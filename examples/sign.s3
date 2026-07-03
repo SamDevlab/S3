@@ -1,0 +1,20 @@
+fn sign(value: tryte) -> trit {
+    switch (value <=> 0) {
+        -1: {
+            return -1;
+        }
+
+        0: {
+            return 0;
+        }
+
+        1: {
+            return 1;
+        }
+    }
+}
+
+fn main() -> trit {
+    return sign(-20);
+}
+

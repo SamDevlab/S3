@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "s3-bootstrap"
+version = "0.2.0"
+description = "Reference bootstrap toolchain for the S3 balanced-ternary language"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "S3 contributors" }]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+s3 = "bootstrap.s3.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["bootstrap*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

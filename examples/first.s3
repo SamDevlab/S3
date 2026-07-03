@@ -1,0 +1,6 @@
+fn main() -> tryte {
+    tryte a = 10;
+    tryte b = 4;
+    return a - b;
+}
+

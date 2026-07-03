@@ -1,0 +1,124 @@
+"""Generate typed, labelled S3 Assembly from verified block-based S3 IR."""
+
+from __future__ import annotations
+
+from .assembly import (
+    AssemblyBlock,
+    AssemblyFunction,
+    AssemblyInstruction,
+    AssemblyOpcode,
+    AssemblyParameter,
+    AssemblyProgram,
+    AssemblyType,
+)
+from .ir import IRInstruction, IROpcode, IRProgram, IRType
+from .verifier import verify_ir
+
+
+class CodegenError(Exception):
+    """Raised when a verified IR construct has no assembly encoding."""
+
+
+TYPE_MAP = {
+    IRType.TRIT: AssemblyType.TRIT,
+    IRType.TRYTE: AssemblyType.TRYTE,
+}
+
+OPCODE_MAP = {
+    IROpcode.CONST: AssemblyOpcode.TCONST,
+    IROpcode.MOVE: AssemblyOpcode.TMOV,
+    IROpcode.INVERT: AssemblyOpcode.TINV,
+    IROpcode.ADD: AssemblyOpcode.TADD,
+    IROpcode.MINIMUM: AssemblyOpcode.TMIN,
+    IROpcode.MAXIMUM: AssemblyOpcode.TMAX,
+    IROpcode.COMPARE: AssemblyOpcode.TCMP,
+    IROpcode.CALL: AssemblyOpcode.TCALL,
+    IROpcode.RETURN: AssemblyOpcode.TRET,
+    IROpcode.JUMP: AssemblyOpcode.TJMP,
+    IROpcode.BRANCH3: AssemblyOpcode.TBR3,
+}
+
+
+def _generate_instruction(instruction: IRInstruction) -> AssemblyInstruction:
+    try:
+        opcode = OPCODE_MAP[instruction.opcode]
+    except KeyError as error:
+        raise CodegenError(
+            f"IR opcode '{instruction.opcode}' has no assembly encoding"
+        ) from error
+    if opcode is AssemblyOpcode.TCONST:
+        assert instruction.result is not None
+        return AssemblyInstruction(
+            opcode,
+            (instruction.result,),
+            immediate=instruction.immediate,
+            source=instruction.location,
+        )
+    if opcode is AssemblyOpcode.TCALL:
+        assert instruction.result is not None
+        return AssemblyInstruction(
+            opcode,
+            (instruction.result, *instruction.operands),
+            callee=instruction.callee,
+            source=instruction.location,
+        )
+    if opcode in {AssemblyOpcode.TJMP, AssemblyOpcode.TBR3}:
+        return AssemblyInstruction(
+            opcode,
+            instruction.operands,
+            labels=instruction.targets,
+            source=instruction.location,
+        )
+    registers = (
+        instruction.operands
+        if instruction.result is None
+        else (instruction.result, *instruction.operands)
+    )
+    return AssemblyInstruction(
+        opcode,
+        registers,
+        source=instruction.location,
+    )
+
+
+def generate_assembly(ir_program: IRProgram) -> AssemblyProgram:
+    verify_ir(ir_program)
+    functions: list[AssemblyFunction] = []
+    for function in ir_program.functions:
+        parameter_registers = {
+            parameter.register for parameter in function.parameters
+        }
+        functions.append(
+            AssemblyFunction(
+                function.name,
+                TYPE_MAP[function.return_type],
+                tuple(
+                    AssemblyParameter(
+                        parameter.register,
+                        TYPE_MAP[parameter.type],
+                    )
+                    for parameter in function.parameters
+                ),
+                tuple(
+                    (register.index, TYPE_MAP[register.type])
+                    for register in function.registers
+                    if register.index not in parameter_registers
+                ),
+                tuple(
+                    AssemblyBlock(
+                        block.name,
+                        tuple(
+                            _generate_instruction(instruction)
+                            for instruction in block.instructions
+                        ),
+                    )
+                    for block in function.blocks
+                ),
+            )
+        )
+    return AssemblyProgram(tuple(functions))
+
+
+def generate_assembly_text(ir_program: IRProgram) -> str:
+    return generate_assembly(ir_program).render()
+

@@ -1,0 +1,267 @@
+"""Recursive-descent parser for the first S3 grammar."""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+
+from . import ast
+from .diagnostics import ParseError
+from .lexer import Token, TokenKind, tokenize
+
+
+class Parser:
+    def __init__(self, tokens: tuple[Token, ...]):
+        self.tokens = tokens
+        self.current = 0
+
+    def parse_program(self) -> ast.Program:
+        functions: list[ast.FunctionDeclaration] = []
+        location = self._peek().location
+        while not self._check(TokenKind.EOF):
+            functions.append(self._parse_function())
+        if not functions:
+            raise ParseError("expected at least one function", self._peek().location)
+        return ast.Program(tuple(functions), location)
+
+    def _parse_function(self) -> ast.FunctionDeclaration:
+        start = self._consume(TokenKind.FN, "expected 'fn'")
+        name = self._consume(TokenKind.IDENTIFIER, "expected function name")
+        self._consume(TokenKind.LEFT_PAREN, "expected '(' after function name")
+        parameters = self._parse_parameters()
+        self._consume(TokenKind.RIGHT_PAREN, "expected ')' after parameters")
+        self._consume(TokenKind.ARROW, "expected '->' before return type")
+        return_type = self._parse_type()
+        body = self._parse_block()
+        signature = ast.FunctionSignature(
+            name.text,
+            tuple(parameters),
+            return_type,
+            name.location,
+        )
+        return ast.FunctionDeclaration(signature, body, start.location)
+
+    def _parse_parameters(self) -> list[ast.Parameter]:
+        parameters: list[ast.Parameter] = []
+        if self._check(TokenKind.RIGHT_PAREN):
+            return parameters
+        while True:
+            name = self._consume(TokenKind.IDENTIFIER, "expected parameter name")
+            self._consume(TokenKind.COLON, "expected ':' after parameter name")
+            type_name = self._parse_type()
+            parameters.append(ast.Parameter(name.text, type_name, name.location))
+            if not self._match(TokenKind.COMMA):
+                return parameters
+            if self._check(TokenKind.RIGHT_PAREN):
+                raise ParseError(
+                    "expected parameter after ','",
+                    self._peek().location,
+                )
+
+    def _parse_type(self) -> ast.TypeName:
+        if self._match(TokenKind.TRIT):
+            return ast.TypeName.TRIT
+        if self._match(TokenKind.TRYTE):
+            return ast.TypeName.TRYTE
+        raise ParseError("expected type 'trit' or 'tryte'", self._peek().location)
+
+    def _parse_block(self) -> ast.Block:
+        start = self._consume(TokenKind.LEFT_BRACE, "expected '{'")
+        statements: list[ast.Statement] = []
+        while not self._check(TokenKind.RIGHT_BRACE) and not self._check(TokenKind.EOF):
+            statements.append(self._parse_statement())
+        self._consume(TokenKind.RIGHT_BRACE, "expected '}' after block")
+        return ast.Block(tuple(statements), start.location)
+
+    def _parse_statement(self) -> ast.Statement:
+        if self._check(TokenKind.TRIT) or self._check(TokenKind.TRYTE):
+            return self._parse_variable_declaration()
+        if self._match(TokenKind.RETURN):
+            return self._parse_return(self._previous())
+        if self._match(TokenKind.SWITCH):
+            return self._parse_switch(self._previous())
+        raise ParseError(
+            "expected variable declaration, 'return', or 'switch'",
+            self._peek().location,
+        )
+
+    def _parse_variable_declaration(self) -> ast.VariableDeclaration:
+        start = self._peek()
+        type_name = self._parse_type()
+        name = self._consume(TokenKind.IDENTIFIER, "expected variable name")
+        self._consume(TokenKind.EQUAL, "expected '=' after variable name")
+        initializer = self._parse_expression()
+        self._consume(
+            TokenKind.SEMICOLON,
+            "expected ';' after variable declaration",
+        )
+        return ast.VariableDeclaration(
+            type_name,
+            name.text,
+            initializer,
+            start.location,
+        )
+
+    def _parse_return(self, start: Token) -> ast.ReturnStatement:
+        expression = self._parse_expression()
+        self._consume(TokenKind.SEMICOLON, "expected ';' after return value")
+        return ast.ReturnStatement(expression, start.location)
+
+    def _parse_switch(self, start: Token) -> ast.SwitchStatement:
+        self._consume(TokenKind.LEFT_PAREN, "expected '(' after 'switch'")
+        expression = self._parse_expression()
+        self._consume(TokenKind.RIGHT_PAREN, "expected ')' after switch expression")
+        self._consume(TokenKind.LEFT_BRACE, "expected '{' before switch cases")
+        cases: list[ast.TernaryCase] = []
+        while not self._check(TokenKind.RIGHT_BRACE) and not self._check(TokenKind.EOF):
+            cases.append(self._parse_ternary_case())
+        self._consume(TokenKind.RIGHT_BRACE, "expected '}' after switch cases")
+        return ast.SwitchStatement(expression, tuple(cases), start.location)
+
+    def _parse_ternary_case(self) -> ast.TernaryCase:
+        negative = self._match(TokenKind.MINUS)
+        start = self._previous() if negative else self._peek()
+        integer = self._consume(
+            TokenKind.INTEGER,
+            "expected integer case label",
+        )
+        value = int(integer.text)
+        if negative:
+            value = -value
+        self._consume(TokenKind.COLON, "expected ':' after case label")
+        body = self._parse_block()
+        return ast.TernaryCase(value, body, start.location)
+
+    def _parse_expression(self) -> ast.Expression:
+        return self._parse_compare()
+
+    def _parse_compare(self) -> ast.Expression:
+        return self._parse_left_associative(
+            self._parse_maximum,
+            {TokenKind.COMPARE: ast.BinaryOperator.COMPARE},
+        )
+
+    def _parse_maximum(self) -> ast.Expression:
+        return self._parse_left_associative(
+            self._parse_minimum,
+            {TokenKind.PIPE: ast.BinaryOperator.MAXIMUM},
+        )
+
+    def _parse_minimum(self) -> ast.Expression:
+        return self._parse_left_associative(
+            self._parse_additive,
+            {TokenKind.AMPERSAND: ast.BinaryOperator.MINIMUM},
+        )
+
+    def _parse_additive(self) -> ast.Expression:
+        return self._parse_left_associative(
+            self._parse_unary,
+            {
+                TokenKind.PLUS: ast.BinaryOperator.ADD,
+                TokenKind.MINUS: ast.BinaryOperator.SUBTRACT,
+            },
+        )
+
+    def _parse_left_associative(
+        self,
+        operand_parser: Callable[[], ast.Expression],
+        operators: dict[TokenKind, ast.BinaryOperator],
+    ) -> ast.Expression:
+        expression = operand_parser()
+        while self._peek().kind in operators:
+            operator_token = self._advance()
+            right = operand_parser()
+            expression = ast.BinaryExpression(
+                operators[operator_token.kind],
+                expression,
+                right,
+                operator_token.location,
+            )
+        return expression
+
+    def _parse_unary(self) -> ast.Expression:
+        if self._match(TokenKind.TILDE):
+            token = self._previous()
+            return ast.UnaryExpression(
+                ast.UnaryOperator.INVERT,
+                self._parse_unary(),
+                token.location,
+            )
+        if self._match(TokenKind.MINUS):
+            token = self._previous()
+            return ast.UnaryExpression(
+                ast.UnaryOperator.NEGATE,
+                self._parse_unary(),
+                token.location,
+            )
+        return self._parse_primary()
+
+    def _parse_primary(self) -> ast.Expression:
+        if self._match(TokenKind.INTEGER):
+            token = self._previous()
+            return ast.IntegerLiteral(int(token.text), token.location)
+        if self._match(TokenKind.IDENTIFIER):
+            token = self._previous()
+            if self._match(TokenKind.LEFT_PAREN):
+                return self._finish_call(token)
+            return ast.Identifier(token.text, token.location)
+        if self._match(TokenKind.LEFT_PAREN):
+            expression = self._parse_expression()
+            self._consume(TokenKind.RIGHT_PAREN, "expected ')' after expression")
+            return expression
+        raise ParseError("expected expression", self._peek().location)
+
+    def _finish_call(self, function: Token) -> ast.CallExpression:
+        arguments: list[ast.CallArgument] = []
+        if not self._check(TokenKind.RIGHT_PAREN):
+            while True:
+                expression = self._parse_expression()
+                arguments.append(ast.CallArgument(expression, expression.location))
+                if not self._match(TokenKind.COMMA):
+                    break
+                if self._check(TokenKind.RIGHT_PAREN):
+                    raise ParseError(
+                        "expected argument after ','",
+                        self._peek().location,
+                    )
+        self._consume(TokenKind.RIGHT_PAREN, "expected ')' after arguments")
+        return ast.CallExpression(
+            function.text,
+            tuple(arguments),
+            function.location,
+        )
+
+    def _match(self, kind: TokenKind) -> bool:
+        if not self._check(kind):
+            return False
+        self._advance()
+        return True
+
+    def _consume(self, kind: TokenKind, message: str) -> Token:
+        if self._check(kind):
+            return self._advance()
+        found = self._peek()
+        suffix = "end of file" if found.kind is TokenKind.EOF else repr(found.text)
+        raise ParseError(f"{message}; found {suffix}", found.location)
+
+    def _check(self, kind: TokenKind) -> bool:
+        return self._peek().kind is kind
+
+    def _advance(self) -> Token:
+        token = self._peek()
+        if token.kind is not TokenKind.EOF:
+            self.current += 1
+        return token
+
+    def _peek(self) -> Token:
+        return self.tokens[self.current]
+
+    def _previous(self) -> Token:
+        return self.tokens[self.current - 1]
+
+
+def parse_tokens(tokens: tuple[Token, ...]) -> ast.Program:
+    return Parser(tokens).parse_program()
+
+
+def parse(source: str) -> ast.Program:
+    return parse_tokens(tokenize(source))
