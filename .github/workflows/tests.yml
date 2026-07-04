@@ -7,10 +7,13 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
+
 
     steps:
       - name: Check out repository
@@ -29,15 +32,24 @@ jobs:
       - name: Run tests
         run: |
           python -m pytest > pytest.log || true
-          curl -sT pytest.log https://transfer.sh/pytest_${{ matrix.python-version }}.log > url.txt
-          echo "### Log URL: $(cat url.txt)" >> $GITHUB_STEP_SUMMARY
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git pull
+          cp pytest.log pytest_${{ matrix.python-version }}.log
+          git add pytest_${{ matrix.python-version }}.log
+          git commit -m "Auto-upload pytest_${{ matrix.python-version }}.log" || true
+          git push || true
           python -m pytest
+
 
 
 
 
   native-x86-64:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
 
     steps:
       - name: Check out repository
@@ -67,9 +79,15 @@ jobs:
           S3_NATIVE_REQUIRED: "1"
         run: |
           python -m pytest tests/test_native_x86_64_integration.py > pytest.log || true
-          curl -sT pytest.log https://transfer.sh/pytest_native.log > url.txt
-          echo "### Log URL: $(cat url.txt)" >> $GITHUB_STEP_SUMMARY
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git pull
+          cp pytest.log pytest_native.log
+          git add pytest_native.log
+          git commit -m "Auto-upload pytest_native.log" || true
+          git push || true
           python -m pytest tests/test_native_x86_64_integration.py
+
 
 
 
