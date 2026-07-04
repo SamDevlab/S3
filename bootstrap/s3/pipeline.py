@@ -9,7 +9,7 @@ from .assembly import AssemblyProgram
 from .codegen import generate_assembly
 from .emulator import DEFAULT_MAX_FRAMES, Emulator
 from .ir import IRProgram
-from .lexer import Token, tokenize
+from .lexer import SyntaxMode, Token, tokenize
 from .lowering import lower
 from .optimizer import OptimizationLevel, optimize_ir
 from .parser import parse_tokens
@@ -32,9 +32,11 @@ class CompilationResult:
 def compile_source(
     source: str,
     optimization: OptimizationLevel | str = OptimizationLevel.O0,
+    *,
+    mode: SyntaxMode = SyntaxMode.V0_5,
 ) -> CompilationResult:
-    tokens = tokenize(source)
-    syntax_tree = parse_tokens(tokens)
+    tokens = tokenize(source, mode=mode)
+    syntax_tree = parse_tokens(tokens, mode=mode)
     semantic_model = analyze(syntax_tree)
     ir_program = optimize_ir(
         lower(syntax_tree, semantic_model),
@@ -56,6 +58,7 @@ def run_source(
     optimization: OptimizationLevel | str = OptimizationLevel.O0,
     *,
     max_frames: int = DEFAULT_MAX_FRAMES,
+    mode: SyntaxMode = SyntaxMode.V0_5,
 ) -> int:
-    compilation = compile_source(source, optimization)
+    compilation = compile_source(source, optimization, mode=mode)
     return Emulator(max_frames=max_frames).execute(compilation.assembly, entry)

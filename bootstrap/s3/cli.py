@@ -28,6 +28,7 @@ from .diagnostics import (
 )
 from .emulator import DEFAULT_MAX_FRAMES, Emulator
 from .ir_serialization import deserialize_ir, serialize_ir
+from .lexer import SyntaxMode
 from .optimizer import OptimizationLevel
 from .pipeline import compile_source
 
@@ -46,6 +47,12 @@ class _CLIUsageError(Exception):
 class _ArgumentParser(argparse.ArgumentParser):
     def error(self, message: str) -> None:
         raise _CLIUsageError(message)
+
+
+_SOURCE_SYNTAX_MODES = {
+    "0.5": SyntaxMode.V0_5,
+    "0.6": SyntaxMode.V0_6,
+}
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -106,6 +113,12 @@ def _parser() -> argparse.ArgumentParser:
         "--debug",
         action="store_true",
         help="re-raise failures with a Python traceback",
+    )
+    parser.add_argument(
+        "--source-syntax",
+        choices=("0.5", "0.6"),
+        default="0.5",
+        help="Source syntax version (default: 0.5)",
     )
     return parser
 
@@ -183,7 +196,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(f"IR verified: {len(module.functions)} function(s)")
             return 0
         optimization = OptimizationLevel.parse(args.optimization)
-        compilation = compile_source(source, optimization)
+        mode = _SOURCE_SYNTAX_MODES[args.source_syntax]
+        compilation = compile_source(source, optimization, mode=mode)
         if args.command == "tokens":
             payload = [
                 token.to_dict()

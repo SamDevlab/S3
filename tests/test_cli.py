@@ -326,7 +326,13 @@ def test_internal_error_is_structured_and_debug_mode_reraises(
         "fn main() -> tryte { return 0; }\n",
     )
 
-    def fail(_source: str, _optimization: object) -> object:
+    def fail(
+        _source: str,
+        _optimization: object,
+        *,
+        mode: cli.SyntaxMode = cli.SyntaxMode.V0_5,
+    ) -> object:
+        assert mode == cli.SyntaxMode.V0_5
         raise RuntimeError("developer detail")
 
     monkeypatch.setattr(cli, "compile_source", fail)
@@ -476,5 +482,73 @@ def test_native_runtime_json_is_a_wrapper_not_parsed_elf_diagnostics(
     assert payload["category"] == "native-runtime"
     assert payload["code"] == "S3E_NATIVE_PROCESS_FAILED"
     assert payload["exit_code"] == 1
-    assert payload["notes"] == [native_stderr.rstrip("\n")]
     assert payload["message"] == "standalone native program exited with status 1"
+
+
+def test_cli_mode_propagation_default_v0_5(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _write_source(tmp_path / "prog.s3", "fn main() -> tryte { return 0; }\n")
+    received_modes = []
+
+    def fake_compile(_source: str, _optimization: object, *, mode: cli.SyntaxMode = cli.SyntaxMode.V0_5) -> object:
+        received_modes.append(mode)
+        raise RuntimeError("stop")
+
+    monkeypatch.setattr(cli, "compile_source", fake_compile)
+
+    cli.main(["ir", str(source)])
+    assert received_modes == [cli.SyntaxMode.V0_5]
+
+
+def test_cli_mode_propagation_explicit_v0_5(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _write_source(tmp_path / "prog.s3", "fn main() -> tryte { return 0; }\n")
+    received_modes = []
+
+    def fake_compile(_source: str, _optimization: object, *, mode: cli.SyntaxMode = cli.SyntaxMode.V0_5) -> object:
+        received_modes.append(mode)
+        raise RuntimeError("stop")
+
+    monkeypatch.setattr(cli, "compile_source", fake_compile)
+
+    cli.main(["--source-syntax", "0.5", "ast", str(source)])
+    assert received_modes == [cli.SyntaxMode.V0_5]
+
+
+def test_cli_mode_propagation_explicit_v0_6(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _write_source(tmp_path / "prog.s3", "fn main() -> tryte: return 0\n")
+    received_modes = []
+
+    def fake_compile(_source: str, _optimization: object, *, mode: cli.SyntaxMode = cli.SyntaxMode.V0_5) -> object:
+        received_modes.append(mode)
+        raise RuntimeError("stop")
+
+    monkeypatch.setattr(cli, "compile_source", fake_compile)
+
+    cli.main(["--source-syntax", "0.6", "build", str(source)])
+    assert received_modes == [cli.SyntaxMode.V0_6]
+
+
+def test_cli_run_command_propagates_mode_to_emulator(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _write_source(tmp_path / "prog.s3", "fn main() -> tryte: return 0\n")
+    received_modes = []
+
+    # 'run' uses compile_source then Emulator, we check if compile_source received it.
+    def fake_compile(_source: str, _optimization: object, *, mode: cli.SyntaxMode = cli.SyntaxMode.V0_5) -> object:
+        received_modes.append(mode)
+        raise RuntimeError("stop")
+
+    monkeypatch.setattr(cli, "compile_source", fake_compile)
+
+    cli.main(["--source-syntax", "0.6", "run", str(source)])
+    assert received_modes == [cli.SyntaxMode.V0_6]

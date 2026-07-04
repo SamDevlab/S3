@@ -62,6 +62,10 @@ desenvolvimento.
 
 ## CLI
 
+A CLI suporta as versões de sintaxe fonte 0.5 (padrão atual) e 0.6 (preview) através da opção `--source-syntax {0.5,0.6}`.
+Exemplos oficiais ainda podem usar a sintaxe 0.5. Consulte o [guia de migração 0.6](docs/migration-source-0.5-to-0.6.md) para detalhes.
+A IR JSON e o S3 Assembly continuam na versão 0.5.0, independentemente da sintaxe de origem. O Marco 0.6 ainda não foi concluído.
+
 ```bash
 python -m bootstrap.s3.cli tokens examples/static_array.s3
 python -m bootstrap.s3.cli ast examples/static_array.s3

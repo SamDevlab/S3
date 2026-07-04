@@ -73,14 +73,13 @@ Em andamento:
   - Entrega A concluída e validada;
   - Entrega B concluída e validada;
   - Entrega C1 concluída e validada;
-  - Entrega C2 implementada localmente;
-  - arrays estáticos V0.6 disponíveis somente pelo modo interno;
-  - declaração, literal, leitura e atribuição indexada suportados;
-  - equivalência com arrays V0.5 preservada;
-  - V0_5 continua sendo o padrão;
-  - CLI pública continua usando V0_5;
-  - migração dos exemplos e testes ainda está pendente;
-  - remoção da gramática antiga continua pendente;
+  - Entrega C2 concluída e validada;
+  - Entrega D1 implementada localmente (validação remota pendente);
+  - seleção pública explícita de V0.6 adicionada;
+  - default continua sendo V0.5;
+  - migração dos exemplos e testes históricos não migrados;
+  - troca de default e remoção da gramática antiga (V0.5) pendente;
+  - validação final E pendente;
   - Marco 0.6 não está concluído.
 
 Permanecem pendentes:
