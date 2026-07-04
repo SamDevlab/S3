@@ -38,6 +38,8 @@ WIDTH_MAP = {
     AssemblyType.TRYTE: TernaryWidth.TRYTE,
 }
 
+DEFAULT_MAX_MEMORY_TRITS = 6561
+
 
 @dataclass(slots=True)
 class Frame:
@@ -58,7 +60,7 @@ class Emulator:
         *,
         max_frames: int = 1024,
         max_instructions: int = 100_000,
-        max_memory_trits: int = 2187,
+        max_memory_trits: int = DEFAULT_MAX_MEMORY_TRITS,
     ):
         if max_frames < 1:
             raise ValueError("max_frames must be at least 1")
@@ -69,6 +71,33 @@ class Emulator:
         self.max_frames = max_frames
         self.max_instructions = max_instructions
         self.max_memory_trits = max_memory_trits
+
+    def validate(
+        self,
+        program: AssemblyProgram,
+        *,
+        entry: str | None = None,
+    ) -> None:
+        """Validate assembly without executing it.
+
+        Native backends use this public boundary so they only consume the same
+        typed, structurally valid assembly accepted by the emulator.
+        """
+
+        functions = self._validate_program(program)
+        for function in program.functions:
+            self._validate_memory_budget(function)
+        if entry is not None:
+            try:
+                entry_function = functions[entry]
+            except KeyError as error:
+                raise EmulatorError(
+                    f"entry function '{entry}' was not found"
+                ) from error
+            if entry_function.parameters:
+                raise EmulatorError(
+                    f"entry function '{entry}' must not declare parameters"
+                )
 
     def execute(self, program: AssemblyProgram, entry: str = "main") -> int:
         functions = self._validate_program(program)
@@ -664,16 +693,7 @@ class Emulator:
         return_instruction_index: int | None = None,
         call_instruction: AssemblyInstruction | None = None,
     ) -> Frame:
-        memory_cost = sum(
-            memory.length
-            * (1 if memory.element_type is AssemblyType.TRIT else 6)
-            for memory in function.memory_objects
-        )
-        if memory_cost > self.max_memory_trits:
-            raise EmulatorError(
-                f"function '{function.name}' requires {memory_cost} logical "
-                f"trits of frame memory; limit is {self.max_memory_trits}"
-            )
+        self._validate_memory_budget(function)
         return Frame(
             function,
             registers={} if registers is None else dict(registers),
@@ -686,6 +706,18 @@ class Emulator:
             return_instruction_index=return_instruction_index,
             call_instruction=call_instruction,
         )
+
+    def _validate_memory_budget(self, function: AssemblyFunction) -> None:
+        memory_cost = sum(
+            memory.length
+            * (1 if memory.element_type is AssemblyType.TRIT else 6)
+            for memory in function.memory_objects
+        )
+        if memory_cost > self.max_memory_trits:
+            raise EmulatorError(
+                f"function '{function.name}' requires {memory_cost} logical "
+                f"trits of frame memory; limit is {self.max_memory_trits}"
+            )
 
     @staticmethod
     def _memory_definition(
@@ -874,7 +906,7 @@ def execute_assembly(
     *,
     max_frames: int = 1024,
     max_instructions: int = 100_000,
-    max_memory_trits: int = 2187,
+    max_memory_trits: int = DEFAULT_MAX_MEMORY_TRITS,
 ) -> int:
     program = parse_assembly(assembly) if isinstance(assembly, str) else assembly
     return Emulator(

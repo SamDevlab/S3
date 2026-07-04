@@ -9,7 +9,11 @@ from bootstrap.s3.assembly import (
     AssemblyParseError,
     parse_assembly,
 )
-from bootstrap.s3.emulator import EmulatorError, execute_assembly
+from bootstrap.s3.emulator import (
+    DEFAULT_MAX_MEMORY_TRITS,
+    EmulatorError,
+    execute_assembly,
+)
 from bootstrap.s3.pipeline import compile_source, run_source
 
 
@@ -214,7 +218,60 @@ def test_duplicate_and_invalid_memory_declarations_are_rejected() -> None:
         execute_assembly(too_long)
 
 
-def test_memory_limit_is_enforced_per_frame() -> None:
+def test_maximum_tryte_array_fits_default_memory_limit() -> None:
+    source = """\
+.function main -> tryte
+    .register r0, tryte
+    .memory m0, tryte, 365
+.label entry
+    TCONST r0, 0
+    TRET r0
+.end
+"""
+    assert DEFAULT_MAX_MEMORY_TRITS == 6561
+    assert execute_assembly(source) == 0
+
+
+def test_tryte_memory_costs_six_logical_trits() -> None:
+    source = """\
+.function main -> tryte
+    .register r0, tryte
+    .memory m0, tryte, 1
+.label entry
+    TCONST r0, 0
+    TRET r0
+.end
+"""
+    with pytest.raises(
+        EmulatorError,
+        match=r"function 'main' requires 6 logical trits.*limit is 5",
+    ):
+        execute_assembly(source, max_memory_trits=5)
+
+
+def test_multiple_objects_over_default_memory_limit_are_rejected() -> None:
+    source = """\
+.function main -> tryte
+    .register r0, tryte
+    .memory m0, tryte, 365
+    .memory m1, tryte, 365
+    .memory m2, tryte, 365
+.label entry
+    TCONST r0, 0
+    TRET r0
+.end
+"""
+    with pytest.raises(
+        EmulatorError,
+        match=(
+            r"function 'main' requires 6570 logical trits of frame memory; "
+            r"limit is 6561"
+        ),
+    ):
+        execute_assembly(source)
+
+
+def test_custom_smaller_memory_limit_is_enforced_per_frame() -> None:
     source = """\
 .function main -> tryte
     .register r0, tryte
@@ -226,7 +283,10 @@ def test_memory_limit_is_enforced_per_frame() -> None:
 """
     with pytest.raises(
         EmulatorError,
-        match="requires 12 logical trits.*limit is 11",
+        match=(
+            r"function 'main' requires 12 logical trits of frame memory; "
+            r"limit is 11"
+        ),
     ):
         execute_assembly(source, max_memory_trits=11)
 

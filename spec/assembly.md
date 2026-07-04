@@ -1,4 +1,4 @@
-# S3 Assembly textual 0.3
+# S3 Assembly textual 0.4
 
 Status: normativo para o bootstrap.
 
@@ -73,3 +73,14 @@ retorna `10`.
 Assembly 0.1 sem labels recebe bloco implícito `entry`; assembly 0.2 sem memória
 continua válida. Todos os registradores, objetos, labels e assinaturas são
 validados antes da execução.
+
+## Backend nativo
+
+O S3 Assembly validado é o contrato de entrada do backend Linux x86-64. Todos
+os opcodes listados acima possuem emissão nativa; o backend não reinterpreta
+AST nem repete semântica de fonte. Antes de emitir, valida programa completo,
+`main` sem parâmetros, tipos, chamadas, CFG, objetos e cota lógica.
+
+A representação física, ABI, checks e runtime estão em
+[`native-x86_64.md`](native-x86_64.md). Esse target não adiciona diretivas nem
+opcodes ao formato e continua rejeitando `TSUB`.

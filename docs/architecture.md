@@ -1,4 +1,4 @@
-# Arquitetura do S3 bootstrap 0.3
+# Arquitetura do S3 bootstrap 0.4
 
 ## Pipeline
 
@@ -6,8 +6,9 @@
 fonte → lexer → AST → semântica
       → lowering SSA + objetos de memória
       → IR com CFG/dominância verificada
-      → assembly tipada
-      → emulador com frames e memória local
+      → S3 Assembly tipada e validada
+        ├→ emulador com frames e memória local
+        └→ backend x86-64 → GNU assembly → ELF Linux
 ```
 
 AST, semântica, IR e assembly permanecem modelos separados. Origem atravessa
@@ -63,8 +64,30 @@ Defaults:
 ```text
 max_frames        = 1024
 max_instructions  = 100000
-max_memory_trits  = 2187
+max_memory_trits  = 6561
 ```
+
+## Backend nativo
+
+`backends/x86_64` consome apenas `AssemblyProgram` validado pelo limite público
+do emulador. O layout é uma etapa isolada: registradores ordenados recebem
+slots de 8 bytes e flags; objetos ordenados recebem regiões int8/int16 e flags
+por elemento; regiões não se sobrepõem e o frame termina alinhado a 16 bytes.
+
+O emitter mantém todos os valores virtuais no frame e usa registradores AMD64
+como temporários. Funções seguem System V: seis argumentos em registradores,
+demais na pilha, retorno em `RAX`. O runtime assembly fornece `_start`,
+conversão decimal, helpers tritwise, `write`, `exit` e falhas controladas. A
+toolchain detecta Linux x86-64 e invoca `cc`/`gcc`/`clang` sem shell, com
+temporários isolados.
+
+```text
+S3 lógico: trit=1 trit, tryte=6 trits, cota=6561/frame
+x86-64 físico: trit=int8, tryte=int16, valores temporários=int64
+```
+
+Essas medidas são independentes: flags, padding e slots físicos não consomem a
+cota lógica.
 
 ## Invariantes
 
@@ -76,13 +99,15 @@ max_memory_trits  = 2187
 6. Bounds nunca são silenciosos.
 7. Codegen consome somente IR verificada.
 8. Não existem `PHI`, `SUBTRACT`, `TSUB`, ponteiros ou casts.
-9. Python continua apenas bootstrap.
+9. Python continua apenas compilador bootstrap; o ELF não depende dele.
+10. Emissão textual, símbolos e offsets são determinísticos.
 
 ## Riscos
 
 Todos os objetos lexicais da função são alocados ao entrar no frame, inclusive
 os de ramos não executados; é simples e conservador, mas pode superestimar
 memória. Inicialização de memória imutável é verificada dinamicamente na
-assembly. O modelo não define layout físico e ainda não possui heap, aliasing
-ou promoção memória-para-SSA.
-
+assembly. O layout x86-64 ainda não aloca registradores, não reproduz os limites
+operacionais de instruções/frames do emulador e não possui heap, aliasing ou
+promoção memória-para-SSA. Outros sistemas/arquiteturas exigem backend e ADR
+próprios.

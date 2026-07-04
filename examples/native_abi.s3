@@ -1,0 +1,16 @@
+fn eighth(
+    a: tryte,
+    b: tryte,
+    c: tryte,
+    d: tryte,
+    e: tryte,
+    f: tryte,
+    g: tryte,
+    h: tryte
+) -> tryte {
+    return h;
+}
+
+fn main() -> tryte {
+    return eighth(0, 1, 2, 3, 4, 5, 6, 7);
+}

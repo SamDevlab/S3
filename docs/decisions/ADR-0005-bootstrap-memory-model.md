@@ -49,7 +49,8 @@ Adotar objetos de memória tipados e indexados, locais ao frame:
 - arrays armazenam elementos contíguos em ordem crescente de índice;
 - cada objeto tem no máximo 365 elementos, pois índices `tryte` válidos para
   memória são `0..364`;
-- limite padrão por frame: 2187 trits lógicos (`3^7`), configurável;
+- limite padrão por frame: 6561 trits lógicos (`3^8`), configurável; ele
+  comporta um `tryte[365]` de 2190 trits lógicos e múltiplos objetos moderados;
 - todos os elementos começam não inicializados;
 - leitura não inicializada e índice negativo/fora do limite são erros;
 - cada chamada aloca objetos próprios e os descarta ao retornar;
@@ -62,6 +63,7 @@ elemento; nova escrita é erro. Objetos mutáveis aceitam escritas posteriores.
 
 Bounds e inicialização são verificáveis sem `IndexError` ou valores
 indeterminados. O custo é manter metadados por objeto/elemento no emulador.
-Endereços, tamanho físico, endian de bytes, padding e ABI permanecem abstratos.
-Um backend futuro poderá mapear objeto para stack slot ou região, preservando
-tipo, comprimento e checks, e só então definir ponteiros.
+Endereços, tamanho físico, endian de bytes, padding e ABI permanecem abstratos
+no modelo lógico. O backend x86-64 agora mapeia objetos para regiões de stack
+sob ADR-0007/0008, preservando tipo, comprimento e checks; essa decisão física
+não introduz ponteiros na linguagem nem obriga outros backends.

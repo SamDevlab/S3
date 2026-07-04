@@ -23,8 +23,11 @@ existem endereços ou ponteiros como valores S3.
 - arrays dispõem elementos em índices consecutivos de `0` a `length - 1`;
 - objetos são regiões lógicas separadas, sem offsets observáveis ou aliasing.
 
-O limite padrão é 2187 trits lógicos por frame. O custo de um objeto é
-`length × 1` para trit e `length × 6` para tryte.
+O limite padrão é 6561 trits lógicos (`3^8`) por frame. Ele comporta qualquer
+objeto individual permitido, inclusive `tryte[365]`, que custa 2190 trits
+lógicos. O custo de um objeto é `length × 1` para trit e `length × 6` para
+tryte. A soma dos custos de todos os objetos do frame não pode exceder o limite,
+que permanece configurável pela API do emulador.
 
 ## Inicialização e acesso
 
@@ -45,8 +48,17 @@ Objetos são alocados ao criar um frame e descartados com ele. Chamadas,
 inclusive recursivas, nunca compartilham objetos. Não há heap, memória global,
 aliasing, ponteiros, referências ou aritmética de endereço.
 
-## Fronteira futura
+## Mapeamento nativo x86-64
 
-O modelo não define tamanho em bits, ordem de bytes, padding, stack pointer ou
-endereços assinados/não assinados. Backends futuros mapearão objetos lógicos a
-endereços físicos sob ADR próprio.
+O modelo lógico não define universalmente tamanho em bits, ordem de bytes,
+padding ou stack pointer. O backend Linux x86-64 faz um mapeamento específico:
+
+```text
+trit  → int8
+tryte → int16
+```
+
+Arrays são contíguos no frame e cada elemento possui um byte físico de
+inicialização. Esses bytes, slots de registradores e padding não alteram o
+custo lógico. Outros backends podem mapear os mesmos objetos de modo diferente
+sob ADR próprio; veja ADR-0007 e `native-x86_64.md`.

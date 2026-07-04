@@ -25,6 +25,7 @@ ROOT = Path(__file__).parents[1]
         ("static_array.s3", 13),
         ("trit_array.s3", 1),
         ("recursive_memory.s3", 6),
+        ("native_abi.s3", 7),
     ),
 )
 def test_all_language_examples(filename: str, expected: int) -> None:
@@ -88,4 +89,3 @@ def test_no_phi_subtract_or_pointer_opcodes_exist() -> None:
     assert "phi" not in names
     assert all("sub" not in name for name in names)
     assert all("ptr" not in name for name in names)
-

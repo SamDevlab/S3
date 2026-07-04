@@ -3,15 +3,17 @@
 [![Tests](https://github.com/SamDevlab/S3/actions/workflows/tests.yml/badge.svg)](https://github.com/SamDevlab/S3/actions/workflows/tests.yml)
 
 S3 é uma linguagem experimental de sistemas baseada em ternário balanceado.
-Este repositório contém o bootstrap 0.3 executável:
+Este repositório contém o bootstrap 0.4 executável:
 
 ```text
-fonte → frontend → IR verificada → S3 Assembly → emulador
+fonte → frontend → IR verificada → S3 Assembly validada
+      ├→ emulador
+      └→ GNU assembly x86-64 → ELF Linux
 ```
 
 Python está isolado em `bootstrap/`; a fonte normativa é [`spec/`](spec/).
 
-## Marco 0.3
+## Marcos 0.3 e 0.4
 
 Suporte atual:
 
@@ -25,7 +27,10 @@ Suporte atual:
 - IR SSA com CFG, dominância, `LOAD` e `STORE`;
 - assembly com `.memory`, `TLOAD` e `TSTORE`;
 - leitura não inicializada sempre diagnosticada;
-- CI em Python 3.11, 3.12 e 3.13.
+- backend nativo experimental Linux x86-64 para todos os opcodes atuais;
+- ELF independente de Python, C, LLVM, libc e runtime padrão;
+- System V AMD64, inclusive argumentos adicionais pela pilha;
+- CI bootstrap em Python 3.11–3.13 e job nativo obrigatório em Ubuntu.
 
 Não existem `PHI`, `SUBTRACT`, `TSUB`, heap ou memória global.
 
@@ -51,10 +56,23 @@ python -m bootstrap.s3.cli ast examples/static_array.s3
 python -m bootstrap.s3.cli ir examples/static_array.s3
 python -m bootstrap.s3.cli asm examples/static_array.s3
 python -m bootstrap.s3.cli run examples/static_array.s3
+python -m bootstrap.s3.cli native-asm examples/first.s3
+python -m bootstrap.s3.cli native-asm examples/first.s3 -o build/first.s
+python -m bootstrap.s3.cli build examples/first.s3 -o build/first
+python -m bootstrap.s3.cli run-native examples/first.s3
 ```
 
 `ir` exibe `memory_objects`, `load` e `store`; `asm` exibe `.memory`, `TLOAD` e
-`TSTORE`.
+`TSTORE`. `native-asm` é determinístico e funciona em qualquer host.
+`build`/`run-native` exigem Linux x86-64 e `cc`, `gcc` ou `clang`; o driver usa
+somente o assembler/linker com `-nostdlib -no-pie`.
+
+O compilador continua sendo Python. Depois do build, o ELF chama `_start`, usa
+syscalls Linux diretamente e imprime:
+
+```text
+program returned: 6
+```
 
 Resultados dos exemplos:
 
@@ -69,6 +87,7 @@ mutable_switch.s3    → 10
 static_array.s3      → 13
 trit_array.s3        → 1
 recursive_memory.s3  → 6
+native_abi.s3        → 7
 ```
 
 O exemplo normativo assembly
@@ -81,18 +100,23 @@ O exemplo normativo assembly
 python -m pytest
 ```
 
-Saída local registrada com Python 3.11.15:
+Saída local registrada no host Windows com Python 3.11.15:
 
 ```text
-........................................................................ [ 41%]
-........................................................................ [ 82%]
-...............................                                          [100%]
-175 passed in 3.34s
+191 passed, 74 skipped
 ```
 
-O workflow [Tests](.github/workflows/tests.yml) executa instalação editável e a
-suíte completa em Ubuntu com Python 3.11–3.13, em `push` e `pull_request`, sem
-`continue-on-error`.
+Os 74 casos são integrações ELF coletadas e puladas localmente porque este host
+não é Linux. O workflow [Tests](.github/workflows/tests.yml), com
+`actions/checkout@v6` e `actions/setup-python@v6`, executa a suíte completa em
+Ubuntu/Python 3.11–3.13 e um job Linux x86-64 separado com
+`S3_NATIVE_REQUIRED=1`; nesse job, toolchain ausente ou skip essencial falha.
+Não se afirma aqui que uma execução remota do GitHub já ocorreu.
+
+Uma validação manual adicional montou, ligou e executou o assembly com GNU GCC
+9.5 em Linux: os onze exemplos produziram os mesmos valores do emulador;
+overflow, bounds, leitura não inicializada e reescrita imutável encerraram com
+status 1 e categoria controlada.
 
 ## Memória lógica
 
@@ -105,7 +129,7 @@ Limites padrão configuráveis:
 ```text
 frames:             1024
 instruções:         100000
-memória por frame:  2187 trits lógicos
+memória por frame:  6561 trits lógicos (3^8)
 ```
 
 Índice negativo/fora da faixa, tipo incorreto, leitura não inicializada,
@@ -114,13 +138,28 @@ segunda escrita imutável ou excesso de memória terminam com diagnóstico.
 Ciclos IR/assembly são permitidos quando estruturalmente válidos; execução sem
 retorno é interrompida pelo limite de instruções.
 
+## Backend x86-64
+
+Em objetos físicos, `trit` usa inteiro assinado de 8 bits e `tryte`, inteiro
+assinado de 16 bits. Cálculos e slots de registradores virtuais usam 64 bits.
+Cada frame contém valores, flags de inicialização, arrays contíguos e um byte
+de estado por elemento; o tamanho físico é alinhado a 16 bytes e não se
+confunde com a cota lógica.
+
+`TADD` valida overflow, `TBR3` valida -1/0/1, todo acesso valida bounds e
+inicialização, e `TMIN`/`TMAX` de trytes usam helpers assembly tritwise. Erros
+escrevem em stderr e saem com status 1, sem acesso arbitrário. Contratos:
+[representação física](docs/decisions/ADR-0007-x86-64-physical-representation.md),
+[ABI/runtime](docs/decisions/ADR-0008-x86-64-native-abi-and-runtime.md) e
+[especificação nativa](spec/native-x86_64.md).
+
 ## Organização
 
 ```text
-bootstrap/s3/    frontend, IR, verifier, assembly e emulador
+bootstrap/s3/    frontend, IR, verifier, assembly, emulador e backends
 spec/            especificações normativas, incluindo memory.md
-docs/decisions/  ADRs 0001–0006
-examples/        programas 0.1–0.3 e assembly normativo
+docs/decisions/  ADRs 0001–0008
+examples/        programas 0.1–0.4 e assembly normativo
 tests/           regressão, propriedades e integração
 selfhost/        fronteira da futura implementação em S3
 ```
@@ -128,6 +167,9 @@ selfhost/        fronteira da futura implementação em S3
 ## Limitações e próximo marco
 
 Não há ponteiros, heap, globals, arrays dinâmicos/multidimensionais, arrays em
-assinaturas, strings, estruturas, módulos, I/O, linker, ABI física ou backend
-nativo. O Marco 0.4 recomendado prepara layout físico e um backend x86-64
-mínimo; veja o [roadmap](docs/roadmap.md).
+assinaturas, strings, estruturas, módulos, I/O, linker próprio, ABI C pública
+ou backend para Windows/macOS/ARM64. O target 0.4 é somente Linux x86-64 e não
+implementa otimização, interoperabilidade C, JIT ou limites dinâmicos de
+instruções/profundidade do emulador. O Marco 0.5 recomendado fortalece
+artefatos reproduzíveis, otimização local e análise estática de inicialização;
+veja o [roadmap](docs/roadmap.md).
