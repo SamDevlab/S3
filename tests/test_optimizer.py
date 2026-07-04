@@ -21,6 +21,7 @@ from bootstrap.s3.optimizer import (
     optimize_ir,
 )
 from bootstrap.s3.pipeline import compile_source, run_source
+from bootstrap.s3.lexer import SyntaxMode
 from bootstrap.s3.verifier import verify_ir
 
 
@@ -138,8 +139,8 @@ def test_o1_removes_unreachable_blocks_and_threads_empty_jumps() -> None:
 )
 def test_all_examples_match_between_o0_and_o1(filename: str) -> None:
     source = (ROOT / "examples" / filename).read_text(encoding="utf-8")
-    o0 = compile_source(source, "O0")
-    o1 = compile_source(source, "O1")
+    o0 = compile_source(source, "O0", mode=SyntaxMode.V0_6)
+    o1 = compile_source(source, "O1", mode=SyntaxMode.V0_6)
     verify_ir(o1.ir)
     assert Emulator().execute(o0.assembly) == Emulator().execute(o1.assembly)
     assert "TSUB" not in o1.assembly_text
@@ -149,8 +150,8 @@ def test_o1_native_assembly_is_deterministic() -> None:
     source = (ROOT / "examples" / "static_array.s3").read_text(
         encoding="utf-8"
     )
-    first = compile_source(source, "O1").assembly
-    second = compile_source(source, "O1").assembly
+    first = compile_source(source, "O1", mode=SyntaxMode.V0_6).assembly
+    second = compile_source(source, "O1", mode=SyntaxMode.V0_6).assembly
     assert first.render() == second.render()
 
 

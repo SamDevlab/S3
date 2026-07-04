@@ -6,6 +6,7 @@ import pytest
 
 from bootstrap.s3.emulator import EmulatorError
 from bootstrap.s3.ir import IROpcode
+from bootstrap.s3.lexer import SyntaxMode
 from bootstrap.s3.pipeline import compile_source, run_source
 
 
@@ -30,12 +31,12 @@ ROOT = Path(__file__).parents[1]
 )
 def test_all_language_examples(filename: str, expected: int) -> None:
     source = (ROOT / "examples" / filename).read_text(encoding="utf-8")
-    assert run_source(source) == expected
+    assert run_source(source, mode=SyntaxMode.V0_6) == expected
 
 
 def test_static_array_pipeline_exposes_memory_at_ir_and_assembly() -> None:
     source = (ROOT / "examples" / "static_array.s3").read_text(encoding="utf-8")
-    compilation = compile_source(source)
+    compilation = compile_source(source, mode=SyntaxMode.V0_6)
     function = compilation.ir.functions[0]
     assert function.memory_objects[0].length == 4
     opcodes = {instruction.opcode for instruction in function.instructions}

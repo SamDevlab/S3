@@ -1,8 +1,6 @@
-fn main() -> tryte {
-    mut tryte[4] values = [1, 2, 3, 4];
+fn main() -> tryte:
+    mut values: tryte[4] = [1, 2, 3, 4]
 
-    values[1] = 5;
+    values[1] = 5
 
-    return values[0] + values[1] + values[2] + values[3];
-}
-
+    return values[0] + values[1] + values[2] + values[3]

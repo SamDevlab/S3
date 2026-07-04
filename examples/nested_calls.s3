@@ -1,9 +1,6 @@
-fn double(value: tryte) -> tryte {
-    return value + value;
-}
+fn double(value: tryte) -> tryte:
+    return value + value
 
-fn main() -> tryte {
-    tryte result = double(double(3));
-    return result;
-}
-
+fn main() -> tryte:
+    result: tryte = double(double(3))
+    return result

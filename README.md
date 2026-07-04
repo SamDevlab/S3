@@ -63,23 +63,23 @@ desenvolvimento.
 ## CLI
 
 A CLI suporta as versões de sintaxe fonte 0.5 (padrão atual) e 0.6 (preview) através da opção `--source-syntax {0.5,0.6}`.
-Exemplos oficiais ainda podem usar a sintaxe 0.5. Consulte o [guia de migração 0.6](docs/migration-source-0.5-to-0.6.md) para detalhes.
-A IR JSON e o S3 Assembly continuam na versão 0.5.0, independentemente da sintaxe de origem. O Marco 0.6 ainda não foi concluído.
+Os exemplos oficiais foram migrados para a sintaxe recomendada 0.6. Para executá-los, use `--source-syntax 0.6`. A sintaxe 0.5 permanece disponível e é o padrão. Consulte o [guia de migração 0.6](docs/migration-source-0.5-to-0.6.md) para detalhes.
+A IR JSON e o S3 Assembly continuam na versão 0.5.0, independentemente da sintaxe de origem. A troca do default para 0.6 e a conclusão do Marco 0.6 ainda estão pendentes.
 
 ```bash
-python -m bootstrap.s3.cli tokens examples/static_array.s3
-python -m bootstrap.s3.cli ast examples/static_array.s3
-python -m bootstrap.s3.cli ir examples/static_array.s3
-python -m bootstrap.s3.cli ir-json examples/static_array.s3 -o build/array.s3ir.json
+python -m bootstrap.s3.cli --source-syntax 0.6 tokens examples/static_array.s3
+python -m bootstrap.s3.cli --source-syntax 0.6 ast examples/static_array.s3
+python -m bootstrap.s3.cli --source-syntax 0.6 ir examples/static_array.s3
+python -m bootstrap.s3.cli --source-syntax 0.6 ir-json examples/static_array.s3 -o build/array.s3ir.json
 python -m bootstrap.s3.cli verify-ir build/array.s3ir.json
-python -m bootstrap.s3.cli asm examples/static_array.s3
-python -m bootstrap.s3.cli asm examples/first.s3 -O1
-python -m bootstrap.s3.cli run examples/static_array.s3
-python -m bootstrap.s3.cli run examples/static_array.s3 --diagnostic-format json
-python -m bootstrap.s3.cli native-asm examples/first.s3
-python -m bootstrap.s3.cli native-asm examples/first.s3 -o build/first.s
-python -m bootstrap.s3.cli build examples/first.s3 -o build/first
-python -m bootstrap.s3.cli run-native examples/first.s3 -O1 --max-frames 128
+python -m bootstrap.s3.cli --source-syntax 0.6 asm examples/static_array.s3
+python -m bootstrap.s3.cli --source-syntax 0.6 asm examples/first.s3 -O1
+python -m bootstrap.s3.cli --source-syntax 0.6 run examples/static_array.s3
+python -m bootstrap.s3.cli --source-syntax 0.6 run examples/static_array.s3 --diagnostic-format json
+python -m bootstrap.s3.cli --source-syntax 0.6 native-asm examples/first.s3
+python -m bootstrap.s3.cli --source-syntax 0.6 native-asm examples/first.s3 -o build/first.s
+python -m bootstrap.s3.cli --source-syntax 0.6 build examples/first.s3 -o build/first
+python -m bootstrap.s3.cli --source-syntax 0.6 run-native examples/first.s3 -O1 --max-frames 128
 ```
 
 `ir-json` emite o envelope `s3-ir` 0.5.0 com newline; `verify-ir` reconstrói e

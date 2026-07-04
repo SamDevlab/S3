@@ -1,8 +1,5 @@
-fn add(a: tryte, b: tryte) -> tryte {
-    return a + b;
-}
+fn add(a: tryte, b: tryte) -> tryte:
+    return a + b
 
-fn main() -> tryte {
-    return add(10, 5);
-}
-
+fn main() -> tryte:
+    return add(10, 5)

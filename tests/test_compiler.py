@@ -9,13 +9,14 @@ from bootstrap.s3.diagnostics import SemanticError
 from bootstrap.s3.emulator import EmulatorError, execute_assembly
 from bootstrap.s3.ir import IROpcode
 from bootstrap.s3.pipeline import compile_source, run_source
+from bootstrap.s3.lexer import SyntaxMode
 
 
 FIRST_PROGRAM = Path("examples/first.s3").read_text(encoding="utf-8")
 
 
 def test_first_program_compiles_through_every_stage() -> None:
-    result = compile_source(FIRST_PROGRAM)
+    result = compile_source(FIRST_PROGRAM, mode=SyntaxMode.V0_6)
     assert result.tokens
     assert result.ast.functions[0].name == "main"
     assert result.ir.functions[0].name == "main"
@@ -23,7 +24,7 @@ def test_first_program_compiles_through_every_stage() -> None:
 
 
 def test_subtraction_lowers_to_invert_then_add() -> None:
-    result = compile_source(FIRST_PROGRAM)
+    result = compile_source(FIRST_PROGRAM, mode=SyntaxMode.V0_6)
     opcodes = [
         instruction.opcode
         for instruction in result.ir.functions[0].instructions
@@ -49,7 +50,7 @@ def test_subtraction_lowers_to_invert_then_add() -> None:
 
 
 def test_assembly_has_no_subtraction_instruction() -> None:
-    result = compile_source(FIRST_PROGRAM)
+    result = compile_source(FIRST_PROGRAM, mode=SyntaxMode.V0_6)
     assert "TSUB" not in result.assembly_text
     assert "TSUB" not in AssemblyOpcode.__members__
     reparsed = parse_assembly(result.assembly_text)
@@ -57,8 +58,8 @@ def test_assembly_has_no_subtraction_instruction() -> None:
 
 
 def test_first_program_returns_six() -> None:
-    assert run_source(FIRST_PROGRAM) == 6
-    result = compile_source(FIRST_PROGRAM)
+    assert run_source(FIRST_PROGRAM, mode=SyntaxMode.V0_6) == 6
+    result = compile_source(FIRST_PROGRAM, mode=SyntaxMode.V0_6)
     assert execute_assembly(result.assembly_text) == 6
 
 

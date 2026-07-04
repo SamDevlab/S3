@@ -15,6 +15,7 @@ from bootstrap.s3.emulator import (
     execute_assembly,
 )
 from bootstrap.s3.pipeline import compile_source, run_source
+from bootstrap.s3.lexer import SyntaxMode
 
 
 ROOT = Path(__file__).parents[1]
@@ -22,7 +23,7 @@ ROOT = Path(__file__).parents[1]
 
 def test_generated_memory_assembly_round_trips() -> None:
     source = (ROOT / "examples" / "static_array.s3").read_text(encoding="utf-8")
-    assembly = compile_source(source).assembly
+    assembly = compile_source(source, mode=SyntaxMode.V0_6).assembly
     text = assembly.render()
     assert ".memory m0, tryte, 4, mutable" in text
     assert "TSTORE" in text
@@ -295,7 +296,7 @@ def test_recursive_frames_have_independent_memory() -> None:
     source = (ROOT / "examples" / "recursive_memory.s3").read_text(
         encoding="utf-8"
     )
-    assert run_source(source) == 6
+    assert run_source(source, mode=SyntaxMode.V0_6) == 6
 
 
 def test_overflow_before_memory_store_remains_detectable() -> None:

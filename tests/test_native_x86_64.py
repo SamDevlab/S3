@@ -18,6 +18,7 @@ from bootstrap.s3.backends.x86_64.emitter import (
 )
 from bootstrap.s3.cli import main as cli_main
 from bootstrap.s3.emulator import Emulator, EmulatorError
+from bootstrap.s3.lexer import SyntaxMode
 from bootstrap.s3.pipeline import compile_source
 
 
@@ -55,7 +56,7 @@ def _ordered_entry_program(order: tuple[str, ...]):
 
 def _compilation(filename: str):
     source = (ROOT / "examples" / filename).read_text(encoding="utf-8")
-    return compile_source(source)
+    return compile_source(source, mode=SyntaxMode.V0_6)
 
 
 def test_native_generation_is_deterministic() -> None:
@@ -224,6 +225,7 @@ def test_native_asm_cli_writes_requested_output(tmp_path: Path) -> None:
     output = tmp_path / "first.s"
     assert cli_main(
         [
+            "--source-syntax", "0.6",
             "native-asm",
             str(ROOT / "examples" / "first.s3"),
             "-o",
@@ -349,6 +351,7 @@ def test_native_asm_cli_accepts_max_frames(
     output = tmp_path / "limited.s"
     assert cli_main(
         [
+            "--source-syntax", "0.6",
             "native-asm",
             str(ROOT / "examples" / "first.s3"),
             "-o",

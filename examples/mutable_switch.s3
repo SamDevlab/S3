@@ -1,24 +1,17 @@
-fn classify(value: tryte) -> tryte {
-    mut tryte result = 0;
+fn classify(value: tryte) -> tryte:
+    mut result: tryte = 0
 
-    switch (value <=> 0) {
-        -1: {
-            result = -10;
-        }
+    match value <=> 0:
+        -1:
+            result = -10
 
-        0: {
-            result = 0;
-        }
+        0:
+            result = 0
 
-        1: {
-            result = 10;
-        }
-    }
+        1:
+            result = 10
 
-    return result;
-}
+    return result
 
-fn main() -> tryte {
-    return classify(5);
-}
-
+fn main() -> tryte:
+    return classify(5)

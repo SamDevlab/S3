@@ -8,6 +8,7 @@ from bootstrap.s3.assembly import AssemblyOpcode
 from bootstrap.s3.emulator import EmulatorError, execute_assembly
 from bootstrap.s3.ir import IROpcode, IRType
 from bootstrap.s3.pipeline import compile_source, run_source
+from bootstrap.s3.lexer import SyntaxMode
 from bootstrap.s3.verifier import verify_ir
 
 
@@ -26,11 +27,11 @@ def example(name: str) -> str:
     ),
 )
 def test_examples_execute_end_to_end(filename: str, expected: int) -> None:
-    assert run_source(example(filename)) == expected
+    assert run_source(example(filename), mode=SyntaxMode.V0_6) == expected
 
 
 def test_recursive_lowering_has_blocks_calls_and_subtraction_reduction() -> None:
-    compilation = compile_source(example("recursive_sum.s3"))
+    compilation = compile_source(example("recursive_sum.s3"), mode=SyntaxMode.V0_6)
     verify_ir(compilation.ir)
     sum_to = compilation.ir.functions[0]
     assert sum_to.parameters[0].type is IRType.TRYTE
@@ -80,7 +81,7 @@ fn calculate(value: tryte) -> tryte { return value + 1; }
 
 
 def test_control_flow_ir_preserves_source_locations() -> None:
-    compilation = compile_source(example("recursive_sum.s3"))
+    compilation = compile_source(example("recursive_sum.s3"), mode=SyntaxMode.V0_6)
     instructions = [
         instruction
         for function in compilation.ir.functions
@@ -143,7 +144,7 @@ fn main() -> tryte { return forever(0); }
 
 
 def test_instruction_limit_is_enforced() -> None:
-    assembly = compile_source(example("simple_call.s3")).assembly
+    assembly = compile_source(example("simple_call.s3"), mode=SyntaxMode.V0_6).assembly
     with pytest.raises(EmulatorError, match="instruction limit 2 exceeded"):
         execute_assembly(assembly, max_instructions=2)
 

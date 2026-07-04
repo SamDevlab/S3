@@ -1,20 +1,13 @@
-fn sum_to(n: tryte) -> tryte {
-    switch (n <=> 0) {
-        -1: {
-            return 0;
-        }
+fn sum_to(n: tryte) -> tryte:
+    match n <=> 0:
+        -1:
+            return 0
 
-        0: {
-            return 0;
-        }
+        0:
+            return 0
 
-        1: {
-            return n + sum_to(n - 1);
-        }
-    }
-}
+        1:
+            return n + sum_to(n - 1)
 
-fn main() -> tryte {
-    return sum_to(4);
-}
-
+fn main() -> tryte:
+    return sum_to(4)

@@ -10,13 +10,14 @@ from bootstrap.s3.assembly import (
 )
 from bootstrap.s3.emulator import EmulatorError, execute_assembly
 from bootstrap.s3.pipeline import compile_source, run_source
+from bootstrap.s3.lexer import SyntaxMode
 
 
 RECURSIVE_SOURCE = Path("examples/recursive_sum.s3").read_text(encoding="utf-8")
 
 
 def test_generated_assembly_contains_parameters_labels_calls_and_branches() -> None:
-    compilation = compile_source(RECURSIVE_SOURCE)
+    compilation = compile_source(RECURSIVE_SOURCE, mode=SyntaxMode.V0_6)
     text = compilation.assembly_text
     assert ".param r0, tryte" in text
     assert ".label entry" in text
@@ -28,7 +29,7 @@ def test_generated_assembly_contains_parameters_labels_calls_and_branches() -> N
 
 
 def test_assembly_round_trip_preserves_complete_model() -> None:
-    assembly = compile_source(RECURSIVE_SOURCE).assembly
+    assembly = compile_source(RECURSIVE_SOURCE, mode=SyntaxMode.V0_6).assembly
     reparsed = parse_assembly(assembly.render())
     assert reparsed == assembly
     assert reparsed.render() == assembly.render()

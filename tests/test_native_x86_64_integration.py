@@ -17,6 +17,7 @@ from bootstrap.s3.backends.x86_64 import (
 )
 from bootstrap.s3.cli import main as cli_main
 from bootstrap.s3.emulator import Emulator, EmulatorError
+from bootstrap.s3.lexer import SyntaxMode
 from bootstrap.s3.pipeline import compile_source
 from bootstrap.s3.ternary import TernaryWidth, tritwise_max, tritwise_min
 
@@ -38,7 +39,7 @@ def native_toolchain() -> NativeToolchain:
 def _program(source_or_program: str | AssemblyProgram) -> AssemblyProgram:
     if isinstance(source_or_program, AssemblyProgram):
         return source_or_program
-    return compile_source(source_or_program).assembly
+    return compile_source(source_or_program, mode=SyntaxMode.V0_6).assembly
 
 
 def _run_native(
@@ -58,7 +59,7 @@ def _assert_differential(
     output: Path,
     optimization: str = "O0",
 ) -> None:
-    program = compile_source(source, optimization).assembly
+    program = compile_source(source, optimization, mode=SyntaxMode.V0_6).assembly
     assert Emulator().execute(program) == expected
     completed = _run_native(program, toolchain, output)
     assert completed.returncode == 0
@@ -152,7 +153,7 @@ def test_native_recursion_within_frame_limit(
     native_toolchain: NativeToolchain,
     tmp_path: Path,
 ) -> None:
-    program = compile_source(RECURSIVE_DEPTH_SOURCE).assembly
+    program = compile_source(RECURSIVE_DEPTH_SOURCE, mode=SyntaxMode.V0_6).assembly
     assert Emulator(max_frames=max_frames).execute(program) == 0
     executable = native_toolchain.build(
         generate_native_assembly(program, max_frames=max_frames),
@@ -168,7 +169,7 @@ def test_native_recursion_above_frame_limit_is_controlled(
     native_toolchain: NativeToolchain,
     tmp_path: Path,
 ) -> None:
-    program = compile_source(RECURSIVE_DEPTH_SOURCE).assembly
+    program = compile_source(RECURSIVE_DEPTH_SOURCE, mode=SyntaxMode.V0_6).assembly
     with pytest.raises(EmulatorError, match="frame limit 4 exceeded"):
         Emulator(max_frames=4).execute(program)
     executable = native_toolchain.build(
@@ -706,7 +707,7 @@ def test_o0_o1_native_errors_preserve_category(
 ) -> None:
     messages: list[str] = []
     for level in ("O0", "O1"):
-        program = compile_source(source, level).assembly
+        program = compile_source(source, level, mode=SyntaxMode.V0_6).assembly
         with pytest.raises(EmulatorError, match=category):
             Emulator().execute(program)
         completed = _run_native(

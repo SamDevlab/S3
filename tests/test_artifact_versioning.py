@@ -19,6 +19,7 @@ from bootstrap.s3.ir_serialization import (
 )
 from bootstrap.s3.codegen import generate_assembly
 from bootstrap.s3.cli import main as cli_main
+from bootstrap.s3.lexer import SyntaxMode
 from bootstrap.s3.pipeline import compile_source
 
 
@@ -98,7 +99,7 @@ def test_ir_json_round_trip_is_deterministic_and_executable(
     filename: str,
 ) -> None:
     source = (ROOT / "examples" / filename).read_text(encoding="utf-8")
-    original = compile_source(source).ir
+    original = compile_source(source, mode=SyntaxMode.V0_6).ir
     first = serialize_ir(original)
     second = serialize_ir(original)
     assert first == second
@@ -108,13 +109,13 @@ def test_ir_json_round_trip_is_deterministic_and_executable(
     assert restored == original
     assert serialize_ir(restored) == first
     assert execute_assembly(generate_assembly(restored)) == execute_assembly(
-        compile_source(source).assembly
+        compile_source(source, mode=SyntaxMode.V0_6).assembly
     )
 
 
 def test_ir_json_preserves_memory_cfg_and_origins() -> None:
     source = (ROOT / "examples" / "static_array.s3").read_text(encoding="utf-8")
-    original = compile_source(source).ir
+    original = compile_source(source, mode=SyntaxMode.V0_6).ir
     restored = deserialize_ir(serialize_ir(original))
     function = restored.functions[0]
     assert function.memory_objects == original.functions[0].memory_objects
@@ -171,7 +172,7 @@ def test_ir_json_and_verify_ir_cli_round_trip(
 ) -> None:
     artifact = tmp_path / "static-array.s3ir.json"
     source = ROOT / "examples" / "static_array.s3"
-    assert cli_main(["ir-json", str(source), "-o", str(artifact)]) == 0
+    assert cli_main(["--source-syntax", "0.6", "ir-json", str(source), "-o", str(artifact)]) == 0
     assert capsys.readouterr().err == ""
     payload = artifact.read_text(encoding="utf-8")
     assert payload.endswith("\n")
