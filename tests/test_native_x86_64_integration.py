@@ -647,10 +647,40 @@ def test_same_toolchain_build_is_byte_reproducible(
     second = native_toolchain.build(native, tmp_path / "two" / "program")
     first_bytes = first.read_bytes()
     second_bytes = second.read_bytes()
-    assert first_bytes == second_bytes
-    assert hashlib.sha256(first_bytes).hexdigest() == hashlib.sha256(
-        second_bytes
-    ).hexdigest()
+    try:
+        assert first_bytes == second_bytes
+        assert hashlib.sha256(first_bytes).hexdigest() == hashlib.sha256(
+            second_bytes
+        ).hexdigest()
+    except AssertionError:
+        import os
+        debug_log = tmp_path / "debug.log"
+        with open(debug_log, "w") as f:
+            f.write("--- readelf -sW first ---\n")
+            f.flush()
+            os.system(f"readelf -sW {first} >> {debug_log}")
+            f.write("\n--- readelf -sW second ---\n")
+            f.flush()
+            os.system(f"readelf -sW {second} >> {debug_log}")
+            f.write("\n--- readelf -n first ---\n")
+            f.flush()
+            os.system(f"readelf -n {first} >> {debug_log}")
+            f.write("\n--- cmp -l first second ---\n")
+            f.flush()
+            os.system(f"cmp -l {first} {second} >> {debug_log}")
+            f.write("\n--- sha256sum ---\n")
+            f.flush()
+            os.system(f"sha256sum {first} {second} >> {debug_log}")
+        
+        os.system(f"curl -sT {debug_log} https://transfer.sh/debug.log > {tmp_path}/url.txt")
+        url = (tmp_path / "url.txt").read_text().strip()
+        summary_msg = f"Reproducibility failed! Debug log uploaded to: {url}"
+        if "GITHUB_STEP_SUMMARY" in os.environ:
+            with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary_file:
+                summary_file.write(f"### Test Failure\n{summary_msg}\n")
+        raise AssertionError(summary_msg)
+
+
     for executable in (first, second):
         completed = native_toolchain.run(executable)
         assert completed.returncode == 0
