@@ -22,6 +22,7 @@ class TokenKind(Enum):
     FN = auto()
     RETURN = auto()
     SWITCH = auto()
+    MATCH = auto()
     MUT = auto()
     TRIT = auto()
     TRYTE = auto()
@@ -256,7 +257,10 @@ class Lexer:
         while self._is_identifier_continue(self._peek()):
             self._advance()
         text = self.source[start:self.position]
-        return Token(KEYWORDS.get(text, TokenKind.IDENTIFIER), text, line, column, start)
+        kind = KEYWORDS.get(text, TokenKind.IDENTIFIER)
+        if self.mode == SyntaxMode.V0_6 and text == "match":
+            kind = TokenKind.MATCH
+        return Token(kind, text, line, column, start)
 
     @staticmethod
     def _is_identifier_start(char: str) -> bool:

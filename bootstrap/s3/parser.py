@@ -116,9 +116,13 @@ class Parser:
                 raise ParseError("obsolete brace syntax", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_OBSOLETE_BRACE)
             if self._check(TokenKind.SEMICOLON):
                 raise ParseError("obsolete ';' syntax", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_OBSOLETE_SEMICOLON)
+            if self._check(TokenKind.SWITCH):
+                raise ParseError("obsolete 'switch' syntax, use 'match'", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_OBSOLETE_SWITCH)
 
             if self._match(TokenKind.RETURN):
                 return self._parse_return_v0_6(self._previous())
+            if self._match(TokenKind.MATCH):
+                return self._parse_match_v0_6(self._previous())
             if self._check(TokenKind.MUT):
                 return self._parse_variable_declaration_v0_6()
             if self._check(TokenKind.IDENTIFIER):
@@ -180,6 +184,39 @@ class Parser:
             raise ParseError("obsolete ';' syntax", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_OBSOLETE_SEMICOLON)
         self._consume(TokenKind.NEWLINE, "expected newline after return value")
         return ast.ReturnStatement(expression, start.location)
+
+    def _parse_match_v0_6(self, start: Token) -> ast.SwitchStatement:
+        expression = self._parse_expression()
+        self._consume(TokenKind.COLON, "expected ':' after match expression")
+        self._consume(TokenKind.NEWLINE, "expected newline after ':'")
+        self._consume(TokenKind.INDENT, "expected indented block")
+
+        cases: list[ast.TernaryCase] = []
+        while not self._check(TokenKind.DEDENT) and not self._check(TokenKind.EOF):
+            cases.append(self._parse_ternary_case_v0_6())
+
+        if not cases:
+            raise ParseError("expected at least one match arm", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_EXPECTED_MATCH_ARM)
+
+        self._consume(TokenKind.DEDENT, "expected dedent after match block")
+        return ast.SwitchStatement(expression, tuple(cases), start.location)
+
+    def _parse_ternary_case_v0_6(self) -> ast.TernaryCase:
+        negative = self._match(TokenKind.MINUS)
+        start = self._previous() if negative else self._peek()
+
+        if not self._check(TokenKind.INTEGER):
+            raise ParseError("expected integer case label", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_INVALID_MATCH_ARM)
+
+        integer = self._advance()
+        value = int(integer.text)
+        if negative:
+            value = -value
+        self._consume(TokenKind.COLON, "expected ':' after case label")
+        self._consume(TokenKind.NEWLINE, "expected newline after ':'")
+        self._consume(TokenKind.INDENT, "expected indented block")
+        body = self._parse_block_v0_6()
+        return ast.TernaryCase(value, body, start.location)
 
     def _parse_variable_declaration(self) -> ast.VariableDeclaration:
         start = self._peek()

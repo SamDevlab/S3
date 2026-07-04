@@ -124,12 +124,6 @@ def test_v0_5_default():
     program2 = parse(source, mode=SyntaxMode.V0_5)
     assert ast.to_dict(program1) == ast.to_dict(program2)
 
-def test_match_unsupported_in_v0_6_yet():
-    source = "fn main() -> tryte:\n    match a <=> b:\n        0:\n            return 1\n"
-    with pytest.raises(ParseError):
-        # We don't have match yet
-        parse(source, mode=SyntaxMode.V0_6)
-
 def test_comments_ignored_v0_6():
     source = "fn main() -> tryte:\n    # start\n    mut a: tryte = 1\n    # mid\n    a = 2\n    return a # end\n"
     program = parse(source, mode=SyntaxMode.V0_6)

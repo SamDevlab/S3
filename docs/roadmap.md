@@ -71,12 +71,14 @@ Em andamento:
 
 - simplificação da sintaxe de fonte (especificada arquiteturalmente sob ADR-0013):
   - Entrega A concluída e validada;
-  - Entrega B implementada localmente;
-  - parser básico V0_6 disponível apenas por modo interno explícito;
-  - funções indentadas, return, declarações tipadas e atribuição escalar suportadas;
+  - Entrega B concluída e validada;
+  - Entrega C1 implementada localmente;
+  - match V0_6 disponível somente pelo modo interno explícito;
+  - equivalência com switch V0_5 preservada;
   - V0_5 continua sendo o padrão;
   - CLI pública continua usando V0_5;
-  - match, arrays V0_6, atribuição indexada, migração e remoção da gramática antiga continuam pendentes;
+  - Entrega C2 (arrays V0_6, indexação e atribuição indexada) permanece pendente;
+  - migração e remoção da gramática antiga continuam pendentes;
   - Marco 0.6 não está concluído.
 
 Permanecem pendentes:
