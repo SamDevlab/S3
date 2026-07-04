@@ -29,8 +29,15 @@ jobs:
       - name: Run tests
         run: |
           python -m pytest > pytest.log || true
-          cat pytest.log >> $GITHUB_STEP_SUMMARY
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git pull
+          cp pytest.log pytest_${{ matrix.python-version }}.log
+          git add pytest_${{ matrix.python-version }}.log
+          git commit -m "Auto-upload pytest.log" || true
+          git push || true
           python -m pytest
+
 
 
   native-x86-64:
@@ -64,6 +71,13 @@ jobs:
           S3_NATIVE_REQUIRED: "1"
         run: |
           python -m pytest tests/test_native_x86_64_integration.py > pytest.log || true
-          cat pytest.log >> $GITHUB_STEP_SUMMARY
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git pull
+          cp pytest.log pytest_native.log
+          git add pytest_native.log
+          git commit -m "Auto-upload pytest_native.log" || true
+          git push || true
           python -m pytest tests/test_native_x86_64_integration.py
+
 
