@@ -6,7 +6,14 @@ import json
 import re
 from typing import Any
 
-from .diagnostics import S3Error, SourceLocation
+from .diagnostics import (
+    DiagnosticCategory,
+    DiagnosticCode,
+    DiagnosticPhase,
+    DiagnosticSource,
+    S3Error,
+    SourceLocation,
+)
 from .ir import (
     IRBasicBlock,
     IRFunction,
@@ -28,6 +35,9 @@ _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 class IRSerializationError(S3Error):
     category = "IR artifact error"
+    diagnostic_category = DiagnosticCategory.ARTIFACT
+    diagnostic_code = DiagnosticCode.ARTIFACT_INVALID_IR
+    diagnostic_phase = DiagnosticPhase.ARTIFACT_READ
 
 
 def _source_to_data(location: SourceLocation | None) -> dict[str, int] | None:
@@ -363,20 +373,31 @@ def deserialize_ir(source: str) -> IRModule:
         raw = json.loads(source)
     except json.JSONDecodeError as error:
         raise IRSerializationError(
-            f"invalid JSON at line {error.lineno}, column {error.colno}"
+            f"invalid JSON at line {error.lineno}, column {error.colno}",
+            diagnostic_code=DiagnosticCode.ARTIFACT_INVALID_JSON,
+            diagnostic_context={
+                "source": DiagnosticSource(
+                    offset=error.pos,
+                    line=error.lineno,
+                    column=error.colno,
+                ),
+            },
         ) from error
     envelope = _object(raw, "artifact")
     _exact_keys(envelope, {"format", "module", "version"}, "artifact")
     format_name = _string(envelope["format"], "artifact.format")
     if format_name != IR_FORMAT:
         raise IRSerializationError(
-            f"unsupported artifact format {format_name!r}"
+            f"unsupported artifact format {format_name!r}",
+            diagnostic_code=DiagnosticCode.ARTIFACT_UNSUPPORTED_FORMAT,
         )
     version = _string(envelope["version"], "artifact.version")
     if version != IR_FORMAT_VERSION:
         raise IRSerializationError(
             f"unsupported S3 IR version {version}; "
-            f"expected {IR_FORMAT_VERSION}"
+            f"expected {IR_FORMAT_VERSION}",
+            diagnostic_category=DiagnosticCategory.VERSION,
+            diagnostic_code=DiagnosticCode.ARTIFACT_UNSUPPORTED_VERSION,
         )
     module_data = _object(envelope["module"], "artifact.module")
     _exact_keys(module_data, {"functions"}, "artifact.module")
@@ -393,4 +414,3 @@ def deserialize_ir(source: str) -> IRModule:
     )
     verify_ir(module)
     return module
-

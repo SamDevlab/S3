@@ -58,14 +58,22 @@ Implementado localmente; conclusão remota depende do job CI após push:
 - diferenciais O0/O1 emulador/nativo;
 - estudo ARM64 sem backend ou alegação de suporte.
 
-## Marco 0.6 — robustez operacional (recomendado)
+## Marco 0.6 — robustez operacional (iniciado)
+
+Primeira entrega implementada:
+
+- diagnósticos estruturados consumíveis por ferramentas na CLI hospedada;
+- schema `s3-diagnostic` 1.0.0, com categorias e códigos estáveis;
+- formato textual preservado como padrão;
+- fronteira explícita: o runtime ELF continua com diagnósticos textuais.
+
+Permanecem pendentes:
 
 1. cache de artefatos por conteúdo/versionamento;
-2. diagnósticos estruturados consumíveis por ferramentas;
-3. métricas e orçamento de otimização por exemplo;
-4. política de limite nativo de instruções;
-5. otimizações entre blocos provadas sem `PHI`;
-6. execução ARM64 experimental somente após ADR/backend/runtime/CI completos.
+2. métricas e orçamento de otimização por exemplo;
+3. política de limite nativo de instruções;
+4. otimizações entre blocos provadas sem `PHI`;
+5. execução ARM64 experimental somente após ADR/backend/runtime/CI completos.
 
 Arrays em assinaturas, heap, ponteiros, strings, módulos e I/O continuam fora
 até receberem contratos próprios.

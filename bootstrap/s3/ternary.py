@@ -5,6 +5,12 @@ from __future__ import annotations
 from enum import Enum
 from typing import Iterable
 
+from .diagnostics import (
+    DiagnosticCategory,
+    DiagnosticCode,
+    DiagnosticPhase,
+)
+
 TRIT_MIN = -1
 TRIT_MAX = 1
 TRYTE_TRITS = 6
@@ -14,6 +20,28 @@ TRYTE_MAX = 364
 
 class TernaryRangeError(ValueError):
     """Raised when a value cannot be represented by the requested width."""
+
+    diagnostic_category = DiagnosticCategory.OVERFLOW
+    diagnostic_code = DiagnosticCode.TERNARY_RANGE
+    diagnostic_phase = DiagnosticPhase.VERIFICATION
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        value: int | None = None,
+        lower_bound: int | None = None,
+        upper_bound: int | None = None,
+    ) -> None:
+        self.value = value
+        self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
+        self.diagnostic_context = {
+            "value": value,
+            "lower_bound": lower_bound,
+            "upper_bound": upper_bound,
+        }
+        super().__init__(message)
 
 
 class TernaryWidth(Enum):
@@ -38,7 +66,10 @@ def validate_trit(value: int) -> int:
         raise TernaryRangeError(f"trit must be an integer, got {value!r}")
     if not TRIT_MIN <= value <= TRIT_MAX:
         raise TernaryRangeError(
-            f"trit value {value} is outside [{TRIT_MIN}, {TRIT_MAX}]"
+            f"trit value {value} is outside [{TRIT_MIN}, {TRIT_MAX}]",
+            value=value,
+            lower_bound=TRIT_MIN,
+            upper_bound=TRIT_MAX,
         )
     return value
 
@@ -48,7 +79,10 @@ def validate_tryte(value: int) -> int:
         raise TernaryRangeError(f"tryte must be an integer, got {value!r}")
     if not TRYTE_MIN <= value <= TRYTE_MAX:
         raise TernaryRangeError(
-            f"tryte value {value} is outside [{TRYTE_MIN}, {TRYTE_MAX}]"
+            f"tryte value {value} is outside [{TRYTE_MIN}, {TRYTE_MAX}]",
+            value=value,
+            lower_bound=TRYTE_MIN,
+            upper_bound=TRYTE_MAX,
         )
     return value
 
@@ -119,7 +153,10 @@ def add(left: int, right: int, width: TernaryWidth) -> int:
         return validate(result, width)
     except TernaryRangeError as error:
         raise TernaryRangeError(
-            f"{width.value} overflow: {left} + {right} = {result}"
+            f"{width.value} overflow: {left} + {right} = {result}",
+            value=result,
+            lower_bound=width.minimum,
+            upper_bound=width.maximum,
         ) from error
 
 
@@ -181,4 +218,3 @@ def compare_trit(left: int, right: int) -> int:
 
 def compare_tryte(left: int, right: int) -> int:
     return compare(left, right, TernaryWidth.TRYTE)
-

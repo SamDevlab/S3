@@ -67,7 +67,11 @@ class SemanticAnalyzer:
                 main.location,
             )
         for function in program.functions:
-            self._analyze_function(function)
+            try:
+                self._analyze_function(function)
+            except SemanticError as error:
+                error.add_diagnostic_context(function=function.name)
+                raise
         return SemanticModel(dict(self.expression_types), dict(self.functions))
 
     def _collect_signatures(self, program: ast.Program) -> None:

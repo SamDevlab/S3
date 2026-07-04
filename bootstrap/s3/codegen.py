@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from .diagnostics import (
+    DiagnosticCategory,
+    DiagnosticCode,
+    DiagnosticPhase,
+)
 from .assembly import (
     AssemblyBlock,
     AssemblyFunction,
@@ -19,6 +24,10 @@ from .verifier import verify_ir
 
 class CodegenError(Exception):
     """Raised when a verified IR construct has no assembly encoding."""
+
+    diagnostic_category = DiagnosticCategory.INTERNAL
+    diagnostic_code = DiagnosticCode.CODEGEN_UNSUPPORTED_IR
+    diagnostic_phase = DiagnosticPhase.ASSEMBLY
 
 
 TYPE_MAP = {

@@ -17,15 +17,39 @@ from .backends.x86_64 import (
     generate_native_assembly,
 )
 from .codegen import CodegenError
-from .diagnostics import S3Error
+from .diagnostics import (
+    Diagnostic,
+    DiagnosticCategory,
+    DiagnosticCode,
+    DiagnosticPhase,
+    DiagnosticSeverity,
+    S3Error,
+    diagnostic_from_exception,
+)
 from .emulator import DEFAULT_MAX_FRAMES, Emulator
 from .ir_serialization import deserialize_ir, serialize_ir
 from .optimizer import OptimizationLevel
 from .pipeline import compile_source
 
 
+class _CLIUsageError(Exception):
+    diagnostic_category = DiagnosticCategory.SYNTAX
+    diagnostic_code = DiagnosticCode.CLI_USAGE
+    diagnostic_phase = DiagnosticPhase.CLI
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+        self.diagnostic_message = message
+        super().__init__(message)
+
+
+class _ArgumentParser(argparse.ArgumentParser):
+    def error(self, message: str) -> None:
+        raise _CLIUsageError(message)
+
+
 def _parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+    parser = _ArgumentParser(
         prog="s3",
         description="S3 balanced-ternary bootstrap toolchain",
     )
@@ -72,11 +96,84 @@ def _parser() -> argparse.ArgumentParser:
         default="0",
         help="IR optimization level (default: 0)",
     )
+    parser.add_argument(
+        "--diagnostic-format",
+        choices=("text", "json"),
+        default="text",
+        help="diagnostic output format on stderr (default: text)",
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="re-raise failures with a Python traceback",
+    )
     return parser
 
 
+def _requested_diagnostic_format(argv: Sequence[str]) -> str:
+    for index, argument in enumerate(argv):
+        if argument.startswith("--diagnostic-format="):
+            value = argument.partition("=")[2]
+            return value if value in {"text", "json"} else "text"
+        if argument == "--diagnostic-format" and index + 1 < len(argv):
+            value = argv[index + 1]
+            return value if value in {"text", "json"} else "text"
+    return "text"
+
+
+def _emit_diagnostic(diagnostic: Diagnostic, output_format: str) -> None:
+    if output_format == "json":
+        payload = diagnostic.to_json()
+        byte_stream = getattr(sys.stderr, "buffer", None)
+        if byte_stream is None:
+            sys.stderr.write(payload)
+        else:
+            byte_stream.write(payload.encode("utf-8"))
+            byte_stream.flush()
+    else:
+        raise ValueError("text diagnostics require their original exception")
+
+
+def _emit_error(
+    error: Exception,
+    output_format: str,
+    *,
+    file: str | None = None,
+    internal: bool = False,
+) -> None:
+    if output_format == "json":
+        _emit_diagnostic(
+            diagnostic_from_exception(error, file=file),
+            output_format,
+        )
+    else:
+        prefix = "internal error: " if internal else ""
+        print(f"error: {prefix}{error}", file=sys.stderr)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
-    args = _parser().parse_args(argv)
+    raw_argv = list(sys.argv[1:] if argv is None else argv)
+    parser = _parser()
+    requested_format = _requested_diagnostic_format(raw_argv)
+    try:
+        args = parser.parse_args(raw_argv)
+    except _CLIUsageError as error:
+        if requested_format == "json":
+            _emit_error(error, requested_format)
+        else:
+            print(parser.format_usage(), end="", file=sys.stderr)
+            print(f"{parser.prog}: error: {error}", file=sys.stderr)
+        return 2
+
+    if args.diagnostic_format == "json" and args.debug:
+        _emit_error(
+            _CLIUsageError(
+                "--debug cannot be combined with --diagnostic-format json"
+            ),
+            args.diagnostic_format,
+        )
+        return 2
+
     try:
         if args.max_frames < 1:
             raise NativeBackendError("--max-frames must be at least 1")
@@ -165,7 +262,29 @@ def main(argv: Sequence[str] | None = None) -> int:
                     completed = toolchain.run(executable)
             if completed.stdout:
                 print(completed.stdout, end="")
-            if completed.stderr:
+            if completed.returncode != 0 and args.diagnostic_format == "json":
+                notes = (
+                    (completed.stderr.rstrip("\n"),)
+                    if completed.stderr
+                    else ("standalone ELF emitted no stderr",)
+                )
+                _emit_diagnostic(
+                    Diagnostic(
+                        DiagnosticSeverity.ERROR,
+                        DiagnosticCategory.NATIVE_RUNTIME,
+                        DiagnosticPhase.NATIVE_RUNTIME,
+                        DiagnosticCode.NATIVE_PROCESS_FAILED,
+                        (
+                            "standalone native program exited with status "
+                            f"{completed.returncode}"
+                        ),
+                        file=str(args.source),
+                        exit_code=completed.returncode,
+                        notes=notes,
+                    ),
+                    args.diagnostic_format,
+                )
+            elif completed.stderr:
                 print(completed.stderr, end="", file=sys.stderr)
             return completed.returncode
         return 0
@@ -177,7 +296,24 @@ def main(argv: Sequence[str] | None = None) -> int:
         CodegenError,
         NativeBackendError,
     ) as error:
-        print(f"error: {error}", file=sys.stderr)
+        if args.debug:
+            raise
+        _emit_error(
+            error,
+            args.diagnostic_format,
+            file=str(args.source),
+            internal=False,
+        )
+        return 1
+    except Exception as error:
+        if args.debug:
+            raise
+        _emit_error(
+            error,
+            args.diagnostic_format,
+            file=str(args.source),
+            internal=True,
+        )
         return 1
 
 

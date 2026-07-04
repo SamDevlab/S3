@@ -10,6 +10,7 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
+from ...diagnostics import DiagnosticCode
 from .diagnostics import NativePlatformError, NativeToolchainError
 
 
@@ -38,7 +39,8 @@ class NativeToolchain:
         )
         if compiler is None:
             raise NativeToolchainError(
-                "no GNU assembly driver found; install cc, gcc, or clang"
+                "no GNU assembly driver found; install cc, gcc, or clang",
+                diagnostic_code=DiagnosticCode.TOOLCHAIN_NOT_FOUND,
             )
         return cls(compiler, shutil.which("as"), shutil.which("ld"))
 
@@ -108,7 +110,11 @@ class NativeToolchain:
                 details = completed.stderr.strip() or completed.stdout.strip()
                 raise NativeToolchainError(
                     f"native assembler/linker failed with status "
-                    f"{completed.returncode}: {details}"
+                    f"{completed.returncode}: {details}",
+                    diagnostic_context={
+                        "exit_code": completed.returncode,
+                        "notes": (details,) if details else (),
+                    },
                 )
 
         if not output.is_file():
@@ -144,7 +150,10 @@ class NativeToolchain:
             details = completed.stderr.strip() or completed.stdout.strip()
             raise NativeToolchainError(
                 f"native program exited with status {completed.returncode}: "
-                f"{details}"
+                f"{details}",
+                diagnostic_context={
+                    "exit_code": completed.returncode,
+                    "notes": (details,) if details else (),
+                },
             )
         return completed
-

@@ -4,6 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from .diagnostics import (
+    DiagnosticCategory,
+    DiagnosticCode,
+    DiagnosticPhase,
+    SourceLocation,
+)
 from .assembly import (
     ASSEMBLY_FORMAT_VERSION,
     AssemblyBlock,
@@ -32,6 +38,30 @@ from .ternary import (
 
 class EmulatorError(AssemblyError):
     """Raised when loaded assembly violates an execution invariant."""
+
+    diagnostic_category = DiagnosticCategory.VERIFICATION
+    diagnostic_code = DiagnosticCode.ASSEMBLY_INVALID_PROGRAM
+    diagnostic_phase = DiagnosticPhase.EMULATION
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        diagnostic_message: str | None = None,
+        diagnostic_category: DiagnosticCategory | None = None,
+        diagnostic_code: DiagnosticCode | None = None,
+        diagnostic_context: dict[str, object] | None = None,
+        location: SourceLocation | None = None,
+    ) -> None:
+        self.message = message
+        self.diagnostic_message = diagnostic_message or message
+        self.location = location
+        if diagnostic_category is not None:
+            self.diagnostic_category = diagnostic_category
+        if diagnostic_code is not None:
+            self.diagnostic_code = diagnostic_code
+        self.diagnostic_context = dict(diagnostic_context or {})
+        super().__init__(message)
 
 
 WIDTH_MAP = {
@@ -132,7 +162,18 @@ class Emulator:
             if executed >= self.max_instructions:
                 raise EmulatorError(
                     f"instruction limit {self.max_instructions} exceeded in "
-                    f"function '{frame.function.name}'"
+                    f"function '{frame.function.name}'",
+                    diagnostic_category=(
+                        DiagnosticCategory.INSTRUCTION_LIMIT
+                    ),
+                    diagnostic_code=(
+                        DiagnosticCode.RUNTIME_INSTRUCTION_LIMIT
+                    ),
+                    diagnostic_context={
+                        "function": frame.function.name,
+                        "block": frame.block_label,
+                        "limit": self.max_instructions,
+                    },
                 )
             instruction = block.instructions[frame.instruction_index]
             executed += 1
@@ -246,12 +287,13 @@ class Emulator:
                     frame.instruction_index = 0
                 elif opcode is AssemblyOpcode.TCALL:
                     if len(stack) >= self.max_frames:
-                        raise EmulatorError(
-                            self._context(
-                                frame,
-                                instruction,
-                                f"frame limit {self.max_frames} exceeded",
-                            )
+                        raise self._runtime_error(
+                            frame,
+                            instruction,
+                            f"frame limit {self.max_frames} exceeded",
+                            DiagnosticCategory.FRAME_LIMIT,
+                            DiagnosticCode.RUNTIME_FRAME_LIMIT,
+                            limit=self.max_frames,
                         )
                     assert instruction.callee is not None
                     callee = functions[instruction.callee]
@@ -297,9 +339,13 @@ class Emulator:
                         or caller.instruction_index
                         != completed.return_instruction_index
                     ):
-                        raise EmulatorError(
+                        raise self._runtime_error(
+                            caller,
+                            completed.call_instruction,
                             f"corrupt return position after calling "
-                            f"'{completed.function.name}'"
+                            f"'{completed.function.name}'",
+                            DiagnosticCategory.INTERNAL,
+                            DiagnosticCode.RUNTIME_INVALID_STATE,
                         )
                     self._write(
                         caller,
@@ -308,19 +354,30 @@ class Emulator:
                         completed.call_instruction,
                     )
                 else:
-                    raise EmulatorError(
-                        self._context(
-                            frame,
-                            instruction,
-                            f"unsupported opcode {opcode.value}",
-                        )
+                    raise self._runtime_error(
+                        frame,
+                        instruction,
+                        f"unsupported opcode {opcode.value}",
+                        DiagnosticCategory.INTERNAL,
+                        DiagnosticCode.RUNTIME_INVALID_STATE,
                     )
             except TernaryRangeError as error:
-                raise EmulatorError(
-                    self._context(frame, instruction, str(error))
+                raise self._runtime_error(
+                    frame,
+                    instruction,
+                    str(error),
+                    DiagnosticCategory.OVERFLOW,
+                    DiagnosticCode.RUNTIME_OVERFLOW,
+                    value=error.value,
+                    lower_bound=error.lower_bound,
+                    upper_bound=error.upper_bound,
                 ) from error
 
-        raise EmulatorError("execution stopped without returning a value")
+        raise EmulatorError(
+            "execution stopped without returning a value",
+            diagnostic_category=DiagnosticCategory.INTERNAL,
+            diagnostic_code=DiagnosticCode.RUNTIME_INVALID_STATE,
+        )
 
     def _validate_program(
         self,
@@ -752,13 +809,17 @@ class Emulator:
         index: int,
     ) -> int:
         if index < 0 or index >= memory.length:
-            raise EmulatorError(
-                cls._context(
-                    frame,
-                    instruction,
-                    f"[bounds] memory m{memory.index} index {index} is outside "
-                    f"[0, {memory.length})",
-                )
+            raise cls._runtime_error(
+                frame,
+                instruction,
+                f"[bounds] memory m{memory.index} index {index} is outside "
+                f"[0, {memory.length})",
+                DiagnosticCategory.BOUNDS,
+                DiagnosticCode.RUNTIME_BOUNDS,
+                memory=f"m{memory.index}",
+                index=index,
+                lower_bound=0,
+                upper_bound=memory.length,
             )
         return index
 
@@ -785,22 +846,29 @@ class Emulator:
         try:
             validate(value, WIDTH_MAP[memory.element_type])
         except TernaryRangeError as error:
-            raise EmulatorError(
-                self._context(
-                    frame,
-                    instruction,
-                    f"memory m{memory.index} index {index}: {error}",
-                )
+            raise self._runtime_error(
+                frame,
+                instruction,
+                f"memory m{memory.index} index {index}: {error}",
+                DiagnosticCategory.OVERFLOW,
+                DiagnosticCode.RUNTIME_OVERFLOW,
+                memory=f"m{memory.index}",
+                index=index,
+                value=error.value,
+                lower_bound=error.lower_bound,
+                upper_bound=error.upper_bound,
             ) from error
         cells = frame.memory[memory.index]
         if not memory.mutable and cells[index] is not None:
-            raise EmulatorError(
-                self._context(
-                    frame,
-                    instruction,
-                    f"memory m{memory.index} index {index} is immutable and "
-                    "already initialized",
-                )
+            raise self._runtime_error(
+                frame,
+                instruction,
+                f"memory m{memory.index} index {index} is immutable and "
+                "already initialized",
+                DiagnosticCategory.IMMUTABLE_WRITE,
+                DiagnosticCode.RUNTIME_IMMUTABLE_WRITE,
+                memory=f"m{memory.index}",
+                index=index,
             )
         cells[index] = value
 
@@ -814,13 +882,16 @@ class Emulator:
         index = self._checked_memory_index(frame, instruction, memory, index)
         value = frame.memory[memory.index][index]
         if value is None:
-            raise EmulatorError(
-                self._context(
-                    frame,
-                    instruction,
-                    f"uninitialized memory m{memory.index} at index {index} "
-                    f"(length {memory.length})",
-                )
+            raise self._runtime_error(
+                frame,
+                instruction,
+                f"uninitialized memory m{memory.index} at index {index} "
+                f"(length {memory.length})",
+                DiagnosticCategory.UNINITIALIZED,
+                DiagnosticCode.RUNTIME_UNINITIALIZED_MEMORY,
+                memory=f"m{memory.index}",
+                index=index,
+                limit=memory.length,
             )
         return value
 
@@ -847,12 +918,13 @@ class Emulator:
         try:
             return frame.registers[register]
         except KeyError as error:
-            raise EmulatorError(
-                self._context(
-                    frame,
-                    instruction,
-                    f"uninitialized register r{register}",
-                )
+            raise self._runtime_error(
+                frame,
+                instruction,
+                f"uninitialized register r{register}",
+                DiagnosticCategory.UNINITIALIZED,
+                DiagnosticCode.RUNTIME_UNINITIALIZED_REGISTER,
+                notes=(f"register r{register}",),
             ) from error
 
     def _write(
@@ -866,10 +938,48 @@ class Emulator:
         try:
             validate(value, WIDTH_MAP[type_name])
         except TernaryRangeError as error:
-            raise EmulatorError(
-                self._context(frame, instruction, str(error))
+            raise self._runtime_error(
+                frame,
+                instruction,
+                str(error),
+                DiagnosticCategory.OVERFLOW,
+                DiagnosticCode.RUNTIME_OVERFLOW,
+                value=error.value,
+                lower_bound=error.lower_bound,
+                upper_bound=error.upper_bound,
             ) from error
         frame.registers[register] = value
+
+    @classmethod
+    def _runtime_error(
+        cls,
+        frame: Frame,
+        instruction: AssemblyInstruction,
+        message: str,
+        category: DiagnosticCategory,
+        code: DiagnosticCode,
+        **context: object,
+    ) -> EmulatorError:
+        notes: tuple[str, ...] = ()
+        if instruction.line is not None:
+            notes = (f"assembly line {instruction.line}",)
+        supplied_notes = context.pop("notes", ())
+        if isinstance(supplied_notes, str):
+            supplied_notes = (supplied_notes,)
+        return EmulatorError(
+            cls._context(frame, instruction, message),
+            diagnostic_message=message,
+            diagnostic_category=category,
+            diagnostic_code=code,
+            diagnostic_context={
+                "function": frame.function.name,
+                "block": frame.block_label,
+                "opcode": instruction.opcode.value,
+                "notes": (*notes, *supplied_notes),
+                **context,
+            },
+            location=instruction.source,
+        )
 
     @staticmethod
     def _static_context(

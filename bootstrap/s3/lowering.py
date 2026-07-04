@@ -531,9 +531,11 @@ class FunctionLowerer:
 
 
 def lower(program: ast.Program, semantic_model: SemanticModel) -> IRModule:
-    return IRModule(
-        tuple(
-            FunctionLowerer(function, semantic_model).lower()
-            for function in program.functions
-        )
-    )
+    functions: list[IRFunction] = []
+    for function in program.functions:
+        try:
+            functions.append(FunctionLowerer(function, semantic_model).lower())
+        except LoweringError as error:
+            error.add_diagnostic_context(function=function.name)
+            raise
+    return IRModule(tuple(functions))

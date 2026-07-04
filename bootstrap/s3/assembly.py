@@ -6,7 +6,13 @@ import re
 from dataclasses import dataclass, field
 from enum import Enum
 
-from .diagnostics import SourceLocation
+from .diagnostics import (
+    DiagnosticCategory,
+    DiagnosticCode,
+    DiagnosticPhase,
+    DiagnosticSource,
+    SourceLocation,
+)
 
 
 ASSEMBLY_FORMAT_VERSION = "0.5.0"
@@ -15,11 +21,34 @@ ASSEMBLY_FORMAT_VERSION = "0.5.0"
 class AssemblyError(Exception):
     """Base error for malformed assembly or invalid assembly execution."""
 
+    diagnostic_category = DiagnosticCategory.VERIFICATION
+    diagnostic_code = DiagnosticCode.ASSEMBLY_INVALID_PROGRAM
+    diagnostic_phase = DiagnosticPhase.ASSEMBLY
+
 
 class AssemblyParseError(AssemblyError):
-    def __init__(self, message: str, line: int):
+    diagnostic_category = DiagnosticCategory.ARTIFACT
+    diagnostic_code = DiagnosticCode.ARTIFACT_INVALID_ASSEMBLY
+    diagnostic_phase = DiagnosticPhase.ARTIFACT_READ
+
+    def __init__(
+        self,
+        message: str,
+        line: int,
+        *,
+        diagnostic_category: DiagnosticCategory | None = None,
+        diagnostic_code: DiagnosticCode | None = None,
+    ):
         self.message = message
+        self.diagnostic_message = message
         self.line = line
+        if diagnostic_category is not None:
+            self.diagnostic_category = diagnostic_category
+        if diagnostic_code is not None:
+            self.diagnostic_code = diagnostic_code
+        self.diagnostic_context = {
+            "source": DiagnosticSource(line=line),
+        }
         super().__init__(f"assembly line {line}: {message}")
 
 
@@ -425,6 +454,10 @@ def parse_assembly(source: str) -> AssemblyProgram:
                 raise AssemblyParseError(
                     "invalid .s3asm version; expected MAJOR.MINOR.PATCH",
                     line_number,
+                    diagnostic_category=DiagnosticCategory.VERSION,
+                    diagnostic_code=(
+                        DiagnosticCode.ARTIFACT_UNSUPPORTED_VERSION
+                    ),
                 )
             version = version_match.group(1)
             if version != ASSEMBLY_FORMAT_VERSION:
@@ -440,7 +473,14 @@ def parse_assembly(source: str) -> AssemblyProgram:
                         f"unknown S3 Assembly version {version}; supported "
                         f"version is {ASSEMBLY_FORMAT_VERSION}"
                     )
-                raise AssemblyParseError(message, line_number)
+                raise AssemblyParseError(
+                    message,
+                    line_number,
+                    diagnostic_category=DiagnosticCategory.VERSION,
+                    diagnostic_code=(
+                        DiagnosticCode.ARTIFACT_UNSUPPORTED_VERSION
+                    ),
+                )
             artifact_started = True
             continue
         artifact_started = True

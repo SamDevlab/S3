@@ -71,6 +71,7 @@ python -m bootstrap.s3.cli verify-ir build/array.s3ir.json
 python -m bootstrap.s3.cli asm examples/static_array.s3
 python -m bootstrap.s3.cli asm examples/first.s3 -O1
 python -m bootstrap.s3.cli run examples/static_array.s3
+python -m bootstrap.s3.cli run examples/static_array.s3 --diagnostic-format json
 python -m bootstrap.s3.cli native-asm examples/first.s3
 python -m bootstrap.s3.cli native-asm examples/first.s3 -o build/first.s
 python -m bootstrap.s3.cli build examples/first.s3 -o build/first
@@ -81,6 +82,19 @@ python -m bootstrap.s3.cli run-native examples/first.s3 -O1 --max-frames 128
 verifica o artefato. `asm` sempre começa por `.s3asm 0.5.0`. `-O0` é padrão;
 `-O1` faz somente folding, DCE e threading conservadores. `native-asm` é
 determinístico e funciona em qualquer host.
+
+Diagnósticos usam texto em stderr por padrão. Todos os comandos aceitam
+`--diagnostic-format json` para emitir um objeto JSON por diagnóstico, no
+schema versionado `s3-diagnostic` 1.0.0. Resultados normais permanecem em
+stdout. Categorias, códigos, campos opcionais e regras de compatibilidade estão
+em [`spec/diagnostics.md`](spec/diagnostics.md).
+
+`--debug` repropaga exceções somente em texto. A combinação com JSON é
+rejeitada com um único diagnóstico estruturado e status 2.
+
+O runtime ELF independente continua emitindo os diagnósticos textuais de
+`spec/native-diagnostics.md`; a CLI não analisa esse texto para inventar
+diagnósticos estruturados.
 
 `build` e `run-native` exigem Linux x86-64 e `cc`, `gcc` ou `clang`; o driver
 usa somente o assembler e o linker com `-nostdlib -no-pie`.
@@ -212,8 +226,8 @@ Contratos:
 
 ```text
 bootstrap/s3/    frontend, IR, verifier, assembly, emulador e backends
-spec/            especificações normativas, incluindo memory.md
-docs/decisions/  ADRs 0001–0011
+spec/            especificações normativas, incluindo diagnostics.md
+docs/decisions/  ADRs 0001–0012
 examples/        programas 0.1–0.5 e assembly normativo
 tests/           regressão, propriedades e integração
 selfhost/        fronteira da futura implementação em S3
@@ -229,5 +243,6 @@ O target nativo é somente Linux x86-64. Não há interoperabilidade C, JIT, TCO
 ou otimização interprocedural. ARM64 possui apenas um
 [estudo de viabilidade](docs/arm64-feasibility.md).
 
-O próximo marco recomendado trata diagnósticos estruturados, caching e
-otimizações mensuradas; consulte o [roadmap](docs/roadmap.md).
+O Marco 0.6 foi iniciado pelos diagnósticos estruturados da toolchain
+hospedada. Cache e otimizações mensuradas permanecem pendentes; consulte o
+[roadmap](docs/roadmap.md).

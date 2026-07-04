@@ -5,7 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-from .diagnostics import S3Error
+from .diagnostics import (
+    DiagnosticCategory,
+    DiagnosticCode,
+    DiagnosticPhase,
+    S3Error,
+)
 from .ir import IRFunction, IRInstruction, IRModule, IROpcode, IRType
 from .ternary import (
     TernaryRangeError,
@@ -24,6 +29,9 @@ class InitializationState(Enum):
 
 class InitializationAnalysisError(S3Error):
     category = "initialization analysis error"
+    diagnostic_category = DiagnosticCategory.VERIFICATION
+    diagnostic_code = DiagnosticCode.INITIALIZATION_INVALID_ACCESS
+    diagnostic_phase = DiagnosticPhase.INITIALIZATION
 
 
 Cell = tuple[int, int]
@@ -271,6 +279,17 @@ def _analyze_function(function: IRFunction) -> FunctionInitialization:
                         f"load: memory m{instruction.memory} index {index} is "
                         "definitely uninitialized",
                         instruction.location,
+                        diagnostic_category=DiagnosticCategory.UNINITIALIZED,
+                        diagnostic_code=(
+                            DiagnosticCode.INITIALIZATION_UNINITIALIZED
+                        ),
+                        diagnostic_context={
+                            "function": function.name,
+                            "block": block.name,
+                            "opcode": instruction.opcode.value,
+                            "memory": f"m{instruction.memory}",
+                            "index": index,
+                        },
                     )
             elif instruction.opcode is IROpcode.STORE:
                 assert instruction.memory is not None
@@ -287,6 +306,17 @@ def _analyze_function(function: IRFunction) -> FunctionInitialization:
                         f"store: immutable memory m{instruction.memory} index "
                         f"{index} is definitely already initialized",
                         instruction.location,
+                        diagnostic_category=DiagnosticCategory.IMMUTABLE_WRITE,
+                        diagnostic_code=(
+                            DiagnosticCode.INITIALIZATION_IMMUTABLE_WRITE
+                        ),
+                        diagnostic_context={
+                            "function": function.name,
+                            "block": block.name,
+                            "opcode": instruction.opcode.value,
+                            "memory": f"m{instruction.memory}",
+                            "index": index,
+                        },
                     )
                 _apply_store(state, instruction, constants, memory_lengths)
 
@@ -315,4 +345,3 @@ def analyze_initialization(module: IRModule) -> InitializationReport:
     return InitializationReport(
         tuple(_analyze_function(function) for function in module.functions)
     )
-

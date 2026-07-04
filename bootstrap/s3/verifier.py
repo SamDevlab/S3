@@ -2,7 +2,13 @@
 
 from __future__ import annotations
 
-from .diagnostics import S3Error, SourceLocation
+from .diagnostics import (
+    DiagnosticCategory,
+    DiagnosticCode,
+    DiagnosticPhase,
+    S3Error,
+    SourceLocation,
+)
 from .ir import (
     IRFunction,
     IRInstruction,
@@ -17,6 +23,9 @@ from .ternary import TRYTE_MAX, TernaryRangeError, TernaryWidth, validate
 
 class IRVerificationError(S3Error):
     category = "IR verification error"
+    diagnostic_category = DiagnosticCategory.VERIFICATION
+    diagnostic_code = DiagnosticCode.VERIFY_INVALID_IR
+    diagnostic_phase = DiagnosticPhase.VERIFICATION
 
 
 WIDTH_MAP = {
@@ -28,9 +37,17 @@ Definition = tuple[str, int] | None  # None denotes a parameter.
 
 
 class IRVerifier:
+    def __init__(self) -> None:
+        self.current_function: str | None = None
+        self.current_block: str | None = None
+        self.current_opcode: str | None = None
+
     def verify(self, module: IRModule) -> None:
         functions: dict[str, IRFunction] = {}
         for function in module.functions:
+            self.current_function = function.name
+            self.current_block = None
+            self.current_opcode = None
             if function.name in functions:
                 self._error(
                     f"duplicate function '{function.name}'",
@@ -45,13 +62,25 @@ class IRVerifier:
         function: IRFunction,
         functions: dict[str, IRFunction],
     ) -> None:
+        self.current_function = function.name
+        self.current_block = None
+        self.current_opcode = None
         blocks = self._collect_blocks(function)
+        self.current_block = None
         register_types = self._collect_registers(function)
         memory_objects = self._collect_memory(function)
         definitions = self._collect_definitions(function, register_types)
 
+        self.current_block = None
+        self.current_opcode = None
         for block in function.blocks:
+            self.current_block = block.name
             for instruction in block.instructions:
+                self.current_opcode = (
+                    instruction.opcode.value
+                    if isinstance(instruction.opcode, IROpcode)
+                    else str(instruction.opcode)
+                )
                 self._verify_instruction(
                     instruction,
                     function,
@@ -61,6 +90,8 @@ class IRVerifier:
                     memory_objects,
                 )
 
+        self.current_block = None
+        self.current_opcode = None
         undefined = sorted(set(register_types) - definitions.keys())
         if undefined:
             rendered = ", ".join(f"r{register}" for register in undefined)
@@ -77,6 +108,8 @@ class IRVerifier:
             reachable,
             dominators,
         )
+        self.current_block = None
+        self.current_opcode = None
 
     def _collect_blocks(self, function: IRFunction) -> dict[str, object]:
         blocks: dict[str, object] = {}
@@ -172,7 +205,13 @@ class IRVerifier:
             definitions[parameter.register] = None
 
         for block in function.blocks:
+            self.current_block = block.name
             for position, instruction in enumerate(block.instructions):
+                self.current_opcode = (
+                    instruction.opcode.value
+                    if isinstance(instruction.opcode, IROpcode)
+                    else str(instruction.opcode)
+                )
                 if instruction.result is None:
                     continue
                 if instruction.result not in register_types:
@@ -187,6 +226,8 @@ class IRVerifier:
                         instruction.location,
                     )
                 definitions[instruction.result] = (block.name, position)
+        self.current_block = None
+        self.current_opcode = None
         return definitions
 
     def _verify_block_shape(
@@ -195,6 +236,8 @@ class IRVerifier:
         block_name: str,
         instructions: tuple[IRInstruction, ...],
     ) -> None:
+        self.current_block = block_name
+        self.current_opcode = None
         terminator_indices = [
             index
             for index, instruction in enumerate(instructions)
@@ -507,7 +550,13 @@ class IRVerifier:
         dominators: dict[str, set[str]],
     ) -> None:
         for block in function.blocks:
+            self.current_block = block.name
             for position, instruction in enumerate(block.instructions):
+                self.current_opcode = (
+                    instruction.opcode.value
+                    if isinstance(instruction.opcode, IROpcode)
+                    else str(instruction.opcode)
+                )
                 for operand in instruction.operands:
                     definition = definitions.get(operand)
                     if definition is None:
@@ -551,9 +600,16 @@ class IRVerifier:
             rendered = ", ".join(type_name.value for type_name in types)
             self._error(f"{subject} type mismatch ({rendered})", location)
 
-    @staticmethod
-    def _error(message: str, location: SourceLocation | None) -> None:
-        raise IRVerificationError(message, location)
+    def _error(self, message: str, location: SourceLocation | None) -> None:
+        raise IRVerificationError(
+            message,
+            location,
+            diagnostic_context={
+                "function": self.current_function,
+                "block": self.current_block,
+                "opcode": self.current_opcode,
+            },
+        )
 
 
 def verify_ir(module: IRModule) -> None:
