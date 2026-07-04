@@ -143,7 +143,8 @@ fn descend(value: tryte) -> tryte {
         1: { return descend(value - 1); }
     }
 }
-fn main() -> tryte { return descend(3); }
+fn main() -> tryte:
+    return descend(3)
 """
 
 
@@ -334,8 +335,10 @@ def test_system_v_argument_counts(
 ) -> None:
     if arity == 0:
         source = """\
-fn selected() -> tryte { return 7; }
-fn main() -> tryte { return selected(); }
+fn selected() -> tryte:
+    return 7
+fn main() -> tryte:
+    return selected()
 """
     else:
         parameters = ", ".join(f"a{i}: tryte" for i in range(arity))
@@ -358,8 +361,10 @@ def test_forward_call_matches_emulator(
 ) -> None:
     _assert_differential(
         """\
-fn main() -> tryte { return later(9); }
-fn later(value: tryte) -> tryte { return value + 1; }
+fn main() -> tryte:
+    return later(9)
+fn later(value: tryte) -> tryte:
+    return value + 1
 """,
         10,
         native_toolchain,
@@ -396,44 +401,47 @@ fn main() -> tryte {{ return read({index_expression}); }}
     (
         (
             """\
-fn twice(value: tryte) -> tryte { return value + value; }
-fn main() -> tryte { return twice(8) - 3; }
+fn twice(value: tryte) -> tryte:
+    return value + value
+fn main() -> tryte:
+    return twice(8) - 3
 """,
             13,
         ),
         (
             """\
-fn choose(value: tryte) -> tryte {
-    mut tryte result = 0;
-    switch (value <=> 0) {
-        -1: { result = -3; }
-        0: { result = 0; }
-        1: { result = 3; }
-    }
-    return result;
-}
-fn main() -> tryte { return choose(1); }
+fn choose(value: tryte) -> tryte:
+    result: mut tryte = 0
+    match value <=> 0:
+        -1:
+            result = -3
+        0:
+            result = 0
+        1:
+            result = 3
+    return result
+fn main() -> tryte:
+    return choose(1)
 """,
             3,
         ),
         (
             """\
-fn read(index: tryte) -> tryte {
-    mut tryte[3] values = [2, 4, 6];
-    values[1] = values[0] + values[2];
-    return values[index];
-}
-fn main() -> tryte { return read(1); }
+fn read(index: tryte) -> tryte:
+    values: mut tryte[3] = [2, 4, 6]
+    values[1] = values[0] + values[2]
+    return values[index]
+fn main() -> tryte:
+    return read(1)
 """,
             8,
         ),
         (
             """\
-fn main() -> tryte {
-    tryte left = -100;
-    tryte right = 40;
-    return (left & right) | 1;
-}
+fn main() -> tryte:
+    left: tryte = -100
+    right: tryte = 40
+    return (left & right) | 1
 """,
             tritwise_max(
                 tritwise_min(-100, 40, TernaryWidth.TRYTE),
@@ -461,25 +469,25 @@ def test_deterministic_differential_corpus(
 @pytest.mark.parametrize(
     ("source_or_program", "category"),
     (
-        ("fn main() -> tryte { return 364 + 1; }", "overflow"),
-        ("fn main() -> tryte { return -364 + -1; }", "overflow"),
+        ("fn main() -> tryte:\n    return 364 + 1\n", "overflow"),
+        ("fn main() -> tryte:\n    return -364 + -1\n", "overflow"),
         (
             """\
-fn read(index: tryte) -> tryte {
-    tryte[2] values = [10, 20];
-    return values[index];
-}
-fn main() -> tryte { return read(-1); }
+fn read(index: tryte) -> tryte:
+    values: tryte[2] = [10, 20]
+    return values[index]
+fn main() -> tryte:
+    return read(-1)
 """,
             "bounds",
         ),
         (
             """\
-fn read(index: tryte) -> tryte {
-    tryte[2] values = [10, 20];
-    return values[index];
-}
-fn main() -> tryte { return read(2); }
+fn read(index: tryte) -> tryte:
+    values: tryte[2] = [10, 20]
+    return values[index]
+fn main() -> tryte:
+    return read(2)
 """,
             "bounds",
         ),
@@ -543,11 +551,11 @@ def test_native_bounds_diagnostic_contains_context_and_dynamic_value(
 ) -> None:
     program = compile_source(
         """\
-fn read(index: tryte) -> tryte {
-    tryte[2] values = [10, 20];
-    return values[index];
-}
-fn main() -> tryte { return read(-1); }
+fn read(index: tryte) -> tryte:
+    values: tryte[2] = [10, 20]
+    return values[index]
+fn main() -> tryte:
+    return read(-1)
 """
     ).assembly
     completed = _run_native(program, native_toolchain, tmp_path / "bounds-context")
@@ -686,14 +694,14 @@ def test_same_toolchain_build_is_byte_reproducible(
 @pytest.mark.parametrize(
     ("source", "category"),
     (
-        ("fn main() -> tryte { return 364 + 1; }", "overflow"),
+        ("fn main() -> tryte:\n    return 364 + 1\n", "overflow"),
         (
             """\
-fn read(index: tryte) -> tryte {
-    tryte[1] values = [1];
-    return values[index];
-}
-fn main() -> tryte { return read(1); }
+fn read(index: tryte) -> tryte:
+    values: tryte[1] = [1]
+    return values[index]
+fn main() -> tryte:
+    return read(1)
 """,
             "bounds",
         ),
@@ -744,7 +752,7 @@ def test_build_and_run_native_cli_commands(
     assert build_output.err == ""
     assert executable.is_file()
     assert assembly.is_file()
-    assert cli_main(["run-native", str(source)]) == 0
+    assert cli_main(["--source-syntax", "0.6", "run-native", str(source)]) == 0
     run_output = capsys.readouterr()
     assert run_output.err == ""
     assert run_output.out == "program returned: 6\n"
