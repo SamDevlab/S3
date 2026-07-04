@@ -1,4 +1,4 @@
-# Arquitetura do S3 bootstrap 0.4
+# Arquitetura do S3 bootstrap 0.5
 
 ## Pipeline
 
@@ -6,7 +6,8 @@
 fonte → lexer → AST → semântica
       → lowering SSA + objetos de memória
       → IR com CFG/dominância verificada
-      → S3 Assembly tipada e validada
+      → análise de inicialização → otimização O0/O1 → nova verificação
+      → S3 Assembly 0.5 tipada, versionada e validada
         ├→ emulador com frames e memória local
         └→ backend x86-64 → GNU assembly → ELF Linux
 ```
@@ -46,6 +47,24 @@ apenas um ramo e usados no join.
 Ciclos são permitidos. A análise não prova terminação; o emulador aplica limite
 global configurável de instruções.
 
+## Inicialização e O1
+
+O passe de inicialização calcula ponto fixo por elemento com estados
+`UNINITIALIZED`, `INITIALIZED` e `MAYBE_INITIALIZED`. Load constante
+definitivamente inválido e segunda inicialização imutável comprovada são erros
+estáticos. Índices dinâmicos e joins incertos mantêm checks de runtime.
+
+O0 preserva a IR. O1 dobra/propaga constantes locais, remove resultados puros
+seguros e mortos, blocos inalcançáveis e trampolins de salto. ADD potencialmente
+overflow, efeitos e terminadores não são apagados. Verificador e análise rodam
+antes e depois.
+
+## Artefatos
+
+S3 Assembly usa `.s3asm 0.5.0`; texto legado é normalizado. IR persistente usa
+JSON `s3-ir` 0.5.0 canônica, estrita e terminada por newline. Desserialização
+reconstrói modelos explícitos e chama `verify_ir`.
+
 ## Assembly e memória por frame
 
 `.memory` torna objetos autocontidos no texto. `TLOAD`/`TSTORE` não manipulam
@@ -81,6 +100,12 @@ conversão decimal, helpers tritwise, `write`, `exit` e falhas controladas. A
 toolchain detecta Linux x86-64 e invoca `cc`/`gcc`/`clang` sem shell, com
 temporários isolados.
 
+Toda função incrementa um contador privado antes de alocar stack e falha ao
+exceder `max_frames`; cada `TRET` decrementa. Após o prólogo há salto explícito
+para `entry`, independente da ordem física. Pontos de falha recebem IDs
+determinísticos e strings com categoria, função, bloco, opcode e origem;
+índices e resultados são impressos dinamicamente sem libc.
+
 ```text
 S3 lógico: trit=1 trit, tryte=6 trits, cota=6561/frame
 x86-64 físico: trit=int8, tryte=int16, valores temporários=int64
@@ -101,13 +126,15 @@ cota lógica.
 8. Não existem `PHI`, `SUBTRACT`, `TSUB`, ponteiros ou casts.
 9. Python continua apenas compilador bootstrap; o ELF não depende dele.
 10. Emissão textual, símbolos e offsets são determinísticos.
+11. O0 é padrão; O1 não remove falhas observáveis.
+12. Artefatos desconhecidos são rejeitados, nunca adivinhados.
 
 ## Riscos
 
 Todos os objetos lexicais da função são alocados ao entrar no frame, inclusive
 os de ramos não executados; é simples e conservador, mas pode superestimar
 memória. Inicialização de memória imutável é verificada dinamicamente na
-assembly. O layout x86-64 ainda não aloca registradores, não reproduz os limites
-operacionais de instruções/frames do emulador e não possui heap, aliasing ou
-promoção memória-para-SSA. Outros sistemas/arquiteturas exigem backend e ADR
-próprios.
+assembly. O layout x86-64 ainda não aloca registradores e não reproduz o limite
+de instruções do emulador; o limite de frames, porém, é explícito nos dois.
+Não há heap, aliasing ou promoção memória-para-SSA. Reprodutibilidade binária
+vale somente na mesma toolchain. Outros targets exigem backend/ADR próprios.

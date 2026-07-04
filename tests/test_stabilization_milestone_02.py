@@ -85,6 +85,8 @@ def test_ci_workflow_has_required_matrix_and_commands() -> None:
     assert "cc --version" in workflow
     assert "as --version" in workflow
     assert "ld --version" in workflow
+    assert "file --version" in workflow
+    assert "readelf --version" in workflow
     assert 'S3_NATIVE_REQUIRED: "1"' in workflow
     assert "continue-on-error" not in workflow
 

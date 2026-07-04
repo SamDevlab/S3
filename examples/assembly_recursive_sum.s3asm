@@ -1,3 +1,5 @@
+.s3asm 0.5.0
+
 .function sum_to -> tryte
     .param r0, tryte
     .register r1, tryte
@@ -36,4 +38,3 @@
     TCALL  r1, sum_to, r0
     TRET   r1
 .end
-

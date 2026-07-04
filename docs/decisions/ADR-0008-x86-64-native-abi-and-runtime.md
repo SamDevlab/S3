@@ -55,6 +55,11 @@ como inicializados no prólogo; os demais metadados começam em zero. O backend
 não precisa de área fixa para temporários no marco 0.4, mas o layout a modela
 explicitamente. Objetos e metadados vivem no frame, logo recursão os isola.
 
+Desde o Marco 0.5, toda função incrementa antes do prólogo um contador privado
+de frames S3, limitado a 1024 por padrão, e todo retorno normal decrementa. O
+prólogo transfere explicitamente controle para `entry`; ordem física dos
+blocos não possui semântica.
+
 O custo lógico da função é validado contra 6561 trits antes da emissão. O
 tamanho físico inclui representação binária e metadados e não é essa cota.
 
@@ -70,15 +75,29 @@ Falhas saltam para rotinas `__s3_fail_*`, escrevem uma categoria controlada em
 stderr com a syscall `write` e encerram com status 1 pela syscall `exit`. Não
 há acesso fora do objeto depois de um check falhar.
 
+O Marco 0.5 especializa pontos de falha com IDs determinísticos e metadados de
+função, bloco, opcode, origem ou linha assembly e valores relevantes. Origem
+ausente é explicitamente desconhecida. ADR-0010 define o contrato atualizado.
+
 ### Entrada e saída
 
 O ELF define `_start`, que chama `s3_main`, escreve exatamente:
 
 ```text
-program returned: <decimal assinado>\n
+program returned: N\n
 ```
 
-e encerra com status 0. A conversão decimal, `TMIN`/`TMAX` tritwise de trytes,
+`N` é a representação decimal assinada do valor retornado por `main`. Por
+exemplo:
+
+```text
+program returned: 6
+program returned: -1
+program returned: 0
+```
+
+Cada linha termina por newline. Depois da escrita, `_start` encerra com status
+0. A conversão decimal, `TMIN`/`TMAX` tritwise de trytes,
 mensagens e syscalls são implementadas em GNU assembly. O link usa
 `-nostdlib -no-pie`; não existe runtime padrão nem dependência dinâmica de
 Python.
@@ -102,4 +121,3 @@ Os limites de instruções e profundidade do emulador são proteções do
 interpretador, não semântica do executável nativo. A cota estática de memória
 lógica, checks de valores, bounds, inicialização e imutabilidade são
 preservados.
-

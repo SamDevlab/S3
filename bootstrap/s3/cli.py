@@ -18,7 +18,9 @@ from .backends.x86_64 import (
 )
 from .codegen import CodegenError
 from .diagnostics import S3Error
-from .emulator import Emulator
+from .emulator import DEFAULT_MAX_FRAMES, Emulator
+from .ir_serialization import deserialize_ir, serialize_ir
+from .optimizer import OptimizationLevel
 from .pipeline import compile_source
 
 
@@ -33,6 +35,8 @@ def _parser() -> argparse.ArgumentParser:
             "tokens",
             "ast",
             "ir",
+            "ir-json",
+            "verify-ir",
             "asm",
             "run",
             "native-asm",
@@ -46,7 +50,7 @@ def _parser() -> argparse.ArgumentParser:
         "-o",
         "--output",
         type=Path,
-        help="output path for native-asm/build (Linux x86-64 build target)",
+        help="output path for ir-json/native-asm/build",
     )
     parser.add_argument(
         "--keep-assembly",
@@ -54,14 +58,35 @@ def _parser() -> argparse.ArgumentParser:
         metavar="PATH",
         help="preserve generated .s while building a native executable",
     )
+    parser.add_argument(
+        "--max-frames",
+        type=int,
+        default=DEFAULT_MAX_FRAMES,
+        metavar="N",
+        help=f"maximum S3 call depth (default: {DEFAULT_MAX_FRAMES})",
+    )
+    parser.add_argument(
+        "-O",
+        dest="optimization",
+        choices=("0", "1"),
+        default="0",
+        help="IR optimization level (default: 0)",
+    )
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
+        if args.max_frames < 1:
+            raise NativeBackendError("--max-frames must be at least 1")
         source = args.source.read_text(encoding="utf-8")
-        compilation = compile_source(source)
+        if args.command == "verify-ir":
+            module = deserialize_ir(source)
+            print(f"IR verified: {len(module.functions)} function(s)")
+            return 0
+        optimization = OptimizationLevel.parse(args.optimization)
+        compilation = compile_source(source, optimization)
         if args.command == "tokens":
             payload = [
                 token.to_dict()
@@ -73,20 +98,39 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(json.dumps(ast.to_dict(compilation.ast), indent=2))
         elif args.command == "ir":
             print(json.dumps(compilation.ir.to_dict(), indent=2))
+        elif args.command == "ir-json":
+            artifact = serialize_ir(compilation.ir)
+            if args.output is None:
+                print(artifact, end="")
+            else:
+                args.output.parent.mkdir(parents=True, exist_ok=True)
+                args.output.write_text(
+                    artifact,
+                    encoding="utf-8",
+                    newline="\n",
+                )
         elif args.command == "asm":
             print(compilation.assembly_text, end="")
         elif args.command == "run":
-            result = Emulator().execute(compilation.assembly)
+            result = Emulator(max_frames=args.max_frames).execute(
+                compilation.assembly
+            )
             print(f"program returned: {result}")
         elif args.command == "native-asm":
-            native = generate_native_assembly(compilation.assembly)
+            native = generate_native_assembly(
+                compilation.assembly,
+                max_frames=args.max_frames,
+            )
             if args.output is None:
                 print(native, end="")
             else:
                 args.output.parent.mkdir(parents=True, exist_ok=True)
                 args.output.write_text(native, encoding="utf-8", newline="\n")
         elif args.command == "build":
-            native = generate_native_assembly(compilation.assembly)
+            native = generate_native_assembly(
+                compilation.assembly,
+                max_frames=args.max_frames,
+            )
             output = (
                 args.output
                 if args.output is not None
@@ -99,7 +143,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             print(output)
         elif args.command == "run-native":
-            native = generate_native_assembly(compilation.assembly)
+            native = generate_native_assembly(
+                compilation.assembly,
+                max_frames=args.max_frames,
+            )
             toolchain = NativeToolchain.detect()
             if args.output is not None:
                 executable = toolchain.build(

@@ -9,6 +9,9 @@ from enum import Enum
 from .diagnostics import SourceLocation
 
 
+ASSEMBLY_FORMAT_VERSION = "0.5.0"
+
+
 class AssemblyError(Exception):
     """Base error for malformed assembly or invalid assembly execution."""
 
@@ -187,9 +190,11 @@ class AssemblyFunction:
 @dataclass(frozen=True, slots=True)
 class AssemblyProgram:
     functions: tuple[AssemblyFunction, ...]
+    version: str = ASSEMBLY_FORMAT_VERSION
 
     def render(self) -> str:
-        return "\n\n".join(function.render() for function in self.functions) + "\n"
+        body = "\n\n".join(function.render() for function in self.functions)
+        return f".s3asm {self.version}\n\n{body}\n"
 
 
 _IDENTIFIER = r"[A-Za-z_][A-Za-z0-9_]*"
@@ -209,6 +214,7 @@ _REGISTER_PATTERN = re.compile(r"^r([0-9]+)$")
 _MEMORY_PATTERN = re.compile(r"^m([0-9]+)$")
 _IDENTIFIER_PATTERN = re.compile(rf"^{_IDENTIFIER}$")
 _SOURCE_PATTERN = re.compile(r"^source=([0-9]+):([0-9]+):([0-9]+)$")
+_VERSION_PATTERN = re.compile(r"^\.s3asm\s+([0-9]+\.[0-9]+\.[0-9]+)$")
 
 
 def _parse_register(text: str, line: int) -> int:
@@ -389,6 +395,7 @@ def parse_assembly(source: str) -> AssemblyProgram:
     current_label: str | None = None
     instructions: list[AssemblyInstruction] = []
     code_started = False
+    artifact_started = False
 
     def flush_block() -> None:
         nonlocal current_label, instructions
@@ -407,6 +414,36 @@ def parse_assembly(source: str) -> AssemblyProgram:
         )
         if not text:
             continue
+        if text.startswith(".s3asm"):
+            if artifact_started or current_name is not None or functions:
+                raise AssemblyParseError(
+                    ".s3asm version must precede all functions",
+                    line_number,
+                )
+            version_match = _VERSION_PATTERN.fullmatch(text)
+            if version_match is None:
+                raise AssemblyParseError(
+                    "invalid .s3asm version; expected MAJOR.MINOR.PATCH",
+                    line_number,
+                )
+            version = version_match.group(1)
+            if version != ASSEMBLY_FORMAT_VERSION:
+                current_major = ASSEMBLY_FORMAT_VERSION.split(".", 1)[0]
+                supplied_major = version.split(".", 1)[0]
+                if supplied_major != current_major:
+                    message = (
+                        f"incompatible S3 Assembly major version {version}; "
+                        f"supported version is {ASSEMBLY_FORMAT_VERSION}"
+                    )
+                else:
+                    message = (
+                        f"unknown S3 Assembly version {version}; supported "
+                        f"version is {ASSEMBLY_FORMAT_VERSION}"
+                    )
+                raise AssemblyParseError(message, line_number)
+            artifact_started = True
+            continue
+        artifact_started = True
         if current_name is None:
             match = _FUNCTION_PATTERN.fullmatch(text)
             if match is None:
@@ -531,4 +568,4 @@ def parse_assembly(source: str) -> AssemblyProgram:
         )
     if not functions:
         raise AssemblyParseError("assembly contains no functions", 1)
-    return AssemblyProgram(tuple(functions))
+    return AssemblyProgram(tuple(functions), ASSEMBLY_FORMAT_VERSION)

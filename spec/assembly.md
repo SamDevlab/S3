@@ -1,10 +1,12 @@
-# S3 Assembly textual 0.4
+# S3 Assembly textual 0.5
 
 Status: normativo para o bootstrap.
 
 ## Declarações
 
 ```asm
+.s3asm 0.5.0
+
 .function main -> tryte
     .register r0, tryte
     .register r1, tryte
@@ -28,6 +30,10 @@ Status: normativo para o bootstrap.
 O quarto campo é emitido pelo renderer; se omitido em assembly manual, o parser
 assume `mutable`. Declarações antecedem labels/instruções. Objetos e
 registradores são locais ao frame. Comprimentos válidos estão entre 1 e 365.
+
+O renderer sempre emite `.s3asm 0.5.0` antes das funções. O parser aceita
+exatamente essa versão e normaliza assembly 0.1–0.4 sem cabeçalho; versão
+malformada, desconhecida ou major incompatível é erro.
 
 ## Instruções
 
@@ -55,6 +61,9 @@ Não existem `TSUB`, `TPTR` ou `TCAST`.
 Cada bloco termina com `TRET`, `TJMP` ou `TBR3`; cada função contém ao menos um
 `TRET`. Ciclos estruturais são permitidos e execuções sem retorno são
 interrompidas pelo limite de instruções.
+
+Toda função começa semanticamente no bloco `entry`, independentemente da ordem
+textual. O backend nativo emite salto explícito do prólogo para esse label.
 
 Metadado opcional:
 

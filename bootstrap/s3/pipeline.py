@@ -7,10 +7,11 @@ from dataclasses import dataclass
 from . import ast
 from .assembly import AssemblyProgram
 from .codegen import generate_assembly
-from .emulator import Emulator
+from .emulator import DEFAULT_MAX_FRAMES, Emulator
 from .ir import IRProgram
 from .lexer import Token, tokenize
 from .lowering import lower
+from .optimizer import OptimizationLevel, optimize_ir
 from .parser import parse_tokens
 from .semantic import SemanticModel, analyze
 
@@ -28,11 +29,17 @@ class CompilationResult:
         return self.assembly.render()
 
 
-def compile_source(source: str) -> CompilationResult:
+def compile_source(
+    source: str,
+    optimization: OptimizationLevel | str = OptimizationLevel.O0,
+) -> CompilationResult:
     tokens = tokenize(source)
     syntax_tree = parse_tokens(tokens)
     semantic_model = analyze(syntax_tree)
-    ir_program = lower(syntax_tree, semantic_model)
+    ir_program = optimize_ir(
+        lower(syntax_tree, semantic_model),
+        optimization,
+    )
     assembly_program = generate_assembly(ir_program)
     return CompilationResult(
         tokens,
@@ -43,7 +50,12 @@ def compile_source(source: str) -> CompilationResult:
     )
 
 
-def run_source(source: str, entry: str = "main") -> int:
-    compilation = compile_source(source)
-    return Emulator().execute(compilation.assembly, entry)
-
+def run_source(
+    source: str,
+    entry: str = "main",
+    optimization: OptimizationLevel | str = OptimizationLevel.O0,
+    *,
+    max_frames: int = DEFAULT_MAX_FRAMES,
+) -> int:
+    compilation = compile_source(source, optimization)
+    return Emulator(max_frames=max_frames).execute(compilation.assembly, entry)

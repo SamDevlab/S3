@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import os
 import platform
 import shutil
@@ -55,8 +56,9 @@ def _assert_differential(
     expected: int,
     toolchain: NativeToolchain,
     output: Path,
+    optimization: str = "O0",
 ) -> None:
-    program = compile_source(source).assembly
+    program = compile_source(source, optimization).assembly
     assert Emulator().execute(program) == expected
     completed = _run_native(program, toolchain, output)
     assert completed.returncode == 0
@@ -87,7 +89,100 @@ def test_all_examples_match_emulator(
     tmp_path: Path,
 ) -> None:
     source = (ROOT / "examples" / filename).read_text(encoding="utf-8")
-    _assert_differential(source, expected, native_toolchain, tmp_path / filename)
+    for level in ("O0", "O1"):
+        _assert_differential(
+            source,
+            expected,
+            native_toolchain,
+            tmp_path / f"{filename}-{level}",
+            level,
+        )
+
+
+@pytest.mark.parametrize(
+    "order",
+    (
+        ("entry", "before", "after"),
+        ("before", "entry", "after"),
+        ("before", "after", "entry"),
+    ),
+)
+def test_native_execution_starts_at_entry_regardless_of_block_order(
+    order: tuple[str, ...],
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    blocks = {
+        "before": ".label before\n    TCONST r0, 99\n    TRET r0\n",
+        "entry": ".label entry\n    TCONST r0, 6\n    TRET r0\n",
+        "after": ".label after\n    TCONST r0, 77\n    TRET r0\n",
+    }
+    program = parse_assembly(
+        ".function main -> tryte\n"
+        "    .register r0, tryte\n"
+        + "".join(blocks[label] for label in order)
+        + ".end\n"
+    )
+    assert Emulator().execute(program) == 6
+    completed = _run_native(
+        program,
+        native_toolchain,
+        tmp_path / f"entry-{'-'.join(order)}",
+    )
+    assert completed.returncode == 0
+    assert completed.stderr == ""
+    assert completed.stdout == "program returned: 6\n"
+
+
+RECURSIVE_DEPTH_SOURCE = """\
+fn descend(value: tryte) -> tryte {
+    switch (value <=> 0) {
+        -1: { return 0; }
+        0: { return 0; }
+        1: { return descend(value - 1); }
+    }
+}
+fn main() -> tryte { return descend(3); }
+"""
+
+
+@pytest.mark.parametrize("max_frames", (5, 8))
+def test_native_recursion_within_frame_limit(
+    max_frames: int,
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    program = compile_source(RECURSIVE_DEPTH_SOURCE).assembly
+    assert Emulator(max_frames=max_frames).execute(program) == 0
+    executable = native_toolchain.build(
+        generate_native_assembly(program, max_frames=max_frames),
+        tmp_path / f"frames-{max_frames}",
+    )
+    completed = native_toolchain.run(executable)
+    assert completed.returncode == 0
+    assert completed.stdout == "program returned: 0\n"
+    assert completed.stderr == ""
+
+
+def test_native_recursion_above_frame_limit_is_controlled(
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    program = compile_source(RECURSIVE_DEPTH_SOURCE).assembly
+    with pytest.raises(EmulatorError, match="frame limit 4 exceeded"):
+        Emulator(max_frames=4).execute(program)
+    executable = native_toolchain.build(
+        generate_native_assembly(program, max_frames=4),
+        tmp_path / "frames-overflow",
+    )
+    completed = native_toolchain.run(executable)
+    assert completed.returncode != 0
+    assert completed.returncode not in {-11, 139}
+    assert completed.stdout == ""
+    assert "frame limit" in completed.stderr.lower()
+    assert "function 'descend'" in completed.stderr
+    assert "block entry, ENTER" in completed.stderr
+    assert "depth 5 exceeds limit 4" in completed.stderr
 
 
 @pytest.mark.parametrize("value", (-364, -1, 0, 1, 364))
@@ -441,6 +536,55 @@ def test_runtime_failures_are_controlled(
     assert category in completed.stderr.lower()
 
 
+def test_native_bounds_diagnostic_contains_context_and_dynamic_value(
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    program = compile_source(
+        """\
+fn read(index: tryte) -> tryte {
+    tryte[2] values = [10, 20];
+    return values[index];
+}
+fn main() -> tryte { return read(-1); }
+"""
+    ).assembly
+    completed = _run_native(program, native_toolchain, tmp_path / "bounds-context")
+    assert completed.returncode != 0
+    assert completed.stdout == ""
+    assert "runtime error [bounds] in function 'read'" in completed.stderr
+    assert "block entry, TLOAD" in completed.stderr
+    assert "source 3:" in completed.stderr
+    assert "index -1 outside [0, 2)" in completed.stderr
+
+
+def test_native_unknown_source_diagnostic_is_explicit(
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    program = parse_assembly(
+        """\
+.function main -> tryte
+    .register r0, tryte
+    .register r1, tryte
+    .memory m0, tryte, 1, mutable
+.label entry
+    TCONST r0, 0
+    TLOAD r1, m0, r0
+    TRET r1
+.end
+"""
+    )
+    completed = _run_native(program, native_toolchain, tmp_path / "unknown-source")
+    assert completed.returncode != 0
+    assert "runtime error [uninitialized memory] in function 'main'" in (
+        completed.stderr
+    )
+    assert "source unknown" in completed.stderr
+    assert "block entry, TLOAD, assembly line 7" in completed.stderr
+    assert "index 0 is uninitialized in m0" in completed.stderr
+
+
 def test_native_elf_has_start_and_no_dynamic_dependencies(
     native_toolchain: NativeToolchain,
     tmp_path: Path,
@@ -486,6 +630,90 @@ def test_native_elf_has_start_and_no_dynamic_dependencies(
     assert "TSUB" not in assembly
     assert "python" not in assembly.lower()
     assert platform.machine().lower() in {"x86_64", "amd64"}
+
+
+def test_same_toolchain_build_is_byte_reproducible(
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    program = compile_source(
+        (ROOT / "examples" / "recursive_memory.s3").read_text(
+            encoding="utf-8"
+        ),
+        "O1",
+    ).assembly
+    native = generate_native_assembly(program)
+    first = native_toolchain.build(native, tmp_path / "one" / "program")
+    second = native_toolchain.build(native, tmp_path / "two" / "program")
+    first_bytes = first.read_bytes()
+    second_bytes = second.read_bytes()
+    assert first_bytes == second_bytes
+    assert hashlib.sha256(first_bytes).hexdigest() == hashlib.sha256(
+        second_bytes
+    ).hexdigest()
+    for executable in (first, second):
+        completed = native_toolchain.run(executable)
+        assert completed.returncode == 0
+        assert completed.stdout == "program returned: 6\n"
+
+    readelf = shutil.which("readelf")
+    if NATIVE_REQUIRED:
+        assert readelf is not None, "readelf is required by the native CI job"
+    if readelf is None:
+        pytest.skip("readelf is unavailable")
+    notes = subprocess.run(
+        [readelf, "-nW", str(first)],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    assert "Build ID" not in notes
+    header = subprocess.run(
+        [readelf, "-hW", str(first)],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    assert "ELF64" in header
+    assert "Advanced Micro Devices X86-64" in header
+
+
+@pytest.mark.parametrize(
+    ("source", "category"),
+    (
+        ("fn main() -> tryte { return 364 + 1; }", "overflow"),
+        (
+            """\
+fn read(index: tryte) -> tryte {
+    tryte[1] values = [1];
+    return values[index];
+}
+fn main() -> tryte { return read(1); }
+""",
+            "bounds",
+        ),
+    ),
+)
+def test_o0_o1_native_errors_preserve_category(
+    source: str,
+    category: str,
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    messages: list[str] = []
+    for level in ("O0", "O1"):
+        program = compile_source(source, level).assembly
+        with pytest.raises(EmulatorError, match=category):
+            Emulator().execute(program)
+        completed = _run_native(
+            program,
+            native_toolchain,
+            tmp_path / f"error-{category}-{level}",
+        )
+        assert completed.returncode != 0
+        assert category in completed.stderr.lower()
+        messages.append(completed.stderr)
+    assert all(category in message for message in messages)
 
 
 def test_build_and_run_native_cli_commands(

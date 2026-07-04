@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from .assembly import (
+    ASSEMBLY_FORMAT_VERSION,
     AssemblyBlock,
     AssemblyError,
     AssemblyFunction,
@@ -39,6 +40,7 @@ WIDTH_MAP = {
 }
 
 DEFAULT_MAX_MEMORY_TRITS = 6561
+DEFAULT_MAX_FRAMES = 1024
 
 
 @dataclass(slots=True)
@@ -58,7 +60,7 @@ class Emulator:
     def __init__(
         self,
         *,
-        max_frames: int = 1024,
+        max_frames: int = DEFAULT_MAX_FRAMES,
         max_instructions: int = 100_000,
         max_memory_trits: int = DEFAULT_MAX_MEMORY_TRITS,
     ):
@@ -324,6 +326,11 @@ class Emulator:
         self,
         program: AssemblyProgram,
     ) -> dict[str, AssemblyFunction]:
+        if program.version != ASSEMBLY_FORMAT_VERSION:
+            raise EmulatorError(
+                f"unsupported S3 Assembly version {program.version}; "
+                f"expected {ASSEMBLY_FORMAT_VERSION}"
+            )
         functions: dict[str, AssemblyFunction] = {}
         for function in program.functions:
             if function.name in functions:
@@ -904,7 +911,7 @@ def execute_assembly(
     assembly: str | AssemblyProgram,
     entry: str = "main",
     *,
-    max_frames: int = 1024,
+    max_frames: int = DEFAULT_MAX_FRAMES,
     max_instructions: int = 100_000,
     max_memory_trits: int = DEFAULT_MAX_MEMORY_TRITS,
 ) -> int:

@@ -47,6 +47,8 @@ jobs:
           cc --version
           as --version
           ld --version
+          file --version
+          readelf --version
 
       - name: Install project
         run: |

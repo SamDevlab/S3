@@ -1,4 +1,4 @@
-# S3 IR 0.3
+# S3 IR 0.5
 
 Status: normativo.
 
@@ -74,12 +74,31 @@ Regras:
 
 Comunicação entre ramos usa objeto de memória, não `PHI`.
 
+## Artefato JSON
+
+A forma persistente usa envelope `s3-ir`, versão `0.5.0`, chaves ordenadas,
+indentação de dois espaços e newline. Funções, parâmetros, registros, memória,
+blocos, instruções, mutabilidade e origem são explícitos. O leitor rejeita
+campos, opcodes, tipos e versões desconhecidos e executa o verificador. Veja
+`artifacts.md`.
+
+## Inicialização e otimização
+
+Após verificação, análise por CFG prova estados por elemento. Load constante
+definitivamente não inicializado e segunda escrita imutável comprovada são
+erros estáticos; incerteza mantém runtime check.
+
+O0 preserva a IR e é padrão. O1 permite folding local válido, propagação,
+eliminação de valor puro/morto, bloco inalcançável e trampolim. ADD que poderia
+falhar, `CALL`, `LOAD`, `STORE` e terminadores permanecem. A IR otimizada é
+verificada novamente. Veja `optimization.md`.
+
 ## Verificação estática e dinâmica
 
 O verificador rejeita objetos duplicados/inválidos, referências inexistentes,
 tipos de índice/valor/resultados incorretos, store comum em objeto imutável,
 violação SSA/dominância, chamada/retorno inválido, ponteiros e subtração.
 
-Inicialização por caminho e bounds calculados são dinâmicos. O frontend
-inicializa todas as declarações; o emulador jamais devolve célula não
+Bounds calculados e inicialização não comprovável permanecem dinâmicos. O
+frontend inicializa declarações; emulador e nativo jamais devolvem célula não
 inicializada.

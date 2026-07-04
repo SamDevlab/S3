@@ -36,16 +36,29 @@ fatorada, a política de ciclos corrigida e CI adicionada.
 - corpus diferencial e todos os exemplos;
 - CI nativa obrigatória em Ubuntu x86-64.
 
-## Marco 0.5 — robustez e otimização inicial (recomendado)
+## Marco 0.5 — robustez e otimização inicial
 
-1. análise estática de inicialização por caminhos;
-2. representação/serialização persistente e versionada da IR/assembly;
-3. testes reprodutíveis de bytes ELF entre toolchains suportadas;
-4. eliminação local de movimentos e slots comprovadamente desnecessários;
-5. diagnósticos nativos com função/origem preservadas;
-6. política nativa explícita para profundidade de recursão;
-7. avaliação separada de um backend ARM64, sem marcá-lo como suportado antes
-   de ADR, runtime e CI próprios.
+Implementado localmente; conclusão remota depende do job CI após push:
+
+- correção de entrada física no bloco `entry`;
+- limite nativo configurável de frames;
+- diagnósticos com função, bloco, opcode, origem e valor;
+- S3 Assembly e IR JSON versionadas em 0.5.0;
+- round-trip e verificação estrita de IR;
+- análise conservadora de inicialização;
+- O0 padrão e O1 local com verificação dupla;
+- testes de ELF reproduzível na mesma toolchain;
+- diferenciais O0/O1 emulador/nativo;
+- estudo ARM64 sem backend ou alegação de suporte.
+
+## Marco 0.6 — robustez operacional (recomendado)
+
+1. cache de artefatos por conteúdo/versionamento;
+2. diagnósticos estruturados consumíveis por ferramentas;
+3. métricas e orçamento de otimização por exemplo;
+4. política de limite nativo de instruções;
+5. otimizações entre blocos provadas sem `PHI`;
+6. execução ARM64 experimental somente após ADR/backend/runtime/CI completos.
 
 Arrays em assinaturas, heap, ponteiros, strings, módulos e I/O continuam fora
 até receberem contratos próprios.

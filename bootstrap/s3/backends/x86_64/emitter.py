@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 
 from ...assembly import (
     AssemblyFunction,
@@ -18,6 +19,26 @@ from .runtime import render_runtime
 
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _ARGUMENT_REGISTERS = ("rdi", "rsi", "rdx", "rcx", "r8", "r9")
+
+
+@dataclass(frozen=True, slots=True)
+class FailureSite:
+    index: int
+    prefix: str
+    suffix: str | None = None
+    value_register: str | None = None
+
+    @property
+    def label(self) -> str:
+        return f".L__s3_failure_site_{self.index}"
+
+    @property
+    def prefix_label(self) -> str:
+        return f".L__s3_failure_prefix_{self.index}"
+
+    @property
+    def suffix_label(self) -> str:
+        return f".L__s3_failure_suffix_{self.index}"
 
 
 def mangle_function(name: str) -> str:
@@ -55,8 +76,13 @@ def _address(
 
 
 class X8664Emitter:
-    def __init__(self, program: AssemblyProgram):
+    def __init__(self, program: AssemblyProgram, *, max_frames: int):
         self.program = program
+        self.max_frames = max_frames
+        self.failure_sites: list[FailureSite] = []
+        self.current_function: AssemblyFunction | None = None
+        self.current_block: str | None = None
+        self.current_instruction: AssemblyInstruction | None = None
 
     def emit(self) -> str:
         lines = [
@@ -67,16 +93,34 @@ class X8664Emitter:
         for function in self.program.functions:
             lines.extend(self._emit_function(function))
             lines.append("")
+        lines.extend(self._render_failure_handlers())
+        lines.extend(self._render_failure_data())
         lines.append(render_runtime().rstrip())
         return "\n".join(lines) + "\n"
 
     def _emit_function(self, function: AssemblyFunction) -> list[str]:
         layout = layout_frame(function)
         symbol = mangle_function(function.name)
+        frame_failure = self._new_failure_site(
+            category="frame limit",
+            function=function.name,
+            block="entry",
+            opcode="ENTER",
+            instruction=None,
+            detail_prefix="depth ",
+            detail_suffix=f" exceeds limit {self.max_frames}\n",
+            value_register="qword ptr [rip + __s3_frame_count]",
+        )
         lines = [
             f".globl {symbol}",
             f".type {symbol}, @function",
             f"{symbol}:",
+            "    inc qword ptr [rip + __s3_frame_count]",
+            (
+                "    cmp qword ptr [rip + __s3_frame_count], "
+                f"{self.max_frames}"
+            ),
+            f"    jg {frame_failure}",
             "    push rbp",
             "    mov rbp, rsp",
         ]
@@ -84,11 +128,17 @@ class X8664Emitter:
             lines.append(f"    sub rsp, {layout.frame_size}")
         lines.extend(self._save_parameters(function, layout))
         lines.extend(self._initialize_metadata(function, layout))
+        lines.append(f"    jmp {mangle_block(function.name, 'entry')}")
         for block in function.blocks:
             lines.append(f"{mangle_block(function.name, block.label)}:")
             for instruction in block.instructions:
                 lines.extend(
-                    self._emit_instruction(function, layout, instruction)
+                    self._emit_instruction(
+                        function,
+                        block.label,
+                        layout,
+                        instruction,
+                    )
                 )
         lines.append(f".size {symbol}, .-{symbol}")
         return lines
@@ -149,9 +199,13 @@ class X8664Emitter:
         target: str,
     ) -> list[str]:
         slot = layout.register(register)
+        failure = self._instruction_failure(
+            "uninitialized register",
+            detail=f"register r{register} is uninitialized\n",
+        )
         return [
             f"    cmp byte ptr {_address(slot.initialized)}, 0",
-            "    je __s3_fail_uninitialized_register",
+            f"    je {failure}",
             f"    mov {target}, qword ptr {_address(slot.value)}",
         ]
 
@@ -168,7 +222,11 @@ class X8664Emitter:
         ]
 
     @staticmethod
-    def _range_check(type_name: AssemblyType, register: str) -> list[str]:
+    def _range_check(
+        type_name: AssemblyType,
+        register: str,
+        failure: str,
+    ) -> list[str]:
         minimum, maximum = (
             (-1, 1)
             if type_name is AssemblyType.TRIT
@@ -176,17 +234,21 @@ class X8664Emitter:
         )
         return [
             f"    cmp {register}, {minimum}",
-            "    jl __s3_fail_overflow",
+            f"    jl {failure}",
             f"    cmp {register}, {maximum}",
-            "    jg __s3_fail_overflow",
+            f"    jg {failure}",
         ]
 
     def _emit_instruction(
         self,
         function: AssemblyFunction,
+        block_name: str,
         layout: FrameLayout,
         instruction: AssemblyInstruction,
     ) -> list[str]:
+        self.current_function = function
+        self.current_block = block_name
+        self.current_instruction = instruction
         opcode = instruction.opcode
         registers = instruction.registers
         if opcode is AssemblyOpcode.TCONST:
@@ -203,22 +265,24 @@ class X8664Emitter:
         if opcode is AssemblyOpcode.TINV:
             type_name = function.type_of(registers[0])
             assert type_name is not None
+            overflow = self._overflow_failure(type_name, "rax")
             return [
                 *self._read_register(layout, registers[1], "rax"),
                 "    neg rax",
-                "    jo __s3_fail_overflow",
-                *self._range_check(type_name, "rax"),
+                f"    jo {overflow}",
+                *self._range_check(type_name, "rax", overflow),
                 *self._write_register(layout, registers[0], "rax"),
             ]
         if opcode is AssemblyOpcode.TADD:
             type_name = function.type_of(registers[0])
             assert type_name is not None
+            overflow = self._overflow_failure(type_name, "rax")
             return [
                 *self._read_register(layout, registers[1], "rax"),
                 *self._read_register(layout, registers[2], "r10"),
                 "    add rax, r10",
-                "    jo __s3_fail_overflow",
-                *self._range_check(type_name, "rax"),
+                f"    jo {overflow}",
+                *self._range_check(type_name, "rax", overflow),
                 *self._write_register(layout, registers[0], "rax"),
             ]
         if opcode in {AssemblyOpcode.TMIN, AssemblyOpcode.TMAX}:
@@ -245,6 +309,12 @@ class X8664Emitter:
                 mangle_block(function.name, label)
                 for label in instruction.labels
             )
+            invalid_trit = self._instruction_failure(
+                "invalid trit state",
+                detail_prefix="value ",
+                detail_suffix=" outside [-1, 1]\n",
+                value_register="rax",
+            )
             return [
                 *self._read_register(layout, registers[0], "rax"),
                 "    cmp rax, -1",
@@ -253,13 +323,14 @@ class X8664Emitter:
                 f"    je {zero}",
                 "    cmp rax, 1",
                 f"    je {positive}",
-                "    jmp __s3_fail_invalid_trit",
+                f"    jmp {invalid_trit}",
             ]
         if opcode is AssemblyOpcode.TCALL:
             return self._emit_call(function, layout, instruction)
         if opcode is AssemblyOpcode.TRET:
             return [
                 *self._read_register(layout, registers[0], "rax"),
+                "    dec qword ptr [rip + __s3_frame_count]",
                 "    leave",
                 "    ret",
             ]
@@ -339,13 +410,18 @@ class X8664Emitter:
         lines.extend(self._write_register(layout, destination, "rax"))
         return lines
 
-    @staticmethod
-    def _memory_bounds(memory: MemorySlot, index: str) -> list[str]:
+    def _memory_bounds(self, memory: MemorySlot, index: str) -> list[str]:
+        failure = self._instruction_failure(
+            "bounds",
+            detail_prefix="index ",
+            detail_suffix=f" outside [0, {memory.length})\n",
+            value_register=index,
+        )
         return [
             f"    cmp {index}, 0",
-            "    jl __s3_fail_bounds",
+            f"    jl {failure}",
             f"    cmp {index}, {memory.length}",
-            "    jge __s3_fail_bounds",
+            f"    jge {failure}",
         ]
 
     def _emit_load(
@@ -356,6 +432,12 @@ class X8664Emitter:
         destination, index_register = instruction.registers
         assert instruction.memory is not None
         memory = layout.memory(instruction.memory)
+        uninitialized = self._instruction_failure(
+            "uninitialized memory",
+            detail_prefix="index ",
+            detail_suffix=f" is uninitialized in m{memory.index}\n",
+            value_register="r10",
+        )
         load = "movsx rax, byte ptr" if memory.element_size == 1 else (
             "movsx rax, word ptr"
         )
@@ -366,7 +448,7 @@ class X8664Emitter:
                 f"    cmp byte ptr "
                 f"{_address(memory.initialized, index='r10')}, 0"
             ),
-            "    je __s3_fail_uninitialized_memory",
+            f"    je {uninitialized}",
             (
                 f"    {load} "
                 f"{_address(memory.data, index='r10', scale=memory.element_size)}"
@@ -382,18 +464,27 @@ class X8664Emitter:
         index_register, source_register = instruction.registers
         assert instruction.memory is not None
         memory = layout.memory(instruction.memory)
+        overflow = self._overflow_failure(memory.element_type, "r10")
         lines = [
             *self._read_register(layout, index_register, "rax"),
             *self._read_register(layout, source_register, "r10"),
             *self._memory_bounds(memory, "rax"),
-            *self._range_check(memory.element_type, "r10"),
+            *self._range_check(memory.element_type, "r10", overflow),
         ]
         init_address = _address(memory.initialized, index="rax")
         if not memory.mutable:
+            immutable = self._instruction_failure(
+                "immutable memory",
+                detail_prefix="index ",
+                detail_suffix=(
+                    f" already initialized in immutable m{memory.index}\n"
+                ),
+                value_register="rax",
+            )
             lines.extend(
                 (
                     f"    cmp byte ptr {init_address}, 0",
-                    "    jne __s3_fail_immutable_memory",
+                    f"    jne {immutable}",
                 )
             )
         data_address = _address(
@@ -410,3 +501,143 @@ class X8664Emitter:
             )
         )
         return lines
+
+    def _overflow_failure(
+        self,
+        type_name: AssemblyType,
+        value_register: str,
+    ) -> str:
+        minimum, maximum = (
+            (-1, 1)
+            if type_name is AssemblyType.TRIT
+            else (-364, 364)
+        )
+        return self._instruction_failure(
+            "overflow",
+            detail_prefix=f"{type_name.value} result ",
+            detail_suffix=f" outside [{minimum}, {maximum}]\n",
+            value_register=value_register,
+        )
+
+    def _instruction_failure(
+        self,
+        category: str,
+        *,
+        detail: str | None = None,
+        detail_prefix: str | None = None,
+        detail_suffix: str | None = None,
+        value_register: str | None = None,
+    ) -> str:
+        assert self.current_function is not None
+        assert self.current_block is not None
+        assert self.current_instruction is not None
+        return self._new_failure_site(
+            category=category,
+            function=self.current_function.name,
+            block=self.current_block,
+            opcode=self.current_instruction.opcode.value,
+            instruction=self.current_instruction,
+            detail=detail,
+            detail_prefix=detail_prefix,
+            detail_suffix=detail_suffix,
+            value_register=value_register,
+        )
+
+    def _new_failure_site(
+        self,
+        *,
+        category: str,
+        function: str,
+        block: str,
+        opcode: str,
+        instruction: AssemblyInstruction | None,
+        detail: str | None = None,
+        detail_prefix: str | None = None,
+        detail_suffix: str | None = None,
+        value_register: str | None = None,
+    ) -> str:
+        source = (
+            "source unknown"
+            if instruction is None or instruction.source is None
+            else (
+                f"source {instruction.source.line}:"
+                f"{instruction.source.column}"
+            )
+        )
+        assembly_line = (
+            ""
+            if instruction is None or instruction.line is None
+            else f", assembly line {instruction.line}"
+        )
+        context = (
+            f"runtime error [{category}] in function '{function}'\n"
+            f"at {source} (block {block}, {opcode}{assembly_line}): "
+        )
+        if value_register is None:
+            assert detail is not None
+            site = FailureSite(len(self.failure_sites), context + detail)
+        else:
+            assert detail_prefix is not None
+            assert detail_suffix is not None
+            site = FailureSite(
+                len(self.failure_sites),
+                context + detail_prefix,
+                detail_suffix,
+                value_register,
+            )
+        self.failure_sites.append(site)
+        return site.label
+
+    def _render_failure_handlers(self) -> list[str]:
+        lines = [".section .text"]
+        for site in self.failure_sites:
+            lines.append(f"{site.label}:")
+            if site.value_register is None:
+                lines.extend(
+                    (
+                        f"    lea rsi, [rip + {site.prefix_label}]",
+                        f"    mov edx, {len(site.prefix.encode('ascii'))}",
+                        "    jmp __s3_fail_message",
+                    )
+                )
+            else:
+                assert site.suffix is not None
+                lines.extend(
+                    (
+                        f"    mov rdi, {site.value_register}",
+                        f"    lea rsi, [rip + {site.prefix_label}]",
+                        f"    mov edx, {len(site.prefix.encode('ascii'))}",
+                        f"    lea rcx, [rip + {site.suffix_label}]",
+                        f"    mov r8d, {len(site.suffix.encode('ascii'))}",
+                        "    jmp __s3_fail_value",
+                    )
+                )
+        lines.append("")
+        return lines
+
+    def _render_failure_data(self) -> list[str]:
+        lines = [".section .rodata"]
+        for site in self.failure_sites:
+            lines.extend(
+                (
+                    f"{site.prefix_label}:",
+                    f'    .ascii "{self._escape_ascii(site.prefix)}"',
+                )
+            )
+            if site.suffix is not None:
+                lines.extend(
+                    (
+                        f"{site.suffix_label}:",
+                        f'    .ascii "{self._escape_ascii(site.suffix)}"',
+                    )
+                )
+        lines.append("")
+        return lines
+
+    @staticmethod
+    def _escape_ascii(value: str) -> str:
+        return (
+            value.replace("\\", "\\\\")
+            .replace('"', '\\"')
+            .replace("\n", "\\n")
+        )

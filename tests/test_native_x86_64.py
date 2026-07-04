@@ -6,6 +6,7 @@ import pytest
 
 from bootstrap.s3.assembly import AssemblyOpcode, parse_assembly
 from bootstrap.s3.backends.x86_64 import (
+    NativeBackendError,
     NativePlatformError,
     NativeToolchain,
     generate_native_assembly,
@@ -16,11 +17,40 @@ from bootstrap.s3.backends.x86_64.emitter import (
     mangle_function,
 )
 from bootstrap.s3.cli import main as cli_main
-from bootstrap.s3.emulator import EmulatorError
+from bootstrap.s3.emulator import Emulator, EmulatorError
 from bootstrap.s3.pipeline import compile_source
 
 
 ROOT = Path(__file__).parents[1]
+
+
+def _ordered_entry_program(order: tuple[str, ...]):
+    blocks = {
+        "before": """\
+.label before
+    TCONST r0, 99
+    TRET r0
+""",
+        "entry": """\
+.label entry
+    TCONST r0, 6
+    TRET r0
+""",
+        "after": """\
+.label after
+    TCONST r0, 77
+    TRET r0
+""",
+    }
+    body = "".join(blocks[label] for label in order)
+    return parse_assembly(
+        """\
+.function main -> tryte
+    .register r0, tryte
+"""
+        + body
+        + ".end\n"
+    )
 
 
 def _compilation(filename: str):
@@ -224,3 +254,148 @@ def test_invalid_trit_control_state_is_rejected_before_emission() -> None:
     )
     with pytest.raises(EmulatorError, match="trit value 2 is outside"):
         generate_native_assembly(program)
+
+
+@pytest.mark.parametrize(
+    "order",
+    (
+        ("entry", "before", "after"),
+        ("before", "entry", "after"),
+        ("before", "after", "entry"),
+    ),
+)
+def test_native_function_explicitly_enters_entry_block(
+    order: tuple[str, ...],
+) -> None:
+    program = _ordered_entry_program(order)
+    function = program.functions[0]
+    assert tuple(block.label for block in function.blocks) == order
+    Emulator().validate(program, entry="main")
+    assert Emulator().execute(program) == 6
+
+    native = generate_native_assembly(program)
+    entry_jump = f"    jmp {mangle_block('main', 'entry')}"
+    first_physical_label = f"{mangle_block('main', order[0])}:"
+    assert native.index(entry_jump) < native.index(first_physical_label)
+
+
+def test_each_native_function_enters_its_own_entry_block() -> None:
+    program = parse_assembly(
+        """\
+.function helper -> tryte
+    .register r0, tryte
+.label helper_dead
+    TCONST r0, 99
+    TRET r0
+.label entry
+    TCONST r0, 6
+    TRET r0
+.end
+
+.function main -> tryte
+    .register r0, tryte
+    .register r1, tryte
+.label main_dead
+    TCONST r0, 77
+    TRET r0
+.label entry
+    TCALL r1, helper
+    TRET r1
+.end
+"""
+    )
+    assert Emulator().execute(program) == 6
+    native = generate_native_assembly(program)
+    assert f"    jmp {mangle_block('helper', 'entry')}" in native
+    assert f"    jmp {mangle_block('main', 'entry')}" in native
+
+
+def test_native_backend_rejects_function_without_entry() -> None:
+    program = parse_assembly(
+        """\
+.function main -> tryte
+    .register r0, tryte
+.label other
+    TCONST r0, 6
+    TRET r0
+.end
+"""
+    )
+    with pytest.raises(EmulatorError, match="has no entry label"):
+        generate_native_assembly(program)
+
+
+def test_native_frame_limit_is_configurable_and_counted_per_function() -> None:
+    program = _compilation("simple_call.s3").assembly
+    native = generate_native_assembly(program, max_frames=4)
+    assert "inc qword ptr [rip + __s3_frame_count]" in native
+    assert "cmp qword ptr [rip + __s3_frame_count], 4" in native
+    assert "dec qword ptr [rip + __s3_frame_count]" in native
+    assert "__s3_fail_frame_limit" in native
+    assert "__s3_frame_count:" in native
+
+
+def test_native_frame_limit_rejects_invalid_configuration() -> None:
+    with pytest.raises(
+        NativeBackendError,
+        match="max_frames must be at least 1",
+    ):
+        generate_native_assembly(_compilation("first.s3").assembly, max_frames=0)
+
+
+def test_native_asm_cli_accepts_max_frames(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "limited.s"
+    assert cli_main(
+        [
+            "native-asm",
+            str(ROOT / "examples" / "first.s3"),
+            "-o",
+            str(output),
+            "--max-frames",
+            "8",
+        ]
+    ) == 0
+    assert "cmp qword ptr [rip + __s3_frame_count], 8" in output.read_text(
+        encoding="utf-8"
+    )
+
+
+def test_native_failure_sites_have_deterministic_source_context() -> None:
+    source = """\
+fn main() -> tryte {
+    return 364 + 1;
+}
+"""
+    program = compile_source(source).assembly
+    first = generate_native_assembly(program)
+    second = generate_native_assembly(program)
+    assert first == second
+    assert "runtime error [overflow] in function 'main'\\n" in first
+    assert "at source 2:16 (block entry, TADD)" in first
+    assert "tryte result " in first
+    assert " outside [-364, 364]\\n" in first
+
+
+def test_manual_assembly_failure_site_reports_unknown_source_and_line() -> None:
+    program = parse_assembly(
+        """\
+.function main -> tryte
+    .register r0, tryte
+    .register r1, tryte
+    .memory m0, tryte, 1, mutable
+.label entry
+    TCONST r0, 0
+    TLOAD r1, m0, r0
+    TRET r1
+.end
+"""
+    )
+    native = generate_native_assembly(program)
+    assert (
+        "runtime error [uninitialized memory] in function 'main'\\n"
+        in native
+    )
+    assert "at source unknown (block entry, TLOAD, assembly line 7)" in native
+    assert " is uninitialized in m0\\n" in native

@@ -1,4 +1,4 @@
-# Memória lógica S3 0.3
+# Memória lógica S3 0.5
 
 Status: normativo para o bootstrap.
 
@@ -41,6 +41,11 @@ verificados pelo emulador.
 Objeto imutável aceita somente a primeira inicialização de cada célula. Objeto
 mutável aceita escritas posteriores. Tipo e faixa do valor são sempre
 verificados.
+
+Antes do codegen, a IR usa análise conservadora por elemento. Erro
+definitivamente provado é estático. Estado talvez inicializado, índice dinâmico
+ou segunda escrita incerta conservam exatamente os checks de runtime; análise
+não os remove.
 
 ## Tempo de vida e isolamento
 

@@ -13,6 +13,7 @@ from .assembly import (
     AssemblyType,
 )
 from .ir import IRInstruction, IROpcode, IRProgram, IRType
+from .initialization import analyze_initialization
 from .verifier import verify_ir
 
 
@@ -101,6 +102,7 @@ def _generate_instruction(instruction: IRInstruction) -> AssemblyInstruction:
 
 def generate_assembly(ir_program: IRProgram) -> AssemblyProgram:
     verify_ir(ir_program)
+    analyze_initialization(ir_program)
     functions: list[AssemblyFunction] = []
     for function in ir_program.functions:
         parameter_registers = {

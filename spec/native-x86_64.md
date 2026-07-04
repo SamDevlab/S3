@@ -1,4 +1,4 @@
-# Backend nativo Linux x86-64 0.4
+# Backend nativo Linux x86-64 0.5
 
 Status: normativo para o backend experimental.
 
@@ -45,6 +45,11 @@ por elemento. Regiões seguem ordem numérica, respeitam alinhamento próprio e
 não se sobrepõem. O tamanho final é múltiplo de 16. Cada chamada cria um frame
 novo.
 
+Antes do prólogo, a função incrementa o contador privado
+`__s3_frame_count`, compara com `max_frames` (1024 por padrão) e falha de modo
+controlado em excesso. `TRET` decrementa. Depois de inicializar o frame, o
+controle salta explicitamente para `entry`.
+
 ## Instruções
 
 | S3 Assembly | Emissão x86-64 |
@@ -73,6 +78,14 @@ Linux `write` e encerra por `exit`. Erros de overflow, bounds, registro ou
 memória não inicializados, store imutável e estado ternário inválido produzem
 mensagem em stderr e status 1. Não há libc.
 
+`N` é o valor decimal assinado retornado por `main`; saídas completas incluem
+`program returned: 6\n`, `program returned: -1\n` e
+`program returned: 0\n`.
+
+Falhas usam IDs de site determinísticos e informam categoria, função, bloco,
+opcode, origem S3 ou `source unknown`, linha assembly quando disponível e
+valor dinâmico relevante. Veja `native-diagnostics.md`.
+
 ## Toolchain e determinismo
 
 O build exige host Linux x86-64 e um driver `cc`, `gcc` ou `clang` capaz de
@@ -84,10 +97,13 @@ A mesma entrada produz texto idêntico: não há timestamps, paths temporários,
 aleatoriedade ou iteração instável. Arquivos temporários são removidos; o
 assembly pode ser preservado explicitamente.
 
+O link usa `--build-id=none`. Na mesma versão de driver, assembler e linker,
+com as mesmas opções, builds em diretórios diferentes devem ter bytes e
+SHA-256 idênticos. Toolchains diferentes exigem equivalência semântica.
+
 ## Limites
 
 Somente Linux x86-64 ELF é suportado. Não há Windows, macOS, ARM64, linker ou
 assembler próprio, geração direta de ELF, ABI C pública, heap, globals,
 ponteiros, I/O na linguagem, depurador, JIT, otimização avançada ou
 autohospedagem.
-
