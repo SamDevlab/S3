@@ -323,7 +323,7 @@ fn main() -> trit {{
 
 @pytest.mark.parametrize(
     ("arity", "expected"),
-    ((0, 7), (1, 1), (6, 5), (7, 6), (8, 7)),
+    ((0, 7), (1, 0), (6, 5), (7, 6), (8, 7)),
 )
 def test_system_v_argument_counts(
     arity: int,

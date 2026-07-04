@@ -756,7 +756,7 @@ class Emulator:
                 cls._context(
                     frame,
                     instruction,
-                    f"memory m{memory.index} index {index} is outside "
+                    f"[bounds] memory m{memory.index} index {index} is outside "
                     f"[0, {memory.length})",
                 )
             )
