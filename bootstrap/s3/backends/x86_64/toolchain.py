@@ -75,13 +75,14 @@ class NativeToolchain:
             "-nostdlib",
             "-no-pie",
             "-Wl,--build-id=none",
-            str(source),
+            source.name,
             "-o",
             str(output),
         ]
         try:
             completed = subprocess.run(
                 command,
+                cwd=str(source.parent),
                 check=False,
                 capture_output=True,
                 text=True,
