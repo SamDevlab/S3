@@ -5,14 +5,15 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from . import ast
-from .diagnostics import ParseError
-from .lexer import Token, TokenKind, tokenize
+from .diagnostics import DiagnosticCode, ParseError
+from .lexer import SyntaxMode, Token, TokenKind, tokenize
 
 
 class Parser:
-    def __init__(self, tokens: tuple[Token, ...]):
+    def __init__(self, tokens: tuple[Token, ...], mode: SyntaxMode = SyntaxMode.V0_5):
         self.tokens = tokens
         self.current = 0
+        self.mode = mode
 
     def parse_program(self) -> ast.Program:
         functions: list[ast.FunctionDeclaration] = []
@@ -31,7 +32,17 @@ class Parser:
         self._consume(TokenKind.RIGHT_PAREN, "expected ')' after parameters")
         self._consume(TokenKind.ARROW, "expected '->' before return type")
         return_type = self._parse_type()
-        body = self._parse_block()
+
+        if self.mode is SyntaxMode.V0_6:
+            if self._check(TokenKind.LEFT_BRACE):
+                raise ParseError("obsolete brace syntax", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_OBSOLETE_BRACE)
+            self._consume(TokenKind.COLON, "expected ':' after return type")
+            self._consume(TokenKind.NEWLINE, "expected newline after ':'")
+            self._consume(TokenKind.INDENT, "expected indented block")
+            body = self._parse_block_v0_6()
+        else:
+            body = self._parse_block()
+
         signature = ast.FunctionSignature(
             name.text,
             tuple(parameters),
@@ -89,7 +100,34 @@ class Parser:
         self._consume(TokenKind.RIGHT_BRACE, "expected '}' after block")
         return ast.Block(tuple(statements), start.location)
 
+    def _parse_block_v0_6(self) -> ast.Block:
+        start = self._previous()
+        statements: list[ast.Statement] = []
+        while not self._check(TokenKind.DEDENT) and not self._check(TokenKind.EOF):
+            statements.append(self._parse_statement())
+        if not statements:
+            raise ParseError("expected at least one statement in block", self._peek().location)
+        self._consume(TokenKind.DEDENT, "expected dedent after block")
+        return ast.Block(tuple(statements), start.location)
+
     def _parse_statement(self) -> ast.Statement:
+        if self.mode is SyntaxMode.V0_6:
+            if self._check(TokenKind.LEFT_BRACE) or self._check(TokenKind.RIGHT_BRACE):
+                raise ParseError("obsolete brace syntax", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_OBSOLETE_BRACE)
+            if self._check(TokenKind.SEMICOLON):
+                raise ParseError("obsolete ';' syntax", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_OBSOLETE_SEMICOLON)
+
+            if self._match(TokenKind.RETURN):
+                return self._parse_return_v0_6(self._previous())
+            if self._check(TokenKind.MUT):
+                return self._parse_variable_declaration_v0_6()
+            if self._check(TokenKind.IDENTIFIER):
+                next_token = self.tokens[self.current + 1] if self.current + 1 < len(self.tokens) else None
+                if next_token and next_token.kind is TokenKind.COLON:
+                    return self._parse_variable_declaration_v0_6()
+                return self._parse_assignment_v0_6()
+            raise ParseError("expected variable declaration, 'return', or assignment", self._peek().location)
+
         if (
             self._check(TokenKind.MUT)
             or self._check(TokenKind.TRIT)
@@ -106,6 +144,42 @@ class Parser:
             "expected variable declaration, 'return', or 'switch'",
             self._peek().location,
         )
+
+    def _parse_variable_declaration_v0_6(self) -> ast.VariableDeclaration:
+        start = self._peek()
+        mutable = self._match(TokenKind.MUT)
+        name = self._consume(TokenKind.IDENTIFIER, "expected variable name")
+        self._consume(TokenKind.COLON, "expected ':' after variable name")
+        type_name = self._parse_type()
+        self._consume(TokenKind.EQUAL, "expected '=' after variable type")
+        initializer = self._parse_initializer()
+        if self._check(TokenKind.SEMICOLON):
+            raise ParseError("obsolete ';' syntax", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_OBSOLETE_SEMICOLON)
+        self._consume(TokenKind.NEWLINE, "expected newline after declaration")
+        return ast.VariableDeclaration(
+            type_name,
+            name.text,
+            initializer,
+            start.location,
+            mutable,
+        )
+
+    def _parse_assignment_v0_6(self) -> ast.AssignmentStatement:
+        name = self._consume(TokenKind.IDENTIFIER, "expected assignment target")
+        target: ast.AssignmentTarget = ast.VariableTarget(name.text, name.location)
+        self._consume(TokenKind.EQUAL, "expected '=' after assignment target")
+        value = self._parse_initializer()
+        if self._check(TokenKind.SEMICOLON):
+            raise ParseError("obsolete ';' syntax", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_OBSOLETE_SEMICOLON)
+        self._consume(TokenKind.NEWLINE, "expected newline after assignment")
+        return ast.AssignmentStatement(target, value, name.location)
+
+    def _parse_return_v0_6(self, start: Token) -> ast.ReturnStatement:
+        expression = self._parse_expression()
+        if self._check(TokenKind.SEMICOLON):
+            raise ParseError("obsolete ';' syntax", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_OBSOLETE_SEMICOLON)
+        self._consume(TokenKind.NEWLINE, "expected newline after return value")
+        return ast.ReturnStatement(expression, start.location)
 
     def _parse_variable_declaration(self) -> ast.VariableDeclaration:
         start = self._peek()
@@ -322,9 +396,9 @@ class Parser:
         return self.tokens[self.current - 1]
 
 
-def parse_tokens(tokens: tuple[Token, ...]) -> ast.Program:
-    return Parser(tokens).parse_program()
+def parse_tokens(tokens: tuple[Token, ...], *, mode: SyntaxMode = SyntaxMode.V0_5) -> ast.Program:
+    return Parser(tokens, mode).parse_program()
 
 
-def parse(source: str) -> ast.Program:
-    return parse_tokens(tokenize(source))
+def parse(source: str, *, mode: SyntaxMode = SyntaxMode.V0_5) -> ast.Program:
+    return parse_tokens(tokenize(source, mode=mode), mode=mode)

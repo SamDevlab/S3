@@ -10,10 +10,10 @@ This document outlines the proposed indentation-based source syntax for S3, desi
 | **Function** | `fn f() { ... }` | `fn f():\n    ...` | None | Lexer/Parser blocks |
 | **Parameters** | `(a: trit, b: tryte)` | `(a: trit, b: tryte)` | None | None |
 | **Return** | `-> tryte { ... }` | `-> tryte:\n    ...` | None | Parser blocks |
-| **Immutable Binding** | `v: tryte = 5;` | `v: tryte = 5` | None | Parser semicolon |
-| **Mutable Binding** | `mut v: tryte = 5;` | `mut v: tryte = 5` | None | Parser semicolon |
+| **Immutable Binding** | `tryte v = 5;` | `v: tryte = 5` | None | Parser semicolon |
+| **Mutable Binding** | `mut tryte v = 5;` | `mut v: tryte = 5` | None | Parser semicolon |
 | **Assignment** | `v = 6;` | `v = 6` | None | Parser semicolon |
-| **Array** | `arr: tryte[3] = [1,2,3];` | `arr: tryte[3] = [1, 2, 3]` | None | Parser semicolon |
+| **Array** | `tryte[3] arr = [1, 2, 3];` | `arr: tryte[3] = [1, 2, 3]` | None | Parser semicolon |
 | **Indexing** | `arr[0]` | `arr[0]` | None | None |
 | **Call** | `f(a);` | `f(a)` | None | Parser semicolon |
 | **Recursion** | `f(a);` | `f(a)` | None | Parser semicolon |

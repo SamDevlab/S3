@@ -70,9 +70,14 @@ Primeira entrega implementada:
 Em andamento:
 
 - simplificação da sintaxe de fonte (especificada arquiteturalmente sob ADR-0013):
-  - Entrega A implementada localmente (infraestrutura lexical 0.6 disponível apenas por modo interno explícito).
-  - parser e CLI públicos ainda usam a sintaxe 0.5.
-  - Entrega B ainda não começou. Marco 0.6 não está concluído.
+  - Entrega A concluída e validada;
+  - Entrega B implementada localmente;
+  - parser básico V0_6 disponível apenas por modo interno explícito;
+  - funções indentadas, return, declarações tipadas e atribuição escalar suportadas;
+  - V0_5 continua sendo o padrão;
+  - CLI pública continua usando V0_5;
+  - match, arrays V0_6, atribuição indexada, migração e remoção da gramática antiga continuam pendentes;
+  - Marco 0.6 não está concluído.
 
 Permanecem pendentes:
 
