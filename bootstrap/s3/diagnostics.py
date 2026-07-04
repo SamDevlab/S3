@@ -57,6 +57,9 @@ class DiagnosticCode(str, Enum):
     CLI_USAGE = "S3E_CLI_USAGE"
     IO = "S3E_IO"
     LEX_INVALID_CHARACTER = "S3E_LEX_INVALID_CHARACTER"
+    LEX_TAB_INDENTATION = "S3E_LEX_TAB_INDENTATION"
+    LEX_MIXED_INDENTATION = "S3E_LEX_MIXED_INDENTATION"
+    LEX_INVALID_DEDENT = "S3E_LEX_INVALID_DEDENT"
     PARSE_SYNTAX = "S3E_PARSE_SYNTAX"
     SEMANTIC_INVALID_PROGRAM = "S3E_SEMANTIC_INVALID_PROGRAM"
     LOWERING_INVALID_PROGRAM = "S3E_LOWERING_INVALID_PROGRAM"
@@ -375,6 +378,10 @@ class LexError(S3Error):
     diagnostic_category = DiagnosticCategory.SYNTAX
     diagnostic_code = DiagnosticCode.LEX_INVALID_CHARACTER
     diagnostic_phase = DiagnosticPhase.LEXING
+
+class IndentationError(LexError):
+    category = "indentation error"
+    diagnostic_code = DiagnosticCode.LEX_INVALID_DEDENT
 
 
 class ParseError(S3Error):
