@@ -1,76 +1,88 @@
-# Arquitetura do S3 bootstrap 0.2
+# Arquitetura do S3 bootstrap 0.3
 
 ## Pipeline
 
 ```text
-fonte
-  ↓ lexer posicional
-AST explícita (assinaturas, chamadas, switch)
-  ↓ semântica em duas fases + retorno por caminhos
-IR tipada em blocos
-  ↓ verificador obrigatório
-S3 Assembly tipada e rotulada
-  ↓ parser/validação
-emulador com pilha explícita de frames
-  ↓
-valor de main
+fonte → lexer → AST → semântica
+      → lowering SSA + objetos de memória
+      → IR com CFG/dominância verificada
+      → assembly tipada
+      → emulador com frames e memória local
 ```
 
-AST, IR e assembly possuem modelos independentes. A origem atravessa as
-fronteiras como `SourceLocation`, não como referência privada à AST.
+AST, semântica, IR e assembly permanecem modelos separados. Origem atravessa
+camadas por `SourceLocation`.
 
 ## Frontend
 
-O parser constrói `FunctionSignature`, `Parameter`, `CallArgument`,
-`CallExpression`, `SwitchStatement` e `TernaryCase`. A semântica primeiro
-coleta assinaturas e depois analisa corpos, viabilizando forward calls e
-recursão direta.
+A AST distingue tipo escalar/array, literal de array, indexação, mutabilidade e
+alvos de atribuição. A tabela semântica associa a cada binding tipo,
+mutabilidade, origem e condição de parâmetro.
 
-Escopos formam uma pilha. O escopo da função contém parâmetros e locais; cada
-caso cria um filho descartado ao final. A análise de bloco retorna um indicador
-de terminação definitiva, usado para validar todos os caminhos e código
-inalcançável.
+Arrays não entram nas assinaturas nem no sistema de valores escalares. Bounds
+de expressões constantes simples (`literal`, negação, soma/subtração) são
+checados estaticamente; demais índices chegam ao emulador.
 
-## IR e lowering
+## Lowering híbrido
 
-Cada função começa em `entry`. Um switch produz um `BRANCH3` e três blocos. Se
-algum caso continuar, os casos abertos emitem `JUMP` para um bloco de
-continuação; se todos retornarem, não há continuação. Isso elimina a necessidade
-de `PHI` no subconjunto imutável.
+- escalar imutável: registrador SSA;
+- escalar `mut`: objeto de memória de comprimento 1;
+- qualquer array: objeto de memória do comprimento declarado;
+- leitura: `LOAD`;
+- inicialização/atribuição: `STORE`;
+- índices e valores: registradores SSA.
 
-O verificador é separado e executado pelo codegen. A redução de subtração
-continua sendo uma invariante estrutural.
+Em switch, ramos armazenam no mesmo objeto preexistente e o join carrega o
+valor. Não há `PHI`.
 
-## Assembly e emulador
+## CFG e dominância
 
-Parâmetros e registradores são declarados no texto; labels preservam os blocos.
-O emulador valida o programa inteiro e executa por uma lista Python de objetos
-`Frame`, não por recursão Python.
+O verificador valida todos os blocos, constrói arestas dos terminadores, calcula
+alcançabilidade e dominadores por ponto fixo. Uma definição deve preceder o uso
+no bloco ou dominar o bloco consumidor. Isso rejeita valores originados em
+apenas um ramo e usados no join.
 
-Cada frame contém função, registradores, label atual, índice de instrução,
-destino do retorno, bloco/índice de retorno e instrução chamadora. `TCALL`
-avança o PC do chamador, copia argumentos a um novo frame e o empilha. `TRET`
-remove o frame e escreve no destino salvo.
+Ciclos são permitidos. A análise não prova terminação; o emulador aplica limite
+global configurável de instruções.
+
+## Assembly e memória por frame
+
+`.memory` torna objetos autocontidos no texto. `TLOAD`/`TSTORE` não manipulam
+endereços, apenas identidade de objeto e índice.
+
+Ao criar um `Frame`, o emulador:
+
+1. copia parâmetros para registradores;
+2. aloca lista independente de células não inicializadas por objeto;
+3. verifica custo contra `max_memory_trits`;
+4. executa bounds, tipo e inicialização em cada acesso;
+5. descarta memória ao retornar.
+
+Defaults:
+
+```text
+max_frames        = 1024
+max_instructions  = 100000
+max_memory_trits  = 2187
+```
 
 ## Invariantes
 
-1. `-1` nunca é token único.
-2. Tipos não sofrem conversão implícita.
-3. O seletor de switch e `TBR3` é `trit`.
-4. Switch possui exatamente três casos/destinos sem fallthrough.
-5. Todo bloco IR/assembly possui exatamente um terminador final.
-6. Codegen só consome IR verificada.
-7. Registradores são locais ao frame.
-8. Toda escrita valida faixa; overflow é erro.
-9. Não há `SUBTRACT`/`TSUB`.
-10. Python permanece fora do futuro núcleo autohospedado.
+1. Sem conversões implícitas ou overflow silencioso.
+2. `-1` continua dois tokens.
+3. Imutáveis escalares permanecem SSA.
+4. Memória é local, tipada, sem aliasing e sem endereço exposto.
+5. Nenhuma leitura não inicializada retorna valor.
+6. Bounds nunca são silenciosos.
+7. Codegen consome somente IR verificada.
+8. Não existem `PHI`, `SUBTRACT`, `TSUB`, ponteiros ou casts.
+9. Python continua apenas bootstrap.
 
-## Segurança e riscos conhecidos
+## Riscos
 
-Os limites padrão evitam recursão/execução infinita, mas são cotas globais
-simples, não um modelo de recursos. O verificador confirma existência e
-definição única dos valores, mas ainda não calcula dominância SSA completa;
-isso é suficiente sem `PHI` e com o lowering atual, porém deverá evoluir quando
-houver joins com valores. A ABI é lógica e será substituída ou traduzida por
-uma ABI nativa futura.
+Todos os objetos lexicais da função são alocados ao entrar no frame, inclusive
+os de ramos não executados; é simples e conservador, mas pode superestimar
+memória. Inicialização de memória imutável é verificada dinamicamente na
+assembly. O modelo não define layout físico e ainda não possui heap, aliasing
+ou promoção memória-para-SSA.
 

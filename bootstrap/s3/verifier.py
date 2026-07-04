@@ -1,4 +1,4 @@
-"""Standalone structural and type verifier for block-based S3 IR."""
+"""Structural, type, memory, CFG, and dominance verifier for S3 IR."""
 
 from __future__ import annotations
 
@@ -6,12 +6,13 @@ from .diagnostics import S3Error, SourceLocation
 from .ir import (
     IRFunction,
     IRInstruction,
+    IRMemoryObject,
     IRModule,
     IROpcode,
     IRType,
     TERMINATOR_OPCODES,
 )
-from .ternary import TernaryRangeError, TernaryWidth, validate
+from .ternary import TRYTE_MAX, TernaryRangeError, TernaryWidth, validate
 
 
 class IRVerificationError(S3Error):
@@ -22,6 +23,8 @@ WIDTH_MAP = {
     IRType.TRIT: TernaryWidth.TRIT,
     IRType.TRYTE: TernaryWidth.TRYTE,
 }
+
+Definition = tuple[str, int] | None  # None denotes a parameter.
 
 
 class IRVerifier:
@@ -42,21 +45,59 @@ class IRVerifier:
         function: IRFunction,
         functions: dict[str, IRFunction],
     ) -> None:
-        block_names: set[str] = set()
+        blocks = self._collect_blocks(function)
+        register_types = self._collect_registers(function)
+        memory_objects = self._collect_memory(function)
+        definitions = self._collect_definitions(function, register_types)
+
         for block in function.blocks:
-            if block.name in block_names:
+            for instruction in block.instructions:
+                self._verify_instruction(
+                    instruction,
+                    function,
+                    functions,
+                    set(blocks),
+                    register_types,
+                    memory_objects,
+                )
+
+        undefined = sorted(set(register_types) - definitions.keys())
+        if undefined:
+            rendered = ", ".join(f"r{register}" for register in undefined)
+            self._error(
+                f"function '{function.name}' has values without definitions: "
+                f"{rendered}",
+                function.location,
+            )
+
+        reachable, dominators = self._compute_dominators(function, blocks)
+        self._verify_uses_dominate(
+            function,
+            definitions,
+            reachable,
+            dominators,
+        )
+
+    def _collect_blocks(self, function: IRFunction) -> dict[str, object]:
+        blocks: dict[str, object] = {}
+        for block in function.blocks:
+            if block.name in blocks:
                 self._error(
                     f"function '{function.name}' has duplicate block "
                     f"'{block.name}'",
                     block.location,
                 )
-            block_names.add(block.name)
-        if "entry" not in block_names:
+            blocks[block.name] = block
+        if "entry" not in blocks:
             self._error(
                 f"function '{function.name}' has no entry block",
                 function.location,
             )
+        for block in function.blocks:
+            self._verify_block_shape(function, block.name, block.instructions)
+        return blocks
 
+    def _collect_registers(self, function: IRFunction) -> dict[int, IRType]:
         register_types: dict[int, IRType] = {}
         for register in function.registers:
             if register.index in register_types:
@@ -64,9 +105,51 @@ class IRVerifier:
                     f"duplicate value r{register.index}",
                     register.location,
                 )
+            if not isinstance(register.type, IRType):
+                self._error(
+                    f"invalid type for r{register.index}",
+                    register.location,
+                )
             register_types[register.index] = register.type
+        return register_types
 
-        definitions: set[int] = set()
+    def _collect_memory(
+        self,
+        function: IRFunction,
+    ) -> dict[int, IRMemoryObject]:
+        result: dict[int, IRMemoryObject] = {}
+        for memory in function.memory_objects:
+            if memory.index in result:
+                self._error(
+                    f"duplicate memory object m{memory.index}",
+                    memory.location,
+                )
+            if not isinstance(memory.element_type, IRType):
+                self._error(
+                    f"memory object m{memory.index} has invalid element type",
+                    memory.location,
+                )
+            if memory.length <= 0:
+                self._error(
+                    f"memory object m{memory.index} has invalid length "
+                    f"{memory.length}",
+                    memory.location,
+                )
+            if memory.length > TRYTE_MAX + 1:
+                self._error(
+                    f"memory object m{memory.index} length {memory.length} "
+                    f"exceeds indexable maximum {TRYTE_MAX + 1}",
+                    memory.location,
+                )
+            result[memory.index] = memory
+        return result
+
+    def _collect_definitions(
+        self,
+        function: IRFunction,
+        register_types: dict[int, IRType],
+    ) -> dict[int, Definition]:
+        definitions: dict[int, Definition] = {}
         parameter_names: set[str] = set()
         for parameter in function.parameters:
             if parameter.name in parameter_names:
@@ -86,43 +169,25 @@ class IRVerifier:
                     f"redefinition of r{parameter.register}",
                     parameter.location,
                 )
-            definitions.add(parameter.register)
+            definitions[parameter.register] = None
 
         for block in function.blocks:
-            self._verify_block_shape(function, block.name, block.instructions)
-            for instruction in block.instructions:
-                if instruction.result is not None:
-                    if instruction.result not in register_types:
-                        self._error(
-                            f"instruction defines nonexistent value "
-                            f"r{instruction.result}",
-                            instruction.location,
-                        )
-                    if instruction.result in definitions:
-                        self._error(
-                            f"redefinition of r{instruction.result}",
-                            instruction.location,
-                        )
-                    definitions.add(instruction.result)
-
-        for block in function.blocks:
-            for instruction in block.instructions:
-                self._verify_instruction(
-                    instruction,
-                    function,
-                    functions,
-                    block_names,
-                    register_types,
-                )
-
-        undefined = sorted(set(register_types) - definitions)
-        if undefined:
-            rendered = ", ".join(f"r{register}" for register in undefined)
-            self._error(
-                f"function '{function.name}' has values without definitions: "
-                f"{rendered}",
-                function.location,
-            )
+            for position, instruction in enumerate(block.instructions):
+                if instruction.result is None:
+                    continue
+                if instruction.result not in register_types:
+                    self._error(
+                        f"instruction defines nonexistent value "
+                        f"r{instruction.result}",
+                        instruction.location,
+                    )
+                if instruction.result in definitions:
+                    self._error(
+                        f"redefinition of r{instruction.result}",
+                        instruction.location,
+                    )
+                definitions[instruction.result] = (block.name, position)
+        return definitions
 
     def _verify_block_shape(
         self,
@@ -161,6 +226,7 @@ class IRVerifier:
         functions: dict[str, IRFunction],
         block_names: set[str],
         register_types: dict[int, IRType],
+        memory_objects: dict[int, IRMemoryObject],
     ) -> None:
         if not isinstance(instruction.opcode, IROpcode):
             name = str(instruction.opcode).lower()
@@ -169,8 +235,20 @@ class IRVerifier:
                     "subtraction opcode is forbidden after lowering",
                     instruction.location,
                 )
+            if any(part in name for part in ("ptr", "address", "cast")):
+                self._error(
+                    "pointer/address opcodes are not supported",
+                    instruction.location,
+                )
             self._error(f"unknown IR opcode '{instruction.opcode}'", instruction.location)
         opcode = instruction.opcode
+
+        def require_no_result() -> None:
+            if instruction.result is not None:
+                self._error(
+                    f"{opcode.value} cannot define a result",
+                    instruction.location,
+                )
 
         def require_result() -> tuple[int, IRType]:
             if instruction.result is None:
@@ -232,10 +310,7 @@ class IRVerifier:
             _, result_type = require_result()
             operand_types = require_operands(2)
             if result_type is not IRType.TRIT:
-                self._error(
-                    "compare result must have type trit",
-                    instruction.location,
-                )
+                self._error("compare result must have type trit", instruction.location)
             self._require_same_types(
                 operand_types,
                 "compare operands",
@@ -275,9 +350,41 @@ class IRVerifier:
                 )
             return
 
+        if opcode is IROpcode.LOAD:
+            _, result_type = require_result()
+            operand_types = require_operands(1)
+            memory = self._require_memory(instruction, memory_objects)
+            if operand_types[0] is not IRType.TRYTE:
+                self._error("load index must have type tryte", instruction.location)
+            if result_type is not memory.element_type:
+                self._error(
+                    f"load result has type {result_type.value}; memory "
+                    f"m{memory.index} contains {memory.element_type.value}",
+                    instruction.location,
+                )
+            return
+
+        if opcode is IROpcode.STORE:
+            require_no_result()
+            operand_types = require_operands(2)
+            memory = self._require_memory(instruction, memory_objects)
+            if operand_types[0] is not IRType.TRYTE:
+                self._error("store index must have type tryte", instruction.location)
+            if operand_types[1] is not memory.element_type:
+                self._error(
+                    f"store value has type {operand_types[1].value}; memory "
+                    f"m{memory.index} contains {memory.element_type.value}",
+                    instruction.location,
+                )
+            if not memory.mutable and not instruction.initialization:
+                self._error(
+                    f"store to immutable memory m{memory.index} is not initialization",
+                    instruction.location,
+                )
+            return
+
         if opcode is IROpcode.RETURN:
-            if instruction.result is not None:
-                self._error("return cannot define a result", instruction.location)
+            require_no_result()
             operand_types = require_operands(1)
             if operand_types[0] is not function.return_type:
                 self._error(
@@ -288,11 +395,13 @@ class IRVerifier:
             return
 
         if opcode is IROpcode.JUMP:
+            require_no_result()
             require_operands(0)
             self._verify_targets(instruction, 1, block_names)
             return
 
         if opcode is IROpcode.BRANCH3:
+            require_no_result()
             operand_types = require_operands(1)
             if operand_types[0] is not IRType.TRIT:
                 self._error("branch3 condition must be trit", instruction.location)
@@ -305,6 +414,24 @@ class IRVerifier:
             return
 
         self._error(f"unhandled IR opcode '{opcode.value}'", instruction.location)
+
+    def _require_memory(
+        self,
+        instruction: IRInstruction,
+        memory_objects: dict[int, IRMemoryObject],
+    ) -> IRMemoryObject:
+        if instruction.memory is None:
+            self._error(
+                f"{instruction.opcode.value} requires a memory object",
+                instruction.location,
+            )
+        try:
+            return memory_objects[instruction.memory]  # type: ignore[index]
+        except KeyError:
+            self._error(
+                f"reference to nonexistent memory object m{instruction.memory}",
+                instruction.location,
+            )
 
     def _verify_targets(
         self,
@@ -325,6 +452,95 @@ class IRVerifier:
                     instruction.location,
                 )
 
+    def _compute_dominators(
+        self,
+        function: IRFunction,
+        blocks: dict[str, object],
+    ) -> tuple[set[str], dict[str, set[str]]]:
+        successors: dict[str, set[str]] = {}
+        predecessors: dict[str, set[str]] = {name: set() for name in blocks}
+        for block in function.blocks:
+            terminator = block.instructions[-1]
+            targets = (
+                set(terminator.targets)
+                if terminator.opcode in {IROpcode.JUMP, IROpcode.BRANCH3}
+                else set()
+            )
+            successors[block.name] = targets
+            for target in targets:
+                predecessors[target].add(block.name)
+
+        reachable: set[str] = set()
+        pending = ["entry"]
+        while pending:
+            name = pending.pop()
+            if name in reachable:
+                continue
+            reachable.add(name)
+            pending.extend(successors[name] - reachable)
+
+        dominators: dict[str, set[str]] = {
+            name: ({"entry"} if name == "entry" else set(reachable))
+            for name in reachable
+        }
+        changed = True
+        while changed:
+            changed = False
+            for name in reachable - {"entry"}:
+                incoming = predecessors[name] & reachable
+                shared = (
+                    set.intersection(*(dominators[pred] for pred in incoming))
+                    if incoming
+                    else set()
+                )
+                updated = {name} | shared
+                if updated != dominators[name]:
+                    dominators[name] = updated
+                    changed = True
+        return reachable, dominators
+
+    def _verify_uses_dominate(
+        self,
+        function: IRFunction,
+        definitions: dict[int, Definition],
+        reachable: set[str],
+        dominators: dict[str, set[str]],
+    ) -> None:
+        for block in function.blocks:
+            for position, instruction in enumerate(block.instructions):
+                for operand in instruction.operands:
+                    definition = definitions.get(operand)
+                    if definition is None:
+                        if operand in definitions:  # Parameter.
+                            continue
+                        self._error(
+                            f"use of nonexistent value r{operand}",
+                            instruction.location,
+                        )
+                    assert definition is not None
+                    definition_block, definition_position = definition
+                    if definition_block == block.name:
+                        if definition_position >= position:
+                            self._error(
+                                f"definition of r{operand} does not precede its use "
+                                f"in block '{block.name}'",
+                                instruction.location,
+                            )
+                        continue
+                    if block.name not in reachable:
+                        self._error(
+                            f"definition of r{operand} does not dominate "
+                            f"unreachable block '{block.name}'",
+                            instruction.location,
+                        )
+                    if definition_block not in dominators[block.name]:
+                        self._error(
+                            f"definition of r{operand} in block "
+                            f"'{definition_block}' does not dominate block "
+                            f"'{block.name}'",
+                            instruction.location,
+                        )
+
     def _require_same_types(
         self,
         types: tuple[IRType, ...],
@@ -342,4 +558,3 @@ class IRVerifier:
 
 def verify_ir(module: IRModule) -> None:
     IRVerifier().verify(module)
-

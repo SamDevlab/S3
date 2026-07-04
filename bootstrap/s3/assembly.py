@@ -34,6 +34,8 @@ class AssemblyOpcode(Enum):
     TMAX = "TMAX"
     TCMP = "TCMP"
     TCALL = "TCALL"
+    TLOAD = "TLOAD"
+    TSTORE = "TSTORE"
     TRET = "TRET"
     TJMP = "TJMP"
     TBR3 = "TBR3"
@@ -56,12 +58,32 @@ class AssemblyParameter:
 
 
 @dataclass(frozen=True, slots=True)
+class AssemblyMemoryObject:
+    index: int
+    element_type: AssemblyType
+    length: int
+    mutable: bool
+
+    @property
+    def name(self) -> str:
+        return f"m{self.index}"
+
+    def render(self) -> str:
+        mutability = "mutable" if self.mutable else "immutable"
+        return (
+            f"    .memory {self.name}, {self.element_type.value}, "
+            f"{self.length}, {mutability}"
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class AssemblyInstruction:
     opcode: AssemblyOpcode
     registers: tuple[int, ...] = ()
     immediate: int | None = None
     callee: str | None = None
     labels: tuple[str, ...] = ()
+    memory: int | None = None
     source: SourceLocation | None = None
     line: int | None = field(default=None, compare=False)
 
@@ -83,6 +105,18 @@ class AssemblyInstruction:
         elif self.opcode is AssemblyOpcode.TBR3:
             operands = ", ".join(
                 (f"r{self.registers[0]}", *self.labels)
+            )
+        elif self.opcode is AssemblyOpcode.TLOAD:
+            assert self.memory is not None
+            operands = (
+                f"r{self.registers[0]}, m{self.memory}, "
+                f"r{self.registers[1]}"
+            )
+        elif self.opcode is AssemblyOpcode.TSTORE:
+            assert self.memory is not None
+            operands = (
+                f"m{self.memory}, r{self.registers[0]}, "
+                f"r{self.registers[1]}"
             )
         else:
             operands = ", ".join(f"r{register}" for register in self.registers)
@@ -113,6 +147,7 @@ class AssemblyFunction:
     parameters: tuple[AssemblyParameter, ...]
     register_types: tuple[tuple[int, AssemblyType], ...]
     blocks: tuple[AssemblyBlock, ...]
+    memory_objects: tuple[AssemblyMemoryObject, ...] = ()
 
     @property
     def instructions(self) -> tuple[AssemblyInstruction, ...]:
@@ -143,6 +178,7 @@ class AssemblyFunction:
             f"    .register r{register}, {type_name.value}"
             for register, type_name in self.register_types
         )
+        lines.extend(memory.render() for memory in self.memory_objects)
         lines.extend(block.render() for block in self.blocks)
         lines.append(".end")
         return "\n".join(lines)
@@ -163,9 +199,14 @@ _FUNCTION_PATTERN = re.compile(
 _DECLARATION_PATTERN = re.compile(
     r"^\.(param|register)\s+(r[0-9]+)\s*,\s*(trit|tryte)$"
 )
+_MEMORY_DECLARATION_PATTERN = re.compile(
+    r"^\.memory\s+(m[0-9]+)\s*,\s*(trit|tryte)\s*,\s*"
+    r"(-?[0-9]+)(?:\s*,\s*(mutable|immutable))?$"
+)
 _LABEL_PATTERN = re.compile(rf"^\.label\s+({_IDENTIFIER})$")
 _INSTRUCTION_PATTERN = re.compile(r"^([A-Za-z0-9_]+)(?:\s+(.*))?$")
 _REGISTER_PATTERN = re.compile(r"^r([0-9]+)$")
+_MEMORY_PATTERN = re.compile(r"^m([0-9]+)$")
 _IDENTIFIER_PATTERN = re.compile(rf"^{_IDENTIFIER}$")
 _SOURCE_PATTERN = re.compile(r"^source=([0-9]+):([0-9]+):([0-9]+)$")
 
@@ -174,6 +215,13 @@ def _parse_register(text: str, line: int) -> int:
     match = _REGISTER_PATTERN.fullmatch(text.strip())
     if match is None:
         raise AssemblyParseError(f"invalid register '{text.strip()}'", line)
+    return int(match.group(1))
+
+
+def _parse_memory(text: str, line: int) -> int:
+    match = _MEMORY_PATTERN.fullmatch(text.strip())
+    if match is None:
+        raise AssemblyParseError(f"invalid memory object '{text.strip()}'", line)
     return int(match.group(1))
 
 
@@ -231,6 +279,8 @@ def _parse_instruction(
         AssemblyOpcode.TMIN: 3,
         AssemblyOpcode.TMAX: 3,
         AssemblyOpcode.TCMP: 3,
+        AssemblyOpcode.TLOAD: 3,
+        AssemblyOpcode.TSTORE: 3,
         AssemblyOpcode.TRET: 1,
         AssemblyOpcode.TJMP: 1,
         AssemblyOpcode.TBR3: 4,
@@ -278,6 +328,28 @@ def _parse_instruction(
             source=source,
             line=line,
         )
+    if opcode is AssemblyOpcode.TLOAD:
+        return AssemblyInstruction(
+            opcode,
+            (
+                _parse_register(operands[0], line),
+                _parse_register(operands[2], line),
+            ),
+            memory=_parse_memory(operands[1], line),
+            source=source,
+            line=line,
+        )
+    if opcode is AssemblyOpcode.TSTORE:
+        return AssemblyInstruction(
+            opcode,
+            (
+                _parse_register(operands[1], line),
+                _parse_register(operands[2], line),
+            ),
+            memory=_parse_memory(operands[0], line),
+            source=source,
+            line=line,
+        )
     if opcode is AssemblyOpcode.TJMP:
         return AssemblyInstruction(
             opcode,
@@ -311,6 +383,7 @@ def parse_assembly(source: str) -> AssemblyProgram:
     current_return_type: AssemblyType | None = None
     parameters: list[AssemblyParameter] = []
     registers: dict[int, AssemblyType] = {}
+    memory_objects: dict[int, AssemblyMemoryObject] = {}
     blocks: list[AssemblyBlock] = []
     block_labels: set[str] = set()
     current_label: str | None = None
@@ -348,6 +421,7 @@ def parse_assembly(source: str) -> AssemblyProgram:
             current_return_type = AssemblyType(type_text)
             parameters = []
             registers = {}
+            memory_objects = {}
             blocks = []
             block_labels = set()
             current_label = None
@@ -365,6 +439,10 @@ def parse_assembly(source: str) -> AssemblyProgram:
                     tuple(parameters),
                     tuple(sorted(registers.items())),
                     tuple(blocks),
+                    tuple(
+                        memory_objects[index]
+                        for index in sorted(memory_objects)
+                    ),
                 )
             )
             current_name = None
@@ -395,6 +473,30 @@ def parse_assembly(source: str) -> AssemblyProgram:
                 parameters.append(AssemblyParameter(register, type_name))
             else:
                 registers[register] = type_name
+            continue
+
+        memory_declaration = _MEMORY_DECLARATION_PATTERN.fullmatch(text)
+        if memory_declaration is not None:
+            if code_started:
+                raise AssemblyParseError(
+                    "memory declarations must precede labels and instructions",
+                    line_number,
+                )
+            memory_text, type_text, length_text, mutability = (
+                memory_declaration.groups()
+            )
+            memory = _parse_memory(memory_text, line_number)
+            if memory in memory_objects:
+                raise AssemblyParseError(
+                    f"duplicate memory object m{memory}",
+                    line_number,
+                )
+            memory_objects[memory] = AssemblyMemoryObject(
+                memory,
+                AssemblyType(type_text),
+                int(length_text),
+                mutability != "immutable",
+            )
             continue
 
         label_match = _LABEL_PATTERN.fullmatch(text)
@@ -430,4 +532,3 @@ def parse_assembly(source: str) -> AssemblyProgram:
     if not functions:
         raise AssemblyParseError("assembly contains no functions", 1)
     return AssemblyProgram(tuple(functions))
-

@@ -1,0 +1,6 @@
+fn main() -> tryte {
+    mut tryte value = 10;
+    value = value + 5;
+    return value;
+}
+

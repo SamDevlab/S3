@@ -57,12 +57,29 @@ class Parser:
                     self._peek().location,
                 )
 
-    def _parse_type(self) -> ast.TypeName:
+    def _parse_type(self) -> ast.DeclaredType:
+        start = self._peek()
         if self._match(TokenKind.TRIT):
-            return ast.TypeName.TRIT
-        if self._match(TokenKind.TRYTE):
-            return ast.TypeName.TRYTE
-        raise ParseError("expected type 'trit' or 'tryte'", self._peek().location)
+            result: ast.DeclaredType = ast.TypeName.TRIT
+        elif self._match(TokenKind.TRYTE):
+            result = ast.TypeName.TRYTE
+        else:
+            raise ParseError("expected type 'trit' or 'tryte'", self._peek().location)
+        while self._match(TokenKind.LEFT_BRACKET):
+            negative = self._match(TokenKind.MINUS)
+            length = self._consume(
+                TokenKind.INTEGER,
+                "expected static array length",
+            )
+            value = int(length.text)
+            if negative:
+                value = -value
+            self._consume(
+                TokenKind.RIGHT_BRACKET,
+                "expected ']' after array length",
+            )
+            result = ast.ArrayType(result, value, start.location)
+        return result
 
     def _parse_block(self) -> ast.Block:
         start = self._consume(TokenKind.LEFT_BRACE, "expected '{'")
@@ -73,12 +90,18 @@ class Parser:
         return ast.Block(tuple(statements), start.location)
 
     def _parse_statement(self) -> ast.Statement:
-        if self._check(TokenKind.TRIT) or self._check(TokenKind.TRYTE):
+        if (
+            self._check(TokenKind.MUT)
+            or self._check(TokenKind.TRIT)
+            or self._check(TokenKind.TRYTE)
+        ):
             return self._parse_variable_declaration()
         if self._match(TokenKind.RETURN):
             return self._parse_return(self._previous())
         if self._match(TokenKind.SWITCH):
             return self._parse_switch(self._previous())
+        if self._check(TokenKind.IDENTIFIER):
+            return self._parse_assignment()
         raise ParseError(
             "expected variable declaration, 'return', or 'switch'",
             self._peek().location,
@@ -86,10 +109,11 @@ class Parser:
 
     def _parse_variable_declaration(self) -> ast.VariableDeclaration:
         start = self._peek()
+        mutable = self._match(TokenKind.MUT)
         type_name = self._parse_type()
         name = self._consume(TokenKind.IDENTIFIER, "expected variable name")
         self._consume(TokenKind.EQUAL, "expected '=' after variable name")
-        initializer = self._parse_expression()
+        initializer = self._parse_initializer()
         self._consume(
             TokenKind.SEMICOLON,
             "expected ';' after variable declaration",
@@ -99,7 +123,42 @@ class Parser:
             name.text,
             initializer,
             start.location,
+            mutable,
         )
+
+    def _parse_assignment(self) -> ast.AssignmentStatement:
+        name = self._consume(TokenKind.IDENTIFIER, "expected assignment target")
+        target: ast.AssignmentTarget
+        if self._match(TokenKind.LEFT_BRACKET):
+            index = self._parse_expression()
+            self._consume(TokenKind.RIGHT_BRACKET, "expected ']' after index")
+            target = ast.IndexTarget(name.text, index, name.location)
+        else:
+            target = ast.VariableTarget(name.text, name.location)
+        self._consume(TokenKind.EQUAL, "expected '=' after assignment target")
+        value = self._parse_initializer()
+        self._consume(TokenKind.SEMICOLON, "expected ';' after assignment")
+        return ast.AssignmentStatement(target, value, name.location)
+
+    def _parse_initializer(self) -> ast.Initializer:
+        if self._match(TokenKind.LEFT_BRACKET):
+            return self._finish_array_literal(self._previous())
+        return self._parse_expression()
+
+    def _finish_array_literal(self, start: Token) -> ast.ArrayLiteral:
+        elements: list[ast.Expression] = []
+        if not self._check(TokenKind.RIGHT_BRACKET):
+            while True:
+                elements.append(self._parse_expression())
+                if not self._match(TokenKind.COMMA):
+                    break
+                if self._check(TokenKind.RIGHT_BRACKET):
+                    raise ParseError(
+                        "expected array element after ','",
+                        self._peek().location,
+                    )
+        self._consume(TokenKind.RIGHT_BRACKET, "expected ']' after array literal")
+        return ast.ArrayLiteral(tuple(elements), start.location)
 
     def _parse_return(self, start: Token) -> ast.ReturnStatement:
         expression = self._parse_expression()
@@ -203,6 +262,10 @@ class Parser:
             token = self._previous()
             if self._match(TokenKind.LEFT_PAREN):
                 return self._finish_call(token)
+            if self._match(TokenKind.LEFT_BRACKET):
+                index = self._parse_expression()
+                self._consume(TokenKind.RIGHT_BRACKET, "expected ']' after index")
+                return ast.IndexExpression(token.text, index, token.location)
             return ast.Identifier(token.text, token.location)
         if self._match(TokenKind.LEFT_PAREN):
             expression = self._parse_expression()

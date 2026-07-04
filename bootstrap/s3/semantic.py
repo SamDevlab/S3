@@ -1,4 +1,4 @@
-"""Two-phase name, type, scope, and return-path analysis for S3."""
+"""Two-phase name, type, scope, mutability, and return-path analysis for S3."""
 
 from __future__ import annotations
 
@@ -18,8 +18,16 @@ class FunctionType:
 
 
 @dataclass(frozen=True, slots=True)
+class Binding:
+    type_name: ast.DeclaredType
+    mutable: bool
+    parameter: bool
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
 class SemanticModel:
-    """Expression types and the complete file-level function table."""
+    """Scalar expression types and the complete file-level function table."""
 
     expression_types: dict[int, ast.TypeName]
     functions: dict[str, FunctionType]
@@ -29,7 +37,7 @@ class SemanticModel:
             return self.expression_types[id(expression)]
         except KeyError as error:
             raise SemanticError(
-                "internal error: expression has no semantic type",
+                "internal error: expression has no scalar semantic type",
                 expression.location,
             ) from error
 
@@ -44,7 +52,7 @@ class SemanticAnalyzer:
     def __init__(self) -> None:
         self.expression_types: dict[int, ast.TypeName] = {}
         self.functions: dict[str, FunctionType] = {}
-        self.scopes: list[dict[str, ast.TypeName]] = []
+        self.scopes: list[dict[str, Binding]] = []
         self.parameter_names: set[str] = set()
         self.return_type = ast.TypeName.TRYTE
 
@@ -70,6 +78,7 @@ class SemanticAnalyzer:
                     function.location,
                 )
             parameter_names: set[str] = set()
+            parameter_types: list[ast.TypeName] = []
             for parameter in function.parameters:
                 if parameter.name in parameter_names:
                     raise SemanticError(
@@ -77,24 +86,44 @@ class SemanticAnalyzer:
                         parameter.location,
                     )
                 parameter_names.add(parameter.name)
+                if isinstance(parameter.type_name, ast.ArrayType):
+                    raise SemanticError(
+                        "arrays cannot be function parameters",
+                        parameter.location,
+                    )
+                parameter_types.append(parameter.type_name)
+            if isinstance(function.return_type, ast.ArrayType):
+                raise SemanticError(
+                    "functions cannot return arrays",
+                    function.signature.location,
+                )
             self.functions[function.name] = FunctionType(
                 function.name,
-                tuple(parameter.type_name for parameter in function.parameters),
+                tuple(parameter_types),
                 function.return_type,
                 function.signature.location,
             )
 
     def _analyze_function(self, function: ast.FunctionDeclaration) -> None:
-        self.return_type = function.return_type
+        signature = self.functions[function.name]
+        self.return_type = signature.return_type
         self.parameter_names = {parameter.name for parameter in function.parameters}
         self.scopes = [
-            {parameter.name: parameter.type_name for parameter in function.parameters}
+            {
+                parameter.name: Binding(
+                    parameter.type_name,
+                    mutable=False,
+                    parameter=True,
+                    location=parameter.location,
+                )
+                for parameter in function.parameters
+            }
         ]
         definitely_returns = self._analyze_block(function.body, create_scope=False)
         if not definitely_returns:
             raise SemanticError(
                 f"function '{function.name}' has a path without returning "
-                f"{function.return_type.value}",
+                f"{self.return_type.value}",
                 function.location,
             )
 
@@ -119,7 +148,23 @@ class SemanticAnalyzer:
         if isinstance(statement, ast.VariableDeclaration):
             self._analyze_declaration(statement)
             return False
+        if isinstance(statement, ast.AssignmentStatement):
+            self._analyze_assignment(statement)
+            return False
         if isinstance(statement, ast.ReturnStatement):
+            if (
+                isinstance(statement.expression, ast.Identifier)
+                and isinstance(
+                    self._lookup_binding(statement.expression.name).type_name
+                    if self._lookup_binding(statement.expression.name)
+                    else None,
+                    ast.ArrayType,
+                )
+            ):
+                raise SemanticError(
+                    "arrays cannot be returned",
+                    statement.expression.location,
+                )
             actual = self._analyze_expression(statement.expression, self.return_type)
             self._require_type(
                 actual,
@@ -182,17 +227,155 @@ class SemanticAnalyzer:
                 f"duplicate declaration of variable '{declaration.name}'",
                 declaration.location,
             )
-        initializer_type = self._analyze_expression(
-            declaration.initializer,
+
+        if isinstance(declaration.type_name, ast.ArrayType):
+            self._validate_array_type(declaration.type_name)
+            if not isinstance(declaration.initializer, ast.ArrayLiteral):
+                raise SemanticError(
+                    f"array '{declaration.name}' requires an array literal initializer",
+                    declaration.initializer.location,
+                )
+            self._analyze_array_literal(
+                declaration.initializer,
+                declaration.type_name,
+            )
+        else:
+            if isinstance(declaration.initializer, ast.ArrayLiteral):
+                raise SemanticError(
+                    f"scalar '{declaration.name}' cannot use an array initializer",
+                    declaration.initializer.location,
+                )
+            initializer_type = self._analyze_expression(
+                declaration.initializer,
+                declaration.type_name,
+            )
+            self._require_type(
+                initializer_type,
+                declaration.type_name,
+                declaration.initializer.location,
+                f"initializer for '{declaration.name}'",
+            )
+        current_scope[declaration.name] = Binding(
             declaration.type_name,
+            declaration.mutable,
+            parameter=False,
+            location=declaration.location,
+        )
+
+    def _validate_array_type(self, type_name: ast.ArrayType) -> None:
+        if isinstance(type_name.element_type, ast.ArrayType):
+            raise SemanticError(
+                "nested arrays are not supported",
+                type_name.location,
+            )
+        if type_name.length <= 0:
+            raise SemanticError(
+                f"array length must be positive, got {type_name.length}",
+                type_name.location,
+            )
+        if type_name.length > TRYTE_MAX + 1:
+            raise SemanticError(
+                f"array length {type_name.length} exceeds tryte-indexed "
+                f"maximum {TRYTE_MAX + 1}",
+                type_name.location,
+            )
+
+    def _analyze_array_literal(
+        self,
+        literal: ast.ArrayLiteral,
+        type_name: ast.ArrayType,
+    ) -> None:
+        assert isinstance(type_name.element_type, ast.TypeName)
+        if len(literal.elements) != type_name.length:
+            raise SemanticError(
+                f"array initializer has {len(literal.elements)} element(s); "
+                f"expected {type_name.length}",
+                literal.location,
+            )
+        for index, element in enumerate(literal.elements):
+            actual = self._analyze_expression(element, type_name.element_type)
+            self._require_type(
+                actual,
+                type_name.element_type,
+                element.location,
+                f"array element {index}",
+            )
+
+    def _analyze_assignment(self, statement: ast.AssignmentStatement) -> None:
+        if isinstance(statement.target, ast.VariableTarget):
+            binding = self._assignment_binding(
+                statement.target.name,
+                statement.target.location,
+            )
+            if isinstance(binding.type_name, ast.ArrayType):
+                raise SemanticError(
+                    "whole-array assignment is not supported",
+                    statement.target.location,
+                )
+            self._require_mutable(binding, statement.target.location)
+            if isinstance(statement.value, ast.ArrayLiteral):
+                raise SemanticError(
+                    "scalar assignment requires a scalar expression",
+                    statement.value.location,
+                )
+            actual = self._analyze_expression(statement.value, binding.type_name)
+            self._require_type(
+                actual,
+                binding.type_name,
+                statement.value.location,
+                "assigned value",
+            )
+            return
+
+        binding = self._assignment_binding(
+            statement.target.array_name,
+            statement.target.location,
+        )
+        if not isinstance(binding.type_name, ast.ArrayType):
+            raise SemanticError(
+                f"variable '{statement.target.array_name}' is not an array",
+                statement.target.location,
+            )
+        self._require_mutable(binding, statement.target.location)
+        self._analyze_index(
+            statement.target.array_name,
+            statement.target.index,
+            binding.type_name,
+        )
+        if isinstance(statement.value, ast.ArrayLiteral):
+            raise SemanticError(
+                "array element assignment requires a scalar expression",
+                statement.value.location,
+            )
+        assert isinstance(binding.type_name.element_type, ast.TypeName)
+        actual = self._analyze_expression(
+            statement.value,
+            binding.type_name.element_type,
         )
         self._require_type(
-            initializer_type,
-            declaration.type_name,
-            declaration.initializer.location,
-            f"initializer for '{declaration.name}'",
+            actual,
+            binding.type_name.element_type,
+            statement.value.location,
+            "array element assignment",
         )
-        current_scope[declaration.name] = declaration.type_name
+
+    def _assignment_binding(self, name: str, location: SourceLocation) -> Binding:
+        binding = self._lookup_binding(name)
+        if binding is not None:
+            return binding
+        if name in self.functions:
+            raise SemanticError(
+                f"function '{name}' cannot be an assignment target",
+                location,
+            )
+        raise SemanticError(f"undeclared variable '{name}'", location)
+
+    @staticmethod
+    def _require_mutable(binding: Binding, location: SourceLocation) -> None:
+        if binding.parameter:
+            raise SemanticError("cannot assign to a parameter", location)
+        if not binding.mutable:
+            raise SemanticError("cannot assign to immutable variable", location)
 
     def _analyze_expression(
         self,
@@ -210,6 +393,30 @@ class SemanticAnalyzer:
                     expected,
                     expression.location,
                     f"variable '{expression.name}'",
+                )
+        elif isinstance(expression, ast.IndexExpression):
+            binding = self._lookup_binding(expression.array_name)
+            if binding is None:
+                raise SemanticError(
+                    f"undeclared variable '{expression.array_name}'",
+                    expression.location,
+                )
+            if not isinstance(binding.type_name, ast.ArrayType):
+                raise SemanticError(
+                    f"variable '{expression.array_name}' is not an array",
+                    expression.location,
+                )
+            result = self._analyze_index(
+                expression.array_name,
+                expression.index,
+                binding.type_name,
+            )
+            if expected is not None:
+                self._require_type(
+                    result,
+                    expected,
+                    expression.location,
+                    f"array element '{expression.array_name}'",
                 )
         elif isinstance(expression, ast.CallExpression):
             result = self._analyze_call(expression)
@@ -229,8 +436,31 @@ class SemanticAnalyzer:
         self.expression_types[id(expression)] = result
         return result
 
+    def _analyze_index(
+        self,
+        array_name: str,
+        index: ast.Expression,
+        type_name: ast.ArrayType,
+    ) -> ast.TypeName:
+        index_type = self._analyze_expression(index, ast.TypeName.TRYTE)
+        self._require_type(
+            index_type,
+            ast.TypeName.TRYTE,
+            index.location,
+            "array index",
+        )
+        constant = self._constant_integer(index)
+        if constant is not None and not 0 <= constant < type_name.length:
+            raise SemanticError(
+                f"constant index {constant} is outside array '{array_name}' "
+                f"bounds [0, {type_name.length})",
+                index.location,
+            )
+        assert isinstance(type_name.element_type, ast.TypeName)
+        return type_name.element_type
+
     def _analyze_call(self, expression: ast.CallExpression) -> ast.TypeName:
-        if self._lookup_variable(expression.function_name) is not None:
+        if self._lookup_binding(expression.function_name) is not None:
             raise SemanticError(
                 f"variable '{expression.function_name}' cannot be called",
                 expression.location,
@@ -249,13 +479,18 @@ class SemanticAnalyzer:
                 expression.location,
             )
         for index, (argument, parameter_type) in enumerate(
-            zip(
-                expression.arguments,
-                signature.parameter_types,
-                strict=True,
-            ),
+            zip(expression.arguments, signature.parameter_types, strict=True),
             start=1,
         ):
+            if (
+                isinstance(argument.expression, ast.Identifier)
+                and (
+                    binding := self._lookup_binding(argument.expression.name)
+                )
+                is not None
+                and isinstance(binding.type_name, ast.ArrayType)
+            ):
+                raise SemanticError("arrays cannot be passed as arguments", argument.location)
             actual = self._analyze_expression(argument.expression, parameter_type)
             self._require_type(
                 actual,
@@ -288,7 +523,6 @@ class SemanticAnalyzer:
                 "comparison operands",
             )
             return ast.TypeName.TRIT
-
         operand_type = expected or self._binary_operand_type(expression)
         left_type = self._analyze_expression(expression.left, operand_type)
         right_type = self._analyze_expression(expression.right, operand_type)
@@ -322,6 +556,11 @@ class SemanticAnalyzer:
     ) -> ast.TypeName | None:
         if isinstance(expression, ast.Identifier):
             return self._identifier_type(expression)
+        if isinstance(expression, ast.IndexExpression):
+            binding = self._lookup_binding(expression.array_name)
+            if binding is not None and isinstance(binding.type_name, ast.ArrayType):
+                element = binding.type_name.element_type
+                return element if isinstance(element, ast.TypeName) else None
         if isinstance(expression, ast.CallExpression):
             signature = self.functions.get(expression.function_name)
             return None if signature is None else signature.return_type
@@ -334,16 +573,21 @@ class SemanticAnalyzer:
             return ast.TypeName.TRIT
         return None
 
-    def _lookup_variable(self, name: str) -> ast.TypeName | None:
+    def _lookup_binding(self, name: str) -> Binding | None:
         for scope in reversed(self.scopes):
             if name in scope:
                 return scope[name]
         return None
 
     def _identifier_type(self, expression: ast.Identifier) -> ast.TypeName:
-        result = self._lookup_variable(expression.name)
-        if result is not None:
-            return result
+        binding = self._lookup_binding(expression.name)
+        if binding is not None:
+            if isinstance(binding.type_name, ast.ArrayType):
+                raise SemanticError(
+                    f"array '{expression.name}' cannot be used as a scalar value",
+                    expression.location,
+                )
+            return binding.type_name
         if expression.name in self.functions:
             raise SemanticError(
                 f"function '{expression.name}' cannot be used as a variable",
@@ -354,8 +598,26 @@ class SemanticAnalyzer:
             expression.location,
         )
 
+    @staticmethod
+    def _constant_integer(expression: ast.Expression) -> int | None:
+        if isinstance(expression, ast.IntegerLiteral):
+            return expression.value
+        if isinstance(expression, ast.UnaryExpression):
+            operand = SemanticAnalyzer._constant_integer(expression.operand)
+            return None if operand is None else -operand
+        if isinstance(expression, ast.BinaryExpression):
+            left = SemanticAnalyzer._constant_integer(expression.left)
+            right = SemanticAnalyzer._constant_integer(expression.right)
+            if left is None or right is None:
+                return None
+            if expression.operator is ast.BinaryOperator.ADD:
+                return left + right
+            if expression.operator is ast.BinaryOperator.SUBTRACT:
+                return left - right
+        return None
+
+    @staticmethod
     def _validate_literal(
-        self,
         literal: ast.IntegerLiteral,
         type_name: ast.TypeName,
     ) -> None:

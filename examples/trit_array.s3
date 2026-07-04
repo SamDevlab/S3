@@ -1,0 +1,5 @@
+fn main() -> trit {
+    trit[3] states = [-1, 0, 1];
+    return states[2];
+}
+

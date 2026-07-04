@@ -40,6 +40,8 @@ def test_subtraction_lowers_to_invert_then_add() -> None:
         IROpcode.MAXIMUM,
         IROpcode.COMPARE,
         IROpcode.CALL,
+        IROpcode.LOAD,
+        IROpcode.STORE,
         IROpcode.RETURN,
         IROpcode.JUMP,
         IROpcode.BRANCH3,

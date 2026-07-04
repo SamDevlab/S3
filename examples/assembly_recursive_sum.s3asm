@@ -1,0 +1,39 @@
+.function sum_to -> tryte
+    .param r0, tryte
+    .register r1, tryte
+    .register r2, trit
+    .register r3, tryte
+    .register r4, tryte
+    .register r5, tryte
+    .register r6, tryte
+    .register r7, tryte
+    .register r8, tryte
+    .register r9, tryte
+.label entry
+    TCONST r1, 0
+    TCMP   r2, r0, r1
+    TBR3   r2, negative, neutral, positive
+.label negative
+    TCONST r3, 0
+    TRET   r3
+.label neutral
+    TCONST r4, 0
+    TRET   r4
+.label positive
+    TCONST r5, 1
+    TINV   r6, r5
+    TADD   r7, r0, r6
+    TCALL  r8, sum_to, r7
+    TADD   r9, r0, r8
+    TRET   r9
+.end
+
+.function main -> tryte
+    .register r0, tryte
+    .register r1, tryte
+.label entry
+    TCONST r0, 4
+    TCALL  r1, sum_to, r0
+    TRET   r1
+.end
+

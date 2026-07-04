@@ -10,6 +10,7 @@ from .ir import (
     IRBasicBlock,
     IRFunction,
     IRInstruction,
+    IRMemoryObject,
     IRModule,
     IROpcode,
     IRParameter,
@@ -32,6 +33,14 @@ class _MutableBlock:
     instructions: list[IRInstruction] = field(default_factory=list)
 
 
+@dataclass(frozen=True, slots=True)
+class _LoweredBinding:
+    type_name: ast.DeclaredType
+    mutable: bool
+    register: int | None = None
+    memory: int | None = None
+
+
 class FunctionLowerer:
     def __init__(
         self,
@@ -41,14 +50,16 @@ class FunctionLowerer:
         self.function = function
         self.semantic_model = semantic_model
         self.registers: list[IRRegister] = []
+        self.memory_objects: list[IRMemoryObject] = []
         self.parameters: list[IRParameter] = []
         self.blocks: list[_MutableBlock] = []
         self.current: _MutableBlock | None = None
-        self.variable_scopes: list[dict[str, int]] = [{}]
+        self.variable_scopes: list[dict[str, _LoweredBinding]] = [{}]
         self.block_counter = 0
 
     def lower(self) -> IRFunction:
         for parameter in self.function.parameters:
+            assert isinstance(parameter.type_name, ast.TypeName)
             register = self._allocate(parameter.type_name, parameter.location)
             self.parameters.append(
                 IRParameter(
@@ -58,7 +69,11 @@ class FunctionLowerer:
                     parameter.location,
                 )
             )
-            self.variable_scopes[0][parameter.name] = register
+            self.variable_scopes[0][parameter.name] = _LoweredBinding(
+                parameter.type_name,
+                mutable=False,
+                register=register,
+            )
         self.current = self._create_block("entry", self.function.body.location)
         self._lower_block(self.function.body, create_scope=False)
         if self.current is not None:
@@ -66,12 +81,13 @@ class FunctionLowerer:
                 f"function '{self.function.name}' ended without a terminator",
                 self.function.location,
             )
+        assert isinstance(self.function.return_type, ast.TypeName)
         return IRFunction(
-            self.function.name,
-            tuple(self.parameters),
-            TYPE_MAP[self.function.return_type],
-            tuple(self.registers),
-            tuple(
+            name=self.function.name,
+            parameters=tuple(self.parameters),
+            return_type=TYPE_MAP[self.function.return_type],
+            registers=tuple(self.registers),
+            blocks=tuple(
                 IRBasicBlock(
                     block.name,
                     tuple(block.instructions),
@@ -79,7 +95,8 @@ class FunctionLowerer:
                 )
                 for block in self.blocks
             ),
-            self.function.location,
+            location=self.function.location,
+            memory_objects=tuple(self.memory_objects),
         )
 
     def _create_block(
@@ -122,6 +139,9 @@ class FunctionLowerer:
         if isinstance(statement, ast.VariableDeclaration):
             self._lower_declaration(statement)
             return
+        if isinstance(statement, ast.AssignmentStatement):
+            self._lower_assignment(statement)
+            return
         if isinstance(statement, ast.ReturnStatement):
             value = self._lower_expression(statement.expression)
             self._emit(
@@ -147,14 +167,102 @@ class FunctionLowerer:
         self.registers.append(IRRegister(index, TYPE_MAP[type_name], location))
         return index
 
-    def _lookup_variable(self, name: str, location: SourceLocation) -> int:
+    def _allocate_memory(
+        self,
+        element_type: ast.TypeName,
+        length: int,
+        mutable: bool,
+        location: SourceLocation,
+    ) -> int:
+        index = len(self.memory_objects)
+        self.memory_objects.append(
+            IRMemoryObject(
+                index,
+                TYPE_MAP[element_type],
+                length,
+                mutable,
+                location,
+            )
+        )
+        return index
+
+    def _lookup_variable(
+        self,
+        name: str,
+        location: SourceLocation,
+    ) -> _LoweredBinding:
         for scope in reversed(self.variable_scopes):
             if name in scope:
                 return scope[name]
         raise LoweringError(f"unknown variable '{name}'", location)
 
     def _lower_declaration(self, declaration: ast.VariableDeclaration) -> None:
+        if isinstance(declaration.type_name, ast.ArrayType):
+            assert isinstance(declaration.type_name.element_type, ast.TypeName)
+            assert isinstance(declaration.initializer, ast.ArrayLiteral)
+            memory = self._allocate_memory(
+                declaration.type_name.element_type,
+                declaration.type_name.length,
+                declaration.mutable,
+                declaration.location,
+            )
+            for index, element in enumerate(declaration.initializer.elements):
+                index_register = self._emit_constant(
+                    index,
+                    ast.TypeName.TRYTE,
+                    element.location,
+                )
+                value = self._lower_expression(element)
+                self._emit(
+                    IRInstruction(
+                        IROpcode.STORE,
+                        operands=(index_register, value),
+                        memory=memory,
+                        initialization=True,
+                        location=element.location,
+                    )
+                )
+            self.variable_scopes[-1][declaration.name] = _LoweredBinding(
+                declaration.type_name,
+                declaration.mutable,
+                memory=memory,
+            )
+            return
+
+        if isinstance(declaration.initializer, ast.ArrayLiteral):
+            raise LoweringError(
+                "scalar declaration received an array initializer",
+                declaration.initializer.location,
+            )
         initializer = self._lower_expression(declaration.initializer)
+        if declaration.mutable:
+            memory = self._allocate_memory(
+                declaration.type_name,
+                1,
+                True,
+                declaration.location,
+            )
+            index = self._emit_constant(
+                0,
+                ast.TypeName.TRYTE,
+                declaration.location,
+            )
+            self._emit(
+                IRInstruction(
+                    IROpcode.STORE,
+                    operands=(index, initializer),
+                    memory=memory,
+                    initialization=True,
+                    location=declaration.location,
+                )
+            )
+            self.variable_scopes[-1][declaration.name] = _LoweredBinding(
+                declaration.type_name,
+                True,
+                memory=memory,
+            )
+            return
+
         variable = self._allocate(declaration.type_name, declaration.location)
         self._emit(
             IRInstruction(
@@ -164,7 +272,77 @@ class FunctionLowerer:
                 location=declaration.location,
             )
         )
-        self.variable_scopes[-1][declaration.name] = variable
+        self.variable_scopes[-1][declaration.name] = _LoweredBinding(
+            declaration.type_name,
+            False,
+            register=variable,
+        )
+
+    def _lower_assignment(self, statement: ast.AssignmentStatement) -> None:
+        if isinstance(statement.target, ast.VariableTarget):
+            binding = self._lookup_variable(
+                statement.target.name,
+                statement.target.location,
+            )
+            assert binding.memory is not None
+            if isinstance(statement.value, ast.ArrayLiteral):
+                raise LoweringError(
+                    "scalar assignment received an array literal",
+                    statement.value.location,
+                )
+            value = self._lower_expression(statement.value)
+            index = self._emit_constant(
+                0,
+                ast.TypeName.TRYTE,
+                statement.target.location,
+            )
+            self._emit(
+                IRInstruction(
+                    IROpcode.STORE,
+                    operands=(index, value),
+                    memory=binding.memory,
+                    location=statement.location,
+                )
+            )
+            return
+
+        binding = self._lookup_variable(
+            statement.target.array_name,
+            statement.target.location,
+        )
+        assert binding.memory is not None
+        index = self._lower_expression(statement.target.index)
+        if isinstance(statement.value, ast.ArrayLiteral):
+            raise LoweringError(
+                "array element assignment received an array literal",
+                statement.value.location,
+            )
+        value = self._lower_expression(statement.value)
+        self._emit(
+            IRInstruction(
+                IROpcode.STORE,
+                operands=(index, value),
+                memory=binding.memory,
+                location=statement.location,
+            )
+        )
+
+    def _emit_constant(
+        self,
+        value: int,
+        type_name: ast.TypeName,
+        location: SourceLocation,
+    ) -> int:
+        result = self._allocate(type_name, location)
+        self._emit(
+            IRInstruction(
+                IROpcode.CONST,
+                result=result,
+                immediate=value,
+                location=location,
+            )
+        )
+        return result
 
     def _lower_switch(self, statement: ast.SwitchStatement) -> None:
         condition = self._lower_expression(statement.expression)
@@ -214,18 +392,56 @@ class FunctionLowerer:
     def _lower_expression(self, expression: ast.Expression) -> int:
         expression_type = self.semantic_model.type_of(expression)
         if isinstance(expression, ast.IntegerLiteral):
-            result = self._allocate(expression_type, expression.location)
+            return self._emit_constant(
+                expression.value,
+                expression_type,
+                expression.location,
+            )
+        if isinstance(expression, ast.Identifier):
+            binding = self._lookup_variable(expression.name, expression.location)
+            if binding.register is not None:
+                return binding.register
+            assert binding.memory is not None
+            assert isinstance(binding.type_name, ast.TypeName)
+            index = self._emit_constant(
+                0,
+                ast.TypeName.TRYTE,
+                expression.location,
+            )
+            result = self._allocate(binding.type_name, expression.location)
             self._emit(
                 IRInstruction(
-                    IROpcode.CONST,
+                    IROpcode.LOAD,
                     result=result,
-                    immediate=expression.value,
+                    operands=(index,),
+                    memory=binding.memory,
                     location=expression.location,
                 )
             )
             return result
-        if isinstance(expression, ast.Identifier):
-            return self._lookup_variable(expression.name, expression.location)
+        if isinstance(expression, ast.IndexExpression):
+            binding = self._lookup_variable(
+                expression.array_name,
+                expression.location,
+            )
+            assert binding.memory is not None
+            assert isinstance(binding.type_name, ast.ArrayType)
+            assert isinstance(binding.type_name.element_type, ast.TypeName)
+            index = self._lower_expression(expression.index)
+            result = self._allocate(
+                binding.type_name.element_type,
+                expression.location,
+            )
+            self._emit(
+                IRInstruction(
+                    IROpcode.LOAD,
+                    result=result,
+                    operands=(index,),
+                    memory=binding.memory,
+                    location=expression.location,
+                )
+            )
+            return result
         if isinstance(expression, ast.CallExpression):
             arguments = tuple(
                 self._lower_expression(argument.expression)
@@ -321,4 +537,3 @@ def lower(program: ast.Program, semantic_model: SemanticModel) -> IRModule:
             for function in program.functions
         )
     )
-

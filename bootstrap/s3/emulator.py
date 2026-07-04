@@ -9,6 +9,7 @@ from .assembly import (
     AssemblyError,
     AssemblyFunction,
     AssemblyInstruction,
+    AssemblyMemoryObject,
     AssemblyOpcode,
     AssemblyProgram,
     AssemblyType,
@@ -18,6 +19,7 @@ from .assembly import (
 from .ternary import (
     TernaryRangeError,
     TernaryWidth,
+    TRYTE_MAX,
     add,
     compare,
     invert,
@@ -41,6 +43,7 @@ WIDTH_MAP = {
 class Frame:
     function: AssemblyFunction
     registers: dict[int, int] = field(default_factory=dict)
+    memory: dict[int, list[int | None]] = field(default_factory=dict)
     block_label: str = "entry"
     instruction_index: int = 0
     return_destination: int | None = None
@@ -55,13 +58,17 @@ class Emulator:
         *,
         max_frames: int = 1024,
         max_instructions: int = 100_000,
+        max_memory_trits: int = 2187,
     ):
         if max_frames < 1:
             raise ValueError("max_frames must be at least 1")
         if max_instructions < 1:
             raise ValueError("max_instructions must be at least 1")
+        if max_memory_trits < 1:
+            raise ValueError("max_memory_trits must be at least 1")
         self.max_frames = max_frames
         self.max_instructions = max_instructions
+        self.max_memory_trits = max_memory_trits
 
     def execute(self, program: AssemblyProgram, entry: str = "main") -> int:
         functions = self._validate_program(program)
@@ -80,7 +87,7 @@ class Emulator:
             }
             for function in program.functions
         }
-        stack = [Frame(entry_function)]
+        stack = [self._create_frame(entry_function)]
         executed = 0
 
         while stack:
@@ -176,6 +183,24 @@ class Emulator:
                         instruction,
                     )
                     frame.instruction_index += 1
+                elif opcode is AssemblyOpcode.TSTORE:
+                    index_register, source_register = instruction.registers
+                    index = self._read(frame, index_register, instruction)
+                    value = self._read(frame, source_register, instruction)
+                    self._store_memory(
+                        frame,
+                        instruction,
+                        index,
+                        value,
+                        source_register,
+                    )
+                    frame.instruction_index += 1
+                elif opcode is AssemblyOpcode.TLOAD:
+                    destination, index_register = instruction.registers
+                    index = self._read(frame, index_register, instruction)
+                    value = self._load_memory(frame, instruction, index)
+                    self._write(frame, destination, value, instruction)
+                    frame.instruction_index += 1
                 elif opcode is AssemblyOpcode.TJMP:
                     frame.block_label = instruction.labels[0]
                     frame.instruction_index = 0
@@ -215,7 +240,7 @@ class Emulator:
                         )
                     }
                     stack.append(
-                        Frame(
+                        self._create_frame(
                             callee,
                             registers=callee_registers,
                             return_destination=instruction.registers[0],
@@ -299,6 +324,26 @@ class Emulator:
                 )
             declared_types[register] = type_name
 
+        memory_objects: dict[int, AssemblyMemoryObject] = {}
+        for memory in function.memory_objects:
+            if memory.index in memory_objects:
+                raise EmulatorError(
+                    f"function '{function.name}': duplicate memory object "
+                    f"m{memory.index}"
+                )
+            if memory.length <= 0:
+                raise EmulatorError(
+                    f"function '{function.name}': memory object m{memory.index} "
+                    f"has invalid length {memory.length}"
+                )
+            if memory.length > TRYTE_MAX + 1:
+                raise EmulatorError(
+                    f"function '{function.name}': memory object m{memory.index} "
+                    f"length {memory.length} exceeds indexable maximum "
+                    f"{TRYTE_MAX + 1}"
+                )
+            memory_objects[memory.index] = memory
+
         blocks: dict[str, AssemblyBlock] = {}
         for block in function.blocks:
             if block.label in blocks:
@@ -344,6 +389,7 @@ class Emulator:
                     block,
                     instruction,
                     declared_types,
+                    memory_objects,
                     blocks,
                     functions,
                 )
@@ -362,6 +408,7 @@ class Emulator:
         block: AssemblyBlock,
         instruction: AssemblyInstruction,
         types: dict[int, AssemblyType],
+        memory_objects: dict[int, AssemblyMemoryObject],
         blocks: dict[str, AssemblyBlock],
         functions: dict[str, AssemblyFunction],
     ) -> None:
@@ -437,6 +484,68 @@ class Emulator:
                     )
                 )
             same_type(tuple(sources))
+        elif opcode is AssemblyOpcode.TLOAD:
+            destination, index = instruction.registers
+            if instruction.memory not in memory_objects:
+                raise EmulatorError(
+                    self._static_context(
+                        function,
+                        block,
+                        instruction,
+                        f"unknown memory object m{instruction.memory}",
+                    )
+                )
+            memory = memory_objects[instruction.memory]  # type: ignore[index]
+            if register_type(index) is not AssemblyType.TRYTE:
+                raise EmulatorError(
+                    self._static_context(
+                        function,
+                        block,
+                        instruction,
+                        "TLOAD index must be a tryte register",
+                    )
+                )
+            if register_type(destination) is not memory.element_type:
+                raise EmulatorError(
+                    self._static_context(
+                        function,
+                        block,
+                        instruction,
+                        f"TLOAD destination type does not match "
+                        f"m{memory.index}:{memory.element_type.value}",
+                    )
+                )
+        elif opcode is AssemblyOpcode.TSTORE:
+            index, source = instruction.registers
+            if instruction.memory not in memory_objects:
+                raise EmulatorError(
+                    self._static_context(
+                        function,
+                        block,
+                        instruction,
+                        f"unknown memory object m{instruction.memory}",
+                    )
+                )
+            memory = memory_objects[instruction.memory]  # type: ignore[index]
+            if register_type(index) is not AssemblyType.TRYTE:
+                raise EmulatorError(
+                    self._static_context(
+                        function,
+                        block,
+                        instruction,
+                        "TSTORE index must be a tryte register",
+                    )
+                )
+            if register_type(source) is not memory.element_type:
+                raise EmulatorError(
+                    self._static_context(
+                        function,
+                        block,
+                        instruction,
+                        f"TSTORE source type does not match "
+                        f"m{memory.index}:{memory.element_type.value}",
+                    )
+                )
         elif opcode is AssemblyOpcode.TCALL:
             destination, *arguments = instruction.registers
             register_type(destination)
@@ -545,6 +654,137 @@ class Emulator:
                     )
                 )
 
+    def _create_frame(
+        self,
+        function: AssemblyFunction,
+        *,
+        registers: dict[int, int] | None = None,
+        return_destination: int | None = None,
+        return_block: str | None = None,
+        return_instruction_index: int | None = None,
+        call_instruction: AssemblyInstruction | None = None,
+    ) -> Frame:
+        memory_cost = sum(
+            memory.length
+            * (1 if memory.element_type is AssemblyType.TRIT else 6)
+            for memory in function.memory_objects
+        )
+        if memory_cost > self.max_memory_trits:
+            raise EmulatorError(
+                f"function '{function.name}' requires {memory_cost} logical "
+                f"trits of frame memory; limit is {self.max_memory_trits}"
+            )
+        return Frame(
+            function,
+            registers={} if registers is None else dict(registers),
+            memory={
+                memory.index: [None] * memory.length
+                for memory in function.memory_objects
+            },
+            return_destination=return_destination,
+            return_block=return_block,
+            return_instruction_index=return_instruction_index,
+            call_instruction=call_instruction,
+        )
+
+    @staticmethod
+    def _memory_definition(
+        frame: Frame,
+        memory_index: int | None,
+        instruction: AssemblyInstruction,
+    ) -> AssemblyMemoryObject:
+        for memory in frame.function.memory_objects:
+            if memory.index == memory_index:
+                return memory
+        raise EmulatorError(
+            Emulator._context(
+                frame,
+                instruction,
+                f"unknown memory object m{memory_index}",
+            )
+        )
+
+    @classmethod
+    def _checked_memory_index(
+        cls,
+        frame: Frame,
+        instruction: AssemblyInstruction,
+        memory: AssemblyMemoryObject,
+        index: int,
+    ) -> int:
+        if index < 0 or index >= memory.length:
+            raise EmulatorError(
+                cls._context(
+                    frame,
+                    instruction,
+                    f"memory m{memory.index} index {index} is outside "
+                    f"[0, {memory.length})",
+                )
+            )
+        return index
+
+    def _store_memory(
+        self,
+        frame: Frame,
+        instruction: AssemblyInstruction,
+        index: int,
+        value: int,
+        source_register: int,
+    ) -> None:
+        memory = self._memory_definition(frame, instruction.memory, instruction)
+        index = self._checked_memory_index(frame, instruction, memory, index)
+        source_type = self._register_type(frame, source_register, instruction)
+        if source_type is not memory.element_type:
+            raise EmulatorError(
+                self._context(
+                    frame,
+                    instruction,
+                    f"memory m{memory.index} expects {memory.element_type.value}, "
+                    f"got {source_type.value}",
+                )
+            )
+        try:
+            validate(value, WIDTH_MAP[memory.element_type])
+        except TernaryRangeError as error:
+            raise EmulatorError(
+                self._context(
+                    frame,
+                    instruction,
+                    f"memory m{memory.index} index {index}: {error}",
+                )
+            ) from error
+        cells = frame.memory[memory.index]
+        if not memory.mutable and cells[index] is not None:
+            raise EmulatorError(
+                self._context(
+                    frame,
+                    instruction,
+                    f"memory m{memory.index} index {index} is immutable and "
+                    "already initialized",
+                )
+            )
+        cells[index] = value
+
+    def _load_memory(
+        self,
+        frame: Frame,
+        instruction: AssemblyInstruction,
+        index: int,
+    ) -> int:
+        memory = self._memory_definition(frame, instruction.memory, instruction)
+        index = self._checked_memory_index(frame, instruction, memory, index)
+        value = frame.memory[memory.index][index]
+        if value is None:
+            raise EmulatorError(
+                self._context(
+                    frame,
+                    instruction,
+                    f"uninitialized memory m{memory.index} at index {index} "
+                    f"(length {memory.length})",
+                )
+            )
+        return value
+
     def _register_type(
         self,
         frame: Frame,
@@ -634,9 +874,11 @@ def execute_assembly(
     *,
     max_frames: int = 1024,
     max_instructions: int = 100_000,
+    max_memory_trits: int = 2187,
 ) -> int:
     program = parse_assembly(assembly) if isinstance(assembly, str) else assembly
     return Emulator(
         max_frames=max_frames,
         max_instructions=max_instructions,
+        max_memory_trits=max_memory_trits,
     ).execute(program, entry)

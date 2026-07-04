@@ -14,6 +14,16 @@ class TypeName(Enum):
     TRYTE = "tryte"
 
 
+@dataclass(frozen=True, slots=True)
+class ArrayType:
+    element_type: TypeName | ArrayType
+    length: int
+    location: SourceLocation
+
+
+DeclaredType: TypeAlias = TypeName | ArrayType
+
+
 class UnaryOperator(Enum):
     INVERT = "~"
     NEGATE = "-"
@@ -53,6 +63,13 @@ class CallExpression:
 
 
 @dataclass(frozen=True, slots=True)
+class IndexExpression:
+    array_name: str
+    index: Expression
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
 class UnaryExpression:
     operator: UnaryOperator
     operand: Expression
@@ -71,16 +88,50 @@ Expression: TypeAlias = (
     IntegerLiteral
     | Identifier
     | CallExpression
+    | IndexExpression
     | UnaryExpression
     | BinaryExpression
 )
 
 
 @dataclass(frozen=True, slots=True)
+class ArrayLiteral:
+    elements: tuple[Expression, ...]
+    location: SourceLocation
+
+
+Initializer: TypeAlias = Expression | ArrayLiteral
+
+
+@dataclass(frozen=True, slots=True)
 class VariableDeclaration:
-    type_name: TypeName
+    type_name: DeclaredType
     name: str
-    initializer: Expression
+    initializer: Initializer
+    location: SourceLocation
+    mutable: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class VariableTarget:
+    name: str
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
+class IndexTarget:
+    array_name: str
+    index: Expression
+    location: SourceLocation
+
+
+AssignmentTarget: TypeAlias = VariableTarget | IndexTarget
+
+
+@dataclass(frozen=True, slots=True)
+class AssignmentStatement:
+    target: AssignmentTarget
+    value: Initializer
     location: SourceLocation
 
 
@@ -104,7 +155,12 @@ class SwitchStatement:
     location: SourceLocation
 
 
-Statement: TypeAlias = VariableDeclaration | ReturnStatement | SwitchStatement
+Statement: TypeAlias = (
+    VariableDeclaration
+    | AssignmentStatement
+    | ReturnStatement
+    | SwitchStatement
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -116,7 +172,7 @@ class Block:
 @dataclass(frozen=True, slots=True)
 class Parameter:
     name: str
-    type_name: TypeName
+    type_name: DeclaredType
     location: SourceLocation
 
 
@@ -124,7 +180,7 @@ class Parameter:
 class FunctionSignature:
     name: str
     parameters: tuple[Parameter, ...]
-    return_type: TypeName
+    return_type: DeclaredType
     location: SourceLocation
 
 
@@ -143,7 +199,7 @@ class FunctionDeclaration:
         return self.signature.parameters
 
     @property
-    def return_type(self) -> TypeName:
+    def return_type(self) -> DeclaredType:
         return self.signature.return_type
 
 

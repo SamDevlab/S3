@@ -1,72 +1,85 @@
-# S3 IR 0.2
+# S3 IR 0.3
 
 Status: normativo.
 
-## Modelo
+## Estrutura
 
-Um `IRModule` contém funções. Cada função contém:
+`IRModule` contém funções. Cada função declara parâmetros, registradores SSA,
+objetos de memória e blocos básicos. `entry` é obrigatório.
 
-- nome e tipo de retorno;
-- parâmetros ligados a registradores tipados;
-- tabela de registradores/valores virtuais;
-- blocos básicos nomeados;
-- localização de origem opcional.
+Registradores possuem tipo `trit`/`tryte` e definição única. Parâmetros são
+definições disponíveis em todos os blocos alcançáveis.
 
-`entry` é o bloco de entrada obrigatório. Registradores têm tipo imutável e uma
-única definição; parâmetros contam como definições. A visão achatada
-`function.instructions` existe apenas para inspeção/compatibilidade, não define
-controle de fluxo.
+```text
+IRMemoryObject:
+    index
+    element_type
+    length
+    mutable
+    source
+```
+
+Objetos são locais à função/frame, têm comprimento entre 1 e 365 e não são
+valores: não podem ser passados, retornados ou usados por operadores.
 
 ## Instruções
 
-| Opcode | Forma | Semântica |
-|---|---|---|
-| `CONST` | `dest, immediate` | constante verificada |
-| `MOVE` | `dest, source` | cópia do mesmo tipo |
-| `INVERT` | `dest, source` | inversão ternária |
-| `ADD` | `dest, left, right` | soma verificada |
-| `MINIMUM` | `dest, left, right` | mínimo tritwise |
-| `MAXIMUM` | `dest, left, right` | máximo tritwise |
-| `COMPARE` | `trit_dest, left, right` | comparação ternária |
-| `CALL` | `dest, function, args...` | chamada tipada |
+Operações de valor:
+
+```text
+CONST MOVE INVERT ADD MINIMUM MAXIMUM COMPARE CALL
+```
+
+Memória:
+
+```text
+LOAD  result, memory, index
+STORE memory, index, value
+```
+
+`LOAD` produz o tipo do elemento. `STORE` não produz resultado. Índices são
+`tryte`. O marcador `initialization=true` distingue stores iniciais permitidos
+em objetos imutáveis; escrita comum neles é rejeitada pelo verificador.
 
 Terminadores:
 
-| Opcode | Forma |
-|---|---|
-| `RETURN` | `source` |
-| `JUMP` | `target` |
-| `BRANCH3` | `trit_condition, negative, neutral, positive` |
+```text
+RETURN JUMP BRANCH3
+```
 
-Cada bloco termina exatamente uma vez e não possui instruções posteriores.
-Destinos de `BRANCH3` são distintos e correspondem, nessa ordem, a `-1`, `0` e
-`1`.
+Cada bloco termina exatamente uma vez. `BRANCH3` usa `trit` e destinos
+distintos na ordem negativo, neutro, positivo. Ciclos são válidos; terminação
+dinâmica é protegida pelo limite de instruções.
 
-Não existe `SUBTRACT`. `a - b` emite `INVERT(b)` e `ADD(a, inverted)`.
+Não existem `SUBTRACT`, `PHI`, ponteiros, casts ou aritmética de endereço.
 
-## Verificador
+## Dominância
 
-`verifier.py` é independente do lowering e rejeita:
+O verificador constrói sucessores e predecessores, encontra blocos alcançáveis
+por busca desde `entry` e calcula dominadores por ponto fixo:
 
-- função sem `entry`;
-- função/bloco/valor duplicado;
-- bloco sem terminador ou instrução após terminador;
-- destino inexistente ou destinos ternários duplicados;
-- `BRANCH3` não controlado por `trit`;
-- valor inexistente ou não definido;
-- operação com tipos incompatíveis;
-- chamada inexistente, aridade/tipos incorretos ou destino de retorno errado;
-- retorno incompatível;
-- opcode desconhecido ou de subtração.
+```text
+dom(entry) = {entry}
+dom(B) = {B} ∪ interseção(dom(P)) para predecessores alcançáveis P
+```
 
-O codegen sempre chama o verificador antes de produzir assembly.
+Regras:
 
-## Origem
+- parâmetro domina todo bloco alcançável;
+- definição no mesmo bloco precede o uso;
+- definição em outro bloco deve dominar o bloco de uso;
+- valor definido num único ramo não pode ser usado no join;
+- bloco inalcançável ainda recebe validação estrutural/tipos; uso cruzado
+  não-paramétrico nele é rejeitado conservadoramente.
 
-Registradores, parâmetros, blocos e instruções podem carregar
-`SourceLocation(offset, line, column)`. Comparações, chamadas, saltos ternários
-e retornos gerados pelo frontend preservam esses metadados.
+Comunicação entre ramos usa objeto de memória, não `PHI`.
 
-Não existem `PHI`: variáveis são imutáveis e nomes declarados em casos não
-escapam do ramo.
+## Verificação estática e dinâmica
 
+O verificador rejeita objetos duplicados/inválidos, referências inexistentes,
+tipos de índice/valor/resultados incorretos, store comum em objeto imutável,
+violação SSA/dominância, chamada/retorno inválido, ponteiros e subtração.
+
+Inicialização por caminho e bounds calculados são dinâmicos. O frontend
+inicializa todas as declarações; o emulador jamais devolve célula não
+inicializada.

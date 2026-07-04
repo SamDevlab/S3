@@ -1,70 +1,75 @@
-# S3 Assembly textual 0.2
+# S3 Assembly textual 0.3
 
 Status: normativo para o bootstrap.
 
-## Formato
+## Declarações
 
 ```asm
-.function sum_to -> tryte
-    .param r0, tryte
+.function main -> tryte
+    .register r0, tryte
     .register r1, tryte
-    .register r2, trit
+    .register r2, tryte
+    .memory m0, tryte, 1, mutable
 .label entry
-    TCONST r1, 0
-    TCMP   r2, r0, r1
-    TBR3   r2, negative, neutral, positive
-.label negative
-    TRET   r1
-.label neutral
-    TRET   r1
-.label positive
-    TCALL  r3, sum_to, r1
-    TRET   r3
+    TCONST r0, 0
+    TCONST r1, 10
+    TSTORE m0, r0, r1
+    TLOAD  r2, m0, r0
+    TRET   r2
 .end
 ```
 
-`.param` declara parâmetros em ordem posicional. `.register` declara os demais
-registradores. Declarações precedem `.label` e instruções. Todo registrador é
-local ao frame e possui tipo fixo.
+`.param` e `.register` declaram registradores. `.memory` declara:
 
-Cada função possui `.label entry`. Assembly 0.1 sem labels é aceita pelo parser
-como um único bloco `entry`. Identificadores e labels seguem
-`[A-Za-z_][A-Za-z0-9_]*`.
+```text
+.memory mN, trit|tryte, comprimento, mutable|immutable
+```
+
+O quarto campo é emitido pelo renderer; se omitido em assembly manual, o parser
+assume `mutable`. Declarações antecedem labels/instruções. Objetos e
+registradores são locais ao frame. Comprimentos válidos estão entre 1 e 365.
 
 ## Instruções
 
-| Instrução | Operandos | Regra |
-|---|---|---|
-| `TCONST` | `dest, decimal` | valor cabe em `dest` |
-| `TMOV` | `dest, source` | tipos iguais |
-| `TINV` | `dest, source` | tipos iguais |
-| `TADD` | `dest, left, right` | tipos iguais; overflow é erro |
-| `TMIN` | `dest, left, right` | mínimo tritwise |
-| `TMAX` | `dest, left, right` | máximo tritwise |
-| `TCMP` | `trit_dest, left, right` | fontes do mesmo tipo |
-| `TCALL` | `dest, function, args...` | assinatura e retorno compatíveis |
-| `TRET` | `source` | tipo da função |
-| `TJMP` | `label` | salto incondicional |
-| `TBR3` | `trit, neg, zero, pos` | três labels existentes e distintos |
+Mantidas:
 
-`TRET`, `TJMP` e `TBR3` são terminadores. Não existe `TSUB`.
+```text
+TCONST TMOV TINV TADD TMIN TMAX TCMP TCALL TRET TJMP TBR3
+```
 
-## Metadados
+Memória:
 
-Uma instrução pode terminar com:
+```text
+TLOAD  r_destination, m_object, r_index
+TSTORE m_object, r_index, r_source
+```
+
+O índice deve ser registrador `tryte`; destino/fonte deve corresponder ao tipo
+do objeto. Bounds e inicialização são validados em execução. Em objeto
+imutável, o primeiro store de cada célula inicializa; outro store falha.
+
+Não existem `TSUB`, `TPTR` ou `TCAST`.
+
+## Estrutura, ciclos e origem
+
+Cada bloco termina com `TRET`, `TJMP` ou `TBR3`; cada função contém ao menos um
+`TRET`. Ciclos estruturais são permitidos e execuções sem retorno são
+interrompidas pelo limite de instruções.
+
+Metadado opcional:
 
 ```asm
 ; source=linha:coluna:offset
 ```
 
-O renderer e parser preservam esse metadado. Outros comentários após `;` são
-ignorados. Erros de execução incluem função, bloco, opcode, linha de assembly e
-origem S3 quando disponíveis.
+é preservado pelo round-trip e incluído em diagnósticos.
 
-## Validação
+O exemplo recursivo normativo completo está em
+`examples/assembly_recursive_sum.s3asm`, é analisado e executado pela suíte e
+retorna `10`.
 
-Antes de executar, o emulador valida todas as funções, inclusive blocos
-inalcançáveis: declarações, tipos, labels, terminadores e assinaturas. Leitura
-de registrador não inicializado e overflow permanecem verificações dinâmicas.
-Cada função deve conter ao menos um `TRET`; ciclos compostos apenas por saltos
-são rejeitados neste bootstrap conservador.
+## Compatibilidade
+
+Assembly 0.1 sem labels recebe bloco implícito `entry`; assembly 0.2 sem memória
+continua válida. Todos os registradores, objetos, labels e assinaturas são
+validados antes da execução.

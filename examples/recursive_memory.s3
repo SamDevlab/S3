@@ -1,0 +1,23 @@
+fn preserve(value: tryte) -> tryte {
+    mut tryte local = value;
+
+    switch (value <=> 0) {
+        -1: {
+            return local;
+        }
+
+        0: {
+            return local;
+        }
+
+        1: {
+            tryte nested = preserve(value - 1);
+            return local + nested;
+        }
+    }
+}
+
+fn main() -> tryte {
+    return preserve(3);
+}
+

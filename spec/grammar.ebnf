@@ -1,17 +1,24 @@
-(* Gramática normativa do subconjunto S3 0.2. *)
+(* Gramática normativa do subconjunto S3 0.3. *)
 
 program              = function, { function }, EOF ;
 function             = "fn", identifier, "(", [ parameter-list ], ")",
                        "->", type, block ;
 parameter-list       = parameter, { ",", parameter } ;
 parameter            = identifier, ":", type ;
-type                 = "trit" | "tryte" ;
+
+scalar-type          = "trit" | "tryte" ;
+type                 = scalar-type, { "[", signed-integer, "]" } ;
 
 block                = "{", { statement }, "}" ;
 statement            = variable-declaration
+                     | assignment-statement
                      | return-statement
                      | switch-statement ;
-variable-declaration = type, identifier, "=", expression, ";" ;
+variable-declaration = [ "mut" ], type, identifier, "=", initializer, ";" ;
+assignment-statement = assignment-target, "=", initializer, ";" ;
+assignment-target    = identifier, [ index-suffix ] ;
+initializer          = expression | array-literal ;
+array-literal        = "[", [ expression, { ",", expression } ], "]" ;
 return-statement     = "return", expression, ";" ;
 switch-statement     = "switch", "(", expression, ")", "{",
                        { ternary-case }, "}" ;
@@ -24,8 +31,13 @@ maximum              = minimum, { "|", minimum } ;
 minimum              = additive, { "&", additive } ;
 additive             = unary, { ("+" | "-"), unary } ;
 unary                = ("~" | "-"), unary | primary ;
-primary              = integer | identifier | call | "(", expression, ")" ;
-call                 = identifier, "(", [ argument-list ], ")" ;
+primary              = integer
+                     | identifier-expression
+                     | "(", expression, ")" ;
+identifier-expression = identifier, [ postfix-suffix ] ;
+postfix-suffix       = call-suffix | index-suffix ;
+call-suffix          = "(", [ argument-list ], ")" ;
+index-suffix         = "[", expression, "]" ;
 argument-list        = expression, { ",", expression } ;
 
 identifier           = identifier-start, { identifier-continue } ;
@@ -36,5 +48,6 @@ digit                = "0" | "1" | "2" | "3" | "4"
                      | "5" | "6" | "7" | "8" | "9" ;
 
 (* Espaço em branco e comentários // até LF são ignorados entre tokens. *)
-(* A semântica restringe signed-integer em casos a -1, 0 e 1. *)
+(* A semântica restringe casos a -1/0/1, arrays a uma dimensão e *)
+(* parâmetros/retornos a tipos escalares. *)
 

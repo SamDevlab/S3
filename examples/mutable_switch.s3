@@ -1,0 +1,24 @@
+fn classify(value: tryte) -> tryte {
+    mut tryte result = 0;
+
+    switch (value <=> 0) {
+        -1: {
+            result = -10;
+        }
+
+        0: {
+            result = 0;
+        }
+
+        1: {
+            result = 10;
+        }
+    }
+
+    return result;
+}
+
+fn main() -> tryte {
+    return classify(5);
+}
+

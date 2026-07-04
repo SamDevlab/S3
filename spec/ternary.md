@@ -54,3 +54,8 @@ Overflow é uma condição de erro detectável. Não há saturação, wraparound
 promoção implícita nem comportamento indefinido. Constantes são verificadas na
 análise semântica e cada escrita de registrador é verificada no emulador.
 
+## Armazenamento lógico
+
+No modelo de memória 0.3, `trit` custa um trit lógico e `tryte` custa seis. A
+ordem conceitual dos seis trits continua menos significativo primeiro. Isso não
+define ordem de bytes, packing binário ou layout físico de backend.

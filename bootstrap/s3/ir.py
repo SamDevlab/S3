@@ -22,6 +22,8 @@ class IROpcode(Enum):
     MAXIMUM = "maximum"
     COMPARE = "compare"
     CALL = "call"
+    LOAD = "load"
+    STORE = "store"
     RETURN = "return"
     JUMP = "jump"
     BRANCH3 = "branch3"
@@ -74,6 +76,31 @@ class IRParameter:
 
 
 @dataclass(frozen=True, slots=True)
+class IRMemoryObject:
+    index: int
+    element_type: IRType
+    length: int
+    mutable: bool
+    location: SourceLocation | None = None
+
+    @property
+    def name(self) -> str:
+        return f"m{self.index}"
+
+    def to_dict(self) -> dict[str, object]:
+        result: dict[str, object] = {
+            "name": self.name,
+            "index": self.index,
+            "element_type": self.element_type.value,
+            "length": self.length,
+            "mutable": self.mutable,
+        }
+        if self.location is not None:
+            result["source"] = self.location.to_dict()
+        return result
+
+
+@dataclass(frozen=True, slots=True)
 class IRInstruction:
     opcode: IROpcode
     result: int | None = None
@@ -81,6 +108,8 @@ class IRInstruction:
     immediate: int | None = None
     callee: str | None = None
     targets: tuple[str, ...] = ()
+    memory: int | None = None
+    initialization: bool = False
     location: SourceLocation | None = None
 
     @property
@@ -104,6 +133,10 @@ class IRInstruction:
             result["callee"] = self.callee
         if self.targets:
             result["targets"] = list(self.targets)
+        if self.memory is not None:
+            result["memory"] = f"m{self.memory}"
+        if self.initialization:
+            result["initialization"] = True
         if self.location is not None:
             result["source"] = self.location.to_dict()
         return result
@@ -135,6 +168,7 @@ class IRFunction:
     registers: tuple[IRRegister, ...]
     blocks: tuple[IRBasicBlock, ...]
     location: SourceLocation | None = None
+    memory_objects: tuple[IRMemoryObject, ...] = ()
 
     @property
     def instructions(self) -> tuple[IRInstruction, ...]:
@@ -154,6 +188,9 @@ class IRFunction:
             ],
             "return_type": self.return_type.value,
             "registers": [register.to_dict() for register in self.registers],
+            "memory_objects": [
+                memory.to_dict() for memory in self.memory_objects
+            ],
             "blocks": [block.to_dict() for block in self.blocks],
         }
         if self.location is not None:
@@ -177,4 +214,3 @@ class IRModule:
 
 # Backward-compatible public name used by the 0.1 pipeline.
 IRProgram = IRModule
-

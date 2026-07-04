@@ -6,6 +6,7 @@ from .assembly import (
     AssemblyBlock,
     AssemblyFunction,
     AssemblyInstruction,
+    AssemblyMemoryObject,
     AssemblyOpcode,
     AssemblyParameter,
     AssemblyProgram,
@@ -33,6 +34,8 @@ OPCODE_MAP = {
     IROpcode.MAXIMUM: AssemblyOpcode.TMAX,
     IROpcode.COMPARE: AssemblyOpcode.TCMP,
     IROpcode.CALL: AssemblyOpcode.TCALL,
+    IROpcode.LOAD: AssemblyOpcode.TLOAD,
+    IROpcode.STORE: AssemblyOpcode.TSTORE,
     IROpcode.RETURN: AssemblyOpcode.TRET,
     IROpcode.JUMP: AssemblyOpcode.TJMP,
     IROpcode.BRANCH3: AssemblyOpcode.TBR3,
@@ -67,6 +70,21 @@ def _generate_instruction(instruction: IRInstruction) -> AssemblyInstruction:
             opcode,
             instruction.operands,
             labels=instruction.targets,
+            source=instruction.location,
+        )
+    if opcode is AssemblyOpcode.TLOAD:
+        assert instruction.result is not None
+        return AssemblyInstruction(
+            opcode,
+            (instruction.result, instruction.operands[0]),
+            memory=instruction.memory,
+            source=instruction.location,
+        )
+    if opcode is AssemblyOpcode.TSTORE:
+        return AssemblyInstruction(
+            opcode,
+            instruction.operands,
+            memory=instruction.memory,
             source=instruction.location,
         )
     registers = (
@@ -114,6 +132,15 @@ def generate_assembly(ir_program: IRProgram) -> AssemblyProgram:
                     )
                     for block in function.blocks
                 ),
+                tuple(
+                    AssemblyMemoryObject(
+                        memory.index,
+                        TYPE_MAP[memory.element_type],
+                        memory.length,
+                        memory.mutable,
+                    )
+                    for memory in function.memory_objects
+                ),
             )
         )
     return AssemblyProgram(tuple(functions))
@@ -121,4 +148,3 @@ def generate_assembly(ir_program: IRProgram) -> AssemblyProgram:
 
 def generate_assembly_text(ir_program: IRProgram) -> str:
     return generate_assembly(ir_program).render()
-
