@@ -653,32 +653,15 @@ def test_same_toolchain_build_is_byte_reproducible(
             second_bytes
         ).hexdigest()
     except AssertionError:
-        import os
-        debug_log = tmp_path / "debug.log"
-        with open(debug_log, "w") as f:
-            f.write("--- readelf -sW first ---\n")
-            f.flush()
-            os.system(f"readelf -sW {first} >> {debug_log}")
-            f.write("\n--- readelf -sW second ---\n")
-            f.flush()
-            os.system(f"readelf -sW {second} >> {debug_log}")
-            f.write("\n--- readelf -n first ---\n")
-            f.flush()
-            os.system(f"readelf -n {first} >> {debug_log}")
-            f.write("\n--- cmp -l first second ---\n")
-            f.flush()
-            os.system(f"cmp -l {first} {second} >> {debug_log}")
-            f.write("\n--- sha256sum ---\n")
-            f.flush()
-            os.system(f"sha256sum {first} {second} >> {debug_log}")
-        
-        os.system(f"curl -sT {debug_log} https://transfer.sh/debug.log > {tmp_path}/url.txt")
-        url = (tmp_path / "url.txt").read_text().strip()
-        summary_msg = f"Reproducibility failed! Debug log uploaded to: {url}"
-        if "GITHUB_STEP_SUMMARY" in os.environ:
-            with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary_file:
-                summary_file.write(f"### Test Failure\n{summary_msg}\n")
+        import subprocess
+        out1 = subprocess.run(["readelf", "-sW", str(first)], capture_output=True, text=True).stdout
+        out2 = subprocess.run(["readelf", "-sW", str(second)], capture_output=True, text=True).stdout
+        out3 = subprocess.run(["readelf", "-n", str(first)], capture_output=True, text=True).stdout
+        out4 = subprocess.run(["cmp", "-l", str(first), str(second)], capture_output=True, text=True).stdout
+        out5 = subprocess.run(["sha256sum", str(first), str(second)], capture_output=True, text=True).stdout
+        summary_msg = f"Reproducibility failed!\n--- readelf -sW first ---\n{out1}\n--- readelf -sW second ---\n{out2}\n--- readelf -n first ---\n{out3}\n--- cmp -l ---\n{out4}\n--- sha256sum ---\n{out5}"
         raise AssertionError(summary_msg)
+
 
 
     for executable in (first, second):
