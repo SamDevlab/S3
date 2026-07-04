@@ -59,8 +59,8 @@ optimization = 'O0'
 >       assert Emulator().execute(program) == expected
 E       AssertionError: assert 0 == 1
 E        +  where 0 = execute(AssemblyProgram(functions=(AssemblyFunction(name='selected', return_type=<AssemblyType.TRYTE: 'tryte'>, parameters=(As...memory=None, source=SourceLocation(offset=68, line=2, column=22), line=None))),), memory_objects=())), version='0.5.0'))
-E        +    where execute = <bootstrap.s3.emulator.Emulator object at 0x7f9c711d9f10>.execute
-E        +      where <bootstrap.s3.emulator.Emulator object at 0x7f9c711d9f10> = Emulator()
+E        +    where execute = <bootstrap.s3.emulator.Emulator object at 0x7faf49795f70>.execute
+E        +      where <bootstrap.s3.emulator.Emulator object at 0x7faf49795f70> = Emulator()
 
 tests/test_native_x86_64_integration.py:62: AssertionError
 ________________ test_same_toolchain_build_is_byte_reproducible ________________
@@ -87,7 +87,7 @@ tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_same_toolchain_build_i
 >           assert first_bytes == second_bytes
 E           assert b"\x7fELF\x02...0\x00\x00\x00" == b"\x7fELF\x02...0\x00\x00\x00"
 E             
-E             At index 13187 diff: b'N' != b'Q'
+E             At index 13187 diff: b'X' != b'I'
 E             
 E             Full diff:
 E               (b'\x7fELF\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00>\x00'
@@ -654,10 +654,10 @@ E                b'XA@\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00Z\x01\
 E                b'\x12\x00\x01\x00\x9f\x13@\x00\x00\x00\x00\x00k\x00\x00\x00\x00\x00\x00\x00'
 E                b'b\x01\x00\x00\x10\x00\x03\x00RA@\x00\x00\x00\x00\x00\x00\x00\x00\x00'
 E                b'\x00\x00\x00\x00i\x01\x00\x00\x10\x00\x03\x00`A@\x00\x00\x00\x00\x00'
-E             -  b'\x00\x00\x00\x00\x00\x00\x00\x00\x00ccQ2mGfm.o\x00__s3_frame_count\x00__s'
-E             ?                                          ^ ^^ -
-E             +  b'\x00\x00\x00\x00\x00\x00\x00\x00\x00ccN2IU6f.o\x00__s3_frame_count\x00__s'
-E             ?                                          ^ ^^^
+E             -  b'\x00\x00\x00\x00\x00\x00\x00\x00\x00ccIea3Jx.o\x00__s3_frame_count\x00__s'
+E             ?                                          ^^^^^^
+E             +  b'\x00\x00\x00\x00\x00\x00\x00\x00\x00ccXXO1bn.o\x00__s3_frame_count\x00__s'
+E             ?                                          ^^^^^^
 E                b'3_fail_value\x00__s3_fail_message\x00__s3_print_i64\x00__s3_tryte_min\x00__s'
 E                b'3_tryte_max\x00__s3_fail_overflow\x00__s3_fail_bounds\x00__s3_fail_uninit'
 E                b'ialized_register\x00__s3_fail_uninitialized_memory\x00__s3_fail_immutable_'
@@ -721,35 +721,86 @@ tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-0/test_same_toolchain_build_i
                 second_bytes
             ).hexdigest()
         except AssertionError:
-            import os
-            debug_log = tmp_path / "debug.log"
-            with open(debug_log, "w") as f:
-                f.write("--- readelf -sW first ---\n")
-                f.flush()
-                os.system(f"readelf -sW {first} >> {debug_log}")
-                f.write("\n--- readelf -sW second ---\n")
-                f.flush()
-                os.system(f"readelf -sW {second} >> {debug_log}")
-                f.write("\n--- readelf -n first ---\n")
-                f.flush()
-                os.system(f"readelf -n {first} >> {debug_log}")
-                f.write("\n--- cmp -l first second ---\n")
-                f.flush()
-                os.system(f"cmp -l {first} {second} >> {debug_log}")
-                f.write("\n--- sha256sum ---\n")
-                f.flush()
-                os.system(f"sha256sum {first} {second} >> {debug_log}")
-    
-            os.system(f"curl -sT {debug_log} https://transfer.sh/debug.log > {tmp_path}/url.txt")
-            url = (tmp_path / "url.txt").read_text().strip()
-            summary_msg = f"Reproducibility failed! Debug log uploaded to: {url}"
-            if "GITHUB_STEP_SUMMARY" in os.environ:
-                with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary_file:
-                    summary_file.write(f"### Test Failure\n{summary_msg}\n")
+            import subprocess
+            out1 = subprocess.run(["readelf", "-sW", str(first)], capture_output=True, text=True).stdout
+            out2 = subprocess.run(["readelf", "-sW", str(second)], capture_output=True, text=True).stdout
+            out3 = subprocess.run(["readelf", "-n", str(first)], capture_output=True, text=True).stdout
+            out4 = subprocess.run(["cmp", "-l", str(first), str(second)], capture_output=True, text=True).stdout
+            out5 = subprocess.run(["sha256sum", str(first), str(second)], capture_output=True, text=True).stdout
+            summary_msg = f"Reproducibility failed!\n--- readelf -sW first ---\n{out1}\n--- readelf -sW second ---\n{out2}\n--- readelf -n first ---\n{out3}\n--- cmp -l ---\n{out4}\n--- sha256sum ---\n{out5}"
 >           raise AssertionError(summary_msg)
-E           AssertionError: Reproducibility failed! Debug log uploaded to:
+E           AssertionError: Reproducibility failed!
+E           --- readelf -sW first ---
+E           
+E           Symbol table '.symtab' contains 23 entries:
+E              Num:    Value          Size Type    Bind   Vis      Ndx Name
+E                0: 0000000000000000     0 NOTYPE  LOCAL  DEFAULT  UND 
+E                1: 0000000000000000     0 FILE    LOCAL  DEFAULT  ABS ccXXO1bn.o
+E                2: 0000000000404158     0 NOTYPE  LOCAL  DEFAULT    3 __s3_frame_count
+E                3: 00000000004018fb     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_value
+E                4: 00000000004018e1     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_message
+E                5: 0000000000401739   117 FUNC    LOCAL  DEFAULT    1 __s3_print_i64
+E                6: 00000000004017ae     5 FUNC    LOCAL  DEFAULT    1 __s3_tryte_min
+E                7: 00000000004017b3   190 FUNC    LOCAL  DEFAULT    1 __s3_tryte_max
+E                8: 0000000000401871     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_overflow
+E                9: 000000000040187f     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_bounds
+E               10: 000000000040188d     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_uninitialized_register
+E               11: 000000000040189b     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_uninitialized_memory
+E               12: 00000000004018a9     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_immutable_memory
+E               13: 00000000004018b7     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_invalid_trit
+E               14: 00000000004018c5     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_frame_limit
+E               15: 00000000004018d3     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_invalid_runtime_state
+E               16: 00000000004018e1     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail
+E               17: 0000000000401000   927 FUNC    GLOBAL DEFAULT    1 s3_preserve
+E               18: 0000000000401702    55 FUNC    GLOBAL DEFAULT    1 _start
+E               19: 0000000000404158     0 NOTYPE  GLOBAL DEFAULT    3 __bss_start
+E               20: 000000000040139f   107 FUNC    GLOBAL DEFAULT    1 s3_main
+E               21: 0000000000404152     0 NOTYPE  GLOBAL DEFAULT    3 _edata
+E               22: 0000000000404160     0 NOTYPE  GLOBAL DEFAULT    3 _end
+E           
+E           --- readelf -sW second ---
+E           
+E           Symbol table '.symtab' contains 23 entries:
+E              Num:    Value          Size Type    Bind   Vis      Ndx Name
+E                0: 0000000000000000     0 NOTYPE  LOCAL  DEFAULT  UND 
+E                1: 0000000000000000     0 FILE    LOCAL  DEFAULT  ABS ccIea3Jx.o
+E                2: 0000000000404158     0 NOTYPE  LOCAL  DEFAULT    3 __s3_frame_count
+E                3: 00000000004018fb     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_value
+E                4: 00000000004018e1     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_message
+E                5: 0000000000401739   117 FUNC    LOCAL  DEFAULT    1 __s3_print_i64
+E                6: 00000000004017ae     5 FUNC    LOCAL  DEFAULT    1 __s3_tryte_min
+E                7: 00000000004017b3   190 FUNC    LOCAL  DEFAULT    1 __s3_tryte_max
+E                8: 0000000000401871     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_overflow
+E                9: 000000000040187f     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_bounds
+E               10: 000000000040188d     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_uninitialized_register
+E               11: 000000000040189b     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_uninitialized_memory
+E               12: 00000000004018a9     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_immutable_memory
+E               13: 00000000004018b7     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_invalid_trit
+E               14: 00000000004018c5     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_frame_limit
+E               15: 00000000004018d3     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_invalid_runtime_state
+E               16: 00000000004018e1     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail
+E               17: 0000000000401000   927 FUNC    GLOBAL DEFAULT    1 s3_preserve
+E               18: 0000000000401702    55 FUNC    GLOBAL DEFAULT    1 _start
+E               19: 0000000000404158     0 NOTYPE  GLOBAL DEFAULT    3 __bss_start
+E               20: 000000000040139f   107 FUNC    GLOBAL DEFAULT    1 s3_main
+E               21: 0000000000404152     0 NOTYPE  GLOBAL DEFAULT    3 _edata
+E               22: 0000000000404160     0 NOTYPE  GLOBAL DEFAULT    3 _end
+E           
+E           --- readelf -n first ---
+E           
+E           --- cmp -l ---
+E           13188 130 111
+E           13189 130 145
+E           13190 117 141
+E           13191  61  63
+E           13192 142 112
+E           13193 156 170
+E           
+E           --- sha256sum ---
+E           eedb3937829f91c458a0a61d3693362745e93d5ee9bba3c22ae374ce72ecce5d  /tmp/pytest-of-runner/pytest-0/test_same_toolchain_build_is_b0/one/program
+E           cde414f991bd240603dcb556ce0e45bfe9c6722c3c940fa18b71392469a85a00  /tmp/pytest-of-runner/pytest-0/test_same_toolchain_build_is_b0/two/program
 
-tests/test_native_x86_64_integration.py:681: AssertionError
+tests/test_native_x86_64_integration.py:663: AssertionError
 _ test_o0_o1_native_errors_preserve_category[fn read(index: tryte) -> tryte {\n    tryte[1] values = [1];\n    return values[index];\n}\nfn main() -> tryte { return read(1); }\n-bounds] _
 
 source = 'fn read(index: tryte) -> tryte {\n    tryte[1] values = [1];\n    return values[index];\n}\nfn main() -> tryte { return read(1); }\n'
@@ -788,14 +839,83 @@ E           AssertionError: Regex pattern did not match.
 E             Expected regex: 'bounds'
 E             Actual message: "function 'read', block 'entry', TLOAD, source 3:12: memory m0 index 1 is outside [0, 1)"
 
-tests/test_native_x86_64_integration.py:736: AssertionError
+tests/test_native_x86_64_integration.py:719: AssertionError
 =========================== short test summary info ============================
 FAILED tests/test_native_x86_64_integration.py::test_system_v_argument_counts[1-1] - AssertionError: assert 0 == 1
  +  where 0 = execute(AssemblyProgram(functions=(AssemblyFunction(name='selected', return_type=<AssemblyType.TRYTE: 'tryte'>, parameters=(As...memory=None, source=SourceLocation(offset=68, line=2, column=22), line=None))),), memory_objects=())), version='0.5.0'))
- +    where execute = <bootstrap.s3.emulator.Emulator object at 0x7f9c711d9f10>.execute
- +      where <bootstrap.s3.emulator.Emulator object at 0x7f9c711d9f10> = Emulator()
-FAILED tests/test_native_x86_64_integration.py::test_same_toolchain_build_is_byte_reproducible - AssertionError: Reproducibility failed! Debug log uploaded to:
+ +    where execute = <bootstrap.s3.emulator.Emulator object at 0x7faf49795f70>.execute
+ +      where <bootstrap.s3.emulator.Emulator object at 0x7faf49795f70> = Emulator()
+FAILED tests/test_native_x86_64_integration.py::test_same_toolchain_build_is_byte_reproducible - AssertionError: Reproducibility failed!
+--- readelf -sW first ---
+
+Symbol table '.symtab' contains 23 entries:
+   Num:    Value          Size Type    Bind   Vis      Ndx Name
+     0: 0000000000000000     0 NOTYPE  LOCAL  DEFAULT  UND 
+     1: 0000000000000000     0 FILE    LOCAL  DEFAULT  ABS ccXXO1bn.o
+     2: 0000000000404158     0 NOTYPE  LOCAL  DEFAULT    3 __s3_frame_count
+     3: 00000000004018fb     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_value
+     4: 00000000004018e1     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_message
+     5: 0000000000401739   117 FUNC    LOCAL  DEFAULT    1 __s3_print_i64
+     6: 00000000004017ae     5 FUNC    LOCAL  DEFAULT    1 __s3_tryte_min
+     7: 00000000004017b3   190 FUNC    LOCAL  DEFAULT    1 __s3_tryte_max
+     8: 0000000000401871     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_overflow
+     9: 000000000040187f     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_bounds
+    10: 000000000040188d     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_uninitialized_register
+    11: 000000000040189b     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_uninitialized_memory
+    12: 00000000004018a9     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_immutable_memory
+    13: 00000000004018b7     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_invalid_trit
+    14: 00000000004018c5     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_frame_limit
+    15: 00000000004018d3     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_invalid_runtime_state
+    16: 00000000004018e1     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail
+    17: 0000000000401000   927 FUNC    GLOBAL DEFAULT    1 s3_preserve
+    18: 0000000000401702    55 FUNC    GLOBAL DEFAULT    1 _start
+    19: 0000000000404158     0 NOTYPE  GLOBAL DEFAULT    3 __bss_start
+    20: 000000000040139f   107 FUNC    GLOBAL DEFAULT    1 s3_main
+    21: 0000000000404152     0 NOTYPE  GLOBAL DEFAULT    3 _edata
+    22: 0000000000404160     0 NOTYPE  GLOBAL DEFAULT    3 _end
+
+--- readelf -sW second ---
+
+Symbol table '.symtab' contains 23 entries:
+   Num:    Value          Size Type    Bind   Vis      Ndx Name
+     0: 0000000000000000     0 NOTYPE  LOCAL  DEFAULT  UND 
+     1: 0000000000000000     0 FILE    LOCAL  DEFAULT  ABS ccIea3Jx.o
+     2: 0000000000404158     0 NOTYPE  LOCAL  DEFAULT    3 __s3_frame_count
+     3: 00000000004018fb     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_value
+     4: 00000000004018e1     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_message
+     5: 0000000000401739   117 FUNC    LOCAL  DEFAULT    1 __s3_print_i64
+     6: 00000000004017ae     5 FUNC    LOCAL  DEFAULT    1 __s3_tryte_min
+     7: 00000000004017b3   190 FUNC    LOCAL  DEFAULT    1 __s3_tryte_max
+     8: 0000000000401871     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_overflow
+     9: 000000000040187f     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_bounds
+    10: 000000000040188d     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_uninitialized_register
+    11: 000000000040189b     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_uninitialized_memory
+    12: 00000000004018a9     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_immutable_memory
+    13: 00000000004018b7     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_invalid_trit
+    14: 00000000004018c5     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_frame_limit
+    15: 00000000004018d3     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail_invalid_runtime_state
+    16: 00000000004018e1     0 NOTYPE  LOCAL  DEFAULT    1 __s3_fail
+    17: 0000000000401000   927 FUNC    GLOBAL DEFAULT    1 s3_preserve
+    18: 0000000000401702    55 FUNC    GLOBAL DEFAULT    1 _start
+    19: 0000000000404158     0 NOTYPE  GLOBAL DEFAULT    3 __bss_start
+    20: 000000000040139f   107 FUNC    GLOBAL DEFAULT    1 s3_main
+    21: 0000000000404152     0 NOTYPE  GLOBAL DEFAULT    3 _edata
+    22: 0000000000404160     0 NOTYPE  GLOBAL DEFAULT    3 _end
+
+--- readelf -n first ---
+
+--- cmp -l ---
+13188 130 111
+13189 130 145
+13190 117 141
+13191  61  63
+13192 142 112
+13193 156 170
+
+--- sha256sum ---
+eedb3937829f91c458a0a61d3693362745e93d5ee9bba3c22ae374ce72ecce5d  /tmp/pytest-of-runner/pytest-0/test_same_toolchain_build_is_b0/one/program
+cde414f991bd240603dcb556ce0e45bfe9c6722c3c940fa18b71392469a85a00  /tmp/pytest-of-runner/pytest-0/test_same_toolchain_build_is_b0/two/program
 FAILED tests/test_native_x86_64_integration.py::test_o0_o1_native_errors_preserve_category[fn read(index: tryte) -> tryte {\n    tryte[1] values = [1];\n    return values[index];\n}\nfn main() -> tryte { return read(1); }\n-bounds] - AssertionError: Regex pattern did not match.
   Expected regex: 'bounds'
   Actual message: "function 'read', block 'entry', TLOAD, source 3:12: memory m0 index 1 is outside [0, 1)"
-3 failed, 326 passed in 3.15s
+3 failed, 326 passed in 2.92s
