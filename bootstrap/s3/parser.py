@@ -170,7 +170,13 @@ class Parser:
 
     def _parse_assignment_v0_6(self) -> ast.AssignmentStatement:
         name = self._consume(TokenKind.IDENTIFIER, "expected assignment target")
-        target: ast.AssignmentTarget = ast.VariableTarget(name.text, name.location)
+        target: ast.AssignmentTarget
+        if self._match(TokenKind.LEFT_BRACKET):
+            index = self._parse_expression()
+            self._consume(TokenKind.RIGHT_BRACKET, "expected ']' after index")
+            target = ast.IndexTarget(name.text, index, name.location)
+        else:
+            target = ast.VariableTarget(name.text, name.location)
         self._consume(TokenKind.EQUAL, "expected '=' after assignment target")
         value = self._parse_initializer()
         if self._check(TokenKind.SEMICOLON):
