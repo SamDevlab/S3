@@ -67,6 +67,10 @@ Primeira entrega implementada:
 - formato textual preservado como padrão;
 - fronteira explícita: o runtime ELF continua com diagnósticos textuais.
 
+Em andamento:
+
+- simplificação da sintaxe de fonte (especificada arquiteturalmente sob ADR-0013; implementação ainda não começou; lexer, parser, exemplos e testes ainda precisam ser migrados).
+
 Permanecem pendentes:
 
 1. cache de artefatos por conteúdo/versionamento;
