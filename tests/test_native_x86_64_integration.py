@@ -647,20 +647,11 @@ def test_same_toolchain_build_is_byte_reproducible(
     second = native_toolchain.build(native, tmp_path / "two" / "program")
     first_bytes = first.read_bytes()
     second_bytes = second.read_bytes()
-    try:
-        assert first_bytes == second_bytes
-        assert hashlib.sha256(first_bytes).hexdigest() == hashlib.sha256(
-            second_bytes
-        ).hexdigest()
-    except AssertionError:
-        import subprocess
-        out1 = subprocess.run(["readelf", "-sW", str(first)], capture_output=True, text=True).stdout
-        out2 = subprocess.run(["readelf", "-sW", str(second)], capture_output=True, text=True).stdout
-        out3 = subprocess.run(["readelf", "-n", str(first)], capture_output=True, text=True).stdout
-        out4 = subprocess.run(["cmp", "-l", str(first), str(second)], capture_output=True, text=True).stdout
-        out5 = subprocess.run(["sha256sum", str(first), str(second)], capture_output=True, text=True).stdout
-        summary_msg = f"Reproducibility failed!\n--- readelf -sW first ---\n{out1}\n--- readelf -sW second ---\n{out2}\n--- readelf -n first ---\n{out3}\n--- cmp -l ---\n{out4}\n--- sha256sum ---\n{out5}"
-        raise AssertionError(summary_msg)
+    assert first_bytes == second_bytes
+    assert hashlib.sha256(first_bytes).hexdigest() == hashlib.sha256(
+        second_bytes
+    ).hexdigest()
+
 
 
 

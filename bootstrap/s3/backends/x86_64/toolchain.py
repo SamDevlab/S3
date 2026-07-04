@@ -68,36 +68,49 @@ class NativeToolchain:
         return output
 
     def _invoke(self, source: Path, output: Path) -> None:
-        command = [
+        obj_name = source.with_suffix(".o").name
+        
+        compile_command = [
             self.compiler,
             "-x",
             "assembler",
+            "-c",
+            source.name,
+            "-o",
+            obj_name,
+        ]
+        
+        link_command = [
+            self.compiler,
             "-nostdlib",
             "-no-pie",
             "-Wl,--build-id=none",
-            source.name,
+            obj_name,
             "-o",
             str(output),
         ]
-        try:
-            completed = subprocess.run(
-                command,
-                cwd=str(source.parent),
-                check=False,
-                capture_output=True,
-                text=True,
-                shell=False,
-            )
-        except OSError as error:
-            raise NativeToolchainError(
-                f"could not start native toolchain '{self.compiler}': {error}"
-            ) from error
-        if completed.returncode != 0:
-            details = completed.stderr.strip() or completed.stdout.strip()
-            raise NativeToolchainError(
-                f"native assembler/linker failed with status "
-                f"{completed.returncode}: {details}"
-            )
+        
+        for command in (compile_command, link_command):
+            try:
+                completed = subprocess.run(
+                    command,
+                    cwd=str(source.parent),
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                    shell=False,
+                )
+            except OSError as error:
+                raise NativeToolchainError(
+                    f"could not start native toolchain '{self.compiler}': {error}"
+                ) from error
+            if completed.returncode != 0:
+                details = completed.stderr.strip() or completed.stdout.strip()
+                raise NativeToolchainError(
+                    f"native assembler/linker failed with status "
+                    f"{completed.returncode}: {details}"
+                )
+
         if not output.is_file():
             raise NativeToolchainError(
                 "native assembler/linker reported success without an output file"
