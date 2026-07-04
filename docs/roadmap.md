@@ -36,7 +36,14 @@ fatorada, a política de ciclos corrigida e CI adicionada.
 - corpus diferencial e todos os exemplos;
 - CI nativa obrigatória em Ubuntu x86-64.
 
-## Marco 0.5 — robustez e otimização inicial
+## Marco 0.5 — robustez e otimização inicial (concluído e validado)
+
+Validado pelo GitHub Actions no commit `70d10a0`, com sucesso em:
+
+- Python 3.11;
+- Python 3.12;
+- Python 3.13;
+- backend nativo Linux x86-64.
 
 Implementado localmente; conclusão remota depende do job CI após push:
 

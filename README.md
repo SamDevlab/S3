@@ -47,10 +47,13 @@ Não existem `PHI`, `SUBTRACT`, `TSUB`, heap ou memória global.
 
 ```bash
 python -m venv .venv
+
 # PowerShell:
 .venv\Scripts\Activate.ps1
+
 # Linux/macOS:
 source .venv/bin/activate
+
 python -m pip install -e ".[dev]"
 ```
 
@@ -76,10 +79,11 @@ python -m bootstrap.s3.cli run-native examples/first.s3 -O1 --max-frames 128
 
 `ir-json` emite o envelope `s3-ir` 0.5.0 com newline; `verify-ir` reconstrói e
 verifica o artefato. `asm` sempre começa por `.s3asm 0.5.0`. `-O0` é padrão;
-`-O1` faz somente folding/DCE/threading conservadores. `native-asm` é
+`-O1` faz somente folding, DCE e threading conservadores. `native-asm` é
 determinístico e funciona em qualquer host.
-`build`/`run-native` exigem Linux x86-64 e `cc`, `gcc` ou `clang`; o driver usa
-somente o assembler/linker com `-nostdlib -no-pie`.
+
+`build` e `run-native` exigem Linux x86-64 e `cc`, `gcc` ou `clang`; o driver
+usa somente o assembler e o linker com `-nostdlib -no-pie`.
 
 O compilador continua sendo Python. Depois do build, o ELF chama `_start`, usa
 syscalls Linux diretamente e imprime:
@@ -125,18 +129,39 @@ Saída local registrada no host Windows com Python 3.11.15:
 244 passed, 85 skipped
 ```
 
-Os 85 casos são integrações ELF coletadas e puladas localmente porque este host
-não é Linux. O workflow [Tests](.github/workflows/tests.yml), com
+Os 85 casos são integrações ELF coletadas e puladas localmente porque esse host
+não é Linux.
+
+O workflow [Tests](.github/workflows/tests.yml), com
 `actions/checkout@v6` e `actions/setup-python@v6`, executa a suíte completa em
-Ubuntu/Python 3.11–3.13 e um job Linux x86-64 separado com
-`S3_NATIVE_REQUIRED=1`; nesse job, toolchain ausente ou skip essencial falha.
-Não se afirma aqui que uma execução remota do GitHub já ocorreu.
+Ubuntu com Python 3.11, 3.12 e 3.13, além de um job Linux x86-64 separado com
+`S3_NATIVE_REQUIRED=1`.
+
+Nesse job, a ausência da toolchain nativa ou o skip indevido de um teste
+obrigatório causa falha.
+
+O Marco 0.5 foi validado remotamente pelo GitHub Actions no commit
+[`70d10a0`](https://github.com/SamDevlab/S3/commit/70d10a0), por meio da
+execução
+[`28712027579`](https://github.com/SamDevlab/S3/actions/runs/28712027579).
+
+Todos os jobs obrigatórios concluíram com sucesso:
+
+- Python 3.11;
+- Python 3.12;
+- Python 3.13;
+- Linux x86-64 nativo.
+
+Na matriz completa de Python, a suíte terminou com 329 testes aprovados em cada
+versão. No job nativo Linux x86-64, os 85 testes obrigatórios de integração
+foram aprovados.
 
 Uma validação manual adicional montou, ligou e executou GNU assembly com GCC
-9.5 em Linux: os onze exemplos produziram os mesmos valores em O0/O1;
-overflow, bounds e limite de frames exibiram contexto/valor e status 1.
-Identidade byte a byte e `readelf` estão testados no job Linux, mas nenhuma
-execução remota do GitHub é alegada antes do push.
+9.5 em Linux. Os onze exemplos produziram os mesmos valores em O0 e O1;
+overflow, bounds e limite de frames exibiram contexto, valor e status 1.
+
+A reprodutibilidade byte a byte dos ELF, os hashes SHA-256 e a inspeção com
+`readelf` também são verificadas automaticamente no job Linux.
 
 ## Memória lógica
 
@@ -152,10 +177,10 @@ instruções:         100000
 memória por frame:  6561 trits lógicos (3^8)
 ```
 
-Índice negativo/fora da faixa, tipo incorreto, leitura não inicializada,
+Índice negativo ou fora da faixa, tipo incorreto, leitura não inicializada,
 segunda escrita imutável ou excesso de memória terminam com diagnóstico.
 
-Ciclos IR/assembly são permitidos quando estruturalmente válidos. O emulador
+Ciclos IR e assembly são permitidos quando estruturalmente válidos. O emulador
 limita instruções; emulador e nativo limitam frames S3. O contador nativo é
 estado privado do runtime, não memória global da linguagem.
 
@@ -163,18 +188,25 @@ estado privado do runtime, não memória global da linguagem.
 
 Em objetos físicos, `trit` usa inteiro assinado de 8 bits e `tryte`, inteiro
 assinado de 16 bits. Cálculos e slots de registradores virtuais usam 64 bits.
+
 Cada frame contém valores, flags de inicialização, arrays contíguos e um byte
 de estado por elemento; o tamanho físico é alinhado a 16 bytes e não se
 confunde com a cota lógica.
 
-`TADD` valida overflow, `TBR3` valida -1/0/1, todo acesso valida bounds e
-inicialização, e `TMIN`/`TMAX` de trytes usam helpers assembly tritwise. Erros
-escrevem em stderr, identificam o ponto lógico e saem com status 1. Contratos:
-[representação física](docs/decisions/ADR-0007-x86-64-physical-representation.md),
-[ABI/runtime](docs/decisions/ADR-0008-x86-64-native-abi-and-runtime.md) e
-[especificação nativa](spec/native-x86_64.md),
-[artefatos](spec/artifacts.md), [diagnósticos](spec/native-diagnostics.md) e
-[otimização](spec/optimization.md).
+`TADD` valida overflow, `TBR3` valida `-1`, `0` ou `1`, e todo acesso valida
+bounds e inicialização. `TMIN` e `TMAX` de trytes usam helpers assembly
+tritwise.
+
+Erros escrevem em stderr, identificam o ponto lógico e encerram com status 1.
+
+Contratos:
+
+- [representação física](docs/decisions/ADR-0007-x86-64-physical-representation.md);
+- [ABI e runtime](docs/decisions/ADR-0008-x86-64-native-abi-and-runtime.md);
+- [especificação nativa](spec/native-x86_64.md);
+- [artefatos](spec/artifacts.md);
+- [diagnósticos](spec/native-diagnostics.md);
+- [otimização](spec/optimization.md).
 
 ## Organização
 
@@ -189,10 +221,13 @@ selfhost/        fronteira da futura implementação em S3
 
 ## Limitações e próximo marco
 
-Não há ponteiros, heap, globals, arrays dinâmicos/multidimensionais, arrays em
-assinaturas, strings, estruturas, módulos, I/O, linker próprio, ABI C pública
-ou backend para Windows/macOS/ARM64. O target nativo é somente Linux x86-64;
-não há interoperabilidade C, JIT, TCO ou otimização interprocedural. ARM64
-possui apenas [estudo de viabilidade](docs/arm64-feasibility.md). O próximo
-marco recomendado trata diagnósticos estruturados, caching e otimizações
-mensuradas; veja o [roadmap](docs/roadmap.md).
+Não há ponteiros, heap, globals, arrays dinâmicos ou multidimensionais, arrays
+em assinaturas, strings, estruturas, módulos, I/O, linker próprio, ABI C
+pública ou backend para Windows, macOS ou ARM64.
+
+O target nativo é somente Linux x86-64. Não há interoperabilidade C, JIT, TCO
+ou otimização interprocedural. ARM64 possui apenas um
+[estudo de viabilidade](docs/arm64-feasibility.md).
+
+O próximo marco recomendado trata diagnósticos estruturados, caching e
+otimizações mensuradas; consulte o [roadmap](docs/roadmap.md).
