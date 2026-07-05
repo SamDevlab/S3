@@ -104,7 +104,7 @@ Estado:
 - E1, paridade hospedada e interface pública: concluída;
 - E2, instrumentação nativa: concluída;
 - E3, validação ELF: concluída;
-- E4, fechamento: concluída localmente; publicação pendente.
+- E4, fechamento: concluída; versão 0.7.0, tag e release publicadas.
 
 O que a E1, E2 e E3 entregaram:
 

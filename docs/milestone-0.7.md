@@ -3,7 +3,7 @@
 ## Estado
 
 E0 normativa concluída. E1 paridade hospedada concluída. E2 instrumentação nativa implementada. E3 (validação ELF real) concluída e integrada na branch `main`.
-O estado funcional do Marco 0.7 está concluído. A E4 (fechamento documental, empacotamento e preparação da versão 0.7.0) está concluída localmente; publicação pendente.
+O estado funcional do Marco 0.7 está concluído. A E4 (fechamento documental, empacotamento e versão 0.7.0) está encerrada; a tag v0.7.0 e a GitHub Release foram publicadas.
 
 Todos os critérios de aceitação foram satisfeitos. A CI da `main` (Run 28745917775) validou:
 - 622 passed por job Python (3.11, 3.12, 3.13);
@@ -14,7 +14,7 @@ As versões foram preservadas (fonte 0.6, IR 0.5.0, Assembly 0.5.0, schema 1.0.0
 Este documento fecha o escopo do Marco 0.7 conforme o
 [ADR-0014](decisions/ADR-0014-hosted-and-native-instruction-limit.md). A E0
 formalizou a decisão normativa, a E1 implementou a paridade hospedada e a E2
-implementou a instrumentação nativa; a E3 concluiu a validação ELF; a E4 é o fechamento final, atualmente preparada localmente.
+implementou a instrumentação nativa; a E3 concluiu a validação ELF; a E4 é o fechamento final, concluído com a publicação da versão 0.7.0.
 
 ## Decisão normativa
 
@@ -307,7 +307,7 @@ maior. Não se propõe um modo ilimitado implícito.
 
 1. **E0 — decisão normativa (concluída):** registrar ADR e ajustar as
    especificações de otimização, runtime e diagnósticos antes do código.
-2. **E1 — paridade hospedada (concluída localmente):** constante
+2. **E1 — paridade hospedada (concluída):** constante
    `DEFAULT_MAX_INSTRUCTIONS` centralizada, `max_instructions` exposto em
    `run_source` e `execute_assembly`, opção `--max-instructions` adicionada ao
    comando `run`, validação de valores inválidos, testes de contador global,
@@ -317,7 +317,7 @@ maior. Não se propõe um modo ilimitado implícito.
    comandos `native-asm`, `build` e `run-native`.
 4. **E3 — validação ELF (concluída e integrada):** executar diferenciais e limites reais no Linux
    x86-64 obrigatório, incluindo O0/O1 e reprodutibilidade.
-5. **E4 — fechamento (concluída localmente; publicação pendente):** auditar compatibilidade, documentação, empacotamento e
+5. **E4 — fechamento (concluída; versão 0.7.0 publicada):** auditar compatibilidade, documentação, empacotamento e
    preparar a distribuição 0.7.0 sem mudar as versões dos formatos.
 
 Cada entrega deve ser pequena, revisável e manter a suíte verde. O Marco 0.7 encerra-se com a E4.
