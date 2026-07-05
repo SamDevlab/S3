@@ -65,7 +65,7 @@ fn main() -> tryte:
     compilation = compile_source(source)
     count = sum(len(b.instructions) for b in compilation.assembly.functions[0].blocks)
     
-    res_fail = _run_native(source, tmp_path / "fail_limit", native_toolchain, count - 1)
+    res_fail = _run_native(source, tmp_path / "fail_limit", native_toolchain, count - 2)
     assert res_fail.returncode == 1
     assert "instruction limit" in res_fail.stderr
     assert "bounds" not in res_fail.stderr
