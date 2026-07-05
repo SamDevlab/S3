@@ -19,27 +19,22 @@ from bootstrap.s3.backends.x86_64.backend import generate_native_assembly
 from bootstrap.s3.diagnostics import DIAGNOSTIC_SCHEMA_VERSION
 from bootstrap.s3.ir_serialization import IR_FORMAT_VERSION
 
-try:
-    import tomllib
-except ImportError:
-    try:
-        import tomli as tomllib
-    except ImportError:
-        tomllib = None
+import tomllib
 
 BENCHMARK_FORMAT_VERSION = "1.0.0"
 
 def extract_format_and_output():
     fmt = "text"
     output = None
-    if "--format" in sys.argv:
-        idx = sys.argv.index("--format")
-        if idx + 1 < len(sys.argv):
-            fmt = sys.argv[idx + 1]
-    if "--output" in sys.argv:
-        idx = sys.argv.index("--output")
-        if idx + 1 < len(sys.argv):
-            output = sys.argv[idx + 1]
+    for i, arg in enumerate(sys.argv):
+        if arg == "--format" and i + 1 < len(sys.argv):
+            fmt = sys.argv[i + 1]
+        elif arg.startswith("--format="):
+            fmt = arg.split("=", 1)[1]
+        elif arg == "--output" and i + 1 < len(sys.argv):
+            output = sys.argv[i + 1]
+        elif arg.startswith("--output="):
+            output = arg.split("=", 1)[1]
 
     class MockArgs:
         pass
@@ -96,17 +91,13 @@ def get_distribution_version() -> str:
     except importlib.metadata.PackageNotFoundError:
         pass
 
-    if tomllib:
-        try:
-            checkout_root = Path(__file__).resolve().parent.parent
-            pyproject_path = checkout_root / "pyproject.toml"
-            if pyproject_path.exists():
-                with pyproject_path.open("rb") as f:
-                    data = tomllib.load(f)
-                return data["project"]["version"]
-        except Exception:
-            pass
-    return "unavailable"
+    try:
+        pyproject_path = Path(__file__).resolve().parent.parent / "pyproject.toml"
+        with pyproject_path.open("rb") as f:
+            pyproject_data = tomllib.load(f)
+        return pyproject_data["project"]["version"]
+    except Exception:
+        return "unavailable"
 
 def syntax_mode_to_string(mode: SyntaxMode) -> str:
     if mode == SyntaxMode.V0_5:
@@ -225,35 +216,42 @@ def load_manifest(manifest_path: Path) -> dict:
             raise ValueError(f"Duplicate workload ID: {w_id}")
         seen_ids.add(w_id)
 
+        description = w.get("description")
+        if not isinstance(description, str) or not description.strip():
+            raise ValueError(f"Missing or empty description in workload {w_id}")
+
         file_path = w.get("file")
         if not isinstance(file_path, str):
             raise ValueError(f"Invalid file for workload {w_id}")
 
-        if Path(file_path).is_absolute():
-            raise ValueError(f"Absolute path in workload {w_id}")
-        if ".." in file_path:
-            raise ValueError(f"Path traversal in workload {w_id}")
+        # Phase 4 path validation
+        from pathlib import PurePosixPath, PureWindowsPath
+        if PurePosixPath(file_path).is_absolute():
+            raise ValueError(f"Absolute POSIX path in workload {w_id}")
+        if PureWindowsPath(file_path).is_absolute() or file_path.startswith("\\\\"):
+            raise ValueError(f"Absolute Windows/UNC path in workload {w_id}")
+
+        for part in PurePosixPath(file_path.replace("\\\\", "/")).parts:
+            if part == "..":
+                raise ValueError(f"Path traversal in workload {w_id}")
 
         full_path = (benchmarks_dir / file_path).resolve()
         try:
             full_path.relative_to(benchmarks_dir.resolve())
         except ValueError:
-            raise ValueError(f"Path traversal in workload {w_id}")
-
-        if not full_path.exists():
-            raise ValueError(f"File {file_path} does not exist")
+            raise ValueError(f"Path traversal out of benchmarks in workload {w_id}")
 
         expected_return = w.get("expected_return")
-        if not isinstance(expected_return, int):
-            raise ValueError(f"Invalid expected_return in {w_id}")
+        if not isinstance(expected_return, int) or isinstance(expected_return, bool):
+            raise ValueError(f"Invalid expected_return in workload {w_id}")
 
         max_instructions = w.get("max_instructions")
-        if not isinstance(max_instructions, int) or max_instructions <= 0:
-            raise ValueError(f"Invalid max_instructions in {w_id}")
+        if not isinstance(max_instructions, int) or isinstance(max_instructions, bool) or max_instructions < 1:
+            raise ValueError(f"Invalid max_instructions in workload {w_id}")
 
         max_frames = w.get("max_frames")
-        if not isinstance(max_frames, int) or max_frames <= 0:
-            raise ValueError(f"Invalid max_frames in {w_id}")
+        if not isinstance(max_frames, int) or isinstance(max_frames, bool) or max_frames < 1:
+            raise ValueError(f"Invalid max_frames in workload {w_id}")
 
     if seen_ids != valid_ids:
         raise ValueError("Manifest must contain exactly the seven official workloads")
@@ -397,6 +395,8 @@ def main():
             try:
                 out1 = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
                 out2 = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
+            except TypeError as e:
+                exit_error(args, "S3_BENCH_NATIVE_TYPE_ERROR", str(e))
             except Exception as e:
                 exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Workload {w['id']} failed during determinism check: {e}")
 
@@ -424,7 +424,10 @@ def main():
                 if actual != expected_ret:
                     exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Warmup failed for {w['id']}")
             else:
-                out = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
+                try:
+                    out = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
+                except TypeError as e:
+                    exit_error(args, "S3_BENCH_NATIVE_TYPE_ERROR", str(e))
                 if not out:
                     exit_error(args, "S3_BENCH_NATIVE_EMPTY", f"Warmup failed for {w['id']}: empty output")
 
@@ -442,9 +445,11 @@ def main():
                 actual_for_json = actual
             else:
                 start_ns = time.perf_counter_ns()
-                out = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
+                try:
+                    out = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
+                except TypeError as e:
+                    exit_error(args, "S3_BENCH_NATIVE_TYPE_ERROR", str(e))
                 end_ns = time.perf_counter_ns()
-
                 if not out:
                     exit_error(args, "S3_BENCH_NATIVE_EMPTY", f"Run failed for {w['id']}: empty output")
 
