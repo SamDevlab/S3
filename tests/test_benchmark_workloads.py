@@ -23,61 +23,109 @@ def test_manifest_missing_workloads(tmp_path):
     with pytest.raises(ValueError, match="Workloads must be a non-empty list"):
         load_manifest(p)
 
+def get_base_mock_workload(w_id="minimal"):
+    return {
+        "id": w_id,
+        "description": "mock",
+        "file": f"{w_id}.s3",
+        "expected_return": 0,
+        "max_instructions": 1,
+        "max_frames": 1
+    }
+
 def test_manifest_duplicate_id(tmp_path):
     p = tmp_path / "manifest.json"
-    f1 = tmp_path / "f"
-    f2 = tmp_path / "f2"
-    f1.write_text("dummy")
-    f2.write_text("dummy")
-
     p.write_text(json.dumps({
         "manifest_version": "1.0.0",
-        "workloads": [
-            {"id": "minimal", "file": "f", "expected_return": 0, "max_instructions": 1, "max_frames": 1},
-            {"id": "minimal", "file": "f2", "expected_return": 0, "max_instructions": 1, "max_frames": 1}
-        ]
+        "workloads": [get_base_mock_workload("minimal"), get_base_mock_workload("minimal")]
     }))
     with pytest.raises(ValueError, match="Duplicate workload ID"):
         load_manifest(p)
 
 def test_manifest_missing_id(tmp_path):
     p = tmp_path / "manifest.json"
-    f1 = tmp_path / "f"
-    f1.write_text("dummy")
+    w = get_base_mock_workload("minimal")
+    del w["id"]
     p.write_text(json.dumps({
         "manifest_version": "1.0.0",
-        "workloads": [{"file": "f", "expected_return": 0, "max_instructions": 1, "max_frames": 1}]
+        "workloads": [w]
     }))
     with pytest.raises(ValueError, match="Invalid or missing ID"):
         load_manifest(p)
 
 def test_manifest_invalid_file(tmp_path):
     p = tmp_path / "manifest.json"
-    abs_path = "C:/absolute/path" if os.name == "nt" else "/absolute/path"
-    p.write_text(json.dumps({
-        "manifest_version": "1.0.0",
-        "workloads": [{"id": "minimal", "file": abs_path}]
-    }))
-    with pytest.raises(ValueError, match="Absolute path"):
+    # POSIX absolute
+    w = get_base_mock_workload("minimal")
+    w["file"] = "/absolute/path"
+    p.write_text(json.dumps({"manifest_version": "1.0.0", "workloads": [w]}))
+    with pytest.raises(ValueError, match="Absolute POSIX path"):
+        load_manifest(p)
+
+    # Windows absolute
+    w["file"] = "C:\\\\absolute\\\\path"
+    p.write_text(json.dumps({"manifest_version": "1.0.0", "workloads": [w]}))
+    with pytest.raises(ValueError, match="Absolute Windows/UNC path"):
+        load_manifest(p)
+
+    # UNC path
+    w["file"] = "\\\\\\\\server\\\\path"
+    p.write_text(json.dumps({"manifest_version": "1.0.0", "workloads": [w]}))
+    with pytest.raises(ValueError, match="Absolute Windows/UNC path"):
         load_manifest(p)
 
 def test_manifest_traversal(tmp_path):
     p = tmp_path / "manifest.json"
-    p.write_text(json.dumps({
-        "manifest_version": "1.0.0",
-        "workloads": [{"id": "minimal", "file": "../test"}]
-    }))
+    w = get_base_mock_workload("minimal")
+    w["file"] = "../test"
+    p.write_text(json.dumps({"manifest_version": "1.0.0", "workloads": [w]}))
     with pytest.raises(ValueError, match="Path traversal"):
         load_manifest(p)
 
 def test_manifest_limits(tmp_path):
     p = tmp_path / "manifest.json"
-    f1 = tmp_path / "minimal.s3"
-    f1.write_text("dummy")
-    base = {"manifest_version": "1.0.0", "workloads": [{"id": "minimal", "file": "minimal.s3", "expected_return": 0, "max_instructions": 0, "max_frames": 1}]}
-    p.write_text(json.dumps(base))
+    w = get_base_mock_workload("minimal")
+    w["max_instructions"] = 0
+    p.write_text(json.dumps({"manifest_version": "1.0.0", "workloads": [w]}))
     with pytest.raises(ValueError, match="Invalid max_instructions"):
         load_manifest(p)
+
+def test_manifest_validation_failures(tmp_path):
+    p = tmp_path / "manifest.json"
+
+    def write_load(w_dict):
+        p.write_text(json.dumps({"manifest_version": "1.0.0", "workloads": [w_dict]}))
+        load_manifest(p)
+
+    # expected_return is bool
+    w = get_base_mock_workload("minimal")
+    w["expected_return"] = True
+    with pytest.raises(ValueError, match="Invalid expected_return"):
+        write_load(w)
+
+    # max_instructions is bool
+    w = get_base_mock_workload("minimal")
+    w["max_instructions"] = True
+    with pytest.raises(ValueError, match="Invalid max_instructions"):
+        write_load(w)
+
+    # max_frames is bool
+    w = get_base_mock_workload("minimal")
+    w["max_frames"] = True
+    with pytest.raises(ValueError, match="Invalid max_frames"):
+        write_load(w)
+
+    # description missing
+    w = get_base_mock_workload("minimal")
+    del w["description"]
+    with pytest.raises(ValueError, match="Missing or empty description"):
+        write_load(w)
+
+    # description empty
+    w = get_base_mock_workload("minimal")
+    w["description"] = "   "
+    with pytest.raises(ValueError, match="Missing or empty description"):
+        write_load(w)
 
 def test_load_official_manifest():
     root = Path(__file__).resolve().parent.parent
