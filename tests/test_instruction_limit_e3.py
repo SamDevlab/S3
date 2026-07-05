@@ -59,7 +59,8 @@ def test_order_before_effects(native_toolchain: NativeToolchain, tmp_path: Path)
     source = """
 fn main() -> tryte:
     arr: tryte[2] = [0, 0]
-    return arr[5]
+    idx: tryte = 5
+    return arr[idx]
 """
     compilation = compile_source(source)
     count = sum(len(b.instructions) for b in compilation.assembly.functions[0].blocks)
@@ -169,9 +170,8 @@ def test_run_native_cli_textual_and_json(native_toolchain: NativeToolchain, tmp_
     source_file.write_text("fn main() -> tryte:\n    return 1 + 2\n", encoding="utf-8")
     
     monkeypatch.setattr(sys, "argv", ["s3", "run-native", str(source_file), "--max-instructions=1"])
-    with pytest.raises(SystemExit) as excinfo:
-        cli_main()
-    assert excinfo.value.code != 0
+    code1 = cli_main()
+    assert code1 != 0
     
     from io import BytesIO
     mock_stderr = BytesIO()
@@ -179,9 +179,8 @@ def test_run_native_cli_textual_and_json(native_toolchain: NativeToolchain, tmp_
     monkeypatch.setattr(sys.stderr, "buffer", mock_stderr, raising=False)
     
     monkeypatch.setattr(sys, "argv", ["s3", "run-native", str(source_file), "--max-instructions=1", "--diagnostic-format=json"])
-    with pytest.raises(SystemExit) as excinfo:
-        cli_main()
-    assert excinfo.value.code != 0
+    code2 = cli_main()
+    assert code2 != 0
     
     output = mock_stderr.getvalue().decode("utf-8")
     data = json.loads(output)
