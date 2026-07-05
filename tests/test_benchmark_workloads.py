@@ -140,8 +140,8 @@ def test_workloads_execution():
 
     for w in data["workloads"]:
         src = (root / "benchmarks" / w["file"]).read_text(encoding="utf-8")
-        ret_o0, _, _, _ = run_hosted_pipeline(src, OptimizationLevel.O0, w["max_instructions"], w["max_frames"])
-        ret_o1, _, _, _ = run_hosted_pipeline(src, OptimizationLevel.O1, w["max_instructions"], w["max_frames"])
+        ret_o0 = run_hosted_pipeline(src, OptimizationLevel.O0, w["max_instructions"], w["max_frames"])[0]
+        ret_o1 = run_hosted_pipeline(src, OptimizationLevel.O1, w["max_instructions"], w["max_frames"])[0]
         assert ret_o0 == w["expected_return"]
         assert ret_o1 == w["expected_return"]
 
@@ -160,18 +160,23 @@ def test_deterministic_metrics_gate():
     workloads = {w["id"]: w for w in manifest["workloads"]}
 
     for b_res in baseline["results"]:
-        w_id = b_res["workload"]
-        opt_level_str = b_res.get("opt_level", "O0")
-        opt = OptimizationLevel.O1 if opt_level_str == "O1" else OptimizationLevel.O0
-        
-        w = workloads[w_id]
-        src = (root / "benchmarks" / w["file"]).read_text(encoding="utf-8")
-        
-        # run hosted to get actual dynamic metrics
-        ret, _, static_metrics, dynamic_metrics = run_hosted_pipeline(src, opt, w["max_instructions"], w["max_frames"])
-        
-        # check expected metrics
-        expected_metrics = b_res["metrics"]
+        if "comparison" in b_res:
+            items = [b_res["O0"], b_res["O1"]]
+        else:
+            items = [b_res]
+
+        for item in items:
+            opt_level_str = item.get("opt_level", "O0")
+            opt = OptimizationLevel.O1 if opt_level_str == "O1" else OptimizationLevel.O0
+            
+            w = workloads[item["workload"]]
+            src = (root / "benchmarks" / w["file"]).read_text(encoding="utf-8")
+            
+            # run hosted to get actual dynamic metrics
+            ret, _, static_metrics, dynamic_metrics, _, _, _ = run_hosted_pipeline(src, opt, w["max_instructions"], w["max_frames"])
+            
+            # check expected metrics
+            expected_metrics = item["metrics"]
         
         # check static S3 assembly
         assert static_metrics["s3_assembly"]["opcode_count"] == expected_metrics["s3_assembly"]["opcode_count"]
@@ -182,7 +187,7 @@ def test_deterministic_metrics_gate():
         
         # check native generation determinism
         from tools.benchmark import run_native_asm_pipeline
-        out, _, _ = run_native_asm_pipeline(src, opt, w["max_instructions"], w["max_frames"])
+        out, _, _, _, _, _ = run_native_asm_pipeline(src, opt, w["max_instructions"], w["max_frames"])
         import hashlib
         out_sha256 = hashlib.sha256(out.encode("utf-8")).hexdigest()
         
