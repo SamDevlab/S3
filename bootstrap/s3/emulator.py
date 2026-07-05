@@ -71,6 +71,7 @@ WIDTH_MAP = {
 
 DEFAULT_MAX_MEMORY_TRITS = 6561
 DEFAULT_MAX_FRAMES = 1024
+DEFAULT_MAX_INSTRUCTIONS = 100_000
 
 
 @dataclass(slots=True)
@@ -91,7 +92,7 @@ class Emulator:
         self,
         *,
         max_frames: int = DEFAULT_MAX_FRAMES,
-        max_instructions: int = 100_000,
+        max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
         max_memory_trits: int = DEFAULT_MAX_MEMORY_TRITS,
     ):
         if max_frames < 1:
@@ -1022,7 +1023,7 @@ def execute_assembly(
     entry: str = "main",
     *,
     max_frames: int = DEFAULT_MAX_FRAMES,
-    max_instructions: int = 100_000,
+    max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
     max_memory_trits: int = DEFAULT_MAX_MEMORY_TRITS,
 ) -> int:
     program = parse_assembly(assembly) if isinstance(assembly, str) else assembly

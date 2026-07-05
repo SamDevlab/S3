@@ -26,7 +26,7 @@ from .diagnostics import (
     S3Error,
     diagnostic_from_exception,
 )
-from .emulator import DEFAULT_MAX_FRAMES, Emulator
+from .emulator import DEFAULT_MAX_FRAMES, DEFAULT_MAX_INSTRUCTIONS, Emulator
 from .ir_serialization import deserialize_ir, serialize_ir
 from .lexer import SyntaxMode
 from .optimizer import OptimizationLevel
@@ -60,23 +60,8 @@ def _parser() -> argparse.ArgumentParser:
         prog="s3",
         description="S3 balanced-ternary bootstrap toolchain",
     )
-    parser.add_argument(
-        "command",
-        choices=(
-            "tokens",
-            "ast",
-            "ir",
-            "ir-json",
-            "verify-ir",
-            "asm",
-            "run",
-            "native-asm",
-            "build",
-            "run-native",
-        ),
-        help="pipeline artifact to print or action to perform",
-    )
-    parser.add_argument("source", type=Path, help="path to an S3 source file")
+
+    # --- Add common options to the main parser (with defaults) ---
     parser.add_argument(
         "-o",
         "--output",
@@ -120,6 +105,90 @@ def _parser() -> argparse.ArgumentParser:
         default="0.6",
         help="Source syntax version (default: 0.6)",
     )
+
+    # --- Parent parser for subcommands (without defaults, so they don't overwrite) ---
+    parent = argparse.ArgumentParser(add_help=False)
+    parent.add_argument("source", type=Path, help="path to an S3 source file")
+    parent.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        default=argparse.SUPPRESS,
+        help=argparse.SUPPRESS,
+    )
+    parent.add_argument(
+        "--keep-assembly",
+        type=Path,
+        metavar="PATH",
+        default=argparse.SUPPRESS,
+        help=argparse.SUPPRESS,
+    )
+    parent.add_argument(
+        "--max-frames",
+        type=int,
+        metavar="N",
+        default=argparse.SUPPRESS,
+        help=argparse.SUPPRESS,
+    )
+    parent.add_argument(
+        "-O",
+        dest="optimization",
+        choices=("0", "1"),
+        default=argparse.SUPPRESS,
+        help=argparse.SUPPRESS,
+    )
+    parent.add_argument(
+        "--diagnostic-format",
+        choices=("text", "json"),
+        default=argparse.SUPPRESS,
+        help=argparse.SUPPRESS,
+    )
+    parent.add_argument(
+        "--debug",
+        action="store_true",
+        default=argparse.SUPPRESS,
+        help=argparse.SUPPRESS,
+    )
+    parent.add_argument(
+        "--source-syntax",
+        choices=("0.5", "0.6"),
+        default=argparse.SUPPRESS,
+        help=argparse.SUPPRESS,
+    )
+
+    subparsers = parser.add_subparsers(
+        dest="command",
+        parser_class=_ArgumentParser,
+        help="pipeline artifact to print or action to perform",
+    )
+    subparsers.required = True
+
+    commands = (
+        "tokens",
+        "ast",
+        "ir",
+        "ir-json",
+        "verify-ir",
+        "asm",
+        "run",
+        "native-asm",
+        "build",
+        "run-native",
+    )
+    for cmd in commands:
+        p = subparsers.add_parser(cmd, parents=[parent])
+        if cmd == "run":
+            p.add_argument(
+                "--max-instructions",
+                type=int,
+                default=DEFAULT_MAX_INSTRUCTIONS,
+                metavar="N",
+                help=(
+                    f"maximum S3 opcodes for 'run' (default: {DEFAULT_MAX_INSTRUCTIONS});"
+                    " not accepted by native commands"
+                ),
+            )
+
     return parser
 
 
@@ -187,6 +256,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return 2
 
+
+    if args.command == "run" and args.max_instructions < 1:
+        _usage_error = _CLIUsageError("--max-instructions must be at least 1")
+        if args.diagnostic_format == "json":
+            _emit_error(_usage_error, args.diagnostic_format)
+        else:
+            print(parser.format_usage(), end="", file=sys.stderr)
+            print(f"{parser.prog}: error: {_usage_error}", file=sys.stderr)
+        return 2
+
     try:
         if args.max_frames < 1:
             raise NativeBackendError("--max-frames must be at least 1")
@@ -223,7 +302,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         elif args.command == "asm":
             print(compilation.assembly_text, end="")
         elif args.command == "run":
-            result = Emulator(max_frames=args.max_frames).execute(
+            result = Emulator(
+                max_frames=args.max_frames,
+                max_instructions=args.max_instructions,
+            ).execute(
                 compilation.assembly
             )
             print(f"program returned: {result}")

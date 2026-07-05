@@ -2,12 +2,12 @@
 
 ## Estado
 
-Aprovado. Implementação ainda não iniciada.
+E0 normativa concluída. E1 paridade hospedada concluída localmente (pendente CI).
 
 Este documento fecha o escopo do Marco 0.7 conforme o
 [ADR-0014](decisions/ADR-0014-hosted-and-native-instruction-limit.md). A E0
-formalizou a decisão normativa; a E1 é a próxima entrega e deve ocorrer
-separadamente.
+formalizou a decisão normativa e a E1 implementou a paridade hospedada; a E2 é
+a próxima entrega e deve ocorrer separadamente.
 
 ## Decisão normativa
 
@@ -85,8 +85,15 @@ No baseline 0.6.0:
   chamados;
 - excesso produz `S3E_RUNTIME_INSTRUCTION_LIMIT`, categoria
   `instruction-limit`, fase `emulation`, função, bloco e limite;
-- `run_source` e o comando `s3 run` não expõem esse parâmetro e usam o padrão;
-- a CLI expõe apenas `--max-frames`;
+- `DEFAULT_MAX_INSTRUCTIONS = 100_000` centralizado em `emulator.py`, eliminando
+  os dois literais isolados;
+- `Emulator`, `execute_assembly` e `run_source` aceitam e propagam `max_instructions`;
+- `s3 run --max-instructions N` aceita inteiro positivo e propaga até o `Emulator`;
+- zero e valores negativos são rejeitados com mensagem de uso (CLI) ou `ValueError` (API);
+- `--max-instructions` está ausente de `native-asm`, `build` e `run-native` nesta E1;
+- diagnóstico `S3E_RUNTIME_INSTRUCTION_LIMIT` preservado sem alteração;
+- orçamento global confirmado por testes: chamadas, recursão, TCALL, TRET e TJMP;
+- nenhuma versão alterada.
 - `X8664Backend`, `generate_native_assembly` e `X8664Emitter` recebem somente o
   limite de frames;
 - o runtime nativo possui contador privado de frames, mas nenhum contador de
@@ -290,9 +297,11 @@ maior. Não se propõe um modo ilimitado implícito.
 
 1. **E0 — decisão normativa (concluída):** registrar ADR e ajustar as
    especificações de otimização, runtime e diagnósticos antes do código.
-2. **E1 — paridade hospedada (próxima):** centralizar o default, expor API/CLI
-   somente nos comandos aprovados e completar diagnóstico e testes do
-   emulador.
+2. **E1 — paridade hospedada (concluída localmente):** constante
+   `DEFAULT_MAX_INSTRUCTIONS` centralizada, `max_instructions` exposto em
+   `run_source` e `execute_assembly`, opção `--max-instructions` adicionada ao
+   comando `run`, validação de valores inválidos, testes de contador global,
+   diagnóstico preservado. Ausente de `native-asm`, `build` e `run-native`.
 3. **E2 — instrumentação nativa:** implementar contador, handlers e testes
    unitários da assembly sem alterar a toolchain.
 4. **E3 — validação ELF:** executar diferenciais e limites reais no Linux

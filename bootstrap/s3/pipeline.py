@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from . import ast
 from .assembly import AssemblyProgram
 from .codegen import generate_assembly
-from .emulator import DEFAULT_MAX_FRAMES, Emulator
+from .emulator import DEFAULT_MAX_FRAMES, DEFAULT_MAX_INSTRUCTIONS, Emulator
 from .ir import IRProgram
 from .lexer import SyntaxMode, Token, tokenize
 from .lowering import lower
@@ -58,7 +58,11 @@ def run_source(
     optimization: OptimizationLevel | str = OptimizationLevel.O0,
     *,
     max_frames: int = DEFAULT_MAX_FRAMES,
+    max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
     mode: SyntaxMode = SyntaxMode.V0_6,
 ) -> int:
     compilation = compile_source(source, optimization, mode=mode)
-    return Emulator(max_frames=max_frames).execute(compilation.assembly, entry)
+    return Emulator(
+        max_frames=max_frames,
+        max_instructions=max_instructions,
+    ).execute(compilation.assembly, entry)

@@ -91,21 +91,28 @@ Entrega E:
   verde em Python 3.11–3.13 e Linux x86-64 nativo;
 - Marco 0.6 concluído.
 
-## Marco 0.7 — paridade do limite de instruções (E0 normativa concluída)
+## Marco 0.7 — paridade do limite de instruções (E0 e E1 concluídas localmente)
 
-A E0 aprovou exclusivamente a paridade do limite de instruções entre o
-emulador hospedado e o runtime Linux x86-64. O contrato está no
+A E0 aprovou o contrato normativo do limite de instruções. A E1 implementou
+a paridade hospedada. O contrato está no
 [ADR-0014](decisions/ADR-0014-hosted-and-native-instruction-limit.md) e no
 [plano do marco](milestone-0.7.md).
 
 Estado:
 
-- E0, decisão normativa: concluída;
-- E1, paridade hospedada e interface pública: próxima entrega;
-- E2, instrumentação nativa: não iniciada;
+- E0, decisão normativa: concluída e publicada;
+- E1, paridade hospedada e interface pública: concluída localmente (pendente CI);
+- E2, instrumentação nativa: próxima entrega;
 - E3, validação ELF: não iniciada;
-- E4, fechamento: não iniciada;
-- implementação funcional: ainda não iniciada.
+- E4, fechamento: não iniciada.
+
+O que a E1 entregou:
+
+- `DEFAULT_MAX_INSTRUCTIONS = 100_000` como constante pública em `emulator.py`;
+- `max_instructions` exposto em `run_source` e `execute_assembly`;
+- `s3 run --max-instructions N` com validação de valores inválidos;
+- `--max-instructions` ausente de `native-asm`, `build` e `run-native` nesta E1;
+- diagnóstico `S3E_RUNTIME_INSTRUCTION_LIMIT` preservado sem alteração.
 
 O default aprovado é `100000` opcodes S3 Assembly executados. Fonte, gramática,
 AST, semântica, IR 0.5.0, Assembly 0.5.0 e schema diagnóstico 1.0.0 não mudam.
