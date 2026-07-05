@@ -91,7 +91,7 @@ Entrega E:
   verde em Python 3.11–3.13 e Linux x86-64 nativo;
 - Marco 0.6 concluído.
 
-## Marco 0.7 — paridade do limite de instruções (E0, E1 e E2 concluídas localmente)
+## Marco 0.7 — paridade do limite de instruções (E0, E1, E2 e E3 concluídas)
 
 A E0 aprovou o contrato normativo do limite de instruções. A E1 implementou
 a paridade hospedada. A E2 implementou a instrumentação nativa. O contrato está no
@@ -101,9 +101,9 @@ a paridade hospedada. A E2 implementou a instrumentação nativa. O contrato est
 Estado:
 
 - E0, decisão normativa: concluída e publicada;
-- E1, paridade hospedada e interface pública: concluída localmente (pendente CI);
-- E2, instrumentação nativa: concluída localmente (pendente CI);
-- E3, validação ELF: próxima entrega;
+- E1, paridade hospedada e interface pública: concluída;
+- E2, instrumentação nativa: concluída;
+- E3, validação ELF: concluída e validada na branch (integração pendente);
 - E4, fechamento: não iniciada.
 
 O que a E1 e a E2 entregaram:
