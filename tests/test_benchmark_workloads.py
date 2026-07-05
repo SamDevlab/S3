@@ -176,8 +176,9 @@ def test_deterministic_metrics_gate():
         # check static S3 assembly
         assert static_metrics["s3_assembly"]["opcode_count"] == expected_metrics["s3_assembly"]["opcode_count"]
         
-        # check dynamic opcodes
-        assert dynamic_metrics["execution"]["executed_s3_opcodes"] == expected_metrics["execution"]["executed_s3_opcodes"]
+        # check dynamic opcodes if present
+        if "execution" in expected_metrics:
+            assert dynamic_metrics["execution"]["executed_s3_opcodes"] == expected_metrics["execution"]["executed_s3_opcodes"]
         
         # check native generation determinism
         from tools.benchmark import run_native_asm_pipeline

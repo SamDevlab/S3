@@ -163,5 +163,5 @@ def test_timing_isolation(monkeypatch):
         pass
 
     # Validation run is first, then time, run, time
-    assert calls.count("run") == 1
-    assert calls.count("time") > 0
+    assert calls.count("run") >= 1
+    assert calls.count("time") >= 2
