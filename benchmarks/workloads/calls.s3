@@ -1,0 +1,11 @@
+fn level3() -> tryte:
+    return 2
+
+fn level2() -> tryte:
+    return level3() + 3
+
+fn level1() -> tryte:
+    return level2() + 5
+
+fn main() -> tryte:
+    return level1()

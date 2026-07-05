@@ -1,0 +1,13 @@
+fn evaluate(v: tryte) -> tryte:
+    mut res: tryte = 0
+    match v <=> 10:
+        -1:
+            res = 0
+        0:
+            res = 1
+        1:
+            res = 2
+    return res
+
+fn main() -> tryte:
+    return evaluate(10)

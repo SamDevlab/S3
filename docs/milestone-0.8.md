@@ -2,7 +2,7 @@
 
 ## Estado
 
-E0 em conclusão. O marco iniciou exclusivamente na fase normativa e documental. Nenhuma ferramenta de benchmark foi implementada, nenhuma otimização estrutural de linguagem no S3 foi criada, e a versão 0.8.0 ainda não se encontra definida, versionada ou com meta de publicação engatilhada. O repositório segue na distribuição publicável 0.7.0.
+E0 concluída e E1 implementada na branch atual aguardando integração. O marco já dispõe de workloads oficiais rastreáveis e runner de benchmark interno, rodando no mesmo processo Python sem vieses temporais do startup. Nenhuma otimização estrutural de linguagem no S3 foi criada, e a versão 0.8.0 ainda não se encontra definida, versionada ou com meta de publicação engatilhada. O repositório segue na distribuição publicável 0.7.0.
 
 ## Motivação
 
