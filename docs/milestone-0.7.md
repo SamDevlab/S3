@@ -2,7 +2,7 @@
 
 ## Estado
 
-E0 normativa concluída. E1 paridade hospedada concluída localmente. E2 instrumentação nativa implementada localmente. E3 (validação ELF real) adicionada e aguardando CI na branch isolada `milestone-0.7-e2-e3`.
+E0 normativa concluída. E1 paridade hospedada concluída. E2 instrumentação nativa implementada. E3 (validação ELF real) concluída e validada na branch isolada `milestone-0.7-e2-e3`, com integração na main pendente antes do merge.
 
 Este documento fecha o escopo do Marco 0.7 conforme o
 [ADR-0014](decisions/ADR-0014-hosted-and-native-instruction-limit.md). A E0
@@ -305,11 +305,11 @@ maior. Não se propõe um modo ilimitado implícito.
    `run_source` e `execute_assembly`, opção `--max-instructions` adicionada ao
    comando `run`, validação de valores inválidos, testes de contador global,
    diagnóstico preservado.
-3. **E2 — instrumentação nativa (concluída localmente):** implementar contador, handlers e testes
+3. **E2 — instrumentação nativa (concluída):** implementar contador, handlers e testes
    unitários da assembly sem alterar a toolchain. Adicionada a flag para os
    comandos `native-asm`, `build` e `run-native`.
-4. **E3 — validação ELF (aguardando CI remota):** executar diferenciais e limites reais no Linux
-   x86-64 obrigatório, incluindo O0/O1 e reprodutibilidade, empurrada em branch isolada `milestone-0.7-e2-e3`.
+4. **E3 — validação ELF (concluída e validada na branch):** executar diferenciais e limites reais no Linux
+   x86-64 obrigatório, incluindo O0/O1 e reprodutibilidade.
 5. **E4 — fechamento (não iniciada):** auditar compatibilidade, documentação, empacotamento e
    preparar a distribuição 0.7.0 sem mudar as versões dos formatos.
 
