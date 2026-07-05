@@ -177,15 +177,14 @@ def _parser() -> argparse.ArgumentParser:
     )
     for cmd in commands:
         p = subparsers.add_parser(cmd, parents=[parent])
-        if cmd == "run":
+        if cmd in ("run", "native-asm", "build", "run-native"):
             p.add_argument(
                 "--max-instructions",
                 type=int,
                 default=DEFAULT_MAX_INSTRUCTIONS,
                 metavar="N",
                 help=(
-                    f"maximum S3 opcodes for 'run' (default: {DEFAULT_MAX_INSTRUCTIONS});"
-                    " not accepted by native commands"
+                    f"maximum S3 opcodes (default: {DEFAULT_MAX_INSTRUCTIONS})"
                 ),
             )
 
@@ -257,7 +256,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
 
 
-    if args.command == "run" and args.max_instructions < 1:
+    if args.command in ("run", "native-asm", "build", "run-native") and args.max_instructions < 1:
         _usage_error = _CLIUsageError("--max-instructions must be at least 1")
         if args.diagnostic_format == "json":
             _emit_error(_usage_error, args.diagnostic_format)
@@ -313,6 +312,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             native = generate_native_assembly(
                 compilation.assembly,
                 max_frames=args.max_frames,
+                max_instructions=args.max_instructions,
             )
             if args.output is None:
                 print(native, end="")
@@ -323,6 +323,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             native = generate_native_assembly(
                 compilation.assembly,
                 max_frames=args.max_frames,
+                max_instructions=args.max_instructions,
             )
             output = (
                 args.output
@@ -339,6 +340,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             native = generate_native_assembly(
                 compilation.assembly,
                 max_frames=args.max_frames,
+                max_instructions=args.max_instructions,
             )
             toolchain = NativeToolchain.detect()
             if args.output is not None:

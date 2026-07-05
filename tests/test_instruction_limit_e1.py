@@ -481,27 +481,6 @@ class TestCLIMaxInstructions:
         assert code == 0
 
 
-# ---------------------------------------------------------------------------
-# 8. --max-instructions absent from native commands in E1
-# ---------------------------------------------------------------------------
-
-class TestMaxInstructionsAbsentFromNativeCommands:
-    """E1 does not add --max-instructions to native-asm, build, or run-native.
-
-    These commands must reject the option (argparse will produce a usage error).
-    """
-
-    @pytest.mark.parametrize("command", ("native-asm", "build", "run-native"))
-    def test_native_commands_reject_max_instructions(
-        self,
-        command: str,
-        tmp_path: Path,
-        capsys: pytest.CaptureFixture[str],
-    ) -> None:
-        source = _write_source(tmp_path / "prog.s3", _TRIVIAL_V0_6)
-        code = cli.main([command, str(source), "--max-instructions", "100"])
-        assert code == 2  # argparse usage error for unrecognised option
-
 
 # ---------------------------------------------------------------------------
 # 9. Compatibility contracts

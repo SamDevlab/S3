@@ -11,6 +11,7 @@ ERROR_MESSAGES = {
     "immutable_memory": "runtime error: immutable memory\n",
     "invalid_trit": "runtime error: invalid trit\n",
     "frame_limit": "runtime error: frame limit\n",
+    "instruction_limit": "runtime error: instruction limit\n",
     "invalid_runtime_state": "runtime error: invalid runtime state\n",
 }
 
@@ -263,6 +264,9 @@ def render_runtime() -> str:
         ".section .bss",
         "    .align 8",
         "__s3_frame_count:",
+        "    .zero 8",
+        "    .align 8",
+        "__s3_instruction_count:",
         "    .zero 8",
         "",
         '.section .note.GNU-stack,"",@progbits',
