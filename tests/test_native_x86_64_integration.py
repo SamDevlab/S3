@@ -58,8 +58,13 @@ def _assert_differential(
     toolchain: NativeToolchain,
     output: Path,
     optimization: str = "O0",
+    *,
+    mode: SyntaxMode | None = None,
 ) -> None:
-    program = compile_source(source, optimization, mode=SyntaxMode.V0_6).assembly
+    if mode is not None:
+        program = compile_source(source, optimization, mode=mode).assembly
+    else:
+        program = compile_source(source, optimization).assembly
     assert Emulator().execute(program) == expected
     completed = _run_native(program, toolchain, output)
     assert completed.returncode == 0
@@ -97,6 +102,7 @@ def test_all_examples_match_emulator(
             native_toolchain,
             tmp_path / f"{filename}-{level}",
             level,
+            mode=SyntaxMode.V0_6,
         )
 
 
@@ -136,13 +142,14 @@ def test_native_execution_starts_at_entry_regardless_of_block_order(
 
 
 RECURSIVE_DEPTH_SOURCE = """\
-fn descend(value: tryte) -> tryte {
-    switch (value <=> 0) {
-        -1: { return 0; }
-        0: { return 0; }
-        1: { return descend(value - 1); }
-    }
-}
+fn descend(value: tryte) -> tryte:
+    match value <=> 0:
+        -1:
+            return 0
+        0:
+            return 0
+        1:
+            return descend(value - 1)
 fn main() -> tryte:
     return descend(3)
 """
@@ -198,6 +205,7 @@ def test_constant_boundaries(
         value,
         native_toolchain,
         tmp_path / f"constant-{value}",
+        mode=SyntaxMode.V0_5,
     )
 
 
@@ -224,6 +232,7 @@ def test_scalar_arithmetic_and_comparison(
         expected,
         native_toolchain,
         tmp_path / f"scalar-{expression.replace(' ', '_').replace('<=>', 'cmp')}",
+        mode=SyntaxMode.V0_5,
     )
 
 
@@ -251,6 +260,7 @@ fn main() -> trit {{ return sign({argument}); }}
         expected,
         native_toolchain,
         tmp_path / f"branch-{argument}",
+        mode=SyntaxMode.V0_5,
     )
 
 
@@ -289,6 +299,7 @@ def test_tryte_tritwise_helpers_match_reference(
         expected,
         native_toolchain,
         tmp_path / f"tritwise-{left}-{right}-{ord(operator)}",
+        mode=SyntaxMode.V0_5,
     )
 
 
@@ -320,6 +331,7 @@ fn main() -> trit {{
         expected,
         native_toolchain,
         tmp_path / f"trit-{left}-{right}-{ord(operator)}",
+        mode=SyntaxMode.V0_5,
     )
 
 
@@ -335,10 +347,12 @@ def test_system_v_argument_counts(
 ) -> None:
     if arity == 0:
         source = """\
-fn selected() -> tryte:
-    return 7
-fn main() -> tryte:
-    return selected()
+fn selected() -> tryte {
+    return 7;
+}
+fn main() -> tryte {
+    return selected();
+}
 """
     else:
         parameters = ", ".join(f"a{i}: tryte" for i in range(arity))
@@ -352,6 +366,7 @@ fn main() -> tryte {{ return selected({arguments}); }}
         expected,
         native_toolchain,
         tmp_path / f"arity-{arity}",
+        mode=SyntaxMode.V0_5,
     )
 
 
@@ -369,6 +384,7 @@ fn later(value: tryte) -> tryte:
         10,
         native_toolchain,
         tmp_path / "forward-call",
+        mode=SyntaxMode.V0_6,
     )
 
 
@@ -384,15 +400,16 @@ def test_tryte_array_first_last_and_calculated_indices(
 ) -> None:
     _assert_differential(
         f"""\
-fn read(index: tryte) -> tryte {{
-    tryte[3] values = [5, 6, 7];
-    return values[index];
-}}
-fn main() -> tryte {{ return read({index_expression}); }}
+fn read(index: tryte) -> tryte:
+    values: tryte[3] = [5, 6, 7]
+    return values[index]
+fn main() -> tryte:
+    return read({index_expression})
 """,
         expected,
         native_toolchain,
         tmp_path / f"array-{expected}-{len(index_expression)}",
+        mode=SyntaxMode.V0_6,
     )
 
 
@@ -411,7 +428,7 @@ fn main() -> tryte:
         (
             """\
 fn choose(value: tryte) -> tryte:
-    result: mut tryte = 0
+    mut result: tryte = 0
     match value <=> 0:
         -1:
             result = -3
@@ -428,7 +445,7 @@ fn main() -> tryte:
         (
             """\
 fn read(index: tryte) -> tryte:
-    values: mut tryte[3] = [2, 4, 6]
+    mut values: tryte[3] = [2, 4, 6]
     values[1] = values[0] + values[2]
     return values[index]
 fn main() -> tryte:
@@ -463,6 +480,7 @@ def test_deterministic_differential_corpus(
         expected,
         native_toolchain,
         tmp_path / f"corpus-{case}",
+        mode=SyntaxMode.V0_6,
     )
 
 
@@ -556,7 +574,8 @@ fn read(index: tryte) -> tryte:
     return values[index]
 fn main() -> tryte:
     return read(-1)
-"""
+""",
+        mode=SyntaxMode.V0_6,
     ).assembly
     completed = _run_native(program, native_toolchain, tmp_path / "bounds-context")
     assert completed.returncode != 0
@@ -599,7 +618,8 @@ def test_native_elf_has_start_and_no_dynamic_dependencies(
     tmp_path: Path,
 ) -> None:
     program = compile_source(
-        (ROOT / "examples" / "first.s3").read_text(encoding="utf-8")
+        (ROOT / "examples" / "first.s3").read_text(encoding="utf-8"),
+        mode=SyntaxMode.V0_6,
     ).assembly
     executable = native_toolchain.build(
         generate_native_assembly(program),
@@ -650,6 +670,7 @@ def test_same_toolchain_build_is_byte_reproducible(
             encoding="utf-8"
         ),
         "O1",
+        mode=SyntaxMode.V0_6,
     ).assembly
     native = generate_native_assembly(program)
     first = native_toolchain.build(native, tmp_path / "one" / "program")
@@ -740,6 +761,7 @@ def test_build_and_run_native_cli_commands(
     assembly = tmp_path / "first.s"
     assert cli_main(
         [
+            "--source-syntax", "0.6",
             "build",
             str(source),
             "-o",

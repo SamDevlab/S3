@@ -73,7 +73,6 @@ def test_official_examples_do_not_contain_obsolete_syntax(example_path: Path) ->
 @pytest.mark.parametrize("example_path", _discover_examples(), ids=lambda p: p.name)
 def test_official_examples_via_public_cli(example_path: Path) -> None:
     import subprocess
-    import sys
     
     commands = ["ast", "ir", "asm", "run"]
     
