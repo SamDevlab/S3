@@ -3,8 +3,9 @@
 [![Tests](https://github.com/SamDevlab/S3/actions/workflows/tests.yml/badge.svg)](https://github.com/SamDevlab/S3/actions/workflows/tests.yml)
 
 S3 é uma linguagem experimental de sistemas baseada em ternário balanceado.
-Este repositório contém a distribuição `s3-bootstrap` 0.6.0, com sintaxe fonte
-V0.6 por padrão e formatos IR JSON e S3 Assembly 0.5.0:
+Este repositório contém o primeiro MVP publicável, distribuído como
+`s3-bootstrap` 0.6.0, com sintaxe fonte V0.6 por padrão e formatos IR JSON e
+S3 Assembly 0.5.0:
 
 ```text
 fonte → frontend → IR verificada → análise de inicialização → O0/O1
@@ -95,8 +96,8 @@ autodetecção, fallback ou migração automática; consulte o
 [guia de migração 0.6](docs/migration-source-0.5-to-0.6.md).
 
 A versão da fonte é independente dos artefatos: IR JSON e S3 Assembly
-continuam em 0.5.0. A Entrega E está implementada localmente; sua validação
-remota e a conclusão do Marco 0.6 ainda estão pendentes.
+continuam em 0.5.0. A Entrega E foi validada remotamente e o Marco 0.6 está
+concluído.
 
 ```bash
 s3 tokens examples/static_array.s3
@@ -214,8 +215,13 @@ A reprodutibilidade byte a byte dos ELF, os hashes SHA-256 e a inspeção com
 
 A Entrega D2B foi validada no
 [run 28726929769](https://github.com/SamDevlab/S3/actions/runs/28726929769):
-os jobs Python 3.11–3.13 e Linux x86-64 nativo concluíram com sucesso. A
-validação remota da Entrega E será registrada somente depois de sua integração.
+os jobs Python 3.11–3.13 e Linux x86-64 nativo concluíram com sucesso.
+
+A preparação final da Entrega E, commit
+[`aceee82`](https://github.com/SamDevlab/S3/commit/aceee820ebc99b7d90fc5d32dd8fa8e699ad37b5),
+foi validada no
+[run 28737520765](https://github.com/SamDevlab/S3/actions/runs/28737520765),
+com 561 testes em cada versão de Python e 85 integrações nativas obrigatórias.
 
 ## Memória lógica
 
@@ -285,7 +291,8 @@ O target nativo é somente Linux x86-64. Não há interoperabilidade C, JIT, TCO
 ou otimização interprocedural. ARM64 possui apenas um
 [estudo de viabilidade](docs/arm64-feasibility.md).
 
-O Marco 0.6 está em fechamento: D2B foi validada remotamente e a Entrega E está
-implementada localmente, com validação remota pendente. Nenhuma tag ou release
-0.6.0 foi publicada. Consulte o [roadmap](docs/roadmap.md) e as
+O Marco 0.6 está concluído: D2B e Entrega E foram validadas remotamente. Os
+recursos classificados como Pós-MVP continuam não implementados e o Marco 0.7
+não foi iniciado. A tag e a release 0.6.0 ainda não foram publicadas. Consulte
+o [roadmap](docs/roadmap.md) e as
 [notas de lançamento](docs/releases/0.6.0.md).

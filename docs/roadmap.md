@@ -58,7 +58,7 @@ Entregas validadas na execução remota acima:
 - diferenciais O0/O1 emulador/nativo;
 - estudo ARM64 sem backend ou alegação de suporte.
 
-## Marco 0.6 — primeiro MVP publicável (fechamento)
+## Marco 0.6 — primeiro MVP publicável (concluído e validado)
 
 Escopo concluído e validado antes da Entrega E:
 
@@ -84,8 +84,12 @@ Entrega E:
 - fechamento do contrato do MVP e da versão pública 0.6.0;
 - auditoria de instalação, empacotamento, CLI, exemplos e artefatos;
 - notas de lançamento preparadas;
-- implementada localmente, com validação remota pendente;
-- o Marco 0.6 permanece não concluído até o CI final da Entrega E.
+- concluída e validada no commit
+  `aceee820ebc99b7d90fc5d32dd8fa8e699ad37b5`;
+- GitHub Actions
+  [`28737520765`](https://github.com/SamDevlab/S3/actions/runs/28737520765)
+  verde em Python 3.11–3.13 e Linux x86-64 nativo;
+- Marco 0.6 concluído.
 
 ## Pós-MVP / marco futuro
 
@@ -99,6 +103,8 @@ Não bloqueiam o lançamento 0.6 e não estão implementados:
 
 Arrays em assinaturas, heap, ponteiros, strings, módulos e I/O continuam fora
 do MVP até receberem contratos próprios.
+
+O Marco 0.7 não foi iniciado.
 
 ## Autohospedagem
 
