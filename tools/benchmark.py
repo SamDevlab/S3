@@ -92,12 +92,13 @@ class JsonArgumentParser(argparse.ArgumentParser):
         args = extract_format_and_output()
         exit_error(args, "S3_BENCH_INVALID_ARGUMENT", message)
 
-def get_distribution_version() -> str:
+def get_installed_distribution_version() -> str:
     try:
         return importlib.metadata.version("s3-bootstrap")
-    except importlib.metadata.PackageNotFoundError:
-        pass
+    except Exception:
+        return "unavailable"
 
+def get_checkout_distribution_version() -> str:
     try:
         pyproject_path = Path(__file__).resolve().parent.parent / "pyproject.toml"
         with pyproject_path.open("rb") as f:
@@ -142,7 +143,8 @@ def gather_metadata(args, workloads_order: list[str]) -> dict:
         "benchmark_format_version": BENCHMARK_FORMAT_VERSION,
         "commit": get_git_commit(),
         "dirty": is_git_dirty(),
-        "distribution": get_distribution_version(),
+        "checkout_distribution_version": get_checkout_distribution_version(),
+        "installed_distribution_version": get_installed_distribution_version(),
         "source_syntax": syntax_mode_to_string(SyntaxMode.V0_6),
         "ir_version": IR_FORMAT_VERSION,
         "assembly_version": ASSEMBLY_FORMAT_VERSION,
@@ -159,6 +161,17 @@ def gather_metadata(args, workloads_order: list[str]) -> dict:
         "warmups": getattr(args, "warmups", 0),
         "runs": getattr(args, "runs", 0),
         "workloads_order": workloads_order,
+    }
+
+def calc_stats(samples: list[int]) -> dict:
+    if not samples:
+        raise ValueError("Empty collection")
+    return {
+        "minimum": calc_min(samples),
+        "maximum": calc_max(samples),
+        "mean": calc_mean(samples),
+        "median": calc_median(samples),
+        "p95": calc_p95(samples),
     }
 
 def calc_min(samples: list[int]) -> int:
@@ -292,9 +305,10 @@ def extract_static_metrics(source: str, ir_program, assembly_program):
         }
     return metrics
 
-def run_hosted_pipeline(source: str, opt: OptimizationLevel, max_inst: int, max_frames: int | None):
-    timer = PhaseTimer()
-    total_start = time.perf_counter_ns()
+def run_hosted_pipeline(source: str, opt: OptimizationLevel, max_inst: int, max_frames: int | None, clock=None):
+    clock = clock if clock is not None else time.perf_counter_ns
+    timer = PhaseTimer(clock=clock)
+    total_start = clock()
     
     with timer.measure("parsing"):
         tokens = tokenize(source, mode=SyntaxMode.V0_6)
@@ -320,9 +334,13 @@ def run_hosted_pipeline(source: str, opt: OptimizationLevel, max_inst: int, max_
         )
         actual = emulator.execute(assembly_program, "main")
         
-    total_end = time.perf_counter_ns()
+    total_end = clock()
+    total_ns = total_end - total_start
     phases = timer.snapshot()
-    phases["pipeline_total"] = total_end - total_start
+    measured_total_ns = sum(phases.values())
+    overhead_ns = total_ns - measured_total_ns
+    if overhead_ns < 0:
+        raise ValueError(f"Inconsistent timing: overhead is negative {overhead_ns}")
     
     static_metrics = extract_static_metrics(source, ir_program, assembly_program)
     dynamic_metrics = {
@@ -333,11 +351,12 @@ def run_hosted_pipeline(source: str, opt: OptimizationLevel, max_inst: int, max_
         }
     }
     
-    return actual, phases, static_metrics, dynamic_metrics
+    return actual, phases, static_metrics, dynamic_metrics, total_ns, measured_total_ns, overhead_ns
 
-def run_native_asm_pipeline(source: str, opt: OptimizationLevel, max_inst: int, max_frames: int | None):
-    timer = PhaseTimer()
-    total_start = time.perf_counter_ns()
+def run_native_asm_pipeline(source: str, opt: OptimizationLevel, max_inst: int, max_frames: int | None, clock=None):
+    clock = clock if clock is not None else time.perf_counter_ns
+    timer = PhaseTimer(clock=clock)
+    total_start = clock()
     
     with timer.measure("parsing"):
         tokens = tokenize(source, mode=SyntaxMode.V0_6)
@@ -362,21 +381,33 @@ def run_native_asm_pipeline(source: str, opt: OptimizationLevel, max_inst: int, 
             max_instructions=max_inst,
         )
         
-    total_end = time.perf_counter_ns()
+    total_end = clock()
+    total_ns = total_end - total_start
     phases = timer.snapshot()
-    phases["pipeline_total"] = total_end - total_start
+    measured_total_ns = sum(phases.values())
+    overhead_ns = total_ns - measured_total_ns
+    if overhead_ns < 0:
+        raise ValueError("Inconsistent timing: overhead is negative")
     
     static_metrics = extract_static_metrics(source, ir_program, assembly_program)
-    return out, phases, static_metrics
+    
+    static_metrics["native_artifact"] = {
+        "artifact_kind": "gnu-x86-64-assembly",
+        "textual_size_bytes": len(out.encode("utf-8")),
+        "line_count": len(out.splitlines()),
+        "sha256": hashlib.sha256(out.encode("utf-8")).hexdigest()
+    }
+    
+    return out, phases, static_metrics, total_ns, measured_total_ns, overhead_ns
 
-def run_workload(w, source, opt_level, max_inst, max_frames, args):
+def run_workload(w, source, opt_level, max_inst, max_frames, args, clock=None):
     expected_ret = w["expected_return"]
     functional_validation = None
 
     if args.mode == "native-asm-pipeline":
         # 1. Functional validation in hosted pipeline
         try:
-            actual, _, _, _ = run_hosted_pipeline(source, opt_level, max_inst, max_frames)
+            actual, _, _, dyn_metrics, _, _, _ = run_hosted_pipeline(source, opt_level, max_inst, max_frames, clock=clock)
         except Exception as e:
             exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Workload {w['id']} functional validation failed with exception: {e}")
         if actual != expected_ret:
@@ -386,13 +417,14 @@ def run_workload(w, source, opt_level, max_inst, max_frames, args):
             "mode": "hosted-pipeline",
             "status": "passed",
             "expected_return": expected_ret,
-            "actual_return": actual
+            "actual_return": actual,
+            "metrics": dyn_metrics
         }
 
         # 2. Determinism check
         try:
-            out1, _, static_metrics1 = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
-            out2, _, _ = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
+            out1, _, static_metrics1, _, _, _ = run_native_asm_pipeline(source, opt_level, max_inst, max_frames, clock=clock)
+            out2, _, _, _, _, _ = run_native_asm_pipeline(source, opt_level, max_inst, max_frames, clock=clock)
         except TypeError as e:
             exit_error(args, "S3_BENCH_NATIVE_TYPE_ERROR", str(e))
         except Exception as e:
@@ -403,13 +435,11 @@ def run_workload(w, source, opt_level, max_inst, max_frames, args):
         if out1 != out2:
             exit_error(args, "S3_BENCH_NATIVE_NON_DETERMINISTIC", f"Workload {w['id']} native asm output is non-deterministic")
 
-        artifact_size = len(out1.encode("utf-8"))
-        artifact_sha256 = hashlib.sha256(out1.encode("utf-8")).hexdigest()
         static_metrics_for_json = static_metrics1
     else:
         # For hosted pipeline, we just want to run once to fail early if invalid
         try:
-            actual, _, static_metrics_for_json, dynamic_metrics_for_json = run_hosted_pipeline(source, opt_level, max_inst, max_frames)
+            actual, _, static_metrics_for_json, dynamic_metrics_for_json, _, _, _ = run_hosted_pipeline(source, opt_level, max_inst, max_frames, clock=clock)
             if actual != expected_ret:
                 exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Workload {w['id']} failed: expected {expected_ret}, got {actual}")
         except Exception as e:
@@ -418,60 +448,50 @@ def run_workload(w, source, opt_level, max_inst, max_frames, args):
     # Warmups
     for _ in range(args.warmups):
         if args.mode == "hosted-pipeline":
-            actual, _, _, _ = run_hosted_pipeline(source, opt_level, max_inst, max_frames)
+            actual, _, _, _, _, _, _ = run_hosted_pipeline(source, opt_level, max_inst, max_frames, clock=clock)
             if actual != expected_ret:
                 exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Warmup failed for {w['id']}")
         else:
             try:
-                out, _, _ = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
+                out, _, _, _, _, _ = run_native_asm_pipeline(source, opt_level, max_inst, max_frames, clock=clock)
             except TypeError as e:
                 exit_error(args, "S3_BENCH_NATIVE_TYPE_ERROR", str(e))
             if not out:
                 exit_error(args, "S3_BENCH_NATIVE_EMPTY", f"Warmup failed for {w['id']}: empty output")
 
     # Runs
-    samples = []
+    total_samples = []
+    measured_samples = []
+    overhead_samples = []
     phase_samples = {}
+    
     actual_for_json = None
     for _ in range(args.runs):
         if args.mode == "hosted-pipeline":
-            actual, run_phases, _, _ = run_hosted_pipeline(source, opt_level, max_inst, max_frames)
+            actual, run_phases, _, _, total_ns, measured_ns, overhead_ns = run_hosted_pipeline(source, opt_level, max_inst, max_frames, clock=clock)
             if actual != expected_ret:
                 exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Run failed for {w['id']}")
             actual_for_json = actual
         else:
             try:
-                out, run_phases, _ = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
+                out, run_phases, _, total_ns, measured_ns, overhead_ns = run_native_asm_pipeline(source, opt_level, max_inst, max_frames, clock=clock)
             except TypeError as e:
                 exit_error(args, "S3_BENCH_NATIVE_TYPE_ERROR", str(e))
             if not out:
                 exit_error(args, "S3_BENCH_NATIVE_EMPTY", f"Run failed for {w['id']}: empty output")
 
-        total = run_phases["pipeline_total"]
-        samples.append(total)
+        total_samples.append(total_ns)
+        measured_samples.append(measured_ns)
+        overhead_samples.append(overhead_ns)
+        
         for k, v in run_phases.items():
             if k not in phase_samples:
                 phase_samples[k] = []
             phase_samples[k].append(v)
 
-    pipeline_total = calc_median(phase_samples["pipeline_total"])
     phases_out = {}
-    measured_total = 0
     for p_name, p_samples in phase_samples.items():
-        if p_name != "pipeline_total":
-            p_med = calc_median(p_samples)
-            measured_total += p_med
-            phases_out[p_name] = {
-                "minimum": calc_min(p_samples),
-                "maximum": calc_max(p_samples),
-                "mean": calc_mean(p_samples),
-                "median": p_med,
-                "p95": calc_p95(p_samples),
-            }
-
-    unclassified = pipeline_total - measured_total
-    if unclassified < 0:
-        unclassified = 0
+        phases_out[p_name] = calc_stats(p_samples)
 
     res = {
         "workload": w["id"],
@@ -479,9 +499,9 @@ def run_workload(w, source, opt_level, max_inst, max_frames, args):
         "opt_level": opt_level.name,
         "timing": {
             "unit": "ns",
-            "pipeline_total": int(pipeline_total),
-            "measured_phases_total": int(measured_total),
-            "unclassified_overhead": int(unclassified),
+            "pipeline_total": calc_stats(total_samples),
+            "measured_phases_total": calc_stats(measured_samples),
+            "unclassified_overhead": calc_stats(overhead_samples),
             "phases": phases_out
         },
         "metrics": static_metrics_for_json
@@ -493,14 +513,14 @@ def run_workload(w, source, opt_level, max_inst, max_frames, args):
         res["metrics"].update(dynamic_metrics_for_json)
     else:
         res["functional_validation"] = functional_validation
-        res["metrics"]["native_artifact"] = {
-            "artifact_kind": "gnu-x86-64-assembly",
-            "artifact_size_bytes": artifact_size,
-            "artifact_sha256": artifact_sha256
-        }
 
     if args.include_samples:
-        res["timing"]["samples_ns"] = phase_samples
+        res["timing"]["samples_ns"] = {
+            "pipeline_total": total_samples,
+            "measured_phases_total": measured_samples,
+            "unclassified_overhead": overhead_samples,
+            "phases": phase_samples
+        }
 
     return res
 
@@ -610,23 +630,94 @@ def main():
             res_O1 = run_workload(w, source, OptimizationLevel.O1, max_inst, max_frames, args)
             
             # comparison
+            def _diff_and_pct(v0, v1):
+                diff = v1 - v0
+                pct = (diff / v0 * 100.0) if v0 != 0 else None
+                lbl = "equal"
+                if diff < 0:
+                    lbl = "fewer"
+                elif diff > 0:
+                    lbl = "more"
+                return diff, pct, lbl
+                
+            def _time_diff(v0, v1):
+                diff = v1 - v0
+                pct = (diff / v0 * 100.0) if v0 != 0 else None
+                lbl = "equal_in_this_run"
+                if diff < 0:
+                    lbl = "faster_in_this_run"
+                elif diff > 0:
+                    lbl = "slower_in_this_run"
+                return diff, pct, lbl
+
             comp = {
                 "O0_return": res_O0.get("actual_return", res_O0.get("functional_validation", {}).get("actual_return")),
                 "O1_return": res_O1.get("actual_return", res_O1.get("functional_validation", {}).get("actual_return")),
             }
             comp["equal_return"] = comp["O0_return"] == comp["O1_return"]
-            comp["O0_opcode_count"] = res_O0["metrics"].get("s3_assembly", {}).get("opcode_count", 0)
-            comp["O1_opcode_count"] = res_O1["metrics"].get("s3_assembly", {}).get("opcode_count", 0)
-            comp["diff_opcode_count"] = comp["O1_opcode_count"] - comp["O0_opcode_count"]
             
+            # S3 Opcode count
+            o0_s3_opcode = res_O0["metrics"].get("s3_assembly", {}).get("opcode_count", 0)
+            o1_s3_opcode = res_O1["metrics"].get("s3_assembly", {}).get("opcode_count", 0)
+            diff, pct, lbl = _diff_and_pct(o0_s3_opcode, o1_s3_opcode)
+            comp["O0_s3_opcode_count"] = o0_s3_opcode
+            comp["O1_s3_opcode_count"] = o1_s3_opcode
+            comp["s3_opcode_count_diff"] = diff
+            comp["s3_opcode_count_percent"] = pct
+            comp["s3_opcode_count_label"] = lbl
+            
+            # Executed S3 opcodes
             if "execution" in res_O0["metrics"]:
-                comp["O0_executed_s3_opcodes"] = res_O0["metrics"]["execution"].get("executed_s3_opcodes", 0)
-                comp["O1_executed_s3_opcodes"] = res_O1["metrics"]["execution"].get("executed_s3_opcodes", 0)
-                comp["diff_executed_s3_opcodes"] = comp["O1_executed_s3_opcodes"] - comp["O0_executed_s3_opcodes"]
+                o0_exec = res_O0["metrics"]["execution"].get("executed_s3_opcodes", 0)
+                o1_exec = res_O1["metrics"]["execution"].get("executed_s3_opcodes", 0)
+                diff, pct, lbl = _diff_and_pct(o0_exec, o1_exec)
+                comp["O0_executed_s3_opcodes"] = o0_exec
+                comp["O1_executed_s3_opcodes"] = o1_exec
+                comp["executed_s3_opcodes_diff"] = diff
+                comp["executed_s3_opcodes_percent"] = pct
+                comp["executed_s3_opcodes_label"] = lbl
+                
+            # S3 textual size
+            o0_text = res_O0["metrics"].get("s3_assembly", {}).get("textual_size_bytes", 0)
+            o1_text = res_O1["metrics"].get("s3_assembly", {}).get("textual_size_bytes", 0)
+            diff, pct, lbl = _diff_and_pct(o0_text, o1_text)
+            comp["O0_s3_textual_size_bytes"] = o0_text
+            comp["O1_s3_textual_size_bytes"] = o1_text
+            comp["s3_textual_size_diff"] = diff
+            
+            # GNU textual size
+            if "native_artifact" in res_O0["metrics"]:
+                o0_gnu = res_O0["metrics"]["native_artifact"].get("textual_size_bytes", 0)
+                o1_gnu = res_O1["metrics"]["native_artifact"].get("textual_size_bytes", 0)
+                diff, pct, lbl = _diff_and_pct(o0_gnu, o1_gnu)
+                comp["O0_gnu_textual_size_bytes"] = o0_gnu
+                comp["O1_gnu_textual_size_bytes"] = o1_gnu
+                comp["gnu_textual_size_diff"] = diff
+            
+            # Hashes
+            comp["O0_s3_assembly_sha256"] = res_O0["metrics"].get("s3_assembly", {}).get("sha256")
+            comp["O1_s3_assembly_sha256"] = res_O1["metrics"].get("s3_assembly", {}).get("sha256")
+            if "native_artifact" in res_O0["metrics"]:
+                comp["O0_gnu_assembly_sha256"] = res_O0["metrics"]["native_artifact"].get("sha256")
+                comp["O1_gnu_assembly_sha256"] = res_O1["metrics"]["native_artifact"].get("sha256")
+            
+            # Timing info
+            o0_time = res_O0["timing"]["pipeline_total"]["median"]
+            o1_time = res_O1["timing"]["pipeline_total"]["median"]
+            diff, pct, lbl = _time_diff(o0_time, o1_time)
+            comp["O0_pipeline_median_ns"] = o0_time
+            comp["O1_pipeline_median_ns"] = o1_time
+            comp["pipeline_median_diff_ns"] = diff
+            comp["pipeline_median_percent"] = pct
+            comp["pipeline_median_label"] = lbl
 
-            res_O1["comparison"] = comp
-            results.append(res_O0)
-            results.append(res_O1)
+            results.append({
+                "workload": w["id"],
+                "status": "passed",
+                "O0": res_O0,
+                "O1": res_O1,
+                "comparison": comp
+            })
         else:
             opt_lvl = OptimizationLevel.O1 if args.optimization == "O1" else OptimizationLevel.O0
             results.append(run_workload(w, source, opt_lvl, max_inst, max_frames, args))
@@ -648,37 +739,49 @@ def main():
         out_str = json.dumps(output_data, indent=2, ensure_ascii=False, allow_nan=False) + "\n"
     else:
         lines = []
-        for r in results:
-            lines.append(f"workload: {r['workload']}")
-            lines.append(f"mode: {args.mode}")
-            lines.append(f"optimization: {args.optimization}")
-            t = r["timing"]
-            lines.append(f"median total: {t['pipeline_total'] / 1_000_000.0:.3f} ms")
-            lines.append("")
-            lines.append("phases:")
-            for p_name, p_data in t["phases"].items():
-                lines.append(f"  {p_name:<20}: {p_data['median'] / 1_000_000.0:.3f} ms")
-            lines.append(f"  {'unclassified':<20}: {t['unclassified_overhead'] / 1_000_000.0:.3f} ms")
-            lines.append("")
-            
-            lines.append("metrics:")
-            m = r["metrics"]
-            if "s3_assembly" in m:
-                lines.append(f"  S3 opcodes emitted:   {m['s3_assembly'].get('opcode_count', 0)}")
-                lines.append(f"  functions:            {m['s3_assembly'].get('function_count', 0)}")
-                lines.append(f"  blocks:               {m['s3_assembly'].get('block_count', 0)}")
-            if "execution" in m:
-                lines.append(f"  S3 opcodes executed:  {m['execution'].get('executed_s3_opcodes', 0)}")
-                lines.append(f"  max frame depth:      {m['execution'].get('maximum_frame_depth_observed', 0)}")
+        for top_r in results:
+            if "comparison" in top_r:
+                rs = [top_r["O0"], top_r["O1"]]
+            else:
+                rs = [top_r]
                 
-            if "comparison" in r:
+            for r in rs:
+                lines.append(f"workload: {r['workload']}")
+                lines.append(f"mode: {args.mode}")
+                lines.append(f"optimization: {r['opt_level']}")
+                t = r["timing"]
+                lines.append(f"median total: {t['pipeline_total']['median'] / 1_000_000.0:.3f} ms")
                 lines.append("")
-                lines.append("comparison (O0 vs O1):")
-                c = r["comparison"]
-                for k, v in c.items():
-                    lines.append(f"  {k:<20}: {v}")
+                lines.append("phases:")
+                for p_name, p_data in t["phases"].items():
+                    lines.append(f"  {p_name:<20}: {p_data['median'] / 1_000_000.0:.3f} ms")
+                lines.append(f"  {'measured sum':<20}: {t['measured_phases_total']['median'] / 1_000_000.0:.3f} ms")
+                lines.append(f"  {'unclassified':<20}: {t['unclassified_overhead']['median'] / 1_000_000.0:.3f} ms")
+                lines.append("")
                 
-            lines.append("")
+                lines.append("metrics:")
+                m = r["metrics"]
+                if "s3_assembly" in m:
+                    lines.append(f"  S3 opcodes emitted:   {m['s3_assembly'].get('opcode_count', 0)}")
+                    lines.append(f"  functions:            {m['s3_assembly'].get('function_count', 0)}")
+                    lines.append(f"  blocks:               {m['s3_assembly'].get('block_count', 0)}")
+                if "execution" in m:
+                    lines.append(f"  S3 opcodes executed:  {m['execution'].get('executed_s3_opcodes', 0)}")
+                    lines.append(f"  max frame depth:      {m['execution'].get('maximum_frame_depth_observed', 0)}")
+                    lines.append(f"  function calls:       {m['execution'].get('function_call_count', 0)}")
+                if "native_artifact" in m:
+                    lines.append(f"  native size:          {m['native_artifact'].get('textual_size_bytes', 0)} bytes")
+                    lines.append(f"  native sha256:        {m['native_artifact'].get('sha256', '')[:8]}...")
+                    
+                lines.append("")
+
+            if "comparison" in top_r:
+                lines.append("comparison (O0 vs O1):")
+                c = top_r["comparison"]
+                for k, v in c.items():
+                    lines.append(f"  {k:<30}: {v}")
+                lines.append("")
+                
         out_str = "\n".join(lines)
 
     write_output(args, out_str)

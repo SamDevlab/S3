@@ -2,9 +2,10 @@
   "benchmark_format_version": "1.1.0",
   "metadata": {
     "benchmark_format_version": "1.1.0",
-    "commit": "ba1d76df5cadc429f3cb879f33af8d49e52e040d",
+    "commit": "f0d8ce34c7defbb6319ea4d2f11098fa27be4140",
     "dirty": "true",
-    "distribution": "0.4.0",
+    "checkout_distribution_version": "0.7.0",
+    "installed_distribution_version": "0.4.0",
     "source_syntax": "0.6",
     "ir_version": "0.5.0",
     "assembly_version": "0.5.0",
@@ -15,11 +16,11 @@
     "architecture": "AMD64",
     "processor": "AMD64 Family 23 Model 24 Stepping 1, AuthenticAMD",
     "logical_cpus": 8,
-    "timestamp_utc": "2026-07-05T23:08:28.002614+00:00",
-    "mode": "native-asm-pipeline",
+    "timestamp_utc": "2026-07-05T23:54:14.274681+00:00",
+    "mode": "hosted-pipeline",
     "optimization": "both",
-    "warmups": 0,
-    "runs": 1,
+    "warmups": 3,
+    "runs": 10,
     "workloads_order": [
       "minimal",
       "arithmetic",
@@ -31,177 +32,209 @@
     ]
   },
   "configuration": {
-    "mode": "native-asm-pipeline",
+    "mode": "hosted-pipeline",
     "optimization": "both",
-    "warmups": 0,
-    "runs": 1,
+    "warmups": 3,
+    "runs": 10,
     "include_samples": false
   },
   "results": [
     {
       "workload": "minimal",
       "status": "passed",
-      "opt_level": "O0",
-      "timing": {
-        "unit": "ns",
-        "pipeline_total": 1036200,
-        "measured_phases_total": 907700,
-        "unclassified_overhead": 128500,
-        "phases": {
-          "parsing": {
-            "minimum": 260900,
-            "maximum": 260900,
-            "mean": 260900.0,
-            "median": 260900.0,
-            "p95": 260900
-          },
-          "semantic_analysis": {
-            "minimum": 66000,
-            "maximum": 66000,
-            "mean": 66000.0,
-            "median": 66000.0,
-            "p95": 66000
-          },
-          "ir_generation": {
-            "minimum": 67500,
-            "maximum": 67500,
-            "mean": 67500.0,
-            "median": 67500.0,
-            "p95": 67500
-          },
-          "optimization": {
-            "minimum": 173600,
-            "maximum": 173600,
-            "mean": 173600.0,
-            "median": 173600.0,
-            "p95": 173600
-          },
-          "assembly_generation": {
-            "minimum": 117300,
-            "maximum": 117300,
-            "mean": 117300.0,
-            "median": 117300.0,
-            "p95": 117300
-          },
-          "native_x86_64_emission": {
-            "minimum": 222400,
-            "maximum": 222400,
-            "mean": 222400.0,
-            "median": 222400.0,
-            "p95": 222400
-          }
-        }
-      },
-      "metrics": {
-        "source": {
-          "source_size_bytes": 33,
-          "source_line_count": 2
-        },
-        "ir": {
-          "function_count": 1,
-          "block_count": 1,
-          "instruction_count": 2
-        },
-        "s3_assembly": {
-          "function_count": 1,
-          "block_count": 1,
-          "opcode_count": 2,
-          "textual_size_bytes": 144,
-          "sha256": "ab038877d912135cf036bb50407bd070f8d2aad9f754cc870be0c8aede068f41"
-        },
-        "native_artifact": {
-          "artifact_kind": "gnu-x86-64-assembly",
-          "artifact_size_bytes": 7858,
-          "artifact_sha256": "e1b2fdc5c6e319a9fbd256f931b72cf30b128c7389747abbb7ef4d0c43237104"
-        }
-      },
-      "functional_validation": {
-        "mode": "hosted-pipeline",
+      "O0": {
+        "workload": "minimal",
         "status": "passed",
+        "opt_level": "O0",
+        "timing": {
+          "unit": "ns",
+          "pipeline_total": {
+            "minimum": 797200,
+            "maximum": 1535400,
+            "mean": 1168950.0,
+            "median": 1133900.0,
+            "p95": 1535400
+          },
+          "measured_phases_total": {
+            "minimum": 669400,
+            "maximum": 1271600,
+            "mean": 959740.0,
+            "median": 866050.0,
+            "p95": 1271600
+          },
+          "unclassified_overhead": {
+            "minimum": 127400,
+            "maximum": 370200,
+            "mean": 209210.0,
+            "median": 206650.0,
+            "p95": 370200
+          },
+          "phases": {
+            "parsing": {
+              "minimum": 209000,
+              "maximum": 462800,
+              "mean": 320380.0,
+              "median": 306050.0,
+              "p95": 462800
+            },
+            "semantic_analysis": {
+              "minimum": 31100,
+              "maximum": 55800,
+              "mean": 41430.0,
+              "median": 40950.0,
+              "p95": 55800
+            },
+            "ir_generation": {
+              "minimum": 56600,
+              "maximum": 349900,
+              "mean": 97090.0,
+              "median": 72500.0,
+              "p95": 349900
+            },
+            "optimization": {
+              "minimum": 140900,
+              "maximum": 242600,
+              "mean": 189500.0,
+              "median": 183350.0,
+              "p95": 242600
+            },
+            "assembly_generation": {
+              "minimum": 102200,
+              "maximum": 366100,
+              "mean": 201810.0,
+              "median": 170550.0,
+              "p95": 366100
+            },
+            "emulation": {
+              "minimum": 47200,
+              "maximum": 265000,
+              "mean": 109530.0,
+              "median": 93350.0,
+              "p95": 265000
+            }
+          }
+        },
+        "metrics": {
+          "source": {
+            "source_size_bytes": 33,
+            "source_line_count": 2
+          },
+          "ir": {
+            "function_count": 1,
+            "block_count": 1,
+            "instruction_count": 2
+          },
+          "s3_assembly": {
+            "function_count": 1,
+            "block_count": 1,
+            "opcode_count": 2,
+            "textual_size_bytes": 144,
+            "sha256": "ab038877d912135cf036bb50407bd070f8d2aad9f754cc870be0c8aede068f41"
+          },
+          "execution": {
+            "executed_s3_opcodes": 2,
+            "maximum_frame_depth_observed": 1,
+            "function_call_count": 0
+          }
+        },
         "expected_return": 0,
         "actual_return": 0
-      }
-    },
-    {
-      "workload": "minimal",
-      "status": "passed",
-      "opt_level": "O1",
-      "timing": {
-        "unit": "ns",
-        "pipeline_total": 769700,
-        "measured_phases_total": 706200,
-        "unclassified_overhead": 63500,
-        "phases": {
-          "parsing": {
-            "minimum": 155800,
-            "maximum": 155800,
-            "mean": 155800.0,
-            "median": 155800.0,
-            "p95": 155800
-          },
-          "semantic_analysis": {
-            "minimum": 20400,
-            "maximum": 20400,
-            "mean": 20400.0,
-            "median": 20400.0,
-            "p95": 20400
-          },
-          "ir_generation": {
-            "minimum": 30900,
-            "maximum": 30900,
-            "mean": 30900.0,
-            "median": 30900.0,
-            "p95": 30900
-          },
-          "optimization": {
-            "minimum": 184400,
-            "maximum": 184400,
-            "mean": 184400.0,
-            "median": 184400.0,
-            "p95": 184400
-          },
-          "assembly_generation": {
-            "minimum": 83900,
-            "maximum": 83900,
-            "mean": 83900.0,
-            "median": 83900.0,
-            "p95": 83900
-          },
-          "native_x86_64_emission": {
-            "minimum": 230800,
-            "maximum": 230800,
-            "mean": 230800.0,
-            "median": 230800.0,
-            "p95": 230800
-          }
-        }
       },
-      "metrics": {
-        "source": {
-          "source_size_bytes": 33,
-          "source_line_count": 2
-        },
-        "ir": {
-          "function_count": 1,
-          "block_count": 1,
-          "instruction_count": 2
-        },
-        "s3_assembly": {
-          "function_count": 1,
-          "block_count": 1,
-          "opcode_count": 2,
-          "textual_size_bytes": 144,
-          "sha256": "ab038877d912135cf036bb50407bd070f8d2aad9f754cc870be0c8aede068f41"
-        },
-        "native_artifact": {
-          "artifact_kind": "gnu-x86-64-assembly",
-          "artifact_size_bytes": 7858,
-          "artifact_sha256": "e1b2fdc5c6e319a9fbd256f931b72cf30b128c7389747abbb7ef4d0c43237104"
-        }
-      },
-      "functional_validation": {
-        "mode": "hosted-pipeline",
+      "O1": {
+        "workload": "minimal",
         "status": "passed",
+        "opt_level": "O1",
+        "timing": {
+          "unit": "ns",
+          "pipeline_total": {
+            "minimum": 749400,
+            "maximum": 2826200,
+            "mean": 1604820.0,
+            "median": 1589850.0,
+            "p95": 2826200
+          },
+          "measured_phases_total": {
+            "minimum": 668800,
+            "maximum": 2411100,
+            "mean": 1367200.0,
+            "median": 1264450.0,
+            "p95": 2411100
+          },
+          "unclassified_overhead": {
+            "minimum": 80600,
+            "maximum": 419900,
+            "mean": 237620.0,
+            "median": 216150.0,
+            "p95": 419900
+          },
+          "phases": {
+            "parsing": {
+              "minimum": 176500,
+              "maximum": 1048100,
+              "mean": 407850.0,
+              "median": 271700.0,
+              "p95": 1048100
+            },
+            "semantic_analysis": {
+              "minimum": 24400,
+              "maximum": 183200,
+              "mean": 58360.0,
+              "median": 42800.0,
+              "p95": 183200
+            },
+            "ir_generation": {
+              "minimum": 48300,
+              "maximum": 108500,
+              "mean": 74520.0,
+              "median": 65850.0,
+              "p95": 108500
+            },
+            "optimization": {
+              "minimum": 238200,
+              "maximum": 697200,
+              "mean": 457410.0,
+              "median": 447600.0,
+              "p95": 697200
+            },
+            "assembly_generation": {
+              "minimum": 118700,
+              "maximum": 677800,
+              "mean": 279520.0,
+              "median": 196450.0,
+              "p95": 677800
+            },
+            "emulation": {
+              "minimum": 58800,
+              "maximum": 129100,
+              "mean": 89540.0,
+              "median": 88150.0,
+              "p95": 129100
+            }
+          }
+        },
+        "metrics": {
+          "source": {
+            "source_size_bytes": 33,
+            "source_line_count": 2
+          },
+          "ir": {
+            "function_count": 1,
+            "block_count": 1,
+            "instruction_count": 2
+          },
+          "s3_assembly": {
+            "function_count": 1,
+            "block_count": 1,
+            "opcode_count": 2,
+            "textual_size_bytes": 144,
+            "sha256": "ab038877d912135cf036bb50407bd070f8d2aad9f754cc870be0c8aede068f41"
+          },
+          "execution": {
+            "executed_s3_opcodes": 2,
+            "maximum_frame_depth_observed": 1,
+            "function_call_count": 0
+          }
+        },
         "expected_return": 0,
         "actual_return": 0
       },
@@ -209,175 +242,224 @@
         "O0_return": 0,
         "O1_return": 0,
         "equal_return": true,
-        "O0_opcode_count": 2,
-        "O1_opcode_count": 2,
-        "diff_opcode_count": 0
+        "O0_s3_opcode_count": 2,
+        "O1_s3_opcode_count": 2,
+        "s3_opcode_count_diff": 0,
+        "s3_opcode_count_percent": 0.0,
+        "s3_opcode_count_label": "equal",
+        "O0_executed_s3_opcodes": 2,
+        "O1_executed_s3_opcodes": 2,
+        "executed_s3_opcodes_diff": 0,
+        "executed_s3_opcodes_percent": 0.0,
+        "executed_s3_opcodes_label": "equal",
+        "O0_s3_textual_size_bytes": 144,
+        "O1_s3_textual_size_bytes": 144,
+        "s3_textual_size_diff": 0,
+        "O0_s3_assembly_sha256": "ab038877d912135cf036bb50407bd070f8d2aad9f754cc870be0c8aede068f41",
+        "O1_s3_assembly_sha256": "ab038877d912135cf036bb50407bd070f8d2aad9f754cc870be0c8aede068f41",
+        "O0_pipeline_median_ns": 1133900.0,
+        "O1_pipeline_median_ns": 1589850.0,
+        "pipeline_median_diff_ns": 455950.0,
+        "pipeline_median_percent": 40.21077696445895,
+        "pipeline_median_label": "slower_in_this_run"
       }
     },
     {
       "workload": "arithmetic",
       "status": "passed",
-      "opt_level": "O0",
-      "timing": {
-        "unit": "ns",
-        "pipeline_total": 3144400,
-        "measured_phases_total": 3019900,
-        "unclassified_overhead": 124500,
-        "phases": {
-          "parsing": {
-            "minimum": 451000,
-            "maximum": 451000,
-            "mean": 451000.0,
-            "median": 451000.0,
-            "p95": 451000
-          },
-          "semantic_analysis": {
-            "minimum": 57400,
-            "maximum": 57400,
-            "mean": 57400.0,
-            "median": 57400.0,
-            "p95": 57400
-          },
-          "ir_generation": {
-            "minimum": 131200,
-            "maximum": 131200,
-            "mean": 131200.0,
-            "median": 131200.0,
-            "p95": 131200
-          },
-          "optimization": {
-            "minimum": 413000,
-            "maximum": 413000,
-            "mean": 413000.0,
-            "median": 413000.0,
-            "p95": 413000
-          },
-          "assembly_generation": {
-            "minimum": 771300,
-            "maximum": 771300,
-            "mean": 771300.0,
-            "median": 771300.0,
-            "p95": 771300
-          },
-          "native_x86_64_emission": {
-            "minimum": 1196000,
-            "maximum": 1196000,
-            "mean": 1196000.0,
-            "median": 1196000.0,
-            "p95": 1196000
-          }
-        }
-      },
-      "metrics": {
-        "source": {
-          "source_size_bytes": 117,
-          "source_line_count": 6
-        },
-        "ir": {
-          "function_count": 1,
-          "block_count": 1,
-          "instruction_count": 22
-        },
-        "s3_assembly": {
-          "function_count": 1,
-          "block_count": 1,
-          "opcode_count": 22,
-          "textual_size_bytes": 1378,
-          "sha256": "130ccaf42c9cc8ec7dc8abb6f630a5491eb9388037e73f0c05519c7fe11657a3"
-        },
-        "native_artifact": {
-          "artifact_kind": "gnu-x86-64-assembly",
-          "artifact_size_bytes": 33531,
-          "artifact_sha256": "c2c4c1331844bd3a4de356dee13de99eb81a0e6853c5135be2aa848dc847efe0"
-        }
-      },
-      "functional_validation": {
-        "mode": "hosted-pipeline",
+      "O0": {
+        "workload": "arithmetic",
         "status": "passed",
+        "opt_level": "O0",
+        "timing": {
+          "unit": "ns",
+          "pipeline_total": {
+            "minimum": 4131600,
+            "maximum": 9854200,
+            "mean": 6158280.0,
+            "median": 5992850.0,
+            "p95": 9854200
+          },
+          "measured_phases_total": {
+            "minimum": 3884800,
+            "maximum": 8189000,
+            "mean": 5708850.0,
+            "median": 5636600.0,
+            "p95": 8189000
+          },
+          "unclassified_overhead": {
+            "minimum": 246800,
+            "maximum": 1665200,
+            "mean": 449430.0,
+            "median": 295800.0,
+            "p95": 1665200
+          },
+          "phases": {
+            "parsing": {
+              "minimum": 723200,
+              "maximum": 2121400,
+              "mean": 1212340.0,
+              "median": 950950.0,
+              "p95": 2121400
+            },
+            "semantic_analysis": {
+              "minimum": 80200,
+              "maximum": 2123000,
+              "mean": 311130.0,
+              "median": 103900.0,
+              "p95": 2123000
+            },
+            "ir_generation": {
+              "minimum": 205900,
+              "maximum": 1375000,
+              "mean": 409780.0,
+              "median": 274550.0,
+              "p95": 1375000
+            },
+            "optimization": {
+              "minimum": 492100,
+              "maximum": 1626200,
+              "mean": 1064320.0,
+              "median": 946350.0,
+              "p95": 1626200
+            },
+            "assembly_generation": {
+              "minimum": 853300,
+              "maximum": 4146100,
+              "mean": 2051830.0,
+              "median": 1760850.0,
+              "p95": 4146100
+            },
+            "emulation": {
+              "minimum": 357100,
+              "maximum": 1631600,
+              "mean": 659450.0,
+              "median": 560400.0,
+              "p95": 1631600
+            }
+          }
+        },
+        "metrics": {
+          "source": {
+            "source_size_bytes": 117,
+            "source_line_count": 6
+          },
+          "ir": {
+            "function_count": 1,
+            "block_count": 1,
+            "instruction_count": 22
+          },
+          "s3_assembly": {
+            "function_count": 1,
+            "block_count": 1,
+            "opcode_count": 22,
+            "textual_size_bytes": 1378,
+            "sha256": "130ccaf42c9cc8ec7dc8abb6f630a5491eb9388037e73f0c05519c7fe11657a3"
+          },
+          "execution": {
+            "executed_s3_opcodes": 22,
+            "maximum_frame_depth_observed": 1,
+            "function_call_count": 0
+          }
+        },
         "expected_return": 42,
         "actual_return": 42
-      }
-    },
-    {
-      "workload": "arithmetic",
-      "status": "passed",
-      "opt_level": "O1",
-      "timing": {
-        "unit": "ns",
-        "pipeline_total": 2936700,
-        "measured_phases_total": 2818300,
-        "unclassified_overhead": 118400,
-        "phases": {
-          "parsing": {
-            "minimum": 527300,
-            "maximum": 527300,
-            "mean": 527300.0,
-            "median": 527300.0,
-            "p95": 527300
-          },
-          "semantic_analysis": {
-            "minimum": 63800,
-            "maximum": 63800,
-            "mean": 63800.0,
-            "median": 63800.0,
-            "p95": 63800
-          },
-          "ir_generation": {
-            "minimum": 140300,
-            "maximum": 140300,
-            "mean": 140300.0,
-            "median": 140300.0,
-            "p95": 140300
-          },
-          "optimization": {
-            "minimum": 810900,
-            "maximum": 810900,
-            "mean": 810900.0,
-            "median": 810900.0,
-            "p95": 810900
-          },
-          "assembly_generation": {
-            "minimum": 422600,
-            "maximum": 422600,
-            "mean": 422600.0,
-            "median": 422600.0,
-            "p95": 422600
-          },
-          "native_x86_64_emission": {
-            "minimum": 853400,
-            "maximum": 853400,
-            "mean": 853400.0,
-            "median": 853400.0,
-            "p95": 853400
-          }
-        }
       },
-      "metrics": {
-        "source": {
-          "source_size_bytes": 117,
-          "source_line_count": 6
-        },
-        "ir": {
-          "function_count": 1,
-          "block_count": 1,
-          "instruction_count": 22
-        },
-        "s3_assembly": {
-          "function_count": 1,
-          "block_count": 1,
-          "opcode_count": 22,
-          "textual_size_bytes": 1378,
-          "sha256": "130ccaf42c9cc8ec7dc8abb6f630a5491eb9388037e73f0c05519c7fe11657a3"
-        },
-        "native_artifact": {
-          "artifact_kind": "gnu-x86-64-assembly",
-          "artifact_size_bytes": 33531,
-          "artifact_sha256": "c2c4c1331844bd3a4de356dee13de99eb81a0e6853c5135be2aa848dc847efe0"
-        }
-      },
-      "functional_validation": {
-        "mode": "hosted-pipeline",
+      "O1": {
+        "workload": "arithmetic",
         "status": "passed",
+        "opt_level": "O1",
+        "timing": {
+          "unit": "ns",
+          "pipeline_total": {
+            "minimum": 4293400,
+            "maximum": 8382200,
+            "mean": 5754620.0,
+            "median": 5645250.0,
+            "p95": 8382200
+          },
+          "measured_phases_total": {
+            "minimum": 4127700,
+            "maximum": 7480500,
+            "mean": 5416710.0,
+            "median": 5380200.0,
+            "p95": 7480500
+          },
+          "unclassified_overhead": {
+            "minimum": 165700,
+            "maximum": 901700,
+            "mean": 337910.0,
+            "median": 266000.0,
+            "p95": 901700
+          },
+          "phases": {
+            "parsing": {
+              "minimum": 538600,
+              "maximum": 2536800,
+              "mean": 1304350.0,
+              "median": 1223300.0,
+              "p95": 2536800
+            },
+            "semantic_analysis": {
+              "minimum": 64700,
+              "maximum": 120100,
+              "mean": 97300.0,
+              "median": 104300.0,
+              "p95": 120100
+            },
+            "ir_generation": {
+              "minimum": 140900,
+              "maximum": 345900,
+              "mean": 261310.0,
+              "median": 291050.0,
+              "p95": 345900
+            },
+            "optimization": {
+              "minimum": 971200,
+              "maximum": 2722600,
+              "mean": 1726350.0,
+              "median": 1517000.0,
+              "p95": 2722600
+            },
+            "assembly_generation": {
+              "minimum": 568700,
+              "maximum": 4302600,
+              "mean": 1455950.0,
+              "median": 839650.0,
+              "p95": 4302600
+            },
+            "emulation": {
+              "minimum": 299200,
+              "maximum": 1171200,
+              "mean": 571450.0,
+              "median": 420650.0,
+              "p95": 1171200
+            }
+          }
+        },
+        "metrics": {
+          "source": {
+            "source_size_bytes": 117,
+            "source_line_count": 6
+          },
+          "ir": {
+            "function_count": 1,
+            "block_count": 1,
+            "instruction_count": 22
+          },
+          "s3_assembly": {
+            "function_count": 1,
+            "block_count": 1,
+            "opcode_count": 22,
+            "textual_size_bytes": 1378,
+            "sha256": "130ccaf42c9cc8ec7dc8abb6f630a5491eb9388037e73f0c05519c7fe11657a3"
+          },
+          "execution": {
+            "executed_s3_opcodes": 22,
+            "maximum_frame_depth_observed": 1,
+            "function_call_count": 0
+          }
+        },
         "expected_return": 42,
         "actual_return": 42
       },
@@ -385,175 +467,224 @@
         "O0_return": 42,
         "O1_return": 42,
         "equal_return": true,
-        "O0_opcode_count": 22,
-        "O1_opcode_count": 22,
-        "diff_opcode_count": 0
+        "O0_s3_opcode_count": 22,
+        "O1_s3_opcode_count": 22,
+        "s3_opcode_count_diff": 0,
+        "s3_opcode_count_percent": 0.0,
+        "s3_opcode_count_label": "equal",
+        "O0_executed_s3_opcodes": 22,
+        "O1_executed_s3_opcodes": 22,
+        "executed_s3_opcodes_diff": 0,
+        "executed_s3_opcodes_percent": 0.0,
+        "executed_s3_opcodes_label": "equal",
+        "O0_s3_textual_size_bytes": 1378,
+        "O1_s3_textual_size_bytes": 1378,
+        "s3_textual_size_diff": 0,
+        "O0_s3_assembly_sha256": "130ccaf42c9cc8ec7dc8abb6f630a5491eb9388037e73f0c05519c7fe11657a3",
+        "O1_s3_assembly_sha256": "130ccaf42c9cc8ec7dc8abb6f630a5491eb9388037e73f0c05519c7fe11657a3",
+        "O0_pipeline_median_ns": 5992850.0,
+        "O1_pipeline_median_ns": 5645250.0,
+        "pipeline_median_diff_ns": -347600.0,
+        "pipeline_median_percent": -5.800245292306665,
+        "pipeline_median_label": "faster_in_this_run"
       }
     },
     {
       "workload": "branches",
       "status": "passed",
-      "opt_level": "O0",
-      "timing": {
-        "unit": "ns",
-        "pipeline_total": 7020100,
-        "measured_phases_total": 6768700,
-        "unclassified_overhead": 251400,
-        "phases": {
-          "parsing": {
-            "minimum": 1504500,
-            "maximum": 1504500,
-            "mean": 1504500.0,
-            "median": 1504500.0,
-            "p95": 1504500
-          },
-          "semantic_analysis": {
-            "minimum": 127000,
-            "maximum": 127000,
-            "mean": 127000.0,
-            "median": 127000.0,
-            "p95": 127000
-          },
-          "ir_generation": {
-            "minimum": 298300,
-            "maximum": 298300,
-            "mean": 298300.0,
-            "median": 298300.0,
-            "p95": 298300
-          },
-          "optimization": {
-            "minimum": 1042800,
-            "maximum": 1042800,
-            "mean": 1042800.0,
-            "median": 1042800.0,
-            "p95": 1042800
-          },
-          "assembly_generation": {
-            "minimum": 1365700,
-            "maximum": 1365700,
-            "mean": 1365700.0,
-            "median": 1365700.0,
-            "p95": 1365700
-          },
-          "native_x86_64_emission": {
-            "minimum": 2430400,
-            "maximum": 2430400,
-            "mean": 2430400.0,
-            "median": 2430400.0,
-            "p95": 2430400
-          }
-        }
-      },
-      "metrics": {
-        "source": {
-          "source_size_bytes": 422,
-          "source_line_count": 23
-        },
-        "ir": {
-          "function_count": 2,
-          "block_count": 9,
-          "instruction_count": 47
-        },
-        "s3_assembly": {
-          "function_count": 2,
-          "block_count": 9,
-          "opcode_count": 47,
-          "textual_size_bytes": 3079,
-          "sha256": "99f90c3c7cdef3d9fea753220d324725e85dc131c7a5cef44daabcdac82bb2ab"
-        },
-        "native_artifact": {
-          "artifact_kind": "gnu-x86-64-assembly",
-          "artifact_size_bytes": 57699,
-          "artifact_sha256": "eeda1921d36411c326f2aac3986431b6696b0b4d8b2f88d8f5c351a610b59d45"
-        }
-      },
-      "functional_validation": {
-        "mode": "hosted-pipeline",
+      "O0": {
+        "workload": "branches",
         "status": "passed",
+        "opt_level": "O0",
+        "timing": {
+          "unit": "ns",
+          "pipeline_total": {
+            "minimum": 8468600,
+            "maximum": 16225500,
+            "mean": 11410200.0,
+            "median": 11485850.0,
+            "p95": 16225500
+          },
+          "measured_phases_total": {
+            "minimum": 8109300,
+            "maximum": 13999100,
+            "mean": 10628760.0,
+            "median": 10575550.0,
+            "p95": 13999100
+          },
+          "unclassified_overhead": {
+            "minimum": 212100,
+            "maximum": 2515600,
+            "mean": 781440.0,
+            "median": 343150.0,
+            "p95": 2515600
+          },
+          "phases": {
+            "parsing": {
+              "minimum": 1848000,
+              "maximum": 4182500,
+              "mean": 2985740.0,
+              "median": 3021450.0,
+              "p95": 4182500
+            },
+            "semantic_analysis": {
+              "minimum": 155800,
+              "maximum": 721800,
+              "mean": 395470.0,
+              "median": 320350.0,
+              "p95": 721800
+            },
+            "ir_generation": {
+              "minimum": 306700,
+              "maximum": 977000,
+              "mean": 572820.0,
+              "median": 544050.0,
+              "p95": 977000
+            },
+            "optimization": {
+              "minimum": 1266300,
+              "maximum": 3393100,
+              "mean": 2245300.0,
+              "median": 1832900.0,
+              "p95": 3393100
+            },
+            "assembly_generation": {
+              "minimum": 1678900,
+              "maximum": 4370200,
+              "mean": 2825760.0,
+              "median": 2885700.0,
+              "p95": 4370200
+            },
+            "emulation": {
+              "minimum": 583400,
+              "maximum": 4362500,
+              "mean": 1603670.0,
+              "median": 1005200.0,
+              "p95": 4362500
+            }
+          }
+        },
+        "metrics": {
+          "source": {
+            "source_size_bytes": 422,
+            "source_line_count": 23
+          },
+          "ir": {
+            "function_count": 2,
+            "block_count": 9,
+            "instruction_count": 47
+          },
+          "s3_assembly": {
+            "function_count": 2,
+            "block_count": 9,
+            "opcode_count": 47,
+            "textual_size_bytes": 3079,
+            "sha256": "99f90c3c7cdef3d9fea753220d324725e85dc131c7a5cef44daabcdac82bb2ab"
+          },
+          "execution": {
+            "executed_s3_opcodes": 48,
+            "maximum_frame_depth_observed": 2,
+            "function_call_count": 2
+          }
+        },
         "expected_return": 1,
         "actual_return": 1
-      }
-    },
-    {
-      "workload": "branches",
-      "status": "passed",
-      "opt_level": "O1",
-      "timing": {
-        "unit": "ns",
-        "pipeline_total": 8273100,
-        "measured_phases_total": 8081500,
-        "unclassified_overhead": 191600,
-        "phases": {
-          "parsing": {
-            "minimum": 2020500,
-            "maximum": 2020500,
-            "mean": 2020500.0,
-            "median": 2020500.0,
-            "p95": 2020500
-          },
-          "semantic_analysis": {
-            "minimum": 291900,
-            "maximum": 291900,
-            "mean": 291900.0,
-            "median": 291900.0,
-            "p95": 291900
-          },
-          "ir_generation": {
-            "minimum": 303900,
-            "maximum": 303900,
-            "mean": 303900.0,
-            "median": 303900.0,
-            "p95": 303900
-          },
-          "optimization": {
-            "minimum": 2072400,
-            "maximum": 2072400,
-            "mean": 2072400.0,
-            "median": 2072400.0,
-            "p95": 2072400
-          },
-          "assembly_generation": {
-            "minimum": 1129800,
-            "maximum": 1129800,
-            "mean": 1129800.0,
-            "median": 1129800.0,
-            "p95": 1129800
-          },
-          "native_x86_64_emission": {
-            "minimum": 2263000,
-            "maximum": 2263000,
-            "mean": 2263000.0,
-            "median": 2263000.0,
-            "p95": 2263000
-          }
-        }
       },
-      "metrics": {
-        "source": {
-          "source_size_bytes": 422,
-          "source_line_count": 23
-        },
-        "ir": {
-          "function_count": 2,
-          "block_count": 9,
-          "instruction_count": 47
-        },
-        "s3_assembly": {
-          "function_count": 2,
-          "block_count": 9,
-          "opcode_count": 47,
-          "textual_size_bytes": 3079,
-          "sha256": "99f90c3c7cdef3d9fea753220d324725e85dc131c7a5cef44daabcdac82bb2ab"
-        },
-        "native_artifact": {
-          "artifact_kind": "gnu-x86-64-assembly",
-          "artifact_size_bytes": 57699,
-          "artifact_sha256": "eeda1921d36411c326f2aac3986431b6696b0b4d8b2f88d8f5c351a610b59d45"
-        }
-      },
-      "functional_validation": {
-        "mode": "hosted-pipeline",
+      "O1": {
+        "workload": "branches",
         "status": "passed",
+        "opt_level": "O1",
+        "timing": {
+          "unit": "ns",
+          "pipeline_total": {
+            "minimum": 10538900,
+            "maximum": 27812700,
+            "mean": 17406160.0,
+            "median": 16004250.0,
+            "p95": 27812700
+          },
+          "measured_phases_total": {
+            "minimum": 10330100,
+            "maximum": 27206500,
+            "mean": 16871930.0,
+            "median": 15368500.0,
+            "p95": 27206500
+          },
+          "unclassified_overhead": {
+            "minimum": 208800,
+            "maximum": 985400,
+            "mean": 534230.0,
+            "median": 481200.0,
+            "p95": 985400
+          },
+          "phases": {
+            "parsing": {
+              "minimum": 1903000,
+              "maximum": 5191300,
+              "mean": 3346420.0,
+              "median": 2799350.0,
+              "p95": 5191300
+            },
+            "semantic_analysis": {
+              "minimum": 128800,
+              "maximum": 2066300,
+              "mean": 658420.0,
+              "median": 230450.0,
+              "p95": 2066300
+            },
+            "ir_generation": {
+              "minimum": 279400,
+              "maximum": 2431900,
+              "mean": 987910.0,
+              "median": 754900.0,
+              "p95": 2431900
+            },
+            "optimization": {
+              "minimum": 4538400,
+              "maximum": 12083800,
+              "mean": 6552560.0,
+              "median": 5483200.0,
+              "p95": 12083800
+            },
+            "assembly_generation": {
+              "minimum": 2100200,
+              "maximum": 5555400,
+              "mean": 3338610.0,
+              "median": 2748300.0,
+              "p95": 5555400
+            },
+            "emulation": {
+              "minimum": 660300,
+              "maximum": 3358000,
+              "mean": 1988010.0,
+              "median": 2259950.0,
+              "p95": 3358000
+            }
+          }
+        },
+        "metrics": {
+          "source": {
+            "source_size_bytes": 422,
+            "source_line_count": 23
+          },
+          "ir": {
+            "function_count": 2,
+            "block_count": 9,
+            "instruction_count": 47
+          },
+          "s3_assembly": {
+            "function_count": 2,
+            "block_count": 9,
+            "opcode_count": 47,
+            "textual_size_bytes": 3079,
+            "sha256": "99f90c3c7cdef3d9fea753220d324725e85dc131c7a5cef44daabcdac82bb2ab"
+          },
+          "execution": {
+            "executed_s3_opcodes": 48,
+            "maximum_frame_depth_observed": 2,
+            "function_call_count": 2
+          }
+        },
         "expected_return": 1,
         "actual_return": 1
       },
@@ -561,175 +692,224 @@
         "O0_return": 1,
         "O1_return": 1,
         "equal_return": true,
-        "O0_opcode_count": 47,
-        "O1_opcode_count": 47,
-        "diff_opcode_count": 0
+        "O0_s3_opcode_count": 47,
+        "O1_s3_opcode_count": 47,
+        "s3_opcode_count_diff": 0,
+        "s3_opcode_count_percent": 0.0,
+        "s3_opcode_count_label": "equal",
+        "O0_executed_s3_opcodes": 48,
+        "O1_executed_s3_opcodes": 48,
+        "executed_s3_opcodes_diff": 0,
+        "executed_s3_opcodes_percent": 0.0,
+        "executed_s3_opcodes_label": "equal",
+        "O0_s3_textual_size_bytes": 3079,
+        "O1_s3_textual_size_bytes": 3079,
+        "s3_textual_size_diff": 0,
+        "O0_s3_assembly_sha256": "99f90c3c7cdef3d9fea753220d324725e85dc131c7a5cef44daabcdac82bb2ab",
+        "O1_s3_assembly_sha256": "99f90c3c7cdef3d9fea753220d324725e85dc131c7a5cef44daabcdac82bb2ab",
+        "O0_pipeline_median_ns": 11485850.0,
+        "O1_pipeline_median_ns": 16004250.0,
+        "pipeline_median_diff_ns": 4518400.0,
+        "pipeline_median_percent": 39.33883865800093,
+        "pipeline_median_label": "slower_in_this_run"
       }
     },
     {
       "workload": "calls",
       "status": "passed",
-      "opt_level": "O0",
-      "timing": {
-        "unit": "ns",
-        "pipeline_total": 4461500,
-        "measured_phases_total": 4276000,
-        "unclassified_overhead": 185500,
-        "phases": {
-          "parsing": {
-            "minimum": 1508500,
-            "maximum": 1508500,
-            "mean": 1508500.0,
-            "median": 1508500.0,
-            "p95": 1508500
-          },
-          "semantic_analysis": {
-            "minimum": 199300,
-            "maximum": 199300,
-            "mean": 199300.0,
-            "median": 199300.0,
-            "p95": 199300
-          },
-          "ir_generation": {
-            "minimum": 194500,
-            "maximum": 194500,
-            "mean": 194500.0,
-            "median": 194500.0,
-            "p95": 194500
-          },
-          "optimization": {
-            "minimum": 614900,
-            "maximum": 614900,
-            "mean": 614900.0,
-            "median": 614900.0,
-            "p95": 614900
-          },
-          "assembly_generation": {
-            "minimum": 773100,
-            "maximum": 773100,
-            "mean": 773100.0,
-            "median": 773100.0,
-            "p95": 773100
-          },
-          "native_x86_64_emission": {
-            "minimum": 985700,
-            "maximum": 985700,
-            "mean": 985700.0,
-            "median": 985700.0,
-            "p95": 985700
-          }
-        }
-      },
-      "metrics": {
-        "source": {
-          "source_size_bytes": 220,
-          "source_line_count": 17
-        },
-        "ir": {
-          "function_count": 6,
-          "block_count": 6,
-          "instruction_count": 22
-        },
-        "s3_assembly": {
-          "function_count": 6,
-          "block_count": 6,
-          "opcode_count": 22,
-          "textual_size_bytes": 1415,
-          "sha256": "c848fd2acda7a9dbef075a4ef892b49a7402b323dc535ba95fe4de356794f63a"
-        },
-        "native_artifact": {
-          "artifact_kind": "gnu-x86-64-assembly",
-          "artifact_size_bytes": 30005,
-          "artifact_sha256": "3bd10f6cbde4f18c8a0b8fead588ef026b1936f0d8ea8305a3591c632949df9a"
-        }
-      },
-      "functional_validation": {
-        "mode": "hosted-pipeline",
+      "O0": {
+        "workload": "calls",
         "status": "passed",
+        "opt_level": "O0",
+        "timing": {
+          "unit": "ns",
+          "pipeline_total": {
+            "minimum": 5528600,
+            "maximum": 10245800,
+            "mean": 7449760.0,
+            "median": 7368700.0,
+            "p95": 10245800
+          },
+          "measured_phases_total": {
+            "minimum": 5264500,
+            "maximum": 9656700,
+            "mean": 7090620.0,
+            "median": 6960900.0,
+            "p95": 9656700
+          },
+          "unclassified_overhead": {
+            "minimum": 264100,
+            "maximum": 679300,
+            "mean": 359140.0,
+            "median": 307600.0,
+            "p95": 679300
+          },
+          "phases": {
+            "parsing": {
+              "minimum": 1471800,
+              "maximum": 4313400,
+              "mean": 2057180.0,
+              "median": 1769000.0,
+              "p95": 4313400
+            },
+            "semantic_analysis": {
+              "minimum": 130100,
+              "maximum": 488500,
+              "mean": 194220.0,
+              "median": 154200.0,
+              "p95": 488500
+            },
+            "ir_generation": {
+              "minimum": 255100,
+              "maximum": 2835900,
+              "mean": 556930.0,
+              "median": 294500.0,
+              "p95": 2835900
+            },
+            "optimization": {
+              "minimum": 945300,
+              "maximum": 2478600,
+              "mean": 1648920.0,
+              "median": 1664950.0,
+              "p95": 2478600
+            },
+            "assembly_generation": {
+              "minimum": 1108800,
+              "maximum": 2803600,
+              "mean": 1653760.0,
+              "median": 1680900.0,
+              "p95": 2803600
+            },
+            "emulation": {
+              "minimum": 635400,
+              "maximum": 1571500,
+              "mean": 979610.0,
+              "median": 926950.0,
+              "p95": 1571500
+            }
+          }
+        },
+        "metrics": {
+          "source": {
+            "source_size_bytes": 220,
+            "source_line_count": 17
+          },
+          "ir": {
+            "function_count": 6,
+            "block_count": 6,
+            "instruction_count": 22
+          },
+          "s3_assembly": {
+            "function_count": 6,
+            "block_count": 6,
+            "opcode_count": 22,
+            "textual_size_bytes": 1415,
+            "sha256": "c848fd2acda7a9dbef075a4ef892b49a7402b323dc535ba95fe4de356794f63a"
+          },
+          "execution": {
+            "executed_s3_opcodes": 40,
+            "maximum_frame_depth_observed": 6,
+            "function_call_count": 10
+          }
+        },
         "expected_return": 10,
         "actual_return": 10
-      }
-    },
-    {
-      "workload": "calls",
-      "status": "passed",
-      "opt_level": "O1",
-      "timing": {
-        "unit": "ns",
-        "pipeline_total": 5331800,
-        "measured_phases_total": 5143400,
-        "unclassified_overhead": 188400,
-        "phases": {
-          "parsing": {
-            "minimum": 1464500,
-            "maximum": 1464500,
-            "mean": 1464500.0,
-            "median": 1464500.0,
-            "p95": 1464500
-          },
-          "semantic_analysis": {
-            "minimum": 135100,
-            "maximum": 135100,
-            "mean": 135100.0,
-            "median": 135100.0,
-            "p95": 135100
-          },
-          "ir_generation": {
-            "minimum": 260800,
-            "maximum": 260800,
-            "mean": 260800.0,
-            "median": 260800.0,
-            "p95": 260800
-          },
-          "optimization": {
-            "minimum": 1574200,
-            "maximum": 1574200,
-            "mean": 1574200.0,
-            "median": 1574200.0,
-            "p95": 1574200
-          },
-          "assembly_generation": {
-            "minimum": 691800,
-            "maximum": 691800,
-            "mean": 691800.0,
-            "median": 691800.0,
-            "p95": 691800
-          },
-          "native_x86_64_emission": {
-            "minimum": 1017000,
-            "maximum": 1017000,
-            "mean": 1017000.0,
-            "median": 1017000.0,
-            "p95": 1017000
-          }
-        }
       },
-      "metrics": {
-        "source": {
-          "source_size_bytes": 220,
-          "source_line_count": 17
-        },
-        "ir": {
-          "function_count": 6,
-          "block_count": 6,
-          "instruction_count": 22
-        },
-        "s3_assembly": {
-          "function_count": 6,
-          "block_count": 6,
-          "opcode_count": 22,
-          "textual_size_bytes": 1415,
-          "sha256": "c848fd2acda7a9dbef075a4ef892b49a7402b323dc535ba95fe4de356794f63a"
-        },
-        "native_artifact": {
-          "artifact_kind": "gnu-x86-64-assembly",
-          "artifact_size_bytes": 30005,
-          "artifact_sha256": "3bd10f6cbde4f18c8a0b8fead588ef026b1936f0d8ea8305a3591c632949df9a"
-        }
-      },
-      "functional_validation": {
-        "mode": "hosted-pipeline",
+      "O1": {
+        "workload": "calls",
         "status": "passed",
+        "opt_level": "O1",
+        "timing": {
+          "unit": "ns",
+          "pipeline_total": {
+            "minimum": 8294600,
+            "maximum": 17442200,
+            "mean": 11880290.0,
+            "median": 11320900.0,
+            "p95": 17442200
+          },
+          "measured_phases_total": {
+            "minimum": 7932500,
+            "maximum": 15066600,
+            "mean": 11194510.0,
+            "median": 10833600.0,
+            "p95": 15066600
+          },
+          "unclassified_overhead": {
+            "minimum": 311300,
+            "maximum": 2811700,
+            "mean": 685780.0,
+            "median": 487300.0,
+            "p95": 2811700
+          },
+          "phases": {
+            "parsing": {
+              "minimum": 1457900,
+              "maximum": 3690400,
+              "mean": 2335750.0,
+              "median": 2121500.0,
+              "p95": 3690400
+            },
+            "semantic_analysis": {
+              "minimum": 150000,
+              "maximum": 501300,
+              "mean": 241850.0,
+              "median": 194350.0,
+              "p95": 501300
+            },
+            "ir_generation": {
+              "minimum": 264400,
+              "maximum": 1621600,
+              "mean": 469900.0,
+              "median": 324050.0,
+              "p95": 1621600
+            },
+            "optimization": {
+              "minimum": 2425500,
+              "maximum": 9229000,
+              "mean": 4761730.0,
+              "median": 4379250.0,
+              "p95": 9229000
+            },
+            "assembly_generation": {
+              "minimum": 1148400,
+              "maximum": 4252300,
+              "mean": 2237160.0,
+              "median": 1926150.0,
+              "p95": 4252300
+            },
+            "emulation": {
+              "minimum": 561600,
+              "maximum": 1884900,
+              "mean": 1148120.0,
+              "median": 1074200.0,
+              "p95": 1884900
+            }
+          }
+        },
+        "metrics": {
+          "source": {
+            "source_size_bytes": 220,
+            "source_line_count": 17
+          },
+          "ir": {
+            "function_count": 6,
+            "block_count": 6,
+            "instruction_count": 22
+          },
+          "s3_assembly": {
+            "function_count": 6,
+            "block_count": 6,
+            "opcode_count": 22,
+            "textual_size_bytes": 1415,
+            "sha256": "c848fd2acda7a9dbef075a4ef892b49a7402b323dc535ba95fe4de356794f63a"
+          },
+          "execution": {
+            "executed_s3_opcodes": 40,
+            "maximum_frame_depth_observed": 6,
+            "function_call_count": 10
+          }
+        },
         "expected_return": 10,
         "actual_return": 10
       },
@@ -737,175 +917,224 @@
         "O0_return": 10,
         "O1_return": 10,
         "equal_return": true,
-        "O0_opcode_count": 22,
-        "O1_opcode_count": 22,
-        "diff_opcode_count": 0
+        "O0_s3_opcode_count": 22,
+        "O1_s3_opcode_count": 22,
+        "s3_opcode_count_diff": 0,
+        "s3_opcode_count_percent": 0.0,
+        "s3_opcode_count_label": "equal",
+        "O0_executed_s3_opcodes": 40,
+        "O1_executed_s3_opcodes": 40,
+        "executed_s3_opcodes_diff": 0,
+        "executed_s3_opcodes_percent": 0.0,
+        "executed_s3_opcodes_label": "equal",
+        "O0_s3_textual_size_bytes": 1415,
+        "O1_s3_textual_size_bytes": 1415,
+        "s3_textual_size_diff": 0,
+        "O0_s3_assembly_sha256": "c848fd2acda7a9dbef075a4ef892b49a7402b323dc535ba95fe4de356794f63a",
+        "O1_s3_assembly_sha256": "c848fd2acda7a9dbef075a4ef892b49a7402b323dc535ba95fe4de356794f63a",
+        "O0_pipeline_median_ns": 7368700.0,
+        "O1_pipeline_median_ns": 11320900.0,
+        "pipeline_median_diff_ns": 3952200.0,
+        "pipeline_median_percent": 53.63496953329624,
+        "pipeline_median_label": "slower_in_this_run"
       }
     },
     {
       "workload": "recursion",
       "status": "passed",
-      "opt_level": "O0",
-      "timing": {
-        "unit": "ns",
-        "pipeline_total": 8486200,
-        "measured_phases_total": 7904100,
-        "unclassified_overhead": 582100,
-        "phases": {
-          "parsing": {
-            "minimum": 1618000,
-            "maximum": 1618000,
-            "mean": 1618000.0,
-            "median": 1618000.0,
-            "p95": 1618000
-          },
-          "semantic_analysis": {
-            "minimum": 175200,
-            "maximum": 175200,
-            "mean": 175200.0,
-            "median": 175200.0,
-            "p95": 175200
-          },
-          "ir_generation": {
-            "minimum": 255500,
-            "maximum": 255500,
-            "mean": 255500.0,
-            "median": 255500.0,
-            "p95": 255500
-          },
-          "optimization": {
-            "minimum": 3535400,
-            "maximum": 3535400,
-            "mean": 3535400.0,
-            "median": 3535400.0,
-            "p95": 3535400
-          },
-          "assembly_generation": {
-            "minimum": 871800,
-            "maximum": 871800,
-            "mean": 871800.0,
-            "median": 871800.0,
-            "p95": 871800
-          },
-          "native_x86_64_emission": {
-            "minimum": 1448200,
-            "maximum": 1448200,
-            "mean": 1448200.0,
-            "median": 1448200.0,
-            "p95": 1448200
-          }
-        }
-      },
-      "metrics": {
-        "source": {
-          "source_size_bytes": 205,
-          "source_line_count": 11
-        },
-        "ir": {
-          "function_count": 2,
-          "block_count": 5,
-          "instruction_count": 18
-        },
-        "s3_assembly": {
-          "function_count": 2,
-          "block_count": 5,
-          "opcode_count": 18,
-          "textual_size_bytes": 1219,
-          "sha256": "1e8bc27fdc32f0717bd962af9620cf294c818d32d08fa6b8de5766f10e6aac7e"
-        },
-        "native_artifact": {
-          "artifact_kind": "gnu-x86-64-assembly",
-          "artifact_size_bytes": 27170,
-          "artifact_sha256": "8b03be6a187db44a2a94c8cdce2bcbb1b3d1f42aeacdbb9d2e1116ba074808cf"
-        }
-      },
-      "functional_validation": {
-        "mode": "hosted-pipeline",
+      "O0": {
+        "workload": "recursion",
         "status": "passed",
+        "opt_level": "O0",
+        "timing": {
+          "unit": "ns",
+          "pipeline_total": {
+            "minimum": 30612000,
+            "maximum": 44988600,
+            "mean": 37430640.0,
+            "median": 36630450.0,
+            "p95": 44988600
+          },
+          "measured_phases_total": {
+            "minimum": 30219200,
+            "maximum": 44656100,
+            "mean": 36406890.0,
+            "median": 36042500.0,
+            "p95": 44656100
+          },
+          "unclassified_overhead": {
+            "minimum": 267400,
+            "maximum": 4301600,
+            "mean": 1023750.0,
+            "median": 315050.0,
+            "p95": 4301600
+          },
+          "phases": {
+            "parsing": {
+              "minimum": 1079300,
+              "maximum": 3097000,
+              "mean": 1875550.0,
+              "median": 1405100.0,
+              "p95": 3097000
+            },
+            "semantic_analysis": {
+              "minimum": 153200,
+              "maximum": 235200,
+              "mean": 189110.0,
+              "median": 189400.0,
+              "p95": 235200
+            },
+            "ir_generation": {
+              "minimum": 221200,
+              "maximum": 372800,
+              "mean": 276610.0,
+              "median": 266500.0,
+              "p95": 372800
+            },
+            "optimization": {
+              "minimum": 762600,
+              "maximum": 1702000,
+              "mean": 1162280.0,
+              "median": 1145450.0,
+              "p95": 1702000
+            },
+            "assembly_generation": {
+              "minimum": 878900,
+              "maximum": 2266200,
+              "mean": 1419750.0,
+              "median": 1358100.0,
+              "p95": 2266200
+            },
+            "emulation": {
+              "minimum": 24701300,
+              "maximum": 39873200,
+              "mean": 31483590.0,
+              "median": 31453750.0,
+              "p95": 39873200
+            }
+          }
+        },
+        "metrics": {
+          "source": {
+            "source_size_bytes": 205,
+            "source_line_count": 11
+          },
+          "ir": {
+            "function_count": 2,
+            "block_count": 5,
+            "instruction_count": 18
+          },
+          "s3_assembly": {
+            "function_count": 2,
+            "block_count": 5,
+            "opcode_count": 18,
+            "textual_size_bytes": 1219,
+            "sha256": "1e8bc27fdc32f0717bd962af9620cf294c818d32d08fa6b8de5766f10e6aac7e"
+          },
+          "execution": {
+            "executed_s3_opcodes": 1503,
+            "maximum_frame_depth_observed": 11,
+            "function_call_count": 177
+          }
+        },
         "expected_return": 55,
         "actual_return": 55
-      }
-    },
-    {
-      "workload": "recursion",
-      "status": "passed",
-      "opt_level": "O1",
-      "timing": {
-        "unit": "ns",
-        "pipeline_total": 6091600,
-        "measured_phases_total": 5806300,
-        "unclassified_overhead": 285300,
-        "phases": {
-          "parsing": {
-            "minimum": 1118700,
-            "maximum": 1118700,
-            "mean": 1118700.0,
-            "median": 1118700.0,
-            "p95": 1118700
-          },
-          "semantic_analysis": {
-            "minimum": 572300,
-            "maximum": 572300,
-            "mean": 572300.0,
-            "median": 572300.0,
-            "p95": 572300
-          },
-          "ir_generation": {
-            "minimum": 245200,
-            "maximum": 245200,
-            "mean": 245200.0,
-            "median": 245200.0,
-            "p95": 245200
-          },
-          "optimization": {
-            "minimum": 1706700,
-            "maximum": 1706700,
-            "mean": 1706700.0,
-            "median": 1706700.0,
-            "p95": 1706700
-          },
-          "assembly_generation": {
-            "minimum": 740800,
-            "maximum": 740800,
-            "mean": 740800.0,
-            "median": 740800.0,
-            "p95": 740800
-          },
-          "native_x86_64_emission": {
-            "minimum": 1422600,
-            "maximum": 1422600,
-            "mean": 1422600.0,
-            "median": 1422600.0,
-            "p95": 1422600
-          }
-        }
       },
-      "metrics": {
-        "source": {
-          "source_size_bytes": 205,
-          "source_line_count": 11
-        },
-        "ir": {
-          "function_count": 2,
-          "block_count": 5,
-          "instruction_count": 16
-        },
-        "s3_assembly": {
-          "function_count": 2,
-          "block_count": 5,
-          "opcode_count": 16,
-          "textual_size_bytes": 1101,
-          "sha256": "917f75e9bf51361260e56e39da2bf7e32273fed37b05a91fa924e7b6bffbcf86"
-        },
-        "native_artifact": {
-          "artifact_kind": "gnu-x86-64-assembly",
-          "artifact_size_bytes": 24224,
-          "artifact_sha256": "23a002d417b9b96dfbd0256b3db7d1d611f8bd8d9f6249a2df8ae4962d49a39a"
-        }
-      },
-      "functional_validation": {
-        "mode": "hosted-pipeline",
+      "O1": {
+        "workload": "recursion",
         "status": "passed",
+        "opt_level": "O1",
+        "timing": {
+          "unit": "ns",
+          "pipeline_total": {
+            "minimum": 21257800,
+            "maximum": 36478300,
+            "mean": 30566390.0,
+            "median": 31263950.0,
+            "p95": 36478300
+          },
+          "measured_phases_total": {
+            "minimum": 20828700,
+            "maximum": 36128200,
+            "mean": 30236350.0,
+            "median": 30946250.0,
+            "p95": 36128200
+          },
+          "unclassified_overhead": {
+            "minimum": 229800,
+            "maximum": 493100,
+            "mean": 330040.0,
+            "median": 297050.0,
+            "p95": 493100
+          },
+          "phases": {
+            "parsing": {
+              "minimum": 1002500,
+              "maximum": 3601600,
+              "mean": 1825760.0,
+              "median": 1811900.0,
+              "p95": 3601600
+            },
+            "semantic_analysis": {
+              "minimum": 137400,
+              "maximum": 534200,
+              "mean": 263180.0,
+              "median": 193500.0,
+              "p95": 534200
+            },
+            "ir_generation": {
+              "minimum": 215100,
+              "maximum": 594000,
+              "mean": 288510.0,
+              "median": 248700.0,
+              "p95": 594000
+            },
+            "optimization": {
+              "minimum": 1771000,
+              "maximum": 4457500,
+              "mean": 3076750.0,
+              "median": 2969250.0,
+              "p95": 4457500
+            },
+            "assembly_generation": {
+              "minimum": 738900,
+              "maximum": 4292900,
+              "mean": 1333700.0,
+              "median": 956700.0,
+              "p95": 4292900
+            },
+            "emulation": {
+              "minimum": 16668000,
+              "maximum": 27836200,
+              "mean": 23448450.0,
+              "median": 23599400.0,
+              "p95": 27836200
+            }
+          }
+        },
+        "metrics": {
+          "source": {
+            "source_size_bytes": 205,
+            "source_line_count": 11
+          },
+          "ir": {
+            "function_count": 2,
+            "block_count": 5,
+            "instruction_count": 16
+          },
+          "s3_assembly": {
+            "function_count": 2,
+            "block_count": 5,
+            "opcode_count": 16,
+            "textual_size_bytes": 1101,
+            "sha256": "917f75e9bf51361260e56e39da2bf7e32273fed37b05a91fa924e7b6bffbcf86"
+          },
+          "execution": {
+            "executed_s3_opcodes": 1327,
+            "maximum_frame_depth_observed": 11,
+            "function_call_count": 177
+          }
+        },
         "expected_return": 55,
         "actual_return": 55
       },
@@ -913,175 +1142,224 @@
         "O0_return": 55,
         "O1_return": 55,
         "equal_return": true,
-        "O0_opcode_count": 18,
-        "O1_opcode_count": 16,
-        "diff_opcode_count": -2
+        "O0_s3_opcode_count": 18,
+        "O1_s3_opcode_count": 16,
+        "s3_opcode_count_diff": -2,
+        "s3_opcode_count_percent": -11.11111111111111,
+        "s3_opcode_count_label": "fewer",
+        "O0_executed_s3_opcodes": 1503,
+        "O1_executed_s3_opcodes": 1327,
+        "executed_s3_opcodes_diff": -176,
+        "executed_s3_opcodes_percent": -11.709913506320692,
+        "executed_s3_opcodes_label": "fewer",
+        "O0_s3_textual_size_bytes": 1219,
+        "O1_s3_textual_size_bytes": 1101,
+        "s3_textual_size_diff": -118,
+        "O0_s3_assembly_sha256": "1e8bc27fdc32f0717bd962af9620cf294c818d32d08fa6b8de5766f10e6aac7e",
+        "O1_s3_assembly_sha256": "917f75e9bf51361260e56e39da2bf7e32273fed37b05a91fa924e7b6bffbcf86",
+        "O0_pipeline_median_ns": 36630450.0,
+        "O1_pipeline_median_ns": 31263950.0,
+        "pipeline_median_diff_ns": -5366500.0,
+        "pipeline_median_percent": -14.65037967046542,
+        "pipeline_median_label": "faster_in_this_run"
       }
     },
     {
       "workload": "arrays",
       "status": "passed",
-      "opt_level": "O0",
-      "timing": {
-        "unit": "ns",
-        "pipeline_total": 6957000,
-        "measured_phases_total": 6659700,
-        "unclassified_overhead": 297300,
-        "phases": {
-          "parsing": {
-            "minimum": 1315600,
-            "maximum": 1315600,
-            "mean": 1315600.0,
-            "median": 1315600.0,
-            "p95": 1315600
-          },
-          "semantic_analysis": {
-            "minimum": 128200,
-            "maximum": 128200,
-            "mean": 128200.0,
-            "median": 128200.0,
-            "p95": 128200
-          },
-          "ir_generation": {
-            "minimum": 326300,
-            "maximum": 326300,
-            "mean": 326300.0,
-            "median": 326300.0,
-            "p95": 326300
-          },
-          "optimization": {
-            "minimum": 1598700,
-            "maximum": 1598700,
-            "mean": 1598700.0,
-            "median": 1598700.0,
-            "p95": 1598700
-          },
-          "assembly_generation": {
-            "minimum": 1278400,
-            "maximum": 1278400,
-            "mean": 1278400.0,
-            "median": 1278400.0,
-            "p95": 1278400
-          },
-          "native_x86_64_emission": {
-            "minimum": 2012500,
-            "maximum": 2012500,
-            "mean": 2012500.0,
-            "median": 2012500.0,
-            "p95": 2012500
-          }
-        }
-      },
-      "metrics": {
-        "source": {
-          "source_size_bytes": 163,
-          "source_line_count": 7
-        },
-        "ir": {
-          "function_count": 1,
-          "block_count": 1,
-          "instruction_count": 31
-        },
-        "s3_assembly": {
-          "function_count": 1,
-          "block_count": 1,
-          "opcode_count": 31,
-          "textual_size_bytes": 1839,
-          "sha256": "c49fed4584d996f485830df7475beaedd2af3a950559b9ce15ded340656c9e3d"
-        },
-        "native_artifact": {
-          "artifact_kind": "gnu-x86-64-assembly",
-          "artifact_size_bytes": 43427,
-          "artifact_sha256": "f908ae1e5a4fcbb6125ae64ed108311db92f6f85a316156fad47209326ac23e4"
-        }
-      },
-      "functional_validation": {
-        "mode": "hosted-pipeline",
+      "O0": {
+        "workload": "arrays",
         "status": "passed",
+        "opt_level": "O0",
+        "timing": {
+          "unit": "ns",
+          "pipeline_total": {
+            "minimum": 9683700,
+            "maximum": 16667700,
+            "mean": 13169460.0,
+            "median": 13371900.0,
+            "p95": 16667700
+          },
+          "measured_phases_total": {
+            "minimum": 8440900,
+            "maximum": 16415800,
+            "mean": 12464850.0,
+            "median": 12276550.0,
+            "p95": 16415800
+          },
+          "unclassified_overhead": {
+            "minimum": 242900,
+            "maximum": 3443100,
+            "mean": 704610.0,
+            "median": 302200.0,
+            "p95": 3443100
+          },
+          "phases": {
+            "parsing": {
+              "minimum": 1378300,
+              "maximum": 5896700,
+              "mean": 3422920.0,
+              "median": 2948400.0,
+              "p95": 5896700
+            },
+            "semantic_analysis": {
+              "minimum": 108500,
+              "maximum": 154400,
+              "mean": 131020.0,
+              "median": 126650.0,
+              "p95": 154400
+            },
+            "ir_generation": {
+              "minimum": 253100,
+              "maximum": 4092800,
+              "mean": 1010360.0,
+              "median": 395150.0,
+              "p95": 4092800
+            },
+            "optimization": {
+              "minimum": 908500,
+              "maximum": 4747000,
+              "mean": 2566870.0,
+              "median": 2111400.0,
+              "p95": 4747000
+            },
+            "assembly_generation": {
+              "minimum": 987400,
+              "maximum": 6247200,
+              "mean": 3563560.0,
+              "median": 3385650.0,
+              "p95": 6247200
+            },
+            "emulation": {
+              "minimum": 609300,
+              "maximum": 4707500,
+              "mean": 1770120.0,
+              "median": 1162800.0,
+              "p95": 4707500
+            }
+          }
+        },
+        "metrics": {
+          "source": {
+            "source_size_bytes": 163,
+            "source_line_count": 7
+          },
+          "ir": {
+            "function_count": 1,
+            "block_count": 1,
+            "instruction_count": 31
+          },
+          "s3_assembly": {
+            "function_count": 1,
+            "block_count": 1,
+            "opcode_count": 31,
+            "textual_size_bytes": 1839,
+            "sha256": "c49fed4584d996f485830df7475beaedd2af3a950559b9ce15ded340656c9e3d"
+          },
+          "execution": {
+            "executed_s3_opcodes": 31,
+            "maximum_frame_depth_observed": 1,
+            "function_call_count": 0
+          }
+        },
         "expected_return": 60,
         "actual_return": 60
-      }
-    },
-    {
-      "workload": "arrays",
-      "status": "passed",
-      "opt_level": "O1",
-      "timing": {
-        "unit": "ns",
-        "pipeline_total": 7791500,
-        "measured_phases_total": 7531900,
-        "unclassified_overhead": 259600,
-        "phases": {
-          "parsing": {
-            "minimum": 1179600,
-            "maximum": 1179600,
-            "mean": 1179600.0,
-            "median": 1179600.0,
-            "p95": 1179600
-          },
-          "semantic_analysis": {
-            "minimum": 132600,
-            "maximum": 132600,
-            "mean": 132600.0,
-            "median": 132600.0,
-            "p95": 132600
-          },
-          "ir_generation": {
-            "minimum": 278100,
-            "maximum": 278100,
-            "mean": 278100.0,
-            "median": 278100.0,
-            "p95": 278100
-          },
-          "optimization": {
-            "minimum": 2724500,
-            "maximum": 2724500,
-            "mean": 2724500.0,
-            "median": 2724500.0,
-            "p95": 2724500
-          },
-          "assembly_generation": {
-            "minimum": 1212400,
-            "maximum": 1212400,
-            "mean": 1212400.0,
-            "median": 1212400.0,
-            "p95": 1212400
-          },
-          "native_x86_64_emission": {
-            "minimum": 2004700,
-            "maximum": 2004700,
-            "mean": 2004700.0,
-            "median": 2004700.0,
-            "p95": 2004700
-          }
-        }
       },
-      "metrics": {
-        "source": {
-          "source_size_bytes": 163,
-          "source_line_count": 7
-        },
-        "ir": {
-          "function_count": 1,
-          "block_count": 1,
-          "instruction_count": 31
-        },
-        "s3_assembly": {
-          "function_count": 1,
-          "block_count": 1,
-          "opcode_count": 31,
-          "textual_size_bytes": 1839,
-          "sha256": "c49fed4584d996f485830df7475beaedd2af3a950559b9ce15ded340656c9e3d"
-        },
-        "native_artifact": {
-          "artifact_kind": "gnu-x86-64-assembly",
-          "artifact_size_bytes": 43427,
-          "artifact_sha256": "f908ae1e5a4fcbb6125ae64ed108311db92f6f85a316156fad47209326ac23e4"
-        }
-      },
-      "functional_validation": {
-        "mode": "hosted-pipeline",
+      "O1": {
+        "workload": "arrays",
         "status": "passed",
+        "opt_level": "O1",
+        "timing": {
+          "unit": "ns",
+          "pipeline_total": {
+            "minimum": 9685600,
+            "maximum": 18191800,
+            "mean": 14613740.0,
+            "median": 14971450.0,
+            "p95": 18191800
+          },
+          "measured_phases_total": {
+            "minimum": 9423200,
+            "maximum": 17421600,
+            "mean": 14208140.0,
+            "median": 14708050.0,
+            "p95": 17421600
+          },
+          "unclassified_overhead": {
+            "minimum": 244600,
+            "maximum": 1107100,
+            "mean": 405600.0,
+            "median": 291550.0,
+            "p95": 1107100
+          },
+          "phases": {
+            "parsing": {
+              "minimum": 1342100,
+              "maximum": 5801200,
+              "mean": 3281260.0,
+              "median": 3289350.0,
+              "p95": 5801200
+            },
+            "semantic_analysis": {
+              "minimum": 111400,
+              "maximum": 3895900,
+              "mean": 575350.0,
+              "median": 176900.0,
+              "p95": 3895900
+            },
+            "ir_generation": {
+              "minimum": 236600,
+              "maximum": 1541000,
+              "mean": 506580.0,
+              "median": 302150.0,
+              "p95": 1541000
+            },
+            "optimization": {
+              "minimum": 3678800,
+              "maximum": 8333900,
+              "mean": 5087040.0,
+              "median": 4775750.0,
+              "p95": 8333900
+            },
+            "assembly_generation": {
+              "minimum": 845500,
+              "maximum": 6446200,
+              "mean": 2663070.0,
+              "median": 2107450.0,
+              "p95": 6446200
+            },
+            "emulation": {
+              "minimum": 579700,
+              "maximum": 4696200,
+              "mean": 2094840.0,
+              "median": 1570100.0,
+              "p95": 4696200
+            }
+          }
+        },
+        "metrics": {
+          "source": {
+            "source_size_bytes": 163,
+            "source_line_count": 7
+          },
+          "ir": {
+            "function_count": 1,
+            "block_count": 1,
+            "instruction_count": 31
+          },
+          "s3_assembly": {
+            "function_count": 1,
+            "block_count": 1,
+            "opcode_count": 31,
+            "textual_size_bytes": 1839,
+            "sha256": "c49fed4584d996f485830df7475beaedd2af3a950559b9ce15ded340656c9e3d"
+          },
+          "execution": {
+            "executed_s3_opcodes": 31,
+            "maximum_frame_depth_observed": 1,
+            "function_call_count": 0
+          }
+        },
         "expected_return": 60,
         "actual_return": 60
       },
@@ -1089,175 +1367,224 @@
         "O0_return": 60,
         "O1_return": 60,
         "equal_return": true,
-        "O0_opcode_count": 31,
-        "O1_opcode_count": 31,
-        "diff_opcode_count": 0
+        "O0_s3_opcode_count": 31,
+        "O1_s3_opcode_count": 31,
+        "s3_opcode_count_diff": 0,
+        "s3_opcode_count_percent": 0.0,
+        "s3_opcode_count_label": "equal",
+        "O0_executed_s3_opcodes": 31,
+        "O1_executed_s3_opcodes": 31,
+        "executed_s3_opcodes_diff": 0,
+        "executed_s3_opcodes_percent": 0.0,
+        "executed_s3_opcodes_label": "equal",
+        "O0_s3_textual_size_bytes": 1839,
+        "O1_s3_textual_size_bytes": 1839,
+        "s3_textual_size_diff": 0,
+        "O0_s3_assembly_sha256": "c49fed4584d996f485830df7475beaedd2af3a950559b9ce15ded340656c9e3d",
+        "O1_s3_assembly_sha256": "c49fed4584d996f485830df7475beaedd2af3a950559b9ce15ded340656c9e3d",
+        "O0_pipeline_median_ns": 13371900.0,
+        "O1_pipeline_median_ns": 14971450.0,
+        "pipeline_median_diff_ns": 1599550.0,
+        "pipeline_median_percent": 11.962024843141213,
+        "pipeline_median_label": "slower_in_this_run"
       }
     },
     {
       "workload": "optimizer_stress",
       "status": "passed",
-      "opt_level": "O0",
-      "timing": {
-        "unit": "ns",
-        "pipeline_total": 2979000,
-        "measured_phases_total": 2781600,
-        "unclassified_overhead": 197400,
-        "phases": {
-          "parsing": {
-            "minimum": 639200,
-            "maximum": 639200,
-            "mean": 639200.0,
-            "median": 639200.0,
-            "p95": 639200
-          },
-          "semantic_analysis": {
-            "minimum": 79800,
-            "maximum": 79800,
-            "mean": 79800.0,
-            "median": 79800.0,
-            "p95": 79800
-          },
-          "ir_generation": {
-            "minimum": 168800,
-            "maximum": 168800,
-            "mean": 168800.0,
-            "median": 168800.0,
-            "p95": 168800
-          },
-          "optimization": {
-            "minimum": 511500,
-            "maximum": 511500,
-            "mean": 511500.0,
-            "median": 511500.0,
-            "p95": 511500
-          },
-          "assembly_generation": {
-            "minimum": 479400,
-            "maximum": 479400,
-            "mean": 479400.0,
-            "median": 479400.0,
-            "p95": 479400
-          },
-          "native_x86_64_emission": {
-            "minimum": 902900,
-            "maximum": 902900,
-            "mean": 902900.0,
-            "median": 902900.0,
-            "p95": 902900
-          }
-        }
-      },
-      "metrics": {
-        "source": {
-          "source_size_bytes": 105,
-          "source_line_count": 5
-        },
-        "ir": {
-          "function_count": 1,
-          "block_count": 1,
-          "instruction_count": 18
-        },
-        "s3_assembly": {
-          "function_count": 1,
-          "block_count": 1,
-          "opcode_count": 18,
-          "textual_size_bytes": 1151,
-          "sha256": "af9b896776eea080ef56e2930cb9699f206946711a2b5e4cc6f8db4d50d27d0c"
-        },
-        "native_artifact": {
-          "artifact_kind": "gnu-x86-64-assembly",
-          "artifact_size_bytes": 28337,
-          "artifact_sha256": "61a2b0145b0088f5aea8d5e38bb86cd60636a90245f631ab904a9dc0cca55c4d"
-        }
-      },
-      "functional_validation": {
-        "mode": "hosted-pipeline",
+      "O0": {
+        "workload": "optimizer_stress",
         "status": "passed",
+        "opt_level": "O0",
+        "timing": {
+          "unit": "ns",
+          "pipeline_total": {
+            "minimum": 2253800,
+            "maximum": 13270700,
+            "mean": 7851560.0,
+            "median": 8366950.0,
+            "p95": 13270700
+          },
+          "measured_phases_total": {
+            "minimum": 2035700,
+            "maximum": 11074300,
+            "mean": 6906500.0,
+            "median": 7944450.0,
+            "p95": 11074300
+          },
+          "unclassified_overhead": {
+            "minimum": 202900,
+            "maximum": 3719400,
+            "mean": 945060.0,
+            "median": 471250.0,
+            "p95": 3719400
+          },
+          "phases": {
+            "parsing": {
+              "minimum": 492200,
+              "maximum": 3929500,
+              "mean": 1489590.0,
+              "median": 1079600.0,
+              "p95": 3929500
+            },
+            "semantic_analysis": {
+              "minimum": 70400,
+              "maximum": 343100,
+              "mean": 124510.0,
+              "median": 100500.0,
+              "p95": 343100
+            },
+            "ir_generation": {
+              "minimum": 132100,
+              "maximum": 2687700,
+              "mean": 592490.0,
+              "median": 240050.0,
+              "p95": 2687700
+            },
+            "optimization": {
+              "minimum": 387100,
+              "maximum": 4539500,
+              "mean": 1657180.0,
+              "median": 1068450.0,
+              "p95": 4539500
+            },
+            "assembly_generation": {
+              "minimum": 481300,
+              "maximum": 4797700,
+              "mean": 2120330.0,
+              "median": 2117700.0,
+              "p95": 4797700
+            },
+            "emulation": {
+              "minimum": 220900,
+              "maximum": 3333500,
+              "mean": 922400.0,
+              "median": 479700.0,
+              "p95": 3333500
+            }
+          }
+        },
+        "metrics": {
+          "source": {
+            "source_size_bytes": 105,
+            "source_line_count": 5
+          },
+          "ir": {
+            "function_count": 1,
+            "block_count": 1,
+            "instruction_count": 18
+          },
+          "s3_assembly": {
+            "function_count": 1,
+            "block_count": 1,
+            "opcode_count": 18,
+            "textual_size_bytes": 1151,
+            "sha256": "af9b896776eea080ef56e2930cb9699f206946711a2b5e4cc6f8db4d50d27d0c"
+          },
+          "execution": {
+            "executed_s3_opcodes": 18,
+            "maximum_frame_depth_observed": 1,
+            "function_call_count": 0
+          }
+        },
         "expected_return": 20,
         "actual_return": 20
-      }
-    },
-    {
-      "workload": "optimizer_stress",
-      "status": "passed",
-      "opt_level": "O1",
-      "timing": {
-        "unit": "ns",
-        "pipeline_total": 3852500,
-        "measured_phases_total": 3652200,
-        "unclassified_overhead": 200300,
-        "phases": {
-          "parsing": {
-            "minimum": 471600,
-            "maximum": 471600,
-            "mean": 471600.0,
-            "median": 471600.0,
-            "p95": 471600
-          },
-          "semantic_analysis": {
-            "minimum": 56600,
-            "maximum": 56600,
-            "mean": 56600.0,
-            "median": 56600.0,
-            "p95": 56600
-          },
-          "ir_generation": {
-            "minimum": 126500,
-            "maximum": 126500,
-            "mean": 126500.0,
-            "median": 126500.0,
-            "p95": 126500
-          },
-          "optimization": {
-            "minimum": 1206200,
-            "maximum": 1206200,
-            "mean": 1206200.0,
-            "median": 1206200.0,
-            "p95": 1206200
-          },
-          "assembly_generation": {
-            "minimum": 588600,
-            "maximum": 588600,
-            "mean": 588600.0,
-            "median": 588600.0,
-            "p95": 588600
-          },
-          "native_x86_64_emission": {
-            "minimum": 1202700,
-            "maximum": 1202700,
-            "mean": 1202700.0,
-            "median": 1202700.0,
-            "p95": 1202700
-          }
-        }
       },
-      "metrics": {
-        "source": {
-          "source_size_bytes": 105,
-          "source_line_count": 5
-        },
-        "ir": {
-          "function_count": 1,
-          "block_count": 1,
-          "instruction_count": 18
-        },
-        "s3_assembly": {
-          "function_count": 1,
-          "block_count": 1,
-          "opcode_count": 18,
-          "textual_size_bytes": 1151,
-          "sha256": "af9b896776eea080ef56e2930cb9699f206946711a2b5e4cc6f8db4d50d27d0c"
-        },
-        "native_artifact": {
-          "artifact_kind": "gnu-x86-64-assembly",
-          "artifact_size_bytes": 28337,
-          "artifact_sha256": "61a2b0145b0088f5aea8d5e38bb86cd60636a90245f631ab904a9dc0cca55c4d"
-        }
-      },
-      "functional_validation": {
-        "mode": "hosted-pipeline",
+      "O1": {
+        "workload": "optimizer_stress",
         "status": "passed",
+        "opt_level": "O1",
+        "timing": {
+          "unit": "ns",
+          "pipeline_total": {
+            "minimum": 2989000,
+            "maximum": 8509900,
+            "mean": 4740600.0,
+            "median": 4172450.0,
+            "p95": 8509900
+          },
+          "measured_phases_total": {
+            "minimum": 2794300,
+            "maximum": 7758300,
+            "mean": 4443410.0,
+            "median": 3862800.0,
+            "p95": 7758300
+          },
+          "unclassified_overhead": {
+            "minimum": 180600,
+            "maximum": 751600,
+            "mean": 297190.0,
+            "median": 243300.0,
+            "p95": 751600
+          },
+          "phases": {
+            "parsing": {
+              "minimum": 428300,
+              "maximum": 1586900,
+              "mean": 800600.0,
+              "median": 767650.0,
+              "p95": 1586900
+            },
+            "semantic_analysis": {
+              "minimum": 58400,
+              "maximum": 185200,
+              "mean": 89300.0,
+              "median": 80150.0,
+              "p95": 185200
+            },
+            "ir_generation": {
+              "minimum": 127100,
+              "maximum": 564300,
+              "mean": 252200.0,
+              "median": 185600.0,
+              "p95": 564300
+            },
+            "optimization": {
+              "minimum": 850600,
+              "maximum": 3846800,
+              "mean": 2071320.0,
+              "median": 1592350.0,
+              "p95": 3846800
+            },
+            "assembly_generation": {
+              "minimum": 381700,
+              "maximum": 1944700,
+              "mean": 728510.0,
+              "median": 609650.0,
+              "p95": 1944700
+            },
+            "emulation": {
+              "minimum": 268900,
+              "maximum": 1297700,
+              "mean": 501480.0,
+              "median": 401150.0,
+              "p95": 1297700
+            }
+          }
+        },
+        "metrics": {
+          "source": {
+            "source_size_bytes": 105,
+            "source_line_count": 5
+          },
+          "ir": {
+            "function_count": 1,
+            "block_count": 1,
+            "instruction_count": 18
+          },
+          "s3_assembly": {
+            "function_count": 1,
+            "block_count": 1,
+            "opcode_count": 18,
+            "textual_size_bytes": 1151,
+            "sha256": "af9b896776eea080ef56e2930cb9699f206946711a2b5e4cc6f8db4d50d27d0c"
+          },
+          "execution": {
+            "executed_s3_opcodes": 18,
+            "maximum_frame_depth_observed": 1,
+            "function_call_count": 0
+          }
+        },
         "expected_return": 20,
         "actual_return": 20
       },
@@ -1265,9 +1592,26 @@
         "O0_return": 20,
         "O1_return": 20,
         "equal_return": true,
-        "O0_opcode_count": 18,
-        "O1_opcode_count": 18,
-        "diff_opcode_count": 0
+        "O0_s3_opcode_count": 18,
+        "O1_s3_opcode_count": 18,
+        "s3_opcode_count_diff": 0,
+        "s3_opcode_count_percent": 0.0,
+        "s3_opcode_count_label": "equal",
+        "O0_executed_s3_opcodes": 18,
+        "O1_executed_s3_opcodes": 18,
+        "executed_s3_opcodes_diff": 0,
+        "executed_s3_opcodes_percent": 0.0,
+        "executed_s3_opcodes_label": "equal",
+        "O0_s3_textual_size_bytes": 1151,
+        "O1_s3_textual_size_bytes": 1151,
+        "s3_textual_size_diff": 0,
+        "O0_s3_assembly_sha256": "af9b896776eea080ef56e2930cb9699f206946711a2b5e4cc6f8db4d50d27d0c",
+        "O1_s3_assembly_sha256": "af9b896776eea080ef56e2930cb9699f206946711a2b5e4cc6f8db4d50d27d0c",
+        "O0_pipeline_median_ns": 8366950.0,
+        "O1_pipeline_median_ns": 4172450.0,
+        "pipeline_median_diff_ns": -4194500.0,
+        "pipeline_median_percent": -50.13176844608848,
+        "pipeline_median_label": "faster_in_this_run"
       }
     }
   ]

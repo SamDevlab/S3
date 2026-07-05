@@ -155,8 +155,10 @@ class Emulator:
         stack = [self._create_frame(entry_function)]
         executed = 0
         if self.metrics:
+            # Phase 8: clear metrics for each run
+            self.metrics.executed_s3_opcodes = 0
             self.metrics.maximum_frame_depth_observed = 1
-            self.metrics.function_call_count = 1
+            self.metrics.function_call_count = 0
 
         while stack:
             frame = stack[-1]

@@ -8,7 +8,7 @@ from pathlib import Path
 
 from tools.benchmark import (
     calc_min, calc_max, calc_mean, calc_median, calc_p95,
-    get_distribution_version, get_git_commit, is_git_dirty
+    get_installed_distribution_version, get_checkout_distribution_version, get_git_commit, is_git_dirty
 )
 
 def test_calc_stats():
@@ -61,8 +61,10 @@ def test_git_metadata(monkeypatch):
 
 def test_distribution_version(monkeypatch):
     # Should get from importlib or tomllib
-    ver = get_distribution_version()
-    assert isinstance(ver, str)
+    ver1 = get_installed_distribution_version()
+    ver2 = get_checkout_distribution_version()
+    assert isinstance(ver1, str)
+    assert isinstance(ver2, str)
 
 def test_cli_help():
     res = subprocess.run([sys.executable, "tools/benchmark.py", "--help"], capture_output=True, text=True)
