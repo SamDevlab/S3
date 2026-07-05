@@ -294,7 +294,9 @@ O target nativo é somente Linux x86-64. Não há interoperabilidade C, JIT, TCO
 ou otimização interprocedural. ARM64 possui apenas um
 [estudo de viabilidade](docs/arm64-feasibility.md).
 
-O Marco 0.7 está concluído e a versão 0.7.0 está publicada. Os
-recursos classificados como Pós-MVP continuam não implementados. Consulte
+O Marco 0.7 está concluído e a versão 0.7.0 está publicada. O desenvolvimento
+encontra-se estruturando normativamente a medição de desempenho do
+[Marco 0.8](docs/milestone-0.8.md) (trabalho em andamento).
+Os demais recursos classificados como Pós-MVP continuam não implementados. Consulte
 o [roadmap](docs/roadmap.md) e as
 [notas de lançamento](docs/releases/0.7.0.md).

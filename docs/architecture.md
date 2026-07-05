@@ -88,9 +88,8 @@ max_memory_trits  = 6561
 
 ## Limite de instruções do Marco 0.7
 
-Aprovado para o Marco 0.7; implementação pendente. O
-[ADR-0014](decisions/ADR-0014-hosted-and-native-instruction-limit.md) estende o
-default `max_instructions = 100000` ao runtime Linux x86-64.
+O [ADR-0014](decisions/ADR-0014-hosted-and-native-instruction-limit.md) estendeu e implementou o
+default `max_instructions = 100000` ao runtime Linux x86-64, atingindo paridade no Marco 0.7.
 
 Cada opcode S3 Assembly efetivamente executado consumirá uma unidade. Antes do
 opcode, o runtime verificará o limite, incrementará o contador uma vez e só
@@ -151,9 +150,9 @@ cota lógica.
 Todos os objetos lexicais da função são alocados ao entrar no frame, inclusive
 os de ramos não executados; é simples e conservador, mas pode superestimar
 memória. Inicialização de memória imutável é verificada dinamicamente na
-assembly. O layout x86-64 ainda não aloca registradores. No baseline 0.6.0, o
-runtime nativo ainda não reproduz o limite de instruções do emulador; a
-paridade está aprovada para o Marco 0.7 e permanece pendente de implementação.
-O limite de frames já é explícito nos dois.
+assembly. O layout x86-64 ainda não aloca registradores. O limite de frames e
+o limite de instruções (implementado no Marco 0.7) são verificados ativamente no runtime.
+A futura infraestrutura de medição do Marco 0.8 analisará gargalos precisos por
+trás desse pipeline antes que ele sofra grandes refatoramentos de otimização.
 Não há heap, aliasing ou promoção memória-para-SSA. Reprodutibilidade binária
 vale somente na mesma toolchain. Outros targets exigem backend/ADR próprios.

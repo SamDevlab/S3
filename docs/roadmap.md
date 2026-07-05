@@ -119,6 +119,22 @@ O default aprovado é `100000` opcodes S3 Assembly executados. Fonte, gramática
 AST, semântica, IR 0.5.0, Assembly 0.5.0 e schema diagnóstico 1.0.0 não mudam.
 Nenhuma outra funcionalidade foi incorporada.
 
+## Marco 0.8 — Medição e desempenho orientado por evidências
+
+O Marco 0.8 foi iniciado exclusivamente em nível normativo. A infraestrutura de benchmark, medição estruturada de O0/O1 e execução paralela do ELF visam embasar dados empíricos precisos antes de implementar qualquer otimização adicional na base semântica da linguagem S3.
+
+Estado atual:
+
+- E0, contrato normativo: concluída;
+- E1, workloads e runner no mesmo processo: futura;
+- E2, tempos por fase e métricas determinísticas: futura;
+- E3, CLI e ELF Linux x86-64: futura;
+- E4, diagnóstico de gargalo: futura;
+- E5, otimização dirigida por evidência: futura;
+- E6, fechamento (sem versão 0.8.0 publicada ainda): futura.
+
+Nenhum benchmark, runner ou otimização foi implementado ainda.
+
 ## Pós-MVP / marcos futuros
 
 Não integram o Marco 0.7 e não estão implementados:
