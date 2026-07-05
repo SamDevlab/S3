@@ -2,12 +2,12 @@
 
 ## Estado
 
-E0 normativa concluída. E1 paridade hospedada concluída localmente (pendente CI).
+E0 normativa concluída. E1 paridade hospedada concluída localmente. E2 instrumentação nativa concluída localmente (pendentes CI).
 
 Este documento fecha o escopo do Marco 0.7 conforme o
 [ADR-0014](decisions/ADR-0014-hosted-and-native-instruction-limit.md). A E0
-formalizou a decisão normativa e a E1 implementou a paridade hospedada; a E2 é
-a próxima entrega e deve ocorrer separadamente.
+formalizou a decisão normativa, a E1 implementou a paridade hospedada e a E2
+implementou a instrumentação nativa; a E3 é a próxima entrega (validação ELF).
 
 ## Decisão normativa
 
@@ -301,9 +301,10 @@ maior. Não se propõe um modo ilimitado implícito.
    `DEFAULT_MAX_INSTRUCTIONS` centralizada, `max_instructions` exposto em
    `run_source` e `execute_assembly`, opção `--max-instructions` adicionada ao
    comando `run`, validação de valores inválidos, testes de contador global,
-   diagnóstico preservado. Ausente de `native-asm`, `build` e `run-native`.
-3. **E2 — instrumentação nativa:** implementar contador, handlers e testes
-   unitários da assembly sem alterar a toolchain.
+   diagnóstico preservado.
+3. **E2 — instrumentação nativa (concluída localmente):** implementar contador, handlers e testes
+   unitários da assembly sem alterar a toolchain. Adicionada a flag para os
+   comandos `native-asm`, `build` e `run-native`.
 4. **E3 — validação ELF:** executar diferenciais e limites reais no Linux
    x86-64 obrigatório, incluindo O0/O1 e reprodutibilidade.
 5. **E4 — fechamento:** auditar compatibilidade, documentação, empacotamento e

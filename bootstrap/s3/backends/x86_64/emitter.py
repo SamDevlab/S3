@@ -76,9 +76,10 @@ def _address(
 
 
 class X8664Emitter:
-    def __init__(self, program: AssemblyProgram, *, max_frames: int):
+    def __init__(self, program: AssemblyProgram, *, max_frames: int, max_instructions: int):
         self.program = program
         self.max_frames = max_frames
+        self.max_instructions = max_instructions
         self.failure_sites: list[FailureSite] = []
         self.current_function: AssemblyFunction | None = None
         self.current_block: str | None = None
@@ -251,14 +252,26 @@ class X8664Emitter:
         self.current_instruction = instruction
         opcode = instruction.opcode
         registers = instruction.registers
+
+        limit_failure = self._instruction_failure(
+            "instruction limit",
+            detail=f"instruction limit {self.max_instructions} exceeded\n",
+        )
+        instrumentation = [
+            f"    mov r11, {self.max_instructions}",
+            "    cmp qword ptr [rip + __s3_instruction_count], r11",
+            f"    jae {limit_failure}",
+            "    inc qword ptr [rip + __s3_instruction_count]",
+        ]
+
         if opcode is AssemblyOpcode.TCONST:
             assert instruction.immediate is not None
-            return [
+            return instrumentation + [
                 f"    mov rax, {instruction.immediate}",
                 *self._write_register(layout, registers[0], "rax"),
             ]
         if opcode is AssemblyOpcode.TMOV:
-            return [
+            return instrumentation + [
                 *self._read_register(layout, registers[1], "rax"),
                 *self._write_register(layout, registers[0], "rax"),
             ]
@@ -266,7 +279,7 @@ class X8664Emitter:
             type_name = function.type_of(registers[0])
             assert type_name is not None
             overflow = self._overflow_failure(type_name, "rax")
-            return [
+            return instrumentation + [
                 *self._read_register(layout, registers[1], "rax"),
                 "    neg rax",
                 f"    jo {overflow}",
@@ -277,7 +290,7 @@ class X8664Emitter:
             type_name = function.type_of(registers[0])
             assert type_name is not None
             overflow = self._overflow_failure(type_name, "rax")
-            return [
+            return instrumentation + [
                 *self._read_register(layout, registers[1], "rax"),
                 *self._read_register(layout, registers[2], "r10"),
                 "    add rax, r10",
@@ -286,9 +299,9 @@ class X8664Emitter:
                 *self._write_register(layout, registers[0], "rax"),
             ]
         if opcode in {AssemblyOpcode.TMIN, AssemblyOpcode.TMAX}:
-            return self._emit_extreme(function, layout, instruction)
+            return instrumentation + self._emit_extreme(function, layout, instruction)
         if opcode is AssemblyOpcode.TCMP:
-            return [
+            return instrumentation + [
                 *self._read_register(layout, registers[1], "rax"),
                 *self._read_register(layout, registers[2], "r10"),
                 "    xor r11d, r11d",
@@ -301,7 +314,7 @@ class X8664Emitter:
                 *self._write_register(layout, registers[0], "rax"),
             ]
         if opcode is AssemblyOpcode.TJMP:
-            return [
+            return instrumentation + [
                 f"    jmp {mangle_block(function.name, instruction.labels[0])}"
             ]
         if opcode is AssemblyOpcode.TBR3:
@@ -315,7 +328,7 @@ class X8664Emitter:
                 detail_suffix=" outside [-1, 1]\n",
                 value_register="rax",
             )
-            return [
+            return instrumentation + [
                 *self._read_register(layout, registers[0], "rax"),
                 "    cmp rax, -1",
                 f"    je {negative}",
@@ -326,18 +339,18 @@ class X8664Emitter:
                 f"    jmp {invalid_trit}",
             ]
         if opcode is AssemblyOpcode.TCALL:
-            return self._emit_call(function, layout, instruction)
+            return instrumentation + self._emit_call(function, layout, instruction)
         if opcode is AssemblyOpcode.TRET:
-            return [
+            return instrumentation + [
                 *self._read_register(layout, registers[0], "rax"),
                 "    dec qword ptr [rip + __s3_frame_count]",
                 "    leave",
                 "    ret",
             ]
         if opcode is AssemblyOpcode.TLOAD:
-            return self._emit_load(layout, instruction)
+            return instrumentation + self._emit_load(layout, instruction)
         if opcode is AssemblyOpcode.TSTORE:
-            return self._emit_store(layout, instruction)
+            return instrumentation + self._emit_store(layout, instruction)
         raise NativeBackendError(f"unsupported opcode {opcode.value}")
 
     def _emit_extreme(
