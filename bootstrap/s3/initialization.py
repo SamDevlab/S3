@@ -216,6 +216,7 @@ def _transfer(
 
 
 def _analyze_function(function: IRFunction) -> FunctionInitialization:
+    blocks = {block.name: block for block in function.blocks}
     successors = _successors(function)
     predecessors = _predecessors(function, successors)
     reachable = _reachable(successors)

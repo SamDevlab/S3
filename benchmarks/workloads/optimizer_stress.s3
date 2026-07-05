@@ -2,11 +2,11 @@ fn main() -> tryte:
     mut x: tryte = 5
     mut y: tryte = 5
     mut z: tryte = x - y
-    
+
     mut a: tryte = 10
     mut b: tryte = 20
     mut c: tryte = a + b
-    
+
     match z <=> 0:
         -1:
             return 0
