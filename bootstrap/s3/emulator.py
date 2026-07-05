@@ -34,6 +34,7 @@ from .ternary import (
     tritwise_min,
     validate,
 )
+from .metrics import EmulationMetrics
 
 
 class EmulatorError(AssemblyError):
@@ -94,6 +95,7 @@ class Emulator:
         max_frames: int = DEFAULT_MAX_FRAMES,
         max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
         max_memory_trits: int = DEFAULT_MAX_MEMORY_TRITS,
+        enable_metrics: bool = False,
     ):
         if max_frames < 1:
             raise ValueError("max_frames must be at least 1")
@@ -104,6 +106,7 @@ class Emulator:
         self.max_frames = max_frames
         self.max_instructions = max_instructions
         self.max_memory_trits = max_memory_trits
+        self.metrics = EmulationMetrics() if enable_metrics else None
 
     def validate(
         self,
@@ -151,6 +154,9 @@ class Emulator:
         }
         stack = [self._create_frame(entry_function)]
         executed = 0
+        if self.metrics:
+            self.metrics.maximum_frame_depth_observed = 1
+            self.metrics.function_call_count = 1
 
         while stack:
             frame = stack[-1]
@@ -178,6 +184,8 @@ class Emulator:
                 )
             instruction = block.instructions[frame.instruction_index]
             executed += 1
+            if self.metrics:
+                self.metrics.executed_s3_opcodes = executed
             opcode = instruction.opcode
 
             try:
@@ -323,6 +331,10 @@ class Emulator:
                             call_instruction=instruction,
                         )
                     )
+                    if self.metrics:
+                        self.metrics.function_call_count += 1
+                        if len(stack) > self.metrics.maximum_frame_depth_observed:
+                            self.metrics.maximum_frame_depth_observed = len(stack)
                 elif opcode is AssemblyOpcode.TRET:
                     result = self._read(
                         frame,

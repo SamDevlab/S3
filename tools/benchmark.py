@@ -12,16 +12,23 @@ import hashlib
 from pathlib import Path
 
 # Direct imports
-from bootstrap.s3 import OptimizationLevel, compile_source, run_source
-from bootstrap.s3.lexer import SyntaxMode
+from bootstrap.s3 import OptimizationLevel
+from bootstrap.s3.lexer import SyntaxMode, tokenize
+from bootstrap.s3.parser import parse_tokens
+from bootstrap.s3.semantic import analyze
+from bootstrap.s3.lowering import lower
+from bootstrap.s3.optimizer import optimize_ir
+from bootstrap.s3.codegen import generate_assembly
+from bootstrap.s3.emulator import Emulator, DEFAULT_MAX_FRAMES, DEFAULT_MAX_INSTRUCTIONS
 from bootstrap.s3.assembly import ASSEMBLY_FORMAT_VERSION
 from bootstrap.s3.backends.x86_64.backend import generate_native_assembly
 from bootstrap.s3.diagnostics import DIAGNOSTIC_SCHEMA_VERSION
 from bootstrap.s3.ir_serialization import IR_FORMAT_VERSION
+from bootstrap.s3.metrics import PhaseTimer
 
 import tomllib
 
-BENCHMARK_FORMAT_VERSION = "1.0.0"
+BENCHMARK_FORMAT_VERSION = "1.1.0"
 
 def extract_format_and_output():
     fmt = "text"
@@ -258,24 +265,250 @@ def load_manifest(manifest_path: Path) -> dict:
 
     return data
 
-def run_hosted_pipeline(source: str, opt: OptimizationLevel, max_inst: int, max_frames: int | None) -> int:
-    kwargs = {"max_instructions": max_inst}
-    if max_frames is not None:
-        kwargs["max_frames"] = max_frames
-    return run_source(source, optimization=opt, **kwargs)
+def extract_static_metrics(source: str, ir_program, assembly_program):
+    metrics = {
+        "source": {
+            "source_size_bytes": len(source.encode("utf-8")),
+            "source_line_count": len(source.splitlines())
+        }
+    }
+    if ir_program:
+        ir_instructions = sum(len(b.instructions) for f in ir_program.functions for b in f.blocks)
+        metrics["ir"] = {
+            "function_count": len(ir_program.functions),
+            "block_count": sum(len(f.blocks) for f in ir_program.functions),
+            "instruction_count": ir_instructions,
+        }
+    if assembly_program:
+        asm_opcodes = sum(len(b.instructions) for f in assembly_program.functions for b in f.blocks)
+        rendered = assembly_program.render()
+        rendered_bytes = rendered.encode("utf-8")
+        metrics["s3_assembly"] = {
+            "function_count": len(assembly_program.functions),
+            "block_count": sum(len(f.blocks) for f in assembly_program.functions),
+            "opcode_count": asm_opcodes,
+            "textual_size_bytes": len(rendered_bytes),
+            "sha256": hashlib.sha256(rendered_bytes).hexdigest(),
+        }
+    return metrics
 
-def run_native_asm_pipeline(source: str, opt: OptimizationLevel, max_inst: int, max_frames: int | None) -> str:
-    compilation = compile_source(source, optimization=opt)
-    kwargs = {"max_instructions": max_inst}
-    if max_frames is not None:
-        kwargs["max_frames"] = max_frames
-    return generate_native_assembly(compilation.assembly, **kwargs)
+def run_hosted_pipeline(source: str, opt: OptimizationLevel, max_inst: int, max_frames: int | None):
+    timer = PhaseTimer()
+    total_start = time.perf_counter_ns()
+    
+    with timer.measure("parsing"):
+        tokens = tokenize(source, mode=SyntaxMode.V0_6)
+        syntax_tree = parse_tokens(tokens, mode=SyntaxMode.V0_6)
+        
+    with timer.measure("semantic_analysis"):
+        semantic_model = analyze(syntax_tree)
+        
+    with timer.measure("ir_generation"):
+        ir_program_unopt = lower(syntax_tree, semantic_model)
+        
+    with timer.measure("optimization"):
+        ir_program = optimize_ir(ir_program_unopt, opt)
+        
+    with timer.measure("assembly_generation"):
+        assembly_program = generate_assembly(ir_program)
+        
+    with timer.measure("emulation"):
+        emulator = Emulator(
+            max_frames=max_frames if max_frames is not None else DEFAULT_MAX_FRAMES,
+            max_instructions=max_inst,
+            enable_metrics=True,
+        )
+        actual = emulator.execute(assembly_program, "main")
+        
+    total_end = time.perf_counter_ns()
+    phases = timer.snapshot()
+    phases["pipeline_total"] = total_end - total_start
+    
+    static_metrics = extract_static_metrics(source, ir_program, assembly_program)
+    dynamic_metrics = {
+        "execution": {
+            "executed_s3_opcodes": emulator.metrics.executed_s3_opcodes if emulator.metrics else 0,
+            "maximum_frame_depth_observed": emulator.metrics.maximum_frame_depth_observed if emulator.metrics else 0,
+            "function_call_count": emulator.metrics.function_call_count if emulator.metrics else 0,
+        }
+    }
+    
+    return actual, phases, static_metrics, dynamic_metrics
+
+def run_native_asm_pipeline(source: str, opt: OptimizationLevel, max_inst: int, max_frames: int | None):
+    timer = PhaseTimer()
+    total_start = time.perf_counter_ns()
+    
+    with timer.measure("parsing"):
+        tokens = tokenize(source, mode=SyntaxMode.V0_6)
+        syntax_tree = parse_tokens(tokens, mode=SyntaxMode.V0_6)
+        
+    with timer.measure("semantic_analysis"):
+        semantic_model = analyze(syntax_tree)
+        
+    with timer.measure("ir_generation"):
+        ir_program_unopt = lower(syntax_tree, semantic_model)
+        
+    with timer.measure("optimization"):
+        ir_program = optimize_ir(ir_program_unopt, opt)
+        
+    with timer.measure("assembly_generation"):
+        assembly_program = generate_assembly(ir_program)
+        
+    with timer.measure("native_x86_64_emission"):
+        out = generate_native_assembly(
+            assembly_program,
+            max_frames=max_frames if max_frames is not None else DEFAULT_MAX_FRAMES,
+            max_instructions=max_inst,
+        )
+        
+    total_end = time.perf_counter_ns()
+    phases = timer.snapshot()
+    phases["pipeline_total"] = total_end - total_start
+    
+    static_metrics = extract_static_metrics(source, ir_program, assembly_program)
+    return out, phases, static_metrics
+
+def run_workload(w, source, opt_level, max_inst, max_frames, args):
+    expected_ret = w["expected_return"]
+    functional_validation = None
+
+    if args.mode == "native-asm-pipeline":
+        # 1. Functional validation in hosted pipeline
+        try:
+            actual, _, _, _ = run_hosted_pipeline(source, opt_level, max_inst, max_frames)
+        except Exception as e:
+            exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Workload {w['id']} functional validation failed with exception: {e}")
+        if actual != expected_ret:
+            exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Workload {w['id']} functional validation failed: expected {expected_ret}, got {actual}")
+
+        functional_validation = {
+            "mode": "hosted-pipeline",
+            "status": "passed",
+            "expected_return": expected_ret,
+            "actual_return": actual
+        }
+
+        # 2. Determinism check
+        try:
+            out1, _, static_metrics1 = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
+            out2, _, _ = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
+        except TypeError as e:
+            exit_error(args, "S3_BENCH_NATIVE_TYPE_ERROR", str(e))
+        except Exception as e:
+            exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Workload {w['id']} failed during determinism check: {e}")
+
+        if not out1 or not out2:
+            exit_error(args, "S3_BENCH_NATIVE_EMPTY", f"Workload {w['id']} generated empty output")
+        if out1 != out2:
+            exit_error(args, "S3_BENCH_NATIVE_NON_DETERMINISTIC", f"Workload {w['id']} native asm output is non-deterministic")
+
+        artifact_size = len(out1.encode("utf-8"))
+        artifact_sha256 = hashlib.sha256(out1.encode("utf-8")).hexdigest()
+        static_metrics_for_json = static_metrics1
+    else:
+        # For hosted pipeline, we just want to run once to fail early if invalid
+        try:
+            actual, _, static_metrics_for_json, dynamic_metrics_for_json = run_hosted_pipeline(source, opt_level, max_inst, max_frames)
+            if actual != expected_ret:
+                exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Workload {w['id']} failed: expected {expected_ret}, got {actual}")
+        except Exception as e:
+            exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Workload {w['id']} failed with exception: {e}")
+
+    # Warmups
+    for _ in range(args.warmups):
+        if args.mode == "hosted-pipeline":
+            actual, _, _, _ = run_hosted_pipeline(source, opt_level, max_inst, max_frames)
+            if actual != expected_ret:
+                exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Warmup failed for {w['id']}")
+        else:
+            try:
+                out, _, _ = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
+            except TypeError as e:
+                exit_error(args, "S3_BENCH_NATIVE_TYPE_ERROR", str(e))
+            if not out:
+                exit_error(args, "S3_BENCH_NATIVE_EMPTY", f"Warmup failed for {w['id']}: empty output")
+
+    # Runs
+    samples = []
+    phase_samples = {}
+    actual_for_json = None
+    for _ in range(args.runs):
+        if args.mode == "hosted-pipeline":
+            actual, run_phases, _, _ = run_hosted_pipeline(source, opt_level, max_inst, max_frames)
+            if actual != expected_ret:
+                exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Run failed for {w['id']}")
+            actual_for_json = actual
+        else:
+            try:
+                out, run_phases, _ = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
+            except TypeError as e:
+                exit_error(args, "S3_BENCH_NATIVE_TYPE_ERROR", str(e))
+            if not out:
+                exit_error(args, "S3_BENCH_NATIVE_EMPTY", f"Run failed for {w['id']}: empty output")
+
+        total = run_phases["pipeline_total"]
+        samples.append(total)
+        for k, v in run_phases.items():
+            if k not in phase_samples:
+                phase_samples[k] = []
+            phase_samples[k].append(v)
+
+    pipeline_total = calc_median(phase_samples["pipeline_total"])
+    phases_out = {}
+    measured_total = 0
+    for p_name, p_samples in phase_samples.items():
+        if p_name != "pipeline_total":
+            p_med = calc_median(p_samples)
+            measured_total += p_med
+            phases_out[p_name] = {
+                "minimum": calc_min(p_samples),
+                "maximum": calc_max(p_samples),
+                "mean": calc_mean(p_samples),
+                "median": p_med,
+                "p95": calc_p95(p_samples),
+            }
+
+    unclassified = pipeline_total - measured_total
+    if unclassified < 0:
+        unclassified = 0
+
+    res = {
+        "workload": w["id"],
+        "status": "passed",
+        "opt_level": opt_level.name,
+        "timing": {
+            "unit": "ns",
+            "pipeline_total": int(pipeline_total),
+            "measured_phases_total": int(measured_total),
+            "unclassified_overhead": int(unclassified),
+            "phases": phases_out
+        },
+        "metrics": static_metrics_for_json
+    }
+    
+    if args.mode == "hosted-pipeline":
+        res["expected_return"] = expected_ret
+        res["actual_return"] = actual_for_json
+        res["metrics"].update(dynamic_metrics_for_json)
+    else:
+        res["functional_validation"] = functional_validation
+        res["metrics"]["native_artifact"] = {
+            "artifact_kind": "gnu-x86-64-assembly",
+            "artifact_size_bytes": artifact_size,
+            "artifact_sha256": artifact_sha256
+        }
+
+    if args.include_samples:
+        res["timing"]["samples_ns"] = phase_samples
+
+    return res
 
 def parse_args():
     parser = JsonArgumentParser(description="In-process benchmark runner for S3")
     parser.add_argument("--list", action="store_true", help="List available workloads")
     parser.add_argument("--mode", choices=["hosted-pipeline", "native-asm-pipeline"], help="Benchmark mode")
-    parser.add_argument("--optimization", choices=["O0", "O1"], help="Optimization level")
+    parser.add_argument("--optimization", choices=["O0", "O1", "both"], help="Optimization level")
     parser.add_argument("--workload", help="Workload ID or 'all'")
     parser.add_argument("--warmups", type=int, default=3, help="Number of warmups")
     parser.add_argument("--runs", type=int, default=10, help="Number of measured runs")
@@ -369,120 +602,34 @@ def main():
         except Exception as e:
             exit_error(args, "S3_BENCH_INVALID_MANIFEST", f"Failed to read workload source: {e}")
 
-        expected_ret = w["expected_return"]
         max_inst = w["max_instructions"]
         max_frames = w.get("max_frames")
 
-        functional_validation = None
-
-        if args.mode == "native-asm-pipeline":
-            # 1. Functional validation in hosted pipeline
-            try:
-                actual = run_hosted_pipeline(source, opt_level, max_inst, max_frames)
-            except Exception as e:
-                exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Workload {w['id']} functional validation failed with exception: {e}")
-            if actual != expected_ret:
-                exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Workload {w['id']} functional validation failed: expected {expected_ret}, got {actual}")
-
-            functional_validation = {
-                "mode": "hosted-pipeline",
-                "status": "passed",
-                "expected_return": expected_ret,
-                "actual_return": actual
+        if args.optimization == "both":
+            res_O0 = run_workload(w, source, OptimizationLevel.O0, max_inst, max_frames, args)
+            res_O1 = run_workload(w, source, OptimizationLevel.O1, max_inst, max_frames, args)
+            
+            # comparison
+            comp = {
+                "O0_return": res_O0.get("actual_return", res_O0.get("functional_validation", {}).get("actual_return")),
+                "O1_return": res_O1.get("actual_return", res_O1.get("functional_validation", {}).get("actual_return")),
             }
+            comp["equal_return"] = comp["O0_return"] == comp["O1_return"]
+            comp["O0_opcode_count"] = res_O0["metrics"].get("s3_assembly", {}).get("opcode_count", 0)
+            comp["O1_opcode_count"] = res_O1["metrics"].get("s3_assembly", {}).get("opcode_count", 0)
+            comp["diff_opcode_count"] = comp["O1_opcode_count"] - comp["O0_opcode_count"]
+            
+            if "execution" in res_O0["metrics"]:
+                comp["O0_executed_s3_opcodes"] = res_O0["metrics"]["execution"].get("executed_s3_opcodes", 0)
+                comp["O1_executed_s3_opcodes"] = res_O1["metrics"]["execution"].get("executed_s3_opcodes", 0)
+                comp["diff_executed_s3_opcodes"] = comp["O1_executed_s3_opcodes"] - comp["O0_executed_s3_opcodes"]
 
-            # 2. Determinism check
-            try:
-                out1 = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
-                out2 = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
-            except TypeError as e:
-                exit_error(args, "S3_BENCH_NATIVE_TYPE_ERROR", str(e))
-            except Exception as e:
-                exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Workload {w['id']} failed during determinism check: {e}")
-
-            if not out1 or not out2:
-                exit_error(args, "S3_BENCH_NATIVE_EMPTY", f"Workload {w['id']} generated empty output")
-            if out1 != out2:
-                exit_error(args, "S3_BENCH_NATIVE_NON_DETERMINISTIC", f"Workload {w['id']} native asm output is non-deterministic")
-
-            artifact_size = len(out1.encode("utf-8"))
-            artifact_sha256 = hashlib.sha256(out1.encode("utf-8")).hexdigest()
-
+            res_O1["comparison"] = comp
+            results.append(res_O0)
+            results.append(res_O1)
         else:
-            # For hosted pipeline, we just want to run once to fail early if invalid
-            try:
-                actual = run_hosted_pipeline(source, opt_level, max_inst, max_frames)
-                if actual != expected_ret:
-                    exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Workload {w['id']} failed: expected {expected_ret}, got {actual}")
-            except Exception as e:
-                exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Workload {w['id']} failed with exception: {e}")
-
-        # Warmups
-        for _ in range(args.warmups):
-            if args.mode == "hosted-pipeline":
-                actual = run_hosted_pipeline(source, opt_level, max_inst, max_frames)
-                if actual != expected_ret:
-                    exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Warmup failed for {w['id']}")
-            else:
-                try:
-                    out = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
-                except TypeError as e:
-                    exit_error(args, "S3_BENCH_NATIVE_TYPE_ERROR", str(e))
-                if not out:
-                    exit_error(args, "S3_BENCH_NATIVE_EMPTY", f"Warmup failed for {w['id']}: empty output")
-
-        # Runs
-        samples = []
-        actual_for_json = None
-        for _ in range(args.runs):
-            if args.mode == "hosted-pipeline":
-                start_ns = time.perf_counter_ns()
-                actual = run_hosted_pipeline(source, opt_level, max_inst, max_frames)
-                end_ns = time.perf_counter_ns()
-
-                if actual != expected_ret:
-                    exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Run failed for {w['id']}")
-                actual_for_json = actual
-            else:
-                start_ns = time.perf_counter_ns()
-                try:
-                    out = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
-                except TypeError as e:
-                    exit_error(args, "S3_BENCH_NATIVE_TYPE_ERROR", str(e))
-                end_ns = time.perf_counter_ns()
-                if not out:
-                    exit_error(args, "S3_BENCH_NATIVE_EMPTY", f"Run failed for {w['id']}: empty output")
-
-            samples.append(end_ns - start_ns)
-
-        res = {
-            "workload": w["id"],
-            "status": "passed",
-            "expected_return": expected_ret,
-            "max_instructions": max_inst,
-            "max_frames": max_frames,
-            "statistics": {
-                "unit": "ns",
-                "minimum": calc_min(samples),
-                "maximum": calc_max(samples),
-                "mean": calc_mean(samples),
-                "median": calc_median(samples),
-                "p95": calc_p95(samples),
-            }
-        }
-
-        if args.mode == "hosted-pipeline":
-            res["actual_return"] = actual_for_json
-        else:
-            res["functional_validation"] = functional_validation
-            res["artifact_kind"] = "gnu-x86-64-assembly"
-            res["artifact_size_bytes"] = artifact_size
-            res["artifact_sha256"] = artifact_sha256
-
-        if args.include_samples:
-            res["samples_ns"] = samples
-
-        results.append(res)
+            opt_lvl = OptimizationLevel.O1 if args.optimization == "O1" else OptimizationLevel.O0
+            results.append(run_workload(w, source, opt_lvl, max_inst, max_frames, args))
 
     output_data = {
         "benchmark_format_version": BENCHMARK_FORMAT_VERSION,
@@ -502,13 +649,35 @@ def main():
     else:
         lines = []
         for r in results:
-            lines.append(f"Workload: {r['workload']}")
-            s = r["statistics"]
-            lines.append(f"  Min:    {s['minimum'] / 1_000_000.0:.3f} ms")
-            lines.append(f"  Max:    {s['maximum'] / 1_000_000.0:.3f} ms")
-            lines.append(f"  Mean:   {s['mean'] / 1_000_000.0:.3f} ms")
-            lines.append(f"  Median: {s['median'] / 1_000_000.0:.3f} ms")
-            lines.append(f"  p95:    {s['p95'] / 1_000_000.0:.3f} ms")
+            lines.append(f"workload: {r['workload']}")
+            lines.append(f"mode: {args.mode}")
+            lines.append(f"optimization: {args.optimization}")
+            t = r["timing"]
+            lines.append(f"median total: {t['pipeline_total'] / 1_000_000.0:.3f} ms")
+            lines.append("")
+            lines.append("phases:")
+            for p_name, p_data in t["phases"].items():
+                lines.append(f"  {p_name:<20}: {p_data['median'] / 1_000_000.0:.3f} ms")
+            lines.append(f"  {'unclassified':<20}: {t['unclassified_overhead'] / 1_000_000.0:.3f} ms")
+            lines.append("")
+            
+            lines.append("metrics:")
+            m = r["metrics"]
+            if "s3_assembly" in m:
+                lines.append(f"  S3 opcodes emitted:   {m['s3_assembly'].get('opcode_count', 0)}")
+                lines.append(f"  functions:            {m['s3_assembly'].get('function_count', 0)}")
+                lines.append(f"  blocks:               {m['s3_assembly'].get('block_count', 0)}")
+            if "execution" in m:
+                lines.append(f"  S3 opcodes executed:  {m['execution'].get('executed_s3_opcodes', 0)}")
+                lines.append(f"  max frame depth:      {m['execution'].get('maximum_frame_depth_observed', 0)}")
+                
+            if "comparison" in r:
+                lines.append("")
+                lines.append("comparison (O0 vs O1):")
+                c = r["comparison"]
+                for k, v in c.items():
+                    lines.append(f"  {k:<20}: {v}")
+                
             lines.append("")
         out_str = "\n".join(lines)
 

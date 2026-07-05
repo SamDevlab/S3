@@ -140,7 +140,50 @@ def test_workloads_execution():
 
     for w in data["workloads"]:
         src = (root / "benchmarks" / w["file"]).read_text(encoding="utf-8")
-        ret_o0 = run_hosted_pipeline(src, OptimizationLevel.O0, w["max_instructions"], w["max_frames"])
-        ret_o1 = run_hosted_pipeline(src, OptimizationLevel.O1, w["max_instructions"], w["max_frames"])
+        ret_o0, _, _, _ = run_hosted_pipeline(src, OptimizationLevel.O0, w["max_instructions"], w["max_frames"])
+        ret_o1, _, _, _ = run_hosted_pipeline(src, OptimizationLevel.O1, w["max_instructions"], w["max_frames"])
         assert ret_o0 == w["expected_return"]
         assert ret_o1 == w["expected_return"]
+
+def test_deterministic_metrics_gate():
+    root = Path(__file__).resolve().parent.parent
+    baseline_path = root / "tests" / "baseline-0.8-e2.json"
+    
+    if not baseline_path.exists():
+        pytest.skip("Baseline not generated yet")
+        
+    with open(baseline_path, "r", encoding="utf-8") as f:
+        baseline = json.load(f)
+
+    manifest_path = root / "benchmarks" / "manifest.json"
+    manifest = load_manifest(manifest_path)
+    workloads = {w["id"]: w for w in manifest["workloads"]}
+
+    for b_res in baseline["results"]:
+        w_id = b_res["workload"]
+        opt_level_str = b_res.get("opt_level", "O0")
+        opt = OptimizationLevel.O1 if opt_level_str == "O1" else OptimizationLevel.O0
+        
+        w = workloads[w_id]
+        src = (root / "benchmarks" / w["file"]).read_text(encoding="utf-8")
+        
+        # run hosted to get actual dynamic metrics
+        ret, _, static_metrics, dynamic_metrics = run_hosted_pipeline(src, opt, w["max_instructions"], w["max_frames"])
+        
+        # check expected metrics
+        expected_metrics = b_res["metrics"]
+        
+        # check static S3 assembly
+        assert static_metrics["s3_assembly"]["opcode_count"] == expected_metrics["s3_assembly"]["opcode_count"]
+        
+        # check dynamic opcodes
+        assert dynamic_metrics["execution"]["executed_s3_opcodes"] == expected_metrics["execution"]["executed_s3_opcodes"]
+        
+        # check native generation determinism
+        from tools.benchmark import run_native_asm_pipeline
+        out, _, _ = run_native_asm_pipeline(src, opt, w["max_instructions"], w["max_frames"])
+        import hashlib
+        out_sha256 = hashlib.sha256(out.encode("utf-8")).hexdigest()
+        
+        if "native_artifact" in expected_metrics:
+            assert out_sha256 == expected_metrics["native_artifact"]["artifact_sha256"]
