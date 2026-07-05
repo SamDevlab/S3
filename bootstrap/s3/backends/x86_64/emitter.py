@@ -258,7 +258,7 @@ class X8664Emitter:
             detail=f"instruction limit {self.max_instructions} exceeded\n",
         )
         instrumentation = [
-            f"    mov r11, {self.max_instructions}",
+            f"    movabs r11, {self.max_instructions}",
             "    cmp qword ptr [rip + __s3_instruction_count], r11",
             f"    jae {limit_failure}",
             "    inc qword ptr [rip + __s3_instruction_count]",
