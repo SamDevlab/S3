@@ -14,6 +14,8 @@ from ...emulator import (
 from .diagnostics import NativeBackendError
 from .emitter import X8664Emitter
 
+NATIVE_MAX_INSTRUCTIONS = (1 << 64) - 1
+
 
 @dataclass(frozen=True, slots=True)
 class X8664Backend:
@@ -28,6 +30,8 @@ class X8664Backend:
             raise NativeBackendError("max_frames must be at least 1")
         if self.max_instructions < 1:
             raise NativeBackendError("max_instructions must be at least 1")
+        if self.max_instructions > NATIVE_MAX_INSTRUCTIONS:
+            raise NativeBackendError(f"max_instructions exceeds physical 64-bit limit of {NATIVE_MAX_INSTRUCTIONS}")
         Emulator(max_memory_trits=self.max_memory_trits).validate(
             program,
             entry="main",

@@ -116,7 +116,7 @@ def test_instrumentation_64_bit_limit():
 
     # Check for temporary register usage and jae
     instrumentation = (
-        f"    mov r11, {limit}\n"
+        f"    movabs r11, {limit}\n"
         "    cmp qword ptr [rip + __s3_instruction_count], r11\n"
         "    jae .L__s3_failure_site_1\n"
         "    inc qword ptr [rip + __s3_instruction_count]\n"
