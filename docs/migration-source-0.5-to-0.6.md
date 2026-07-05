@@ -105,4 +105,5 @@ altera os formatos posteriores: IR JSON e S3 Assembly permanecem em 0.5.0.
 ## Próximos Passos (Roadmap)
 
 V0.5 permanece temporariamente disponível para compatibilidade explícita. A
-Entrega E e a conclusão do Marco 0.6 continuam pendentes.
+Entrega D2B foi validada; a Entrega E está implementada localmente e aguarda
+validação remota antes da conclusão do Marco 0.6.

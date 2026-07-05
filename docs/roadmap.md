@@ -58,18 +58,15 @@ Entregas validadas na execução remota acima:
 - diferenciais O0/O1 emulador/nativo;
 - estudo ARM64 sem backend ou alegação de suporte.
 
-## Marco 0.6 — robustez operacional (iniciado)
+## Marco 0.6 — primeiro MVP publicável (fechamento)
 
-Primeira entrega implementada:
+Escopo concluído e validado antes da Entrega E:
 
 - diagnósticos estruturados consumíveis por ferramentas na CLI hospedada;
 - schema `s3-diagnostic` 1.0.0, com categorias e códigos estáveis;
 - formato textual preservado como padrão;
 - fronteira explícita: o runtime ELF continua com diagnósticos textuais.
-
-Em andamento:
-
-- simplificação da sintaxe de fonte (especificada arquiteturalmente sob ADR-0013):
+- simplificação da sintaxe de fonte (ADR-0013):
   - Entrega A concluída e validada;
   - Entrega B concluída e validada;
   - Entrega C1 concluída e validada;
@@ -77,22 +74,31 @@ Em andamento:
   - Entrega D1 concluída;
   - Entrega D2A concluída;
   - Entrega D2A.1 concluída;
-  - Entrega D2B implementada localmente, com validação remota pendente;
+  - Entrega D2B concluída e validada;
   - V0.6 é o default do frontend e da CLI;
   - V0.5 continua disponível por seleção explícita, sem fallback;
-  - Entrega E pendente;
-  - Marco 0.6 não está concluído.
+  - corpus oficial migrado para V0.6.
 
-Permanecem pendentes:
+Entrega E:
+
+- fechamento do contrato do MVP e da versão pública 0.6.0;
+- auditoria de instalação, empacotamento, CLI, exemplos e artefatos;
+- notas de lançamento preparadas;
+- implementada localmente, com validação remota pendente;
+- o Marco 0.6 permanece não concluído até o CI final da Entrega E.
+
+## Pós-MVP / marco futuro
+
+Não bloqueiam o lançamento 0.6 e não estão implementados:
 
 1. cache de artefatos por conteúdo/versionamento;
 2. métricas e orçamento de otimização por exemplo;
 3. política de limite nativo de instruções;
 4. otimizações entre blocos provadas sem `PHI`;
-5. execução ARM64 experimental somente após ADR/backend/runtime/CI completos.
+5. backend ou execução ARM64 experimental.
 
 Arrays em assinaturas, heap, ponteiros, strings, módulos e I/O continuam fora
-até receberem contratos próprios.
+do MVP até receberem contratos próprios.
 
 ## Autohospedagem
 

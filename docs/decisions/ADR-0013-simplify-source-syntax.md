@@ -1,5 +1,12 @@
 # ADR 0013: Simplify source syntax with indentation-based blocks
 
+## Status
+
+Aceita e implementada para a fonte V0.6. O MVP mantém V0.5 apenas por seleção
+explícita, sem autodetecção ou fallback. Essa compatibilidade transitória
+substitui a previsão original de remoção imediata da gramática antiga na
+Entrega D; não altera a gramática V0.6 nem os formatos posteriores.
+
 ## Contexto
 O S3 iniciou com uma sintaxe baseada em chaves (`{}`) e ponto e vírgula (`;`). Isso permitiu focar rapidamente na semântica, infraestrutura, IR e assembly. No entanto, à medida que avançamos para o Marco 0.6, o objetivo é alinhar a sintaxe com a filosofia central "Menos é mais", garantindo uma experiência ergonômica, de baixa cerimônia, mas sem perder as garantias estáticas de uma linguagem de sistemas.
 

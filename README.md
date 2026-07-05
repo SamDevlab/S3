@@ -3,8 +3,8 @@
 [![Tests](https://github.com/SamDevlab/S3/actions/workflows/tests.yml/badge.svg)](https://github.com/SamDevlab/S3/actions/workflows/tests.yml)
 
 S3 é uma linguagem experimental de sistemas baseada em ternário balanceado.
-Este repositório contém o bootstrap executável, com sintaxe fonte V0.6 por
-padrão e formatos IR JSON e S3 Assembly 0.5.0:
+Este repositório contém a distribuição `s3-bootstrap` 0.6.0, com sintaxe fonte
+V0.6 por padrão e formatos IR JSON e S3 Assembly 0.5.0:
 
 ```text
 fonte → frontend → IR verificada → análise de inicialização → O0/O1
@@ -45,6 +45,21 @@ A implementação atual oferece:
 
 Não existem `PHI`, `SUBTRACT`, `TSUB`, heap ou memória global.
 
+## Contrato do MVP 0.6
+
+O primeiro MVP publicável inclui fonte V0.6 por padrão e V0.5 por seleção
+explícita; `trit`, `tryte`, funções, chamadas, recursão, mutabilidade,
+`match`, arrays estáticos e acesso indexado; bounds e análise de inicialização;
+IR verificada, O0/O1, S3 Assembly e emulador; backend experimental Linux
+x86-64 com ELF independente de Python depois do build; diagnósticos em texto e
+JSON; CLI pública; e suporte a Python 3.11, 3.12 e 3.13.
+
+Ficam fora deste MVP: ponteiros, heap, memória global, structs, strings,
+módulos, I/O da linguagem, package manager, LSP, depurador, generics, macros,
+concorrência, ARM64, backends Windows/macOS, self-hosting, ABI C pública e
+arrays dinâmicos ou multidimensionais. Esses limites definem o escopo do MVP;
+não são pendências da Entrega E.
+
 ## Instalação
 
 ```bash
@@ -56,7 +71,16 @@ python -m venv .venv
 # Linux/macOS:
 source .venv/bin/activate
 
+python -m pip install .
+s3 --help
+s3 run examples/first.s3
+```
+
+Para desenvolvimento:
+
+```bash
 python -m pip install -e ".[dev]"
+python -m pytest
 ```
 
 O runtime usa somente a biblioteca padrão. `pytest` é dependência de
@@ -71,25 +95,28 @@ autodetecção, fallback ou migração automática; consulte o
 [guia de migração 0.6](docs/migration-source-0.5-to-0.6.md).
 
 A versão da fonte é independente dos artefatos: IR JSON e S3 Assembly
-continuam em 0.5.0. A Entrega E permanece pendente e o Marco 0.6 ainda não
-está concluído.
+continuam em 0.5.0. A Entrega E está implementada localmente; sua validação
+remota e a conclusão do Marco 0.6 ainda estão pendentes.
 
 ```bash
-python -m bootstrap.s3.cli tokens examples/static_array.s3
-python -m bootstrap.s3.cli ast examples/static_array.s3
-python -m bootstrap.s3.cli ir examples/static_array.s3
-python -m bootstrap.s3.cli ir-json examples/static_array.s3 -o build/array.s3ir.json
-python -m bootstrap.s3.cli verify-ir build/array.s3ir.json
-python -m bootstrap.s3.cli asm examples/static_array.s3
-python -m bootstrap.s3.cli asm examples/first.s3 -O1
-python -m bootstrap.s3.cli run examples/static_array.s3
-python -m bootstrap.s3.cli run examples/static_array.s3 --diagnostic-format json
-python -m bootstrap.s3.cli native-asm examples/first.s3
-python -m bootstrap.s3.cli native-asm examples/first.s3 -o build/first.s
-python -m bootstrap.s3.cli build examples/first.s3 -o build/first
-python -m bootstrap.s3.cli run-native examples/first.s3 -O1 --max-frames 128
-python -m bootstrap.s3.cli --source-syntax 0.5 run legacy-v0.5.s3
+s3 tokens examples/static_array.s3
+s3 ast examples/static_array.s3
+s3 ir examples/static_array.s3
+s3 ir-json examples/static_array.s3 -o build/array.s3ir.json
+s3 verify-ir build/array.s3ir.json
+s3 asm examples/static_array.s3
+s3 asm examples/first.s3 -O1
+s3 run examples/static_array.s3
+s3 run examples/static_array.s3 --diagnostic-format json
+s3 native-asm examples/first.s3
+s3 native-asm examples/first.s3 -o build/first.s
+s3 build examples/first.s3 -o build/first
+s3 run-native examples/first.s3 -O1 --max-frames 128
+s3 --source-syntax 0.5 run legacy-v0.5.s3
 ```
+
+Em um checkout sem instalação, a forma equivalente é
+`python -m bootstrap.s3.cli`.
 
 `ir-json` emite o envelope `s3-ir` 0.5.0 com newline; `verify-ir` reconstrói e
 verifica o artefato. `asm` sempre começa por `.s3asm 0.5.0`. `-O0` é padrão;
@@ -185,6 +212,11 @@ overflow, bounds e limite de frames exibiram contexto, valor e status 1.
 A reprodutibilidade byte a byte dos ELF, os hashes SHA-256 e a inspeção com
 `readelf` também são verificadas automaticamente no job Linux.
 
+A Entrega D2B foi validada no
+[run 28726929769](https://github.com/SamDevlab/S3/actions/runs/28726929769):
+os jobs Python 3.11–3.13 e Linux x86-64 nativo concluíram com sucesso. A
+validação remota da Entrega E será registrada somente depois de sua integração.
+
 ## Memória lógica
 
 Objetos possuem tipo, comprimento e mutabilidade. Um `trit` custa 1 trit lógico
@@ -235,7 +267,8 @@ Contratos:
 ```text
 bootstrap/s3/    frontend, IR, verifier, assembly, emulador e backends
 spec/            especificações normativas, incluindo diagnostics.md
-docs/decisions/  ADRs 0001–0012
+docs/decisions/  ADRs 0001–0013
+docs/releases/   notas de lançamento
 examples/        programas oficiais V0.6 e assembly normativo
 tests/           regressão, propriedades e integração
 selfhost/        fronteira da futura implementação em S3
@@ -244,14 +277,15 @@ selfhost/        fronteira da futura implementação em S3
 ## Limitações e próximo marco
 
 Não há ponteiros, heap, globals, arrays dinâmicos ou multidimensionais, arrays
-em assinaturas, strings, estruturas, módulos, I/O, linker próprio, ABI C
-pública ou backend para Windows, macOS ou ARM64.
+em assinaturas, strings, estruturas, módulos, I/O, package manager, LSP,
+depurador, generics, macros, concorrência, linker próprio, ABI C pública,
+self-hosting ou backend para Windows, macOS ou ARM64.
 
 O target nativo é somente Linux x86-64. Não há interoperabilidade C, JIT, TCO
 ou otimização interprocedural. ARM64 possui apenas um
 [estudo de viabilidade](docs/arm64-feasibility.md).
 
-O Marco 0.6 está em andamento: diagnósticos estruturados já foram entregues e a
-Entrega D2B da sintaxe fonte está implementada localmente. A Entrega E, cache e
-otimizações mensuradas permanecem pendentes; consulte o
-[roadmap](docs/roadmap.md).
+O Marco 0.6 está em fechamento: D2B foi validada remotamente e a Entrega E está
+implementada localmente, com validação remota pendente. Nenhuma tag ou release
+0.6.0 foi publicada. Consulte o [roadmap](docs/roadmap.md) e as
+[notas de lançamento](docs/releases/0.6.0.md).
