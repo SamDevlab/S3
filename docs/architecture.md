@@ -86,6 +86,22 @@ max_instructions  = 100000
 max_memory_trits  = 6561
 ```
 
+## Limite de instruções do Marco 0.7
+
+Aprovado para o Marco 0.7; implementação pendente. O
+[ADR-0014](decisions/ADR-0014-hosted-and-native-instruction-limit.md) estende o
+default `max_instructions = 100000` ao runtime Linux x86-64.
+
+Cada opcode S3 Assembly efetivamente executado consumirá uma unidade. Antes do
+opcode, o runtime verificará o limite, incrementará o contador uma vez e só
+então executará o opcode. O contador será global para a execução, compartilhado
+por chamadas e recursão e independente de frames e memória lógica. Instruções
+x86-64, helpers, checks, prólogos, epílogos e syscalls não serão contados.
+
+O orçamento incidirá sobre o S3 Assembly posterior a O0 ou O1. Limites baixos
+podem terminar em pontos diferentes; execuções que terminarem dentro do
+orçamento continuarão semanticamente equivalentes.
+
 ## Backend nativo
 
 `backends/x86_64` consome apenas `AssemblyProgram` validado pelo limite público
@@ -126,7 +142,8 @@ cota lógica.
 8. Não existem `PHI`, `SUBTRACT`, `TSUB`, ponteiros ou casts.
 9. Python continua apenas compilador bootstrap; o ELF não depende dele.
 10. Emissão textual, símbolos e offsets são determinísticos.
-11. O0 é padrão; O1 não remove falhas observáveis.
+11. O0 é padrão; O1 não remove falhas semânticas observáveis. O orçamento de
+    instruções incide sobre o Assembly resultante, conforme o ADR-0014.
 12. Artefatos desconhecidos são rejeitados, nunca adivinhados.
 
 ## Riscos
@@ -134,7 +151,9 @@ cota lógica.
 Todos os objetos lexicais da função são alocados ao entrar no frame, inclusive
 os de ramos não executados; é simples e conservador, mas pode superestimar
 memória. Inicialização de memória imutável é verificada dinamicamente na
-assembly. O layout x86-64 ainda não aloca registradores e não reproduz o limite
-de instruções do emulador; o limite de frames, porém, é explícito nos dois.
+assembly. O layout x86-64 ainda não aloca registradores. No baseline 0.6.0, o
+runtime nativo ainda não reproduz o limite de instruções do emulador; a
+paridade está aprovada para o Marco 0.7 e permanece pendente de implementação.
+O limite de frames já é explícito nos dois.
 Não há heap, aliasing ou promoção memória-para-SSA. Reprodutibilidade binária
 vale somente na mesma toolchain. Outros targets exigem backend/ADR próprios.

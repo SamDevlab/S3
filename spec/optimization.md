@@ -26,11 +26,24 @@ Não pode remover/reordenar efeitos (`CALL`, `LOAD`, `STORE`, terminadores) nem
 checks de overflow, faixa, bounds, inicialização, imutabilidade, frame limit ou
 estado trit. Folding que esconderia overflow é proibido.
 
-Equivalência exigida:
+Equivalência semântica exigida quando as execuções terminam dentro do
+orçamento:
 
 ```text
 emulador O0 = emulador O1 = nativo O0 = nativo O1
 ```
 
-Para falhas, categoria e local lógico devem ser equivalentes.
+Para falhas semânticas, categoria e local lógico devem ser equivalentes.
 
+## Orçamento de instruções do Marco 0.7
+
+Aprovado para o Marco 0.7; implementação pendente.
+
+O orçamento conta opcodes do S3 Assembly efetivamente selecionado depois de O0
+ou O1. Como O1 pode remover instruções, limites baixos podem ser esgotados em
+pontos diferentes. Essa diferença de uma falha por limite de recurso é
+permitida.
+
+A equivalência continua obrigatória quando ambas as execuções terminam dentro
+do orçamento. Exaustão não autoriza resultado diferente, diferença semântica,
+corrupção de estado nem efeitos do opcode excedente.

@@ -91,20 +91,36 @@ Entrega E:
   verde em Python 3.11–3.13 e Linux x86-64 nativo;
 - Marco 0.6 concluído.
 
-## Pós-MVP / marco futuro
+## Marco 0.7 — paridade do limite de instruções (E0 normativa concluída)
 
-Não bloqueiam o lançamento 0.6 e não estão implementados:
+A E0 aprovou exclusivamente a paridade do limite de instruções entre o
+emulador hospedado e o runtime Linux x86-64. O contrato está no
+[ADR-0014](decisions/ADR-0014-hosted-and-native-instruction-limit.md) e no
+[plano do marco](milestone-0.7.md).
+
+Estado:
+
+- E0, decisão normativa: concluída;
+- E1, paridade hospedada e interface pública: próxima entrega;
+- E2, instrumentação nativa: não iniciada;
+- E3, validação ELF: não iniciada;
+- E4, fechamento: não iniciada;
+- implementação funcional: ainda não iniciada.
+
+O default aprovado é `100000` opcodes S3 Assembly executados. Fonte, gramática,
+AST, semântica, IR 0.5.0, Assembly 0.5.0 e schema diagnóstico 1.0.0 não mudam.
+
+## Pós-MVP / marcos futuros
+
+Não integram o Marco 0.7 e não estão implementados:
 
 1. cache de artefatos por conteúdo/versionamento;
 2. métricas e orçamento de otimização por exemplo;
-3. política de limite nativo de instruções;
-4. otimizações entre blocos provadas sem `PHI`;
-5. backend ou execução ARM64 experimental.
+3. otimizações entre blocos provadas sem `PHI`;
+4. backend ou execução ARM64 experimental.
 
 Arrays em assinaturas, heap, ponteiros, strings, módulos e I/O continuam fora
 do MVP até receberem contratos próprios.
-
-O Marco 0.7 não foi iniciado.
 
 ## Autohospedagem
 

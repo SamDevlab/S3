@@ -86,6 +86,33 @@ Falhas usam IDs de site determinísticos e informam categoria, função, bloco,
 opcode, origem S3 ou `source unknown`, linha assembly quando disponível e
 valor dinâmico relevante. Veja `native-diagnostics.md`.
 
+## Limite de instruções do Marco 0.7
+
+Aprovado para o Marco 0.7; implementação pendente.
+
+O runtime adotará `max_instructions = 100000` por padrão, igual ao emulador.
+Cada opcode S3 Assembly efetivamente executado consumirá uma unidade. Prólogos,
+epílogos, helpers, checks físicos, instruções x86-64 e syscalls não serão
+contados.
+
+O contador começará em zero antes de `main`, será global para a execução,
+compartilhado por chamadas e recursão, privado do runtime e independente dos
+limites de frames e memória lógica. Antes de cada opcode, o runtime:
+
+1. falhará se o contador for igual ao limite;
+2. caso contrário, incrementará uma vez;
+3. executará o opcode.
+
+O opcode posterior ao orçamento não produzirá efeitos. O valor configurado
+deverá ser inteiro positivo e não haverá modo ilimitado implícito.
+
+O orçamento incidirá sobre o Assembly posterior a O0 ou O1. Limites baixos
+podem ser esgotados em pontos diferentes; resultados permanecem equivalentes
+quando ambas as execuções terminarem dentro do orçamento.
+
+O contrato completo está no
+[ADR-0014](../docs/decisions/ADR-0014-hosted-and-native-instruction-limit.md).
+
 ## Toolchain e determinismo
 
 O build exige host Linux x86-64 e um driver `cc`, `gcc` ou `clang` capaz de

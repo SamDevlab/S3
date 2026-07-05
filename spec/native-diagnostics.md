@@ -45,3 +45,25 @@ invalid runtime state
 Falha ocorre antes de acesso perigoso ou publicação de valor inválido. Não há
 traceback, libc, C ou Python no executável.
 
+## Limite de instruções do Marco 0.7
+
+Aprovado para o Marco 0.7; implementação pendente.
+
+O runtime acrescentará a categoria:
+
+```text
+instruction limit
+```
+
+A falha ocorrerá no site do opcode S3 pendente, antes de seus efeitos, e usará
+stderr e status 1. O diagnóstico informará limite, função, bloco, opcode e
+origem quando disponíveis. O formato continuará textual:
+
+```text
+runtime error [instruction limit] in function 'main'
+at source 3:5 (block entry, TJMP): limit 100000 exceeded
+```
+
+Em `run-native --diagnostic-format json`, a CLI hospedada continuará emitindo
+`S3E_NATIVE_PROCESS_FAILED` e preservando este stderr em `notes`, sem analisar
+ou converter semanticamente o texto do ELF.
