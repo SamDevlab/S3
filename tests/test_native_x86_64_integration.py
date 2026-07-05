@@ -39,7 +39,7 @@ def native_toolchain() -> NativeToolchain:
 def _program(source_or_program: str | AssemblyProgram) -> AssemblyProgram:
     if isinstance(source_or_program, AssemblyProgram):
         return source_or_program
-    return compile_source(source_or_program, mode=SyntaxMode.V0_6).assembly
+    return compile_source(source_or_program).assembly
 
 
 def _run_native(
@@ -102,7 +102,6 @@ def test_all_examples_match_emulator(
             native_toolchain,
             tmp_path / f"{filename}-{level}",
             level,
-            mode=SyntaxMode.V0_6,
         )
 
 

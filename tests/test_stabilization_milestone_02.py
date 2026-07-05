@@ -7,6 +7,7 @@ import pytest
 from bootstrap.s3 import ast
 from bootstrap.s3.assembly import parse_assembly
 from bootstrap.s3.emulator import EmulatorError, execute_assembly
+from bootstrap.s3.lexer import SyntaxMode
 from bootstrap.s3.parser import parse
 
 
@@ -36,7 +37,8 @@ fn main() -> tryte {
     tryte copied = value;
     return outer(inner(1));
 }
-"""
+""",
+        mode=SyntaxMode.V0_5,
     )
     statements = program.functions[-1].body.statements
     declaration = statements[1]

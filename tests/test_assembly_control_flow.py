@@ -237,6 +237,6 @@ fn main() -> tryte {
     return 7;
 }
 """
-    compilation = compile_source(source)
+    compilation = compile_source(source, mode=SyntaxMode.V0_5)
     assert "TJMP" in compilation.assembly_text
-    assert run_source(source) == 7
+    assert run_source(source, mode=SyntaxMode.V0_5) == 7

@@ -308,7 +308,7 @@ fn main() -> tryte {
 }
 """
     with pytest.raises(EmulatorError, match="tryte overflow"):
-        run_source(source)
+        run_source(source, mode=SyntaxMode.V0_5)
 
 
 def test_memory_instruction_rejects_undeclared_register() -> None:

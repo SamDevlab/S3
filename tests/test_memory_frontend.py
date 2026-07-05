@@ -4,20 +4,21 @@ import pytest
 
 from bootstrap.s3 import ast
 from bootstrap.s3.diagnostics import ParseError, SemanticError
-from bootstrap.s3.lexer import TokenKind, tokenize
+from bootstrap.s3.lexer import SyntaxMode, TokenKind, tokenize
 from bootstrap.s3.parser import parse
 from bootstrap.s3.semantic import analyze
 
 
 def analyze_source(source: str) -> ast.Program:
-    program = parse(source)
+    program = parse(source, mode=SyntaxMode.V0_5)
     analyze(program)
     return program
 
 
 def test_lexer_recognizes_mut_brackets_and_separate_negative_sign() -> None:
     tokens = tokenize(
-        "fn main() -> trit { mut trit[3] states = [-1, 0, 1]; return states[2]; }"
+        "fn main() -> trit { mut trit[3] states = [-1, 0, 1]; return states[2]; }",
+        mode=SyntaxMode.V0_5,
     )
     kinds = [token.kind for token in tokens]
     assert TokenKind.MUT in kinds
@@ -38,7 +39,8 @@ fn main() -> tryte {
     values[1] = value;
     return values[0];
 }
-"""
+""",
+        mode=SyntaxMode.V0_5,
     )
     statements = program.functions[0].body.statements
     scalar = statements[0]
@@ -67,7 +69,8 @@ fn main() -> tryte {
     tryte[1] values = [identity(1)];
     return values[0] + identity(2);
 }
-"""
+""",
+        mode=SyntaxMode.V0_5,
     )
     declaration = program.functions[1].body.statements[0]
     returned = program.functions[1].body.statements[1]
@@ -91,7 +94,7 @@ fn main() -> tryte {
 )
 def test_array_bracket_and_literal_syntax_errors(source: str) -> None:
     with pytest.raises(ParseError):
-        parse(source)
+        parse(source, mode=SyntaxMode.V0_5)
 
 
 def test_valid_scalar_assignment_is_semantically_accepted() -> None:

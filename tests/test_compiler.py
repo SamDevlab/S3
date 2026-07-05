@@ -69,7 +69,7 @@ def test_undeclared_variable_is_rejected_with_location() -> None:
         SemanticError,
         match=r"2:12: semantic error: undeclared variable 'missing'",
     ):
-        compile_source(source)
+        compile_source(source, mode=SyntaxMode.V0_5)
 
 
 def test_duplicate_variable_is_rejected() -> None:
@@ -81,7 +81,7 @@ fn main() -> tryte {
 }
 """
     with pytest.raises(SemanticError, match="duplicate declaration"):
-        compile_source(source)
+        compile_source(source, mode=SyntaxMode.V0_5)
 
 
 @pytest.mark.parametrize(
@@ -99,7 +99,7 @@ def test_out_of_range_literal_is_rejected(
         "}\n"
     )
     with pytest.raises(SemanticError, match=range_text):
-        compile_source(source)
+        compile_source(source, mode=SyntaxMode.V0_5)
 
 
 def test_return_type_is_checked() -> None:
@@ -110,7 +110,7 @@ fn main() -> trit {
 }
 """
     with pytest.raises(SemanticError, match=r"has type tryte; expected trit"):
-        compile_source(source)
+        compile_source(source, mode=SyntaxMode.V0_5)
 
 
 def test_statement_after_return_is_rejected() -> None:
@@ -121,13 +121,13 @@ fn main() -> tryte {
 }
 """
     with pytest.raises(SemanticError, match="unreachable statement after return"):
-        compile_source(source)
+        compile_source(source, mode=SyntaxMode.V0_5)
 
 
 def test_source_arithmetic_overflow_is_detected_at_runtime() -> None:
     source = "fn main() -> tryte { return 364 + 1; }"
     with pytest.raises(EmulatorError, match="tryte overflow"):
-        run_source(source)
+        run_source(source, mode=SyntaxMode.V0_5)
 
 
 def test_all_initial_operators_execute() -> None:
@@ -139,5 +139,11 @@ def test_all_initial_operators_execute() -> None:
     ]
     for statement, expected in sources_and_results:
         source = f"fn main() -> tryte {{ {statement} }}"
-        assert run_source(source) == expected
-    assert run_source("fn main() -> trit { return 2 <=> 3; }") == -1
+        assert run_source(source, mode=SyntaxMode.V0_5) == expected
+    assert (
+        run_source(
+            "fn main() -> trit { return 2 <=> 3; }",
+            mode=SyntaxMode.V0_5,
+        )
+        == -1
+    )

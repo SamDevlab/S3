@@ -10,7 +10,7 @@ from .lexer import SyntaxMode, Token, TokenKind, tokenize
 
 
 class Parser:
-    def __init__(self, tokens: tuple[Token, ...], mode: SyntaxMode = SyntaxMode.V0_5):
+    def __init__(self, tokens: tuple[Token, ...], mode: SyntaxMode = SyntaxMode.V0_6):
         self.tokens = tokens
         self.current = 0
         self.mode = mode
@@ -439,9 +439,9 @@ class Parser:
         return self.tokens[self.current - 1]
 
 
-def parse_tokens(tokens: tuple[Token, ...], *, mode: SyntaxMode = SyntaxMode.V0_5) -> ast.Program:
+def parse_tokens(tokens: tuple[Token, ...], *, mode: SyntaxMode = SyntaxMode.V0_6) -> ast.Program:
     return Parser(tokens, mode).parse_program()
 
 
-def parse(source: str, *, mode: SyntaxMode = SyntaxMode.V0_5) -> ast.Program:
+def parse(source: str, *, mode: SyntaxMode = SyntaxMode.V0_6) -> ast.Program:
     return parse_tokens(tokenize(source, mode=mode), mode=mode)

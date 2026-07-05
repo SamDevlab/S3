@@ -3,7 +3,8 @@
 [![Tests](https://github.com/SamDevlab/S3/actions/workflows/tests.yml/badge.svg)](https://github.com/SamDevlab/S3/actions/workflows/tests.yml)
 
 S3 é uma linguagem experimental de sistemas baseada em ternário balanceado.
-Este repositório contém o bootstrap 0.5 executável:
+Este repositório contém o bootstrap executável, com sintaxe fonte V0.6 por
+padrão e formatos IR JSON e S3 Assembly 0.5.0:
 
 ```text
 fonte → frontend → IR verificada → análise de inicialização → O0/O1
@@ -14,12 +15,13 @@ fonte → frontend → IR verificada → análise de inicialização → O0/O1
 
 Python está isolado em `bootstrap/`; a fonte normativa é [`spec/`](spec/).
 
-## Marcos 0.3 a 0.5
+## Suporte atual
 
-Suporte atual:
+A implementação atual oferece:
 
 - `trit` e `tryte`, overflow detectável e sem unsigned;
-- funções, chamadas, recursão e switch ternário exaustivo;
+- funções, chamadas, recursão e `match` ternário exaustivo no default V0.6;
+- `switch` ternário exaustivo somente no modo V0.5 explícito;
 - bindings imutáveis e `mut` explícito;
 - atribuição escalar e indexada;
 - arrays estáticos unidimensionais de `trit`/`tryte`;
@@ -62,24 +64,31 @@ desenvolvimento.
 
 ## CLI
 
-A CLI suporta as versões de sintaxe fonte 0.5 (padrão atual) e 0.6 (preview) através da opção `--source-syntax {0.5,0.6}`.
-Os exemplos oficiais foram migrados para a sintaxe recomendada 0.6. Para executá-los, use `--source-syntax 0.6`. A sintaxe 0.5 permanece disponível e é o padrão. Consulte o [guia de migração 0.6](docs/migration-source-0.5-to-0.6.md) para detalhes.
-A IR JSON e o S3 Assembly continuam na versão 0.5.0, independentemente da sintaxe de origem. A troca do default para 0.6 e a conclusão do Marco 0.6 ainda estão pendentes.
+A CLI usa a sintaxe fonte 0.6 por padrão. Os exemplos oficiais já usam V0.6,
+portanto os comandos comuns não precisam de uma opção de versão. A sintaxe
+V0.5 permanece temporariamente disponível com `--source-syntax 0.5`. Não há
+autodetecção, fallback ou migração automática; consulte o
+[guia de migração 0.6](docs/migration-source-0.5-to-0.6.md).
+
+A versão da fonte é independente dos artefatos: IR JSON e S3 Assembly
+continuam em 0.5.0. A Entrega E permanece pendente e o Marco 0.6 ainda não
+está concluído.
 
 ```bash
-python -m bootstrap.s3.cli --source-syntax 0.6 tokens examples/static_array.s3
-python -m bootstrap.s3.cli --source-syntax 0.6 ast examples/static_array.s3
-python -m bootstrap.s3.cli --source-syntax 0.6 ir examples/static_array.s3
-python -m bootstrap.s3.cli --source-syntax 0.6 ir-json examples/static_array.s3 -o build/array.s3ir.json
+python -m bootstrap.s3.cli tokens examples/static_array.s3
+python -m bootstrap.s3.cli ast examples/static_array.s3
+python -m bootstrap.s3.cli ir examples/static_array.s3
+python -m bootstrap.s3.cli ir-json examples/static_array.s3 -o build/array.s3ir.json
 python -m bootstrap.s3.cli verify-ir build/array.s3ir.json
-python -m bootstrap.s3.cli --source-syntax 0.6 asm examples/static_array.s3
-python -m bootstrap.s3.cli --source-syntax 0.6 asm examples/first.s3 -O1
-python -m bootstrap.s3.cli --source-syntax 0.6 run examples/static_array.s3
-python -m bootstrap.s3.cli --source-syntax 0.6 run examples/static_array.s3 --diagnostic-format json
-python -m bootstrap.s3.cli --source-syntax 0.6 native-asm examples/first.s3
-python -m bootstrap.s3.cli --source-syntax 0.6 native-asm examples/first.s3 -o build/first.s
-python -m bootstrap.s3.cli --source-syntax 0.6 build examples/first.s3 -o build/first
-python -m bootstrap.s3.cli --source-syntax 0.6 run-native examples/first.s3 -O1 --max-frames 128
+python -m bootstrap.s3.cli asm examples/static_array.s3
+python -m bootstrap.s3.cli asm examples/first.s3 -O1
+python -m bootstrap.s3.cli run examples/static_array.s3
+python -m bootstrap.s3.cli run examples/static_array.s3 --diagnostic-format json
+python -m bootstrap.s3.cli native-asm examples/first.s3
+python -m bootstrap.s3.cli native-asm examples/first.s3 -o build/first.s
+python -m bootstrap.s3.cli build examples/first.s3 -o build/first
+python -m bootstrap.s3.cli run-native examples/first.s3 -O1 --max-frames 128
+python -m bootstrap.s3.cli --source-syntax 0.5 run legacy-v0.5.s3
 ```
 
 `ir-json` emite o envelope `s3-ir` 0.5.0 com newline; `verify-ir` reconstrói e
@@ -141,14 +150,9 @@ O exemplo normativo assembly
 python -m pytest
 ```
 
-Saída local registrada no host Windows com Python 3.11.15:
-
-```text
-244 passed, 85 skipped
-```
-
-Os 85 casos são integrações ELF coletadas e puladas localmente porque esse host
-não é Linux.
+Integrações ELF são coletadas e puladas em hosts que não são Linux. Os
+resultados atuais devem ser consultados no workflow; os números abaixo
+documentam especificamente a validação histórica do Marco 0.5.
 
 O workflow [Tests](.github/workflows/tests.yml), com
 `actions/checkout@v6` e `actions/setup-python@v6`, executa a suíte completa em
@@ -170,9 +174,9 @@ Todos os jobs obrigatórios concluíram com sucesso:
 - Python 3.13;
 - Linux x86-64 nativo.
 
-Na matriz completa de Python, a suíte terminou com 329 testes aprovados em cada
-versão. No job nativo Linux x86-64, os 85 testes obrigatórios de integração
-foram aprovados.
+Na matriz histórica do Marco 0.5, a suíte terminou com 329 testes aprovados em
+cada versão. No job nativo Linux x86-64, os 85 testes obrigatórios de
+integração foram aprovados.
 
 Uma validação manual adicional montou, ligou e executou GNU assembly com GCC
 9.5 em Linux. Os onze exemplos produziram os mesmos valores em O0 e O1;
@@ -232,7 +236,7 @@ Contratos:
 bootstrap/s3/    frontend, IR, verifier, assembly, emulador e backends
 spec/            especificações normativas, incluindo diagnostics.md
 docs/decisions/  ADRs 0001–0012
-examples/        programas 0.1–0.5 e assembly normativo
+examples/        programas oficiais V0.6 e assembly normativo
 tests/           regressão, propriedades e integração
 selfhost/        fronteira da futura implementação em S3
 ```
@@ -247,6 +251,7 @@ O target nativo é somente Linux x86-64. Não há interoperabilidade C, JIT, TCO
 ou otimização interprocedural. ARM64 possui apenas um
 [estudo de viabilidade](docs/arm64-feasibility.md).
 
-O Marco 0.6 foi iniciado pelos diagnósticos estruturados da toolchain
-hospedada. Cache e otimizações mensuradas permanecem pendentes; consulte o
+O Marco 0.6 está em andamento: diagnósticos estruturados já foram entregues e a
+Entrega D2B da sintaxe fonte está implementada localmente. A Entrega E, cache e
+otimizações mensuradas permanecem pendentes; consulte o
 [roadmap](docs/roadmap.md).

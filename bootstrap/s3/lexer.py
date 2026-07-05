@@ -84,7 +84,7 @@ class Token:
 
 
 class Lexer:
-    def __init__(self, source: str, *, mode: SyntaxMode = SyntaxMode.V0_5):
+    def __init__(self, source: str, *, mode: SyntaxMode = SyntaxMode.V0_6):
         self.source = source
         self.mode = mode
         self.position = 0
@@ -336,5 +336,5 @@ class Lexer:
         return Token(kind, char, line, column, start)
 
 
-def tokenize(source: str, *, mode: SyntaxMode = SyntaxMode.V0_5) -> tuple[Token, ...]:
+def tokenize(source: str, *, mode: SyntaxMode = SyntaxMode.V0_6) -> tuple[Token, ...]:
     return Lexer(source, mode=mode).tokenize()

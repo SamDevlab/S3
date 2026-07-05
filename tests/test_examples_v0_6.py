@@ -30,19 +30,21 @@ def _discover_examples() -> list[Path]:
 
 
 @pytest.mark.parametrize("example_path", _discover_examples(), ids=lambda p: p.name)
-def test_official_examples_compile_and_run_as_v0_6(example_path: Path) -> None:
+def test_official_examples_compile_and_run_with_default(
+    example_path: Path,
+) -> None:
     source = example_path.read_text(encoding="utf-8")
-    
-    # Assert it compiles through all stages with V0.6
-    compilation = compile_source(source, mode=SyntaxMode.V0_6)
+
+    compilation = compile_source(source)
     assert compilation.ast
     assert compilation.ir
     assert compilation.assembly
-    
-    # Run the emulator
-    result = run_source(source, mode=SyntaxMode.V0_6)
-    
-    assert example_path.name in EXPECTED_RESULTS, f"Missing expected result for {example_path.name}"
+
+    result = run_source(source)
+
+    assert example_path.name in EXPECTED_RESULTS, (
+        f"Missing expected result for {example_path.name}"
+    )
     assert result == EXPECTED_RESULTS[example_path.name]
 
 
@@ -78,9 +80,29 @@ def test_official_examples_via_public_cli(example_path: Path) -> None:
     
     for cmd in commands:
         result = subprocess.run(
-            [sys.executable, "-m", "bootstrap.s3.cli", "--source-syntax", "0.6", cmd, str(example_path)],
+            [
+                sys.executable,
+                "-m",
+                "bootstrap.s3.cli",
+                cmd,
+                str(example_path),
+            ],
             capture_output=True,
             text=True,
         )
-        assert result.returncode == 0, f"CLI command {cmd} failed for {example_path.name}:\n{result.stderr}"
+        assert result.returncode == 0, (
+            f"CLI command {cmd} failed for {example_path.name}:\n"
+            f"{result.stderr}"
+        )
+
+
+def test_default_matches_explicit_v0_6_for_official_example() -> None:
+    source = (EXAMPLES_DIR / "first.s3").read_text(encoding="utf-8")
+    default = compile_source(source)
+    explicit = compile_source(source, mode=SyntaxMode.V0_6)
+
+    assert default.ast == explicit.ast
+    assert default.ir == explicit.ir
+    assert default.assembly == explicit.assembly
+    assert run_source(source) == run_source(source, mode=SyntaxMode.V0_6)
 

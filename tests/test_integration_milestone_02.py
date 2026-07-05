@@ -61,7 +61,7 @@ fn main() -> trit {
     }
 }
 """
-    compilation = compile_source(source)
+    compilation = compile_source(source, mode=SyntaxMode.V0_5)
     main = compilation.ir.functions[1]
     calls = [
         instruction
@@ -69,7 +69,7 @@ fn main() -> trit {
         if instruction.opcode is IROpcode.CALL
     ]
     assert len(calls) == 1
-    assert run_source(source) == 0
+    assert run_source(source, mode=SyntaxMode.V0_5) == 0
 
 
 def test_forward_declared_function_executes() -> None:
@@ -77,7 +77,7 @@ def test_forward_declared_function_executes() -> None:
 fn main() -> tryte { return calculate(3); }
 fn calculate(value: tryte) -> tryte { return value + 1; }
 """
-    assert run_source(source) == 4
+    assert run_source(source, mode=SyntaxMode.V0_5) == 4
 
 
 def test_control_flow_ir_preserves_source_locations() -> None:
@@ -117,7 +117,7 @@ fn sign(value: tryte) -> trit {{
 }}
 fn main() -> trit {{ return sign({argument}); }}
 """
-    assert run_source(source) == expected
+    assert run_source(source, mode=SyntaxMode.V0_5) == expected
 
 
 def test_frame_registers_are_isolated_across_nested_calls() -> None:
@@ -129,7 +129,7 @@ fn outer(value: tryte) -> tryte {
 }
 fn main() -> tryte { return outer(9); }
 """
-    assert run_source(source) == 12
+    assert run_source(source, mode=SyntaxMode.V0_5) == 12
 
 
 def test_frame_limit_stops_unbounded_recursion() -> None:
@@ -137,7 +137,8 @@ def test_frame_limit_stops_unbounded_recursion() -> None:
         """\
 fn forever(value: tryte) -> tryte { return forever(value); }
 fn main() -> tryte { return forever(0); }
-"""
+""",
+        mode=SyntaxMode.V0_5,
     ).assembly
     with pytest.raises(EmulatorError, match="frame limit 4 exceeded"):
         execute_assembly(assembly, max_frames=4)
@@ -158,4 +159,4 @@ fn main() -> tryte { return overflow(); }
         EmulatorError,
         match=r"function 'overflow'.*TADD.*source 1:.*overflow",
     ):
-        run_source(source)
+        run_source(source, mode=SyntaxMode.V0_5)

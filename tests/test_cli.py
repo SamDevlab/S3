@@ -30,13 +30,13 @@ def test_text_is_default_and_explicit_text_preserves_the_same_message(
 ) -> None:
     source = _write_source(
         tmp_path / "invalid.s3",
-        "fn main() -> tryte { return 0 }\n",
+        "fn main() -> tryte:\n    return\n",
     )
     assert cli.main(["run", str(source)]) == 1
     default = capsys.readouterr()
     assert default.out == ""
     assert default.err.startswith("error: ")
-    assert "parse error: expected ';' after return value" in default.err
+    assert "parse error: expected expression" in default.err
     assert "Traceback" not in default.err
 
     assert cli.main(
@@ -66,7 +66,7 @@ def test_parser_json_diagnostic_is_one_object_on_stderr_with_source_and_file(
 ) -> None:
     source = _write_source(
         tmp_path / "diretório com espaços" / "fonte inválida.s3",
-        "fn main() -> tryte {\n    return 0\n}\n",
+        "fn main() -> tryte:\n    return\n",
     )
     assert cli.main(
         ["run", str(source), "--diagnostic-format", "json"]
@@ -79,7 +79,7 @@ def test_parser_json_diagnostic_is_one_object_on_stderr_with_source_and_file(
     assert payload["phase"] == "parsing"
     assert payload["code"] == "S3E_PARSE_SYNTAX"
     assert payload["file"] == str(source)
-    assert payload["source"] == {"offset": 34, "line": 3, "column": 1}
+    assert payload["source"] == {"offset": 30, "line": 2, "column": 11}
 
 
 def test_lexer_json_diagnostic_has_lexical_code(
@@ -103,7 +103,7 @@ def test_semantic_json_diagnostic_has_stable_code_and_function(
 ) -> None:
     source = _write_source(
         tmp_path / "semantic.s3",
-        "fn main() -> tryte {\n    return missing;\n}\n",
+        "fn main() -> tryte:\n    return missing\n",
     )
     assert cli.main(
         ["run", str(source), "--diagnostic-format=json"]
@@ -113,7 +113,7 @@ def test_semantic_json_diagnostic_has_stable_code_and_function(
     assert payload["phase"] == "semantic"
     assert payload["code"] == "S3E_SEMANTIC_INVALID_PROGRAM"
     assert payload["function"] == "main"
-    assert payload["source"] == {"offset": 32, "line": 2, "column": 12}
+    assert payload["source"] == {"offset": 31, "line": 2, "column": 12}
 
 
 def test_verifier_json_diagnostic_keeps_ir_context(
@@ -121,7 +121,7 @@ def test_verifier_json_diagnostic_keeps_ir_context(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     artifact = json.loads(
-        serialize_ir(compile_source("fn main() -> tryte { return 0; }").ir)
+        serialize_ir(compile_source("fn main() -> tryte:\n    return 0\n").ir)
     )
     artifact["module"]["functions"][0]["return_type"] = "trit"
     path = tmp_path / "invalid.s3ir.json"
@@ -176,7 +176,7 @@ def test_json_mode_preserves_normal_stdout_on_success(
 ) -> None:
     source = _write_source(
         tmp_path / "success.s3",
-        "fn main() -> tryte { return 6; }\n",
+        "fn main() -> tryte:\n    return 6\n",
     )
     assert cli.main(
         ["run", str(source), "--diagnostic-format", "json"]
@@ -191,7 +191,7 @@ def test_json_mode_preserves_normal_stdout_on_success(
     (
         (
             "overflow",
-            "fn main() -> tryte { return 364 + 1; }\n",
+            "fn main() -> tryte:\n    return 364 + 1\n",
             (),
             "overflow",
             "S3E_RUNTIME_OVERFLOW",
@@ -199,11 +199,11 @@ def test_json_mode_preserves_normal_stdout_on_success(
         (
             "bounds",
             """\
-fn read(index: tryte) -> tryte {
-    tryte[1] values = [1];
-    return values[index];
-}
-fn main() -> tryte { return read(-1); }
+fn read(index: tryte) -> tryte:
+    values: tryte[1] = [1]
+    return values[index]
+fn main() -> tryte:
+    return read(-1)
 """,
             (),
             "bounds",
@@ -212,8 +212,10 @@ fn main() -> tryte { return read(-1); }
         (
             "frame",
             """\
-fn recurse() -> tryte { return recurse(); }
-fn main() -> tryte { return recurse(); }
+fn recurse() -> tryte:
+    return recurse()
+fn main() -> tryte:
+    return recurse()
 """,
             ("--max-frames", "2"),
             "frame-limit",
@@ -304,7 +306,7 @@ def test_json_option_is_accepted_before_command_and_after_source(
 ) -> None:
     source = _write_source(
         tmp_path / "position.s3",
-        "fn main() -> tryte { return missing; }\n",
+        "fn main() -> tryte:\n    return missing\n",
     )
     payloads = []
     for arguments in (
@@ -323,16 +325,16 @@ def test_internal_error_is_structured_and_debug_mode_reraises(
 ) -> None:
     source = _write_source(
         tmp_path / "internal.s3",
-        "fn main() -> tryte { return 0; }\n",
+        "fn main() -> tryte:\n    return 0\n",
     )
 
     def fail(
         _source: str,
         _optimization: object,
         *,
-        mode: cli.SyntaxMode = cli.SyntaxMode.V0_5,
+        mode: cli.SyntaxMode,
     ) -> object:
-        assert mode == cli.SyntaxMode.V0_5
+        assert mode == cli.SyntaxMode.V0_6
         raise RuntimeError("developer detail")
 
     monkeypatch.setattr(cli, "compile_source", fail)
@@ -359,7 +361,7 @@ def test_json_and_debug_are_rejected_with_one_structured_diagnostic(
 ) -> None:
     source = _write_source(
         tmp_path / "debug.s3",
-        "fn main() -> tryte { return 0; }\n",
+        "fn main() -> tryte:\n    return 0\n",
     )
     assert cli.main(
         [
@@ -397,7 +399,7 @@ def test_unsupported_target_and_missing_toolchain_are_distinct(
 ) -> None:
     source = _write_source(
         tmp_path / "native.s3",
-        "fn main() -> tryte { return 0; }\n",
+        "fn main() -> tryte:\n    return 0\n",
     )
     monkeypatch.setattr(
         "bootstrap.s3.backends.x86_64.toolchain.platform.system",
@@ -441,7 +443,7 @@ def test_native_runtime_json_is_a_wrapper_not_parsed_elf_diagnostics(
 ) -> None:
     source = _write_source(
         tmp_path / "native-runtime.s3",
-        "fn main() -> tryte { return 0; }\n",
+        "fn main() -> tryte:\n    return 0\n",
     )
     native_stderr = (
         "runtime error [bounds] in function 'main'\n"
@@ -485,21 +487,29 @@ def test_native_runtime_json_is_a_wrapper_not_parsed_elf_diagnostics(
     assert payload["message"] == "standalone native program exited with status 1"
 
 
-def test_cli_mode_propagation_default_v0_5(
+def test_cli_mode_propagation_default_v0_6(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    source = _write_source(tmp_path / "prog.s3", "fn main() -> tryte { return 0; }\n")
+    source = _write_source(
+        tmp_path / "prog.s3",
+        "fn main() -> tryte:\n    return 0\n",
+    )
     received_modes = []
 
-    def fake_compile(_source: str, _optimization: object, *, mode: cli.SyntaxMode = cli.SyntaxMode.V0_5) -> object:
+    def fake_compile(
+        _source: str,
+        _optimization: object,
+        *,
+        mode: cli.SyntaxMode,
+    ) -> object:
         received_modes.append(mode)
         raise RuntimeError("stop")
 
     monkeypatch.setattr(cli, "compile_source", fake_compile)
 
     cli.main(["ir", str(source)])
-    assert received_modes == [cli.SyntaxMode.V0_5]
+    assert received_modes == [cli.SyntaxMode.V0_6]
 
 
 def test_cli_mode_propagation_explicit_v0_5(
@@ -509,7 +519,12 @@ def test_cli_mode_propagation_explicit_v0_5(
     source = _write_source(tmp_path / "prog.s3", "fn main() -> tryte { return 0; }\n")
     received_modes = []
 
-    def fake_compile(_source: str, _optimization: object, *, mode: cli.SyntaxMode = cli.SyntaxMode.V0_5) -> object:
+    def fake_compile(
+        _source: str,
+        _optimization: object,
+        *,
+        mode: cli.SyntaxMode,
+    ) -> object:
         received_modes.append(mode)
         raise RuntimeError("stop")
 
@@ -526,7 +541,12 @@ def test_cli_mode_propagation_explicit_v0_6(
     source = _write_source(tmp_path / "prog.s3", "fn main() -> tryte: return 0\n")
     received_modes = []
 
-    def fake_compile(_source: str, _optimization: object, *, mode: cli.SyntaxMode = cli.SyntaxMode.V0_5) -> object:
+    def fake_compile(
+        _source: str,
+        _optimization: object,
+        *,
+        mode: cli.SyntaxMode,
+    ) -> object:
         received_modes.append(mode)
         raise RuntimeError("stop")
 
@@ -544,7 +564,12 @@ def test_cli_run_command_propagates_mode_to_emulator(
     received_modes = []
 
     # 'run' uses compile_source then Emulator, we check if compile_source received it.
-    def fake_compile(_source: str, _optimization: object, *, mode: cli.SyntaxMode = cli.SyntaxMode.V0_5) -> object:
+    def fake_compile(
+        _source: str,
+        _optimization: object,
+        *,
+        mode: cli.SyntaxMode,
+    ) -> object:
         received_modes.append(mode)
         raise RuntimeError("stop")
 

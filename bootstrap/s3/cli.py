@@ -117,8 +117,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--source-syntax",
         choices=("0.5", "0.6"),
-        default="0.5",
-        help="Source syntax version (default: 0.5)",
+        default="0.6",
+        help="Source syntax version (default: 0.6)",
     )
     return parser
 

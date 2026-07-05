@@ -105,7 +105,7 @@ def test_ast_equivalence():
     source_v0_5 = "fn add(a: tryte, b: tryte) -> tryte {\n    mut tryte c = a + b;\n    c = c + 1;\n    return c;\n}\n"
     source_v0_6 = "fn add(a: tryte, b: tryte) -> tryte:\n    mut c: tryte = a + b\n    c = c + 1\n    return c\n"
     
-    ast_v0_5 = ast.to_dict(parse(source_v0_5))
+    ast_v0_5 = ast.to_dict(parse(source_v0_5, mode=SyntaxMode.V0_5))
     ast_v0_6 = ast.to_dict(parse(source_v0_6, mode=SyntaxMode.V0_6))
     
     # Strip location fields for equivalence comparison
@@ -118,10 +118,10 @@ def test_ast_equivalence():
 
     assert strip_locations(ast_v0_5) == strip_locations(ast_v0_6)
 
-def test_v0_5_default():
-    source = "fn main() -> tryte { tryte a = 1; return a; }"
+def test_v0_6_default():
+    source = "fn main() -> tryte:\n    a: tryte = 1\n    return a\n"
     program1 = parse(source)
-    program2 = parse(source, mode=SyntaxMode.V0_5)
+    program2 = parse(source, mode=SyntaxMode.V0_6)
     assert ast.to_dict(program1) == ast.to_dict(program2)
 
 def test_comments_ignored_v0_6():

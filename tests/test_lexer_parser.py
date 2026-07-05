@@ -4,7 +4,7 @@ import pytest
 
 from bootstrap.s3 import ast
 from bootstrap.s3.diagnostics import LexError, ParseError
-from bootstrap.s3.lexer import TokenKind, tokenize
+from bootstrap.s3.lexer import SyntaxMode, TokenKind, tokenize
 from bootstrap.s3.parser import parse
 
 
@@ -18,7 +18,7 @@ fn main() -> tryte {
 
 
 def test_lexer_recognizes_tokens_and_tracks_locations() -> None:
-    tokens = tokenize(SOURCE)
+    tokens = tokenize(SOURCE, mode=SyntaxMode.V0_5)
     kinds = [token.kind for token in tokens]
     assert kinds == [
         TokenKind.FN,
@@ -55,11 +55,11 @@ def test_lexer_recognizes_tokens_and_tracks_locations() -> None:
 
 def test_invalid_character_reports_location() -> None:
     with pytest.raises(LexError, match=r"2:5: lexical error.*invalid character"):
-        tokenize("fn\n    @")
+        tokenize("fn\n    @", mode=SyntaxMode.V0_5)
 
 
 def test_parser_builds_typed_ast_and_operator_precedence() -> None:
-    program = parse(SOURCE)
+    program = parse(SOURCE, mode=SyntaxMode.V0_5)
     function = program.functions[0]
     assert function.name == "main"
     assert function.return_type is ast.TypeName.TRYTE
@@ -75,4 +75,7 @@ def test_parser_builds_typed_ast_and_operator_precedence() -> None:
 
 def test_parser_rejects_missing_semicolon() -> None:
     with pytest.raises(ParseError, match="expected ';'"):
-        parse("fn main() -> tryte { return 0 }")
+        parse(
+            "fn main() -> tryte { return 0 }",
+            mode=SyntaxMode.V0_5,
+        )

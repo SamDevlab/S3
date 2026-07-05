@@ -4,12 +4,13 @@ import pytest
 
 from bootstrap.s3 import ast
 from bootstrap.s3.diagnostics import ParseError, SemanticError
+from bootstrap.s3.lexer import SyntaxMode
 from bootstrap.s3.parser import parse
 from bootstrap.s3.semantic import analyze
 
 
 def analyze_source(source: str) -> ast.Program:
-    program = parse(source)
+    program = parse(source, mode=SyntaxMode.V0_5)
     analyze(program)
     return program
 
@@ -21,7 +22,8 @@ fn zero() -> tryte { return 0; }
 fn one(value: tryte) -> tryte { return value; }
 fn two(left: tryte, right: trit) -> tryte { return left; }
 fn main() -> tryte { return zero(); }
-"""
+""",
+        mode=SyntaxMode.V0_5,
     )
     assert [len(function.parameters) for function in program.functions] == [0, 1, 2, 0]
     assert program.functions[2].parameters[1].type_name is ast.TypeName.TRIT
@@ -33,7 +35,8 @@ def test_parser_builds_nested_and_recursive_calls() -> None:
 fn recurse(value: tryte) -> tryte { return recurse(value); }
 fn pair(a: tryte, b: tryte) -> tryte { return a + b; }
 fn main() -> tryte { return pair(recurse(1), pair(2, 3)); }
-"""
+""",
+        mode=SyntaxMode.V0_5,
     )
     return_statement = program.functions[-1].body.statements[0]
     assert isinstance(return_statement, ast.ReturnStatement)
@@ -55,7 +58,8 @@ fn main() -> trit {
         0: { return 0; }
     }
 }
-"""
+""",
+        mode=SyntaxMode.V0_5,
     )
     statement = program.functions[0].body.statements[0]
     assert isinstance(statement, ast.SwitchStatement)
@@ -72,17 +76,23 @@ fn main() -> trit {
 )
 def test_parameter_syntax_errors(source: str) -> None:
     with pytest.raises(ParseError):
-        parse(source)
+        parse(source, mode=SyntaxMode.V0_5)
 
 
 def test_argument_syntax_error() -> None:
     with pytest.raises(ParseError, match="expected argument"):
-        parse("fn main() -> tryte { return missing(1,); }")
+        parse(
+            "fn main() -> tryte { return missing(1,); }",
+            mode=SyntaxMode.V0_5,
+        )
 
 
 def test_case_syntax_error() -> None:
     with pytest.raises(ParseError, match="expected integer case label"):
-        parse("fn main() -> trit { switch (0) { value: {} } }")
+        parse(
+            "fn main() -> trit { switch (0) { value: {} } }",
+            mode=SyntaxMode.V0_5,
+        )
 
 
 def test_forward_call_and_direct_recursion_are_resolved() -> None:
@@ -280,4 +290,3 @@ fn main() -> tryte {
 }
 """
         )
-

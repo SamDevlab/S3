@@ -1,5 +1,10 @@
 # S3 Source Syntax Specification (Milestone 0.6 Draft)
 
+## Status
+
+V0.6 é o default do frontend. V0.5 permanece selecionável explicitamente. As
+versões de sintaxe fonte, IR JSON e S3 Assembly são independentes.
+
 ## 1. Objective
 This document outlines the proposed indentation-based source syntax for S3, designed for Milestone 0.6. The primary goal is to adhere to the "Less is more" principle by providing a low-ceremony, Python-like ergonomic syntax while retaining the explicit, predictable, and low-level characteristics of a systems programming language.
 

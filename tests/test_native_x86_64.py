@@ -116,7 +116,8 @@ fn main() -> tryte {
     tryte minimum = left & right;
     return minimum | right;
 }
-"""
+""",
+            mode=SyntaxMode.V0_5,
         ).assembly
     )
     seen = {
@@ -147,7 +148,8 @@ fn eighth(
 fn main() -> tryte {
     return eighth(0, 1, 2, 3, 4, 5, 6, 7);
 }
-"""
+""",
+        mode=SyntaxMode.V0_5,
     ).assembly
     native = generate_native_assembly(program)
     assert "mov rax, qword ptr [rbp + 16]" in native
@@ -169,7 +171,8 @@ fn seventh(
 fn main() -> tryte {
     return seventh(0, 1, 2, 3, 4, 5, 6);
 }
-"""
+""",
+        mode=SyntaxMode.V0_5,
     ).assembly
     native = generate_native_assembly(program)
     call = native.index("    call s3_seventh")
@@ -371,7 +374,7 @@ fn main() -> tryte {
     return 364 + 1;
 }
 """
-    program = compile_source(source).assembly
+    program = compile_source(source, mode=SyntaxMode.V0_5).assembly
     first = generate_native_assembly(program)
     second = generate_native_assembly(program)
     assert first == second

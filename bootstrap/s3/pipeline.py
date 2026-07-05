@@ -33,7 +33,7 @@ def compile_source(
     source: str,
     optimization: OptimizationLevel | str = OptimizationLevel.O0,
     *,
-    mode: SyntaxMode = SyntaxMode.V0_5,
+    mode: SyntaxMode = SyntaxMode.V0_6,
 ) -> CompilationResult:
     tokens = tokenize(source, mode=mode)
     syntax_tree = parse_tokens(tokens, mode=mode)
@@ -58,7 +58,7 @@ def run_source(
     optimization: OptimizationLevel | str = OptimizationLevel.O0,
     *,
     max_frames: int = DEFAULT_MAX_FRAMES,
-    mode: SyntaxMode = SyntaxMode.V0_5,
+    mode: SyntaxMode = SyntaxMode.V0_6,
 ) -> int:
     compilation = compile_source(source, optimization, mode=mode)
     return Emulator(max_frames=max_frames).execute(compilation.assembly, entry)

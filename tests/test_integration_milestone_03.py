@@ -58,7 +58,7 @@ fn main() -> tryte { return read(2); }
         EmulatorError,
         match=r"function 'read'.*memory m0 index 2.*\[0, 2\)",
     ):
-        run_source(source)
+        run_source(source, mode=SyntaxMode.V0_5)
 
 
 def test_array_initializers_are_lowered_left_to_right() -> None:
@@ -69,7 +69,7 @@ fn main() -> tryte {
     return values[2];
 }
 """
-    function = compile_source(source).ir.functions[1]
+    function = compile_source(source, mode=SyntaxMode.V0_5).ir.functions[1]
     calls = [
         instruction
         for instruction in function.instructions
@@ -82,7 +82,7 @@ fn main() -> tryte {
     ]
     assert len(calls) == 3
     assert len(stores) == 3
-    assert run_source(source) == 3
+    assert run_source(source, mode=SyntaxMode.V0_5) == 3
 
 
 def test_no_phi_subtract_or_pointer_opcodes_exist() -> None:

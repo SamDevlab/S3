@@ -16,13 +16,13 @@ def run_cli(*args: str | Path, cwd: Path | None = None) -> subprocess.CompletedP
     )
 
 
-def test_cli_source_syntax_default_v0_5(tmp_path: Path) -> None:
+def test_cli_source_syntax_default_v0_6(tmp_path: Path) -> None:
     source = tmp_path / "test.s3"
-    source.write_text("fn main() -> tryte {\n    return 1;\n}\n", encoding="utf-8")
+    source.write_text("fn main() -> tryte:\n    return 2\n", encoding="utf-8")
 
     result = run_cli("run", source)
     assert result.returncode == 0
-    assert "program returned: 1" in result.stdout
+    assert "program returned: 2" in result.stdout
 
 
 def test_cli_source_syntax_explicit_v0_5(tmp_path: Path) -> None:
@@ -41,6 +41,13 @@ def test_cli_source_syntax_explicit_v0_6(tmp_path: Path) -> None:
     result = run_cli("--source-syntax", "0.6", "run", source)
     assert result.returncode == 0
     assert "program returned: 2" in result.stdout
+
+
+def test_cli_source_syntax_help_reports_v0_6_default() -> None:
+    result = run_cli("--help")
+    assert result.returncode == 0
+    assert "Source syntax version (default: 0.6)" in result.stdout
+    assert result.stderr == ""
 
 
 def test_cli_source_syntax_invalid_value(tmp_path: Path) -> None:
@@ -181,7 +188,7 @@ def test_cli_v0_5_source_in_v0_6_mode(tmp_path: Path) -> None:
     source = tmp_path / "test.s3"
     source.write_text("fn main() -> tryte {\n    return 1;\n}\n", encoding="utf-8")
 
-    result = run_cli("--source-syntax", "0.6", "run", source)
+    result = run_cli("run", source)
     assert result.returncode == 1
     assert "error: obsolete brace syntax" in result.stderr
 
@@ -293,7 +300,5 @@ def test_source_syntax_modes_exhaustive() -> None:
 
     with pytest.raises(KeyError):
         _ = _SOURCE_SYNTAX_MODES["invalid"]
-
-
 
 

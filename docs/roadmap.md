@@ -45,7 +45,7 @@ Validado pelo GitHub Actions no commit `70d10a0`, com sucesso em:
 - Python 3.13;
 - backend nativo Linux x86-64.
 
-Implementado localmente; conclusão remota depende do job CI após push:
+Entregas validadas na execução remota acima:
 
 - correção de entrada física no bloco `entry`;
 - limite nativo configurável de frames;
@@ -74,12 +74,13 @@ Em andamento:
   - Entrega B concluída e validada;
   - Entrega C1 concluída e validada;
   - Entrega C2 concluída e validada;
-  - Entrega D1 implementada localmente (validação remota pendente);
-  - seleção pública explícita de V0.6 adicionada;
-  - default continua sendo V0.5;
-  - migração dos exemplos e testes históricos não migrados;
-  - troca de default e remoção da gramática antiga (V0.5) pendente;
-  - validação final E pendente;
+  - Entrega D1 concluída;
+  - Entrega D2A concluída;
+  - Entrega D2A.1 concluída;
+  - Entrega D2B implementada localmente, com validação remota pendente;
+  - V0.6 é o default do frontend e da CLI;
+  - V0.5 continua disponível por seleção explícita, sem fallback;
+  - Entrega E pendente;
   - Marco 0.6 não está concluído.
 
 Permanecem pendentes:

@@ -320,7 +320,16 @@ def test_diagnostic_text():
     with pytest.raises(ParseError, match="obsolete 'switch' syntax, use 'match'"):
         parse(source, mode=SyntaxMode.V0_6)
 
-def test_default_mode_is_v0_5():
-    source = "fn sign() -> trit { switch (0) { -1: { return -1; } 0: { return 0; } 1: { return 1; } } }"
+def test_default_mode_is_v0_6():
+    source = """\
+fn sign() -> trit:
+    match 0:
+        -1:
+            return -1
+        0:
+            return 0
+        1:
+            return 1
+"""
     program = parse(source)
     assert len(program.functions[0].body.statements) == 1

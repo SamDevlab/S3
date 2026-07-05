@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from bootstrap.s3.ir import IROpcode, IRType
+from bootstrap.s3.lexer import SyntaxMode
 from bootstrap.s3.lowering import lower
 from bootstrap.s3.parser import parse
 from bootstrap.s3.semantic import analyze
@@ -8,7 +9,7 @@ from bootstrap.s3.verifier import verify_ir
 
 
 def lower_source(source: str):
-    program = parse(source)
+    program = parse(source, mode=SyntaxMode.V0_5)
     module = lower(program, analyze(program))
     verify_ir(module)
     return module
@@ -125,4 +126,3 @@ fn main() -> tryte {
     invert = opcodes.index(IROpcode.INVERT)
     assert opcodes[invert + 1] is IROpcode.ADD
     assert all("sub" not in opcode.value for opcode in IROpcode)
-

@@ -38,7 +38,7 @@ def _legacy_assembly() -> str:
 
 
 def test_generated_assembly_is_versioned_and_round_trips() -> None:
-    assembly = compile_source("fn main() -> tryte { return 6; }").assembly
+    assembly = compile_source("fn main() -> tryte:\n    return 6\n").assembly
     rendered = assembly.render()
     assert rendered.startswith(f".s3asm {ASSEMBLY_FORMAT_VERSION}\n\n")
     assert parse_assembly(rendered) == assembly
@@ -129,7 +129,7 @@ def test_ir_json_preserves_memory_cfg_and_origins() -> None:
 
 def test_ir_json_rejects_unknown_version_and_opcode() -> None:
     artifact = json.loads(
-        serialize_ir(compile_source("fn main() -> tryte { return 6; }").ir)
+        serialize_ir(compile_source("fn main() -> tryte:\n    return 6\n").ir)
     )
     artifact["version"] = "0.6.0"
     with pytest.raises(IRSerializationError, match="unsupported S3 IR version"):
@@ -145,21 +145,21 @@ def test_ir_json_rejects_unknown_version_and_opcode() -> None:
 
 def test_ir_json_rejects_missing_unknown_and_invalid_fields() -> None:
     artifact = json.loads(
-        serialize_ir(compile_source("fn main() -> tryte { return 6; }").ir)
+        serialize_ir(compile_source("fn main() -> tryte:\n    return 6\n").ir)
     )
     del artifact["module"]["functions"][0]["return_type"]
     with pytest.raises(IRSerializationError, match="missing required field"):
         deserialize_ir(json.dumps(artifact))
 
     artifact = json.loads(
-        serialize_ir(compile_source("fn main() -> tryte { return 6; }").ir)
+        serialize_ir(compile_source("fn main() -> tryte:\n    return 6\n").ir)
     )
     artifact["module"]["extra"] = True
     with pytest.raises(IRSerializationError, match="unknown field"):
         deserialize_ir(json.dumps(artifact))
 
     artifact = json.loads(
-        serialize_ir(compile_source("fn main() -> tryte { return 6; }").ir)
+        serialize_ir(compile_source("fn main() -> tryte:\n    return 6\n").ir)
     )
     artifact["module"]["functions"][0]["registers"][0]["index"] = True
     with pytest.raises(IRSerializationError, match="must be an integer"):

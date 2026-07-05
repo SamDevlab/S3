@@ -30,8 +30,12 @@ ROOT = Path(__file__).parents[1]
 
 def test_o0_is_default_and_preserves_lowered_ir() -> None:
     source = "fn main() -> tryte { return 1 + 2; }"
-    default = compile_source(source)
-    explicit = compile_source(source, OptimizationLevel.O0)
+    default = compile_source(source, mode=SyntaxMode.V0_5)
+    explicit = compile_source(
+        source,
+        OptimizationLevel.O0,
+        mode=SyntaxMode.V0_5,
+    )
     assert default.ir == explicit.ir
     assert default.assembly == explicit.assembly
 
@@ -44,10 +48,18 @@ fn main() -> tryte {
     return folded | 5;
 }
 """
-    o0 = compile_source(source, "O0")
-    o1 = compile_source(source, "O1")
-    assert run_source(source, optimization="O0") == 12
-    assert run_source(source, optimization="O1") == 12
+    o0 = compile_source(source, "O0", mode=SyntaxMode.V0_5)
+    o1 = compile_source(source, "O1", mode=SyntaxMode.V0_5)
+    assert run_source(
+        source,
+        optimization="O0",
+        mode=SyntaxMode.V0_5,
+    ) == 12
+    assert run_source(
+        source,
+        optimization="O1",
+        mode=SyntaxMode.V0_5,
+    ) == 12
     assert instruction_count(o1.ir) < instruction_count(o0.ir)
     opcodes = [
         instruction.opcode
@@ -59,14 +71,18 @@ fn main() -> tryte {
 
 def test_o1_does_not_hide_constant_overflow() -> None:
     source = "fn main() -> tryte { return 364 + 1; }"
-    o1 = compile_source(source, "O1")
+    o1 = compile_source(source, "O1", mode=SyntaxMode.V0_5)
     assert IROpcode.ADD in {
         instruction.opcode
         for instruction in o1.ir.functions[0].instructions
     }
     for level in ("O0", "O1"):
         with pytest.raises(EmulatorError, match="overflow"):
-            run_source(source, optimization=level)
+            run_source(
+                source,
+                optimization=level,
+                mode=SyntaxMode.V0_5,
+            )
 
 
 def test_o1_removes_unreachable_blocks_and_threads_empty_jumps() -> None:
@@ -161,7 +177,7 @@ def test_cli_accepts_o1_for_asm_run_and_native_asm(
 ) -> None:
     source = tmp_path / "fold.s3"
     source.write_text(
-        "fn main() -> tryte { return (1 + 2) + 3; }\n",
+        "fn main() -> tryte:\n    return (1 + 2) + 3\n",
         encoding="utf-8",
     )
     assert cli_main(["asm", str(source), "-O1"]) == 0
