@@ -36,12 +36,11 @@ def _run_native(source: str, tmp_path: Path, toolchain: NativeToolchain, max_ins
 
 def test_exact_limit(native_toolchain: NativeToolchain, tmp_path: Path) -> None:
     source = """
-    function main() {
-        var a = 1;
-        var b = 2;
-        return a + b;
-    }
-    """
+fn main() -> tryte:
+    a: tryte = 1
+    b: tryte = 2
+    return a + b
+"""
     compilation = compile_source(source)
     count = sum(len(b.instructions) for b in compilation.assembly.functions[0].blocks)
     
@@ -58,11 +57,10 @@ def test_exact_limit(native_toolchain: NativeToolchain, tmp_path: Path) -> None:
 
 def test_order_before_effects(native_toolchain: NativeToolchain, tmp_path: Path) -> None:
     source = """
-    function main() {
-        var arr = array(2);
-        return arr[5];
-    }
-    """
+fn main() -> tryte:
+    arr: tryte[2] = [0, 0]
+    return arr[5]
+"""
     compilation = compile_source(source)
     count = sum(len(b.instructions) for b in compilation.assembly.functions[0].blocks)
     
@@ -74,43 +72,40 @@ def test_order_before_effects(native_toolchain: NativeToolchain, tmp_path: Path)
 
 def test_control_flow(native_toolchain: NativeToolchain, tmp_path: Path) -> None:
     source = """
-    function helper(x) {
-        if x == 0 {
-            return 1;
-        }
-        return helper(x - 1);
-    }
-    function main() {
-        var x = 0;
-        loop {
-            if x == 2 {
-                break;
-            }
-            x = x + 1;
-        }
-        return helper(3);
-    }
-    """
+fn helper(x: tryte) -> tryte:
+    match x <=> 0:
+        -1:
+            return 1
+        0:
+            return 1
+        1:
+            return helper(x - 1)
+
+fn main() -> tryte:
+    return helper(3)
+"""
     res_success = _run_native(source, tmp_path / "success", native_toolchain, 1000)
     assert res_success.returncode == 0
 
-    res_fail = _run_native(source, tmp_path / "fail", native_toolchain, 20)
+    res_fail = _run_native(source, tmp_path / "fail", native_toolchain, 5)
     assert res_fail.returncode == 1
     assert "instruction limit" in res_fail.stderr
 
 
 def test_frame_limit_independence(native_toolchain: NativeToolchain, tmp_path: Path) -> None:
     source = """
-    function recurse(n) {
-        if n == 0 {
-            return 0;
-        }
-        return recurse(n - 1);
-    }
-    function main() {
-        return recurse(10);
-    }
-    """
+fn recurse(n: tryte) -> tryte:
+    match n <=> 0:
+        -1:
+            return 0
+        0:
+            return 0
+        1:
+            return recurse(n - 1)
+
+fn main() -> tryte:
+    return recurse(10)
+"""
     compilation = compile_source(source)
     
     assembly_inst_fail = generate_native_assembly(
@@ -134,13 +129,12 @@ def test_frame_limit_independence(native_toolchain: NativeToolchain, tmp_path: P
 
 def test_o0_and_o1(native_toolchain: NativeToolchain, tmp_path: Path) -> None:
     source = """
-    function main() {
-        var a = 1;
-        var b = 2;
-        var c = a + b;
-        return c;
-    }
-    """
+fn main() -> tryte:
+    a: tryte = 1
+    b: tryte = 2
+    c: tryte = a + b
+    return c
+"""
     res_o0 = _run_native(source, tmp_path / "o0", native_toolchain, 1, "O0")
     res_o1 = _run_native(source, tmp_path / "o1", native_toolchain, 1, "O1")
     
@@ -153,11 +147,10 @@ def test_o0_and_o1(native_toolchain: NativeToolchain, tmp_path: Path) -> None:
 
 def test_native_textual_diagnostic(native_toolchain: NativeToolchain, tmp_path: Path) -> None:
     source = """
-    function main() {
-        var x = 0;
-        return x;
-    }
-    """
+fn main() -> tryte:
+    x: tryte = 0
+    return x
+"""
     res = _run_native(source, tmp_path / "diag", native_toolchain, 1)
     assert res.returncode == 1
     stderr = res.stderr
@@ -173,7 +166,7 @@ def test_native_textual_diagnostic(native_toolchain: NativeToolchain, tmp_path: 
 
 def test_run_native_cli_textual_and_json(native_toolchain: NativeToolchain, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     source_file = tmp_path / "source.s3"
-    source_file.write_text("function main() { return 1 + 2; }", encoding="utf-8")
+    source_file.write_text("fn main() -> tryte:\n    return 1 + 2\n", encoding="utf-8")
     
     monkeypatch.setattr(sys, "argv", ["s3", "run-native", str(source_file), "--max-instructions=1"])
     with pytest.raises(SystemExit) as excinfo:
