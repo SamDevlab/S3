@@ -3,6 +3,7 @@
 
 import argparse
 import datetime
+import importlib.metadata
 import json
 import math
 import os
@@ -10,18 +11,31 @@ import platform
 import subprocess
 import sys
 import time
+import hashlib
 from pathlib import Path
 
-try:
-    from bootstrap.s3 import OptimizationLevel, compile_source, run_source
-    from bootstrap.s3.assembly import ASSEMBLY_FORMAT_VERSION
-    from bootstrap.s3.backends.x86_64.backend import generate_native_assembly
-    from bootstrap.s3.diagnostics import DIAGNOSTIC_SCHEMA_VERSION
-    from bootstrap.s3.ir_serialization import IR_FORMAT_VERSION
-except ImportError:
-    pass  # We will handle failures during execution, not at import time, but typically this runs inside the repo.
+# Direct imports - no ImportError hiding
+from bootstrap.s3 import OptimizationLevel, compile_source, run_source
+from bootstrap.s3.lexer import SyntaxMode
+from bootstrap.s3.assembly import ASSEMBLY_FORMAT_VERSION
+from bootstrap.s3.backends.x86_64.backend import generate_native_assembly
+from bootstrap.s3.diagnostics import DIAGNOSTIC_SCHEMA_VERSION
+from bootstrap.s3.ir_serialization import IR_FORMAT_VERSION
 
 BENCHMARK_FORMAT_VERSION = "1.0.0"
+
+def get_distribution_version() -> str:
+    try:
+        return importlib.metadata.version("s3-bootstrap")
+    except importlib.metadata.PackageNotFoundError:
+        return "0.7.0"  # fallback if not installed as a package, though it should be
+
+def syntax_mode_to_string(mode: SyntaxMode) -> str:
+    if mode == SyntaxMode.V0_5:
+        return "0.5"
+    if mode == SyntaxMode.V0_6:
+        return "0.6"
+    return str(mode)
 
 def get_git_commit() -> str:
     try:
@@ -34,26 +48,24 @@ def get_git_commit() -> str:
 
 def is_git_dirty() -> str:
     try:
-        subprocess.check_call(
-            ["git", "diff", "--quiet", "HEAD"], stderr=subprocess.DEVNULL
-        )
-        return "false"
-    except subprocess.CalledProcessError:
-        return "true"
+        out = subprocess.check_output(
+            ["git", "status", "--porcelain", "--untracked-files=normal"],
+            stderr=subprocess.DEVNULL
+        ).strip()
+        return "true" if out else "false"
     except Exception:
         return "unknown"
 
 def sanitize_processor(proc: str) -> str:
-    # Just a basic sanitization if needed, though platform.processor() is usually fine
     return proc.strip()
 
 def gather_metadata(args, workloads_order: list[str]) -> dict:
-    meta = {
+    return {
         "benchmark_format_version": BENCHMARK_FORMAT_VERSION,
         "commit": get_git_commit(),
         "dirty": is_git_dirty(),
-        "distribution": "0.7.0",
-        "source_syntax": "0.6",
+        "distribution": get_distribution_version(),
+        "source_syntax": syntax_mode_to_string(SyntaxMode.V0_6),
         "ir_version": IR_FORMAT_VERSION,
         "assembly_version": ASSEMBLY_FORMAT_VERSION,
         "diagnostic_schema": DIAGNOSTIC_SCHEMA_VERSION,
@@ -70,7 +82,6 @@ def gather_metadata(args, workloads_order: list[str]) -> dict:
         "runs": args.runs,
         "workloads_order": workloads_order,
     }
-    return meta
 
 def calc_min(samples: list[int]) -> int:
     if not samples:
@@ -104,10 +115,8 @@ def calc_p95(samples: list[int]) -> int:
     if not samples:
         raise ValueError("Empty collection")
     s = sorted(samples)
-    n = len(s)
-    rank = math.ceil(0.95 * n)
-    idx = rank - 1
-    return s[idx]
+    rank = math.ceil(0.95 * len(s))
+    return s[rank - 1]
 
 def load_manifest(manifest_path: Path) -> dict:
     with manifest_path.open("r", encoding="utf-8") as f:
@@ -126,6 +135,30 @@ def run_native_asm_pipeline(source: str, opt: OptimizationLevel, max_inst: int, 
         kwargs["max_frames"] = max_frames
     return generate_native_assembly(compilation.assembly, **kwargs)
 
+def exit_error(args, code: str, message: str, print_to_stderr=True):
+    if args.format == "json":
+        err_obj = {
+            "benchmark_format_version": BENCHMARK_FORMAT_VERSION,
+            "status": "error",
+            "error": {
+                "code": code,
+                "message": message
+            }
+        }
+        out_str = json.dumps(err_obj, indent=2, ensure_ascii=False, allow_nan=False) + "\n"
+        if args.output:
+            try:
+                with open(args.output, "w", encoding="utf-8") as f:
+                    f.write(out_str)
+            except Exception:
+                sys.exit(1)
+        else:
+            print(out_str, end="")
+    else:
+        if print_to_stderr:
+            print(f"Error ({code}): {message}", file=sys.stderr)
+    sys.exit(1)
+
 def parse_args():
     parser = argparse.ArgumentParser(description="In-process benchmark runner for S3")
     parser.add_argument("--list", action="store_true", help="List available workloads")
@@ -140,111 +173,132 @@ def parse_args():
     return parser.parse_args()
 
 def main():
-    args = parse_args()
-    
+    try:
+        args = parse_args()
+    except SystemExit:
+        # argparse handles its own exits; let it do so.
+        raise
+
     root_dir = Path(__file__).resolve().parent.parent
     manifest_path = root_dir / "benchmarks" / "manifest.json"
-    
+
     if not manifest_path.exists():
-        print(f"Manifest not found: {manifest_path}", file=sys.stderr)
-        sys.exit(1)
-        
-    manifest = load_manifest(manifest_path)
+        exit_error(args, "S3_BENCH_INVALID_MANIFEST", f"Manifest not found: {manifest_path}")
+
+    try:
+        manifest = load_manifest(manifest_path)
+    except Exception as e:
+        exit_error(args, "S3_BENCH_INVALID_MANIFEST", f"Invalid manifest: {e}")
+
     workloads = manifest.get("workloads", [])
-    
+
     if args.list:
+        if args.format == "json":
+            # For list, just print IDs in json or text
+            pass
         for w in workloads:
             print(w["id"])
         sys.exit(0)
-        
-    if args.warmups < 0:
-        print("Warmups must be >= 0", file=sys.stderr)
-        sys.exit(1)
-        
-    if args.runs <= 0:
-        print("Runs must be > 0", file=sys.stderr)
-        sys.exit(1)
-        
+
+    if args.warmups is None or args.warmups < 0:
+        exit_error(args, "S3_BENCH_INVALID_ARGUMENT", "Warmups must be >= 0")
+
+    if args.runs is None or args.runs <= 0:
+        exit_error(args, "S3_BENCH_INVALID_ARGUMENT", "Runs must be > 0")
+
     if not args.mode or not args.optimization or not args.workload:
-        print("Missing required arguments for benchmarking.", file=sys.stderr)
-        sys.exit(1)
-        
+        exit_error(args, "S3_BENCH_INVALID_ARGUMENT", "Missing required arguments for benchmarking.")
+
     opt_level = OptimizationLevel.O1 if args.optimization == "O1" else OptimizationLevel.O0
-    
+
     if args.workload == "all":
         selected_workloads = workloads
     else:
         selected_workloads = [w for w in workloads if w["id"] == args.workload]
         if not selected_workloads:
-            print(f"Unknown workload: {args.workload}", file=sys.stderr)
-            sys.exit(1)
-            
+            exit_error(args, "S3_BENCH_UNKNOWN_WORKLOAD", f"Unknown workload: {args.workload}")
+
     workloads_order = [w["id"] for w in selected_workloads]
     metadata = gather_metadata(args, workloads_order)
-    
+
     results = []
-    
+
     for w in selected_workloads:
         w_path = root_dir / "benchmarks" / w["file"]
-        with w_path.open("r", encoding="utf-8") as f:
-            source = f.read()
-            
+        try:
+            with w_path.open("r", encoding="utf-8") as f:
+                source = f.read()
+        except Exception as e:
+            exit_error(args, "S3_BENCH_INVALID_MANIFEST", f"Failed to read workload source: {e}")
+
         expected_ret = w["expected_return"]
         max_inst = w["max_instructions"]
         max_frames = w.get("max_frames")
-        
-        # Validation run
+
+        # Native ASM Determinism Check
+        if args.mode == "native-asm-pipeline":
+            try:
+                out1 = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
+                out2 = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
+            except Exception as e:
+                exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Workload {w['id']} failed during determinism check: {e}")
+
+            if not out1 or not out2:
+                exit_error(args, "S3_BENCH_NATIVE_EMPTY", f"Workload {w['id']} generated empty output")
+            if out1 != out2:
+                exit_error(args, "S3_BENCH_NATIVE_NON_DETERMINISTIC", f"Workload {w['id']} native asm output is non-deterministic")
+
+            artifact_size = len(out1.encode("utf-8"))
+            artifact_sha256 = hashlib.sha256(out1.encode("utf-8")).hexdigest()
+
+        # Validation run (functional validation)
         try:
             if args.mode == "hosted-pipeline":
-                ret = run_hosted_pipeline(source, opt_level, max_inst, max_frames)
-                if ret != expected_ret:
-                    print(f"Workload {w['id']} failed: expected {expected_ret}, got {ret}", file=sys.stderr)
-                    sys.exit(1)
-            else:
-                out = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
-                if not out or not isinstance(out, str):
-                    print(f"Workload {w['id']} failed: no output for native-asm", file=sys.stderr)
-                    sys.exit(1)
+                actual = run_hosted_pipeline(source, opt_level, max_inst, max_frames)
+                if actual != expected_ret:
+                    exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Workload {w['id']} failed: expected {expected_ret}, got {actual}")
         except Exception as e:
-            print(f"Workload {w['id']} failed with exception: {e}", file=sys.stderr)
-            sys.exit(1)
-            
+            exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Workload {w['id']} failed with exception: {e}")
+
         # Warmups
         for _ in range(args.warmups):
             if args.mode == "hosted-pipeline":
-                ret = run_hosted_pipeline(source, opt_level, max_inst, max_frames)
-                if ret != expected_ret:
-                    print(f"Warmup failed for {w['id']}", file=sys.stderr)
-                    sys.exit(1)
+                actual = run_hosted_pipeline(source, opt_level, max_inst, max_frames)
+                if actual != expected_ret:
+                    exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Warmup failed for {w['id']}")
             else:
                 out = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
                 if not out:
-                    print(f"Warmup failed for {w['id']}", file=sys.stderr)
-                    sys.exit(1)
-                    
+                    exit_error(args, "S3_BENCH_NATIVE_EMPTY", f"Warmup failed for {w['id']}: empty output")
+
         # Runs
         samples = []
+        actual_for_json = None
         for _ in range(args.runs):
-            start_ns = time.perf_counter_ns()
             if args.mode == "hosted-pipeline":
-                ret = run_hosted_pipeline(source, opt_level, max_inst, max_frames)
+                start_ns = time.perf_counter_ns()
+                actual = run_hosted_pipeline(source, opt_level, max_inst, max_frames)
                 end_ns = time.perf_counter_ns()
-                if ret != expected_ret:
-                    print(f"Run failed for {w['id']}", file=sys.stderr)
-                    sys.exit(1)
+
+                if actual != expected_ret:
+                    exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Run failed for {w['id']}")
+                actual_for_json = actual
             else:
+                start_ns = time.perf_counter_ns()
                 out = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
                 end_ns = time.perf_counter_ns()
+
                 if not out:
-                    print(f"Run failed for {w['id']}", file=sys.stderr)
-                    sys.exit(1)
+                    exit_error(args, "S3_BENCH_NATIVE_EMPTY", f"Run failed for {w['id']}: empty output")
+
             samples.append(end_ns - start_ns)
-            
+
         res = {
             "workload": w["id"],
             "status": "passed",
             "expected_return": expected_ret,
-            "actual_return": expected_ret,
+            "max_instructions": max_inst,
+            "max_frames": max_frames,
             "statistics": {
                 "unit": "ns",
                 "minimum": calc_min(samples),
@@ -254,11 +308,21 @@ def main():
                 "p95": calc_p95(samples),
             }
         }
+
+        if args.mode == "hosted-pipeline":
+            res["actual_return"] = actual_for_json
+        else:
+            # For native asm, we don't execute it, so no actual_return.
+            # We record artifact info instead.
+            res["artifact_kind"] = "gnu-x86-64-assembly"
+            res["artifact_size_bytes"] = artifact_size
+            res["artifact_sha256"] = artifact_sha256
+
         if args.include_samples:
             res["samples_ns"] = samples
-            
+
         results.append(res)
-        
+
     output_data = {
         "benchmark_format_version": BENCHMARK_FORMAT_VERSION,
         "metadata": metadata,
@@ -271,9 +335,9 @@ def main():
         },
         "results": results
     }
-    
+
     if args.format == "json":
-        out_str = json.dumps(output_data, indent=2, ensure_ascii=False)
+        out_str = json.dumps(output_data, indent=2, ensure_ascii=False, allow_nan=False) + "\n"
     else:
         lines = []
         for r in results:
@@ -286,16 +350,18 @@ def main():
             lines.append(f"  p95:    {s['p95'] / 1_000_000.0:.3f} ms")
             lines.append("")
         out_str = "\n".join(lines)
-        
+
     if args.output:
         try:
             with open(args.output, "w", encoding="utf-8") as f:
                 f.write(out_str)
         except Exception as e:
-            print(f"Failed to write output to {args.output}: {e}", file=sys.stderr)
-            sys.exit(1)
+            exit_error(args, "S3_BENCH_WRITE_FAILED", f"Failed to write output to {args.output}: {e}")
     else:
-        print(out_str)
+        print(out_str, end="" if args.format == "json" else "\n")
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.exit(1)
