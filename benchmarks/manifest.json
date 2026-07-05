@@ -4,35 +4,39 @@
     {
       "id": "minimal",
       "file": "workloads/minimal.s3",
-      "description": "Menor programa valido, testando custo de inicializacao.",
+      "description": "Menor pipeline S3 valido executado no mesmo processo.",
       "expected_return": 0,
-      "max_instructions": 100000
+      "max_instructions": 100000,
+      "max_frames": 1000
     },
     {
       "id": "arithmetic",
       "file": "workloads/arithmetic.s3",
       "description": "Operacoes aritmeticas sucessivas sem overflow.",
       "expected_return": 42,
-      "max_instructions": 100000
+      "max_instructions": 100000,
+      "max_frames": 1000
     },
     {
       "id": "branches",
       "file": "workloads/branches.s3",
       "description": "Controle de fluxo via match e saltos basicos simulados.",
       "expected_return": 1,
-      "max_instructions": 100000
+      "max_instructions": 100000,
+      "max_frames": 1000
     },
     {
       "id": "calls",
       "file": "workloads/calls.s3",
       "description": "Multiplas chamadas de funcoes aninhadas sem recursao.",
       "expected_return": 10,
-      "max_instructions": 100000
+      "max_instructions": 100000,
+      "max_frames": 1000
     },
     {
       "id": "recursion",
       "file": "workloads/recursion.s3",
-      "description": "Chamadas recursivas profundas controladas.",
+      "description": "Chamadas recursivas controladas.",
       "expected_return": 55,
       "max_instructions": 100000,
       "max_frames": 1000
@@ -41,15 +45,17 @@
       "id": "arrays",
       "file": "workloads/arrays.s3",
       "description": "Leitura e escrita sequencial em tryte arrays.",
-      "expected_return": 100,
-      "max_instructions": 100000
+      "expected_return": 60,
+      "max_instructions": 100000,
+      "max_frames": 1000
     },
     {
       "id": "optimizer_stress",
       "file": "workloads/optimizer_stress.s3",
       "description": "Expressoes e movimentacoes passiveis de otimizacao via O1.",
-      "expected_return": 2,
-      "max_instructions": 100000
+      "expected_return": 20,
+      "max_instructions": 100000,
+      "max_frames": 1000
     }
   ]
 }

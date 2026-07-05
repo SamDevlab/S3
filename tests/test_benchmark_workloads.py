@@ -1,51 +1,98 @@
 import pytest
+import json
+import os
 from pathlib import Path
 from tools.benchmark import load_manifest, run_hosted_pipeline
 from bootstrap.s3 import OptimizationLevel
 
-def test_manifest_structure():
-    manifest_path = Path(__file__).parent.parent / "benchmarks" / "manifest.json"
-    assert manifest_path.exists()
+def test_manifest_invalid_json(tmp_path):
+    p = tmp_path / "manifest.json"
+    p.write_text("{invalid")
+    with pytest.raises(ValueError, match="Invalid JSON"):
+        load_manifest(p)
 
-    manifest = load_manifest(manifest_path)
-    assert manifest["manifest_version"] == "1.0.0"
+def test_manifest_unsupported_version(tmp_path):
+    p = tmp_path / "manifest.json"
+    p.write_text(json.dumps({"manifest_version": "9.9.9"}))
+    with pytest.raises(ValueError, match="Unsupported manifest version"):
+        load_manifest(p)
 
-    workloads = manifest["workloads"]
-    assert len(workloads) == 7
+def test_manifest_missing_workloads(tmp_path):
+    p = tmp_path / "manifest.json"
+    p.write_text(json.dumps({"manifest_version": "1.0.0"}))
+    with pytest.raises(ValueError, match="Workloads must be a non-empty list"):
+        load_manifest(p)
 
-    ids = [w["id"] for w in workloads]
-    assert len(set(ids)) == 7
+def test_manifest_duplicate_id(tmp_path):
+    p = tmp_path / "manifest.json"
+    f1 = tmp_path / "f"
+    f2 = tmp_path / "f2"
+    f1.write_text("dummy")
+    f2.write_text("dummy")
 
-    for w in workloads:
-        assert (Path(__file__).parent.parent / "benchmarks" / w["file"]).exists()
-        assert not Path(w["file"]).is_absolute()
-        assert w["max_instructions"] > 0
-        assert "expected_return" in w
-        if "max_frames" in w:
-            assert w["max_frames"] > 0
+    p.write_text(json.dumps({
+        "manifest_version": "1.0.0",
+        "workloads": [
+            {"id": "minimal", "file": "f", "expected_return": 0, "max_instructions": 1, "max_frames": 1},
+            {"id": "minimal", "file": "f2", "expected_return": 0, "max_instructions": 1, "max_frames": 1}
+        ]
+    }))
+    with pytest.raises(ValueError, match="Duplicate workload ID"):
+        load_manifest(p)
 
-@pytest.mark.parametrize("workload_id", [
-    "minimal",
-    "arithmetic",
-    "branches",
-    "calls",
-    "recursion",
-    "arrays",
-    "optimizer_stress",
-])
-@pytest.mark.parametrize("opt", [OptimizationLevel.O0, OptimizationLevel.O1])
-def test_workload_execution(workload_id, opt):
-    manifest_path = Path(__file__).parent.parent / "benchmarks" / "manifest.json"
-    manifest = load_manifest(manifest_path)
-    w = next(w for w in manifest["workloads"] if w["id"] == workload_id)
+def test_manifest_missing_id(tmp_path):
+    p = tmp_path / "manifest.json"
+    f1 = tmp_path / "f"
+    f1.write_text("dummy")
+    p.write_text(json.dumps({
+        "manifest_version": "1.0.0",
+        "workloads": [{"file": "f", "expected_return": 0, "max_instructions": 1, "max_frames": 1}]
+    }))
+    with pytest.raises(ValueError, match="Invalid or missing ID"):
+        load_manifest(p)
 
-    w_path = Path(__file__).parent.parent / "benchmarks" / w["file"]
-    with w_path.open("r", encoding="utf-8") as f:
-        source = f.read()
+def test_manifest_invalid_file(tmp_path):
+    p = tmp_path / "manifest.json"
+    abs_path = "C:/absolute/path" if os.name == "nt" else "/absolute/path"
+    p.write_text(json.dumps({
+        "manifest_version": "1.0.0",
+        "workloads": [{"id": "minimal", "file": abs_path}]
+    }))
+    with pytest.raises(ValueError, match="Absolute path"):
+        load_manifest(p)
 
-    expected_ret = w["expected_return"]
-    max_inst = w["max_instructions"]
-    max_frames = w.get("max_frames")
+def test_manifest_traversal(tmp_path):
+    p = tmp_path / "manifest.json"
+    p.write_text(json.dumps({
+        "manifest_version": "1.0.0",
+        "workloads": [{"id": "minimal", "file": "../test"}]
+    }))
+    with pytest.raises(ValueError, match="Path traversal"):
+        load_manifest(p)
 
-    ret = run_hosted_pipeline(source, opt, max_inst, max_frames)
-    assert ret == expected_ret
+def test_manifest_limits(tmp_path):
+    p = tmp_path / "manifest.json"
+    f1 = tmp_path / "minimal.s3"
+    f1.write_text("dummy")
+    base = {"manifest_version": "1.0.0", "workloads": [{"id": "minimal", "file": "minimal.s3", "expected_return": 0, "max_instructions": 0, "max_frames": 1}]}
+    p.write_text(json.dumps(base))
+    with pytest.raises(ValueError, match="Invalid max_instructions"):
+        load_manifest(p)
+
+def test_load_official_manifest():
+    root = Path(__file__).resolve().parent.parent
+    p = root / "benchmarks" / "manifest.json"
+    data = load_manifest(p)
+    assert len(data["workloads"]) == 7
+
+def test_workloads_execution():
+    root = Path(__file__).resolve().parent.parent
+    p = root / "benchmarks" / "manifest.json"
+    data = load_manifest(p)
+
+    for w in data["workloads"]:
+        src = (root / "benchmarks" / w["file"]).read_text(encoding="utf-8")
+        ret_o0 = run_hosted_pipeline(src, OptimizationLevel.O0, w["max_instructions"], w["max_frames"])
+        ret_o1 = run_hosted_pipeline(src, OptimizationLevel.O1, w["max_instructions"], w["max_frames"])
+        assert ret_o0 == w["expected_return"]
+        assert ret_o1 == w["expected_return"]

@@ -1,11 +1,7 @@
 fn main() -> tryte:
-    mut arr: tryte[5] = [10, 20, 30, 40, 0]
-
-    mut sum: tryte = 0
-    sum = sum + arr[0]
-    sum = sum + arr[1]
-    sum = sum + arr[2]
-    sum = sum + arr[3]
-
-    arr[4] = sum
-    return arr[4]
+    mut arr: tryte[3] = [0, 0, 0]
+    mut idx: tryte = 1
+    arr[0] = 10
+    arr[idx] = 20
+    arr[2] = 30
+    return arr[0] + arr[1] + arr[2]

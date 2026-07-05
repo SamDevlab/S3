@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-"""In-process benchmark runner for S3."""
-
 import argparse
 import datetime
 import importlib.metadata
@@ -14,7 +11,7 @@ import time
 import hashlib
 from pathlib import Path
 
-# Direct imports - no ImportError hiding
+# Direct imports
 from bootstrap.s3 import OptimizationLevel, compile_source, run_source
 from bootstrap.s3.lexer import SyntaxMode
 from bootstrap.s3.assembly import ASSEMBLY_FORMAT_VERSION
@@ -22,13 +19,94 @@ from bootstrap.s3.backends.x86_64.backend import generate_native_assembly
 from bootstrap.s3.diagnostics import DIAGNOSTIC_SCHEMA_VERSION
 from bootstrap.s3.ir_serialization import IR_FORMAT_VERSION
 
+try:
+    import tomllib
+except ImportError:
+    try:
+        import tomli as tomllib
+    except ImportError:
+        tomllib = None
+
 BENCHMARK_FORMAT_VERSION = "1.0.0"
+
+def extract_format_and_output():
+    fmt = "text"
+    output = None
+    if "--format" in sys.argv:
+        idx = sys.argv.index("--format")
+        if idx + 1 < len(sys.argv):
+            fmt = sys.argv[idx + 1]
+    if "--output" in sys.argv:
+        idx = sys.argv.index("--output")
+        if idx + 1 < len(sys.argv):
+            output = sys.argv[idx + 1]
+
+    class MockArgs:
+        pass
+    a = MockArgs()
+    a.format = fmt
+    a.output = output
+    return a
+
+def exit_error(args, code: str, message: str):
+    fmt = getattr(args, "format", "text")
+    out = getattr(args, "output", None)
+
+    if fmt == "json":
+        err_obj = {
+            "benchmark_format_version": BENCHMARK_FORMAT_VERSION,
+            "status": "error",
+            "error": {
+                "code": code,
+                "message": message
+            }
+        }
+        out_str = json.dumps(err_obj, indent=2, ensure_ascii=False, allow_nan=False) + "\n"
+        if out:
+            try:
+                with open(out, "w", encoding="utf-8") as f:
+                    f.write(out_str)
+            except OSError as e:
+                err_obj2 = {
+                    "benchmark_format_version": BENCHMARK_FORMAT_VERSION,
+                    "status": "error",
+                    "error": {
+                        "code": "S3_BENCH_WRITE_FAILED",
+                        "message": f"Failed to write output to {out}: {e}"
+                    }
+                }
+                print(json.dumps(err_obj2, indent=2, ensure_ascii=False, allow_nan=False), file=sys.stderr)
+                sys.exit(1)
+            sys.exit(1)
+        else:
+            print(out_str, end="")
+            sys.exit(1)
+    else:
+        print(f"Error ({code}): {message}", file=sys.stderr)
+        sys.exit(1)
+
+class JsonArgumentParser(argparse.ArgumentParser):
+    def error(self, message):
+        args = extract_format_and_output()
+        exit_error(args, "S3_BENCH_INVALID_ARGUMENT", message)
 
 def get_distribution_version() -> str:
     try:
         return importlib.metadata.version("s3-bootstrap")
     except importlib.metadata.PackageNotFoundError:
-        return "0.7.0"  # fallback if not installed as a package, though it should be
+        pass
+
+    if tomllib:
+        try:
+            checkout_root = Path(__file__).resolve().parent.parent
+            pyproject_path = checkout_root / "pyproject.toml"
+            if pyproject_path.exists():
+                with pyproject_path.open("rb") as f:
+                    data = tomllib.load(f)
+                return data["project"]["version"]
+        except Exception:
+            pass
+    return "unavailable"
 
 def syntax_mode_to_string(mode: SyntaxMode) -> str:
     if mode == SyntaxMode.V0_5:
@@ -38,19 +116,21 @@ def syntax_mode_to_string(mode: SyntaxMode) -> str:
     return str(mode)
 
 def get_git_commit() -> str:
+    cwd = Path(__file__).resolve().parent.parent
     try:
         commit = subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL
+            ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL, cwd=cwd
         ).decode("utf-8").strip()
         return commit if commit else "unavailable"
     except Exception:
         return "unavailable"
 
 def is_git_dirty() -> str:
+    cwd = Path(__file__).resolve().parent.parent
     try:
         out = subprocess.check_output(
             ["git", "status", "--porcelain", "--untracked-files=normal"],
-            stderr=subprocess.DEVNULL
+            stderr=subprocess.DEVNULL, cwd=cwd
         ).strip()
         return "true" if out else "false"
     except Exception:
@@ -76,10 +156,10 @@ def gather_metadata(args, workloads_order: list[str]) -> dict:
         "processor": sanitize_processor(platform.processor()),
         "logical_cpus": os.cpu_count() or 1,
         "timestamp_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        "mode": args.mode,
-        "optimization": args.optimization,
-        "warmups": args.warmups,
-        "runs": args.runs,
+        "mode": getattr(args, "mode", "unknown"),
+        "optimization": getattr(args, "optimization", "unknown"),
+        "warmups": getattr(args, "warmups", 0),
+        "runs": getattr(args, "runs", 0),
         "workloads_order": workloads_order,
     }
 
@@ -119,8 +199,66 @@ def calc_p95(samples: list[int]) -> int:
     return s[rank - 1]
 
 def load_manifest(manifest_path: Path) -> dict:
-    with manifest_path.open("r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with manifest_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        raise ValueError("Invalid JSON")
+
+    if data.get("manifest_version") != "1.0.0":
+        raise ValueError("Unsupported manifest version")
+
+    workloads = data.get("workloads")
+    if not isinstance(workloads, list) or not workloads:
+        raise ValueError("Workloads must be a non-empty list")
+
+    valid_ids = {"minimal", "arithmetic", "branches", "calls", "recursion", "arrays", "optimizer_stress"}
+    seen_ids = set()
+
+    benchmarks_dir = manifest_path.parent
+
+    for w in workloads:
+        w_id = w.get("id")
+        if not isinstance(w_id, str):
+            raise ValueError("Invalid or missing ID in workload")
+        if w_id in seen_ids:
+            raise ValueError(f"Duplicate workload ID: {w_id}")
+        seen_ids.add(w_id)
+
+        file_path = w.get("file")
+        if not isinstance(file_path, str):
+            raise ValueError(f"Invalid file for workload {w_id}")
+
+        if Path(file_path).is_absolute():
+            raise ValueError(f"Absolute path in workload {w_id}")
+        if ".." in file_path:
+            raise ValueError(f"Path traversal in workload {w_id}")
+
+        full_path = (benchmarks_dir / file_path).resolve()
+        try:
+            full_path.relative_to(benchmarks_dir.resolve())
+        except ValueError:
+            raise ValueError(f"Path traversal in workload {w_id}")
+
+        if not full_path.exists():
+            raise ValueError(f"File {file_path} does not exist")
+
+        expected_return = w.get("expected_return")
+        if not isinstance(expected_return, int):
+            raise ValueError(f"Invalid expected_return in {w_id}")
+
+        max_instructions = w.get("max_instructions")
+        if not isinstance(max_instructions, int) or max_instructions <= 0:
+            raise ValueError(f"Invalid max_instructions in {w_id}")
+
+        max_frames = w.get("max_frames")
+        if not isinstance(max_frames, int) or max_frames <= 0:
+            raise ValueError(f"Invalid max_frames in {w_id}")
+
+    if seen_ids != valid_ids:
+        raise ValueError("Manifest must contain exactly the seven official workloads")
+
+    return data
 
 def run_hosted_pipeline(source: str, opt: OptimizationLevel, max_inst: int, max_frames: int | None) -> int:
     kwargs = {"max_instructions": max_inst}
@@ -135,32 +273,8 @@ def run_native_asm_pipeline(source: str, opt: OptimizationLevel, max_inst: int, 
         kwargs["max_frames"] = max_frames
     return generate_native_assembly(compilation.assembly, **kwargs)
 
-def exit_error(args, code: str, message: str, print_to_stderr=True):
-    if args.format == "json":
-        err_obj = {
-            "benchmark_format_version": BENCHMARK_FORMAT_VERSION,
-            "status": "error",
-            "error": {
-                "code": code,
-                "message": message
-            }
-        }
-        out_str = json.dumps(err_obj, indent=2, ensure_ascii=False, allow_nan=False) + "\n"
-        if args.output:
-            try:
-                with open(args.output, "w", encoding="utf-8") as f:
-                    f.write(out_str)
-            except Exception:
-                sys.exit(1)
-        else:
-            print(out_str, end="")
-    else:
-        if print_to_stderr:
-            print(f"Error ({code}): {message}", file=sys.stderr)
-    sys.exit(1)
-
 def parse_args():
-    parser = argparse.ArgumentParser(description="In-process benchmark runner for S3")
+    parser = JsonArgumentParser(description="In-process benchmark runner for S3")
     parser.add_argument("--list", action="store_true", help="List available workloads")
     parser.add_argument("--mode", choices=["hosted-pipeline", "native-asm-pipeline"], help="Benchmark mode")
     parser.add_argument("--optimization", choices=["O0", "O1"], help="Optimization level")
@@ -172,12 +286,30 @@ def parse_args():
     parser.add_argument("--include-samples", action="store_true", help="Include raw samples in JSON output")
     return parser.parse_args()
 
+def write_output(args, out_str: str):
+    if args.output:
+        try:
+            with open(args.output, "w", encoding="utf-8") as f:
+                f.write(out_str)
+        except OSError as e:
+            if args.format == "json":
+                err_obj = {
+                    "benchmark_format_version": BENCHMARK_FORMAT_VERSION,
+                    "status": "error",
+                    "error": {
+                        "code": "S3_BENCH_WRITE_FAILED",
+                        "message": f"Failed to write output to {args.output}: {e}"
+                    }
+                }
+                print(json.dumps(err_obj, indent=2, ensure_ascii=False, allow_nan=False), file=sys.stderr)
+            else:
+                print(f"Error (S3_BENCH_WRITE_FAILED): Failed to write output to {args.output}: {e}", file=sys.stderr)
+            sys.exit(1)
+    else:
+        print(out_str, end="" if args.format == "json" else "\n")
+
 def main():
-    try:
-        args = parse_args()
-    except SystemExit:
-        # argparse handles its own exits; let it do so.
-        raise
+    args = parse_args()
 
     root_dir = Path(__file__).resolve().parent.parent
     manifest_path = root_dir / "benchmarks" / "manifest.json"
@@ -194,10 +326,18 @@ def main():
 
     if args.list:
         if args.format == "json":
-            # For list, just print IDs in json or text
-            pass
-        for w in workloads:
-            print(w["id"])
+            out_obj = {
+                "benchmark_format_version": BENCHMARK_FORMAT_VERSION,
+                "status": "success",
+                "workloads": [
+                    {"id": w["id"], "description": w.get("description", "")} for w in workloads
+                ]
+            }
+            out_str = json.dumps(out_obj, indent=2, ensure_ascii=False, allow_nan=False) + "\n"
+            write_output(args, out_str)
+        else:
+            for w in workloads:
+                print(w["id"])
         sys.exit(0)
 
     if args.warmups is None or args.warmups < 0:
@@ -235,8 +375,25 @@ def main():
         max_inst = w["max_instructions"]
         max_frames = w.get("max_frames")
 
-        # Native ASM Determinism Check
+        functional_validation = None
+
         if args.mode == "native-asm-pipeline":
+            # 1. Functional validation in hosted pipeline
+            try:
+                actual = run_hosted_pipeline(source, opt_level, max_inst, max_frames)
+            except Exception as e:
+                exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Workload {w['id']} functional validation failed with exception: {e}")
+            if actual != expected_ret:
+                exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Workload {w['id']} functional validation failed: expected {expected_ret}, got {actual}")
+
+            functional_validation = {
+                "mode": "hosted-pipeline",
+                "status": "passed",
+                "expected_return": expected_ret,
+                "actual_return": actual
+            }
+
+            # 2. Determinism check
             try:
                 out1 = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
                 out2 = run_native_asm_pipeline(source, opt_level, max_inst, max_frames)
@@ -251,14 +408,14 @@ def main():
             artifact_size = len(out1.encode("utf-8"))
             artifact_sha256 = hashlib.sha256(out1.encode("utf-8")).hexdigest()
 
-        # Validation run (functional validation)
-        try:
-            if args.mode == "hosted-pipeline":
+        else:
+            # For hosted pipeline, we just want to run once to fail early if invalid
+            try:
                 actual = run_hosted_pipeline(source, opt_level, max_inst, max_frames)
                 if actual != expected_ret:
                     exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Workload {w['id']} failed: expected {expected_ret}, got {actual}")
-        except Exception as e:
-            exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Workload {w['id']} failed with exception: {e}")
+            except Exception as e:
+                exit_error(args, "S3_BENCH_INCORRECT_RESULT", f"Workload {w['id']} failed with exception: {e}")
 
         # Warmups
         for _ in range(args.warmups):
@@ -312,8 +469,7 @@ def main():
         if args.mode == "hosted-pipeline":
             res["actual_return"] = actual_for_json
         else:
-            # For native asm, we don't execute it, so no actual_return.
-            # We record artifact info instead.
+            res["functional_validation"] = functional_validation
             res["artifact_kind"] = "gnu-x86-64-assembly"
             res["artifact_size_bytes"] = artifact_size
             res["artifact_sha256"] = artifact_sha256
@@ -351,14 +507,7 @@ def main():
             lines.append("")
         out_str = "\n".join(lines)
 
-    if args.output:
-        try:
-            with open(args.output, "w", encoding="utf-8") as f:
-                f.write(out_str)
-        except Exception as e:
-            exit_error(args, "S3_BENCH_WRITE_FAILED", f"Failed to write output to {args.output}: {e}")
-    else:
-        print(out_str, end="" if args.format == "json" else "\n")
+    write_output(args, out_str)
 
 if __name__ == "__main__":
     try:

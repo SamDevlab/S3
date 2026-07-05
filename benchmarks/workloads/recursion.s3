@@ -1,9 +1,9 @@
 fn fib(n: tryte) -> tryte:
     match n <=> 1:
         -1:
-            return 0
+            return n
         0:
-            return 1
+            return n
         1:
             return fib(n - 1) + fib(n - 2)
 
