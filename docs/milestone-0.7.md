@@ -2,12 +2,19 @@
 
 ## Estado
 
-E0 normativa concluída. E1 paridade hospedada concluída. E2 instrumentação nativa implementada. E3 (validação ELF real) concluída e validada na branch isolada `milestone-0.7-e2-e3`, com integração na main pendente antes do merge.
+E0 normativa concluída. E1 paridade hospedada concluída. E2 instrumentação nativa implementada. E3 (validação ELF real) concluída e integrada na branch `main`.
+O estado funcional do Marco 0.7 está concluído. A E4 (fechamento documental, empacotamento e preparação da versão 0.7.0) está concluída localmente; publicação pendente.
+
+Todos os critérios de aceitação foram satisfeitos. A CI da `main` (Run 28745917775) validou:
+- 622 passed por job Python (3.11, 3.12, 3.13);
+- 92 passed no job nativo x86-64, sem skips.
+
+As versões foram preservadas (fonte 0.6, IR 0.5.0, Assembly 0.5.0, schema 1.0.0), a compatibilidade V0.5 continua explícita sem fallback, e nenhum item fora do escopo foi incorporado. Os riscos residuais relativos à exaustão diferente em O0/O1 e ao contador global foram assumidos.
 
 Este documento fecha o escopo do Marco 0.7 conforme o
 [ADR-0014](decisions/ADR-0014-hosted-and-native-instruction-limit.md). A E0
 formalizou a decisão normativa, a E1 implementou a paridade hospedada e a E2
-implementou a instrumentação nativa; a E3 iniciou a validação ELF; a E4 é o fechamento final.
+implementou a instrumentação nativa; a E3 concluiu a validação ELF; a E4 é o fechamento final, atualmente preparada localmente.
 
 ## Decisão normativa
 
@@ -308,14 +315,12 @@ maior. Não se propõe um modo ilimitado implícito.
 3. **E2 — instrumentação nativa (concluída):** implementar contador, handlers e testes
    unitários da assembly sem alterar a toolchain. Adicionada a flag para os
    comandos `native-asm`, `build` e `run-native`.
-4. **E3 — validação ELF (concluída e validada na branch):** executar diferenciais e limites reais no Linux
+4. **E3 — validação ELF (concluída e integrada):** executar diferenciais e limites reais no Linux
    x86-64 obrigatório, incluindo O0/O1 e reprodutibilidade.
-5. **E4 — fechamento (não iniciada):** auditar compatibilidade, documentação, empacotamento e
+5. **E4 — fechamento (concluída localmente; publicação pendente):** auditar compatibilidade, documentação, empacotamento e
    preparar a distribuição 0.7.0 sem mudar as versões dos formatos.
 
-Cada entrega deve ser pequena, revisável e manter a suíte verde. A conclusão
-da E0 não implementa funcionalidade. E1 não autoriza antecipar E2, e nenhuma
-delas autoriza outra direção Pós-MVP.
+Cada entrega deve ser pequena, revisável e manter a suíte verde. O Marco 0.7 encerra-se com a E4.
 
 ## Riscos
 

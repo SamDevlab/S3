@@ -3,8 +3,8 @@
 [![Tests](https://github.com/SamDevlab/S3/actions/workflows/tests.yml/badge.svg)](https://github.com/SamDevlab/S3/actions/workflows/tests.yml)
 
 S3 é uma linguagem experimental de sistemas baseada em ternário balanceado.
-Este repositório contém o primeiro MVP publicável, distribuído como
-`s3-bootstrap` 0.6.0, com sintaxe fonte V0.6 por padrão e formatos IR JSON e
+Este repositório contém a versão publicável
+`s3-bootstrap` 0.7.0, com sintaxe fonte V0.6 por padrão e formatos IR JSON e
 S3 Assembly 0.5.0:
 
 ```text
@@ -35,6 +35,8 @@ A implementação atual oferece:
 - ELF independente de Python, C, LLVM, libc e runtime padrão;
 - System V AMD64, inclusive argumentos adicionais pela pilha;
 - entrada explícita de toda função nativa no bloco `entry`;
+- limite hospedado e nativo configurável de 100000 instruções por padrão;
+- faixa nativa u64 isolada por processo;
 - limite nativo configurável de 1024 frames por padrão;
 - diagnósticos nativos com função, bloco, opcode, origem e valor;
 - S3 Assembly `.s3asm 0.5.0` com leitura de legado;
@@ -46,14 +48,15 @@ A implementação atual oferece:
 
 Não existem `PHI`, `SUBTRACT`, `TSUB`, heap ou memória global.
 
-## Contrato do MVP 0.6
+## Contrato do Marco 0.7
 
-O primeiro MVP publicável inclui fonte V0.6 por padrão e V0.5 por seleção
+A versão 0.7.0 inclui fonte V0.6 por padrão e V0.5 por seleção
 explícita; `trit`, `tryte`, funções, chamadas, recursão, mutabilidade,
 `match`, arrays estáticos e acesso indexado; bounds e análise de inicialização;
 IR verificada, O0/O1, S3 Assembly e emulador; backend experimental Linux
-x86-64 com ELF independente de Python depois do build; diagnósticos em texto e
-JSON; CLI pública; e suporte a Python 3.11, 3.12 e 3.13.
+x86-64 com ELF independente de Python depois do build; limite de instruções
+hospedado e nativo compartilhado (default 100000); limite de frames nativo;
+diagnósticos em texto e JSON; CLI pública; e suporte a Python 3.11, 3.12 e 3.13.
 
 Ficam fora deste MVP: ponteiros, heap, memória global, structs, strings,
 módulos, I/O da linguagem, package manager, LSP, depurador, generics, macros,
@@ -96,8 +99,7 @@ autodetecção, fallback ou migração automática; consulte o
 [guia de migração 0.6](docs/migration-source-0.5-to-0.6.md).
 
 A versão da fonte é independente dos artefatos: IR JSON e S3 Assembly
-continuam em 0.5.0. A Entrega E foi validada remotamente e o Marco 0.6 está
-concluído.
+continuam em 0.5.0. O Marco 0.7 está concluído.
 
 ```bash
 s3 tokens examples/static_array.s3
@@ -107,12 +109,12 @@ s3 ir-json examples/static_array.s3 -o build/array.s3ir.json
 s3 verify-ir build/array.s3ir.json
 s3 asm examples/static_array.s3
 s3 asm examples/first.s3 -O1
-s3 run examples/static_array.s3
+s3 run examples/static_array.s3 --max-instructions 200000
 s3 run examples/static_array.s3 --diagnostic-format json
-s3 native-asm examples/first.s3
+s3 native-asm examples/first.s3 --max-instructions 200000
 s3 native-asm examples/first.s3 -o build/first.s
-s3 build examples/first.s3 -o build/first
-s3 run-native examples/first.s3 -O1 --max-frames 128
+s3 build examples/first.s3 -o build/first --max-instructions 200000
+s3 run-native examples/first.s3 -O1 --max-frames 128 --max-instructions 200000
 s3 --source-syntax 0.5 run legacy-v0.5.s3
 ```
 
@@ -241,8 +243,9 @@ memória por frame:  6561 trits lógicos (3^8)
 segunda escrita imutável ou excesso de memória terminam com diagnóstico.
 
 Ciclos IR e assembly são permitidos quando estruturalmente válidos. O emulador
-limita instruções; emulador e nativo limitam frames S3. O contador nativo é
-estado privado do runtime, não memória global da linguagem.
+limita instruções e o backend nativo impõe o mesmo limite no ELF, respeitando
+o teto u64 de `1` a `2**64 - 1` na CPU. Emulador e nativo limitam frames S3.
+O contador nativo é estado privado do runtime, não memória global da linguagem.
 
 ## Backend x86-64
 
@@ -291,8 +294,7 @@ O target nativo é somente Linux x86-64. Não há interoperabilidade C, JIT, TCO
 ou otimização interprocedural. ARM64 possui apenas um
 [estudo de viabilidade](docs/arm64-feasibility.md).
 
-O Marco 0.6 está concluído: D2B e Entrega E foram validadas remotamente. Os
-recursos classificados como Pós-MVP continuam não implementados e o Marco 0.7
-não foi iniciado. A tag e a release 0.6.0 ainda não foram publicadas. Consulte
+O Marco 0.7 está concluído e a versão 0.7.0 preparada para publicação. Os
+recursos classificados como Pós-MVP continuam não implementados. Consulte
 o [roadmap](docs/roadmap.md) e as
-[notas de lançamento](docs/releases/0.6.0.md).
+[notas de lançamento](docs/releases/0.7.0.md).

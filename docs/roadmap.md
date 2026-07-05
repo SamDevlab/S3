@@ -91,7 +91,7 @@ Entrega E:
   verde em Python 3.11–3.13 e Linux x86-64 nativo;
 - Marco 0.6 concluído.
 
-## Marco 0.7 — paridade do limite de instruções (E0, E1, E2 e E3 concluídas)
+## Marco 0.7 — paridade do limite de instruções (concluído)
 
 A E0 aprovou o contrato normativo do limite de instruções. A E1 implementou
 a paridade hospedada. A E2 implementou a instrumentação nativa. O contrato está no
@@ -100,22 +100,24 @@ a paridade hospedada. A E2 implementou a instrumentação nativa. O contrato est
 
 Estado:
 
-- E0, decisão normativa: concluída e publicada;
+- E0, decisão normativa: concluída;
 - E1, paridade hospedada e interface pública: concluída;
 - E2, instrumentação nativa: concluída;
-- E3, validação ELF: concluída e validada na branch (integração pendente);
-- E4, fechamento: não iniciada.
+- E3, validação ELF: concluída;
+- E4, fechamento: concluída localmente; publicação pendente.
 
-O que a E1 e a E2 entregaram:
+O que a E1, E2 e E3 entregaram:
 
 - `DEFAULT_MAX_INSTRUCTIONS = 100_000` como constante pública em `emulator.py`;
 - `max_instructions` exposto em `run_source`, `execute_assembly` e `generate_native_assembly`;
 - `s3 run`, `native-asm`, `build` e `run-native` aceitando `--max-instructions N` com validação de valores inválidos;
 - contador de instruções e falhas estruturadas instrumentadas no backend x86-64;
-- diagnóstico `S3E_RUNTIME_INSTRUCTION_LIMIT` hospedado preservado sem alteração.
+- diagnóstico `S3E_RUNTIME_INSTRUCTION_LIMIT` hospedado preservado sem alteração;
+- validação ELF real O0/O1, controle de fluxo e chamadas, e preservação da faixa u64 nativa.
 
 O default aprovado é `100000` opcodes S3 Assembly executados. Fonte, gramática,
 AST, semântica, IR 0.5.0, Assembly 0.5.0 e schema diagnóstico 1.0.0 não mudam.
+Nenhuma outra funcionalidade foi incorporada.
 
 ## Pós-MVP / marcos futuros
 
