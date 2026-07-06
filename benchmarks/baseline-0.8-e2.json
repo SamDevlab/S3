@@ -1,0 +1,300 @@
+{
+  "baseline_format_version": "1.0.0",
+  "benchmark_format_version": "1.1.0",
+  "workloads": {
+    "minimal": {
+      "O0": {
+        "expected_return": 0,
+        "ir": {
+          "function_count": 1,
+          "block_count": 1,
+          "instruction_count": 2
+        },
+        "s3_assembly": {
+          "function_count": 1,
+          "block_count": 1,
+          "opcode_count": 2,
+          "textual_size_bytes": 144,
+          "sha256": "ab038877d912135cf036bb50407bd070f8d2aad9f754cc870be0c8aede068f41"
+        },
+        "execution": {
+          "executed_s3_opcodes": 2,
+          "maximum_frame_depth_observed": 1,
+          "function_call_count": 0
+        }
+      },
+      "O1": {
+        "expected_return": 0,
+        "ir": {
+          "function_count": 1,
+          "block_count": 1,
+          "instruction_count": 2
+        },
+        "s3_assembly": {
+          "function_count": 1,
+          "block_count": 1,
+          "opcode_count": 2,
+          "textual_size_bytes": 144,
+          "sha256": "ab038877d912135cf036bb50407bd070f8d2aad9f754cc870be0c8aede068f41"
+        },
+        "execution": {
+          "executed_s3_opcodes": 2,
+          "maximum_frame_depth_observed": 1,
+          "function_call_count": 0
+        }
+      }
+    },
+    "arithmetic": {
+      "O0": {
+        "expected_return": 42,
+        "ir": {
+          "function_count": 1,
+          "block_count": 1,
+          "instruction_count": 22
+        },
+        "s3_assembly": {
+          "function_count": 1,
+          "block_count": 1,
+          "opcode_count": 22,
+          "textual_size_bytes": 1378,
+          "sha256": "130ccaf42c9cc8ec7dc8abb6f630a5491eb9388037e73f0c05519c7fe11657a3"
+        },
+        "execution": {
+          "executed_s3_opcodes": 22,
+          "maximum_frame_depth_observed": 1,
+          "function_call_count": 0
+        }
+      },
+      "O1": {
+        "expected_return": 42,
+        "ir": {
+          "function_count": 1,
+          "block_count": 1,
+          "instruction_count": 22
+        },
+        "s3_assembly": {
+          "function_count": 1,
+          "block_count": 1,
+          "opcode_count": 22,
+          "textual_size_bytes": 1378,
+          "sha256": "130ccaf42c9cc8ec7dc8abb6f630a5491eb9388037e73f0c05519c7fe11657a3"
+        },
+        "execution": {
+          "executed_s3_opcodes": 22,
+          "maximum_frame_depth_observed": 1,
+          "function_call_count": 0
+        }
+      }
+    },
+    "branches": {
+      "O0": {
+        "expected_return": 1,
+        "ir": {
+          "function_count": 2,
+          "block_count": 9,
+          "instruction_count": 47
+        },
+        "s3_assembly": {
+          "function_count": 2,
+          "block_count": 9,
+          "opcode_count": 47,
+          "textual_size_bytes": 3079,
+          "sha256": "99f90c3c7cdef3d9fea753220d324725e85dc131c7a5cef44daabcdac82bb2ab"
+        },
+        "execution": {
+          "executed_s3_opcodes": 48,
+          "maximum_frame_depth_observed": 2,
+          "function_call_count": 2
+        }
+      },
+      "O1": {
+        "expected_return": 1,
+        "ir": {
+          "function_count": 2,
+          "block_count": 9,
+          "instruction_count": 47
+        },
+        "s3_assembly": {
+          "function_count": 2,
+          "block_count": 9,
+          "opcode_count": 47,
+          "textual_size_bytes": 3079,
+          "sha256": "99f90c3c7cdef3d9fea753220d324725e85dc131c7a5cef44daabcdac82bb2ab"
+        },
+        "execution": {
+          "executed_s3_opcodes": 48,
+          "maximum_frame_depth_observed": 2,
+          "function_call_count": 2
+        }
+      }
+    },
+    "calls": {
+      "O0": {
+        "expected_return": 10,
+        "ir": {
+          "function_count": 6,
+          "block_count": 6,
+          "instruction_count": 22
+        },
+        "s3_assembly": {
+          "function_count": 6,
+          "block_count": 6,
+          "opcode_count": 22,
+          "textual_size_bytes": 1415,
+          "sha256": "c848fd2acda7a9dbef075a4ef892b49a7402b323dc535ba95fe4de356794f63a"
+        },
+        "execution": {
+          "executed_s3_opcodes": 40,
+          "maximum_frame_depth_observed": 6,
+          "function_call_count": 10
+        }
+      },
+      "O1": {
+        "expected_return": 10,
+        "ir": {
+          "function_count": 6,
+          "block_count": 6,
+          "instruction_count": 22
+        },
+        "s3_assembly": {
+          "function_count": 6,
+          "block_count": 6,
+          "opcode_count": 22,
+          "textual_size_bytes": 1415,
+          "sha256": "c848fd2acda7a9dbef075a4ef892b49a7402b323dc535ba95fe4de356794f63a"
+        },
+        "execution": {
+          "executed_s3_opcodes": 40,
+          "maximum_frame_depth_observed": 6,
+          "function_call_count": 10
+        }
+      }
+    },
+    "recursion": {
+      "O0": {
+        "expected_return": 55,
+        "ir": {
+          "function_count": 2,
+          "block_count": 5,
+          "instruction_count": 18
+        },
+        "s3_assembly": {
+          "function_count": 2,
+          "block_count": 5,
+          "opcode_count": 18,
+          "textual_size_bytes": 1219,
+          "sha256": "1e8bc27fdc32f0717bd962af9620cf294c818d32d08fa6b8de5766f10e6aac7e"
+        },
+        "execution": {
+          "executed_s3_opcodes": 1503,
+          "maximum_frame_depth_observed": 11,
+          "function_call_count": 177
+        }
+      },
+      "O1": {
+        "expected_return": 55,
+        "ir": {
+          "function_count": 2,
+          "block_count": 5,
+          "instruction_count": 16
+        },
+        "s3_assembly": {
+          "function_count": 2,
+          "block_count": 5,
+          "opcode_count": 16,
+          "textual_size_bytes": 1101,
+          "sha256": "917f75e9bf51361260e56e39da2bf7e32273fed37b05a91fa924e7b6bffbcf86"
+        },
+        "execution": {
+          "executed_s3_opcodes": 1327,
+          "maximum_frame_depth_observed": 11,
+          "function_call_count": 177
+        }
+      }
+    },
+    "arrays": {
+      "O0": {
+        "expected_return": 60,
+        "ir": {
+          "function_count": 1,
+          "block_count": 1,
+          "instruction_count": 31
+        },
+        "s3_assembly": {
+          "function_count": 1,
+          "block_count": 1,
+          "opcode_count": 31,
+          "textual_size_bytes": 1839,
+          "sha256": "c49fed4584d996f485830df7475beaedd2af3a950559b9ce15ded340656c9e3d"
+        },
+        "execution": {
+          "executed_s3_opcodes": 31,
+          "maximum_frame_depth_observed": 1,
+          "function_call_count": 0
+        }
+      },
+      "O1": {
+        "expected_return": 60,
+        "ir": {
+          "function_count": 1,
+          "block_count": 1,
+          "instruction_count": 31
+        },
+        "s3_assembly": {
+          "function_count": 1,
+          "block_count": 1,
+          "opcode_count": 31,
+          "textual_size_bytes": 1839,
+          "sha256": "c49fed4584d996f485830df7475beaedd2af3a950559b9ce15ded340656c9e3d"
+        },
+        "execution": {
+          "executed_s3_opcodes": 31,
+          "maximum_frame_depth_observed": 1,
+          "function_call_count": 0
+        }
+      }
+    },
+    "optimizer_stress": {
+      "O0": {
+        "expected_return": 20,
+        "ir": {
+          "function_count": 1,
+          "block_count": 1,
+          "instruction_count": 18
+        },
+        "s3_assembly": {
+          "function_count": 1,
+          "block_count": 1,
+          "opcode_count": 18,
+          "textual_size_bytes": 1151,
+          "sha256": "af9b896776eea080ef56e2930cb9699f206946711a2b5e4cc6f8db4d50d27d0c"
+        },
+        "execution": {
+          "executed_s3_opcodes": 18,
+          "maximum_frame_depth_observed": 1,
+          "function_call_count": 0
+        }
+      },
+      "O1": {
+        "expected_return": 20,
+        "ir": {
+          "function_count": 1,
+          "block_count": 1,
+          "instruction_count": 18
+        },
+        "s3_assembly": {
+          "function_count": 1,
+          "block_count": 1,
+          "opcode_count": 18,
+          "textual_size_bytes": 1151,
+          "sha256": "af9b896776eea080ef56e2930cb9699f206946711a2b5e4cc6f8db4d50d27d0c"
+        },
+        "execution": {
+          "executed_s3_opcodes": 18,
+          "maximum_frame_depth_observed": 1,
+          "function_call_count": 0
+        }
+      }
+    }
+  }
+}

@@ -19,7 +19,7 @@ from bootstrap.s3.semantic import analyze
 from bootstrap.s3.lowering import lower
 from bootstrap.s3.optimizer import optimize_ir
 from bootstrap.s3.codegen import generate_assembly
-from bootstrap.s3.emulator import Emulator, DEFAULT_MAX_FRAMES, DEFAULT_MAX_INSTRUCTIONS
+from bootstrap.s3.emulator import Emulator, DEFAULT_MAX_FRAMES
 from bootstrap.s3.assembly import ASSEMBLY_FORMAT_VERSION
 from bootstrap.s3.backends.x86_64.backend import generate_native_assembly
 from bootstrap.s3.diagnostics import DIAGNOSTIC_SCHEMA_VERSION

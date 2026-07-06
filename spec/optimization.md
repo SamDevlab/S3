@@ -50,7 +50,10 @@ corrupção de estado nem efeitos do opcode excedente.
 
 ## Otimizações baseadas em evidências (Marco 0.8)
 
-Qualquer alteração ou adição nos passes de O1 será estritamente avaliada pelas
-métricas isoladas e normativas da infraestrutura de medição do Marco 0.8, não
-sendo admitidas otimizações às cegas ou especulativas na linguagem S3 que não
-possuam comprovação em relatórios de desempenho oficiais.
+Qualquer alteração ou adição nos passes de O1 deve ser avaliada com as
+métricas da infraestrutura de medição do Marco 0.8. As métricas temporais são
+informativas, enquanto métricas determinísticas de estrutura gerada e
+instruções executadas podem funcionar como gates de CI por meio do baseline
+determinístico. Otimizações devem preservar a semântica e os contratos públicos
+da linguagem S3 e ser acompanhadas por evidências reproduzíveis. Nenhuma nova
+regra de otimização foi implementada nesta entrega.

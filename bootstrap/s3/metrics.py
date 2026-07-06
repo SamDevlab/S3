@@ -10,6 +10,7 @@ from typing import Callable
 @dataclass
 class EmulationMetrics:
     """Metrics collected during an emulation run."""
+
     executed_s3_opcodes: int = 0
     maximum_frame_depth_observed: int = 0
     # Counts only TCALLs. The entry into 'main' is not counted.
@@ -30,24 +31,27 @@ class PhaseTimer:
             raise ValueError(f"Cannot start '{name}' while '{self._current_phase}' is running")
         if name in self._phases:
             raise ValueError(f"Phase '{name}' was already measured")
+        start_time = self._clock()
         self._current_phase = name
-        self._start_time = self._clock()
+        self._start_time = start_time
 
     def stop(self, name: str) -> None:
         if self._current_phase != name:
             raise ValueError(f"Cannot stop '{name}', currently in '{self._current_phase}'")
         if self._start_time is None:
             raise ValueError(f"Phase '{name}' was never started")
-            
-        end_time = self._clock()
-        duration = end_time - self._start_time
-        
-        self._current_phase = None
-        self._start_time = None
-        
+
+        start_time = self._start_time
+        try:
+            end_time = self._clock()
+        finally:
+            self._current_phase = None
+            self._start_time = None
+
+        duration = end_time - start_time
         if duration < 0:
             raise ValueError("Negative duration observed")
-            
+
         self._phases[name] = duration
 
     def measure(self, name: str):
@@ -61,16 +65,19 @@ class PhaseTimer:
                 self.timer.start(self.phase_name)
 
             def __exit__(self, exc_type, exc_val, exc_tb):
+                if exc_type is None:
+                    self.timer.stop(self.phase_name)
+                    return False
+
+                assert exc_val is not None
                 try:
                     self.timer.stop(self.phase_name)
-                except ValueError:
-                    # Se ocorrer erro original dentro do context, não falhar no stop
-                    # Apenas limpamos o estado se já não tiver sido feito
-                    if self.timer._current_phase == self.phase_name:
-                        self.timer._current_phase = None
-                        self.timer._start_time = None
-                    if exc_type is None:
-                        raise
+                except BaseException as stop_exc:
+                    raise BaseExceptionGroup(
+                        "Phase execution and stop both failed",
+                        [exc_val, stop_exc],
+                    ) from None
+                return False
 
         return _Context(self, name)
 
