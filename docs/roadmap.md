@@ -132,16 +132,19 @@ Estado atual:
 - E2, tempos por fase, métricas e baseline determinístico: concluída e
   integrada pelo PR #4, com CI pós-merge verde;
 - E3, CLI e ELF Linux x86-64: etapa atual, com a primeira fundação interna de
-  build, artefato, execução direta e validação funcional; os modos públicos e
-  o ciclo completo de amostragem continuam pendentes;
+  build, artefato, execução direta, validação funcional, estatísticas puras e
+  amostragem validada do mesmo ELF; os modos públicos, a serialização JSON da
+  E3 e `cli-end-to-end` continuam pendentes;
 - E4, diagnóstico de gargalo: não iniciada;
 - E5, otimização dirigida por evidência: não iniciada;
 - E6, fechamento (sem versão 0.8.0 publicada ainda): futura.
 
 A E3 coletará evidências sem escolher ou implementar otimizações. Tempos serão
 informativos; correção funcional, completude dos casos e formatos
-determinísticos serão gates. A primeira unidade não expõe novos modos, não
-calcula estatísticas agregadas e não implementa `cli-end-to-end`.
+determinísticos serão gates. A implementação parcial atual não expõe novos
+modos, mantém o JSON público inalterado, ainda não implementa `cli-end-to-end`
+e exercita a amostragem interna O0/O1 do workload `minimal` com build único,
+preflight, um warmup descartado e três runs medidos.
 
 ## Pós-MVP / marcos futuros
 

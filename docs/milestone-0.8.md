@@ -5,9 +5,10 @@
 E0, E1 e E2 estão concluídas e integradas. A E2 foi incorporada pelo PR #4,
 com o baseline determinístico oficial e a CI pós-merge validados. A E3 está
 formalmente aberta para especificar a medição da CLI completa e da execução
-isolada de ELF Linux x86-64. Sua implementação começou apenas pela fundação
-interna que separa build, execução direta e validação funcional do artefato;
-as superfícies públicas e o ciclo de amostragem continuam pendentes. E4 e E5
+isolada de ELF Linux x86-64. Sua implementação começou pela fundação interna
+que separa build, execução direta, validação funcional e amostragem validada do
+artefato; as superfícies públicas e a serialização da E3 continuam pendentes.
+E4 e E5
 não foram iniciadas. Nenhuma otimização estrutural de linguagem no S3 foi
 criada, e a versão 0.8.0 ainda não se encontra definida, versionada ou com meta
 de publicação engatilhada. O repositório segue na distribuição publicável
@@ -172,9 +173,10 @@ Para `elf-execution`, a sequência obrigatória é:
 
 ```text
 construir uma vez
-validar o artefato
-executar warmups
-executar amostras medidas
+executar preflight funcional
+validar o preflight
+executar warmups validados e descartados
+executar amostras medidas e validadas
 calcular estatísticas
 ```
 
@@ -185,6 +187,11 @@ timeout, termina com status admissível, produz o retorno funcional esperado e
 não apresenta stdout ou stderr incompatível com o contrato do caso. Amostras
 inválidas são excluídas dos cálculos e fazem a validação falhar; elas não podem
 ser silenciosamente descartadas.
+
+As estatísticas temporais são calculadas por um módulo puro, independente de
+CLI, backend, subprocessos, filesystem e relógio. Ele recebe somente durações
+válidas em nanossegundos e produz minimum, maximum, mean, median e p95
+nearest-rank.
 
 #### Política de CI
 
@@ -226,17 +233,20 @@ falha da toolchain e artefato ausente.
 
 #### Estado da implementação
 
-A primeira fundação interna contém modelos imutáveis para solicitação de build,
-artefato, execução bruta e validação estruturada. O builder invoca uma vez o
-comando público de build existente; o executor mede uma chamada direta ao ELF
-com relógio e processo injetáveis; o validador não acessa filesystem nem inicia
-processos. Testes unitários independentes de Linux e uma integração nativa
-O0/O1 para o workload `minimal` demonstram build único e múltiplas execuções do
-mesmo artefato.
+A fundação interna contém modelos imutáveis para solicitação de build,
+artefato, execução bruta, validação estruturada, plano de amostragem e
+resultado estatístico. O builder invoca uma vez o comando público de build
+existente; o executor mede uma chamada direta ao ELF com relógio e processo
+injetáveis; o validador não acessa filesystem nem inicia processos; o coletor
+reutiliza o mesmo artefato em preflight, warmups e runs. Testes unitários
+independentes de Linux e uma integração nativa O0/O1 para o workload `minimal`
+demonstram build único, mesmo caminho, mesmos bytes, mesmo tamanho, mesmo
+SHA-256, warmups descartados e três amostras medidas válidas em nanossegundos.
 
 Ainda não existem os modos públicos `elf-execution` e `cli-end-to-end`.
-Warmups, runs, estatísticas agregadas e serialização JSON da E3 permanecem
-pendentes.
+O JSON público continua em `benchmark_format_version 1.1.0` e ainda não
+serializa a E3. A exposição pública de `elf-execution`, a medição
+`cli-end-to-end` e a serialização JSON da E3 permanecem pendentes.
 
 #### Fora do escopo da E3
 

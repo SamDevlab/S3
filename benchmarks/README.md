@@ -44,12 +44,19 @@ Não faça regeração implícita dentro de rodadas normais de benchmark.
 
 ## Fundação interna da E3
 
-A implementação da E3 foi iniciada somente pela fundação interna do ciclo de
-vida de um ELF. O módulo `tools/benchmark_native.py` separa solicitação de
-build, artefato nativo, execução direta e validação funcional. O builder usa o
+A implementação da E3 continua parcial, mas já possui a fundação interna do
+ciclo de vida de um ELF e o loop validado de amostragem. O módulo
+`tools/benchmark_native.py` separa solicitação de build, artefato nativo,
+execução direta, validação funcional e coleta de amostras. O builder usa o
 comando público de build já existente, enquanto o executor recebe um artefato
 pronto e não conhece fonte S3 ou toolchain. O validador consome apenas o
 resultado bruto e não acessa processos ou filesystem.
+
+As estatísticas temporais foram isoladas no módulo puro
+`tools/benchmark_statistics.py`, sem subprocessos, filesystem, relógio, CLI ou
+backend. Ele centraliza minimum, maximum, mean, median e p95, preservando o
+cálculo nearest-rank para p95 e recebendo apenas amostras já validadas em
+nanossegundos.
 
 As superfícies públicas planejadas continuam separadas:
 
@@ -58,26 +65,30 @@ As superfícies públicas planejadas continuam separadas:
 - `elf-execution`: medição exclusiva de um ELF Linux x86-64 previamente
   construído e validado, sem incluir build ou inicialização da CLI na amostra.
 
-Para a execução isolada, cada combinação de workload e O0/O1 deverá construir
-o ELF antes do loop. O artefato será validado, reutilizado nos warmups e então
-reutilizado nas amostras medidas. Warmups não entram nas estatísticas e uma
-amostra funcionalmente inválida não pode ser incorporada a minimum, maximum,
-mean, median ou p95.
+Para a execução isolada, cada combinação de workload e O0/O1 constrói o ELF
+uma única vez antes do loop interno. O mesmo artefato passa por preflight
+funcional, warmups validados e descartados, e runs medidos e validados. Apenas
+os runs válidos entram nas estatísticas e nas amostras brutas em
+nanossegundos; preflight e warmups não entram em minimum, maximum, mean,
+median ou p95.
 
 Os sete workloads oficiais serão usados pelo mesmo caminho estrutural em O0 e
-O1, variando somente o nível solicitado. Build, execução, validação, cálculo
-estatístico e serialização permanecerão responsabilidades separadas. A
-instrumentação de benchmark deverá usar as interfaces públicas existentes e
-não criará opções experimentais na CLI apenas para facilitar medições.
+O1, variando somente o nível solicitado. A integração nativa atual já exercita
+o workload oficial `minimal` em O0 e O1 com build único e reutilização do mesmo
+ELF. Build, execução, validação, cálculo estatístico e serialização permanecem
+responsabilidades separadas. A instrumentação de benchmark deverá usar as
+interfaces públicas existentes e não criará opções experimentais na CLI apenas
+para facilitar medições.
 
 Tempos e comparações percentuais serão informativos, nunca thresholds rígidos
 de CI. Timeout continuará permitido como proteção contra travamento. Correção
 funcional, execução completa dos casos, zero skips nativos e validade dos
 formatos poderão atuar como gates determinísticos.
 
-O modo público `elf-execution` ainda não está disponível no runner. Warmups,
-runs, estatísticas agregadas e JSON da E3 ainda não foram implementados, assim
-como `cli-end-to-end`.
+O modo público `elf-execution` ainda não está disponível no runner. O JSON
+público do runner continua inalterado em `benchmark_format_version 1.1.0` e
+não expõe os dados internos da E3. `cli-end-to-end` continua pendente. A E3
+ainda é parcial, e E4 e E5 não foram iniciadas.
 
 O baseline determinístico continuará livre de tempos e informações ambientais.
 Resultados temporais poderão ser emitidos localmente, em logs ou artefatos

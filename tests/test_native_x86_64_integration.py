@@ -25,8 +25,10 @@ from bootstrap.s3.pipeline import compile_source
 from bootstrap.s3.ternary import TernaryWidth, tritwise_max, tritwise_min
 from tools.benchmark_native import (
     NativeBuildRequest,
+    NativeSamplingPlan,
     build_native_artifact,
     execute_native_artifact,
+    run_native_sampling_case,
     validate_native_execution,
 )
 
@@ -793,7 +795,7 @@ def test_build_and_run_native_cli_commands(
     (OptimizationLevel.O0, OptimizationLevel.O1),
     ids=lambda level: level.value,
 )
-def test_e3_native_artifact_is_built_once_and_executed_twice(
+def test_e3_native_sampling_reuses_one_minimal_elf_for_o0_and_o1(
     optimization: OptimizationLevel,
     native_toolchain: NativeToolchain,
     tmp_path: Path,
@@ -808,70 +810,127 @@ def test_e3_native_artifact_is_built_once_and_executed_twice(
     source_path = ROOT / "benchmarks" / workload["file"]
     output_path = tmp_path / f"minimal-{optimization.value}"
     build_calls = []
+    build_process_calls = []
+    built_snapshots = []
 
     def build_runner(command, **kwargs):
-        build_calls.append((command, kwargs))
+        build_process_calls.append((command, kwargs))
         return subprocess.run(command, **kwargs)
 
-    artifact = build_native_artifact(
-        NativeBuildRequest(
-            workload_id=workload["id"],
-            source_path=source_path,
-            optimization=optimization,
-            expected_return=workload["expected_return"],
-            output_path=output_path,
-            max_instructions=workload["max_instructions"],
-            max_frames=workload["max_frames"],
-            source_syntax="0.6",
-        ),
-        process_runner=build_runner,
-        python_executable=sys.executable,
+    request = NativeBuildRequest(
+        workload_id=workload["id"],
+        source_path=source_path,
+        optimization=optimization,
+        expected_return=workload["expected_return"],
+        output_path=output_path,
+        max_instructions=workload["max_instructions"],
+        max_frames=workload["max_frames"],
+        source_syntax="0.6",
     )
 
-    assert len(build_calls) == 1
-    assert artifact.executable_path == output_path.resolve()
-    assert artifact.executable_path.is_file()
-    original_bytes = artifact.executable_path.read_bytes()
-    original_mtime = artifact.executable_path.stat().st_mtime_ns
-    assert artifact.size_bytes == len(original_bytes)
-    assert artifact.size_bytes > 0
-    assert artifact.sha256 == hashlib.sha256(original_bytes).hexdigest()
+    def builder(build_request: NativeBuildRequest):
+        build_calls.append(build_request)
+        artifact = build_native_artifact(
+            build_request,
+            process_runner=build_runner,
+            python_executable=sys.executable,
+        )
+        artifact_path = artifact.executable_path
+        artifact_bytes = artifact_path.read_bytes()
+        built_snapshots.append(
+            (
+                artifact_path,
+                artifact_bytes,
+                artifact_path.stat().st_mtime_ns,
+                artifact_path.stat().st_size,
+                hashlib.sha256(artifact_bytes).hexdigest(),
+            )
+        )
+        return artifact
 
     execution_calls = []
+    execution_results = []
 
     def execution_runner(command, **kwargs):
         execution_calls.append((command, kwargs))
         return subprocess.run(command, **kwargs)
 
-    observed_returns = []
-    for _ in range(2):
-        result = execute_native_artifact(
+    def executor(artifact, *, timeout):
+        execution = execute_native_artifact(
             artifact,
-            timeout=10.0,
+            timeout=timeout,
             process_runner=execution_runner,
         )
-        observed_returns.append(
-            validate_native_execution(
-                result,
-                artifact.expected_return,
-            ).require_valid()
-        )
-        assert not result.timed_out
-        assert result.returncode == 0
-        assert result.stderr == ""
+        execution_results.append((artifact, execution))
+        return execution
 
-    assert observed_returns == [
-        workload["expected_return"],
-        workload["expected_return"],
-    ]
-    assert len(execution_calls) == 2
+    validation_calls = []
+
+    def validator(execution, expected_return):
+        validation = validate_native_execution(execution, expected_return)
+        validation_calls.append((execution, expected_return, validation))
+        return validation
+
+    result = run_native_sampling_case(
+        request,
+        NativeSamplingPlan(warmups=1, runs=3, timeout=10.0),
+        builder=builder,
+        executor=executor,
+        validator=validator,
+    )
+
+    assert build_calls == [request]
+    assert len(build_process_calls) == 1
+    assert len(built_snapshots) == 1
+    original_path, original_bytes, original_mtime, original_size, original_sha = (
+        built_snapshots[0]
+    )
+    assert result.artifact.executable_path == output_path.resolve()
+    assert result.artifact.executable_path == original_path
+    assert result.artifact.executable_path.is_file()
+    assert result.artifact.size_bytes == original_size
+    assert result.artifact.size_bytes == len(original_bytes)
+    assert result.artifact.size_bytes > 0
+    assert result.artifact.sha256 == original_sha
+    assert original_sha == hashlib.sha256(original_bytes).hexdigest()
+
+    assert len(execution_calls) == 5
+    assert len(execution_results) == 5
+    assert len(validation_calls) == 5
+    assert all(artifact is result.artifact for artifact, _ in execution_results)
     assert all(
-        command == [str(artifact.executable_path)]
+        command == [str(result.artifact.executable_path)]
         for command, _ in execution_calls
     )
-    assert artifact.executable_path.read_bytes() == original_bytes
-    assert artifact.executable_path.stat().st_mtime_ns == original_mtime
-    assert artifact.size_bytes == artifact.executable_path.stat().st_size
-    assert artifact.sha256 == hashlib.sha256(
-        artifact.executable_path.read_bytes()
-    ).hexdigest()
+    assert all(kwargs["timeout"] == 10.0 for _, kwargs in execution_calls)
+
+    for _, execution in execution_results:
+        assert execution.returncode == 0
+        assert execution.stderr == ""
+        assert not execution.timed_out
+
+    assert all(
+        validation.valid and validation.require_valid() == workload["expected_return"]
+        for _, _, validation in validation_calls
+    )
+    assert result.actual_return == workload["expected_return"]
+    assert result.warmups == 1
+    assert result.runs == 3
+    assert result.total_execution_count == 5
+    assert len(result.samples_ns) == 3
+    assert all(isinstance(sample, int) for sample in result.samples_ns)
+    assert all(sample >= 0 for sample in result.samples_ns)
+    assert result.statistics.sample_count == 3
+    assert result.statistics.unit == "ns"
+    assert result.statistics.minimum in result.samples_ns
+    assert result.statistics.maximum in result.samples_ns
+    assert result.statistics.minimum == min(result.samples_ns)
+    assert result.statistics.maximum == max(result.samples_ns)
+    assert result.statistics.median == sorted(result.samples_ns)[1]
+    assert result.statistics.p95 == max(result.samples_ns)
+
+    current_bytes = result.artifact.executable_path.read_bytes()
+    assert current_bytes == original_bytes
+    assert result.artifact.executable_path.stat().st_mtime_ns == original_mtime
+    assert result.artifact.executable_path.stat().st_size == original_size
+    assert hashlib.sha256(current_bytes).hexdigest() == original_sha
