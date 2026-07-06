@@ -121,19 +121,26 @@ Nenhuma outra funcionalidade foi incorporada.
 
 ## Marco 0.8 — Medição e desempenho orientado por evidências
 
-O Marco 0.8 foi iniciado exclusivamente em nível normativo. A infraestrutura de benchmark, medição estruturada de O0/O1 e execução paralela do ELF visam embasar dados empíricos precisos antes de implementar qualquer otimização adicional na base semântica da linguagem S3.
+O Marco 0.8 possui E0, E1 e E2 integradas. A E3 é a etapa atual e foi aberta
+formalmente para definir a coleta ortogonal de evidências da CLI completa e da
+execução isolada do ELF, antes de qualquer análise de gargalo ou otimização.
 
 Estado atual:
 
 - E0, contrato normativo: concluída e integrada;
 - E1, workloads e runner no mesmo processo: concluída e integrada;
-- E2, tempos por fase e métricas determinísticas: implementada no Draft PR #4, aguardando revisão e integração;
-- E3, CLI e ELF Linux x86-64: futura;
-- E4, diagnóstico de gargalo: futura;
-- E5, otimização dirigida por evidência: futura;
+- E2, tempos por fase, métricas e baseline determinístico: concluída e
+  integrada pelo PR #4, com CI pós-merge verde;
+- E3, CLI e ELF Linux x86-64: etapa atual, formalmente aberta e ainda não
+  implementada; separará CLI end-to-end de execução ELF sobre artefato
+  previamente construído;
+- E4, diagnóstico de gargalo: não iniciada;
+- E5, otimização dirigida por evidência: não iniciada;
 - E6, fechamento (sem versão 0.8.0 publicada ainda): futura.
 
-Nenhum outro benchmark ou otimização foi implementado ainda.
+A E3 coletará evidências sem escolher ou implementar otimizações. Tempos serão
+informativos; correção funcional, completude dos casos e formatos
+determinísticos serão gates. Nenhuma implementação funcional da E3 começou.
 
 ## Pós-MVP / marcos futuros
 

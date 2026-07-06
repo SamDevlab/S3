@@ -2,7 +2,7 @@
 
 Esta infraestrutura realiza benchmarks das APIs e da execução local do S3 no mesmo processo (`in-process`).
 
-## Infraestrutura E1 e E2
+## Infraestrutura E1 e E2 integradas
 
 A infraestrutura E1 introduziu o runner para separar o custo da CLI, medindo a execução direta das APIs Python. A entrega E2 inseriu métricas determinísticas (contagem de instruções, blocos, funções e opcodes S3 executados) e subdividiu o tempo do pipeline em fases (`PhaseTimer`).
 
@@ -41,6 +41,39 @@ Não faça regeração implícita dentro de rodadas normais de benchmark.
 - `hosted-pipeline`: Mede a compilação de fonte para Assembly através das APIs do pacote e a execução no emulador interno (in-process).
 - `native-asm-pipeline`: Mede o tempo gasto na transcrição para o Assembly interno e a emissão do GNU Assembly x86-64 nativo como string (textual).
 **Nota**: O `native-asm-pipeline` não engloba tempos para invocar nenhum assembler, invocar o linker e nem compila/executa o executável ELF resultante.
+
+## Contrato planejado da E3
+
+A E3 está formalmente aberta, mas ainda não foi implementada. A implementação
+futura separará duas superfícies:
+
+- `cli-end-to-end`: medição da experiência completa de um comando público já
+  existente, incluindo os custos reais atravessados por esse comando;
+- `elf-execution`: medição exclusiva de um ELF Linux x86-64 previamente
+  construído e validado, sem incluir build ou inicialização da CLI na amostra.
+
+Para a execução isolada, cada combinação de workload e O0/O1 deverá construir
+o ELF antes do loop. O artefato será validado, reutilizado nos warmups e então
+reutilizado nas amostras medidas. Warmups não entram nas estatísticas e uma
+amostra funcionalmente inválida não pode ser incorporada a minimum, maximum,
+mean, median ou p95.
+
+Os sete workloads oficiais serão usados pelo mesmo caminho estrutural em O0 e
+O1, variando somente o nível solicitado. Build, execução, validação, cálculo
+estatístico e serialização permanecerão responsabilidades separadas. A
+instrumentação de benchmark deverá usar as interfaces públicas existentes e
+não criará opções experimentais na CLI apenas para facilitar medições.
+
+Tempos e comparações percentuais serão informativos, nunca thresholds rígidos
+de CI. Timeout continuará permitido como proteção contra travamento. Correção
+funcional, execução completa dos casos, zero skips nativos e validade dos
+formatos poderão atuar como gates determinísticos.
+
+O baseline determinístico continuará livre de tempos e informações ambientais.
+Resultados temporais poderão ser emitidos localmente, em logs ou artefatos
+efêmeros de CI e em JSON não versionado; eles não serão rastreados por padrão.
+Esta seção estabelece o contrato da implementação futura e não apresenta
+comandos ou opções futuras como se já existissem.
 
 ## Comandos
 

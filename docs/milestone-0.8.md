@@ -2,7 +2,14 @@
 
 ## Estado
 
-E0 concluída e integrada. E1 concluída e integrada. E2 implementada no Draft PR #4, aguardando revisão e integração. As entregas E3 a E6 permanecem futuras. Nenhuma otimização estrutural de linguagem no S3 foi criada, e a versão 0.8.0 ainda não se encontra definida, versionada ou com meta de publicação engatilhada. O repositório segue na distribuição publicável 0.7.0.
+E0, E1 e E2 estão concluídas e integradas. A E2 foi incorporada pelo PR #4,
+com o baseline determinístico oficial e a CI pós-merge validados. A E3 está
+formalmente aberta para especificar a medição da CLI completa e da execução
+isolada de ELF Linux x86-64, mas sua implementação ainda não começou. E4 e E5
+não foram iniciadas. Nenhuma otimização estrutural de linguagem no S3 foi
+criada, e a versão 0.8.0 ainda não se encontra definida, versionada ou com meta
+de publicação engatilhada. O repositório segue na distribuição publicável
+0.7.0.
 
 ## Motivação
 
@@ -31,7 +38,8 @@ O contrato final estipulado e aprovado na [ADR-0015](decisions/ADR-0015-performa
 - Métricas captadas minunciosamente divididas por cada fase acionável na construção e virtualização da chamada (Token, IR, Semantic, Emissão).
 - Acompanhamento passivo atrelado das contagens determinísticas intrínsecas ao output (contagem instrucional estática e bytes brutos ELF ou .s).
 - Disparo de medições *end-to-end* da CLI e chamadas atreladas isoladamente.
-- Ciclo acionado em loop real sobre artefatos já alocados (*build nativo de ELF executado de forma paralela via SO em host Linux x86-64 testado estritamente por repetição sequencial limpa*).
+- Ciclo de execução real sobre artefatos ELF previamente construídos e
+  validados, sem recompilar dentro do loop de amostragem.
 - Geração de relatório conclusivo apontando o veredito empírico da performance O0 frente à otimização O1 em cada bloco aferido, para atestar os limites e falhas atuais das engrenagens lógicas da linguagem e das fases compiladoras (diagnóstico de gargalo).
 - Adoção finalíssima estrita a uma única otimização focada, implementada tão logo e meramente com a confirmação diagnóstica pautada em dados.
 
@@ -62,25 +70,161 @@ Toda e qualquer interferência não orientada por este objetivo isolado da E0 co
 
 O avanço e a estabilização funcional da base serão escalonados metodicamente via:
 
-### E0 — Contrato normativo (Fase Atual)
+### E0 — Contrato normativo (concluída e integrada)
 - Construção e consolidação global via ADR e Documento do marco normativo das estratégias de benchmarking.
 - Definição completa das medidas estatísticas admitidas, dos parâmetros matemáticos válidos, políticas rígidas da integração contínua (CI) e determinação das limitações estritas (escopos in e out) embutidas.
 
-### E1 — Workloads e runner no mesmo processo
+### E1 — Workloads e runner no mesmo processo (concluída e integrada)
 - Planejamento e implantação oficial in-repo das métricas alvo/workloads rastreáveis que não possuam vieses temporais em dependências do relógio sistêmico, redes e interdependências.
 - Confecção e injetamento lógico do utilitário core em local Python normatizado pelo repositório (ex: `tools/benchmark.py`), contendo warmups e rotinas exclusivas em memória viva.
 - Inclusão plena do pipeline funcional com cálculos de média, mínima, máxima, mediana real e dispersão/p95 de O0/O1 sob o json output isolado rigoroso exigido; incluindo a exigência intrínseca que os testes sejam avaliados pelo checksum antes e nunca pautados no resultado gerado puramente em run ELF nativa remota (somente testes API in-process).
 
-### E2 — Tempos por fase e métricas determinísticas
+### E2 — Tempos por fase e métricas determinísticas (concluída e integrada)
 - Integração da medição detalhada no runner de emulação, subdividida no percurso: leitura/tokenization do frontend, verificação de lógica semântica IR, otimizador estático passivo atrelado do Assembly até os ticks e disparos de geração do opcode nativo.
 - Captação intrínseca matemática estruturada via hashes imutáveis das contagens de funções iteradas nativas e bytes emitidos estáticos textuais.
 - Abstenção formal de ativações indevidas na cli interface via novas flags experimentais que não possuam ratificações independentes via decisão explícita no conselho técnico da ramificação do desenvolvimento S3.
 
-### E3 — CLI e ELF Linux x86-64
-- Compilação empacotada de rotinas em CLI *end-to-end*.
-- Refinamento do pipeline a ponto de apartar formalmente o *build nativo* com medições de chamadas inter-sistemas ELF gerados de chamadas O0 vs O1.
-- Geração da base iterativa de repetição executável real para cada artefato validado com estatísticas informativas desassociadas.
-- Obrigação estrita do job paralelo de integração x86-64 rodar a CLI final com ausência absoluta de *skips* perante o ambiente.
+### E3 — CLI e ELF Linux x86-64 (formalmente aberta, não implementada)
+
+A abertura da E3 é normativa. A etapa coletará evidências para a análise
+posterior, sem escolher gargalos ou implementar otimizações. A interpretação
+dos resultados pertence à E4; qualquer otimização aprovada pertence à E5.
+
+#### Objetivo e superfícies
+
+A E3 medirá O0 e O1 sobre os mesmos sete workloads oficiais, preservando a
+correção funcional, em duas superfícies independentes:
+
+- `cli-end-to-end`: representa a experiência completa do usuário ao invocar um
+  comando público já existente. A medição pode incluir inicialização do Python,
+  parsing de argumentos, leitura de arquivos, frontend, IR, otimização,
+  lowering, geração de Assembly e, quando fizer parte do comando escolhido,
+  invocação da toolchain. Essa superfície não representa o tempo isolado do
+  programa nativo;
+- `elf-execution`: mede somente a execução de um ELF Linux x86-64 previamente
+  construído e validado. Exclui da amostra o build, a toolchain e a
+  inicialização da CLI hospedada.
+
+Os tempos dessas superfícies não podem ser somados nem apresentados como uma
+única medição.
+
+#### Matriz de execução
+
+O desenho deve compor independentemente:
+
+```text
+workload × optimization × surface × purpose
+```
+
+As dimensões iniciais são:
+
+- workload: os sete casos do manifesto oficial;
+- optimization: O0 ou O1, pelo mesmo caminho estrutural, variando somente o
+  nível solicitado;
+- surface: `cli-end-to-end` ou `elf-execution`;
+- purpose: validação funcional ou medição temporal.
+
+Por exemplo:
+
+```text
+arrays × O1 × elf-execution × measurement
+recursion × O0 × cli-end-to-end × validation
+```
+
+Não haverá executor, estatística, serializer ou formato especial por workload.
+Adicionar futuramente um oitavo workload deverá exigir somente uma entrada no
+manifesto ou na fonte de casos, sem mudanças nesses componentes.
+
+#### Princípio de ortogonalidade
+
+> Compilar, executar, validar, medir, calcular estatísticas e serializar
+> resultados são responsabilidades distintas. Uma alteração em uma dessas
+> responsabilidades não deve exigir mudanças desnecessárias nas demais.
+
+Esse princípio impõe as seguintes fronteiras:
+
+- build e execução: o builder recebe workload e configuração e produz um
+  artefato validável; o executor recebe um artefato já produzido e devolve o
+  resultado da execução;
+- execução e validação: o resultado de processo distingue status, retorno
+  esperado e observado, stdout, stderr, timeout e duração. O executor não
+  decide sozinho se a amostra é estatisticamente admissível;
+- validação e estatística: o validador rejeita falhas funcionais antes do
+  cálculo; o componente estatístico recebe somente durações já validadas;
+- estatística e serialização: minimum, maximum, mean, median e p95 são
+  calculados sem decidir nomes de campos, ordenação, apresentação, escrita em
+  disco ou política de baseline;
+- benchmark e CLI pública: a ferramenta de benchmark deve preferir as
+  interfaces públicas existentes e não pode adicionar flags experimentais à
+  CLI por conveniência. Uma mudança pública futura exigirá necessidade,
+  justificativa, compatibilidade e testes próprios;
+- medição e otimização: a E3 não altera lowering, seleção de instruções,
+  alocação de registradores, geração x86-64, O0 ou O1. Evidências de possível
+  gargalo são registradas sem solução nesta etapa.
+
+#### Build, warmups e validade das amostras
+
+Para `elf-execution`, a sequência obrigatória é:
+
+```text
+construir uma vez
+validar o artefato
+executar warmups
+executar amostras medidas
+calcular estatísticas
+```
+
+Cada ELF é construído antes da amostragem e nunca recompilado dentro do loop.
+Warmups usam o mesmo artefato, mas não entram nas estatísticas. Uma amostra
+medida somente é válida quando o processo inicia corretamente, não sofre
+timeout, termina com status admissível, produz o retorno funcional esperado e
+não apresenta stdout ou stderr incompatível com o contrato do caso. Amostras
+inválidas são excluídas dos cálculos e fazem a validação falhar; elas não podem
+ser silenciosamente descartadas.
+
+#### Política de CI
+
+Podem funcionar como gates determinísticos:
+
+- produção, presença e execução do ELF;
+- ausência de timeout e validade do status e do resultado funcional;
+- equivalência semântica entre O0 e O1;
+- execução de todos os workloads obrigatórios e zero skips no job nativo;
+- validade do JSON e respeito ao formato declarado;
+- estabilidade deliberada do baseline determinístico;
+- presença das fases obrigatórias;
+- impossibilidade de incluir amostra inválida nas estatísticas.
+
+Duração individual, minimum, maximum, mean, median, p95, diferença percentual
+entre O0 e O1, velocidade absoluta e variação do runner são exclusivamente
+informativos. A CI não pode falhar porque O1 ficou uma porcentagem mais lento
+nem porque uma amostra válida excedeu um limite de desempenho. Timeout é
+permitido somente como proteção contra processo travado.
+
+#### Política de dados
+
+O baseline determinístico oficial não recebe tempos, estatísticas temporais,
+warmups, runs, timestamps, commit, estado dirty, CPU, sistema operacional,
+arquitetura, Python, hostname, caminhos ou metadados do GitHub Actions.
+Resultados temporais e ambientais sanitizados podem existir como saída local,
+artefato efêmero da CI, relatório manual, JSON não versionado ou seção
+informativa do log. Caminhos privados e diretórios temporários não são
+versionados.
+
+#### Testabilidade da implementação futura
+
+A implementação deverá permitir substituir ou injetar relógio, executor de
+processos, builder de artefatos, diretório temporário, número de warmups e
+número de runs. Assim, testes controlados poderão cobrir timeout, falha ao
+iniciar processo, status não zero, stdout ou stderr inesperado, retorno
+incorreto, amostras conhecidas, mediana, p95, exclusão de amostra inválida,
+falha da toolchain e artefato ausente.
+
+#### Fora do escopo da E3
+
+A E3 não introduz sintaxe, opcode, IR, S3 Assembly, schema diagnóstico, nível
+de otimização ou mudança de CLI pública sem decisão independente. Também não
+escolhe gargalo, não implementa otimização e não inicia E4 ou E5.
 
 ### E4 — Diagnóstico de gargalo
 - Levantamento documental com apuração exaustiva matemática produzida pelos números reportados no `JSON`.
@@ -104,7 +248,9 @@ O avanço e a estabilização funcional da base serão escalonados metodicamente
 2. CLI integracional do host, APIs Python de mesma base (in-process), geração build nativo em arquivos `.s` (assembly) e chamadas operacionais ELF devem possuir total rastreabilidade subdividida de dados informados nas medidas.
 3. As assinaturas produzidas com a operação temporal nos Workloads documentados garantem perenidade (resultados determinísticos precisos, livre de anomalias flutuantes ao serem executadas fora das áreas temporizadas).
 4. Rotinas de compilação ativadas por `-O0` e `-O1` demonstram imutabilidade irrestrita e não degenerada aos resultados obtidos da base semântica (integridade funcional da AST persistente aprovada sem perda algorítmica).
-5. Output final obriga JSON estrito possuindo estática estatística (min/max/mediana/p95/status) juntamente aos ambientes (sistêmicos e organizacionais globais) não voláteis (exclui infos cruciais sigilosas/privadas do host).
+5. Relatórios temporais efêmeros usam JSON estrito com estatísticas e metadados
+   sanitizados necessários à interpretação; o baseline determinístico
+   versionado permanece livre de tempos e dados ambientais.
 6. Execução final interativa ao host ELF restringe-se estritamente ao artefato sendo gerado única vez (compilado unicamente) repetido sequencial e repetitivamente de modo contido às medidas, livre do ruído compilação.
 7. Variações sensíveis de processamento instável natural do agendador base (`sys-clock noise`) estão exauridas do processo de decisão rigorosa em bloqueio ou travamento contínuo das etapas de testes da plataforma paralela integrada de CI na cloud.
 8. Flutuações críticas em *gates estruturais* puramente métricas físicas (contagem total atestada da pipeline binária nativa nas assembly em instruções S3 geradas ou executadas) configuram e disparam falhas determinísticas absolutas que intercedem o pull automático no host da pipeline (CI Gate).
