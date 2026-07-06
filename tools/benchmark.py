@@ -309,23 +309,23 @@ def run_hosted_pipeline(source: str, opt: OptimizationLevel, max_inst: int, max_
     clock = clock if clock is not None else time.perf_counter_ns
     timer = PhaseTimer(clock=clock)
     total_start = clock()
-    
+
     with timer.measure("parsing"):
         tokens = tokenize(source, mode=SyntaxMode.V0_6)
         syntax_tree = parse_tokens(tokens, mode=SyntaxMode.V0_6)
-        
+
     with timer.measure("semantic_analysis"):
         semantic_model = analyze(syntax_tree)
-        
+
     with timer.measure("ir_generation"):
         ir_program_unopt = lower(syntax_tree, semantic_model)
-        
+
     with timer.measure("optimization"):
         ir_program = optimize_ir(ir_program_unopt, opt)
-        
+
     with timer.measure("assembly_generation"):
         assembly_program = generate_assembly(ir_program)
-        
+
     with timer.measure("emulation"):
         emulator = Emulator(
             max_frames=max_frames if max_frames is not None else DEFAULT_MAX_FRAMES,
@@ -333,7 +333,7 @@ def run_hosted_pipeline(source: str, opt: OptimizationLevel, max_inst: int, max_
             enable_metrics=True,
         )
         actual = emulator.execute(assembly_program, "main")
-        
+
     total_end = clock()
     total_ns = total_end - total_start
     phases = timer.snapshot()
@@ -341,7 +341,7 @@ def run_hosted_pipeline(source: str, opt: OptimizationLevel, max_inst: int, max_
     overhead_ns = total_ns - measured_total_ns
     if overhead_ns < 0:
         raise ValueError(f"Inconsistent timing: overhead is negative {overhead_ns}")
-    
+
     static_metrics = extract_static_metrics(source, ir_program, assembly_program)
     dynamic_metrics = {
         "execution": {
@@ -350,37 +350,37 @@ def run_hosted_pipeline(source: str, opt: OptimizationLevel, max_inst: int, max_
             "function_call_count": emulator.metrics.function_call_count if emulator.metrics else 0,
         }
     }
-    
+
     return actual, phases, static_metrics, dynamic_metrics, total_ns, measured_total_ns, overhead_ns
 
 def run_native_asm_pipeline(source: str, opt: OptimizationLevel, max_inst: int, max_frames: int | None, clock=None):
     clock = clock if clock is not None else time.perf_counter_ns
     timer = PhaseTimer(clock=clock)
     total_start = clock()
-    
+
     with timer.measure("parsing"):
         tokens = tokenize(source, mode=SyntaxMode.V0_6)
         syntax_tree = parse_tokens(tokens, mode=SyntaxMode.V0_6)
-        
+
     with timer.measure("semantic_analysis"):
         semantic_model = analyze(syntax_tree)
-        
+
     with timer.measure("ir_generation"):
         ir_program_unopt = lower(syntax_tree, semantic_model)
-        
+
     with timer.measure("optimization"):
         ir_program = optimize_ir(ir_program_unopt, opt)
-        
+
     with timer.measure("assembly_generation"):
         assembly_program = generate_assembly(ir_program)
-        
+
     with timer.measure("native_x86_64_emission"):
         out = generate_native_assembly(
             assembly_program,
             max_frames=max_frames if max_frames is not None else DEFAULT_MAX_FRAMES,
             max_instructions=max_inst,
         )
-        
+
     total_end = clock()
     total_ns = total_end - total_start
     phases = timer.snapshot()
@@ -388,16 +388,16 @@ def run_native_asm_pipeline(source: str, opt: OptimizationLevel, max_inst: int, 
     overhead_ns = total_ns - measured_total_ns
     if overhead_ns < 0:
         raise ValueError("Inconsistent timing: overhead is negative")
-    
+
     static_metrics = extract_static_metrics(source, ir_program, assembly_program)
-    
+
     static_metrics["native_artifact"] = {
         "artifact_kind": "gnu-x86-64-assembly",
         "textual_size_bytes": len(out.encode("utf-8")),
         "line_count": len(out.splitlines()),
         "sha256": hashlib.sha256(out.encode("utf-8")).hexdigest()
     }
-    
+
     return out, phases, static_metrics, total_ns, measured_total_ns, overhead_ns
 
 def run_workload(w, source, opt_level, max_inst, max_frames, args, clock=None):
@@ -464,7 +464,7 @@ def run_workload(w, source, opt_level, max_inst, max_frames, args, clock=None):
     measured_samples = []
     overhead_samples = []
     phase_samples = {}
-    
+
     actual_for_json = None
     for _ in range(args.runs):
         if args.mode == "hosted-pipeline":
@@ -483,7 +483,7 @@ def run_workload(w, source, opt_level, max_inst, max_frames, args, clock=None):
         total_samples.append(total_ns)
         measured_samples.append(measured_ns)
         overhead_samples.append(overhead_ns)
-        
+
         for k, v in run_phases.items():
             if k not in phase_samples:
                 phase_samples[k] = []
@@ -506,7 +506,7 @@ def run_workload(w, source, opt_level, max_inst, max_frames, args, clock=None):
         },
         "metrics": static_metrics_for_json
     }
-    
+
     if args.mode == "hosted-pipeline":
         res["expected_return"] = expected_ret
         res["actual_return"] = actual_for_json
@@ -628,7 +628,7 @@ def main():
         if args.optimization == "both":
             res_O0 = run_workload(w, source, OptimizationLevel.O0, max_inst, max_frames, args)
             res_O1 = run_workload(w, source, OptimizationLevel.O1, max_inst, max_frames, args)
-            
+
             # comparison
             def _diff_and_pct(v0, v1):
                 diff = v1 - v0
@@ -639,7 +639,7 @@ def main():
                 elif diff > 0:
                     lbl = "more"
                 return diff, pct, lbl
-                
+
             def _time_diff(v0, v1):
                 diff = v1 - v0
                 pct = (diff / v0 * 100.0) if v0 != 0 else None
@@ -655,7 +655,7 @@ def main():
                 "O1_return": res_O1.get("actual_return", res_O1.get("functional_validation", {}).get("actual_return")),
             }
             comp["equal_return"] = comp["O0_return"] == comp["O1_return"]
-            
+
             # S3 Opcode count
             o0_s3_opcode = res_O0["metrics"].get("s3_assembly", {}).get("opcode_count", 0)
             o1_s3_opcode = res_O1["metrics"].get("s3_assembly", {}).get("opcode_count", 0)
@@ -665,7 +665,7 @@ def main():
             comp["s3_opcode_count_diff"] = diff
             comp["s3_opcode_count_percent"] = pct
             comp["s3_opcode_count_label"] = lbl
-            
+
             # Executed S3 opcodes
             if "execution" in res_O0["metrics"]:
                 o0_exec = res_O0["metrics"]["execution"].get("executed_s3_opcodes", 0)
@@ -676,7 +676,7 @@ def main():
                 comp["executed_s3_opcodes_diff"] = diff
                 comp["executed_s3_opcodes_percent"] = pct
                 comp["executed_s3_opcodes_label"] = lbl
-                
+
             # S3 textual size
             o0_text = res_O0["metrics"].get("s3_assembly", {}).get("textual_size_bytes", 0)
             o1_text = res_O1["metrics"].get("s3_assembly", {}).get("textual_size_bytes", 0)
@@ -684,7 +684,7 @@ def main():
             comp["O0_s3_textual_size_bytes"] = o0_text
             comp["O1_s3_textual_size_bytes"] = o1_text
             comp["s3_textual_size_diff"] = diff
-            
+
             # GNU textual size
             if "native_artifact" in res_O0["metrics"]:
                 o0_gnu = res_O0["metrics"]["native_artifact"].get("textual_size_bytes", 0)
@@ -693,14 +693,14 @@ def main():
                 comp["O0_gnu_textual_size_bytes"] = o0_gnu
                 comp["O1_gnu_textual_size_bytes"] = o1_gnu
                 comp["gnu_textual_size_diff"] = diff
-            
+
             # Hashes
             comp["O0_s3_assembly_sha256"] = res_O0["metrics"].get("s3_assembly", {}).get("sha256")
             comp["O1_s3_assembly_sha256"] = res_O1["metrics"].get("s3_assembly", {}).get("sha256")
             if "native_artifact" in res_O0["metrics"]:
                 comp["O0_gnu_assembly_sha256"] = res_O0["metrics"]["native_artifact"].get("sha256")
                 comp["O1_gnu_assembly_sha256"] = res_O1["metrics"]["native_artifact"].get("sha256")
-            
+
             # Timing info
             o0_time = res_O0["timing"]["pipeline_total"]["median"]
             o1_time = res_O1["timing"]["pipeline_total"]["median"]
@@ -744,7 +744,7 @@ def main():
                 rs = [top_r["O0"], top_r["O1"]]
             else:
                 rs = [top_r]
-                
+
             for r in rs:
                 lines.append(f"workload: {r['workload']}")
                 lines.append(f"mode: {args.mode}")
@@ -758,7 +758,7 @@ def main():
                 lines.append(f"  {'measured sum':<20}: {t['measured_phases_total']['median'] / 1_000_000.0:.3f} ms")
                 lines.append(f"  {'unclassified':<20}: {t['unclassified_overhead']['median'] / 1_000_000.0:.3f} ms")
                 lines.append("")
-                
+
                 lines.append("metrics:")
                 m = r["metrics"]
                 if "s3_assembly" in m:
@@ -772,7 +772,7 @@ def main():
                 if "native_artifact" in m:
                     lines.append(f"  native size:          {m['native_artifact'].get('textual_size_bytes', 0)} bytes")
                     lines.append(f"  native sha256:        {m['native_artifact'].get('sha256', '')[:8]}...")
-                    
+
                 lines.append("")
 
             if "comparison" in top_r:
@@ -781,7 +781,7 @@ def main():
                 for k, v in c.items():
                     lines.append(f"  {k:<30}: {v}")
                 lines.append("")
-                
+
         out_str = "\n".join(lines)
 
     write_output(args, out_str)
