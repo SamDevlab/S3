@@ -2,13 +2,13 @@ import argparse
 import datetime
 import importlib.metadata
 import json
-import math
 import os
 import platform
 import subprocess
 import sys
 import time
 import hashlib
+import tomllib
 from pathlib import Path
 
 # Direct imports
@@ -26,7 +26,17 @@ from bootstrap.s3.diagnostics import DIAGNOSTIC_SCHEMA_VERSION
 from bootstrap.s3.ir_serialization import IR_FORMAT_VERSION
 from bootstrap.s3.metrics import PhaseTimer
 
-import tomllib
+if __package__:
+    from . import benchmark_statistics as _benchmark_statistics
+else:
+    import benchmark_statistics as _benchmark_statistics
+
+calc_max = _benchmark_statistics.calc_max
+calc_mean = _benchmark_statistics.calc_mean
+calc_median = _benchmark_statistics.calc_median
+calc_min = _benchmark_statistics.calc_min
+calc_p95 = _benchmark_statistics.calc_p95
+calc_stats = _benchmark_statistics.calc_stats
 
 BENCHMARK_FORMAT_VERSION = "1.1.0"
 
@@ -162,52 +172,6 @@ def gather_metadata(args, workloads_order: list[str]) -> dict:
         "runs": getattr(args, "runs", 0),
         "workloads_order": workloads_order,
     }
-
-def calc_stats(samples: list[int]) -> dict:
-    if not samples:
-        raise ValueError("Empty collection")
-    return {
-        "minimum": calc_min(samples),
-        "maximum": calc_max(samples),
-        "mean": calc_mean(samples),
-        "median": calc_median(samples),
-        "p95": calc_p95(samples),
-    }
-
-def calc_min(samples: list[int]) -> int:
-    if not samples:
-        raise ValueError("Empty collection")
-    return min(samples)
-
-def calc_max(samples: list[int]) -> int:
-    if not samples:
-        raise ValueError("Empty collection")
-    return max(samples)
-
-def calc_mean(samples: list[int]) -> float:
-    if not samples:
-        raise ValueError("Empty collection")
-    mean_val = sum(samples) / len(samples)
-    if math.isnan(mean_val) or math.isinf(mean_val):
-        raise ValueError("Invalid mean")
-    return mean_val
-
-def calc_median(samples: list[int]) -> float:
-    if not samples:
-        raise ValueError("Empty collection")
-    s = sorted(samples)
-    n = len(s)
-    mid = n // 2
-    if n % 2 == 0:
-        return (s[mid - 1] + s[mid]) / 2.0
-    return float(s[mid])
-
-def calc_p95(samples: list[int]) -> int:
-    if not samples:
-        raise ValueError("Empty collection")
-    s = sorted(samples)
-    rank = math.ceil(0.95 * len(s))
-    return s[rank - 1]
 
 def load_manifest(manifest_path: Path) -> dict:
     try:
@@ -599,8 +563,6 @@ def main():
 
     if not args.mode or not args.optimization or not args.workload:
         exit_error(args, "S3_BENCH_INVALID_ARGUMENT", "Missing required arguments for benchmarking.")
-
-    opt_level = OptimizationLevel.O1 if args.optimization == "O1" else OptimizationLevel.O0
 
     if args.workload == "all":
         selected_workloads = workloads
