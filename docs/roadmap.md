@@ -126,8 +126,8 @@ O Marco 0.8 foi iniciado exclusivamente em nível normativo. A infraestrutura de
 Estado atual:
 
 - E0, contrato normativo: concluída e integrada;
-- E1, workloads e runner no mesmo processo: implementada na branch, aguardando integração;
-- E2, tempos por fase e métricas determinísticas: futura;
+- E1, workloads e runner no mesmo processo: concluída e integrada;
+- E2, tempos por fase e métricas determinísticas: implementada no Draft PR #4, aguardando revisão e integração;
 - E3, CLI e ELF Linux x86-64: futura;
 - E4, diagnóstico de gargalo: futura;
 - E5, otimização dirigida por evidência: futura;
