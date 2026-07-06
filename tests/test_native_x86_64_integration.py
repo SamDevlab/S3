@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import platform
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -18,8 +20,15 @@ from bootstrap.s3.backends.x86_64 import (
 from bootstrap.s3.cli import main as cli_main
 from bootstrap.s3.emulator import Emulator, EmulatorError
 from bootstrap.s3.lexer import SyntaxMode
+from bootstrap.s3.optimizer import OptimizationLevel
 from bootstrap.s3.pipeline import compile_source
 from bootstrap.s3.ternary import TernaryWidth, tritwise_max, tritwise_min
+from tools.benchmark_native import (
+    NativeBuildRequest,
+    build_native_artifact,
+    execute_native_artifact,
+    validate_native_execution,
+)
 
 
 ROOT = Path(__file__).parents[1]
@@ -777,3 +786,92 @@ def test_build_and_run_native_cli_commands(
     run_output = capsys.readouterr()
     assert run_output.err == ""
     assert run_output.out == "program returned: 6\n"
+
+
+@pytest.mark.parametrize(
+    "optimization",
+    (OptimizationLevel.O0, OptimizationLevel.O1),
+    ids=lambda level: level.value,
+)
+def test_e3_native_artifact_is_built_once_and_executed_twice(
+    optimization: OptimizationLevel,
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    del native_toolchain
+    manifest = json.loads(
+        (ROOT / "benchmarks" / "manifest.json").read_text(encoding="utf-8")
+    )
+    workload = next(
+        item for item in manifest["workloads"] if item["id"] == "minimal"
+    )
+    source_path = ROOT / "benchmarks" / workload["file"]
+    output_path = tmp_path / f"minimal-{optimization.value}"
+    build_calls = []
+
+    def build_runner(command, **kwargs):
+        build_calls.append((command, kwargs))
+        return subprocess.run(command, **kwargs)
+
+    artifact = build_native_artifact(
+        NativeBuildRequest(
+            workload_id=workload["id"],
+            source_path=source_path,
+            optimization=optimization,
+            expected_return=workload["expected_return"],
+            output_path=output_path,
+            max_instructions=workload["max_instructions"],
+            max_frames=workload["max_frames"],
+            source_syntax="0.6",
+        ),
+        process_runner=build_runner,
+        python_executable=sys.executable,
+    )
+
+    assert len(build_calls) == 1
+    assert artifact.executable_path == output_path.resolve()
+    assert artifact.executable_path.is_file()
+    original_bytes = artifact.executable_path.read_bytes()
+    original_mtime = artifact.executable_path.stat().st_mtime_ns
+    assert artifact.size_bytes == len(original_bytes)
+    assert artifact.size_bytes > 0
+    assert artifact.sha256 == hashlib.sha256(original_bytes).hexdigest()
+
+    execution_calls = []
+
+    def execution_runner(command, **kwargs):
+        execution_calls.append((command, kwargs))
+        return subprocess.run(command, **kwargs)
+
+    observed_returns = []
+    for _ in range(2):
+        result = execute_native_artifact(
+            artifact,
+            timeout=10.0,
+            process_runner=execution_runner,
+        )
+        observed_returns.append(
+            validate_native_execution(
+                result,
+                artifact.expected_return,
+            ).require_valid()
+        )
+        assert not result.timed_out
+        assert result.returncode == 0
+        assert result.stderr == ""
+
+    assert observed_returns == [
+        workload["expected_return"],
+        workload["expected_return"],
+    ]
+    assert len(execution_calls) == 2
+    assert all(
+        command == [str(artifact.executable_path)]
+        for command, _ in execution_calls
+    )
+    assert artifact.executable_path.read_bytes() == original_bytes
+    assert artifact.executable_path.stat().st_mtime_ns == original_mtime
+    assert artifact.size_bytes == artifact.executable_path.stat().st_size
+    assert artifact.sha256 == hashlib.sha256(
+        artifact.executable_path.read_bytes()
+    ).hexdigest()

@@ -5,7 +5,9 @@
 E0, E1 e E2 estão concluídas e integradas. A E2 foi incorporada pelo PR #4,
 com o baseline determinístico oficial e a CI pós-merge validados. A E3 está
 formalmente aberta para especificar a medição da CLI completa e da execução
-isolada de ELF Linux x86-64, mas sua implementação ainda não começou. E4 e E5
+isolada de ELF Linux x86-64. Sua implementação começou apenas pela fundação
+interna que separa build, execução direta e validação funcional do artefato;
+as superfícies públicas e o ciclo de amostragem continuam pendentes. E4 e E5
 não foram iniciadas. Nenhuma otimização estrutural de linguagem no S3 foi
 criada, e a versão 0.8.0 ainda não se encontra definida, versionada ou com meta
 de publicação engatilhada. O repositório segue na distribuição publicável
@@ -84,11 +86,13 @@ O avanço e a estabilização funcional da base serão escalonados metodicamente
 - Captação intrínseca matemática estruturada via hashes imutáveis das contagens de funções iteradas nativas e bytes emitidos estáticos textuais.
 - Abstenção formal de ativações indevidas na cli interface via novas flags experimentais que não possuam ratificações independentes via decisão explícita no conselho técnico da ramificação do desenvolvimento S3.
 
-### E3 — CLI e ELF Linux x86-64 (formalmente aberta, não implementada)
+### E3 — CLI e ELF Linux x86-64 (implementação parcial)
 
-A abertura da E3 é normativa. A etapa coletará evidências para a análise
-posterior, sem escolher gargalos ou implementar otimizações. A interpretação
-dos resultados pertence à E4; qualquer otimização aprovada pertence à E5.
+A E3 foi aberta normativamente e sua primeira unidade funcional implementa
+somente o modelo interno do ciclo de vida do ELF. A etapa coletará evidências
+para a análise posterior, sem escolher gargalos ou implementar otimizações. A
+interpretação dos resultados pertence à E4; qualquer otimização aprovada
+pertence à E5.
 
 #### Objetivo e superfícies
 
@@ -219,6 +223,20 @@ número de runs. Assim, testes controlados poderão cobrir timeout, falha ao
 iniciar processo, status não zero, stdout ou stderr inesperado, retorno
 incorreto, amostras conhecidas, mediana, p95, exclusão de amostra inválida,
 falha da toolchain e artefato ausente.
+
+#### Estado da implementação
+
+A primeira fundação interna contém modelos imutáveis para solicitação de build,
+artefato, execução bruta e validação estruturada. O builder invoca uma vez o
+comando público de build existente; o executor mede uma chamada direta ao ELF
+com relógio e processo injetáveis; o validador não acessa filesystem nem inicia
+processos. Testes unitários independentes de Linux e uma integração nativa
+O0/O1 para o workload `minimal` demonstram build único e múltiplas execuções do
+mesmo artefato.
+
+Ainda não existem os modos públicos `elf-execution` e `cli-end-to-end`.
+Warmups, runs, estatísticas agregadas e serialização JSON da E3 permanecem
+pendentes.
 
 #### Fora do escopo da E3
 

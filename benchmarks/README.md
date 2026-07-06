@@ -42,10 +42,16 @@ Não faça regeração implícita dentro de rodadas normais de benchmark.
 - `native-asm-pipeline`: Mede o tempo gasto na transcrição para o Assembly interno e a emissão do GNU Assembly x86-64 nativo como string (textual).
 **Nota**: O `native-asm-pipeline` não engloba tempos para invocar nenhum assembler, invocar o linker e nem compila/executa o executável ELF resultante.
 
-## Contrato planejado da E3
+## Fundação interna da E3
 
-A E3 está formalmente aberta, mas ainda não foi implementada. A implementação
-futura separará duas superfícies:
+A implementação da E3 foi iniciada somente pela fundação interna do ciclo de
+vida de um ELF. O módulo `tools/benchmark_native.py` separa solicitação de
+build, artefato nativo, execução direta e validação funcional. O builder usa o
+comando público de build já existente, enquanto o executor recebe um artefato
+pronto e não conhece fonte S3 ou toolchain. O validador consome apenas o
+resultado bruto e não acessa processos ou filesystem.
+
+As superfícies públicas planejadas continuam separadas:
 
 - `cli-end-to-end`: medição da experiência completa de um comando público já
   existente, incluindo os custos reais atravessados por esse comando;
@@ -69,11 +75,14 @@ de CI. Timeout continuará permitido como proteção contra travamento. Correç�
 funcional, execução completa dos casos, zero skips nativos e validade dos
 formatos poderão atuar como gates determinísticos.
 
+O modo público `elf-execution` ainda não está disponível no runner. Warmups,
+runs, estatísticas agregadas e JSON da E3 ainda não foram implementados, assim
+como `cli-end-to-end`.
+
 O baseline determinístico continuará livre de tempos e informações ambientais.
 Resultados temporais poderão ser emitidos localmente, em logs ou artefatos
 efêmeros de CI e em JSON não versionado; eles não serão rastreados por padrão.
-Esta seção estabelece o contrato da implementação futura e não apresenta
-comandos ou opções futuras como se já existissem.
+Esta seção não apresenta comandos ou opções futuras como se já existissem.
 
 ## Comandos
 
