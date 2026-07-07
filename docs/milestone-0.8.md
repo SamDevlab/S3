@@ -5,14 +5,14 @@
 E0, E1 e E2 estão concluídas e integradas. A E2 foi incorporada pelo PR #4,
 com o baseline determinístico oficial e a CI pós-merge validados. A E3 está
 formalmente aberta para especificar a medição da CLI completa e da execução
-isolada de ELF Linux x86-64. Sua implementação começou pela fundação interna
-que separa build, execução direta, validação funcional e amostragem validada do
-artefato; as superfícies públicas e a serialização da E3 continuam pendentes.
-E4 e E5
-não foram iniciadas. Nenhuma otimização estrutural de linguagem no S3 foi
-criada, e a versão 0.8.0 ainda não se encontra definida, versionada ou com meta
-de publicação engatilhada. O repositório segue na distribuição publicável
-0.7.0.
+isolada de ELF Linux x86-64. A E3-3 concluiu a superfície pública
+`elf-execution`, o relatório JSON `benchmark_format_version 1.2.0` e a
+integração Linux x86-64 real do runner para O0/O1. A medição
+`cli-end-to-end`, a seleção de gargalo e qualquer otimização continuam
+pendentes; E4 e E5 não foram iniciadas. Nenhuma otimização estrutural de
+linguagem no S3 foi criada, e a versão 0.8.0 ainda não se encontra definida,
+versionada ou com meta de publicação engatilhada. O repositório segue na
+distribuição publicável 0.7.0.
 
 ## Motivação
 
@@ -89,11 +89,11 @@ O avanço e a estabilização funcional da base serão escalonados metodicamente
 
 ### E3 — CLI e ELF Linux x86-64 (implementação parcial)
 
-A E3 foi aberta normativamente e sua primeira unidade funcional implementa
-somente o modelo interno do ciclo de vida do ELF. A etapa coletará evidências
-para a análise posterior, sem escolher gargalos ou implementar otimizações. A
-interpretação dos resultados pertence à E4; qualquer otimização aprovada
-pertence à E5.
+A E3 foi aberta normativamente e já contém o modelo interno do ciclo de vida do
+ELF, a amostragem validada e o modo público `elf-execution` no runner de
+benchmarks. A etapa coleta evidências para a análise posterior, sem escolher
+gargalos ou implementar otimizações. A interpretação dos resultados pertence à
+E4; qualquer otimização aprovada pertence à E5.
 
 #### Objetivo e superfícies
 
@@ -239,14 +239,20 @@ resultado estatístico. O builder invoca uma vez o comando público de build
 existente; o executor mede uma chamada direta ao ELF com relógio e processo
 injetáveis; o validador não acessa filesystem nem inicia processos; o coletor
 reutiliza o mesmo artefato em preflight, warmups e runs. Testes unitários
-independentes de Linux e uma integração nativa O0/O1 para o workload `minimal`
+independentes de Linux e integrações nativas O0/O1 para o workload `minimal`
 demonstram build único, mesmo caminho, mesmos bytes, mesmo tamanho, mesmo
 SHA-256, warmups descartados e três amostras medidas válidas em nanossegundos.
 
-Ainda não existem os modos públicos `elf-execution` e `cli-end-to-end`.
-O JSON público continua em `benchmark_format_version 1.1.0` e ainda não
-serializa a E3. A exposição pública de `elf-execution`, a medição
-`cli-end-to-end` e a serialização JSON da E3 permanecem pendentes.
+O modo público `elf-execution` existe no runner de benchmarks e é restrito a
+Linux x86-64. Ele carrega os casos pelo manifesto oficial, cria artefatos em
+tempdirs fora do checkout, constrói uma vez por workload/otimização, executa
+preflight, warmups validados e runs medidos, e serializa JSON público em
+`benchmark_format_version 1.2.0`. O baseline determinístico da E2 preserva
+`benchmark_format_version 1.1.0` como origem histórica e
+`baseline_format_version 1.0.0` como schema próprio.
+
+Ainda não existe o modo público `cli-end-to-end`. A E3 permanece parcial
+enquanto essa superfície e o fechamento formal da coleta não forem concluídos.
 
 #### Fora do escopo da E3
 

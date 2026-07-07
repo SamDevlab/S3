@@ -131,20 +131,22 @@ Estado atual:
 - E1, workloads e runner no mesmo processo: concluída e integrada;
 - E2, tempos por fase, métricas e baseline determinístico: concluída e
   integrada pelo PR #4, com CI pós-merge verde;
-- E3, CLI e ELF Linux x86-64: etapa atual, com a primeira fundação interna de
-  build, artefato, execução direta, validação funcional, estatísticas puras e
-  amostragem validada do mesmo ELF; os modos públicos, a serialização JSON da
-  E3 e `cli-end-to-end` continuam pendentes;
+- E3, CLI e ELF Linux x86-64: etapa atual, com fundação interna de build,
+  artefato, execução direta, validação funcional, estatísticas puras,
+  amostragem validada do mesmo ELF e modo público `elf-execution` no runner;
+  `cli-end-to-end`, seleção de gargalo e fechamento formal da E3 continuam
+  pendentes;
 - E4, diagnóstico de gargalo: não iniciada;
 - E5, otimização dirigida por evidência: não iniciada;
 - E6, fechamento (sem versão 0.8.0 publicada ainda): futura.
 
 A E3 coletará evidências sem escolher ou implementar otimizações. Tempos serão
 informativos; correção funcional, completude dos casos e formatos
-determinísticos serão gates. A implementação parcial atual não expõe novos
-modos, mantém o JSON público inalterado, ainda não implementa `cli-end-to-end`
-e exercita a amostragem interna O0/O1 do workload `minimal` com build único,
-preflight, um warmup descartado e três runs medidos.
+determinísticos serão gates. A implementação parcial atual expõe
+`elf-execution` em `benchmark_format_version 1.2.0`, preserva o baseline
+histórico da E2 em `benchmark_format_version 1.1.0` e exercita o runner real
+O0/O1 do workload `minimal` com build único, preflight, um warmup descartado e
+três runs medidos. `cli-end-to-end` ainda não foi implementado.
 
 ## Pós-MVP / marcos futuros
 

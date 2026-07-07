@@ -2,12 +2,14 @@ import argparse
 import datetime
 import importlib.metadata
 import json
+import math
 import os
 import platform
 import subprocess
 import sys
 import time
 import hashlib
+import tempfile
 import tomllib
 from pathlib import Path
 
@@ -28,8 +30,26 @@ from bootstrap.s3.metrics import PhaseTimer
 
 if __package__:
     from . import benchmark_statistics as _benchmark_statistics
+    from .benchmark_native import (
+        NativeBuildError,
+        NativeBuildRequest,
+        NativeExecutionError,
+        NativeSamplingError,
+        NativeSamplingPlan,
+        NativeSamplingResult,
+        run_native_sampling_case,
+    )
 else:
     import benchmark_statistics as _benchmark_statistics
+    from benchmark_native import (
+        NativeBuildError,
+        NativeBuildRequest,
+        NativeExecutionError,
+        NativeSamplingError,
+        NativeSamplingPlan,
+        NativeSamplingResult,
+        run_native_sampling_case,
+    )
 
 calc_max = _benchmark_statistics.calc_max
 calc_mean = _benchmark_statistics.calc_mean
@@ -38,7 +58,15 @@ calc_min = _benchmark_statistics.calc_min
 calc_p95 = _benchmark_statistics.calc_p95
 calc_stats = _benchmark_statistics.calc_stats
 
-BENCHMARK_FORMAT_VERSION = "1.1.0"
+BENCHMARK_FORMAT_VERSION = "1.2.0"
+# The deterministic E2 baseline is a historical artifact generated with the
+# public benchmark report format that existed at the time. Keep that source
+# format explicit so new public reports can evolve without rewriting the
+# tracked baseline.
+DETERMINISTIC_BASELINE_SOURCE_FORMAT_VERSION = "1.1.0"
+
+ELF_EXECUTION_MODE = "elf-execution"
+ELF_ARTIFACT_KIND = "elf-linux-x86-64"
 
 def extract_format_and_output():
     fmt = "text"
@@ -172,6 +200,231 @@ def gather_metadata(args, workloads_order: list[str]) -> dict:
         "runs": getattr(args, "runs", 0),
         "workloads_order": workloads_order,
     }
+
+
+def is_linux_x86_64() -> bool:
+    system = platform.system()
+    machine = platform.machine().lower()
+    return system == "Linux" and machine in {"x86_64", "amd64"}
+
+
+def validate_elf_execution_platform(args) -> None:
+    if args.mode != ELF_EXECUTION_MODE:
+        return
+    if is_linux_x86_64():
+        return
+    detected = f"{platform.system()} {platform.machine()}".strip()
+    exit_error(
+        args,
+        "S3_BENCH_UNSUPPORTED_PLATFORM",
+        (
+            f"mode {ELF_EXECUTION_MODE} requires Linux x86-64; "
+            f"detected {detected or 'unknown platform'}"
+        ),
+    )
+
+
+def validate_elf_timeout(args) -> None:
+    if args.mode != ELF_EXECUTION_MODE:
+        return
+    timeout = args.timeout_seconds
+    if timeout is None or not math.isfinite(timeout) or timeout <= 0:
+        exit_error(
+            args,
+            "S3_BENCH_INVALID_ARGUMENT",
+            "timeout-seconds must be finite and greater than zero",
+        )
+
+
+def ensure_temp_dir_outside_checkout(temp_dir: Path, root_dir: Path) -> None:
+    resolved_temp = temp_dir.resolve()
+    resolved_root = root_dir.resolve()
+    try:
+        resolved_temp.relative_to(resolved_root)
+    except ValueError:
+        return
+    raise RuntimeError("benchmark ELF tempdir resolved inside the checkout")
+
+
+def make_native_build_request(
+    workload: dict,
+    root_dir: Path,
+    output_path: Path,
+    optimization: OptimizationLevel,
+) -> NativeBuildRequest:
+    return NativeBuildRequest(
+        workload_id=workload["id"],
+        source_path=root_dir / "benchmarks" / workload["file"],
+        optimization=optimization,
+        expected_return=workload["expected_return"],
+        output_path=output_path,
+        max_instructions=workload["max_instructions"],
+        max_frames=workload["max_frames"],
+        source_syntax="0.6",
+    )
+
+
+def serialize_timing_statistics(statistics) -> dict[str, int | float]:
+    values = {
+        "sample_count": statistics.sample_count,
+        "minimum": statistics.minimum,
+        "maximum": statistics.maximum,
+        "mean": statistics.mean,
+        "median": statistics.median,
+        "p95": statistics.p95,
+    }
+    for field, value in values.items():
+        if isinstance(value, float) and not math.isfinite(value):
+            raise ValueError(f"non-finite timing statistic: {field}")
+    return values
+
+
+def serialize_native_sampling_result(
+    result: NativeSamplingResult,
+) -> dict:
+    statistics = serialize_timing_statistics(result.statistics)
+    return {
+        "workload": result.artifact.workload_id,
+        "status": "passed",
+        "mode": ELF_EXECUTION_MODE,
+        "opt_level": result.artifact.optimization.name,
+        "functional_validation": {
+            "mode": ELF_EXECUTION_MODE,
+            "status": "passed",
+            "expected_return": result.artifact.expected_return,
+            "actual_return": result.actual_return,
+        },
+        "timing": {
+            "unit": "ns",
+            "samples_ns": list(result.samples_ns),
+            "elf_execution": statistics,
+        },
+        "metrics": {
+            "native_artifact": {
+                "artifact_kind": ELF_ARTIFACT_KIND,
+                "size_bytes": result.artifact.size_bytes,
+                "sha256": result.artifact.sha256,
+            },
+            "execution": {
+                "build_count": 1,
+                "preflight_count": 1,
+                "warmups": result.warmups,
+                "runs": result.runs,
+                "total_execution_count": result.total_execution_count,
+            },
+        },
+    }
+
+
+def _native_validation_error_message(
+    workload_id: str,
+    optimization: OptimizationLevel,
+    error: NativeSamplingError,
+) -> str:
+    phase = error.phase.value
+    index = "" if error.index is None else f" {error.index}"
+    codes = ", ".join(code.value for code in error.failure_codes) or "unknown"
+    return (
+        f"Native validation failed for workload {workload_id} "
+        f"{optimization.name}: phase {phase}{index}; codes: {codes}"
+    )
+
+
+def run_elf_execution_workload(
+    workload: dict,
+    root_dir: Path,
+    optimization: OptimizationLevel,
+    args,
+) -> dict:
+    try:
+        plan = NativeSamplingPlan(
+            warmups=args.warmups,
+            runs=args.runs,
+            timeout=args.timeout_seconds,
+        )
+    except (TypeError, ValueError) as error:
+        exit_error(args, "S3_BENCH_INVALID_ARGUMENT", str(error))
+
+    try:
+        with tempfile.TemporaryDirectory(prefix="s3-benchmark-elf-") as temp_dir:
+            temp_path = Path(temp_dir)
+            ensure_temp_dir_outside_checkout(temp_path, root_dir)
+            output_path = temp_path / f"{workload['id']}-{optimization.value}"
+            request = make_native_build_request(
+                workload,
+                root_dir,
+                output_path,
+                optimization,
+            )
+            sampling_result = run_native_sampling_case(request, plan)
+            return serialize_native_sampling_result(sampling_result)
+    except NativeBuildError:
+        exit_error(
+            args,
+            "S3_BENCH_NATIVE_BUILD_FAILED",
+            (
+                f"Native build failed for workload {workload['id']} "
+                f"{optimization.name}"
+            ),
+        )
+    except NativeExecutionError:
+        exit_error(
+            args,
+            "S3_BENCH_NATIVE_EXECUTION_FAILED",
+            (
+                f"Native ELF execution failed for workload {workload['id']} "
+                f"{optimization.name}"
+            ),
+        )
+    except NativeSamplingError as error:
+        exit_error(
+            args,
+            "S3_BENCH_NATIVE_VALIDATION_FAILED",
+            _native_validation_error_message(
+                workload["id"],
+                optimization,
+                error,
+            ),
+        )
+    except (OSError, RuntimeError, TypeError, ValueError) as error:
+        exit_error(
+            args,
+            "S3_BENCH_NATIVE_SAMPLING_FAILED",
+            (
+                f"Native sampling failed for workload {workload['id']} "
+                f"{optimization.name}: {type(error).__name__}"
+            ),
+        )
+
+
+def append_elf_text_result(lines: list[str], result: dict) -> None:
+    timing = result["timing"]
+    statistics = timing["elf_execution"]
+    validation = result["functional_validation"]
+    artifact = result["metrics"]["native_artifact"]
+    execution = result["metrics"]["execution"]
+
+    lines.append(f"workload: {result['workload']}")
+    lines.append(f"mode: {result['mode']}")
+    lines.append(f"optimization: {result['opt_level']}")
+    lines.append(f"status: {result['status']}")
+    lines.append(f"expected return: {validation['expected_return']}")
+    lines.append(f"actual return: {validation['actual_return']}")
+    lines.append(f"artifact size: {artifact['size_bytes']} bytes")
+    lines.append(f"artifact sha256: {artifact['sha256']}")
+    lines.append(f"warmups: {execution['warmups']}")
+    lines.append(f"runs: {execution['runs']}")
+    lines.append(f"total executions: {execution['total_execution_count']}")
+    lines.append("")
+    lines.append("timing (ns):")
+    lines.append(f"  sample count        : {statistics['sample_count']}")
+    lines.append(f"  minimum             : {statistics['minimum']}")
+    lines.append(f"  maximum             : {statistics['maximum']}")
+    lines.append(f"  mean                : {statistics['mean']}")
+    lines.append(f"  median              : {statistics['median']}")
+    lines.append(f"  p95                 : {statistics['p95']}")
+    lines.append("")
+
 
 def load_manifest(manifest_path: Path) -> dict:
     try:
@@ -491,11 +744,23 @@ def run_workload(w, source, opt_level, max_inst, max_frames, args, clock=None):
 def parse_args():
     parser = JsonArgumentParser(description="In-process benchmark runner for S3")
     parser.add_argument("--list", action="store_true", help="List available workloads")
-    parser.add_argument("--mode", choices=["hosted-pipeline", "native-asm-pipeline"], help="Benchmark mode")
+    parser.add_argument(
+        "--mode",
+        choices=["hosted-pipeline", "native-asm-pipeline", ELF_EXECUTION_MODE],
+        help="Benchmark mode",
+    )
     parser.add_argument("--optimization", choices=["O0", "O1", "both"], help="Optimization level")
     parser.add_argument("--workload", help="Workload ID or 'all'")
     parser.add_argument("--warmups", type=int, default=3, help="Number of warmups")
     parser.add_argument("--runs", type=int, default=10, help="Number of measured runs")
+    parser.add_argument(
+        "--timeout-seconds",
+        type=float,
+        default=10.0,
+        help=(
+            "Defensive timeout for each ELF execution in elf-execution mode"
+        ),
+    )
     parser.add_argument("--format", choices=["text", "json"], default="text", help="Output format")
     parser.add_argument("--output", help="Output file path")
     parser.add_argument("--include-samples", action="store_true", help="Include raw samples in JSON output")
@@ -564,6 +829,8 @@ def main():
     if not args.mode or not args.optimization or not args.workload:
         exit_error(args, "S3_BENCH_INVALID_ARGUMENT", "Missing required arguments for benchmarking.")
 
+    validate_elf_timeout(args)
+
     if args.workload == "all":
         selected_workloads = workloads
     else:
@@ -571,23 +838,46 @@ def main():
         if not selected_workloads:
             exit_error(args, "S3_BENCH_UNKNOWN_WORKLOAD", f"Unknown workload: {args.workload}")
 
+    validate_elf_execution_platform(args)
+
     workloads_order = [w["id"] for w in selected_workloads]
     metadata = gather_metadata(args, workloads_order)
 
     results = []
 
     for w in selected_workloads:
-        w_path = root_dir / "benchmarks" / w["file"]
-        try:
-            with w_path.open("r", encoding="utf-8") as f:
-                source = f.read()
-        except Exception as e:
-            exit_error(args, "S3_BENCH_INVALID_MANIFEST", f"Failed to read workload source: {e}")
-
         max_inst = w["max_instructions"]
         max_frames = w.get("max_frames")
 
         if args.optimization == "both":
+            if args.mode == ELF_EXECUTION_MODE:
+                res_O0 = run_elf_execution_workload(
+                    w,
+                    root_dir,
+                    OptimizationLevel.O0,
+                    args,
+                )
+                res_O1 = run_elf_execution_workload(
+                    w,
+                    root_dir,
+                    OptimizationLevel.O1,
+                    args,
+                )
+                results.append({
+                    "workload": w["id"],
+                    "status": "passed",
+                    "O0": res_O0,
+                    "O1": res_O1,
+                })
+                continue
+
+            w_path = root_dir / "benchmarks" / w["file"]
+            try:
+                with w_path.open("r", encoding="utf-8") as f:
+                    source = f.read()
+            except Exception as e:
+                exit_error(args, "S3_BENCH_INVALID_MANIFEST", f"Failed to read workload source: {e}")
+
             res_O0 = run_workload(w, source, OptimizationLevel.O0, max_inst, max_frames, args)
             res_O1 = run_workload(w, source, OptimizationLevel.O1, max_inst, max_frames, args)
 
@@ -682,7 +972,18 @@ def main():
             })
         else:
             opt_lvl = OptimizationLevel.O1 if args.optimization == "O1" else OptimizationLevel.O0
-            results.append(run_workload(w, source, opt_lvl, max_inst, max_frames, args))
+            if args.mode == ELF_EXECUTION_MODE:
+                results.append(
+                    run_elf_execution_workload(w, root_dir, opt_lvl, args)
+                )
+            else:
+                w_path = root_dir / "benchmarks" / w["file"]
+                try:
+                    with w_path.open("r", encoding="utf-8") as f:
+                        source = f.read()
+                except Exception as e:
+                    exit_error(args, "S3_BENCH_INVALID_MANIFEST", f"Failed to read workload source: {e}")
+                results.append(run_workload(w, source, opt_lvl, max_inst, max_frames, args))
 
     output_data = {
         "benchmark_format_version": BENCHMARK_FORMAT_VERSION,
@@ -702,12 +1003,16 @@ def main():
     else:
         lines = []
         for top_r in results:
-            if "comparison" in top_r:
+            if "comparison" in top_r or ("O0" in top_r and "O1" in top_r):
                 rs = [top_r["O0"], top_r["O1"]]
             else:
                 rs = [top_r]
 
             for r in rs:
+                if r.get("mode") == ELF_EXECUTION_MODE:
+                    append_elf_text_result(lines, r)
+                    continue
+
                 lines.append(f"workload: {r['workload']}")
                 lines.append(f"mode: {args.mode}")
                 lines.append(f"optimization: {r['opt_level']}")

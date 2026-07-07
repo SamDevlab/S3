@@ -1,10 +1,7 @@
 import pytest
-import math
 import subprocess
 import json
 import sys
-import os
-from pathlib import Path
 
 from tools.benchmark import (
     calc_min, calc_max, calc_mean, calc_median, calc_p95,

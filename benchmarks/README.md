@@ -15,7 +15,7 @@ As métricas temporais extraídas **são apenas informativas**. Embora o overhea
 
 ## Modelo Temporal e Estatísticas
 
-Os tempos reportados englobam mínimo, máximo, média (`mean`), mediana (`median`) e o percentil 95 (`p95`). A saída JSON formatada em `--format json` (schema `benchmark_format_version 1.1.0`) descreve as métricas determinísticas e o registro da versão:
+Os tempos reportados englobam mínimo, máximo, média (`mean`), mediana (`median`) e o percentil 95 (`p95`). A saída JSON formatada em `--format json` (schema público `benchmark_format_version 1.2.0`) descreve as métricas determinísticas e o registro da versão:
 - `checkout_distribution_version`: a versão proveniente do estado atual do git/diretório onde o runner opera;
 - `installed_distribution_version`: a versão real da biblioteca s3 instalada (se houver), permitindo comparar a divergência de instâncias.
 
@@ -30,6 +30,12 @@ Para atuar como gate de CI (testes automatizados), utilizamos um **baseline dete
 
 O contador `function_call_count` registra apenas as instruções dinâmicas de chamadas `TCALL` (a entrada para a função principal não é computada).
 
+O baseline da E2 preserva o campo histórico
+`benchmark_format_version 1.1.0`, porque foi produzido sob essa versão do
+relatório público. O schema próprio do baseline permanece
+`baseline_format_version 1.0.0`; o relatório público atual evoluiu
+independentemente para `benchmark_format_version 1.2.0`.
+
 Para regerar o baseline caso haja alterações aprovadas (ex. refatoração semântica no emulador), utilize o comando explícito:
 ```bash
 python tools/generate_deterministic_baseline.py --output benchmarks/baseline-0.8-e2.json
@@ -40,6 +46,11 @@ Não faça regeração implícita dentro de rodadas normais de benchmark.
 
 - `hosted-pipeline`: Mede a compilação de fonte para Assembly através das APIs do pacote e a execução no emulador interno (in-process).
 - `native-asm-pipeline`: Mede o tempo gasto na transcrição para o Assembly interno e a emissão do GNU Assembly x86-64 nativo como string (textual).
+- `elf-execution`: Em Linux x86-64, constrói cada combinação workload/O0/O1
+  uma única vez, executa preflight funcional, warmups validados e descartados,
+  e mede somente os runs ELF validados. As amostras são emitidas em
+  nanossegundos no JSON 1.2.0, junto de tamanho e SHA-256 do artefato, sem
+  serializar caminhos locais.
 **Nota**: O `native-asm-pipeline` não engloba tempos para invocar nenhum assembler, invocar o linker e nem compila/executa o executável ELF resultante.
 
 ## Fundação interna da E3
@@ -85,15 +96,15 @@ de CI. Timeout continuará permitido como proteção contra travamento. Correç�
 funcional, execução completa dos casos, zero skips nativos e validade dos
 formatos poderão atuar como gates determinísticos.
 
-O modo público `elf-execution` ainda não está disponível no runner. O JSON
-público do runner continua inalterado em `benchmark_format_version 1.1.0` e
-não expõe os dados internos da E3. `cli-end-to-end` continua pendente. A E3
-ainda é parcial, e E4 e E5 não foram iniciadas.
+O modo público `elf-execution` está disponível no runner para Linux x86-64. O
+JSON público do runner está em `benchmark_format_version 1.2.0` e expõe os
+dados seguros da E3 para execução ELF. `cli-end-to-end` continua pendente. A
+E3 ainda é parcial, e E4 e E5 não foram iniciadas.
 
 O baseline determinístico continuará livre de tempos e informações ambientais.
-Resultados temporais poderão ser emitidos localmente, em logs ou artefatos
-efêmeros de CI e em JSON não versionado; eles não serão rastreados por padrão.
-Esta seção não apresenta comandos ou opções futuras como se já existissem.
+Resultados temporais podem ser emitidos localmente, em logs ou artefatos
+efêmeros de CI pelo relatório público 1.2.0; eles não serão rastreados por
+padrão.
 
 ## Comandos
 
@@ -102,6 +113,25 @@ python tools/benchmark.py --help
 python tools/benchmark.py --list
 python tools/benchmark.py --mode hosted-pipeline --optimization both --workload all --warmups 3 --runs 10
 ```
+
+Em Linux x86-64, a superfície pública de execução ELF pode ser acionada com:
+
+```bash
+python tools/benchmark.py \
+  --mode elf-execution \
+  --optimization both \
+  --workload minimal \
+  --warmups 1 \
+  --runs 3 \
+  --timeout-seconds 10.0 \
+  --format json
+```
+
+O timeout é defensivo e existe apenas para impedir processo travado; ele não é
+gate de desempenho. O build, o preflight e os warmups não entram nas amostras.
+Cada caso emite três runs medidos no exemplo acima, com unidade `ns`, artefato
+`elf-linux-x86-64`, tamanho, SHA-256 e validação funcional, sem caminhos do
+checkout ou do diretório temporário.
 
 Quando invocado com `--optimization both`, o runner executa ambas as configurações (O0 e O1) e emite uma comparação neutra com razões informativas de proporção temporal e volumétrica (crescimento ou decréscimo estrutural).
 

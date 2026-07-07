@@ -56,12 +56,16 @@ Essa camada visa isolar o processo de compilação sem misturar o *build* com a 
 
 Fluxo normativo:
 - compilar uma vez;
-- validar resultado;
-- executar o mesmo ELF várias vezes;
-- medir somente execução;
+- executar preflight funcional;
+- executar warmups validados e descartados;
+- executar o mesmo ELF em runs medidos;
+- medir somente execuções ELF válidas;
 - medir O0 e O1 separadamente.
 
 A execução de arquivos ELF é obrigatoriamente Linux x86-64 enquanto este for o único backend suportado.
+Build, preflight e warmups não entram nas amostras temporais. A janela
+estatística da Camada D começa somente nos runs medidos que passaram pela
+validação funcional.
 
 ## 3. Terminologia
 
@@ -188,9 +192,9 @@ Qualquer emissão oficial dos relatórios em JSON registrará:
 
 Para prezar pela segurança absoluta dos dados e rastros digitais efêmeros da CI, está restrito que o JSON registre: nomes de sessões interativas dos usuários (usernames), tokens de identificação locais e globais, file system mappings particulares privados e extensões não efêmeras de root hostname, além de vetos integrais ao dump total da `environ` na serialização do objeto (chaves sensíveis).
 
-## 10. Formato de saída futuro
+## 10. Formato de saída
 
-A geração dos laudos de benchmark se adequará às políticas mínimas futuras a seguir delineadas (sem implantação no E0):
+A geração dos laudos de benchmark se adequa às políticas mínimas a seguir:
 
 - Obrigatório texto serializado em UTF-8 nativo e não escapado sem necessidade.
 - Serialização padronizada, alinhada e JSON puro e determinístico.
@@ -201,6 +205,17 @@ A geração dos laudos de benchmark se adequará às políticas mínimas futuras
 - Verificadores status_check/bool confirmados explicitamente (ok ou falha) nas medições captadas.
 - Mensagens textuais agrupadas nas tags descritivas da classe "erro estruturado" perfeitamente decodificáveis.
 - Versão isolada que rastreia puramente as mudanças do design do JSON benchmark em questão (sem amarra à linguagem S3).
+
+O relatório público atual do runner usa `benchmark_format_version 1.2.0`.
+Essa versão cobre os modos `hosted-pipeline`, `native-asm-pipeline` e
+`elf-execution`, incluindo no caso ELF metadados determinísticos do artefato,
+validação funcional nativa, amostras brutas em nanossegundos e estatísticas de
+execução. O baseline determinístico da E2 mantém
+`benchmark_format_version 1.1.0` como registro histórico do formato sob o qual
+foi produzido, enquanto o schema próprio do baseline permanece
+`baseline_format_version 1.0.0`. Essas três versões possuem responsabilidades
+distintas: relatório público atual, origem histórica do baseline e estrutura do
+baseline.
 
 ## 11. Política de CI
 
@@ -281,3 +296,9 @@ Para blindar e promover isolamento e veracidade aos dados:
 
 ## 16. Estado da decisão
 Aprovada integralmente na oficialização documental do Marco 0.8 e fixada normativamente como padrão oficial para toda validação futura temporal e de otimização no S3.
+
+Na E3-3, o runner passou a expor `elf-execution` como superfície pública de
+benchmark para Linux x86-64. Essa superfície mede somente execuções ELF
+válidas, depois de build único, preflight e warmups descartados. Tempos seguem
+informativos; correção funcional, validade estrutural do JSON e completude dos
+casos continuam sendo os gates determinísticos.

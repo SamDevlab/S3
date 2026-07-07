@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import platform
 import shutil
@@ -934,3 +935,113 @@ def test_e3_native_sampling_reuses_one_minimal_elf_for_o0_and_o1(
     assert result.artifact.executable_path.stat().st_mtime_ns == original_mtime
     assert result.artifact.executable_path.stat().st_size == original_size
     assert hashlib.sha256(current_bytes).hexdigest() == original_sha
+
+
+def test_public_elf_execution_runner_measures_minimal_o0_o1(
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    del native_toolchain
+    native_temp = tmp_path / "native-runner-temp"
+    native_temp.mkdir()
+    env = os.environ.copy()
+    env.update({
+        "TMPDIR": str(native_temp),
+        "TMP": str(native_temp),
+        "TEMP": str(native_temp),
+    })
+    command = [
+        sys.executable,
+        str(ROOT / "tools" / "benchmark.py"),
+        "--mode",
+        "elf-execution",
+        "--optimization",
+        "both",
+        "--workload",
+        "minimal",
+        "--warmups",
+        "1",
+        "--runs",
+        "3",
+        "--timeout-seconds",
+        "10.0",
+        "--format",
+        "json",
+    ]
+
+    completed = subprocess.run(
+        command,
+        cwd=ROOT,
+        env=env,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert completed.stderr == ""
+    assert "traceback" not in completed.stdout.lower()
+    assert "traceback" not in completed.stderr.lower()
+    assert str(ROOT) not in completed.stdout
+    assert str(native_temp) not in completed.stdout
+    username = env.get("USERNAME") or env.get("USER")
+    if username:
+        assert username not in completed.stdout
+
+    payload = json.loads(completed.stdout)
+    assert payload["benchmark_format_version"] == "1.2.0"
+    assert payload["configuration"]["mode"] == "elf-execution"
+    assert payload["metadata"]["mode"] == "elf-execution"
+    assert len(payload["results"]) == 1
+
+    grouped_result = payload["results"][0]
+    assert grouped_result["workload"] == "minimal"
+    assert grouped_result["status"] == "passed"
+    cases = [grouped_result["O0"], grouped_result["O1"]]
+    assert [case["opt_level"] for case in cases] == ["O0", "O1"]
+
+    for case in cases:
+        assert case["workload"] == "minimal"
+        assert case["mode"] == "elf-execution"
+        assert case["status"] == "passed"
+        validation = case["functional_validation"]
+        assert validation["mode"] == "elf-execution"
+        assert validation["status"] == "passed"
+        assert validation["expected_return"] == 0
+        assert validation["actual_return"] == 0
+
+        artifact = case["metrics"]["native_artifact"]
+        assert artifact["artifact_kind"] == "elf-linux-x86-64"
+        assert artifact["size_bytes"] > 0
+        assert len(artifact["sha256"]) == 64
+        assert all(character in "0123456789abcdef" for character in artifact["sha256"])
+
+        execution = case["metrics"]["execution"]
+        assert execution["build_count"] == 1
+        assert execution["preflight_count"] == 1
+        assert execution["warmups"] == 1
+        assert execution["runs"] == 3
+        assert execution["total_execution_count"] == 5
+
+        timing = case["timing"]
+        assert timing["unit"] == "ns"
+        samples = timing["samples_ns"]
+        assert len(samples) == 3
+        assert all(isinstance(sample, int) for sample in samples)
+        assert all(sample >= 0 for sample in samples)
+
+        statistics = timing["elf_execution"]
+        ordered_samples = sorted(samples)
+        expected_p95 = ordered_samples[math.ceil(0.95 * len(samples)) - 1]
+        assert statistics["sample_count"] == 3
+        assert statistics["minimum"] == min(samples)
+        assert statistics["maximum"] == max(samples)
+        assert statistics["mean"] == pytest.approx(sum(samples) / len(samples))
+        assert statistics["median"] == ordered_samples[1]
+        assert statistics["p95"] == expected_p95
+
+    assert native_temp.exists()
+    assert list(native_temp.glob("s3-benchmark-elf-*")) == []
+    assert not any(native_temp.rglob("*.s"))
+    assert not any(path.is_file() for path in native_temp.rglob("*"))
