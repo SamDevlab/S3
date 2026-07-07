@@ -5,6 +5,7 @@ from pathlib import Path
 from bootstrap.s3 import OptimizationLevel
 from tools.benchmark import (
     BENCHMARK_FORMAT_VERSION,
+    DETERMINISTIC_BASELINE_SOURCE_FORMAT_VERSION,
     load_manifest,
     run_hosted_pipeline,
 )
@@ -168,7 +169,23 @@ def test_deterministic_metrics_gate():
         "workloads",
     }
     assert baseline["baseline_format_version"] == BASELINE_FORMAT_VERSION
-    assert baseline["benchmark_format_version"] == BENCHMARK_FORMAT_VERSION
+    assert baseline["benchmark_format_version"] == DETERMINISTIC_BASELINE_SOURCE_FORMAT_VERSION
+
+    # The historical E2 baseline must remain pinned to the source format that
+    # existed when it was generated, even if the public benchmark report format
+    # advances later.
+    assert baseline["benchmark_format_version"] != BENCHMARK_FORMAT_VERSION
+
+    # Guard against accidentally wiring the current public report version into
+    # the baseline generator.
+    from tools import benchmark as benchmark_module
+
+    original_version = benchmark_module.BENCHMARK_FORMAT_VERSION
+    benchmark_module.BENCHMARK_FORMAT_VERSION = "9.9.9"
+    try:
+        assert generate_baseline()["benchmark_format_version"] == DETERMINISTIC_BASELINE_SOURCE_FORMAT_VERSION
+    finally:
+        benchmark_module.BENCHMARK_FORMAT_VERSION = original_version
     assert generate_baseline() == baseline
 
     manifest_path = root / "benchmarks" / "manifest.json"

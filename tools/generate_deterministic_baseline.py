@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from bootstrap.s3 import OptimizationLevel  # noqa: E402
 from tools.benchmark import (  # noqa: E402
-    BENCHMARK_FORMAT_VERSION,
+    DETERMINISTIC_BASELINE_SOURCE_FORMAT_VERSION,
     load_manifest,
     run_hosted_pipeline,
 )
@@ -49,7 +49,10 @@ def generate_baseline():
 
     baseline = {
         "baseline_format_version": BASELINE_FORMAT_VERSION,
-        "benchmark_format_version": BENCHMARK_FORMAT_VERSION,
+        # This baseline is a historical E2 artifact. Keep the benchmark report
+        # format it was produced under explicit even as new public reports
+        # evolve independently.
+        "benchmark_format_version": DETERMINISTIC_BASELINE_SOURCE_FORMAT_VERSION,
         "workloads": {},
     }
 
