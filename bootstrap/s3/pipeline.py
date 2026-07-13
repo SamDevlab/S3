@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from . import ast
 from .assembly import AssemblyProgram
 from .codegen import generate_assembly
+from .compilation_context import CompilationContext
 from .emulator import DEFAULT_MAX_FRAMES, DEFAULT_MAX_INSTRUCTIONS, Emulator
 from .ir import IRProgram
 from .lexer import SyntaxMode, Token, tokenize
@@ -35,12 +36,20 @@ def compile_source(
     *,
     mode: SyntaxMode = SyntaxMode.V0_6,
 ) -> CompilationResult:
-    tokens = tokenize(source, mode=mode)
-    syntax_tree = parse_tokens(tokens, mode=mode)
+    context = CompilationContext(optimization=optimization, mode=mode)
+    return _compile_source_with_context(source, context)
+
+
+def _compile_source_with_context(
+    source: str,
+    context: CompilationContext,
+) -> CompilationResult:
+    tokens = tokenize(source, mode=context.mode)
+    syntax_tree = parse_tokens(tokens, mode=context.mode)
     semantic_model = analyze(syntax_tree)
     ir_program = optimize_ir(
         lower(syntax_tree, semantic_model),
-        optimization,
+        context.optimization,
     )
     assembly_program = generate_assembly(ir_program)
     return CompilationResult(
