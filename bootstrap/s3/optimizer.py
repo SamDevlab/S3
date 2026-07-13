@@ -14,6 +14,8 @@ from .ir import (
     IROpcode,
     IRType,
 )
+from .passes import FunctionPass as _FunctionPass
+from .passes import PassManager as _PassManager
 from .ternary import (
     TernaryRangeError,
     TernaryWidth,
@@ -279,12 +281,19 @@ def _eliminate_dead_pure_instructions(function: IRFunction) -> IRFunction:
     )
 
 
-def _optimize_function(function: IRFunction) -> IRFunction:
-    result = _remove_unreachable(function)
-    result = _thread_jumps(result)
-    result = _fold_constants(result)
-    result = _eliminate_dead_pure_instructions(result)
-    return result
+_O1_PASSES = (
+    _FunctionPass("remove-unreachable-blocks", _remove_unreachable),
+    _FunctionPass("thread-empty-jumps", _thread_jumps),
+    _FunctionPass("fold-constants", _fold_constants),
+    _FunctionPass(
+        "eliminate-dead-pure-instructions",
+        _eliminate_dead_pure_instructions,
+    ),
+)
+
+
+def _o1_passes() -> tuple[_FunctionPass, ...]:
+    return _O1_PASSES
 
 
 def optimize_ir(
@@ -296,9 +305,7 @@ def optimize_ir(
     analyze_initialization(module)
     if selected is OptimizationLevel.O0:
         return module
-    optimized = IRModule(
-        tuple(_optimize_function(function) for function in module.functions)
-    )
+    optimized = _PassManager(_O1_PASSES).run(module)
     verify_ir(optimized)
     analyze_initialization(optimized)
     return optimized
