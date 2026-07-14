@@ -14,8 +14,7 @@ from .ir import (
     IROpcode,
     IRType,
 )
-from .passes import FunctionPass as _FunctionPass
-from .passes import PassManager as _PassManager
+from .passes import _FunctionPass, _PassManager
 from .ternary import (
     TernaryRangeError,
     TernaryWidth,
@@ -309,4 +308,3 @@ def optimize_ir(
     verify_ir(optimized)
     analyze_initialization(optimized)
     return optimized
-
