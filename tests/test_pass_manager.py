@@ -16,7 +16,7 @@ from bootstrap.s3.ir import (
     IRType,
 )
 from bootstrap.s3.optimizer import OptimizationLevel, _o1_passes, optimize_ir
-from bootstrap.s3.passes import PassManager
+from bootstrap.s3.passes import _PassManager
 from bootstrap.s3.pipeline import compile_source
 
 
@@ -76,7 +76,7 @@ class _FailingPass:
 
 def test_pass_manager_runs_passes_in_explicit_order() -> None:
     events: list[str] = []
-    manager = PassManager(
+    manager = _PassManager(
         (
             _RecordingPass("first", events),
             _RecordingPass("second", events),
@@ -90,7 +90,7 @@ def test_pass_manager_runs_passes_in_explicit_order() -> None:
 
 def test_pass_manager_runs_function_major_not_pass_major() -> None:
     events: list[str] = []
-    manager = PassManager(
+    manager = _PassManager(
         (
             _RecordingPass("first", events),
             _RecordingPass("second", events),
@@ -111,7 +111,7 @@ def test_pass_manager_runs_function_major_not_pass_major() -> None:
 
 def test_pass_manager_rejects_duplicate_names() -> None:
     with pytest.raises(ValueError, match="duplicate pass name"):
-        PassManager(
+        _PassManager(
             (
                 _RecordingPass("same", []),
                 _RecordingPass("same", []),
@@ -122,13 +122,13 @@ def test_pass_manager_rejects_duplicate_names() -> None:
 def test_empty_pass_manager_is_valid_for_o0_shape() -> None:
     module = _module()
 
-    assert PassManager().names == ()
-    assert PassManager().run(module) is module
+    assert _PassManager().names == ()
+    assert _PassManager().run(module) is module
 
 
 def test_pass_errors_are_not_wrapped() -> None:
     with pytest.raises(_SentinelError, match="pass failed"):
-        PassManager((_FailingPass(),)).run(_module())
+        _PassManager((_FailingPass(),)).run(_module())
 
 
 def test_o1_pass_order_is_explicit_and_stable() -> None:

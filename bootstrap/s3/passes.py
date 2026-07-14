@@ -9,7 +9,7 @@ from typing import Protocol
 from .ir import IRFunction, IRModule
 
 
-class IRPass(Protocol):
+class _IRPass(Protocol):
     name: str
 
     def run_function(self, function: IRFunction) -> IRFunction:
@@ -17,7 +17,7 @@ class IRPass(Protocol):
 
 
 @dataclass(frozen=True, slots=True)
-class FunctionPass:
+class _FunctionPass:
     name: str
     transform: Callable[[IRFunction], IRFunction]
 
@@ -28,17 +28,12 @@ class FunctionPass:
     def run_function(self, function: IRFunction) -> IRFunction:
         return self.transform(function)
 
-    def run(self, module: IRModule) -> IRModule:
-        return IRModule(
-            tuple(self.run_function(function) for function in module.functions)
-        )
-
 
 @dataclass(frozen=True, slots=True)
-class PassManager:
-    passes: tuple[IRPass, ...] = ()
+class _PassManager:
+    passes: tuple[_IRPass, ...] = ()
 
-    def __init__(self, passes: Iterable[IRPass] = ()) -> None:
+    def __init__(self, passes: Iterable[_IRPass] = ()) -> None:
         items = tuple(passes)
         names: set[str] = set()
         duplicates: set[str] = set()
