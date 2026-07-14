@@ -1041,8 +1041,12 @@ def execute_assembly(
     max_memory_trits: int = DEFAULT_MAX_MEMORY_TRITS,
 ) -> int:
     program = parse_assembly(assembly) if isinstance(assembly, str) else assembly
-    return Emulator(
+    from .backends._hosted_execution import _execute_hosted_assembly
+
+    return _execute_hosted_assembly(
+        program,
+        entry,
         max_frames=max_frames,
         max_instructions=max_instructions,
         max_memory_trits=max_memory_trits,
-    ).execute(program, entry)
+    )
