@@ -50,8 +50,11 @@ def generate_native_assembly(
     max_frames: int = DEFAULT_MAX_FRAMES,
     max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
 ) -> str:
-    return X8664Backend(
+    from .._native_assembly import _generate_native_assembly
+
+    return _generate_native_assembly(
+        program,
         max_memory_trits=max_memory_trits,
         max_frames=max_frames,
         max_instructions=max_instructions,
-    ).generate(program)
+    )
