@@ -13,6 +13,9 @@ before the S3 renderer exists.
 The Python renderer remains the reference implementation. The S3 renderer is not
 implemented.
 
+String literals are available only as front-end expressions. Runtime string
+support is not implemented, so the renderer comparison remains blocked.
+
 `python tools/compare_assembly_renderer.py --status` reports the current state
 and exits successfully.
 

@@ -5,11 +5,12 @@
 This document defines the first implementable plan for real strings in S3:
 static, immutable, deterministic string literals.
 
-This delivery does not implement strings. Double-quoted string literals remain
-reserved syntax today, and source programs that use them still fail with the
-current unsupported-string diagnostic. The goal here is to define the smallest
-future implementation slice that can turn reserved literals into useful static
-values without exposing broad string behavior.
+This delivery does not implement runtime strings. Double-quoted string literals
+are reserved syntax with a front-end node today, and source programs that use
+them still fail before lowering with a runtime-unsupported semantic diagnostic.
+The goal here is to define the smallest future implementation slice that can
+turn front-end literals into useful static values without exposing broad string
+behavior.
 
 ## Current Behavior
 

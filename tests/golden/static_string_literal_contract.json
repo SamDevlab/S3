@@ -7,9 +7,13 @@
   ],
   "contract_version": "1.0.0",
   "current_state": {
-    "lexer": "STRING_LITERAL reserved",
-    "parser": "static literal expression",
-    "runtime": "not supported"
+    "ast": "StringLiteral",
+    "backend": "not supported",
+    "ir": "not supported",
+    "lexer": "STRING_LITERAL",
+    "parser": "front-end expression",
+    "runtime": "not supported",
+    "semantic": "runtime-unsupported diagnostic"
   },
   "diagnostics": {
     "runtime_unsupported": "S3E_SEMANTIC_STRING_LITERAL_RUNTIME_UNSUPPORTED",
