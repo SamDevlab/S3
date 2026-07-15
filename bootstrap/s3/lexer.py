@@ -28,6 +28,7 @@ class TokenKind(Enum):
     TRYTE = auto()
     IDENTIFIER = auto()
     INTEGER = auto()
+    STRING_LITERAL = auto()
     ARROW = auto()
     COMPARE = auto()
     TILDE = auto()
@@ -136,6 +137,9 @@ class Lexer:
                 continue
             if char.isdigit():
                 tokens.append(self._integer())
+                continue
+            if char == '"':
+                tokens.append(self._string_literal())
                 continue
             tokens.append(self._operator_or_punctuation())
 
@@ -280,6 +284,32 @@ class Lexer:
             self._advance()
         text = self.source[start:self.position]
         return Token(TokenKind.INTEGER, text, line, column, start)
+
+    def _string_literal(self) -> Token:
+        start = self.position
+        line = self.line
+        column = self.column
+        self._advance()
+
+        while not self._at_end:
+            char = self._peek()
+            if char == '"':
+                self._advance()
+                text = self.source[start:self.position]
+                return Token(TokenKind.STRING_LITERAL, text, line, column, start)
+            if char in "\r\n":
+                break
+            if char == "\\":
+                self._advance()
+                if self._at_end or self._peek() in "\r\n":
+                    break
+            self._advance()
+
+        raise LexError(
+            "unterminated string literal",
+            SourceLocation(start, line, column),
+            diagnostic_code=DiagnosticCode.LEX_UNTERMINATED_STRING_LITERAL,
+        )
 
     def _operator_or_punctuation(self) -> Token:
         start = self.position

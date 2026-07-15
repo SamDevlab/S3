@@ -179,6 +179,20 @@ def test_return_without_expression():
     with pytest.raises(ParseError):
         parse("fn main() -> tryte:\n    return\n", mode=SyntaxMode.V0_6)
 
+def test_string_literal_is_reserved_syntax():
+    with pytest.raises(ParseError) as exc:
+        parse(
+            'fn main() -> tryte:\n    return "hello"\n',
+            mode=SyntaxMode.V0_6,
+        )
+    assert (
+        exc.value.diagnostic_code
+        is DiagnosticCode.PARSE_UNSUPPORTED_STRING_LITERAL
+    )
+    assert exc.value.message == "string literals are reserved for future S3 support"
+    assert exc.value.location is not None
+    assert (exc.value.location.line, exc.value.location.column) == (2, 12)
+
 def test_return_multiline():
     source = "fn main() -> tryte:\n    return add(\n        1,\n        2\n    )\n"
     program = parse(source, mode=SyntaxMode.V0_6)
