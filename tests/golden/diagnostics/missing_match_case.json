@@ -1,0 +1,17 @@
+[
+  {
+    "category": "semantic",
+    "code": "S3E_SEMANTIC_INVALID_PROGRAM",
+    "function": "main",
+    "message": "ternary switch is missing case(s): 0",
+    "phase": "semantic",
+    "schema": "s3-diagnostic",
+    "schema_version": "1.0.0",
+    "severity": "error",
+    "source": {
+      "column": 5,
+      "line": 2,
+      "offset": 24
+    }
+  }
+]

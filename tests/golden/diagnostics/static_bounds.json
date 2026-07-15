@@ -1,0 +1,17 @@
+[
+  {
+    "category": "semantic",
+    "code": "S3E_SEMANTIC_INVALID_PROGRAM",
+    "function": "main",
+    "message": "constant index 2 is outside array 'values' bounds [0, 2)",
+    "phase": "semantic",
+    "schema": "s3-diagnostic",
+    "schema_version": "1.0.0",
+    "severity": "error",
+    "source": {
+      "column": 19,
+      "line": 3,
+      "offset": 68
+    }
+  }
+]
