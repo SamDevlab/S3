@@ -392,6 +392,22 @@ def test_help_remains_on_stdout(
     assert captured.err == ""
 
 
+def test_targets_command_lists_internal_architecture_deterministically(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert cli.main(["targets"]) == 0
+    first = capsys.readouterr()
+
+    assert first.err == ""
+    assert "Targets:\n  linux-x86_64\n" in first.out
+    assert "Hosted execution:\n  hosted-emulator\n" in first.out
+    assert "Native assembly:\n  linux-x86_64\n" in first.out
+
+    assert cli.main(["targets"]) == 0
+    second = capsys.readouterr()
+    assert second == first
+
+
 def test_unsupported_target_and_missing_toolchain_are_distinct(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
