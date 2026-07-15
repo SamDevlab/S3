@@ -1,0 +1,27 @@
+{
+  "blocked_by": [
+    "string_type",
+    "static_literal_table_or_ir_string_constant",
+    "hosted_emulator_representation",
+    "deterministic_formatting_helpers"
+  ],
+  "contract_version": "1.0.0",
+  "current_state": {
+    "lexer": "STRING_LITERAL reserved",
+    "parser": "unsupported diagnostic",
+    "runtime": "not supported"
+  },
+  "diagnostics": {
+    "unsupported": "S3E_PARSE_UNSUPPORTED_STRING_LITERAL",
+    "unterminated": "S3E_LEX_UNTERMINATED_STRING_LITERAL"
+  },
+  "feature": "static_string_literal",
+  "first_supported_behavior": {
+    "concat": false,
+    "encoding": "ascii_subset_utf8_compatible",
+    "indexing": false,
+    "length": false,
+    "mutable": false,
+    "storage": "static_literal_table"
+  }
+}
