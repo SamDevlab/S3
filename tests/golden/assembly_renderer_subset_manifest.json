@@ -1,0 +1,37 @@
+{
+  "assembly_format_version": "0.5.0",
+  "directives": [
+    ".end",
+    ".function",
+    ".label",
+    ".param",
+    ".register",
+    ".s3asm"
+  ],
+  "fixtures": [
+    {
+      "example": "examples/first.s3",
+      "golden": "tests/golden/inspect/first.assembly.txt"
+    },
+    {
+      "example": "examples/simple_call.s3",
+      "golden": "tests/golden/inspect/simple_call.assembly.txt"
+    },
+    {
+      "example": "examples/sign.s3",
+      "golden": "tests/golden/inspect/sign.assembly.txt"
+    }
+  ],
+  "manifest_format_version": "1.0.0",
+  "opcodes": [
+    "TADD",
+    "TBR3",
+    "TCALL",
+    "TCMP",
+    "TCONST",
+    "TINV",
+    "TMOV",
+    "TRET"
+  ],
+  "source": "tests/golden/inspect/*.assembly.txt"
+}
