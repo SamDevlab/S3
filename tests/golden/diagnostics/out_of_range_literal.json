@@ -1,0 +1,17 @@
+[
+  {
+    "category": "semantic",
+    "code": "S3E_SEMANTIC_INVALID_PROGRAM",
+    "function": "main",
+    "message": "literal 2 is outside trit range [-1, 1]",
+    "phase": "semantic",
+    "schema": "s3-diagnostic",
+    "schema_version": "1.0.0",
+    "severity": "error",
+    "source": {
+      "column": 12,
+      "line": 2,
+      "offset": 30
+    }
+  }
+]

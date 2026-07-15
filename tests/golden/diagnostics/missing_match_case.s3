@@ -1,0 +1,7 @@
+fn main() -> tryte:
+    match 0:
+        -1:
+            return -1
+
+        1:
+            return 1
