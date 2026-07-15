@@ -1,0 +1,21 @@
+.s3asm 0.5.0
+
+.function add -> tryte
+    .param r0, tryte
+    .param r1, tryte
+    .register r2, tryte
+.label entry
+    TADD   r2, r0, r1 ; source=2:14:50
+    TRET   r2 ; source=2:5:41
+.end
+
+.function main -> tryte
+    .register r0, tryte
+    .register r1, tryte
+    .register r2, tryte
+.label entry
+    TCONST r0, 10 ; source=5:16:90
+    TCONST r1, 5 ; source=5:20:94
+    TCALL  r2, add, r0, r1 ; source=5:12:86
+    TRET   r2 ; source=5:5:79
+.end

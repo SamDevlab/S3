@@ -13,5 +13,5 @@ def test_golden_inspect_check_matches_committed_outputs() -> None:
     )
 
     assert completed.returncode == 0
-    assert "golden inspect: checked 1 example(s)" in completed.stdout
+    assert "golden inspect: checked 3 example(s)" in completed.stdout
     assert completed.stderr == ""
