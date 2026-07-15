@@ -1,0 +1,206 @@
+{
+  "module": {
+    "functions": [
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "opcode": "add",
+                "operands": [
+                  "r0",
+                  "r1"
+                ],
+                "result": "r2",
+                "source": {
+                  "column": 14,
+                  "line": 2,
+                  "offset": 50
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r2"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 2,
+                  "offset": 41
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 2,
+              "offset": 41
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "add",
+        "parameters": [
+          {
+            "name": "a",
+            "register": "r0",
+            "source": {
+              "column": 8,
+              "line": 1,
+              "offset": 7
+            },
+            "type": "tryte"
+          },
+          {
+            "name": "b",
+            "register": "r1",
+            "source": {
+              "column": 18,
+              "line": 1,
+              "offset": 17
+            },
+            "type": "tryte"
+          }
+        ],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 8,
+              "line": 1,
+              "offset": 7
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 1,
+            "name": "r1",
+            "source": {
+              "column": 18,
+              "line": 1,
+              "offset": 17
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 2,
+            "name": "r2",
+            "source": {
+              "column": 14,
+              "line": 2,
+              "offset": 50
+            },
+            "type": "tryte"
+          }
+        ],
+        "return_type": "tryte",
+        "source": {
+          "column": 1,
+          "line": 1,
+          "offset": 0
+        }
+      },
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "immediate": 10,
+                "opcode": "const",
+                "result": "r0",
+                "source": {
+                  "column": 16,
+                  "line": 5,
+                  "offset": 90
+                }
+              },
+              {
+                "immediate": 5,
+                "opcode": "const",
+                "result": "r1",
+                "source": {
+                  "column": 20,
+                  "line": 5,
+                  "offset": 94
+                }
+              },
+              {
+                "callee": "add",
+                "opcode": "call",
+                "operands": [
+                  "r0",
+                  "r1"
+                ],
+                "result": "r2",
+                "source": {
+                  "column": 12,
+                  "line": 5,
+                  "offset": 86
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r2"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 5,
+                  "offset": 79
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 5,
+              "offset": 79
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "main",
+        "parameters": [],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 16,
+              "line": 5,
+              "offset": 90
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 1,
+            "name": "r1",
+            "source": {
+              "column": 20,
+              "line": 5,
+              "offset": 94
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 2,
+            "name": "r2",
+            "source": {
+              "column": 12,
+              "line": 5,
+              "offset": 86
+            },
+            "type": "tryte"
+          }
+        ],
+        "return_type": "tryte",
+        "source": {
+          "column": 1,
+          "line": 4,
+          "offset": 55
+        }
+      }
+    ]
+  }
+}
