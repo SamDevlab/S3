@@ -14,6 +14,11 @@ The current front-end state is intentionally narrow: lexer token,
 `ast.StringLiteral`, parser expression, and semantic rejection. There is still no
 IR value, Assembly value, backend value, or runtime representation.
 
+A front-end static literal table can collect these literals before semantic
+rejection. It assigns deterministic IDs such as `s0` and `s1` by first
+occurrence and deduplicates identical literal values. The table is not lowered
+to IR and does not create runtime string values.
+
 Future string support will depend on a minimal string representation plus
 arrays or buffers and deterministic formatting helpers. This document records
 the current static-literal foundation; it does not define runtime string

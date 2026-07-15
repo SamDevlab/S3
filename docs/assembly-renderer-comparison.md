@@ -26,7 +26,7 @@ the S3 renderer is unavailable.
 
 Failure is correct today because real comparison is still blocked by:
 
-- string runtime or a safe static string table;
+- string runtime support;
 - records/structs or an equivalent representation;
 - enums/sum types or safe tags;
 - deterministic formatting helpers.

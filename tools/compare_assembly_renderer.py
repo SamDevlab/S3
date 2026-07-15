@@ -14,7 +14,7 @@ BLOCKED_MESSAGE = (
 
 
 BLOCKER_BY_FEATURE = {
-    "strings": "string runtime or static string table",
+    "strings": "string runtime support",
     "records_or_structs": "records/structs or equivalent tagged data",
     "enums_or_tagged_unions": "enums/sum types or safe tags",
     "deterministic_formatting_helpers": "deterministic formatting helpers",

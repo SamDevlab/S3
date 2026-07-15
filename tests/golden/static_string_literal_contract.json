@@ -1,7 +1,7 @@
 {
   "blocked_by": [
     "string_type",
-    "static_literal_table_or_ir_string_constant",
+    "ir_string_constant_or_data_section",
     "hosted_emulator_representation",
     "deterministic_formatting_helpers"
   ],
@@ -27,5 +27,10 @@
     "length": false,
     "mutable": false,
     "storage": "static_literal_table"
+  },
+  "static_literal_table": {
+    "deduplication": true,
+    "id_scheme": "deterministic_sN",
+    "scope": "front-end only"
   }
 }

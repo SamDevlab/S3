@@ -21,6 +21,8 @@ Confirmed current behavior:
   the closing quote and stores the original token text on the token.
 - `bootstrap/s3/parser.py` builds a static string literal front-end expression
   for completed `TokenKind.STRING_LITERAL` tokens.
+- `bootstrap/s3/static_strings.py` collects front-end string literal values into
+  a deterministic static literal table.
 - `bootstrap/s3/semantic.py` rejects that expression with
   `S3E_SEMANTIC_STRING_LITERAL_RUNTIME_UNSUPPORTED` before lowering.
 - `bootstrap/s3/diagnostics.py` defines
@@ -77,8 +79,8 @@ support.
 Recommended sequence:
 
 1. Stage 1: introduce a static literal table with a symbolic string ID. The
-   table owns decoded, validated literal bytes and exposes stable IDs to later
-   compiler phases.
+   table owns front-end literal text and exposes stable IDs to later compiler
+   phases.
 2. Stage 2: add either an IR string constant or an explicit static data section
    when lowering needs to carry string data beyond the front end.
 
@@ -164,6 +166,14 @@ modeled as deterministic literals before broader string operations exist.
 The native backend should either reject unsupported string paths with a clear
 internal limitation or implement explicit static data emission. It should not
 silently ignore string data or imply runtime support before layout is defined.
+
+## Static Literal Table
+
+The current front-end table assigns IDs as `s0`, `s1`, `s2`, in first occurrence
+order. Identical literal values reuse the first entry. The table is collected
+from the AST only; it does not call semantic analysis, lowering, IR generation,
+Assembly generation, or any backend. Runtime string support remains blocked by
+`S3E_SEMANTIC_STRING_LITERAL_RUNTIME_UNSUPPORTED`.
 
 ## Test Plan
 
