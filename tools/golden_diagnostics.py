@@ -41,6 +41,10 @@ GOLDEN_CASES = (
         "unsupported_string_literal",
         GOLDEN_ROOT / "unsupported_string_literal.s3",
     ),
+    GoldenDiagnosticCase(
+        "unterminated_string_literal",
+        GOLDEN_ROOT / "unterminated_string_literal.s3",
+    ),
 )
 
 
