@@ -8,11 +8,11 @@
   "contract_version": "1.0.0",
   "current_state": {
     "lexer": "STRING_LITERAL reserved",
-    "parser": "unsupported diagnostic",
+    "parser": "static literal expression",
     "runtime": "not supported"
   },
   "diagnostics": {
-    "unsupported": "S3E_PARSE_UNSUPPORTED_STRING_LITERAL",
+    "runtime_unsupported": "S3E_SEMANTIC_STRING_LITERAL_RUNTIME_UNSUPPORTED",
     "unterminated": "S3E_LEX_UNTERMINATED_STRING_LITERAL"
   },
   "feature": "static_string_literal",

@@ -1,7 +1,8 @@
 from bootstrap.s3 import ast
+from bootstrap.s3.diagnostics import DiagnosticCode, SemanticError
 from bootstrap.s3.lexer import SyntaxMode
-from bootstrap.s3.parser import parse, ParseError
-from bootstrap.s3.diagnostics import DiagnosticCode
+from bootstrap.s3.parser import ParseError, parse
+from bootstrap.s3.semantic import analyze
 import pytest
 
 def test_simple_function():
@@ -179,17 +180,38 @@ def test_return_without_expression():
     with pytest.raises(ParseError):
         parse("fn main() -> tryte:\n    return\n", mode=SyntaxMode.V0_6)
 
-def test_string_literal_is_reserved_syntax():
-    with pytest.raises(ParseError) as exc:
-        parse(
-            'fn main() -> tryte:\n    return "hello"\n',
-            mode=SyntaxMode.V0_6,
-        )
+def test_string_literal_is_parsed_as_static_front_end_node():
+    program = parse(
+        'fn main() -> tryte:\n    return "hello"\n',
+        mode=SyntaxMode.V0_6,
+    )
+    statement = program.functions[0].body.statements[0]
+    assert isinstance(statement, ast.ReturnStatement)
+    assert isinstance(statement.expression, ast.StringLiteral)
+    assert statement.expression.value == "hello"
+    assert (statement.expression.location.line, statement.expression.location.column) == (
+        2,
+        12,
+    )
+
+
+def test_string_literal_is_rejected_by_semantic_until_runtime_exists():
+    program = parse(
+        'fn main() -> tryte:\n    return "hello"\n',
+        mode=SyntaxMode.V0_6,
+    )
+
+    with pytest.raises(SemanticError) as exc:
+        analyze(program)
+
     assert (
         exc.value.diagnostic_code
-        is DiagnosticCode.PARSE_UNSUPPORTED_STRING_LITERAL
+        is DiagnosticCode.SEMANTIC_STRING_LITERAL_RUNTIME_UNSUPPORTED
     )
-    assert exc.value.message == "string literals are reserved for future S3 support"
+    assert (
+        exc.value.message
+        == "string literals are parsed as static literals but runtime support is not implemented"
+    )
     assert exc.value.location is not None
     assert (exc.value.location.line, exc.value.location.column) == (2, 12)
 

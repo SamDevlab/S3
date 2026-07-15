@@ -18,10 +18,13 @@ Confirmed current behavior:
 - `bootstrap/s3/lexer.py` defines `TokenKind.STRING_LITERAL`.
 - `bootstrap/s3/lexer.py` scans a quoted literal from the opening quote through
   the closing quote and stores the original token text on the token.
-- `bootstrap/s3/parser.py` rejects `TokenKind.STRING_LITERAL` in expression
-  position with `S3E_PARSE_UNSUPPORTED_STRING_LITERAL`.
+- `bootstrap/s3/parser.py` builds a static string literal front-end expression
+  for completed `TokenKind.STRING_LITERAL` tokens.
+- `bootstrap/s3/semantic.py` rejects that expression with
+  `S3E_SEMANTIC_STRING_LITERAL_RUNTIME_UNSUPPORTED` before lowering.
 - `bootstrap/s3/diagnostics.py` defines
   `S3E_PARSE_UNSUPPORTED_STRING_LITERAL` and
+  `S3E_SEMANTIC_STRING_LITERAL_RUNTIME_UNSUPPORTED` and
   `S3E_LEX_UNTERMINATED_STRING_LITERAL`.
 - `spec/diagnostics.md` lists both diagnostic codes.
 - `tests/golden/diagnostics/unsupported_string_literal.json` covers the
@@ -31,8 +34,9 @@ Confirmed current behavior:
 
 Confirmed absence:
 
-- `bootstrap/s3/ast.py` has no string expression node and no string type.
-- `bootstrap/s3/semantic.py` has no string type checking.
+- `bootstrap/s3/ast.py` has a string literal expression node but no string
+  type.
+- `bootstrap/s3/semantic.py` has no runtime string type checking.
 - `bootstrap/s3/ir.py` has no string value type, string constant, or data
   section.
 - `bootstrap/s3/assembly.py` renders Assembly text from Python strings, but
@@ -100,18 +104,22 @@ by tests.
 
 ## Diagnostic Migration
 
-Today, any completed string literal used in expression position is rejected with
-`S3E_PARSE_UNSUPPORTED_STRING_LITERAL`. An unterminated literal remains a lexical
-error with `S3E_LEX_UNTERMINATED_STRING_LITERAL`.
+Today, any completed string literal used in expression position is parsed as a
+static front-end expression and then rejected by semantic analysis with
+`S3E_SEMANTIC_STRING_LITERAL_RUNTIME_UNSUPPORTED`. An unterminated literal
+remains a lexical error with `S3E_LEX_UNTERMINATED_STRING_LITERAL`.
 
 In the first implementation stage:
 
 - `S3E_LEX_UNTERMINATED_STRING_LITERAL` remains lexical and keeps covering
   unfinished quoted text.
-- Valid static string literals are accepted only in explicitly chosen contexts.
-- Unsupported contexts may continue to use
-  `S3E_PARSE_UNSUPPORTED_STRING_LITERAL`, or a narrower replacement may be
-  introduced if the unsupported case moves from parsing to semantic analysis.
+- Valid static string literals are represented in the front-end only.
+- Runtime use continues to use
+  `S3E_SEMANTIC_STRING_LITERAL_RUNTIME_UNSUPPORTED` until lowering and runtime
+  representation exist.
+- `S3E_PARSE_UNSUPPORTED_STRING_LITERAL` remains available for compatibility or
+  parser-only unsupported contexts, but it is no longer the normal completed
+  string-literal path.
 - Existing diagnostic goldens are updated only with replacement coverage in the
   same implementation PR.
 

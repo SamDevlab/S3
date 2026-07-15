@@ -6,10 +6,11 @@ This document defines the smallest future string contract needed for partial
 self-hosting work, especially the Assembly renderer subset.
 
 Strings are not runtime values in S3 today. Double-quoted string literals are
-recognized by the lexer as reserved syntax, then rejected by the parser with a
-structured diagnostic. Python remains the reference implementation for the
-compiler and for Assembly rendering. This delivery documents a target contract;
-it does not implement strings.
+recognized by the lexer as reserved syntax, parsed as static front-end
+expressions, then rejected by semantic analysis with a structured diagnostic.
+Python remains the reference implementation for the compiler and for Assembly
+rendering. This delivery documents a target contract; it does not implement
+runtime strings.
 
 ## Current State
 
@@ -18,21 +19,25 @@ Confirmed source behavior:
 - `bootstrap/s3/lexer.py` defines `TokenKind.STRING_LITERAL`.
 - `bootstrap/s3/lexer.py` scans double-quoted literals enough to find the
   closing quote.
-- `bootstrap/s3/parser.py` rejects `STRING_LITERAL` in expression position.
+- `bootstrap/s3/parser.py` builds a string literal expression for completed
+  `STRING_LITERAL` tokens.
+- `bootstrap/s3/semantic.py` rejects string literal expressions before lowering
+  because runtime support is not implemented.
 - `bootstrap/s3/diagnostics.py` defines:
   - `S3E_PARSE_UNSUPPORTED_STRING_LITERAL`
+  - `S3E_SEMANTIC_STRING_LITERAL_RUNTIME_UNSUPPORTED`
   - `S3E_LEX_UNTERMINATED_STRING_LITERAL`
 - `spec/diagnostics.md` lists both public diagnostic codes.
 - `tests/golden/diagnostics/unsupported_string_literal.json` covers the
-  reserved literal diagnostic.
+  semantic runtime-unsupported diagnostic.
 - `tests/golden/diagnostics/unterminated_string_literal.json` covers the
   unterminated literal diagnostic.
 
 Confirmed absence:
 
 - There is no source-level `string` type.
-- `bootstrap/s3/ast.py` has no string expression node.
-- `bootstrap/s3/semantic.py` has no string type checking.
+- `bootstrap/s3/ast.py` has a string expression node but no string type.
+- `bootstrap/s3/semantic.py` has no runtime string type checking.
 - `bootstrap/s3/ir.py` only has `trit` and `tryte` value types.
 - `bootstrap/s3/assembly.py` only models Assembly text as Python strings in the
   hosted renderer, not as S3 runtime string values.

@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from . import ast
-from .diagnostics import SemanticError, SourceLocation
+from .diagnostics import DiagnosticCode, SemanticError, SourceLocation
 from .ternary import TRIT_MAX, TRIT_MIN, TRYTE_MAX, TRYTE_MIN
 
 
@@ -389,6 +389,15 @@ class SemanticAnalyzer:
         if isinstance(expression, ast.IntegerLiteral):
             result = expected or ast.TypeName.TRYTE
             self._validate_literal(expression, result)
+        elif isinstance(expression, ast.StringLiteral):
+            raise SemanticError(
+                "string literals are parsed as static literals but runtime "
+                "support is not implemented",
+                expression.location,
+                diagnostic_code=(
+                    DiagnosticCode.SEMANTIC_STRING_LITERAL_RUNTIME_UNSUPPORTED
+                ),
+            )
         elif isinstance(expression, ast.Identifier):
             result = self._identifier_type(expression)
             if expected is not None:
