@@ -375,6 +375,14 @@ class Parser:
         if self._match(TokenKind.INTEGER):
             token = self._previous()
             return ast.IntegerLiteral(int(token.text), token.location)
+        if self._match(TokenKind.STRING_LITERAL):
+            token = self._previous()
+            raise ParseError(
+                "string literals are reserved for future S3 support",
+                token.location,
+                diagnostic_category=None,
+                diagnostic_code=DiagnosticCode.PARSE_UNSUPPORTED_STRING_LITERAL,
+            )
         if self._match(TokenKind.IDENTIFIER):
             token = self._previous()
             if self._match(TokenKind.LEFT_PAREN):

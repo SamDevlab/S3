@@ -37,6 +37,10 @@ GOLDEN_CASES = (
         "missing_match_case",
         GOLDEN_ROOT / "missing_match_case.s3",
     ),
+    GoldenDiagnosticCase(
+        "unsupported_string_literal",
+        GOLDEN_ROOT / "unsupported_string_literal.s3",
+    ),
 )
 
 

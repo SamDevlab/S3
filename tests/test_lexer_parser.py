@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from bootstrap.s3 import ast
-from bootstrap.s3.diagnostics import LexError, ParseError
+from bootstrap.s3.diagnostics import DiagnosticCode, LexError, ParseError
 from bootstrap.s3.lexer import SyntaxMode, TokenKind, tokenize
 from bootstrap.s3.parser import parse
 
@@ -56,6 +56,33 @@ def test_lexer_recognizes_tokens_and_tracks_locations() -> None:
 def test_invalid_character_reports_location() -> None:
     with pytest.raises(LexError, match=r"2:5: lexical error.*invalid character"):
         tokenize("fn\n    @", mode=SyntaxMode.V0_5)
+
+
+def test_lexer_recognizes_string_literal_as_reserved_token() -> None:
+    tokens = tokenize(
+        'fn main() -> tryte:\n    return "hello"\n',
+        mode=SyntaxMode.V0_6,
+    )
+
+    string_token = next(
+        token for token in tokens if token.kind is TokenKind.STRING_LITERAL
+    )
+    assert string_token.text == '"hello"'
+    assert (string_token.line, string_token.column) == (2, 12)
+
+
+def test_unterminated_string_literal_reports_lexical_error() -> None:
+    with pytest.raises(LexError) as captured:
+        tokenize(
+            'fn main() -> tryte:\n    return "hello\n',
+            mode=SyntaxMode.V0_6,
+        )
+
+    assert (
+        captured.value.diagnostic_code
+        is DiagnosticCode.LEX_UNTERMINATED_STRING_LITERAL
+    )
+    assert "unterminated string literal" in captured.value.message
 
 
 def test_parser_builds_typed_ast_and_operator_precedence() -> None:
