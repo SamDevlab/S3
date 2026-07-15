@@ -455,6 +455,25 @@ def test_inspect_command_reports_compilation_summary_without_running(
     assert "program returned" not in captured.out
 
 
+def test_check_command_reports_ok_without_running(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    source = _write_source(
+        tmp_path / "overflow.s3",
+        "fn main() -> tryte:\n    return 364 + 1\n",
+    )
+
+    assert cli.main(["check", str(source)]) == 0
+    captured = capsys.readouterr()
+
+    assert captured.err == ""
+    assert captured.out.startswith("S3 check\n")
+    assert f"  path: {source}" in captured.out
+    assert "  status: ok\n" in captured.out
+    assert "program returned" not in captured.out
+
+
 def test_unsupported_target_and_missing_toolchain_are_distinct(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],

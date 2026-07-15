@@ -172,6 +172,7 @@ def _parser() -> argparse.ArgumentParser:
     commands = (
         "tokens",
         "ast",
+        "check",
         "ir",
         "ir-json",
         "inspect",
@@ -323,6 +324,10 @@ def _print_inspection(
     print("\n".join(lines))
 
 
+def _print_check(source_path: Path) -> None:
+    print("\n".join(("S3 check", f"  path: {source_path}", "  status: ok")))
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     raw_argv = list(sys.argv[1:] if argv is None else argv)
     parser = _parser()
@@ -373,7 +378,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         optimization = OptimizationLevel.parse(args.optimization)
         mode = _SOURCE_SYNTAX_MODES[args.source_syntax]
         compilation = compile_source(source, optimization, mode=mode)
-        if args.command == "inspect":
+        if args.command == "check":
+            _print_check(args.source)
+        elif args.command == "inspect":
             _print_inspection(
                 args.source,
                 compilation,
