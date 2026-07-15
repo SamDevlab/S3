@@ -53,6 +53,7 @@ def status() -> int:
     print()
     print("python reference: available")
     print("s3 renderer: not implemented")
+    print("string literals: front-end only, runtime not implemented")
     print("status: blocked")
     print()
     print("fixtures:")

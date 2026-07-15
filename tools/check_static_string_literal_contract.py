@@ -21,6 +21,16 @@ EXPECTED_DIAGNOSTICS = {
     "unterminated": "S3E_LEX_UNTERMINATED_STRING_LITERAL",
 }
 
+EXPECTED_CURRENT_STATE = {
+    "ast": "StringLiteral",
+    "backend": "not supported",
+    "ir": "not supported",
+    "lexer": "STRING_LITERAL",
+    "parser": "front-end expression",
+    "runtime": "not supported",
+    "semantic": "runtime-unsupported diagnostic",
+}
+
 
 def _canonical(data: object) -> str:
     return json.dumps(data, indent=2, sort_keys=True) + "\n"
@@ -46,6 +56,10 @@ def _validate_contract(data: dict[str, object], text: str) -> None:
     diagnostics = data["diagnostics"]
     if diagnostics != EXPECTED_DIAGNOSTICS:
         raise ValueError("contract diagnostics do not match reserved string diagnostics")
+
+    current_state = data["current_state"]
+    if current_state != EXPECTED_CURRENT_STATE:
+        raise ValueError("contract current_state does not match front-end string state")
 
     behavior = data["first_supported_behavior"]
     if not isinstance(behavior, dict):
