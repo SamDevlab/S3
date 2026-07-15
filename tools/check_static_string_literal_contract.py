@@ -14,6 +14,7 @@ REQUIRED_KEYS = {
     "diagnostics",
     "feature",
     "first_supported_behavior",
+    "static_literal_table",
 }
 
 EXPECTED_DIAGNOSTICS = {
@@ -29,6 +30,12 @@ EXPECTED_CURRENT_STATE = {
     "parser": "front-end expression",
     "runtime": "not supported",
     "semantic": "runtime-unsupported diagnostic",
+}
+
+EXPECTED_STATIC_LITERAL_TABLE = {
+    "deduplication": True,
+    "id_scheme": "deterministic_sN",
+    "scope": "front-end only",
 }
 
 
@@ -60,6 +67,10 @@ def _validate_contract(data: dict[str, object], text: str) -> None:
     current_state = data["current_state"]
     if current_state != EXPECTED_CURRENT_STATE:
         raise ValueError("contract current_state does not match front-end string state")
+
+    static_literal_table = data["static_literal_table"]
+    if static_literal_table != EXPECTED_STATIC_LITERAL_TABLE:
+        raise ValueError("contract static_literal_table does not match front-end table")
 
     behavior = data["first_supported_behavior"]
     if not isinstance(behavior, dict):
