@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import platform
 import sys
 import tempfile
 from pathlib import Path
@@ -165,6 +166,9 @@ def _parser() -> argparse.ArgumentParser:
     )
     subparsers.required = True
 
+    subparsers.add_parser("doctor")
+    subparsers.add_parser("targets")
+
     commands = (
         "tokens",
         "ast",
@@ -177,7 +181,6 @@ def _parser() -> argparse.ArgumentParser:
         "build",
         "run-native",
     )
-    subparsers.add_parser("targets")
     for cmd in commands:
         p = subparsers.add_parser(cmd, parents=[parent])
         if cmd in ("run", "native-asm", "build", "run-native"):
@@ -246,6 +249,43 @@ def _print_targets() -> None:
     print("\n".join(lines))
 
 
+def _print_doctor() -> None:
+    registry = create_builtin_backend_registry()
+    lines = [
+        "S3 doctor",
+        "",
+        "Python:",
+        f"  version: {platform.python_version()}",
+        f"  executable: {sys.executable}",
+        "",
+        "Host:",
+        f"  system: {platform.system()}",
+        f"  machine: {platform.machine()}",
+        "",
+        "Targets:",
+    ]
+    lines.extend(f"  {target.name}" for target in BUILTIN_TARGETS)
+    lines.extend(("", "Hosted execution:"))
+    lines.extend(f"  {name}" for name in registry.hosted_execution_names)
+    lines.extend(("", "Native assembly:"))
+    lines.extend(f"  {name}" for name in registry.native_assembly_targets)
+    lines.extend(("", "Native toolchain:"))
+    try:
+        toolchain = NativeToolchain.detect()
+    except NativeBackendError as error:
+        lines.extend(("  available: no", f"  reason: {error}"))
+    else:
+        lines.extend(
+            (
+                "  available: yes",
+                f"  compiler: {toolchain.compiler}",
+                f"  assembler: {toolchain.assembler or 'not found'}",
+                f"  linker: {toolchain.linker or 'not found'}",
+            )
+        )
+    print("\n".join(lines))
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     raw_argv = list(sys.argv[1:] if argv is None else argv)
     parser = _parser()
@@ -280,6 +320,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
 
     try:
+        if args.command == "doctor":
+            _print_doctor()
+            return 0
         if args.command == "targets":
             _print_targets()
             return 0

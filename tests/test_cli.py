@@ -408,6 +408,27 @@ def test_targets_command_lists_internal_architecture_deterministically(
     assert second == first
 
 
+def test_doctor_command_reports_environment_and_internal_architecture(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    assert cli.main(["doctor"]) == 0
+    captured = capsys.readouterr()
+
+    assert captured.err == ""
+    assert captured.out.startswith("S3 doctor\n")
+    assert "\nPython:\n" in captured.out
+    assert "\n  version: " in captured.out
+    assert "\n  executable: " in captured.out
+    assert "\nHost:\n" in captured.out
+    assert "\n  system: " in captured.out
+    assert "\n  machine: " in captured.out
+    assert "\nTargets:\n  linux-x86_64\n" in captured.out
+    assert "\nHosted execution:\n  hosted-emulator\n" in captured.out
+    assert "\nNative assembly:\n  linux-x86_64\n" in captured.out
+    assert "\nNative toolchain:\n" in captured.out
+    assert "\n  available: " in captured.out
+
+
 def test_unsupported_target_and_missing_toolchain_are_distinct(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
