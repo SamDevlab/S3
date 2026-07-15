@@ -1,0 +1,216 @@
+{
+  "contract_version": "1.0.0",
+  "directives": {
+    ".end": "AssemblyFunction.end",
+    ".function": "AssemblyFunction",
+    ".label": "AssemblyFunction.labels",
+    ".param": "AssemblyFunction.params",
+    ".register": "AssemblyFunction.registers",
+    ".s3asm": "AssemblyProgram.assembly_format_version"
+  },
+  "entities": {
+    "AssemblyFunction": {
+      "fields": [
+        {
+          "concept": "string",
+          "name": "name",
+          "required": true
+        },
+        {
+          "concept": "AssemblyType tag",
+          "name": "return_type",
+          "required": true
+        },
+        {
+          "concept": "ordered array<AssemblyRegister>",
+          "name": "params",
+          "required": true
+        },
+        {
+          "concept": "ordered array<AssemblyRegister>",
+          "name": "registers",
+          "required": true
+        },
+        {
+          "concept": "ordered array<AssemblyLabel>",
+          "name": "labels",
+          "required": true
+        },
+        {
+          "concept": "ordered array<AssemblyInstruction>",
+          "name": "instructions",
+          "required": true
+        }
+      ]
+    },
+    "AssemblyInstruction": {
+      "fields": [
+        {
+          "concept": "AssemblyOpcode tag",
+          "name": "opcode",
+          "required": true
+        },
+        {
+          "concept": "ordered array<AssemblyOperand>",
+          "name": "operands",
+          "required": true
+        },
+        {
+          "concept": "optional AssemblySource",
+          "name": "source",
+          "required": false
+        }
+      ]
+    },
+    "AssemblyLabel": {
+      "fields": [
+        {
+          "concept": "string",
+          "name": "name",
+          "required": true
+        }
+      ]
+    },
+    "AssemblyOperand": {
+      "fields": [
+        {
+          "concept": "operand kind tag",
+          "name": "kind",
+          "required": true
+        },
+        {
+          "concept": "tag-specific scalar",
+          "name": "value",
+          "required": true
+        }
+      ]
+    },
+    "AssemblyProgram": {
+      "fields": [
+        {
+          "concept": "string",
+          "name": "assembly_format_version",
+          "required": true
+        },
+        {
+          "concept": "ordered array<AssemblyFunction>",
+          "name": "functions",
+          "required": true
+        }
+      ]
+    },
+    "AssemblyRegister": {
+      "fields": [
+        {
+          "concept": "string",
+          "name": "name",
+          "required": true
+        },
+        {
+          "concept": "AssemblyType tag",
+          "name": "type",
+          "required": true
+        }
+      ]
+    },
+    "AssemblySource": {
+      "fields": [
+        {
+          "concept": "string",
+          "name": "file",
+          "required": false
+        },
+        {
+          "concept": "integer",
+          "name": "line",
+          "required": true
+        },
+        {
+          "concept": "integer",
+          "name": "column",
+          "required": true
+        },
+        {
+          "concept": "integer",
+          "name": "offset",
+          "required": true
+        },
+        {
+          "concept": "string",
+          "name": "note",
+          "required": false
+        }
+      ]
+    }
+  },
+  "initial_fixtures": [
+    "examples/first.s3",
+    "examples/simple_call.s3",
+    "examples/sign.s3"
+  ],
+  "opcodes": {
+    "TADD": {
+      "fixtures": [
+        "examples/first.s3",
+        "examples/simple_call.s3"
+      ],
+      "operands": "register destination, register left, register right"
+    },
+    "TBR3": {
+      "fixtures": [
+        "examples/sign.s3"
+      ],
+      "operands": "register condition, label negative, label neutral, label positive"
+    },
+    "TCALL": {
+      "fixtures": [
+        "examples/simple_call.s3",
+        "examples/sign.s3"
+      ],
+      "operands": "register destination, function callee, register arguments[]"
+    },
+    "TCMP": {
+      "fixtures": [
+        "examples/sign.s3"
+      ],
+      "operands": "register destination, register left, register right"
+    },
+    "TCONST": {
+      "fixtures": [
+        "examples/first.s3",
+        "examples/simple_call.s3",
+        "examples/sign.s3"
+      ],
+      "operands": "register destination, immediate constant"
+    },
+    "TINV": {
+      "fixtures": [
+        "examples/first.s3",
+        "examples/sign.s3"
+      ],
+      "operands": "register destination, register source"
+    },
+    "TMOV": {
+      "fixtures": [
+        "examples/first.s3"
+      ],
+      "operands": "register destination, register source"
+    },
+    "TRET": {
+      "fixtures": [
+        "examples/first.s3",
+        "examples/simple_call.s3",
+        "examples/sign.s3"
+      ],
+      "operands": "register source"
+    }
+  },
+  "purpose": "Conceptual data contract for the future S3 Assembly renderer subset",
+  "required_language_features": [
+    "strings",
+    "arrays",
+    "records_or_structs",
+    "enums_or_tagged_unions",
+    "deterministic_formatting_helpers"
+  ]
+}
