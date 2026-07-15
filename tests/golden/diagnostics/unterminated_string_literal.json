@@ -1,0 +1,16 @@
+[
+  {
+    "category": "syntax",
+    "code": "S3E_LEX_UNTERMINATED_STRING_LITERAL",
+    "message": "unterminated string literal",
+    "phase": "lexing",
+    "schema": "s3-diagnostic",
+    "schema_version": "1.0.0",
+    "severity": "error",
+    "source": {
+      "column": 12,
+      "line": 2,
+      "offset": 30
+    }
+  }
+]

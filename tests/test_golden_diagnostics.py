@@ -13,5 +13,5 @@ def test_golden_diagnostics_check_matches_committed_outputs() -> None:
     )
 
     assert completed.returncode == 0
-    assert "golden diagnostics: checked 4 case(s)" in completed.stdout
+    assert "golden diagnostics: checked 5 case(s)" in completed.stdout
     assert completed.stderr == ""
