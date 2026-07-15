@@ -102,6 +102,13 @@ A versão da fonte é independente dos artefatos: IR JSON e S3 Assembly
 continuam em 0.5.0. O Marco 0.7 está concluído.
 
 ```bash
+s3 targets
+s3 doctor
+s3 check examples/first.s3
+s3 inspect examples/first.s3
+s3 inspect examples/first.s3 --emit summary
+s3 inspect examples/first.s3 --emit ir
+s3 inspect examples/first.s3 --emit assembly
 s3 tokens examples/static_array.s3
 s3 ast examples/static_array.s3
 s3 ir examples/static_array.s3
@@ -120,6 +127,16 @@ s3 --source-syntax 0.5 run legacy-v0.5.s3
 
 Em um checkout sem instalação, a forma equivalente é
 `python -m bootstrap.s3.cli`.
+
+`targets` mostra os targets e providers internos disponíveis. `doctor`
+diagnostica Python, host, targets, execução hospedada, assembly nativo e a
+disponibilidade da `NativeToolchain`.
+
+`check` valida se um arquivo fonte compila, sem executar o programa, sem gerar
+ELF e sem chamar o backend nativo. `inspect` mostra um resumo da compilação por
+padrão; `--emit summary` torna esse modo explícito. `--emit ir` emite o IR JSON
+do compilador atual, e `--emit assembly` emite o S3 Assembly atual para
+inspection e comparação.
 
 `ir-json` emite o envelope `s3-ir` 0.5.0 com newline; `verify-ir` reconstrói e
 verifica o artefato. `asm` sempre começa por `.s3asm 0.5.0`. `-O0` é padrão;
@@ -178,7 +195,16 @@ O exemplo normativo assembly
 
 ```bash
 python -m pytest
+python tools/golden_inspect.py check
+python tools/golden_inspect.py update
 ```
+
+`tools/golden_inspect.py check` compara os golden artifacts versionados em
+`tests/golden/inspect/` com a saída atual do compilador. `update` regenera esses
+goldens quando uma mudança de IR ou S3 Assembly for intencional. A cobertura
+atual inclui `examples/first.s3`, `examples/simple_call.s3` e
+`examples/sign.s3`; essa infraestrutura serve como ponto de comparação para a
+future Python-to-S3 migration, não como benchmark.
 
 Integrações ELF são coletadas e puladas em hosts que não são Linux. Os
 resultados atuais devem ser consultados no workflow; os números abaixo
