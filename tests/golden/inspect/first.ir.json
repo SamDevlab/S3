@@ -1,0 +1,171 @@
+{
+  "module": {
+    "functions": [
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "immediate": 10,
+                "opcode": "const",
+                "result": "r0",
+                "source": {
+                  "column": 16,
+                  "line": 2,
+                  "offset": 35
+                }
+              },
+              {
+                "opcode": "move",
+                "operands": [
+                  "r0"
+                ],
+                "result": "r1",
+                "source": {
+                  "column": 5,
+                  "line": 2,
+                  "offset": 24
+                }
+              },
+              {
+                "immediate": 4,
+                "opcode": "const",
+                "result": "r2",
+                "source": {
+                  "column": 16,
+                  "line": 3,
+                  "offset": 53
+                }
+              },
+              {
+                "opcode": "move",
+                "operands": [
+                  "r2"
+                ],
+                "result": "r3",
+                "source": {
+                  "column": 5,
+                  "line": 3,
+                  "offset": 42
+                }
+              },
+              {
+                "opcode": "invert",
+                "operands": [
+                  "r3"
+                ],
+                "result": "r4",
+                "source": {
+                  "column": 14,
+                  "line": 4,
+                  "offset": 68
+                }
+              },
+              {
+                "opcode": "add",
+                "operands": [
+                  "r1",
+                  "r4"
+                ],
+                "result": "r5",
+                "source": {
+                  "column": 14,
+                  "line": 4,
+                  "offset": 68
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r5"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 4,
+                  "offset": 59
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 2,
+              "offset": 24
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "main",
+        "parameters": [],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 16,
+              "line": 2,
+              "offset": 35
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 1,
+            "name": "r1",
+            "source": {
+              "column": 5,
+              "line": 2,
+              "offset": 24
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 2,
+            "name": "r2",
+            "source": {
+              "column": 16,
+              "line": 3,
+              "offset": 53
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 3,
+            "name": "r3",
+            "source": {
+              "column": 5,
+              "line": 3,
+              "offset": 42
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 4,
+            "name": "r4",
+            "source": {
+              "column": 16,
+              "line": 4,
+              "offset": 70
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 5,
+            "name": "r5",
+            "source": {
+              "column": 14,
+              "line": 4,
+              "offset": 68
+            },
+            "type": "tryte"
+          }
+        ],
+        "return_type": "tryte",
+        "source": {
+          "column": 1,
+          "line": 1,
+          "offset": 0
+        }
+      }
+    ]
+  }
+}
