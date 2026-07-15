@@ -26,6 +26,9 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
 
+      - name: Check golden inspect artifacts
+        run: python tools/golden_inspect.py check
+
       - name: Run tests
         run: python -m pytest
 
