@@ -1,0 +1,8 @@
+# Conceptual example only.
+# This documents a desired S3 capability for future compiler migration.
+# It is not part of the compiler test corpus and is not expected to compile.
+
+import compiler.rendering.render_register
+
+fn render_return(index: tryte) -> string:
+    return "TRET " + render_register(index)

@@ -1,0 +1,9 @@
+# Conceptual example only.
+# This documents a desired S3 capability for future compiler migration.
+# It is not part of the compiler test corpus and is not expected to compile.
+
+fn first_opcode() -> tryte:
+    opcodes: vector[tryte] = vector_new()
+    vector_push(opcodes, 1)
+    vector_push(opcodes, 2)
+    return vector_get(opcodes, 0)

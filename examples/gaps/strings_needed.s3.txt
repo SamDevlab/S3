@@ -1,0 +1,9 @@
+# Conceptual example only.
+# This documents a desired S3 capability for future compiler migration.
+# It is not part of the compiler test corpus and is not expected to compile.
+
+fn render_register(index: tryte) -> string:
+    return "r" + decimal(index)
+
+fn render_return(index: tryte) -> string:
+    return "TRET " + render_register(index)
