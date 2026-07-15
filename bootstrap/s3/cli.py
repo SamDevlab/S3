@@ -185,6 +185,13 @@ def _parser() -> argparse.ArgumentParser:
     )
     for cmd in commands:
         p = subparsers.add_parser(cmd, parents=[parent])
+        if cmd == "inspect":
+            p.add_argument(
+                "--emit",
+                choices=("summary", "ir", "assembly"),
+                default="summary",
+                help="inspection output to print (default: summary)",
+            )
         if cmd in ("run", "native-asm", "build", "run-native"):
             p.add_argument(
                 "--max-instructions",
@@ -324,6 +331,11 @@ def _print_inspection(
     print("\n".join(lines))
 
 
+def _print_inspection_artifact(kind: str, artifact: str) -> None:
+    print("\n".join(("S3 inspect", "", "Emit:", f"  kind: {kind}", "")))
+    print(artifact, end="" if artifact.endswith("\n") else "\n")
+
+
 def _print_check(source_path: Path) -> None:
     print("\n".join(("S3 check", f"  path: {source_path}", "  status: ok")))
 
@@ -381,12 +393,23 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "check":
             _print_check(args.source)
         elif args.command == "inspect":
-            _print_inspection(
-                args.source,
-                compilation,
-                syntax=args.source_syntax,
-                optimization=optimization,
-            )
+            if args.emit == "summary":
+                _print_inspection(
+                    args.source,
+                    compilation,
+                    syntax=args.source_syntax,
+                    optimization=optimization,
+                )
+            elif args.emit == "ir":
+                _print_inspection_artifact(
+                    "ir",
+                    json.dumps(compilation.ir.to_dict(), indent=2),
+                )
+            elif args.emit == "assembly":
+                _print_inspection_artifact(
+                    "assembly",
+                    compilation.assembly_text,
+                )
         elif args.command == "tokens":
             payload = [
                 token.to_dict()

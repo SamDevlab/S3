@@ -452,6 +452,58 @@ def test_inspect_command_reports_compilation_summary_without_running(
     assert "\n  entry: main\n" in captured.out
     assert "\nIR:\n" in captured.out
     assert "\nAssembly:\n" in captured.out
+    assert "\nEmit:\n" not in captured.out
+    assert "program returned" not in captured.out
+
+
+def test_inspect_command_explicit_summary_reports_compilation_summary(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    source = _write_source(
+        tmp_path / "overflow.s3",
+        "fn main() -> tryte:\n    return 364 + 1\n",
+    )
+
+    assert cli.main(["inspect", str(source), "--emit", "summary"]) == 0
+    captured = capsys.readouterr()
+
+    assert captured.err == ""
+    assert captured.out.startswith("S3 inspect\n")
+    assert f"  path: {source}" in captured.out
+    assert "\nCompilation:\n" in captured.out
+    assert "\nIR:\n" in captured.out
+    assert "\nAssembly:\n" in captured.out
+    assert "\nEmit:\n" not in captured.out
+    assert "program returned" not in captured.out
+
+
+@pytest.mark.parametrize(
+    ("emit", "expected_artifact"),
+    (
+        ("ir", '"module"'),
+        ("assembly", ".s3asm "),
+    ),
+)
+def test_inspect_command_emits_requested_artifact_without_running(
+    emit: str,
+    expected_artifact: str,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    source = _write_source(
+        tmp_path / "overflow.s3",
+        "fn main() -> tryte:\n    return 364 + 1\n",
+    )
+
+    assert cli.main(["inspect", str(source), "--emit", emit]) == 0
+    captured = capsys.readouterr()
+
+    assert captured.err == ""
+    assert captured.out.startswith("S3 inspect\n")
+    assert "\nEmit:\n" in captured.out
+    assert f"\n  kind: {emit}\n" in captured.out
+    assert expected_artifact in captured.out
     assert "program returned" not in captured.out
 
 
