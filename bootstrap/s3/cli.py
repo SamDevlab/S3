@@ -11,6 +11,7 @@ from typing import Sequence
 
 from . import ast
 from .assembly import AssemblyError
+from .backends.registry import create_builtin_backend_registry
 from .backends.x86_64 import (
     NativeBackendError,
     NativeToolchain,
@@ -31,6 +32,7 @@ from .ir_serialization import deserialize_ir, serialize_ir
 from .lexer import SyntaxMode
 from .optimizer import OptimizationLevel
 from .pipeline import compile_source
+from .targets import BUILTIN_TARGETS
 
 
 class _CLIUsageError(Exception):
@@ -175,6 +177,7 @@ def _parser() -> argparse.ArgumentParser:
         "build",
         "run-native",
     )
+    subparsers.add_parser("targets")
     for cmd in commands:
         p = subparsers.add_parser(cmd, parents=[parent])
         if cmd in ("run", "native-asm", "build", "run-native"):
@@ -232,6 +235,17 @@ def _emit_error(
         print(f"error: {prefix}{error}", file=sys.stderr)
 
 
+def _print_targets() -> None:
+    registry = create_builtin_backend_registry()
+    lines = ["Targets:"]
+    lines.extend(f"  {target.name}" for target in BUILTIN_TARGETS)
+    lines.extend(("", "Hosted execution:"))
+    lines.extend(f"  {name}" for name in registry.hosted_execution_names)
+    lines.extend(("", "Native assembly:"))
+    lines.extend(f"  {name}" for name in registry.native_assembly_targets)
+    print("\n".join(lines))
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     raw_argv = list(sys.argv[1:] if argv is None else argv)
     parser = _parser()
@@ -266,6 +280,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
 
     try:
+        if args.command == "targets":
+            _print_targets()
+            return 0
         if args.max_frames < 1:
             raise NativeBackendError("--max-frames must be at least 1")
         source = args.source.read_text(encoding="utf-8")

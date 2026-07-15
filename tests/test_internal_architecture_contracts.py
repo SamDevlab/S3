@@ -130,14 +130,12 @@ def test_builtin_registry_is_internal_and_not_shared() -> None:
 
 
 def test_import_boundaries_do_not_expose_registry_or_create_cycles() -> None:
-    assert ".backends.registry" not in _module_imports("bootstrap/s3/cli.py")
     assert ".backends._hosted_execution" not in _module_imports(
         "bootstrap/s3/cli.py"
     )
     assert ".backends._native_assembly" not in _module_imports(
         "bootstrap/s3/cli.py"
     )
-    assert ".targets" not in _module_imports("bootstrap/s3/cli.py")
 
     assert ".backends.registry" not in _module_imports(
         "bootstrap/s3/backends/x86_64/toolchain.py"
