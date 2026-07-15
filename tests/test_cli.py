@@ -429,6 +429,32 @@ def test_doctor_command_reports_environment_and_internal_architecture(
     assert "\n  available: " in captured.out
 
 
+def test_inspect_command_reports_compilation_summary_without_running(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    source = _write_source(
+        tmp_path / "overflow.s3",
+        "fn main() -> tryte:\n    return 364 + 1\n",
+    )
+
+    assert cli.main(["inspect", str(source)]) == 0
+    captured = capsys.readouterr()
+
+    assert captured.err == ""
+    assert captured.out.startswith("S3 inspect\n")
+    assert f"  path: {source}" in captured.out
+    assert "\nCompilation:\n" in captured.out
+    assert "\n  syntax: 0.6\n" in captured.out
+    assert "\n  optimization: O0\n" in captured.out
+    assert "\nProgram:\n" in captured.out
+    assert "\n  functions: 1\n" in captured.out
+    assert "\n  entry: main\n" in captured.out
+    assert "\nIR:\n" in captured.out
+    assert "\nAssembly:\n" in captured.out
+    assert "program returned" not in captured.out
+
+
 def test_unsupported_target_and_missing_toolchain_are_distinct(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],

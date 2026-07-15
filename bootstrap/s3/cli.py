@@ -31,8 +31,8 @@ from .diagnostics import (
 from .emulator import DEFAULT_MAX_FRAMES, DEFAULT_MAX_INSTRUCTIONS, Emulator
 from .ir_serialization import deserialize_ir, serialize_ir
 from .lexer import SyntaxMode
-from .optimizer import OptimizationLevel
-from .pipeline import compile_source
+from .optimizer import OptimizationLevel, instruction_count
+from .pipeline import CompilationResult, compile_source
 from .targets import BUILTIN_TARGETS
 
 
@@ -174,6 +174,7 @@ def _parser() -> argparse.ArgumentParser:
         "ast",
         "ir",
         "ir-json",
+        "inspect",
         "verify-ir",
         "asm",
         "run",
@@ -286,6 +287,42 @@ def _print_doctor() -> None:
     print("\n".join(lines))
 
 
+def _print_inspection(
+    source_path: Path,
+    compilation: CompilationResult,
+    *,
+    syntax: str,
+    optimization: OptimizationLevel,
+) -> None:
+    function_names = tuple(function.name for function in compilation.ast.functions)
+    assembly_instructions = sum(
+        len(block.instructions)
+        for function in compilation.assembly.functions
+        for block in function.blocks
+    )
+    lines = [
+        "S3 inspect",
+        "",
+        "Source:",
+        f"  path: {source_path}",
+        "",
+        "Compilation:",
+        f"  syntax: {syntax}",
+        f"  optimization: {optimization.value}",
+        "",
+        "Program:",
+        f"  functions: {len(function_names)}",
+        f"  entry: {'main' if 'main' in function_names else 'not found'}",
+        "",
+        "IR:",
+        f"  instructions: {instruction_count(compilation.ir)}",
+        "",
+        "Assembly:",
+        f"  instructions: {assembly_instructions}",
+    ]
+    print("\n".join(lines))
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     raw_argv = list(sys.argv[1:] if argv is None else argv)
     parser = _parser()
@@ -336,7 +373,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         optimization = OptimizationLevel.parse(args.optimization)
         mode = _SOURCE_SYNTAX_MODES[args.source_syntax]
         compilation = compile_source(source, optimization, mode=mode)
-        if args.command == "tokens":
+        if args.command == "inspect":
+            _print_inspection(
+                args.source,
+                compilation,
+                syntax=args.source_syntax,
+                optimization=optimization,
+            )
+        elif args.command == "tokens":
             payload = [
                 token.to_dict()
                 for token in compilation.tokens
