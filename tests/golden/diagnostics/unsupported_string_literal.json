@@ -1,9 +1,10 @@
 [
   {
-    "category": "syntax",
-    "code": "S3E_PARSE_UNSUPPORTED_STRING_LITERAL",
-    "message": "string literals are reserved for future S3 support",
-    "phase": "parsing",
+    "category": "semantic",
+    "code": "S3E_SEMANTIC_STRING_LITERAL_RUNTIME_UNSUPPORTED",
+    "function": "main",
+    "message": "string literals are parsed as static literals but runtime support is not implemented",
+    "phase": "semantic",
     "schema": "s3-diagnostic",
     "schema_version": "1.0.0",
     "severity": "error",

@@ -71,6 +71,22 @@ def test_lexer_recognizes_string_literal_as_reserved_token() -> None:
     assert (string_token.line, string_token.column) == (2, 12)
 
 
+def test_parser_preserves_string_literal_as_front_end_node() -> None:
+    program = parse(
+        'fn main() -> tryte:\n    return "hello"\n',
+        mode=SyntaxMode.V0_6,
+    )
+
+    statement = program.functions[0].body.statements[0]
+    assert isinstance(statement, ast.ReturnStatement)
+    assert isinstance(statement.expression, ast.StringLiteral)
+    assert statement.expression.value == "hello"
+    assert (statement.expression.location.line, statement.expression.location.column) == (
+        2,
+        12,
+    )
+
+
 def test_unterminated_string_literal_reports_lexical_error() -> None:
     with pytest.raises(LexError) as captured:
         tokenize(

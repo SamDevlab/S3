@@ -44,6 +44,12 @@ class IntegerLiteral:
 
 
 @dataclass(frozen=True, slots=True)
+class StringLiteral:
+    value: str
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
 class Identifier:
     name: str
     location: SourceLocation
@@ -86,6 +92,7 @@ class BinaryExpression:
 
 Expression: TypeAlias = (
     IntegerLiteral
+    | StringLiteral
     | Identifier
     | CallExpression
     | IndexExpression
