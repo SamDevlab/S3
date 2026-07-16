@@ -25,6 +25,10 @@ PROGRAMS = (
     S3Program(REPO_ROOT / "examples" / "first.s3", "baseline example"),
     S3Program(REPO_ROOT / "examples" / "simple_call.s3", "call example"),
     S3Program(REPO_ROOT / "examples" / "sign.s3", "ternary/sign behavior example"),
+    S3Program(
+        REPO_ROOT / "examples" / "self_hosting" / "assembly_renderer_stub.s3",
+        "future Assembly renderer stub",
+    ),
 )
 
 

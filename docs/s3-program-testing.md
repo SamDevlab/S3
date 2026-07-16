@@ -20,7 +20,11 @@ Current checked programs:
 - `examples/first.s3`
 - `examples/simple_call.s3`
 - `examples/sign.s3`
+- `examples/self_hosting/assembly_renderer_stub.s3`
 
 Conceptual gap examples under `examples/gaps/` are intentionally excluded
 because they may contain pseudocode and are not part of the compile-check
 inventory.
+
+Programs under `examples/self_hosting/` may be future component stubs. They must
+compile, but they do not need to implement the final component yet.

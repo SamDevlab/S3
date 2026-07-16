@@ -1,0 +1,5 @@
+# Stub for the future S3 Assembly renderer subset.
+# It intentionally does not render Assembly yet.
+
+fn main() -> tryte:
+    return 0

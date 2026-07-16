@@ -14,6 +14,8 @@ def test_compare_assembly_renderer_status_reports_blocked_state() -> None:
 
     assert completed.returncode == 0
     assert "S3 Assembly renderer comparison harness" in completed.stdout
+    assert "s3 renderer stub: available" in completed.stdout
+    assert "s3 renderer implementation: not implemented" in completed.stdout
     assert (
         "string literals: front-end only, runtime not implemented"
         in completed.stdout
