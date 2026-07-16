@@ -19,6 +19,11 @@ support is not implemented, so the renderer comparison remains blocked.
 `python tools/compare_assembly_renderer.py --status` reports the current state
 and exits successfully.
 
+`python tools/compare_assembly_renderer.py --reference` validates the
+Python/reference side of the comparison and exits successfully when the subset
+manifest, AssemblyProgram contract, fixtures, and Assembly goldens are present.
+The Assembly goldens must be non-empty and end with a final newline.
+
 `python tools/compare_assembly_renderer.py --check` fails intentionally while
 the S3 renderer is unavailable.
 
