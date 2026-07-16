@@ -12,6 +12,7 @@ MANIFEST_PATH = (
 REQUIRED_KEYS = {
     "candidate_manifest_version",
     "candidate_api",
+    "candidate_execution",
     "component",
     "s3_candidate",
     "python_reference",
@@ -23,6 +24,8 @@ EXPECTED_SUBSET_MANIFEST = "tests/golden/assembly_renderer_subset_manifest.json"
 EXPECTED_DATA_CONTRACT = "tests/golden/assembly_program_data_contract.json"
 EXPECTED_ENTRYPOINT = "main"
 EXPECTED_STATUS_FUNCTION = "renderer_candidate_status"
+EXPECTED_EXECUTION_MODE = "hosted"
+EXPECTED_STUB_STATUS = -1
 
 
 def _canonical(data: object) -> str:
@@ -48,6 +51,13 @@ def _string(data: dict[str, object], key: str) -> str:
     value = data.get(key)
     if not isinstance(value, str) or not value:
         raise ValueError(f"candidate manifest {key} must be a string")
+    return value
+
+
+def _integer(data: dict[str, object], key: str) -> int:
+    value = data.get(key)
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise ValueError(f"candidate manifest {key} must be an integer")
     return value
 
 
@@ -97,10 +107,22 @@ def _validate_manifest(data: dict[str, object], text: str) -> None:
             f"candidate API status_function must be {EXPECTED_STATUS_FUNCTION}"
         )
     status_return = _object(candidate_api, "status_return")
-    if status_return.get("stub") != -1:
+    if status_return.get("stub") != EXPECTED_STUB_STATUS:
         raise ValueError("candidate API stub return must be -1")
     if status_return.get("ready") != 1:
         raise ValueError("candidate API ready return must be 1")
+
+    candidate_execution = _object(data, "candidate_execution")
+    if _string(candidate_execution, "mode") != EXPECTED_EXECUTION_MODE:
+        raise ValueError("candidate execution mode must be hosted")
+    if _string(candidate_execution, "entrypoint") != EXPECTED_ENTRYPOINT:
+        raise ValueError(
+            f"candidate execution entrypoint must be {EXPECTED_ENTRYPOINT}"
+        )
+    if _integer(candidate_execution, "expected_status") != EXPECTED_STUB_STATUS:
+        raise ValueError("candidate execution expected_status must be -1")
+    if _string(candidate_execution, "meaning") != "stub":
+        raise ValueError("candidate execution meaning must be stub")
 
     s3_candidate = _object(data, "s3_candidate")
     candidate_path = _string(s3_candidate, "path")

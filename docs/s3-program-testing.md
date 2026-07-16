@@ -31,3 +31,5 @@ compile, but they do not need to implement the final component yet.
 
 The Assembly renderer candidate stub exposes `renderer_candidate_status()` as a
 minimal status API; its stub value does not mean the renderer is implemented.
+`tools/compare_assembly_renderer.py --candidate-run` executes that stub through
+the hosted path and confirms that `main` still returns `-1`.
