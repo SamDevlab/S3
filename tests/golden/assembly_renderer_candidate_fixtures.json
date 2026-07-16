@@ -1,0 +1,35 @@
+{
+  "comparison": {
+    "reason": "S3 renderer is not implemented",
+    "status": "blocked"
+  },
+  "component": "assembly_renderer_candidate_fixtures",
+  "excluded": [
+    {
+      "name": "assembly_renderer_stub",
+      "reason": "candidate program, not a renderer output fixture"
+    }
+  ],
+  "fixtures": [
+    {
+      "assembly_golden": "tests/golden/inspect/first.assembly.txt",
+      "name": "first",
+      "source": "examples/first.s3",
+      "status": "reference"
+    },
+    {
+      "assembly_golden": "tests/golden/inspect/simple_call.assembly.txt",
+      "name": "simple_call",
+      "source": "examples/simple_call.s3",
+      "status": "reference"
+    },
+    {
+      "assembly_golden": "tests/golden/inspect/sign.assembly.txt",
+      "name": "sign",
+      "source": "examples/sign.s3",
+      "status": "reference"
+    }
+  ],
+  "status": "reference_only",
+  "version": "1.0.0"
+}
