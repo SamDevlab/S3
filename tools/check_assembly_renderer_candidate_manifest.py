@@ -14,9 +14,13 @@ from tools.s3_program_check import find_program  # noqa: E402
 MANIFEST_PATH = (
     REPO_ROOT / "tests" / "golden" / "assembly_renderer_candidate_manifest.json"
 )
+SUBSET_MANIFEST_PATH = (
+    REPO_ROOT / "tests" / "golden" / "assembly_renderer_subset_manifest.json"
+)
 REQUIRED_KEYS = {
     "candidate_manifest_version",
     "candidate_api",
+    "candidate_capabilities",
     "candidate_execution",
     "component",
     "s3_candidate",
@@ -32,6 +36,8 @@ EXPECTED_ENTRYPOINT = "main"
 EXPECTED_STATUS_FUNCTION = "renderer_candidate_status"
 EXPECTED_EXECUTION_MODE = "hosted"
 EXPECTED_STUB_STATUS = -1
+EXPECTED_DIRECTIVE_COUNT_FUNCTION = "renderer_supported_directive_count"
+EXPECTED_OPCODE_COUNT_FUNCTION = "renderer_supported_opcode_count"
 
 
 def _canonical(data: object) -> str:
@@ -44,6 +50,13 @@ def _load_manifest() -> tuple[dict[str, object], str]:
     if not isinstance(data, dict):
         raise ValueError("candidate manifest root must be an object")
     return data, text
+
+
+def _load_subset_manifest() -> dict[str, object]:
+    data = json.loads(SUBSET_MANIFEST_PATH.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise ValueError("subset manifest root must be an object")
+    return data
 
 
 def _object(data: dict[str, object], key: str) -> dict[str, object]:
@@ -94,6 +107,32 @@ def _validate_stub_api(path_text: str) -> None:
         raise ValueError("candidate stub missing main entrypoint")
 
 
+def _validate_stub_capability(
+    source: str,
+    function_name: str,
+    expected_return: int,
+    label: str,
+) -> None:
+    pattern = (
+        rf"(?ms)^fn\s+{re.escape(function_name)}"
+        r"\s*\(\)\s*->\s*tryte\s*:\s*"
+        rf"(?:#.*\n\s*)*return\s+{expected_return}\b"
+    )
+    if re.search(pattern, source) is None:
+        raise ValueError(
+            f"candidate stub missing {label} capability return {expected_return}"
+        )
+
+
+def _required_string_array(data: dict[str, object], key: str) -> list[str]:
+    value = data.get(key)
+    if not isinstance(value, list) or not all(
+        isinstance(item, str) for item in value
+    ):
+        raise ValueError(f"subset manifest {key} must be a string array")
+    return value
+
+
 def _validate_manifest(data: dict[str, object], text: str) -> None:
     missing = REQUIRED_KEYS - data.keys()
     if missing:
@@ -113,6 +152,7 @@ def _validate_manifest(data: dict[str, object], text: str) -> None:
         raise ValueError("candidate manifest blockers must be a string array")
 
     candidate_api = _object(data, "candidate_api")
+    candidate_capabilities = _object(data, "candidate_capabilities")
     if _string(candidate_api, "entrypoint") != EXPECTED_ENTRYPOINT:
         raise ValueError(f"candidate API entrypoint must be {EXPECTED_ENTRYPOINT}")
     if _string(candidate_api, "status_function") != EXPECTED_STATUS_FUNCTION:
@@ -124,6 +164,29 @@ def _validate_manifest(data: dict[str, object], text: str) -> None:
         raise ValueError("candidate API stub return must be -1")
     if status_return.get("ready") != 1:
         raise ValueError("candidate API ready return must be 1")
+
+    directive_count_function = _string(
+        candidate_capabilities, "directive_count_function"
+    )
+    if directive_count_function != EXPECTED_DIRECTIVE_COUNT_FUNCTION:
+        raise ValueError(
+            "candidate directive count function must be "
+            f"{EXPECTED_DIRECTIVE_COUNT_FUNCTION}"
+        )
+    opcode_count_function = _string(candidate_capabilities, "opcode_count_function")
+    if opcode_count_function != EXPECTED_OPCODE_COUNT_FUNCTION:
+        raise ValueError(
+            "candidate opcode count function must be "
+            f"{EXPECTED_OPCODE_COUNT_FUNCTION}"
+        )
+
+    subset_data = _load_subset_manifest()
+    directive_count = len(_required_string_array(subset_data, "directives"))
+    opcode_count = len(_required_string_array(subset_data, "opcodes"))
+    if _integer(candidate_capabilities, "expected_directive_count") != directive_count:
+        raise ValueError("candidate directive count must match subset manifest")
+    if _integer(candidate_capabilities, "expected_opcode_count") != opcode_count:
+        raise ValueError("candidate opcode count must match subset manifest")
 
     candidate_execution = _object(data, "candidate_execution")
     if _string(candidate_execution, "mode") != EXPECTED_EXECUTION_MODE:
@@ -151,6 +214,19 @@ def _validate_manifest(data: dict[str, object], text: str) -> None:
         raise ValueError("candidate implements_renderer must be false")
     _validate_repo_file(candidate_path, "candidate path")
     _validate_stub_api(candidate_path)
+    candidate_source = (REPO_ROOT / candidate_path).read_text(encoding="utf-8")
+    _validate_stub_capability(
+        candidate_source,
+        directive_count_function,
+        directive_count,
+        "directive count",
+    )
+    _validate_stub_capability(
+        candidate_source,
+        opcode_count_function,
+        opcode_count,
+        "opcode count",
+    )
 
     program_inventory = _object(data, "program_inventory")
     inventory_path = _string(program_inventory, "path")

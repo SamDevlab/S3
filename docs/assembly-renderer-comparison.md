@@ -40,6 +40,12 @@ The candidate stub is also covered by `tools/golden_inspect.py check`. Those
 goldens lock the current compiler-facing IR and Assembly output for the stub;
 they do not mean the S3 renderer is implemented.
 
+The stub exposes scalar capability functions for the current subset contract:
+`renderer_supported_directive_count()` returns the number of supported
+directives, and `renderer_supported_opcode_count()` returns the number of
+supported opcodes. These values are checked against the subset manifest; they do
+not render Assembly.
+
 `python tools/compare_assembly_renderer.py --check` fails intentionally while
 the S3 renderer is unavailable.
 

@@ -13,6 +13,12 @@
       "stub": -1
     }
   },
+  "candidate_capabilities": {
+    "directive_count_function": "renderer_supported_directive_count",
+    "expected_directive_count": 6,
+    "expected_opcode_count": 8,
+    "opcode_count_function": "renderer_supported_opcode_count"
+  },
   "candidate_execution": {
     "entrypoint": "main",
     "expected_status": -1,

@@ -28,6 +28,8 @@ EXPECTED_ENTRYPOINT = "main"
 EXPECTED_STATUS_FUNCTION = "renderer_candidate_status"
 EXPECTED_EXECUTION_MODE = "hosted"
 EXPECTED_STUB_STATUS = -1
+EXPECTED_DIRECTIVE_COUNT_FUNCTION = "renderer_supported_directive_count"
+EXPECTED_OPCODE_COUNT_FUNCTION = "renderer_supported_opcode_count"
 
 
 BLOCKER_BY_FEATURE = {
@@ -50,6 +52,8 @@ class CandidateStatus:
     status: str
     entrypoint: str
     status_function: str
+    directive_count_function: str
+    opcode_count_function: str
     execution_mode: str
     expected_status: int
     execution_meaning: str
@@ -95,6 +99,15 @@ def _contract_strings(data: dict[str, object], key: str) -> tuple[str, ...]:
     if not isinstance(values, list):
         return ()
     return tuple(item for item in values if isinstance(item, str))
+
+
+def _string_array(data: dict[str, object], key: str) -> tuple[str, ...]:
+    values = data.get(key)
+    if not isinstance(values, list) or not all(
+        isinstance(item, str) for item in values
+    ):
+        raise ValueError(f"{key} must be a string array")
+    return tuple(values)
 
 
 def _blockers(features: tuple[str, ...]) -> tuple[str, ...]:
@@ -204,7 +217,9 @@ def load_reference_fixtures() -> tuple[ReferenceFixture, ...]:
 
 def load_candidate_status() -> CandidateStatus:
     manifest = _load_candidate_manifest()
+    subset_manifest_data = _load_manifest()
     candidate_api = _object(manifest, "candidate_api")
+    candidate_capabilities = _object(manifest, "candidate_capabilities")
     candidate_execution = _object(manifest, "candidate_execution")
     s3_candidate = _object(manifest, "s3_candidate")
     program_inventory = _object(manifest, "program_inventory")
@@ -219,6 +234,30 @@ def load_candidate_status() -> CandidateStatus:
         raise ValueError(
             f"candidate API status_function must be {EXPECTED_STATUS_FUNCTION}"
         )
+    directive_count_function = _string(
+        candidate_capabilities, "directive_count_function"
+    )
+    if directive_count_function != EXPECTED_DIRECTIVE_COUNT_FUNCTION:
+        raise ValueError(
+            "candidate directive count function must be "
+            f"{EXPECTED_DIRECTIVE_COUNT_FUNCTION}"
+        )
+    opcode_count_function = _string(candidate_capabilities, "opcode_count_function")
+    if opcode_count_function != EXPECTED_OPCODE_COUNT_FUNCTION:
+        raise ValueError(
+            "candidate opcode count function must be "
+            f"{EXPECTED_OPCODE_COUNT_FUNCTION}"
+        )
+    expected_directive_count = _integer(
+        candidate_capabilities, "expected_directive_count"
+    )
+    if expected_directive_count != len(
+        _string_array(subset_manifest_data, "directives")
+    ):
+        raise ValueError("candidate directive count must match subset manifest")
+    expected_opcode_count = _integer(candidate_capabilities, "expected_opcode_count")
+    if expected_opcode_count != len(_string_array(subset_manifest_data, "opcodes")):
+        raise ValueError("candidate opcode count must match subset manifest")
 
     candidate_path = _string(s3_candidate, "path")
     if candidate_path != EXPECTED_CANDIDATE_PATH:
@@ -278,6 +317,8 @@ def load_candidate_status() -> CandidateStatus:
         status=_string(s3_candidate, "status"),
         entrypoint=entrypoint,
         status_function=status_function,
+        directive_count_function=directive_count_function,
+        opcode_count_function=opcode_count_function,
         execution_mode=execution_mode,
         expected_status=expected_status,
         execution_meaning=execution_meaning,
@@ -296,6 +337,8 @@ def render_candidate_status(candidate: CandidateStatus) -> str:
         f"path: {candidate.path}",
         f"entrypoint: {candidate.entrypoint}",
         f"status function: {candidate.status_function}",
+        f"directive count function: {candidate.directive_count_function}",
+        f"opcode count function: {candidate.opcode_count_function}",
         f"implements renderer: {implements}",
         f"comparison: {candidate.comparison_status}",
     ]
