@@ -5,6 +5,14 @@
     "deterministic formatting helpers",
     "real S3 renderer implementation"
   ],
+  "candidate_api": {
+    "entrypoint": "main",
+    "status_function": "renderer_candidate_status",
+    "status_return": {
+      "ready": 1,
+      "stub": -1
+    }
+  },
   "candidate_manifest_version": "1.0.0",
   "comparison": {
     "reason": "S3 renderer is not implemented",
@@ -17,6 +25,7 @@
     "subset_manifest": "tests/golden/assembly_renderer_subset_manifest.json"
   },
   "s3_candidate": {
+    "api_status": "stub",
     "expected": "compiles",
     "implements_renderer": false,
     "path": "examples/self_hosting/assembly_renderer_stub.s3",

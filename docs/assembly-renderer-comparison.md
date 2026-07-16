@@ -27,7 +27,8 @@ The Assembly goldens must be non-empty and end with a final newline.
 `python tools/compare_assembly_renderer.py --candidate` validates the S3
 candidate manifest and confirms that the compilable candidate is still an
 explicit stub. The candidate exists and compiles, but it does not implement
-Assembly rendering.
+Assembly rendering. Its minimal API is `renderer_candidate_status() -> trit`,
+where `-1` means stub.
 
 `python tools/compare_assembly_renderer.py --check` fails intentionally while
 the S3 renderer is unavailable.

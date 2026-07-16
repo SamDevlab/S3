@@ -19,6 +19,8 @@ BLOCKED_MESSAGE = (
     "assembly renderer comparison is blocked: S3 renderer is not implemented"
 )
 EXPECTED_CANDIDATE_PATH = "examples/self_hosting/assembly_renderer_stub.s3"
+EXPECTED_ENTRYPOINT = "main"
+EXPECTED_STATUS_FUNCTION = "renderer_candidate_status"
 
 
 BLOCKER_BY_FEATURE = {
@@ -39,6 +41,8 @@ class ReferenceFixture:
 class CandidateStatus:
     path: str
     status: str
+    entrypoint: str
+    status_function: str
     implements_renderer: bool
     comparison_status: str
 
@@ -175,14 +179,27 @@ def load_reference_fixtures() -> tuple[ReferenceFixture, ...]:
 
 def load_candidate_status() -> CandidateStatus:
     manifest = _load_candidate_manifest()
+    candidate_api = _object(manifest, "candidate_api")
     s3_candidate = _object(manifest, "s3_candidate")
     python_reference = _object(manifest, "python_reference")
     comparison = _object(manifest, "comparison")
+
+    entrypoint = _string(candidate_api, "entrypoint")
+    if entrypoint != EXPECTED_ENTRYPOINT:
+        raise ValueError(f"candidate API entrypoint must be {EXPECTED_ENTRYPOINT}")
+    status_function = _string(candidate_api, "status_function")
+    if status_function != EXPECTED_STATUS_FUNCTION:
+        raise ValueError(
+            f"candidate API status_function must be {EXPECTED_STATUS_FUNCTION}"
+        )
 
     candidate_path = _string(s3_candidate, "path")
     if candidate_path != EXPECTED_CANDIDATE_PATH:
         raise ValueError(f"candidate path must be {EXPECTED_CANDIDATE_PATH}")
     _require_repo_file(candidate_path, "candidate path")
+
+    if _string(s3_candidate, "api_status") != "stub":
+        raise ValueError("candidate api_status must be stub")
 
     subset_manifest = _string(python_reference, "subset_manifest")
     _require_repo_file(subset_manifest, "subset manifest")
@@ -200,6 +217,8 @@ def load_candidate_status() -> CandidateStatus:
     return CandidateStatus(
         path=candidate_path,
         status=_string(s3_candidate, "status"),
+        entrypoint=entrypoint,
+        status_function=status_function,
         implements_renderer=implements_renderer,
         comparison_status=comparison_status,
     )
@@ -212,6 +231,8 @@ def render_candidate_status(candidate: CandidateStatus) -> str:
         "",
         f"status: {candidate.status}",
         f"path: {candidate.path}",
+        f"entrypoint: {candidate.entrypoint}",
+        f"status function: {candidate.status_function}",
         f"implements renderer: {implements}",
         f"comparison: {candidate.comparison_status}",
     ]

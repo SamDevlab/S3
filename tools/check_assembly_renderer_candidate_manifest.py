@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 
@@ -10,6 +11,7 @@ MANIFEST_PATH = (
 )
 REQUIRED_KEYS = {
     "candidate_manifest_version",
+    "candidate_api",
     "component",
     "s3_candidate",
     "python_reference",
@@ -19,6 +21,8 @@ REQUIRED_KEYS = {
 EXPECTED_CANDIDATE_PATH = "examples/self_hosting/assembly_renderer_stub.s3"
 EXPECTED_SUBSET_MANIFEST = "tests/golden/assembly_renderer_subset_manifest.json"
 EXPECTED_DATA_CONTRACT = "tests/golden/assembly_program_data_contract.json"
+EXPECTED_ENTRYPOINT = "main"
+EXPECTED_STATUS_FUNCTION = "renderer_candidate_status"
 
 
 def _canonical(data: object) -> str:
@@ -55,6 +59,18 @@ def _validate_repo_file(path_text: str, label: str) -> None:
         raise ValueError(f"{label} missing: {path_text}")
 
 
+def _validate_stub_api(path_text: str) -> None:
+    source = (REPO_ROOT / path_text).read_text(encoding="utf-8")
+    status_pattern = (
+        rf"(?m)^fn\s+{re.escape(EXPECTED_STATUS_FUNCTION)}"
+        r"\s*\(\)\s*->\s*trit\s*:"
+    )
+    if re.search(status_pattern, source) is None:
+        raise ValueError("candidate stub missing status function")
+    if re.search(r"(?m)^fn\s+main\s*\(\)\s*->\s*trit\s*:", source) is None:
+        raise ValueError("candidate stub missing main entrypoint")
+
+
 def _validate_manifest(data: dict[str, object], text: str) -> None:
     missing = REQUIRED_KEYS - data.keys()
     if missing:
@@ -73,10 +89,25 @@ def _validate_manifest(data: dict[str, object], text: str) -> None:
     ):
         raise ValueError("candidate manifest blockers must be a string array")
 
+    candidate_api = _object(data, "candidate_api")
+    if _string(candidate_api, "entrypoint") != EXPECTED_ENTRYPOINT:
+        raise ValueError(f"candidate API entrypoint must be {EXPECTED_ENTRYPOINT}")
+    if _string(candidate_api, "status_function") != EXPECTED_STATUS_FUNCTION:
+        raise ValueError(
+            f"candidate API status_function must be {EXPECTED_STATUS_FUNCTION}"
+        )
+    status_return = _object(candidate_api, "status_return")
+    if status_return.get("stub") != -1:
+        raise ValueError("candidate API stub return must be -1")
+    if status_return.get("ready") != 1:
+        raise ValueError("candidate API ready return must be 1")
+
     s3_candidate = _object(data, "s3_candidate")
     candidate_path = _string(s3_candidate, "path")
     if candidate_path != EXPECTED_CANDIDATE_PATH:
         raise ValueError(f"candidate path must be {EXPECTED_CANDIDATE_PATH}")
+    if _string(s3_candidate, "api_status") != "stub":
+        raise ValueError("candidate api_status must be stub")
     if _string(s3_candidate, "status") != "stub":
         raise ValueError("candidate status must be stub")
     if _string(s3_candidate, "expected") != "compiles":
@@ -84,6 +115,7 @@ def _validate_manifest(data: dict[str, object], text: str) -> None:
     if s3_candidate.get("implements_renderer") is not False:
         raise ValueError("candidate implements_renderer must be false")
     _validate_repo_file(candidate_path, "candidate path")
+    _validate_stub_api(candidate_path)
 
     python_reference = _object(data, "python_reference")
     if _string(python_reference, "status") != "available":
