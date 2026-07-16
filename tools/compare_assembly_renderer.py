@@ -11,10 +11,14 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 MANIFEST_PATH = (
     REPO_ROOT / "tests" / "golden" / "assembly_renderer_subset_manifest.json"
 )
+CANDIDATE_MANIFEST_PATH = (
+    REPO_ROOT / "tests" / "golden" / "assembly_renderer_candidate_manifest.json"
+)
 CONTRACT_PATH = REPO_ROOT / "tests" / "golden" / "assembly_program_data_contract.json"
 BLOCKED_MESSAGE = (
     "assembly renderer comparison is blocked: S3 renderer is not implemented"
 )
+EXPECTED_CANDIDATE_PATH = "examples/self_hosting/assembly_renderer_stub.s3"
 
 
 BLOCKER_BY_FEATURE = {
@@ -29,6 +33,14 @@ BLOCKER_BY_FEATURE = {
 class ReferenceFixture:
     example: str
     golden: str
+
+
+@dataclass(frozen=True, slots=True)
+class CandidateStatus:
+    path: str
+    status: str
+    implements_renderer: bool
+    comparison_status: str
 
 
 def _repo_path(path: Path) -> str:
@@ -59,6 +71,10 @@ def _load_manifest() -> dict[str, object]:
     return _load_json(MANIFEST_PATH, "manifest")
 
 
+def _load_candidate_manifest() -> dict[str, object]:
+    return _load_json(CANDIDATE_MANIFEST_PATH, "candidate manifest")
+
+
 def _contract_strings(data: dict[str, object], key: str) -> tuple[str, ...]:
     values = data.get(key)
     if not isinstance(values, list):
@@ -73,6 +89,28 @@ def _blockers(features: tuple[str, ...]) -> tuple[str, ...]:
         if blocker is not None:
             blockers.append(blocker)
     return tuple(blockers)
+
+
+def _object(data: dict[str, object], key: str) -> dict[str, object]:
+    value = data.get(key)
+    if not isinstance(value, dict):
+        raise ValueError(f"{key} must be an object")
+    return value
+
+
+def _string(data: dict[str, object], key: str) -> str:
+    value = data.get(key)
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{key} must be a string")
+    return value
+
+
+def _require_repo_file(path_text: str, label: str) -> None:
+    path = Path(path_text)
+    if path.is_absolute():
+        raise ValueError(f"{label} must be relative")
+    if not (REPO_ROOT / path).is_file():
+        raise ValueError(f"{label} missing: {path_text}")
 
 
 def _manifest_fixtures(data: dict[str, object]) -> tuple[ReferenceFixture, ...]:
@@ -135,6 +173,51 @@ def load_reference_fixtures() -> tuple[ReferenceFixture, ...]:
     return fixtures
 
 
+def load_candidate_status() -> CandidateStatus:
+    manifest = _load_candidate_manifest()
+    s3_candidate = _object(manifest, "s3_candidate")
+    python_reference = _object(manifest, "python_reference")
+    comparison = _object(manifest, "comparison")
+
+    candidate_path = _string(s3_candidate, "path")
+    if candidate_path != EXPECTED_CANDIDATE_PATH:
+        raise ValueError(f"candidate path must be {EXPECTED_CANDIDATE_PATH}")
+    _require_repo_file(candidate_path, "candidate path")
+
+    subset_manifest = _string(python_reference, "subset_manifest")
+    _require_repo_file(subset_manifest, "subset manifest")
+    data_contract = _string(python_reference, "data_contract")
+    _require_repo_file(data_contract, "data contract")
+
+    implements_renderer = s3_candidate.get("implements_renderer")
+    if implements_renderer is not False:
+        raise ValueError("candidate implements_renderer must be false")
+
+    comparison_status = _string(comparison, "status")
+    if comparison_status != "blocked":
+        raise ValueError("candidate comparison status must be blocked")
+
+    return CandidateStatus(
+        path=candidate_path,
+        status=_string(s3_candidate, "status"),
+        implements_renderer=implements_renderer,
+        comparison_status=comparison_status,
+    )
+
+
+def render_candidate_status(candidate: CandidateStatus) -> str:
+    implements = "yes" if candidate.implements_renderer else "no"
+    lines = [
+        "S3 Assembly renderer candidate",
+        "",
+        f"status: {candidate.status}",
+        f"path: {candidate.path}",
+        f"implements renderer: {implements}",
+        f"comparison: {candidate.comparison_status}",
+    ]
+    return "\n".join(lines) + "\n"
+
+
 def render_reference_status(fixtures: tuple[ReferenceFixture, ...]) -> str:
     lines = [
         "S3 Assembly renderer Python reference",
@@ -184,6 +267,20 @@ def reference() -> int:
     return 0
 
 
+def candidate() -> int:
+    try:
+        candidate_status = load_candidate_status()
+    except ValueError as error:
+        print("S3 Assembly renderer candidate")
+        print()
+        print("status: unavailable")
+        print(f"reason: {error}")
+        return 1
+
+    print(render_candidate_status(candidate_status), end="")
+    return 0
+
+
 def check() -> int:
     print(BLOCKED_MESSAGE)
     return 1
@@ -196,6 +293,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--status", action="store_true")
     mode.add_argument("--reference", action="store_true")
+    mode.add_argument("--candidate", action="store_true")
     mode.add_argument("--check", action="store_true")
     args = parser.parse_args(argv)
 
@@ -203,6 +301,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return status()
     if args.reference:
         return reference()
+    if args.candidate:
+        return candidate()
     return check()
 
 

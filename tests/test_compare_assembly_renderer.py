@@ -41,6 +41,21 @@ def test_compare_assembly_renderer_reference_reports_available_reference() -> No
     assert completed.stderr == ""
 
 
+def test_compare_assembly_renderer_candidate_reports_stub() -> None:
+    completed = subprocess.run(
+        [sys.executable, "tools/compare_assembly_renderer.py", "--candidate"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0
+    assert "S3 Assembly renderer candidate" in completed.stdout
+    assert "status: stub" in completed.stdout
+    assert "implements renderer: no" in completed.stdout
+    assert completed.stderr == ""
+
+
 def test_compare_assembly_renderer_check_fails_until_s3_renderer_exists() -> None:
     completed = subprocess.run(
         [sys.executable, "tools/compare_assembly_renderer.py", "--check"],
