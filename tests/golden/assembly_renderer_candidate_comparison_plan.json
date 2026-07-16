@@ -10,11 +10,11 @@
   "fixtures": [
     {
       "actual_output_status": "available",
-      "comparison_status": "pending",
+      "comparison_status": "passed",
       "expected_assembly": "tests/golden/inspect/first.assembly.txt",
       "expected_sha256": "46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67",
       "name": "first",
-      "reason": "first actual output is available; formal comparison remains blocked",
+      "reason": "first actual output matches expected assembly byte-for-byte",
       "source": "examples/first.s3"
     },
     {

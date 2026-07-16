@@ -152,14 +152,17 @@ def _validate_fixtures(
         comparison_status = _string(item, "comparison_status")
         if actual_output_status not in {"available", "not_implemented"}:
             raise ValueError(f"comparison fixture {name} actual output status mismatch")
-        if actual_output_status == "available" and comparison_status != "pending":
+        if actual_output_status == "available" and comparison_status not in {
+            "pending",
+            "passed",
+        }:
             raise ValueError(f"comparison fixture {name} comparison status mismatch")
         if actual_output_status == "not_implemented" and comparison_status != "blocked":
             raise ValueError(f"comparison fixture {name} comparison status mismatch")
         reason = _string(item, "reason")
         if actual_output_status == "not_implemented" and NOT_IMPLEMENTED_REASON not in reason:
             raise ValueError(f"comparison fixture {name} reason mismatch")
-        if actual_output_status == "available" and "formal comparison remains blocked" not in reason:
+        if actual_output_status == "available" and not reason:
             raise ValueError(f"comparison fixture {name} reason mismatch")
 
         _relative_repo_file(source, "comparison fixture source")

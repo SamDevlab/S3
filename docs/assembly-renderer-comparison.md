@@ -96,6 +96,12 @@ actual-output contracts, or implement the S3 renderer.
 `sign` remain blocked and absent. `--check` remains blocked until the formal
 `first` comparison is introduced.
 
+0.12-C formalizes that comparison. `python tools/compare_assembly_renderer.py
+--candidate-compare-available` compares available actual outputs only; `first`
+passes byte-for-byte against the LF-normalized inspect golden, while
+`simple_call` and `sign` remain blocked. The global `--check` mode still fails
+because the complete S3 renderer is not implemented.
+
 `python tools/check_assembly_renderer_candidate_readiness.py` is the single
 readiness gate for the candidate stub. It validates the candidate manifest, the
 symbol export golden, the fixture contract, the fixture expectations, the

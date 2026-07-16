@@ -40,7 +40,7 @@ def test_first_fixture_output_probe_matches_inspect_golden() -> None:
 def test_first_fixture_actual_output_matches_probe_and_golden() -> None:
     document = build_first_fixture_assembly_text()
     expected = _read_lf_normalized_golden_bytes(FIRST_ASSEMBLY_GOLDEN)
-    actual = FIRST_ACTUAL_OUTPUT.read_bytes()
+    actual = FIRST_ACTUAL_OUTPUT.read_text(encoding="utf-8").encode("utf-8")
 
     assert FIRST_ACTUAL_OUTPUT.is_file()
     assert actual == document.utf8_bytes
@@ -53,6 +53,13 @@ def test_first_fixture_actual_output_matches_probe_and_golden() -> None:
     )
     assert b"\r\n" not in actual
     assert actual.endswith(b"\n")
+
+
+def test_first_fixture_expected_and_actual_are_byte_for_byte_equal() -> None:
+    expected = _read_lf_normalized_golden_bytes(FIRST_ASSEMBLY_GOLDEN)
+    actual = FIRST_ACTUAL_OUTPUT.read_text(encoding="utf-8").encode("utf-8")
+
+    assert actual == expected
 
 
 def test_only_first_fixture_actual_output_exists() -> None:

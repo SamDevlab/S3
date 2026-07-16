@@ -232,7 +232,7 @@ def test_compare_assembly_renderer_candidate_actual_outputs_reports_contract() -
     )
     assert "exists=true" in completed.stdout
     assert "status=available" in completed.stdout
-    assert "comparison=pending" in completed.stdout
+    assert "comparison=passed" in completed.stdout
     assert (
         "sha256=46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67"
         in completed.stdout
@@ -251,6 +251,45 @@ def test_compare_assembly_renderer_candidate_actual_outputs_reports_contract() -
     assert "status=not_implemented" in completed.stdout
     assert "comparison=blocked" in completed.stdout
     assert "status: partial" in completed.stdout
+    assert completed.stderr == ""
+
+
+def test_compare_assembly_renderer_candidate_compare_available_reports_first_passed() -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "tools/compare_assembly_renderer.py",
+            "--candidate-compare-available",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0
+    assert (
+        "S3 Assembly renderer candidate available comparisons"
+        in completed.stdout
+    )
+    assert (
+        "first expected=tests/golden/inspect/first.assembly.txt "
+        "actual=tests/golden/assembly_renderer_candidate_actual/first.assembly.txt "
+        "status=passed"
+        in completed.stdout
+    )
+    assert (
+        "sha256=46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67"
+        in completed.stdout
+    )
+    assert "bytes=441" in completed.stdout
+    assert "lines=18" in completed.stdout
+    assert "simple_call status=blocked reason=actual output is not implemented" in completed.stdout
+    assert "sign status=blocked reason=actual output is not implemented" in completed.stdout
+    assert "available comparisons: 1" in completed.stdout
+    assert "passed comparisons: 1" in completed.stdout
+    assert "blocked comparisons: 2" in completed.stdout
+    assert "status: partial" in completed.stdout
+    assert "comparison: partial" in completed.stdout
     assert completed.stderr == ""
 
 
