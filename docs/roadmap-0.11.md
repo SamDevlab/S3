@@ -44,6 +44,8 @@ The first real implementation work will probably start in one of these areas:
 
 ### 0.11-A: implementation decision and smallest text-output path
 
+Status: started
+
 Objective:
 
 Choose and implement the smallest technical path that lets S3 represent or
@@ -51,6 +53,12 @@ produce deterministic text needed by the renderer.
 
 This should not be documentation-only. It should produce a small, testable
 technical change aligned with renderer output.
+
+The first implementation slice adds deterministic static text helpers for
+front-end string literals. It provides LF-normalized UTF-8 bytes and metadata
+for static text, while string literals remain blocked in semantic/runtime use.
+It does not implement the S3 Assembly renderer and does not create fixture
+actual outputs.
 
 Candidate paths:
 

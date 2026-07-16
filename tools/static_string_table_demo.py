@@ -26,7 +26,11 @@ def main() -> int:
     print("S3 static string literal table")
     print()
     for entry in table.entries:
-        print(f'{entry.id}: "{entry.value}"')
+        print(
+            f'{entry.id}: "{entry.value}" '
+            f"bytes={entry.byte_count} lines={entry.line_count} "
+            f"sha256={entry.sha256}"
+        )
     return 0
 
 

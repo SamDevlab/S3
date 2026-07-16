@@ -10,6 +10,7 @@ from bootstrap.s3.static_strings import (
     StaticStringTable,
     collect_static_string_literals,
 )
+from bootstrap.s3.static_text import StaticTextDecodeError
 
 
 def _table(source: str) -> StaticStringTable:
@@ -53,6 +54,57 @@ def test_static_string_literal_table_deduplicates_by_value() -> None:
     ]
     assert table.entry_for_value("hello") is table.entries[0]
     assert table.entry_for_value("missing") is None
+
+
+def test_static_string_literal_entry_exposes_deterministic_text_metadata() -> None:
+    table = _table(
+        'fn main() -> tryte:\n'
+        r'    first: tryte = "line\nnext"'
+        "\n"
+        r'    second: tryte = "quote: \" slash: \\"'
+        "\n"
+        "    return 0\n"
+    )
+
+    first = table.entries[0]
+    assert first.id == "s0"
+    assert first.value == r"line\nnext"
+    assert first.text == "line\nnext"
+    assert first.utf8_bytes == b"line\nnext"
+    assert first.byte_count == 9
+    assert first.line_count == 2
+    assert (
+        first.sha256
+        == "dc20ec73d7c6c71c3936bd3ff9734b011870b68ef6ca70ac638189d251526eb9"
+    )
+
+    second = table.entries[1]
+    assert second.text == 'quote: " slash: \\'
+
+
+def test_static_string_literal_table_keeps_stable_ids_with_escaped_literals() -> None:
+    table = _table(
+        'fn main() -> tryte:\n'
+        r'    first: tryte = "same\ntext"'
+        "\n"
+        r'    second: tryte = "other"'
+        "\n"
+        r'    third: tryte = "same\ntext"'
+        "\n"
+        "    return 0\n"
+    )
+
+    assert [(entry.id, entry.value) for entry in table.entries] == [
+        ("s0", r"same\ntext"),
+        ("s1", "other"),
+    ]
+
+
+def test_static_string_literal_entry_reports_unsupported_escape_when_decoded() -> None:
+    table = _table('fn main() -> tryte:\n' r'    return "bad\t"' "\n")
+
+    with pytest.raises(StaticTextDecodeError):
+        _ = table.entries[0].text
 
 
 def test_static_string_literal_table_walks_nested_expressions() -> None:

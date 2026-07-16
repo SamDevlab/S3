@@ -175,6 +175,13 @@ from the AST only; it does not call semantic analysis, lowering, IR generation,
 Assembly generation, or any backend. Runtime string support remains blocked by
 `S3E_SEMANTIC_STRING_LITERAL_RUNTIME_UNSUPPORTED`.
 
+0.11-A adds a deterministic static text foundation around that table. Entries
+keep the existing raw literal value and stable IDs, while exposing calculated
+decoded text, LF-normalized UTF-8 bytes, byte count, line count, and SHA-256
+metadata. Supported escapes are `\\`, `\"`, and `\n`; unsupported escapes fail
+through the static text helper rather than through semantic diagnostics. This
+does not make string literals executable or lowerable.
+
 ## Test Plan
 
 When implementation begins, add focused tests for:
