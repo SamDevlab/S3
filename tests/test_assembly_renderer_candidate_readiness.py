@@ -13,6 +13,8 @@ def test_assembly_renderer_candidate_readiness_gate_passes() -> None:
     )
 
     assert completed.returncode == 0
+    assert "fixtures: ok" in completed.stdout
+    assert "candidate fixtures: ok" in completed.stdout
     assert "comparison blocked: ok" in completed.stdout
     assert "assembly renderer candidate readiness: ok" in completed.stdout
     assert completed.stderr == ""

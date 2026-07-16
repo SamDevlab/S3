@@ -20,6 +20,9 @@ MANIFEST_PATH = (
 CANDIDATE_MANIFEST_PATH = (
     REPO_ROOT / "tests" / "golden" / "assembly_renderer_candidate_manifest.json"
 )
+CANDIDATE_FIXTURES_PATH = (
+    REPO_ROOT / "tests" / "golden" / "assembly_renderer_candidate_fixtures.json"
+)
 CONTRACT_PATH = REPO_ROOT / "tests" / "golden" / "assembly_program_data_contract.json"
 BLOCKED_MESSAGE = (
     "assembly renderer comparison is blocked: S3 renderer is not implemented"
@@ -60,6 +63,27 @@ class CandidateSymbol:
     symbol_id: int
     symbol: str
     function: str
+
+
+@dataclass(frozen=True, slots=True)
+class CandidateFixture:
+    name: str
+    source: str
+    assembly_golden: str
+
+
+@dataclass(frozen=True, slots=True)
+class CandidateFixtureExclusion:
+    name: str
+    reason: str
+
+
+@dataclass(frozen=True, slots=True)
+class CandidateFixtureStatus:
+    status: str
+    comparison_status: str
+    fixtures: tuple[CandidateFixture, ...]
+    excluded: tuple[CandidateFixtureExclusion, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -119,6 +143,10 @@ def _load_manifest() -> dict[str, object]:
 
 def _load_candidate_manifest() -> dict[str, object]:
     return _load_json(CANDIDATE_MANIFEST_PATH, "candidate manifest")
+
+
+def _load_candidate_fixtures_manifest() -> dict[str, object]:
+    return _load_json(CANDIDATE_FIXTURES_PATH, "candidate fixtures manifest")
 
 
 def _contract_strings(data: dict[str, object], key: str) -> tuple[str, ...]:
@@ -279,6 +307,55 @@ def _validate_reference_fixtures(fixtures: tuple[ReferenceFixture, ...]) -> None
             raise ValueError(f"golden missing final newline: {fixture.golden}")
 
 
+def _manifest_candidate_fixtures(data: dict[str, object]) -> tuple[CandidateFixture, ...]:
+    fixtures = data.get("fixtures")
+    if not isinstance(fixtures, list) or not fixtures:
+        raise ValueError("candidate fixtures must be a non-empty array")
+
+    parsed: list[CandidateFixture] = []
+    for index, item in enumerate(fixtures):
+        if not isinstance(item, dict):
+            raise ValueError(f"candidate fixture {index} must be an object")
+        name = _string(item, "name")
+        source = _string(item, "source")
+        assembly_golden = _string(item, "assembly_golden")
+        if _string(item, "status") != "reference":
+            raise ValueError(f"candidate fixture {name} status must be reference")
+        _require_repo_file(source, "candidate fixture source")
+        _require_repo_file(assembly_golden, "candidate fixture assembly golden")
+        parsed.append(
+            CandidateFixture(
+                name=name,
+                source=source,
+                assembly_golden=assembly_golden,
+            )
+        )
+
+    if len({fixture.name for fixture in parsed}) != len(parsed):
+        raise ValueError("candidate fixture names must be unique")
+    return tuple(parsed)
+
+
+def _manifest_candidate_exclusions(
+    data: dict[str, object],
+) -> tuple[CandidateFixtureExclusion, ...]:
+    excluded = data.get("excluded")
+    if not isinstance(excluded, list):
+        raise ValueError("candidate fixture excluded must be an array")
+
+    parsed: list[CandidateFixtureExclusion] = []
+    for index, item in enumerate(excluded):
+        if not isinstance(item, dict):
+            raise ValueError(f"candidate fixture exclusion {index} must be an object")
+        parsed.append(
+            CandidateFixtureExclusion(
+                name=_string(item, "name"),
+                reason=_string(item, "reason"),
+            )
+        )
+    return tuple(parsed)
+
+
 def load_reference_fixtures() -> tuple[ReferenceFixture, ...]:
     manifest = _load_manifest()
     contract = _load_contract()
@@ -286,6 +363,35 @@ def load_reference_fixtures() -> tuple[ReferenceFixture, ...]:
     fixtures = _manifest_fixtures(manifest)
     _validate_reference_fixtures(fixtures)
     return fixtures
+
+
+def load_candidate_fixture_status() -> CandidateFixtureStatus:
+    manifest = _load_candidate_fixtures_manifest()
+    if _string(manifest, "version") != "1.0.0":
+        raise ValueError("candidate fixtures version must be 1.0.0")
+    if _string(manifest, "component") != "assembly_renderer_candidate_fixtures":
+        raise ValueError("candidate fixtures component mismatch")
+    status = _string(manifest, "status")
+    if status != "reference_only":
+        raise ValueError("candidate fixtures status must be reference_only")
+    comparison = _object(manifest, "comparison")
+    comparison_status = _string(comparison, "status")
+    if comparison_status != "blocked":
+        raise ValueError("candidate fixtures comparison status must be blocked")
+
+    fixtures = _manifest_candidate_fixtures(manifest)
+    excluded = _manifest_candidate_exclusions(manifest)
+    if "assembly_renderer_stub" in {fixture.name for fixture in fixtures}:
+        raise ValueError("candidate stub must not be a renderer target fixture")
+    if "assembly_renderer_stub" not in {item.name for item in excluded}:
+        raise ValueError("candidate stub must be listed as excluded")
+
+    return CandidateFixtureStatus(
+        status=status,
+        comparison_status=comparison_status,
+        fixtures=fixtures,
+        excluded=excluded,
+    )
 
 
 def load_candidate_status() -> CandidateStatus:
@@ -558,6 +664,36 @@ def render_candidate_symbols(candidate: CandidateStatus) -> str:
     return "\n".join(lines) + "\n"
 
 
+def render_candidate_fixtures(candidate: CandidateFixtureStatus) -> str:
+    lines = [
+        "S3 Assembly renderer candidate fixtures",
+        "",
+        "fixtures:",
+    ]
+    lines.extend(
+        f"  {fixture.name} {fixture.source} {fixture.assembly_golden}"
+        for fixture in candidate.fixtures
+    )
+    lines.extend(
+        [
+            "",
+            "excluded:",
+        ]
+    )
+    lines.extend(
+        f"  {item.name} {item.reason}"
+        for item in candidate.excluded
+    )
+    lines.extend(
+        [
+            "",
+            f"status: {candidate.status}",
+            f"comparison: {candidate.comparison_status}",
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
 def render_reference_status(fixtures: tuple[ReferenceFixture, ...]) -> str:
     lines = [
         "S3 Assembly renderer Python reference",
@@ -655,6 +791,20 @@ def candidate_symbols() -> int:
     return 0
 
 
+def candidate_fixtures() -> int:
+    try:
+        fixture_status = load_candidate_fixture_status()
+    except ValueError as error:
+        print("S3 Assembly renderer candidate fixtures")
+        print()
+        print("status: unavailable")
+        print(f"reason: {error}")
+        return 1
+
+    print(render_candidate_fixtures(fixture_status), end="")
+    return 0
+
+
 def candidate_run() -> int:
     try:
         candidate_status = load_candidate_status()
@@ -698,6 +848,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     mode.add_argument("--reference", action="store_true")
     mode.add_argument("--candidate", action="store_true")
     mode.add_argument("--candidate-symbols", action="store_true")
+    mode.add_argument("--candidate-fixtures", action="store_true")
     mode.add_argument("--candidate-run", action="store_true")
     mode.add_argument("--check", action="store_true")
     args = parser.parse_args(argv)
@@ -710,6 +861,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return candidate()
     if args.candidate_symbols:
         return candidate_symbols()
+    if args.candidate_fixtures:
+        return candidate_fixtures()
     if args.candidate_run:
         return candidate_run()
     return check()

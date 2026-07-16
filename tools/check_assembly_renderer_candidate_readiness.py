@@ -32,6 +32,12 @@ READINESS_STEPS = (
         stdout_contains=("assembly renderer candidate symbols: ok",),
     ),
     ReadinessStep(
+        "fixtures",
+        ("tools/check_assembly_renderer_candidate_fixtures.py",),
+        0,
+        stdout_contains=("assembly renderer candidate fixtures: ok",),
+    ),
+    ReadinessStep(
         "program check",
         ("tools/s3_program_check.py", "check"),
         0,
@@ -58,6 +64,19 @@ READINESS_STEPS = (
             "S3 Assembly renderer candidate symbols",
             "0 .end renderer_directive_end_id",
             "7 TRET renderer_opcode_tret_id",
+        ),
+    ),
+    ReadinessStep(
+        "candidate fixtures",
+        ("tools/compare_assembly_renderer.py", "--candidate-fixtures"),
+        0,
+        stdout_contains=(
+            "S3 Assembly renderer candidate fixtures",
+            "first examples/first.s3",
+            "simple_call examples/simple_call.s3",
+            "sign examples/sign.s3",
+            "status: reference_only",
+            "comparison: blocked",
         ),
     ),
     ReadinessStep(

@@ -105,6 +105,27 @@ def test_compare_assembly_renderer_candidate_symbols_reports_table() -> None:
     assert completed.stderr == ""
 
 
+def test_compare_assembly_renderer_candidate_fixtures_reports_contract() -> None:
+    completed = subprocess.run(
+        [sys.executable, "tools/compare_assembly_renderer.py", "--candidate-fixtures"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0
+    assert "S3 Assembly renderer candidate fixtures" in completed.stdout
+    assert "fixtures:" in completed.stdout
+    assert "first examples/first.s3" in completed.stdout
+    assert "simple_call examples/simple_call.s3" in completed.stdout
+    assert "sign examples/sign.s3" in completed.stdout
+    assert "excluded:" in completed.stdout
+    assert "assembly_renderer_stub" in completed.stdout
+    assert "status: reference_only" in completed.stdout
+    assert "comparison: blocked" in completed.stdout
+    assert completed.stderr == ""
+
+
 def test_compare_assembly_renderer_candidate_run_executes_stub_status() -> None:
     completed = subprocess.run(
         [sys.executable, "tools/compare_assembly_renderer.py", "--candidate-run"],
