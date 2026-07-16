@@ -1,143 +1,75 @@
 # S3 0.11 Roadmap
 
-Status: open
+Status: closed
 
 ## Objective
 
-Start incremental implementation work that makes deterministic textual output
-possible in S3, beginning with the smallest path needed for a future S3
-Assembly renderer.
+S3 0.11 established the deterministic static text foundation needed for future
+textual compiler output. It moved the project from renderer-candidate-only
+contracts into small, testable implementation layers that can later support a
+real Assembly renderer output path.
 
-0.11 should move beyond renderer-candidate-only scaffolding. Each delivery
-should bring the project closer to producing real actual output that can be
-compared byte-for-byte against existing Assembly goldens.
+0.11 is complete after 0.11-C. There is no 0.11-D planned. The next milestone
+starts actual-output work.
 
-## Direction
+## Completed sequence
 
-Recommended direction for 0.11:
+### 0.11-A: deterministic static text foundation
 
-1. Unlock the minimum text or string capability needed by the renderer.
-2. Produce the first controlled actual output for one fixture.
-3. Compare that output byte-for-byte against the Assembly golden.
-4. Expand to additional fixtures only after the first path is stable.
+0.11-A added deterministic static text helpers for front-end string literal
+contents. The helpers decode the supported escapes `\\`, `\"`, and `\n`,
+normalize newlines to LF, encode UTF-8 bytes, and expose byte count, line count,
+and SHA-256 metadata.
 
-The first real implementation work will probably start in one of these areas:
+This was a foundation layer only. It did not implement the S3 Assembly renderer
+and did not create fixture actual outputs.
 
-- minimal deterministic text output or buffer capability;
-- minimal static string literal runtime or lowering support;
-- a simple internal format for assembling Assembly text lines;
-- the first actual output for a single fixture;
-- byte-for-byte comparison using the existing contracts.
+### 0.11-B: deterministic static text builder/document
 
-## Principles
+0.11-B added `StaticTextDocument` and `StaticTextBuilder` so future renderer
+work can compose byte-stable documents before fixture actual outputs exist.
 
-- Avoid new isolated contracts without implementation attached.
-- Every PR should move toward real actual output.
-- Preserve byte-for-byte determinism.
-- Preserve Windows and Linux behavior.
-- Keep `python tools/compare_assembly_renderer.py --check` blocked until enough
-  real output exists for a correct comparison result.
-- Keep the renderer candidate readiness gate passing.
-- Do not broaden self-hosting before one renderer fixture works.
+The builder starts empty, appends decoded text, appends raw static literals
+through the same decoder, appends LF-terminated lines, and finalizes to a
+document exposing normalized text, UTF-8 bytes, byte count, line count, and
+SHA-256 metadata.
 
-## Proposed 0.11 sequence
+### 0.11-C: deterministic static text line emitter
 
-### 0.11-A: implementation decision and smallest text-output path
+0.11-C added `StaticTextLineEmitter`, a line-oriented layer on top of the static
+text builder. It emits LF-terminated text lines, blank lines, raw static literal
+lines through the existing decoder, and controlled indentation.
 
-Status: started
+The emitter finalizes to the same `StaticTextDocument` type and keeps the
+document text, UTF-8 bytes, and metadata deterministic.
 
-Objective:
+## Delivered
 
-Choose and implement the smallest technical path that lets S3 represent or
-produce deterministic text needed by the renderer.
+0.11 delivered:
 
-This should not be documentation-only. It should produce a small, testable
-technical change aligned with renderer output.
+- deterministic static text representation;
+- deterministic UTF-8 bytes;
+- LF newline normalization;
+- `byte_count`, `line_count`, and `sha256` metadata;
+- `StaticTextDocument`;
+- `StaticTextBuilder`;
+- `StaticTextLineEmitter`;
+- structured line-based text composition;
+- a foundation for future textual output.
 
-The first implementation slice adds deterministic static text helpers for
-front-end string literals. It provides LF-normalized UTF-8 bytes and metadata
-for static text, while string literals remain blocked in semantic/runtime use.
-It does not implement the S3 Assembly renderer and does not create fixture
-actual outputs.
+## Not delivered
 
-Candidate paths:
+0.11 did not:
 
-- reduce the `StringLiteral` blocker for one narrow case;
-- add a minimal static string runtime structure;
-- add a deterministic text emission helper at the level S3 currently supports;
-- implement the first safe mechanism that can prepare actual output.
+- implement the real S3 renderer;
+- create actual outputs;
+- create `tests/golden/assembly_renderer_candidate_actual`;
+- unblock broad string lowering or runtime support;
+- alter inspect goldens;
+- alter the backend or emulator.
 
-Acceptance:
+## Next milestone
 
-- at least one new test demonstrates real technical capability;
-- no fixture actual output is required yet if text support is still too small.
-
-### 0.11-B: static text builder
-
-Objective:
-
-Add deterministic composition for static text so future renderer work can build
-byte-stable documents before creating fixture actual outputs.
-
-This stage introduces a static text document/builder layer on top of the 0.11-A
-encoding helpers. It keeps LF normalization, UTF-8 bytes, and metadata stable,
-but it still does not implement the S3 Assembly renderer or create fixture
-actual outputs.
-
-Acceptance:
-
-- builder starts empty;
-- builder appends decoded text, static literals, and LF-terminated lines;
-- finalized documents expose text, UTF-8 bytes, byte count, line count, and
-  SHA-256;
-- renderer candidate contracts remain unchanged;
-- `--check` remains blocked.
-
-### 0.11-C: structured static text line emitter
-
-Objective:
-
-Add a deterministic line-oriented emitter on top of the static text builder so
-future renderer work can assemble structured text with LF-terminated lines,
-blank lines, literal text, and controlled indentation.
-
-This stage still does not render `AssemblyProgram`, does not implement the S3
-Assembly renderer, and does not create fixture actual outputs.
-
-Acceptance:
-
-- emitter starts empty;
-- emitter emits text lines and blank lines with LF;
-- emitter can emit raw static literal lines through the existing decoder;
-- finalized documents expose the same deterministic text, UTF-8 bytes, and
-  metadata as the builder;
-- renderer candidate contracts remain unchanged;
-- `--check` remains blocked.
-
-### 0.11-D: first actual output path for one fixture
-
-Objective:
-
-When text support provides enough capability, produce or prepare the first
-actual output for a simple fixture.
-
-Preferred initial fixture:
-
-- `first`
-
-Future acceptance:
-
-- actual output exists for `first`;
-- the comparison plan changes from blocked to partial for `first` only, if that
-  is technically correct;
-- byte-for-byte comparison is validated;
-- remaining fixtures stay blocked.
-
-### 0.11-E: expand fixture coverage
-
-Objective:
-
-Expand from `first` to `simple_call` and `sign` only after the first path is
-stable.
-
-This sequence may change based on what implementation investigation discovers.
+S3 0.12 uses this deterministic text foundation to begin practical
+actual-output work. The initial focus is the `first` fixture; see
+`docs/roadmap-0.12.md`.
