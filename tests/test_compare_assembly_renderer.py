@@ -126,6 +126,42 @@ def test_compare_assembly_renderer_candidate_fixtures_reports_contract() -> None
     assert completed.stderr == ""
 
 
+def test_compare_assembly_renderer_candidate_fixture_expectations_reports_contract() -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "tools/compare_assembly_renderer.py",
+            "--candidate-fixture-expectations",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0
+    assert (
+        "S3 Assembly renderer candidate fixture expectations"
+        in completed.stdout
+    )
+    assert "expectations:" in completed.stdout
+    assert "first tests/golden/inspect/first.assembly.txt" in completed.stdout
+    assert (
+        "simple_call tests/golden/inspect/simple_call.assembly.txt"
+        in completed.stdout
+    )
+    assert "sign tests/golden/inspect/sign.assembly.txt" in completed.stdout
+    assert "sha256=" in completed.stdout
+    assert "bytes=" in completed.stdout
+    assert "lines=" in completed.stdout
+    assert (
+        "source manifest: tests/golden/assembly_renderer_candidate_fixtures.json"
+        in completed.stdout
+    )
+    assert "status: reference_only" in completed.stdout
+    assert "comparison: blocked" in completed.stdout
+    assert completed.stderr == ""
+
+
 def test_compare_assembly_renderer_candidate_run_executes_stub_status() -> None:
     completed = subprocess.run(
         [sys.executable, "tools/compare_assembly_renderer.py", "--candidate-run"],

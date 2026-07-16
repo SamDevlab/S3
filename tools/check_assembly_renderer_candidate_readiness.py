@@ -38,6 +38,14 @@ READINESS_STEPS = (
         stdout_contains=("assembly renderer candidate fixtures: ok",),
     ),
     ReadinessStep(
+        "fixture expectations",
+        ("tools/check_assembly_renderer_candidate_fixture_expectations.py",),
+        0,
+        stdout_contains=(
+            "assembly renderer candidate fixture expectations: ok",
+        ),
+    ),
+    ReadinessStep(
         "program check",
         ("tools/s3_program_check.py", "check"),
         0,
@@ -75,6 +83,19 @@ READINESS_STEPS = (
             "first examples/first.s3",
             "simple_call examples/simple_call.s3",
             "sign examples/sign.s3",
+            "status: reference_only",
+            "comparison: blocked",
+        ),
+    ),
+    ReadinessStep(
+        "candidate fixture expectations",
+        ("tools/compare_assembly_renderer.py", "--candidate-fixture-expectations"),
+        0,
+        stdout_contains=(
+            "S3 Assembly renderer candidate fixture expectations",
+            "first tests/golden/inspect/first.assembly.txt",
+            "simple_call tests/golden/inspect/simple_call.assembly.txt",
+            "sign tests/golden/inspect/sign.assembly.txt",
             "status: reference_only",
             "comparison: blocked",
         ),
