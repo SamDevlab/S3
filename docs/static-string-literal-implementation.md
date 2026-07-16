@@ -182,6 +182,13 @@ metadata. Supported escapes are `\\`, `\"`, and `\n`; unsupported escapes fail
 through the static text helper rather than through semantic diagnostics. This
 does not make string literals executable or lowerable.
 
+0.11-B adds `StaticTextBuilder` and `StaticTextDocument` for deterministic text
+composition. The builder appends already-decoded text, raw static literals using
+the 0.11-A decoder, and LF-terminated lines. Finalized documents expose
+normalized text, UTF-8 bytes, byte count, line count, and SHA-256. No files are
+created, no renderer output is generated, and source string literals remain
+blocked by the semantic runtime diagnostic.
+
 ## Test Plan
 
 When implementation begins, add focused tests for:

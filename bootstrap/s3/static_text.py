@@ -17,6 +17,55 @@ class StaticTextMetadata:
     sha256: str
 
 
+@dataclass(frozen=True, slots=True)
+class StaticTextDocument:
+    text: str
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "text", normalize_static_text_newlines(self.text))
+
+    @property
+    def utf8_bytes(self) -> bytes:
+        return self.text.encode("utf-8")
+
+    @property
+    def metadata(self) -> StaticTextMetadata:
+        return _metadata_from_text(self.text)
+
+    @property
+    def byte_count(self) -> int:
+        return self.metadata.byte_count
+
+    @property
+    def line_count(self) -> int:
+        return self.metadata.line_count
+
+    @property
+    def sha256(self) -> str:
+        return self.metadata.sha256
+
+
+class StaticTextBuilder:
+    def __init__(self) -> None:
+        self._parts: list[str] = []
+
+    def append_text(self, text: str) -> StaticTextBuilder:
+        self._parts.append(normalize_static_text_newlines(text))
+        return self
+
+    def append_literal(self, value: str) -> StaticTextBuilder:
+        self._parts.append(decode_static_text(value))
+        return self
+
+    def append_line(self, text: str = "") -> StaticTextBuilder:
+        self.append_text(text)
+        self._parts.append("\n")
+        return self
+
+    def build(self) -> StaticTextDocument:
+        return StaticTextDocument("".join(self._parts))
+
+
 def decode_static_text(value: str) -> str:
     """Decode the supported static string literal escapes deterministically."""
 
@@ -60,8 +109,12 @@ def encode_static_text(value: str) -> bytes:
 
 
 def static_text_metadata(value: str) -> StaticTextMetadata:
-    data = encode_static_text(value)
-    text = data.decode("utf-8")
+    return _metadata_from_text(decode_static_text(value))
+
+
+def _metadata_from_text(text: str) -> StaticTextMetadata:
+    text = normalize_static_text_newlines(text)
+    data = text.encode("utf-8")
     line_count = 0 if text == "" else len(text.splitlines())
     return StaticTextMetadata(
         byte_count=len(data),
