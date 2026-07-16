@@ -1,5 +1,35 @@
 # S3 0.10 Roadmap: Python-to-S3 Migration
 
+## S3 0.10 status
+
+Status: closed
+
+0.10 closed after the renderer candidate actual output contract completed the
+current preparation chain for the S3 Assembly renderer candidate.
+
+The milestone prepared the ground for self-hosting, but it did not implement
+real self-hosting. It prepared the Assembly renderer candidate, but it did not
+implement a real S3 renderer. `python tools/compare_assembly_renderer.py
+--check` remains blocked intentionally, and the readiness gate validates that
+blocked candidate state.
+
+Closed delivery themes:
+
+- language and static string preparation;
+- array and structured-data inventory;
+- Assembly renderer subset contracts;
+- S3 renderer candidate stub and API;
+- symbol export and goldens;
+- fixture, expectation, comparison, and actual-output contracts;
+- candidate readiness gate.
+
+The planned actual outputs are contract entries only. No real actual-output
+files should exist yet under `tests/golden/assembly_renderer_candidate_actual`.
+
+0.10 is complete. Further renderer-candidate-only scaffolding should move to
+0.11 only if it directly supports implementation work. The next step is not
+more 0.10 contracts; it is incremental implementation work in 0.11.
+
 The 0.10 series is about preparing S3 for incremental self-hosting. It does not
 replace the Python compiler in one step. Each delivery should be small,
 testable, and reversible.
