@@ -13,6 +13,12 @@
       "stub": -1
     }
   },
+  "candidate_execution": {
+    "entrypoint": "main",
+    "expected_status": -1,
+    "meaning": "stub",
+    "mode": "hosted"
+  },
   "candidate_manifest_version": "1.0.0",
   "comparison": {
     "reason": "S3 renderer is not implemented",

@@ -58,6 +58,24 @@ def test_compare_assembly_renderer_candidate_reports_stub() -> None:
     assert completed.stderr == ""
 
 
+def test_compare_assembly_renderer_candidate_run_executes_stub_status() -> None:
+    completed = subprocess.run(
+        [sys.executable, "tools/compare_assembly_renderer.py", "--candidate-run"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0
+    assert "S3 Assembly renderer candidate execution" in completed.stdout
+    assert "path: examples/self_hosting/assembly_renderer_stub.s3" in completed.stdout
+    assert "entrypoint: main" in completed.stdout
+    assert "expected status: -1" in completed.stdout
+    assert "actual status: -1" in completed.stdout
+    assert "status: stub" in completed.stdout
+    assert completed.stderr == ""
+
+
 def test_compare_assembly_renderer_check_fails_until_s3_renderer_exists() -> None:
     completed = subprocess.run(
         [sys.executable, "tools/compare_assembly_renderer.py", "--check"],

@@ -2,12 +2,17 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
+
+from bootstrap.s3.pipeline import run_source  # noqa: E402
+
 MANIFEST_PATH = (
     REPO_ROOT / "tests" / "golden" / "assembly_renderer_subset_manifest.json"
 )
@@ -21,6 +26,8 @@ BLOCKED_MESSAGE = (
 EXPECTED_CANDIDATE_PATH = "examples/self_hosting/assembly_renderer_stub.s3"
 EXPECTED_ENTRYPOINT = "main"
 EXPECTED_STATUS_FUNCTION = "renderer_candidate_status"
+EXPECTED_EXECUTION_MODE = "hosted"
+EXPECTED_STUB_STATUS = -1
 
 
 BLOCKER_BY_FEATURE = {
@@ -43,6 +50,9 @@ class CandidateStatus:
     status: str
     entrypoint: str
     status_function: str
+    execution_mode: str
+    expected_status: int
+    execution_meaning: str
     implements_renderer: bool
     comparison_status: str
 
@@ -106,6 +116,13 @@ def _string(data: dict[str, object], key: str) -> str:
     value = data.get(key)
     if not isinstance(value, str) or not value:
         raise ValueError(f"{key} must be a string")
+    return value
+
+
+def _integer(data: dict[str, object], key: str) -> int:
+    value = data.get(key)
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise ValueError(f"{key} must be an integer")
     return value
 
 
@@ -180,6 +197,7 @@ def load_reference_fixtures() -> tuple[ReferenceFixture, ...]:
 def load_candidate_status() -> CandidateStatus:
     manifest = _load_candidate_manifest()
     candidate_api = _object(manifest, "candidate_api")
+    candidate_execution = _object(manifest, "candidate_execution")
     s3_candidate = _object(manifest, "s3_candidate")
     python_reference = _object(manifest, "python_reference")
     comparison = _object(manifest, "comparison")
@@ -201,6 +219,21 @@ def load_candidate_status() -> CandidateStatus:
     if _string(s3_candidate, "api_status") != "stub":
         raise ValueError("candidate api_status must be stub")
 
+    execution_mode = _string(candidate_execution, "mode")
+    if execution_mode != EXPECTED_EXECUTION_MODE:
+        raise ValueError("candidate execution mode must be hosted")
+    execution_entrypoint = _string(candidate_execution, "entrypoint")
+    if execution_entrypoint != EXPECTED_ENTRYPOINT:
+        raise ValueError(
+            f"candidate execution entrypoint must be {EXPECTED_ENTRYPOINT}"
+        )
+    expected_status = _integer(candidate_execution, "expected_status")
+    if expected_status != EXPECTED_STUB_STATUS:
+        raise ValueError("candidate execution expected_status must be -1")
+    execution_meaning = _string(candidate_execution, "meaning")
+    if execution_meaning != "stub":
+        raise ValueError("candidate execution meaning must be stub")
+
     subset_manifest = _string(python_reference, "subset_manifest")
     _require_repo_file(subset_manifest, "subset manifest")
     data_contract = _string(python_reference, "data_contract")
@@ -219,6 +252,9 @@ def load_candidate_status() -> CandidateStatus:
         status=_string(s3_candidate, "status"),
         entrypoint=entrypoint,
         status_function=status_function,
+        execution_mode=execution_mode,
+        expected_status=expected_status,
+        execution_meaning=execution_meaning,
         implements_renderer=implements_renderer,
         comparison_status=comparison_status,
     )
@@ -248,6 +284,24 @@ def render_reference_status(fixtures: tuple[ReferenceFixture, ...]) -> str:
         "fixtures:",
     ]
     lines.extend(f"  {fixture.example} -> {fixture.golden}" for fixture in fixtures)
+    return "\n".join(lines) + "\n"
+
+
+def render_candidate_execution(candidate: CandidateStatus, actual_status: int) -> str:
+    status = (
+        candidate.execution_meaning
+        if actual_status == candidate.expected_status
+        else "unexpected"
+    )
+    lines = [
+        "S3 Assembly renderer candidate execution",
+        "",
+        f"path: {candidate.path}",
+        f"entrypoint: {candidate.entrypoint}",
+        f"expected status: {candidate.expected_status}",
+        f"actual status: {actual_status}",
+        f"status: {status}",
+    ]
     return "\n".join(lines) + "\n"
 
 
@@ -302,6 +356,30 @@ def candidate() -> int:
     return 0
 
 
+def candidate_run() -> int:
+    try:
+        candidate_status = load_candidate_status()
+        source = (REPO_ROOT / candidate_status.path).read_text(encoding="utf-8")
+        actual_status = run_source(source, entry=candidate_status.entrypoint)
+    except (OSError, ValueError) as error:
+        print("S3 Assembly renderer candidate execution")
+        print()
+        print("status: unavailable")
+        print(f"reason: {error}")
+        return 1
+    except Exception as error:
+        print("S3 Assembly renderer candidate execution")
+        print()
+        print("status: failed")
+        print(f"reason: {error}")
+        return 1
+
+    print(render_candidate_execution(candidate_status, actual_status), end="")
+    if actual_status != candidate_status.expected_status:
+        return 1
+    return 0
+
+
 def check() -> int:
     print(BLOCKED_MESSAGE)
     return 1
@@ -315,6 +393,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     mode.add_argument("--status", action="store_true")
     mode.add_argument("--reference", action="store_true")
     mode.add_argument("--candidate", action="store_true")
+    mode.add_argument("--candidate-run", action="store_true")
     mode.add_argument("--check", action="store_true")
     args = parser.parse_args(argv)
 
@@ -324,6 +403,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return reference()
     if args.candidate:
         return candidate()
+    if args.candidate_run:
+        return candidate_run()
     return check()
 
 

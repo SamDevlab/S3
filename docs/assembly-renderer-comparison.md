@@ -30,6 +30,10 @@ explicit stub. The candidate exists and compiles, but it does not implement
 Assembly rendering. Its minimal API is `renderer_candidate_status() -> trit`,
 where `-1` means stub.
 
+`python tools/compare_assembly_renderer.py --candidate-run` executes the
+candidate stub through the hosted path and expects `main` to return `-1`. This
+only validates the status API; it does not render Assembly.
+
 `python tools/compare_assembly_renderer.py --check` fails intentionally while
 the S3 renderer is unavailable.
 
