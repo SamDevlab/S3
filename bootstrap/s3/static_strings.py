@@ -5,6 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from . import ast
+from .static_text import (
+    StaticTextMetadata,
+    decode_static_text,
+    encode_static_text,
+    static_text_metadata,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -12,6 +18,30 @@ class StaticStringEntry:
     id: str
     value: str
     index: int
+
+    @property
+    def text(self) -> str:
+        return decode_static_text(self.value)
+
+    @property
+    def utf8_bytes(self) -> bytes:
+        return encode_static_text(self.value)
+
+    @property
+    def metadata(self) -> StaticTextMetadata:
+        return static_text_metadata(self.value)
+
+    @property
+    def byte_count(self) -> int:
+        return self.metadata.byte_count
+
+    @property
+    def line_count(self) -> int:
+        return self.metadata.line_count
+
+    @property
+    def sha256(self) -> str:
+        return self.metadata.sha256
 
 
 @dataclass(frozen=True, slots=True)

@@ -97,6 +97,12 @@ Out of scope for the first renderer subset:
 
 The recommended starting point is an ASCII-compatible UTF-8 byte sequence.
 
+0.11-A starts this path with deterministic static text helpers for front-end
+string literal contents. The helpers decode the supported escapes `\\`, `\"`,
+and `\n`, normalize newlines to LF, encode UTF-8 bytes, and expose byte count,
+line count, and SHA-256 metadata. This is not runtime string support, does not
+make string literals lowerable, and does not create renderer actual outputs.
+
 For the first implementation, it is acceptable to validate only the ASCII subset
 needed by the Assembly renderer fixtures, while keeping the representation and
 terminology compatible with UTF-8 bytes.
