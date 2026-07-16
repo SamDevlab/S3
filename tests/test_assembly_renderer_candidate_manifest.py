@@ -1,7 +1,14 @@
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
+from pathlib import Path
+
+from tools.s3_program_check import find_program
+
+
+MANIFEST_PATH = Path("tests/golden/assembly_renderer_candidate_manifest.json")
 
 
 def test_assembly_renderer_candidate_manifest_is_valid() -> None:
@@ -15,3 +22,22 @@ def test_assembly_renderer_candidate_manifest_is_valid() -> None:
     assert completed.returncode == 0
     assert "assembly renderer candidate manifest: ok" in completed.stdout
     assert completed.stderr == ""
+
+
+def test_assembly_renderer_candidate_manifest_matches_program_inventory() -> None:
+    data = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    program_inventory = data["program_inventory"]
+
+    program = find_program(program_inventory["path"])
+
+    assert program is not None
+    assert (
+        program_inventory["path"]
+        == "examples/self_hosting/assembly_renderer_stub.s3"
+    )
+    assert program_inventory["covered_by_s3_program_check"] is True
+    assert program_inventory["hosted_expected_return"] == -1
+    assert (
+        program.hosted_expected_return
+        == program_inventory["hosted_expected_return"]
+    )

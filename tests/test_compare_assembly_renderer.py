@@ -72,6 +72,7 @@ def test_compare_assembly_renderer_candidate_run_executes_stub_status() -> None:
     assert "entrypoint: main" in completed.stdout
     assert "expected status: -1" in completed.stdout
     assert "actual status: -1" in completed.stdout
+    assert "covered by s3_program_check: yes" in completed.stdout
     assert "status: stub" in completed.stdout
     assert completed.stderr == ""
 

@@ -2,10 +2,15 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from pathlib import Path
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
+
+from tools.s3_program_check import find_program  # noqa: E402
+
 MANIFEST_PATH = (
     REPO_ROOT / "tests" / "golden" / "assembly_renderer_candidate_manifest.json"
 )
@@ -15,6 +20,7 @@ REQUIRED_KEYS = {
     "candidate_execution",
     "component",
     "s3_candidate",
+    "program_inventory",
     "python_reference",
     "comparison",
     "blockers",
@@ -58,6 +64,13 @@ def _integer(data: dict[str, object], key: str) -> int:
     value = data.get(key)
     if not isinstance(value, int) or isinstance(value, bool):
         raise ValueError(f"candidate manifest {key} must be an integer")
+    return value
+
+
+def _boolean(data: dict[str, object], key: str) -> bool:
+    value = data.get(key)
+    if not isinstance(value, bool):
+        raise ValueError(f"candidate manifest {key} must be a boolean")
     return value
 
 
@@ -138,6 +151,23 @@ def _validate_manifest(data: dict[str, object], text: str) -> None:
         raise ValueError("candidate implements_renderer must be false")
     _validate_repo_file(candidate_path, "candidate path")
     _validate_stub_api(candidate_path)
+
+    program_inventory = _object(data, "program_inventory")
+    inventory_path = _string(program_inventory, "path")
+    if inventory_path != EXPECTED_CANDIDATE_PATH:
+        raise ValueError(f"program inventory path must be {EXPECTED_CANDIDATE_PATH}")
+    if inventory_path != candidate_path:
+        raise ValueError("program inventory path must match candidate path")
+    if _integer(program_inventory, "hosted_expected_return") != EXPECTED_STUB_STATUS:
+        raise ValueError("program inventory hosted_expected_return must be -1")
+    if not _boolean(program_inventory, "covered_by_s3_program_check"):
+        raise ValueError("program inventory must be covered by s3_program_check")
+
+    inventory_program = find_program(inventory_path)
+    if inventory_program is None:
+        raise ValueError("s3_program_check inventory missing candidate stub")
+    if inventory_program.hosted_expected_return != EXPECTED_STUB_STATUS:
+        raise ValueError("s3_program_check hosted expected return must be -1")
 
     python_reference = _object(data, "python_reference")
     if _string(python_reference, "status") != "available":
