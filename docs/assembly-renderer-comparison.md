@@ -66,14 +66,26 @@ The plan links each fixture to its expected Assembly output while keeping the
 candidate actual output status at `not_implemented`. This prepares a future
 byte-for-byte comparison; it does not mean the renderer is implemented.
 
+`tests/golden/assembly_renderer_candidate_actual_outputs.json` records the
+blocked actual-output contract for the same fixture order. Check it with
+`python tools/check_assembly_renderer_candidate_actual_outputs.py` and list it
+with `python tools/compare_assembly_renderer.py --candidate-actual-outputs`.
+The contract defines one `planned_actual_output` path per fixture under
+`tests/golden/assembly_renderer_candidate_actual`, but requires those files to
+be absent while the S3 renderer is unavailable. This reserves the future output
+location; it does not mean the renderer is implemented, and `--check` remains
+blocked.
+
 `python tools/check_assembly_renderer_candidate_readiness.py` is the single
 readiness gate for the candidate stub. It validates the candidate manifest, the
 symbol export golden, the fixture contract, the fixture expectations, the
-comparison plan, the hosted `s3_program_check.py check` opt-in, the
+comparison plan, the actual-output contract, the hosted
+`s3_program_check.py check` opt-in, the
 `--candidate`, `--candidate-symbols`, `--candidate-fixtures`,
 `--candidate-fixture-expectations`, `--candidate-comparison-plan`, and
-`--candidate-run` modes, and the expected blocked result from `--check`. This
-gate keeps the candidate consistent; it does not implement rendering.
+`--candidate-actual-outputs`, and `--candidate-run` modes, and the expected
+blocked result from `--check`. This gate keeps the candidate consistent; it
+does not implement rendering.
 
 `python tools/compare_assembly_renderer.py --candidate-run` executes the
 candidate stub through the hosted path and expects `main` to return `-1`. This

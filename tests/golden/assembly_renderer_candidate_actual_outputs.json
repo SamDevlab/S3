@@ -1,0 +1,40 @@
+{
+  "actual_output_root": "tests/golden/assembly_renderer_candidate_actual",
+  "comparison_plan": "tests/golden/assembly_renderer_candidate_comparison_plan.json",
+  "component": "assembly_renderer_candidate_actual_outputs",
+  "outputs": [
+    {
+      "actual_output_exists": false,
+      "actual_output_status": "not_implemented",
+      "comparison_status": "blocked",
+      "expected_assembly": "tests/golden/inspect/first.assembly.txt",
+      "name": "first",
+      "planned_actual_output": "tests/golden/assembly_renderer_candidate_actual/first.assembly.txt",
+      "reason": "S3 renderer is not implemented",
+      "source": "examples/first.s3"
+    },
+    {
+      "actual_output_exists": false,
+      "actual_output_status": "not_implemented",
+      "comparison_status": "blocked",
+      "expected_assembly": "tests/golden/inspect/simple_call.assembly.txt",
+      "name": "simple_call",
+      "planned_actual_output": "tests/golden/assembly_renderer_candidate_actual/simple_call.assembly.txt",
+      "reason": "S3 renderer is not implemented",
+      "source": "examples/simple_call.s3"
+    },
+    {
+      "actual_output_exists": false,
+      "actual_output_status": "not_implemented",
+      "comparison_status": "blocked",
+      "expected_assembly": "tests/golden/inspect/sign.assembly.txt",
+      "name": "sign",
+      "planned_actual_output": "tests/golden/assembly_renderer_candidate_actual/sign.assembly.txt",
+      "reason": "S3 renderer is not implemented",
+      "source": "examples/sign.s3"
+    }
+  ],
+  "reason": "S3 renderer is not implemented",
+  "status": "blocked",
+  "version": "1.0.0"
+}
