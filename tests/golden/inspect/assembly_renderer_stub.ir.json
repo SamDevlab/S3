@@ -124,7 +124,7 @@
                 "source": {
                   "column": 12,
                   "line": 11,
-                  "offset": 301
+                  "offset": 303
                 }
               },
               {
@@ -135,7 +135,7 @@
                 "source": {
                   "column": 5,
                   "line": 11,
-                  "offset": 294
+                  "offset": 296
                 }
               }
             ],
@@ -143,12 +143,12 @@
             "source": {
               "column": 5,
               "line": 11,
-              "offset": 294
+              "offset": 296
             }
           }
         ],
         "memory_objects": [],
-        "name": "renderer_directive_end_id",
+        "name": "renderer_first_directive_id",
         "parameters": [],
         "registers": [
           {
@@ -157,7 +157,7 @@
             "source": {
               "column": 12,
               "line": 11,
-              "offset": 301
+              "offset": 303
             },
             "type": "tryte"
           }
@@ -174,13 +174,13 @@
           {
             "instructions": [
               {
-                "immediate": 1,
+                "immediate": 5,
                 "opcode": "const",
                 "result": "r0",
                 "source": {
                   "column": 12,
                   "line": 14,
-                  "offset": 361
+                  "offset": 359
                 }
               },
               {
@@ -191,7 +191,7 @@
                 "source": {
                   "column": 5,
                   "line": 14,
-                  "offset": 354
+                  "offset": 352
                 }
               }
             ],
@@ -199,7 +199,1077 @@
             "source": {
               "column": 5,
               "line": 14,
-              "offset": 354
+              "offset": 352
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "renderer_last_directive_id",
+        "parameters": [],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 12,
+              "line": 14,
+              "offset": 359
+            },
+            "type": "tryte"
+          }
+        ],
+        "return_type": "tryte",
+        "source": {
+          "column": 1,
+          "line": 13,
+          "offset": 306
+        }
+      },
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r0",
+                "source": {
+                  "column": 12,
+                  "line": 17,
+                  "offset": 413
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r0"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 17,
+                  "offset": 406
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 17,
+              "offset": 406
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "renderer_first_opcode_id",
+        "parameters": [],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 12,
+              "line": 17,
+              "offset": 413
+            },
+            "type": "tryte"
+          }
+        ],
+        "return_type": "tryte",
+        "source": {
+          "column": 1,
+          "line": 16,
+          "offset": 362
+        }
+      },
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "immediate": 7,
+                "opcode": "const",
+                "result": "r0",
+                "source": {
+                  "column": 12,
+                  "line": 20,
+                  "offset": 466
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r0"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 20,
+                  "offset": 459
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 20,
+              "offset": 459
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "renderer_last_opcode_id",
+        "parameters": [],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 12,
+              "line": 20,
+              "offset": 466
+            },
+            "type": "tryte"
+          }
+        ],
+        "return_type": "tryte",
+        "source": {
+          "column": 1,
+          "line": 19,
+          "offset": 416
+        }
+      },
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "callee": "renderer_first_directive_id",
+                "opcode": "call",
+                "result": "r1",
+                "source": {
+                  "column": 18,
+                  "line": 23,
+                  "offset": 540
+                }
+              },
+              {
+                "opcode": "compare",
+                "operands": [
+                  "r0",
+                  "r1"
+                ],
+                "result": "r2",
+                "source": {
+                  "column": 14,
+                  "line": 23,
+                  "offset": 536
+                }
+              },
+              {
+                "opcode": "branch3",
+                "operands": [
+                  "r2"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 23,
+                  "offset": 527
+                },
+                "targets": [
+                  "switch_negative_0",
+                  "switch_neutral_1",
+                  "switch_positive_2"
+                ]
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 23,
+              "offset": 527
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 1,
+                "opcode": "const",
+                "result": "r3",
+                "source": {
+                  "column": 21,
+                  "line": 25,
+                  "offset": 603
+                }
+              },
+              {
+                "opcode": "invert",
+                "operands": [
+                  "r3"
+                ],
+                "result": "r4",
+                "source": {
+                  "column": 20,
+                  "line": 25,
+                  "offset": 602
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r4"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 25,
+                  "offset": 595
+                }
+              }
+            ],
+            "name": "switch_negative_0",
+            "source": {
+              "column": 9,
+              "line": 24,
+              "offset": 579
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 1,
+                "opcode": "const",
+                "result": "r5",
+                "source": {
+                  "column": 20,
+                  "line": 28,
+                  "offset": 636
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r5"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 28,
+                  "offset": 629
+                }
+              }
+            ],
+            "name": "switch_neutral_1",
+            "source": {
+              "column": 9,
+              "line": 27,
+              "offset": 614
+            }
+          },
+          {
+            "instructions": [
+              {
+                "callee": "renderer_last_directive_id",
+                "opcode": "call",
+                "result": "r6",
+                "source": {
+                  "column": 26,
+                  "line": 31,
+                  "offset": 675
+                }
+              },
+              {
+                "opcode": "compare",
+                "operands": [
+                  "r0",
+                  "r6"
+                ],
+                "result": "r7",
+                "source": {
+                  "column": 22,
+                  "line": 31,
+                  "offset": 671
+                }
+              },
+              {
+                "opcode": "branch3",
+                "operands": [
+                  "r7"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 31,
+                  "offset": 662
+                },
+                "targets": [
+                  "switch_negative_3",
+                  "switch_neutral_4",
+                  "switch_positive_5"
+                ]
+              }
+            ],
+            "name": "switch_positive_2",
+            "source": {
+              "column": 9,
+              "line": 30,
+              "offset": 647
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 1,
+                "opcode": "const",
+                "result": "r8",
+                "source": {
+                  "column": 28,
+                  "line": 33,
+                  "offset": 752
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r8"
+                ],
+                "source": {
+                  "column": 21,
+                  "line": 33,
+                  "offset": 745
+                }
+              }
+            ],
+            "name": "switch_negative_3",
+            "source": {
+              "column": 17,
+              "line": 32,
+              "offset": 721
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 1,
+                "opcode": "const",
+                "result": "r9",
+                "source": {
+                  "column": 28,
+                  "line": 36,
+                  "offset": 801
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r9"
+                ],
+                "source": {
+                  "column": 21,
+                  "line": 36,
+                  "offset": 794
+                }
+              }
+            ],
+            "name": "switch_neutral_4",
+            "source": {
+              "column": 17,
+              "line": 35,
+              "offset": 771
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 1,
+                "opcode": "const",
+                "result": "r10",
+                "source": {
+                  "column": 29,
+                  "line": 39,
+                  "offset": 851
+                }
+              },
+              {
+                "opcode": "invert",
+                "operands": [
+                  "r10"
+                ],
+                "result": "r11",
+                "source": {
+                  "column": 28,
+                  "line": 39,
+                  "offset": 850
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r11"
+                ],
+                "source": {
+                  "column": 21,
+                  "line": 39,
+                  "offset": 843
+                }
+              }
+            ],
+            "name": "switch_positive_5",
+            "source": {
+              "column": 17,
+              "line": 38,
+              "offset": 820
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "renderer_supports_directive_id",
+        "parameters": [
+          {
+            "name": "id",
+            "register": "r0",
+            "source": {
+              "column": 35,
+              "line": 22,
+              "offset": 503
+            },
+            "type": "tryte"
+          }
+        ],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 35,
+              "line": 22,
+              "offset": 503
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 1,
+            "name": "r1",
+            "source": {
+              "column": 18,
+              "line": 23,
+              "offset": 540
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 2,
+            "name": "r2",
+            "source": {
+              "column": 14,
+              "line": 23,
+              "offset": 536
+            },
+            "type": "trit"
+          },
+          {
+            "index": 3,
+            "name": "r3",
+            "source": {
+              "column": 21,
+              "line": 25,
+              "offset": 603
+            },
+            "type": "trit"
+          },
+          {
+            "index": 4,
+            "name": "r4",
+            "source": {
+              "column": 20,
+              "line": 25,
+              "offset": 602
+            },
+            "type": "trit"
+          },
+          {
+            "index": 5,
+            "name": "r5",
+            "source": {
+              "column": 20,
+              "line": 28,
+              "offset": 636
+            },
+            "type": "trit"
+          },
+          {
+            "index": 6,
+            "name": "r6",
+            "source": {
+              "column": 26,
+              "line": 31,
+              "offset": 675
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 7,
+            "name": "r7",
+            "source": {
+              "column": 22,
+              "line": 31,
+              "offset": 671
+            },
+            "type": "trit"
+          },
+          {
+            "index": 8,
+            "name": "r8",
+            "source": {
+              "column": 28,
+              "line": 33,
+              "offset": 752
+            },
+            "type": "trit"
+          },
+          {
+            "index": 9,
+            "name": "r9",
+            "source": {
+              "column": 28,
+              "line": 36,
+              "offset": 801
+            },
+            "type": "trit"
+          },
+          {
+            "index": 10,
+            "name": "r10",
+            "source": {
+              "column": 29,
+              "line": 39,
+              "offset": 851
+            },
+            "type": "trit"
+          },
+          {
+            "index": 11,
+            "name": "r11",
+            "source": {
+              "column": 28,
+              "line": 39,
+              "offset": 850
+            },
+            "type": "trit"
+          }
+        ],
+        "return_type": "trit",
+        "source": {
+          "column": 1,
+          "line": 22,
+          "offset": 469
+        }
+      },
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "callee": "renderer_first_opcode_id",
+                "opcode": "call",
+                "result": "r1",
+                "source": {
+                  "column": 18,
+                  "line": 42,
+                  "offset": 922
+                }
+              },
+              {
+                "opcode": "compare",
+                "operands": [
+                  "r0",
+                  "r1"
+                ],
+                "result": "r2",
+                "source": {
+                  "column": 14,
+                  "line": 42,
+                  "offset": 918
+                }
+              },
+              {
+                "opcode": "branch3",
+                "operands": [
+                  "r2"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 42,
+                  "offset": 909
+                },
+                "targets": [
+                  "switch_negative_0",
+                  "switch_neutral_1",
+                  "switch_positive_2"
+                ]
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 42,
+              "offset": 909
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 1,
+                "opcode": "const",
+                "result": "r3",
+                "source": {
+                  "column": 21,
+                  "line": 44,
+                  "offset": 982
+                }
+              },
+              {
+                "opcode": "invert",
+                "operands": [
+                  "r3"
+                ],
+                "result": "r4",
+                "source": {
+                  "column": 20,
+                  "line": 44,
+                  "offset": 981
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r4"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 44,
+                  "offset": 974
+                }
+              }
+            ],
+            "name": "switch_negative_0",
+            "source": {
+              "column": 9,
+              "line": 43,
+              "offset": 958
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 1,
+                "opcode": "const",
+                "result": "r5",
+                "source": {
+                  "column": 20,
+                  "line": 47,
+                  "offset": 1015
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r5"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 47,
+                  "offset": 1008
+                }
+              }
+            ],
+            "name": "switch_neutral_1",
+            "source": {
+              "column": 9,
+              "line": 46,
+              "offset": 993
+            }
+          },
+          {
+            "instructions": [
+              {
+                "callee": "renderer_last_opcode_id",
+                "opcode": "call",
+                "result": "r6",
+                "source": {
+                  "column": 26,
+                  "line": 50,
+                  "offset": 1054
+                }
+              },
+              {
+                "opcode": "compare",
+                "operands": [
+                  "r0",
+                  "r6"
+                ],
+                "result": "r7",
+                "source": {
+                  "column": 22,
+                  "line": 50,
+                  "offset": 1050
+                }
+              },
+              {
+                "opcode": "branch3",
+                "operands": [
+                  "r7"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 50,
+                  "offset": 1041
+                },
+                "targets": [
+                  "switch_negative_3",
+                  "switch_neutral_4",
+                  "switch_positive_5"
+                ]
+              }
+            ],
+            "name": "switch_positive_2",
+            "source": {
+              "column": 9,
+              "line": 49,
+              "offset": 1026
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 1,
+                "opcode": "const",
+                "result": "r8",
+                "source": {
+                  "column": 28,
+                  "line": 52,
+                  "offset": 1128
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r8"
+                ],
+                "source": {
+                  "column": 21,
+                  "line": 52,
+                  "offset": 1121
+                }
+              }
+            ],
+            "name": "switch_negative_3",
+            "source": {
+              "column": 17,
+              "line": 51,
+              "offset": 1097
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 1,
+                "opcode": "const",
+                "result": "r9",
+                "source": {
+                  "column": 28,
+                  "line": 55,
+                  "offset": 1177
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r9"
+                ],
+                "source": {
+                  "column": 21,
+                  "line": 55,
+                  "offset": 1170
+                }
+              }
+            ],
+            "name": "switch_neutral_4",
+            "source": {
+              "column": 17,
+              "line": 54,
+              "offset": 1147
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 1,
+                "opcode": "const",
+                "result": "r10",
+                "source": {
+                  "column": 29,
+                  "line": 58,
+                  "offset": 1227
+                }
+              },
+              {
+                "opcode": "invert",
+                "operands": [
+                  "r10"
+                ],
+                "result": "r11",
+                "source": {
+                  "column": 28,
+                  "line": 58,
+                  "offset": 1226
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r11"
+                ],
+                "source": {
+                  "column": 21,
+                  "line": 58,
+                  "offset": 1219
+                }
+              }
+            ],
+            "name": "switch_positive_5",
+            "source": {
+              "column": 17,
+              "line": 57,
+              "offset": 1196
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "renderer_supports_opcode_id",
+        "parameters": [
+          {
+            "name": "id",
+            "register": "r0",
+            "source": {
+              "column": 32,
+              "line": 41,
+              "offset": 885
+            },
+            "type": "tryte"
+          }
+        ],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 32,
+              "line": 41,
+              "offset": 885
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 1,
+            "name": "r1",
+            "source": {
+              "column": 18,
+              "line": 42,
+              "offset": 922
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 2,
+            "name": "r2",
+            "source": {
+              "column": 14,
+              "line": 42,
+              "offset": 918
+            },
+            "type": "trit"
+          },
+          {
+            "index": 3,
+            "name": "r3",
+            "source": {
+              "column": 21,
+              "line": 44,
+              "offset": 982
+            },
+            "type": "trit"
+          },
+          {
+            "index": 4,
+            "name": "r4",
+            "source": {
+              "column": 20,
+              "line": 44,
+              "offset": 981
+            },
+            "type": "trit"
+          },
+          {
+            "index": 5,
+            "name": "r5",
+            "source": {
+              "column": 20,
+              "line": 47,
+              "offset": 1015
+            },
+            "type": "trit"
+          },
+          {
+            "index": 6,
+            "name": "r6",
+            "source": {
+              "column": 26,
+              "line": 50,
+              "offset": 1054
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 7,
+            "name": "r7",
+            "source": {
+              "column": 22,
+              "line": 50,
+              "offset": 1050
+            },
+            "type": "trit"
+          },
+          {
+            "index": 8,
+            "name": "r8",
+            "source": {
+              "column": 28,
+              "line": 52,
+              "offset": 1128
+            },
+            "type": "trit"
+          },
+          {
+            "index": 9,
+            "name": "r9",
+            "source": {
+              "column": 28,
+              "line": 55,
+              "offset": 1177
+            },
+            "type": "trit"
+          },
+          {
+            "index": 10,
+            "name": "r10",
+            "source": {
+              "column": 29,
+              "line": 58,
+              "offset": 1227
+            },
+            "type": "trit"
+          },
+          {
+            "index": 11,
+            "name": "r11",
+            "source": {
+              "column": 28,
+              "line": 58,
+              "offset": 1226
+            },
+            "type": "trit"
+          }
+        ],
+        "return_type": "trit",
+        "source": {
+          "column": 1,
+          "line": 41,
+          "offset": 854
+        }
+      },
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r0",
+                "source": {
+                  "column": 12,
+                  "line": 61,
+                  "offset": 1282
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r0"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 61,
+                  "offset": 1275
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 61,
+              "offset": 1275
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "renderer_directive_end_id",
+        "parameters": [],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 12,
+              "line": 61,
+              "offset": 1282
+            },
+            "type": "tryte"
+          }
+        ],
+        "return_type": "tryte",
+        "source": {
+          "column": 1,
+          "line": 60,
+          "offset": 1230
+        }
+      },
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "immediate": 1,
+                "opcode": "const",
+                "result": "r0",
+                "source": {
+                  "column": 12,
+                  "line": 64,
+                  "offset": 1342
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r0"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 64,
+                  "offset": 1335
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 64,
+              "offset": 1335
             }
           }
         ],
@@ -212,8 +1282,8 @@
             "name": "r0",
             "source": {
               "column": 12,
-              "line": 14,
-              "offset": 361
+              "line": 64,
+              "offset": 1342
             },
             "type": "tryte"
           }
@@ -221,8 +1291,8 @@
         "return_type": "tryte",
         "source": {
           "column": 1,
-          "line": 13,
-          "offset": 304
+          "line": 63,
+          "offset": 1285
         }
       },
       {
@@ -235,8 +1305,8 @@
                 "result": "r0",
                 "source": {
                   "column": 12,
-                  "line": 17,
-                  "offset": 418
+                  "line": 67,
+                  "offset": 1399
                 }
               },
               {
@@ -246,16 +1316,16 @@
                 ],
                 "source": {
                   "column": 5,
-                  "line": 17,
-                  "offset": 411
+                  "line": 67,
+                  "offset": 1392
                 }
               }
             ],
             "name": "entry",
             "source": {
               "column": 5,
-              "line": 17,
-              "offset": 411
+              "line": 67,
+              "offset": 1392
             }
           }
         ],
@@ -268,8 +1338,8 @@
             "name": "r0",
             "source": {
               "column": 12,
-              "line": 17,
-              "offset": 418
+              "line": 67,
+              "offset": 1399
             },
             "type": "tryte"
           }
@@ -277,8 +1347,8 @@
         "return_type": "tryte",
         "source": {
           "column": 1,
-          "line": 16,
-          "offset": 364
+          "line": 66,
+          "offset": 1345
         }
       },
       {
@@ -291,8 +1361,8 @@
                 "result": "r0",
                 "source": {
                   "column": 12,
-                  "line": 20,
-                  "offset": 475
+                  "line": 70,
+                  "offset": 1456
                 }
               },
               {
@@ -302,16 +1372,16 @@
                 ],
                 "source": {
                   "column": 5,
-                  "line": 20,
-                  "offset": 468
+                  "line": 70,
+                  "offset": 1449
                 }
               }
             ],
             "name": "entry",
             "source": {
               "column": 5,
-              "line": 20,
-              "offset": 468
+              "line": 70,
+              "offset": 1449
             }
           }
         ],
@@ -324,8 +1394,8 @@
             "name": "r0",
             "source": {
               "column": 12,
-              "line": 20,
-              "offset": 475
+              "line": 70,
+              "offset": 1456
             },
             "type": "tryte"
           }
@@ -333,8 +1403,8 @@
         "return_type": "tryte",
         "source": {
           "column": 1,
-          "line": 19,
-          "offset": 421
+          "line": 69,
+          "offset": 1402
         }
       },
       {
@@ -347,8 +1417,8 @@
                 "result": "r0",
                 "source": {
                   "column": 12,
-                  "line": 23,
-                  "offset": 535
+                  "line": 73,
+                  "offset": 1516
                 }
               },
               {
@@ -358,16 +1428,16 @@
                 ],
                 "source": {
                   "column": 5,
-                  "line": 23,
-                  "offset": 528
+                  "line": 73,
+                  "offset": 1509
                 }
               }
             ],
             "name": "entry",
             "source": {
               "column": 5,
-              "line": 23,
-              "offset": 528
+              "line": 73,
+              "offset": 1509
             }
           }
         ],
@@ -380,8 +1450,8 @@
             "name": "r0",
             "source": {
               "column": 12,
-              "line": 23,
-              "offset": 535
+              "line": 73,
+              "offset": 1516
             },
             "type": "tryte"
           }
@@ -389,8 +1459,8 @@
         "return_type": "tryte",
         "source": {
           "column": 1,
-          "line": 22,
-          "offset": 478
+          "line": 72,
+          "offset": 1459
         }
       },
       {
@@ -403,8 +1473,8 @@
                 "result": "r0",
                 "source": {
                   "column": 12,
-                  "line": 26,
-                  "offset": 592
+                  "line": 76,
+                  "offset": 1573
                 }
               },
               {
@@ -414,16 +1484,16 @@
                 ],
                 "source": {
                   "column": 5,
-                  "line": 26,
-                  "offset": 585
+                  "line": 76,
+                  "offset": 1566
                 }
               }
             ],
             "name": "entry",
             "source": {
               "column": 5,
-              "line": 26,
-              "offset": 585
+              "line": 76,
+              "offset": 1566
             }
           }
         ],
@@ -436,8 +1506,8 @@
             "name": "r0",
             "source": {
               "column": 12,
-              "line": 26,
-              "offset": 592
+              "line": 76,
+              "offset": 1573
             },
             "type": "tryte"
           }
@@ -445,8 +1515,8 @@
         "return_type": "tryte",
         "source": {
           "column": 1,
-          "line": 25,
-          "offset": 538
+          "line": 75,
+          "offset": 1519
         }
       },
       {
@@ -459,8 +1529,8 @@
                 "result": "r0",
                 "source": {
                   "column": 12,
-                  "line": 29,
-                  "offset": 645
+                  "line": 79,
+                  "offset": 1626
                 }
               },
               {
@@ -470,16 +1540,16 @@
                 ],
                 "source": {
                   "column": 5,
-                  "line": 29,
-                  "offset": 638
+                  "line": 79,
+                  "offset": 1619
                 }
               }
             ],
             "name": "entry",
             "source": {
               "column": 5,
-              "line": 29,
-              "offset": 638
+              "line": 79,
+              "offset": 1619
             }
           }
         ],
@@ -492,8 +1562,8 @@
             "name": "r0",
             "source": {
               "column": 12,
-              "line": 29,
-              "offset": 645
+              "line": 79,
+              "offset": 1626
             },
             "type": "tryte"
           }
@@ -501,8 +1571,8 @@
         "return_type": "tryte",
         "source": {
           "column": 1,
-          "line": 28,
-          "offset": 595
+          "line": 78,
+          "offset": 1576
         }
       },
       {
@@ -515,8 +1585,8 @@
                 "result": "r0",
                 "source": {
                   "column": 12,
-                  "line": 32,
-                  "offset": 698
+                  "line": 82,
+                  "offset": 1679
                 }
               },
               {
@@ -526,16 +1596,16 @@
                 ],
                 "source": {
                   "column": 5,
-                  "line": 32,
-                  "offset": 691
+                  "line": 82,
+                  "offset": 1672
                 }
               }
             ],
             "name": "entry",
             "source": {
               "column": 5,
-              "line": 32,
-              "offset": 691
+              "line": 82,
+              "offset": 1672
             }
           }
         ],
@@ -548,8 +1618,8 @@
             "name": "r0",
             "source": {
               "column": 12,
-              "line": 32,
-              "offset": 698
+              "line": 82,
+              "offset": 1679
             },
             "type": "tryte"
           }
@@ -557,8 +1627,8 @@
         "return_type": "tryte",
         "source": {
           "column": 1,
-          "line": 31,
-          "offset": 648
+          "line": 81,
+          "offset": 1629
         }
       },
       {
@@ -571,8 +1641,8 @@
                 "result": "r0",
                 "source": {
                   "column": 12,
-                  "line": 35,
-                  "offset": 752
+                  "line": 85,
+                  "offset": 1733
                 }
               },
               {
@@ -582,16 +1652,16 @@
                 ],
                 "source": {
                   "column": 5,
-                  "line": 35,
-                  "offset": 745
+                  "line": 85,
+                  "offset": 1726
                 }
               }
             ],
             "name": "entry",
             "source": {
               "column": 5,
-              "line": 35,
-              "offset": 745
+              "line": 85,
+              "offset": 1726
             }
           }
         ],
@@ -604,8 +1674,8 @@
             "name": "r0",
             "source": {
               "column": 12,
-              "line": 35,
-              "offset": 752
+              "line": 85,
+              "offset": 1733
             },
             "type": "tryte"
           }
@@ -613,8 +1683,8 @@
         "return_type": "tryte",
         "source": {
           "column": 1,
-          "line": 34,
-          "offset": 701
+          "line": 84,
+          "offset": 1682
         }
       },
       {
@@ -627,8 +1697,8 @@
                 "result": "r0",
                 "source": {
                   "column": 12,
-                  "line": 38,
-                  "offset": 805
+                  "line": 88,
+                  "offset": 1786
                 }
               },
               {
@@ -638,16 +1708,16 @@
                 ],
                 "source": {
                   "column": 5,
-                  "line": 38,
-                  "offset": 798
+                  "line": 88,
+                  "offset": 1779
                 }
               }
             ],
             "name": "entry",
             "source": {
               "column": 5,
-              "line": 38,
-              "offset": 798
+              "line": 88,
+              "offset": 1779
             }
           }
         ],
@@ -660,8 +1730,8 @@
             "name": "r0",
             "source": {
               "column": 12,
-              "line": 38,
-              "offset": 805
+              "line": 88,
+              "offset": 1786
             },
             "type": "tryte"
           }
@@ -669,8 +1739,8 @@
         "return_type": "tryte",
         "source": {
           "column": 1,
-          "line": 37,
-          "offset": 755
+          "line": 87,
+          "offset": 1736
         }
       },
       {
@@ -683,8 +1753,8 @@
                 "result": "r0",
                 "source": {
                   "column": 12,
-                  "line": 41,
-                  "offset": 860
+                  "line": 91,
+                  "offset": 1841
                 }
               },
               {
@@ -694,16 +1764,16 @@
                 ],
                 "source": {
                   "column": 5,
-                  "line": 41,
-                  "offset": 853
+                  "line": 91,
+                  "offset": 1834
                 }
               }
             ],
             "name": "entry",
             "source": {
               "column": 5,
-              "line": 41,
-              "offset": 853
+              "line": 91,
+              "offset": 1834
             }
           }
         ],
@@ -716,8 +1786,8 @@
             "name": "r0",
             "source": {
               "column": 12,
-              "line": 41,
-              "offset": 860
+              "line": 91,
+              "offset": 1841
             },
             "type": "tryte"
           }
@@ -725,8 +1795,8 @@
         "return_type": "tryte",
         "source": {
           "column": 1,
-          "line": 40,
-          "offset": 808
+          "line": 90,
+          "offset": 1789
         }
       },
       {
@@ -739,8 +1809,8 @@
                 "result": "r0",
                 "source": {
                   "column": 12,
-                  "line": 44,
-                  "offset": 913
+                  "line": 94,
+                  "offset": 1894
                 }
               },
               {
@@ -750,16 +1820,16 @@
                 ],
                 "source": {
                   "column": 5,
-                  "line": 44,
-                  "offset": 906
+                  "line": 94,
+                  "offset": 1887
                 }
               }
             ],
             "name": "entry",
             "source": {
               "column": 5,
-              "line": 44,
-              "offset": 906
+              "line": 94,
+              "offset": 1887
             }
           }
         ],
@@ -772,8 +1842,8 @@
             "name": "r0",
             "source": {
               "column": 12,
-              "line": 44,
-              "offset": 913
+              "line": 94,
+              "offset": 1894
             },
             "type": "tryte"
           }
@@ -781,8 +1851,8 @@
         "return_type": "tryte",
         "source": {
           "column": 1,
-          "line": 43,
-          "offset": 863
+          "line": 93,
+          "offset": 1844
         }
       },
       {
@@ -795,8 +1865,8 @@
                 "result": "r0",
                 "source": {
                   "column": 12,
-                  "line": 47,
-                  "offset": 966
+                  "line": 97,
+                  "offset": 1947
                 }
               },
               {
@@ -806,16 +1876,16 @@
                 ],
                 "source": {
                   "column": 5,
-                  "line": 47,
-                  "offset": 959
+                  "line": 97,
+                  "offset": 1940
                 }
               }
             ],
             "name": "entry",
             "source": {
               "column": 5,
-              "line": 47,
-              "offset": 959
+              "line": 97,
+              "offset": 1940
             }
           }
         ],
@@ -828,8 +1898,8 @@
             "name": "r0",
             "source": {
               "column": 12,
-              "line": 47,
-              "offset": 966
+              "line": 97,
+              "offset": 1947
             },
             "type": "tryte"
           }
@@ -837,8 +1907,8 @@
         "return_type": "tryte",
         "source": {
           "column": 1,
-          "line": 46,
-          "offset": 916
+          "line": 96,
+          "offset": 1897
         }
       },
       {
@@ -851,8 +1921,8 @@
                 "result": "r0",
                 "source": {
                   "column": 12,
-                  "line": 50,
-                  "offset": 1019
+                  "line": 100,
+                  "offset": 2000
                 }
               },
               {
@@ -862,16 +1932,16 @@
                 ],
                 "source": {
                   "column": 5,
-                  "line": 50,
-                  "offset": 1012
+                  "line": 100,
+                  "offset": 1993
                 }
               }
             ],
             "name": "entry",
             "source": {
               "column": 5,
-              "line": 50,
-              "offset": 1012
+              "line": 100,
+              "offset": 1993
             }
           }
         ],
@@ -884,8 +1954,8 @@
             "name": "r0",
             "source": {
               "column": 12,
-              "line": 50,
-              "offset": 1019
+              "line": 100,
+              "offset": 2000
             },
             "type": "tryte"
           }
@@ -893,8 +1963,8 @@
         "return_type": "tryte",
         "source": {
           "column": 1,
-          "line": 49,
-          "offset": 969
+          "line": 99,
+          "offset": 1950
         }
       },
       {
@@ -902,47 +1972,93 @@
           {
             "instructions": [
               {
-                "callee": "renderer_supported_directive_count",
-                "opcode": "call",
+                "immediate": 1,
+                "opcode": "const",
                 "result": "r0",
                 "source": {
+                  "column": 25,
+                  "line": 103,
+                  "offset": 2077
+                }
+              },
+              {
+                "opcode": "invert",
+                "operands": [
+                  "r0"
+                ],
+                "result": "r1",
+                "source": {
+                  "column": 24,
+                  "line": 103,
+                  "offset": 2076
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r2",
+                "source": {
+                  "column": 5,
+                  "line": 103,
+                  "offset": 2057
+                }
+              },
+              {
+                "initialization": true,
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r2",
+                  "r1"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 103,
+                  "offset": 2057
+                }
+              },
+              {
+                "callee": "renderer_supported_directive_count",
+                "opcode": "call",
+                "result": "r3",
+                "source": {
                   "column": 11,
-                  "line": 53,
-                  "offset": 1082
+                  "line": 105,
+                  "offset": 2090
                 }
               },
               {
                 "immediate": 6,
                 "opcode": "const",
-                "result": "r1",
+                "result": "r4",
                 "source": {
                   "column": 52,
-                  "line": 53,
-                  "offset": 1123
+                  "line": 105,
+                  "offset": 2131
                 }
               },
               {
                 "opcode": "compare",
                 "operands": [
-                  "r0",
-                  "r1"
+                  "r3",
+                  "r4"
                 ],
-                "result": "r2",
+                "result": "r5",
                 "source": {
                   "column": 48,
-                  "line": 53,
-                  "offset": 1119
+                  "line": 105,
+                  "offset": 2127
                 }
               },
               {
                 "opcode": "branch3",
                 "operands": [
-                  "r2"
+                  "r5"
                 ],
                 "source": {
                   "column": 5,
-                  "line": 53,
-                  "offset": 1076
+                  "line": 105,
+                  "offset": 2084
                 },
                 "targets": [
                   "switch_negative_0",
@@ -954,8 +2070,8 @@
             "name": "entry",
             "source": {
               "column": 5,
-              "line": 53,
-              "offset": 1076
+              "line": 103,
+              "offset": 2057
             }
           },
           {
@@ -963,241 +2079,120 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r3",
+                "result": "r6",
                 "source": {
-                  "column": 20,
-                  "line": 55,
-                  "offset": 1157
+                  "column": 22,
+                  "line": 107,
+                  "offset": 2167
                 }
               },
               {
-                "opcode": "return",
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r7",
+                "source": {
+                  "column": 13,
+                  "line": 107,
+                  "offset": 2158
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
                 "operands": [
-                  "r3"
+                  "r7",
+                  "r6"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 55,
-                  "offset": 1150
+                  "line": 107,
+                  "offset": 2158
                 }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 106,
+                  "offset": 2142
+                },
+                "targets": [
+                  "switch_continue_3"
+                ]
               }
             ],
             "name": "switch_negative_0",
             "source": {
               "column": 9,
-              "line": 54,
-              "offset": 1134
+              "line": 106,
+              "offset": 2142
             }
           },
           {
             "instructions": [
               {
-                "callee": "renderer_supported_opcode_count",
-                "opcode": "call",
-                "result": "r4",
-                "source": {
-                  "column": 19,
-                  "line": 58,
-                  "offset": 1189
-                }
-              },
-              {
-                "immediate": 8,
+                "immediate": 0,
                 "opcode": "const",
-                "result": "r5",
+                "result": "r8",
                 "source": {
-                  "column": 57,
-                  "line": 58,
-                  "offset": 1227
+                  "column": 22,
+                  "line": 110,
+                  "offset": 2202
                 }
               },
               {
-                "opcode": "compare",
+                "memory": "m0",
+                "opcode": "load",
                 "operands": [
-                  "r4",
-                  "r5"
+                  "r8"
                 ],
-                "result": "r6",
+                "result": "r9",
                 "source": {
-                  "column": 53,
-                  "line": 58,
-                  "offset": 1223
+                  "column": 22,
+                  "line": 110,
+                  "offset": 2202
                 }
               },
               {
-                "opcode": "branch3",
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r10",
+                "source": {
+                  "column": 13,
+                  "line": 110,
+                  "offset": 2193
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
                 "operands": [
-                  "r6"
+                  "r10",
+                  "r9"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 58,
-                  "offset": 1183
+                  "line": 110,
+                  "offset": 2193
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 109,
+                  "offset": 2178
                 },
                 "targets": [
-                  "switch_negative_3",
-                  "switch_neutral_4",
-                  "switch_positive_5"
+                  "switch_continue_3"
                 ]
               }
             ],
             "name": "switch_neutral_1",
             "source": {
               "column": 9,
-              "line": 57,
-              "offset": 1168
-            }
-          },
-          {
-            "instructions": [
-              {
-                "immediate": 0,
-                "opcode": "const",
-                "result": "r31",
-                "source": {
-                  "column": 20,
-                  "line": 101,
-                  "offset": 2603
-                }
-              },
-              {
-                "opcode": "return",
-                "operands": [
-                  "r31"
-                ],
-                "source": {
-                  "column": 13,
-                  "line": 101,
-                  "offset": 2596
-                }
-              }
-            ],
-            "name": "switch_positive_2",
-            "source": {
-              "column": 9,
-              "line": 100,
-              "offset": 2581
-            }
-          },
-          {
-            "instructions": [
-              {
-                "immediate": 0,
-                "opcode": "const",
-                "result": "r7",
-                "source": {
-                  "column": 28,
-                  "line": 60,
-                  "offset": 1277
-                }
-              },
-              {
-                "opcode": "return",
-                "operands": [
-                  "r7"
-                ],
-                "source": {
-                  "column": 21,
-                  "line": 60,
-                  "offset": 1270
-                }
-              }
-            ],
-            "name": "switch_negative_3",
-            "source": {
-              "column": 17,
-              "line": 59,
-              "offset": 1246
-            }
-          },
-          {
-            "instructions": [
-              {
-                "callee": "renderer_directive_end_id",
-                "opcode": "call",
-                "result": "r8",
-                "source": {
-                  "column": 27,
-                  "line": 63,
-                  "offset": 1325
-                }
-              },
-              {
-                "immediate": 0,
-                "opcode": "const",
-                "result": "r9",
-                "source": {
-                  "column": 59,
-                  "line": 63,
-                  "offset": 1357
-                }
-              },
-              {
-                "opcode": "compare",
-                "operands": [
-                  "r8",
-                  "r9"
-                ],
-                "result": "r10",
-                "source": {
-                  "column": 55,
-                  "line": 63,
-                  "offset": 1353
-                }
-              },
-              {
-                "opcode": "branch3",
-                "operands": [
-                  "r10"
-                ],
-                "source": {
-                  "column": 21,
-                  "line": 63,
-                  "offset": 1319
-                },
-                "targets": [
-                  "switch_negative_6",
-                  "switch_neutral_7",
-                  "switch_positive_8"
-                ]
-              }
-            ],
-            "name": "switch_neutral_4",
-            "source": {
-              "column": 17,
-              "line": 62,
-              "offset": 1296
-            }
-          },
-          {
-            "instructions": [
-              {
-                "immediate": 0,
-                "opcode": "const",
-                "result": "r30",
-                "source": {
-                  "column": 28,
-                  "line": 98,
-                  "offset": 2570
-                }
-              },
-              {
-                "opcode": "return",
-                "operands": [
-                  "r30"
-                ],
-                "source": {
-                  "column": 21,
-                  "line": 98,
-                  "offset": 2563
-                }
-              }
-            ],
-            "name": "switch_positive_5",
-            "source": {
-              "column": 17,
-              "line": 97,
-              "offset": 2540
+              "line": 109,
+              "offset": 2178
             }
           },
           {
@@ -1207,161 +2202,122 @@
                 "opcode": "const",
                 "result": "r11",
                 "source": {
-                  "column": 36,
-                  "line": 65,
-                  "offset": 1423
+                  "column": 22,
+                  "line": 113,
+                  "offset": 2242
                 }
               },
               {
-                "opcode": "return",
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r12",
+                "source": {
+                  "column": 13,
+                  "line": 113,
+                  "offset": 2233
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
                 "operands": [
+                  "r12",
                   "r11"
                 ],
                 "source": {
-                  "column": 29,
-                  "line": 65,
-                  "offset": 1416
+                  "column": 13,
+                  "line": 113,
+                  "offset": 2233
                 }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 112,
+                  "offset": 2218
+                },
+                "targets": [
+                  "switch_continue_3"
+                ]
               }
             ],
-            "name": "switch_negative_6",
+            "name": "switch_positive_2",
             "source": {
-              "column": 25,
-              "line": 64,
-              "offset": 1384
+              "column": 9,
+              "line": 112,
+              "offset": 2218
             }
           },
           {
             "instructions": [
               {
-                "callee": "renderer_directive_s3asm_id",
+                "callee": "renderer_supported_opcode_count",
                 "opcode": "call",
-                "result": "r12",
+                "result": "r13",
                 "source": {
-                  "column": 35,
-                  "line": 68,
-                  "offset": 1487
+                  "column": 11,
+                  "line": 115,
+                  "offset": 2255
                 }
               },
               {
-                "immediate": 5,
+                "immediate": 8,
                 "opcode": "const",
-                "result": "r13",
+                "result": "r14",
                 "source": {
-                  "column": 69,
-                  "line": 68,
-                  "offset": 1521
+                  "column": 49,
+                  "line": 115,
+                  "offset": 2293
                 }
               },
               {
                 "opcode": "compare",
                 "operands": [
-                  "r12",
-                  "r13"
+                  "r13",
+                  "r14"
                 ],
-                "result": "r14",
+                "result": "r15",
                 "source": {
-                  "column": 65,
-                  "line": 68,
-                  "offset": 1517
+                  "column": 45,
+                  "line": 115,
+                  "offset": 2289
                 }
               },
               {
                 "opcode": "branch3",
                 "operands": [
-                  "r14"
-                ],
-                "source": {
-                  "column": 29,
-                  "line": 68,
-                  "offset": 1481
-                },
-                "targets": [
-                  "switch_negative_9",
-                  "switch_neutral_10",
-                  "switch_positive_11"
-                ]
-              }
-            ],
-            "name": "switch_neutral_7",
-            "source": {
-              "column": 25,
-              "line": 67,
-              "offset": 1450
-            }
-          },
-          {
-            "instructions": [
-              {
-                "immediate": 0,
-                "opcode": "const",
-                "result": "r29",
-                "source": {
-                  "column": 36,
-                  "line": 95,
-                  "offset": 2521
-                }
-              },
-              {
-                "opcode": "return",
-                "operands": [
-                  "r29"
-                ],
-                "source": {
-                  "column": 29,
-                  "line": 95,
-                  "offset": 2514
-                }
-              }
-            ],
-            "name": "switch_positive_8",
-            "source": {
-              "column": 25,
-              "line": 94,
-              "offset": 2483
-            }
-          },
-          {
-            "instructions": [
-              {
-                "immediate": 0,
-                "opcode": "const",
-                "result": "r15",
-                "source": {
-                  "column": 44,
-                  "line": 70,
-                  "offset": 1603
-                }
-              },
-              {
-                "opcode": "return",
-                "operands": [
                   "r15"
                 ],
                 "source": {
-                  "column": 37,
-                  "line": 70,
-                  "offset": 1596
-                }
+                  "column": 5,
+                  "line": 115,
+                  "offset": 2249
+                },
+                "targets": [
+                  "switch_negative_4",
+                  "switch_neutral_5",
+                  "switch_positive_6"
+                ]
               }
             ],
-            "name": "switch_negative_9",
+            "name": "switch_continue_3",
             "source": {
-              "column": 33,
-              "line": 69,
-              "offset": 1556
+              "column": 5,
+              "line": 105,
+              "offset": 2084
             }
           },
           {
             "instructions": [
               {
-                "callee": "renderer_opcode_tadd_id",
-                "opcode": "call",
+                "immediate": 0,
+                "opcode": "const",
                 "result": "r16",
                 "source": {
-                  "column": 43,
-                  "line": 73,
-                  "offset": 1683
+                  "column": 22,
+                  "line": 117,
+                  "offset": 2329
                 }
               },
               {
@@ -1369,272 +2325,221 @@
                 "opcode": "const",
                 "result": "r17",
                 "source": {
-                  "column": 73,
-                  "line": 73,
-                  "offset": 1713
+                  "column": 13,
+                  "line": 117,
+                  "offset": 2320
                 }
               },
               {
-                "opcode": "compare",
+                "memory": "m0",
+                "opcode": "store",
                 "operands": [
-                  "r16",
-                  "r17"
+                  "r17",
+                  "r16"
                 ],
+                "source": {
+                  "column": 13,
+                  "line": 117,
+                  "offset": 2320
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 116,
+                  "offset": 2304
+                },
+                "targets": [
+                  "switch_continue_7"
+                ]
+              }
+            ],
+            "name": "switch_negative_4",
+            "source": {
+              "column": 9,
+              "line": 116,
+              "offset": 2304
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
                 "result": "r18",
                 "source": {
-                  "column": 69,
-                  "line": 73,
-                  "offset": 1709
+                  "column": 22,
+                  "line": 120,
+                  "offset": 2364
                 }
               },
               {
-                "opcode": "branch3",
+                "memory": "m0",
+                "opcode": "load",
                 "operands": [
                   "r18"
                 ],
-                "source": {
-                  "column": 37,
-                  "line": 73,
-                  "offset": 1677
-                },
-                "targets": [
-                  "switch_negative_12",
-                  "switch_neutral_13",
-                  "switch_positive_14"
-                ]
-              }
-            ],
-            "name": "switch_neutral_10",
-            "source": {
-              "column": 33,
-              "line": 72,
-              "offset": 1638
-            }
-          },
-          {
-            "instructions": [
-              {
-                "immediate": 0,
-                "opcode": "const",
-                "result": "r28",
-                "source": {
-                  "column": 44,
-                  "line": 92,
-                  "offset": 2456
-                }
-              },
-              {
-                "opcode": "return",
-                "operands": [
-                  "r28"
-                ],
-                "source": {
-                  "column": 37,
-                  "line": 92,
-                  "offset": 2449
-                }
-              }
-            ],
-            "name": "switch_positive_11",
-            "source": {
-              "column": 33,
-              "line": 91,
-              "offset": 2410
-            }
-          },
-          {
-            "instructions": [
-              {
-                "immediate": 0,
-                "opcode": "const",
                 "result": "r19",
                 "source": {
-                  "column": 52,
-                  "line": 75,
-                  "offset": 1811
+                  "column": 22,
+                  "line": 120,
+                  "offset": 2364
                 }
               },
               {
-                "opcode": "return",
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r20",
+                "source": {
+                  "column": 13,
+                  "line": 120,
+                  "offset": 2355
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
                 "operands": [
+                  "r20",
                   "r19"
                 ],
                 "source": {
-                  "column": 45,
-                  "line": 75,
-                  "offset": 1804
+                  "column": 13,
+                  "line": 120,
+                  "offset": 2355
                 }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 119,
+                  "offset": 2340
+                },
+                "targets": [
+                  "switch_continue_7"
+                ]
               }
             ],
-            "name": "switch_negative_12",
+            "name": "switch_neutral_5",
             "source": {
-              "column": 41,
-              "line": 74,
-              "offset": 1756
+              "column": 9,
+              "line": 119,
+              "offset": 2340
             }
           },
           {
             "instructions": [
               {
-                "callee": "renderer_opcode_tret_id",
-                "opcode": "call",
-                "result": "r20",
-                "source": {
-                  "column": 51,
-                  "line": 78,
-                  "offset": 1907
-                }
-              },
-              {
-                "immediate": 7,
+                "immediate": 0,
                 "opcode": "const",
                 "result": "r21",
                 "source": {
-                  "column": 81,
-                  "line": 78,
-                  "offset": 1937
+                  "column": 22,
+                  "line": 123,
+                  "offset": 2404
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r22",
+                "source": {
+                  "column": 13,
+                  "line": 123,
+                  "offset": 2395
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r22",
+                  "r21"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 123,
+                  "offset": 2395
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 122,
+                  "offset": 2380
+                },
+                "targets": [
+                  "switch_continue_7"
+                ]
+              }
+            ],
+            "name": "switch_positive_6",
+            "source": {
+              "column": 9,
+              "line": 122,
+              "offset": 2380
+            }
+          },
+          {
+            "instructions": [
+              {
+                "callee": "renderer_first_directive_id",
+                "opcode": "call",
+                "result": "r23",
+                "source": {
+                  "column": 11,
+                  "line": 125,
+                  "offset": 2417
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r24",
+                "source": {
+                  "column": 45,
+                  "line": 125,
+                  "offset": 2451
                 }
               },
               {
                 "opcode": "compare",
                 "operands": [
-                  "r20",
-                  "r21"
-                ],
-                "result": "r22",
-                "source": {
-                  "column": 77,
-                  "line": 78,
-                  "offset": 1933
-                }
-              },
-              {
-                "opcode": "branch3",
-                "operands": [
-                  "r22"
-                ],
-                "source": {
-                  "column": 45,
-                  "line": 78,
-                  "offset": 1901
-                },
-                "targets": [
-                  "switch_negative_15",
-                  "switch_neutral_16",
-                  "switch_positive_17"
-                ]
-              }
-            ],
-            "name": "switch_neutral_13",
-            "source": {
-              "column": 41,
-              "line": 77,
-              "offset": 1854
-            }
-          },
-          {
-            "instructions": [
-              {
-                "immediate": 0,
-                "opcode": "const",
-                "result": "r27",
-                "source": {
-                  "column": 52,
-                  "line": 89,
-                  "offset": 2375
-                }
-              },
-              {
-                "opcode": "return",
-                "operands": [
-                  "r27"
-                ],
-                "source": {
-                  "column": 45,
-                  "line": 89,
-                  "offset": 2368
-                }
-              }
-            ],
-            "name": "switch_positive_14",
-            "source": {
-              "column": 41,
-              "line": 88,
-              "offset": 2321
-            }
-          },
-          {
-            "instructions": [
-              {
-                "immediate": 0,
-                "opcode": "const",
-                "result": "r23",
-                "source": {
-                  "column": 60,
-                  "line": 80,
-                  "offset": 2051
-                }
-              },
-              {
-                "opcode": "return",
-                "operands": [
-                  "r23"
-                ],
-                "source": {
-                  "column": 53,
-                  "line": 80,
-                  "offset": 2044
-                }
-              }
-            ],
-            "name": "switch_negative_15",
-            "source": {
-              "column": 49,
-              "line": 79,
-              "offset": 1988
-            }
-          },
-          {
-            "instructions": [
-              {
-                "immediate": 1,
-                "opcode": "const",
-                "result": "r24",
-                "source": {
-                  "column": 61,
-                  "line": 83,
-                  "offset": 2165
-                }
-              },
-              {
-                "opcode": "invert",
-                "operands": [
+                  "r23",
                   "r24"
                 ],
                 "result": "r25",
                 "source": {
-                  "column": 60,
-                  "line": 83,
-                  "offset": 2164
+                  "column": 41,
+                  "line": 125,
+                  "offset": 2447
                 }
               },
               {
-                "opcode": "return",
+                "opcode": "branch3",
                 "operands": [
                   "r25"
                 ],
                 "source": {
-                  "column": 53,
-                  "line": 83,
-                  "offset": 2157
-                }
+                  "column": 5,
+                  "line": 125,
+                  "offset": 2411
+                },
+                "targets": [
+                  "switch_negative_8",
+                  "switch_neutral_9",
+                  "switch_positive_10"
+                ]
               }
             ],
-            "name": "switch_neutral_16",
+            "name": "switch_continue_7",
             "source": {
-              "column": 49,
-              "line": 82,
-              "offset": 2102
+              "column": 5,
+              "line": 115,
+              "offset": 2249
             }
           },
           {
@@ -1644,32 +2549,2895 @@
                 "opcode": "const",
                 "result": "r26",
                 "source": {
-                  "column": 60,
-                  "line": 86,
-                  "offset": 2278
+                  "column": 22,
+                  "line": 127,
+                  "offset": 2487
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r27",
+                "source": {
+                  "column": 13,
+                  "line": 127,
+                  "offset": 2478
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r27",
+                  "r26"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 127,
+                  "offset": 2478
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 126,
+                  "offset": 2462
+                },
+                "targets": [
+                  "switch_continue_11"
+                ]
+              }
+            ],
+            "name": "switch_negative_8",
+            "source": {
+              "column": 9,
+              "line": 126,
+              "offset": 2462
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r28",
+                "source": {
+                  "column": 22,
+                  "line": 130,
+                  "offset": 2522
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "load",
+                "operands": [
+                  "r28"
+                ],
+                "result": "r29",
+                "source": {
+                  "column": 22,
+                  "line": 130,
+                  "offset": 2522
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r30",
+                "source": {
+                  "column": 13,
+                  "line": 130,
+                  "offset": 2513
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r30",
+                  "r29"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 130,
+                  "offset": 2513
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 129,
+                  "offset": 2498
+                },
+                "targets": [
+                  "switch_continue_11"
+                ]
+              }
+            ],
+            "name": "switch_neutral_9",
+            "source": {
+              "column": 9,
+              "line": 129,
+              "offset": 2498
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r31",
+                "source": {
+                  "column": 22,
+                  "line": 133,
+                  "offset": 2562
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r32",
+                "source": {
+                  "column": 13,
+                  "line": 133,
+                  "offset": 2553
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r32",
+                  "r31"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 133,
+                  "offset": 2553
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 132,
+                  "offset": 2538
+                },
+                "targets": [
+                  "switch_continue_11"
+                ]
+              }
+            ],
+            "name": "switch_positive_10",
+            "source": {
+              "column": 9,
+              "line": 132,
+              "offset": 2538
+            }
+          },
+          {
+            "instructions": [
+              {
+                "callee": "renderer_last_directive_id",
+                "opcode": "call",
+                "result": "r33",
+                "source": {
+                  "column": 11,
+                  "line": 135,
+                  "offset": 2575
+                }
+              },
+              {
+                "immediate": 5,
+                "opcode": "const",
+                "result": "r34",
+                "source": {
+                  "column": 44,
+                  "line": 135,
+                  "offset": 2608
+                }
+              },
+              {
+                "opcode": "compare",
+                "operands": [
+                  "r33",
+                  "r34"
+                ],
+                "result": "r35",
+                "source": {
+                  "column": 40,
+                  "line": 135,
+                  "offset": 2604
+                }
+              },
+              {
+                "opcode": "branch3",
+                "operands": [
+                  "r35"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 135,
+                  "offset": 2569
+                },
+                "targets": [
+                  "switch_negative_12",
+                  "switch_neutral_13",
+                  "switch_positive_14"
+                ]
+              }
+            ],
+            "name": "switch_continue_11",
+            "source": {
+              "column": 5,
+              "line": 125,
+              "offset": 2411
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r36",
+                "source": {
+                  "column": 22,
+                  "line": 137,
+                  "offset": 2644
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r37",
+                "source": {
+                  "column": 13,
+                  "line": 137,
+                  "offset": 2635
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r37",
+                  "r36"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 137,
+                  "offset": 2635
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 136,
+                  "offset": 2619
+                },
+                "targets": [
+                  "switch_continue_15"
+                ]
+              }
+            ],
+            "name": "switch_negative_12",
+            "source": {
+              "column": 9,
+              "line": 136,
+              "offset": 2619
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r38",
+                "source": {
+                  "column": 22,
+                  "line": 140,
+                  "offset": 2679
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "load",
+                "operands": [
+                  "r38"
+                ],
+                "result": "r39",
+                "source": {
+                  "column": 22,
+                  "line": 140,
+                  "offset": 2679
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r40",
+                "source": {
+                  "column": 13,
+                  "line": 140,
+                  "offset": 2670
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r40",
+                  "r39"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 140,
+                  "offset": 2670
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 139,
+                  "offset": 2655
+                },
+                "targets": [
+                  "switch_continue_15"
+                ]
+              }
+            ],
+            "name": "switch_neutral_13",
+            "source": {
+              "column": 9,
+              "line": 139,
+              "offset": 2655
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r41",
+                "source": {
+                  "column": 22,
+                  "line": 143,
+                  "offset": 2719
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r42",
+                "source": {
+                  "column": 13,
+                  "line": 143,
+                  "offset": 2710
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r42",
+                  "r41"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 143,
+                  "offset": 2710
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 142,
+                  "offset": 2695
+                },
+                "targets": [
+                  "switch_continue_15"
+                ]
+              }
+            ],
+            "name": "switch_positive_14",
+            "source": {
+              "column": 9,
+              "line": 142,
+              "offset": 2695
+            }
+          },
+          {
+            "instructions": [
+              {
+                "callee": "renderer_first_opcode_id",
+                "opcode": "call",
+                "result": "r43",
+                "source": {
+                  "column": 11,
+                  "line": 145,
+                  "offset": 2732
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r44",
+                "source": {
+                  "column": 42,
+                  "line": 145,
+                  "offset": 2763
+                }
+              },
+              {
+                "opcode": "compare",
+                "operands": [
+                  "r43",
+                  "r44"
+                ],
+                "result": "r45",
+                "source": {
+                  "column": 38,
+                  "line": 145,
+                  "offset": 2759
+                }
+              },
+              {
+                "opcode": "branch3",
+                "operands": [
+                  "r45"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 145,
+                  "offset": 2726
+                },
+                "targets": [
+                  "switch_negative_16",
+                  "switch_neutral_17",
+                  "switch_positive_18"
+                ]
+              }
+            ],
+            "name": "switch_continue_15",
+            "source": {
+              "column": 5,
+              "line": 135,
+              "offset": 2569
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r46",
+                "source": {
+                  "column": 22,
+                  "line": 147,
+                  "offset": 2799
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r47",
+                "source": {
+                  "column": 13,
+                  "line": 147,
+                  "offset": 2790
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r47",
+                  "r46"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 147,
+                  "offset": 2790
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 146,
+                  "offset": 2774
+                },
+                "targets": [
+                  "switch_continue_19"
+                ]
+              }
+            ],
+            "name": "switch_negative_16",
+            "source": {
+              "column": 9,
+              "line": 146,
+              "offset": 2774
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r48",
+                "source": {
+                  "column": 22,
+                  "line": 150,
+                  "offset": 2834
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "load",
+                "operands": [
+                  "r48"
+                ],
+                "result": "r49",
+                "source": {
+                  "column": 22,
+                  "line": 150,
+                  "offset": 2834
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r50",
+                "source": {
+                  "column": 13,
+                  "line": 150,
+                  "offset": 2825
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r50",
+                  "r49"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 150,
+                  "offset": 2825
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 149,
+                  "offset": 2810
+                },
+                "targets": [
+                  "switch_continue_19"
+                ]
+              }
+            ],
+            "name": "switch_neutral_17",
+            "source": {
+              "column": 9,
+              "line": 149,
+              "offset": 2810
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r51",
+                "source": {
+                  "column": 22,
+                  "line": 153,
+                  "offset": 2874
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r52",
+                "source": {
+                  "column": 13,
+                  "line": 153,
+                  "offset": 2865
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r52",
+                  "r51"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 153,
+                  "offset": 2865
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 152,
+                  "offset": 2850
+                },
+                "targets": [
+                  "switch_continue_19"
+                ]
+              }
+            ],
+            "name": "switch_positive_18",
+            "source": {
+              "column": 9,
+              "line": 152,
+              "offset": 2850
+            }
+          },
+          {
+            "instructions": [
+              {
+                "callee": "renderer_last_opcode_id",
+                "opcode": "call",
+                "result": "r53",
+                "source": {
+                  "column": 11,
+                  "line": 155,
+                  "offset": 2887
+                }
+              },
+              {
+                "immediate": 7,
+                "opcode": "const",
+                "result": "r54",
+                "source": {
+                  "column": 41,
+                  "line": 155,
+                  "offset": 2917
+                }
+              },
+              {
+                "opcode": "compare",
+                "operands": [
+                  "r53",
+                  "r54"
+                ],
+                "result": "r55",
+                "source": {
+                  "column": 37,
+                  "line": 155,
+                  "offset": 2913
+                }
+              },
+              {
+                "opcode": "branch3",
+                "operands": [
+                  "r55"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 155,
+                  "offset": 2881
+                },
+                "targets": [
+                  "switch_negative_20",
+                  "switch_neutral_21",
+                  "switch_positive_22"
+                ]
+              }
+            ],
+            "name": "switch_continue_19",
+            "source": {
+              "column": 5,
+              "line": 145,
+              "offset": 2726
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r56",
+                "source": {
+                  "column": 22,
+                  "line": 157,
+                  "offset": 2953
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r57",
+                "source": {
+                  "column": 13,
+                  "line": 157,
+                  "offset": 2944
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r57",
+                  "r56"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 157,
+                  "offset": 2944
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 156,
+                  "offset": 2928
+                },
+                "targets": [
+                  "switch_continue_23"
+                ]
+              }
+            ],
+            "name": "switch_negative_20",
+            "source": {
+              "column": 9,
+              "line": 156,
+              "offset": 2928
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r58",
+                "source": {
+                  "column": 22,
+                  "line": 160,
+                  "offset": 2988
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "load",
+                "operands": [
+                  "r58"
+                ],
+                "result": "r59",
+                "source": {
+                  "column": 22,
+                  "line": 160,
+                  "offset": 2988
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r60",
+                "source": {
+                  "column": 13,
+                  "line": 160,
+                  "offset": 2979
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r60",
+                  "r59"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 160,
+                  "offset": 2979
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 159,
+                  "offset": 2964
+                },
+                "targets": [
+                  "switch_continue_23"
+                ]
+              }
+            ],
+            "name": "switch_neutral_21",
+            "source": {
+              "column": 9,
+              "line": 159,
+              "offset": 2964
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r61",
+                "source": {
+                  "column": 22,
+                  "line": 163,
+                  "offset": 3028
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r62",
+                "source": {
+                  "column": 13,
+                  "line": 163,
+                  "offset": 3019
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r62",
+                  "r61"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 163,
+                  "offset": 3019
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 162,
+                  "offset": 3004
+                },
+                "targets": [
+                  "switch_continue_23"
+                ]
+              }
+            ],
+            "name": "switch_positive_22",
+            "source": {
+              "column": 9,
+              "line": 162,
+              "offset": 3004
+            }
+          },
+          {
+            "instructions": [
+              {
+                "callee": "renderer_directive_end_id",
+                "opcode": "call",
+                "result": "r63",
+                "source": {
+                  "column": 11,
+                  "line": 165,
+                  "offset": 3041
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r64",
+                "source": {
+                  "column": 43,
+                  "line": 165,
+                  "offset": 3073
+                }
+              },
+              {
+                "opcode": "compare",
+                "operands": [
+                  "r63",
+                  "r64"
+                ],
+                "result": "r65",
+                "source": {
+                  "column": 39,
+                  "line": 165,
+                  "offset": 3069
+                }
+              },
+              {
+                "opcode": "branch3",
+                "operands": [
+                  "r65"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 165,
+                  "offset": 3035
+                },
+                "targets": [
+                  "switch_negative_24",
+                  "switch_neutral_25",
+                  "switch_positive_26"
+                ]
+              }
+            ],
+            "name": "switch_continue_23",
+            "source": {
+              "column": 5,
+              "line": 155,
+              "offset": 2881
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r66",
+                "source": {
+                  "column": 22,
+                  "line": 167,
+                  "offset": 3109
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r67",
+                "source": {
+                  "column": 13,
+                  "line": 167,
+                  "offset": 3100
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r67",
+                  "r66"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 167,
+                  "offset": 3100
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 166,
+                  "offset": 3084
+                },
+                "targets": [
+                  "switch_continue_27"
+                ]
+              }
+            ],
+            "name": "switch_negative_24",
+            "source": {
+              "column": 9,
+              "line": 166,
+              "offset": 3084
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r68",
+                "source": {
+                  "column": 22,
+                  "line": 170,
+                  "offset": 3144
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "load",
+                "operands": [
+                  "r68"
+                ],
+                "result": "r69",
+                "source": {
+                  "column": 22,
+                  "line": 170,
+                  "offset": 3144
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r70",
+                "source": {
+                  "column": 13,
+                  "line": 170,
+                  "offset": 3135
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r70",
+                  "r69"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 170,
+                  "offset": 3135
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 169,
+                  "offset": 3120
+                },
+                "targets": [
+                  "switch_continue_27"
+                ]
+              }
+            ],
+            "name": "switch_neutral_25",
+            "source": {
+              "column": 9,
+              "line": 169,
+              "offset": 3120
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r71",
+                "source": {
+                  "column": 22,
+                  "line": 173,
+                  "offset": 3184
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r72",
+                "source": {
+                  "column": 13,
+                  "line": 173,
+                  "offset": 3175
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r72",
+                  "r71"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 173,
+                  "offset": 3175
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 172,
+                  "offset": 3160
+                },
+                "targets": [
+                  "switch_continue_27"
+                ]
+              }
+            ],
+            "name": "switch_positive_26",
+            "source": {
+              "column": 9,
+              "line": 172,
+              "offset": 3160
+            }
+          },
+          {
+            "instructions": [
+              {
+                "callee": "renderer_directive_s3asm_id",
+                "opcode": "call",
+                "result": "r73",
+                "source": {
+                  "column": 11,
+                  "line": 175,
+                  "offset": 3197
+                }
+              },
+              {
+                "immediate": 5,
+                "opcode": "const",
+                "result": "r74",
+                "source": {
+                  "column": 45,
+                  "line": 175,
+                  "offset": 3231
+                }
+              },
+              {
+                "opcode": "compare",
+                "operands": [
+                  "r73",
+                  "r74"
+                ],
+                "result": "r75",
+                "source": {
+                  "column": 41,
+                  "line": 175,
+                  "offset": 3227
+                }
+              },
+              {
+                "opcode": "branch3",
+                "operands": [
+                  "r75"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 175,
+                  "offset": 3191
+                },
+                "targets": [
+                  "switch_negative_28",
+                  "switch_neutral_29",
+                  "switch_positive_30"
+                ]
+              }
+            ],
+            "name": "switch_continue_27",
+            "source": {
+              "column": 5,
+              "line": 165,
+              "offset": 3035
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r76",
+                "source": {
+                  "column": 22,
+                  "line": 177,
+                  "offset": 3267
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r77",
+                "source": {
+                  "column": 13,
+                  "line": 177,
+                  "offset": 3258
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r77",
+                  "r76"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 177,
+                  "offset": 3258
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 176,
+                  "offset": 3242
+                },
+                "targets": [
+                  "switch_continue_31"
+                ]
+              }
+            ],
+            "name": "switch_negative_28",
+            "source": {
+              "column": 9,
+              "line": 176,
+              "offset": 3242
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r78",
+                "source": {
+                  "column": 22,
+                  "line": 180,
+                  "offset": 3302
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "load",
+                "operands": [
+                  "r78"
+                ],
+                "result": "r79",
+                "source": {
+                  "column": 22,
+                  "line": 180,
+                  "offset": 3302
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r80",
+                "source": {
+                  "column": 13,
+                  "line": 180,
+                  "offset": 3293
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r80",
+                  "r79"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 180,
+                  "offset": 3293
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 179,
+                  "offset": 3278
+                },
+                "targets": [
+                  "switch_continue_31"
+                ]
+              }
+            ],
+            "name": "switch_neutral_29",
+            "source": {
+              "column": 9,
+              "line": 179,
+              "offset": 3278
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r81",
+                "source": {
+                  "column": 22,
+                  "line": 183,
+                  "offset": 3342
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r82",
+                "source": {
+                  "column": 13,
+                  "line": 183,
+                  "offset": 3333
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r82",
+                  "r81"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 183,
+                  "offset": 3333
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 182,
+                  "offset": 3318
+                },
+                "targets": [
+                  "switch_continue_31"
+                ]
+              }
+            ],
+            "name": "switch_positive_30",
+            "source": {
+              "column": 9,
+              "line": 182,
+              "offset": 3318
+            }
+          },
+          {
+            "instructions": [
+              {
+                "callee": "renderer_opcode_tadd_id",
+                "opcode": "call",
+                "result": "r83",
+                "source": {
+                  "column": 11,
+                  "line": 185,
+                  "offset": 3355
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r84",
+                "source": {
+                  "column": 41,
+                  "line": 185,
+                  "offset": 3385
+                }
+              },
+              {
+                "opcode": "compare",
+                "operands": [
+                  "r83",
+                  "r84"
+                ],
+                "result": "r85",
+                "source": {
+                  "column": 37,
+                  "line": 185,
+                  "offset": 3381
+                }
+              },
+              {
+                "opcode": "branch3",
+                "operands": [
+                  "r85"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 185,
+                  "offset": 3349
+                },
+                "targets": [
+                  "switch_negative_32",
+                  "switch_neutral_33",
+                  "switch_positive_34"
+                ]
+              }
+            ],
+            "name": "switch_continue_31",
+            "source": {
+              "column": 5,
+              "line": 175,
+              "offset": 3191
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r86",
+                "source": {
+                  "column": 22,
+                  "line": 187,
+                  "offset": 3421
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r87",
+                "source": {
+                  "column": 13,
+                  "line": 187,
+                  "offset": 3412
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r87",
+                  "r86"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 187,
+                  "offset": 3412
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 186,
+                  "offset": 3396
+                },
+                "targets": [
+                  "switch_continue_35"
+                ]
+              }
+            ],
+            "name": "switch_negative_32",
+            "source": {
+              "column": 9,
+              "line": 186,
+              "offset": 3396
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r88",
+                "source": {
+                  "column": 22,
+                  "line": 190,
+                  "offset": 3456
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "load",
+                "operands": [
+                  "r88"
+                ],
+                "result": "r89",
+                "source": {
+                  "column": 22,
+                  "line": 190,
+                  "offset": 3456
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r90",
+                "source": {
+                  "column": 13,
+                  "line": 190,
+                  "offset": 3447
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r90",
+                  "r89"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 190,
+                  "offset": 3447
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 189,
+                  "offset": 3432
+                },
+                "targets": [
+                  "switch_continue_35"
+                ]
+              }
+            ],
+            "name": "switch_neutral_33",
+            "source": {
+              "column": 9,
+              "line": 189,
+              "offset": 3432
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r91",
+                "source": {
+                  "column": 22,
+                  "line": 193,
+                  "offset": 3496
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r92",
+                "source": {
+                  "column": 13,
+                  "line": 193,
+                  "offset": 3487
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r92",
+                  "r91"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 193,
+                  "offset": 3487
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 192,
+                  "offset": 3472
+                },
+                "targets": [
+                  "switch_continue_35"
+                ]
+              }
+            ],
+            "name": "switch_positive_34",
+            "source": {
+              "column": 9,
+              "line": 192,
+              "offset": 3472
+            }
+          },
+          {
+            "instructions": [
+              {
+                "callee": "renderer_opcode_tret_id",
+                "opcode": "call",
+                "result": "r93",
+                "source": {
+                  "column": 11,
+                  "line": 195,
+                  "offset": 3509
+                }
+              },
+              {
+                "immediate": 7,
+                "opcode": "const",
+                "result": "r94",
+                "source": {
+                  "column": 41,
+                  "line": 195,
+                  "offset": 3539
+                }
+              },
+              {
+                "opcode": "compare",
+                "operands": [
+                  "r93",
+                  "r94"
+                ],
+                "result": "r95",
+                "source": {
+                  "column": 37,
+                  "line": 195,
+                  "offset": 3535
+                }
+              },
+              {
+                "opcode": "branch3",
+                "operands": [
+                  "r95"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 195,
+                  "offset": 3503
+                },
+                "targets": [
+                  "switch_negative_36",
+                  "switch_neutral_37",
+                  "switch_positive_38"
+                ]
+              }
+            ],
+            "name": "switch_continue_35",
+            "source": {
+              "column": 5,
+              "line": 185,
+              "offset": 3349
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r96",
+                "source": {
+                  "column": 22,
+                  "line": 197,
+                  "offset": 3575
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r97",
+                "source": {
+                  "column": 13,
+                  "line": 197,
+                  "offset": 3566
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r97",
+                  "r96"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 197,
+                  "offset": 3566
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 196,
+                  "offset": 3550
+                },
+                "targets": [
+                  "switch_continue_39"
+                ]
+              }
+            ],
+            "name": "switch_negative_36",
+            "source": {
+              "column": 9,
+              "line": 196,
+              "offset": 3550
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r98",
+                "source": {
+                  "column": 22,
+                  "line": 200,
+                  "offset": 3610
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "load",
+                "operands": [
+                  "r98"
+                ],
+                "result": "r99",
+                "source": {
+                  "column": 22,
+                  "line": 200,
+                  "offset": 3610
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r100",
+                "source": {
+                  "column": 13,
+                  "line": 200,
+                  "offset": 3601
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r100",
+                  "r99"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 200,
+                  "offset": 3601
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 199,
+                  "offset": 3586
+                },
+                "targets": [
+                  "switch_continue_39"
+                ]
+              }
+            ],
+            "name": "switch_neutral_37",
+            "source": {
+              "column": 9,
+              "line": 199,
+              "offset": 3586
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r101",
+                "source": {
+                  "column": 22,
+                  "line": 203,
+                  "offset": 3650
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r102",
+                "source": {
+                  "column": 13,
+                  "line": 203,
+                  "offset": 3641
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r102",
+                  "r101"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 203,
+                  "offset": 3641
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 202,
+                  "offset": 3626
+                },
+                "targets": [
+                  "switch_continue_39"
+                ]
+              }
+            ],
+            "name": "switch_positive_38",
+            "source": {
+              "column": 9,
+              "line": 202,
+              "offset": 3626
+            }
+          },
+          {
+            "instructions": [
+              {
+                "callee": "renderer_first_directive_id",
+                "opcode": "call",
+                "result": "r103",
+                "source": {
+                  "column": 42,
+                  "line": 205,
+                  "offset": 3694
+                }
+              },
+              {
+                "callee": "renderer_supports_directive_id",
+                "opcode": "call",
+                "operands": [
+                  "r103"
+                ],
+                "result": "r104",
+                "source": {
+                  "column": 11,
+                  "line": 205,
+                  "offset": 3663
+                }
+              },
+              {
+                "immediate": 1,
+                "opcode": "const",
+                "result": "r105",
+                "source": {
+                  "column": 77,
+                  "line": 205,
+                  "offset": 3729
+                }
+              },
+              {
+                "opcode": "compare",
+                "operands": [
+                  "r104",
+                  "r105"
+                ],
+                "result": "r106",
+                "source": {
+                  "column": 73,
+                  "line": 205,
+                  "offset": 3725
+                }
+              },
+              {
+                "opcode": "branch3",
+                "operands": [
+                  "r106"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 205,
+                  "offset": 3657
+                },
+                "targets": [
+                  "switch_negative_40",
+                  "switch_neutral_41",
+                  "switch_positive_42"
+                ]
+              }
+            ],
+            "name": "switch_continue_39",
+            "source": {
+              "column": 5,
+              "line": 195,
+              "offset": 3503
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r107",
+                "source": {
+                  "column": 22,
+                  "line": 207,
+                  "offset": 3765
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r108",
+                "source": {
+                  "column": 13,
+                  "line": 207,
+                  "offset": 3756
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r108",
+                  "r107"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 207,
+                  "offset": 3756
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 206,
+                  "offset": 3740
+                },
+                "targets": [
+                  "switch_continue_43"
+                ]
+              }
+            ],
+            "name": "switch_negative_40",
+            "source": {
+              "column": 9,
+              "line": 206,
+              "offset": 3740
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r109",
+                "source": {
+                  "column": 22,
+                  "line": 210,
+                  "offset": 3800
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "load",
+                "operands": [
+                  "r109"
+                ],
+                "result": "r110",
+                "source": {
+                  "column": 22,
+                  "line": 210,
+                  "offset": 3800
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r111",
+                "source": {
+                  "column": 13,
+                  "line": 210,
+                  "offset": 3791
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r111",
+                  "r110"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 210,
+                  "offset": 3791
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 209,
+                  "offset": 3776
+                },
+                "targets": [
+                  "switch_continue_43"
+                ]
+              }
+            ],
+            "name": "switch_neutral_41",
+            "source": {
+              "column": 9,
+              "line": 209,
+              "offset": 3776
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r112",
+                "source": {
+                  "column": 22,
+                  "line": 213,
+                  "offset": 3840
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r113",
+                "source": {
+                  "column": 13,
+                  "line": 213,
+                  "offset": 3831
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r113",
+                  "r112"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 213,
+                  "offset": 3831
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 212,
+                  "offset": 3816
+                },
+                "targets": [
+                  "switch_continue_43"
+                ]
+              }
+            ],
+            "name": "switch_positive_42",
+            "source": {
+              "column": 9,
+              "line": 212,
+              "offset": 3816
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 1,
+                "opcode": "const",
+                "result": "r114",
+                "source": {
+                  "column": 43,
+                  "line": 215,
+                  "offset": 3885
+                }
+              },
+              {
+                "opcode": "invert",
+                "operands": [
+                  "r114"
+                ],
+                "result": "r115",
+                "source": {
+                  "column": 42,
+                  "line": 215,
+                  "offset": 3884
+                }
+              },
+              {
+                "callee": "renderer_supports_directive_id",
+                "opcode": "call",
+                "operands": [
+                  "r115"
+                ],
+                "result": "r116",
+                "source": {
+                  "column": 11,
+                  "line": 215,
+                  "offset": 3853
+                }
+              },
+              {
+                "immediate": 1,
+                "opcode": "const",
+                "result": "r117",
+                "source": {
+                  "column": 51,
+                  "line": 215,
+                  "offset": 3893
+                }
+              },
+              {
+                "opcode": "invert",
+                "operands": [
+                  "r117"
+                ],
+                "result": "r118",
+                "source": {
+                  "column": 50,
+                  "line": 215,
+                  "offset": 3892
+                }
+              },
+              {
+                "opcode": "compare",
+                "operands": [
+                  "r116",
+                  "r118"
+                ],
+                "result": "r119",
+                "source": {
+                  "column": 46,
+                  "line": 215,
+                  "offset": 3888
+                }
+              },
+              {
+                "opcode": "branch3",
+                "operands": [
+                  "r119"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 215,
+                  "offset": 3847
+                },
+                "targets": [
+                  "switch_negative_44",
+                  "switch_neutral_45",
+                  "switch_positive_46"
+                ]
+              }
+            ],
+            "name": "switch_continue_43",
+            "source": {
+              "column": 5,
+              "line": 205,
+              "offset": 3657
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r120",
+                "source": {
+                  "column": 22,
+                  "line": 217,
+                  "offset": 3929
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r121",
+                "source": {
+                  "column": 13,
+                  "line": 217,
+                  "offset": 3920
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r121",
+                  "r120"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 217,
+                  "offset": 3920
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 216,
+                  "offset": 3904
+                },
+                "targets": [
+                  "switch_continue_47"
+                ]
+              }
+            ],
+            "name": "switch_negative_44",
+            "source": {
+              "column": 9,
+              "line": 216,
+              "offset": 3904
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r122",
+                "source": {
+                  "column": 22,
+                  "line": 220,
+                  "offset": 3964
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "load",
+                "operands": [
+                  "r122"
+                ],
+                "result": "r123",
+                "source": {
+                  "column": 22,
+                  "line": 220,
+                  "offset": 3964
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r124",
+                "source": {
+                  "column": 13,
+                  "line": 220,
+                  "offset": 3955
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r124",
+                  "r123"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 220,
+                  "offset": 3955
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 219,
+                  "offset": 3940
+                },
+                "targets": [
+                  "switch_continue_47"
+                ]
+              }
+            ],
+            "name": "switch_neutral_45",
+            "source": {
+              "column": 9,
+              "line": 219,
+              "offset": 3940
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r125",
+                "source": {
+                  "column": 22,
+                  "line": 223,
+                  "offset": 4004
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r126",
+                "source": {
+                  "column": 13,
+                  "line": 223,
+                  "offset": 3995
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r126",
+                  "r125"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 223,
+                  "offset": 3995
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 222,
+                  "offset": 3980
+                },
+                "targets": [
+                  "switch_continue_47"
+                ]
+              }
+            ],
+            "name": "switch_positive_46",
+            "source": {
+              "column": 9,
+              "line": 222,
+              "offset": 3980
+            }
+          },
+          {
+            "instructions": [
+              {
+                "callee": "renderer_last_opcode_id",
+                "opcode": "call",
+                "result": "r127",
+                "source": {
+                  "column": 39,
+                  "line": 225,
+                  "offset": 4045
+                }
+              },
+              {
+                "callee": "renderer_supports_opcode_id",
+                "opcode": "call",
+                "operands": [
+                  "r127"
+                ],
+                "result": "r128",
+                "source": {
+                  "column": 11,
+                  "line": 225,
+                  "offset": 4017
+                }
+              },
+              {
+                "immediate": 1,
+                "opcode": "const",
+                "result": "r129",
+                "source": {
+                  "column": 70,
+                  "line": 225,
+                  "offset": 4076
+                }
+              },
+              {
+                "opcode": "compare",
+                "operands": [
+                  "r128",
+                  "r129"
+                ],
+                "result": "r130",
+                "source": {
+                  "column": 66,
+                  "line": 225,
+                  "offset": 4072
+                }
+              },
+              {
+                "opcode": "branch3",
+                "operands": [
+                  "r130"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 225,
+                  "offset": 4011
+                },
+                "targets": [
+                  "switch_negative_48",
+                  "switch_neutral_49",
+                  "switch_positive_50"
+                ]
+              }
+            ],
+            "name": "switch_continue_47",
+            "source": {
+              "column": 5,
+              "line": 215,
+              "offset": 3847
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r131",
+                "source": {
+                  "column": 22,
+                  "line": 227,
+                  "offset": 4112
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r132",
+                "source": {
+                  "column": 13,
+                  "line": 227,
+                  "offset": 4103
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r132",
+                  "r131"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 227,
+                  "offset": 4103
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 226,
+                  "offset": 4087
+                },
+                "targets": [
+                  "switch_continue_51"
+                ]
+              }
+            ],
+            "name": "switch_negative_48",
+            "source": {
+              "column": 9,
+              "line": 226,
+              "offset": 4087
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r133",
+                "source": {
+                  "column": 22,
+                  "line": 230,
+                  "offset": 4147
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "load",
+                "operands": [
+                  "r133"
+                ],
+                "result": "r134",
+                "source": {
+                  "column": 22,
+                  "line": 230,
+                  "offset": 4147
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r135",
+                "source": {
+                  "column": 13,
+                  "line": 230,
+                  "offset": 4138
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r135",
+                  "r134"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 230,
+                  "offset": 4138
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 229,
+                  "offset": 4123
+                },
+                "targets": [
+                  "switch_continue_51"
+                ]
+              }
+            ],
+            "name": "switch_neutral_49",
+            "source": {
+              "column": 9,
+              "line": 229,
+              "offset": 4123
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r136",
+                "source": {
+                  "column": 22,
+                  "line": 233,
+                  "offset": 4187
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r137",
+                "source": {
+                  "column": 13,
+                  "line": 233,
+                  "offset": 4178
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r137",
+                  "r136"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 233,
+                  "offset": 4178
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 232,
+                  "offset": 4163
+                },
+                "targets": [
+                  "switch_continue_51"
+                ]
+              }
+            ],
+            "name": "switch_positive_50",
+            "source": {
+              "column": 9,
+              "line": 232,
+              "offset": 4163
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 8,
+                "opcode": "const",
+                "result": "r138",
+                "source": {
+                  "column": 39,
+                  "line": 235,
+                  "offset": 4228
+                }
+              },
+              {
+                "callee": "renderer_supports_opcode_id",
+                "opcode": "call",
+                "operands": [
+                  "r138"
+                ],
+                "result": "r139",
+                "source": {
+                  "column": 11,
+                  "line": 235,
+                  "offset": 4200
+                }
+              },
+              {
+                "immediate": 1,
+                "opcode": "const",
+                "result": "r140",
+                "source": {
+                  "column": 47,
+                  "line": 235,
+                  "offset": 4236
+                }
+              },
+              {
+                "opcode": "invert",
+                "operands": [
+                  "r140"
+                ],
+                "result": "r141",
+                "source": {
+                  "column": 46,
+                  "line": 235,
+                  "offset": 4235
+                }
+              },
+              {
+                "opcode": "compare",
+                "operands": [
+                  "r139",
+                  "r141"
+                ],
+                "result": "r142",
+                "source": {
+                  "column": 42,
+                  "line": 235,
+                  "offset": 4231
+                }
+              },
+              {
+                "opcode": "branch3",
+                "operands": [
+                  "r142"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 235,
+                  "offset": 4194
+                },
+                "targets": [
+                  "switch_negative_52",
+                  "switch_neutral_53",
+                  "switch_positive_54"
+                ]
+              }
+            ],
+            "name": "switch_continue_51",
+            "source": {
+              "column": 5,
+              "line": 225,
+              "offset": 4011
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r143",
+                "source": {
+                  "column": 22,
+                  "line": 237,
+                  "offset": 4272
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r144",
+                "source": {
+                  "column": 13,
+                  "line": 237,
+                  "offset": 4263
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r144",
+                  "r143"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 237,
+                  "offset": 4263
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 236,
+                  "offset": 4247
+                },
+                "targets": [
+                  "switch_continue_55"
+                ]
+              }
+            ],
+            "name": "switch_negative_52",
+            "source": {
+              "column": 9,
+              "line": 236,
+              "offset": 4247
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r145",
+                "source": {
+                  "column": 22,
+                  "line": 240,
+                  "offset": 4307
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "load",
+                "operands": [
+                  "r145"
+                ],
+                "result": "r146",
+                "source": {
+                  "column": 22,
+                  "line": 240,
+                  "offset": 4307
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r147",
+                "source": {
+                  "column": 13,
+                  "line": 240,
+                  "offset": 4298
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r147",
+                  "r146"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 240,
+                  "offset": 4298
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 239,
+                  "offset": 4283
+                },
+                "targets": [
+                  "switch_continue_55"
+                ]
+              }
+            ],
+            "name": "switch_neutral_53",
+            "source": {
+              "column": 9,
+              "line": 239,
+              "offset": 4283
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r148",
+                "source": {
+                  "column": 22,
+                  "line": 243,
+                  "offset": 4347
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r149",
+                "source": {
+                  "column": 13,
+                  "line": 243,
+                  "offset": 4338
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r149",
+                  "r148"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 243,
+                  "offset": 4338
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 242,
+                  "offset": 4323
+                },
+                "targets": [
+                  "switch_continue_55"
+                ]
+              }
+            ],
+            "name": "switch_positive_54",
+            "source": {
+              "column": 9,
+              "line": 242,
+              "offset": 4323
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r150",
+                "source": {
+                  "column": 12,
+                  "line": 245,
+                  "offset": 4361
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "load",
+                "operands": [
+                  "r150"
+                ],
+                "result": "r151",
+                "source": {
+                  "column": 12,
+                  "line": 245,
+                  "offset": 4361
                 }
               },
               {
                 "opcode": "return",
                 "operands": [
-                  "r26"
+                  "r151"
                 ],
                 "source": {
-                  "column": 53,
-                  "line": 86,
-                  "offset": 2271
+                  "column": 5,
+                  "line": 245,
+                  "offset": 4354
                 }
               }
             ],
-            "name": "switch_positive_17",
+            "name": "switch_continue_55",
             "source": {
-              "column": 49,
-              "line": 85,
-              "offset": 2216
+              "column": 5,
+              "line": 235,
+              "offset": 4194
             }
           }
         ],
-        "memory_objects": [],
+        "memory_objects": [
+          {
+            "element_type": "trit",
+            "index": 0,
+            "length": 1,
+            "mutable": true,
+            "name": "m0",
+            "source": {
+              "column": 5,
+              "line": 103,
+              "offset": 2057
+            }
+          }
+        ],
         "name": "renderer_candidate_capability_smoke",
         "parameters": [],
         "registers": [
@@ -1677,49 +5445,49 @@
             "index": 0,
             "name": "r0",
             "source": {
-              "column": 11,
-              "line": 53,
-              "offset": 1082
+              "column": 25,
+              "line": 103,
+              "offset": 2077
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 1,
             "name": "r1",
             "source": {
-              "column": 52,
-              "line": 53,
-              "offset": 1123
+              "column": 24,
+              "line": 103,
+              "offset": 2076
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 2,
             "name": "r2",
             "source": {
-              "column": 48,
-              "line": 53,
-              "offset": 1119
+              "column": 5,
+              "line": 103,
+              "offset": 2057
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 3,
             "name": "r3",
             "source": {
-              "column": 20,
-              "line": 55,
-              "offset": 1157
+              "column": 11,
+              "line": 105,
+              "offset": 2090
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 4,
             "name": "r4",
             "source": {
-              "column": 19,
-              "line": 58,
-              "offset": 1189
+              "column": 52,
+              "line": 105,
+              "offset": 2131
             },
             "type": "tryte"
           },
@@ -1727,19 +5495,19 @@
             "index": 5,
             "name": "r5",
             "source": {
-              "column": 57,
-              "line": 58,
-              "offset": 1227
+              "column": 48,
+              "line": 105,
+              "offset": 2127
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 6,
             "name": "r6",
             "source": {
-              "column": 53,
-              "line": 58,
-              "offset": 1223
+              "column": 22,
+              "line": 107,
+              "offset": 2167
             },
             "type": "trit"
           },
@@ -1747,19 +5515,19 @@
             "index": 7,
             "name": "r7",
             "source": {
-              "column": 28,
-              "line": 60,
-              "offset": 1277
+              "column": 13,
+              "line": 107,
+              "offset": 2158
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 8,
             "name": "r8",
             "source": {
-              "column": 27,
-              "line": 63,
-              "offset": 1325
+              "column": 22,
+              "line": 110,
+              "offset": 2202
             },
             "type": "tryte"
           },
@@ -1767,29 +5535,29 @@
             "index": 9,
             "name": "r9",
             "source": {
-              "column": 59,
-              "line": 63,
-              "offset": 1357
+              "column": 22,
+              "line": 110,
+              "offset": 2202
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 10,
             "name": "r10",
             "source": {
-              "column": 55,
-              "line": 63,
-              "offset": 1353
+              "column": 13,
+              "line": 110,
+              "offset": 2193
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 11,
             "name": "r11",
             "source": {
-              "column": 36,
-              "line": 65,
-              "offset": 1423
+              "column": 22,
+              "line": 113,
+              "offset": 2242
             },
             "type": "trit"
           },
@@ -1797,9 +5565,9 @@
             "index": 12,
             "name": "r12",
             "source": {
-              "column": 35,
-              "line": 68,
-              "offset": 1487
+              "column": 13,
+              "line": 113,
+              "offset": 2233
             },
             "type": "tryte"
           },
@@ -1807,9 +5575,9 @@
             "index": 13,
             "name": "r13",
             "source": {
-              "column": 69,
-              "line": 68,
-              "offset": 1521
+              "column": 11,
+              "line": 115,
+              "offset": 2255
             },
             "type": "tryte"
           },
@@ -1817,19 +5585,19 @@
             "index": 14,
             "name": "r14",
             "source": {
-              "column": 65,
-              "line": 68,
-              "offset": 1517
+              "column": 49,
+              "line": 115,
+              "offset": 2293
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 15,
             "name": "r15",
             "source": {
-              "column": 44,
-              "line": 70,
-              "offset": 1603
+              "column": 45,
+              "line": 115,
+              "offset": 2289
             },
             "type": "trit"
           },
@@ -1837,19 +5605,19 @@
             "index": 16,
             "name": "r16",
             "source": {
-              "column": 43,
-              "line": 73,
-              "offset": 1683
+              "column": 22,
+              "line": 117,
+              "offset": 2329
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 17,
             "name": "r17",
             "source": {
-              "column": 73,
-              "line": 73,
-              "offset": 1713
+              "column": 13,
+              "line": 117,
+              "offset": 2320
             },
             "type": "tryte"
           },
@@ -1857,19 +5625,19 @@
             "index": 18,
             "name": "r18",
             "source": {
-              "column": 69,
-              "line": 73,
-              "offset": 1709
+              "column": 22,
+              "line": 120,
+              "offset": 2364
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 19,
             "name": "r19",
             "source": {
-              "column": 52,
-              "line": 75,
-              "offset": 1811
+              "column": 22,
+              "line": 120,
+              "offset": 2364
             },
             "type": "trit"
           },
@@ -1877,9 +5645,9 @@
             "index": 20,
             "name": "r20",
             "source": {
-              "column": 51,
-              "line": 78,
-              "offset": 1907
+              "column": 13,
+              "line": 120,
+              "offset": 2355
             },
             "type": "tryte"
           },
@@ -1887,49 +5655,49 @@
             "index": 21,
             "name": "r21",
             "source": {
-              "column": 81,
-              "line": 78,
-              "offset": 1937
+              "column": 22,
+              "line": 123,
+              "offset": 2404
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 22,
             "name": "r22",
             "source": {
-              "column": 77,
-              "line": 78,
-              "offset": 1933
+              "column": 13,
+              "line": 123,
+              "offset": 2395
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 23,
             "name": "r23",
             "source": {
-              "column": 60,
-              "line": 80,
-              "offset": 2051
+              "column": 11,
+              "line": 125,
+              "offset": 2417
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 24,
             "name": "r24",
             "source": {
-              "column": 61,
-              "line": 83,
-              "offset": 2165
+              "column": 45,
+              "line": 125,
+              "offset": 2451
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 25,
             "name": "r25",
             "source": {
-              "column": 60,
-              "line": 83,
-              "offset": 2164
+              "column": 41,
+              "line": 125,
+              "offset": 2447
             },
             "type": "trit"
           },
@@ -1937,9 +5705,9 @@
             "index": 26,
             "name": "r26",
             "source": {
-              "column": 60,
-              "line": 86,
-              "offset": 2278
+              "column": 22,
+              "line": 127,
+              "offset": 2487
             },
             "type": "trit"
           },
@@ -1947,29 +5715,29 @@
             "index": 27,
             "name": "r27",
             "source": {
-              "column": 52,
-              "line": 89,
-              "offset": 2375
+              "column": 13,
+              "line": 127,
+              "offset": 2478
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 28,
             "name": "r28",
             "source": {
-              "column": 44,
-              "line": 92,
-              "offset": 2456
+              "column": 22,
+              "line": 130,
+              "offset": 2522
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 29,
             "name": "r29",
             "source": {
-              "column": 36,
-              "line": 95,
-              "offset": 2521
+              "column": 22,
+              "line": 130,
+              "offset": 2522
             },
             "type": "trit"
           },
@@ -1977,19 +5745,1219 @@
             "index": 30,
             "name": "r30",
             "source": {
-              "column": 28,
-              "line": 98,
-              "offset": 2570
+              "column": 13,
+              "line": 130,
+              "offset": 2513
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 31,
             "name": "r31",
             "source": {
-              "column": 20,
-              "line": 101,
-              "offset": 2603
+              "column": 22,
+              "line": 133,
+              "offset": 2562
+            },
+            "type": "trit"
+          },
+          {
+            "index": 32,
+            "name": "r32",
+            "source": {
+              "column": 13,
+              "line": 133,
+              "offset": 2553
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 33,
+            "name": "r33",
+            "source": {
+              "column": 11,
+              "line": 135,
+              "offset": 2575
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 34,
+            "name": "r34",
+            "source": {
+              "column": 44,
+              "line": 135,
+              "offset": 2608
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 35,
+            "name": "r35",
+            "source": {
+              "column": 40,
+              "line": 135,
+              "offset": 2604
+            },
+            "type": "trit"
+          },
+          {
+            "index": 36,
+            "name": "r36",
+            "source": {
+              "column": 22,
+              "line": 137,
+              "offset": 2644
+            },
+            "type": "trit"
+          },
+          {
+            "index": 37,
+            "name": "r37",
+            "source": {
+              "column": 13,
+              "line": 137,
+              "offset": 2635
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 38,
+            "name": "r38",
+            "source": {
+              "column": 22,
+              "line": 140,
+              "offset": 2679
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 39,
+            "name": "r39",
+            "source": {
+              "column": 22,
+              "line": 140,
+              "offset": 2679
+            },
+            "type": "trit"
+          },
+          {
+            "index": 40,
+            "name": "r40",
+            "source": {
+              "column": 13,
+              "line": 140,
+              "offset": 2670
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 41,
+            "name": "r41",
+            "source": {
+              "column": 22,
+              "line": 143,
+              "offset": 2719
+            },
+            "type": "trit"
+          },
+          {
+            "index": 42,
+            "name": "r42",
+            "source": {
+              "column": 13,
+              "line": 143,
+              "offset": 2710
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 43,
+            "name": "r43",
+            "source": {
+              "column": 11,
+              "line": 145,
+              "offset": 2732
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 44,
+            "name": "r44",
+            "source": {
+              "column": 42,
+              "line": 145,
+              "offset": 2763
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 45,
+            "name": "r45",
+            "source": {
+              "column": 38,
+              "line": 145,
+              "offset": 2759
+            },
+            "type": "trit"
+          },
+          {
+            "index": 46,
+            "name": "r46",
+            "source": {
+              "column": 22,
+              "line": 147,
+              "offset": 2799
+            },
+            "type": "trit"
+          },
+          {
+            "index": 47,
+            "name": "r47",
+            "source": {
+              "column": 13,
+              "line": 147,
+              "offset": 2790
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 48,
+            "name": "r48",
+            "source": {
+              "column": 22,
+              "line": 150,
+              "offset": 2834
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 49,
+            "name": "r49",
+            "source": {
+              "column": 22,
+              "line": 150,
+              "offset": 2834
+            },
+            "type": "trit"
+          },
+          {
+            "index": 50,
+            "name": "r50",
+            "source": {
+              "column": 13,
+              "line": 150,
+              "offset": 2825
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 51,
+            "name": "r51",
+            "source": {
+              "column": 22,
+              "line": 153,
+              "offset": 2874
+            },
+            "type": "trit"
+          },
+          {
+            "index": 52,
+            "name": "r52",
+            "source": {
+              "column": 13,
+              "line": 153,
+              "offset": 2865
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 53,
+            "name": "r53",
+            "source": {
+              "column": 11,
+              "line": 155,
+              "offset": 2887
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 54,
+            "name": "r54",
+            "source": {
+              "column": 41,
+              "line": 155,
+              "offset": 2917
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 55,
+            "name": "r55",
+            "source": {
+              "column": 37,
+              "line": 155,
+              "offset": 2913
+            },
+            "type": "trit"
+          },
+          {
+            "index": 56,
+            "name": "r56",
+            "source": {
+              "column": 22,
+              "line": 157,
+              "offset": 2953
+            },
+            "type": "trit"
+          },
+          {
+            "index": 57,
+            "name": "r57",
+            "source": {
+              "column": 13,
+              "line": 157,
+              "offset": 2944
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 58,
+            "name": "r58",
+            "source": {
+              "column": 22,
+              "line": 160,
+              "offset": 2988
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 59,
+            "name": "r59",
+            "source": {
+              "column": 22,
+              "line": 160,
+              "offset": 2988
+            },
+            "type": "trit"
+          },
+          {
+            "index": 60,
+            "name": "r60",
+            "source": {
+              "column": 13,
+              "line": 160,
+              "offset": 2979
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 61,
+            "name": "r61",
+            "source": {
+              "column": 22,
+              "line": 163,
+              "offset": 3028
+            },
+            "type": "trit"
+          },
+          {
+            "index": 62,
+            "name": "r62",
+            "source": {
+              "column": 13,
+              "line": 163,
+              "offset": 3019
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 63,
+            "name": "r63",
+            "source": {
+              "column": 11,
+              "line": 165,
+              "offset": 3041
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 64,
+            "name": "r64",
+            "source": {
+              "column": 43,
+              "line": 165,
+              "offset": 3073
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 65,
+            "name": "r65",
+            "source": {
+              "column": 39,
+              "line": 165,
+              "offset": 3069
+            },
+            "type": "trit"
+          },
+          {
+            "index": 66,
+            "name": "r66",
+            "source": {
+              "column": 22,
+              "line": 167,
+              "offset": 3109
+            },
+            "type": "trit"
+          },
+          {
+            "index": 67,
+            "name": "r67",
+            "source": {
+              "column": 13,
+              "line": 167,
+              "offset": 3100
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 68,
+            "name": "r68",
+            "source": {
+              "column": 22,
+              "line": 170,
+              "offset": 3144
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 69,
+            "name": "r69",
+            "source": {
+              "column": 22,
+              "line": 170,
+              "offset": 3144
+            },
+            "type": "trit"
+          },
+          {
+            "index": 70,
+            "name": "r70",
+            "source": {
+              "column": 13,
+              "line": 170,
+              "offset": 3135
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 71,
+            "name": "r71",
+            "source": {
+              "column": 22,
+              "line": 173,
+              "offset": 3184
+            },
+            "type": "trit"
+          },
+          {
+            "index": 72,
+            "name": "r72",
+            "source": {
+              "column": 13,
+              "line": 173,
+              "offset": 3175
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 73,
+            "name": "r73",
+            "source": {
+              "column": 11,
+              "line": 175,
+              "offset": 3197
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 74,
+            "name": "r74",
+            "source": {
+              "column": 45,
+              "line": 175,
+              "offset": 3231
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 75,
+            "name": "r75",
+            "source": {
+              "column": 41,
+              "line": 175,
+              "offset": 3227
+            },
+            "type": "trit"
+          },
+          {
+            "index": 76,
+            "name": "r76",
+            "source": {
+              "column": 22,
+              "line": 177,
+              "offset": 3267
+            },
+            "type": "trit"
+          },
+          {
+            "index": 77,
+            "name": "r77",
+            "source": {
+              "column": 13,
+              "line": 177,
+              "offset": 3258
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 78,
+            "name": "r78",
+            "source": {
+              "column": 22,
+              "line": 180,
+              "offset": 3302
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 79,
+            "name": "r79",
+            "source": {
+              "column": 22,
+              "line": 180,
+              "offset": 3302
+            },
+            "type": "trit"
+          },
+          {
+            "index": 80,
+            "name": "r80",
+            "source": {
+              "column": 13,
+              "line": 180,
+              "offset": 3293
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 81,
+            "name": "r81",
+            "source": {
+              "column": 22,
+              "line": 183,
+              "offset": 3342
+            },
+            "type": "trit"
+          },
+          {
+            "index": 82,
+            "name": "r82",
+            "source": {
+              "column": 13,
+              "line": 183,
+              "offset": 3333
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 83,
+            "name": "r83",
+            "source": {
+              "column": 11,
+              "line": 185,
+              "offset": 3355
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 84,
+            "name": "r84",
+            "source": {
+              "column": 41,
+              "line": 185,
+              "offset": 3385
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 85,
+            "name": "r85",
+            "source": {
+              "column": 37,
+              "line": 185,
+              "offset": 3381
+            },
+            "type": "trit"
+          },
+          {
+            "index": 86,
+            "name": "r86",
+            "source": {
+              "column": 22,
+              "line": 187,
+              "offset": 3421
+            },
+            "type": "trit"
+          },
+          {
+            "index": 87,
+            "name": "r87",
+            "source": {
+              "column": 13,
+              "line": 187,
+              "offset": 3412
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 88,
+            "name": "r88",
+            "source": {
+              "column": 22,
+              "line": 190,
+              "offset": 3456
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 89,
+            "name": "r89",
+            "source": {
+              "column": 22,
+              "line": 190,
+              "offset": 3456
+            },
+            "type": "trit"
+          },
+          {
+            "index": 90,
+            "name": "r90",
+            "source": {
+              "column": 13,
+              "line": 190,
+              "offset": 3447
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 91,
+            "name": "r91",
+            "source": {
+              "column": 22,
+              "line": 193,
+              "offset": 3496
+            },
+            "type": "trit"
+          },
+          {
+            "index": 92,
+            "name": "r92",
+            "source": {
+              "column": 13,
+              "line": 193,
+              "offset": 3487
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 93,
+            "name": "r93",
+            "source": {
+              "column": 11,
+              "line": 195,
+              "offset": 3509
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 94,
+            "name": "r94",
+            "source": {
+              "column": 41,
+              "line": 195,
+              "offset": 3539
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 95,
+            "name": "r95",
+            "source": {
+              "column": 37,
+              "line": 195,
+              "offset": 3535
+            },
+            "type": "trit"
+          },
+          {
+            "index": 96,
+            "name": "r96",
+            "source": {
+              "column": 22,
+              "line": 197,
+              "offset": 3575
+            },
+            "type": "trit"
+          },
+          {
+            "index": 97,
+            "name": "r97",
+            "source": {
+              "column": 13,
+              "line": 197,
+              "offset": 3566
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 98,
+            "name": "r98",
+            "source": {
+              "column": 22,
+              "line": 200,
+              "offset": 3610
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 99,
+            "name": "r99",
+            "source": {
+              "column": 22,
+              "line": 200,
+              "offset": 3610
+            },
+            "type": "trit"
+          },
+          {
+            "index": 100,
+            "name": "r100",
+            "source": {
+              "column": 13,
+              "line": 200,
+              "offset": 3601
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 101,
+            "name": "r101",
+            "source": {
+              "column": 22,
+              "line": 203,
+              "offset": 3650
+            },
+            "type": "trit"
+          },
+          {
+            "index": 102,
+            "name": "r102",
+            "source": {
+              "column": 13,
+              "line": 203,
+              "offset": 3641
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 103,
+            "name": "r103",
+            "source": {
+              "column": 42,
+              "line": 205,
+              "offset": 3694
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 104,
+            "name": "r104",
+            "source": {
+              "column": 11,
+              "line": 205,
+              "offset": 3663
+            },
+            "type": "trit"
+          },
+          {
+            "index": 105,
+            "name": "r105",
+            "source": {
+              "column": 77,
+              "line": 205,
+              "offset": 3729
+            },
+            "type": "trit"
+          },
+          {
+            "index": 106,
+            "name": "r106",
+            "source": {
+              "column": 73,
+              "line": 205,
+              "offset": 3725
+            },
+            "type": "trit"
+          },
+          {
+            "index": 107,
+            "name": "r107",
+            "source": {
+              "column": 22,
+              "line": 207,
+              "offset": 3765
+            },
+            "type": "trit"
+          },
+          {
+            "index": 108,
+            "name": "r108",
+            "source": {
+              "column": 13,
+              "line": 207,
+              "offset": 3756
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 109,
+            "name": "r109",
+            "source": {
+              "column": 22,
+              "line": 210,
+              "offset": 3800
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 110,
+            "name": "r110",
+            "source": {
+              "column": 22,
+              "line": 210,
+              "offset": 3800
+            },
+            "type": "trit"
+          },
+          {
+            "index": 111,
+            "name": "r111",
+            "source": {
+              "column": 13,
+              "line": 210,
+              "offset": 3791
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 112,
+            "name": "r112",
+            "source": {
+              "column": 22,
+              "line": 213,
+              "offset": 3840
+            },
+            "type": "trit"
+          },
+          {
+            "index": 113,
+            "name": "r113",
+            "source": {
+              "column": 13,
+              "line": 213,
+              "offset": 3831
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 114,
+            "name": "r114",
+            "source": {
+              "column": 43,
+              "line": 215,
+              "offset": 3885
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 115,
+            "name": "r115",
+            "source": {
+              "column": 42,
+              "line": 215,
+              "offset": 3884
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 116,
+            "name": "r116",
+            "source": {
+              "column": 11,
+              "line": 215,
+              "offset": 3853
+            },
+            "type": "trit"
+          },
+          {
+            "index": 117,
+            "name": "r117",
+            "source": {
+              "column": 51,
+              "line": 215,
+              "offset": 3893
+            },
+            "type": "trit"
+          },
+          {
+            "index": 118,
+            "name": "r118",
+            "source": {
+              "column": 50,
+              "line": 215,
+              "offset": 3892
+            },
+            "type": "trit"
+          },
+          {
+            "index": 119,
+            "name": "r119",
+            "source": {
+              "column": 46,
+              "line": 215,
+              "offset": 3888
+            },
+            "type": "trit"
+          },
+          {
+            "index": 120,
+            "name": "r120",
+            "source": {
+              "column": 22,
+              "line": 217,
+              "offset": 3929
+            },
+            "type": "trit"
+          },
+          {
+            "index": 121,
+            "name": "r121",
+            "source": {
+              "column": 13,
+              "line": 217,
+              "offset": 3920
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 122,
+            "name": "r122",
+            "source": {
+              "column": 22,
+              "line": 220,
+              "offset": 3964
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 123,
+            "name": "r123",
+            "source": {
+              "column": 22,
+              "line": 220,
+              "offset": 3964
+            },
+            "type": "trit"
+          },
+          {
+            "index": 124,
+            "name": "r124",
+            "source": {
+              "column": 13,
+              "line": 220,
+              "offset": 3955
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 125,
+            "name": "r125",
+            "source": {
+              "column": 22,
+              "line": 223,
+              "offset": 4004
+            },
+            "type": "trit"
+          },
+          {
+            "index": 126,
+            "name": "r126",
+            "source": {
+              "column": 13,
+              "line": 223,
+              "offset": 3995
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 127,
+            "name": "r127",
+            "source": {
+              "column": 39,
+              "line": 225,
+              "offset": 4045
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 128,
+            "name": "r128",
+            "source": {
+              "column": 11,
+              "line": 225,
+              "offset": 4017
+            },
+            "type": "trit"
+          },
+          {
+            "index": 129,
+            "name": "r129",
+            "source": {
+              "column": 70,
+              "line": 225,
+              "offset": 4076
+            },
+            "type": "trit"
+          },
+          {
+            "index": 130,
+            "name": "r130",
+            "source": {
+              "column": 66,
+              "line": 225,
+              "offset": 4072
+            },
+            "type": "trit"
+          },
+          {
+            "index": 131,
+            "name": "r131",
+            "source": {
+              "column": 22,
+              "line": 227,
+              "offset": 4112
+            },
+            "type": "trit"
+          },
+          {
+            "index": 132,
+            "name": "r132",
+            "source": {
+              "column": 13,
+              "line": 227,
+              "offset": 4103
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 133,
+            "name": "r133",
+            "source": {
+              "column": 22,
+              "line": 230,
+              "offset": 4147
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 134,
+            "name": "r134",
+            "source": {
+              "column": 22,
+              "line": 230,
+              "offset": 4147
+            },
+            "type": "trit"
+          },
+          {
+            "index": 135,
+            "name": "r135",
+            "source": {
+              "column": 13,
+              "line": 230,
+              "offset": 4138
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 136,
+            "name": "r136",
+            "source": {
+              "column": 22,
+              "line": 233,
+              "offset": 4187
+            },
+            "type": "trit"
+          },
+          {
+            "index": 137,
+            "name": "r137",
+            "source": {
+              "column": 13,
+              "line": 233,
+              "offset": 4178
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 138,
+            "name": "r138",
+            "source": {
+              "column": 39,
+              "line": 235,
+              "offset": 4228
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 139,
+            "name": "r139",
+            "source": {
+              "column": 11,
+              "line": 235,
+              "offset": 4200
+            },
+            "type": "trit"
+          },
+          {
+            "index": 140,
+            "name": "r140",
+            "source": {
+              "column": 47,
+              "line": 235,
+              "offset": 4236
+            },
+            "type": "trit"
+          },
+          {
+            "index": 141,
+            "name": "r141",
+            "source": {
+              "column": 46,
+              "line": 235,
+              "offset": 4235
+            },
+            "type": "trit"
+          },
+          {
+            "index": 142,
+            "name": "r142",
+            "source": {
+              "column": 42,
+              "line": 235,
+              "offset": 4231
+            },
+            "type": "trit"
+          },
+          {
+            "index": 143,
+            "name": "r143",
+            "source": {
+              "column": 22,
+              "line": 237,
+              "offset": 4272
+            },
+            "type": "trit"
+          },
+          {
+            "index": 144,
+            "name": "r144",
+            "source": {
+              "column": 13,
+              "line": 237,
+              "offset": 4263
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 145,
+            "name": "r145",
+            "source": {
+              "column": 22,
+              "line": 240,
+              "offset": 4307
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 146,
+            "name": "r146",
+            "source": {
+              "column": 22,
+              "line": 240,
+              "offset": 4307
+            },
+            "type": "trit"
+          },
+          {
+            "index": 147,
+            "name": "r147",
+            "source": {
+              "column": 13,
+              "line": 240,
+              "offset": 4298
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 148,
+            "name": "r148",
+            "source": {
+              "column": 22,
+              "line": 243,
+              "offset": 4347
+            },
+            "type": "trit"
+          },
+          {
+            "index": 149,
+            "name": "r149",
+            "source": {
+              "column": 13,
+              "line": 243,
+              "offset": 4338
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 150,
+            "name": "r150",
+            "source": {
+              "column": 12,
+              "line": 245,
+              "offset": 4361
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 151,
+            "name": "r151",
+            "source": {
+              "column": 12,
+              "line": 245,
+              "offset": 4361
             },
             "type": "trit"
           }
@@ -1997,8 +6965,8 @@
         "return_type": "trit",
         "source": {
           "column": 1,
-          "line": 52,
-          "offset": 1022
+          "line": 102,
+          "offset": 2003
         }
       },
       {
@@ -2011,8 +6979,8 @@
                 "result": "r0",
                 "source": {
                   "column": 12,
-                  "line": 104,
-                  "offset": 2657
+                  "line": 248,
+                  "offset": 4420
                 }
               },
               {
@@ -2022,16 +6990,16 @@
                 ],
                 "source": {
                   "column": 5,
-                  "line": 104,
-                  "offset": 2650
+                  "line": 248,
+                  "offset": 4413
                 }
               }
             ],
             "name": "entry",
             "source": {
               "column": 5,
-              "line": 104,
-              "offset": 2650
+              "line": 248,
+              "offset": 4413
             }
           }
         ],
@@ -2044,8 +7012,8 @@
             "name": "r0",
             "source": {
               "column": 12,
-              "line": 104,
-              "offset": 2657
+              "line": 248,
+              "offset": 4420
             },
             "type": "trit"
           }
@@ -2053,8 +7021,8 @@
         "return_type": "trit",
         "source": {
           "column": 1,
-          "line": 103,
-          "offset": 2606
+          "line": 247,
+          "offset": 4369
         }
       },
       {
@@ -2067,8 +7035,8 @@
                 "result": "r0",
                 "source": {
                   "column": 12,
-                  "line": 107,
-                  "offset": 2726
+                  "line": 251,
+                  "offset": 4489
                 }
               },
               {
@@ -2078,16 +7046,16 @@
                 ],
                 "source": {
                   "column": 5,
-                  "line": 107,
-                  "offset": 2719
+                  "line": 251,
+                  "offset": 4482
                 }
               }
             ],
             "name": "entry",
             "source": {
               "column": 5,
-              "line": 107,
-              "offset": 2719
+              "line": 251,
+              "offset": 4482
             }
           }
         ],
@@ -2100,8 +7068,8 @@
             "name": "r0",
             "source": {
               "column": 12,
-              "line": 107,
-              "offset": 2726
+              "line": 251,
+              "offset": 4489
             },
             "type": "trit"
           }
@@ -2109,8 +7077,8 @@
         "return_type": "trit",
         "source": {
           "column": 1,
-          "line": 106,
-          "offset": 2696
+          "line": 250,
+          "offset": 4459
         }
       }
     ]

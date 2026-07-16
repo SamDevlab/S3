@@ -93,6 +93,26 @@
       }
     }
   },
+  "candidate_symbol_predicates": {
+    "directive_function": "renderer_supports_directive_id",
+    "opcode_function": "renderer_supports_opcode_id",
+    "supported_return": 1,
+    "unsupported_return": -1
+  },
+  "candidate_symbol_ranges": {
+    "directives": {
+      "first_function": "renderer_first_directive_id",
+      "first_id": 0,
+      "last_function": "renderer_last_directive_id",
+      "last_id": 5
+    },
+    "opcodes": {
+      "first_function": "renderer_first_opcode_id",
+      "first_id": 0,
+      "last_function": "renderer_last_opcode_id",
+      "last_id": 7
+    }
+  },
   "comparison": {
     "reason": "S3 renderer is not implemented",
     "status": "blocked"

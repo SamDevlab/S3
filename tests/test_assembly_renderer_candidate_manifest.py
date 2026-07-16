@@ -76,6 +76,51 @@ def test_assembly_renderer_candidate_manifest_smoke_matches_stub() -> None:
     assert "renderer_directive_s3asm_id()" in source
     assert "renderer_opcode_tadd_id()" in source
     assert "renderer_opcode_tret_id()" in source
+    assert "renderer_first_directive_id()" in source
+    assert "renderer_last_directive_id()" in source
+    assert "renderer_first_opcode_id()" in source
+    assert "renderer_last_opcode_id()" in source
+    assert "renderer_supports_directive_id(" in source
+    assert "renderer_supports_opcode_id(" in source
+
+
+def test_assembly_renderer_candidate_manifest_symbol_ranges_match_subset() -> None:
+    data = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    subset = json.loads(SUBSET_MANIFEST_PATH.read_text(encoding="utf-8"))
+    source = STUB_PATH.read_text(encoding="utf-8")
+    ranges = data["candidate_symbol_ranges"]
+
+    assert ranges["directives"] == {
+        "first_function": "renderer_first_directive_id",
+        "first_id": 0,
+        "last_function": "renderer_last_directive_id",
+        "last_id": len(subset["directives"]) - 1,
+    }
+    assert ranges["opcodes"] == {
+        "first_function": "renderer_first_opcode_id",
+        "first_id": 0,
+        "last_function": "renderer_last_opcode_id",
+        "last_id": len(subset["opcodes"]) - 1,
+    }
+    assert "fn renderer_first_directive_id() -> tryte:\n    return 0" in source
+    assert "fn renderer_last_directive_id() -> tryte:\n    return 5" in source
+    assert "fn renderer_first_opcode_id() -> tryte:\n    return 0" in source
+    assert "fn renderer_last_opcode_id() -> tryte:\n    return 7" in source
+
+
+def test_assembly_renderer_candidate_manifest_symbol_predicates_match_stub() -> None:
+    data = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    source = STUB_PATH.read_text(encoding="utf-8")
+    predicates = data["candidate_symbol_predicates"]
+
+    assert predicates == {
+        "directive_function": "renderer_supports_directive_id",
+        "opcode_function": "renderer_supports_opcode_id",
+        "supported_return": 1,
+        "unsupported_return": -1,
+    }
+    assert "fn renderer_supports_directive_id(id: tryte) -> trit:" in source
+    assert "fn renderer_supports_opcode_id(id: tryte) -> trit:" in source
 
 
 def test_assembly_renderer_candidate_manifest_symbol_ids_match_subset() -> None:

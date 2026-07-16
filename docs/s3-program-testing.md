@@ -33,8 +33,8 @@ compile, but they do not need to implement the final component yet.
 The Assembly renderer candidate stub exposes `renderer_candidate_status()` as a
 minimal status API; its stub value does not mean the renderer is implemented.
 That status delegates to `renderer_candidate_capability_smoke()`, a hosted
-assertion smoke that reaches scalar count and selected ID functions while still
-returning `-1` for the stub state.
+assertion smoke that reaches scalar count, selected ID, range, and support
+predicate functions while still returning `-1` for the stub state.
 `tools/compare_assembly_renderer.py --candidate-run` executes that stub through
 the hosted path and confirms that `main` still returns `-1`.
 `tools/s3_program_check.py check` also executes that stub because its inventory
@@ -57,3 +57,7 @@ counts only; `compare_assembly_renderer.py --check` remains blocked.
 It also exposes scalar ID functions for each supported directive and opcode.
 Those IDs are deterministic constants that follow the subset manifest order;
 they are not Assembly rendering.
+
+The stub also declares scalar first/last ID ranges for directives and opcodes,
+plus scalar support predicates for those ID ranges. These APIs are metadata for
+the candidate stub and do not make the renderer implemented.

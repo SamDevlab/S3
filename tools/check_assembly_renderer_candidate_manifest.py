@@ -24,6 +24,7 @@ REQUIRED_KEYS = {
     "candidate_capabilities",
     "candidate_execution",
     "candidate_symbol_ids",
+    "candidate_symbol_ranges",
     "candidate_smoke",
     "component",
     "s3_candidate",
@@ -41,11 +42,23 @@ EXPECTED_EXECUTION_MODE = "hosted"
 EXPECTED_STUB_STATUS = -1
 EXPECTED_DIRECTIVE_COUNT_FUNCTION = "renderer_supported_directive_count"
 EXPECTED_OPCODE_COUNT_FUNCTION = "renderer_supported_opcode_count"
+EXPECTED_DIRECTIVE_FIRST_FUNCTION = "renderer_first_directive_id"
+EXPECTED_DIRECTIVE_LAST_FUNCTION = "renderer_last_directive_id"
+EXPECTED_OPCODE_FIRST_FUNCTION = "renderer_first_opcode_id"
+EXPECTED_OPCODE_LAST_FUNCTION = "renderer_last_opcode_id"
+EXPECTED_DIRECTIVE_PREDICATE_FUNCTION = "renderer_supports_directive_id"
+EXPECTED_OPCODE_PREDICATE_FUNCTION = "renderer_supports_opcode_id"
 EXPECTED_SMOKE_FUNCTION = "renderer_candidate_capability_smoke"
 EXPECTED_SMOKE_KINDS = {"hosted_reachability", "hosted_assertion"}
 EXPECTED_SMOKE_CALLS = (
     "renderer_supported_directive_count",
     "renderer_supported_opcode_count",
+    "renderer_first_directive_id",
+    "renderer_last_directive_id",
+    "renderer_first_opcode_id",
+    "renderer_last_opcode_id",
+    "renderer_supports_directive_id",
+    "renderer_supports_opcode_id",
     "renderer_directive_end_id",
     "renderer_directive_s3asm_id",
     "renderer_opcode_tadd_id",
@@ -160,6 +173,23 @@ def _validate_stub_capability(
         )
 
 
+def _validate_stub_function(
+    source: str,
+    function_name: str,
+    parameter_text: str,
+    return_type: str,
+) -> None:
+    pattern = (
+        rf"(?m)^fn\s+{re.escape(function_name)}"
+        r"\s*\(\s*"
+        rf"{re.escape(parameter_text)}"
+        r"\s*\)\s*->\s*"
+        rf"{re.escape(return_type)}\s*:"
+    )
+    if re.search(pattern, source) is None:
+        raise ValueError(f"candidate stub missing {function_name} function")
+
+
 def _directive_symbol_function_name(symbol: str) -> str:
     name = symbol[1:] if symbol.startswith(".") else symbol
     return f"renderer_directive_{name.replace('.', '_')}_id"
@@ -223,6 +253,96 @@ def _validate_symbol_ids(
             expected_id,
             f"{key} {symbol} ID",
         )
+
+
+def _validate_symbol_ranges(
+    data: dict[str, object],
+    directive_count: int,
+    opcode_count: int,
+    candidate_source: str,
+) -> None:
+    ranges = _object(data, "candidate_symbol_ranges")
+    directive_ranges = _object(ranges, "directives")
+    opcode_ranges = _object(ranges, "opcodes")
+    expected_ranges = (
+        (
+            directive_ranges,
+            EXPECTED_DIRECTIVE_FIRST_FUNCTION,
+            0,
+            EXPECTED_DIRECTIVE_LAST_FUNCTION,
+            directive_count - 1,
+            "directive",
+        ),
+        (
+            opcode_ranges,
+            EXPECTED_OPCODE_FIRST_FUNCTION,
+            0,
+            EXPECTED_OPCODE_LAST_FUNCTION,
+            opcode_count - 1,
+            "opcode",
+        ),
+    )
+
+    for (
+        range_data,
+        first_function,
+        first_id,
+        last_function,
+        last_id,
+        label,
+    ) in expected_ranges:
+        if _string(range_data, "first_function") != first_function:
+            raise ValueError(f"candidate {label} first range function mismatch")
+        if _integer(range_data, "first_id") != first_id:
+            raise ValueError(f"candidate {label} first ID must be {first_id}")
+        if _string(range_data, "last_function") != last_function:
+            raise ValueError(f"candidate {label} last range function mismatch")
+        if _integer(range_data, "last_id") != last_id:
+            raise ValueError(f"candidate {label} last ID must be {last_id}")
+
+        _validate_stub_capability(
+            candidate_source,
+            first_function,
+            first_id,
+            f"{label} first ID range",
+        )
+        _validate_stub_capability(
+            candidate_source,
+            last_function,
+            last_id,
+            f"{label} last ID range",
+        )
+
+
+def _validate_symbol_predicates(
+    data: dict[str, object],
+    candidate_source: str,
+) -> None:
+    value = data.get("candidate_symbol_predicates")
+    if value is None:
+        return
+    if not isinstance(value, dict):
+        raise ValueError("candidate manifest candidate_symbol_predicates must be an object")
+
+    directive_function = _string(value, "directive_function")
+    if directive_function != EXPECTED_DIRECTIVE_PREDICATE_FUNCTION:
+        raise ValueError(
+            "candidate directive support predicate must be "
+            f"{EXPECTED_DIRECTIVE_PREDICATE_FUNCTION}"
+        )
+    opcode_function = _string(value, "opcode_function")
+    if opcode_function != EXPECTED_OPCODE_PREDICATE_FUNCTION:
+        raise ValueError(
+            "candidate opcode support predicate must be "
+            f"{EXPECTED_OPCODE_PREDICATE_FUNCTION}"
+        )
+    if _integer(value, "supported_return") != 1:
+        raise ValueError("candidate support predicate supported_return must be 1")
+    if _integer(value, "unsupported_return") != EXPECTED_STUB_STATUS:
+        raise ValueError("candidate support predicate unsupported_return must be -1")
+
+    _validate_stub_function(candidate_source, directive_function, "id: tryte", "trit")
+    _validate_stub_function(candidate_source, opcode_function, "id: tryte", "trit")
 
 
 def _required_string_array(data: dict[str, object], key: str) -> list[str]:
@@ -345,6 +465,13 @@ def _validate_manifest(data: dict[str, object], text: str) -> None:
         opcode_count,
         "opcode count",
     )
+    _validate_symbol_ranges(
+        data,
+        directive_count,
+        opcode_count,
+        candidate_source,
+    )
+    _validate_symbol_predicates(data, candidate_source)
     _validate_stub_smoke(candidate_source)
     candidate_symbol_ids = _object(data, "candidate_symbol_ids")
     _validate_symbol_ids(
