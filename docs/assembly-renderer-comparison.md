@@ -42,6 +42,13 @@ golden for that export at
 table text against accidental drift; it does not make the S3 renderer
 implemented.
 
+`python tools/check_assembly_renderer_candidate_readiness.py` is the single
+readiness gate for the candidate stub. It validates the candidate manifest, the
+symbol export golden, the hosted `s3_program_check.py check` opt-in, the
+`--candidate`, `--candidate-symbols`, and `--candidate-run` modes, and the
+expected blocked result from `--check`. This gate keeps the candidate
+consistent; it does not implement rendering.
+
 `python tools/compare_assembly_renderer.py --candidate-run` executes the
 candidate stub through the hosted path and expects `main` to return `-1`. This
 uses the same registered stub entry as `tools/s3_program_check.py check`, so the
