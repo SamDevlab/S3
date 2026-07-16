@@ -27,6 +27,10 @@ GOLDEN_CASES = (
     GoldenCase("first", REPO_ROOT / "examples" / "first.s3"),
     GoldenCase("simple_call", REPO_ROOT / "examples" / "simple_call.s3"),
     GoldenCase("sign", REPO_ROOT / "examples" / "sign.s3"),
+    GoldenCase(
+        "assembly_renderer_stub",
+        REPO_ROOT / "examples" / "self_hosting" / "assembly_renderer_stub.s3",
+    ),
 )
 
 
