@@ -26,6 +26,11 @@
     "mode": "hosted"
   },
   "candidate_manifest_version": "1.0.0",
+  "candidate_smoke": {
+    "expected_return": -1,
+    "function": "renderer_candidate_capability_smoke",
+    "kind": "hosted_assertion"
+  },
   "candidate_symbol_ids": {
     "directives": {
       ".end": {

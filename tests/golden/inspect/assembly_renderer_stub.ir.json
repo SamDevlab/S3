@@ -902,68 +902,1094 @@
           {
             "instructions": [
               {
-                "immediate": 1,
-                "opcode": "const",
+                "callee": "renderer_supported_directive_count",
+                "opcode": "call",
                 "result": "r0",
                 "source": {
-                  "column": 13,
+                  "column": 11,
                   "line": 53,
-                  "offset": 1074
+                  "offset": 1082
                 }
               },
               {
-                "opcode": "invert",
-                "operands": [
-                  "r0"
-                ],
+                "immediate": 6,
+                "opcode": "const",
                 "result": "r1",
                 "source": {
-                  "column": 12,
+                  "column": 52,
                   "line": 53,
-                  "offset": 1073
+                  "offset": 1123
                 }
               },
               {
-                "opcode": "return",
+                "opcode": "compare",
                 "operands": [
+                  "r0",
                   "r1"
+                ],
+                "result": "r2",
+                "source": {
+                  "column": 48,
+                  "line": 53,
+                  "offset": 1119
+                }
+              },
+              {
+                "opcode": "branch3",
+                "operands": [
+                  "r2"
                 ],
                 "source": {
                   "column": 5,
                   "line": 53,
-                  "offset": 1066
-                }
+                  "offset": 1076
+                },
+                "targets": [
+                  "switch_negative_0",
+                  "switch_neutral_1",
+                  "switch_positive_2"
+                ]
               }
             ],
             "name": "entry",
             "source": {
               "column": 5,
               "line": 53,
-              "offset": 1066
+              "offset": 1076
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r3",
+                "source": {
+                  "column": 20,
+                  "line": 55,
+                  "offset": 1157
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r3"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 55,
+                  "offset": 1150
+                }
+              }
+            ],
+            "name": "switch_negative_0",
+            "source": {
+              "column": 9,
+              "line": 54,
+              "offset": 1134
+            }
+          },
+          {
+            "instructions": [
+              {
+                "callee": "renderer_supported_opcode_count",
+                "opcode": "call",
+                "result": "r4",
+                "source": {
+                  "column": 19,
+                  "line": 58,
+                  "offset": 1189
+                }
+              },
+              {
+                "immediate": 8,
+                "opcode": "const",
+                "result": "r5",
+                "source": {
+                  "column": 57,
+                  "line": 58,
+                  "offset": 1227
+                }
+              },
+              {
+                "opcode": "compare",
+                "operands": [
+                  "r4",
+                  "r5"
+                ],
+                "result": "r6",
+                "source": {
+                  "column": 53,
+                  "line": 58,
+                  "offset": 1223
+                }
+              },
+              {
+                "opcode": "branch3",
+                "operands": [
+                  "r6"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 58,
+                  "offset": 1183
+                },
+                "targets": [
+                  "switch_negative_3",
+                  "switch_neutral_4",
+                  "switch_positive_5"
+                ]
+              }
+            ],
+            "name": "switch_neutral_1",
+            "source": {
+              "column": 9,
+              "line": 57,
+              "offset": 1168
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r31",
+                "source": {
+                  "column": 20,
+                  "line": 101,
+                  "offset": 2603
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r31"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 101,
+                  "offset": 2596
+                }
+              }
+            ],
+            "name": "switch_positive_2",
+            "source": {
+              "column": 9,
+              "line": 100,
+              "offset": 2581
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r7",
+                "source": {
+                  "column": 28,
+                  "line": 60,
+                  "offset": 1277
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r7"
+                ],
+                "source": {
+                  "column": 21,
+                  "line": 60,
+                  "offset": 1270
+                }
+              }
+            ],
+            "name": "switch_negative_3",
+            "source": {
+              "column": 17,
+              "line": 59,
+              "offset": 1246
+            }
+          },
+          {
+            "instructions": [
+              {
+                "callee": "renderer_directive_end_id",
+                "opcode": "call",
+                "result": "r8",
+                "source": {
+                  "column": 27,
+                  "line": 63,
+                  "offset": 1325
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r9",
+                "source": {
+                  "column": 59,
+                  "line": 63,
+                  "offset": 1357
+                }
+              },
+              {
+                "opcode": "compare",
+                "operands": [
+                  "r8",
+                  "r9"
+                ],
+                "result": "r10",
+                "source": {
+                  "column": 55,
+                  "line": 63,
+                  "offset": 1353
+                }
+              },
+              {
+                "opcode": "branch3",
+                "operands": [
+                  "r10"
+                ],
+                "source": {
+                  "column": 21,
+                  "line": 63,
+                  "offset": 1319
+                },
+                "targets": [
+                  "switch_negative_6",
+                  "switch_neutral_7",
+                  "switch_positive_8"
+                ]
+              }
+            ],
+            "name": "switch_neutral_4",
+            "source": {
+              "column": 17,
+              "line": 62,
+              "offset": 1296
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r30",
+                "source": {
+                  "column": 28,
+                  "line": 98,
+                  "offset": 2570
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r30"
+                ],
+                "source": {
+                  "column": 21,
+                  "line": 98,
+                  "offset": 2563
+                }
+              }
+            ],
+            "name": "switch_positive_5",
+            "source": {
+              "column": 17,
+              "line": 97,
+              "offset": 2540
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r11",
+                "source": {
+                  "column": 36,
+                  "line": 65,
+                  "offset": 1423
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r11"
+                ],
+                "source": {
+                  "column": 29,
+                  "line": 65,
+                  "offset": 1416
+                }
+              }
+            ],
+            "name": "switch_negative_6",
+            "source": {
+              "column": 25,
+              "line": 64,
+              "offset": 1384
+            }
+          },
+          {
+            "instructions": [
+              {
+                "callee": "renderer_directive_s3asm_id",
+                "opcode": "call",
+                "result": "r12",
+                "source": {
+                  "column": 35,
+                  "line": 68,
+                  "offset": 1487
+                }
+              },
+              {
+                "immediate": 5,
+                "opcode": "const",
+                "result": "r13",
+                "source": {
+                  "column": 69,
+                  "line": 68,
+                  "offset": 1521
+                }
+              },
+              {
+                "opcode": "compare",
+                "operands": [
+                  "r12",
+                  "r13"
+                ],
+                "result": "r14",
+                "source": {
+                  "column": 65,
+                  "line": 68,
+                  "offset": 1517
+                }
+              },
+              {
+                "opcode": "branch3",
+                "operands": [
+                  "r14"
+                ],
+                "source": {
+                  "column": 29,
+                  "line": 68,
+                  "offset": 1481
+                },
+                "targets": [
+                  "switch_negative_9",
+                  "switch_neutral_10",
+                  "switch_positive_11"
+                ]
+              }
+            ],
+            "name": "switch_neutral_7",
+            "source": {
+              "column": 25,
+              "line": 67,
+              "offset": 1450
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r29",
+                "source": {
+                  "column": 36,
+                  "line": 95,
+                  "offset": 2521
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r29"
+                ],
+                "source": {
+                  "column": 29,
+                  "line": 95,
+                  "offset": 2514
+                }
+              }
+            ],
+            "name": "switch_positive_8",
+            "source": {
+              "column": 25,
+              "line": 94,
+              "offset": 2483
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r15",
+                "source": {
+                  "column": 44,
+                  "line": 70,
+                  "offset": 1603
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r15"
+                ],
+                "source": {
+                  "column": 37,
+                  "line": 70,
+                  "offset": 1596
+                }
+              }
+            ],
+            "name": "switch_negative_9",
+            "source": {
+              "column": 33,
+              "line": 69,
+              "offset": 1556
+            }
+          },
+          {
+            "instructions": [
+              {
+                "callee": "renderer_opcode_tadd_id",
+                "opcode": "call",
+                "result": "r16",
+                "source": {
+                  "column": 43,
+                  "line": 73,
+                  "offset": 1683
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r17",
+                "source": {
+                  "column": 73,
+                  "line": 73,
+                  "offset": 1713
+                }
+              },
+              {
+                "opcode": "compare",
+                "operands": [
+                  "r16",
+                  "r17"
+                ],
+                "result": "r18",
+                "source": {
+                  "column": 69,
+                  "line": 73,
+                  "offset": 1709
+                }
+              },
+              {
+                "opcode": "branch3",
+                "operands": [
+                  "r18"
+                ],
+                "source": {
+                  "column": 37,
+                  "line": 73,
+                  "offset": 1677
+                },
+                "targets": [
+                  "switch_negative_12",
+                  "switch_neutral_13",
+                  "switch_positive_14"
+                ]
+              }
+            ],
+            "name": "switch_neutral_10",
+            "source": {
+              "column": 33,
+              "line": 72,
+              "offset": 1638
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r28",
+                "source": {
+                  "column": 44,
+                  "line": 92,
+                  "offset": 2456
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r28"
+                ],
+                "source": {
+                  "column": 37,
+                  "line": 92,
+                  "offset": 2449
+                }
+              }
+            ],
+            "name": "switch_positive_11",
+            "source": {
+              "column": 33,
+              "line": 91,
+              "offset": 2410
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r19",
+                "source": {
+                  "column": 52,
+                  "line": 75,
+                  "offset": 1811
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r19"
+                ],
+                "source": {
+                  "column": 45,
+                  "line": 75,
+                  "offset": 1804
+                }
+              }
+            ],
+            "name": "switch_negative_12",
+            "source": {
+              "column": 41,
+              "line": 74,
+              "offset": 1756
+            }
+          },
+          {
+            "instructions": [
+              {
+                "callee": "renderer_opcode_tret_id",
+                "opcode": "call",
+                "result": "r20",
+                "source": {
+                  "column": 51,
+                  "line": 78,
+                  "offset": 1907
+                }
+              },
+              {
+                "immediate": 7,
+                "opcode": "const",
+                "result": "r21",
+                "source": {
+                  "column": 81,
+                  "line": 78,
+                  "offset": 1937
+                }
+              },
+              {
+                "opcode": "compare",
+                "operands": [
+                  "r20",
+                  "r21"
+                ],
+                "result": "r22",
+                "source": {
+                  "column": 77,
+                  "line": 78,
+                  "offset": 1933
+                }
+              },
+              {
+                "opcode": "branch3",
+                "operands": [
+                  "r22"
+                ],
+                "source": {
+                  "column": 45,
+                  "line": 78,
+                  "offset": 1901
+                },
+                "targets": [
+                  "switch_negative_15",
+                  "switch_neutral_16",
+                  "switch_positive_17"
+                ]
+              }
+            ],
+            "name": "switch_neutral_13",
+            "source": {
+              "column": 41,
+              "line": 77,
+              "offset": 1854
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r27",
+                "source": {
+                  "column": 52,
+                  "line": 89,
+                  "offset": 2375
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r27"
+                ],
+                "source": {
+                  "column": 45,
+                  "line": 89,
+                  "offset": 2368
+                }
+              }
+            ],
+            "name": "switch_positive_14",
+            "source": {
+              "column": 41,
+              "line": 88,
+              "offset": 2321
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r23",
+                "source": {
+                  "column": 60,
+                  "line": 80,
+                  "offset": 2051
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r23"
+                ],
+                "source": {
+                  "column": 53,
+                  "line": 80,
+                  "offset": 2044
+                }
+              }
+            ],
+            "name": "switch_negative_15",
+            "source": {
+              "column": 49,
+              "line": 79,
+              "offset": 1988
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 1,
+                "opcode": "const",
+                "result": "r24",
+                "source": {
+                  "column": 61,
+                  "line": 83,
+                  "offset": 2165
+                }
+              },
+              {
+                "opcode": "invert",
+                "operands": [
+                  "r24"
+                ],
+                "result": "r25",
+                "source": {
+                  "column": 60,
+                  "line": 83,
+                  "offset": 2164
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r25"
+                ],
+                "source": {
+                  "column": 53,
+                  "line": 83,
+                  "offset": 2157
+                }
+              }
+            ],
+            "name": "switch_neutral_16",
+            "source": {
+              "column": 49,
+              "line": 82,
+              "offset": 2102
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r26",
+                "source": {
+                  "column": 60,
+                  "line": 86,
+                  "offset": 2278
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r26"
+                ],
+                "source": {
+                  "column": 53,
+                  "line": 86,
+                  "offset": 2271
+                }
+              }
+            ],
+            "name": "switch_positive_17",
+            "source": {
+              "column": 49,
+              "line": 85,
+              "offset": 2216
             }
           }
         ],
         "memory_objects": [],
-        "name": "renderer_candidate_status",
+        "name": "renderer_candidate_capability_smoke",
         "parameters": [],
         "registers": [
           {
             "index": 0,
             "name": "r0",
             "source": {
-              "column": 13,
+              "column": 11,
               "line": 53,
-              "offset": 1074
+              "offset": 1082
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 1,
             "name": "r1",
             "source": {
-              "column": 12,
+              "column": 52,
               "line": 53,
-              "offset": 1073
+              "offset": 1123
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 2,
+            "name": "r2",
+            "source": {
+              "column": 48,
+              "line": 53,
+              "offset": 1119
+            },
+            "type": "trit"
+          },
+          {
+            "index": 3,
+            "name": "r3",
+            "source": {
+              "column": 20,
+              "line": 55,
+              "offset": 1157
+            },
+            "type": "trit"
+          },
+          {
+            "index": 4,
+            "name": "r4",
+            "source": {
+              "column": 19,
+              "line": 58,
+              "offset": 1189
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 5,
+            "name": "r5",
+            "source": {
+              "column": 57,
+              "line": 58,
+              "offset": 1227
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 6,
+            "name": "r6",
+            "source": {
+              "column": 53,
+              "line": 58,
+              "offset": 1223
+            },
+            "type": "trit"
+          },
+          {
+            "index": 7,
+            "name": "r7",
+            "source": {
+              "column": 28,
+              "line": 60,
+              "offset": 1277
+            },
+            "type": "trit"
+          },
+          {
+            "index": 8,
+            "name": "r8",
+            "source": {
+              "column": 27,
+              "line": 63,
+              "offset": 1325
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 9,
+            "name": "r9",
+            "source": {
+              "column": 59,
+              "line": 63,
+              "offset": 1357
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 10,
+            "name": "r10",
+            "source": {
+              "column": 55,
+              "line": 63,
+              "offset": 1353
+            },
+            "type": "trit"
+          },
+          {
+            "index": 11,
+            "name": "r11",
+            "source": {
+              "column": 36,
+              "line": 65,
+              "offset": 1423
+            },
+            "type": "trit"
+          },
+          {
+            "index": 12,
+            "name": "r12",
+            "source": {
+              "column": 35,
+              "line": 68,
+              "offset": 1487
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 13,
+            "name": "r13",
+            "source": {
+              "column": 69,
+              "line": 68,
+              "offset": 1521
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 14,
+            "name": "r14",
+            "source": {
+              "column": 65,
+              "line": 68,
+              "offset": 1517
+            },
+            "type": "trit"
+          },
+          {
+            "index": 15,
+            "name": "r15",
+            "source": {
+              "column": 44,
+              "line": 70,
+              "offset": 1603
+            },
+            "type": "trit"
+          },
+          {
+            "index": 16,
+            "name": "r16",
+            "source": {
+              "column": 43,
+              "line": 73,
+              "offset": 1683
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 17,
+            "name": "r17",
+            "source": {
+              "column": 73,
+              "line": 73,
+              "offset": 1713
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 18,
+            "name": "r18",
+            "source": {
+              "column": 69,
+              "line": 73,
+              "offset": 1709
+            },
+            "type": "trit"
+          },
+          {
+            "index": 19,
+            "name": "r19",
+            "source": {
+              "column": 52,
+              "line": 75,
+              "offset": 1811
+            },
+            "type": "trit"
+          },
+          {
+            "index": 20,
+            "name": "r20",
+            "source": {
+              "column": 51,
+              "line": 78,
+              "offset": 1907
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 21,
+            "name": "r21",
+            "source": {
+              "column": 81,
+              "line": 78,
+              "offset": 1937
+            },
+            "type": "tryte"
+          },
+          {
+            "index": 22,
+            "name": "r22",
+            "source": {
+              "column": 77,
+              "line": 78,
+              "offset": 1933
+            },
+            "type": "trit"
+          },
+          {
+            "index": 23,
+            "name": "r23",
+            "source": {
+              "column": 60,
+              "line": 80,
+              "offset": 2051
+            },
+            "type": "trit"
+          },
+          {
+            "index": 24,
+            "name": "r24",
+            "source": {
+              "column": 61,
+              "line": 83,
+              "offset": 2165
+            },
+            "type": "trit"
+          },
+          {
+            "index": 25,
+            "name": "r25",
+            "source": {
+              "column": 60,
+              "line": 83,
+              "offset": 2164
+            },
+            "type": "trit"
+          },
+          {
+            "index": 26,
+            "name": "r26",
+            "source": {
+              "column": 60,
+              "line": 86,
+              "offset": 2278
+            },
+            "type": "trit"
+          },
+          {
+            "index": 27,
+            "name": "r27",
+            "source": {
+              "column": 52,
+              "line": 89,
+              "offset": 2375
+            },
+            "type": "trit"
+          },
+          {
+            "index": 28,
+            "name": "r28",
+            "source": {
+              "column": 44,
+              "line": 92,
+              "offset": 2456
+            },
+            "type": "trit"
+          },
+          {
+            "index": 29,
+            "name": "r29",
+            "source": {
+              "column": 36,
+              "line": 95,
+              "offset": 2521
+            },
+            "type": "trit"
+          },
+          {
+            "index": 30,
+            "name": "r30",
+            "source": {
+              "column": 28,
+              "line": 98,
+              "offset": 2570
+            },
+            "type": "trit"
+          },
+          {
+            "index": 31,
+            "name": "r31",
+            "source": {
+              "column": 20,
+              "line": 101,
+              "offset": 2603
             },
             "type": "trit"
           }
@@ -980,13 +2006,13 @@
           {
             "instructions": [
               {
-                "callee": "renderer_candidate_status",
+                "callee": "renderer_candidate_capability_smoke",
                 "opcode": "call",
                 "result": "r0",
                 "source": {
                   "column": 12,
-                  "line": 56,
-                  "offset": 1107
+                  "line": 104,
+                  "offset": 2657
                 }
               },
               {
@@ -996,16 +2022,72 @@
                 ],
                 "source": {
                   "column": 5,
-                  "line": 56,
-                  "offset": 1100
+                  "line": 104,
+                  "offset": 2650
                 }
               }
             ],
             "name": "entry",
             "source": {
               "column": 5,
-              "line": 56,
-              "offset": 1100
+              "line": 104,
+              "offset": 2650
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "renderer_candidate_status",
+        "parameters": [],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 12,
+              "line": 104,
+              "offset": 2657
+            },
+            "type": "trit"
+          }
+        ],
+        "return_type": "trit",
+        "source": {
+          "column": 1,
+          "line": 103,
+          "offset": 2606
+        }
+      },
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "callee": "renderer_candidate_status",
+                "opcode": "call",
+                "result": "r0",
+                "source": {
+                  "column": 12,
+                  "line": 107,
+                  "offset": 2726
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r0"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 107,
+                  "offset": 2719
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 107,
+              "offset": 2719
             }
           }
         ],
@@ -1018,8 +2100,8 @@
             "name": "r0",
             "source": {
               "column": 12,
-              "line": 56,
-              "offset": 1107
+              "line": 107,
+              "offset": 2726
             },
             "type": "trit"
           }
@@ -1027,8 +2109,8 @@
         "return_type": "trit",
         "source": {
           "column": 1,
-          "line": 55,
-          "offset": 1077
+          "line": 106,
+          "offset": 2696
         }
       }
     ]

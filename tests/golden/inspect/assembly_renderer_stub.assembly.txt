@@ -112,18 +112,121 @@
     TRET   r0 ; source=50:5:1012
 .end
 
+.function renderer_candidate_capability_smoke -> trit
+    .register r0, tryte
+    .register r1, tryte
+    .register r2, trit
+    .register r3, trit
+    .register r4, tryte
+    .register r5, tryte
+    .register r6, trit
+    .register r7, trit
+    .register r8, tryte
+    .register r9, tryte
+    .register r10, trit
+    .register r11, trit
+    .register r12, tryte
+    .register r13, tryte
+    .register r14, trit
+    .register r15, trit
+    .register r16, tryte
+    .register r17, tryte
+    .register r18, trit
+    .register r19, trit
+    .register r20, tryte
+    .register r21, tryte
+    .register r22, trit
+    .register r23, trit
+    .register r24, trit
+    .register r25, trit
+    .register r26, trit
+    .register r27, trit
+    .register r28, trit
+    .register r29, trit
+    .register r30, trit
+    .register r31, trit
+.label entry
+    TCALL  r0, renderer_supported_directive_count ; source=53:11:1082
+    TCONST r1, 6 ; source=53:52:1123
+    TCMP   r2, r0, r1 ; source=53:48:1119
+    TBR3   r2, switch_negative_0, switch_neutral_1, switch_positive_2 ; source=53:5:1076
+.label switch_negative_0
+    TCONST r3, 0 ; source=55:20:1157
+    TRET   r3 ; source=55:13:1150
+.label switch_neutral_1
+    TCALL  r4, renderer_supported_opcode_count ; source=58:19:1189
+    TCONST r5, 8 ; source=58:57:1227
+    TCMP   r6, r4, r5 ; source=58:53:1223
+    TBR3   r6, switch_negative_3, switch_neutral_4, switch_positive_5 ; source=58:13:1183
+.label switch_positive_2
+    TCONST r31, 0 ; source=101:20:2603
+    TRET   r31 ; source=101:13:2596
+.label switch_negative_3
+    TCONST r7, 0 ; source=60:28:1277
+    TRET   r7 ; source=60:21:1270
+.label switch_neutral_4
+    TCALL  r8, renderer_directive_end_id ; source=63:27:1325
+    TCONST r9, 0 ; source=63:59:1357
+    TCMP   r10, r8, r9 ; source=63:55:1353
+    TBR3   r10, switch_negative_6, switch_neutral_7, switch_positive_8 ; source=63:21:1319
+.label switch_positive_5
+    TCONST r30, 0 ; source=98:28:2570
+    TRET   r30 ; source=98:21:2563
+.label switch_negative_6
+    TCONST r11, 0 ; source=65:36:1423
+    TRET   r11 ; source=65:29:1416
+.label switch_neutral_7
+    TCALL  r12, renderer_directive_s3asm_id ; source=68:35:1487
+    TCONST r13, 5 ; source=68:69:1521
+    TCMP   r14, r12, r13 ; source=68:65:1517
+    TBR3   r14, switch_negative_9, switch_neutral_10, switch_positive_11 ; source=68:29:1481
+.label switch_positive_8
+    TCONST r29, 0 ; source=95:36:2521
+    TRET   r29 ; source=95:29:2514
+.label switch_negative_9
+    TCONST r15, 0 ; source=70:44:1603
+    TRET   r15 ; source=70:37:1596
+.label switch_neutral_10
+    TCALL  r16, renderer_opcode_tadd_id ; source=73:43:1683
+    TCONST r17, 0 ; source=73:73:1713
+    TCMP   r18, r16, r17 ; source=73:69:1709
+    TBR3   r18, switch_negative_12, switch_neutral_13, switch_positive_14 ; source=73:37:1677
+.label switch_positive_11
+    TCONST r28, 0 ; source=92:44:2456
+    TRET   r28 ; source=92:37:2449
+.label switch_negative_12
+    TCONST r19, 0 ; source=75:52:1811
+    TRET   r19 ; source=75:45:1804
+.label switch_neutral_13
+    TCALL  r20, renderer_opcode_tret_id ; source=78:51:1907
+    TCONST r21, 7 ; source=78:81:1937
+    TCMP   r22, r20, r21 ; source=78:77:1933
+    TBR3   r22, switch_negative_15, switch_neutral_16, switch_positive_17 ; source=78:45:1901
+.label switch_positive_14
+    TCONST r27, 0 ; source=89:52:2375
+    TRET   r27 ; source=89:45:2368
+.label switch_negative_15
+    TCONST r23, 0 ; source=80:60:2051
+    TRET   r23 ; source=80:53:2044
+.label switch_neutral_16
+    TCONST r24, 1 ; source=83:61:2165
+    TINV   r25, r24 ; source=83:60:2164
+    TRET   r25 ; source=83:53:2157
+.label switch_positive_17
+    TCONST r26, 0 ; source=86:60:2278
+    TRET   r26 ; source=86:53:2271
+.end
+
 .function renderer_candidate_status -> trit
     .register r0, trit
-    .register r1, trit
 .label entry
-    TCONST r0, 1 ; source=53:13:1074
-    TINV   r1, r0 ; source=53:12:1073
-    TRET   r1 ; source=53:5:1066
+    TCALL  r0, renderer_candidate_capability_smoke ; source=104:12:2657
+    TRET   r0 ; source=104:5:2650
 .end
 
 .function main -> trit
     .register r0, trit
 .label entry
-    TCALL  r0, renderer_candidate_status ; source=56:12:1107
-    TRET   r0 ; source=56:5:1100
+    TCALL  r0, renderer_candidate_status ; source=107:12:2726
+    TRET   r0 ; source=107:5:2719
 .end

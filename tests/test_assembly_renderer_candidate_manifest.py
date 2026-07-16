@@ -10,6 +10,7 @@ from tools.s3_program_check import find_program
 
 MANIFEST_PATH = Path("tests/golden/assembly_renderer_candidate_manifest.json")
 SUBSET_MANIFEST_PATH = Path("tests/golden/assembly_renderer_subset_manifest.json")
+STUB_PATH = Path("examples/self_hosting/assembly_renderer_stub.s3")
 
 
 def test_assembly_renderer_candidate_manifest_is_valid() -> None:
@@ -56,6 +57,25 @@ def test_assembly_renderer_candidate_manifest_capabilities_match_subset() -> Non
     assert capabilities["expected_directive_count"] == len(subset["directives"])
     assert capabilities["opcode_count_function"] == "renderer_supported_opcode_count"
     assert capabilities["expected_opcode_count"] == len(subset["opcodes"])
+
+
+def test_assembly_renderer_candidate_manifest_smoke_matches_stub() -> None:
+    data = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    source = STUB_PATH.read_text(encoding="utf-8")
+    smoke = data["candidate_smoke"]
+
+    assert smoke == {
+        "expected_return": -1,
+        "function": "renderer_candidate_capability_smoke",
+        "kind": "hosted_assertion",
+    }
+    assert "fn renderer_candidate_capability_smoke() -> trit:" in source
+    assert "renderer_supported_directive_count()" in source
+    assert "renderer_supported_opcode_count()" in source
+    assert "renderer_directive_end_id()" in source
+    assert "renderer_directive_s3asm_id()" in source
+    assert "renderer_opcode_tadd_id()" in source
+    assert "renderer_opcode_tret_id()" in source
 
 
 def test_assembly_renderer_candidate_manifest_symbol_ids_match_subset() -> None:

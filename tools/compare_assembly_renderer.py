@@ -31,6 +31,8 @@ EXPECTED_EXECUTION_MODE = "hosted"
 EXPECTED_STUB_STATUS = -1
 EXPECTED_DIRECTIVE_COUNT_FUNCTION = "renderer_supported_directive_count"
 EXPECTED_OPCODE_COUNT_FUNCTION = "renderer_supported_opcode_count"
+EXPECTED_SMOKE_FUNCTION = "renderer_candidate_capability_smoke"
+EXPECTED_SMOKE_KINDS = {"hosted_reachability", "hosted_assertion"}
 
 
 BLOCKER_BY_FEATURE = {
@@ -55,6 +57,7 @@ class CandidateStatus:
     status_function: str
     directive_count_function: str
     opcode_count_function: str
+    smoke_function: str
     directive_id_functions: int
     opcode_id_functions: int
     execution_mode: str
@@ -264,6 +267,7 @@ def load_candidate_status() -> CandidateStatus:
     candidate_api = _object(manifest, "candidate_api")
     candidate_capabilities = _object(manifest, "candidate_capabilities")
     candidate_execution = _object(manifest, "candidate_execution")
+    candidate_smoke = _object(manifest, "candidate_smoke")
     candidate_symbol_ids = _object(manifest, "candidate_symbol_ids")
     s3_candidate = _object(manifest, "s3_candidate")
     program_inventory = _object(manifest, "program_inventory")
@@ -300,6 +304,18 @@ def load_candidate_status() -> CandidateStatus:
     expected_opcode_count = _integer(candidate_capabilities, "expected_opcode_count")
     if expected_opcode_count != len(opcodes):
         raise ValueError("candidate opcode count must match subset manifest")
+    smoke_function = _string(candidate_smoke, "function")
+    if smoke_function != EXPECTED_SMOKE_FUNCTION:
+        raise ValueError(
+            f"candidate smoke function must be {EXPECTED_SMOKE_FUNCTION}"
+        )
+    if _integer(candidate_smoke, "expected_return") != EXPECTED_STUB_STATUS:
+        raise ValueError("candidate smoke expected return must be -1")
+    smoke_kind = _string(candidate_smoke, "kind")
+    if smoke_kind not in EXPECTED_SMOKE_KINDS:
+        raise ValueError(
+            "candidate smoke kind must be hosted_reachability or hosted_assertion"
+        )
     directive_id_functions = _symbol_id_function_count(
         candidate_symbol_ids,
         "directives",
@@ -375,6 +391,7 @@ def load_candidate_status() -> CandidateStatus:
         status_function=status_function,
         directive_count_function=directive_count_function,
         opcode_count_function=opcode_count_function,
+        smoke_function=smoke_function,
         directive_id_functions=directive_id_functions,
         opcode_id_functions=opcode_id_functions,
         execution_mode=execution_mode,
@@ -397,6 +414,7 @@ def render_candidate_status(candidate: CandidateStatus) -> str:
         f"status function: {candidate.status_function}",
         f"directive count function: {candidate.directive_count_function}",
         f"opcode count function: {candidate.opcode_count_function}",
+        f"capability smoke function: {candidate.smoke_function}",
         f"directive id functions: {candidate.directive_id_functions}",
         f"opcode id functions: {candidate.opcode_id_functions}",
         f"implements renderer: {implements}",

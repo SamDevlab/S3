@@ -49,8 +49,59 @@ fn renderer_opcode_tmov_id() -> tryte:
 fn renderer_opcode_tret_id() -> tryte:
     return 7
 
+fn renderer_candidate_capability_smoke() -> trit:
+    match renderer_supported_directive_count() <=> 6:
+        -1:
+            return 0
+
+        0:
+            match renderer_supported_opcode_count() <=> 8:
+                -1:
+                    return 0
+
+                0:
+                    match renderer_directive_end_id() <=> 0:
+                        -1:
+                            return 0
+
+                        0:
+                            match renderer_directive_s3asm_id() <=> 5:
+                                -1:
+                                    return 0
+
+                                0:
+                                    match renderer_opcode_tadd_id() <=> 0:
+                                        -1:
+                                            return 0
+
+                                        0:
+                                            match renderer_opcode_tret_id() <=> 7:
+                                                -1:
+                                                    return 0
+
+                                                0:
+                                                    return -1
+
+                                                1:
+                                                    return 0
+
+                                        1:
+                                            return 0
+
+                                1:
+                                    return 0
+
+                        1:
+                            return 0
+
+                1:
+                    return 0
+
+        1:
+            return 0
+
 fn renderer_candidate_status() -> trit:
-    return -1
+    return renderer_candidate_capability_smoke()
 
 fn main() -> trit:
     return renderer_candidate_status()
