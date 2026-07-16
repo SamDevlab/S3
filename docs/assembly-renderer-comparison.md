@@ -17,8 +17,9 @@ String literals are available only as front-end expressions. Runtime string
 support is not implemented, so the renderer comparison remains blocked.
 
 S3 0.10 closed with the candidate contracts and readiness gate in place. S3
-0.11 starts implementation work toward real actual renderer output; see
-`docs/roadmap-0.10.md` and `docs/roadmap-0.11.md`.
+0.11 is closed after establishing deterministic static text helpers. S3 0.12
+opens practical actual-output work, starting with the `first` fixture; see
+`docs/roadmap-0.10.md`, `docs/roadmap-0.11.md`, and `docs/roadmap-0.12.md`.
 
 `python tools/compare_assembly_renderer.py --status` reports the current state
 and exits successfully.
@@ -79,6 +80,9 @@ The contract defines one `planned_actual_output` path per fixture under
 be absent while the S3 renderer is unavailable. This reserves the future output
 location; it does not mean the renderer is implemented, and `--check` remains
 blocked.
+
+S3 0.12 starts the work of turning the first planned actual output into real
+deterministic output. The starting point is the `first` fixture.
 
 `python tools/check_assembly_renderer_candidate_readiness.py` is the single
 readiness gate for the candidate stub. It validates the candidate manifest, the
