@@ -54,6 +54,14 @@ def test_compare_assembly_renderer_candidate_reports_stub() -> None:
     assert "status: stub" in completed.stdout
     assert "entrypoint: main" in completed.stdout
     assert "status function: renderer_candidate_status" in completed.stdout
+    assert (
+        "directive count function: renderer_supported_directive_count"
+        in completed.stdout
+    )
+    assert (
+        "opcode count function: renderer_supported_opcode_count"
+        in completed.stdout
+    )
     assert "implements renderer: no" in completed.stdout
     assert completed.stderr == ""
 

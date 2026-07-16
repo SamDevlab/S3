@@ -45,3 +45,8 @@ share one hosted coverage contract for the stub.
 The same stub is also included in golden inspect coverage as
 `assembly_renderer_stub`, which records its current IR and Assembly outputs
 without treating it as a real renderer.
+
+The stub also exposes scalar capability functions for the renderer subset:
+`renderer_supported_directive_count()` and
+`renderer_supported_opcode_count()`. They report the current subset manifest
+counts only; `compare_assembly_renderer.py --check` remains blocked.

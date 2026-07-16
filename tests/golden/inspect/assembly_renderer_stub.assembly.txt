@@ -1,17 +1,31 @@
 .s3asm 0.5.0
 
+.function renderer_supported_directive_count -> tryte
+    .register r0, tryte
+.label entry
+    TCONST r0, 6 ; source=5:12:185
+    TRET   r0 ; source=5:5:178
+.end
+
+.function renderer_supported_opcode_count -> tryte
+    .register r0, tryte
+.label entry
+    TCONST r0, 8 ; source=8:12:246
+    TRET   r0 ; source=8:5:239
+.end
+
 .function renderer_candidate_status -> trit
     .register r0, trit
     .register r1, trit
 .label entry
-    TCONST r0, 1 ; source=5:13:153
-    TINV   r1, r0 ; source=5:12:152
-    TRET   r1 ; source=5:5:145
+    TCONST r0, 1 ; source=11:13:301
+    TINV   r1, r0 ; source=11:12:300
+    TRET   r1 ; source=11:5:293
 .end
 
 .function main -> trit
     .register r0, trit
 .label entry
-    TCALL  r0, renderer_candidate_status ; source=8:12:186
-    TRET   r0 ; source=8:5:179
+    TCALL  r0, renderer_candidate_status ; source=14:12:334
+    TRET   r0 ; source=14:5:327
 .end

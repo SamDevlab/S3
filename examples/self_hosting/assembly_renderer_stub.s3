@@ -1,5 +1,11 @@
 # Stub for the future S3 Assembly renderer subset.
-# It intentionally does not render Assembly yet.
+# Capability functions are scalar markers, not real Assembly rendering.
+
+fn renderer_supported_directive_count() -> tryte:
+    return 6
+
+fn renderer_supported_opcode_count() -> tryte:
+    return 8
 
 fn renderer_candidate_status() -> trit:
     return -1
