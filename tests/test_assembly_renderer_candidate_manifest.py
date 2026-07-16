@@ -56,3 +56,31 @@ def test_assembly_renderer_candidate_manifest_capabilities_match_subset() -> Non
     assert capabilities["expected_directive_count"] == len(subset["directives"])
     assert capabilities["opcode_count_function"] == "renderer_supported_opcode_count"
     assert capabilities["expected_opcode_count"] == len(subset["opcodes"])
+
+
+def test_assembly_renderer_candidate_manifest_symbol_ids_match_subset() -> None:
+    data = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+    subset = json.loads(SUBSET_MANIFEST_PATH.read_text(encoding="utf-8"))
+    capabilities = data["candidate_capabilities"]
+    symbol_ids = data["candidate_symbol_ids"]
+
+    directives = symbol_ids["directives"]
+    opcodes = symbol_ids["opcodes"]
+
+    assert len(directives) == capabilities["expected_directive_count"]
+    assert len(opcodes) == capabilities["expected_opcode_count"]
+    assert set(directives) == set(subset["directives"])
+    assert set(opcodes) == set(subset["opcodes"])
+
+    for expected_id, directive in enumerate(subset["directives"]):
+        function_name = directive.removeprefix(".").replace(".", "_")
+        assert directives[directive] == {
+            "function": f"renderer_directive_{function_name}_id",
+            "id": expected_id,
+        }
+
+    for expected_id, opcode in enumerate(subset["opcodes"]):
+        assert opcodes[opcode] == {
+            "function": f"renderer_opcode_{opcode.lower()}_id",
+            "id": expected_id,
+        }

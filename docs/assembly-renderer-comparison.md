@@ -46,6 +46,10 @@ directives, and `renderer_supported_opcode_count()` returns the number of
 supported opcodes. These values are checked against the subset manifest; they do
 not render Assembly.
 
+The stub also exposes one scalar ID function per supported directive and opcode.
+Those IDs follow the subset manifest order and are checked as constants only;
+they do not render Assembly.
+
 `python tools/compare_assembly_renderer.py --check` fails intentionally while
 the S3 renderer is unavailable.
 

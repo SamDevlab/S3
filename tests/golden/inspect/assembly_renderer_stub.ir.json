@@ -118,13 +118,797 @@
           {
             "instructions": [
               {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r0",
+                "source": {
+                  "column": 12,
+                  "line": 11,
+                  "offset": 301
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r0"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 11,
+                  "offset": 294
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 11,
+              "offset": 294
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "renderer_directive_end_id",
+        "parameters": [],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 12,
+              "line": 11,
+              "offset": 301
+            },
+            "type": "tryte"
+          }
+        ],
+        "return_type": "tryte",
+        "source": {
+          "column": 1,
+          "line": 10,
+          "offset": 249
+        }
+      },
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "immediate": 1,
+                "opcode": "const",
+                "result": "r0",
+                "source": {
+                  "column": 12,
+                  "line": 14,
+                  "offset": 361
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r0"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 14,
+                  "offset": 354
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 14,
+              "offset": 354
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "renderer_directive_function_id",
+        "parameters": [],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 12,
+              "line": 14,
+              "offset": 361
+            },
+            "type": "tryte"
+          }
+        ],
+        "return_type": "tryte",
+        "source": {
+          "column": 1,
+          "line": 13,
+          "offset": 304
+        }
+      },
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "immediate": 2,
+                "opcode": "const",
+                "result": "r0",
+                "source": {
+                  "column": 12,
+                  "line": 17,
+                  "offset": 418
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r0"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 17,
+                  "offset": 411
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 17,
+              "offset": 411
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "renderer_directive_label_id",
+        "parameters": [],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 12,
+              "line": 17,
+              "offset": 418
+            },
+            "type": "tryte"
+          }
+        ],
+        "return_type": "tryte",
+        "source": {
+          "column": 1,
+          "line": 16,
+          "offset": 364
+        }
+      },
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "immediate": 3,
+                "opcode": "const",
+                "result": "r0",
+                "source": {
+                  "column": 12,
+                  "line": 20,
+                  "offset": 475
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r0"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 20,
+                  "offset": 468
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 20,
+              "offset": 468
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "renderer_directive_param_id",
+        "parameters": [],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 12,
+              "line": 20,
+              "offset": 475
+            },
+            "type": "tryte"
+          }
+        ],
+        "return_type": "tryte",
+        "source": {
+          "column": 1,
+          "line": 19,
+          "offset": 421
+        }
+      },
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "immediate": 4,
+                "opcode": "const",
+                "result": "r0",
+                "source": {
+                  "column": 12,
+                  "line": 23,
+                  "offset": 535
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r0"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 23,
+                  "offset": 528
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 23,
+              "offset": 528
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "renderer_directive_register_id",
+        "parameters": [],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 12,
+              "line": 23,
+              "offset": 535
+            },
+            "type": "tryte"
+          }
+        ],
+        "return_type": "tryte",
+        "source": {
+          "column": 1,
+          "line": 22,
+          "offset": 478
+        }
+      },
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "immediate": 5,
+                "opcode": "const",
+                "result": "r0",
+                "source": {
+                  "column": 12,
+                  "line": 26,
+                  "offset": 592
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r0"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 26,
+                  "offset": 585
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 26,
+              "offset": 585
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "renderer_directive_s3asm_id",
+        "parameters": [],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 12,
+              "line": 26,
+              "offset": 592
+            },
+            "type": "tryte"
+          }
+        ],
+        "return_type": "tryte",
+        "source": {
+          "column": 1,
+          "line": 25,
+          "offset": 538
+        }
+      },
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r0",
+                "source": {
+                  "column": 12,
+                  "line": 29,
+                  "offset": 645
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r0"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 29,
+                  "offset": 638
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 29,
+              "offset": 638
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "renderer_opcode_tadd_id",
+        "parameters": [],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 12,
+              "line": 29,
+              "offset": 645
+            },
+            "type": "tryte"
+          }
+        ],
+        "return_type": "tryte",
+        "source": {
+          "column": 1,
+          "line": 28,
+          "offset": 595
+        }
+      },
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "immediate": 1,
+                "opcode": "const",
+                "result": "r0",
+                "source": {
+                  "column": 12,
+                  "line": 32,
+                  "offset": 698
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r0"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 32,
+                  "offset": 691
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 32,
+              "offset": 691
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "renderer_opcode_tbr3_id",
+        "parameters": [],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 12,
+              "line": 32,
+              "offset": 698
+            },
+            "type": "tryte"
+          }
+        ],
+        "return_type": "tryte",
+        "source": {
+          "column": 1,
+          "line": 31,
+          "offset": 648
+        }
+      },
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "immediate": 2,
+                "opcode": "const",
+                "result": "r0",
+                "source": {
+                  "column": 12,
+                  "line": 35,
+                  "offset": 752
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r0"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 35,
+                  "offset": 745
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 35,
+              "offset": 745
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "renderer_opcode_tcall_id",
+        "parameters": [],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 12,
+              "line": 35,
+              "offset": 752
+            },
+            "type": "tryte"
+          }
+        ],
+        "return_type": "tryte",
+        "source": {
+          "column": 1,
+          "line": 34,
+          "offset": 701
+        }
+      },
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "immediate": 3,
+                "opcode": "const",
+                "result": "r0",
+                "source": {
+                  "column": 12,
+                  "line": 38,
+                  "offset": 805
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r0"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 38,
+                  "offset": 798
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 38,
+              "offset": 798
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "renderer_opcode_tcmp_id",
+        "parameters": [],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 12,
+              "line": 38,
+              "offset": 805
+            },
+            "type": "tryte"
+          }
+        ],
+        "return_type": "tryte",
+        "source": {
+          "column": 1,
+          "line": 37,
+          "offset": 755
+        }
+      },
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "immediate": 4,
+                "opcode": "const",
+                "result": "r0",
+                "source": {
+                  "column": 12,
+                  "line": 41,
+                  "offset": 860
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r0"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 41,
+                  "offset": 853
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 41,
+              "offset": 853
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "renderer_opcode_tconst_id",
+        "parameters": [],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 12,
+              "line": 41,
+              "offset": 860
+            },
+            "type": "tryte"
+          }
+        ],
+        "return_type": "tryte",
+        "source": {
+          "column": 1,
+          "line": 40,
+          "offset": 808
+        }
+      },
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "immediate": 5,
+                "opcode": "const",
+                "result": "r0",
+                "source": {
+                  "column": 12,
+                  "line": 44,
+                  "offset": 913
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r0"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 44,
+                  "offset": 906
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 44,
+              "offset": 906
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "renderer_opcode_tinv_id",
+        "parameters": [],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 12,
+              "line": 44,
+              "offset": 913
+            },
+            "type": "tryte"
+          }
+        ],
+        "return_type": "tryte",
+        "source": {
+          "column": 1,
+          "line": 43,
+          "offset": 863
+        }
+      },
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "immediate": 6,
+                "opcode": "const",
+                "result": "r0",
+                "source": {
+                  "column": 12,
+                  "line": 47,
+                  "offset": 966
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r0"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 47,
+                  "offset": 959
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 47,
+              "offset": 959
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "renderer_opcode_tmov_id",
+        "parameters": [],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 12,
+              "line": 47,
+              "offset": 966
+            },
+            "type": "tryte"
+          }
+        ],
+        "return_type": "tryte",
+        "source": {
+          "column": 1,
+          "line": 46,
+          "offset": 916
+        }
+      },
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "immediate": 7,
+                "opcode": "const",
+                "result": "r0",
+                "source": {
+                  "column": 12,
+                  "line": 50,
+                  "offset": 1019
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r0"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 50,
+                  "offset": 1012
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 50,
+              "offset": 1012
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "renderer_opcode_tret_id",
+        "parameters": [],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 12,
+              "line": 50,
+              "offset": 1019
+            },
+            "type": "tryte"
+          }
+        ],
+        "return_type": "tryte",
+        "source": {
+          "column": 1,
+          "line": 49,
+          "offset": 969
+        }
+      },
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
                 "immediate": 1,
                 "opcode": "const",
                 "result": "r0",
                 "source": {
                   "column": 13,
-                  "line": 11,
-                  "offset": 301
+                  "line": 53,
+                  "offset": 1074
                 }
               },
               {
@@ -135,8 +919,8 @@
                 "result": "r1",
                 "source": {
                   "column": 12,
-                  "line": 11,
-                  "offset": 300
+                  "line": 53,
+                  "offset": 1073
                 }
               },
               {
@@ -146,16 +930,16 @@
                 ],
                 "source": {
                   "column": 5,
-                  "line": 11,
-                  "offset": 293
+                  "line": 53,
+                  "offset": 1066
                 }
               }
             ],
             "name": "entry",
             "source": {
               "column": 5,
-              "line": 11,
-              "offset": 293
+              "line": 53,
+              "offset": 1066
             }
           }
         ],
@@ -168,8 +952,8 @@
             "name": "r0",
             "source": {
               "column": 13,
-              "line": 11,
-              "offset": 301
+              "line": 53,
+              "offset": 1074
             },
             "type": "trit"
           },
@@ -178,8 +962,8 @@
             "name": "r1",
             "source": {
               "column": 12,
-              "line": 11,
-              "offset": 300
+              "line": 53,
+              "offset": 1073
             },
             "type": "trit"
           }
@@ -187,8 +971,8 @@
         "return_type": "trit",
         "source": {
           "column": 1,
-          "line": 10,
-          "offset": 249
+          "line": 52,
+          "offset": 1022
         }
       },
       {
@@ -201,8 +985,8 @@
                 "result": "r0",
                 "source": {
                   "column": 12,
-                  "line": 14,
-                  "offset": 334
+                  "line": 56,
+                  "offset": 1107
                 }
               },
               {
@@ -212,16 +996,16 @@
                 ],
                 "source": {
                   "column": 5,
-                  "line": 14,
-                  "offset": 327
+                  "line": 56,
+                  "offset": 1100
                 }
               }
             ],
             "name": "entry",
             "source": {
               "column": 5,
-              "line": 14,
-              "offset": 327
+              "line": 56,
+              "offset": 1100
             }
           }
         ],
@@ -234,8 +1018,8 @@
             "name": "r0",
             "source": {
               "column": 12,
-              "line": 14,
-              "offset": 334
+              "line": 56,
+              "offset": 1107
             },
             "type": "trit"
           }
@@ -243,8 +1027,8 @@
         "return_type": "trit",
         "source": {
           "column": 1,
-          "line": 13,
-          "offset": 304
+          "line": 55,
+          "offset": 1077
         }
       }
     ]

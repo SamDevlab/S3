@@ -50,3 +50,7 @@ The stub also exposes scalar capability functions for the renderer subset:
 `renderer_supported_directive_count()` and
 `renderer_supported_opcode_count()`. They report the current subset manifest
 counts only; `compare_assembly_renderer.py --check` remains blocked.
+
+It also exposes scalar ID functions for each supported directive and opcode.
+Those IDs are deterministic constants that follow the subset manifest order;
+they are not Assembly rendering.
