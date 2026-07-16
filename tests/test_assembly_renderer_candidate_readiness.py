@@ -1,0 +1,18 @@
+from __future__ import annotations
+
+import subprocess
+import sys
+
+
+def test_assembly_renderer_candidate_readiness_gate_passes() -> None:
+    completed = subprocess.run(
+        [sys.executable, "tools/check_assembly_renderer_candidate_readiness.py"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0
+    assert "comparison blocked: ok" in completed.stdout
+    assert "assembly renderer candidate readiness: ok" in completed.stdout
+    assert completed.stderr == ""
