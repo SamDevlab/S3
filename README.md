@@ -202,9 +202,10 @@ python tools/golden_inspect.py update
 `tools/golden_inspect.py check` compara os golden artifacts versionados em
 `tests/golden/inspect/` com a saída atual do compilador. `update` regenera esses
 goldens quando uma mudança de IR ou S3 Assembly for intencional. A cobertura
-atual inclui `examples/first.s3`, `examples/simple_call.s3` e
-`examples/sign.s3`; essa infraestrutura serve como ponto de comparação para a
-future Python-to-S3 migration, não como benchmark.
+atual inclui `examples/first.s3`, `examples/simple_call.s3`,
+`examples/sign.s3` e `examples/self_hosting/assembly_renderer_stub.s3`; essa
+infraestrutura serve como ponto de comparação para a future Python-to-S3
+migration, não como benchmark.
 
 Integrações ELF são coletadas e puladas em hosts que não são Linux. Os
 resultados atuais devem ser consultados no workflow; os números abaixo

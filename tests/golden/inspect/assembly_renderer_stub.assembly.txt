@@ -1,0 +1,17 @@
+.s3asm 0.5.0
+
+.function renderer_candidate_status -> trit
+    .register r0, trit
+    .register r1, trit
+.label entry
+    TCONST r0, 1 ; source=5:13:153
+    TINV   r1, r0 ; source=5:12:152
+    TRET   r1 ; source=5:5:145
+.end
+
+.function main -> trit
+    .register r0, trit
+.label entry
+    TCALL  r0, renderer_candidate_status ; source=8:12:186
+    TRET   r0 ; source=8:5:179
+.end

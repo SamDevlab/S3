@@ -1,0 +1,140 @@
+{
+  "module": {
+    "functions": [
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "immediate": 1,
+                "opcode": "const",
+                "result": "r0",
+                "source": {
+                  "column": 13,
+                  "line": 5,
+                  "offset": 153
+                }
+              },
+              {
+                "opcode": "invert",
+                "operands": [
+                  "r0"
+                ],
+                "result": "r1",
+                "source": {
+                  "column": 12,
+                  "line": 5,
+                  "offset": 152
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r1"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 5,
+                  "offset": 145
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 5,
+              "offset": 145
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "renderer_candidate_status",
+        "parameters": [],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 13,
+              "line": 5,
+              "offset": 153
+            },
+            "type": "trit"
+          },
+          {
+            "index": 1,
+            "name": "r1",
+            "source": {
+              "column": 12,
+              "line": 5,
+              "offset": 152
+            },
+            "type": "trit"
+          }
+        ],
+        "return_type": "trit",
+        "source": {
+          "column": 1,
+          "line": 4,
+          "offset": 101
+        }
+      },
+      {
+        "blocks": [
+          {
+            "instructions": [
+              {
+                "callee": "renderer_candidate_status",
+                "opcode": "call",
+                "result": "r0",
+                "source": {
+                  "column": 12,
+                  "line": 8,
+                  "offset": 186
+                }
+              },
+              {
+                "opcode": "return",
+                "operands": [
+                  "r0"
+                ],
+                "source": {
+                  "column": 5,
+                  "line": 8,
+                  "offset": 179
+                }
+              }
+            ],
+            "name": "entry",
+            "source": {
+              "column": 5,
+              "line": 8,
+              "offset": 179
+            }
+          }
+        ],
+        "memory_objects": [],
+        "name": "main",
+        "parameters": [],
+        "registers": [
+          {
+            "index": 0,
+            "name": "r0",
+            "source": {
+              "column": 12,
+              "line": 8,
+              "offset": 186
+            },
+            "type": "trit"
+          }
+        ],
+        "return_type": "trit",
+        "source": {
+          "column": 1,
+          "line": 7,
+          "offset": 156
+        }
+      }
+    ]
+  }
+}

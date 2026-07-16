@@ -41,3 +41,7 @@ compile-only until they opt into hosted execution.
 The renderer candidate manifest records the same inventory path and hosted
 expected return, so the general S3 program check and the renderer candidate run
 share one hosted coverage contract for the stub.
+
+The same stub is also included in golden inspect coverage as
+`assembly_renderer_stub`, which records its current IR and Assembly outputs
+without treating it as a real renderer.
