@@ -36,6 +36,12 @@ derived from the candidate manifest and validated against the subset manifest,
 including counts and scalar ID ranges. This prepares future dispatch work; it
 does not mean the S3 renderer is implemented.
 
+`python tools/check_assembly_renderer_candidate_symbols.py` checks the canonical
+golden for that export at
+`tests/golden/assembly_renderer_candidate_symbols.txt`. This locks the symbol
+table text against accidental drift; it does not make the S3 renderer
+implemented.
+
 `python tools/compare_assembly_renderer.py --candidate-run` executes the
 candidate stub through the hosted path and expects `main` to return `-1`. This
 uses the same registered stub entry as `tools/s3_program_check.py check`, so the
