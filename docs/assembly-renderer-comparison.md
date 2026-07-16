@@ -10,8 +10,8 @@ before the S3 renderer exists.
 
 ## Current status
 
-The Python renderer remains the reference implementation. The S3 renderer is not
-implemented.
+The Python renderer remains the reference implementation. A compilable S3 stub
+now exists, but the S3 renderer implementation is not available.
 
 String literals are available only as front-end expressions. Runtime string
 support is not implemented, so the renderer comparison remains blocked.
