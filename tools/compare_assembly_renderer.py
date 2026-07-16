@@ -56,6 +56,13 @@ class ReferenceFixture:
 
 
 @dataclass(frozen=True, slots=True)
+class CandidateSymbol:
+    symbol_id: int
+    symbol: str
+    function: str
+
+
+@dataclass(frozen=True, slots=True)
 class CandidateStatus:
     path: str
     status: str
@@ -66,6 +73,8 @@ class CandidateStatus:
     smoke_function: str
     directive_id_functions: int
     opcode_id_functions: int
+    directive_symbols: tuple[CandidateSymbol, ...]
+    opcode_symbols: tuple[CandidateSymbol, ...]
     directive_first_id: int
     directive_last_id: int
     opcode_first_id: int
@@ -182,19 +191,20 @@ def _opcode_symbol_function_name(symbol: str) -> str:
     return f"renderer_opcode_{symbol.lower()}_id"
 
 
-def _symbol_id_function_count(
+def _symbol_id_table(
     data: dict[str, object],
     key: str,
     expected_symbols: tuple[str, ...],
     expected_count: int,
     function_name_for_symbol: Callable[[str], str],
-) -> int:
+) -> tuple[CandidateSymbol, ...]:
     symbols = _object(data, key)
     if len(symbols) != expected_count:
         raise ValueError(f"candidate {key} symbol ID count must match capabilities")
     if set(symbols) != set(expected_symbols):
         raise ValueError(f"candidate {key} symbol IDs must match subset manifest")
 
+    table: list[CandidateSymbol] = []
     for expected_id, symbol in enumerate(expected_symbols):
         entry = _object(symbols, symbol)
         function_name = _string(entry, "function")
@@ -207,8 +217,15 @@ def _symbol_id_function_count(
         symbol_id = _integer(entry, "id")
         if symbol_id != expected_id:
             raise ValueError(f"candidate {key} {symbol} ID must be {expected_id}")
+        table.append(
+            CandidateSymbol(
+                symbol_id=symbol_id,
+                symbol=symbol,
+                function=function_name,
+            )
+        )
 
-    return len(symbols)
+    return tuple(table)
 
 
 def _manifest_fixtures(data: dict[str, object]) -> tuple[ReferenceFixture, ...]:
@@ -375,14 +392,14 @@ def load_candidate_status() -> CandidateStatus:
             raise ValueError(
                 "candidate support predicate unsupported return must be -1"
             )
-    directive_id_functions = _symbol_id_function_count(
+    directive_symbols = _symbol_id_table(
         candidate_symbol_ids,
         "directives",
         directives,
         expected_directive_count,
         _directive_symbol_function_name,
     )
-    opcode_id_functions = _symbol_id_function_count(
+    opcode_symbols = _symbol_id_table(
         candidate_symbol_ids,
         "opcodes",
         opcodes,
@@ -451,8 +468,10 @@ def load_candidate_status() -> CandidateStatus:
         directive_count_function=directive_count_function,
         opcode_count_function=opcode_count_function,
         smoke_function=smoke_function,
-        directive_id_functions=directive_id_functions,
-        opcode_id_functions=opcode_id_functions,
+        directive_id_functions=len(directive_symbols),
+        opcode_id_functions=len(opcode_symbols),
+        directive_symbols=directive_symbols,
+        opcode_symbols=opcode_symbols,
         directive_first_id=directive_first_id,
         directive_last_id=directive_last_id,
         opcode_first_id=opcode_first_id,
@@ -501,6 +520,41 @@ def render_candidate_status(candidate: CandidateStatus) -> str:
             -2,
             f"opcode support predicate: {candidate.opcode_support_predicate}",
         )
+    return "\n".join(lines) + "\n"
+
+
+def render_candidate_symbols(candidate: CandidateStatus) -> str:
+    lines = [
+        "S3 Assembly renderer candidate symbols",
+        "",
+        "directives:",
+    ]
+    lines.extend(
+        f"  {entry.symbol_id} {entry.symbol} {entry.function}"
+        for entry in candidate.directive_symbols
+    )
+    lines.extend(
+        [
+            "",
+            "opcodes:",
+        ]
+    )
+    lines.extend(
+        f"  {entry.symbol_id} {entry.symbol} {entry.function}"
+        for entry in candidate.opcode_symbols
+    )
+    lines.extend(
+        [
+            "",
+            (
+                "directive id range: "
+                f"{candidate.directive_first_id}..{candidate.directive_last_id}"
+            ),
+            f"opcode id range: {candidate.opcode_first_id}..{candidate.opcode_last_id}",
+            f"status: {candidate.status}",
+            f"comparison: {candidate.comparison_status}",
+        ]
+    )
     return "\n".join(lines) + "\n"
 
 
@@ -587,6 +641,20 @@ def candidate() -> int:
     return 0
 
 
+def candidate_symbols() -> int:
+    try:
+        candidate_status = load_candidate_status()
+    except ValueError as error:
+        print("S3 Assembly renderer candidate symbols")
+        print()
+        print("status: unavailable")
+        print(f"reason: {error}")
+        return 1
+
+    print(render_candidate_symbols(candidate_status), end="")
+    return 0
+
+
 def candidate_run() -> int:
     try:
         candidate_status = load_candidate_status()
@@ -629,6 +697,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     mode.add_argument("--status", action="store_true")
     mode.add_argument("--reference", action="store_true")
     mode.add_argument("--candidate", action="store_true")
+    mode.add_argument("--candidate-symbols", action="store_true")
     mode.add_argument("--candidate-run", action="store_true")
     mode.add_argument("--check", action="store_true")
     args = parser.parse_args(argv)
@@ -639,6 +708,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return reference()
     if args.candidate:
         return candidate()
+    if args.candidate_symbols:
+        return candidate_symbols()
     if args.candidate_run:
         return candidate_run()
     return check()

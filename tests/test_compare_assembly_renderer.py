@@ -82,6 +82,29 @@ def test_compare_assembly_renderer_candidate_reports_stub() -> None:
     assert completed.stderr == ""
 
 
+def test_compare_assembly_renderer_candidate_symbols_reports_table() -> None:
+    completed = subprocess.run(
+        [sys.executable, "tools/compare_assembly_renderer.py", "--candidate-symbols"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0
+    assert "S3 Assembly renderer candidate symbols" in completed.stdout
+    assert "directives:" in completed.stdout
+    assert "0 .end renderer_directive_end_id" in completed.stdout
+    assert "5 .s3asm renderer_directive_s3asm_id" in completed.stdout
+    assert "opcodes:" in completed.stdout
+    assert "0 TADD renderer_opcode_tadd_id" in completed.stdout
+    assert "7 TRET renderer_opcode_tret_id" in completed.stdout
+    assert "directive id range: 0..5" in completed.stdout
+    assert "opcode id range: 0..7" in completed.stdout
+    assert "status: stub" in completed.stdout
+    assert "comparison: blocked" in completed.stdout
+    assert completed.stderr == ""
+
+
 def test_compare_assembly_renderer_candidate_run_executes_stub_status() -> None:
     completed = subprocess.run(
         [sys.executable, "tools/compare_assembly_renderer.py", "--candidate-run"],
