@@ -9,12 +9,12 @@
   "fixture_expectations": "tests/golden/assembly_renderer_candidate_fixture_expectations.json",
   "fixtures": [
     {
-      "actual_output_status": "not_implemented",
-      "comparison_status": "blocked",
+      "actual_output_status": "available",
+      "comparison_status": "pending",
       "expected_assembly": "tests/golden/inspect/first.assembly.txt",
       "expected_sha256": "46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67",
       "name": "first",
-      "reason": "S3 renderer is not implemented",
+      "reason": "first actual output is available; formal comparison remains blocked",
       "source": "examples/first.s3"
     },
     {

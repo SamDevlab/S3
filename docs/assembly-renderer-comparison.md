@@ -90,6 +90,12 @@ LF-normalized inspect golden. This proves the deterministic text path for one
 fixture, but it does not create a versioned actual output, change the
 actual-output contracts, or implement the S3 renderer.
 
+0.12-B creates the first versioned candidate actual output for `first` from
+`build_first_fixture_assembly_text()`. The actual-output contract now marks
+`first` as available with pending formal comparison, while `simple_call` and
+`sign` remain blocked and absent. `--check` remains blocked until the formal
+`first` comparison is introduced.
+
 `python tools/check_assembly_renderer_candidate_readiness.py` is the single
 readiness gate for the candidate stub. It validates the candidate manifest, the
 symbol export golden, the fixture contract, the fixture expectations, the

@@ -146,6 +146,9 @@ class CandidateActualOutput:
     actual_output_status: str
     actual_output_exists: bool
     comparison_status: str
+    actual_sha256: str | None
+    actual_byte_count: int | None
+    actual_line_count: int | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -291,6 +294,24 @@ def _boolean(data: dict[str, object], key: str) -> bool:
     value = data.get(key)
     if not isinstance(value, bool):
         raise ValueError(f"{key} must be a boolean")
+    return value
+
+
+def _optional_string(data: dict[str, object], key: str) -> str | None:
+    value = data.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{key} must be a string")
+    return value
+
+
+def _optional_integer(data: dict[str, object], key: str) -> int | None:
+    value = data.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise ValueError(f"{key} must be an integer")
     return value
 
 
@@ -549,6 +570,9 @@ def _manifest_candidate_actual_outputs(
                 actual_output_status=_string(item, "actual_output_status"),
                 actual_output_exists=_boolean(item, "actual_output_exists"),
                 comparison_status=_string(item, "comparison_status"),
+                actual_sha256=_optional_string(item, "actual_sha256"),
+                actual_byte_count=_optional_integer(item, "actual_byte_count"),
+                actual_line_count=_optional_integer(item, "actual_line_count"),
             )
         )
 
@@ -678,8 +702,8 @@ def load_candidate_actual_output_status() -> CandidateActualOutputStatus:
     if _string(manifest, "component") != "assembly_renderer_candidate_actual_outputs":
         raise ValueError("candidate actual outputs component mismatch")
     status = _string(manifest, "status")
-    if status != "blocked":
-        raise ValueError("candidate actual outputs status must be blocked")
+    if status not in {"blocked", "partial"}:
+        raise ValueError("candidate actual outputs status must be blocked or partial")
     comparison_plan = _string(manifest, "comparison_plan")
     if comparison_plan != "tests/golden/assembly_renderer_candidate_comparison_plan.json":
         raise ValueError("candidate actual outputs comparison plan mismatch")
@@ -690,18 +714,36 @@ def load_candidate_actual_output_status() -> CandidateActualOutputStatus:
 
     outputs = _manifest_candidate_actual_outputs(manifest)
     for output in outputs:
-        if output.actual_output_status != "not_implemented":
+        if output.actual_output_status == "available":
+            if not output.actual_output_exists:
+                raise ValueError("candidate actual output existence flag mismatch")
+            if output.comparison_status != "pending":
+                raise ValueError("candidate actual output comparison status mismatch")
+            if (
+                output.actual_sha256 is None
+                or output.actual_byte_count is None
+                or output.actual_line_count is None
+            ):
+                raise ValueError("candidate actual output metadata missing")
+        elif output.actual_output_status == "not_implemented":
+            if output.actual_output_exists:
+                raise ValueError("candidate actual output existence flag mismatch")
+            if output.comparison_status != "blocked":
+                raise ValueError("candidate actual output comparison status mismatch")
+            if (
+                output.actual_sha256 is not None
+                or output.actual_byte_count is not None
+                or output.actual_line_count is not None
+            ):
+                raise ValueError("candidate actual output metadata mismatch")
+        else:
             raise ValueError("candidate actual output status mismatch")
-        if output.actual_output_exists:
-            raise ValueError("candidate actual output existence flag mismatch")
-        if output.comparison_status != "blocked":
-            raise ValueError("candidate actual output comparison status mismatch")
 
     return CandidateActualOutputStatus(
         comparison_plan=comparison_plan,
         actual_output_root=actual_output_root,
         status=status,
-        comparison_status=status,
+        comparison_status="blocked",
         outputs=outputs,
     )
 
@@ -1076,15 +1118,20 @@ def render_candidate_actual_outputs(
         "",
         "outputs:",
     ]
-    lines.extend(
-        (
+    for output in candidate.outputs:
+        line = (
             f"  {output.name} planned={output.planned_actual_output} "
             f"exists={str(output.actual_output_exists).lower()} "
             f"status={output.actual_output_status} "
             f"comparison={output.comparison_status}"
         )
-        for output in candidate.outputs
-    )
+        if output.actual_output_status == "available":
+            line = (
+                f"{line} sha256={output.actual_sha256} "
+                f"bytes={output.actual_byte_count} "
+                f"lines={output.actual_line_count}"
+            )
+        lines.append(line)
     lines.extend(
         [
             "",

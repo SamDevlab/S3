@@ -230,6 +230,15 @@ def test_compare_assembly_renderer_candidate_actual_outputs_reports_contract() -
         "first planned=tests/golden/assembly_renderer_candidate_actual/first.assembly.txt"
         in completed.stdout
     )
+    assert "exists=true" in completed.stdout
+    assert "status=available" in completed.stdout
+    assert "comparison=pending" in completed.stdout
+    assert (
+        "sha256=46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67"
+        in completed.stdout
+    )
+    assert "bytes=441" in completed.stdout
+    assert "lines=18" in completed.stdout
     assert (
         "simple_call planned=tests/golden/assembly_renderer_candidate_actual/simple_call.assembly.txt"
         in completed.stdout
@@ -241,7 +250,7 @@ def test_compare_assembly_renderer_candidate_actual_outputs_reports_contract() -
     assert "exists=false" in completed.stdout
     assert "status=not_implemented" in completed.stdout
     assert "comparison=blocked" in completed.stdout
-    assert "status: blocked" in completed.stdout
+    assert "status: partial" in completed.stdout
     assert completed.stderr == ""
 
 

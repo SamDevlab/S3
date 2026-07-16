@@ -1,0 +1,18 @@
+.s3asm 0.5.0
+
+.function main -> tryte
+    .register r0, tryte
+    .register r1, tryte
+    .register r2, tryte
+    .register r3, tryte
+    .register r4, tryte
+    .register r5, tryte
+.label entry
+    TCONST r0, 10 ; source=2:16:35
+    TMOV   r1, r0 ; source=2:5:24
+    TCONST r2, 4 ; source=3:16:53
+    TMOV   r3, r2 ; source=3:5:42
+    TINV   r4, r3 ; source=4:14:68
+    TADD   r5, r1, r4 ; source=4:14:68
+    TRET   r5 ; source=4:5:59
+.end
