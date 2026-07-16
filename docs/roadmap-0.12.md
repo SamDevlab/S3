@@ -28,15 +28,25 @@ goldens.
 
 ### 0.12-A: first fixture output investigation
 
+Status: complete
+
 Objective:
 
 Investigate the Assembly golden for `first` and add the smallest technical layer
 needed to produce, in memory, an equivalent or partial textual document using
 `StaticTextLineEmitter`.
 
+0.12-A adds an in-memory probe for the `first` fixture. The probe builds the
+expected Assembly text with `StaticTextLineEmitter`, finalizes it as a
+`StaticTextDocument`, and validates the LF-normalized bytes, line count, byte
+count, and SHA-256 against the existing inspect golden.
+
+It does not create a versioned actual output, alter actual-output contracts, or
+implement the real S3 renderer.
+
 Acceptance:
 
-- no versioned actual output is required yet;
+- no versioned actual output is created;
 - a test demonstrates that the emitter can assemble the textual shape needed
   for `first`;
 - comparison and actual-output contracts remain blocked.
