@@ -25,6 +25,11 @@
     "status": "blocked"
   },
   "component": "assembly_renderer_subset",
+  "program_inventory": {
+    "covered_by_s3_program_check": true,
+    "hosted_expected_return": -1,
+    "path": "examples/self_hosting/assembly_renderer_stub.s3"
+  },
   "python_reference": {
     "data_contract": "tests/golden/assembly_program_data_contract.json",
     "status": "available",

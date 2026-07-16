@@ -37,3 +37,7 @@ the hosted path and confirms that `main` still returns `-1`.
 `tools/s3_program_check.py check` also executes that stub because its inventory
 entry declares `hosted expected return: -1`. Other inventory entries remain
 compile-only until they opt into hosted execution.
+
+The renderer candidate manifest records the same inventory path and hosted
+expected return, so the general S3 program check and the renderer candidate run
+share one hosted coverage contract for the stub.

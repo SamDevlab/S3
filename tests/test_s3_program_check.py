@@ -3,6 +3,17 @@ from __future__ import annotations
 import subprocess
 import sys
 
+from tools.s3_program_check import find_program, get_program_inventory
+
+
+def test_s3_program_check_inventory_exposes_renderer_stub_hosted_check() -> None:
+    programs = get_program_inventory()
+    stub = find_program("examples/self_hosting/assembly_renderer_stub.s3")
+
+    assert len(programs) == 4
+    assert stub is not None
+    assert stub.hosted_expected_return == -1
+
 
 def test_s3_program_check_matches_registered_programs() -> None:
     completed = subprocess.run(

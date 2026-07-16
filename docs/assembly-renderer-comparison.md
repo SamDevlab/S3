@@ -32,7 +32,9 @@ where `-1` means stub.
 
 `python tools/compare_assembly_renderer.py --candidate-run` executes the
 candidate stub through the hosted path and expects `main` to return `-1`. This
-only validates the status API; it does not render Assembly.
+uses the same registered stub entry as `tools/s3_program_check.py check`, so the
+candidate run and program inventory stay aligned. This only validates the status
+API; it does not render Assembly.
 
 `python tools/compare_assembly_renderer.py --check` fails intentionally while
 the S3 renderer is unavailable.

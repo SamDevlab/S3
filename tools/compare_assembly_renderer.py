@@ -11,7 +11,7 @@ from typing import Sequence
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from bootstrap.s3.pipeline import run_source  # noqa: E402
+from tools.s3_program_check import find_program, run_hosted_check  # noqa: E402
 
 MANIFEST_PATH = (
     REPO_ROOT / "tests" / "golden" / "assembly_renderer_subset_manifest.json"
@@ -53,6 +53,7 @@ class CandidateStatus:
     execution_mode: str
     expected_status: int
     execution_meaning: str
+    covered_by_s3_program_check: bool
     implements_renderer: bool
     comparison_status: str
 
@@ -123,6 +124,13 @@ def _integer(data: dict[str, object], key: str) -> int:
     value = data.get(key)
     if not isinstance(value, int) or isinstance(value, bool):
         raise ValueError(f"{key} must be an integer")
+    return value
+
+
+def _boolean(data: dict[str, object], key: str) -> bool:
+    value = data.get(key)
+    if not isinstance(value, bool):
+        raise ValueError(f"{key} must be a boolean")
     return value
 
 
@@ -199,6 +207,7 @@ def load_candidate_status() -> CandidateStatus:
     candidate_api = _object(manifest, "candidate_api")
     candidate_execution = _object(manifest, "candidate_execution")
     s3_candidate = _object(manifest, "s3_candidate")
+    program_inventory = _object(manifest, "program_inventory")
     python_reference = _object(manifest, "python_reference")
     comparison = _object(manifest, "comparison")
 
@@ -243,6 +252,23 @@ def load_candidate_status() -> CandidateStatus:
     if implements_renderer is not False:
         raise ValueError("candidate implements_renderer must be false")
 
+    inventory_path = _string(program_inventory, "path")
+    if inventory_path != candidate_path:
+        raise ValueError("program inventory path must match candidate path")
+    if _integer(program_inventory, "hosted_expected_return") != expected_status:
+        raise ValueError("program inventory hosted expected return must match")
+    covered_by_s3_program_check = _boolean(
+        program_inventory, "covered_by_s3_program_check"
+    )
+    if not covered_by_s3_program_check:
+        raise ValueError("candidate must be covered by s3_program_check")
+
+    inventory_program = find_program(candidate_path)
+    if inventory_program is None:
+        raise ValueError("candidate missing from s3_program_check inventory")
+    if inventory_program.hosted_expected_return != expected_status:
+        raise ValueError("s3_program_check hosted expected return must match")
+
     comparison_status = _string(comparison, "status")
     if comparison_status != "blocked":
         raise ValueError("candidate comparison status must be blocked")
@@ -255,6 +281,7 @@ def load_candidate_status() -> CandidateStatus:
         execution_mode=execution_mode,
         expected_status=expected_status,
         execution_meaning=execution_meaning,
+        covered_by_s3_program_check=covered_by_s3_program_check,
         implements_renderer=implements_renderer,
         comparison_status=comparison_status,
     )
@@ -293,6 +320,7 @@ def render_candidate_execution(candidate: CandidateStatus, actual_status: int) -
         if actual_status == candidate.expected_status
         else "unexpected"
     )
+    coverage = "yes" if candidate.covered_by_s3_program_check else "no"
     lines = [
         "S3 Assembly renderer candidate execution",
         "",
@@ -300,6 +328,7 @@ def render_candidate_execution(candidate: CandidateStatus, actual_status: int) -
         f"entrypoint: {candidate.entrypoint}",
         f"expected status: {candidate.expected_status}",
         f"actual status: {actual_status}",
+        f"covered by s3_program_check: {coverage}",
         f"status: {status}",
     ]
     return "\n".join(lines) + "\n"
@@ -359,8 +388,13 @@ def candidate() -> int:
 def candidate_run() -> int:
     try:
         candidate_status = load_candidate_status()
-        source = (REPO_ROOT / candidate_status.path).read_text(encoding="utf-8")
-        actual_status = run_source(source, entry=candidate_status.entrypoint)
+        inventory_program = find_program(candidate_status.path)
+        if inventory_program is None:
+            raise ValueError("candidate missing from s3_program_check inventory")
+        actual_status = run_hosted_check(
+            inventory_program,
+            entry=candidate_status.entrypoint,
+        )
     except (OSError, ValueError) as error:
         print("S3 Assembly renderer candidate execution")
         print()
