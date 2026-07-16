@@ -93,7 +93,28 @@ Acceptance:
 - renderer candidate contracts remain unchanged;
 - `--check` remains blocked.
 
-### 0.11-C: first actual output path for one fixture
+### 0.11-C: structured static text line emitter
+
+Objective:
+
+Add a deterministic line-oriented emitter on top of the static text builder so
+future renderer work can assemble structured text with LF-terminated lines,
+blank lines, literal text, and controlled indentation.
+
+This stage still does not render `AssemblyProgram`, does not implement the S3
+Assembly renderer, and does not create fixture actual outputs.
+
+Acceptance:
+
+- emitter starts empty;
+- emitter emits text lines and blank lines with LF;
+- emitter can emit raw static literal lines through the existing decoder;
+- finalized documents expose the same deterministic text, UTF-8 bytes, and
+  metadata as the builder;
+- renderer candidate contracts remain unchanged;
+- `--check` remains blocked.
+
+### 0.11-D: first actual output path for one fixture
 
 Objective:
 
@@ -112,7 +133,7 @@ Future acceptance:
 - byte-for-byte comparison is validated;
 - remaining fixtures stay blocked.
 
-### 0.11-D: expand fixture coverage
+### 0.11-E: expand fixture coverage
 
 Objective:
 

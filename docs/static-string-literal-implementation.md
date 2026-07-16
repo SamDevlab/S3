@@ -189,6 +189,12 @@ normalized text, UTF-8 bytes, byte count, line count, and SHA-256. No files are
 created, no renderer output is generated, and source string literals remain
 blocked by the semantic runtime diagnostic.
 
+0.11-C adds `StaticTextLineEmitter`, a small structured layer that uses the
+builder to emit LF-terminated lines, blank lines, raw static literal lines, and
+controlled indentation. It finalizes to the same `StaticTextDocument` type and
+keeps all metadata deterministic. It still does not render real Assembly
+programs or produce fixture actual outputs.
+
 ## Test Plan
 
 When implementation begins, add focused tests for:
