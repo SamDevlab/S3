@@ -30,6 +30,12 @@ explicit stub. The candidate exists and compiles, but it does not implement
 Assembly rendering. Its minimal API is `renderer_candidate_status() -> trit`,
 where `-1` means stub.
 
+`python tools/compare_assembly_renderer.py --candidate-symbols` prints the
+deterministic directive/opcode symbol table for the candidate. The table is
+derived from the candidate manifest and validated against the subset manifest,
+including counts and scalar ID ranges. This prepares future dispatch work; it
+does not mean the S3 renderer is implemented.
+
 `python tools/compare_assembly_renderer.py --candidate-run` executes the
 candidate stub through the hosted path and expects `main` to return `-1`. This
 uses the same registered stub entry as `tools/s3_program_check.py check`, so the
