@@ -84,6 +84,12 @@ blocked.
 S3 0.12 starts the work of turning the first planned actual output into real
 deterministic output. The starting point is the `first` fixture.
 
+0.12-A adds an in-memory probe for `first` that builds the expected Assembly
+text with `StaticTextLineEmitter` and compares it byte-for-byte against the
+LF-normalized inspect golden. This proves the deterministic text path for one
+fixture, but it does not create a versioned actual output, change the
+actual-output contracts, or implement the S3 renderer.
+
 `python tools/check_assembly_renderer_candidate_readiness.py` is the single
 readiness gate for the candidate stub. It validates the candidate manifest, the
 symbol export golden, the fixture contract, the fixture expectations, the
