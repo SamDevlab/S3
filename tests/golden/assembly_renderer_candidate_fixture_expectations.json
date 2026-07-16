@@ -1,0 +1,39 @@
+{
+  "comparison": {
+    "reason": "S3 renderer is not implemented",
+    "status": "blocked"
+  },
+  "component": "assembly_renderer_candidate_fixture_expectations",
+  "expectations": [
+    {
+      "byte_count": 441,
+      "expected_assembly": "tests/golden/inspect/first.assembly.txt",
+      "line_count": 18,
+      "name": "first",
+      "sha256": "46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67",
+      "source": "examples/first.s3",
+      "status": "expected"
+    },
+    {
+      "byte_count": 448,
+      "expected_assembly": "tests/golden/inspect/simple_call.assembly.txt",
+      "line_count": 21,
+      "name": "simple_call",
+      "sha256": "d6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f",
+      "source": "examples/simple_call.s3",
+      "status": "expected"
+    },
+    {
+      "byte_count": 946,
+      "expected_assembly": "tests/golden/inspect/sign.assembly.txt",
+      "line_count": 36,
+      "name": "sign",
+      "sha256": "c077d2c49639b1a033505ec8c1ba1c60c78242e6e09c43f60a8aa5ed8b49e2d9",
+      "source": "examples/sign.s3",
+      "status": "expected"
+    }
+  ],
+  "source_manifest": "tests/golden/assembly_renderer_candidate_fixtures.json",
+  "status": "reference_only",
+  "version": "1.0.0"
+}
