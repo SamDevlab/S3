@@ -4,9 +4,10 @@
 programs that may become future helper, library, or experimental compiler
 component candidates.
 
-This is not self-hosting. It does not execute programs, call the native backend,
-or replace any Python compiler component. It only records a few stable S3
-programs and checks that the current Python compiler can still compile them.
+This is not self-hosting. It does not call the native backend or replace any
+Python compiler component. It only records a few stable S3 programs and checks
+that the current Python compiler can still compile them. Inventory entries may
+also opt into hosted execution with an expected return value.
 
 Current commands:
 
@@ -33,3 +34,6 @@ The Assembly renderer candidate stub exposes `renderer_candidate_status()` as a
 minimal status API; its stub value does not mean the renderer is implemented.
 `tools/compare_assembly_renderer.py --candidate-run` executes that stub through
 the hosted path and confirms that `main` still returns `-1`.
+`tools/s3_program_check.py check` also executes that stub because its inventory
+entry declares `hosted expected return: -1`. Other inventory entries remain
+compile-only until they opt into hosted execution.
