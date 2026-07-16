@@ -109,6 +109,11 @@ then finalize to a document exposing normalized text, UTF-8 bytes, and the same
 metadata. This remains an internal compiler foundation, not source-level string
 runtime support.
 
+0.11-C adds a line-oriented emitter on top of the builder. It can emit
+LF-terminated text lines, blank lines, raw static literal lines through the
+existing decoder, and controlled indentation. This prepares structured textual
+output without rendering `AssemblyProgram` or creating fixture actual outputs.
+
 For the first implementation, it is acceptable to validate only the ASCII subset
 needed by the Assembly renderer fixtures, while keeping the representation and
 terminology compatible with UTF-8 bytes.
@@ -146,6 +151,7 @@ Required first:
 - Append a newline.
 - Append a known identifier/name.
 - Join known lines deterministically.
+- Emit structured LF-terminated lines deterministically.
 - Finalize to output text.
 - Compare output byte-for-byte against committed expectations.
 

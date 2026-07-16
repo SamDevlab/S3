@@ -66,6 +66,45 @@ class StaticTextBuilder:
         return StaticTextDocument("".join(self._parts))
 
 
+class StaticTextLineEmitter:
+    def __init__(self, *, indent_text: str = "    ") -> None:
+        self._builder = StaticTextBuilder()
+        self._indent_text = normalize_static_text_newlines(indent_text)
+        if "\n" in self._indent_text:
+            raise ValueError("static text indentation must not contain newlines")
+
+    def emit_line(self, text: str = "", *, indent: int = 0) -> StaticTextLineEmitter:
+        self._append_indent(indent)
+        self._builder.append_line(text)
+        return self
+
+    def emit_literal_line(
+        self,
+        value: str = "",
+        *,
+        indent: int = 0,
+    ) -> StaticTextLineEmitter:
+        self._append_indent(indent)
+        self._builder.append_literal(value)
+        self._builder.append_line()
+        return self
+
+    def emit_blank_line(self) -> StaticTextLineEmitter:
+        self._builder.append_line()
+        return self
+
+    def build(self) -> StaticTextDocument:
+        return self._builder.build()
+
+    def _append_indent(self, indent: int) -> None:
+        if isinstance(indent, bool) or not isinstance(indent, int):
+            raise TypeError("static text indentation level must be an integer")
+        if indent < 0:
+            raise ValueError("static text indentation level must be non-negative")
+        if indent:
+            self._builder.append_text(self._indent_text * indent)
+
+
 def decode_static_text(value: str) -> str:
     """Decode the supported static string literal escapes deterministically."""
 
