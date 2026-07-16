@@ -203,6 +203,48 @@ def test_compare_assembly_renderer_candidate_comparison_plan_reports_contract() 
     assert completed.stderr == ""
 
 
+def test_compare_assembly_renderer_candidate_actual_outputs_reports_contract() -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "tools/compare_assembly_renderer.py",
+            "--candidate-actual-outputs",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0
+    assert "S3 Assembly renderer candidate actual outputs" in completed.stdout
+    assert (
+        "comparison plan: "
+        "tests/golden/assembly_renderer_candidate_comparison_plan.json"
+        in completed.stdout
+    )
+    assert (
+        "actual output root: tests/golden/assembly_renderer_candidate_actual"
+        in completed.stdout
+    )
+    assert (
+        "first planned=tests/golden/assembly_renderer_candidate_actual/first.assembly.txt"
+        in completed.stdout
+    )
+    assert (
+        "simple_call planned=tests/golden/assembly_renderer_candidate_actual/simple_call.assembly.txt"
+        in completed.stdout
+    )
+    assert (
+        "sign planned=tests/golden/assembly_renderer_candidate_actual/sign.assembly.txt"
+        in completed.stdout
+    )
+    assert "exists=false" in completed.stdout
+    assert "status=not_implemented" in completed.stdout
+    assert "comparison=blocked" in completed.stdout
+    assert "status: blocked" in completed.stdout
+    assert completed.stderr == ""
+
+
 def test_compare_assembly_renderer_candidate_run_executes_stub_status() -> None:
     completed = subprocess.run(
         [sys.executable, "tools/compare_assembly_renderer.py", "--candidate-run"],

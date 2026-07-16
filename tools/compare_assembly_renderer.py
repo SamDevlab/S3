@@ -32,6 +32,9 @@ CANDIDATE_FIXTURE_EXPECTATIONS_PATH = (
 CANDIDATE_COMPARISON_PLAN_PATH = (
     REPO_ROOT / "tests" / "golden" / "assembly_renderer_candidate_comparison_plan.json"
 )
+CANDIDATE_ACTUAL_OUTPUTS_PATH = (
+    REPO_ROOT / "tests" / "golden" / "assembly_renderer_candidate_actual_outputs.json"
+)
 CONTRACT_PATH = REPO_ROOT / "tests" / "golden" / "assembly_program_data_contract.json"
 BLOCKED_MESSAGE = (
     "assembly renderer comparison is blocked: S3 renderer is not implemented"
@@ -135,6 +138,26 @@ class CandidateComparisonPlanStatus:
 
 
 @dataclass(frozen=True, slots=True)
+class CandidateActualOutput:
+    name: str
+    source: str
+    expected_assembly: str
+    planned_actual_output: str
+    actual_output_status: str
+    actual_output_exists: bool
+    comparison_status: str
+
+
+@dataclass(frozen=True, slots=True)
+class CandidateActualOutputStatus:
+    comparison_plan: str
+    actual_output_root: str
+    status: str
+    comparison_status: str
+    outputs: tuple[CandidateActualOutput, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class CandidateStatus:
     path: str
     status: str
@@ -208,6 +231,13 @@ def _load_candidate_comparison_plan_manifest() -> dict[str, object]:
     return _load_json(
         CANDIDATE_COMPARISON_PLAN_PATH,
         "candidate comparison plan manifest",
+    )
+
+
+def _load_candidate_actual_outputs_manifest() -> dict[str, object]:
+    return _load_json(
+        CANDIDATE_ACTUAL_OUTPUTS_PATH,
+        "candidate actual outputs manifest",
     )
 
 
@@ -491,6 +521,44 @@ def _manifest_candidate_comparison_plan_fixtures(
     return tuple(parsed)
 
 
+def _manifest_candidate_actual_outputs(
+    data: dict[str, object],
+) -> tuple[CandidateActualOutput, ...]:
+    outputs = data.get("outputs")
+    if not isinstance(outputs, list) or not outputs:
+        raise ValueError("candidate actual outputs must be a non-empty array")
+
+    parsed: list[CandidateActualOutput] = []
+    for index, item in enumerate(outputs):
+        if not isinstance(item, dict):
+            raise ValueError(f"candidate actual output {index} must be an object")
+        name = _string(item, "name")
+        source = _string(item, "source")
+        expected_assembly = _string(item, "expected_assembly")
+        planned_actual_output = _string(item, "planned_actual_output")
+        _require_repo_file(source, "candidate actual output source")
+        _require_repo_file(expected_assembly, "candidate actual output expected assembly")
+        if Path(planned_actual_output).is_absolute():
+            raise ValueError("candidate actual output planned path must be relative")
+        parsed.append(
+            CandidateActualOutput(
+                name=name,
+                source=source,
+                expected_assembly=expected_assembly,
+                planned_actual_output=planned_actual_output,
+                actual_output_status=_string(item, "actual_output_status"),
+                actual_output_exists=_boolean(item, "actual_output_exists"),
+                comparison_status=_string(item, "comparison_status"),
+            )
+        )
+
+    if len({output.name for output in parsed}) != len(parsed):
+        raise ValueError("candidate actual output names must be unique")
+    if "assembly_renderer_stub" in {output.name for output in parsed}:
+        raise ValueError("candidate stub must not be an actual output")
+    return tuple(parsed)
+
+
 def load_reference_fixtures() -> tuple[ReferenceFixture, ...]:
     manifest = _load_manifest()
     contract = _load_contract()
@@ -600,6 +668,41 @@ def load_candidate_comparison_plan_status() -> CandidateComparisonPlanStatus:
         status=status,
         comparison_status=comparison_status,
         fixtures=_manifest_candidate_comparison_plan_fixtures(manifest),
+    )
+
+
+def load_candidate_actual_output_status() -> CandidateActualOutputStatus:
+    manifest = _load_candidate_actual_outputs_manifest()
+    if _string(manifest, "version") != "1.0.0":
+        raise ValueError("candidate actual outputs version must be 1.0.0")
+    if _string(manifest, "component") != "assembly_renderer_candidate_actual_outputs":
+        raise ValueError("candidate actual outputs component mismatch")
+    status = _string(manifest, "status")
+    if status != "blocked":
+        raise ValueError("candidate actual outputs status must be blocked")
+    comparison_plan = _string(manifest, "comparison_plan")
+    if comparison_plan != "tests/golden/assembly_renderer_candidate_comparison_plan.json":
+        raise ValueError("candidate actual outputs comparison plan mismatch")
+    _require_repo_file(comparison_plan, "candidate actual outputs comparison plan")
+    actual_output_root = _string(manifest, "actual_output_root")
+    if actual_output_root != "tests/golden/assembly_renderer_candidate_actual":
+        raise ValueError("candidate actual outputs root mismatch")
+
+    outputs = _manifest_candidate_actual_outputs(manifest)
+    for output in outputs:
+        if output.actual_output_status != "not_implemented":
+            raise ValueError("candidate actual output status mismatch")
+        if output.actual_output_exists:
+            raise ValueError("candidate actual output existence flag mismatch")
+        if output.comparison_status != "blocked":
+            raise ValueError("candidate actual output comparison status mismatch")
+
+    return CandidateActualOutputStatus(
+        comparison_plan=comparison_plan,
+        actual_output_root=actual_output_root,
+        status=status,
+        comparison_status=status,
+        outputs=outputs,
     )
 
 
@@ -962,6 +1065,36 @@ def render_candidate_comparison_plan(
     return "\n".join(lines) + "\n"
 
 
+def render_candidate_actual_outputs(
+    candidate: CandidateActualOutputStatus,
+) -> str:
+    lines = [
+        "S3 Assembly renderer candidate actual outputs",
+        "",
+        f"comparison plan: {candidate.comparison_plan}",
+        f"actual output root: {candidate.actual_output_root}",
+        "",
+        "outputs:",
+    ]
+    lines.extend(
+        (
+            f"  {output.name} planned={output.planned_actual_output} "
+            f"exists={str(output.actual_output_exists).lower()} "
+            f"status={output.actual_output_status} "
+            f"comparison={output.comparison_status}"
+        )
+        for output in candidate.outputs
+    )
+    lines.extend(
+        [
+            "",
+            f"status: {candidate.status}",
+            f"comparison: {candidate.comparison_status}",
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
 def render_reference_status(fixtures: tuple[ReferenceFixture, ...]) -> str:
     lines = [
         "S3 Assembly renderer Python reference",
@@ -1101,6 +1234,20 @@ def candidate_comparison_plan() -> int:
     return 0
 
 
+def candidate_actual_outputs() -> int:
+    try:
+        actual_output_status = load_candidate_actual_output_status()
+    except ValueError as error:
+        print("S3 Assembly renderer candidate actual outputs")
+        print()
+        print("status: unavailable")
+        print(f"reason: {error}")
+        return 1
+
+    print(render_candidate_actual_outputs(actual_output_status), end="")
+    return 0
+
+
 def candidate_run() -> int:
     try:
         candidate_status = load_candidate_status()
@@ -1147,6 +1294,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     mode.add_argument("--candidate-fixtures", action="store_true")
     mode.add_argument("--candidate-fixture-expectations", action="store_true")
     mode.add_argument("--candidate-comparison-plan", action="store_true")
+    mode.add_argument("--candidate-actual-outputs", action="store_true")
     mode.add_argument("--candidate-run", action="store_true")
     mode.add_argument("--check", action="store_true")
     args = parser.parse_args(argv)
@@ -1165,6 +1313,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return candidate_fixture_expectations()
     if args.candidate_comparison_plan:
         return candidate_comparison_plan()
+    if args.candidate_actual_outputs:
+        return candidate_actual_outputs()
     if args.candidate_run:
         return candidate_run()
     return check()
