@@ -23,6 +23,22 @@ def test_compare_assembly_renderer_status_reports_blocked_state() -> None:
     assert completed.stderr == ""
 
 
+def test_compare_assembly_renderer_reference_reports_available_reference() -> None:
+    completed = subprocess.run(
+        [sys.executable, "tools/compare_assembly_renderer.py", "--reference"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 0
+    assert "S3 Assembly renderer Python reference" in completed.stdout
+    assert "status: available" in completed.stdout
+    assert "examples/first.s3" in completed.stdout
+    assert "tests/golden/inspect/first.assembly.txt" in completed.stdout
+    assert completed.stderr == ""
+
+
 def test_compare_assembly_renderer_check_fails_until_s3_renderer_exists() -> None:
     completed = subprocess.run(
         [sys.executable, "tools/compare_assembly_renderer.py", "--check"],
