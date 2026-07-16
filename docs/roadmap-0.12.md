@@ -53,10 +53,23 @@ Acceptance:
 
 ### 0.12-B: first actual output draft
 
+Status: complete
+
 Objective:
 
 Create the first controlled actual output for `first`, if 0.12-A confirms the
 technical path.
+
+0.12-B creates the first versioned candidate actual output:
+`tests/golden/assembly_renderer_candidate_actual/first.assembly.txt`. The file
+is generated from `build_first_fixture_assembly_text()`, keeps LF-stable bytes,
+and records the same byte count, line count, and SHA-256 as the `first` inspect
+golden.
+
+The actual outputs contract now marks `first` as available with pending formal
+comparison. `simple_call` and `sign` remain `not_implemented`, and
+`python tools/compare_assembly_renderer.py --check` remains blocked because the
+real S3 renderer is still not implemented.
 
 Future acceptance:
 

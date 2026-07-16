@@ -148,11 +148,18 @@ def _validate_fixtures(
         expected_sha256 = _string(item, "expected_sha256")
         if expected_sha256 != _string(expectation, "sha256"):
             raise ValueError(f"comparison fixture {name} expected sha256 mismatch")
-        if _string(item, "actual_output_status") != "not_implemented":
+        actual_output_status = _string(item, "actual_output_status")
+        comparison_status = _string(item, "comparison_status")
+        if actual_output_status not in {"available", "not_implemented"}:
             raise ValueError(f"comparison fixture {name} actual output status mismatch")
-        if _string(item, "comparison_status") != "blocked":
+        if actual_output_status == "available" and comparison_status != "pending":
             raise ValueError(f"comparison fixture {name} comparison status mismatch")
-        if NOT_IMPLEMENTED_REASON not in _string(item, "reason"):
+        if actual_output_status == "not_implemented" and comparison_status != "blocked":
+            raise ValueError(f"comparison fixture {name} comparison status mismatch")
+        reason = _string(item, "reason")
+        if actual_output_status == "not_implemented" and NOT_IMPLEMENTED_REASON not in reason:
+            raise ValueError(f"comparison fixture {name} reason mismatch")
+        if actual_output_status == "available" and "formal comparison remains blocked" not in reason:
             raise ValueError(f"comparison fixture {name} reason mismatch")
 
         _relative_repo_file(source, "comparison fixture source")

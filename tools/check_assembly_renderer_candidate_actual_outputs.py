@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -15,19 +16,14 @@ EXCLUDED_STUB = "assembly_renderer_stub"
 NOT_IMPLEMENTED_REASON = "S3 renderer is not implemented"
 DISALLOWED_ACTUAL_OUTPUT_FIELDS = {
     "actual_assembly",
-    "actual_byte_count",
     "actual_file",
-    "actual_line_count",
     "actual_output",
     "actual_output_file",
     "actual_output_path",
     "actual_path",
-    "actual_sha256",
-    "byte_count",
-    "line_count",
-    "sha256",
 }
 WINDOWS_ABSOLUTE_PATH_PATTERN = re.compile(r"[A-Za-z]:\\")
+TIMESTAMP_PATTERN = re.compile(r"\b20[0-9]{2}-[0-9]{2}-[0-9]{2}\b")
 
 
 def _canonical(data: object) -> str:
@@ -52,6 +48,13 @@ def _boolean(data: dict[str, object], key: str) -> bool:
     value = data.get(key)
     if not isinstance(value, bool):
         raise ValueError(f"{key} must be a boolean")
+    return value
+
+
+def _integer(data: dict[str, object], key: str) -> int:
+    value = data.get(key)
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError(f"{key} must be an integer")
     return value
 
 
@@ -113,8 +116,82 @@ def _validate_planned_actual_output(path_text: str, root_text: str, name: str) -
     root = _relative_repo_path(root_text, "actual output root")
     if path.parts[: len(root.parts)] != root.parts:
         raise ValueError(f"actual output {name} planned path must be under root")
-    if (REPO_ROOT / path).exists():
-        raise ValueError(f"actual output {name} already exists: {path_text}")
+    return None
+
+
+def _lf_normalized_bytes(path: Path, label: str) -> bytes:
+    text = path.read_bytes().decode("utf-8")
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    if WINDOWS_ABSOLUTE_PATH_PATTERN.search(text):
+        raise ValueError(f"{label} contains Windows absolute path")
+    if TIMESTAMP_PATTERN.search(text):
+        raise ValueError(f"{label} contains timestamp-like text")
+    return text.encode("utf-8")
+
+
+def _validate_not_implemented_output(
+    item: dict[str, object],
+    actual_output_root: str,
+    name: str,
+) -> None:
+    if _boolean(item, "actual_output_exists") is not False:
+        raise ValueError(f"actual output {name} existence flag must be false")
+    if _string(item, "comparison_status") != "blocked":
+        raise ValueError(f"actual output {name} comparison status mismatch")
+    if NOT_IMPLEMENTED_REASON not in _string(item, "reason"):
+        raise ValueError(f"actual output {name} reason mismatch")
+    for field in ("actual_sha256", "actual_byte_count", "actual_line_count"):
+        if field in item:
+            raise ValueError(f"actual output {name} must not contain {field}")
+
+    planned_actual_output = _string(item, "planned_actual_output")
+    _validate_planned_actual_output(planned_actual_output, actual_output_root, name)
+    planned_path = REPO_ROOT / _relative_repo_path(
+        planned_actual_output,
+        f"actual output {name} planned path",
+    )
+    if planned_path.exists():
+        raise ValueError(f"actual output {name} already exists: {planned_actual_output}")
+
+
+def _validate_available_output(
+    item: dict[str, object],
+    actual_output_root: str,
+    name: str,
+    expected_assembly: str,
+) -> None:
+    if _boolean(item, "actual_output_exists") is not True:
+        raise ValueError(f"actual output {name} existence flag must be true")
+    if _string(item, "comparison_status") != "pending":
+        raise ValueError(f"actual output {name} comparison status mismatch")
+
+    planned_actual_output = _string(item, "planned_actual_output")
+    _validate_planned_actual_output(planned_actual_output, actual_output_root, name)
+    planned_path = REPO_ROOT / _relative_repo_path(
+        planned_actual_output,
+        f"actual output {name} planned path",
+    )
+    if not planned_path.is_file():
+        raise ValueError(f"actual output {name} missing: {planned_actual_output}")
+
+    actual_bytes = _lf_normalized_bytes(planned_path, f"actual output {name}")
+    expected_bytes = _lf_normalized_bytes(
+        REPO_ROOT / expected_assembly,
+        f"expected assembly {name}",
+    )
+    if actual_bytes != expected_bytes:
+        raise ValueError(f"actual output {name} does not match expected assembly")
+
+    actual_sha256 = hashlib.sha256(actual_bytes).hexdigest()
+    actual_line_count = 0 if actual_bytes == b"" else len(
+        actual_bytes.decode("utf-8").splitlines()
+    )
+    if _string(item, "actual_sha256") != actual_sha256:
+        raise ValueError(f"actual output {name} sha256 mismatch")
+    if _integer(item, "actual_byte_count") != len(actual_bytes):
+        raise ValueError(f"actual output {name} byte count mismatch")
+    if _integer(item, "actual_line_count") != actual_line_count:
+        raise ValueError(f"actual output {name} line count mismatch")
 
 
 def _validate_outputs(
@@ -150,22 +227,23 @@ def _validate_outputs(
         expected_assembly = _string(item, "expected_assembly")
         if expected_assembly != _string(comparison_fixture, "expected_assembly"):
             raise ValueError(f"actual output {name} expected assembly mismatch")
-        if _string(item, "actual_output_status") != "not_implemented":
+        actual_output_status = _string(item, "actual_output_status")
+        if actual_output_status != _string(comparison_fixture, "actual_output_status"):
             raise ValueError(f"actual output {name} status mismatch")
-        if _boolean(item, "actual_output_exists") is not False:
-            raise ValueError(f"actual output {name} existence flag must be false")
-        if _string(item, "comparison_status") != "blocked":
+        if _string(item, "comparison_status") != _string(
+            comparison_fixture,
+            "comparison_status",
+        ):
             raise ValueError(f"actual output {name} comparison status mismatch")
-        if NOT_IMPLEMENTED_REASON not in _string(item, "reason"):
-            raise ValueError(f"actual output {name} reason mismatch")
 
         _relative_repo_file(source, "actual output source")
         _relative_repo_file(expected_assembly, "actual output expected assembly")
-        _validate_planned_actual_output(
-            _string(item, "planned_actual_output"),
-            actual_output_root,
-            name,
-        )
+        if actual_output_status == "available":
+            _validate_available_output(item, actual_output_root, name, expected_assembly)
+        elif actual_output_status == "not_implemented":
+            _validate_not_implemented_output(item, actual_output_root, name)
+        else:
+            raise ValueError(f"actual output {name} status mismatch")
 
     if EXCLUDED_STUB in seen:
         raise ValueError("assembly_renderer_stub must not be an actual output")
@@ -178,9 +256,9 @@ def _validate_manifest(data: dict[str, object], text: str) -> None:
         raise ValueError("actual outputs version must be 1.0.0")
     if _string(data, "component") != "assembly_renderer_candidate_actual_outputs":
         raise ValueError("actual outputs component mismatch")
-    if _string(data, "status") != "blocked":
-        raise ValueError("actual outputs status must be blocked")
-    if NOT_IMPLEMENTED_REASON not in _string(data, "reason"):
+    if _string(data, "status") not in {"blocked", "partial"}:
+        raise ValueError("actual outputs status must be blocked or partial")
+    if "S3 renderer is not implemented" not in _string(data, "reason"):
         raise ValueError("actual outputs reason mismatch")
 
     comparison_plan = _string(data, "comparison_plan")
