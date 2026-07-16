@@ -24,6 +24,7 @@ REQUIRED_KEYS = {
     "candidate_capabilities",
     "candidate_execution",
     "candidate_symbol_ids",
+    "candidate_smoke",
     "component",
     "s3_candidate",
     "program_inventory",
@@ -40,6 +41,16 @@ EXPECTED_EXECUTION_MODE = "hosted"
 EXPECTED_STUB_STATUS = -1
 EXPECTED_DIRECTIVE_COUNT_FUNCTION = "renderer_supported_directive_count"
 EXPECTED_OPCODE_COUNT_FUNCTION = "renderer_supported_opcode_count"
+EXPECTED_SMOKE_FUNCTION = "renderer_candidate_capability_smoke"
+EXPECTED_SMOKE_KINDS = {"hosted_reachability", "hosted_assertion"}
+EXPECTED_SMOKE_CALLS = (
+    "renderer_supported_directive_count",
+    "renderer_supported_opcode_count",
+    "renderer_directive_end_id",
+    "renderer_directive_s3asm_id",
+    "renderer_opcode_tadd_id",
+    "renderer_opcode_tret_id",
+)
 
 
 def _canonical(data: object) -> str:
@@ -107,6 +118,29 @@ def _validate_stub_api(path_text: str) -> None:
         raise ValueError("candidate stub missing status function")
     if re.search(r"(?m)^fn\s+main\s*\(\)\s*->\s*trit\s*:", source) is None:
         raise ValueError("candidate stub missing main entrypoint")
+
+
+def _function_body(source: str, function_name: str, return_type: str) -> str:
+    pattern = (
+        rf"(?ms)^fn\s+{re.escape(function_name)}"
+        r"\s*\(\)\s*->\s*"
+        rf"{re.escape(return_type)}\s*:\n"
+        r"(?P<body>.*?)(?=^fn\s+|\Z)"
+    )
+    match = re.search(pattern, source)
+    if match is None:
+        raise ValueError(f"candidate stub missing {function_name} function")
+    return match.group("body")
+
+
+def _validate_stub_smoke(source: str) -> None:
+    smoke_body = _function_body(source, EXPECTED_SMOKE_FUNCTION, "trit")
+    for function_name in EXPECTED_SMOKE_CALLS:
+        call_pattern = rf"\b{re.escape(function_name)}\s*\("
+        if re.search(call_pattern, smoke_body) is None:
+            raise ValueError(
+                f"candidate smoke must call {function_name}"
+            )
 
 
 def _validate_stub_capability(
@@ -220,6 +254,7 @@ def _validate_manifest(data: dict[str, object], text: str) -> None:
 
     candidate_api = _object(data, "candidate_api")
     candidate_capabilities = _object(data, "candidate_capabilities")
+    candidate_smoke = _object(data, "candidate_smoke")
     if _string(candidate_api, "entrypoint") != EXPECTED_ENTRYPOINT:
         raise ValueError(f"candidate API entrypoint must be {EXPECTED_ENTRYPOINT}")
     if _string(candidate_api, "status_function") != EXPECTED_STATUS_FUNCTION:
@@ -256,6 +291,20 @@ def _validate_manifest(data: dict[str, object], text: str) -> None:
         raise ValueError("candidate directive count must match subset manifest")
     if _integer(candidate_capabilities, "expected_opcode_count") != opcode_count:
         raise ValueError("candidate opcode count must match subset manifest")
+
+    smoke_function = _string(candidate_smoke, "function")
+    if smoke_function != EXPECTED_SMOKE_FUNCTION:
+        raise ValueError(
+            f"candidate smoke function must be {EXPECTED_SMOKE_FUNCTION}"
+        )
+    if _integer(candidate_smoke, "expected_return") != EXPECTED_STUB_STATUS:
+        raise ValueError("candidate smoke expected_return must be -1")
+    smoke_kind = _string(candidate_smoke, "kind")
+    if smoke_kind not in EXPECTED_SMOKE_KINDS:
+        raise ValueError(
+            "candidate smoke kind must be hosted_reachability or "
+            "hosted_assertion"
+        )
 
     candidate_execution = _object(data, "candidate_execution")
     if _string(candidate_execution, "mode") != EXPECTED_EXECUTION_MODE:
@@ -296,6 +345,7 @@ def _validate_manifest(data: dict[str, object], text: str) -> None:
         opcode_count,
         "opcode count",
     )
+    _validate_stub_smoke(candidate_source)
     candidate_symbol_ids = _object(data, "candidate_symbol_ids")
     _validate_symbol_ids(
         candidate_symbol_ids,

@@ -50,6 +50,12 @@ The stub also exposes one scalar ID function per supported directive and opcode.
 Those IDs follow the subset manifest order and are checked as constants only;
 they do not render Assembly.
 
+The candidate also has a hosted capability smoke function:
+`renderer_candidate_capability_smoke()`. It reaches scalar count and selected ID
+functions and returns `-1` when those assertions match the subset contract. This
+keeps the candidate status aligned with the stub meaning; it does not implement
+Assembly rendering.
+
 `python tools/compare_assembly_renderer.py --check` fails intentionally while
 the S3 renderer is unavailable.
 

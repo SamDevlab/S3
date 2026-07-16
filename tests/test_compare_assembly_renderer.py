@@ -62,6 +62,10 @@ def test_compare_assembly_renderer_candidate_reports_stub() -> None:
         "opcode count function: renderer_supported_opcode_count"
         in completed.stdout
     )
+    assert (
+        "capability smoke function: renderer_candidate_capability_smoke"
+        in completed.stdout
+    )
     assert "directive id functions: 6" in completed.stdout
     assert "opcode id functions: 8" in completed.stdout
     assert "implements renderer: no" in completed.stdout
