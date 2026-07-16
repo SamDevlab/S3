@@ -1,5 +1,8 @@
 # Stub for the future S3 Assembly renderer subset.
 # It intentionally does not render Assembly yet.
 
-fn main() -> tryte:
-    return 0
+fn renderer_candidate_status() -> trit:
+    return -1
+
+fn main() -> trit:
+    return renderer_candidate_status()

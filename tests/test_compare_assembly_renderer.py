@@ -52,6 +52,8 @@ def test_compare_assembly_renderer_candidate_reports_stub() -> None:
     assert completed.returncode == 0
     assert "S3 Assembly renderer candidate" in completed.stdout
     assert "status: stub" in completed.stdout
+    assert "entrypoint: main" in completed.stdout
+    assert "status function: renderer_candidate_status" in completed.stdout
     assert "implements renderer: no" in completed.stdout
     assert completed.stderr == ""
 
