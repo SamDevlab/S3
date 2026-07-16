@@ -76,14 +76,15 @@ def _fixture_rows(data: dict[str, object]) -> list[dict[str, object]]:
 
 def _expected_assembly_metadata(path_text: str) -> tuple[str, int, int]:
     path = _relative_repo_file(path_text, "expected assembly")
-    data = path.read_bytes()
-    text = data.decode("utf-8")
+    text = path.read_bytes().decode("utf-8")
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
     if not text.endswith("\n"):
         raise ValueError(f"expected assembly missing final newline: {path_text}")
     if WINDOWS_ABSOLUTE_PATH_PATTERN.search(text):
         raise ValueError(f"expected assembly contains Windows absolute path: {path_text}")
     if TIMESTAMP_PATTERN.search(text):
         raise ValueError(f"expected assembly contains timestamp-like text: {path_text}")
+    data = text.encode("utf-8")
     return hashlib.sha256(data).hexdigest(), len(data), len(text.splitlines())
 
 

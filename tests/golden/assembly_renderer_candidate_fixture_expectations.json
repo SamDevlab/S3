@@ -15,20 +15,20 @@
       "status": "expected"
     },
     {
-      "byte_count": 469,
+      "byte_count": 448,
       "expected_assembly": "tests/golden/inspect/simple_call.assembly.txt",
       "line_count": 21,
       "name": "simple_call",
-      "sha256": "7b1b7ef29eec49b807acadce8aacbaa6c53d334f21f1253905d4ce34335000d5",
+      "sha256": "d6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f",
       "source": "examples/simple_call.s3",
       "status": "expected"
     },
     {
-      "byte_count": 982,
+      "byte_count": 946,
       "expected_assembly": "tests/golden/inspect/sign.assembly.txt",
       "line_count": 36,
       "name": "sign",
-      "sha256": "edf3892d59f037514fb53c5dc0eb57d0a0833a9c3b5b65ef5e1a1760765d54ee",
+      "sha256": "c077d2c49639b1a033505ec8c1ba1c60c78242e6e09c43f60a8aa5ed8b49e2d9",
       "source": "examples/sign.s3",
       "status": "expected"
     }
