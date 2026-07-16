@@ -1,0 +1,42 @@
+{
+  "comparison": {
+    "actual_output_source": "s3_renderer_candidate",
+    "actual_output_status": "not_implemented",
+    "expected_output_source": "assembly_golden",
+    "result": "blocked"
+  },
+  "component": "assembly_renderer_candidate_comparison_plan",
+  "fixture_expectations": "tests/golden/assembly_renderer_candidate_fixture_expectations.json",
+  "fixtures": [
+    {
+      "actual_output_status": "not_implemented",
+      "comparison_status": "blocked",
+      "expected_assembly": "tests/golden/inspect/first.assembly.txt",
+      "expected_sha256": "46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67",
+      "name": "first",
+      "reason": "S3 renderer is not implemented",
+      "source": "examples/first.s3"
+    },
+    {
+      "actual_output_status": "not_implemented",
+      "comparison_status": "blocked",
+      "expected_assembly": "tests/golden/inspect/simple_call.assembly.txt",
+      "expected_sha256": "d6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f",
+      "name": "simple_call",
+      "reason": "S3 renderer is not implemented",
+      "source": "examples/simple_call.s3"
+    },
+    {
+      "actual_output_status": "not_implemented",
+      "comparison_status": "blocked",
+      "expected_assembly": "tests/golden/inspect/sign.assembly.txt",
+      "expected_sha256": "c077d2c49639b1a033505ec8c1ba1c60c78242e6e09c43f60a8aa5ed8b49e2d9",
+      "name": "sign",
+      "reason": "S3 renderer is not implemented",
+      "source": "examples/sign.s3"
+    }
+  ],
+  "reason": "S3 renderer is not implemented",
+  "status": "blocked",
+  "version": "1.0.0"
+}
