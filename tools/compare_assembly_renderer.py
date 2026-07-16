@@ -31,6 +31,12 @@ EXPECTED_EXECUTION_MODE = "hosted"
 EXPECTED_STUB_STATUS = -1
 EXPECTED_DIRECTIVE_COUNT_FUNCTION = "renderer_supported_directive_count"
 EXPECTED_OPCODE_COUNT_FUNCTION = "renderer_supported_opcode_count"
+EXPECTED_DIRECTIVE_FIRST_FUNCTION = "renderer_first_directive_id"
+EXPECTED_DIRECTIVE_LAST_FUNCTION = "renderer_last_directive_id"
+EXPECTED_OPCODE_FIRST_FUNCTION = "renderer_first_opcode_id"
+EXPECTED_OPCODE_LAST_FUNCTION = "renderer_last_opcode_id"
+EXPECTED_DIRECTIVE_PREDICATE_FUNCTION = "renderer_supports_directive_id"
+EXPECTED_OPCODE_PREDICATE_FUNCTION = "renderer_supports_opcode_id"
 EXPECTED_SMOKE_FUNCTION = "renderer_candidate_capability_smoke"
 EXPECTED_SMOKE_KINDS = {"hosted_reachability", "hosted_assertion"}
 
@@ -60,6 +66,12 @@ class CandidateStatus:
     smoke_function: str
     directive_id_functions: int
     opcode_id_functions: int
+    directive_first_id: int
+    directive_last_id: int
+    opcode_first_id: int
+    opcode_last_id: int
+    directive_support_predicate: str | None
+    opcode_support_predicate: str | None
     execution_mode: str
     expected_status: int
     execution_meaning: str
@@ -269,6 +281,7 @@ def load_candidate_status() -> CandidateStatus:
     candidate_execution = _object(manifest, "candidate_execution")
     candidate_smoke = _object(manifest, "candidate_smoke")
     candidate_symbol_ids = _object(manifest, "candidate_symbol_ids")
+    candidate_symbol_ranges = _object(manifest, "candidate_symbol_ranges")
     s3_candidate = _object(manifest, "s3_candidate")
     program_inventory = _object(manifest, "program_inventory")
     python_reference = _object(manifest, "python_reference")
@@ -316,6 +329,52 @@ def load_candidate_status() -> CandidateStatus:
         raise ValueError(
             "candidate smoke kind must be hosted_reachability or hosted_assertion"
         )
+    directive_ranges = _object(candidate_symbol_ranges, "directives")
+    directive_first_function = _string(directive_ranges, "first_function")
+    if directive_first_function != EXPECTED_DIRECTIVE_FIRST_FUNCTION:
+        raise ValueError("candidate directive first range function mismatch")
+    directive_first_id = _integer(directive_ranges, "first_id")
+    if directive_first_id != 0:
+        raise ValueError("candidate directive first ID must be 0")
+    directive_last_function = _string(directive_ranges, "last_function")
+    if directive_last_function != EXPECTED_DIRECTIVE_LAST_FUNCTION:
+        raise ValueError("candidate directive last range function mismatch")
+    directive_last_id = _integer(directive_ranges, "last_id")
+    if directive_last_id != expected_directive_count - 1:
+        raise ValueError("candidate directive last ID must match subset manifest")
+
+    opcode_ranges = _object(candidate_symbol_ranges, "opcodes")
+    opcode_first_function = _string(opcode_ranges, "first_function")
+    if opcode_first_function != EXPECTED_OPCODE_FIRST_FUNCTION:
+        raise ValueError("candidate opcode first range function mismatch")
+    opcode_first_id = _integer(opcode_ranges, "first_id")
+    if opcode_first_id != 0:
+        raise ValueError("candidate opcode first ID must be 0")
+    opcode_last_function = _string(opcode_ranges, "last_function")
+    if opcode_last_function != EXPECTED_OPCODE_LAST_FUNCTION:
+        raise ValueError("candidate opcode last range function mismatch")
+    opcode_last_id = _integer(opcode_ranges, "last_id")
+    if opcode_last_id != expected_opcode_count - 1:
+        raise ValueError("candidate opcode last ID must match subset manifest")
+
+    directive_support_predicate: str | None = None
+    opcode_support_predicate: str | None = None
+    predicate_value = manifest.get("candidate_symbol_predicates")
+    if predicate_value is not None:
+        if not isinstance(predicate_value, dict):
+            raise ValueError("candidate symbol predicates must be an object")
+        directive_support_predicate = _string(predicate_value, "directive_function")
+        if directive_support_predicate != EXPECTED_DIRECTIVE_PREDICATE_FUNCTION:
+            raise ValueError("candidate directive support predicate mismatch")
+        opcode_support_predicate = _string(predicate_value, "opcode_function")
+        if opcode_support_predicate != EXPECTED_OPCODE_PREDICATE_FUNCTION:
+            raise ValueError("candidate opcode support predicate mismatch")
+        if _integer(predicate_value, "supported_return") != 1:
+            raise ValueError("candidate support predicate supported return must be 1")
+        if _integer(predicate_value, "unsupported_return") != EXPECTED_STUB_STATUS:
+            raise ValueError(
+                "candidate support predicate unsupported return must be -1"
+            )
     directive_id_functions = _symbol_id_function_count(
         candidate_symbol_ids,
         "directives",
@@ -394,6 +453,12 @@ def load_candidate_status() -> CandidateStatus:
         smoke_function=smoke_function,
         directive_id_functions=directive_id_functions,
         opcode_id_functions=opcode_id_functions,
+        directive_first_id=directive_first_id,
+        directive_last_id=directive_last_id,
+        opcode_first_id=opcode_first_id,
+        opcode_last_id=opcode_last_id,
+        directive_support_predicate=directive_support_predicate,
+        opcode_support_predicate=opcode_support_predicate,
         execution_mode=execution_mode,
         expected_status=expected_status,
         execution_meaning=execution_meaning,
@@ -417,9 +482,25 @@ def render_candidate_status(candidate: CandidateStatus) -> str:
         f"capability smoke function: {candidate.smoke_function}",
         f"directive id functions: {candidate.directive_id_functions}",
         f"opcode id functions: {candidate.opcode_id_functions}",
+        (
+            "directive id range: "
+            f"{candidate.directive_first_id}..{candidate.directive_last_id}"
+        ),
+        f"opcode id range: {candidate.opcode_first_id}..{candidate.opcode_last_id}",
         f"implements renderer: {implements}",
         f"comparison: {candidate.comparison_status}",
     ]
+    if candidate.directive_support_predicate is not None:
+        lines.insert(
+            -2,
+            "directive support predicate: "
+            f"{candidate.directive_support_predicate}",
+        )
+    if candidate.opcode_support_predicate is not None:
+        lines.insert(
+            -2,
+            f"opcode support predicate: {candidate.opcode_support_predicate}",
+        )
     return "\n".join(lines) + "\n"
 
 

@@ -7,6 +7,56 @@ fn renderer_supported_directive_count() -> tryte:
 fn renderer_supported_opcode_count() -> tryte:
     return 8
 
+fn renderer_first_directive_id() -> tryte:
+    return 0
+
+fn renderer_last_directive_id() -> tryte:
+    return 5
+
+fn renderer_first_opcode_id() -> tryte:
+    return 0
+
+fn renderer_last_opcode_id() -> tryte:
+    return 7
+
+fn renderer_supports_directive_id(id: tryte) -> trit:
+    match id <=> renderer_first_directive_id():
+        -1:
+            return -1
+
+        0:
+            return 1
+
+        1:
+            match id <=> renderer_last_directive_id():
+                -1:
+                    return 1
+
+                0:
+                    return 1
+
+                1:
+                    return -1
+
+fn renderer_supports_opcode_id(id: tryte) -> trit:
+    match id <=> renderer_first_opcode_id():
+        -1:
+            return -1
+
+        0:
+            return 1
+
+        1:
+            match id <=> renderer_last_opcode_id():
+                -1:
+                    return 1
+
+                0:
+                    return 1
+
+                1:
+                    return -1
+
 fn renderer_directive_end_id() -> tryte:
     return 0
 
@@ -50,55 +100,149 @@ fn renderer_opcode_tret_id() -> tryte:
     return 7
 
 fn renderer_candidate_capability_smoke() -> trit:
+    mut result: trit = -1
+
     match renderer_supported_directive_count() <=> 6:
         -1:
-            return 0
+            result = 0
 
         0:
-            match renderer_supported_opcode_count() <=> 8:
-                -1:
-                    return 0
-
-                0:
-                    match renderer_directive_end_id() <=> 0:
-                        -1:
-                            return 0
-
-                        0:
-                            match renderer_directive_s3asm_id() <=> 5:
-                                -1:
-                                    return 0
-
-                                0:
-                                    match renderer_opcode_tadd_id() <=> 0:
-                                        -1:
-                                            return 0
-
-                                        0:
-                                            match renderer_opcode_tret_id() <=> 7:
-                                                -1:
-                                                    return 0
-
-                                                0:
-                                                    return -1
-
-                                                1:
-                                                    return 0
-
-                                        1:
-                                            return 0
-
-                                1:
-                                    return 0
-
-                        1:
-                            return 0
-
-                1:
-                    return 0
+            result = result
 
         1:
-            return 0
+            result = 0
+
+    match renderer_supported_opcode_count() <=> 8:
+        -1:
+            result = 0
+
+        0:
+            result = result
+
+        1:
+            result = 0
+
+    match renderer_first_directive_id() <=> 0:
+        -1:
+            result = 0
+
+        0:
+            result = result
+
+        1:
+            result = 0
+
+    match renderer_last_directive_id() <=> 5:
+        -1:
+            result = 0
+
+        0:
+            result = result
+
+        1:
+            result = 0
+
+    match renderer_first_opcode_id() <=> 0:
+        -1:
+            result = 0
+
+        0:
+            result = result
+
+        1:
+            result = 0
+
+    match renderer_last_opcode_id() <=> 7:
+        -1:
+            result = 0
+
+        0:
+            result = result
+
+        1:
+            result = 0
+
+    match renderer_directive_end_id() <=> 0:
+        -1:
+            result = 0
+
+        0:
+            result = result
+
+        1:
+            result = 0
+
+    match renderer_directive_s3asm_id() <=> 5:
+        -1:
+            result = 0
+
+        0:
+            result = result
+
+        1:
+            result = 0
+
+    match renderer_opcode_tadd_id() <=> 0:
+        -1:
+            result = 0
+
+        0:
+            result = result
+
+        1:
+            result = 0
+
+    match renderer_opcode_tret_id() <=> 7:
+        -1:
+            result = 0
+
+        0:
+            result = result
+
+        1:
+            result = 0
+
+    match renderer_supports_directive_id(renderer_first_directive_id()) <=> 1:
+        -1:
+            result = 0
+
+        0:
+            result = result
+
+        1:
+            result = 0
+
+    match renderer_supports_directive_id(-1) <=> -1:
+        -1:
+            result = 0
+
+        0:
+            result = result
+
+        1:
+            result = 0
+
+    match renderer_supports_opcode_id(renderer_last_opcode_id()) <=> 1:
+        -1:
+            result = 0
+
+        0:
+            result = result
+
+        1:
+            result = 0
+
+    match renderer_supports_opcode_id(8) <=> -1:
+        -1:
+            result = 0
+
+        0:
+            result = result
+
+        1:
+            result = 0
+
+    return result
 
 fn renderer_candidate_status() -> trit:
     return renderer_candidate_capability_smoke()

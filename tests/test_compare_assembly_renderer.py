@@ -68,6 +68,16 @@ def test_compare_assembly_renderer_candidate_reports_stub() -> None:
     )
     assert "directive id functions: 6" in completed.stdout
     assert "opcode id functions: 8" in completed.stdout
+    assert "directive id range: 0..5" in completed.stdout
+    assert "opcode id range: 0..7" in completed.stdout
+    assert (
+        "directive support predicate: renderer_supports_directive_id"
+        in completed.stdout
+    )
+    assert (
+        "opcode support predicate: renderer_supports_opcode_id"
+        in completed.stdout
+    )
     assert "implements renderer: no" in completed.stdout
     assert completed.stderr == ""
 
