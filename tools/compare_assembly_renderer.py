@@ -29,6 +29,9 @@ CANDIDATE_FIXTURE_EXPECTATIONS_PATH = (
     / "golden"
     / "assembly_renderer_candidate_fixture_expectations.json"
 )
+CANDIDATE_COMPARISON_PLAN_PATH = (
+    REPO_ROOT / "tests" / "golden" / "assembly_renderer_candidate_comparison_plan.json"
+)
 CONTRACT_PATH = REPO_ROOT / "tests" / "golden" / "assembly_program_data_contract.json"
 BLOCKED_MESSAGE = (
     "assembly renderer comparison is blocked: S3 renderer is not implemented"
@@ -111,6 +114,27 @@ class CandidateFixtureExpectationStatus:
 
 
 @dataclass(frozen=True, slots=True)
+class CandidateComparisonPlanFixture:
+    name: str
+    source: str
+    expected_assembly: str
+    expected_sha256: str
+    actual_output_status: str
+    comparison_status: str
+
+
+@dataclass(frozen=True, slots=True)
+class CandidateComparisonPlanStatus:
+    fixture_expectations: str
+    expected_output_source: str
+    actual_output_source: str
+    actual_output_status: str
+    status: str
+    comparison_status: str
+    fixtures: tuple[CandidateComparisonPlanFixture, ...]
+
+
+@dataclass(frozen=True, slots=True)
 class CandidateStatus:
     path: str
     status: str
@@ -177,6 +201,13 @@ def _load_candidate_fixture_expectations_manifest() -> dict[str, object]:
     return _load_json(
         CANDIDATE_FIXTURE_EXPECTATIONS_PATH,
         "candidate fixture expectations manifest",
+    )
+
+
+def _load_candidate_comparison_plan_manifest() -> dict[str, object]:
+    return _load_json(
+        CANDIDATE_COMPARISON_PLAN_PATH,
+        "candidate comparison plan manifest",
     )
 
 
@@ -426,6 +457,40 @@ def _manifest_candidate_fixture_expectations(
     return tuple(parsed)
 
 
+def _manifest_candidate_comparison_plan_fixtures(
+    data: dict[str, object],
+) -> tuple[CandidateComparisonPlanFixture, ...]:
+    fixtures = data.get("fixtures")
+    if not isinstance(fixtures, list) or not fixtures:
+        raise ValueError("candidate comparison plan fixtures must be a non-empty array")
+
+    parsed: list[CandidateComparisonPlanFixture] = []
+    for index, item in enumerate(fixtures):
+        if not isinstance(item, dict):
+            raise ValueError(f"candidate comparison plan fixture {index} must be an object")
+        name = _string(item, "name")
+        source = _string(item, "source")
+        expected_assembly = _string(item, "expected_assembly")
+        _require_repo_file(source, "candidate comparison plan source")
+        _require_repo_file(expected_assembly, "candidate comparison plan expected assembly")
+        parsed.append(
+            CandidateComparisonPlanFixture(
+                name=name,
+                source=source,
+                expected_assembly=expected_assembly,
+                expected_sha256=_string(item, "expected_sha256"),
+                actual_output_status=_string(item, "actual_output_status"),
+                comparison_status=_string(item, "comparison_status"),
+            )
+        )
+
+    if len({fixture.name for fixture in parsed}) != len(parsed):
+        raise ValueError("candidate comparison plan fixture names must be unique")
+    if "assembly_renderer_stub" in {fixture.name for fixture in parsed}:
+        raise ValueError("candidate stub must not be a comparison plan fixture")
+    return tuple(parsed)
+
+
 def load_reference_fixtures() -> tuple[ReferenceFixture, ...]:
     manifest = _load_manifest()
     contract = _load_contract()
@@ -494,6 +559,47 @@ def load_candidate_fixture_expectation_status() -> CandidateFixtureExpectationSt
         status=status,
         comparison_status=comparison_status,
         expectations=_manifest_candidate_fixture_expectations(manifest),
+    )
+
+
+def load_candidate_comparison_plan_status() -> CandidateComparisonPlanStatus:
+    manifest = _load_candidate_comparison_plan_manifest()
+    if _string(manifest, "version") != "1.0.0":
+        raise ValueError("candidate comparison plan version must be 1.0.0")
+    if _string(manifest, "component") != "assembly_renderer_candidate_comparison_plan":
+        raise ValueError("candidate comparison plan component mismatch")
+    status = _string(manifest, "status")
+    if status != "blocked":
+        raise ValueError("candidate comparison plan status must be blocked")
+    fixture_expectations = _string(manifest, "fixture_expectations")
+    if (
+        fixture_expectations
+        != "tests/golden/assembly_renderer_candidate_fixture_expectations.json"
+    ):
+        raise ValueError("candidate comparison plan fixture expectations mismatch")
+    _require_repo_file(fixture_expectations, "candidate comparison plan expectations")
+    comparison = _object(manifest, "comparison")
+    expected_output_source = _string(comparison, "expected_output_source")
+    if expected_output_source != "assembly_golden":
+        raise ValueError("candidate comparison plan expected output source mismatch")
+    actual_output_source = _string(comparison, "actual_output_source")
+    if actual_output_source != "s3_renderer_candidate":
+        raise ValueError("candidate comparison plan actual output source mismatch")
+    actual_output_status = _string(comparison, "actual_output_status")
+    if actual_output_status != "not_implemented":
+        raise ValueError("candidate comparison plan actual output status mismatch")
+    comparison_status = _string(comparison, "result")
+    if comparison_status != "blocked":
+        raise ValueError("candidate comparison plan comparison result mismatch")
+
+    return CandidateComparisonPlanStatus(
+        fixture_expectations=fixture_expectations,
+        expected_output_source=expected_output_source,
+        actual_output_source=actual_output_source,
+        actual_output_status=actual_output_status,
+        status=status,
+        comparison_status=comparison_status,
+        fixtures=_manifest_candidate_comparison_plan_fixtures(manifest),
     )
 
 
@@ -824,6 +930,38 @@ def render_candidate_fixture_expectations(
     return "\n".join(lines) + "\n"
 
 
+def render_candidate_comparison_plan(
+    candidate: CandidateComparisonPlanStatus,
+) -> str:
+    lines = [
+        "S3 Assembly renderer candidate comparison plan",
+        "",
+        f"fixture expectations: {candidate.fixture_expectations}",
+        "",
+        "fixtures:",
+    ]
+    lines.extend(
+        (
+            f"  {fixture.name} expected={fixture.expected_assembly} "
+            f"sha256={fixture.expected_sha256} "
+            f"actual={fixture.actual_output_status} "
+            f"comparison={fixture.comparison_status}"
+        )
+        for fixture in candidate.fixtures
+    )
+    lines.extend(
+        [
+            "",
+            f"expected output: {candidate.expected_output_source}",
+            f"actual output: {candidate.actual_output_source}",
+            f"actual output status: {candidate.actual_output_status}",
+            f"status: {candidate.status}",
+            f"comparison: {candidate.comparison_status}",
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
 def render_reference_status(fixtures: tuple[ReferenceFixture, ...]) -> str:
     lines = [
         "S3 Assembly renderer Python reference",
@@ -949,6 +1087,20 @@ def candidate_fixture_expectations() -> int:
     return 0
 
 
+def candidate_comparison_plan() -> int:
+    try:
+        comparison_plan_status = load_candidate_comparison_plan_status()
+    except ValueError as error:
+        print("S3 Assembly renderer candidate comparison plan")
+        print()
+        print("status: unavailable")
+        print(f"reason: {error}")
+        return 1
+
+    print(render_candidate_comparison_plan(comparison_plan_status), end="")
+    return 0
+
+
 def candidate_run() -> int:
     try:
         candidate_status = load_candidate_status()
@@ -994,6 +1146,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     mode.add_argument("--candidate-symbols", action="store_true")
     mode.add_argument("--candidate-fixtures", action="store_true")
     mode.add_argument("--candidate-fixture-expectations", action="store_true")
+    mode.add_argument("--candidate-comparison-plan", action="store_true")
     mode.add_argument("--candidate-run", action="store_true")
     mode.add_argument("--check", action="store_true")
     args = parser.parse_args(argv)
@@ -1010,6 +1163,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return candidate_fixtures()
     if args.candidate_fixture_expectations:
         return candidate_fixture_expectations()
+    if args.candidate_comparison_plan:
+        return candidate_comparison_plan()
     if args.candidate_run:
         return candidate_run()
     return check()

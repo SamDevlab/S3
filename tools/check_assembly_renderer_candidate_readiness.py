@@ -46,6 +46,12 @@ READINESS_STEPS = (
         ),
     ),
     ReadinessStep(
+        "comparison plan",
+        ("tools/check_assembly_renderer_candidate_comparison_plan.py",),
+        0,
+        stdout_contains=("assembly renderer candidate comparison plan: ok",),
+    ),
+    ReadinessStep(
         "program check",
         ("tools/s3_program_check.py", "check"),
         0,
@@ -97,6 +103,20 @@ READINESS_STEPS = (
             "simple_call tests/golden/inspect/simple_call.assembly.txt",
             "sign tests/golden/inspect/sign.assembly.txt",
             "status: reference_only",
+            "comparison: blocked",
+        ),
+    ),
+    ReadinessStep(
+        "candidate comparison plan",
+        ("tools/compare_assembly_renderer.py", "--candidate-comparison-plan"),
+        0,
+        stdout_contains=(
+            "S3 Assembly renderer candidate comparison plan",
+            "first expected=tests/golden/inspect/first.assembly.txt",
+            "simple_call expected=tests/golden/inspect/simple_call.assembly.txt",
+            "sign expected=tests/golden/inspect/sign.assembly.txt",
+            "actual output status: not_implemented",
+            "status: blocked",
             "comparison: blocked",
         ),
     ),
