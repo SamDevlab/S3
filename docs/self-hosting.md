@@ -13,6 +13,11 @@ programs are compiled by the Python implementation, and the Python pipeline is
 the source of truth for syntax, semantics, IR, Assembly, execution behavior, and
 diagnostics.
 
+S3 0.10 is closed as a preparation milestone for self-hosting and the Assembly
+renderer candidate. S3 0.11 is open for incremental implementation work toward
+deterministic text output and the first real renderer fixture; see
+`docs/roadmap-0.10.md` and `docs/roadmap-0.11.md`.
+
 Recent tools make this pipeline more observable:
 
 - `s3 targets` lists internal target and backend names.

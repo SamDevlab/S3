@@ -16,6 +16,10 @@ now exists, but the S3 renderer implementation is not available.
 String literals are available only as front-end expressions. Runtime string
 support is not implemented, so the renderer comparison remains blocked.
 
+S3 0.10 closed with the candidate contracts and readiness gate in place. S3
+0.11 starts implementation work toward real actual renderer output; see
+`docs/roadmap-0.10.md` and `docs/roadmap-0.11.md`.
+
 `python tools/compare_assembly_renderer.py --status` reports the current state
 and exits successfully.
 
