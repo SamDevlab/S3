@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 
@@ -22,6 +23,7 @@ REQUIRED_KEYS = {
     "candidate_api",
     "candidate_capabilities",
     "candidate_execution",
+    "candidate_symbol_ids",
     "component",
     "s3_candidate",
     "program_inventory",
@@ -124,6 +126,71 @@ def _validate_stub_capability(
         )
 
 
+def _directive_symbol_function_name(symbol: str) -> str:
+    name = symbol[1:] if symbol.startswith(".") else symbol
+    return f"renderer_directive_{name.replace('.', '_')}_id"
+
+
+def _opcode_symbol_function_name(symbol: str) -> str:
+    return f"renderer_opcode_{symbol.lower()}_id"
+
+
+def _validate_symbol_ids(
+    data: dict[str, object],
+    key: str,
+    expected_symbols: list[str],
+    expected_count: int,
+    function_name_for_symbol: Callable[[str], str],
+    candidate_source: str,
+) -> None:
+    if len(set(expected_symbols)) != len(expected_symbols):
+        raise ValueError(f"subset manifest {key} must not contain duplicates")
+
+    symbols = _object(data, key)
+    if len(symbols) != expected_count:
+        raise ValueError(
+            f"candidate {key} symbol ID count must match candidate capabilities"
+        )
+
+    actual_symbol_set = set(symbols)
+    expected_symbol_set = set(expected_symbols)
+    if actual_symbol_set != expected_symbol_set:
+        missing = [symbol for symbol in expected_symbols if symbol not in symbols]
+        extra = sorted(actual_symbol_set - expected_symbol_set)
+        details: list[str] = []
+        if missing:
+            details.append(f"missing: {', '.join(missing)}")
+        if extra:
+            details.append(f"extra: {', '.join(extra)}")
+        rendered = "; ".join(details)
+        raise ValueError(
+            f"candidate {key} symbol IDs must match subset manifest ({rendered})"
+        )
+
+    for expected_id, symbol in enumerate(expected_symbols):
+        entry = _object(symbols, symbol)
+        expected_function_name = function_name_for_symbol(symbol)
+        function_name = _string(entry, "function")
+        if function_name != expected_function_name:
+            raise ValueError(
+                f"candidate {key} {symbol} function must be "
+                f"{expected_function_name}"
+            )
+
+        symbol_id = _integer(entry, "id")
+        if symbol_id != expected_id:
+            raise ValueError(
+                f"candidate {key} {symbol} ID must be {expected_id}"
+            )
+
+        _validate_stub_capability(
+            candidate_source,
+            function_name,
+            expected_id,
+            f"{key} {symbol} ID",
+        )
+
+
 def _required_string_array(data: dict[str, object], key: str) -> list[str]:
     value = data.get(key)
     if not isinstance(value, list) or not all(
@@ -181,8 +248,10 @@ def _validate_manifest(data: dict[str, object], text: str) -> None:
         )
 
     subset_data = _load_subset_manifest()
-    directive_count = len(_required_string_array(subset_data, "directives"))
-    opcode_count = len(_required_string_array(subset_data, "opcodes"))
+    directives = _required_string_array(subset_data, "directives")
+    opcodes = _required_string_array(subset_data, "opcodes")
+    directive_count = len(directives)
+    opcode_count = len(opcodes)
     if _integer(candidate_capabilities, "expected_directive_count") != directive_count:
         raise ValueError("candidate directive count must match subset manifest")
     if _integer(candidate_capabilities, "expected_opcode_count") != opcode_count:
@@ -226,6 +295,23 @@ def _validate_manifest(data: dict[str, object], text: str) -> None:
         opcode_count_function,
         opcode_count,
         "opcode count",
+    )
+    candidate_symbol_ids = _object(data, "candidate_symbol_ids")
+    _validate_symbol_ids(
+        candidate_symbol_ids,
+        "directives",
+        directives,
+        directive_count,
+        _directive_symbol_function_name,
+        candidate_source,
+    )
+    _validate_symbol_ids(
+        candidate_symbol_ids,
+        "opcodes",
+        opcodes,
+        opcode_count,
+        _opcode_symbol_function_name,
+        candidate_source,
     )
 
     program_inventory = _object(data, "program_inventory")

@@ -7,6 +7,48 @@ fn renderer_supported_directive_count() -> tryte:
 fn renderer_supported_opcode_count() -> tryte:
     return 8
 
+fn renderer_directive_end_id() -> tryte:
+    return 0
+
+fn renderer_directive_function_id() -> tryte:
+    return 1
+
+fn renderer_directive_label_id() -> tryte:
+    return 2
+
+fn renderer_directive_param_id() -> tryte:
+    return 3
+
+fn renderer_directive_register_id() -> tryte:
+    return 4
+
+fn renderer_directive_s3asm_id() -> tryte:
+    return 5
+
+fn renderer_opcode_tadd_id() -> tryte:
+    return 0
+
+fn renderer_opcode_tbr3_id() -> tryte:
+    return 1
+
+fn renderer_opcode_tcall_id() -> tryte:
+    return 2
+
+fn renderer_opcode_tcmp_id() -> tryte:
+    return 3
+
+fn renderer_opcode_tconst_id() -> tryte:
+    return 4
+
+fn renderer_opcode_tinv_id() -> tryte:
+    return 5
+
+fn renderer_opcode_tmov_id() -> tryte:
+    return 6
+
+fn renderer_opcode_tret_id() -> tryte:
+    return 7
+
 fn renderer_candidate_status() -> trit:
     return -1
 

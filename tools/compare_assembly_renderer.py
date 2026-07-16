@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
@@ -54,6 +55,8 @@ class CandidateStatus:
     status_function: str
     directive_count_function: str
     opcode_count_function: str
+    directive_id_functions: int
+    opcode_id_functions: int
     execution_mode: str
     expected_status: int
     execution_meaning: str
@@ -155,6 +158,44 @@ def _require_repo_file(path_text: str, label: str) -> None:
         raise ValueError(f"{label} missing: {path_text}")
 
 
+def _directive_symbol_function_name(symbol: str) -> str:
+    name = symbol[1:] if symbol.startswith(".") else symbol
+    return f"renderer_directive_{name.replace('.', '_')}_id"
+
+
+def _opcode_symbol_function_name(symbol: str) -> str:
+    return f"renderer_opcode_{symbol.lower()}_id"
+
+
+def _symbol_id_function_count(
+    data: dict[str, object],
+    key: str,
+    expected_symbols: tuple[str, ...],
+    expected_count: int,
+    function_name_for_symbol: Callable[[str], str],
+) -> int:
+    symbols = _object(data, key)
+    if len(symbols) != expected_count:
+        raise ValueError(f"candidate {key} symbol ID count must match capabilities")
+    if set(symbols) != set(expected_symbols):
+        raise ValueError(f"candidate {key} symbol IDs must match subset manifest")
+
+    for expected_id, symbol in enumerate(expected_symbols):
+        entry = _object(symbols, symbol)
+        function_name = _string(entry, "function")
+        expected_function_name = function_name_for_symbol(symbol)
+        if function_name != expected_function_name:
+            raise ValueError(
+                f"candidate {key} {symbol} function must be "
+                f"{expected_function_name}"
+            )
+        symbol_id = _integer(entry, "id")
+        if symbol_id != expected_id:
+            raise ValueError(f"candidate {key} {symbol} ID must be {expected_id}")
+
+    return len(symbols)
+
+
 def _manifest_fixtures(data: dict[str, object]) -> tuple[ReferenceFixture, ...]:
     fixtures = data.get("fixtures")
     if not isinstance(fixtures, list):
@@ -218,9 +259,12 @@ def load_reference_fixtures() -> tuple[ReferenceFixture, ...]:
 def load_candidate_status() -> CandidateStatus:
     manifest = _load_candidate_manifest()
     subset_manifest_data = _load_manifest()
+    directives = _string_array(subset_manifest_data, "directives")
+    opcodes = _string_array(subset_manifest_data, "opcodes")
     candidate_api = _object(manifest, "candidate_api")
     candidate_capabilities = _object(manifest, "candidate_capabilities")
     candidate_execution = _object(manifest, "candidate_execution")
+    candidate_symbol_ids = _object(manifest, "candidate_symbol_ids")
     s3_candidate = _object(manifest, "s3_candidate")
     program_inventory = _object(manifest, "program_inventory")
     python_reference = _object(manifest, "python_reference")
@@ -251,13 +295,25 @@ def load_candidate_status() -> CandidateStatus:
     expected_directive_count = _integer(
         candidate_capabilities, "expected_directive_count"
     )
-    if expected_directive_count != len(
-        _string_array(subset_manifest_data, "directives")
-    ):
+    if expected_directive_count != len(directives):
         raise ValueError("candidate directive count must match subset manifest")
     expected_opcode_count = _integer(candidate_capabilities, "expected_opcode_count")
-    if expected_opcode_count != len(_string_array(subset_manifest_data, "opcodes")):
+    if expected_opcode_count != len(opcodes):
         raise ValueError("candidate opcode count must match subset manifest")
+    directive_id_functions = _symbol_id_function_count(
+        candidate_symbol_ids,
+        "directives",
+        directives,
+        expected_directive_count,
+        _directive_symbol_function_name,
+    )
+    opcode_id_functions = _symbol_id_function_count(
+        candidate_symbol_ids,
+        "opcodes",
+        opcodes,
+        expected_opcode_count,
+        _opcode_symbol_function_name,
+    )
 
     candidate_path = _string(s3_candidate, "path")
     if candidate_path != EXPECTED_CANDIDATE_PATH:
@@ -319,6 +375,8 @@ def load_candidate_status() -> CandidateStatus:
         status_function=status_function,
         directive_count_function=directive_count_function,
         opcode_count_function=opcode_count_function,
+        directive_id_functions=directive_id_functions,
+        opcode_id_functions=opcode_id_functions,
         execution_mode=execution_mode,
         expected_status=expected_status,
         execution_meaning=execution_meaning,
@@ -339,6 +397,8 @@ def render_candidate_status(candidate: CandidateStatus) -> str:
         f"status function: {candidate.status_function}",
         f"directive count function: {candidate.directive_count_function}",
         f"opcode count function: {candidate.opcode_count_function}",
+        f"directive id functions: {candidate.directive_id_functions}",
+        f"opcode id functions: {candidate.opcode_id_functions}",
         f"implements renderer: {implements}",
         f"comparison: {candidate.comparison_status}",
     ]

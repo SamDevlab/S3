@@ -14,18 +14,116 @@
     TRET   r0 ; source=8:5:239
 .end
 
+.function renderer_directive_end_id -> tryte
+    .register r0, tryte
+.label entry
+    TCONST r0, 0 ; source=11:12:301
+    TRET   r0 ; source=11:5:294
+.end
+
+.function renderer_directive_function_id -> tryte
+    .register r0, tryte
+.label entry
+    TCONST r0, 1 ; source=14:12:361
+    TRET   r0 ; source=14:5:354
+.end
+
+.function renderer_directive_label_id -> tryte
+    .register r0, tryte
+.label entry
+    TCONST r0, 2 ; source=17:12:418
+    TRET   r0 ; source=17:5:411
+.end
+
+.function renderer_directive_param_id -> tryte
+    .register r0, tryte
+.label entry
+    TCONST r0, 3 ; source=20:12:475
+    TRET   r0 ; source=20:5:468
+.end
+
+.function renderer_directive_register_id -> tryte
+    .register r0, tryte
+.label entry
+    TCONST r0, 4 ; source=23:12:535
+    TRET   r0 ; source=23:5:528
+.end
+
+.function renderer_directive_s3asm_id -> tryte
+    .register r0, tryte
+.label entry
+    TCONST r0, 5 ; source=26:12:592
+    TRET   r0 ; source=26:5:585
+.end
+
+.function renderer_opcode_tadd_id -> tryte
+    .register r0, tryte
+.label entry
+    TCONST r0, 0 ; source=29:12:645
+    TRET   r0 ; source=29:5:638
+.end
+
+.function renderer_opcode_tbr3_id -> tryte
+    .register r0, tryte
+.label entry
+    TCONST r0, 1 ; source=32:12:698
+    TRET   r0 ; source=32:5:691
+.end
+
+.function renderer_opcode_tcall_id -> tryte
+    .register r0, tryte
+.label entry
+    TCONST r0, 2 ; source=35:12:752
+    TRET   r0 ; source=35:5:745
+.end
+
+.function renderer_opcode_tcmp_id -> tryte
+    .register r0, tryte
+.label entry
+    TCONST r0, 3 ; source=38:12:805
+    TRET   r0 ; source=38:5:798
+.end
+
+.function renderer_opcode_tconst_id -> tryte
+    .register r0, tryte
+.label entry
+    TCONST r0, 4 ; source=41:12:860
+    TRET   r0 ; source=41:5:853
+.end
+
+.function renderer_opcode_tinv_id -> tryte
+    .register r0, tryte
+.label entry
+    TCONST r0, 5 ; source=44:12:913
+    TRET   r0 ; source=44:5:906
+.end
+
+.function renderer_opcode_tmov_id -> tryte
+    .register r0, tryte
+.label entry
+    TCONST r0, 6 ; source=47:12:966
+    TRET   r0 ; source=47:5:959
+.end
+
+.function renderer_opcode_tret_id -> tryte
+    .register r0, tryte
+.label entry
+    TCONST r0, 7 ; source=50:12:1019
+    TRET   r0 ; source=50:5:1012
+.end
+
 .function renderer_candidate_status -> trit
     .register r0, trit
     .register r1, trit
 .label entry
-    TCONST r0, 1 ; source=11:13:301
-    TINV   r1, r0 ; source=11:12:300
-    TRET   r1 ; source=11:5:293
+    TCONST r0, 1 ; source=53:13:1074
+    TINV   r1, r0 ; source=53:12:1073
+    TRET   r1 ; source=53:5:1066
 .end
 
 .function main -> trit
     .register r0, trit
 .label entry
-    TCALL  r0, renderer_candidate_status ; source=14:12:334
-    TRET   r0 ; source=14:5:327
+    TCALL  r0, renderer_candidate_status ; source=56:12:1107
+    TRET   r0 ; source=56:5:1100
 .end

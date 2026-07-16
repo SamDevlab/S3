@@ -26,6 +26,68 @@
     "mode": "hosted"
   },
   "candidate_manifest_version": "1.0.0",
+  "candidate_symbol_ids": {
+    "directives": {
+      ".end": {
+        "function": "renderer_directive_end_id",
+        "id": 0
+      },
+      ".function": {
+        "function": "renderer_directive_function_id",
+        "id": 1
+      },
+      ".label": {
+        "function": "renderer_directive_label_id",
+        "id": 2
+      },
+      ".param": {
+        "function": "renderer_directive_param_id",
+        "id": 3
+      },
+      ".register": {
+        "function": "renderer_directive_register_id",
+        "id": 4
+      },
+      ".s3asm": {
+        "function": "renderer_directive_s3asm_id",
+        "id": 5
+      }
+    },
+    "opcodes": {
+      "TADD": {
+        "function": "renderer_opcode_tadd_id",
+        "id": 0
+      },
+      "TBR3": {
+        "function": "renderer_opcode_tbr3_id",
+        "id": 1
+      },
+      "TCALL": {
+        "function": "renderer_opcode_tcall_id",
+        "id": 2
+      },
+      "TCMP": {
+        "function": "renderer_opcode_tcmp_id",
+        "id": 3
+      },
+      "TCONST": {
+        "function": "renderer_opcode_tconst_id",
+        "id": 4
+      },
+      "TINV": {
+        "function": "renderer_opcode_tinv_id",
+        "id": 5
+      },
+      "TMOV": {
+        "function": "renderer_opcode_tmov_id",
+        "id": 6
+      },
+      "TRET": {
+        "function": "renderer_opcode_tret_id",
+        "id": 7
+      }
+    }
+  },
   "comparison": {
     "reason": "S3 renderer is not implemented",
     "status": "blocked"
