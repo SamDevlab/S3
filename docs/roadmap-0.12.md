@@ -80,9 +80,23 @@ Future acceptance:
 
 ### 0.12-C: first byte-for-byte comparison
 
+Status: complete
+
 Objective:
 
 Compare the `first` actual output against the expected Assembly golden.
+
+0.12-C formalizes the byte-for-byte comparison for `first`. The expected
+inspect golden and the versioned candidate actual output match after LF
+normalization, so `first` moves from pending to passed comparison status.
+
+The new partial comparison mode is:
+
+`python tools/compare_assembly_renderer.py --candidate-compare-available`
+
+It compares only available actual outputs. `simple_call` and `sign` remain
+blocked and `not_implemented`, and `python tools/compare_assembly_renderer.py
+--check` remains blocked because the complete S3 renderer is still unavailable.
 
 Future acceptance:
 

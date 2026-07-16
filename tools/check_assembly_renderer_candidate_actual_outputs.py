@@ -162,8 +162,11 @@ def _validate_available_output(
 ) -> None:
     if _boolean(item, "actual_output_exists") is not True:
         raise ValueError(f"actual output {name} existence flag must be true")
-    if _string(item, "comparison_status") != "pending":
+    comparison_status = _string(item, "comparison_status")
+    if comparison_status not in {"pending", "passed"}:
         raise ValueError(f"actual output {name} comparison status mismatch")
+    if not _string(item, "reason"):
+        raise ValueError(f"actual output {name} reason mismatch")
 
     planned_actual_output = _string(item, "planned_actual_output")
     _validate_planned_actual_output(planned_actual_output, actual_output_root, name)
@@ -181,6 +184,10 @@ def _validate_available_output(
     )
     if actual_bytes != expected_bytes:
         raise ValueError(f"actual output {name} does not match expected assembly")
+    if not actual_bytes.endswith(b"\n"):
+        raise ValueError(f"actual output {name} missing final newline")
+    if not expected_bytes.endswith(b"\n"):
+        raise ValueError(f"expected assembly {name} missing final newline")
 
     actual_sha256 = hashlib.sha256(actual_bytes).hexdigest()
     actual_line_count = 0 if actual_bytes == b"" else len(
@@ -188,6 +195,8 @@ def _validate_available_output(
     )
     if _string(item, "actual_sha256") != actual_sha256:
         raise ValueError(f"actual output {name} sha256 mismatch")
+    if hashlib.sha256(expected_bytes).hexdigest() != actual_sha256:
+        raise ValueError(f"actual output {name} expected sha256 mismatch")
     if _integer(item, "actual_byte_count") != len(actual_bytes):
         raise ValueError(f"actual output {name} byte count mismatch")
     if _integer(item, "actual_line_count") != actual_line_count:

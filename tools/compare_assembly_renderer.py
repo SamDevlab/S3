@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from collections.abc import Callable
@@ -158,6 +159,18 @@ class CandidateActualOutputStatus:
     status: str
     comparison_status: str
     outputs: tuple[CandidateActualOutput, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class AvailableComparison:
+    name: str
+    expected_assembly: str | None
+    actual_output: str | None
+    status: str
+    reason: str | None
+    sha256: str | None
+    byte_count: int | None
+    line_count: int | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -321,6 +334,22 @@ def _require_repo_file(path_text: str, label: str) -> None:
         raise ValueError(f"{label} must be relative")
     if not (REPO_ROOT / path).is_file():
         raise ValueError(f"{label} missing: {path_text}")
+
+
+def _repo_file_path(path_text: str, label: str) -> Path:
+    path = Path(path_text)
+    if path.is_absolute():
+        raise ValueError(f"{label} must be relative")
+    resolved = REPO_ROOT / path
+    if not resolved.is_file():
+        raise ValueError(f"{label} missing: {path_text}")
+    return resolved
+
+
+def _lf_normalized_file_bytes(path_text: str, label: str) -> bytes:
+    path = _repo_file_path(path_text, label)
+    text = path.read_bytes().decode("utf-8")
+    return text.replace("\r\n", "\n").replace("\r", "\n").encode("utf-8")
 
 
 def _directive_symbol_function_name(symbol: str) -> str:
@@ -717,7 +746,7 @@ def load_candidate_actual_output_status() -> CandidateActualOutputStatus:
         if output.actual_output_status == "available":
             if not output.actual_output_exists:
                 raise ValueError("candidate actual output existence flag mismatch")
-            if output.comparison_status != "pending":
+            if output.comparison_status not in {"pending", "passed"}:
                 raise ValueError("candidate actual output comparison status mismatch")
             if (
                 output.actual_sha256 is None
@@ -1142,6 +1171,96 @@ def render_candidate_actual_outputs(
     return "\n".join(lines) + "\n"
 
 
+def compare_available_outputs(
+    candidate: CandidateActualOutputStatus,
+) -> tuple[AvailableComparison, ...]:
+    comparisons: list[AvailableComparison] = []
+    for output in candidate.outputs:
+        if output.actual_output_status != "available":
+            comparisons.append(
+                AvailableComparison(
+                    name=output.name,
+                    expected_assembly=None,
+                    actual_output=None,
+                    status="blocked",
+                    reason="actual output is not implemented",
+                    sha256=None,
+                    byte_count=None,
+                    line_count=None,
+                )
+            )
+            continue
+
+        expected = _lf_normalized_file_bytes(
+            output.expected_assembly,
+            "available comparison expected assembly",
+        )
+        actual = _lf_normalized_file_bytes(
+            output.planned_actual_output,
+            "available comparison actual output",
+        )
+        if expected != actual:
+            raise ValueError(f"available comparison {output.name} differs")
+        sha256 = hashlib.sha256(actual).hexdigest()
+        byte_count = len(actual)
+        line_count = 0 if actual == b"" else len(actual.decode("utf-8").splitlines())
+        if output.actual_sha256 != sha256:
+            raise ValueError(f"available comparison {output.name} sha256 mismatch")
+        if output.actual_byte_count != byte_count:
+            raise ValueError(f"available comparison {output.name} byte count mismatch")
+        if output.actual_line_count != line_count:
+            raise ValueError(f"available comparison {output.name} line count mismatch")
+        comparisons.append(
+            AvailableComparison(
+                name=output.name,
+                expected_assembly=output.expected_assembly,
+                actual_output=output.planned_actual_output,
+                status="passed",
+                reason=None,
+                sha256=sha256,
+                byte_count=byte_count,
+                line_count=line_count,
+            )
+        )
+    return tuple(comparisons)
+
+
+def render_available_comparisons(
+    comparisons: tuple[AvailableComparison, ...],
+) -> str:
+    available_count = sum(1 for item in comparisons if item.status != "blocked")
+    passed_count = sum(1 for item in comparisons if item.status == "passed")
+    blocked_count = sum(1 for item in comparisons if item.status == "blocked")
+    lines = [
+        "S3 Assembly renderer candidate available comparisons",
+        "",
+        "comparisons:",
+    ]
+    for item in comparisons:
+        if item.status == "passed":
+            lines.append(
+                f"  {item.name} expected={item.expected_assembly} "
+                f"actual={item.actual_output} status=passed "
+                f"sha256={item.sha256} bytes={item.byte_count} "
+                f"lines={item.line_count}"
+            )
+        else:
+            lines.append(
+                f"  {item.name} status=blocked reason={item.reason}"
+            )
+    lines.extend(
+        [
+            "",
+            f"available comparisons: {available_count}",
+            f"passed comparisons: {passed_count}",
+            f"blocked comparisons: {blocked_count}",
+            "status: partial",
+            "comparison: partial",
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
 def render_reference_status(fixtures: tuple[ReferenceFixture, ...]) -> str:
     lines = [
         "S3 Assembly renderer Python reference",
@@ -1295,6 +1414,29 @@ def candidate_actual_outputs() -> int:
     return 0
 
 
+def candidate_compare_available() -> int:
+    try:
+        actual_output_status = load_candidate_actual_output_status()
+        comparisons = compare_available_outputs(actual_output_status)
+    except ValueError as error:
+        print("S3 Assembly renderer candidate available comparisons")
+        print()
+        print("status: unavailable")
+        print(f"reason: {error}")
+        return 1
+
+    available_count = sum(1 for item in comparisons if item.status != "blocked")
+    if available_count == 0:
+        print("S3 Assembly renderer candidate available comparisons")
+        print()
+        print("status: blocked")
+        print("reason: no candidate actual outputs are available")
+        return 1
+
+    print(render_available_comparisons(comparisons), end="")
+    return 0
+
+
 def candidate_run() -> int:
     try:
         candidate_status = load_candidate_status()
@@ -1342,6 +1484,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     mode.add_argument("--candidate-fixture-expectations", action="store_true")
     mode.add_argument("--candidate-comparison-plan", action="store_true")
     mode.add_argument("--candidate-actual-outputs", action="store_true")
+    mode.add_argument("--candidate-compare-available", action="store_true")
     mode.add_argument("--candidate-run", action="store_true")
     mode.add_argument("--check", action="store_true")
     args = parser.parse_args(argv)
@@ -1362,6 +1505,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return candidate_comparison_plan()
     if args.candidate_actual_outputs:
         return candidate_actual_outputs()
+    if args.candidate_compare_available:
+        return candidate_compare_available()
     if args.candidate_run:
         return candidate_run()
     return check()
