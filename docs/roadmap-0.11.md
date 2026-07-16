@@ -72,12 +72,33 @@ Acceptance:
 - at least one new test demonstrates real technical capability;
 - no fixture actual output is required yet if text support is still too small.
 
-### 0.11-B: first actual output path for one fixture
+### 0.11-B: static text builder
 
 Objective:
 
-When 0.11-A provides enough capability, produce or prepare the first actual
-output for a simple fixture.
+Add deterministic composition for static text so future renderer work can build
+byte-stable documents before creating fixture actual outputs.
+
+This stage introduces a static text document/builder layer on top of the 0.11-A
+encoding helpers. It keeps LF normalization, UTF-8 bytes, and metadata stable,
+but it still does not implement the S3 Assembly renderer or create fixture
+actual outputs.
+
+Acceptance:
+
+- builder starts empty;
+- builder appends decoded text, static literals, and LF-terminated lines;
+- finalized documents expose text, UTF-8 bytes, byte count, line count, and
+  SHA-256;
+- renderer candidate contracts remain unchanged;
+- `--check` remains blocked.
+
+### 0.11-C: first actual output path for one fixture
+
+Objective:
+
+When text support provides enough capability, produce or prepare the first
+actual output for a simple fixture.
 
 Preferred initial fixture:
 
@@ -91,7 +112,7 @@ Future acceptance:
 - byte-for-byte comparison is validated;
 - remaining fixtures stay blocked.
 
-### 0.11-C: expand fixture coverage
+### 0.11-D: expand fixture coverage
 
 Objective:
 

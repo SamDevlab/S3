@@ -103,6 +103,12 @@ and `\n`, normalize newlines to LF, encode UTF-8 bytes, and expose byte count,
 line count, and SHA-256 metadata. This is not runtime string support, does not
 make string literals lowerable, and does not create renderer actual outputs.
 
+0.11-B adds deterministic static text composition. A builder can append decoded
+text, raw static literals through the same decoder, and LF-terminated lines,
+then finalize to a document exposing normalized text, UTF-8 bytes, and the same
+metadata. This remains an internal compiler foundation, not source-level string
+runtime support.
+
 For the first implementation, it is acceptable to validate only the ASCII subset
 needed by the Assembly renderer fixtures, while keeping the representation and
 terminology compatible with UTF-8 bytes.
