@@ -16,9 +16,10 @@ diagnostics.
 S3 0.10 is closed as a preparation milestone for self-hosting and the Assembly
 renderer candidate. S3 0.11 is closed after deterministic static text
 foundation work. S3 0.12 is closed after the first passed actual output for
-`first`. S3 0.13 is open for the next practical step, `simple_call`; see
-`docs/roadmap-0.10.md`, `docs/roadmap-0.11.md`, `docs/roadmap-0.12.md`, and
-`docs/roadmap-0.13.md`.
+`first`. S3 0.13 is closed after `simple_call` became available and passed. S3
+0.14 is open for the next practical step, `sign`; see `docs/roadmap-0.10.md`,
+`docs/roadmap-0.11.md`, `docs/roadmap-0.12.md`, `docs/roadmap-0.13.md`, and
+`docs/roadmap-0.14.md`.
 
 Recent tools make this pipeline more observable:
 

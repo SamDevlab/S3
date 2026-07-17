@@ -18,9 +18,11 @@ support is not implemented, so the renderer comparison remains blocked.
 
 S3 0.10 closed with the candidate contracts and readiness gate in place. S3
 0.11 is closed after establishing deterministic static text helpers. S3 0.12
-is closed after making `first` available and passed. S3 0.13 is open for the
-next practical fixture, `simple_call`; see `docs/roadmap-0.10.md`,
-`docs/roadmap-0.11.md`, `docs/roadmap-0.12.md`, and `docs/roadmap-0.13.md`.
+is closed after making `first` available and passed. S3 0.13 is closed after
+making `simple_call` available and passed. S3 0.14 is open for the next
+practical fixture, `sign`; see `docs/roadmap-0.10.md`,
+`docs/roadmap-0.11.md`, `docs/roadmap-0.12.md`, `docs/roadmap-0.13.md`, and
+`docs/roadmap-0.14.md`.
 
 `python tools/compare_assembly_renderer.py --status` reports the current state
 and exits successfully.
@@ -124,6 +126,10 @@ tools/compare_assembly_renderer.py --candidate-compare-available` now reports
 both `first` and `simple_call` as passed byte-for-byte against their
 LF-normalized inspect goldens, while `sign` remains blocked and absent. The
 global `--check` mode still fails because the S3 renderer is not implemented.
+
+After 0.13, `first` and `simple_call` are available and passed. S3 0.14 moves
+the practical fixture focus to `sign`, which remains `not_implemented` and
+blocked. The global `--check` mode remains blocked while `sign` is not passed.
 
 `python tools/check_assembly_renderer_candidate_readiness.py` is the single
 readiness gate for the candidate stub. It validates the candidate manifest, the
