@@ -28,6 +28,8 @@ the whole compiler to S3 or implementing the complete renderer at once.
 
 ### 0.13-A: simple_call output investigation and in-memory probe
 
+Status: complete
+
 Objective:
 
 Investigate `examples/simple_call.s3` and
@@ -41,6 +43,14 @@ Acceptance:
 - the in-memory probe compares against the LF-normalized golden;
 - `simple_call` remains `not_implemented` in the actual-output contract;
 - `--check` remains blocked.
+
+Notes:
+
+0.13-A adds an in-memory `simple_call` fixture probe using the deterministic
+static text path. It validates LF-normalized bytes, line count, byte count, and
+SHA-256 against the inspect golden without creating a versioned actual output
+or changing the actual-output contracts. This prepares 0.13-B to create the
+real candidate actual output.
 
 ### 0.13-B: simple_call actual output
 

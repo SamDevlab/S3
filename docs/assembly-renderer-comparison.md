@@ -107,6 +107,11 @@ After 0.12, `first` is available and passed. The next focus is `simple_call`;
 `sign` remains blocked. `--check` stays blocked until the required fixture
 coverage is sufficient.
 
+0.13-A adds an in-memory probe for `simple_call` using the same deterministic
+static text path. It validates the expected output against the LF-normalized
+inspect golden, but it does not create a candidate actual output: `simple_call`
+remains blocked and `not_implemented`, and `sign` remains blocked.
+
 `python tools/check_assembly_renderer_candidate_readiness.py` is the single
 readiness gate for the candidate stub. It validates the candidate manifest, the
 symbol export golden, the fixture contract, the fixture expectations, the
