@@ -351,5 +351,13 @@ def test_compare_assembly_renderer_check_fails_until_s3_renderer_exists() -> Non
     )
 
     assert completed.returncode == 1
-    assert "S3 renderer is not implemented" in completed.stdout
+    assert "S3 Assembly renderer comparison check: blocked" in completed.stdout
+    assert "actual outputs: passed" in completed.stdout
+    assert "available comparisons: passed" in completed.stdout
+    assert "renderer implementation: not_implemented" in completed.stdout
+    assert "global check: blocked" in completed.stdout
+    assert (
+        "reason: actual outputs pass, but the real S3 renderer is still not implemented"
+        in completed.stdout
+    )
     assert completed.stderr == ""

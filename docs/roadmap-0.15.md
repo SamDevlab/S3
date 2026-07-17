@@ -1,16 +1,21 @@
 # S3 0.15 Roadmap
 
-Status: open
+Status: closed
 
 ## Objective
 
 Evaluate and define the correct renderer candidate check state now that
 `first`, `simple_call`, and `sign` are available and passed.
 
-S3 0.15 should be practical and decision-oriented. It should answer whether
-`python tools/compare_assembly_renderer.py --check` must remain blocked because
-the real S3 renderer is still absent, or whether it should evolve to a
-controlled partial or success state for completed actual outputs.
+S3 0.15 was completed in one delivery: renderer candidate check state safe
+decision.
+
+The decision is to keep
+`python tools/compare_assembly_renderer.py --check` blocked with exit code 1.
+`first`, `simple_call`, and `sign` have available actual outputs and passed
+byte-for-byte comparisons, but those versioned outputs do not prove that a real
+S3 renderer exists. The real S3 renderer is still a stub/not implemented, so
+returning success from the global check would create a false positive.
 
 ## Principles
 
@@ -25,59 +30,27 @@ controlled partial or success state for completed actual outputs.
 - Any `--check` behavior change should happen in its own PR with tests and
   documentation.
 
-## Proposed 0.15 sequence
+## Closed decision
 
-### 0.15-A: renderer candidate check state investigation
+`python tools/compare_assembly_renderer.py --candidate-compare-available` is
+the correct passing mode for validating currently available actual outputs.
+It reports `first`, `simple_call`, and `sign` as passed.
 
-Status: planned
+`python tools/compare_assembly_renderer.py --check` remains the global renderer
+candidate check and stays blocked until a real S3 renderer implementation can
+produce outputs and be compared against the Python reference.
 
-Objective:
+The check output distinguishes:
 
-Investigate whether `--check` should continue to be blocked even with
-`first`, `simple_call`, and `sign` passed, or whether it should move to a
-controlled partial or success state.
+- actual output completion: passed;
+- available comparisons: passed;
+- renderer implementation: not_implemented;
+- global check: blocked.
 
-Acceptance:
+There are no planned 0.15-B or 0.15-C follow-ups because the safe decision,
+tests, readiness expectation, and documentation were completed in the same PR.
 
-- no behavior changes unless the investigation identifies a minimal safe
-  change;
-- current conditions are documented;
-- remaining blockers for a real renderer are identified;
-- an explicit technical decision is prepared for 0.15-B.
+## Next focus
 
-### 0.15-B: renderer candidate check state implementation
-
-Status: planned
-
-Objective:
-
-Implement the 0.15-A decision.
-
-Possible outcomes:
-
-- keep `--check` blocked, with a more precise message;
-- add a separate mode for actual-output completion;
-- allow a partial success without declaring the real renderer implemented.
-
-Acceptance:
-
-- tests cover the decision;
-- the readiness gate is coherent;
-- docs keep "actual outputs passed" separate from "real renderer implemented".
-
-### 0.15-C: close check-state milestone
-
-Status: planned
-
-Objective:
-
-Close the check-state decision and prepare the next milestone.
-
-Acceptance:
-
-- documentation is clear;
-- checkers and harness behavior are stable;
-- the next focus is identified: generalize the renderer, begin the real S3
-  renderer, or add another fixture.
-
-The 0.15 sequence may be adjusted based on the 0.15-A investigation.
+The next milestone should begin the real renderer/generalization work without
+changing `--check` to success prematurely.
