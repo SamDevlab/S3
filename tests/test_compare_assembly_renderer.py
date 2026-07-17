@@ -201,7 +201,8 @@ def test_compare_assembly_renderer_candidate_comparison_plan_reports_contract() 
         in completed.stdout
     )
     assert "actual=available comparison=passed" in completed.stdout
-    assert "actual=available comparison=pending" in completed.stdout
+    assert "sign expected=tests/golden/inspect/sign.assembly.txt" in completed.stdout
+    assert "actual=available comparison=passed" in completed.stdout
     assert "comparison: blocked" in completed.stdout
     assert "expected output: assembly_golden" in completed.stdout
     assert "actual output: s3_renderer_candidate" in completed.stdout
@@ -263,7 +264,7 @@ def test_compare_assembly_renderer_candidate_actual_outputs_reports_contract() -
     )
     assert (
         "sign planned=tests/golden/assembly_renderer_candidate_actual/sign.assembly.txt "
-        "exists=true status=available comparison=pending "
+        "exists=true status=available comparison=passed "
         "sha256=c077d2c49639b1a033505ec8c1ba1c60c78242e6e09c43f60a8aa5ed8b49e2d9 "
         "bytes=946 lines=36"
         in completed.stdout
@@ -310,12 +311,12 @@ def test_compare_assembly_renderer_candidate_compare_available_reports_first_pas
     assert (
         "sign expected=tests/golden/inspect/sign.assembly.txt "
         "actual=tests/golden/assembly_renderer_candidate_actual/sign.assembly.txt "
-        "status=pending"
+        "status=passed"
         in completed.stdout
     )
     assert "available comparisons: 3" in completed.stdout
-    assert "passed comparisons: 2" in completed.stdout
-    assert "pending comparisons: 1" in completed.stdout
+    assert "passed comparisons: 3" in completed.stdout
+    assert "pending comparisons: 0" in completed.stdout
     assert "blocked comparisons: 0" in completed.stdout
     assert "status: partial" in completed.stdout
     assert "comparison: partial" in completed.stdout
