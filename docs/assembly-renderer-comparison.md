@@ -131,6 +131,14 @@ After 0.13, `first` and `simple_call` are available and passed. S3 0.14 moves
 the practical fixture focus to `sign`, which remains `not_implemented` and
 blocked. The global `--check` mode remains blocked while `sign` is not passed.
 
+0.14-A adds an in-memory probe for `sign` using `StaticTextLineEmitter`. It
+validates the expected output byte-for-byte against the LF-normalized inspect
+golden, including byte count, line count, and SHA-256 metadata, but it does not
+create a versioned candidate actual output or change the actual-output
+contracts. `first` and `simple_call` remain available and passed, `sign`
+remains blocked and `not_implemented`, and the global `--check` mode still
+fails because the S3 renderer is not implemented.
+
 `python tools/check_assembly_renderer_candidate_readiness.py` is the single
 readiness gate for the candidate stub. It validates the candidate manifest, the
 symbol export golden, the fixture contract, the fixture expectations, the

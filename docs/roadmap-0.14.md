@@ -29,7 +29,7 @@ decision about the future state of `python tools/compare_assembly_renderer.py
 
 ### 0.14-A: sign output investigation and in-memory probe
 
-Status: planned
+Status: complete
 
 Objective:
 
@@ -43,6 +43,17 @@ Acceptance:
 - the in-memory probe compares against the LF-normalized golden;
 - `sign` remains `not_implemented` and blocked in the contracts;
 - `--check` remains blocked.
+
+Notes:
+
+0.14-A adds an in-memory `sign` fixture probe using `StaticTextLineEmitter`.
+The probe builds the expected Assembly text explicitly and validates
+byte-for-byte output, byte count, line count, and SHA-256 against the
+LF-normalized inspect golden. It does not create a versioned actual output,
+change the actual-output contracts, or implement the S3 renderer. `first` and
+`simple_call` remain available and passed, while `sign` remains blocked and
+`not_implemented`. This prepares 0.14-B to create the versioned `sign` actual
+output if the path remains stable.
 
 ### 0.14-B: sign actual output
 
