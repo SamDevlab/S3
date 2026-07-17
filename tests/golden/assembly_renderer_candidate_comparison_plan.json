@@ -19,11 +19,11 @@
     },
     {
       "actual_output_status": "available",
-      "comparison_status": "pending",
+      "comparison_status": "passed",
       "expected_assembly": "tests/golden/inspect/simple_call.assembly.txt",
       "expected_sha256": "d6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f",
       "name": "simple_call",
-      "reason": "simple_call actual output is available; formal comparison is pending",
+      "reason": "simple_call actual output matches expected assembly byte-for-byte",
       "source": "examples/simple_call.s3"
     },
     {

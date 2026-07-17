@@ -200,7 +200,7 @@ def test_compare_assembly_renderer_candidate_comparison_plan_reports_contract() 
         "simple_call expected=tests/golden/inspect/simple_call.assembly.txt"
         in completed.stdout
     )
-    assert "actual=available comparison=pending" in completed.stdout
+    assert "actual=available comparison=passed" in completed.stdout
     assert "actual=not_implemented comparison=blocked" in completed.stdout
     assert "comparison=blocked" in completed.stdout
     assert "expected output: assembly_golden" in completed.stdout
@@ -252,7 +252,7 @@ def test_compare_assembly_renderer_candidate_actual_outputs_reports_contract() -
     )
     assert (
         "simple_call planned=tests/golden/assembly_renderer_candidate_actual/simple_call.assembly.txt "
-        "exists=true status=available comparison=pending "
+        "exists=true status=available comparison=passed "
         "sha256=d6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f "
         "bytes=448 lines=21"
         in completed.stdout
@@ -300,13 +300,13 @@ def test_compare_assembly_renderer_candidate_compare_available_reports_first_pas
     assert (
         "simple_call expected=tests/golden/inspect/simple_call.assembly.txt "
         "actual=tests/golden/assembly_renderer_candidate_actual/simple_call.assembly.txt "
-        "status=pending"
+        "status=passed"
         in completed.stdout
     )
     assert "sign status=blocked reason=actual output is not implemented" in completed.stdout
     assert "available comparisons: 2" in completed.stdout
-    assert "passed comparisons: 1" in completed.stdout
-    assert "pending comparisons: 1" in completed.stdout
+    assert "passed comparisons: 2" in completed.stdout
+    assert "pending comparisons: 0" in completed.stdout
     assert "blocked comparisons: 1" in completed.stdout
     assert "status: partial" in completed.stdout
     assert "comparison: partial" in completed.stdout

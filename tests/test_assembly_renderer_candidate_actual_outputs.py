@@ -25,7 +25,7 @@ def test_assembly_renderer_candidate_actual_outputs_manifest_is_valid() -> None:
     assert completed.stderr == ""
 
 
-def test_simple_call_actual_output_contract_is_available_pending() -> None:
+def test_simple_call_actual_output_contract_is_available_passed() -> None:
     data = json.loads(ACTUAL_OUTPUTS.read_text(encoding="utf-8"))
     rows = {item["name"]: item for item in data["outputs"]}
 
@@ -33,7 +33,7 @@ def test_simple_call_actual_output_contract_is_available_pending() -> None:
     assert rows["first"]["comparison_status"] == "passed"
     assert rows["simple_call"]["actual_output_status"] == "available"
     assert rows["simple_call"]["actual_output_exists"] is True
-    assert rows["simple_call"]["comparison_status"] == "pending"
+    assert rows["simple_call"]["comparison_status"] == "passed"
     assert rows["simple_call"]["actual_byte_count"] == 448
     assert rows["simple_call"]["actual_line_count"] == 21
     assert (

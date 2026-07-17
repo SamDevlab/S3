@@ -22,11 +22,11 @@
       "actual_output_exists": true,
       "actual_output_status": "available",
       "actual_sha256": "d6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f",
-      "comparison_status": "pending",
+      "comparison_status": "passed",
       "expected_assembly": "tests/golden/inspect/simple_call.assembly.txt",
       "name": "simple_call",
       "planned_actual_output": "tests/golden/assembly_renderer_candidate_actual/simple_call.assembly.txt",
-      "reason": "simple_call actual output is available; formal comparison is pending",
+      "reason": "simple_call actual output matches expected assembly byte-for-byte",
       "source": "examples/simple_call.s3"
     },
     {
