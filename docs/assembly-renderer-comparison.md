@@ -238,6 +238,14 @@ candidate actual output. This does not replace `AssemblyProgram.render()`,
 does not migrate `simple_call` or `sign`, and does not implement the S3
 renderer. The global `--check` mode remains blocked.
 
+0.17-B extends the controlled `AssemblyProgram` adapter to `simple_call`. It
+validates the narrow two-function `add`/`main` model shape, including
+parameters, registers, `TCALL`, and source metadata, then emits through
+`AssemblyTextRenderer` with byte-for-byte stable output against the
+LF-normalized inspect golden and candidate actual output. This still does not
+replace `AssemblyProgram.render()`, does not migrate `sign`, and does not
+implement the S3 renderer. The global `--check` mode remains blocked.
+
 ## Why check fails today
 
 Failure is correct today because real comparison is still blocked by:

@@ -11,6 +11,7 @@ from bootstrap.s3.assembly import (
     AssemblyFunction,
     AssemblyInstruction,
     AssemblyOpcode,
+    AssemblyParameter,
     AssemblyProgram,
     AssemblyType,
 )
@@ -18,6 +19,7 @@ from bootstrap.s3.assembly_program_text_adapter import (
     AssemblyProgramTextAdapter,
     AssemblyProgramTextAdapterError,
     render_first_program,
+    render_simple_call_program,
 )
 from bootstrap.s3.assembly_text_renderer import AssemblyTextRenderer
 from bootstrap.s3.diagnostics import SourceLocation
@@ -34,6 +36,16 @@ FIRST_ACTUAL_OUTPUT = (
     / "golden"
     / "assembly_renderer_candidate_actual"
     / "first.assembly.txt"
+)
+SIMPLE_CALL_ASSEMBLY_GOLDEN = (
+    REPO_ROOT / "tests" / "golden" / "inspect" / "simple_call.assembly.txt"
+)
+SIMPLE_CALL_ACTUAL_OUTPUT = (
+    REPO_ROOT
+    / "tests"
+    / "golden"
+    / "assembly_renderer_candidate_actual"
+    / "simple_call.assembly.txt"
 )
 
 
@@ -89,6 +101,75 @@ def _first_program() -> AssemblyProgram:
                                 AssemblyOpcode.TRET,
                                 (5,),
                                 source=SourceLocation(59, 4, 5),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+    )
+
+
+def _simple_call_program() -> AssemblyProgram:
+    return AssemblyProgram(
+        (
+            AssemblyFunction(
+                "add",
+                AssemblyType.TRYTE,
+                (
+                    AssemblyParameter(0, AssemblyType.TRYTE),
+                    AssemblyParameter(1, AssemblyType.TRYTE),
+                ),
+                ((2, AssemblyType.TRYTE),),
+                (
+                    AssemblyBlock(
+                        "entry",
+                        (
+                            AssemblyInstruction(
+                                AssemblyOpcode.TADD,
+                                (2, 0, 1),
+                                source=SourceLocation(50, 2, 14),
+                            ),
+                            AssemblyInstruction(
+                                AssemblyOpcode.TRET,
+                                (2,),
+                                source=SourceLocation(41, 2, 5),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+            AssemblyFunction(
+                "main",
+                AssemblyType.TRYTE,
+                (),
+                tuple((register, AssemblyType.TRYTE) for register in range(3)),
+                (
+                    AssemblyBlock(
+                        "entry",
+                        (
+                            AssemblyInstruction(
+                                AssemblyOpcode.TCONST,
+                                (0,),
+                                immediate=10,
+                                source=SourceLocation(90, 5, 16),
+                            ),
+                            AssemblyInstruction(
+                                AssemblyOpcode.TCONST,
+                                (1,),
+                                immediate=5,
+                                source=SourceLocation(94, 5, 20),
+                            ),
+                            AssemblyInstruction(
+                                AssemblyOpcode.TCALL,
+                                (2, 0, 1),
+                                callee="add",
+                                source=SourceLocation(86, 5, 12),
+                            ),
+                            AssemblyInstruction(
+                                AssemblyOpcode.TRET,
+                                (2,),
+                                source=SourceLocation(79, 5, 5),
                             ),
                         ),
                     ),
@@ -178,3 +259,68 @@ def test_render_first_program_rejects_non_first_subset() -> None:
         match="first adapter expects exactly one function",
     ):
         render_first_program(program)
+
+
+def test_render_simple_call_program_matches_lf_normalized_inspect_golden() -> None:
+    document = render_simple_call_program(_simple_call_program())
+    expected = _read_lf_normalized_golden_bytes(SIMPLE_CALL_ASSEMBLY_GOLDEN)
+
+    assert isinstance(document, StaticTextDocument)
+    assert document.utf8_bytes == expected
+    assert document.byte_count == 448
+    assert document.line_count == 21
+    assert (
+        document.sha256
+        == "d6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f"
+    )
+    assert document.sha256 == hashlib.sha256(expected).hexdigest()
+    assert document.text.endswith("\n")
+    assert "\r\n" not in document.text
+    assert b"\r\n" not in document.utf8_bytes
+
+
+def test_render_simple_call_program_matches_candidate_actual_output() -> None:
+    document = AssemblyProgramTextAdapter().render_simple_call_program(
+        _simple_call_program()
+    )
+    actual = SIMPLE_CALL_ACTUAL_OUTPUT.read_bytes()
+
+    assert actual == document.utf8_bytes
+    assert len(actual) == 448
+    assert hashlib.sha256(actual).hexdigest() == document.sha256
+    assert b"\r\n" not in actual
+    assert actual.endswith(b"\n")
+
+
+def test_render_simple_call_program_uses_renderer_core(monkeypatch) -> None:
+    calls: list[str] = []
+
+    class SpyRenderer(AssemblyTextRenderer):
+        def __init__(self) -> None:
+            calls.append("init")
+            super().__init__()
+
+        def build(self) -> StaticTextDocument:
+            calls.append("build")
+            return super().build()
+
+    monkeypatch.setattr(
+        assembly_program_text_adapter,
+        "AssemblyTextRenderer",
+        SpyRenderer,
+    )
+
+    document = render_simple_call_program(_simple_call_program())
+
+    assert calls == ["init", "build"]
+    assert document.utf8_bytes == _read_lf_normalized_golden_bytes(
+        SIMPLE_CALL_ASSEMBLY_GOLDEN
+    )
+
+
+def test_render_simple_call_program_rejects_non_simple_call_subset() -> None:
+    with pytest.raises(
+        AssemblyProgramTextAdapterError,
+        match="simple_call adapter expects exactly two functions",
+    ):
+        render_simple_call_program(_first_program())
