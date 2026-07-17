@@ -23,9 +23,9 @@ making `simple_call` available and passed. S3 0.14 is closed after making
 `sign` available and passed. S3 0.15 is closed after keeping the renderer
 candidate check state safely blocked while clarifying the reason; see
 `docs/roadmap-0.10.md`, `docs/roadmap-0.11.md`,
-`docs/roadmap-0.12.md`, `docs/roadmap-0.13.md`, `docs/roadmap-0.14.md`, and
-`docs/roadmap-0.15.md`. S3 0.16 is open to start the incremental renderer core
-path; see `docs/roadmap-0.16.md`.
+`docs/roadmap-0.12.md`, `docs/roadmap-0.13.md`, `docs/roadmap-0.14.md`,
+`docs/roadmap-0.15.md`, and `docs/roadmap-0.16.md`. S3 0.16 is closed after
+routing the three current fixture probes through the incremental renderer core.
 
 `python tools/compare_assembly_renderer.py --status` reports the current state
 and exits successfully.
@@ -220,6 +220,14 @@ functions without adding a general `AssemblyProgram` dependency. `first` and
 `simple_call` now use the core; `sign` remains on the previous probe path. The
 global `--check` mode remains blocked because the S3 renderer is still not
 implemented.
+
+0.16-C applies that renderer core to `sign`. The existing core API can emit its
+parameters, registers, `TBR3`, labels, source metadata, blank line between
+functions, and `.end` directives without adding a general `AssemblyProgram`
+dependency. `first`, `simple_call`, and `sign` now use the core, closing S3
+0.16 while keeping all inspect goldens and candidate actual outputs
+byte-for-byte unchanged. The global `--check` mode remains blocked because the
+S3 renderer is still not implemented.
 
 ## Why check fails today
 

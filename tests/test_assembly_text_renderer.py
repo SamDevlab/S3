@@ -20,6 +20,9 @@ FIRST_ASSEMBLY_GOLDEN = (
 SIMPLE_CALL_ASSEMBLY_GOLDEN = (
     REPO_ROOT / "tests" / "golden" / "inspect" / "simple_call.assembly.txt"
 )
+SIGN_ASSEMBLY_GOLDEN = (
+    REPO_ROOT / "tests" / "golden" / "inspect" / "sign.assembly.txt"
+)
 ACTUAL_OUTPUT_ROOT = (
     REPO_ROOT / "tests" / "golden" / "assembly_renderer_candidate_actual"
 )
@@ -114,6 +117,28 @@ def test_simple_call_fixture_probe_delegates_to_renderer_core(monkeypatch) -> No
     )
 
 
+def test_sign_fixture_probe_delegates_to_renderer_core(monkeypatch) -> None:
+    calls: list[str] = []
+
+    class SpyRenderer(AssemblyTextRenderer):
+        def __init__(self) -> None:
+            calls.append("init")
+            super().__init__()
+
+        def build(self) -> StaticTextDocument:
+            calls.append("build")
+            return super().build()
+
+    monkeypatch.setattr(assembly_text_probe, "AssemblyTextRenderer", SpyRenderer)
+
+    document = assembly_text_probe.build_sign_fixture_assembly_text()
+
+    assert calls == ["init", "build"]
+    assert document.utf8_bytes == _read_lf_normalized_golden_bytes(
+        SIGN_ASSEMBLY_GOLDEN
+    )
+
+
 def test_renderer_core_builds_first_fixture_against_inspect_golden() -> None:
     document = assembly_text_probe.build_first_fixture_assembly_text()
     expected = _read_lf_normalized_golden_bytes(FIRST_ASSEMBLY_GOLDEN)
@@ -148,6 +173,24 @@ def test_renderer_core_builds_simple_call_fixture_against_inspect_golden() -> No
     assert b"\r\n" not in document.utf8_bytes
 
 
+def test_renderer_core_builds_sign_fixture_against_inspect_golden() -> None:
+    document = assembly_text_probe.build_sign_fixture_assembly_text()
+    expected = _read_lf_normalized_golden_bytes(SIGN_ASSEMBLY_GOLDEN)
+
+    assert isinstance(document, StaticTextDocument)
+    assert document.utf8_bytes == expected
+    assert document.byte_count == 946
+    assert document.line_count == 36
+    assert (
+        document.sha256
+        == "c077d2c49639b1a033505ec8c1ba1c60c78242e6e09c43f60a8aa5ed8b49e2d9"
+    )
+    assert document.sha256 == hashlib.sha256(expected).hexdigest()
+    assert document.text.endswith("\n")
+    assert "\r\n" not in document.text
+    assert b"\r\n" not in document.utf8_bytes
+
+
 def test_renderer_core_builds_first_fixture_against_candidate_actual_output() -> None:
     document = assembly_text_probe.build_first_fixture_assembly_text()
     actual = FIRST_ACTUAL_OUTPUT.read_bytes()
@@ -165,6 +208,17 @@ def test_renderer_core_builds_simple_call_fixture_against_candidate_actual_outpu
 
     assert actual == document.utf8_bytes
     assert len(actual) == 448
+    assert hashlib.sha256(actual).hexdigest() == document.sha256
+    assert b"\r\n" not in actual
+    assert actual.endswith(b"\n")
+
+
+def test_renderer_core_builds_sign_fixture_against_candidate_actual_output() -> None:
+    document = assembly_text_probe.build_sign_fixture_assembly_text()
+    actual = SIGN_ACTUAL_OUTPUT.read_bytes()
+
+    assert actual == document.utf8_bytes
+    assert len(actual) == 946
     assert hashlib.sha256(actual).hexdigest() == document.sha256
     assert b"\r\n" not in actual
     assert actual.endswith(b"\n")

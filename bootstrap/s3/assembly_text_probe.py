@@ -6,7 +6,7 @@ from bootstrap.s3.assembly_text_renderer import (
     AssemblyTextRenderer,
     AssemblyTextSource,
 )
-from bootstrap.s3.static_text import StaticTextDocument, StaticTextLineEmitter
+from bootstrap.s3.static_text import StaticTextDocument
 
 
 def build_first_fixture_assembly_text() -> StaticTextDocument:
@@ -117,45 +117,94 @@ def build_simple_call_fixture_assembly_text() -> StaticTextDocument:
 def build_sign_fixture_assembly_text() -> StaticTextDocument:
     """Build the expected Assembly text for ``examples/sign.s3`` in memory."""
 
-    emitter = StaticTextLineEmitter()
-    emitter.emit_line(".s3asm 0.5.0")
-    emitter.emit_blank_line()
-    emitter.emit_line(".function sign -> trit")
-    emitter.emit_line(".param r0, tryte", indent=1)
-    emitter.emit_line(".register r1, tryte", indent=1)
-    emitter.emit_line(".register r2, trit", indent=1)
-    emitter.emit_line(".register r3, trit", indent=1)
-    emitter.emit_line(".register r4, trit", indent=1)
-    emitter.emit_line(".register r5, trit", indent=1)
-    emitter.emit_line(".register r6, trit", indent=1)
-    emitter.emit_line(".label entry")
-    emitter.emit_line("TCONST r1, 0 ; source=2:21:51", indent=1)
-    emitter.emit_line("TCMP   r2, r0, r1 ; source=2:17:47", indent=1)
-    emitter.emit_line(
-        "TBR3   r2, switch_negative_0, switch_neutral_1, switch_positive_2 ; "
-        "source=2:5:35",
-        indent=1,
+    renderer = AssemblyTextRenderer()
+    renderer.emit_header()
+    renderer.emit_function("sign", "trit")
+    renderer.emit_param(0, "tryte")
+    renderer.emit_register(1, "tryte")
+    renderer.emit_register(2, "trit")
+    renderer.emit_register(3, "trit")
+    renderer.emit_register(4, "trit")
+    renderer.emit_register(5, "trit")
+    renderer.emit_register(6, "trit")
+    renderer.emit_label("entry")
+    renderer.emit_instruction(
+        "TCONST",
+        "r1",
+        0,
+        source=AssemblyTextSource(2, 21, 51),
     )
-    emitter.emit_line(".label switch_negative_0")
-    emitter.emit_line("TCONST r3, 1 ; source=4:21:86", indent=1)
-    emitter.emit_line("TINV   r4, r3 ; source=4:20:85", indent=1)
-    emitter.emit_line("TRET   r4 ; source=4:13:78", indent=1)
-    emitter.emit_line(".label switch_neutral_1")
-    emitter.emit_line("TCONST r5, 0 ; source=7:20:119", indent=1)
-    emitter.emit_line("TRET   r5 ; source=7:13:112", indent=1)
-    emitter.emit_line(".label switch_positive_2")
-    emitter.emit_line("TCONST r6, 1 ; source=10:20:152", indent=1)
-    emitter.emit_line("TRET   r6 ; source=10:13:145", indent=1)
-    emitter.emit_line(".end")
-    emitter.emit_blank_line()
-    emitter.emit_line(".function main -> trit")
-    emitter.emit_line(".register r0, tryte", indent=1)
-    emitter.emit_line(".register r1, tryte", indent=1)
-    emitter.emit_line(".register r2, trit", indent=1)
-    emitter.emit_line(".label entry")
-    emitter.emit_line("TCONST r0, 20 ; source=13:18:191", indent=1)
-    emitter.emit_line("TINV   r1, r0 ; source=13:17:190", indent=1)
-    emitter.emit_line("TCALL  r2, sign, r1 ; source=13:12:185", indent=1)
-    emitter.emit_line("TRET   r2 ; source=13:5:178", indent=1)
-    emitter.emit_line(".end")
-    return emitter.build()
+    renderer.emit_instruction(
+        "TCMP",
+        "r2",
+        "r0",
+        "r1",
+        source=AssemblyTextSource(2, 17, 47),
+    )
+    renderer.emit_instruction(
+        "TBR3",
+        "r2",
+        "switch_negative_0",
+        "switch_neutral_1",
+        "switch_positive_2",
+        source=AssemblyTextSource(2, 5, 35),
+    )
+    renderer.emit_label("switch_negative_0")
+    renderer.emit_instruction(
+        "TCONST",
+        "r3",
+        1,
+        source=AssemblyTextSource(4, 21, 86),
+    )
+    renderer.emit_instruction(
+        "TINV",
+        "r4",
+        "r3",
+        source=AssemblyTextSource(4, 20, 85),
+    )
+    renderer.emit_instruction("TRET", "r4", source=AssemblyTextSource(4, 13, 78))
+    renderer.emit_label("switch_neutral_1")
+    renderer.emit_instruction(
+        "TCONST",
+        "r5",
+        0,
+        source=AssemblyTextSource(7, 20, 119),
+    )
+    renderer.emit_instruction("TRET", "r5", source=AssemblyTextSource(7, 13, 112))
+    renderer.emit_label("switch_positive_2")
+    renderer.emit_instruction(
+        "TCONST",
+        "r6",
+        1,
+        source=AssemblyTextSource(10, 20, 152),
+    )
+    renderer.emit_instruction("TRET", "r6", source=AssemblyTextSource(10, 13, 145))
+    renderer.emit_end()
+    renderer.emit_blank_line()
+    renderer.emit_function("main", "trit")
+    renderer.emit_register(0, "tryte")
+    renderer.emit_register(1, "tryte")
+    renderer.emit_register(2, "trit")
+    renderer.emit_label("entry")
+    renderer.emit_instruction(
+        "TCONST",
+        "r0",
+        20,
+        source=AssemblyTextSource(13, 18, 191),
+    )
+    renderer.emit_instruction(
+        "TINV",
+        "r1",
+        "r0",
+        source=AssemblyTextSource(13, 17, 190),
+    )
+    renderer.emit_instruction(
+        "TCALL",
+        "r2",
+        "sign",
+        "r1",
+        source=AssemblyTextSource(13, 12, 185),
+    )
+    renderer.emit_instruction("TRET", "r2", source=AssemblyTextSource(13, 5, 178))
+    renderer.emit_end()
+    return renderer.build()
