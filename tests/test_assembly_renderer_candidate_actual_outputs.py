@@ -25,7 +25,7 @@ def test_assembly_renderer_candidate_actual_outputs_manifest_is_valid() -> None:
     assert completed.stderr == ""
 
 
-def test_actual_output_contract_marks_sign_available_pending() -> None:
+def test_actual_output_contract_marks_sign_available_passed() -> None:
     data = json.loads(ACTUAL_OUTPUTS.read_text(encoding="utf-8"))
     rows = {item["name"]: item for item in data["outputs"]}
 
@@ -43,7 +43,7 @@ def test_actual_output_contract_marks_sign_available_pending() -> None:
     )
     assert rows["sign"]["actual_output_status"] == "available"
     assert rows["sign"]["actual_output_exists"] is True
-    assert rows["sign"]["comparison_status"] == "pending"
+    assert rows["sign"]["comparison_status"] == "passed"
     assert rows["sign"]["actual_byte_count"] == 946
     assert rows["sign"]["actual_line_count"] == 36
     assert (

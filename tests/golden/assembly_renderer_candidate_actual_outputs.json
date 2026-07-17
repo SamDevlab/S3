@@ -35,11 +35,11 @@
       "actual_output_exists": true,
       "actual_output_status": "available",
       "actual_sha256": "c077d2c49639b1a033505ec8c1ba1c60c78242e6e09c43f60a8aa5ed8b49e2d9",
-      "comparison_status": "pending",
+      "comparison_status": "passed",
       "expected_assembly": "tests/golden/inspect/sign.assembly.txt",
       "name": "sign",
       "planned_actual_output": "tests/golden/assembly_renderer_candidate_actual/sign.assembly.txt",
-      "reason": "sign actual output is available; formal byte-for-byte comparison is pending",
+      "reason": "sign actual output matches expected assembly byte-for-byte",
       "source": "examples/sign.s3"
     }
   ],

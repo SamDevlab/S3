@@ -84,7 +84,7 @@ check state.
 
 ### 0.14-C: sign byte-for-byte comparison
 
-Status: planned
+Status: complete
 
 Objective:
 
@@ -97,5 +97,16 @@ Acceptance:
 - `--candidate-compare-available` covers `first`, `simple_call`, and `sign`;
 - after that, evaluate separately whether `--check` should remain blocked or
   can change state.
+
+Notes:
+
+0.14-C formalizes the byte-for-byte comparison for `sign`: the expected inspect
+golden and the versioned candidate actual output match with deterministic LF
+bytes, so `sign` advances from `comparison_status: pending` to
+`comparison_status: passed`. `first` and `simple_call` remain passed, and
+`--candidate-compare-available` now covers `first`, `simple_call`, and `sign`
+as passed. The S3 renderer is still not implemented, so `--check` remains
+blocked; the next delivery should evaluate that global state separately and/or
+close 0.14.
 
 S3 0.14 can close after A/B/C if `sign` is stable.

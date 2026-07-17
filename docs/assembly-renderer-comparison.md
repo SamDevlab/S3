@@ -147,6 +147,13 @@ renderer is not implemented; 0.14-C should formalize the byte-for-byte `sign`
 comparison before the project separately evaluates whether that global state
 can change.
 
+0.14-C formalizes the available `sign` comparison. `python
+tools/compare_assembly_renderer.py --candidate-compare-available` now reports
+`first`, `simple_call`, and `sign` as passed byte-for-byte against their
+LF-normalized inspect goldens. The global `--check` mode still fails because
+the S3 renderer is not implemented; changing that blocked state is a separate
+follow-up decision.
+
 `python tools/check_assembly_renderer_candidate_readiness.py` is the single
 readiness gate for the candidate stub. It validates the candidate manifest, the
 symbol export golden, the fixture contract, the fixture expectations, the
