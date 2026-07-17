@@ -137,7 +137,11 @@ def test_sign_fixture_probe_delegates_to_renderer_core(monkeypatch) -> None:
             calls.append("build")
             return super().build()
 
-    monkeypatch.setattr(assembly_text_probe, "AssemblyTextRenderer", SpyRenderer)
+    monkeypatch.setattr(
+        assembly_program_text_adapter,
+        "AssemblyTextRenderer",
+        SpyRenderer,
+    )
 
     document = assembly_text_probe.build_sign_fixture_assembly_text()
 
