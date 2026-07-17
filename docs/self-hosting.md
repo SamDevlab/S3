@@ -22,7 +22,10 @@ after clarifying that `--candidate-compare-available` validates the passed
 actual outputs while the global `compare --check` remains blocked because the
 real S3 renderer is still not implemented; see `docs/roadmap-0.10.md`,
 `docs/roadmap-0.11.md`, `docs/roadmap-0.12.md`, `docs/roadmap-0.13.md`,
-`docs/roadmap-0.14.md`, and `docs/roadmap-0.15.md`.
+`docs/roadmap-0.14.md`, and `docs/roadmap-0.15.md`. S3 0.16 is open after
+starting a minimal Python renderer core for the `first` fixture path; see
+`docs/roadmap-0.16.md`. This core is an incremental bridge toward renderer
+generalization, not a migrated S3 renderer.
 
 Recent tools make this pipeline more observable:
 

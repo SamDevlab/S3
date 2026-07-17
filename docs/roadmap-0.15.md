@@ -54,3 +54,6 @@ tests, readiness expectation, and documentation were completed in the same PR.
 
 The next milestone should begin the real renderer/generalization work without
 changing `--check` to success prematurely.
+
+S3 0.16 is that follow-up milestone. It opens the renderer core path
+incrementally while preserving the blocked global check.

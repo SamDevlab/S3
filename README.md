@@ -207,13 +207,16 @@ atual inclui `examples/first.s3`, `examples/simple_call.s3`,
 infraestrutura serve como ponto de comparação para a future Python-to-S3
 migration, não como benchmark.
 
-No caminho do renderer candidato, S3 0.15 está fechado: `first`,
+No caminho do renderer candidato, S3 0.15 está fechado e S3 0.16 está aberto
+para começar a generalização incremental do renderer core. `first`,
 `simple_call` e `sign` têm actual outputs disponíveis e
-`comparison_status: passed`. `python tools/compare_assembly_renderer.py
---candidate-compare-available` é o modo correto para validar esses outputs
-disponíveis. `python tools/compare_assembly_renderer.py --check` continua
-bloqueado com status 1 porque o renderer S3 real ainda não está implementado;
-isso evita falso positivo de sucesso global.
+`comparison_status: passed`; o caminho de `first` agora passa por um renderer
+core Python mínimo baseado em `StaticTextLineEmitter`. `python
+tools/compare_assembly_renderer.py --candidate-compare-available` é o modo
+correto para validar esses outputs disponíveis. `python
+tools/compare_assembly_renderer.py --check` continua bloqueado com status 1
+porque o renderer S3 real ainda não está implementado; isso evita falso
+positivo de sucesso global.
 
 Integrações ELF são coletadas e puladas em hosts que não são Linux. Os
 resultados atuais devem ser consultados no workflow; os números abaixo

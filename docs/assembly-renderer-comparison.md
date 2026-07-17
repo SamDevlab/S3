@@ -24,7 +24,8 @@ making `simple_call` available and passed. S3 0.14 is closed after making
 candidate check state safely blocked while clarifying the reason; see
 `docs/roadmap-0.10.md`, `docs/roadmap-0.11.md`,
 `docs/roadmap-0.12.md`, `docs/roadmap-0.13.md`, `docs/roadmap-0.14.md`, and
-`docs/roadmap-0.15.md`.
+`docs/roadmap-0.15.md`. S3 0.16 is open to start the incremental renderer core
+path; see `docs/roadmap-0.16.md`.
 
 `python tools/compare_assembly_renderer.py --status` reports the current state
 and exits successfully.
@@ -206,6 +207,12 @@ with the stub meaning; it does not implement Assembly rendering.
 the S3 renderer is unavailable. Its output reports that actual outputs and
 available comparisons passed, then marks renderer implementation as
 `not_implemented` and the global check as blocked.
+
+0.16-A adds a minimal Python Assembly text renderer core for the `first`
+fixture path. It uses `StaticTextLineEmitter` through structured operations
+instead of emitting every `first` line directly in the probe. This is a step
+away from fixture-only probes, but it does not render arbitrary
+`AssemblyProgram` values and does not implement the real S3 renderer.
 
 ## Why check fails today
 
