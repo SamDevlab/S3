@@ -18,12 +18,12 @@
       "source": "examples/first.s3"
     },
     {
-      "actual_output_status": "not_implemented",
-      "comparison_status": "blocked",
+      "actual_output_status": "available",
+      "comparison_status": "pending",
       "expected_assembly": "tests/golden/inspect/simple_call.assembly.txt",
       "expected_sha256": "d6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f",
       "name": "simple_call",
-      "reason": "S3 renderer is not implemented",
+      "reason": "simple_call actual output is available; formal comparison is pending",
       "source": "examples/simple_call.s3"
     },
     {

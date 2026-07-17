@@ -54,6 +54,8 @@ real candidate actual output.
 
 ### 0.13-B: simple_call actual output
 
+Status: complete
+
 Objective:
 
 Create the versioned candidate actual output for `simple_call`, if 0.13-A
@@ -65,6 +67,15 @@ Acceptance:
 - `first` remains passed;
 - `sign` remains blocked and `not_implemented`;
 - `--check` remains blocked.
+
+Notes:
+
+0.13-B creates
+`tests/golden/assembly_renderer_candidate_actual/simple_call.assembly.txt` from
+`build_simple_call_fixture_assembly_text()`. The actual-output contract now
+marks `simple_call` as available with `comparison_status: pending`; `first`
+remains passed, `sign` remains blocked and absent, and `--check` remains
+blocked. 0.13-C should formalize the byte-for-byte `simple_call` comparison.
 
 ### 0.13-C: simple_call byte-for-byte comparison
 

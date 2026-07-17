@@ -1210,6 +1210,24 @@ def compare_available_outputs(
             raise ValueError(f"available comparison {output.name} byte count mismatch")
         if output.actual_line_count != line_count:
             raise ValueError(f"available comparison {output.name} line count mismatch")
+        if output.comparison_status == "pending":
+            comparisons.append(
+                AvailableComparison(
+                    name=output.name,
+                    expected_assembly=output.expected_assembly,
+                    actual_output=output.planned_actual_output,
+                    status="pending",
+                    reason="formal comparison is pending",
+                    sha256=sha256,
+                    byte_count=byte_count,
+                    line_count=line_count,
+                )
+            )
+            continue
+        if output.comparison_status != "passed":
+            raise ValueError(
+                f"available comparison {output.name} comparison status mismatch"
+            )
         comparisons.append(
             AvailableComparison(
                 name=output.name,
@@ -1230,6 +1248,7 @@ def render_available_comparisons(
 ) -> str:
     available_count = sum(1 for item in comparisons if item.status != "blocked")
     passed_count = sum(1 for item in comparisons if item.status == "passed")
+    pending_count = sum(1 for item in comparisons if item.status == "pending")
     blocked_count = sum(1 for item in comparisons if item.status == "blocked")
     lines = [
         "S3 Assembly renderer candidate available comparisons",
@@ -1237,10 +1256,10 @@ def render_available_comparisons(
         "comparisons:",
     ]
     for item in comparisons:
-        if item.status == "passed":
+        if item.status in {"passed", "pending"}:
             lines.append(
                 f"  {item.name} expected={item.expected_assembly} "
-                f"actual={item.actual_output} status=passed "
+                f"actual={item.actual_output} status={item.status} "
                 f"sha256={item.sha256} bytes={item.byte_count} "
                 f"lines={item.line_count}"
             )
@@ -1253,6 +1272,7 @@ def render_available_comparisons(
             "",
             f"available comparisons: {available_count}",
             f"passed comparisons: {passed_count}",
+            f"pending comparisons: {pending_count}",
             f"blocked comparisons: {blocked_count}",
             "status: partial",
             "comparison: partial",
