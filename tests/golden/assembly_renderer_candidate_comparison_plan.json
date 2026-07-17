@@ -27,12 +27,12 @@
       "source": "examples/simple_call.s3"
     },
     {
-      "actual_output_status": "not_implemented",
-      "comparison_status": "blocked",
+      "actual_output_status": "available",
+      "comparison_status": "pending",
       "expected_assembly": "tests/golden/inspect/sign.assembly.txt",
       "expected_sha256": "c077d2c49639b1a033505ec8c1ba1c60c78242e6e09c43f60a8aa5ed8b49e2d9",
       "name": "sign",
-      "reason": "S3 renderer is not implemented",
+      "reason": "sign actual output is available; formal byte-for-byte comparison is pending",
       "source": "examples/sign.s3"
     }
   ],

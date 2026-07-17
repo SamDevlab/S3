@@ -139,6 +139,14 @@ contracts. `first` and `simple_call` remain available and passed, `sign`
 remains blocked and `not_implemented`, and the global `--check` mode still
 fails because the S3 renderer is not implemented.
 
+0.14-B creates the versioned candidate actual output for `sign` from
+`build_sign_fixture_assembly_text()`. The contract now marks `first` and
+`simple_call` as available and passed, and `sign` as available with pending
+formal comparison. The global `--check` mode remains blocked because the S3
+renderer is not implemented; 0.14-C should formalize the byte-for-byte `sign`
+comparison before the project separately evaluates whether that global state
+can change.
+
 `python tools/check_assembly_renderer_candidate_readiness.py` is the single
 readiness gate for the candidate stub. It validates the candidate manifest, the
 symbol export golden, the fixture contract, the fixture expectations, the

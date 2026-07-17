@@ -30,17 +30,20 @@
       "source": "examples/simple_call.s3"
     },
     {
-      "actual_output_exists": false,
-      "actual_output_status": "not_implemented",
-      "comparison_status": "blocked",
+      "actual_byte_count": 946,
+      "actual_line_count": 36,
+      "actual_output_exists": true,
+      "actual_output_status": "available",
+      "actual_sha256": "c077d2c49639b1a033505ec8c1ba1c60c78242e6e09c43f60a8aa5ed8b49e2d9",
+      "comparison_status": "pending",
       "expected_assembly": "tests/golden/inspect/sign.assembly.txt",
       "name": "sign",
       "planned_actual_output": "tests/golden/assembly_renderer_candidate_actual/sign.assembly.txt",
-      "reason": "S3 renderer is not implemented",
+      "reason": "sign actual output is available; formal byte-for-byte comparison is pending",
       "source": "examples/sign.s3"
     }
   ],
-  "reason": "first and simple_call actual outputs are available; S3 renderer is not implemented",
+  "reason": "first, simple_call, and sign actual outputs are available; S3 renderer is not implemented",
   "status": "partial",
   "version": "1.0.0"
 }

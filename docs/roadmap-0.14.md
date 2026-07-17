@@ -57,7 +57,7 @@ output if the path remains stable.
 
 ### 0.14-B: sign actual output
 
-Status: planned
+Status: complete
 
 Objective:
 
@@ -70,6 +70,17 @@ Acceptance:
 - `sign` has `comparison_status: pending`;
 - `first` and `simple_call` remain passed;
 - `--check` remains blocked.
+
+Notes:
+
+0.14-B creates
+`tests/golden/assembly_renderer_candidate_actual/sign.assembly.txt` from
+`build_sign_fixture_assembly_text()`. The actual-output contract now marks
+`sign` as available with `comparison_status: pending`; `first` and
+`simple_call` remain available and passed. The S3 renderer is still not
+implemented, and `--check` remains blocked. 0.14-C should formalize the
+byte-for-byte `sign` comparison before any separate reassessment of the global
+check state.
 
 ### 0.14-C: sign byte-for-byte comparison
 

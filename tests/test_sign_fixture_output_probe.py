@@ -43,10 +43,21 @@ def test_sign_fixture_output_probe_matches_lf_normalized_inspect_golden() -> Non
     assert b"\r\n" not in document.utf8_bytes
 
 
-def test_sign_fixture_probe_does_not_create_actual_output() -> None:
+def test_sign_fixture_actual_output_matches_probe_and_golden() -> None:
     document = build_sign_fixture_assembly_text()
+    actual = SIGN_ACTUAL_OUTPUT.read_bytes()
+    expected = _read_lf_normalized_golden_bytes(SIGN_ASSEMBLY_GOLDEN)
 
-    assert document.utf8_bytes
     assert FIRST_ACTUAL_OUTPUT.is_file()
     assert SIMPLE_CALL_ACTUAL_OUTPUT.is_file()
-    assert not SIGN_ACTUAL_OUTPUT.exists()
+    assert SIGN_ACTUAL_OUTPUT.is_file()
+    assert actual == document.utf8_bytes
+    assert actual == expected
+    assert len(actual) == 946
+    assert len(actual.decode("utf-8").splitlines()) == 36
+    assert (
+        hashlib.sha256(actual).hexdigest()
+        == "c077d2c49639b1a033505ec8c1ba1c60c78242e6e09c43f60a8aa5ed8b49e2d9"
+    )
+    assert b"\r\n" not in actual
+    assert actual.endswith(b"\n")
