@@ -79,6 +79,8 @@ blocked. 0.13-C should formalize the byte-for-byte `simple_call` comparison.
 
 ### 0.13-C: simple_call byte-for-byte comparison
 
+Status: complete
+
 Objective:
 
 Formalize byte-for-byte comparison for `simple_call`.
@@ -90,5 +92,14 @@ Acceptance:
 - `sign` remains blocked and `not_implemented`;
 - `--candidate-compare-available` covers `first` and `simple_call`;
 - `--check` remains blocked if `sign` is still blocked.
+
+Notes:
+
+0.13-C formalizes the byte-for-byte comparison for `simple_call`: the expected
+inspect golden and the versioned candidate actual output match with deterministic
+LF bytes, so `simple_call` advances from `comparison_status: pending` to
+`comparison_status: passed`. `first` remains passed, `sign` remains blocked and
+absent, and `--check` remains blocked because the full renderer path is still
+incomplete.
 
 0.13 can close after A/B/C if `simple_call` is stable.
