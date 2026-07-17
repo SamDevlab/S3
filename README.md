@@ -211,10 +211,9 @@ No caminho do renderer candidato, S3 0.15 está fechado e S3 0.16 também está
 fechado após generalizar incrementalmente o renderer core para os três probes
 atuais. `first`, `simple_call` e `sign` têm actual outputs disponíveis,
 `comparison_status: passed`, e agora passam por um renderer core Python mínimo
-baseado em `StaticTextLineEmitter`. S3 0.17 está aberto para aproximar o modelo
-real `AssemblyProgram` desse core por adapters controlados; os passos atuais
-provam `first` e `simple_call` byte a byte via adapter, mantendo `sign` fora do
-adapter.
+baseado em `StaticTextLineEmitter`. S3 0.17 está fechado após aproximar o
+modelo real `AssemblyProgram` desse core por adapters controlados; `first`,
+`simple_call` e `sign` são provados byte a byte via adapter.
 `python tools/compare_assembly_renderer.py --candidate-compare-available` é o
 modo correto para validar esses outputs disponíveis.
 `python tools/compare_assembly_renderer.py --check` continua bloqueado com

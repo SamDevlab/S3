@@ -49,6 +49,63 @@ SIMPLE_CALL_MAIN_OPCODES = (
     AssemblyOpcode.TCALL,
     AssemblyOpcode.TRET,
 )
+SIGN_FUNCTION_PARAMETER_TYPES = ((0, AssemblyType.TRYTE),)
+SIGN_FUNCTION_REGISTER_TYPES = (
+    (1, AssemblyType.TRYTE),
+    (2, AssemblyType.TRIT),
+    (3, AssemblyType.TRIT),
+    (4, AssemblyType.TRIT),
+    (5, AssemblyType.TRIT),
+    (6, AssemblyType.TRIT),
+)
+SIGN_FUNCTION_BLOCKS = (
+    (
+        "entry",
+        (
+            AssemblyOpcode.TCONST,
+            AssemblyOpcode.TCMP,
+            AssemblyOpcode.TBR3,
+        ),
+    ),
+    (
+        "switch_negative_0",
+        (
+            AssemblyOpcode.TCONST,
+            AssemblyOpcode.TINV,
+            AssemblyOpcode.TRET,
+        ),
+    ),
+    (
+        "switch_neutral_1",
+        (
+            AssemblyOpcode.TCONST,
+            AssemblyOpcode.TRET,
+        ),
+    ),
+    (
+        "switch_positive_2",
+        (
+            AssemblyOpcode.TCONST,
+            AssemblyOpcode.TRET,
+        ),
+    ),
+)
+SIGN_MAIN_REGISTER_TYPES = (
+    (0, AssemblyType.TRYTE),
+    (1, AssemblyType.TRYTE),
+    (2, AssemblyType.TRIT),
+)
+SIGN_MAIN_BLOCKS = (
+    (
+        "entry",
+        (
+            AssemblyOpcode.TCONST,
+            AssemblyOpcode.TINV,
+            AssemblyOpcode.TCALL,
+            AssemblyOpcode.TRET,
+        ),
+    ),
+)
 
 InstructionEmitter = Callable[[AssemblyTextRenderer, AssemblyInstruction], None]
 
@@ -95,6 +152,16 @@ class AssemblyProgramTextAdapter:
         )
         return renderer.build()
 
+    def render_sign_program(self, program: AssemblyProgram) -> StaticTextDocument:
+        _validate_sign_program_shape(program)
+
+        renderer = AssemblyTextRenderer()
+        renderer.emit_header(program.version)
+        _emit_function(renderer, program.functions[0], _emit_sign_instruction)
+        renderer.emit_blank_line()
+        _emit_function(renderer, program.functions[1], _emit_sign_instruction)
+        return renderer.build()
+
 
 def render_first_program(program: AssemblyProgram) -> StaticTextDocument:
     return AssemblyProgramTextAdapter().render_first_program(program)
@@ -102,6 +169,10 @@ def render_first_program(program: AssemblyProgram) -> StaticTextDocument:
 
 def render_simple_call_program(program: AssemblyProgram) -> StaticTextDocument:
     return AssemblyProgramTextAdapter().render_simple_call_program(program)
+
+
+def render_sign_program(program: AssemblyProgram) -> StaticTextDocument:
+    return AssemblyProgramTextAdapter().render_sign_program(program)
 
 
 def _validate_first_program_shape(program: AssemblyProgram) -> None:
@@ -241,6 +312,91 @@ def _validate_simple_call_main_function(function: AssemblyFunction) -> None:
     if opcodes != SIMPLE_CALL_MAIN_OPCODES:
         raise AssemblyProgramTextAdapterError(
             "simple_call adapter supports only the main opcode sequence"
+        )
+
+
+def _validate_sign_program_shape(program: AssemblyProgram) -> None:
+    if not isinstance(program, AssemblyProgram):
+        raise TypeError("sign adapter expects an AssemblyProgram")
+    if program.version != ASSEMBLY_FORMAT_VERSION:
+        raise AssemblyProgramTextAdapterError(
+            "sign adapter expects Assembly format version "
+            f"{ASSEMBLY_FORMAT_VERSION}"
+        )
+    if len(program.functions) != 2:
+        raise AssemblyProgramTextAdapterError(
+            "sign adapter expects exactly two functions"
+        )
+    if tuple(function.name for function in program.functions) != ("sign", "main"):
+        raise AssemblyProgramTextAdapterError(
+            "sign adapter expects functions 'sign' and 'main'"
+        )
+
+    _validate_sign_function(program.functions[0])
+    _validate_sign_main_function(program.functions[1])
+
+
+def _validate_sign_function(function: AssemblyFunction) -> None:
+    if function.return_type is not AssemblyType.TRIT:
+        raise AssemblyProgramTextAdapterError(
+            "sign adapter expects sign to return trit"
+        )
+    if _parameter_types(function) != SIGN_FUNCTION_PARAMETER_TYPES:
+        raise AssemblyProgramTextAdapterError(
+            "sign adapter expects sign parameter r0 as tryte"
+        )
+    if function.memory_objects:
+        raise AssemblyProgramTextAdapterError(
+            "sign adapter does not support memory objects"
+        )
+    if function.register_types != SIGN_FUNCTION_REGISTER_TYPES:
+        raise AssemblyProgramTextAdapterError(
+            "sign adapter expects sign registers r1..r6 with fixture types"
+        )
+    _validate_blocks(function, SIGN_FUNCTION_BLOCKS, "sign adapter", "sign")
+
+
+def _validate_sign_main_function(function: AssemblyFunction) -> None:
+    if function.return_type is not AssemblyType.TRIT:
+        raise AssemblyProgramTextAdapterError(
+            "sign adapter expects main to return trit"
+        )
+    if function.parameters:
+        raise AssemblyProgramTextAdapterError(
+            "sign adapter does not support main parameters"
+        )
+    if function.memory_objects:
+        raise AssemblyProgramTextAdapterError(
+            "sign adapter does not support memory objects"
+        )
+    if function.register_types != SIGN_MAIN_REGISTER_TYPES:
+        raise AssemblyProgramTextAdapterError(
+            "sign adapter expects main registers r0..r2 with fixture types"
+        )
+    _validate_blocks(function, SIGN_MAIN_BLOCKS, "sign adapter", "main")
+
+
+def _validate_blocks(
+    function: AssemblyFunction,
+    expected_blocks: tuple[tuple[str, tuple[AssemblyOpcode, ...]], ...],
+    adapter_name: str,
+    function_name: str,
+) -> None:
+    if len(function.blocks) != len(expected_blocks):
+        raise AssemblyProgramTextAdapterError(
+            f"{adapter_name} expects {function_name} block shape"
+        )
+
+    actual = tuple(
+        (
+            block.label,
+            tuple(instruction.opcode for instruction in block.instructions),
+        )
+        for block in function.blocks
+    )
+    if actual != expected_blocks:
+        raise AssemblyProgramTextAdapterError(
+            f"{adapter_name} supports only the {function_name} block shape"
         )
 
 
@@ -410,6 +566,109 @@ def _emit_simple_call_instruction(
     )
 
 
+def _emit_sign_instruction(
+    renderer: AssemblyTextRenderer,
+    instruction: AssemblyInstruction,
+) -> None:
+    source = _source(instruction, "sign adapter")
+    opcode = instruction.opcode
+
+    if opcode is AssemblyOpcode.TCONST:
+        register = _single_register(instruction, "TCONST", "sign adapter")
+        if instruction.immediate is None:
+            raise AssemblyProgramTextAdapterError(
+                "sign adapter expects TCONST immediate"
+            )
+        _require_no_extra_operands(
+            instruction,
+            "TCONST",
+            "sign adapter",
+            allow_immediate=True,
+        )
+        renderer.emit_instruction(
+            opcode.value,
+            _register(register),
+            instruction.immediate,
+            source=source,
+        )
+        return
+
+    if opcode is AssemblyOpcode.TCMP:
+        left, middle, right = _register_triple(
+            instruction,
+            opcode.value,
+            "sign adapter",
+        )
+        _require_no_extra_operands(instruction, opcode.value, "sign adapter")
+        renderer.emit_instruction(
+            opcode.value,
+            _register(left),
+            _register(middle),
+            _register(right),
+            source=source,
+        )
+        return
+
+    if opcode is AssemblyOpcode.TINV:
+        left, right = _register_pair(instruction, "TINV", "sign adapter")
+        _require_no_extra_operands(instruction, "TINV", "sign adapter")
+        renderer.emit_instruction(
+            opcode.value,
+            _register(left),
+            _register(right),
+            source=source,
+        )
+        return
+
+    if opcode is AssemblyOpcode.TBR3:
+        condition = _single_register(instruction, "TBR3", "sign adapter")
+        labels = _label_triple(instruction, "TBR3", "sign adapter")
+        _require_no_extra_operands(
+            instruction,
+            "TBR3",
+            "sign adapter",
+            allow_labels=True,
+        )
+        renderer.emit_instruction(
+            opcode.value,
+            _register(condition),
+            *labels,
+            source=source,
+        )
+        return
+
+    if opcode is AssemblyOpcode.TCALL:
+        target, argument = _register_pair(instruction, "TCALL", "sign adapter")
+        if instruction.callee is None:
+            raise AssemblyProgramTextAdapterError(
+                "sign adapter expects TCALL callee"
+            )
+        _require_no_extra_operands(
+            instruction,
+            "TCALL",
+            "sign adapter",
+            allow_callee=True,
+        )
+        renderer.emit_instruction(
+            opcode.value,
+            _register(target),
+            instruction.callee,
+            _register(argument),
+            source=source,
+        )
+        return
+
+    if opcode is AssemblyOpcode.TRET:
+        register = _single_register(instruction, "TRET", "sign adapter")
+        _require_no_extra_operands(instruction, "TRET", "sign adapter")
+        renderer.emit_instruction(opcode.value, _register(register), source=source)
+        return
+
+    raise AssemblyProgramTextAdapterError(
+        f"sign adapter does not support opcode {opcode.value}"
+    )
+
+
 def _source(instruction: AssemblyInstruction, adapter_name: str) -> AssemblyTextSource:
     if instruction.source is None:
         raise AssemblyProgramTextAdapterError(
@@ -455,6 +714,18 @@ def _register_triple(
     return instruction.registers
 
 
+def _label_triple(
+    instruction: AssemblyInstruction,
+    opcode: str,
+    adapter_name: str,
+) -> tuple[str, str, str]:
+    if len(instruction.labels) != 3:
+        raise AssemblyProgramTextAdapterError(
+            f"{adapter_name} expects {opcode} to have three labels"
+        )
+    return instruction.labels
+
+
 def _require_no_extra_operands(
     instruction: AssemblyInstruction,
     opcode: str,
@@ -462,11 +733,12 @@ def _require_no_extra_operands(
     *,
     allow_immediate: bool = False,
     allow_callee: bool = False,
+    allow_labels: bool = False,
 ) -> None:
     if (
         (instruction.immediate is not None and not allow_immediate)
         or (instruction.callee is not None and not allow_callee)
-        or instruction.labels
+        or (instruction.labels and not allow_labels)
         or instruction.memory is not None
     ):
         raise AssemblyProgramTextAdapterError(

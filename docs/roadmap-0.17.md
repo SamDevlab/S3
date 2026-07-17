@@ -1,6 +1,6 @@
 # S3 0.17 Roadmap
 
-Status: open
+Status: closed
 
 ## Objective
 
@@ -49,21 +49,44 @@ This does not replace `AssemblyProgram.render()` globally, does not implement
 the S3 renderer, does not migrate `sign` to the adapter, and does not make the
 global renderer candidate check pass.
 
+## 0.17-C: AssemblyProgram Adapter Sign Path
+
+Status: completed
+
+0.17-C extends the controlled `AssemblyProgram` to `AssemblyTextRenderer`
+adapter to the `sign` fixture path. The adapter reads the real two-function
+`AssemblyProgram` model, validates the narrow `sign`/`main` shape including
+parameters, registers, multiple labels, `TCMP`, `TBR3`, `TCALL`, and source
+metadata, emits through `AssemblyTextRenderer`, and returns a
+`StaticTextDocument`.
+
+The `sign` adapter path remains byte-for-byte stable against the LF-normalized
+inspect golden and the versioned candidate actual output. The actual outputs
+and inspect goldens are not changed.
+
+This does not replace `AssemblyProgram.render()` globally, does not implement
+the S3 renderer, and does not make the global renderer candidate check pass.
+
 ## Current State
 
 - `first`: available, passed, routed through the renderer core, and proven
   through the controlled `AssemblyProgram` adapter;
 - `simple_call`: available, passed, routed through the renderer core, and
   proven through the controlled `AssemblyProgram` adapter;
-- `sign`: available, passed, and routed directly through the renderer core
-  outside the adapter;
+- `sign`: available, passed, routed through the renderer core, and proven
+  through the controlled `AssemblyProgram` adapter;
 - `--candidate-compare-available`: expected exit code 0;
 - `--check`: expected exit code 1, blocked because the real S3 renderer is
   still not implemented.
 
-## Next Focus
+## Completion
 
-Evaluate whether `sign` can use a similarly small adapter slice without
-turning the adapter into a broad renderer. Any future change to the global
-`--check` result must happen separately, with a real S3 renderer
-implementation.
+S3 0.17 is complete after three deliveries:
+
+- 0.17-A: AssemblyProgram adapter first path;
+- 0.17-B: AssemblyProgram adapter simple_call path;
+- 0.17-C: AssemblyProgram adapter sign path.
+
+There is no 0.17-D planned. The next phase should evaluate a real renderer or
+controlled generalization separately. Any future change to the global `--check`
+result must happen separately, with a real S3 renderer implementation.
