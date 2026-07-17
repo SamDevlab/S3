@@ -38,6 +38,24 @@ This is an incremental Python-side bridge. It does not render arbitrary
 `AssemblyProgram` values, does not implement the S3 renderer, and does not make
 the global renderer candidate check pass.
 
+## 0.16-B: Renderer Core Simple Call Path
+
+Status: completed
+
+0.16-B routes `build_simple_call_fixture_assembly_text()` through the same
+minimal renderer core. The current API was sufficient, including parameters,
+multiple functions, blank lines between functions, and `TCALL` as a structured
+instruction with a callee operand.
+
+`first` and `simple_call` now use `AssemblyTextRenderer`. `sign` intentionally
+remains on the previous fixture-probe path for this delivery. All three
+candidate actual outputs remain byte-for-byte stable against their
+LF-normalized inspect goldens, and neither actual outputs nor inspect goldens
+change.
+
+This still does not use the real `AssemblyProgram` renderer and does not
+implement the S3 renderer.
+
 ## Current State
 
 - `first`: available and passed;
@@ -49,7 +67,7 @@ the global renderer candidate check pass.
 
 ## Next Focus
 
-Continue extending the renderer core only where it reduces fixture-probe
-duplication and moves toward a real renderer shape. Any future change to the
-global `--check` result must happen separately, with a real S3 renderer path and
+Apply the renderer core to `sign` only if that can preserve byte-for-byte output
+without broadening the abstraction too far. Any future change to the global
+`--check` result must happen separately, with a real S3 renderer path and
 byte-for-byte comparison coverage.

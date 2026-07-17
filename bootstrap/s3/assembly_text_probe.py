@@ -67,29 +67,51 @@ def build_first_fixture_assembly_text() -> StaticTextDocument:
 def build_simple_call_fixture_assembly_text() -> StaticTextDocument:
     """Build the expected Assembly text for ``examples/simple_call.s3`` in memory."""
 
-    emitter = StaticTextLineEmitter()
-    emitter.emit_line(".s3asm 0.5.0")
-    emitter.emit_blank_line()
-    emitter.emit_line(".function add -> tryte")
-    emitter.emit_line(".param r0, tryte", indent=1)
-    emitter.emit_line(".param r1, tryte", indent=1)
-    emitter.emit_line(".register r2, tryte", indent=1)
-    emitter.emit_line(".label entry")
-    emitter.emit_line("TADD   r2, r0, r1 ; source=2:14:50", indent=1)
-    emitter.emit_line("TRET   r2 ; source=2:5:41", indent=1)
-    emitter.emit_line(".end")
-    emitter.emit_blank_line()
-    emitter.emit_line(".function main -> tryte")
-    emitter.emit_line(".register r0, tryte", indent=1)
-    emitter.emit_line(".register r1, tryte", indent=1)
-    emitter.emit_line(".register r2, tryte", indent=1)
-    emitter.emit_line(".label entry")
-    emitter.emit_line("TCONST r0, 10 ; source=5:16:90", indent=1)
-    emitter.emit_line("TCONST r1, 5 ; source=5:20:94", indent=1)
-    emitter.emit_line("TCALL  r2, add, r0, r1 ; source=5:12:86", indent=1)
-    emitter.emit_line("TRET   r2 ; source=5:5:79", indent=1)
-    emitter.emit_line(".end")
-    return emitter.build()
+    renderer = AssemblyTextRenderer()
+    renderer.emit_header()
+    renderer.emit_function("add", "tryte")
+    renderer.emit_param(0, "tryte")
+    renderer.emit_param(1, "tryte")
+    renderer.emit_register(2, "tryte")
+    renderer.emit_label("entry")
+    renderer.emit_instruction(
+        "TADD",
+        "r2",
+        "r0",
+        "r1",
+        source=AssemblyTextSource(2, 14, 50),
+    )
+    renderer.emit_instruction("TRET", "r2", source=AssemblyTextSource(2, 5, 41))
+    renderer.emit_end()
+    renderer.emit_blank_line()
+    renderer.emit_function("main", "tryte")
+    renderer.emit_register(0, "tryte")
+    renderer.emit_register(1, "tryte")
+    renderer.emit_register(2, "tryte")
+    renderer.emit_label("entry")
+    renderer.emit_instruction(
+        "TCONST",
+        "r0",
+        10,
+        source=AssemblyTextSource(5, 16, 90),
+    )
+    renderer.emit_instruction(
+        "TCONST",
+        "r1",
+        5,
+        source=AssemblyTextSource(5, 20, 94),
+    )
+    renderer.emit_instruction(
+        "TCALL",
+        "r2",
+        "add",
+        "r0",
+        "r1",
+        source=AssemblyTextSource(5, 12, 86),
+    )
+    renderer.emit_instruction("TRET", "r2", source=AssemblyTextSource(5, 5, 79))
+    renderer.emit_end()
+    return renderer.build()
 
 
 def build_sign_fixture_assembly_text() -> StaticTextDocument:
