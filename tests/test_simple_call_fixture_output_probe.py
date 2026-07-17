@@ -60,4 +60,4 @@ def test_simple_call_actual_output_matches_probe_bytes() -> None:
     )
     assert b"\r\n" not in actual
     assert actual.endswith(b"\n")
-    assert not SIGN_ACTUAL_OUTPUT.exists()
+    assert SIGN_ACTUAL_OUTPUT.is_file()
