@@ -20,8 +20,9 @@ S3 0.10 closed with the candidate contracts and readiness gate in place. S3
 0.11 is closed after establishing deterministic static text helpers. S3 0.12
 is closed after making `first` available and passed. S3 0.13 is closed after
 making `simple_call` available and passed. S3 0.14 is closed after making
-`sign` available and passed. S3 0.15 is open to evaluate the renderer candidate
-check state; see `docs/roadmap-0.10.md`, `docs/roadmap-0.11.md`,
+`sign` available and passed. S3 0.15 is closed after keeping the renderer
+candidate check state safely blocked while clarifying the reason; see
+`docs/roadmap-0.10.md`, `docs/roadmap-0.11.md`,
 `docs/roadmap-0.12.md`, `docs/roadmap-0.13.md`, `docs/roadmap-0.14.md`, and
 `docs/roadmap-0.15.md`.
 
@@ -156,9 +157,9 @@ the S3 renderer is not implemented; changing that blocked state is a separate
 follow-up decision.
 
 After 0.14, `first`, `simple_call`, and `sign` are available and passed. S3
-0.15 evaluates whether the global `--check` mode should remain blocked because
-the real S3 renderer is still missing, or whether the harness needs a controlled
-partial or success state for completed actual outputs.
+0.15 keeps the global `--check` mode blocked because the real S3 renderer is
+still missing. `--candidate-compare-available` is the passing mode for completed
+actual outputs; global check success remains reserved for a real renderer.
 
 `python tools/check_assembly_renderer_candidate_readiness.py` is the single
 readiness gate for the candidate stub. It validates the candidate manifest, the
@@ -202,7 +203,9 @@ assertions match the subset contract. This keeps the candidate status aligned
 with the stub meaning; it does not implement Assembly rendering.
 
 `python tools/compare_assembly_renderer.py --check` fails intentionally while
-the S3 renderer is unavailable.
+the S3 renderer is unavailable. Its output reports that actual outputs and
+available comparisons passed, then marks renderer implementation as
+`not_implemented` and the global check as blocked.
 
 ## Why check fails today
 

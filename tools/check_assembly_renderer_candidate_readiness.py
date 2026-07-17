@@ -193,7 +193,17 @@ READINESS_STEPS = (
         "comparison blocked",
         ("tools/compare_assembly_renderer.py", "--check"),
         1,
-        output_contains=("S3 renderer is not implemented",),
+        stdout_contains=(
+            "S3 Assembly renderer comparison check: blocked",
+            "actual outputs: passed",
+            "available comparisons: passed",
+            "renderer implementation: not_implemented",
+            "global check: blocked",
+            (
+                "reason: actual outputs pass, but the real S3 renderer is still "
+                "not implemented"
+            ),
+        ),
     ),
 )
 

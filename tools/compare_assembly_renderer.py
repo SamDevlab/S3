@@ -1281,6 +1281,39 @@ def render_available_comparisons(
     return "\n".join(lines) + "\n"
 
 
+def _available_comparison_summary(
+    comparisons: tuple[AvailableComparison, ...],
+) -> str:
+    if comparisons and all(item.status == "passed" for item in comparisons):
+        return "passed"
+    if any(item.status == "pending" for item in comparisons):
+        return "partial"
+    return "blocked"
+
+
+def render_check_status(
+    candidate_status: CandidateStatus,
+    comparisons: tuple[AvailableComparison, ...],
+) -> str:
+    renderer_implementation = (
+        "implemented" if candidate_status.implements_renderer else "not_implemented"
+    )
+    available_comparisons = _available_comparison_summary(comparisons)
+    actual_outputs = "passed" if available_comparisons == "passed" else "partial"
+    lines = [
+        "S3 Assembly renderer comparison check: blocked",
+        f"actual outputs: {actual_outputs}",
+        f"available comparisons: {available_comparisons}",
+        f"renderer implementation: {renderer_implementation}",
+        "global check: blocked",
+        (
+            "reason: actual outputs pass, but the real S3 renderer is still "
+            "not implemented"
+        ),
+    ]
+    return "\n".join(lines) + "\n"
+
+
 def render_reference_status(fixtures: tuple[ReferenceFixture, ...]) -> str:
     lines = [
         "S3 Assembly renderer Python reference",
@@ -1487,7 +1520,16 @@ def candidate_run() -> int:
 
 
 def check() -> int:
-    print(BLOCKED_MESSAGE)
+    try:
+        candidate_status = load_candidate_status()
+        actual_output_status = load_candidate_actual_output_status()
+        comparisons = compare_available_outputs(actual_output_status)
+    except ValueError as error:
+        print("S3 Assembly renderer comparison check: blocked")
+        print(f"reason: {error}")
+        return 1
+
+    print(render_check_status(candidate_status, comparisons), end="")
     return 1
 
 
