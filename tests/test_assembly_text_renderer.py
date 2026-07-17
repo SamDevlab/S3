@@ -5,7 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from bootstrap.s3 import assembly_text_probe
+from bootstrap.s3 import assembly_program_text_adapter, assembly_text_probe
 from bootstrap.s3.assembly_text_renderer import (
     AssemblyTextRenderer,
     AssemblyTextSource,
@@ -85,7 +85,11 @@ def test_first_fixture_probe_delegates_to_renderer_core(monkeypatch) -> None:
             calls.append("build")
             return super().build()
 
-    monkeypatch.setattr(assembly_text_probe, "AssemblyTextRenderer", SpyRenderer)
+    monkeypatch.setattr(
+        assembly_program_text_adapter,
+        "AssemblyTextRenderer",
+        SpyRenderer,
+    )
 
     document = assembly_text_probe.build_first_fixture_assembly_text()
 

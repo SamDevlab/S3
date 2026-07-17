@@ -26,6 +26,8 @@ candidate check state safely blocked while clarifying the reason; see
 `docs/roadmap-0.12.md`, `docs/roadmap-0.13.md`, `docs/roadmap-0.14.md`,
 `docs/roadmap-0.15.md`, and `docs/roadmap-0.16.md`. S3 0.16 is closed after
 routing the three current fixture probes through the incremental renderer core.
+S3 0.17 is open to connect the real `AssemblyProgram` model to that core
+through controlled adapters; see `docs/roadmap-0.17.md`.
 
 `python tools/compare_assembly_renderer.py --status` reports the current state
 and exits successfully.
@@ -228,6 +230,13 @@ dependency. `first`, `simple_call`, and `sign` now use the core, closing S3
 0.16 while keeping all inspect goldens and candidate actual outputs
 byte-for-byte unchanged. The global `--check` mode remains blocked because the
 S3 renderer is still not implemented.
+
+0.17-A adds a minimal `AssemblyProgram` adapter for `first`. It validates the
+first-only real model shape and emits through `AssemblyTextRenderer`, preserving
+byte-for-byte output against the LF-normalized inspect golden and the versioned
+candidate actual output. This does not replace `AssemblyProgram.render()`,
+does not migrate `simple_call` or `sign`, and does not implement the S3
+renderer. The global `--check` mode remains blocked.
 
 ## Why check fails today
 

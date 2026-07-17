@@ -2,66 +2,84 @@
 
 from __future__ import annotations
 
+from bootstrap.s3.assembly import (
+    AssemblyBlock,
+    AssemblyFunction,
+    AssemblyInstruction,
+    AssemblyOpcode,
+    AssemblyProgram,
+    AssemblyType,
+)
+from bootstrap.s3.assembly_program_text_adapter import render_first_program
 from bootstrap.s3.assembly_text_renderer import (
     AssemblyTextRenderer,
     AssemblyTextSource,
 )
+from bootstrap.s3.diagnostics import SourceLocation
 from bootstrap.s3.static_text import StaticTextDocument
 
 
 def build_first_fixture_assembly_text() -> StaticTextDocument:
     """Build the expected Assembly text for ``examples/first.s3`` in memory."""
 
-    renderer = AssemblyTextRenderer()
-    renderer.emit_header()
-    renderer.emit_function("main", "tryte")
-    renderer.emit_register(0, "tryte")
-    renderer.emit_register(1, "tryte")
-    renderer.emit_register(2, "tryte")
-    renderer.emit_register(3, "tryte")
-    renderer.emit_register(4, "tryte")
-    renderer.emit_register(5, "tryte")
-    renderer.emit_label("entry")
-    renderer.emit_instruction(
-        "TCONST",
-        "r0",
-        10,
-        source=AssemblyTextSource(2, 16, 35),
+    return render_first_program(_build_first_fixture_assembly_program())
+
+
+def _build_first_fixture_assembly_program() -> AssemblyProgram:
+    return AssemblyProgram(
+        (
+            AssemblyFunction(
+                "main",
+                AssemblyType.TRYTE,
+                (),
+                tuple((register, AssemblyType.TRYTE) for register in range(6)),
+                (
+                    AssemblyBlock(
+                        "entry",
+                        (
+                            AssemblyInstruction(
+                                AssemblyOpcode.TCONST,
+                                (0,),
+                                immediate=10,
+                                source=SourceLocation(35, 2, 16),
+                            ),
+                            AssemblyInstruction(
+                                AssemblyOpcode.TMOV,
+                                (1, 0),
+                                source=SourceLocation(24, 2, 5),
+                            ),
+                            AssemblyInstruction(
+                                AssemblyOpcode.TCONST,
+                                (2,),
+                                immediate=4,
+                                source=SourceLocation(53, 3, 16),
+                            ),
+                            AssemblyInstruction(
+                                AssemblyOpcode.TMOV,
+                                (3, 2),
+                                source=SourceLocation(42, 3, 5),
+                            ),
+                            AssemblyInstruction(
+                                AssemblyOpcode.TINV,
+                                (4, 3),
+                                source=SourceLocation(68, 4, 14),
+                            ),
+                            AssemblyInstruction(
+                                AssemblyOpcode.TADD,
+                                (5, 1, 4),
+                                source=SourceLocation(68, 4, 14),
+                            ),
+                            AssemblyInstruction(
+                                AssemblyOpcode.TRET,
+                                (5,),
+                                source=SourceLocation(59, 4, 5),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
     )
-    renderer.emit_instruction(
-        "TMOV",
-        "r1",
-        "r0",
-        source=AssemblyTextSource(2, 5, 24),
-    )
-    renderer.emit_instruction(
-        "TCONST",
-        "r2",
-        4,
-        source=AssemblyTextSource(3, 16, 53),
-    )
-    renderer.emit_instruction(
-        "TMOV",
-        "r3",
-        "r2",
-        source=AssemblyTextSource(3, 5, 42),
-    )
-    renderer.emit_instruction(
-        "TINV",
-        "r4",
-        "r3",
-        source=AssemblyTextSource(4, 14, 68),
-    )
-    renderer.emit_instruction(
-        "TADD",
-        "r5",
-        "r1",
-        "r4",
-        source=AssemblyTextSource(4, 14, 68),
-    )
-    renderer.emit_instruction("TRET", "r5", source=AssemblyTextSource(4, 5, 59))
-    renderer.emit_end()
-    return renderer.build()
 
 
 def build_simple_call_fixture_assembly_text() -> StaticTextDocument:
