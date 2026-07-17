@@ -210,8 +210,9 @@ migration, não como benchmark.
 No caminho do renderer candidato, S3 0.15 está fechado e S3 0.16 está aberto
 para começar a generalização incremental do renderer core. `first`,
 `simple_call` e `sign` têm actual outputs disponíveis e
-`comparison_status: passed`; o caminho de `first` agora passa por um renderer
-core Python mínimo baseado em `StaticTextLineEmitter`. `python
+`comparison_status: passed`; os caminhos de `first` e `simple_call` agora
+passam por um renderer core Python mínimo baseado em
+`StaticTextLineEmitter`, enquanto `sign` permanece no probe anterior. `python
 tools/compare_assembly_renderer.py --candidate-compare-available` é o modo
 correto para validar esses outputs disponíveis. `python
 tools/compare_assembly_renderer.py --check` continua bloqueado com status 1

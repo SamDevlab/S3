@@ -214,6 +214,13 @@ instead of emitting every `first` line directly in the probe. This is a step
 away from fixture-only probes, but it does not render arbitrary
 `AssemblyProgram` values and does not implement the real S3 renderer.
 
+0.16-B applies that renderer core to `simple_call`. The existing core API can
+emit its parameters, two functions, `TCALL`, and the blank line between
+functions without adding a general `AssemblyProgram` dependency. `first` and
+`simple_call` now use the core; `sign` remains on the previous probe path. The
+global `--check` mode remains blocked because the S3 renderer is still not
+implemented.
+
 ## Why check fails today
 
 Failure is correct today because real comparison is still blocked by:
