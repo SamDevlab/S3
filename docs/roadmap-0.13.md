@@ -1,15 +1,21 @@
 # S3 0.13 Roadmap
 
-Status: open
+Status: closed
 
 ## Objective
 
 Advance from the passed `first` fixture to `simple_call`, starting practical
 coverage for Assembly output with function and call structure.
 
-S3 0.13 should remain implementation-focused. It should answer how the project
-moves from an isolated static output to the next real fixture without migrating
-the whole compiler to S3 or implementing the complete renderer at once.
+S3 0.13 remained implementation-focused. It answered how the project moves
+from an isolated static output to the next real fixture without migrating the
+whole compiler to S3 or implementing the complete renderer at once.
+
+S3 0.13 is complete after three deliveries:
+
+- 0.13-A: simple_call in-memory output probe;
+- 0.13-B: simple_call versioned actual output;
+- 0.13-C: simple_call byte-for-byte comparison.
 
 ## Principles
 
@@ -102,4 +108,27 @@ LF bytes, so `simple_call` advances from `comparison_status: pending` to
 absent, and `--check` remains blocked because the full renderer path is still
 incomplete.
 
-0.13 can close after A/B/C if `simple_call` is stable.
+## Delivered scope
+
+S3 0.13 delivered:
+
+- an in-memory probe for `simple_call`;
+- the versioned candidate actual output for `simple_call`;
+- formal byte-for-byte comparison for `simple_call`;
+- `simple_call` advanced to `comparison_status: passed`;
+- `first` remained `comparison_status: passed`;
+- `--candidate-compare-available` now covers `first` and `simple_call` as
+  passed;
+- candidate actual outputs are preserved with LF through `.gitattributes`.
+
+S3 0.13 did not:
+
+- implement a real S3 renderer;
+- create an actual output for `sign`;
+- make `python tools/compare_assembly_renderer.py --check` pass;
+- alter inspect goldens;
+- alter parser, lexer, semantic analysis, lowering, IR, backend, or emulator;
+- migrate the whole Python compiler to S3.
+
+0.13 is complete after 0.13-C. There is no 0.13-D planned. The next milestone
+starts the move from `simple_call` to `sign`.

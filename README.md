@@ -207,6 +207,12 @@ atual inclui `examples/first.s3`, `examples/simple_call.s3`,
 infraestrutura serve como ponto de comparação para a future Python-to-S3
 migration, não como benchmark.
 
+No caminho do renderer candidato, S3 0.13 está fechado: `first` e
+`simple_call` têm actual outputs disponíveis e `comparison_status: passed`. S3
+0.14 está aberto com foco em `sign`, que permanece
+`actual_output_status: not_implemented` e `comparison_status: blocked`; por
+isso `python tools/compare_assembly_renderer.py --check` continua bloqueado.
+
 Integrações ELF são coletadas e puladas em hosts que não são Linux. Os
 resultados atuais devem ser consultados no workflow; os números abaixo
 documentam especificamente a validação histórica do Marco 0.5.
