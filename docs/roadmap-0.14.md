@@ -1,16 +1,22 @@
 # S3 0.14 Roadmap
 
-Status: open
+Status: closed
 
 ## Objective
 
 Advance to the `sign` fixture, completing the third required fixture on the
 candidate actual-output path.
 
-S3 0.14 should remain practical rather than scaffolding-only. It should answer
+S3 0.14 remained practical rather than scaffolding-only. It answered
 how the project completes the third required fixture and prepares the separate
 decision about the future state of `python tools/compare_assembly_renderer.py
 --check`.
+
+S3 0.14 is complete after three deliveries:
+
+- 0.14-A: sign in-memory output probe;
+- 0.14-B: sign versioned actual output;
+- 0.14-C: sign byte-for-byte comparison.
 
 ## Principles
 
@@ -109,4 +115,27 @@ as passed. The S3 renderer is still not implemented, so `--check` remains
 blocked; the next delivery should evaluate that global state separately and/or
 close 0.14.
 
-S3 0.14 can close after A/B/C if `sign` is stable.
+## Delivered scope
+
+S3 0.14 delivered:
+
+- an in-memory probe for `sign`;
+- the versioned candidate actual output for `sign`;
+- formal byte-for-byte comparison for `sign`;
+- `sign` advanced to `comparison_status: passed`;
+- `first` remained `comparison_status: passed`;
+- `simple_call` remained `comparison_status: passed`;
+- `--candidate-compare-available` now covers `first`, `simple_call`, and
+  `sign` as passed;
+- candidate actual outputs are preserved with LF through `.gitattributes`.
+
+S3 0.14 did not:
+
+- implement a real S3 renderer;
+- make `python tools/compare_assembly_renderer.py --check` pass;
+- alter inspect goldens;
+- alter parser, lexer, semantic analysis, lowering, IR, backend, or emulator;
+- migrate the whole Python compiler to S3.
+
+0.14 is complete after 0.14-C. There is no 0.14-D planned. The next milestone
+evaluates the renderer candidate check state.
