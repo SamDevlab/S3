@@ -31,19 +31,39 @@ This does not replace `AssemblyProgram.render()` globally, does not implement
 the S3 renderer, does not migrate `simple_call` or `sign` to the adapter, and
 does not make the global renderer candidate check pass.
 
+## 0.17-B: AssemblyProgram Adapter Simple Call Path
+
+Status: completed
+
+0.17-B extends the controlled `AssemblyProgram` to `AssemblyTextRenderer`
+adapter to the `simple_call` fixture path. The adapter reads the real
+two-function `AssemblyProgram` model, validates the narrow `add`/`main` shape
+including parameters, registers, `TCALL`, and source metadata, emits through
+`AssemblyTextRenderer`, and returns a `StaticTextDocument`.
+
+The `simple_call` adapter path remains byte-for-byte stable against the
+LF-normalized inspect golden and the versioned candidate actual output. The
+actual outputs and inspect goldens are not changed.
+
+This does not replace `AssemblyProgram.render()` globally, does not implement
+the S3 renderer, does not migrate `sign` to the adapter, and does not make the
+global renderer candidate check pass.
+
 ## Current State
 
 - `first`: available, passed, routed through the renderer core, and proven
-  through the first-only `AssemblyProgram` adapter;
-- `simple_call`: available, passed, and routed through the renderer core;
-- `sign`: available, passed, and routed through the renderer core;
+  through the controlled `AssemblyProgram` adapter;
+- `simple_call`: available, passed, routed through the renderer core, and
+  proven through the controlled `AssemblyProgram` adapter;
+- `sign`: available, passed, and routed directly through the renderer core
+  outside the adapter;
 - `--candidate-compare-available`: expected exit code 0;
 - `--check`: expected exit code 1, blocked because the real S3 renderer is
   still not implemented.
 
 ## Next Focus
 
-Evaluate whether `simple_call` can use a similarly small adapter slice without
+Evaluate whether `sign` can use a similarly small adapter slice without
 turning the adapter into a broad renderer. Any future change to the global
 `--check` result must happen separately, with a real S3 renderer
 implementation.

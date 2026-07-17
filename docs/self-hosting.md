@@ -26,10 +26,10 @@ real S3 renderer is still not implemented; see `docs/roadmap-0.10.md`,
 `docs/roadmap-0.16.md`. S3 0.16 is closed after routing the `first`,
 `simple_call`, and `sign` fixture paths through a minimal Python renderer core.
 This core is an incremental bridge toward renderer generalization, not a
-migrated S3 renderer. S3 0.17 is open after adding a first-only
-`AssemblyProgram` adapter path that renders through that core while keeping the
-global `compare --check` result blocked until a real S3 renderer exists; see
-`docs/roadmap-0.17.md`.
+migrated S3 renderer. S3 0.17 is open after adding controlled
+`AssemblyProgram` adapter paths for `first` and `simple_call` that render
+through that core while keeping `sign` direct and the global `compare --check`
+result blocked until a real S3 renderer exists; see `docs/roadmap-0.17.md`.
 
 Recent tools make this pipeline more observable:
 

@@ -7,10 +7,14 @@ from bootstrap.s3.assembly import (
     AssemblyFunction,
     AssemblyInstruction,
     AssemblyOpcode,
+    AssemblyParameter,
     AssemblyProgram,
     AssemblyType,
 )
-from bootstrap.s3.assembly_program_text_adapter import render_first_program
+from bootstrap.s3.assembly_program_text_adapter import (
+    render_first_program,
+    render_simple_call_program,
+)
 from bootstrap.s3.assembly_text_renderer import (
     AssemblyTextRenderer,
     AssemblyTextSource,
@@ -85,51 +89,76 @@ def _build_first_fixture_assembly_program() -> AssemblyProgram:
 def build_simple_call_fixture_assembly_text() -> StaticTextDocument:
     """Build the expected Assembly text for ``examples/simple_call.s3`` in memory."""
 
-    renderer = AssemblyTextRenderer()
-    renderer.emit_header()
-    renderer.emit_function("add", "tryte")
-    renderer.emit_param(0, "tryte")
-    renderer.emit_param(1, "tryte")
-    renderer.emit_register(2, "tryte")
-    renderer.emit_label("entry")
-    renderer.emit_instruction(
-        "TADD",
-        "r2",
-        "r0",
-        "r1",
-        source=AssemblyTextSource(2, 14, 50),
+    return render_simple_call_program(_build_simple_call_fixture_assembly_program())
+
+
+def _build_simple_call_fixture_assembly_program() -> AssemblyProgram:
+    return AssemblyProgram(
+        (
+            AssemblyFunction(
+                "add",
+                AssemblyType.TRYTE,
+                (
+                    AssemblyParameter(0, AssemblyType.TRYTE),
+                    AssemblyParameter(1, AssemblyType.TRYTE),
+                ),
+                ((2, AssemblyType.TRYTE),),
+                (
+                    AssemblyBlock(
+                        "entry",
+                        (
+                            AssemblyInstruction(
+                                AssemblyOpcode.TADD,
+                                (2, 0, 1),
+                                source=SourceLocation(50, 2, 14),
+                            ),
+                            AssemblyInstruction(
+                                AssemblyOpcode.TRET,
+                                (2,),
+                                source=SourceLocation(41, 2, 5),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+            AssemblyFunction(
+                "main",
+                AssemblyType.TRYTE,
+                (),
+                tuple((register, AssemblyType.TRYTE) for register in range(3)),
+                (
+                    AssemblyBlock(
+                        "entry",
+                        (
+                            AssemblyInstruction(
+                                AssemblyOpcode.TCONST,
+                                (0,),
+                                immediate=10,
+                                source=SourceLocation(90, 5, 16),
+                            ),
+                            AssemblyInstruction(
+                                AssemblyOpcode.TCONST,
+                                (1,),
+                                immediate=5,
+                                source=SourceLocation(94, 5, 20),
+                            ),
+                            AssemblyInstruction(
+                                AssemblyOpcode.TCALL,
+                                (2, 0, 1),
+                                callee="add",
+                                source=SourceLocation(86, 5, 12),
+                            ),
+                            AssemblyInstruction(
+                                AssemblyOpcode.TRET,
+                                (2,),
+                                source=SourceLocation(79, 5, 5),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
     )
-    renderer.emit_instruction("TRET", "r2", source=AssemblyTextSource(2, 5, 41))
-    renderer.emit_end()
-    renderer.emit_blank_line()
-    renderer.emit_function("main", "tryte")
-    renderer.emit_register(0, "tryte")
-    renderer.emit_register(1, "tryte")
-    renderer.emit_register(2, "tryte")
-    renderer.emit_label("entry")
-    renderer.emit_instruction(
-        "TCONST",
-        "r0",
-        10,
-        source=AssemblyTextSource(5, 16, 90),
-    )
-    renderer.emit_instruction(
-        "TCONST",
-        "r1",
-        5,
-        source=AssemblyTextSource(5, 20, 94),
-    )
-    renderer.emit_instruction(
-        "TCALL",
-        "r2",
-        "add",
-        "r0",
-        "r1",
-        source=AssemblyTextSource(5, 12, 86),
-    )
-    renderer.emit_instruction("TRET", "r2", source=AssemblyTextSource(5, 5, 79))
-    renderer.emit_end()
-    return renderer.build()
 
 
 def build_sign_fixture_assembly_text() -> StaticTextDocument:
