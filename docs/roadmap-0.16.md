@@ -1,6 +1,6 @@
 # S3 0.16 Roadmap
 
-Status: open
+Status: closed
 
 ## Objective
 
@@ -56,18 +56,36 @@ change.
 This still does not use the real `AssemblyProgram` renderer and does not
 implement the S3 renderer.
 
+## 0.16-C: Renderer Core Sign Path
+
+Status: completed
+
+0.16-C routes `build_sign_fixture_assembly_text()` through the same minimal
+renderer core. The current API was sufficient for the sign fixture, including
+`TBR3`, multiple labels, source metadata, the blank line between functions, and
+the final `.end` directive.
+
+`first`, `simple_call`, and `sign` now use `AssemblyTextRenderer`. All three
+candidate actual outputs remain byte-for-byte stable against their
+LF-normalized inspect goldens, and neither actual outputs nor inspect goldens
+change.
+
+This closes S3 0.16. The milestone still does not use the real
+`AssemblyProgram` renderer and does not implement the S3 renderer.
+
 ## Current State
 
-- `first`: available and passed;
-- `simple_call`: available and passed;
-- `sign`: available and passed;
+- `first`: available, passed, and routed through the renderer core;
+- `simple_call`: available, passed, and routed through the renderer core;
+- `sign`: available, passed, and routed through the renderer core;
 - `--candidate-compare-available`: expected exit code 0;
 - `--check`: expected exit code 1, blocked because the real S3 renderer is
   still not implemented.
 
-## Next Focus
+## Closure
 
-Apply the renderer core to `sign` only if that can preserve byte-for-byte output
-without broadening the abstraction too far. Any future change to the global
-`--check` result must happen separately, with a real S3 renderer path and
-byte-for-byte comparison coverage.
+There is no planned 0.16-D. Any future change should happen in a separate
+milestone that either evaluates controlled coupling to the real
+`AssemblyProgram` model or starts the real S3 renderer path with byte-for-byte
+comparison coverage. Any future change to the global `--check` result must
+happen separately, with a real S3 renderer implementation.
