@@ -45,8 +45,19 @@ def test_simple_call_fixture_output_probe_matches_inspect_golden() -> None:
     assert b"\r\n" not in document.utf8_bytes
 
 
-def test_simple_call_probe_does_not_create_new_actual_outputs() -> None:
-    build_simple_call_fixture_assembly_text()
+def test_simple_call_actual_output_matches_probe_bytes() -> None:
+    document = build_simple_call_fixture_assembly_text()
+    actual = SIMPLE_CALL_ACTUAL_OUTPUT.read_bytes()
 
-    assert not SIMPLE_CALL_ACTUAL_OUTPUT.exists()
+    assert SIMPLE_CALL_ACTUAL_OUTPUT.exists()
+    assert actual == document.utf8_bytes
+    assert actual == _read_lf_normalized_golden_bytes(SIMPLE_CALL_ASSEMBLY_GOLDEN)
+    assert document.byte_count == 448
+    assert document.line_count == 21
+    assert (
+        document.sha256
+        == "d6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f"
+    )
+    assert b"\r\n" not in actual
+    assert actual.endswith(b"\n")
     assert not SIGN_ACTUAL_OUTPUT.exists()

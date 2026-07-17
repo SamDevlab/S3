@@ -194,7 +194,14 @@ def test_compare_assembly_renderer_candidate_comparison_plan_reports_contract() 
         in completed.stdout
     )
     assert "sha256=" in completed.stdout
-    assert "actual=not_implemented" in completed.stdout
+    assert "first expected=tests/golden/inspect/first.assembly.txt" in completed.stdout
+    assert "actual=available comparison=passed" in completed.stdout
+    assert (
+        "simple_call expected=tests/golden/inspect/simple_call.assembly.txt"
+        in completed.stdout
+    )
+    assert "actual=available comparison=pending" in completed.stdout
+    assert "actual=not_implemented comparison=blocked" in completed.stdout
     assert "comparison=blocked" in completed.stdout
     assert "expected output: assembly_golden" in completed.stdout
     assert "actual output: s3_renderer_candidate" in completed.stdout
@@ -244,6 +251,13 @@ def test_compare_assembly_renderer_candidate_actual_outputs_reports_contract() -
         in completed.stdout
     )
     assert (
+        "simple_call planned=tests/golden/assembly_renderer_candidate_actual/simple_call.assembly.txt "
+        "exists=true status=available comparison=pending "
+        "sha256=d6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f "
+        "bytes=448 lines=21"
+        in completed.stdout
+    )
+    assert (
         "sign planned=tests/golden/assembly_renderer_candidate_actual/sign.assembly.txt"
         in completed.stdout
     )
@@ -283,11 +297,17 @@ def test_compare_assembly_renderer_candidate_compare_available_reports_first_pas
     )
     assert "bytes=441" in completed.stdout
     assert "lines=18" in completed.stdout
-    assert "simple_call status=blocked reason=actual output is not implemented" in completed.stdout
+    assert (
+        "simple_call expected=tests/golden/inspect/simple_call.assembly.txt "
+        "actual=tests/golden/assembly_renderer_candidate_actual/simple_call.assembly.txt "
+        "status=pending"
+        in completed.stdout
+    )
     assert "sign status=blocked reason=actual output is not implemented" in completed.stdout
-    assert "available comparisons: 1" in completed.stdout
+    assert "available comparisons: 2" in completed.stdout
     assert "passed comparisons: 1" in completed.stdout
-    assert "blocked comparisons: 2" in completed.stdout
+    assert "pending comparisons: 1" in completed.stdout
+    assert "blocked comparisons: 1" in completed.stdout
     assert "status: partial" in completed.stdout
     assert "comparison: partial" in completed.stdout
     assert completed.stderr == ""

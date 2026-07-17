@@ -62,7 +62,7 @@ def test_first_fixture_expected_and_actual_are_byte_for_byte_equal() -> None:
     assert actual == expected
 
 
-def test_only_first_fixture_actual_output_exists() -> None:
+def test_first_and_simple_call_actual_outputs_exist() -> None:
     assert FIRST_ACTUAL_OUTPUT.is_file()
-    assert not SIMPLE_CALL_ACTUAL_OUTPUT.exists()
+    assert SIMPLE_CALL_ACTUAL_OUTPUT.is_file()
     assert not SIGN_ACTUAL_OUTPUT.exists()

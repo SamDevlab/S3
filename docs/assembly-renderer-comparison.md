@@ -112,6 +112,13 @@ static text path. It validates the expected output against the LF-normalized
 inspect golden, but it does not create a candidate actual output: `simple_call`
 remains blocked and `not_implemented`, and `sign` remains blocked.
 
+0.13-B creates the versioned candidate actual output for `simple_call` from
+`build_simple_call_fixture_assembly_text()`. The contract now marks `first` as
+available and passed, `simple_call` as available with pending formal
+comparison, and `sign` as blocked and `not_implemented`. The S3 renderer is
+still a stub and `--check` remains blocked until later fixture coverage and the
+renderer implementation exist.
+
 `python tools/check_assembly_renderer_candidate_readiness.py` is the single
 readiness gate for the candidate stub. It validates the candidate manifest, the
 symbol export golden, the fixture contract, the fixture expectations, the
