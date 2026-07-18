@@ -263,8 +263,8 @@ def test_s3_program_check_includes_renderer_event_stream_model() -> None:
 
     assert completed.returncode == 0
     assert "examples/self_hosting/assembly_renderer_event_stream.s3" in completed.stdout
-    assert "s3 program check: checked 11 program(s)" in completed.stdout
-    assert "s3 program check: hosted execution checked 8 program(s)" in completed.stdout
+    assert "s3 program check: checked 12 program(s)" in completed.stdout
+    assert "s3 program check: hosted execution checked 9 program(s)" in completed.stdout
     assert "hosted expected return: 0" in completed.stdout
     assert "hosted actual return: 0" in completed.stdout
     assert completed.stderr == ""

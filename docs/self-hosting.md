@@ -72,7 +72,12 @@ current fixture lines without runtime strings, arrays, or text emission; see
 event stream model that records ordered renderer emission events, payload
 classes, transition rules, counts, and deterministic signatures for the same
 fixtures without runtime strings, arrays, or text emission; see
-`docs/roadmap-0.26.md`.
+`docs/roadmap-0.26.md`. S3 0.27 is closed after adding
+`examples/self_hosting/assembly_renderer_event_writer.s3`, an executable S3
+event writer state model that consumes those ordered events and validates
+writer states, line advancement, emitted counts, function open/close balance,
+final state, and deterministic signatures without runtime strings, arrays, or
+text emission; see `docs/roadmap-0.27.md`.
 
 Recent tools make this pipeline more observable:
 

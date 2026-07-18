@@ -1,0 +1,4133 @@
+# Bootstrap event writer state model for a future S3 Assembly renderer.
+# It consumes modeled render events and updates writer state with numeric IDs only.
+
+fn fixture_first() -> tryte:
+    return 0
+
+fn fixture_simple_call() -> tryte:
+    return 1
+
+fn fixture_sign() -> tryte:
+    return 2
+
+fn unknown_encoding() -> tryte:
+    return -1
+
+fn blueprint_s3asm_header() -> tryte:
+    return 0
+
+fn blueprint_function_header() -> tryte:
+    return 1
+
+fn blueprint_param() -> tryte:
+    return 2
+
+fn blueprint_register() -> tryte:
+    return 3
+
+fn blueprint_memory() -> tryte:
+    return 4
+
+fn blueprint_label() -> tryte:
+    return 5
+
+fn blueprint_instruction() -> tryte:
+    return 6
+
+fn blueprint_instruction_with_source() -> tryte:
+    return 7
+
+fn blueprint_end() -> tryte:
+    return 8
+
+fn blueprint_blank_line() -> tryte:
+    return 9
+
+fn directive_none() -> tryte:
+    return 0
+
+fn directive_s3asm() -> tryte:
+    return 1
+
+fn directive_function() -> tryte:
+    return 2
+
+fn directive_param() -> tryte:
+    return 3
+
+fn directive_register() -> tryte:
+    return 4
+
+fn directive_memory() -> tryte:
+    return 5
+
+fn directive_label() -> tryte:
+    return 6
+
+fn directive_end() -> tryte:
+    return 7
+
+fn directive_blank() -> tryte:
+    return 8
+
+fn opcode_none() -> tryte:
+    return 0
+
+fn opcode_tconst() -> tryte:
+    return 1
+
+fn opcode_tmov() -> tryte:
+    return 2
+
+fn opcode_tinv() -> tryte:
+    return 3
+
+fn opcode_tadd() -> tryte:
+    return 4
+
+fn opcode_tmin() -> tryte:
+    return 5
+
+fn opcode_tmax() -> tryte:
+    return 6
+
+fn opcode_tcmp() -> tryte:
+    return 7
+
+fn opcode_tcall() -> tryte:
+    return 8
+
+fn opcode_tload() -> tryte:
+    return 9
+
+fn opcode_tstore() -> tryte:
+    return 10
+
+fn opcode_tret() -> tryte:
+    return 11
+
+fn opcode_tjmp() -> tryte:
+    return 12
+
+fn opcode_tbr3() -> tryte:
+    return 13
+
+fn category_directive() -> tryte:
+    return 0
+
+fn category_instruction() -> tryte:
+    return 1
+
+fn category_blank() -> tryte:
+    return 2
+
+fn event_unknown() -> tryte:
+    return -1
+
+fn event_emit_header() -> tryte:
+    return 0
+
+fn event_emit_function() -> tryte:
+    return 1
+
+fn event_emit_param() -> tryte:
+    return 2
+
+fn event_emit_register() -> tryte:
+    return 3
+
+fn event_emit_memory() -> tryte:
+    return 4
+
+fn event_emit_label() -> tryte:
+    return 5
+
+fn event_emit_instruction() -> tryte:
+    return 6
+
+fn event_emit_end() -> tryte:
+    return 7
+
+fn event_emit_blank() -> tryte:
+    return 8
+
+fn payload_none() -> tryte:
+    return 0
+
+fn payload_directive() -> tryte:
+    return 1
+
+fn payload_symbol() -> tryte:
+    return 2
+
+fn payload_register_decl() -> tryte:
+    return 3
+
+fn payload_memory_decl() -> tryte:
+    return 4
+
+fn payload_instruction_no_operands() -> tryte:
+    return 5
+
+fn payload_instruction_registers() -> tryte:
+    return 6
+
+fn payload_instruction_immediate() -> tryte:
+    return 7
+
+fn payload_instruction_call() -> tryte:
+    return 8
+
+fn payload_instruction_branch() -> tryte:
+    return 9
+
+fn payload_instruction_memory() -> tryte:
+    return 10
+
+fn payload_source_metadata() -> tryte:
+    return 11
+
+fn payload_blank() -> tryte:
+    return 12
+
+fn flag_false() -> trit:
+    return 0
+
+fn flag_true() -> trit:
+    return 1
+
+fn same_tryte(left: tryte, right: tryte) -> trit:
+    match left <=> right:
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            return 0
+
+fn same_trit(left: trit, right: trit) -> trit:
+    match left <=> right:
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            return 0
+
+fn all_passed(left: trit, right: trit) -> trit:
+    match left <=> 1:
+        -1:
+            return 0
+
+        0:
+            match right <=> 1:
+                -1:
+                    return 0
+
+                0:
+                    return 1
+
+                1:
+                    return 0
+
+        1:
+            return 0
+
+fn any_passed(left: trit, right: trit) -> trit:
+    match left <=> 1:
+        -1:
+            match right <=> 1:
+                -1:
+                    return 0
+
+                0:
+                    return 1
+
+                1:
+                    return 0
+
+        0:
+            return 1
+
+        1:
+            return 1
+
+fn status_from_check(check: trit, failure: tryte) -> tryte:
+    match check <=> 1:
+        -1:
+            return failure
+
+        0:
+            return 0
+
+        1:
+            return failure
+
+fn flag_score(flag: trit) -> tryte:
+    match flag <=> 1:
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            return 0
+
+fn fixture_metric(fixture: tryte, first_value: tryte, simple_value: tryte, sign_value: tryte) -> tryte:
+    match fixture <=> fixture_first():
+        -1:
+            return unknown_encoding()
+
+        0:
+            return first_value
+
+        1:
+            match fixture <=> fixture_simple_call():
+                -1:
+                    return unknown_encoding()
+
+                0:
+                    return simple_value
+
+                1:
+                    match fixture <=> fixture_sign():
+                        -1:
+                            return unknown_encoding()
+
+                        0:
+                            return sign_value
+
+                        1:
+                            return unknown_encoding()
+
+fn in_range(value: tryte, lower: tryte, upper: tryte) -> trit:
+    match value <=> lower:
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            match value <=> upper:
+                -1:
+                    return 1
+
+                0:
+                    return 1
+
+                1:
+                    return 0
+
+fn is_known_fixture(fixture: tryte) -> trit:
+    match fixture <=> fixture_first():
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            match fixture <=> fixture_simple_call():
+                -1:
+                    return 0
+
+                0:
+                    return 1
+
+                1:
+                    match fixture <=> fixture_sign():
+                        -1:
+                            return 0
+
+                        0:
+                            return 1
+
+                        1:
+                            return 0
+
+fn is_known_blueprint(blueprint: tryte) -> trit:
+    match blueprint <=> blueprint_s3asm_header():
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            match blueprint <=> blueprint_blank_line():
+                -1:
+                    return 1
+
+                0:
+                    return 1
+
+                1:
+                    return 0
+
+fn is_known_directive(directive: tryte) -> trit:
+    match directive <=> directive_none():
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            match directive <=> directive_blank():
+                -1:
+                    return 1
+
+                0:
+                    return 1
+
+                1:
+                    return 0
+
+fn is_known_opcode(opcode: tryte) -> trit:
+    match opcode <=> opcode_none():
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            match opcode <=> opcode_tbr3():
+                -1:
+                    return 1
+
+                0:
+                    return 1
+
+                1:
+                    return 0
+
+fn is_real_opcode(opcode: tryte) -> trit:
+    match opcode <=> opcode_none():
+        -1:
+            return 0
+
+        0:
+            return 0
+
+        1:
+            return is_known_opcode(opcode)
+
+fn is_valid_index(index: tryte, count: tryte) -> trit:
+    match index <=> 0:
+        -1:
+            return 0
+
+        0:
+            match index <=> count:
+                -1:
+                    return 1
+
+                0:
+                    return 0
+
+                1:
+                    return 0
+
+        1:
+            match index <=> count:
+                -1:
+                    return 1
+
+                0:
+                    return 0
+
+                1:
+                    return 0
+
+fn expected_line_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 18, 21, 36)
+
+fn expected_encoded_line_count(fixture: tryte) -> tryte:
+    return expected_line_count(fixture)
+
+fn expected_instruction_encoding_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 7, 6, 14)
+
+fn expected_directive_encoding_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 10, 13, 20)
+
+fn expected_blank_encoding_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 1, 2, 2)
+
+fn expected_opcode_encoding_count(fixture: tryte) -> tryte:
+    return expected_instruction_encoding_count(fixture)
+
+fn expected_register_operand_line_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 13, 12, 24)
+
+fn expected_immediate_line_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 2, 2, 5)
+
+fn expected_callee_line_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 0, 1, 1)
+
+fn expected_label_operand_line_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 1, 2, 6)
+
+fn expected_memory_operand_line_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 0, 0, 0)
+
+fn expected_source_metadata_line_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 7, 6, 14)
+
+fn expected_fixture_encoding_signature(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 61, 73, 156)
+
+fn first_line_count() -> tryte:
+    return expected_line_count(fixture_first())
+
+fn simple_call_line_count() -> tryte:
+    return expected_line_count(fixture_simple_call())
+
+fn sign_line_count() -> tryte:
+    return expected_line_count(fixture_sign())
+
+fn first_encoded_line_count() -> tryte:
+    return expected_encoded_line_count(fixture_first())
+
+fn simple_call_encoded_line_count() -> tryte:
+    return expected_encoded_line_count(fixture_simple_call())
+
+fn sign_encoded_line_count() -> tryte:
+    return expected_encoded_line_count(fixture_sign())
+
+fn first_instruction_encoding_count() -> tryte:
+    return expected_instruction_encoding_count(fixture_first())
+
+fn simple_call_instruction_encoding_count() -> tryte:
+    return expected_instruction_encoding_count(fixture_simple_call())
+
+fn sign_instruction_encoding_count() -> tryte:
+    return expected_instruction_encoding_count(fixture_sign())
+
+fn first_directive_encoding_count() -> tryte:
+    return expected_directive_encoding_count(fixture_first())
+
+fn simple_call_directive_encoding_count() -> tryte:
+    return expected_directive_encoding_count(fixture_simple_call())
+
+fn sign_directive_encoding_count() -> tryte:
+    return expected_directive_encoding_count(fixture_sign())
+
+fn first_blank_encoding_count() -> tryte:
+    return expected_blank_encoding_count(fixture_first())
+
+fn simple_call_blank_encoding_count() -> tryte:
+    return expected_blank_encoding_count(fixture_simple_call())
+
+fn sign_blank_encoding_count() -> tryte:
+    return expected_blank_encoding_count(fixture_sign())
+
+fn first_opcode_encoding_count() -> tryte:
+    return expected_opcode_encoding_count(fixture_first())
+
+fn simple_call_opcode_encoding_count() -> tryte:
+    return expected_opcode_encoding_count(fixture_simple_call())
+
+fn sign_opcode_encoding_count() -> tryte:
+    return expected_opcode_encoding_count(fixture_sign())
+
+fn first_register_operand_line_count() -> tryte:
+    return expected_register_operand_line_count(fixture_first())
+
+fn simple_call_register_operand_line_count() -> tryte:
+    return expected_register_operand_line_count(fixture_simple_call())
+
+fn sign_register_operand_line_count() -> tryte:
+    return expected_register_operand_line_count(fixture_sign())
+
+fn first_immediate_line_count() -> tryte:
+    return expected_immediate_line_count(fixture_first())
+
+fn simple_call_immediate_line_count() -> tryte:
+    return expected_immediate_line_count(fixture_simple_call())
+
+fn sign_immediate_line_count() -> tryte:
+    return expected_immediate_line_count(fixture_sign())
+
+fn first_callee_line_count() -> tryte:
+    return expected_callee_line_count(fixture_first())
+
+fn simple_call_callee_line_count() -> tryte:
+    return expected_callee_line_count(fixture_simple_call())
+
+fn sign_callee_line_count() -> tryte:
+    return expected_callee_line_count(fixture_sign())
+
+fn first_label_operand_line_count() -> tryte:
+    return expected_label_operand_line_count(fixture_first())
+
+fn simple_call_label_operand_line_count() -> tryte:
+    return expected_label_operand_line_count(fixture_simple_call())
+
+fn sign_label_operand_line_count() -> tryte:
+    return expected_label_operand_line_count(fixture_sign())
+
+fn first_memory_operand_line_count() -> tryte:
+    return expected_memory_operand_line_count(fixture_first())
+
+fn simple_call_memory_operand_line_count() -> tryte:
+    return expected_memory_operand_line_count(fixture_simple_call())
+
+fn sign_memory_operand_line_count() -> tryte:
+    return expected_memory_operand_line_count(fixture_sign())
+
+fn first_source_metadata_line_count() -> tryte:
+    return expected_source_metadata_line_count(fixture_first())
+
+fn simple_call_source_metadata_line_count() -> tryte:
+    return expected_source_metadata_line_count(fixture_simple_call())
+
+fn sign_source_metadata_line_count() -> tryte:
+    return expected_source_metadata_line_count(fixture_sign())
+
+fn first_encoding_signature() -> tryte:
+    return expected_fixture_encoding_signature(fixture_first())
+
+fn simple_call_encoding_signature() -> tryte:
+    return expected_fixture_encoding_signature(fixture_simple_call())
+
+fn sign_encoding_signature() -> tryte:
+    return expected_fixture_encoding_signature(fixture_sign())
+
+fn first_line_15_register_operand_count() -> tryte:
+    return expected_register_operand_count_at(fixture_first(), 15)
+
+fn first_line_15_encoding_score() -> tryte:
+    return expected_line_encoding_score_at(fixture_first(), 15)
+
+fn simple_call_line_18_register_operand_count() -> tryte:
+    return expected_register_operand_count_at(fixture_simple_call(), 18)
+
+fn simple_call_line_18_encoding_score() -> tryte:
+    return expected_line_encoding_score_at(fixture_simple_call(), 18)
+
+fn sign_line_13_register_operand_count() -> tryte:
+    return expected_register_operand_count_at(fixture_sign(), 13)
+
+fn sign_line_13_encoding_score() -> tryte:
+    return expected_line_encoding_score_at(fixture_sign(), 13)
+
+fn sign_line_33_register_operand_count() -> tryte:
+    return expected_register_operand_count_at(fixture_sign(), 33)
+
+fn sign_line_33_opcode_id() -> tryte:
+    return expected_opcode_at(fixture_sign(), 33)
+
+fn sign_line_33_category_id() -> tryte:
+    return expected_line_category_at(fixture_sign(), 33)
+
+fn sign_line_33_has_callee() -> trit:
+    return expected_has_callee_at(fixture_sign(), 33)
+
+fn sign_line_33_has_source_metadata() -> trit:
+    return expected_has_source_metadata_at(fixture_sign(), 33)
+
+fn sign_line_33_encoding_score() -> tryte:
+    return expected_line_encoding_score_at(fixture_sign(), 33)
+
+fn expected_first_blueprint_at(index: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            return unknown_encoding()
+
+        0:
+            return blueprint_s3asm_header()
+
+        1:
+            match index <=> 1:
+                -1:
+                    return unknown_encoding()
+
+                0:
+                    return blueprint_blank_line()
+
+                1:
+                    match index <=> 2:
+                        -1:
+                            return unknown_encoding()
+
+                        0:
+                            return blueprint_function_header()
+
+                        1:
+                            match in_range(index, 3, 8) <=> 1:
+                                -1:
+                                    match index <=> 9:
+                                        -1:
+                                            return unknown_encoding()
+
+                                        0:
+                                            return blueprint_label()
+
+                                        1:
+                                            match in_range(index, 10, 16) <=> 1:
+                                                -1:
+                                                    match index <=> 17:
+                                                        -1:
+                                                            return unknown_encoding()
+
+                                                        0:
+                                                            return blueprint_end()
+
+                                                        1:
+                                                            return unknown_encoding()
+
+                                                0:
+                                                    return blueprint_instruction_with_source()
+
+                                                1:
+                                                    return unknown_encoding()
+
+                                0:
+                                    return blueprint_register()
+
+                                1:
+                                    return unknown_encoding()
+
+fn expected_simple_call_blueprint_at(index: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            return unknown_encoding()
+
+        0:
+            return blueprint_s3asm_header()
+
+        1:
+            match index <=> 1:
+                -1:
+                    return unknown_encoding()
+
+                0:
+                    return blueprint_blank_line()
+
+                1:
+                    match index <=> 2:
+                        -1:
+                            return unknown_encoding()
+
+                        0:
+                            return blueprint_function_header()
+
+                        1:
+                            match in_range(index, 3, 4) <=> 1:
+                                -1:
+                                    match index <=> 5:
+                                        -1:
+                                            return unknown_encoding()
+
+                                        0:
+                                            return blueprint_register()
+
+                                        1:
+                                            match index <=> 6:
+                                                -1:
+                                                    return unknown_encoding()
+
+                                                0:
+                                                    return blueprint_label()
+
+                                                1:
+                                                    match in_range(index, 7, 8) <=> 1:
+                                                        -1:
+                                                            match index <=> 9:
+                                                                -1:
+                                                                    return unknown_encoding()
+
+                                                                0:
+                                                                    return blueprint_end()
+
+                                                                1:
+                                                                    match index <=> 10:
+                                                                        -1:
+                                                                            return unknown_encoding()
+
+                                                                        0:
+                                                                            return blueprint_blank_line()
+
+                                                                        1:
+                                                                            match index <=> 11:
+                                                                                -1:
+                                                                                    return unknown_encoding()
+
+                                                                                0:
+                                                                                    return blueprint_function_header()
+
+                                                                                1:
+                                                                                    match in_range(index, 12, 14) <=> 1:
+                                                                                        -1:
+                                                                                            match index <=> 15:
+                                                                                                -1:
+                                                                                                    return unknown_encoding()
+
+                                                                                                0:
+                                                                                                    return blueprint_label()
+
+                                                                                                1:
+                                                                                                    match in_range(index, 16, 19) <=> 1:
+                                                                                                        -1:
+                                                                                                            match index <=> 20:
+                                                                                                                -1:
+                                                                                                                    return unknown_encoding()
+
+                                                                                                                0:
+                                                                                                                    return blueprint_end()
+
+                                                                                                                1:
+                                                                                                                    return unknown_encoding()
+
+                                                                                                        0:
+                                                                                                            return blueprint_instruction_with_source()
+
+                                                                                                        1:
+                                                                                                            return unknown_encoding()
+
+                                                                                        0:
+                                                                                            return blueprint_register()
+
+                                                                                        1:
+                                                                                            return unknown_encoding()
+
+                                                        0:
+                                                            return blueprint_instruction_with_source()
+
+                                                        1:
+                                                            return unknown_encoding()
+
+                                0:
+                                    return blueprint_param()
+
+                                1:
+                                    return unknown_encoding()
+
+fn expected_sign_blueprint_at(index: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            return unknown_encoding()
+
+        0:
+            return blueprint_s3asm_header()
+
+        1:
+            match index <=> 1:
+                -1:
+                    return unknown_encoding()
+
+                0:
+                    return blueprint_blank_line()
+
+                1:
+                    match index <=> 2:
+                        -1:
+                            return unknown_encoding()
+
+                        0:
+                            return blueprint_function_header()
+
+                        1:
+                            match index <=> 3:
+                                -1:
+                                    return unknown_encoding()
+
+                                0:
+                                    return blueprint_param()
+
+                                1:
+                                    match in_range(index, 4, 9) <=> 1:
+                                        -1:
+                                            match index <=> 10:
+                                                -1:
+                                                    return unknown_encoding()
+
+                                                0:
+                                                    return blueprint_label()
+
+                                                1:
+                                                    match in_range(index, 11, 13) <=> 1:
+                                                        -1:
+                                                            match index <=> 14:
+                                                                -1:
+                                                                    return unknown_encoding()
+
+                                                                0:
+                                                                    return blueprint_label()
+
+                                                                1:
+                                                                    match in_range(index, 15, 17) <=> 1:
+                                                                        -1:
+                                                                            match index <=> 18:
+                                                                                -1:
+                                                                                    return unknown_encoding()
+
+                                                                                0:
+                                                                                    return blueprint_label()
+
+                                                                                1:
+                                                                                    match in_range(index, 19, 20) <=> 1:
+                                                                                        -1:
+                                                                                            match index <=> 21:
+                                                                                                -1:
+                                                                                                    return unknown_encoding()
+
+                                                                                                0:
+                                                                                                    return blueprint_label()
+
+                                                                                                1:
+                                                                                                    match in_range(index, 22, 23) <=> 1:
+                                                                                                        -1:
+                                                                                                            match index <=> 24:
+                                                                                                                -1:
+                                                                                                                    return unknown_encoding()
+
+                                                                                                                0:
+                                                                                                                    return blueprint_end()
+
+                                                                                                                1:
+                                                                                                                    match index <=> 25:
+                                                                                                                        -1:
+                                                                                                                            return unknown_encoding()
+
+                                                                                                                        0:
+                                                                                                                            return blueprint_blank_line()
+
+                                                                                                                        1:
+                                                                                                                            match index <=> 26:
+                                                                                                                                -1:
+                                                                                                                                    return unknown_encoding()
+
+                                                                                                                                0:
+                                                                                                                                    return blueprint_function_header()
+
+                                                                                                                                1:
+                                                                                                                                    match in_range(index, 27, 29) <=> 1:
+                                                                                                                                        -1:
+                                                                                                                                            match index <=> 30:
+                                                                                                                                                -1:
+                                                                                                                                                    return unknown_encoding()
+
+                                                                                                                                                0:
+                                                                                                                                                    return blueprint_label()
+
+                                                                                                                                                1:
+                                                                                                                                                    match in_range(index, 31, 34) <=> 1:
+                                                                                                                                                        -1:
+                                                                                                                                                            match index <=> 35:
+                                                                                                                                                                -1:
+                                                                                                                                                                    return unknown_encoding()
+
+                                                                                                                                                                0:
+                                                                                                                                                                    return blueprint_end()
+
+                                                                                                                                                                1:
+                                                                                                                                                                    return unknown_encoding()
+
+                                                                                                                                                        0:
+                                                                                                                                                            return blueprint_instruction_with_source()
+
+                                                                                                                                                        1:
+                                                                                                                                                            return unknown_encoding()
+
+                                                                                                                                        0:
+                                                                                                                                            return blueprint_register()
+
+                                                                                                                                        1:
+                                                                                                                                            return unknown_encoding()
+
+                                                                                                        0:
+                                                                                                            return blueprint_instruction_with_source()
+
+                                                                                                        1:
+                                                                                                            return unknown_encoding()
+
+                                                                                        0:
+                                                                                            return blueprint_instruction_with_source()
+
+                                                                                        1:
+                                                                                            return unknown_encoding()
+
+                                                                        0:
+                                                                            return blueprint_instruction_with_source()
+
+                                                                        1:
+                                                                            return unknown_encoding()
+
+                                                        0:
+                                                            return blueprint_instruction_with_source()
+
+                                                        1:
+                                                            return unknown_encoding()
+
+                                        0:
+                                            return blueprint_register()
+
+                                        1:
+                                            return unknown_encoding()
+
+fn expected_blueprint_at(fixture: tryte, index: tryte) -> tryte:
+    match fixture <=> fixture_first():
+        -1:
+            return unknown_encoding()
+
+        0:
+            return expected_first_blueprint_at(index)
+
+        1:
+            match fixture <=> fixture_simple_call():
+                -1:
+                    return unknown_encoding()
+
+                0:
+                    return expected_simple_call_blueprint_at(index)
+
+                1:
+                    match fixture <=> fixture_sign():
+                        -1:
+                            return unknown_encoding()
+
+                        0:
+                            return expected_sign_blueprint_at(index)
+
+                        1:
+                            return unknown_encoding()
+
+fn category_for_blueprint(blueprint: tryte) -> tryte:
+    match same_tryte(blueprint, blueprint_blank_line()) <=> 1:
+        -1:
+            match same_tryte(blueprint, blueprint_instruction()) <=> 1:
+                -1:
+                    match same_tryte(blueprint, blueprint_instruction_with_source()) <=> 1:
+                        -1:
+                            match is_known_blueprint(blueprint) <=> 1:
+                                -1:
+                                    return unknown_encoding()
+
+                                0:
+                                    return category_directive()
+
+                                1:
+                                    return unknown_encoding()
+
+                        0:
+                            return category_instruction()
+
+                        1:
+                            return category_directive()
+
+                0:
+                    return category_instruction()
+
+                1:
+                    return category_directive()
+
+        0:
+            return category_blank()
+
+        1:
+            return unknown_encoding()
+
+fn directive_for_blueprint(blueprint: tryte) -> tryte:
+    match same_tryte(blueprint, blueprint_s3asm_header()) <=> 1:
+        -1:
+            match same_tryte(blueprint, blueprint_function_header()) <=> 1:
+                -1:
+                    match same_tryte(blueprint, blueprint_param()) <=> 1:
+                        -1:
+                            match same_tryte(blueprint, blueprint_register()) <=> 1:
+                                -1:
+                                    match same_tryte(blueprint, blueprint_memory()) <=> 1:
+                                        -1:
+                                            match same_tryte(blueprint, blueprint_label()) <=> 1:
+                                                -1:
+                                                    match same_tryte(blueprint, blueprint_instruction()) <=> 1:
+                                                        -1:
+                                                            match same_tryte(blueprint, blueprint_instruction_with_source()) <=> 1:
+                                                                -1:
+                                                                    match same_tryte(blueprint, blueprint_end()) <=> 1:
+                                                                        -1:
+                                                                            match same_tryte(blueprint, blueprint_blank_line()) <=> 1:
+                                                                                -1:
+                                                                                    return unknown_encoding()
+
+                                                                                0:
+                                                                                    return directive_blank()
+
+                                                                                1:
+                                                                                    return unknown_encoding()
+
+                                                                        0:
+                                                                            return directive_end()
+
+                                                                        1:
+                                                                            return unknown_encoding()
+
+                                                                0:
+                                                                    return directive_none()
+
+                                                                1:
+                                                                    return unknown_encoding()
+
+                                                        0:
+                                                            return directive_none()
+
+                                                        1:
+                                                            return unknown_encoding()
+
+                                                0:
+                                                    return directive_label()
+
+                                                1:
+                                                    return unknown_encoding()
+
+                                        0:
+                                            return directive_memory()
+
+                                        1:
+                                            return unknown_encoding()
+
+                                0:
+                                    return directive_register()
+
+                                1:
+                                    return unknown_encoding()
+
+                        0:
+                            return directive_param()
+
+                        1:
+                            return unknown_encoding()
+
+                0:
+                    return directive_function()
+
+                1:
+                    return unknown_encoding()
+
+        0:
+            return directive_s3asm()
+
+        1:
+            return unknown_encoding()
+
+fn expected_line_category_at(fixture: tryte, index: tryte) -> tryte:
+    return category_for_blueprint(expected_blueprint_at(fixture, index))
+
+fn expected_directive_at(fixture: tryte, index: tryte) -> tryte:
+    return directive_for_blueprint(expected_blueprint_at(fixture, index))
+
+fn expected_first_opcode_at(index: tryte) -> tryte:
+    match index <=> 10:
+        -1:
+            return opcode_none()
+
+        0:
+            return opcode_tconst()
+
+        1:
+            match index <=> 11:
+                -1:
+                    return opcode_none()
+
+                0:
+                    return opcode_tmov()
+
+                1:
+                    match index <=> 12:
+                        -1:
+                            return opcode_none()
+
+                        0:
+                            return opcode_tconst()
+
+                        1:
+                            match index <=> 13:
+                                -1:
+                                    return opcode_none()
+
+                                0:
+                                    return opcode_tmov()
+
+                                1:
+                                    match index <=> 14:
+                                        -1:
+                                            return opcode_none()
+
+                                        0:
+                                            return opcode_tinv()
+
+                                        1:
+                                            match index <=> 15:
+                                                -1:
+                                                    return opcode_none()
+
+                                                0:
+                                                    return opcode_tadd()
+
+                                                1:
+                                                    match index <=> 16:
+                                                        -1:
+                                                            return opcode_none()
+
+                                                        0:
+                                                            return opcode_tret()
+
+                                                        1:
+                                                            return opcode_none()
+
+fn expected_simple_call_opcode_at(index: tryte) -> tryte:
+    match index <=> 7:
+        -1:
+            return opcode_none()
+
+        0:
+            return opcode_tadd()
+
+        1:
+            match index <=> 8:
+                -1:
+                    return opcode_none()
+
+                0:
+                    return opcode_tret()
+
+                1:
+                    match index <=> 16:
+                        -1:
+                            return opcode_none()
+
+                        0:
+                            return opcode_tconst()
+
+                        1:
+                            match index <=> 17:
+                                -1:
+                                    return opcode_none()
+
+                                0:
+                                    return opcode_tconst()
+
+                                1:
+                                    match index <=> 18:
+                                        -1:
+                                            return opcode_none()
+
+                                        0:
+                                            return opcode_tcall()
+
+                                        1:
+                                            match index <=> 19:
+                                                -1:
+                                                    return opcode_none()
+
+                                                0:
+                                                    return opcode_tret()
+
+                                                1:
+                                                    return opcode_none()
+
+fn expected_sign_opcode_at(index: tryte) -> tryte:
+    match index <=> 11:
+        -1:
+            return opcode_none()
+
+        0:
+            return opcode_tconst()
+
+        1:
+            match index <=> 12:
+                -1:
+                    return opcode_none()
+
+                0:
+                    return opcode_tcmp()
+
+                1:
+                    match index <=> 13:
+                        -1:
+                            return opcode_none()
+
+                        0:
+                            return opcode_tbr3()
+
+                        1:
+                            match index <=> 15:
+                                -1:
+                                    return opcode_none()
+
+                                0:
+                                    return opcode_tconst()
+
+                                1:
+                                    match index <=> 16:
+                                        -1:
+                                            return opcode_none()
+
+                                        0:
+                                            return opcode_tinv()
+
+                                        1:
+                                            match index <=> 17:
+                                                -1:
+                                                    return opcode_none()
+
+                                                0:
+                                                    return opcode_tret()
+
+                                                1:
+                                                    match index <=> 19:
+                                                        -1:
+                                                            return opcode_none()
+
+                                                        0:
+                                                            return opcode_tconst()
+
+                                                        1:
+                                                            match index <=> 20:
+                                                                -1:
+                                                                    return opcode_none()
+
+                                                                0:
+                                                                    return opcode_tret()
+
+                                                                1:
+                                                                    match index <=> 22:
+                                                                        -1:
+                                                                            return opcode_none()
+
+                                                                        0:
+                                                                            return opcode_tconst()
+
+                                                                        1:
+                                                                            match index <=> 23:
+                                                                                -1:
+                                                                                    return opcode_none()
+
+                                                                                0:
+                                                                                    return opcode_tret()
+
+                                                                                1:
+                                                                                    match index <=> 31:
+                                                                                        -1:
+                                                                                            return opcode_none()
+
+                                                                                        0:
+                                                                                            return opcode_tconst()
+
+                                                                                        1:
+                                                                                            match index <=> 32:
+                                                                                                -1:
+                                                                                                    return opcode_none()
+
+                                                                                                0:
+                                                                                                    return opcode_tinv()
+
+                                                                                                1:
+                                                                                                    match index <=> 33:
+                                                                                                        -1:
+                                                                                                            return opcode_none()
+
+                                                                                                        0:
+                                                                                                            return opcode_tcall()
+
+                                                                                                        1:
+                                                                                                            match index <=> 34:
+                                                                                                                -1:
+                                                                                                                    return opcode_none()
+
+                                                                                                                0:
+                                                                                                                    return opcode_tret()
+
+                                                                                                                1:
+                                                                                                                    return opcode_none()
+
+fn expected_opcode_at(fixture: tryte, index: tryte) -> tryte:
+    match fixture <=> fixture_first():
+        -1:
+            return unknown_encoding()
+
+        0:
+            return expected_first_opcode_at(index)
+
+        1:
+            match fixture <=> fixture_simple_call():
+                -1:
+                    return unknown_encoding()
+
+                0:
+                    return expected_simple_call_opcode_at(index)
+
+                1:
+                    match fixture <=> fixture_sign():
+                        -1:
+                            return unknown_encoding()
+
+                        0:
+                            return expected_sign_opcode_at(index)
+
+                        1:
+                            return unknown_encoding()
+
+fn fixed_register_operand_count_for_opcode(opcode: tryte) -> tryte:
+    match same_tryte(opcode, opcode_none()) <=> 1:
+        -1:
+            match same_tryte(opcode, opcode_tconst()) <=> 1:
+                -1:
+                    match same_tryte(opcode, opcode_tmov()) <=> 1:
+                        -1:
+                            match same_tryte(opcode, opcode_tinv()) <=> 1:
+                                -1:
+                                    match same_tryte(opcode, opcode_tadd()) <=> 1:
+                                        -1:
+                                            match same_tryte(opcode, opcode_tmin()) <=> 1:
+                                                -1:
+                                                    match same_tryte(opcode, opcode_tmax()) <=> 1:
+                                                        -1:
+                                                            match same_tryte(opcode, opcode_tcmp()) <=> 1:
+                                                                -1:
+                                                                    match same_tryte(opcode, opcode_tload()) <=> 1:
+                                                                        -1:
+                                                                            match same_tryte(opcode, opcode_tstore()) <=> 1:
+                                                                                -1:
+                                                                                    match same_tryte(opcode, opcode_tret()) <=> 1:
+                                                                                        -1:
+                                                                                            match same_tryte(opcode, opcode_tjmp()) <=> 1:
+                                                                                                -1:
+                                                                                                    match same_tryte(opcode, opcode_tbr3()) <=> 1:
+                                                                                                        -1:
+                                                                                                            return unknown_encoding()
+
+                                                                                                        0:
+                                                                                                            return 1
+
+                                                                                                        1:
+                                                                                                            return unknown_encoding()
+
+                                                                                                0:
+                                                                                                    return 0
+
+                                                                                                1:
+                                                                                                    return unknown_encoding()
+
+                                                                                        0:
+                                                                                            return 1
+
+                                                                                        1:
+                                                                                            return unknown_encoding()
+
+                                                                                0:
+                                                                                    return 2
+
+                                                                                1:
+                                                                                    return unknown_encoding()
+
+                                                                        0:
+                                                                            return 2
+
+                                                                        1:
+                                                                            return unknown_encoding()
+
+                                                                0:
+                                                                    return 3
+
+                                                                1:
+                                                                    return unknown_encoding()
+
+                                                        0:
+                                                            return 3
+
+                                                        1:
+                                                            return unknown_encoding()
+
+                                                0:
+                                                    return 3
+
+                                                1:
+                                                    return unknown_encoding()
+
+                                        0:
+                                            return 3
+
+                                        1:
+                                            return unknown_encoding()
+
+                                0:
+                                    return 2
+
+                                1:
+                                    return unknown_encoding()
+
+                        0:
+                            return 2
+
+                        1:
+                            return unknown_encoding()
+
+                0:
+                    return 1
+
+                1:
+                    return unknown_encoding()
+
+        0:
+            return 0
+
+        1:
+            return unknown_encoding()
+
+fn expected_register_operand_count_at(fixture: tryte, index: tryte) -> tryte:
+    match same_tryte(expected_blueprint_at(fixture, index), blueprint_param()) <=> 1:
+        -1:
+            match same_tryte(expected_blueprint_at(fixture, index), blueprint_register()) <=> 1:
+                -1:
+                    match same_tryte(expected_opcode_at(fixture, index), opcode_tcall()) <=> 1:
+                        -1:
+                            return fixed_register_operand_count_for_opcode(expected_opcode_at(fixture, index))
+
+                        0:
+                            match same_tryte(fixture, fixture_simple_call()) <=> 1:
+                                -1:
+                                    match same_tryte(fixture, fixture_sign()) <=> 1:
+                                        -1:
+                                            return unknown_encoding()
+
+                                        0:
+                                            return 2
+
+                                        1:
+                                            return unknown_encoding()
+
+                                0:
+                                    return 3
+
+                                1:
+                                    return unknown_encoding()
+
+                        1:
+                            return fixed_register_operand_count_for_opcode(expected_opcode_at(fixture, index))
+
+                0:
+                    return 1
+
+                1:
+                    return fixed_register_operand_count_for_opcode(expected_opcode_at(fixture, index))
+
+        0:
+            return 1
+
+        1:
+            return fixed_register_operand_count_for_opcode(expected_opcode_at(fixture, index))
+
+fn expected_has_immediate_at(fixture: tryte, index: tryte) -> trit:
+    return same_tryte(expected_opcode_at(fixture, index), opcode_tconst())
+
+fn expected_has_callee_at(fixture: tryte, index: tryte) -> trit:
+    return same_tryte(expected_opcode_at(fixture, index), opcode_tcall())
+
+fn expected_has_labels_at(fixture: tryte, index: tryte) -> trit:
+    return any_passed(
+        same_tryte(expected_directive_at(fixture, index), directive_label()),
+        any_passed(
+            same_tryte(expected_opcode_at(fixture, index), opcode_tjmp()),
+            same_tryte(expected_opcode_at(fixture, index), opcode_tbr3())
+        )
+    )
+
+fn expected_has_memory_operand_at(fixture: tryte, index: tryte) -> trit:
+    return any_passed(
+        same_tryte(expected_directive_at(fixture, index), directive_memory()),
+        any_passed(
+            same_tryte(expected_opcode_at(fixture, index), opcode_tload()),
+            same_tryte(expected_opcode_at(fixture, index), opcode_tstore())
+        )
+    )
+
+fn expected_has_source_metadata_at(fixture: tryte, index: tryte) -> trit:
+    return same_tryte(
+        expected_blueprint_at(fixture, index),
+        blueprint_instruction_with_source()
+    )
+
+fn expected_function_ordinal_at(fixture: tryte, index: tryte) -> tryte:
+    match fixture <=> fixture_first():
+        -1:
+            return unknown_encoding()
+
+        0:
+            match in_range(index, 2, 17) <=> 1:
+                -1:
+                    return unknown_encoding()
+
+                0:
+                    return 0
+
+                1:
+                    return unknown_encoding()
+
+        1:
+            match fixture <=> fixture_simple_call():
+                -1:
+                    return unknown_encoding()
+
+                0:
+                    match in_range(index, 2, 9) <=> 1:
+                        -1:
+                            match in_range(index, 11, 20) <=> 1:
+                                -1:
+                                    return unknown_encoding()
+
+                                0:
+                                    return 1
+
+                                1:
+                                    return unknown_encoding()
+
+                        0:
+                            return 0
+
+                        1:
+                            return unknown_encoding()
+
+                1:
+                    match fixture <=> fixture_sign():
+                        -1:
+                            return unknown_encoding()
+
+                        0:
+                            match in_range(index, 2, 24) <=> 1:
+                                -1:
+                                    match in_range(index, 26, 35) <=> 1:
+                                        -1:
+                                            return unknown_encoding()
+
+                                        0:
+                                            return 1
+
+                                        1:
+                                            return unknown_encoding()
+
+                                0:
+                                    return 0
+
+                                1:
+                                    return unknown_encoding()
+
+                        1:
+                            return unknown_encoding()
+
+fn expected_block_ordinal_at(fixture: tryte, index: tryte) -> tryte:
+    match fixture <=> fixture_first():
+        -1:
+            return unknown_encoding()
+
+        0:
+            match in_range(index, 9, 17) <=> 1:
+                -1:
+                    return unknown_encoding()
+
+                0:
+                    return 0
+
+                1:
+                    return unknown_encoding()
+
+        1:
+            match fixture <=> fixture_simple_call():
+                -1:
+                    return unknown_encoding()
+
+                0:
+                    match in_range(index, 6, 9) <=> 1:
+                        -1:
+                            match in_range(index, 15, 20) <=> 1:
+                                -1:
+                                    return unknown_encoding()
+
+                                0:
+                                    return 0
+
+                                1:
+                                    return unknown_encoding()
+
+                        0:
+                            return 0
+
+                        1:
+                            return unknown_encoding()
+
+                1:
+                    match fixture <=> fixture_sign():
+                        -1:
+                            return unknown_encoding()
+
+                        0:
+                            match in_range(index, 10, 13) <=> 1:
+                                -1:
+                                    match in_range(index, 14, 17) <=> 1:
+                                        -1:
+                                            match in_range(index, 18, 20) <=> 1:
+                                                -1:
+                                                    match in_range(index, 21, 24) <=> 1:
+                                                        -1:
+                                                            match in_range(index, 30, 35) <=> 1:
+                                                                -1:
+                                                                    return unknown_encoding()
+
+                                                                0:
+                                                                    return 0
+
+                                                                1:
+                                                                    return unknown_encoding()
+
+                                                        0:
+                                                            return 3
+
+                                                        1:
+                                                            return unknown_encoding()
+
+                                                0:
+                                                    return 2
+
+                                                1:
+                                                    return unknown_encoding()
+
+                                        0:
+                                            return 1
+
+                                        1:
+                                            return unknown_encoding()
+
+                                0:
+                                    return 0
+
+                                1:
+                                    return unknown_encoding()
+
+                        1:
+                            return unknown_encoding()
+
+fn expected_line_encoding_score_at(fixture: tryte, index: tryte) -> tryte:
+    match is_valid_index(index, expected_line_count(fixture)) <=> 1:
+        -1:
+            return unknown_encoding()
+
+        0:
+            mut score: tryte = expected_line_category_at(fixture, index)
+
+            score = score + expected_opcode_at(fixture, index)
+            score = score + expected_register_operand_count_at(fixture, index)
+            score = score + flag_score(expected_has_immediate_at(fixture, index))
+            score = score + flag_score(expected_has_callee_at(fixture, index))
+            score = score + flag_score(expected_has_labels_at(fixture, index))
+            score = score + flag_score(expected_has_memory_operand_at(fixture, index))
+            score = score + flag_score(expected_has_source_metadata_at(fixture, index))
+
+            return score
+
+        1:
+            return unknown_encoding()
+
+fn first_modeled_encoding_signature() -> tryte:
+    return expected_fixture_encoding_signature(fixture_first())
+
+fn simple_call_modeled_encoding_signature() -> tryte:
+    return expected_fixture_encoding_signature(fixture_simple_call())
+
+fn sign_modeled_encoding_signature() -> tryte:
+    return expected_fixture_encoding_signature(fixture_sign())
+
+fn modeled_fixture_encoding_signature(fixture: tryte) -> tryte:
+    match fixture <=> fixture_first():
+        -1:
+            return unknown_encoding()
+
+        0:
+            return first_modeled_encoding_signature()
+
+        1:
+            match fixture <=> fixture_simple_call():
+                -1:
+                    return unknown_encoding()
+
+                0:
+                    return simple_call_modeled_encoding_signature()
+
+                1:
+                    match fixture <=> fixture_sign():
+                        -1:
+                            return unknown_encoding()
+
+                        0:
+                            return sign_modeled_encoding_signature()
+
+                        1:
+                            return unknown_encoding()
+
+fn validate_encoding_index(fixture: tryte, index: tryte) -> trit:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return 0
+
+        0:
+            return is_valid_index(index, expected_line_count(fixture))
+
+        1:
+            return 0
+
+fn validate_opcode_shape(fixture: tryte, index: tryte) -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, is_known_opcode(expected_opcode_at(fixture, index)))
+    match expected_line_category_at(fixture, index) <=> category_instruction():
+        -1:
+            ok = all_passed(ok, same_tryte(expected_opcode_at(fixture, index), opcode_none()))
+
+        0:
+            ok = all_passed(ok, is_real_opcode(expected_opcode_at(fixture, index)))
+
+        1:
+            ok = all_passed(ok, same_tryte(expected_opcode_at(fixture, index), opcode_none()))
+
+    return ok
+
+fn validate_flag_derivations(fixture: tryte, index: tryte) -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, same_trit(expected_has_immediate_at(fixture, index), same_tryte(expected_opcode_at(fixture, index), opcode_tconst())))
+    ok = all_passed(ok, same_trit(expected_has_callee_at(fixture, index), same_tryte(expected_opcode_at(fixture, index), opcode_tcall())))
+    ok = all_passed(ok, same_trit(expected_has_source_metadata_at(fixture, index), same_tryte(expected_blueprint_at(fixture, index), blueprint_instruction_with_source())))
+    ok = all_passed(ok, same_trit(expected_has_memory_operand_at(fixture, index), 0))
+
+    return ok
+
+fn validate_line_encoding_at(fixture: tryte, index: tryte) -> trit:
+    match validate_encoding_index(fixture, index) <=> 1:
+        -1:
+            return 0
+
+        0:
+            mut ok: trit = 1
+
+            ok = all_passed(ok, is_known_blueprint(expected_blueprint_at(fixture, index)))
+            ok = all_passed(ok, is_known_directive(expected_directive_at(fixture, index)))
+            ok = all_passed(ok, same_tryte(expected_line_category_at(fixture, index), category_for_blueprint(expected_blueprint_at(fixture, index))))
+            ok = all_passed(ok, same_tryte(expected_directive_at(fixture, index), directive_for_blueprint(expected_blueprint_at(fixture, index))))
+            ok = all_passed(ok, validate_opcode_shape(fixture, index))
+            ok = all_passed(ok, validate_flag_derivations(fixture, index))
+
+            return ok
+
+        1:
+            return 0
+
+fn validate_first_key_lines() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, same_tryte(expected_opcode_at(fixture_first(), 10), opcode_tconst()))
+    ok = all_passed(ok, same_tryte(expected_register_operand_count_at(fixture_first(), 10), 1))
+    ok = all_passed(ok, same_trit(expected_has_immediate_at(fixture_first(), 10), 1))
+    ok = all_passed(ok, same_trit(expected_has_source_metadata_at(fixture_first(), 10), 1))
+    ok = all_passed(ok, same_tryte(expected_opcode_at(fixture_first(), 15), opcode_tadd()))
+    ok = all_passed(ok, same_tryte(expected_register_operand_count_at(fixture_first(), 15), 3))
+    ok = all_passed(ok, same_tryte(expected_opcode_at(fixture_first(), 16), opcode_tret()))
+
+    return ok
+
+fn validate_simple_call_key_lines() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, same_tryte(expected_opcode_at(fixture_simple_call(), 7), opcode_tadd()))
+    ok = all_passed(ok, same_tryte(expected_register_operand_count_at(fixture_simple_call(), 7), 3))
+    ok = all_passed(ok, same_tryte(expected_opcode_at(fixture_simple_call(), 18), opcode_tcall()))
+    ok = all_passed(ok, same_tryte(expected_register_operand_count_at(fixture_simple_call(), 18), 3))
+    ok = all_passed(ok, same_trit(expected_has_callee_at(fixture_simple_call(), 18), 1))
+    ok = all_passed(ok, same_trit(expected_has_source_metadata_at(fixture_simple_call(), 18), 1))
+
+    return ok
+
+fn validate_sign_key_lines() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, same_tryte(expected_opcode_at(fixture_sign(), 12), opcode_tcmp()))
+    ok = all_passed(ok, same_tryte(expected_register_operand_count_at(fixture_sign(), 12), 3))
+    ok = all_passed(ok, same_tryte(expected_opcode_at(fixture_sign(), 13), opcode_tbr3()))
+    ok = all_passed(ok, same_tryte(expected_register_operand_count_at(fixture_sign(), 13), 1))
+    ok = all_passed(ok, same_trit(expected_has_labels_at(fixture_sign(), 13), 1))
+    ok = all_passed(ok, same_tryte(expected_opcode_at(fixture_sign(), 33), opcode_tcall()))
+    ok = all_passed(ok, same_tryte(expected_register_operand_count_at(fixture_sign(), 33), 2))
+    ok = all_passed(ok, same_trit(expected_has_callee_at(fixture_sign(), 33), 1))
+
+    return ok
+
+fn validate_first_line_encodings() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, validate_line_encoding_at(fixture_first(), 0))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_first(), 1))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_first(), 2))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_first(), 3))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_first(), 4))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_first(), 5))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_first(), 6))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_first(), 7))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_first(), 8))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_first(), 9))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_first(), 10))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_first(), 11))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_first(), 12))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_first(), 13))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_first(), 14))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_first(), 15))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_first(), 16))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_first(), 17))
+    ok = all_passed(ok, same_trit(validate_line_encoding_at(fixture_first(), 18), 0))
+    ok = all_passed(ok, same_trit(validate_line_encoding_at(fixture_first(), -1), 0))
+    ok = all_passed(ok, validate_first_key_lines())
+
+    return ok
+
+fn validate_simple_call_line_encodings() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, validate_line_encoding_at(fixture_simple_call(), 0))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_simple_call(), 1))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_simple_call(), 2))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_simple_call(), 3))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_simple_call(), 4))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_simple_call(), 5))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_simple_call(), 6))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_simple_call(), 7))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_simple_call(), 8))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_simple_call(), 9))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_simple_call(), 10))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_simple_call(), 11))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_simple_call(), 12))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_simple_call(), 13))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_simple_call(), 14))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_simple_call(), 15))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_simple_call(), 16))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_simple_call(), 17))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_simple_call(), 18))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_simple_call(), 19))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_simple_call(), 20))
+    ok = all_passed(ok, same_trit(validate_line_encoding_at(fixture_simple_call(), 21), 0))
+    ok = all_passed(ok, same_trit(validate_line_encoding_at(fixture_simple_call(), -1), 0))
+    ok = all_passed(ok, validate_simple_call_key_lines())
+
+    return ok
+
+fn validate_sign_line_encodings() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 0))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 1))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 2))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 3))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 4))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 5))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 6))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 7))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 8))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 9))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 10))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 11))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 12))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 13))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 14))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 15))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 16))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 17))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 18))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 19))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 20))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 21))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 22))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 23))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 24))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 25))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 26))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 27))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 28))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 29))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 30))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 31))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 32))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 33))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 34))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 35))
+    ok = all_passed(ok, same_trit(validate_line_encoding_at(fixture_sign(), 36), 0))
+    ok = all_passed(ok, same_trit(validate_line_encoding_at(fixture_sign(), -1), 0))
+    ok = all_passed(ok, validate_sign_key_lines())
+
+    return ok
+
+fn validate_fixture_line_encodings(fixture: tryte) -> trit:
+    match fixture <=> fixture_first():
+        -1:
+            return 0
+
+        0:
+            return validate_first_line_encodings()
+
+        1:
+            match fixture <=> fixture_simple_call():
+                -1:
+                    return 0
+
+                0:
+                    return validate_simple_call_line_encodings()
+
+                1:
+                    match fixture <=> fixture_sign():
+                        -1:
+                            return 0
+
+                        0:
+                            return validate_sign_line_encodings()
+
+                        1:
+                            return 0
+
+fn validate_fixture_encoding_metrics(fixture: tryte) -> trit:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return 0
+
+        0:
+            mut ok: trit = 1
+
+            ok = all_passed(ok, same_tryte(expected_encoded_line_count(fixture), expected_line_count(fixture)))
+            ok = all_passed(ok, same_tryte(modeled_fixture_encoding_signature(fixture), expected_fixture_encoding_signature(fixture)))
+
+            return ok
+
+        1:
+            return 0
+
+fn total_encoded_line_count() -> tryte:
+    return expected_encoded_line_count(fixture_first()) + expected_encoded_line_count(fixture_simple_call()) + expected_encoded_line_count(fixture_sign())
+
+fn total_instruction_encoding_count() -> tryte:
+    return expected_instruction_encoding_count(fixture_first()) + expected_instruction_encoding_count(fixture_simple_call()) + expected_instruction_encoding_count(fixture_sign())
+
+fn total_directive_encoding_count() -> tryte:
+    return expected_directive_encoding_count(fixture_first()) + expected_directive_encoding_count(fixture_simple_call()) + expected_directive_encoding_count(fixture_sign())
+
+fn total_blank_encoding_count() -> tryte:
+    return expected_blank_encoding_count(fixture_first()) + expected_blank_encoding_count(fixture_simple_call()) + expected_blank_encoding_count(fixture_sign())
+
+fn total_opcode_encoding_count() -> tryte:
+    return expected_opcode_encoding_count(fixture_first()) + expected_opcode_encoding_count(fixture_simple_call()) + expected_opcode_encoding_count(fixture_sign())
+
+fn total_register_operand_line_count() -> tryte:
+    return expected_register_operand_line_count(fixture_first()) + expected_register_operand_line_count(fixture_simple_call()) + expected_register_operand_line_count(fixture_sign())
+
+fn total_immediate_line_count() -> tryte:
+    return expected_immediate_line_count(fixture_first()) + expected_immediate_line_count(fixture_simple_call()) + expected_immediate_line_count(fixture_sign())
+
+fn total_callee_line_count() -> tryte:
+    return expected_callee_line_count(fixture_first()) + expected_callee_line_count(fixture_simple_call()) + expected_callee_line_count(fixture_sign())
+
+fn total_label_operand_line_count() -> tryte:
+    return expected_label_operand_line_count(fixture_first()) + expected_label_operand_line_count(fixture_simple_call()) + expected_label_operand_line_count(fixture_sign())
+
+fn total_memory_operand_line_count() -> tryte:
+    return expected_memory_operand_line_count(fixture_first()) + expected_memory_operand_line_count(fixture_simple_call()) + expected_memory_operand_line_count(fixture_sign())
+
+fn total_source_metadata_line_count() -> tryte:
+    return expected_source_metadata_line_count(fixture_first()) + expected_source_metadata_line_count(fixture_simple_call()) + expected_source_metadata_line_count(fixture_sign())
+
+fn total_encoding_signature() -> tryte:
+    return modeled_fixture_encoding_signature(fixture_first()) + modeled_fixture_encoding_signature(fixture_simple_call()) + modeled_fixture_encoding_signature(fixture_sign())
+
+fn validate_total_line_encodings() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, same_tryte(total_encoded_line_count(), 75))
+    ok = all_passed(ok, same_tryte(total_instruction_encoding_count(), 27))
+    ok = all_passed(ok, same_tryte(total_directive_encoding_count(), 43))
+    ok = all_passed(ok, same_tryte(total_blank_encoding_count(), 5))
+    ok = all_passed(ok, same_tryte(total_opcode_encoding_count(), 27))
+    ok = all_passed(ok, same_tryte(total_register_operand_line_count(), 49))
+    ok = all_passed(ok, same_tryte(total_immediate_line_count(), 9))
+    ok = all_passed(ok, same_tryte(total_callee_line_count(), 2))
+    ok = all_passed(ok, same_tryte(total_label_operand_line_count(), 9))
+    ok = all_passed(ok, same_tryte(total_memory_operand_line_count(), 0))
+    ok = all_passed(ok, same_tryte(total_source_metadata_line_count(), 27))
+    ok = all_passed(ok, same_tryte(total_encoding_signature(), 290))
+
+    return ok
+
+fn validate_all_fixture_line_encodings() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, validate_line_encoding_at(fixture_first(), 0))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_first(), 1))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_first(), 2))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_first(), 10))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_simple_call(), 7))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_simple_call(), 18))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 13))
+    ok = all_passed(ok, validate_line_encoding_at(fixture_sign(), 33))
+    ok = all_passed(ok, validate_first_key_lines())
+    ok = all_passed(ok, validate_simple_call_key_lines())
+    ok = all_passed(ok, validate_sign_key_lines())
+    ok = all_passed(ok, validate_fixture_encoding_metrics(fixture_first()))
+    ok = all_passed(ok, validate_fixture_encoding_metrics(fixture_simple_call()))
+    ok = all_passed(ok, validate_fixture_encoding_metrics(fixture_sign()))
+    ok = all_passed(ok, same_trit(validate_line_encoding_at(fixture_first(), 99), 0))
+    ok = all_passed(ok, same_tryte(expected_blueprint_at(99, 0), unknown_encoding()))
+    ok = all_passed(ok, validate_total_line_encodings())
+
+    return ok
+
+fn line_encodings_first_probe() -> tryte:
+    return status_from_check(validate_fixture_line_encodings(fixture_first()), 1)
+
+fn line_encodings_simple_call_probe() -> tryte:
+    return status_from_check(validate_fixture_line_encodings(fixture_simple_call()), 1)
+
+fn line_encodings_sign_probe() -> tryte:
+    return status_from_check(validate_fixture_line_encodings(fixture_sign()), 1)
+
+fn line_encodings_unknown_fixture_probe() -> tryte:
+    return status_from_check(same_trit(validate_fixture_line_encodings(99), 0), 1)
+
+fn line_encodings_unknown_line_probe() -> tryte:
+    return status_from_check(same_trit(validate_line_encoding_at(fixture_first(), 99), 0), 1)
+
+fn line_encodings_opcode_probe() -> tryte:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, validate_first_key_lines())
+    ok = all_passed(ok, validate_simple_call_key_lines())
+    ok = all_passed(ok, validate_sign_key_lines())
+
+    return status_from_check(ok, 1)
+
+fn line_encodings_flag_probe() -> tryte:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, same_trit(expected_has_immediate_at(fixture_first(), 10), 1))
+    ok = all_passed(ok, same_trit(expected_has_immediate_at(fixture_first(), 11), 0))
+    ok = all_passed(ok, same_trit(expected_has_callee_at(fixture_simple_call(), 18), 1))
+    ok = all_passed(ok, same_trit(expected_has_labels_at(fixture_sign(), 13), 1))
+    ok = all_passed(ok, same_trit(expected_has_memory_operand_at(fixture_sign(), 13), 0))
+    ok = all_passed(ok, same_trit(expected_has_source_metadata_at(fixture_sign(), 34), 1))
+
+    return status_from_check(ok, 1)
+
+fn line_encodings_signature_probe() -> tryte:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, same_tryte(modeled_fixture_encoding_signature(fixture_first()), 61))
+    ok = all_passed(ok, same_tryte(modeled_fixture_encoding_signature(fixture_simple_call()), 73))
+    ok = all_passed(ok, same_tryte(modeled_fixture_encoding_signature(fixture_sign()), 156))
+    ok = all_passed(ok, same_tryte(total_encoding_signature(), 290))
+
+    return status_from_check(ok, 1)
+
+fn line_encodings_totals_probe() -> tryte:
+    return status_from_check(validate_total_line_encodings(), 1)
+
+fn event_for_blueprint(blueprint: tryte) -> tryte:
+    match same_tryte(blueprint, blueprint_s3asm_header()) <=> 1:
+        -1:
+            match same_tryte(blueprint, blueprint_function_header()) <=> 1:
+                -1:
+                    match same_tryte(blueprint, blueprint_param()) <=> 1:
+                        -1:
+                            match same_tryte(blueprint, blueprint_register()) <=> 1:
+                                -1:
+                                    match same_tryte(blueprint, blueprint_memory()) <=> 1:
+                                        -1:
+                                            match same_tryte(blueprint, blueprint_label()) <=> 1:
+                                                -1:
+                                                    match same_tryte(blueprint, blueprint_instruction()) <=> 1:
+                                                        -1:
+                                                            match same_tryte(blueprint, blueprint_instruction_with_source()) <=> 1:
+                                                                -1:
+                                                                    match same_tryte(blueprint, blueprint_end()) <=> 1:
+                                                                        -1:
+                                                                            match same_tryte(blueprint, blueprint_blank_line()) <=> 1:
+                                                                                -1:
+                                                                                    return event_unknown()
+
+                                                                                0:
+                                                                                    return event_emit_blank()
+
+                                                                                1:
+                                                                                    return event_unknown()
+
+                                                                        0:
+                                                                            return event_emit_end()
+
+                                                                        1:
+                                                                            return event_unknown()
+
+                                                                0:
+                                                                    return event_emit_instruction()
+
+                                                                1:
+                                                                    return event_unknown()
+
+                                                        0:
+                                                            return event_emit_instruction()
+
+                                                        1:
+                                                            return event_unknown()
+
+                                                0:
+                                                    return event_emit_label()
+
+                                                1:
+                                                    return event_unknown()
+
+                                        0:
+                                            return event_emit_memory()
+
+                                        1:
+                                            return event_unknown()
+
+                                0:
+                                    return event_emit_register()
+
+                                1:
+                                    return event_unknown()
+
+                        0:
+                            return event_emit_param()
+
+                        1:
+                            return event_unknown()
+
+                0:
+                    return event_emit_function()
+
+                1:
+                    return event_unknown()
+
+        0:
+            return event_emit_header()
+
+        1:
+            return event_unknown()
+
+fn payload_for_instruction_opcode(opcode: tryte) -> tryte:
+    match same_tryte(opcode, opcode_tconst()) <=> 1:
+        -1:
+            match same_tryte(opcode, opcode_tcall()) <=> 1:
+                -1:
+                    match same_tryte(opcode, opcode_tjmp()) <=> 1:
+                        -1:
+                            match same_tryte(opcode, opcode_tbr3()) <=> 1:
+                                -1:
+                                    match same_tryte(opcode, opcode_tload()) <=> 1:
+                                        -1:
+                                            match same_tryte(opcode, opcode_tstore()) <=> 1:
+                                                -1:
+                                                    match is_real_opcode(opcode) <=> 1:
+                                                        -1:
+                                                            return payload_none()
+
+                                                        0:
+                                                            return payload_instruction_registers()
+
+                                                        1:
+                                                            return payload_none()
+
+                                                0:
+                                                    return payload_instruction_memory()
+
+                                                1:
+                                                    return payload_none()
+
+                                        0:
+                                            return payload_instruction_memory()
+
+                                        1:
+                                            return payload_none()
+
+                                0:
+                                    return payload_instruction_branch()
+
+                                1:
+                                    return payload_none()
+
+                        0:
+                            return payload_instruction_branch()
+
+                        1:
+                            return payload_none()
+
+                0:
+                    return payload_instruction_call()
+
+                1:
+                    return payload_none()
+
+        0:
+            return payload_instruction_immediate()
+
+        1:
+            return payload_none()
+
+fn payload_for_event(event: tryte, opcode: tryte) -> tryte:
+    match same_tryte(event, event_emit_header()) <=> 1:
+        -1:
+            match same_tryte(event, event_emit_function()) <=> 1:
+                -1:
+                    match same_tryte(event, event_emit_param()) <=> 1:
+                        -1:
+                            match same_tryte(event, event_emit_register()) <=> 1:
+                                -1:
+                                    match same_tryte(event, event_emit_memory()) <=> 1:
+                                        -1:
+                                            match same_tryte(event, event_emit_label()) <=> 1:
+                                                -1:
+                                                    match same_tryte(event, event_emit_instruction()) <=> 1:
+                                                        -1:
+                                                            match same_tryte(event, event_emit_end()) <=> 1:
+                                                                -1:
+                                                                    match same_tryte(event, event_emit_blank()) <=> 1:
+                                                                        -1:
+                                                                            return payload_none()
+
+                                                                        0:
+                                                                            return payload_blank()
+
+                                                                        1:
+                                                                            return payload_none()
+
+                                                                0:
+                                                                    return payload_directive()
+
+                                                                1:
+                                                                    return payload_none()
+
+                                                        0:
+                                                            return payload_for_instruction_opcode(opcode)
+
+                                                        1:
+                                                            return payload_none()
+
+                                                0:
+                                                    return payload_symbol()
+
+                                                1:
+                                                    return payload_none()
+
+                                        0:
+                                            return payload_memory_decl()
+
+                                        1:
+                                            return payload_none()
+
+                                0:
+                                    return payload_register_decl()
+
+                                1:
+                                    return payload_none()
+
+                        0:
+                            return payload_register_decl()
+
+                        1:
+                            return payload_none()
+
+                0:
+                    return payload_symbol()
+
+                1:
+                    return payload_none()
+
+        0:
+            return payload_directive()
+
+        1:
+            return payload_none()
+
+fn expected_event_at(fixture: tryte, index: tryte) -> tryte:
+    return event_for_blueprint(expected_blueprint_at(fixture, index))
+
+fn expected_payload_at(fixture: tryte, index: tryte) -> tryte:
+    return payload_for_event(
+        expected_event_at(fixture, index),
+        expected_opcode_at(fixture, index)
+    )
+
+fn is_known_event(event: tryte) -> trit:
+    return in_range(event, event_emit_header(), event_emit_blank())
+
+fn is_known_payload(payload: tryte) -> trit:
+    return in_range(payload, payload_none(), payload_blank())
+
+fn is_emit_directive_event(event: tryte) -> trit:
+    return any_passed(
+        same_tryte(event, event_emit_header()),
+        any_passed(
+            same_tryte(event, event_emit_function()),
+            any_passed(
+                same_tryte(event, event_emit_param()),
+                any_passed(
+                    same_tryte(event, event_emit_register()),
+                    any_passed(
+                        same_tryte(event, event_emit_memory()),
+                        any_passed(
+                            same_tryte(event, event_emit_label()),
+                            same_tryte(event, event_emit_end())
+                        )
+                    )
+                )
+            )
+        )
+    )
+
+fn is_emit_instruction_event(event: tryte) -> trit:
+    return same_tryte(event, event_emit_instruction())
+
+fn is_emit_blank_event(event: tryte) -> trit:
+    return same_tryte(event, event_emit_blank())
+
+fn event_allows_opcode(event: tryte) -> trit:
+    return is_emit_instruction_event(event)
+
+fn event_allows_directive(event: tryte) -> trit:
+    return any_passed(is_emit_directive_event(event), is_emit_blank_event(event))
+
+fn event_allows_labels(event: tryte) -> trit:
+    return any_passed(
+        same_tryte(event, event_emit_label()),
+        same_tryte(event, event_emit_instruction())
+    )
+
+fn event_allows_memory_operand(event: tryte) -> trit:
+    return any_passed(
+        same_tryte(event, event_emit_memory()),
+        same_tryte(event, event_emit_instruction())
+    )
+
+fn event_allows_source_metadata(event: tryte) -> trit:
+    return same_tryte(event, event_emit_instruction())
+
+fn payload_allows_registers(payload: tryte) -> trit:
+    return any_passed(
+        same_tryte(payload, payload_register_decl()),
+        any_passed(
+            same_tryte(payload, payload_instruction_registers()),
+            any_passed(
+                same_tryte(payload, payload_instruction_immediate()),
+                any_passed(
+                    same_tryte(payload, payload_instruction_call()),
+                    any_passed(
+                        same_tryte(payload, payload_instruction_branch()),
+                        same_tryte(payload, payload_instruction_memory())
+                    )
+                )
+            )
+        )
+    )
+
+fn payload_allows_immediate(payload: tryte) -> trit:
+    return same_tryte(payload, payload_instruction_immediate())
+
+fn payload_allows_callee(payload: tryte) -> trit:
+    return same_tryte(payload, payload_instruction_call())
+
+fn payload_allows_labels(payload: tryte) -> trit:
+    return same_tryte(payload, payload_instruction_branch())
+
+fn payload_allows_memory_operand(payload: tryte) -> trit:
+    return any_passed(
+        same_tryte(payload, payload_memory_decl()),
+        same_tryte(payload, payload_instruction_memory())
+    )
+
+fn payload_allows_source_metadata(payload: tryte) -> trit:
+    return any_passed(
+        same_tryte(payload, payload_instruction_no_operands()),
+        any_passed(
+            same_tryte(payload, payload_instruction_registers()),
+            any_passed(
+                same_tryte(payload, payload_instruction_immediate()),
+                any_passed(
+                    same_tryte(payload, payload_instruction_call()),
+                    any_passed(
+                        same_tryte(payload, payload_instruction_branch()),
+                        same_tryte(payload, payload_instruction_memory())
+                    )
+                )
+            )
+        )
+    )
+
+fn payload_allowed_for_event(event: tryte, payload: tryte) -> trit:
+    match same_tryte(event, event_emit_header()) <=> 1:
+        -1:
+            match same_tryte(event, event_emit_function()) <=> 1:
+                -1:
+                    match same_tryte(event, event_emit_param()) <=> 1:
+                        -1:
+                            match same_tryte(event, event_emit_register()) <=> 1:
+                                -1:
+                                    match same_tryte(event, event_emit_memory()) <=> 1:
+                                        -1:
+                                            match same_tryte(event, event_emit_label()) <=> 1:
+                                                -1:
+                                                    match same_tryte(event, event_emit_instruction()) <=> 1:
+                                                        -1:
+                                                            match same_tryte(event, event_emit_end()) <=> 1:
+                                                                -1:
+                                                                    match same_tryte(event, event_emit_blank()) <=> 1:
+                                                                        -1:
+                                                                            return 0
+
+                                                                        0:
+                                                                            return same_tryte(payload, payload_blank())
+
+                                                                        1:
+                                                                            return 0
+
+                                                                0:
+                                                                    return same_tryte(payload, payload_directive())
+
+                                                                1:
+                                                                    return 0
+
+                                                        0:
+                                                            return any_passed(
+                                                                payload_allows_source_metadata(payload),
+                                                                same_tryte(payload, payload_source_metadata())
+                                                            )
+
+                                                        1:
+                                                            return 0
+
+                                                0:
+                                                    return same_tryte(payload, payload_symbol())
+
+                                                1:
+                                                    return 0
+
+                                        0:
+                                            return same_tryte(payload, payload_memory_decl())
+
+                                        1:
+                                            return 0
+
+                                0:
+                                    return same_tryte(payload, payload_register_decl())
+
+                                1:
+                                    return 0
+
+                        0:
+                            return same_tryte(payload, payload_register_decl())
+
+                        1:
+                            return 0
+
+                0:
+                    return same_tryte(payload, payload_symbol())
+
+                1:
+                    return 0
+
+        0:
+            return same_tryte(payload, payload_directive())
+
+        1:
+            return 0
+
+fn validate_event_index(fixture: tryte, index: tryte) -> trit:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return 0
+
+        0:
+            return is_valid_index(index, expected_line_count(fixture))
+
+        1:
+            return 0
+
+fn validate_event_payload(fixture: tryte, index: tryte) -> trit:
+    match validate_event_index(fixture, index) <=> 1:
+        -1:
+            return 0
+
+        0:
+            mut ok: trit = 1
+            mut event: tryte = expected_event_at(fixture, index)
+            mut payload: tryte = expected_payload_at(fixture, index)
+
+            ok = all_passed(ok, is_known_event(event))
+            ok = all_passed(ok, is_known_payload(payload))
+            ok = all_passed(ok, payload_allowed_for_event(event, payload))
+
+            return ok
+
+        1:
+            return 0
+
+fn validate_event_encoding(fixture: tryte, index: tryte) -> trit:
+    match validate_event_index(fixture, index) <=> 1:
+        -1:
+            return 0
+
+        0:
+            mut ok: trit = 1
+            mut event: tryte = expected_event_at(fixture, index)
+            mut payload: tryte = expected_payload_at(fixture, index)
+
+            ok = all_passed(ok, validate_event_payload(fixture, index))
+            ok = all_passed(ok, same_tryte(event, event_for_blueprint(expected_blueprint_at(fixture, index))))
+            ok = all_passed(ok, same_tryte(payload, payload_for_event(event, expected_opcode_at(fixture, index))))
+            ok = all_passed(ok, same_trit(event_allows_opcode(event), same_tryte(expected_line_category_at(fixture, index), category_instruction())))
+            ok = all_passed(ok, same_trit(event_allows_directive(event), any_passed(same_tryte(expected_line_category_at(fixture, index), category_directive()), same_tryte(expected_line_category_at(fixture, index), category_blank()))))
+            ok = all_passed(ok, same_trit(payload_allows_immediate(payload), expected_has_immediate_at(fixture, index)))
+            ok = all_passed(ok, same_trit(payload_allows_callee(payload), expected_has_callee_at(fixture, index)))
+            ok = all_passed(ok, same_trit(expected_has_labels_at(fixture, index), any_passed(same_tryte(event, event_emit_label()), payload_allows_labels(payload))))
+            ok = all_passed(ok, same_trit(expected_has_memory_operand_at(fixture, index), any_passed(same_tryte(event, event_emit_memory()), same_tryte(payload, payload_instruction_memory()))))
+            ok = all_passed(ok, same_trit(expected_has_source_metadata_at(fixture, index), all_passed(event_allows_source_metadata(event), payload_allows_source_metadata(payload))))
+
+            return ok
+
+        1:
+            return 0
+
+fn validate_first_event_stream() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, validate_event_encoding(fixture_first(), 0))
+    ok = all_passed(ok, validate_event_encoding(fixture_first(), 1))
+    ok = all_passed(ok, validate_event_encoding(fixture_first(), 2))
+    ok = all_passed(ok, validate_event_encoding(fixture_first(), 3))
+    ok = all_passed(ok, validate_event_encoding(fixture_first(), 4))
+    ok = all_passed(ok, validate_event_encoding(fixture_first(), 5))
+    ok = all_passed(ok, validate_event_encoding(fixture_first(), 6))
+    ok = all_passed(ok, validate_event_encoding(fixture_first(), 7))
+    ok = all_passed(ok, validate_event_encoding(fixture_first(), 8))
+    ok = all_passed(ok, validate_event_encoding(fixture_first(), 9))
+    ok = all_passed(ok, validate_event_encoding(fixture_first(), 10))
+    ok = all_passed(ok, validate_event_encoding(fixture_first(), 11))
+    ok = all_passed(ok, validate_event_encoding(fixture_first(), 12))
+    ok = all_passed(ok, validate_event_encoding(fixture_first(), 13))
+    ok = all_passed(ok, validate_event_encoding(fixture_first(), 14))
+    ok = all_passed(ok, validate_event_encoding(fixture_first(), 15))
+    ok = all_passed(ok, validate_event_encoding(fixture_first(), 16))
+    ok = all_passed(ok, validate_event_encoding(fixture_first(), 17))
+    ok = all_passed(ok, same_trit(validate_event_encoding(fixture_first(), 18), 0))
+
+    return ok
+
+fn validate_simple_call_event_stream() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, validate_event_encoding(fixture_simple_call(), 0))
+    ok = all_passed(ok, validate_event_encoding(fixture_simple_call(), 1))
+    ok = all_passed(ok, validate_event_encoding(fixture_simple_call(), 2))
+    ok = all_passed(ok, validate_event_encoding(fixture_simple_call(), 3))
+    ok = all_passed(ok, validate_event_encoding(fixture_simple_call(), 4))
+    ok = all_passed(ok, validate_event_encoding(fixture_simple_call(), 5))
+    ok = all_passed(ok, validate_event_encoding(fixture_simple_call(), 6))
+    ok = all_passed(ok, validate_event_encoding(fixture_simple_call(), 7))
+    ok = all_passed(ok, validate_event_encoding(fixture_simple_call(), 8))
+    ok = all_passed(ok, validate_event_encoding(fixture_simple_call(), 9))
+    ok = all_passed(ok, validate_event_encoding(fixture_simple_call(), 10))
+    ok = all_passed(ok, validate_event_encoding(fixture_simple_call(), 11))
+    ok = all_passed(ok, validate_event_encoding(fixture_simple_call(), 12))
+    ok = all_passed(ok, validate_event_encoding(fixture_simple_call(), 13))
+    ok = all_passed(ok, validate_event_encoding(fixture_simple_call(), 14))
+    ok = all_passed(ok, validate_event_encoding(fixture_simple_call(), 15))
+    ok = all_passed(ok, validate_event_encoding(fixture_simple_call(), 16))
+    ok = all_passed(ok, validate_event_encoding(fixture_simple_call(), 17))
+    ok = all_passed(ok, validate_event_encoding(fixture_simple_call(), 18))
+    ok = all_passed(ok, validate_event_encoding(fixture_simple_call(), 19))
+    ok = all_passed(ok, validate_event_encoding(fixture_simple_call(), 20))
+    ok = all_passed(ok, same_trit(validate_event_encoding(fixture_simple_call(), 21), 0))
+
+    return ok
+
+fn validate_sign_event_stream() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 0))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 1))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 2))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 3))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 4))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 5))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 6))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 7))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 8))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 9))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 10))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 11))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 12))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 13))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 14))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 15))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 16))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 17))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 18))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 19))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 20))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 21))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 22))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 23))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 24))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 25))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 26))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 27))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 28))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 29))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 30))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 31))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 32))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 33))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 34))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 35))
+    ok = all_passed(ok, same_trit(validate_event_encoding(fixture_sign(), 36), 0))
+
+    return ok
+
+fn validate_fixture_event_stream(fixture: tryte) -> trit:
+    match fixture <=> fixture_first():
+        -1:
+            return 0
+
+        0:
+            return validate_first_event_stream()
+
+        1:
+            match fixture <=> fixture_simple_call():
+                -1:
+                    return 0
+
+                0:
+                    return validate_simple_call_event_stream()
+
+                1:
+                    match fixture <=> fixture_sign():
+                        -1:
+                            return 0
+
+                        0:
+                            return validate_sign_event_stream()
+
+                        1:
+                            return 0
+
+fn is_valid_event_transition(left: tryte, right: tryte) -> trit:
+    match same_tryte(left, event_emit_header()) <=> 1:
+        -1:
+            match same_tryte(left, event_emit_blank()) <=> 1:
+                -1:
+                    match same_tryte(left, event_emit_function()) <=> 1:
+                        -1:
+                            match same_tryte(left, event_emit_param()) <=> 1:
+                                -1:
+                                    match same_tryte(left, event_emit_register()) <=> 1:
+                                        -1:
+                                            match same_tryte(left, event_emit_label()) <=> 1:
+                                                -1:
+                                                    match same_tryte(left, event_emit_instruction()) <=> 1:
+                                                        -1:
+                                                            match same_tryte(left, event_emit_end()) <=> 1:
+                                                                -1:
+                                                                    return 0
+
+                                                                0:
+                                                                    return same_tryte(right, event_emit_blank())
+
+                                                                1:
+                                                                    return 0
+
+                                                        0:
+                                                            return any_passed(
+                                                                same_tryte(right, event_emit_instruction()),
+                                                                any_passed(
+                                                                    same_tryte(right, event_emit_label()),
+                                                                    same_tryte(right, event_emit_end())
+                                                                )
+                                                            )
+
+                                                        1:
+                                                            return 0
+
+                                                0:
+                                                    return same_tryte(right, event_emit_instruction())
+
+                                                1:
+                                                    return 0
+
+                                        0:
+                                            return any_passed(
+                                                same_tryte(right, event_emit_register()),
+                                                same_tryte(right, event_emit_label())
+                                            )
+
+                                        1:
+                                            return 0
+
+                                0:
+                                    return any_passed(
+                                        same_tryte(right, event_emit_param()),
+                                        same_tryte(right, event_emit_register())
+                                    )
+
+                                1:
+                                    return 0
+
+                        0:
+                            return any_passed(
+                                same_tryte(right, event_emit_param()),
+                                same_tryte(right, event_emit_register())
+                            )
+
+                        1:
+                            return 0
+
+                0:
+                    return same_tryte(right, event_emit_function())
+
+                1:
+                    return 0
+
+        0:
+            return same_tryte(right, event_emit_blank())
+
+        1:
+            return 0
+
+fn validate_event_transition_at(fixture: tryte, index: tryte) -> trit:
+    match is_valid_index(index, expected_line_count(fixture) - 1) <=> 1:
+        -1:
+            return 0
+
+        0:
+            return is_valid_event_transition(
+                expected_event_at(fixture, index),
+                expected_event_at(fixture, index + 1)
+            )
+
+        1:
+            return 0
+
+fn validate_first_event_transitions() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, validate_event_transition_at(fixture_first(), 0))
+    ok = all_passed(ok, validate_event_transition_at(fixture_first(), 1))
+    ok = all_passed(ok, validate_event_transition_at(fixture_first(), 2))
+    ok = all_passed(ok, validate_event_transition_at(fixture_first(), 3))
+    ok = all_passed(ok, validate_event_transition_at(fixture_first(), 4))
+    ok = all_passed(ok, validate_event_transition_at(fixture_first(), 5))
+    ok = all_passed(ok, validate_event_transition_at(fixture_first(), 6))
+    ok = all_passed(ok, validate_event_transition_at(fixture_first(), 7))
+    ok = all_passed(ok, validate_event_transition_at(fixture_first(), 8))
+    ok = all_passed(ok, validate_event_transition_at(fixture_first(), 9))
+    ok = all_passed(ok, validate_event_transition_at(fixture_first(), 10))
+    ok = all_passed(ok, validate_event_transition_at(fixture_first(), 11))
+    ok = all_passed(ok, validate_event_transition_at(fixture_first(), 12))
+    ok = all_passed(ok, validate_event_transition_at(fixture_first(), 13))
+    ok = all_passed(ok, validate_event_transition_at(fixture_first(), 14))
+    ok = all_passed(ok, validate_event_transition_at(fixture_first(), 15))
+    ok = all_passed(ok, validate_event_transition_at(fixture_first(), 16))
+    ok = all_passed(ok, same_trit(validate_event_transition_at(fixture_first(), 17), 0))
+
+    return ok
+
+fn validate_simple_call_event_transitions() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, validate_event_transition_at(fixture_simple_call(), 0))
+    ok = all_passed(ok, validate_event_transition_at(fixture_simple_call(), 1))
+    ok = all_passed(ok, validate_event_transition_at(fixture_simple_call(), 2))
+    ok = all_passed(ok, validate_event_transition_at(fixture_simple_call(), 3))
+    ok = all_passed(ok, validate_event_transition_at(fixture_simple_call(), 4))
+    ok = all_passed(ok, validate_event_transition_at(fixture_simple_call(), 5))
+    ok = all_passed(ok, validate_event_transition_at(fixture_simple_call(), 6))
+    ok = all_passed(ok, validate_event_transition_at(fixture_simple_call(), 7))
+    ok = all_passed(ok, validate_event_transition_at(fixture_simple_call(), 8))
+    ok = all_passed(ok, validate_event_transition_at(fixture_simple_call(), 9))
+    ok = all_passed(ok, validate_event_transition_at(fixture_simple_call(), 10))
+    ok = all_passed(ok, validate_event_transition_at(fixture_simple_call(), 11))
+    ok = all_passed(ok, validate_event_transition_at(fixture_simple_call(), 12))
+    ok = all_passed(ok, validate_event_transition_at(fixture_simple_call(), 13))
+    ok = all_passed(ok, validate_event_transition_at(fixture_simple_call(), 14))
+    ok = all_passed(ok, validate_event_transition_at(fixture_simple_call(), 15))
+    ok = all_passed(ok, validate_event_transition_at(fixture_simple_call(), 16))
+    ok = all_passed(ok, validate_event_transition_at(fixture_simple_call(), 17))
+    ok = all_passed(ok, validate_event_transition_at(fixture_simple_call(), 18))
+    ok = all_passed(ok, validate_event_transition_at(fixture_simple_call(), 19))
+    ok = all_passed(ok, same_trit(validate_event_transition_at(fixture_simple_call(), 20), 0))
+
+    return ok
+
+fn validate_sign_event_transitions() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 0))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 1))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 2))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 3))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 4))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 5))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 6))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 7))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 8))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 9))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 10))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 11))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 12))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 13))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 14))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 15))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 16))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 17))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 18))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 19))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 20))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 21))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 22))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 23))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 24))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 25))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 26))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 27))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 28))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 29))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 30))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 31))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 32))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 33))
+    ok = all_passed(ok, validate_event_transition_at(fixture_sign(), 34))
+    ok = all_passed(ok, same_trit(validate_event_transition_at(fixture_sign(), 35), 0))
+
+    return ok
+
+fn validate_fixture_event_transitions(fixture: tryte) -> trit:
+    match fixture <=> fixture_first():
+        -1:
+            return 0
+
+        0:
+            return validate_first_event_transitions()
+
+        1:
+            match fixture <=> fixture_simple_call():
+                -1:
+                    return 0
+
+                0:
+                    return validate_simple_call_event_transitions()
+
+                1:
+                    match fixture <=> fixture_sign():
+                        -1:
+                            return 0
+
+                        0:
+                            return validate_sign_event_transitions()
+
+                        1:
+                            return 0
+
+fn validate_invalid_event_transition_probes() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, same_trit(is_valid_event_transition(event_emit_blank(), event_emit_blank()), 0))
+    ok = all_passed(ok, same_trit(is_valid_event_transition(event_emit_header(), event_emit_header()), 0))
+    ok = all_passed(ok, same_trit(is_valid_event_transition(event_emit_end(), event_emit_instruction()), 0))
+    ok = all_passed(ok, same_trit(is_valid_event_transition(event_emit_label(), event_emit_register()), 0))
+    ok = all_passed(ok, same_trit(is_valid_event_transition(event_emit_function(), event_emit_end()), 0))
+    ok = all_passed(ok, same_trit(is_valid_event_transition(event_emit_param(), event_emit_label()), 0))
+    ok = all_passed(ok, same_trit(is_valid_event_transition(event_unknown(), event_emit_header()), 0))
+
+    return ok
+
+fn expected_event_count(fixture: tryte) -> tryte:
+    return expected_line_count(fixture)
+
+fn expected_emit_header_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 1, 1, 1)
+
+fn expected_emit_function_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 1, 2, 2)
+
+fn expected_emit_param_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 0, 2, 1)
+
+fn expected_emit_register_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 6, 4, 9)
+
+fn expected_emit_memory_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 0, 0, 0)
+
+fn expected_emit_label_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 1, 2, 5)
+
+fn expected_emit_instruction_count(fixture: tryte) -> tryte:
+    return expected_instruction_encoding_count(fixture)
+
+fn expected_emit_end_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 1, 2, 2)
+
+fn expected_emit_blank_count(fixture: tryte) -> tryte:
+    return expected_blank_encoding_count(fixture)
+
+fn expected_event_transition_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 17, 20, 35)
+
+fn expected_fixture_event_signature(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 81, 94, 170)
+
+fn expected_fixture_payload_signature(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 80, 93, 165)
+
+fn event_score(fixture: tryte, index: tryte) -> tryte:
+    match validate_event_index(fixture, index) <=> 1:
+        -1:
+            return unknown_encoding()
+
+        0:
+            return expected_event_at(fixture, index)
+
+        1:
+            return unknown_encoding()
+
+fn payload_score(fixture: tryte, index: tryte) -> tryte:
+    match validate_event_index(fixture, index) <=> 1:
+        -1:
+            return unknown_encoding()
+
+        0:
+            return expected_payload_at(fixture, index)
+
+        1:
+            return unknown_encoding()
+
+fn modeled_fixture_event_signature(fixture: tryte) -> tryte:
+    return expected_fixture_event_signature(fixture)
+
+fn modeled_fixture_payload_signature(fixture: tryte) -> tryte:
+    return expected_fixture_payload_signature(fixture)
+
+fn total_event_count() -> tryte:
+    return expected_event_count(fixture_first()) + expected_event_count(fixture_simple_call()) + expected_event_count(fixture_sign())
+
+fn total_emit_header_count() -> tryte:
+    return expected_emit_header_count(fixture_first()) + expected_emit_header_count(fixture_simple_call()) + expected_emit_header_count(fixture_sign())
+
+fn total_emit_function_count() -> tryte:
+    return expected_emit_function_count(fixture_first()) + expected_emit_function_count(fixture_simple_call()) + expected_emit_function_count(fixture_sign())
+
+fn total_emit_param_count() -> tryte:
+    return expected_emit_param_count(fixture_first()) + expected_emit_param_count(fixture_simple_call()) + expected_emit_param_count(fixture_sign())
+
+fn total_emit_register_count() -> tryte:
+    return expected_emit_register_count(fixture_first()) + expected_emit_register_count(fixture_simple_call()) + expected_emit_register_count(fixture_sign())
+
+fn total_emit_memory_count() -> tryte:
+    return expected_emit_memory_count(fixture_first()) + expected_emit_memory_count(fixture_simple_call()) + expected_emit_memory_count(fixture_sign())
+
+fn total_emit_label_count() -> tryte:
+    return expected_emit_label_count(fixture_first()) + expected_emit_label_count(fixture_simple_call()) + expected_emit_label_count(fixture_sign())
+
+fn total_emit_instruction_count() -> tryte:
+    return expected_emit_instruction_count(fixture_first()) + expected_emit_instruction_count(fixture_simple_call()) + expected_emit_instruction_count(fixture_sign())
+
+fn total_emit_end_count() -> tryte:
+    return expected_emit_end_count(fixture_first()) + expected_emit_end_count(fixture_simple_call()) + expected_emit_end_count(fixture_sign())
+
+fn total_emit_blank_count() -> tryte:
+    return expected_emit_blank_count(fixture_first()) + expected_emit_blank_count(fixture_simple_call()) + expected_emit_blank_count(fixture_sign())
+
+fn total_event_transition_count() -> tryte:
+    return expected_event_transition_count(fixture_first()) + expected_event_transition_count(fixture_simple_call()) + expected_event_transition_count(fixture_sign())
+
+fn total_event_signature() -> tryte:
+    return modeled_fixture_event_signature(fixture_first()) + modeled_fixture_event_signature(fixture_simple_call()) + modeled_fixture_event_signature(fixture_sign())
+
+fn total_payload_signature() -> tryte:
+    return modeled_fixture_payload_signature(fixture_first()) + modeled_fixture_payload_signature(fixture_simple_call()) + modeled_fixture_payload_signature(fixture_sign())
+
+fn validate_fixture_event_counts(fixture: tryte) -> trit:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return 0
+
+        0:
+            mut ok: trit = 1
+
+            ok = all_passed(ok, same_tryte(expected_event_count(fixture), expected_line_count(fixture)))
+            ok = all_passed(ok, same_tryte(expected_emit_instruction_count(fixture), expected_instruction_encoding_count(fixture)))
+            ok = all_passed(ok, same_tryte(expected_emit_blank_count(fixture), expected_blank_encoding_count(fixture)))
+
+            return ok
+
+        1:
+            return 0
+
+fn validate_total_event_counts() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, same_tryte(total_event_count(), 75))
+    ok = all_passed(ok, same_tryte(total_emit_header_count(), 3))
+    ok = all_passed(ok, same_tryte(total_emit_function_count(), 5))
+    ok = all_passed(ok, same_tryte(total_emit_param_count(), 3))
+    ok = all_passed(ok, same_tryte(total_emit_register_count(), 19))
+    ok = all_passed(ok, same_tryte(total_emit_memory_count(), 0))
+    ok = all_passed(ok, same_tryte(total_emit_label_count(), 8))
+    ok = all_passed(ok, same_tryte(total_emit_instruction_count(), 27))
+    ok = all_passed(ok, same_tryte(total_emit_end_count(), 5))
+    ok = all_passed(ok, same_tryte(total_emit_blank_count(), 5))
+    ok = all_passed(ok, same_tryte(total_event_transition_count(), 72))
+
+    return ok
+
+fn validate_fixture_event_signature(fixture: tryte) -> trit:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return 0
+
+        0:
+            mut ok: trit = 1
+
+            ok = all_passed(ok, same_tryte(modeled_fixture_event_signature(fixture), expected_fixture_event_signature(fixture)))
+            ok = all_passed(ok, same_tryte(modeled_fixture_payload_signature(fixture), expected_fixture_payload_signature(fixture)))
+
+            return ok
+
+        1:
+            return 0
+
+fn validate_total_event_signature() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, same_tryte(total_event_signature(), 345))
+    ok = all_passed(ok, same_tryte(total_payload_signature(), 338))
+
+    return ok
+
+fn validate_event_stream_invalid_fixture_probe() -> trit:
+    return same_trit(validate_fixture_event_stream(99), 0)
+
+fn validate_event_stream_invalid_index_probe() -> trit:
+    return same_trit(validate_event_encoding(fixture_first(), 99), 0)
+
+fn validate_event_stream_unknown_event_probe() -> trit:
+    return all_passed(
+        same_trit(is_known_event(event_unknown()), 0),
+        same_trit(payload_allowed_for_event(event_unknown(), payload_directive()), 0)
+    )
+
+fn validate_event_stream_invalid_payload_probe() -> trit:
+    return all_passed(
+        same_trit(is_known_payload(99), 0),
+        same_trit(payload_allowed_for_event(event_emit_header(), payload_instruction_call()), 0)
+    )
+
+fn validate_all_fixture_event_streams() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, validate_event_encoding(fixture_first(), 0))
+    ok = all_passed(ok, validate_event_encoding(fixture_first(), 1))
+    ok = all_passed(ok, validate_event_encoding(fixture_first(), 10))
+    ok = all_passed(ok, validate_event_encoding(fixture_simple_call(), 18))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 13))
+    ok = all_passed(ok, validate_event_encoding(fixture_sign(), 33))
+    ok = all_passed(ok, validate_fixture_event_counts(fixture_first()))
+    ok = all_passed(ok, validate_fixture_event_counts(fixture_simple_call()))
+    ok = all_passed(ok, validate_fixture_event_counts(fixture_sign()))
+    ok = all_passed(ok, validate_fixture_event_signature(fixture_first()))
+    ok = all_passed(ok, validate_fixture_event_signature(fixture_simple_call()))
+    ok = all_passed(ok, validate_fixture_event_signature(fixture_sign()))
+    ok = all_passed(ok, validate_total_event_counts())
+    ok = all_passed(ok, validate_total_event_signature())
+    ok = all_passed(ok, validate_event_stream_invalid_fixture_probe())
+    ok = all_passed(ok, validate_event_stream_invalid_index_probe())
+    ok = all_passed(ok, validate_event_stream_unknown_event_probe())
+    ok = all_passed(ok, validate_event_stream_invalid_payload_probe())
+    ok = all_passed(ok, validate_invalid_event_transition_probes())
+
+    return ok
+
+fn event_stream_first_probe() -> tryte:
+    return status_from_check(validate_fixture_event_stream(fixture_first()), 1)
+
+fn event_stream_simple_call_probe() -> tryte:
+    return status_from_check(validate_fixture_event_stream(fixture_simple_call()), 1)
+
+fn event_stream_sign_probe() -> tryte:
+    return status_from_check(validate_fixture_event_stream(fixture_sign()), 1)
+
+fn event_stream_transition_probe() -> tryte:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, validate_fixture_event_transitions(fixture_first()))
+    ok = all_passed(ok, validate_fixture_event_transitions(fixture_simple_call()))
+    ok = all_passed(ok, validate_fixture_event_transitions(fixture_sign()))
+    ok = all_passed(ok, validate_invalid_event_transition_probes())
+
+    return status_from_check(ok, 1)
+
+fn event_stream_payload_probe() -> tryte:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, same_tryte(expected_payload_at(fixture_first(), 10), payload_instruction_immediate()))
+    ok = all_passed(ok, same_tryte(expected_payload_at(fixture_first(), 15), payload_instruction_registers()))
+    ok = all_passed(ok, same_tryte(expected_payload_at(fixture_simple_call(), 18), payload_instruction_call()))
+    ok = all_passed(ok, same_tryte(expected_payload_at(fixture_sign(), 13), payload_instruction_branch()))
+    ok = all_passed(ok, same_tryte(expected_payload_at(fixture_sign(), 33), payload_instruction_call()))
+    ok = all_passed(ok, validate_event_stream_invalid_payload_probe())
+
+    return status_from_check(ok, 1)
+
+fn event_stream_signature_probe() -> tryte:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, same_tryte(modeled_fixture_event_signature(fixture_first()), 81))
+    ok = all_passed(ok, same_tryte(modeled_fixture_event_signature(fixture_simple_call()), 94))
+    ok = all_passed(ok, same_tryte(modeled_fixture_event_signature(fixture_sign()), 170))
+    ok = all_passed(ok, same_tryte(total_event_signature(), 345))
+    ok = all_passed(ok, same_tryte(total_payload_signature(), 338))
+
+    return status_from_check(ok, 1)
+
+fn event_stream_totals_probe() -> tryte:
+    return status_from_check(validate_total_event_counts(), 1)
+
+fn event_stream_model_self_check() -> tryte:
+    return status_from_check(validate_all_fixture_event_streams(), 1)
+
+fn writer_state_error() -> tryte:
+    return -1
+
+fn writer_state_start() -> tryte:
+    return 0
+
+fn writer_state_after_header() -> tryte:
+    return 1
+
+fn writer_state_in_function() -> tryte:
+    return 2
+
+fn writer_state_after_label() -> tryte:
+    return 3
+
+fn writer_state_after_instruction() -> tryte:
+    return 4
+
+fn writer_state_after_end() -> tryte:
+    return 5
+
+fn writer_state_after_blank() -> tryte:
+    return 6
+
+fn writer_state_done() -> tryte:
+    return 7
+
+fn is_known_writer_state(state: tryte) -> trit:
+    return in_range(state, writer_state_start(), writer_state_done())
+
+fn is_writer_declaration_event(event: tryte) -> trit:
+    return any_passed(
+        same_tryte(event, event_emit_param()),
+        any_passed(
+            same_tryte(event, event_emit_register()),
+            same_tryte(event, event_emit_memory())
+        )
+    )
+
+fn next_writer_state_from_in_function(event: tryte) -> tryte:
+    match is_writer_declaration_event(event) <=> 1:
+        -1:
+            match same_tryte(event, event_emit_label()) <=> 1:
+                -1:
+                    return writer_state_error()
+
+                0:
+                    return writer_state_after_label()
+
+                1:
+                    return writer_state_error()
+
+        0:
+            return writer_state_in_function()
+
+        1:
+            return writer_state_error()
+
+fn next_writer_state_from_after_instruction(event: tryte) -> tryte:
+    match same_tryte(event, event_emit_instruction()) <=> 1:
+        -1:
+            match same_tryte(event, event_emit_label()) <=> 1:
+                -1:
+                    match same_tryte(event, event_emit_end()) <=> 1:
+                        -1:
+                            return writer_state_error()
+
+                        0:
+                            return writer_state_after_end()
+
+                        1:
+                            return writer_state_error()
+
+                0:
+                    return writer_state_after_label()
+
+                1:
+                    return writer_state_error()
+
+        0:
+            return writer_state_after_instruction()
+
+        1:
+            return writer_state_error()
+
+fn next_writer_state(state: tryte, event: tryte) -> tryte:
+    match is_known_writer_state(state) <=> 1:
+        -1:
+            return writer_state_error()
+
+        0:
+            match is_known_event(event) <=> 1:
+                -1:
+                    return writer_state_error()
+
+                0:
+                    match same_tryte(state, writer_state_start()) <=> 1:
+                        -1:
+                            match same_tryte(state, writer_state_after_header()) <=> 1:
+                                -1:
+                                    match same_tryte(state, writer_state_after_blank()) <=> 1:
+                                        -1:
+                                            match same_tryte(state, writer_state_in_function()) <=> 1:
+                                                -1:
+                                                    match same_tryte(state, writer_state_after_label()) <=> 1:
+                                                        -1:
+                                                            match same_tryte(state, writer_state_after_instruction()) <=> 1:
+                                                                -1:
+                                                                    match same_tryte(state, writer_state_after_end()) <=> 1:
+                                                                        -1:
+                                                                            return writer_state_error()
+
+                                                                        0:
+                                                                            match same_tryte(event, event_emit_blank()) <=> 1:
+                                                                                -1:
+                                                                                    return writer_state_error()
+
+                                                                                0:
+                                                                                    return writer_state_after_blank()
+
+                                                                                1:
+                                                                                    return writer_state_error()
+
+                                                                        1:
+                                                                            return writer_state_error()
+
+                                                                0:
+                                                                    return next_writer_state_from_after_instruction(event)
+
+                                                                1:
+                                                                    return writer_state_error()
+
+                                                        0:
+                                                            match same_tryte(event, event_emit_instruction()) <=> 1:
+                                                                -1:
+                                                                    return writer_state_error()
+
+                                                                0:
+                                                                    return writer_state_after_instruction()
+
+                                                                1:
+                                                                    return writer_state_error()
+
+                                                        1:
+                                                            return writer_state_error()
+
+                                                0:
+                                                    return next_writer_state_from_in_function(event)
+
+                                                1:
+                                                    return writer_state_error()
+
+                                        0:
+                                            match same_tryte(event, event_emit_function()) <=> 1:
+                                                -1:
+                                                    return writer_state_error()
+
+                                                0:
+                                                    return writer_state_in_function()
+
+                                                1:
+                                                    return writer_state_error()
+
+                                        1:
+                                            return writer_state_error()
+
+                                0:
+                                    match same_tryte(event, event_emit_blank()) <=> 1:
+                                        -1:
+                                            return writer_state_error()
+
+                                        0:
+                                            return writer_state_after_blank()
+
+                                        1:
+                                            return writer_state_error()
+
+                                1:
+                                    return writer_state_error()
+
+                        0:
+                            match same_tryte(event, event_emit_header()) <=> 1:
+                                -1:
+                                    return writer_state_error()
+
+                                0:
+                                    return writer_state_after_header()
+
+                                1:
+                                    return writer_state_error()
+
+                        1:
+                            return writer_state_error()
+
+                1:
+                    return writer_state_error()
+
+        1:
+            return writer_state_error()
+
+fn is_valid_writer_transition(state: tryte, event: tryte) -> trit:
+    return is_known_writer_state(next_writer_state(state, event))
+
+fn finalize_writer_state(state: tryte) -> tryte:
+    match same_tryte(state, writer_state_after_end()) <=> 1:
+        -1:
+            return writer_state_error()
+
+        0:
+            return writer_state_done()
+
+        1:
+            return writer_state_error()
+
+fn writer_event_score(state: tryte, event: tryte) -> tryte:
+    match is_valid_writer_transition(state, event) <=> 1:
+        -1:
+            return unknown_encoding()
+
+        0:
+            return state + event + next_writer_state(state, event)
+
+        1:
+            return unknown_encoding()
+
+fn expected_first_writer_state_before_at(index: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            return writer_state_error()
+
+        0:
+            return writer_state_start()
+
+        1:
+            match index <=> 1:
+                -1:
+                    return writer_state_error()
+
+                0:
+                    return writer_state_after_header()
+
+                1:
+                    match index <=> 2:
+                        -1:
+                            return writer_state_error()
+
+                        0:
+                            return writer_state_after_blank()
+
+                        1:
+                            match in_range(index, 3, 9) <=> 1:
+                                -1:
+                                    match index <=> 10:
+                                        -1:
+                                            return writer_state_error()
+
+                                        0:
+                                            return writer_state_after_label()
+
+                                        1:
+                                            match in_range(index, 11, 17) <=> 1:
+                                                -1:
+                                                    return writer_state_error()
+
+                                                0:
+                                                    return writer_state_after_instruction()
+
+                                                1:
+                                                    return writer_state_error()
+
+                                0:
+                                    return writer_state_in_function()
+
+                                1:
+                                    return writer_state_error()
+
+fn expected_simple_call_writer_state_before_at(index: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            return writer_state_error()
+
+        0:
+            return writer_state_start()
+
+        1:
+            match index <=> 1:
+                -1:
+                    return writer_state_error()
+
+                0:
+                    return writer_state_after_header()
+
+                1:
+                    match index <=> 2:
+                        -1:
+                            return writer_state_error()
+
+                        0:
+                            return writer_state_after_blank()
+
+                        1:
+                            match in_range(index, 3, 6) <=> 1:
+                                -1:
+                                    match index <=> 7:
+                                        -1:
+                                            return writer_state_error()
+
+                                        0:
+                                            return writer_state_after_label()
+
+                                        1:
+                                            match in_range(index, 8, 9) <=> 1:
+                                                -1:
+                                                    match index <=> 10:
+                                                        -1:
+                                                            return writer_state_error()
+
+                                                        0:
+                                                            return writer_state_after_end()
+
+                                                        1:
+                                                            match index <=> 11:
+                                                                -1:
+                                                                    return writer_state_error()
+
+                                                                0:
+                                                                    return writer_state_after_blank()
+
+                                                                1:
+                                                                    match in_range(index, 12, 15) <=> 1:
+                                                                        -1:
+                                                                            match index <=> 16:
+                                                                                -1:
+                                                                                    return writer_state_error()
+
+                                                                                0:
+                                                                                    return writer_state_after_label()
+
+                                                                                1:
+                                                                                    match in_range(index, 17, 20) <=> 1:
+                                                                                        -1:
+                                                                                            return writer_state_error()
+
+                                                                                        0:
+                                                                                            return writer_state_after_instruction()
+
+                                                                                        1:
+                                                                                            return writer_state_error()
+
+                                                                        0:
+                                                                            return writer_state_in_function()
+
+                                                                        1:
+                                                                            return writer_state_error()
+
+                                                0:
+                                                    return writer_state_after_instruction()
+
+                                                1:
+                                                    return writer_state_error()
+
+                                0:
+                                    return writer_state_in_function()
+
+                                1:
+                                    return writer_state_error()
+
+fn expected_sign_writer_state_before_at(index: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            return writer_state_error()
+
+        0:
+            return writer_state_start()
+
+        1:
+            match index <=> 1:
+                -1:
+                    return writer_state_error()
+
+                0:
+                    return writer_state_after_header()
+
+                1:
+                    match index <=> 2:
+                        -1:
+                            return writer_state_error()
+
+                        0:
+                            return writer_state_after_blank()
+
+                        1:
+                            match in_range(index, 3, 10) <=> 1:
+                                -1:
+                                    match index <=> 11:
+                                        -1:
+                                            return writer_state_error()
+
+                                        0:
+                                            return writer_state_after_label()
+
+                                        1:
+                                            match in_range(index, 12, 14) <=> 1:
+                                                -1:
+                                                    match index <=> 15:
+                                                        -1:
+                                                            return writer_state_error()
+
+                                                        0:
+                                                            return writer_state_after_label()
+
+                                                        1:
+                                                            match in_range(index, 16, 18) <=> 1:
+                                                                -1:
+                                                                    match index <=> 19:
+                                                                        -1:
+                                                                            return writer_state_error()
+
+                                                                        0:
+                                                                            return writer_state_after_label()
+
+                                                                        1:
+                                                                            match in_range(index, 20, 21) <=> 1:
+                                                                                -1:
+                                                                                    match index <=> 22:
+                                                                                        -1:
+                                                                                            return writer_state_error()
+
+                                                                                        0:
+                                                                                            return writer_state_after_label()
+
+                                                                                        1:
+                                                                                            match in_range(index, 23, 24) <=> 1:
+                                                                                                -1:
+                                                                                                    match index <=> 25:
+                                                                                                        -1:
+                                                                                                            return writer_state_error()
+
+                                                                                                        0:
+                                                                                                            return writer_state_after_end()
+
+                                                                                                        1:
+                                                                                                            match index <=> 26:
+                                                                                                                -1:
+                                                                                                                    return writer_state_error()
+
+                                                                                                                0:
+                                                                                                                    return writer_state_after_blank()
+
+                                                                                                                1:
+                                                                                                                    match in_range(index, 27, 30) <=> 1:
+                                                                                                                        -1:
+                                                                                                                            match index <=> 31:
+                                                                                                                                -1:
+                                                                                                                                    return writer_state_error()
+
+                                                                                                                                0:
+                                                                                                                                    return writer_state_after_label()
+
+                                                                                                                                1:
+                                                                                                                                    match in_range(index, 32, 35) <=> 1:
+                                                                                                                                        -1:
+                                                                                                                                            return writer_state_error()
+
+                                                                                                                                        0:
+                                                                                                                                            return writer_state_after_instruction()
+
+                                                                                                                                        1:
+                                                                                                                                            return writer_state_error()
+
+                                                                                                                        0:
+                                                                                                                            return writer_state_in_function()
+
+                                                                                                                        1:
+                                                                                                                            return writer_state_error()
+
+                                                                                                0:
+                                                                                                    return writer_state_after_instruction()
+
+                                                                                                1:
+                                                                                                    return writer_state_error()
+
+                                                                                0:
+                                                                                    return writer_state_after_instruction()
+
+                                                                                1:
+                                                                                    return writer_state_error()
+
+                                                                0:
+                                                                    return writer_state_after_instruction()
+
+                                                                1:
+                                                                    return writer_state_error()
+
+                                                0:
+                                                    return writer_state_after_instruction()
+
+                                                1:
+                                                    return writer_state_error()
+
+                                0:
+                                    return writer_state_in_function()
+
+                                1:
+                                    return writer_state_error()
+
+fn expected_writer_state_before_at(fixture: tryte, index: tryte) -> tryte:
+    match fixture <=> fixture_first():
+        -1:
+            return writer_state_error()
+
+        0:
+            return expected_first_writer_state_before_at(index)
+
+        1:
+            match fixture <=> fixture_simple_call():
+                -1:
+                    return writer_state_error()
+
+                0:
+                    return expected_simple_call_writer_state_before_at(index)
+
+                1:
+                    match fixture <=> fixture_sign():
+                        -1:
+                            return writer_state_error()
+
+                        0:
+                            return expected_sign_writer_state_before_at(index)
+
+                        1:
+                            return writer_state_error()
+
+fn expected_writer_state_after_at(fixture: tryte, index: tryte) -> tryte:
+    match validate_writer_index(fixture, index) <=> 1:
+        -1:
+            return writer_state_error()
+
+        0:
+            return next_writer_state(
+                expected_writer_state_before_at(fixture, index),
+                expected_event_at(fixture, index)
+            )
+
+        1:
+            return writer_state_error()
+
+fn expected_final_state(fixture: tryte) -> tryte:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return writer_state_error()
+
+        0:
+            return writer_state_done()
+
+        1:
+            return writer_state_error()
+
+fn expected_line_advance_count(fixture: tryte) -> tryte:
+    return expected_line_count(fixture)
+
+fn expected_directive_event_count(fixture: tryte) -> tryte:
+    return expected_directive_encoding_count(fixture)
+
+fn expected_instruction_event_count(fixture: tryte) -> tryte:
+    return expected_emit_instruction_count(fixture)
+
+fn expected_blank_event_count(fixture: tryte) -> tryte:
+    return expected_emit_blank_count(fixture)
+
+fn expected_function_event_count(fixture: tryte) -> tryte:
+    return expected_emit_function_count(fixture)
+
+fn expected_end_event_count(fixture: tryte) -> tryte:
+    return expected_emit_end_count(fixture)
+
+fn expected_open_function_count(fixture: tryte) -> tryte:
+    return expected_function_event_count(fixture)
+
+fn expected_closed_function_count(fixture: tryte) -> tryte:
+    return expected_end_event_count(fixture)
+
+fn expected_open_function_balance(fixture: tryte) -> tryte:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return unknown_encoding()
+
+        0:
+            return expected_open_function_count(fixture) - expected_closed_function_count(fixture)
+
+        1:
+            return unknown_encoding()
+
+fn expected_last_event(fixture: tryte) -> tryte:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return event_unknown()
+
+        0:
+            return event_emit_end()
+
+        1:
+            return event_unknown()
+
+fn expected_writer_signature(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 70, 81, 126)
+
+fn modeled_fixture_writer_signature(fixture: tryte) -> tryte:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return unknown_encoding()
+
+        0:
+            return expected_final_state(fixture) + expected_line_advance_count(fixture) + expected_event_count(fixture) + expected_directive_event_count(fixture) + expected_instruction_event_count(fixture) + expected_blank_event_count(fixture) + expected_function_event_count(fixture) + expected_end_event_count(fixture) + expected_last_event(fixture) + expected_open_function_balance(fixture)
+
+        1:
+            return unknown_encoding()
+
+fn total_line_advance_count() -> tryte:
+    return expected_line_advance_count(fixture_first()) + expected_line_advance_count(fixture_simple_call()) + expected_line_advance_count(fixture_sign())
+
+fn total_directive_event_count() -> tryte:
+    return expected_directive_event_count(fixture_first()) + expected_directive_event_count(fixture_simple_call()) + expected_directive_event_count(fixture_sign())
+
+fn total_instruction_event_count() -> tryte:
+    return expected_instruction_event_count(fixture_first()) + expected_instruction_event_count(fixture_simple_call()) + expected_instruction_event_count(fixture_sign())
+
+fn total_blank_event_count() -> tryte:
+    return expected_blank_event_count(fixture_first()) + expected_blank_event_count(fixture_simple_call()) + expected_blank_event_count(fixture_sign())
+
+fn total_function_event_count() -> tryte:
+    return expected_function_event_count(fixture_first()) + expected_function_event_count(fixture_simple_call()) + expected_function_event_count(fixture_sign())
+
+fn total_end_event_count() -> tryte:
+    return expected_end_event_count(fixture_first()) + expected_end_event_count(fixture_simple_call()) + expected_end_event_count(fixture_sign())
+
+fn total_writer_signature() -> tryte:
+    return modeled_fixture_writer_signature(fixture_first()) + modeled_fixture_writer_signature(fixture_simple_call()) + modeled_fixture_writer_signature(fixture_sign())
+
+fn first_writer_final_state() -> tryte:
+    return modeled_final_state(fixture_first())
+
+fn simple_call_writer_final_state() -> tryte:
+    return modeled_final_state(fixture_simple_call())
+
+fn sign_writer_final_state() -> tryte:
+    return modeled_final_state(fixture_sign())
+
+fn first_writer_signature() -> tryte:
+    return modeled_fixture_writer_signature(fixture_first())
+
+fn simple_call_writer_signature() -> tryte:
+    return modeled_fixture_writer_signature(fixture_simple_call())
+
+fn sign_writer_signature() -> tryte:
+    return modeled_fixture_writer_signature(fixture_sign())
+
+fn validate_writer_index(fixture: tryte, index: tryte) -> trit:
+    return all_passed(
+        is_known_fixture(fixture),
+        is_valid_index(index, expected_line_count(fixture))
+    )
+
+fn validate_writer_step(fixture: tryte, index: tryte) -> trit:
+    match validate_writer_index(fixture, index) <=> 1:
+        -1:
+            return 0
+
+        0:
+            mut state: tryte = expected_writer_state_before_at(fixture, index)
+            mut event: tryte = expected_event_at(fixture, index)
+            mut next: tryte = expected_writer_state_after_at(fixture, index)
+            mut ok: trit = 1
+
+            ok = all_passed(ok, is_known_writer_state(state))
+            ok = all_passed(ok, is_known_event(event))
+            ok = all_passed(ok, is_valid_writer_transition(state, event))
+            ok = all_passed(ok, same_tryte(next_writer_state(state, event), next))
+            ok = all_passed(ok, same_tryte(1, 1))
+
+            return ok
+
+        1:
+            return 0
+
+fn validate_writer_continuity_at(fixture: tryte, index: tryte) -> trit:
+    match is_valid_index(index, expected_line_count(fixture) - 1) <=> 1:
+        -1:
+            return 0
+
+        0:
+            return same_tryte(
+                expected_writer_state_after_at(fixture, index),
+                expected_writer_state_before_at(fixture, index + 1)
+            )
+
+        1:
+            return 0
+
+fn validate_writer_step_range(fixture: tryte, index: tryte, last: tryte) -> trit:
+    match index <=> last:
+        -1:
+            return all_passed(
+                validate_writer_step(fixture, index),
+                validate_writer_step_range(fixture, index + 1, last)
+            )
+
+        0:
+            return validate_writer_step(fixture, index)
+
+        1:
+            return 0
+
+fn validate_writer_continuity_range(fixture: tryte, index: tryte, last: tryte) -> trit:
+    match index <=> last:
+        -1:
+            return all_passed(
+                validate_writer_continuity_at(fixture, index),
+                validate_writer_continuity_range(fixture, index + 1, last)
+            )
+
+        0:
+            return validate_writer_continuity_at(fixture, index)
+
+        1:
+            return 0
+
+fn modeled_final_state(fixture: tryte) -> tryte:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return writer_state_error()
+
+        0:
+            return finalize_writer_state(
+                expected_writer_state_after_at(fixture, expected_line_count(fixture) - 1)
+            )
+
+        1:
+            return writer_state_error()
+
+fn validate_fixture_writer_states(fixture: tryte) -> trit:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return 0
+
+        0:
+            mut ok: trit = 1
+
+            ok = all_passed(ok, validate_writer_step_range(fixture, 0, expected_line_count(fixture) - 1))
+            ok = all_passed(ok, validate_writer_continuity_range(fixture, 0, expected_line_count(fixture) - 2))
+            ok = all_passed(ok, same_tryte(modeled_final_state(fixture), expected_final_state(fixture)))
+            ok = all_passed(ok, same_tryte(expected_last_event(fixture), expected_event_at(fixture, expected_line_count(fixture) - 1)))
+
+            return ok
+
+        1:
+            return 0
+
+fn validate_fixture_writer_counts(fixture: tryte) -> trit:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return 0
+
+        0:
+            mut ok: trit = 1
+
+            ok = all_passed(ok, same_tryte(expected_event_count(fixture), expected_line_count(fixture)))
+            ok = all_passed(ok, same_tryte(expected_line_advance_count(fixture), expected_event_count(fixture)))
+            ok = all_passed(ok, same_tryte(expected_directive_event_count(fixture), expected_emit_header_count(fixture) + expected_emit_function_count(fixture) + expected_emit_param_count(fixture) + expected_emit_register_count(fixture) + expected_emit_memory_count(fixture) + expected_emit_label_count(fixture) + expected_emit_end_count(fixture)))
+            ok = all_passed(ok, same_tryte(expected_instruction_event_count(fixture), expected_emit_instruction_count(fixture)))
+            ok = all_passed(ok, same_tryte(expected_blank_event_count(fixture), expected_emit_blank_count(fixture)))
+            ok = all_passed(ok, same_tryte(expected_open_function_count(fixture), expected_closed_function_count(fixture)))
+            ok = all_passed(ok, same_tryte(expected_open_function_balance(fixture), 0))
+
+            return ok
+
+        1:
+            return 0
+
+fn validate_total_writer_counts() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, same_tryte(total_line_advance_count(), 75))
+    ok = all_passed(ok, same_tryte(total_directive_event_count(), 43))
+    ok = all_passed(ok, same_tryte(total_instruction_event_count(), 27))
+    ok = all_passed(ok, same_tryte(total_blank_event_count(), 5))
+    ok = all_passed(ok, same_tryte(total_function_event_count(), 5))
+    ok = all_passed(ok, same_tryte(total_end_event_count(), 5))
+
+    return ok
+
+fn validate_fixture_writer_signature(fixture: tryte) -> trit:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return 0
+
+        0:
+            return same_tryte(modeled_fixture_writer_signature(fixture), expected_writer_signature(fixture))
+
+        1:
+            return 0
+
+fn validate_total_writer_signature() -> trit:
+    return same_tryte(total_writer_signature(), 277)
+
+fn validate_invalid_fixture_probe() -> trit:
+    return all_passed(
+        same_trit(validate_fixture_writer_states(99), 0),
+        same_trit(validate_fixture_writer_counts(99), 0)
+    )
+
+fn validate_invalid_index_probe() -> trit:
+    return all_passed(
+        same_trit(validate_writer_step(fixture_first(), 99), 0),
+        same_trit(validate_writer_continuity_at(fixture_first(), 17), 0)
+    )
+
+fn validate_unknown_event_probe() -> trit:
+    return all_passed(
+        same_trit(is_known_event(event_unknown()), 0),
+        same_trit(is_valid_writer_transition(writer_state_start(), event_unknown()), 0)
+    )
+
+fn validate_unknown_state_probe() -> trit:
+    return all_passed(
+        same_trit(is_known_writer_state(writer_state_error()), 0),
+        same_trit(is_valid_writer_transition(writer_state_error(), event_emit_header()), 0)
+    )
+
+fn validate_invalid_writer_transition_probe() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, same_trit(is_valid_writer_transition(writer_state_start(), event_emit_instruction()), 0))
+    ok = all_passed(ok, same_trit(is_valid_writer_transition(writer_state_after_header(), event_emit_function()), 0))
+    ok = all_passed(ok, same_trit(is_valid_writer_transition(writer_state_in_function(), event_emit_end()), 0))
+    ok = all_passed(ok, same_trit(is_valid_writer_transition(writer_state_after_label(), event_emit_register()), 0))
+    ok = all_passed(ok, same_trit(is_valid_writer_transition(writer_state_after_end(), event_emit_instruction()), 0))
+    ok = all_passed(ok, same_trit(is_valid_writer_transition(writer_state_done(), event_emit_blank()), 0))
+
+    return ok
+
+fn validate_all_fixture_writer_models() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, validate_writer_step(fixture_first(), 0))
+    ok = all_passed(ok, validate_writer_step(fixture_first(), 1))
+    ok = all_passed(ok, validate_writer_step(fixture_first(), 10))
+    ok = all_passed(ok, validate_writer_step(fixture_simple_call(), 10))
+    ok = all_passed(ok, validate_writer_step(fixture_simple_call(), 18))
+    ok = all_passed(ok, validate_writer_step(fixture_sign(), 14))
+    ok = all_passed(ok, validate_writer_step(fixture_sign(), 25))
+    ok = all_passed(ok, validate_writer_step(fixture_sign(), 33))
+    ok = all_passed(ok, validate_writer_continuity_at(fixture_first(), 1))
+    ok = all_passed(ok, validate_writer_continuity_at(fixture_simple_call(), 10))
+    ok = all_passed(ok, validate_writer_continuity_at(fixture_sign(), 25))
+    ok = all_passed(ok, validate_fixture_writer_counts(fixture_first()))
+    ok = all_passed(ok, validate_fixture_writer_counts(fixture_simple_call()))
+    ok = all_passed(ok, validate_fixture_writer_counts(fixture_sign()))
+    ok = all_passed(ok, validate_fixture_writer_signature(fixture_first()))
+    ok = all_passed(ok, validate_fixture_writer_signature(fixture_simple_call()))
+    ok = all_passed(ok, validate_fixture_writer_signature(fixture_sign()))
+    ok = all_passed(ok, validate_total_writer_counts())
+    ok = all_passed(ok, validate_total_writer_signature())
+    ok = all_passed(ok, validate_invalid_fixture_probe())
+    ok = all_passed(ok, validate_invalid_index_probe())
+    ok = all_passed(ok, validate_unknown_event_probe())
+    ok = all_passed(ok, validate_unknown_state_probe())
+    ok = all_passed(ok, validate_invalid_writer_transition_probe())
+
+    return ok
+
+fn event_writer_first_probe() -> tryte:
+    return status_from_check(validate_fixture_writer_states(fixture_first()), 1)
+
+fn event_writer_simple_call_probe() -> tryte:
+    return status_from_check(validate_fixture_writer_states(fixture_simple_call()), 1)
+
+fn event_writer_sign_probe() -> tryte:
+    return status_from_check(validate_fixture_writer_states(fixture_sign()), 1)
+
+fn event_writer_counts_probe() -> tryte:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, validate_fixture_writer_counts(fixture_first()))
+    ok = all_passed(ok, validate_fixture_writer_counts(fixture_simple_call()))
+    ok = all_passed(ok, validate_fixture_writer_counts(fixture_sign()))
+    ok = all_passed(ok, validate_total_writer_counts())
+
+    return status_from_check(ok, 1)
+
+fn event_writer_signature_probe() -> tryte:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, same_tryte(modeled_fixture_writer_signature(fixture_first()), 70))
+    ok = all_passed(ok, same_tryte(modeled_fixture_writer_signature(fixture_simple_call()), 81))
+    ok = all_passed(ok, same_tryte(modeled_fixture_writer_signature(fixture_sign()), 126))
+    ok = all_passed(ok, same_tryte(total_writer_signature(), 277))
+
+    return status_from_check(ok, 1)
+
+fn event_writer_transition_probe() -> tryte:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, same_tryte(writer_event_score(writer_state_start(), event_emit_header()), 1))
+    ok = all_passed(ok, same_tryte(writer_event_score(writer_state_after_header(), event_emit_blank()), 15))
+    ok = all_passed(ok, same_tryte(writer_event_score(writer_state_in_function(), event_emit_register()), 7))
+    ok = all_passed(ok, same_tryte(writer_event_score(writer_state_after_instruction(), event_emit_end()), 16))
+    ok = all_passed(ok, validate_invalid_writer_transition_probe())
+
+    return status_from_check(ok, 1)
+
+fn event_writer_model_self_check() -> tryte:
+    return status_from_check(validate_all_fixture_writer_models(), 1)
+
+fn line_content_encoding_model_self_check() -> tryte:
+    return status_from_check(validate_all_fixture_line_encodings(), 1)
+
+fn main() -> tryte:
+    return event_writer_model_self_check()
