@@ -26,6 +26,7 @@ Current checked programs:
 - `examples/self_hosting/assembly_renderer_output_model.s3`
 - `examples/self_hosting/assembly_renderer_text_segments.s3`
 - `examples/self_hosting/assembly_renderer_line_blueprints.s3`
+- `examples/self_hosting/assembly_renderer_line_sequences.s3`
 
 Conceptual gap examples under `examples/gaps/` are intentionally excluded
 because they may contain pseudocode and are not part of the compile-check
@@ -80,6 +81,14 @@ through the hosted path. The model assigns one primary scalar numeric blueprint
 to each current Assembly output line for `first`, `simple_call`, and `sign`,
 including an instruction-with-source variant for source metadata, without using
 runtime strings or arrays.
+
+S3 0.24 adds the executable renderer line sequence model at
+`examples/self_hosting/assembly_renderer_line_sequences.s3`. It is registered
+with `hosted expected return: 0`, so the program check compiles and executes it
+through the hosted path. The model records ordered scalar blueprint IDs for the
+same fixtures and validates expected IDs by index, valid and invalid blueprint
+transitions, function boundaries, fixture totals, and a small deterministic
+signature without using runtime strings or arrays.
 
 The same stub is also included in golden inspect coverage as
 `assembly_renderer_stub`, which records its current IR and Assembly outputs

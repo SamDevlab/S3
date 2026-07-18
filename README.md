@@ -238,11 +238,17 @@ S3 0.23 está fechado após adicionar
 model S3 executável que associa cada linha Assembly atual a um blueprint
 numérico primário, incluindo a variante de instrução com `source=`, ainda sem
 strings runtime, arrays ou emissão textual completa.
+S3 0.24 está fechado após adicionar
+`examples/self_hosting/assembly_renderer_line_sequences.s3`, um line sequence
+model S3 executável que registra IDs de blueprint em ordem para os fixtures
+atuais e valida transições, limites de função, totais e uma assinatura
+determinística, ainda sem strings runtime, arrays ou emissão textual completa.
 `python tools/compare_assembly_renderer.py --candidate-compare-available` é o
 modo correto para validar esses outputs disponíveis.
 `python tools/compare_assembly_renderer.py --candidate-run` também valida o
-bootstrap spike, o output model, o text segment model e o line blueprint model,
-e reporta que renderer implementation/full text rendering continuam
+bootstrap spike, o output model, o text segment model, o line blueprint model e
+o line sequence model, e reporta que renderer implementation/full text
+rendering continuam
 `not_implemented`.
 `python tools/compare_assembly_renderer.py --check` continua bloqueado com
 status 1 porque o renderer S3 real ainda não está implementado; isso evita

@@ -61,6 +61,11 @@ EXPECTED_LINE_BLUEPRINT_MODEL_PATH = (
 )
 EXPECTED_LINE_BLUEPRINT_MODEL_ENTRYPOINT = "main"
 EXPECTED_LINE_BLUEPRINT_MODEL_RETURN = 0
+EXPECTED_LINE_SEQUENCE_MODEL_PATH = (
+    "examples/self_hosting/assembly_renderer_line_sequences.s3"
+)
+EXPECTED_LINE_SEQUENCE_MODEL_ENTRYPOINT = "main"
+EXPECTED_LINE_SEQUENCE_MODEL_RETURN = 0
 EXPECTED_DIRECTIVE_COUNT_FUNCTION = "renderer_supported_directive_count"
 EXPECTED_OPCODE_COUNT_FUNCTION = "renderer_supported_opcode_count"
 EXPECTED_DIRECTIVE_FIRST_FUNCTION = "renderer_first_directive_id"
@@ -245,6 +250,15 @@ class TextSegmentModelExecution:
 
 @dataclass(frozen=True, slots=True)
 class LineBlueprintModelExecution:
+    path: str
+    entrypoint: str
+    expected_return: int
+    actual_return: int
+    covered_by_s3_program_check: bool
+
+
+@dataclass(frozen=True, slots=True)
+class LineSequenceModelExecution:
     path: str
     entrypoint: str
     expected_return: int
@@ -1451,6 +1465,28 @@ def run_line_blueprint_model() -> LineBlueprintModelExecution:
     )
 
 
+def run_line_sequence_model() -> LineSequenceModelExecution:
+    inventory_program = find_program(EXPECTED_LINE_SEQUENCE_MODEL_PATH)
+    if inventory_program is None:
+        raise ValueError(
+            "line sequence model missing from s3_program_check inventory"
+        )
+    if inventory_program.hosted_expected_return != EXPECTED_LINE_SEQUENCE_MODEL_RETURN:
+        raise ValueError("line sequence model hosted expected return must be 0")
+
+    actual_return = run_hosted_check(
+        inventory_program,
+        entry=EXPECTED_LINE_SEQUENCE_MODEL_ENTRYPOINT,
+    )
+    return LineSequenceModelExecution(
+        path=EXPECTED_LINE_SEQUENCE_MODEL_PATH,
+        entrypoint=EXPECTED_LINE_SEQUENCE_MODEL_ENTRYPOINT,
+        expected_return=EXPECTED_LINE_SEQUENCE_MODEL_RETURN,
+        actual_return=actual_return,
+        covered_by_s3_program_check=True,
+    )
+
+
 def render_reference_status(fixtures: tuple[ReferenceFixture, ...]) -> str:
     lines = [
         "S3 Assembly renderer Python reference",
@@ -1470,6 +1506,7 @@ def render_candidate_execution(
     output_model: OutputModelExecution,
     text_segment_model: TextSegmentModelExecution,
     line_blueprint_model: LineBlueprintModelExecution,
+    line_sequence_model: LineSequenceModelExecution,
 ) -> str:
     status = (
         candidate.execution_meaning
@@ -1507,6 +1544,15 @@ def render_candidate_execution(
     )
     line_blueprint_model_coverage = (
         "yes" if line_blueprint_model.covered_by_s3_program_check else "no"
+    )
+    line_sequence_model_passed = (
+        line_sequence_model.actual_return == line_sequence_model.expected_return
+    )
+    line_sequence_model_status = (
+        "passed" if line_sequence_model_passed else "failed"
+    )
+    line_sequence_model_coverage = (
+        "yes" if line_sequence_model.covered_by_s3_program_check else "no"
     )
     lines = [
         "S3 Assembly renderer candidate execution",
@@ -1546,6 +1592,13 @@ def render_candidate_execution(
         f"expected return: {line_blueprint_model.expected_return}",
         f"actual return: {line_blueprint_model.actual_return}",
         f"covered by s3_program_check: {line_blueprint_model_coverage}",
+        "",
+        f"s3 line sequence model: {line_sequence_model_status}",
+        f"program: {line_sequence_model.path}",
+        f"entrypoint: {line_sequence_model.entrypoint}",
+        f"expected return: {line_sequence_model.expected_return}",
+        f"actual return: {line_sequence_model.actual_return}",
+        f"covered by s3_program_check: {line_sequence_model_coverage}",
         "renderer implementation: not_implemented",
         "full text rendering: not_implemented",
     ]
@@ -1565,6 +1618,7 @@ def status() -> int:
     print("s3 renderer output model: available")
     print("s3 renderer text segment model: available")
     print("s3 renderer line blueprint model: available")
+    print("s3 renderer line sequence model: available")
     print("s3 renderer implementation: not implemented")
     print("string literals: front-end only, runtime not implemented")
     print("status: blocked")
@@ -1714,6 +1768,7 @@ def candidate_run() -> int:
         output_model = run_output_model()
         text_segment_model = run_text_segment_model()
         line_blueprint_model = run_line_blueprint_model()
+        line_sequence_model = run_line_sequence_model()
     except (OSError, ValueError) as error:
         print("S3 Assembly renderer candidate execution")
         print()
@@ -1735,6 +1790,7 @@ def candidate_run() -> int:
             output_model,
             text_segment_model,
             line_blueprint_model,
+            line_sequence_model,
         ),
         end="",
     )
@@ -1747,6 +1803,8 @@ def candidate_run() -> int:
     if text_segment_model.actual_return != text_segment_model.expected_return:
         return 1
     if line_blueprint_model.actual_return != line_blueprint_model.expected_return:
+        return 1
+    if line_sequence_model.actual_return != line_sequence_model.expected_return:
         return 1
     return 0
 
