@@ -291,6 +291,13 @@ probes for `first`, `simple_call`, and `sign`. There are now ten executable S3
 renderer bootstrap artifacts, and `python tools/compare_assembly_renderer.py
 --candidate-run` validates all of them while renderer implementation and full
 text rendering remain `not_implemented`.
+S3 0.30 adds `examples/self_hosting/assembly_renderer_text_builder.s3`, an
+executable numeric text builder command model after the renderer pipeline and
+output buffer. It validates commands, states, logical byte counts, line and
+write counters, transitions, and deterministic signatures for all fixtures.
+There are now eleven executable S3 renderer bootstrap artifacts; `--candidate-run`
+validates all of them while textual rendering remains `not_implemented` and
+`compare --check` remains blocked.
 `python tools/compare_assembly_renderer.py --check` continua bloqueado com
 status 1 porque o renderer S3 real ainda não está implementado; isso evita
 falso positivo de sucesso global.

@@ -91,6 +91,11 @@ stage order, counts, final writer and buffer states, cursors, capacities,
 signatures, and negative probes without runtime strings, arrays, or text
 emission; see `docs/roadmap-0.29.md`. The full textual renderer remains
 unimplemented and `compare --check` remains blocked.
+S3 0.30 adds `examples/self_hosting/assembly_renderer_text_builder.s3`, an
+executable scalar command model from output-buffer concepts to text-builder
+commands and final builder state. It validates command order, line and write
+counters, logical byte pairs, transitions, negative probes, and signatures
+without runtime strings, arrays, or text emission; see `docs/roadmap-0.30.md`.
 
 Recent tools make this pipeline more observable:
 

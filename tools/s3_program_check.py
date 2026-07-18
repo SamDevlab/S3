@@ -102,6 +102,14 @@ PROGRAMS = (
         "Assembly renderer pipeline model",
         hosted_expected_return=0,
     ),
+    S3Program(
+        REPO_ROOT
+        / "examples"
+        / "self_hosting"
+        / "assembly_renderer_text_builder.s3",
+        "Assembly renderer text builder command model",
+        hosted_expected_return=0,
+    ),
 )
 
 

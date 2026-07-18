@@ -1,0 +1,1179 @@
+# Scalar text builder command model for the future Assembly renderer.
+# Logical byte totals use a base-300 block and remainder pair for tryte safety.
+
+fn fixture_first() -> tryte:
+    return 0
+
+fn fixture_simple_call() -> tryte:
+    return 1
+
+fn fixture_sign() -> tryte:
+    return 2
+
+fn builder_unknown() -> tryte:
+    return -1
+
+fn builder_cmd_unknown() -> tryte:
+    return -1
+
+fn builder_cmd_start_document() -> tryte:
+    return 0
+
+fn builder_cmd_emit_header_line() -> tryte:
+    return 1
+
+fn builder_cmd_emit_function_line() -> tryte:
+    return 2
+
+fn builder_cmd_emit_param_line() -> tryte:
+    return 3
+
+fn builder_cmd_emit_register_line() -> tryte:
+    return 4
+
+fn builder_cmd_emit_memory_line() -> tryte:
+    return 5
+
+fn builder_cmd_emit_label_line() -> tryte:
+    return 6
+
+fn builder_cmd_emit_instruction_line() -> tryte:
+    return 7
+
+fn builder_cmd_emit_source_metadata() -> tryte:
+    return 8
+
+fn builder_cmd_emit_end_line() -> tryte:
+    return 9
+
+fn builder_cmd_emit_blank_line() -> tryte:
+    return 10
+
+fn builder_cmd_finish_document() -> tryte:
+    return 11
+
+fn builder_state_error() -> tryte:
+    return -1
+
+fn builder_state_empty() -> tryte:
+    return 0
+
+fn builder_state_document_open() -> tryte:
+    return 1
+
+fn builder_state_line_open() -> tryte:
+    return 2
+
+fn builder_state_line_closed() -> tryte:
+    return 3
+
+fn builder_state_document_done() -> tryte:
+    return 4
+
+fn same_tryte(left: tryte, right: tryte) -> trit:
+    match left <=> right:
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            return 0
+
+fn same_trit(left: trit, right: trit) -> trit:
+    match left <=> right:
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            return 0
+
+fn all_passed(left: trit, right: trit) -> trit:
+    match left <=> 1:
+        -1:
+            return 0
+
+        0:
+            match right <=> 1:
+                -1:
+                    return 0
+
+                0:
+                    return 1
+
+                1:
+                    return 0
+
+        1:
+            return 0
+
+fn any_passed(left: trit, right: trit) -> trit:
+    match left <=> 1:
+        -1:
+            return right
+
+        0:
+            return 1
+
+        1:
+            return 1
+
+fn status_from_check(check: trit, failure: tryte) -> tryte:
+    match check <=> 1:
+        -1:
+            return failure
+
+        0:
+            return 0
+
+        1:
+            return failure
+
+fn in_range(value: tryte, lower: tryte, upper: tryte) -> trit:
+    match value <=> lower:
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            match value <=> upper:
+                -1:
+                    return 1
+
+                0:
+                    return 1
+
+                1:
+                    return 0
+
+fn fixture_metric(fixture: tryte, first_value: tryte, simple_value: tryte, sign_value: tryte) -> tryte:
+    match fixture <=> fixture_first():
+        -1:
+            return builder_unknown()
+
+        0:
+            return first_value
+
+        1:
+            match fixture <=> fixture_simple_call():
+                -1:
+                    return builder_unknown()
+
+                0:
+                    return simple_value
+
+                1:
+                    match fixture <=> fixture_sign():
+                        -1:
+                            return builder_unknown()
+
+                        0:
+                            return sign_value
+
+                        1:
+                            return builder_unknown()
+
+fn is_even(value: tryte) -> trit:
+    match value <=> 0:
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            return is_odd(value - 1)
+
+fn is_odd(value: tryte) -> trit:
+    match value <=> 0:
+        -1:
+            return 0
+
+        0:
+            return 0
+
+        1:
+            return is_even(value - 1)
+
+fn paired_command_at(index: tryte, start: tryte) -> tryte:
+    match is_even(index - start) <=> 1:
+        -1:
+            return builder_cmd_emit_source_metadata()
+
+        0:
+            return builder_cmd_emit_instruction_line()
+
+        1:
+            return builder_cmd_emit_source_metadata()
+
+fn is_known_fixture(fixture: tryte) -> trit:
+    return in_range(fixture, fixture_first(), fixture_sign())
+
+fn is_known_builder_command(command: tryte) -> trit:
+    return in_range(command, builder_cmd_start_document(), builder_cmd_finish_document())
+
+fn is_known_builder_state(state: tryte) -> trit:
+    return in_range(state, builder_state_empty(), builder_state_document_done())
+
+fn is_line_command(command: tryte) -> trit:
+    match in_range(command, builder_cmd_emit_header_line(), builder_cmd_emit_instruction_line()) <=> 1:
+        -1:
+            return in_range(command, builder_cmd_emit_end_line(), builder_cmd_emit_blank_line())
+
+        0:
+            return 1
+
+        1:
+            return in_range(command, builder_cmd_emit_end_line(), builder_cmd_emit_blank_line())
+
+fn is_document_command(command: tryte) -> trit:
+    return all_passed(
+        same_trit(is_known_builder_command(command), 1),
+        all_passed(same_trit(is_line_command(command), 0), same_trit(is_metadata_command(command), 0))
+    )
+
+fn is_metadata_command(command: tryte) -> trit:
+    return same_tryte(command, builder_cmd_emit_source_metadata())
+
+fn expected_line_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 18, 21, 36)
+
+fn expected_command_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 27, 29, 52)
+
+fn expected_newline_count(fixture: tryte) -> tryte:
+    return expected_line_count(fixture)
+
+fn expected_indentation_write_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 13, 12, 24)
+
+fn expected_token_write_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 17, 19, 34)
+
+fn expected_source_metadata_write_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 7, 6, 14)
+
+fn expected_blank_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 1, 2, 2)
+
+fn logical_byte_chunk_size() -> tryte:
+    return 300
+
+fn expected_logical_byte_chunk_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 1, 1, 3)
+
+fn expected_logical_byte_remainder(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 141, 148, 46)
+
+fn builder_signature_from_counts(line_count: tryte, command_count: tryte, newline_count: tryte, source_metadata_count: tryte, token_count: tryte) -> tryte:
+    return line_count + command_count + newline_count + source_metadata_count + token_count
+
+fn expected_builder_signature(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 87, 96, 172)
+
+fn modeled_builder_signature(fixture: tryte) -> tryte:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return builder_unknown()
+
+        0:
+            return builder_signature_from_counts(
+                expected_line_count(fixture),
+                expected_command_count(fixture),
+                expected_newline_count(fixture),
+                expected_source_metadata_write_count(fixture),
+                expected_token_write_count(fixture)
+            )
+
+        1:
+            return builder_unknown()
+
+fn total_line_count() -> tryte:
+    return expected_line_count(fixture_first()) + expected_line_count(fixture_simple_call()) + expected_line_count(fixture_sign())
+
+fn total_command_count() -> tryte:
+    return expected_command_count(fixture_first()) + expected_command_count(fixture_simple_call()) + expected_command_count(fixture_sign())
+
+fn total_newline_count() -> tryte:
+    return expected_newline_count(fixture_first()) + expected_newline_count(fixture_simple_call()) + expected_newline_count(fixture_sign())
+
+fn total_indentation_write_count() -> tryte:
+    return expected_indentation_write_count(fixture_first()) + expected_indentation_write_count(fixture_simple_call()) + expected_indentation_write_count(fixture_sign())
+
+fn total_token_write_count() -> tryte:
+    return expected_token_write_count(fixture_first()) + expected_token_write_count(fixture_simple_call()) + expected_token_write_count(fixture_sign())
+
+fn total_source_metadata_write_count() -> tryte:
+    return expected_source_metadata_write_count(fixture_first()) + expected_source_metadata_write_count(fixture_simple_call()) + expected_source_metadata_write_count(fixture_sign())
+
+fn total_logical_byte_chunk_count() -> tryte:
+    return expected_logical_byte_chunk_count(fixture_first()) + expected_logical_byte_chunk_count(fixture_simple_call()) + expected_logical_byte_chunk_count(fixture_sign())
+
+fn total_logical_byte_remainder() -> tryte:
+    return expected_logical_byte_remainder(fixture_first()) + expected_logical_byte_remainder(fixture_simple_call()) + expected_logical_byte_remainder(fixture_sign())
+
+fn total_builder_signature() -> tryte:
+    return expected_builder_signature(fixture_first()) + expected_builder_signature(fixture_simple_call()) + expected_builder_signature(fixture_sign())
+
+fn expected_total_builder_signature() -> tryte:
+    return 355
+
+fn expected_first_builder_command_at(index: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            return builder_cmd_unknown()
+
+        0:
+            return builder_cmd_start_document()
+
+        1:
+            match index <=> 1:
+                -1:
+                    return builder_cmd_unknown()
+
+                0:
+                    return builder_cmd_emit_header_line()
+
+                1:
+                    match index <=> 2:
+                        -1:
+                            return builder_cmd_unknown()
+
+                        0:
+                            return builder_cmd_emit_blank_line()
+
+                        1:
+                            match index <=> 3:
+                                -1:
+                                    return builder_cmd_unknown()
+
+                                0:
+                                    return builder_cmd_emit_function_line()
+
+                                1:
+                                    return expected_first_builder_body_command_at(index)
+
+fn expected_first_builder_body_command_at(index: tryte) -> tryte:
+    match in_range(index, 4, 9) <=> 1:
+        -1:
+            match index <=> 10:
+                -1:
+                    return builder_cmd_unknown()
+
+                0:
+                    return builder_cmd_emit_label_line()
+
+                1:
+                    match in_range(index, 11, 24) <=> 1:
+                        -1:
+                            match index <=> 25:
+                                -1:
+                                    return builder_cmd_unknown()
+
+                                0:
+                                    return builder_cmd_emit_end_line()
+
+                                1:
+                                    match index <=> 26:
+                                        -1:
+                                            return builder_cmd_unknown()
+
+                                        0:
+                                            return builder_cmd_finish_document()
+
+                                        1:
+                                            return builder_cmd_unknown()
+
+                        0:
+                            return paired_command_at(index, 11)
+
+                        1:
+                            return builder_cmd_unknown()
+
+        0:
+            return builder_cmd_emit_register_line()
+
+        1:
+            return builder_cmd_unknown()
+
+fn expected_simple_call_builder_command_at(index: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            return builder_cmd_unknown()
+
+        0:
+            return builder_cmd_start_document()
+
+        1:
+            match index <=> 1:
+                -1:
+                    return builder_cmd_unknown()
+
+                0:
+                    return builder_cmd_emit_header_line()
+
+                1:
+                    match index <=> 2:
+                        -1:
+                            return builder_cmd_unknown()
+
+                        0:
+                            return builder_cmd_emit_blank_line()
+
+                        1:
+                            match index <=> 3:
+                                -1:
+                                    return builder_cmd_unknown()
+
+                                0:
+                                    return builder_cmd_emit_function_line()
+
+                                1:
+                                    return expected_simple_call_builder_body_command_at(index)
+
+fn expected_simple_call_builder_body_command_at(index: tryte) -> tryte:
+    match in_range(index, 4, 5) <=> 1:
+        -1:
+            match index <=> 6:
+                -1:
+                    return builder_cmd_unknown()
+
+                0:
+                    return builder_cmd_emit_register_line()
+
+                1:
+                    match index <=> 7:
+                        -1:
+                            return builder_cmd_unknown()
+
+                        0:
+                            return builder_cmd_emit_label_line()
+
+                        1:
+                            return expected_simple_call_builder_tail_command_at(index)
+
+        0:
+            return builder_cmd_emit_param_line()
+
+        1:
+            return builder_cmd_unknown()
+
+fn expected_simple_call_builder_tail_command_at(index: tryte) -> tryte:
+    match in_range(index, 8, 11) <=> 1:
+        -1:
+            match index <=> 12:
+                -1:
+                    return builder_cmd_unknown()
+
+                0:
+                    return builder_cmd_emit_end_line()
+
+                1:
+                    match index <=> 13:
+                        -1:
+                            return builder_cmd_unknown()
+
+                        0:
+                            return builder_cmd_emit_blank_line()
+
+                        1:
+                            match index <=> 14:
+                                -1:
+                                    return builder_cmd_unknown()
+
+                                0:
+                                    return builder_cmd_emit_function_line()
+
+                                1:
+                                    return expected_simple_call_builder_second_command_at(index)
+
+        0:
+            return paired_command_at(index, 8)
+
+        1:
+            return builder_cmd_unknown()
+
+fn expected_simple_call_builder_second_command_at(index: tryte) -> tryte:
+    match in_range(index, 15, 17) <=> 1:
+        -1:
+            match index <=> 18:
+                -1:
+                    return builder_cmd_unknown()
+
+                0:
+                    return builder_cmd_emit_label_line()
+
+                1:
+                    match in_range(index, 19, 26) <=> 1:
+                        -1:
+                            match index <=> 27:
+                                -1:
+                                    return builder_cmd_unknown()
+
+                                0:
+                                    return builder_cmd_emit_end_line()
+
+                                1:
+                                    match index <=> 28:
+                                        -1:
+                                            return builder_cmd_unknown()
+
+                                        0:
+                                            return builder_cmd_finish_document()
+
+                                        1:
+                                            return builder_cmd_unknown()
+
+                        0:
+                            return paired_command_at(index, 19)
+
+                        1:
+                            return builder_cmd_unknown()
+
+        0:
+            return builder_cmd_emit_register_line()
+
+        1:
+            return builder_cmd_unknown()
+
+fn expected_sign_builder_command_at(index: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            return builder_cmd_unknown()
+
+        0:
+            return builder_cmd_start_document()
+
+        1:
+            match index <=> 1:
+                -1:
+                    return builder_cmd_unknown()
+
+                0:
+                    return builder_cmd_emit_header_line()
+
+                1:
+                    match index <=> 2:
+                        -1:
+                            return builder_cmd_unknown()
+
+                        0:
+                            return builder_cmd_emit_blank_line()
+
+                        1:
+                            match index <=> 3:
+                                -1:
+                                    return builder_cmd_unknown()
+
+                                0:
+                                    return builder_cmd_emit_function_line()
+
+                                1:
+                                    match index <=> 4:
+                                        -1:
+                                            return builder_cmd_unknown()
+
+                                        0:
+                                            return builder_cmd_emit_param_line()
+
+                                        1:
+                                            return expected_sign_builder_body_command_at(index)
+
+fn expected_sign_builder_body_command_at(index: tryte) -> tryte:
+    match in_range(index, 5, 10) <=> 1:
+        -1:
+            match index <=> 11:
+                -1:
+                    return builder_cmd_unknown()
+
+                0:
+                    return builder_cmd_emit_label_line()
+
+                1:
+                    return expected_sign_builder_first_function_command_at(index)
+
+        0:
+            return builder_cmd_emit_register_line()
+
+        1:
+            return builder_cmd_unknown()
+
+fn expected_sign_builder_first_function_command_at(index: tryte) -> tryte:
+    match in_range(index, 12, 17) <=> 1:
+        -1:
+            match index <=> 18:
+                -1:
+                    return builder_cmd_unknown()
+
+                0:
+                    return builder_cmd_emit_label_line()
+
+                1:
+                    match in_range(index, 19, 24) <=> 1:
+                        -1:
+                            match index <=> 25:
+                                -1:
+                                    return builder_cmd_unknown()
+
+                                0:
+                                    return builder_cmd_emit_label_line()
+
+                                1:
+                                    return expected_sign_builder_second_function_command_at(index)
+
+                        0:
+                            return paired_command_at(index, 19)
+
+                        1:
+                            return builder_cmd_unknown()
+
+        0:
+            return paired_command_at(index, 12)
+
+        1:
+            return builder_cmd_unknown()
+
+fn expected_sign_builder_second_function_command_at(index: tryte) -> tryte:
+    match in_range(index, 26, 29) <=> 1:
+        -1:
+            match index <=> 30:
+                -1:
+                    return builder_cmd_unknown()
+
+                0:
+                    return builder_cmd_emit_label_line()
+
+                1:
+                    match in_range(index, 31, 34) <=> 1:
+                        -1:
+                            match index <=> 35:
+                                -1:
+                                    return builder_cmd_unknown()
+
+                                0:
+                                    return builder_cmd_emit_end_line()
+
+                                1:
+                                    return expected_sign_builder_main_command_at(index)
+
+                        0:
+                            return paired_command_at(index, 31)
+
+                        1:
+                            return builder_cmd_unknown()
+
+        0:
+            return paired_command_at(index, 26)
+
+        1:
+            return builder_cmd_unknown()
+
+fn expected_sign_builder_main_command_at(index: tryte) -> tryte:
+    match index <=> 36:
+        -1:
+            return builder_cmd_unknown()
+
+        0:
+            return builder_cmd_emit_blank_line()
+
+        1:
+            match index <=> 37:
+                -1:
+                    return builder_cmd_unknown()
+
+                0:
+                    return builder_cmd_emit_function_line()
+
+                1:
+                    match in_range(index, 38, 40) <=> 1:
+                        -1:
+                            match index <=> 41:
+                                -1:
+                                    return builder_cmd_unknown()
+
+                                0:
+                                    return builder_cmd_emit_label_line()
+
+                                1:
+                                    match in_range(index, 42, 49) <=> 1:
+                                        -1:
+                                            match index <=> 50:
+                                                -1:
+                                                    return builder_cmd_unknown()
+
+                                                0:
+                                                    return builder_cmd_emit_end_line()
+
+                                                1:
+                                                    match index <=> 51:
+                                                        -1:
+                                                            return builder_cmd_unknown()
+
+                                                        0:
+                                                            return builder_cmd_finish_document()
+
+                                                        1:
+                                                            return builder_cmd_unknown()
+
+                                        0:
+                                            return paired_command_at(index, 42)
+
+                                        1:
+                                            return builder_cmd_unknown()
+
+                        0:
+                            return builder_cmd_emit_register_line()
+
+                        1:
+                            return builder_cmd_unknown()
+
+fn expected_builder_command_at(fixture: tryte, index: tryte) -> tryte:
+    match fixture <=> fixture_first():
+        -1:
+            return builder_cmd_unknown()
+
+        0:
+            return expected_first_builder_command_at(index)
+
+        1:
+            match fixture <=> fixture_simple_call():
+                -1:
+                    return builder_cmd_unknown()
+
+                0:
+                    return expected_simple_call_builder_command_at(index)
+
+                1:
+                    match fixture <=> fixture_sign():
+                        -1:
+                            return builder_cmd_unknown()
+
+                        0:
+                            return expected_sign_builder_command_at(index)
+
+                        1:
+                            return builder_cmd_unknown()
+
+fn is_valid_index(index: tryte, count: tryte) -> trit:
+    match index <=> 0:
+        -1:
+            return 0
+
+        0:
+            match index <=> count:
+                -1:
+                    return 1
+
+                0:
+                    return 0
+
+                1:
+                    return 0
+
+        1:
+            match index <=> count:
+                -1:
+                    return 1
+
+                0:
+                    return 0
+
+                1:
+                    return 0
+
+fn validate_builder_index(fixture: tryte, index: tryte) -> trit:
+    return all_passed(is_known_fixture(fixture), is_valid_index(index, expected_command_count(fixture)))
+
+fn is_valid_builder_transition(state: tryte, command: tryte) -> trit:
+    match is_known_builder_state(state) <=> 1:
+        -1:
+            return 0
+
+        0:
+            match is_known_builder_command(command) <=> 1:
+                -1:
+                    return 0
+
+                0:
+                    match state <=> builder_state_empty():
+                        -1:
+                            return 0
+
+                        0:
+                            return same_tryte(command, builder_cmd_start_document())
+
+                        1:
+                            match state <=> builder_state_document_open():
+                                -1:
+                                    return 0
+
+                                0:
+                                    return is_line_command(command)
+
+                                1:
+                                    match state <=> builder_state_line_open():
+                                        -1:
+                                            return 0
+
+                                        0:
+                                            return is_metadata_command(command)
+
+                                        1:
+                                            match state <=> builder_state_line_closed():
+                                                -1:
+                                                    return 0
+
+                                                0:
+                                                    match same_tryte(command, builder_cmd_finish_document()) <=> 1:
+                                                        -1:
+                                                            return any_passed(is_line_command(command), is_metadata_command(command))
+
+                                                        0:
+                                                            return 1
+
+                                                        1:
+                                                            return 0
+
+                                                1:
+                                                    return 0
+
+                1:
+                    return 0
+
+        1:
+            return 0
+
+fn next_builder_state(state: tryte, command: tryte) -> tryte:
+    match is_valid_builder_transition(state, command) <=> 1:
+        -1:
+            return builder_state_error()
+
+        0:
+            match state <=> builder_state_empty():
+                -1:
+                    return builder_state_error()
+
+                0:
+                    return builder_state_document_open()
+
+                1:
+                    match state <=> builder_state_line_closed():
+                        -1:
+                            return builder_state_line_closed()
+
+                        0:
+                            match same_tryte(command, builder_cmd_finish_document()) <=> 1:
+                                -1:
+                                    return builder_state_line_closed()
+
+                                0:
+                                    return builder_state_document_done()
+
+                                1:
+                                    return builder_state_error()
+
+                        1:
+                            return builder_state_line_closed()
+
+        1:
+            return builder_state_error()
+
+fn expected_builder_state_before_at(index: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            return builder_state_error()
+
+        0:
+            return builder_state_empty()
+
+        1:
+            match index <=> 1:
+                -1:
+                    return builder_state_error()
+
+                0:
+                    return builder_state_document_open()
+
+                1:
+                    return builder_state_line_closed()
+
+fn expected_final_builder_state(fixture: tryte) -> tryte:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return builder_state_error()
+
+        0:
+            return builder_state_document_done()
+
+        1:
+            return builder_state_error()
+
+fn builder_command_score(state: tryte, command: tryte, index: tryte) -> tryte:
+    return state + command + index
+
+fn validate_builder_step(fixture: tryte, index: tryte) -> trit:
+    match validate_builder_index(fixture, index) <=> 1:
+        -1:
+            return 0
+
+        0:
+            mut state: tryte = expected_builder_state_before_at(index)
+            mut command: tryte = expected_builder_command_at(fixture, index)
+            mut ok: trit = 1
+
+            ok = all_passed(ok, is_known_builder_command(command))
+            ok = all_passed(ok, is_valid_builder_transition(state, command))
+            ok = all_passed(ok, is_known_builder_state(next_builder_state(state, command)))
+
+            return ok
+
+        1:
+            return 0
+
+fn validate_builder_step_range(fixture: tryte, index: tryte, last: tryte) -> trit:
+    match index <=> last:
+        -1:
+            return all_passed(validate_builder_step(fixture, index), validate_builder_step_range(fixture, index + 1, last))
+
+        0:
+            return validate_builder_step(fixture, index)
+
+        1:
+            return 0
+
+fn validate_fixture_builder_commands(fixture: tryte) -> trit:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return 0
+
+        0:
+            mut last: tryte = expected_command_count(fixture) - 1
+            mut ok: trit = 1
+
+            ok = all_passed(ok, validate_builder_step_range(fixture, 0, last))
+            ok = all_passed(ok, same_tryte(expected_builder_command_at(fixture, 0), builder_cmd_start_document()))
+            ok = all_passed(ok, same_tryte(expected_builder_command_at(fixture, last), builder_cmd_finish_document()))
+
+            return ok
+
+        1:
+            return 0
+
+fn validate_builder_line_consistency(fixture: tryte) -> trit:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return 0
+
+        0:
+            mut ok: trit = 1
+
+            ok = all_passed(ok, same_tryte(expected_newline_count(fixture), expected_line_count(fixture)))
+            ok = all_passed(ok, same_tryte(expected_token_write_count(fixture) + expected_blank_count(fixture), expected_line_count(fixture)))
+            ok = all_passed(ok, same_tryte(expected_indentation_write_count(fixture), fixture_metric(fixture, 13, 12, 24)))
+
+            return ok
+
+        1:
+            return 0
+
+fn validate_builder_buffer_consistency(fixture: tryte) -> trit:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return 0
+
+        0:
+            return all_passed(
+                same_tryte(expected_command_count(fixture), expected_line_count(fixture) + expected_source_metadata_write_count(fixture) + 2),
+                same_tryte(expected_newline_count(fixture), expected_line_count(fixture))
+            )
+
+        1:
+            return 0
+
+fn validate_fixture_builder_counts(fixture: tryte) -> trit:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return 0
+
+        0:
+            return all_passed(
+                validate_builder_line_consistency(fixture),
+                all_passed(
+                    validate_builder_buffer_consistency(fixture),
+                    all_passed(
+                        same_tryte(expected_logical_byte_chunk_count(fixture), fixture_metric(fixture, 1, 1, 3)),
+                        same_tryte(expected_logical_byte_remainder(fixture), fixture_metric(fixture, 141, 148, 46))
+                    )
+                )
+            )
+
+        1:
+            return 0
+
+fn validate_builder_signature_consistency(fixture: tryte) -> trit:
+    return same_tryte(modeled_builder_signature(fixture), expected_builder_signature(fixture))
+
+fn validate_fixture_builder_signature(fixture: tryte) -> trit:
+    return all_passed(is_known_fixture(fixture), validate_builder_signature_consistency(fixture))
+
+fn validate_fixture_builder_result(fixture: tryte) -> trit:
+    return all_passed(
+        validate_fixture_builder_commands(fixture),
+        all_passed(validate_fixture_builder_counts(fixture), validate_fixture_builder_signature(fixture))
+    )
+
+fn validate_total_builder_signature() -> trit:
+    return same_tryte(total_builder_signature(), expected_total_builder_signature())
+
+fn validate_all_fixture_builders() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, validate_fixture_builder_result(fixture_first()))
+    ok = all_passed(ok, validate_fixture_builder_result(fixture_simple_call()))
+    ok = all_passed(ok, validate_fixture_builder_result(fixture_sign()))
+    ok = all_passed(ok, same_tryte(total_line_count(), 75))
+    ok = all_passed(ok, same_tryte(total_command_count(), 108))
+    ok = all_passed(ok, same_tryte(total_newline_count(), 75))
+    ok = all_passed(ok, same_tryte(total_indentation_write_count(), 49))
+    ok = all_passed(ok, same_tryte(total_token_write_count(), 70))
+    ok = all_passed(ok, same_tryte(total_source_metadata_write_count(), 27))
+    ok = all_passed(ok, same_tryte(total_logical_byte_chunk_count(), 5))
+    ok = all_passed(ok, same_tryte(total_logical_byte_remainder(), 335))
+    ok = all_passed(ok, validate_total_builder_signature())
+
+    return ok
+
+fn validate_invalid_fixture_probe() -> trit:
+    return all_passed(same_trit(is_known_fixture(99), 0), same_trit(validate_fixture_builder_result(99), 0))
+
+fn validate_unknown_command_probe() -> trit:
+    return all_passed(
+        same_trit(is_known_builder_command(builder_cmd_unknown()), 0),
+        same_trit(is_valid_builder_transition(builder_state_empty(), builder_cmd_unknown()), 0)
+    )
+
+fn validate_unknown_state_probe() -> trit:
+    return all_passed(
+        same_trit(is_known_builder_state(builder_state_error()), 0),
+        same_tryte(next_builder_state(builder_state_error(), builder_cmd_start_document()), builder_state_error())
+    )
+
+fn validate_invalid_index_probe() -> trit:
+    return all_passed(
+        same_trit(validate_builder_index(fixture_first(), -1), 0),
+        same_trit(validate_builder_index(fixture_first(), expected_command_count(fixture_first())), 0)
+    )
+
+fn validate_invalid_builder_transition_probe() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, same_trit(is_valid_builder_transition(builder_state_empty(), builder_cmd_emit_header_line()), 0))
+    ok = all_passed(ok, same_trit(is_valid_builder_transition(builder_state_document_open(), builder_cmd_emit_source_metadata()), 0))
+    ok = all_passed(ok, same_trit(is_valid_builder_transition(builder_state_line_closed(), builder_cmd_start_document()), 0))
+    ok = all_passed(ok, same_trit(is_valid_builder_transition(builder_state_document_done(), builder_cmd_finish_document()), 0))
+
+    return ok
+
+fn validate_byte_count_mismatch_probe() -> trit:
+    return same_trit(same_tryte(expected_logical_byte_remainder(fixture_first()) + 1, expected_logical_byte_remainder(fixture_first())), 0)
+
+fn validate_signature_mismatch_probe() -> trit:
+    return same_trit(
+        same_tryte(
+            builder_signature_from_counts(
+                expected_line_count(fixture_first()) + 1,
+                expected_command_count(fixture_first()),
+                expected_newline_count(fixture_first()),
+                expected_source_metadata_write_count(fixture_first()),
+                expected_token_write_count(fixture_first())
+            ),
+            expected_builder_signature(fixture_first())
+        ),
+        0
+    )
+
+fn validate_first_builder() -> trit:
+    return validate_fixture_builder_result(fixture_first())
+
+fn validate_simple_call_builder() -> trit:
+    return validate_fixture_builder_result(fixture_simple_call())
+
+fn validate_sign_builder() -> trit:
+    return validate_fixture_builder_result(fixture_sign())
+
+fn validate_first_builder_commands() -> trit:
+    return validate_fixture_builder_commands(fixture_first())
+
+fn validate_simple_call_builder_commands() -> trit:
+    return validate_fixture_builder_commands(fixture_simple_call())
+
+fn validate_sign_builder_commands() -> trit:
+    return validate_fixture_builder_commands(fixture_sign())
+
+fn validate_first_builder_counts() -> trit:
+    return validate_fixture_builder_counts(fixture_first())
+
+fn validate_simple_call_builder_counts() -> trit:
+    return validate_fixture_builder_counts(fixture_simple_call())
+
+fn validate_sign_builder_counts() -> trit:
+    return validate_fixture_builder_counts(fixture_sign())
+
+fn validate_first_builder_signature() -> trit:
+    return validate_fixture_builder_signature(fixture_first())
+
+fn validate_simple_call_builder_signature() -> trit:
+    return validate_fixture_builder_signature(fixture_simple_call())
+
+fn validate_sign_builder_signature() -> trit:
+    return validate_fixture_builder_signature(fixture_sign())
+
+fn first_builder_signature() -> tryte:
+    return modeled_builder_signature(fixture_first())
+
+fn simple_call_builder_signature() -> tryte:
+    return modeled_builder_signature(fixture_simple_call())
+
+fn sign_builder_signature() -> tryte:
+    return modeled_builder_signature(fixture_sign())
+
+fn first_builder_logical_byte_chunk_count() -> tryte:
+    return expected_logical_byte_chunk_count(fixture_first())
+
+fn simple_call_builder_logical_byte_chunk_count() -> tryte:
+    return expected_logical_byte_chunk_count(fixture_simple_call())
+
+fn sign_builder_logical_byte_chunk_count() -> tryte:
+    return expected_logical_byte_chunk_count(fixture_sign())
+
+fn first_builder_logical_byte_remainder() -> tryte:
+    return expected_logical_byte_remainder(fixture_first())
+
+fn simple_call_builder_logical_byte_remainder() -> tryte:
+    return expected_logical_byte_remainder(fixture_simple_call())
+
+fn sign_builder_logical_byte_remainder() -> tryte:
+    return expected_logical_byte_remainder(fixture_sign())
+
+fn text_builder_model_self_check() -> tryte:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, validate_all_fixture_builders())
+    ok = all_passed(ok, validate_invalid_fixture_probe())
+    ok = all_passed(ok, validate_unknown_command_probe())
+    ok = all_passed(ok, validate_unknown_state_probe())
+    ok = all_passed(ok, validate_invalid_index_probe())
+    ok = all_passed(ok, validate_invalid_builder_transition_probe())
+    ok = all_passed(ok, validate_byte_count_mismatch_probe())
+    ok = all_passed(ok, validate_signature_mismatch_probe())
+
+    return status_from_check(ok, 1)
+
+fn main() -> tryte:
+    return text_builder_model_self_check()

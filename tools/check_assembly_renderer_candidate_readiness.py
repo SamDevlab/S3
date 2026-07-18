@@ -62,8 +62,8 @@ READINESS_STEPS = (
         ("tools/s3_program_check.py", "check"),
         0,
         stdout_contains=(
-            "s3 program check: checked 14 program(s)",
-            "s3 program check: hosted execution checked 11 program(s)",
+            "s3 program check: checked 15 program(s)",
+            "s3 program check: hosted execution checked 12 program(s)",
         ),
     ),
     ReadinessStep(
@@ -210,6 +210,8 @@ READINESS_STEPS = (
             "program: examples/self_hosting/assembly_renderer_output_buffer.s3",
             "s3 renderer pipeline model: passed",
             "program: examples/self_hosting/assembly_renderer_pipeline.s3",
+            "s3 text builder model: passed",
+            "program: examples/self_hosting/assembly_renderer_text_builder.s3",
             "renderer implementation: not_implemented",
             "full text rendering: not_implemented",
         ),

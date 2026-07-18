@@ -32,6 +32,7 @@ Current checked programs:
 - `examples/self_hosting/assembly_renderer_event_writer.s3`
 - `examples/self_hosting/assembly_renderer_output_buffer.s3`
 - `examples/self_hosting/assembly_renderer_pipeline.s3`
+- `examples/self_hosting/assembly_renderer_text_builder.s3`
 
 Conceptual gap examples under `examples/gaps/` are intentionally excluded
 because they may contain pseudocode and are not part of the compile-check
@@ -132,6 +133,13 @@ through the hosted path. The model connects numeric event stream, event writer,
 output buffer, and final result IDs; it validates stage transitions, counts,
 states, capacity, cursor, signatures, and negative probes without runtime
 strings or arrays.
+
+S3 0.30 adds the executable renderer text builder command model at
+`examples/self_hosting/assembly_renderer_text_builder.s3`. It is registered
+with `hosted expected return: 0`, and models numeric builder commands after the
+output-buffer/pipeline stages. It validates command order, builder states,
+logical byte pairs, counters, transitions, negative probes, and deterministic
+signatures without runtime strings or arrays.
 
 The same stub is also included in golden inspect coverage as
 `assembly_renderer_stub`, which records its current IR and Assembly outputs

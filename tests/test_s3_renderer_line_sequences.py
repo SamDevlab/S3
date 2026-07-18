@@ -471,8 +471,8 @@ def test_s3_program_check_includes_renderer_line_sequence_model() -> None:
         "examples/self_hosting/assembly_renderer_line_sequences.s3"
         in completed.stdout
     )
-    assert "s3 program check: checked 14 program(s)" in completed.stdout
-    assert "s3 program check: hosted execution checked 11 program(s)" in completed.stdout
+    assert "s3 program check: checked 15 program(s)" in completed.stdout
+    assert "s3 program check: hosted execution checked 12 program(s)" in completed.stdout
     assert "hosted expected return: 0" in completed.stdout
     assert "hosted actual return: 0" in completed.stdout
     assert completed.stderr == ""
