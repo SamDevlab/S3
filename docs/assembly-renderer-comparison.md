@@ -29,7 +29,8 @@ candidate check state safely blocked while clarifying the reason; see
 `docs/roadmap-0.17.md`, `docs/roadmap-0.18.md`, and
 `docs/roadmap-0.19.md`, `docs/roadmap-0.20.md`,
 `docs/roadmap-0.21.md`, `docs/roadmap-0.22.md`,
-`docs/roadmap-0.23.md`, and `docs/roadmap-0.24.md`. S3 0.16 is closed after
+`docs/roadmap-0.23.md`, `docs/roadmap-0.24.md`, and
+`docs/roadmap-0.25.md`. S3 0.16 is closed after
 routing the three current
 fixture probes through the incremental renderer core. S3 0.17 is closed after
 connecting the `first`, `simple_call`, and `sign` fixture paths to that core
@@ -52,6 +53,10 @@ S3 0.24 is closed after adding an executable S3 line sequence model that records
 the ordered blueprint IDs for each current fixture and validates fixture
 boundaries, transition rules, negative probes, totals, and a small deterministic
 signature without runtime strings or arrays.
+S3 0.25 is closed after adding an executable S3 line content encoding model that
+records scalar line categories, directive IDs, opcode IDs, register arities,
+operand/source flags, ordinals, totals, and deterministic line encoding
+signatures without runtime strings or arrays.
 
 `python tools/compare_assembly_renderer.py --status` reports the current state
 and exits successfully.
@@ -228,6 +233,13 @@ each fixture, legal transitions between blueprint kinds, invalid transition and
 index probes, function boundaries, totals, and a deterministic sequence
 signature, then reports `s3 line sequence model: passed` while renderer
 implementation and full text rendering remain `not_implemented`.
+The command also executes
+`examples/self_hosting/assembly_renderer_line_encodings.s3` and expects `main`
+to return `0`. That model validates line categories, directive/opcode IDs,
+register operand arity, operand/source flags, unknown probes, totals, and
+deterministic content encoding signatures, then reports `s3 line content
+encoding model: passed` while renderer implementation and full text rendering
+remain `not_implemented`.
 
 The candidate stub is also covered by `tools/golden_inspect.py check`. Those
 goldens lock the current compiler-facing IR and Assembly output for the stub;
@@ -364,6 +376,16 @@ deterministic sequence signature. `--candidate-run` executes the bootstrap
 spike, output model, text segment model, line blueprint model, and line sequence
 model, reporting all five as passed while renderer implementation and full text
 rendering remain `not_implemented`.
+
+0.25 adds `examples/self_hosting/assembly_renderer_line_encodings.s3`, an
+executable S3 model of renderer line content encodings. It validates scalar
+categories, directive IDs, opcode IDs, register arities, operand/source flags,
+function/block ordinals, negative probes, aggregate totals, and deterministic
+fixture signatures for `first`, `simple_call`, and `sign`. `--candidate-run`
+executes the bootstrap spike, output model, text segment model, line blueprint
+model, line sequence model, and line content encoding model, reporting all six
+as passed while renderer implementation and full text rendering remain
+`not_implemented`.
 
 ## Why check fails today
 

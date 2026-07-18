@@ -24,8 +24,11 @@ def test_s3_program_check_inventory_exposes_renderer_stub_hosted_check() -> None
     line_sequences = find_program(
         "examples/self_hosting/assembly_renderer_line_sequences.s3"
     )
+    line_encodings = find_program(
+        "examples/self_hosting/assembly_renderer_line_encodings.s3"
+    )
 
-    assert len(programs) == 9
+    assert len(programs) == 10
     assert stub is not None
     assert stub.hosted_expected_return == -1
     assert bootstrap is not None
@@ -38,6 +41,8 @@ def test_s3_program_check_inventory_exposes_renderer_stub_hosted_check() -> None
     assert line_blueprints.hosted_expected_return == 0
     assert line_sequences is not None
     assert line_sequences.hosted_expected_return == 0
+    assert line_encodings is not None
+    assert line_encodings.hosted_expected_return == 0
 
 
 def test_s3_program_check_matches_registered_programs() -> None:
@@ -49,9 +54,9 @@ def test_s3_program_check_matches_registered_programs() -> None:
     )
 
     assert completed.returncode == 0
-    assert "s3 program check: checked 9 program(s)" in completed.stdout
+    assert "s3 program check: checked 10 program(s)" in completed.stdout
     assert (
-        "s3 program check: hosted execution checked 6 program(s)"
+        "s3 program check: hosted execution checked 7 program(s)"
         in completed.stdout
     )
     assert "examples/self_hosting/assembly_renderer_stub.s3" in completed.stdout
@@ -68,6 +73,10 @@ def test_s3_program_check_matches_registered_programs() -> None:
     )
     assert (
         "examples/self_hosting/assembly_renderer_line_sequences.s3"
+        in completed.stdout
+    )
+    assert (
+        "examples/self_hosting/assembly_renderer_line_encodings.s3"
         in completed.stdout
     )
     assert completed.stderr == ""
@@ -103,4 +112,12 @@ def test_s3_program_check_lists_renderer_stub() -> None:
         in completed.stdout
     )
     assert "purpose: Assembly renderer line sequence model" in completed.stdout
+    assert (
+        "examples/self_hosting/assembly_renderer_line_encodings.s3"
+        in completed.stdout
+    )
+    assert (
+        "purpose: Assembly renderer line content encoding model"
+        in completed.stdout
+    )
     assert completed.stderr == ""
