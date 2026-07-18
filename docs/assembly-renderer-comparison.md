@@ -11,7 +11,7 @@ before the S3 renderer exists.
 ## Current status
 
 The Python renderer remains the reference implementation. A compilable S3 stub
-and three executable S3 renderer bootstrap artifacts now exist, but the S3
+and four executable S3 renderer bootstrap artifacts now exist, but the S3
 renderer implementation is not available.
 
 String literals are available only as front-end expressions. Runtime string
@@ -28,7 +28,8 @@ candidate check state safely blocked while clarifying the reason; see
 `docs/roadmap-0.15.md`, `docs/roadmap-0.16.md`,
 `docs/roadmap-0.17.md`, `docs/roadmap-0.18.md`, and
 `docs/roadmap-0.19.md`, `docs/roadmap-0.20.md`,
-`docs/roadmap-0.21.md`, and `docs/roadmap-0.22.md`. S3 0.16 is closed after
+`docs/roadmap-0.21.md`, `docs/roadmap-0.22.md`, and
+`docs/roadmap-0.23.md`. S3 0.16 is closed after
 routing the three current
 fixture probes through the incremental renderer core. S3 0.17 is closed after
 connecting the `first`, `simple_call`, and `sign` fixture paths to that core
@@ -44,6 +45,9 @@ executable S3 output model for fixture rendering metrics.
 S3 0.22 is closed after adding an executable S3 text segment model that assigns
 numeric IDs to Assembly text segment kinds and validates fixture segment
 metrics without runtime strings or text emission.
+S3 0.23 is closed after adding an executable S3 line blueprint model that maps
+each current Assembly output line to one primary numeric blueprint, treating
+source metadata as an instruction-line variant instead of a separate segment.
 
 `python tools/compare_assembly_renderer.py --status` reports the current state
 and exits successfully.
@@ -208,6 +212,11 @@ declaring full text rendering implemented. The command also executes
 to return `0`. That model validates numeric segment IDs and segment counts for
 the same fixtures, then reports `s3 text segment model: passed` while the real
 textual renderer remains unavailable.
+The command also executes
+`examples/self_hosting/assembly_renderer_line_blueprints.s3` and expects `main`
+to return `0`. That model validates one primary line blueprint per rendered
+Assembly line, then reports `s3 line blueprint model: passed` while renderer
+implementation and full text rendering remain `not_implemented`.
 
 The candidate stub is also covered by `tools/golden_inspect.py check`. Those
 goldens lock the current compiler-facing IR and Assembly output for the stub;
@@ -325,6 +334,15 @@ segment metrics for `first`, `simple_call`, and `sign`. `--candidate-run`
 executes the bootstrap spike, output model, and text segment model, reporting
 all three as passed while renderer implementation and full text rendering
 remain `not_implemented`.
+
+0.23 adds `examples/self_hosting/assembly_renderer_line_blueprints.s3`, an
+executable S3 model of renderer line blueprints. It maps every current rendered
+Assembly line in `first`, `simple_call`, and `sign` to exactly one primary
+numeric blueprint, with source metadata encoded as the
+`instruction_with_source` line variant rather than as a separate text segment.
+`--candidate-run` executes the bootstrap spike, output model, text segment
+model, and line blueprint model, reporting all four as passed while renderer
+implementation and full text rendering remain `not_implemented`.
 
 ## Why check fails today
 

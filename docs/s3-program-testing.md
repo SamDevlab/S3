@@ -25,6 +25,7 @@ Current checked programs:
 - `examples/self_hosting/assembly_renderer_bootstrap.s3`
 - `examples/self_hosting/assembly_renderer_output_model.s3`
 - `examples/self_hosting/assembly_renderer_text_segments.s3`
+- `examples/self_hosting/assembly_renderer_line_blueprints.s3`
 
 Conceptual gap examples under `examples/gaps/` are intentionally excluded
 because they may contain pseudocode and are not part of the compile-check
@@ -71,6 +72,14 @@ through the hosted path. The model assigns scalar numeric IDs to Assembly text
 segment kinds such as directives, instruction lines, blank lines, and source
 metadata markers, then validates segment metrics for `first`, `simple_call`,
 and `sign` without using runtime strings or arrays.
+
+S3 0.23 adds the executable renderer line blueprint model at
+`examples/self_hosting/assembly_renderer_line_blueprints.s3`. It is registered
+with `hosted expected return: 0`, so the program check compiles and executes it
+through the hosted path. The model assigns one primary scalar numeric blueprint
+to each current Assembly output line for `first`, `simple_call`, and `sign`,
+including an instruction-with-source variant for source metadata, without using
+runtime strings or arrays.
 
 The same stub is also included in golden inspect coverage as
 `assembly_renderer_stub`, which records its current IR and Assembly outputs

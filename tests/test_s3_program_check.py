@@ -18,8 +18,11 @@ def test_s3_program_check_inventory_exposes_renderer_stub_hosted_check() -> None
     text_segments = find_program(
         "examples/self_hosting/assembly_renderer_text_segments.s3"
     )
+    line_blueprints = find_program(
+        "examples/self_hosting/assembly_renderer_line_blueprints.s3"
+    )
 
-    assert len(programs) == 7
+    assert len(programs) == 8
     assert stub is not None
     assert stub.hosted_expected_return == -1
     assert bootstrap is not None
@@ -28,6 +31,8 @@ def test_s3_program_check_inventory_exposes_renderer_stub_hosted_check() -> None
     assert output_model.hosted_expected_return == 0
     assert text_segments is not None
     assert text_segments.hosted_expected_return == 0
+    assert line_blueprints is not None
+    assert line_blueprints.hosted_expected_return == 0
 
 
 def test_s3_program_check_matches_registered_programs() -> None:
@@ -39,9 +44,9 @@ def test_s3_program_check_matches_registered_programs() -> None:
     )
 
     assert completed.returncode == 0
-    assert "s3 program check: checked 7 program(s)" in completed.stdout
+    assert "s3 program check: checked 8 program(s)" in completed.stdout
     assert (
-        "s3 program check: hosted execution checked 4 program(s)"
+        "s3 program check: hosted execution checked 5 program(s)"
         in completed.stdout
     )
     assert "examples/self_hosting/assembly_renderer_stub.s3" in completed.stdout
@@ -52,6 +57,10 @@ def test_s3_program_check_matches_registered_programs() -> None:
     assert "hosted actual return: 0" in completed.stdout
     assert "examples/self_hosting/assembly_renderer_output_model.s3" in completed.stdout
     assert "examples/self_hosting/assembly_renderer_text_segments.s3" in completed.stdout
+    assert (
+        "examples/self_hosting/assembly_renderer_line_blueprints.s3"
+        in completed.stdout
+    )
     assert completed.stderr == ""
 
 
@@ -75,4 +84,9 @@ def test_s3_program_check_lists_renderer_stub() -> None:
     assert "purpose: Assembly renderer output model" in completed.stdout
     assert "examples/self_hosting/assembly_renderer_text_segments.s3" in completed.stdout
     assert "purpose: Assembly renderer text segment model" in completed.stdout
+    assert (
+        "examples/self_hosting/assembly_renderer_line_blueprints.s3"
+        in completed.stdout
+    )
+    assert "purpose: Assembly renderer line blueprint model" in completed.stdout
     assert completed.stderr == ""

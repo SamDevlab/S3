@@ -233,11 +233,17 @@ textual completa. S3 0.22 está fechado após adicionar
 model S3 executável que representa segmentos textuais do renderer por IDs
 numéricos e valida métricas de segmentos dos mesmos fixtures sem strings
 runtime, arrays ou emissão textual completa.
+S3 0.23 está fechado após adicionar
+`examples/self_hosting/assembly_renderer_line_blueprints.s3`, um line blueprint
+model S3 executável que associa cada linha Assembly atual a um blueprint
+numérico primário, incluindo a variante de instrução com `source=`, ainda sem
+strings runtime, arrays ou emissão textual completa.
 `python tools/compare_assembly_renderer.py --candidate-compare-available` é o
 modo correto para validar esses outputs disponíveis.
 `python tools/compare_assembly_renderer.py --candidate-run` também valida o
-bootstrap spike, o output model e o text segment model, e reporta que renderer
-implementation/full text rendering continuam `not_implemented`.
+bootstrap spike, o output model, o text segment model e o line blueprint model,
+e reporta que renderer implementation/full text rendering continuam
+`not_implemented`.
 `python tools/compare_assembly_renderer.py --check` continua bloqueado com
 status 1 porque o renderer S3 real ainda não está implementado; isso evita
 falso positivo de sucesso global.

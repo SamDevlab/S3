@@ -1,0 +1,654 @@
+# Bootstrap line blueprint model for a future S3 Assembly renderer.
+# Each rendered assembly line maps to one primary blueprint kind.
+# Source metadata is represented by the instruction with source blueprint.
+
+fn fixture_first() -> tryte:
+    return 0
+
+fn fixture_simple_call() -> tryte:
+    return 1
+
+fn fixture_sign() -> tryte:
+    return 2
+
+fn blueprint_s3asm_header() -> tryte:
+    return 0
+
+fn blueprint_function_header() -> tryte:
+    return 1
+
+fn blueprint_param() -> tryte:
+    return 2
+
+fn blueprint_register() -> tryte:
+    return 3
+
+fn blueprint_memory() -> tryte:
+    return 4
+
+fn blueprint_label() -> tryte:
+    return 5
+
+fn blueprint_instruction() -> tryte:
+    return 6
+
+fn blueprint_instruction_with_source() -> tryte:
+    return 7
+
+fn blueprint_end() -> tryte:
+    return 8
+
+fn blueprint_blank_line() -> tryte:
+    return 9
+
+fn line_blueprint_kind_count() -> tryte:
+    return blueprint_blank_line() + 1
+
+fn same_tryte(left: tryte, right: tryte) -> trit:
+    match left <=> right:
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            return 0
+
+fn same_trit(left: trit, right: trit) -> trit:
+    match left <=> right:
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            return 0
+
+fn all_passed(left: trit, right: trit) -> trit:
+    match left <=> 1:
+        -1:
+            return 0
+
+        0:
+            match right <=> 1:
+                -1:
+                    return 0
+
+                0:
+                    return 1
+
+                1:
+                    return 0
+
+        1:
+            return 0
+
+fn status_from_check(check: trit, failure: tryte) -> tryte:
+    match check <=> 1:
+        -1:
+            return failure
+
+        0:
+            return 0
+
+        1:
+            return failure
+
+fn fixture_metric(fixture: tryte, first_value: tryte, simple_value: tryte, sign_value: tryte) -> tryte:
+    match fixture <=> fixture_first():
+        -1:
+            return -1
+
+        0:
+            return first_value
+
+        1:
+            match fixture <=> fixture_simple_call():
+                -1:
+                    return -1
+
+                0:
+                    return simple_value
+
+                1:
+                    match fixture <=> fixture_sign():
+                        -1:
+                            return -1
+
+                        0:
+                            return sign_value
+
+                        1:
+                            return -1
+
+fn is_known_fixture(fixture: tryte) -> trit:
+    match fixture <=> fixture_first():
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            match fixture <=> fixture_simple_call():
+                -1:
+                    return 0
+
+                0:
+                    return 1
+
+                1:
+                    match fixture <=> fixture_sign():
+                        -1:
+                            return 0
+
+                        0:
+                            return 1
+
+                        1:
+                            return 0
+
+fn is_known_blueprint(blueprint: tryte) -> trit:
+    match blueprint <=> blueprint_s3asm_header():
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            match blueprint <=> blueprint_blank_line():
+                -1:
+                    return 1
+
+                0:
+                    return 1
+
+                1:
+                    return 0
+
+fn is_directive_blueprint(blueprint: tryte) -> trit:
+    match blueprint <=> blueprint_s3asm_header():
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            match blueprint <=> blueprint_label():
+                -1:
+                    return 1
+
+                0:
+                    return 1
+
+                1:
+                    return same_tryte(blueprint, blueprint_end())
+
+fn is_instruction_blueprint(blueprint: tryte) -> trit:
+    match blueprint <=> blueprint_instruction():
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            match blueprint <=> blueprint_instruction_with_source():
+                -1:
+                    return 0
+
+                0:
+                    return 1
+
+                1:
+                    return 0
+
+fn is_blank_blueprint(blueprint: tryte) -> trit:
+    return same_tryte(blueprint, blueprint_blank_line())
+
+fn expected_line_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 18, 21, 36)
+
+fn expected_blueprint_count(fixture: tryte) -> tryte:
+    return expected_line_count(fixture)
+
+fn expected_s3asm_header_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 1, 1, 1)
+
+fn expected_function_header_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 1, 2, 2)
+
+fn expected_param_line_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 0, 2, 1)
+
+fn expected_register_line_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 6, 4, 9)
+
+fn expected_memory_line_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 0, 0, 0)
+
+fn expected_label_line_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 1, 2, 5)
+
+fn expected_instruction_line_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 7, 6, 14)
+
+fn expected_instruction_with_source_line_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 7, 6, 14)
+
+fn expected_instruction_without_source_line_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 0, 0, 0)
+
+fn expected_end_line_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 1, 2, 2)
+
+fn expected_blank_line_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 1, 2, 2)
+
+fn expected_directive_blueprint_count(fixture: tryte) -> tryte:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return -1
+
+        0:
+            mut count: tryte = expected_s3asm_header_count(fixture)
+
+            count = count + expected_function_header_count(fixture)
+            count = count + expected_param_line_count(fixture)
+            count = count + expected_register_line_count(fixture)
+            count = count + expected_memory_line_count(fixture)
+            count = count + expected_label_line_count(fixture)
+            count = count + expected_end_line_count(fixture)
+
+            return count
+
+        1:
+            return -1
+
+fn modeled_blueprint_count(fixture: tryte) -> tryte:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return -1
+
+        0:
+            mut count: tryte = expected_directive_blueprint_count(fixture)
+
+            count = count + expected_instruction_line_count(fixture)
+            count = count + expected_blank_line_count(fixture)
+
+            return count
+
+        1:
+            return -1
+
+fn first_line_count() -> tryte:
+    return expected_line_count(fixture_first())
+
+fn simple_call_line_count() -> tryte:
+    return expected_line_count(fixture_simple_call())
+
+fn sign_line_count() -> tryte:
+    return expected_line_count(fixture_sign())
+
+fn first_blueprint_count() -> tryte:
+    return expected_blueprint_count(fixture_first())
+
+fn simple_call_blueprint_count() -> tryte:
+    return expected_blueprint_count(fixture_simple_call())
+
+fn sign_blueprint_count() -> tryte:
+    return expected_blueprint_count(fixture_sign())
+
+fn first_s3asm_header_count() -> tryte:
+    return expected_s3asm_header_count(fixture_first())
+
+fn simple_call_s3asm_header_count() -> tryte:
+    return expected_s3asm_header_count(fixture_simple_call())
+
+fn sign_s3asm_header_count() -> tryte:
+    return expected_s3asm_header_count(fixture_sign())
+
+fn first_function_header_count() -> tryte:
+    return expected_function_header_count(fixture_first())
+
+fn simple_call_function_header_count() -> tryte:
+    return expected_function_header_count(fixture_simple_call())
+
+fn sign_function_header_count() -> tryte:
+    return expected_function_header_count(fixture_sign())
+
+fn first_param_line_count() -> tryte:
+    return expected_param_line_count(fixture_first())
+
+fn simple_call_param_line_count() -> tryte:
+    return expected_param_line_count(fixture_simple_call())
+
+fn sign_param_line_count() -> tryte:
+    return expected_param_line_count(fixture_sign())
+
+fn first_register_line_count() -> tryte:
+    return expected_register_line_count(fixture_first())
+
+fn simple_call_register_line_count() -> tryte:
+    return expected_register_line_count(fixture_simple_call())
+
+fn sign_register_line_count() -> tryte:
+    return expected_register_line_count(fixture_sign())
+
+fn first_memory_line_count() -> tryte:
+    return expected_memory_line_count(fixture_first())
+
+fn simple_call_memory_line_count() -> tryte:
+    return expected_memory_line_count(fixture_simple_call())
+
+fn sign_memory_line_count() -> tryte:
+    return expected_memory_line_count(fixture_sign())
+
+fn first_label_line_count() -> tryte:
+    return expected_label_line_count(fixture_first())
+
+fn simple_call_label_line_count() -> tryte:
+    return expected_label_line_count(fixture_simple_call())
+
+fn sign_label_line_count() -> tryte:
+    return expected_label_line_count(fixture_sign())
+
+fn first_instruction_line_count() -> tryte:
+    return expected_instruction_line_count(fixture_first())
+
+fn simple_call_instruction_line_count() -> tryte:
+    return expected_instruction_line_count(fixture_simple_call())
+
+fn sign_instruction_line_count() -> tryte:
+    return expected_instruction_line_count(fixture_sign())
+
+fn first_instruction_with_source_line_count() -> tryte:
+    return expected_instruction_with_source_line_count(fixture_first())
+
+fn simple_call_instruction_with_source_line_count() -> tryte:
+    return expected_instruction_with_source_line_count(fixture_simple_call())
+
+fn sign_instruction_with_source_line_count() -> tryte:
+    return expected_instruction_with_source_line_count(fixture_sign())
+
+fn first_instruction_without_source_line_count() -> tryte:
+    return expected_instruction_without_source_line_count(fixture_first())
+
+fn simple_call_instruction_without_source_line_count() -> tryte:
+    return expected_instruction_without_source_line_count(fixture_simple_call())
+
+fn sign_instruction_without_source_line_count() -> tryte:
+    return expected_instruction_without_source_line_count(fixture_sign())
+
+fn first_end_line_count() -> tryte:
+    return expected_end_line_count(fixture_first())
+
+fn simple_call_end_line_count() -> tryte:
+    return expected_end_line_count(fixture_simple_call())
+
+fn sign_end_line_count() -> tryte:
+    return expected_end_line_count(fixture_sign())
+
+fn first_blank_line_count() -> tryte:
+    return expected_blank_line_count(fixture_first())
+
+fn simple_call_blank_line_count() -> tryte:
+    return expected_blank_line_count(fixture_simple_call())
+
+fn sign_blank_line_count() -> tryte:
+    return expected_blank_line_count(fixture_sign())
+
+fn first_directive_blueprint_count() -> tryte:
+    return expected_directive_blueprint_count(fixture_first())
+
+fn simple_call_directive_blueprint_count() -> tryte:
+    return expected_directive_blueprint_count(fixture_simple_call())
+
+fn sign_directive_blueprint_count() -> tryte:
+    return expected_directive_blueprint_count(fixture_sign())
+
+fn total_line_count() -> tryte:
+    return first_line_count() + simple_call_line_count() + sign_line_count()
+
+fn total_blueprint_count() -> tryte:
+    return first_blueprint_count() + simple_call_blueprint_count() + sign_blueprint_count()
+
+fn total_s3asm_header_count() -> tryte:
+    return (
+        first_s3asm_header_count() +
+        simple_call_s3asm_header_count() +
+        sign_s3asm_header_count()
+    )
+
+fn total_function_header_count() -> tryte:
+    return (
+        first_function_header_count() +
+        simple_call_function_header_count() +
+        sign_function_header_count()
+    )
+
+fn total_param_line_count() -> tryte:
+    return (
+        first_param_line_count() +
+        simple_call_param_line_count() +
+        sign_param_line_count()
+    )
+
+fn total_register_line_count() -> tryte:
+    return (
+        first_register_line_count() +
+        simple_call_register_line_count() +
+        sign_register_line_count()
+    )
+
+fn total_memory_line_count() -> tryte:
+    return (
+        first_memory_line_count() +
+        simple_call_memory_line_count() +
+        sign_memory_line_count()
+    )
+
+fn total_label_line_count() -> tryte:
+    return (
+        first_label_line_count() +
+        simple_call_label_line_count() +
+        sign_label_line_count()
+    )
+
+fn total_instruction_line_count() -> tryte:
+    return (
+        first_instruction_line_count() +
+        simple_call_instruction_line_count() +
+        sign_instruction_line_count()
+    )
+
+fn total_instruction_with_source_line_count() -> tryte:
+    return (
+        first_instruction_with_source_line_count() +
+        simple_call_instruction_with_source_line_count() +
+        sign_instruction_with_source_line_count()
+    )
+
+fn total_instruction_without_source_line_count() -> tryte:
+    return (
+        first_instruction_without_source_line_count() +
+        simple_call_instruction_without_source_line_count() +
+        sign_instruction_without_source_line_count()
+    )
+
+fn total_end_line_count() -> tryte:
+    return (
+        first_end_line_count() +
+        simple_call_end_line_count() +
+        sign_end_line_count()
+    )
+
+fn total_blank_line_count() -> tryte:
+    return (
+        first_blank_line_count() +
+        simple_call_blank_line_count() +
+        sign_blank_line_count()
+    )
+
+fn total_directive_blueprint_count() -> tryte:
+    return (
+        first_directive_blueprint_count() +
+        simple_call_directive_blueprint_count() +
+        sign_directive_blueprint_count()
+    )
+
+fn total_instruction_blueprint_count() -> tryte:
+    return total_instruction_line_count()
+
+fn total_blank_blueprint_count() -> tryte:
+    return total_blank_line_count()
+
+fn validate_blueprint_ids() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, same_tryte(line_blueprint_kind_count(), 10))
+    ok = all_passed(ok, is_known_blueprint(blueprint_s3asm_header()))
+    ok = all_passed(ok, is_known_blueprint(blueprint_function_header()))
+    ok = all_passed(ok, is_known_blueprint(blueprint_param()))
+    ok = all_passed(ok, is_known_blueprint(blueprint_register()))
+    ok = all_passed(ok, is_known_blueprint(blueprint_memory()))
+    ok = all_passed(ok, is_known_blueprint(blueprint_label()))
+    ok = all_passed(ok, is_known_blueprint(blueprint_instruction()))
+    ok = all_passed(ok, is_known_blueprint(blueprint_instruction_with_source()))
+    ok = all_passed(ok, is_known_blueprint(blueprint_end()))
+    ok = all_passed(ok, is_known_blueprint(blueprint_blank_line()))
+    ok = all_passed(ok, same_trit(is_known_blueprint(99), 0))
+    ok = all_passed(ok, is_directive_blueprint(blueprint_s3asm_header()))
+    ok = all_passed(ok, is_directive_blueprint(blueprint_function_header()))
+    ok = all_passed(ok, is_directive_blueprint(blueprint_memory()))
+    ok = all_passed(ok, is_directive_blueprint(blueprint_end()))
+    ok = all_passed(ok, same_trit(is_directive_blueprint(blueprint_instruction()), 0))
+    ok = all_passed(ok, same_trit(is_directive_blueprint(blueprint_instruction_with_source()), 0))
+    ok = all_passed(ok, same_trit(is_directive_blueprint(blueprint_blank_line()), 0))
+    ok = all_passed(ok, is_instruction_blueprint(blueprint_instruction()))
+    ok = all_passed(ok, is_instruction_blueprint(blueprint_instruction_with_source()))
+    ok = all_passed(ok, same_trit(is_instruction_blueprint(blueprint_label()), 0))
+    ok = all_passed(ok, is_blank_blueprint(blueprint_blank_line()))
+    ok = all_passed(ok, same_trit(is_blank_blueprint(blueprint_end()), 0))
+
+    return ok
+
+fn validate_fixture_line_blueprints(fixture: tryte) -> trit:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return 0
+
+        0:
+            mut ok: trit = 1
+
+            ok = all_passed(ok, same_tryte(expected_blueprint_count(fixture), modeled_blueprint_count(fixture)))
+            ok = all_passed(ok, same_tryte(expected_blueprint_count(fixture), expected_line_count(fixture)))
+            ok = all_passed(
+                ok,
+                same_tryte(
+                    expected_instruction_line_count(fixture),
+                    expected_instruction_with_source_line_count(fixture) + expected_instruction_without_source_line_count(fixture)
+                )
+            )
+            ok = all_passed(ok, same_tryte(expected_instruction_without_source_line_count(fixture), 0))
+            ok = all_passed(ok, same_tryte(expected_memory_line_count(fixture), 0))
+            ok = all_passed(ok, same_tryte(expected_s3asm_header_count(fixture), 1))
+
+            return ok
+
+        1:
+            return 0
+
+fn validate_total_line_blueprints() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, same_tryte(total_line_count(), 75))
+    ok = all_passed(ok, same_tryte(total_blueprint_count(), 75))
+    ok = all_passed(ok, same_tryte(total_s3asm_header_count(), 3))
+    ok = all_passed(ok, same_tryte(total_function_header_count(), 5))
+    ok = all_passed(ok, same_tryte(total_param_line_count(), 3))
+    ok = all_passed(ok, same_tryte(total_register_line_count(), 19))
+    ok = all_passed(ok, same_tryte(total_memory_line_count(), 0))
+    ok = all_passed(ok, same_tryte(total_label_line_count(), 8))
+    ok = all_passed(ok, same_tryte(total_instruction_line_count(), 27))
+    ok = all_passed(ok, same_tryte(total_instruction_with_source_line_count(), 27))
+    ok = all_passed(ok, same_tryte(total_instruction_without_source_line_count(), 0))
+    ok = all_passed(ok, same_tryte(total_end_line_count(), 5))
+    ok = all_passed(ok, same_tryte(total_blank_line_count(), 5))
+    ok = all_passed(ok, same_tryte(total_directive_blueprint_count(), 43))
+    ok = all_passed(ok, same_tryte(total_instruction_blueprint_count(), 27))
+    ok = all_passed(ok, same_tryte(total_blank_blueprint_count(), 5))
+
+    return ok
+
+fn validate_all_fixture_line_blueprints() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, validate_fixture_line_blueprints(fixture_first()))
+    ok = all_passed(ok, validate_fixture_line_blueprints(fixture_simple_call()))
+    ok = all_passed(ok, validate_fixture_line_blueprints(fixture_sign()))
+    ok = all_passed(ok, same_trit(validate_fixture_line_blueprints(99), 0))
+    ok = all_passed(ok, validate_blueprint_ids())
+    ok = all_passed(ok, validate_total_line_blueprints())
+
+    return ok
+
+fn line_blueprints_first_probe() -> tryte:
+    return status_from_check(validate_fixture_line_blueprints(fixture_first()), 1)
+
+fn line_blueprints_simple_call_probe() -> tryte:
+    return status_from_check(
+        validate_fixture_line_blueprints(fixture_simple_call()),
+        1
+    )
+
+fn line_blueprints_sign_probe() -> tryte:
+    return status_from_check(validate_fixture_line_blueprints(fixture_sign()), 1)
+
+fn line_blueprints_unknown_fixture_probe() -> tryte:
+    return status_from_check(same_trit(validate_fixture_line_blueprints(99), 0), 1)
+
+fn line_blueprints_known_blueprint_probe() -> tryte:
+    return status_from_check(is_known_blueprint(blueprint_memory()), 1)
+
+fn line_blueprints_unknown_blueprint_probe() -> tryte:
+    return status_from_check(same_trit(is_known_blueprint(99), 0), 1)
+
+fn line_blueprints_directive_probe() -> tryte:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, is_directive_blueprint(blueprint_function_header()))
+    ok = all_passed(ok, is_directive_blueprint(blueprint_end()))
+    ok = all_passed(ok, same_trit(is_directive_blueprint(blueprint_instruction()), 0))
+
+    return status_from_check(ok, 1)
+
+fn line_blueprints_instruction_probe() -> tryte:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, is_instruction_blueprint(blueprint_instruction()))
+    ok = all_passed(ok, is_instruction_blueprint(blueprint_instruction_with_source()))
+    ok = all_passed(ok, same_trit(is_instruction_blueprint(blueprint_blank_line()), 0))
+
+    return status_from_check(ok, 1)
+
+fn line_blueprints_blank_probe() -> tryte:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, is_known_blueprint(blueprint_blank_line()))
+    ok = all_passed(ok, is_blank_blueprint(blueprint_blank_line()))
+
+    return status_from_check(ok, 1)
+
+fn line_blueprints_totals_probe() -> tryte:
+    return status_from_check(validate_total_line_blueprints(), 1)
+
+fn line_blueprint_model_self_check() -> tryte:
+    return status_from_check(validate_all_fixture_line_blueprints(), 1)
+
+fn main() -> tryte:
+    return line_blueprint_model_self_check()
