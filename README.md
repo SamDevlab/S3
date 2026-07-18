@@ -214,6 +214,10 @@ atuais. `first`, `simple_call` e `sign` têm actual outputs disponíveis,
 baseado em `StaticTextLineEmitter`. S3 0.17 está fechado após aproximar o
 modelo real `AssemblyProgram` desse core por adapters controlados; `first`,
 `simple_call` e `sign` são provados byte a byte via adapter.
+S3 0.18 está fechado após consolidar esses adapters atrás de
+`render_supported_program`, um caminho comum para o subconjunto
+`AssemblyProgram` já provado por `first`, `simple_call` e `sign`, sem alterar
+outputs versionados ou goldens.
 `python tools/compare_assembly_renderer.py --candidate-compare-available` é o
 modo correto para validar esses outputs disponíveis.
 `python tools/compare_assembly_renderer.py --check` continua bloqueado com

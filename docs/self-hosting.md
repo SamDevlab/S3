@@ -29,7 +29,10 @@ This core is an incremental bridge toward renderer generalization, not a
 migrated S3 renderer. S3 0.17 is closed after adding controlled
 `AssemblyProgram` adapter paths for `first`, `simple_call`, and `sign` that
 render through that core while keeping the global `compare --check` result
-blocked until a real S3 renderer exists; see `docs/roadmap-0.17.md`.
+blocked until a real S3 renderer exists; see `docs/roadmap-0.17.md`. S3 0.18
+is closed after consolidating those fixture adapters behind a common supported
+`AssemblyProgram` renderer subset while preserving byte-for-byte output and the
+blocked global `compare --check` state; see `docs/roadmap-0.18.md`.
 
 Recent tools make this pipeline more observable:
 
