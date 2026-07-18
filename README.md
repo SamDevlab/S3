@@ -265,6 +265,15 @@ executable S3 renderer bootstrap artifacts, and
 `python tools/compare_assembly_renderer.py --candidate-run` validates all of
 them while still reporting renderer implementation/full text rendering as
 `not_implemented`.
+S3 0.27 is closed after adding
+`examples/self_hosting/assembly_renderer_event_writer.s3`, an executable S3
+event writer state model that consumes ordered events and validates writer
+state transitions, line advancement, emitted counters, function open/close
+balance, final state, and deterministic signatures. There are now eight
+executable S3 renderer bootstrap artifacts, and
+`python tools/compare_assembly_renderer.py --candidate-run` validates all of
+them while still reporting renderer implementation/full text rendering as
+`not_implemented`.
 `python tools/compare_assembly_renderer.py --check` continua bloqueado com
 status 1 porque o renderer S3 real ainda não está implementado; isso evita
 falso positivo de sucesso global.
