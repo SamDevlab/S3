@@ -8,6 +8,7 @@ from bootstrap.s3.assembly import (
     ASSEMBLY_FORMAT_VERSION,
     AssemblyFunction,
     AssemblyInstruction,
+    AssemblyMemoryObject,
     AssemblyOpcode,
     AssemblyProgram,
     AssemblyType,
@@ -112,9 +113,14 @@ SUPPORTED_PROGRAM_OPCODES = frozenset(
         AssemblyOpcode.TMOV,
         AssemblyOpcode.TINV,
         AssemblyOpcode.TADD,
+        AssemblyOpcode.TMIN,
+        AssemblyOpcode.TMAX,
         AssemblyOpcode.TCMP,
         AssemblyOpcode.TCALL,
+        AssemblyOpcode.TLOAD,
+        AssemblyOpcode.TSTORE,
         AssemblyOpcode.TRET,
+        AssemblyOpcode.TJMP,
         AssemblyOpcode.TBR3,
     }
 )
@@ -127,11 +133,11 @@ class AssemblyProgramTextAdapterError(ValueError):
 
 
 class AssemblyProgramTextAdapter:
-    """Render controlled fixture subsets through ``AssemblyTextRenderer``.
+    """Render controlled AssemblyProgram shapes through ``AssemblyTextRenderer``.
 
-    This adapter reads real ``AssemblyProgram`` values for narrow fixture
-    shapes. It does not replace ``AssemblyProgram.render`` and does not
-    implement a general Assembly renderer.
+    This adapter reads real ``AssemblyProgram`` values and preserves the
+    current Python Assembly text format. It does not implement the future S3
+    Assembly renderer.
     """
 
     def render_first_program(self, program: AssemblyProgram) -> StaticTextDocument:
@@ -153,7 +159,10 @@ class AssemblyProgramTextAdapter:
         _validate_supported_program_shape(program)
         renderer = AssemblyTextRenderer()
         renderer.emit_header(program.version)
-        for index, function in enumerate(program.functions):
+        functions = tuple(program.functions)
+        if not functions:
+            renderer.emit_blank_line()
+        for index, function in enumerate(functions):
             if index > 0:
                 renderer.emit_blank_line()
             _emit_function(renderer, function, _emit_supported_instruction)
@@ -225,6 +234,7 @@ def _validate_first_program_shape(program: AssemblyProgram) -> None:
         raise AssemblyProgramTextAdapterError(
             "first adapter supports only the first fixture opcode sequence"
         )
+    _validate_source_metadata(function, "first adapter")
 
 
 def _validate_simple_call_program_shape(program: AssemblyProgram) -> None:
@@ -280,6 +290,7 @@ def _validate_simple_call_add_function(function: AssemblyFunction) -> None:
         raise AssemblyProgramTextAdapterError(
             "simple_call adapter supports only the add opcode sequence"
         )
+    _validate_source_metadata(function, "simple_call adapter")
 
 
 def _validate_simple_call_main_function(function: AssemblyFunction) -> None:
@@ -314,6 +325,7 @@ def _validate_simple_call_main_function(function: AssemblyFunction) -> None:
         raise AssemblyProgramTextAdapterError(
             "simple_call adapter supports only the main opcode sequence"
         )
+    _validate_source_metadata(function, "simple_call adapter")
 
 
 def _validate_sign_program_shape(program: AssemblyProgram) -> None:
@@ -355,6 +367,7 @@ def _validate_sign_function(function: AssemblyFunction) -> None:
             "sign adapter expects sign registers r1..r6 with fixture types"
         )
     _validate_blocks(function, SIGN_FUNCTION_BLOCKS, "sign adapter", "sign")
+    _validate_source_metadata(function, "sign adapter")
 
 
 def _validate_sign_main_function(function: AssemblyFunction) -> None:
@@ -375,6 +388,7 @@ def _validate_sign_main_function(function: AssemblyFunction) -> None:
             "sign adapter expects main registers r0..r2 with fixture types"
         )
     _validate_blocks(function, SIGN_MAIN_BLOCKS, "sign adapter", "main")
+    _validate_source_metadata(function, "sign adapter")
 
 
 def _validate_blocks(
@@ -412,50 +426,43 @@ def _parameter_types(
 def _validate_supported_program_shape(program: AssemblyProgram) -> None:
     if not isinstance(program, AssemblyProgram):
         raise TypeError("supported adapter expects an AssemblyProgram")
-    if program.version != ASSEMBLY_FORMAT_VERSION:
-        raise AssemblyProgramTextAdapterError(
-            "supported adapter expects Assembly format version "
-            f"{ASSEMBLY_FORMAT_VERSION}"
-        )
-    if not program.functions:
-        raise AssemblyProgramTextAdapterError(
-            "supported adapter expects at least one function"
-        )
-
-    function_names: set[str] = set()
     for function in program.functions:
-        if function.name in function_names:
-            raise AssemblyProgramTextAdapterError(
-                f"supported adapter expects unique function names: {function.name}"
-            )
-        function_names.add(function.name)
         _validate_supported_function_shape(function)
 
 
 def _validate_supported_function_shape(function: AssemblyFunction) -> None:
-    if function.memory_objects:
-        raise AssemblyProgramTextAdapterError(
-            "supported adapter does not support memory objects"
-        )
-    if not function.blocks:
-        raise AssemblyProgramTextAdapterError(
-            "supported adapter expects every function to have at least one block"
-        )
-
-    block_labels: set[str] = set()
+    for memory in function.memory_objects:
+        _validate_supported_memory_shape(memory)
     for block in function.blocks:
-        if block.label in block_labels:
-            raise AssemblyProgramTextAdapterError(
-                f"supported adapter expects unique labels: {block.label}"
-            )
-        block_labels.add(block.label)
-        if not block.instructions:
-            raise AssemblyProgramTextAdapterError(
-                "supported adapter expects every block to have at least one "
-                "instruction"
-            )
         for instruction in block.instructions:
             _validate_supported_instruction_shape(instruction)
+
+
+def _validate_supported_memory_shape(memory: AssemblyMemoryObject) -> None:
+    if not isinstance(memory.index, int) or isinstance(memory.index, bool):
+        raise AssemblyProgramTextAdapterError(
+            "supported adapter expects memory index to be an integer"
+        )
+    if memory.index < 0:
+        raise AssemblyProgramTextAdapterError(
+            "supported adapter expects memory index to be non-negative"
+        )
+    if not isinstance(memory.length, int) or isinstance(memory.length, bool):
+        raise AssemblyProgramTextAdapterError(
+            "supported adapter expects memory length to be an integer"
+        )
+    if memory.length < 1:
+        raise AssemblyProgramTextAdapterError(
+            "supported adapter expects memory length to be positive"
+        )
+    if not isinstance(memory.element_type, AssemblyType):
+        raise AssemblyProgramTextAdapterError(
+            "supported adapter expects memory element type to be an AssemblyType"
+        )
+    if not isinstance(memory.mutable, bool):
+        raise AssemblyProgramTextAdapterError(
+            "supported adapter expects memory mutability to be a boolean"
+        )
 
 
 def _validate_supported_instruction_shape(
@@ -472,6 +479,16 @@ def _validate_supported_instruction_shape(
         )
 
 
+def _validate_source_metadata(function: AssemblyFunction, adapter_name: str) -> None:
+    for block in function.blocks:
+        for instruction in block.instructions:
+            if instruction.source is None:
+                raise AssemblyProgramTextAdapterError(
+                    f"{adapter_name} expects source metadata for "
+                    f"{instruction.opcode.value}"
+                )
+
+
 def _emit_function(
     renderer: AssemblyTextRenderer,
     function: AssemblyFunction,
@@ -482,6 +499,13 @@ def _emit_function(
         renderer.emit_param(parameter.register, parameter.type.value)
     for register, type_name in function.register_types:
         renderer.emit_register(register, type_name.value)
+    for memory in function.memory_objects:
+        renderer.emit_memory(
+            memory.index,
+            memory.element_type.value,
+            memory.length,
+            memory.mutable,
+        )
     for block in function.blocks:
         renderer.emit_label(block.label)
         for instruction in block.instructions:
@@ -531,7 +555,12 @@ def _emit_supported_instruction(
         )
         return
 
-    if opcode in {AssemblyOpcode.TADD, AssemblyOpcode.TCMP}:
+    if opcode in {
+        AssemblyOpcode.TADD,
+        AssemblyOpcode.TMIN,
+        AssemblyOpcode.TMAX,
+        AssemblyOpcode.TCMP,
+    }:
         left, middle, right = _register_triple(
             instruction,
             opcode.value,
@@ -545,6 +574,17 @@ def _emit_supported_instruction(
             _register(right),
             source=source,
         )
+        return
+
+    if opcode is AssemblyOpcode.TJMP:
+        label = _single_label(instruction, "TJMP", "supported adapter")
+        _require_no_extra_operands(
+            instruction,
+            "TJMP",
+            "supported adapter",
+            allow_labels=True,
+        )
+        renderer.emit_instruction(opcode.value, label, source=source)
         return
 
     if opcode is AssemblyOpcode.TBR3:
@@ -587,6 +627,50 @@ def _emit_supported_instruction(
         )
         return
 
+    if opcode is AssemblyOpcode.TLOAD:
+        target, index = _register_pair(
+            instruction,
+            "TLOAD",
+            "supported adapter",
+        )
+        memory = _instruction_memory(instruction, "TLOAD", "supported adapter")
+        _require_no_extra_operands(
+            instruction,
+            "TLOAD",
+            "supported adapter",
+            allow_memory=True,
+        )
+        renderer.emit_instruction(
+            opcode.value,
+            _register(target),
+            _memory(memory),
+            _register(index),
+            source=source,
+        )
+        return
+
+    if opcode is AssemblyOpcode.TSTORE:
+        index, source_register = _register_pair(
+            instruction,
+            "TSTORE",
+            "supported adapter",
+        )
+        memory = _instruction_memory(instruction, "TSTORE", "supported adapter")
+        _require_no_extra_operands(
+            instruction,
+            "TSTORE",
+            "supported adapter",
+            allow_memory=True,
+        )
+        renderer.emit_instruction(
+            opcode.value,
+            _memory(memory),
+            _register(index),
+            _register(source_register),
+            source=source,
+        )
+        return
+
     if opcode is AssemblyOpcode.TRET:
         register = _single_register(instruction, "TRET", "supported adapter")
         _require_no_extra_operands(instruction, "TRET", "supported adapter")
@@ -598,11 +682,12 @@ def _emit_supported_instruction(
     )
 
 
-def _source(instruction: AssemblyInstruction, adapter_name: str) -> AssemblyTextSource:
+def _source(
+    instruction: AssemblyInstruction,
+    adapter_name: str,
+) -> AssemblyTextSource | None:
     if instruction.source is None:
-        raise AssemblyProgramTextAdapterError(
-            f"{adapter_name} expects source metadata for {instruction.opcode.value}"
-        )
+        return None
     source = instruction.source
     return AssemblyTextSource(source.line, source.column, source.offset)
 
@@ -655,15 +740,39 @@ def _label_triple(
     return instruction.labels
 
 
+def _single_label(
+    instruction: AssemblyInstruction,
+    opcode: str,
+    adapter_name: str,
+) -> str:
+    if len(instruction.labels) != 1:
+        raise AssemblyProgramTextAdapterError(
+            f"{adapter_name} expects {opcode} to have one label"
+        )
+    return instruction.labels[0]
+
+
 def _tcall_registers(
     instruction: AssemblyInstruction,
     adapter_name: str,
 ) -> tuple[int, ...]:
-    if len(instruction.registers) not in {2, 3}:
+    if len(instruction.registers) < 1:
         raise AssemblyProgramTextAdapterError(
-            f"{adapter_name} expects TCALL to have one or two argument registers"
+            f"{adapter_name} expects TCALL to have a destination register"
         )
     return instruction.registers
+
+
+def _instruction_memory(
+    instruction: AssemblyInstruction,
+    opcode: str,
+    adapter_name: str,
+) -> int:
+    if instruction.memory is None:
+        raise AssemblyProgramTextAdapterError(
+            f"{adapter_name} expects {opcode} memory object"
+        )
+    return instruction.memory
 
 
 def _require_no_extra_operands(
@@ -674,12 +783,13 @@ def _require_no_extra_operands(
     allow_immediate: bool = False,
     allow_callee: bool = False,
     allow_labels: bool = False,
+    allow_memory: bool = False,
 ) -> None:
     if (
         (instruction.immediate is not None and not allow_immediate)
         or (instruction.callee is not None and not allow_callee)
         or (instruction.labels and not allow_labels)
-        or instruction.memory is not None
+        or (instruction.memory is not None and not allow_memory)
     ):
         raise AssemblyProgramTextAdapterError(
             f"{adapter_name} found unsupported {opcode} operands"
@@ -688,3 +798,7 @@ def _require_no_extra_operands(
 
 def _register(register: int) -> str:
     return f"r{register}"
+
+
+def _memory(memory: int) -> str:
+    return f"m{memory}"

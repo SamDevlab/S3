@@ -32,7 +32,11 @@ render through that core while keeping the global `compare --check` result
 blocked until a real S3 renderer exists; see `docs/roadmap-0.17.md`. S3 0.18
 is closed after consolidating those fixture adapters behind a common supported
 `AssemblyProgram` renderer subset while preserving byte-for-byte output and the
-blocked global `compare --check` state; see `docs/roadmap-0.18.md`.
+blocked global `compare --check` state; see `docs/roadmap-0.18.md`. S3 0.19 is
+closed after adopting that shared Python-side path inside
+`AssemblyProgram.render()` with parity for the current Assembly output,
+including `.memory`, while leaving the S3 renderer itself unimplemented and
+`compare --check` blocked; see `docs/roadmap-0.19.md`.
 
 Recent tools make this pipeline more observable:
 

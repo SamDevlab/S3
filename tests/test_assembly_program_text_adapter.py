@@ -17,6 +17,7 @@ from bootstrap.s3.assembly import (
     AssemblyParameter,
     AssemblyProgram,
     AssemblyType,
+    parse_assembly,
 )
 from bootstrap.s3.assembly_program_text_adapter import (
     AssemblyProgramTextAdapter,
@@ -61,6 +62,9 @@ SIGN_ACTUAL_OUTPUT = (
     / "golden"
     / "assembly_renderer_candidate_actual"
     / "sign.assembly.txt"
+)
+INSPECT_ASSEMBLY_GOLDENS = tuple(
+    sorted((REPO_ROOT / "tests" / "golden" / "inspect").glob("*.assembly.txt"))
 )
 
 
@@ -419,6 +423,25 @@ def test_render_supported_program_matches_sign_fixture_outputs() -> None:
     assert b"\r\n" not in document.utf8_bytes
 
 
+def test_render_supported_program_matches_all_inspect_assembly_golden_outputs() -> None:
+    assert {path.name for path in INSPECT_ASSEMBLY_GOLDENS} == {
+        "assembly_renderer_stub.assembly.txt",
+        "first.assembly.txt",
+        "sign.assembly.txt",
+        "simple_call.assembly.txt",
+    }
+
+    for golden in INSPECT_ASSEMBLY_GOLDENS:
+        expected = _read_lf_normalized_golden_bytes(golden)
+        program = parse_assembly(golden.read_text(encoding="utf-8"))
+        document = render_supported_program(program)
+
+        assert document.utf8_bytes == expected
+        assert document.text.endswith("\n")
+        assert "\r\n" not in document.text
+        assert b"\r\n" not in document.utf8_bytes
+
+
 def test_render_first_program_delegates_to_supported_program(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -461,15 +484,15 @@ def test_render_sign_program_delegates_to_supported_program(
     )
 
 
-def test_render_supported_program_rejects_program_without_functions() -> None:
-    with pytest.raises(
-        AssemblyProgramTextAdapterError,
-        match="supported adapter expects at least one function",
-    ):
-        render_supported_program(AssemblyProgram(()))
+def test_render_supported_program_preserves_program_without_functions() -> None:
+    document = render_supported_program(AssemblyProgram(()))
+
+    assert document.text == ".s3asm 0.5.0\n\n\n"
+    assert document.utf8_bytes == b".s3asm 0.5.0\n\n\n"
+    assert document.text.endswith("\n")
 
 
-def test_render_supported_program_rejects_memory_objects() -> None:
+def test_render_supported_program_renders_memory_objects() -> None:
     program = AssemblyProgram(
         (
             AssemblyFunction(
@@ -501,14 +524,22 @@ def test_render_supported_program_rejects_memory_objects() -> None:
         )
     )
 
-    with pytest.raises(
-        AssemblyProgramTextAdapterError,
-        match="supported adapter does not support memory objects",
-    ):
-        render_supported_program(program)
+    document = render_supported_program(program)
+
+    assert (
+        document.text
+        == ".s3asm 0.5.0\n"
+        "\n"
+        ".function main -> tryte\n"
+        "    .register r0, tryte\n"
+        "    .memory m0, tryte, 1, immutable\n"
+        ".label entry\n"
+        "    TRET   r0 ; source=1:1:0\n"
+        ".end\n"
+    )
 
 
-def test_render_supported_program_rejects_empty_blocks() -> None:
+def test_render_supported_program_preserves_empty_blocks() -> None:
     program = AssemblyProgram(
         (
             AssemblyFunction(
@@ -521,11 +552,16 @@ def test_render_supported_program_rejects_empty_blocks() -> None:
         )
     )
 
-    with pytest.raises(
-        AssemblyProgramTextAdapterError,
-        match="supported adapter expects every block to have at least one instruction",
-    ):
-        render_supported_program(program)
+    document = render_supported_program(program)
+
+    assert (
+        document.text
+        == ".s3asm 0.5.0\n"
+        "\n"
+        ".function main -> tryte\n"
+        ".label entry\n"
+        ".end\n"
+    )
 
 
 def test_render_supported_program_rejects_unsupported_opcode() -> None:
@@ -541,9 +577,8 @@ def test_render_supported_program_rejects_unsupported_opcode() -> None:
                         "entry",
                         (
                             AssemblyInstruction(
-                                AssemblyOpcode.TJMP,
-                                labels=("entry",),
-                                source=SourceLocation(0, 1, 1),
+                                "TNOPE",  # type: ignore[arg-type]
+                                (),
                             ),
                         ),
                     ),
@@ -554,9 +589,109 @@ def test_render_supported_program_rejects_unsupported_opcode() -> None:
 
     with pytest.raises(
         AssemblyProgramTextAdapterError,
-        match="supported adapter does not support opcode TJMP",
+        match="supported adapter does not support opcode TNOPE",
     ):
         render_supported_program(program)
+
+
+def test_render_supported_program_covers_current_instruction_forms_without_source() -> None:
+    source = (
+        ".s3asm 0.5.0\n"
+        "\n"
+        ".function helper -> tryte\n"
+        "    .register r0, tryte\n"
+        ".label entry\n"
+        "    TRET   r0\n"
+        ".end\n"
+        "\n"
+        ".function main -> tryte\n"
+        "    .register r0, tryte\n"
+        "    .register r1, tryte\n"
+        "    .register r2, tryte\n"
+        "    .register r3, tryte\n"
+        "    .register r4, tryte\n"
+        "    .register r5, tryte\n"
+        "    .memory m0, tryte, 2, mutable\n"
+        ".label entry\n"
+        "    TCONST r0, 0\n"
+        "    TCONST r1, 1\n"
+        "    TSTORE m0, r0, r1\n"
+        "    TLOAD  r2, m0, r0\n"
+        "    TMIN   r3, r1, r2\n"
+        "    TMAX   r4, r1, r2\n"
+        "    TCALL  r5, helper\n"
+        "    TJMP   done\n"
+        ".label done\n"
+        "    TRET   r5\n"
+        ".end\n"
+    )
+    program = parse_assembly(source)
+    document = render_supported_program(program)
+
+    assert document.text == source
+    assert b"\r\n" not in document.utf8_bytes
+    assert document.utf8_bytes.endswith(b"\n")
+
+
+def test_render_supported_program_rejects_invalid_memory_instruction_shape() -> None:
+    program = AssemblyProgram(
+        (
+            AssemblyFunction(
+                "main",
+                AssemblyType.TRYTE,
+                (),
+                ((0, AssemblyType.TRYTE), (1, AssemblyType.TRYTE)),
+                (
+                    AssemblyBlock(
+                        "entry",
+                        (
+                            AssemblyInstruction(
+                                AssemblyOpcode.TLOAD,
+                                (0, 1),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+    )
+
+    with pytest.raises(
+        AssemblyProgramTextAdapterError,
+        match="supported adapter expects TLOAD memory object",
+    ):
+        render_supported_program(program)
+
+
+def test_render_first_program_still_requires_fixture_source_metadata() -> None:
+    original = _first_program()
+    function = original.functions[0]
+    block = function.blocks[0]
+    instructions = (
+        AssemblyInstruction(
+            block.instructions[0].opcode,
+            block.instructions[0].registers,
+            immediate=block.instructions[0].immediate,
+        ),
+        *block.instructions[1:],
+    )
+    program = AssemblyProgram(
+        (
+            AssemblyFunction(
+                function.name,
+                function.return_type,
+                function.parameters,
+                function.register_types,
+                (AssemblyBlock(block.label, instructions),),
+            ),
+        )
+    )
+
+    with pytest.raises(
+        AssemblyProgramTextAdapterError,
+        match="first adapter expects source metadata for TCONST",
+    ):
+        render_first_program(program)
 
 
 def test_render_first_program_matches_lf_normalized_inspect_golden() -> None:

@@ -217,7 +217,10 @@ modelo real `AssemblyProgram` desse core por adapters controlados; `first`,
 S3 0.18 está fechado após consolidar esses adapters atrás de
 `render_supported_program`, um caminho comum para o subconjunto
 `AssemblyProgram` já provado por `first`, `simple_call` e `sign`, sem alterar
-outputs versionados ou goldens.
+outputs versionados ou goldens. S3 0.19 está fechado após expandir esse caminho
+Python-side para cobrir a saída atual de `AssemblyProgram.render()` e fazer
+`AssemblyProgram.render()` delegar a ele. Isso preserva os inspect goldens e os
+actual outputs; o renderer S3 real continua não implementado.
 `python tools/compare_assembly_renderer.py --candidate-compare-available` é o
 modo correto para validar esses outputs disponíveis.
 `python tools/compare_assembly_renderer.py --check` continua bloqueado com
