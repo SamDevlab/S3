@@ -222,8 +222,9 @@ class AssemblyProgram:
     version: str = ASSEMBLY_FORMAT_VERSION
 
     def render(self) -> str:
-        body = "\n\n".join(function.render() for function in self.functions)
-        return f".s3asm {self.version}\n\n{body}\n"
+        from .assembly_program_text_adapter import render_supported_program
+
+        return render_supported_program(self).text
 
 
 _IDENTIFIER = r"[A-Za-z_][A-Za-z0-9_]*"

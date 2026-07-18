@@ -73,6 +73,31 @@ def test_renderer_core_returns_static_text_document_with_lf() -> None:
     assert document.text.endswith("\n")
 
 
+def test_renderer_core_emits_memory_declaration() -> None:
+    document = (
+        AssemblyTextRenderer()
+        .emit_header()
+        .emit_function("main", "tryte")
+        .emit_memory(0, "tryte", 2, True)
+        .emit_label("entry")
+        .emit_instruction("TRET", "r0")
+        .emit_end()
+        .build()
+    )
+
+    assert document.text == (
+        ".s3asm 0.5.0\n"
+        "\n"
+        ".function main -> tryte\n"
+        "    .memory m0, tryte, 2, mutable\n"
+        ".label entry\n"
+        "    TRET   r0\n"
+        ".end\n"
+    )
+    assert "\r\n" not in document.text
+    assert document.text.endswith("\n")
+
+
 def test_first_fixture_probe_delegates_to_renderer_core(monkeypatch) -> None:
     calls: list[str] = []
 

@@ -92,6 +92,22 @@ class AssemblyTextRenderer:
         )
         return self
 
+    def emit_memory(
+        self,
+        index: int,
+        element_type: str,
+        length: int,
+        mutable: bool,
+    ) -> AssemblyTextRenderer:
+        mutability = "mutable" if mutable else "immutable"
+        self._emitter.emit_line(
+            f".memory m{_memory_number(index)}, "
+            f"{_line_fragment(element_type, 'memory element type')}, "
+            f"{_memory_length(length)}, {mutability}",
+            indent=1,
+        )
+        return self
+
     def emit_label(self, name: str) -> AssemblyTextRenderer:
         self._emitter.emit_line(f".label {_line_fragment(name, 'label')}")
         return self
@@ -135,6 +151,16 @@ def _line_fragment(value: str, label: str) -> str:
 
 def _register_number(value: int) -> int:
     _require_non_negative_int(value, "register")
+    return value
+
+
+def _memory_number(value: int) -> int:
+    _require_non_negative_int(value, "memory")
+    return value
+
+
+def _memory_length(value: int) -> int:
+    _require_positive_int(value, "memory length")
     return value
 
 

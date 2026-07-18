@@ -25,13 +25,16 @@ candidate check state safely blocked while clarifying the reason; see
 `docs/roadmap-0.10.md`, `docs/roadmap-0.11.md`,
 `docs/roadmap-0.12.md`, `docs/roadmap-0.13.md`, `docs/roadmap-0.14.md`,
 `docs/roadmap-0.15.md`, `docs/roadmap-0.16.md`,
-`docs/roadmap-0.17.md`, and `docs/roadmap-0.18.md`. S3 0.16 is closed after
-routing the three current fixture probes through the incremental renderer core.
-S3 0.17 is closed after connecting the `first`, `simple_call`, and `sign`
-fixture paths to that core through controlled `AssemblyProgram` adapters. S3
-0.18 is closed after consolidating those controlled adapters behind a common
-supported `AssemblyProgram` renderer subset, while keeping the global `--check`
-mode blocked.
+`docs/roadmap-0.17.md`, `docs/roadmap-0.18.md`, and
+`docs/roadmap-0.19.md`. S3 0.16 is closed after routing the three current
+fixture probes through the incremental renderer core. S3 0.17 is closed after
+connecting the `first`, `simple_call`, and `sign` fixture paths to that core
+through controlled `AssemblyProgram` adapters. S3 0.18 is closed after
+consolidating those controlled adapters behind a common supported
+`AssemblyProgram` renderer subset. S3 0.19 is closed after expanding that
+Python-side path to match the current `AssemblyProgram.render()` output and
+making `AssemblyProgram.render()` delegate to it, while keeping the global
+`--check` mode blocked.
 
 `python tools/compare_assembly_renderer.py --status` reports the current state
 and exits successfully.
@@ -268,6 +271,15 @@ and the fixture opcodes. Actual outputs and inspect goldens remain unchanged,
 and the global `--check` mode remains blocked because the real S3 renderer is
 not implemented.
 
+0.19 adopts that Python-side path inside the real `AssemblyProgram.render()`
+method. The supported adapter now covers the current Python Assembly text
+format, including `.memory`, `TLOAD`, `TSTORE`, `TJMP`, `TMIN`, `TMAX`, optional
+source metadata, and `TCALL` arities beyond the initial fixtures. The inspect
+goldens and candidate actual outputs remain unchanged. This is still not the
+S3 renderer implementation: `--candidate-compare-available` remains the passing
+available-output check, and global `--check` remains blocked with renderer
+implementation reported as `not_implemented`.
+
 ## Why check fails today
 
 Failure is correct today because real comparison is still blocked by:
@@ -294,7 +306,8 @@ When the S3 renderer exists, `--check` should:
 
 This harness does not implement the S3 renderer.
 
-It does not alter the Python renderer.
+The Python `AssemblyProgram.render()` path now uses the shared Python-side
+adapter, but the harness still treats the S3 renderer implementation as absent.
 
 It does not alter the Assembly format.
 
