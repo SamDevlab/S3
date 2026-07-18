@@ -1,0 +1,414 @@
+# Bootstrap spike for a future S3 Assembly renderer.
+# It validates scalar renderer-subset invariants without rendering text.
+
+fn directive_s3asm() -> tryte:
+    return 0
+
+fn directive_function() -> tryte:
+    return 1
+
+fn directive_param() -> tryte:
+    return 2
+
+fn directive_register() -> tryte:
+    return 3
+
+fn directive_memory() -> tryte:
+    return 4
+
+fn directive_label() -> tryte:
+    return 5
+
+fn directive_end() -> tryte:
+    return 6
+
+fn supported_directive_count() -> tryte:
+    return directive_end() + 1
+
+fn opcode_tconst() -> tryte:
+    return 0
+
+fn opcode_tmov() -> tryte:
+    return 1
+
+fn opcode_tinv() -> tryte:
+    return 2
+
+fn opcode_tadd() -> tryte:
+    return 3
+
+fn opcode_tmin() -> tryte:
+    return 4
+
+fn opcode_tmax() -> tryte:
+    return 5
+
+fn opcode_tcmp() -> tryte:
+    return 6
+
+fn opcode_tcall() -> tryte:
+    return 7
+
+fn opcode_tload() -> tryte:
+    return 8
+
+fn opcode_tstore() -> tryte:
+    return 9
+
+fn opcode_tret() -> tryte:
+    return 10
+
+fn opcode_tjmp() -> tryte:
+    return 11
+
+fn opcode_tbr3() -> tryte:
+    return 12
+
+fn supported_opcode_count() -> tryte:
+    return opcode_tbr3() + 1
+
+fn fixture_first() -> tryte:
+    return 0
+
+fn fixture_simple_call() -> tryte:
+    return 1
+
+fn fixture_sign() -> tryte:
+    return 2
+
+fn expected_first_line_count() -> tryte:
+    return 18
+
+fn expected_simple_call_line_count() -> tryte:
+    return 21
+
+fn expected_sign_line_count() -> tryte:
+    return 36
+
+fn same_tryte(left: tryte, right: tryte) -> trit:
+    match left <=> right:
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            return 0
+
+fn same_trit(left: trit, right: trit) -> trit:
+    match left <=> right:
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            return 0
+
+fn all_passed(left: trit, right: trit) -> trit:
+    match left <=> 1:
+        -1:
+            return 0
+
+        0:
+            match right <=> 1:
+                -1:
+                    return 0
+
+                0:
+                    return 1
+
+                1:
+                    return 0
+
+        1:
+            return 0
+
+fn status_from_check(check: trit, failure: tryte) -> tryte:
+    match check <=> 1:
+        -1:
+            return failure
+
+        0:
+            return 0
+
+        1:
+            return failure
+
+fn is_supported_directive(directive: tryte) -> trit:
+    match directive <=> directive_s3asm():
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            match directive <=> directive_end():
+                -1:
+                    return 1
+
+                0:
+                    return 1
+
+                1:
+                    return 0
+
+fn is_supported_opcode(opcode: tryte) -> trit:
+    match opcode <=> opcode_tconst():
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            match opcode <=> opcode_tbr3():
+                -1:
+                    return 1
+
+                0:
+                    return 1
+
+                1:
+                    return 0
+
+fn expected_opcode_min_operand_count(opcode: tryte) -> tryte:
+    match is_supported_opcode(opcode) <=> 1:
+        -1:
+            return -1
+
+        0:
+            match opcode <=> opcode_tconst():
+                -1:
+                    return -1
+
+                0:
+                    return 2
+
+                1:
+                    match opcode <=> opcode_tinv():
+                        -1:
+                            return 2
+
+                        0:
+                            return 2
+
+                        1:
+                            match opcode <=> opcode_tcmp():
+                                -1:
+                                    return 3
+
+                                0:
+                                    return 3
+
+                                1:
+                                    match opcode <=> opcode_tcall():
+                                        -1:
+                                            return -1
+
+                                        0:
+                                            return 2
+
+                                        1:
+                                            match opcode <=> opcode_tstore():
+                                                -1:
+                                                    return 3
+
+                                                0:
+                                                    return 3
+
+                                                1:
+                                                    match opcode <=> opcode_tjmp():
+                                                        -1:
+                                                            return 1
+
+                                                        0:
+                                                            return 1
+
+                                                        1:
+                                                            match opcode <=> opcode_tbr3():
+                                                                -1:
+                                                                    return -1
+
+                                                                0:
+                                                                    return 4
+
+                                                                1:
+                                                                    return -1
+
+        1:
+            return -1
+
+fn validate_min_operand_count(opcode: tryte, operand_count: tryte) -> trit:
+    match is_supported_opcode(opcode) <=> 1:
+        -1:
+            return 0
+
+        0:
+            match operand_count <=> expected_opcode_min_operand_count(opcode):
+                -1:
+                    return 0
+
+                0:
+                    return 1
+
+                1:
+                    return 1
+
+        1:
+            return 0
+
+fn validate_fixture_line_count(fixture: tryte, line_count: tryte) -> trit:
+    match fixture <=> fixture_first():
+        -1:
+            return 0
+
+        0:
+            return same_tryte(line_count, expected_first_line_count())
+
+        1:
+            match fixture <=> fixture_simple_call():
+                -1:
+                    return 0
+
+                0:
+                    return same_tryte(line_count, expected_simple_call_line_count())
+
+                1:
+                    match fixture <=> fixture_sign():
+                        -1:
+                            return 0
+
+                        0:
+                            return same_tryte(line_count, expected_sign_line_count())
+
+                        1:
+                            return 0
+
+fn validate_supported_subset() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, same_tryte(supported_directive_count(), 7))
+    ok = all_passed(ok, is_supported_directive(directive_memory()))
+    ok = all_passed(ok, same_tryte(supported_opcode_count(), 13))
+    ok = all_passed(ok, is_supported_opcode(opcode_tconst()))
+    ok = all_passed(ok, is_supported_opcode(opcode_tload()))
+    ok = all_passed(ok, is_supported_opcode(opcode_tstore()))
+    ok = all_passed(ok, is_supported_opcode(opcode_tbr3()))
+    ok = all_passed(ok, validate_min_operand_count(opcode_tconst(), 2))
+    ok = all_passed(ok, validate_min_operand_count(opcode_tadd(), 3))
+    ok = all_passed(ok, validate_min_operand_count(opcode_tcall(), 2))
+    ok = all_passed(ok, validate_min_operand_count(opcode_tbr3(), 4))
+    ok = all_passed(ok, validate_fixture_line_count(fixture_first(), 18))
+    ok = all_passed(ok, validate_fixture_line_count(fixture_simple_call(), 21))
+    ok = all_passed(ok, validate_fixture_line_count(fixture_sign(), 36))
+
+    return ok
+
+fn bootstrap_supported_opcode_probe() -> tryte:
+    return status_from_check(is_supported_opcode(opcode_tload()), 1)
+
+fn bootstrap_unknown_opcode_probe() -> tryte:
+    return status_from_check(same_trit(is_supported_opcode(99), 0), 1)
+
+fn bootstrap_first_line_count_probe() -> tryte:
+    return status_from_check(
+        validate_fixture_line_count(fixture_first(), expected_first_line_count()),
+        1
+    )
+
+fn bootstrap_simple_call_line_count_probe() -> tryte:
+    return status_from_check(
+        validate_fixture_line_count(
+            fixture_simple_call(),
+            expected_simple_call_line_count()
+        ),
+        1
+    )
+
+fn bootstrap_sign_line_count_probe() -> tryte:
+    return status_from_check(
+        validate_fixture_line_count(fixture_sign(), expected_sign_line_count()),
+        1
+    )
+
+fn bootstrap_operand_shape_probe() -> tryte:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, validate_min_operand_count(opcode_tret(), 1))
+    ok = all_passed(ok, validate_min_operand_count(opcode_tcall(), 3))
+    ok = all_passed(ok, validate_min_operand_count(opcode_tbr3(), 4))
+    ok = all_passed(ok, same_trit(validate_min_operand_count(99, 1), 0))
+
+    return status_from_check(ok, 1)
+
+fn renderer_bootstrap_self_check() -> tryte:
+    mut status: tryte = status_from_check(validate_supported_subset(), 1)
+
+    match status <=> 0:
+        -1:
+            return status
+
+        0:
+            status = bootstrap_supported_opcode_probe()
+
+        1:
+            return status
+
+    match status <=> 0:
+        -1:
+            return status
+
+        0:
+            status = bootstrap_unknown_opcode_probe()
+
+        1:
+            return status
+
+    match status <=> 0:
+        -1:
+            return status
+
+        0:
+            status = bootstrap_first_line_count_probe()
+
+        1:
+            return status
+
+    match status <=> 0:
+        -1:
+            return status
+
+        0:
+            status = bootstrap_simple_call_line_count_probe()
+
+        1:
+            return status
+
+    match status <=> 0:
+        -1:
+            return status
+
+        0:
+            status = bootstrap_sign_line_count_probe()
+
+        1:
+            return status
+
+    match status <=> 0:
+        -1:
+            return status
+
+        0:
+            status = bootstrap_operand_shape_probe()
+
+        1:
+            return status
+
+    return status
+
+fn main() -> tryte:
+    return renderer_bootstrap_self_check()

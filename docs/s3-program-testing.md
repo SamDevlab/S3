@@ -22,6 +22,7 @@ Current checked programs:
 - `examples/simple_call.s3`
 - `examples/sign.s3`
 - `examples/self_hosting/assembly_renderer_stub.s3`
+- `examples/self_hosting/assembly_renderer_bootstrap.s3`
 
 Conceptual gap examples under `examples/gaps/` are intentionally excluded
 because they may contain pseudocode and are not part of the compile-check
@@ -44,6 +45,14 @@ compile-only until they opt into hosted execution.
 The renderer candidate manifest records the same inventory path and hosted
 expected return, so the general S3 program check and the renderer candidate run
 share one hosted coverage contract for the stub.
+
+S3 0.20 adds the executable renderer bootstrap spike at
+`examples/self_hosting/assembly_renderer_bootstrap.s3`. It is registered with
+`hosted expected return: 0`, so `tools/s3_program_check.py check` compiles and
+executes it through the hosted path. The spike validates scalar invariants for
+the supported opcode/directive subset, fixture line counts, representative
+operand shapes, and an unknown-opcode negative case. It is not a full textual
+renderer.
 
 The same stub is also included in golden inspect coverage as
 `assembly_renderer_stub`, which records its current IR and Assembly outputs

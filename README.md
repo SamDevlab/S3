@@ -220,9 +220,16 @@ S3 0.18 está fechado após consolidar esses adapters atrás de
 outputs versionados ou goldens. S3 0.19 está fechado após expandir esse caminho
 Python-side para cobrir a saída atual de `AssemblyProgram.render()` e fazer
 `AssemblyProgram.render()` delegar a ele. Isso preserva os inspect goldens e os
-actual outputs; o renderer S3 real continua não implementado.
+actual outputs; o renderer S3 real continua não implementado. S3 0.20 está
+fechado após adicionar
+`examples/self_hosting/assembly_renderer_bootstrap.s3`, um spike S3 executável
+que valida invariantes escalares do subset suportado sem emitir texto Assembly
+completo.
 `python tools/compare_assembly_renderer.py --candidate-compare-available` é o
 modo correto para validar esses outputs disponíveis.
+`python tools/compare_assembly_renderer.py --candidate-run` também valida o
+spike e reporta que renderer implementation/full text rendering continuam
+`not_implemented`.
 `python tools/compare_assembly_renderer.py --check` continua bloqueado com
 status 1 porque o renderer S3 real ainda não está implementado; isso evita
 falso positivo de sucesso global.
