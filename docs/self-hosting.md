@@ -42,7 +42,12 @@ executable S3 bootstrap artifact for the future Assembly renderer. It validates
 supported-subset invariants with scalar S3 logic and is covered by
 `s3_program_check.py check` and `compare_assembly_renderer.py --candidate-run`,
 while the full textual S3 renderer remains unimplemented and
-`compare --check` remains blocked; see `docs/roadmap-0.20.md`.
+`compare --check` remains blocked; see `docs/roadmap-0.20.md`. S3 0.21 is
+closed after adding `examples/self_hosting/assembly_renderer_output_model.s3`,
+an executable S3 output model that calculates deterministic structural metrics
+for `first`, `simple_call`, and `sign` without strings runtime, arrays, or text
+emission. `--candidate-run` validates both S3 bootstrap artifacts while the
+textual S3 renderer remains unimplemented; see `docs/roadmap-0.21.md`.
 
 Recent tools make this pipeline more observable:
 

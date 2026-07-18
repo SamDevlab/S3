@@ -48,6 +48,9 @@ EXPECTED_STUB_STATUS = -1
 EXPECTED_BOOTSTRAP_PATH = "examples/self_hosting/assembly_renderer_bootstrap.s3"
 EXPECTED_BOOTSTRAP_ENTRYPOINT = "main"
 EXPECTED_BOOTSTRAP_RETURN = 0
+EXPECTED_OUTPUT_MODEL_PATH = "examples/self_hosting/assembly_renderer_output_model.s3"
+EXPECTED_OUTPUT_MODEL_ENTRYPOINT = "main"
+EXPECTED_OUTPUT_MODEL_RETURN = 0
 EXPECTED_DIRECTIVE_COUNT_FUNCTION = "renderer_supported_directive_count"
 EXPECTED_OPCODE_COUNT_FUNCTION = "renderer_supported_opcode_count"
 EXPECTED_DIRECTIVE_FIRST_FUNCTION = "renderer_first_directive_id"
@@ -205,6 +208,15 @@ class CandidateStatus:
 
 @dataclass(frozen=True, slots=True)
 class BootstrapExecution:
+    path: str
+    entrypoint: str
+    expected_return: int
+    actual_return: int
+    covered_by_s3_program_check: bool
+
+
+@dataclass(frozen=True, slots=True)
+class OutputModelExecution:
     path: str
     entrypoint: str
     expected_return: int
@@ -1346,6 +1358,26 @@ def run_bootstrap_spike() -> BootstrapExecution:
     )
 
 
+def run_output_model() -> OutputModelExecution:
+    inventory_program = find_program(EXPECTED_OUTPUT_MODEL_PATH)
+    if inventory_program is None:
+        raise ValueError("output model missing from s3_program_check inventory")
+    if inventory_program.hosted_expected_return != EXPECTED_OUTPUT_MODEL_RETURN:
+        raise ValueError("output model hosted expected return must be 0")
+
+    actual_return = run_hosted_check(
+        inventory_program,
+        entry=EXPECTED_OUTPUT_MODEL_ENTRYPOINT,
+    )
+    return OutputModelExecution(
+        path=EXPECTED_OUTPUT_MODEL_PATH,
+        entrypoint=EXPECTED_OUTPUT_MODEL_ENTRYPOINT,
+        expected_return=EXPECTED_OUTPUT_MODEL_RETURN,
+        actual_return=actual_return,
+        covered_by_s3_program_check=True,
+    )
+
+
 def render_reference_status(fixtures: tuple[ReferenceFixture, ...]) -> str:
     lines = [
         "S3 Assembly renderer Python reference",
@@ -1362,6 +1394,7 @@ def render_candidate_execution(
     candidate: CandidateStatus,
     actual_status: int,
     bootstrap: BootstrapExecution,
+    output_model: OutputModelExecution,
 ) -> str:
     status = (
         candidate.execution_meaning
@@ -1375,6 +1408,14 @@ def render_candidate_execution(
         else "failed"
     )
     bootstrap_coverage = "yes" if bootstrap.covered_by_s3_program_check else "no"
+    output_model_status = (
+        "passed"
+        if output_model.actual_return == output_model.expected_return
+        else "failed"
+    )
+    output_model_coverage = (
+        "yes" if output_model.covered_by_s3_program_check else "no"
+    )
     lines = [
         "S3 Assembly renderer candidate execution",
         "",
@@ -1392,6 +1433,13 @@ def render_candidate_execution(
         f"expected return: {bootstrap.expected_return}",
         f"actual return: {bootstrap.actual_return}",
         f"covered by s3_program_check: {bootstrap_coverage}",
+        "",
+        f"s3 output model: {output_model_status}",
+        f"program: {output_model.path}",
+        f"entrypoint: {output_model.entrypoint}",
+        f"expected return: {output_model.expected_return}",
+        f"actual return: {output_model.actual_return}",
+        f"covered by s3_program_check: {output_model_coverage}",
         "renderer implementation: not_implemented",
         "full text rendering: not_implemented",
     ]
@@ -1408,6 +1456,7 @@ def status() -> int:
     print("python reference: available")
     print("s3 renderer stub: available")
     print("s3 renderer bootstrap spike: available")
+    print("s3 renderer output model: available")
     print("s3 renderer implementation: not implemented")
     print("string literals: front-end only, runtime not implemented")
     print("status: blocked")
@@ -1554,6 +1603,7 @@ def candidate_run() -> int:
             entry=candidate_status.entrypoint,
         )
         bootstrap = run_bootstrap_spike()
+        output_model = run_output_model()
     except (OSError, ValueError) as error:
         print("S3 Assembly renderer candidate execution")
         print()
@@ -1568,12 +1618,19 @@ def candidate_run() -> int:
         return 1
 
     print(
-        render_candidate_execution(candidate_status, actual_status, bootstrap),
+        render_candidate_execution(
+            candidate_status,
+            actual_status,
+            bootstrap,
+            output_model,
+        ),
         end="",
     )
     if actual_status != candidate_status.expected_status:
         return 1
     if bootstrap.actual_return != bootstrap.expected_return:
+        return 1
+    if output_model.actual_return != output_model.expected_return:
         return 1
     return 0
 
