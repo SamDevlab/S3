@@ -21,8 +21,11 @@ def test_s3_program_check_inventory_exposes_renderer_stub_hosted_check() -> None
     line_blueprints = find_program(
         "examples/self_hosting/assembly_renderer_line_blueprints.s3"
     )
+    line_sequences = find_program(
+        "examples/self_hosting/assembly_renderer_line_sequences.s3"
+    )
 
-    assert len(programs) == 8
+    assert len(programs) == 9
     assert stub is not None
     assert stub.hosted_expected_return == -1
     assert bootstrap is not None
@@ -33,6 +36,8 @@ def test_s3_program_check_inventory_exposes_renderer_stub_hosted_check() -> None
     assert text_segments.hosted_expected_return == 0
     assert line_blueprints is not None
     assert line_blueprints.hosted_expected_return == 0
+    assert line_sequences is not None
+    assert line_sequences.hosted_expected_return == 0
 
 
 def test_s3_program_check_matches_registered_programs() -> None:
@@ -44,9 +49,9 @@ def test_s3_program_check_matches_registered_programs() -> None:
     )
 
     assert completed.returncode == 0
-    assert "s3 program check: checked 8 program(s)" in completed.stdout
+    assert "s3 program check: checked 9 program(s)" in completed.stdout
     assert (
-        "s3 program check: hosted execution checked 5 program(s)"
+        "s3 program check: hosted execution checked 6 program(s)"
         in completed.stdout
     )
     assert "examples/self_hosting/assembly_renderer_stub.s3" in completed.stdout
@@ -59,6 +64,10 @@ def test_s3_program_check_matches_registered_programs() -> None:
     assert "examples/self_hosting/assembly_renderer_text_segments.s3" in completed.stdout
     assert (
         "examples/self_hosting/assembly_renderer_line_blueprints.s3"
+        in completed.stdout
+    )
+    assert (
+        "examples/self_hosting/assembly_renderer_line_sequences.s3"
         in completed.stdout
     )
     assert completed.stderr == ""
@@ -89,4 +98,9 @@ def test_s3_program_check_lists_renderer_stub() -> None:
         in completed.stdout
     )
     assert "purpose: Assembly renderer line blueprint model" in completed.stdout
+    assert (
+        "examples/self_hosting/assembly_renderer_line_sequences.s3"
+        in completed.stdout
+    )
+    assert "purpose: Assembly renderer line sequence model" in completed.stdout
     assert completed.stderr == ""

@@ -57,6 +57,11 @@ adding `examples/self_hosting/assembly_renderer_line_blueprints.s3`, an
 executable S3 line blueprint model that maps each rendered Assembly line for
 the current fixtures to one primary numeric blueprint, still without runtime
 strings, arrays, or text emission; see `docs/roadmap-0.23.md`.
+S3 0.24 is closed after adding
+`examples/self_hosting/assembly_renderer_line_sequences.s3`, an executable S3
+line sequence model that records ordered blueprint IDs for the current fixtures
+and validates transitions, boundaries, totals, and a deterministic signature
+without runtime strings, arrays, or text emission; see `docs/roadmap-0.24.md`.
 
 Recent tools make this pipeline more observable:
 

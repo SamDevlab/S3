@@ -54,6 +54,14 @@ PROGRAMS = (
         "Assembly renderer line blueprint model",
         hosted_expected_return=0,
     ),
+    S3Program(
+        REPO_ROOT
+        / "examples"
+        / "self_hosting"
+        / "assembly_renderer_line_sequences.s3",
+        "Assembly renderer line sequence model",
+        hosted_expected_return=0,
+    ),
 )
 
 
