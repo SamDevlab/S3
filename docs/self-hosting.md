@@ -52,7 +52,11 @@ is closed after adding
 `examples/self_hosting/assembly_renderer_text_segments.s3`, an executable S3
 text segment model that represents renderer text pieces as numeric IDs and
 validates segment metrics for the same fixtures without runtime strings,
-arrays, or text emission; see `docs/roadmap-0.22.md`.
+arrays, or text emission; see `docs/roadmap-0.22.md`. S3 0.23 is closed after
+adding `examples/self_hosting/assembly_renderer_line_blueprints.s3`, an
+executable S3 line blueprint model that maps each rendered Assembly line for
+the current fixtures to one primary numeric blueprint, still without runtime
+strings, arrays, or text emission; see `docs/roadmap-0.23.md`.
 
 Recent tools make this pipeline more observable:
 
