@@ -86,6 +86,11 @@ EXPECTED_OUTPUT_BUFFER_MODEL_PATH = (
 )
 EXPECTED_OUTPUT_BUFFER_MODEL_ENTRYPOINT = "main"
 EXPECTED_OUTPUT_BUFFER_MODEL_RETURN = 0
+EXPECTED_PIPELINE_MODEL_PATH = (
+    "examples/self_hosting/assembly_renderer_pipeline.s3"
+)
+EXPECTED_PIPELINE_MODEL_ENTRYPOINT = "main"
+EXPECTED_PIPELINE_MODEL_RETURN = 0
 EXPECTED_DIRECTIVE_COUNT_FUNCTION = "renderer_supported_directive_count"
 EXPECTED_OPCODE_COUNT_FUNCTION = "renderer_supported_opcode_count"
 EXPECTED_DIRECTIVE_FIRST_FUNCTION = "renderer_first_directive_id"
@@ -315,6 +320,15 @@ class EventWriterModelExecution:
 
 @dataclass(frozen=True, slots=True)
 class OutputBufferModelExecution:
+    path: str
+    entrypoint: str
+    expected_return: int
+    actual_return: int
+    covered_by_s3_program_check: bool
+
+
+@dataclass(frozen=True, slots=True)
+class PipelineModelExecution:
     path: str
     entrypoint: str
     expected_return: int
@@ -1636,6 +1650,26 @@ def run_output_buffer_model() -> OutputBufferModelExecution:
     )
 
 
+def run_pipeline_model() -> PipelineModelExecution:
+    inventory_program = find_program(EXPECTED_PIPELINE_MODEL_PATH)
+    if inventory_program is None:
+        raise ValueError("pipeline model missing from s3_program_check inventory")
+    if inventory_program.hosted_expected_return != EXPECTED_PIPELINE_MODEL_RETURN:
+        raise ValueError("pipeline model hosted expected return must be 0")
+
+    actual_return = run_hosted_check(
+        inventory_program,
+        entry=EXPECTED_PIPELINE_MODEL_ENTRYPOINT,
+    )
+    return PipelineModelExecution(
+        path=EXPECTED_PIPELINE_MODEL_PATH,
+        entrypoint=EXPECTED_PIPELINE_MODEL_ENTRYPOINT,
+        expected_return=EXPECTED_PIPELINE_MODEL_RETURN,
+        actual_return=actual_return,
+        covered_by_s3_program_check=True,
+    )
+
+
 def render_reference_status(fixtures: tuple[ReferenceFixture, ...]) -> str:
     lines = [
         "S3 Assembly renderer Python reference",
@@ -1660,6 +1694,7 @@ def render_candidate_execution(
     event_stream_model: EventStreamModelExecution,
     event_writer_model: EventWriterModelExecution,
     output_buffer_model: OutputBufferModelExecution,
+    pipeline_model: PipelineModelExecution,
 ) -> str:
     status = (
         candidate.execution_meaning
@@ -1746,6 +1781,13 @@ def render_candidate_execution(
     output_buffer_model_coverage = (
         "yes" if output_buffer_model.covered_by_s3_program_check else "no"
     )
+    pipeline_model_passed = (
+        pipeline_model.actual_return == pipeline_model.expected_return
+    )
+    pipeline_model_status = "passed" if pipeline_model_passed else "failed"
+    pipeline_model_coverage = (
+        "yes" if pipeline_model.covered_by_s3_program_check else "no"
+    )
     lines = [
         "S3 Assembly renderer candidate execution",
         "",
@@ -1822,6 +1864,13 @@ def render_candidate_execution(
         f"expected return: {output_buffer_model.expected_return}",
         f"actual return: {output_buffer_model.actual_return}",
         f"covered by s3_program_check: {output_buffer_model_coverage}",
+        "",
+        f"s3 renderer pipeline model: {pipeline_model_status}",
+        f"program: {pipeline_model.path}",
+        f"entrypoint: {pipeline_model.entrypoint}",
+        f"expected return: {pipeline_model.expected_return}",
+        f"actual return: {pipeline_model.actual_return}",
+        f"covered by s3_program_check: {pipeline_model_coverage}",
         "renderer implementation: not_implemented",
         "full text rendering: not_implemented",
     ]
@@ -1846,6 +1895,7 @@ def status() -> int:
     print("s3 renderer event stream model: available")
     print("s3 renderer event writer model: available")
     print("s3 renderer output buffer model: available")
+    print("s3 renderer pipeline model: available")
     print("s3 renderer implementation: not implemented")
     print("string literals: front-end only, runtime not implemented")
     print("status: blocked")
@@ -2000,6 +2050,7 @@ def candidate_run() -> int:
         event_stream_model = run_event_stream_model()
         event_writer_model = run_event_writer_model()
         output_buffer_model = run_output_buffer_model()
+        pipeline_model = run_pipeline_model()
     except (OSError, ValueError) as error:
         print("S3 Assembly renderer candidate execution")
         print()
@@ -2026,6 +2077,7 @@ def candidate_run() -> int:
             event_stream_model,
             event_writer_model,
             output_buffer_model,
+            pipeline_model,
         ),
         end="",
     )
@@ -2051,6 +2103,8 @@ def candidate_run() -> int:
     if event_writer_model.actual_return != event_writer_model.expected_return:
         return 1
     if output_buffer_model.actual_return != output_buffer_model.expected_return:
+        return 1
+    if pipeline_model.actual_return != pipeline_model.expected_return:
         return 1
     return 0
 

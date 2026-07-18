@@ -94,6 +94,14 @@ PROGRAMS = (
         "Assembly renderer hosted output buffer model",
         hosted_expected_return=0,
     ),
+    S3Program(
+        REPO_ROOT
+        / "examples"
+        / "self_hosting"
+        / "assembly_renderer_pipeline.s3",
+        "Assembly renderer pipeline model",
+        hosted_expected_return=0,
+    ),
 )
 
 

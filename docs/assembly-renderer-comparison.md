@@ -447,6 +447,15 @@ executes all nine executable renderer bootstrap artifacts and reports them as
 passed while renderer implementation and full text rendering remain
 `not_implemented`.
 
+0.29 adds `examples/self_hosting/assembly_renderer_pipeline.s3`, an executable
+S3 model joining event stream, event writer, output buffer, and final pipeline
+result IDs. It validates stage transitions, per-fixture and total counts,
+writer and buffer final state, capacity and cursor, deterministic signatures,
+and negative probes for `first`, `simple_call`, and `sign`. `--candidate-run`
+executes all ten executable renderer bootstrap artifacts and reports them as
+passed while renderer implementation and full text rendering remain
+`not_implemented`. Global `--check` remains blocked.
+
 ## Why check fails today
 
 Failure is correct today because real comparison is still blocked by:
