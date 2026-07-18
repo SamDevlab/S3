@@ -36,7 +36,13 @@ blocked global `compare --check` state; see `docs/roadmap-0.18.md`. S3 0.19 is
 closed after adopting that shared Python-side path inside
 `AssemblyProgram.render()` with parity for the current Assembly output,
 including `.memory`, while leaving the S3 renderer itself unimplemented and
-`compare --check` blocked; see `docs/roadmap-0.19.md`.
+`compare --check` blocked; see `docs/roadmap-0.19.md`. S3 0.20 is closed after
+adding `examples/self_hosting/assembly_renderer_bootstrap.s3`, the first real
+executable S3 bootstrap artifact for the future Assembly renderer. It validates
+supported-subset invariants with scalar S3 logic and is covered by
+`s3_program_check.py check` and `compare_assembly_renderer.py --candidate-run`,
+while the full textual S3 renderer remains unimplemented and
+`compare --check` remains blocked; see `docs/roadmap-0.20.md`.
 
 Recent tools make this pipeline more observable:
 

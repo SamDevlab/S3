@@ -62,8 +62,8 @@ READINESS_STEPS = (
         ("tools/s3_program_check.py", "check"),
         0,
         stdout_contains=(
-            "s3 program check: checked 4 program(s)",
-            "s3 program check: hosted execution checked 1 program(s)",
+            "s3 program check: checked 5 program(s)",
+            "s3 program check: hosted execution checked 2 program(s)",
         ),
     ),
     ReadinessStep(
@@ -187,6 +187,13 @@ READINESS_STEPS = (
             "expected status: -1",
             "actual status: -1",
             "status: stub",
+            "candidate renderer bootstrap: available",
+            "s3 bootstrap spike: passed",
+            "program: examples/self_hosting/assembly_renderer_bootstrap.s3",
+            "expected return: 0",
+            "actual return: 0",
+            "renderer implementation: not_implemented",
+            "full text rendering: not_implemented",
         ),
     ),
     ReadinessStep(

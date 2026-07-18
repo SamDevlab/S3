@@ -31,6 +31,11 @@ PROGRAMS = (
         "future Assembly renderer stub",
         hosted_expected_return=-1,
     ),
+    S3Program(
+        REPO_ROOT / "examples" / "self_hosting" / "assembly_renderer_bootstrap.s3",
+        "Assembly renderer bootstrap spike",
+        hosted_expected_return=0,
+    ),
 )
 
 

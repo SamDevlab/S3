@@ -11,7 +11,8 @@ before the S3 renderer exists.
 ## Current status
 
 The Python renderer remains the reference implementation. A compilable S3 stub
-now exists, but the S3 renderer implementation is not available.
+and an executable S3 renderer bootstrap spike now exist, but the S3 renderer
+implementation is not available.
 
 String literals are available only as front-end expressions. Runtime string
 support is not implemented, so the renderer comparison remains blocked.
@@ -26,15 +27,17 @@ candidate check state safely blocked while clarifying the reason; see
 `docs/roadmap-0.12.md`, `docs/roadmap-0.13.md`, `docs/roadmap-0.14.md`,
 `docs/roadmap-0.15.md`, `docs/roadmap-0.16.md`,
 `docs/roadmap-0.17.md`, `docs/roadmap-0.18.md`, and
-`docs/roadmap-0.19.md`. S3 0.16 is closed after routing the three current
-fixture probes through the incremental renderer core. S3 0.17 is closed after
-connecting the `first`, `simple_call`, and `sign` fixture paths to that core
-through controlled `AssemblyProgram` adapters. S3 0.18 is closed after
-consolidating those controlled adapters behind a common supported
-`AssemblyProgram` renderer subset. S3 0.19 is closed after expanding that
-Python-side path to match the current `AssemblyProgram.render()` output and
+`docs/roadmap-0.19.md`, and `docs/roadmap-0.20.md`. S3 0.16 is closed after
+routing the three current fixture probes through the incremental renderer core.
+S3 0.17 is closed after connecting the `first`, `simple_call`, and `sign`
+fixture paths to that core through controlled `AssemblyProgram` adapters. S3
+0.18 is closed after consolidating those controlled adapters behind a common
+supported `AssemblyProgram` renderer subset. S3 0.19 is closed after expanding
+that Python-side path to match the current `AssemblyProgram.render()` output and
 making `AssemblyProgram.render()` delegate to it, while keeping the global
-`--check` mode blocked.
+`--check` mode blocked. S3 0.20 is closed after adding an executable S3
+renderer bootstrap spike that validates supported-subset invariants without
+claiming to be the full textual renderer.
 
 `python tools/compare_assembly_renderer.py --status` reports the current state
 and exits successfully.
@@ -186,7 +189,11 @@ does not implement rendering.
 candidate stub through the hosted path and expects `main` to return `-1`. This
 uses the same registered stub entry as `tools/s3_program_check.py check`, so the
 candidate run and program inventory stay aligned. This only validates the status
-API; it does not render Assembly.
+API; it does not render Assembly. The same command also executes
+`examples/self_hosting/assembly_renderer_bootstrap.s3` and expects `main` to
+return `0`. That spike validates scalar opcode, directive, fixture line-count,
+and operand-shape invariants, then reports renderer implementation and full text
+rendering as `not_implemented`.
 
 The candidate stub is also covered by `tools/golden_inspect.py check`. Those
 goldens lock the current compiler-facing IR and Assembly output for the stub;
@@ -279,6 +286,14 @@ goldens and candidate actual outputs remain unchanged. This is still not the
 S3 renderer implementation: `--candidate-compare-available` remains the passing
 available-output check, and global `--check` remains blocked with renderer
 implementation reported as `not_implemented`.
+
+0.20 adds `examples/self_hosting/assembly_renderer_bootstrap.s3`, an executable
+S3 bootstrap kernel for the future renderer. It uses only scalar S3 features to
+validate the supported opcode surface, `.memory` directive coverage, fixture
+line counts for `first`, `simple_call`, and `sign`, and representative operand
+shapes. `--candidate-run` executes it and reports `s3 bootstrap spike: passed`,
+but the full textual S3 renderer remains absent and global `--check` remains
+blocked.
 
 ## Why check fails today
 

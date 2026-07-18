@@ -45,6 +45,9 @@ EXPECTED_ENTRYPOINT = "main"
 EXPECTED_STATUS_FUNCTION = "renderer_candidate_status"
 EXPECTED_EXECUTION_MODE = "hosted"
 EXPECTED_STUB_STATUS = -1
+EXPECTED_BOOTSTRAP_PATH = "examples/self_hosting/assembly_renderer_bootstrap.s3"
+EXPECTED_BOOTSTRAP_ENTRYPOINT = "main"
+EXPECTED_BOOTSTRAP_RETURN = 0
 EXPECTED_DIRECTIVE_COUNT_FUNCTION = "renderer_supported_directive_count"
 EXPECTED_OPCODE_COUNT_FUNCTION = "renderer_supported_opcode_count"
 EXPECTED_DIRECTIVE_FIRST_FUNCTION = "renderer_first_directive_id"
@@ -198,6 +201,15 @@ class CandidateStatus:
     covered_by_s3_program_check: bool
     implements_renderer: bool
     comparison_status: str
+
+
+@dataclass(frozen=True, slots=True)
+class BootstrapExecution:
+    path: str
+    entrypoint: str
+    expected_return: int
+    actual_return: int
+    covered_by_s3_program_check: bool
 
 
 def _repo_path(path: Path) -> str:
@@ -1314,6 +1326,26 @@ def render_check_status(
     return "\n".join(lines) + "\n"
 
 
+def run_bootstrap_spike() -> BootstrapExecution:
+    inventory_program = find_program(EXPECTED_BOOTSTRAP_PATH)
+    if inventory_program is None:
+        raise ValueError("bootstrap spike missing from s3_program_check inventory")
+    if inventory_program.hosted_expected_return != EXPECTED_BOOTSTRAP_RETURN:
+        raise ValueError("bootstrap spike hosted expected return must be 0")
+
+    actual_return = run_hosted_check(
+        inventory_program,
+        entry=EXPECTED_BOOTSTRAP_ENTRYPOINT,
+    )
+    return BootstrapExecution(
+        path=EXPECTED_BOOTSTRAP_PATH,
+        entrypoint=EXPECTED_BOOTSTRAP_ENTRYPOINT,
+        expected_return=EXPECTED_BOOTSTRAP_RETURN,
+        actual_return=actual_return,
+        covered_by_s3_program_check=True,
+    )
+
+
 def render_reference_status(fixtures: tuple[ReferenceFixture, ...]) -> str:
     lines = [
         "S3 Assembly renderer Python reference",
@@ -1326,13 +1358,23 @@ def render_reference_status(fixtures: tuple[ReferenceFixture, ...]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def render_candidate_execution(candidate: CandidateStatus, actual_status: int) -> str:
+def render_candidate_execution(
+    candidate: CandidateStatus,
+    actual_status: int,
+    bootstrap: BootstrapExecution,
+) -> str:
     status = (
         candidate.execution_meaning
         if actual_status == candidate.expected_status
         else "unexpected"
     )
     coverage = "yes" if candidate.covered_by_s3_program_check else "no"
+    bootstrap_status = (
+        "passed"
+        if bootstrap.actual_return == bootstrap.expected_return
+        else "failed"
+    )
+    bootstrap_coverage = "yes" if bootstrap.covered_by_s3_program_check else "no"
     lines = [
         "S3 Assembly renderer candidate execution",
         "",
@@ -1342,6 +1384,16 @@ def render_candidate_execution(candidate: CandidateStatus, actual_status: int) -
         f"actual status: {actual_status}",
         f"covered by s3_program_check: {coverage}",
         f"status: {status}",
+        "",
+        "candidate renderer bootstrap: available",
+        f"s3 bootstrap spike: {bootstrap_status}",
+        f"program: {bootstrap.path}",
+        f"entrypoint: {bootstrap.entrypoint}",
+        f"expected return: {bootstrap.expected_return}",
+        f"actual return: {bootstrap.actual_return}",
+        f"covered by s3_program_check: {bootstrap_coverage}",
+        "renderer implementation: not_implemented",
+        "full text rendering: not_implemented",
     ]
     return "\n".join(lines) + "\n"
 
@@ -1355,6 +1407,7 @@ def status() -> int:
     print()
     print("python reference: available")
     print("s3 renderer stub: available")
+    print("s3 renderer bootstrap spike: available")
     print("s3 renderer implementation: not implemented")
     print("string literals: front-end only, runtime not implemented")
     print("status: blocked")
@@ -1500,6 +1553,7 @@ def candidate_run() -> int:
             inventory_program,
             entry=candidate_status.entrypoint,
         )
+        bootstrap = run_bootstrap_spike()
     except (OSError, ValueError) as error:
         print("S3 Assembly renderer candidate execution")
         print()
@@ -1513,8 +1567,13 @@ def candidate_run() -> int:
         print(f"reason: {error}")
         return 1
 
-    print(render_candidate_execution(candidate_status, actual_status), end="")
+    print(
+        render_candidate_execution(candidate_status, actual_status, bootstrap),
+        end="",
+    )
     if actual_status != candidate_status.expected_status:
+        return 1
+    if bootstrap.actual_return != bootstrap.expected_return:
         return 1
     return 0
 
