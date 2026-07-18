@@ -51,6 +51,11 @@ EXPECTED_BOOTSTRAP_RETURN = 0
 EXPECTED_OUTPUT_MODEL_PATH = "examples/self_hosting/assembly_renderer_output_model.s3"
 EXPECTED_OUTPUT_MODEL_ENTRYPOINT = "main"
 EXPECTED_OUTPUT_MODEL_RETURN = 0
+EXPECTED_TEXT_SEGMENT_MODEL_PATH = (
+    "examples/self_hosting/assembly_renderer_text_segments.s3"
+)
+EXPECTED_TEXT_SEGMENT_MODEL_ENTRYPOINT = "main"
+EXPECTED_TEXT_SEGMENT_MODEL_RETURN = 0
 EXPECTED_DIRECTIVE_COUNT_FUNCTION = "renderer_supported_directive_count"
 EXPECTED_OPCODE_COUNT_FUNCTION = "renderer_supported_opcode_count"
 EXPECTED_DIRECTIVE_FIRST_FUNCTION = "renderer_first_directive_id"
@@ -217,6 +222,15 @@ class BootstrapExecution:
 
 @dataclass(frozen=True, slots=True)
 class OutputModelExecution:
+    path: str
+    entrypoint: str
+    expected_return: int
+    actual_return: int
+    covered_by_s3_program_check: bool
+
+
+@dataclass(frozen=True, slots=True)
+class TextSegmentModelExecution:
     path: str
     entrypoint: str
     expected_return: int
@@ -1378,6 +1392,26 @@ def run_output_model() -> OutputModelExecution:
     )
 
 
+def run_text_segment_model() -> TextSegmentModelExecution:
+    inventory_program = find_program(EXPECTED_TEXT_SEGMENT_MODEL_PATH)
+    if inventory_program is None:
+        raise ValueError("text segment model missing from s3_program_check inventory")
+    if inventory_program.hosted_expected_return != EXPECTED_TEXT_SEGMENT_MODEL_RETURN:
+        raise ValueError("text segment model hosted expected return must be 0")
+
+    actual_return = run_hosted_check(
+        inventory_program,
+        entry=EXPECTED_TEXT_SEGMENT_MODEL_ENTRYPOINT,
+    )
+    return TextSegmentModelExecution(
+        path=EXPECTED_TEXT_SEGMENT_MODEL_PATH,
+        entrypoint=EXPECTED_TEXT_SEGMENT_MODEL_ENTRYPOINT,
+        expected_return=EXPECTED_TEXT_SEGMENT_MODEL_RETURN,
+        actual_return=actual_return,
+        covered_by_s3_program_check=True,
+    )
+
+
 def render_reference_status(fixtures: tuple[ReferenceFixture, ...]) -> str:
     lines = [
         "S3 Assembly renderer Python reference",
@@ -1395,6 +1429,7 @@ def render_candidate_execution(
     actual_status: int,
     bootstrap: BootstrapExecution,
     output_model: OutputModelExecution,
+    text_segment_model: TextSegmentModelExecution,
 ) -> str:
     status = (
         candidate.execution_meaning
@@ -1415,6 +1450,14 @@ def render_candidate_execution(
     )
     output_model_coverage = (
         "yes" if output_model.covered_by_s3_program_check else "no"
+    )
+    text_segment_model_status = (
+        "passed"
+        if text_segment_model.actual_return == text_segment_model.expected_return
+        else "failed"
+    )
+    text_segment_model_coverage = (
+        "yes" if text_segment_model.covered_by_s3_program_check else "no"
     )
     lines = [
         "S3 Assembly renderer candidate execution",
@@ -1440,6 +1483,13 @@ def render_candidate_execution(
         f"expected return: {output_model.expected_return}",
         f"actual return: {output_model.actual_return}",
         f"covered by s3_program_check: {output_model_coverage}",
+        "",
+        f"s3 text segment model: {text_segment_model_status}",
+        f"program: {text_segment_model.path}",
+        f"entrypoint: {text_segment_model.entrypoint}",
+        f"expected return: {text_segment_model.expected_return}",
+        f"actual return: {text_segment_model.actual_return}",
+        f"covered by s3_program_check: {text_segment_model_coverage}",
         "renderer implementation: not_implemented",
         "full text rendering: not_implemented",
     ]
@@ -1457,6 +1507,7 @@ def status() -> int:
     print("s3 renderer stub: available")
     print("s3 renderer bootstrap spike: available")
     print("s3 renderer output model: available")
+    print("s3 renderer text segment model: available")
     print("s3 renderer implementation: not implemented")
     print("string literals: front-end only, runtime not implemented")
     print("status: blocked")
@@ -1604,6 +1655,7 @@ def candidate_run() -> int:
         )
         bootstrap = run_bootstrap_spike()
         output_model = run_output_model()
+        text_segment_model = run_text_segment_model()
     except (OSError, ValueError) as error:
         print("S3 Assembly renderer candidate execution")
         print()
@@ -1623,6 +1675,7 @@ def candidate_run() -> int:
             actual_status,
             bootstrap,
             output_model,
+            text_segment_model,
         ),
         end="",
     )
@@ -1631,6 +1684,8 @@ def candidate_run() -> int:
     if bootstrap.actual_return != bootstrap.expected_return:
         return 1
     if output_model.actual_return != output_model.expected_return:
+        return 1
+    if text_segment_model.actual_return != text_segment_model.expected_return:
         return 1
     return 0
 

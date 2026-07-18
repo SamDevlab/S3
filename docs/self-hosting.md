@@ -47,7 +47,12 @@ closed after adding `examples/self_hosting/assembly_renderer_output_model.s3`,
 an executable S3 output model that calculates deterministic structural metrics
 for `first`, `simple_call`, and `sign` without strings runtime, arrays, or text
 emission. `--candidate-run` validates both S3 bootstrap artifacts while the
-textual S3 renderer remains unimplemented; see `docs/roadmap-0.21.md`.
+textual S3 renderer remains unimplemented; see `docs/roadmap-0.21.md`. S3 0.22
+is closed after adding
+`examples/self_hosting/assembly_renderer_text_segments.s3`, an executable S3
+text segment model that represents renderer text pieces as numeric IDs and
+validates segment metrics for the same fixtures without runtime strings,
+arrays, or text emission; see `docs/roadmap-0.22.md`.
 
 Recent tools make this pipeline more observable:
 

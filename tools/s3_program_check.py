@@ -41,6 +41,11 @@ PROGRAMS = (
         "Assembly renderer output model",
         hosted_expected_return=0,
     ),
+    S3Program(
+        REPO_ROOT / "examples" / "self_hosting" / "assembly_renderer_text_segments.s3",
+        "Assembly renderer text segment model",
+        hosted_expected_return=0,
+    ),
 )
 
 
