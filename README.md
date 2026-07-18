@@ -250,6 +250,13 @@ bootstrap spike, o output model, o text segment model, o line blueprint model e
 o line sequence model, e reporta que renderer implementation/full text
 rendering continuam
 `not_implemented`.
+S3 0.25 is closed after adding
+`examples/self_hosting/assembly_renderer_line_encodings.s3`, an executable S3
+line content encoding model for categories, directives, opcodes, register
+arity, operand flags, source metadata, totals, and deterministic signatures.
+`python tools/compare_assembly_renderer.py --candidate-run` also validates this
+line content encoding model and still reports renderer implementation/full text
+rendering as `not_implemented`.
 `python tools/compare_assembly_renderer.py --check` continua bloqueado com
 status 1 porque o renderer S3 real ainda não está implementado; isso evita
 falso positivo de sucesso global.
