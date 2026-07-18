@@ -39,8 +39,11 @@ def test_s3_program_check_inventory_exposes_renderer_stub_hosted_check() -> None
     pipeline = find_program(
         "examples/self_hosting/assembly_renderer_pipeline.s3"
     )
+    text_builder = find_program(
+        "examples/self_hosting/assembly_renderer_text_builder.s3"
+    )
 
-    assert len(programs) == 14
+    assert len(programs) == 15
     assert stub is not None
     assert stub.hosted_expected_return == -1
     assert bootstrap is not None
@@ -63,6 +66,8 @@ def test_s3_program_check_inventory_exposes_renderer_stub_hosted_check() -> None
     assert output_buffer.hosted_expected_return == 0
     assert pipeline is not None
     assert pipeline.hosted_expected_return == 0
+    assert text_builder is not None
+    assert text_builder.hosted_expected_return == 0
 
 
 def test_s3_program_check_matches_registered_programs() -> None:
@@ -74,9 +79,9 @@ def test_s3_program_check_matches_registered_programs() -> None:
     )
 
     assert completed.returncode == 0
-    assert "s3 program check: checked 14 program(s)" in completed.stdout
+    assert "s3 program check: checked 15 program(s)" in completed.stdout
     assert (
-        "s3 program check: hosted execution checked 11 program(s)"
+        "s3 program check: hosted execution checked 12 program(s)"
         in completed.stdout
     )
     assert "examples/self_hosting/assembly_renderer_stub.s3" in completed.stdout
@@ -112,6 +117,7 @@ def test_s3_program_check_matches_registered_programs() -> None:
         in completed.stdout
     )
     assert "examples/self_hosting/assembly_renderer_pipeline.s3" in completed.stdout
+    assert "examples/self_hosting/assembly_renderer_text_builder.s3" in completed.stdout
     assert completed.stderr == ""
 
 
@@ -176,4 +182,6 @@ def test_s3_program_check_lists_renderer_stub() -> None:
     )
     assert "examples/self_hosting/assembly_renderer_pipeline.s3" in completed.stdout
     assert "purpose: Assembly renderer pipeline model" in completed.stdout
+    assert "examples/self_hosting/assembly_renderer_text_builder.s3" in completed.stdout
+    assert "purpose: Assembly renderer text builder command model" in completed.stdout
     assert completed.stderr == ""

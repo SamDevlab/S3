@@ -456,6 +456,14 @@ executes all ten executable renderer bootstrap artifacts and reports them as
 passed while renderer implementation and full text rendering remain
 `not_implemented`. Global `--check` remains blocked.
 
+0.30 adds `examples/self_hosting/assembly_renderer_text_builder.s3`, an
+executable S3 numeric text-builder command model. It represents document,
+line, metadata, and finish commands; validates builder states, transitions,
+logical byte counts, counters, negative probes, and signatures for `first`,
+`simple_call`, and `sign`. `--candidate-run` executes all eleven bootstrap
+artifacts while full text rendering remains `not_implemented` and global
+`--check` remains blocked.
+
 ## Why check fails today
 
 Failure is correct today because real comparison is still blocked by:
