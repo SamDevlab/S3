@@ -21,6 +21,7 @@ def test_compare_assembly_renderer_status_reports_blocked_state() -> None:
     assert "s3 renderer line blueprint model: available" in completed.stdout
     assert "s3 renderer line sequence model: available" in completed.stdout
     assert "s3 renderer line content encoding model: available" in completed.stdout
+    assert "s3 renderer event stream model: available" in completed.stdout
     assert "s3 renderer implementation: not implemented" in completed.stdout
     assert (
         "string literals: front-end only, runtime not implemented"
@@ -376,6 +377,11 @@ def test_compare_assembly_renderer_candidate_run_executes_stub_status() -> None:
     assert "s3 line content encoding model: passed" in completed.stdout
     assert (
         "program: examples/self_hosting/assembly_renderer_line_encodings.s3"
+        in completed.stdout
+    )
+    assert "s3 event stream model: passed" in completed.stdout
+    assert (
+        "program: examples/self_hosting/assembly_renderer_event_stream.s3"
         in completed.stdout
     )
     assert "renderer implementation: not_implemented" in completed.stdout

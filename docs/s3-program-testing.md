@@ -28,6 +28,7 @@ Current checked programs:
 - `examples/self_hosting/assembly_renderer_line_blueprints.s3`
 - `examples/self_hosting/assembly_renderer_line_sequences.s3`
 - `examples/self_hosting/assembly_renderer_line_encodings.s3`
+- `examples/self_hosting/assembly_renderer_event_stream.s3`
 
 Conceptual gap examples under `examples/gaps/` are intentionally excluded
 because they may contain pseudocode and are not part of the compile-check
@@ -97,6 +98,13 @@ with `hosted expected return: 0`, so the program check compiles and executes it
 through the hosted path. The model records scalar category, directive, opcode,
 register-arity, operand-flag, source-metadata, ordinal, total, and signature
 encodings for the same fixtures without using runtime strings or arrays.
+
+S3 0.26 adds the executable renderer event stream model at
+`examples/self_hosting/assembly_renderer_event_stream.s3`. It is registered
+with `hosted expected return: 0`, so the program check compiles and executes it
+through the hosted path. The model records ordered scalar renderer events,
+payload classes, event transitions, event counts, and deterministic signatures
+for the same fixtures without using runtime strings or arrays.
 
 The same stub is also included in golden inspect coverage as
 `assembly_renderer_stub`, which records its current IR and Assembly outputs

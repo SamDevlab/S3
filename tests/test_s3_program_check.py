@@ -27,8 +27,11 @@ def test_s3_program_check_inventory_exposes_renderer_stub_hosted_check() -> None
     line_encodings = find_program(
         "examples/self_hosting/assembly_renderer_line_encodings.s3"
     )
+    event_stream = find_program(
+        "examples/self_hosting/assembly_renderer_event_stream.s3"
+    )
 
-    assert len(programs) == 10
+    assert len(programs) == 11
     assert stub is not None
     assert stub.hosted_expected_return == -1
     assert bootstrap is not None
@@ -43,6 +46,8 @@ def test_s3_program_check_inventory_exposes_renderer_stub_hosted_check() -> None
     assert line_sequences.hosted_expected_return == 0
     assert line_encodings is not None
     assert line_encodings.hosted_expected_return == 0
+    assert event_stream is not None
+    assert event_stream.hosted_expected_return == 0
 
 
 def test_s3_program_check_matches_registered_programs() -> None:
@@ -54,9 +59,9 @@ def test_s3_program_check_matches_registered_programs() -> None:
     )
 
     assert completed.returncode == 0
-    assert "s3 program check: checked 10 program(s)" in completed.stdout
+    assert "s3 program check: checked 11 program(s)" in completed.stdout
     assert (
-        "s3 program check: hosted execution checked 7 program(s)"
+        "s3 program check: hosted execution checked 8 program(s)"
         in completed.stdout
     )
     assert "examples/self_hosting/assembly_renderer_stub.s3" in completed.stdout
@@ -77,6 +82,10 @@ def test_s3_program_check_matches_registered_programs() -> None:
     )
     assert (
         "examples/self_hosting/assembly_renderer_line_encodings.s3"
+        in completed.stdout
+    )
+    assert (
+        "examples/self_hosting/assembly_renderer_event_stream.s3"
         in completed.stdout
     )
     assert completed.stderr == ""
@@ -120,4 +129,9 @@ def test_s3_program_check_lists_renderer_stub() -> None:
         "purpose: Assembly renderer line content encoding model"
         in completed.stdout
     )
+    assert (
+        "examples/self_hosting/assembly_renderer_event_stream.s3"
+        in completed.stdout
+    )
+    assert "purpose: Assembly renderer event stream model" in completed.stdout
     assert completed.stderr == ""

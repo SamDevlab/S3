@@ -70,6 +70,14 @@ PROGRAMS = (
         "Assembly renderer line content encoding model",
         hosted_expected_return=0,
     ),
+    S3Program(
+        REPO_ROOT
+        / "examples"
+        / "self_hosting"
+        / "assembly_renderer_event_stream.s3",
+        "Assembly renderer event stream model",
+        hosted_expected_return=0,
+    ),
 )
 
 

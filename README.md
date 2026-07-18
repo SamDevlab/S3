@@ -257,6 +257,14 @@ arity, operand flags, source metadata, totals, and deterministic signatures.
 `python tools/compare_assembly_renderer.py --candidate-run` also validates this
 line content encoding model and still reports renderer implementation/full text
 rendering as `not_implemented`.
+S3 0.26 is closed after adding
+`examples/self_hosting/assembly_renderer_event_stream.s3`, an executable S3
+event stream model for ordered renderer events, payload classes, transitions,
+counts, and deterministic event/payload signatures. There are now seven
+executable S3 renderer bootstrap artifacts, and
+`python tools/compare_assembly_renderer.py --candidate-run` validates all of
+them while still reporting renderer implementation/full text rendering as
+`not_implemented`.
 `python tools/compare_assembly_renderer.py --check` continua bloqueado com
 status 1 porque o renderer S3 real ainda não está implementado; isso evita
 falso positivo de sucesso global.

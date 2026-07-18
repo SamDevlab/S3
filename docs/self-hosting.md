@@ -67,7 +67,12 @@ S3 0.25 is closed after adding
 line content encoding model that records scalar category, directive, opcode,
 register-arity, operand-flag, ordinal, total, and signature metadata for the
 current fixture lines without runtime strings, arrays, or text emission; see
-`docs/roadmap-0.25.md`.
+`docs/roadmap-0.25.md`. S3 0.26 is closed after adding
+`examples/self_hosting/assembly_renderer_event_stream.s3`, an executable S3
+event stream model that records ordered renderer emission events, payload
+classes, transition rules, counts, and deterministic signatures for the same
+fixtures without runtime strings, arrays, or text emission; see
+`docs/roadmap-0.26.md`.
 
 Recent tools make this pipeline more observable:
 
