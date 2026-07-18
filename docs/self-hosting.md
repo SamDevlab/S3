@@ -78,6 +78,12 @@ event writer state model that consumes those ordered events and validates
 writer states, line advancement, emitted counts, function open/close balance,
 final state, and deterministic signatures without runtime strings, arrays, or
 text emission; see `docs/roadmap-0.27.md`.
+S3 0.28 is closed after adding
+`examples/self_hosting/assembly_renderer_output_buffer.s3`, an executable S3
+hosted output buffer model that consumes numeric writer writes and validates
+capacity, cursor progression, write counters, final buffer state, overflow,
+and deterministic signatures without runtime strings, arrays, or text
+emission; see `docs/roadmap-0.28.md`.
 
 Recent tools make this pipeline more observable:
 

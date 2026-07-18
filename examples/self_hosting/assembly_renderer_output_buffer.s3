@@ -1,0 +1,1236 @@
+# Hosted output buffer model for a future S3 Assembly renderer.
+# It records numeric write IDs, cursor movement, capacity, and final buffer state.
+
+fn fixture_first() -> tryte:
+    return 0
+
+fn fixture_simple_call() -> tryte:
+    return 1
+
+fn fixture_sign() -> tryte:
+    return 2
+
+fn buffer_state_error() -> tryte:
+    return -1
+
+fn buffer_state_empty() -> tryte:
+    return 0
+
+fn buffer_state_open() -> tryte:
+    return 1
+
+fn buffer_state_written() -> tryte:
+    return 2
+
+fn buffer_state_full() -> tryte:
+    return 3
+
+fn buffer_state_done() -> tryte:
+    return 4
+
+fn buffer_state_overflow() -> tryte:
+    return 5
+
+fn write_unknown() -> tryte:
+    return -1
+
+fn write_header() -> tryte:
+    return 0
+
+fn write_function() -> tryte:
+    return 1
+
+fn write_param() -> tryte:
+    return 2
+
+fn write_register() -> tryte:
+    return 3
+
+fn write_memory() -> tryte:
+    return 4
+
+fn write_label() -> tryte:
+    return 5
+
+fn write_instruction() -> tryte:
+    return 6
+
+fn write_end() -> tryte:
+    return 7
+
+fn write_blank() -> tryte:
+    return 8
+
+fn same_tryte(left: tryte, right: tryte) -> trit:
+    match left <=> right:
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            return 0
+
+fn same_trit(left: trit, right: trit) -> trit:
+    match left <=> right:
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            return 0
+
+fn all_passed(left: trit, right: trit) -> trit:
+    match left <=> 1:
+        -1:
+            return 0
+
+        0:
+            match right <=> 1:
+                -1:
+                    return 0
+
+                0:
+                    return 1
+
+                1:
+                    return 0
+
+        1:
+            return 0
+
+fn status_from_check(check: trit, failure: tryte) -> tryte:
+    match check <=> 1:
+        -1:
+            return failure
+
+        0:
+            return 0
+
+        1:
+            return failure
+
+fn fixture_metric(fixture: tryte, first_value: tryte, simple_value: tryte, sign_value: tryte) -> tryte:
+    match fixture <=> fixture_first():
+        -1:
+            return -1
+
+        0:
+            return first_value
+
+        1:
+            match fixture <=> fixture_simple_call():
+                -1:
+                    return -1
+
+                0:
+                    return simple_value
+
+                1:
+                    match fixture <=> fixture_sign():
+                        -1:
+                            return -1
+
+                        0:
+                            return sign_value
+
+                        1:
+                            return -1
+
+fn in_range(value: tryte, lower: tryte, upper: tryte) -> trit:
+    match value <=> lower:
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            match value <=> upper:
+                -1:
+                    return 1
+
+                0:
+                    return 1
+
+                1:
+                    return 0
+
+fn is_known_fixture(fixture: tryte) -> trit:
+    match fixture <=> fixture_first():
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            match fixture <=> fixture_simple_call():
+                -1:
+                    return 0
+
+                0:
+                    return 1
+
+                1:
+                    match fixture <=> fixture_sign():
+                        -1:
+                            return 0
+
+                        0:
+                            return 1
+
+                        1:
+                            return 0
+
+fn expected_line_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 18, 21, 36)
+
+fn expected_buffer_capacity(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 18, 21, 36)
+
+fn expected_first_write_at(index: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            return write_unknown()
+
+        0:
+            return write_header()
+
+        1:
+            match index <=> 1:
+                -1:
+                    return write_unknown()
+
+                0:
+                    return write_blank()
+
+                1:
+                    match index <=> 2:
+                        -1:
+                            return write_unknown()
+
+                        0:
+                            return write_function()
+
+                        1:
+                            match in_range(index, 3, 8) <=> 1:
+                                -1:
+                                    match index <=> 9:
+                                        -1:
+                                            return write_unknown()
+
+                                        0:
+                                            return write_label()
+
+                                        1:
+                                            match in_range(index, 10, 16) <=> 1:
+                                                -1:
+                                                    match index <=> 17:
+                                                        -1:
+                                                            return write_unknown()
+
+                                                        0:
+                                                            return write_end()
+
+                                                        1:
+                                                            return write_unknown()
+
+                                                0:
+                                                    return write_instruction()
+
+                                                1:
+                                                    return write_unknown()
+
+                                0:
+                                    return write_register()
+
+                                1:
+                                    return write_unknown()
+
+fn expected_simple_call_write_at(index: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            return write_unknown()
+
+        0:
+            return write_header()
+
+        1:
+            match index <=> 1:
+                -1:
+                    return write_unknown()
+
+                0:
+                    return write_blank()
+
+                1:
+                    match index <=> 2:
+                        -1:
+                            return write_unknown()
+
+                        0:
+                            return write_function()
+
+                        1:
+                            match in_range(index, 3, 4) <=> 1:
+                                -1:
+                                    match index <=> 5:
+                                        -1:
+                                            return write_unknown()
+
+                                        0:
+                                            return write_register()
+
+                                        1:
+                                            match index <=> 6:
+                                                -1:
+                                                    return write_unknown()
+
+                                                0:
+                                                    return write_label()
+
+                                                1:
+                                                    match in_range(index, 7, 8) <=> 1:
+                                                        -1:
+                                                            match index <=> 9:
+                                                                -1:
+                                                                    return write_unknown()
+
+                                                                0:
+                                                                    return write_end()
+
+                                                                1:
+                                                                    match index <=> 10:
+                                                                        -1:
+                                                                            return write_unknown()
+
+                                                                        0:
+                                                                            return write_blank()
+
+                                                                        1:
+                                                                            match index <=> 11:
+                                                                                -1:
+                                                                                    return write_unknown()
+
+                                                                                0:
+                                                                                    return write_function()
+
+                                                                                1:
+                                                                                    match in_range(index, 12, 14) <=> 1:
+                                                                                        -1:
+                                                                                            match index <=> 15:
+                                                                                                -1:
+                                                                                                    return write_unknown()
+
+                                                                                                0:
+                                                                                                    return write_label()
+
+                                                                                                1:
+                                                                                                    match in_range(index, 16, 19) <=> 1:
+                                                                                                        -1:
+                                                                                                            match index <=> 20:
+                                                                                                                -1:
+                                                                                                                    return write_unknown()
+
+                                                                                                                0:
+                                                                                                                    return write_end()
+
+                                                                                                                1:
+                                                                                                                    return write_unknown()
+
+                                                                                                        0:
+                                                                                                            return write_instruction()
+
+                                                                                                        1:
+                                                                                                            return write_unknown()
+
+                                                                                        0:
+                                                                                            return write_register()
+
+                                                                                        1:
+                                                                                            return write_unknown()
+
+                                                        0:
+                                                            return write_instruction()
+
+                                                        1:
+                                                            return write_unknown()
+
+                                0:
+                                    return write_param()
+
+                                1:
+                                    return write_unknown()
+
+fn expected_sign_write_at(index: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            return write_unknown()
+
+        0:
+            return write_header()
+
+        1:
+            match index <=> 1:
+                -1:
+                    return write_unknown()
+
+                0:
+                    return write_blank()
+
+                1:
+                    match index <=> 2:
+                        -1:
+                            return write_unknown()
+
+                        0:
+                            return write_function()
+
+                        1:
+                            match index <=> 3:
+                                -1:
+                                    return write_unknown()
+
+                                0:
+                                    return write_param()
+
+                                1:
+                                    match in_range(index, 4, 9) <=> 1:
+                                        -1:
+                                            match index <=> 10:
+                                                -1:
+                                                    return write_unknown()
+
+                                                0:
+                                                    return write_label()
+
+                                                1:
+                                                    match in_range(index, 11, 13) <=> 1:
+                                                        -1:
+                                                            match index <=> 14:
+                                                                -1:
+                                                                    return write_unknown()
+
+                                                                0:
+                                                                    return write_label()
+
+                                                                1:
+                                                                    match in_range(index, 15, 17) <=> 1:
+                                                                        -1:
+                                                                            match index <=> 18:
+                                                                                -1:
+                                                                                    return write_unknown()
+
+                                                                                0:
+                                                                                    return write_label()
+
+                                                                                1:
+                                                                                    match in_range(index, 19, 20) <=> 1:
+                                                                                        -1:
+                                                                                            match index <=> 21:
+                                                                                                -1:
+                                                                                                    return write_unknown()
+
+                                                                                                0:
+                                                                                                    return write_label()
+
+                                                                                                1:
+                                                                                                    match in_range(index, 22, 23) <=> 1:
+                                                                                                        -1:
+                                                                                                            match index <=> 24:
+                                                                                                                -1:
+                                                                                                                    return write_unknown()
+
+                                                                                                                0:
+                                                                                                                    return write_end()
+
+                                                                                                                1:
+                                                                                                                    match index <=> 25:
+                                                                                                                        -1:
+                                                                                                                            return write_unknown()
+
+                                                                                                                        0:
+                                                                                                                            return write_blank()
+
+                                                                                                                        1:
+                                                                                                                            match index <=> 26:
+                                                                                                                                -1:
+                                                                                                                                    return write_unknown()
+
+                                                                                                                                0:
+                                                                                                                                    return write_function()
+
+                                                                                                                                1:
+                                                                                                                                    match in_range(index, 27, 29) <=> 1:
+                                                                                                                                        -1:
+                                                                                                                                            match index <=> 30:
+                                                                                                                                                -1:
+                                                                                                                                                    return write_unknown()
+
+                                                                                                                                                0:
+                                                                                                                                                    return write_label()
+
+                                                                                                                                                1:
+                                                                                                                                                    match in_range(index, 31, 34) <=> 1:
+                                                                                                                                                        -1:
+                                                                                                                                                            match index <=> 35:
+                                                                                                                                                                -1:
+                                                                                                                                                                    return write_unknown()
+
+                                                                                                                                                                0:
+                                                                                                                                                                    return write_end()
+
+                                                                                                                                                                1:
+                                                                                                                                                                    return write_unknown()
+
+                                                                                                                                                        0:
+                                                                                                                                                            return write_instruction()
+
+                                                                                                                                                        1:
+                                                                                                                                                            return write_unknown()
+
+                                                                                                                                        0:
+                                                                                                                                            return write_register()
+
+                                                                                                                                        1:
+                                                                                                                                            return write_unknown()
+
+                                                                                                        0:
+                                                                                                            return write_instruction()
+
+                                                                                                        1:
+                                                                                                            return write_unknown()
+
+                                                                                        0:
+                                                                                            return write_instruction()
+
+                                                                                        1:
+                                                                                            return write_unknown()
+
+                                                                        0:
+                                                                            return write_instruction()
+
+                                                                        1:
+                                                                            return write_unknown()
+
+                                                        0:
+                                                            return write_instruction()
+
+                                                        1:
+                                                            return write_unknown()
+
+                                        0:
+                                            return write_register()
+
+                                        1:
+                                            return write_unknown()
+
+fn expected_write_at(fixture: tryte, index: tryte) -> tryte:
+    match fixture <=> fixture_first():
+        -1:
+            return write_unknown()
+
+        0:
+            return expected_first_write_at(index)
+
+        1:
+            match fixture <=> fixture_simple_call():
+                -1:
+                    return write_unknown()
+
+                0:
+                    return expected_simple_call_write_at(index)
+
+                1:
+                    match fixture <=> fixture_sign():
+                        -1:
+                            return write_unknown()
+
+                        0:
+                            return expected_sign_write_at(index)
+
+                        1:
+                            return write_unknown()
+
+fn expected_final_cursor(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 18, 21, 36)
+
+fn expected_final_buffer_state(fixture: tryte) -> tryte:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return buffer_state_error()
+
+        0:
+            return buffer_state_done()
+
+        1:
+            return buffer_state_error()
+
+fn is_known_buffer_state(state: tryte) -> trit:
+    match state <=> buffer_state_empty():
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            match state <=> buffer_state_overflow():
+                -1:
+                    return 1
+
+                0:
+                    return 1
+
+                1:
+                    return 0
+
+fn is_known_write(write: tryte) -> trit:
+    return in_range(write, write_header(), write_blank())
+
+fn is_directive_write(write: tryte) -> trit:
+    return in_range(write, write_header(), write_end())
+
+fn is_instruction_write(write: tryte) -> trit:
+    return same_tryte(write, write_instruction())
+
+fn is_blank_write(write: tryte) -> trit:
+    return same_tryte(write, write_blank())
+
+fn is_valid_index(index: tryte, count: tryte) -> trit:
+    match index <=> 0:
+        -1:
+            return 0
+
+        0:
+            match index <=> count:
+                -1:
+                    return 1
+
+                0:
+                    return 0
+
+                1:
+                    return 0
+
+        1:
+            match index <=> count:
+                -1:
+                    return 1
+
+                0:
+                    return 0
+
+                1:
+                    return 0
+
+fn validate_buffer_index(fixture: tryte, index: tryte) -> trit:
+    return all_passed(
+        is_known_fixture(fixture),
+        is_valid_index(index, expected_line_count(fixture))
+    )
+
+fn can_write(cursor: tryte, capacity: tryte) -> trit:
+    match cursor <=> 0:
+        -1:
+            return 0
+
+        0:
+            match cursor <=> capacity:
+                -1:
+                    return 1
+
+                0:
+                    return 0
+
+                1:
+                    return 0
+
+        1:
+            match cursor <=> capacity:
+                -1:
+                    return 1
+
+                0:
+                    return 0
+
+                1:
+                    return 0
+
+fn is_valid_buffer_transition(state: tryte, write: tryte) -> trit:
+    match is_known_buffer_state(state) <=> 1:
+        -1:
+            return 0
+
+        0:
+            match is_known_write(write) <=> 1:
+                -1:
+                    return 0
+
+                0:
+                    match state <=> buffer_state_empty():
+                        -1:
+                            return 0
+
+                        0:
+                            return same_tryte(write, write_header())
+
+                        1:
+                            match state <=> buffer_state_open():
+                                -1:
+                                    return 0
+
+                                0:
+                                    return 1
+
+                                1:
+                                    match state <=> buffer_state_written():
+                                        -1:
+                                            return 0
+
+                                        0:
+                                            return 1
+
+                                        1:
+                                            return 0
+
+                1:
+                    return 0
+
+        1:
+            return 0
+
+fn next_buffer_cursor(cursor: tryte, write: tryte) -> tryte:
+    match is_known_write(write) <=> 1:
+        -1:
+            return cursor
+
+        0:
+            return cursor + 1
+
+        1:
+            return cursor
+
+fn next_buffer_state(state: tryte, cursor: tryte, capacity: tryte, write: tryte) -> tryte:
+    match is_valid_buffer_transition(state, write) <=> 1:
+        -1:
+            return buffer_state_error()
+
+        0:
+            match can_write(cursor, capacity) <=> 1:
+                -1:
+                    return buffer_state_overflow()
+
+                0:
+                    match next_buffer_cursor(cursor, write) <=> capacity:
+                        -1:
+                            match state <=> buffer_state_empty():
+                                -1:
+                                    return buffer_state_written()
+
+                                0:
+                                    return buffer_state_open()
+
+                                1:
+                                    return buffer_state_written()
+
+                        0:
+                            return buffer_state_full()
+
+                        1:
+                            return buffer_state_error()
+
+                1:
+                    return buffer_state_error()
+
+        1:
+            return buffer_state_error()
+
+fn finalize_buffer_state(state: tryte, cursor: tryte, capacity: tryte) -> tryte:
+    match state <=> buffer_state_full():
+        -1:
+            return buffer_state_error()
+
+        0:
+            match cursor <=> capacity:
+                -1:
+                    return buffer_state_error()
+
+                0:
+                    return buffer_state_done()
+
+                1:
+                    return buffer_state_error()
+
+        1:
+            return buffer_state_error()
+
+fn write_score(state: tryte, cursor: tryte, write: tryte) -> tryte:
+    return state + cursor + write
+
+fn expected_buffer_cursor_before_at(fixture: tryte, index: tryte) -> tryte:
+    match validate_buffer_index(fixture, index) <=> 1:
+        -1:
+            return -1
+
+        0:
+            return index
+
+        1:
+            return -1
+
+fn expected_buffer_cursor_after_at(fixture: tryte, index: tryte) -> tryte:
+    match validate_buffer_index(fixture, index) <=> 1:
+        -1:
+            return -1
+
+        0:
+            return index + 1
+
+        1:
+            return -1
+
+fn expected_buffer_state_before_at(fixture: tryte, index: tryte) -> tryte:
+    match validate_buffer_index(fixture, index) <=> 1:
+        -1:
+            return buffer_state_error()
+
+        0:
+            match index <=> 0:
+                -1:
+                    return buffer_state_error()
+
+                0:
+                    return buffer_state_empty()
+
+                1:
+                    match index <=> 1:
+                        -1:
+                            return buffer_state_error()
+
+                        0:
+                            return buffer_state_open()
+
+                        1:
+                            return buffer_state_written()
+
+        1:
+            return buffer_state_error()
+
+fn expected_buffer_state_after_at(fixture: tryte, index: tryte) -> tryte:
+    match validate_buffer_index(fixture, index) <=> 1:
+        -1:
+            return buffer_state_error()
+
+        0:
+            return next_buffer_state(
+                expected_buffer_state_before_at(fixture, index),
+                expected_buffer_cursor_before_at(fixture, index),
+                expected_buffer_capacity(fixture),
+                expected_write_at(fixture, index)
+            )
+
+        1:
+            return buffer_state_error()
+
+fn expected_total_write_count(fixture: tryte) -> tryte:
+    return expected_line_count(fixture)
+
+fn expected_directive_write_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 10, 13, 20)
+
+fn expected_instruction_write_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 7, 6, 14)
+
+fn expected_blank_write_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 1, 2, 2)
+
+fn expected_header_write_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 1, 1, 1)
+
+fn expected_function_write_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 1, 2, 2)
+
+fn expected_param_write_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 0, 2, 1)
+
+fn expected_register_write_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 6, 4, 9)
+
+fn expected_memory_write_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 0, 0, 0)
+
+fn expected_label_write_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 1, 2, 5)
+
+fn expected_end_write_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 1, 2, 2)
+
+fn expected_buffer_signature(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 86, 101, 168)
+
+fn modeled_fixture_buffer_signature(fixture: tryte) -> tryte:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return -1
+
+        0:
+            return expected_final_buffer_state(fixture) + expected_buffer_capacity(fixture) + expected_final_cursor(fixture) + expected_total_write_count(fixture) + expected_directive_write_count(fixture) + expected_instruction_write_count(fixture) + expected_blank_write_count(fixture) + expected_header_write_count(fixture) + expected_function_write_count(fixture) + expected_param_write_count(fixture) + expected_register_write_count(fixture) + expected_memory_write_count(fixture) + expected_label_write_count(fixture) + expected_end_write_count(fixture)
+
+        1:
+            return -1
+
+fn total_buffer_capacity() -> tryte:
+    return expected_buffer_capacity(fixture_first()) + expected_buffer_capacity(fixture_simple_call()) + expected_buffer_capacity(fixture_sign())
+
+fn total_final_cursor() -> tryte:
+    return expected_final_cursor(fixture_first()) + expected_final_cursor(fixture_simple_call()) + expected_final_cursor(fixture_sign())
+
+fn total_write_count() -> tryte:
+    return expected_total_write_count(fixture_first()) + expected_total_write_count(fixture_simple_call()) + expected_total_write_count(fixture_sign())
+
+fn total_directive_write_count() -> tryte:
+    return expected_directive_write_count(fixture_first()) + expected_directive_write_count(fixture_simple_call()) + expected_directive_write_count(fixture_sign())
+
+fn total_instruction_write_count() -> tryte:
+    return expected_instruction_write_count(fixture_first()) + expected_instruction_write_count(fixture_simple_call()) + expected_instruction_write_count(fixture_sign())
+
+fn total_blank_write_count() -> tryte:
+    return expected_blank_write_count(fixture_first()) + expected_blank_write_count(fixture_simple_call()) + expected_blank_write_count(fixture_sign())
+
+fn total_header_write_count() -> tryte:
+    return expected_header_write_count(fixture_first()) + expected_header_write_count(fixture_simple_call()) + expected_header_write_count(fixture_sign())
+
+fn total_function_write_count() -> tryte:
+    return expected_function_write_count(fixture_first()) + expected_function_write_count(fixture_simple_call()) + expected_function_write_count(fixture_sign())
+
+fn total_param_write_count() -> tryte:
+    return expected_param_write_count(fixture_first()) + expected_param_write_count(fixture_simple_call()) + expected_param_write_count(fixture_sign())
+
+fn total_register_write_count() -> tryte:
+    return expected_register_write_count(fixture_first()) + expected_register_write_count(fixture_simple_call()) + expected_register_write_count(fixture_sign())
+
+fn total_memory_write_count() -> tryte:
+    return expected_memory_write_count(fixture_first()) + expected_memory_write_count(fixture_simple_call()) + expected_memory_write_count(fixture_sign())
+
+fn total_label_write_count() -> tryte:
+    return expected_label_write_count(fixture_first()) + expected_label_write_count(fixture_simple_call()) + expected_label_write_count(fixture_sign())
+
+fn total_end_write_count() -> tryte:
+    return expected_end_write_count(fixture_first()) + expected_end_write_count(fixture_simple_call()) + expected_end_write_count(fixture_sign())
+
+fn total_buffer_signature() -> tryte:
+    return modeled_fixture_buffer_signature(fixture_first()) + modeled_fixture_buffer_signature(fixture_simple_call()) + modeled_fixture_buffer_signature(fixture_sign())
+
+fn validate_buffer_step(fixture: tryte, index: tryte) -> trit:
+    match validate_buffer_index(fixture, index) <=> 1:
+        -1:
+            return 0
+
+        0:
+            mut state: tryte = expected_buffer_state_before_at(fixture, index)
+            mut cursor: tryte = expected_buffer_cursor_before_at(fixture, index)
+            mut capacity: tryte = expected_buffer_capacity(fixture)
+            mut write: tryte = expected_write_at(fixture, index)
+            mut ok: trit = 1
+
+            ok = all_passed(ok, is_known_buffer_state(state))
+            ok = all_passed(ok, is_known_write(write))
+            ok = all_passed(ok, is_valid_buffer_transition(state, write))
+            ok = all_passed(ok, can_write(cursor, capacity))
+            ok = all_passed(ok, same_tryte(next_buffer_cursor(cursor, write), expected_buffer_cursor_after_at(fixture, index)))
+            ok = all_passed(ok, same_tryte(next_buffer_state(state, cursor, capacity, write), expected_buffer_state_after_at(fixture, index)))
+
+            return ok
+
+        1:
+            return 0
+
+fn validate_buffer_step_range(fixture: tryte, index: tryte, last: tryte) -> trit:
+    match index <=> last:
+        -1:
+            return all_passed(
+                validate_buffer_step(fixture, index),
+                validate_buffer_step_range(fixture, index + 1, last)
+            )
+
+        0:
+            return validate_buffer_step(fixture, index)
+
+        1:
+            return 0
+
+fn validate_buffer_continuity_at(fixture: tryte, index: tryte) -> trit:
+    match is_valid_index(index, expected_line_count(fixture) - 1) <=> 1:
+        -1:
+            return 0
+
+        0:
+            mut current_state: tryte = expected_buffer_state_after_at(fixture, index)
+            mut next_state: tryte = expected_buffer_state_before_at(fixture, index + 1)
+
+            return all_passed(
+                same_tryte(current_state, next_state),
+                same_tryte(expected_buffer_cursor_after_at(fixture, index), expected_buffer_cursor_before_at(fixture, index + 1))
+            )
+
+        1:
+            return 0
+
+fn validate_buffer_continuity_range(fixture: tryte, index: tryte, last: tryte) -> trit:
+    match index <=> last:
+        -1:
+            return all_passed(
+                validate_buffer_continuity_at(fixture, index),
+                validate_buffer_continuity_range(fixture, index + 1, last)
+            )
+
+        0:
+            return validate_buffer_continuity_at(fixture, index)
+
+        1:
+            return 0
+
+fn modeled_final_buffer_state(fixture: tryte) -> tryte:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return buffer_state_error()
+
+        0:
+            return finalize_buffer_state(
+                expected_buffer_state_after_at(fixture, expected_line_count(fixture) - 1),
+                expected_final_cursor(fixture),
+                expected_buffer_capacity(fixture)
+            )
+
+        1:
+            return buffer_state_error()
+
+fn validate_fixture_buffer_writes(fixture: tryte) -> trit:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return 0
+
+        0:
+            mut ok: trit = 1
+
+            ok = all_passed(ok, validate_buffer_step(fixture, 0))
+            ok = all_passed(ok, validate_buffer_step(fixture, 1))
+            ok = all_passed(ok, validate_buffer_step(fixture, 2))
+            ok = all_passed(ok, validate_buffer_step(fixture, expected_line_count(fixture) - 2))
+            ok = all_passed(ok, validate_buffer_step(fixture, expected_line_count(fixture) - 1))
+            ok = all_passed(ok, validate_buffer_continuity_at(fixture, 0))
+            ok = all_passed(ok, validate_buffer_continuity_at(fixture, 1))
+            ok = all_passed(ok, validate_buffer_continuity_at(fixture, expected_line_count(fixture) - 2))
+            ok = all_passed(ok, same_tryte(expected_final_cursor(fixture), expected_buffer_capacity(fixture)))
+            ok = all_passed(ok, same_tryte(modeled_final_buffer_state(fixture), expected_final_buffer_state(fixture)))
+            ok = all_passed(ok, same_tryte(expected_write_at(fixture, expected_line_count(fixture) - 1), write_end()))
+
+            return ok
+
+        1:
+            return 0
+
+fn validate_fixture_buffer_counts(fixture: tryte) -> trit:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return 0
+
+        0:
+            mut ok: trit = 1
+
+            ok = all_passed(ok, same_tryte(expected_total_write_count(fixture), expected_line_count(fixture)))
+            ok = all_passed(ok, same_tryte(expected_total_write_count(fixture), expected_directive_write_count(fixture) + expected_instruction_write_count(fixture) + expected_blank_write_count(fixture)))
+            ok = all_passed(ok, same_tryte(expected_directive_write_count(fixture), expected_header_write_count(fixture) + expected_function_write_count(fixture) + expected_param_write_count(fixture) + expected_register_write_count(fixture) + expected_memory_write_count(fixture) + expected_label_write_count(fixture) + expected_end_write_count(fixture)))
+
+            return ok
+
+        1:
+            return 0
+
+fn validate_fixture_buffer_signature(fixture: tryte) -> trit:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return 0
+
+        0:
+            return same_tryte(modeled_fixture_buffer_signature(fixture), expected_buffer_signature(fixture))
+
+        1:
+            return 0
+
+fn validate_total_buffer_counts() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, same_tryte(total_buffer_capacity(), 75))
+    ok = all_passed(ok, same_tryte(total_final_cursor(), 75))
+    ok = all_passed(ok, same_tryte(total_write_count(), 75))
+    ok = all_passed(ok, same_tryte(total_directive_write_count(), 43))
+    ok = all_passed(ok, same_tryte(total_instruction_write_count(), 27))
+    ok = all_passed(ok, same_tryte(total_blank_write_count(), 5))
+    ok = all_passed(ok, same_tryte(total_header_write_count(), 3))
+    ok = all_passed(ok, same_tryte(total_function_write_count(), 5))
+    ok = all_passed(ok, same_tryte(total_param_write_count(), 3))
+    ok = all_passed(ok, same_tryte(total_register_write_count(), 19))
+    ok = all_passed(ok, same_tryte(total_memory_write_count(), 0))
+    ok = all_passed(ok, same_tryte(total_label_write_count(), 8))
+    ok = all_passed(ok, same_tryte(total_end_write_count(), 5))
+
+    return ok
+
+fn validate_total_buffer_signature() -> trit:
+    return same_tryte(total_buffer_signature(), 355)
+
+fn validate_invalid_fixture_probe() -> trit:
+    return all_passed(
+        same_trit(validate_fixture_buffer_writes(99), 0),
+        same_trit(validate_fixture_buffer_counts(99), 0)
+    )
+
+fn validate_invalid_index_probe() -> trit:
+    return all_passed(
+        same_trit(validate_buffer_index(fixture_first(), -1), 0),
+        same_trit(validate_buffer_index(fixture_first(), 18), 0)
+    )
+
+fn validate_unknown_write_probe() -> trit:
+    return all_passed(
+        same_trit(is_known_write(write_unknown()), 0),
+        same_trit(is_valid_buffer_transition(buffer_state_open(), write_unknown()), 0)
+    )
+
+fn validate_unknown_state_probe() -> trit:
+    return all_passed(
+        same_trit(is_known_buffer_state(buffer_state_error()), 0),
+        same_trit(is_valid_buffer_transition(buffer_state_error(), write_header()), 0)
+    )
+
+fn validate_overflow_probe() -> trit:
+    mut capacity: tryte = expected_buffer_capacity(fixture_first())
+
+    return all_passed(
+        same_trit(can_write(capacity, capacity), 0),
+        same_tryte(next_buffer_state(buffer_state_written(), capacity, capacity, write_end()), buffer_state_overflow())
+    )
+
+fn validate_invalid_buffer_transition_probe() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, same_trit(is_valid_buffer_transition(buffer_state_empty(), write_instruction()), 0))
+    ok = all_passed(ok, same_trit(is_valid_buffer_transition(buffer_state_full(), write_end()), 0))
+    ok = all_passed(ok, same_trit(is_valid_buffer_transition(buffer_state_done(), write_blank()), 0))
+    ok = all_passed(ok, same_trit(is_valid_buffer_transition(buffer_state_overflow(), write_header()), 0))
+
+    return ok
+
+fn validate_all_fixture_buffers() -> trit:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, validate_fixture_buffer_writes(fixture_first()))
+    ok = all_passed(ok, validate_fixture_buffer_writes(fixture_simple_call()))
+    ok = all_passed(ok, validate_fixture_buffer_writes(fixture_sign()))
+    ok = all_passed(ok, validate_fixture_buffer_counts(fixture_first()))
+    ok = all_passed(ok, validate_fixture_buffer_counts(fixture_simple_call()))
+    ok = all_passed(ok, validate_fixture_buffer_counts(fixture_sign()))
+    ok = all_passed(ok, validate_fixture_buffer_signature(fixture_first()))
+    ok = all_passed(ok, validate_fixture_buffer_signature(fixture_simple_call()))
+    ok = all_passed(ok, validate_fixture_buffer_signature(fixture_sign()))
+    ok = all_passed(ok, validate_total_buffer_counts())
+    ok = all_passed(ok, validate_total_buffer_signature())
+    ok = all_passed(ok, validate_invalid_fixture_probe())
+    ok = all_passed(ok, validate_invalid_index_probe())
+    ok = all_passed(ok, validate_unknown_write_probe())
+    ok = all_passed(ok, validate_unknown_state_probe())
+    ok = all_passed(ok, validate_overflow_probe())
+    ok = all_passed(ok, validate_invalid_buffer_transition_probe())
+
+    return ok
+
+fn validate_first_buffer_write_sequence() -> trit:
+    return all_passed(
+        validate_buffer_step_range(fixture_first(), 0, 17),
+        validate_buffer_continuity_range(fixture_first(), 0, 16)
+    )
+
+fn validate_simple_call_buffer_write_sequence() -> trit:
+    return all_passed(
+        validate_buffer_step_range(fixture_simple_call(), 0, 20),
+        validate_buffer_continuity_range(fixture_simple_call(), 0, 19)
+    )
+
+fn validate_sign_buffer_write_sequence() -> trit:
+    return all_passed(
+        validate_buffer_step_range(fixture_sign(), 0, 35),
+        validate_buffer_continuity_range(fixture_sign(), 0, 34)
+    )
+
+fn first_buffer_final_state() -> tryte:
+    return modeled_final_buffer_state(fixture_first())
+
+fn simple_call_buffer_final_state() -> tryte:
+    return modeled_final_buffer_state(fixture_simple_call())
+
+fn sign_buffer_final_state() -> tryte:
+    return modeled_final_buffer_state(fixture_sign())
+
+fn first_buffer_cursor() -> tryte:
+    return expected_final_cursor(fixture_first())
+
+fn simple_call_buffer_cursor() -> tryte:
+    return expected_final_cursor(fixture_simple_call())
+
+fn sign_buffer_cursor() -> tryte:
+    return expected_final_cursor(fixture_sign())
+
+fn first_buffer_capacity() -> tryte:
+    return expected_buffer_capacity(fixture_first())
+
+fn simple_call_buffer_capacity() -> tryte:
+    return expected_buffer_capacity(fixture_simple_call())
+
+fn sign_buffer_capacity() -> tryte:
+    return expected_buffer_capacity(fixture_sign())
+
+fn first_buffer_signature() -> tryte:
+    return modeled_fixture_buffer_signature(fixture_first())
+
+fn simple_call_buffer_signature() -> tryte:
+    return modeled_fixture_buffer_signature(fixture_simple_call())
+
+fn sign_buffer_signature() -> tryte:
+    return modeled_fixture_buffer_signature(fixture_sign())
+
+fn output_buffer_first_probe() -> tryte:
+    return status_from_check(validate_fixture_buffer_writes(fixture_first()), 1)
+
+fn output_buffer_simple_call_probe() -> tryte:
+    return status_from_check(validate_fixture_buffer_writes(fixture_simple_call()), 1)
+
+fn output_buffer_sign_probe() -> tryte:
+    return status_from_check(validate_fixture_buffer_writes(fixture_sign()), 1)
+
+fn output_buffer_counts_probe() -> tryte:
+    return status_from_check(validate_total_buffer_counts(), 1)
+
+fn output_buffer_signature_probe() -> tryte:
+    return status_from_check(validate_total_buffer_signature(), 1)
+
+fn output_buffer_transition_probe() -> tryte:
+    mut ok: trit = 1
+
+    ok = all_passed(ok, same_tryte(write_score(buffer_state_empty(), 0, write_header()), 0))
+    ok = all_passed(ok, same_tryte(write_score(buffer_state_open(), 1, write_blank()), 10))
+    ok = all_passed(ok, same_tryte(write_score(buffer_state_written(), 10, write_instruction()), 18))
+    ok = all_passed(ok, validate_invalid_buffer_transition_probe())
+
+    return status_from_check(ok, 1)
+
+fn output_buffer_model_self_check() -> tryte:
+    return status_from_check(validate_all_fixture_buffers(), 1)
+
+fn main() -> tryte:
+    return output_buffer_model_self_check()

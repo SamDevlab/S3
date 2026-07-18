@@ -81,6 +81,11 @@ EXPECTED_EVENT_WRITER_MODEL_PATH = (
 )
 EXPECTED_EVENT_WRITER_MODEL_ENTRYPOINT = "main"
 EXPECTED_EVENT_WRITER_MODEL_RETURN = 0
+EXPECTED_OUTPUT_BUFFER_MODEL_PATH = (
+    "examples/self_hosting/assembly_renderer_output_buffer.s3"
+)
+EXPECTED_OUTPUT_BUFFER_MODEL_ENTRYPOINT = "main"
+EXPECTED_OUTPUT_BUFFER_MODEL_RETURN = 0
 EXPECTED_DIRECTIVE_COUNT_FUNCTION = "renderer_supported_directive_count"
 EXPECTED_OPCODE_COUNT_FUNCTION = "renderer_supported_opcode_count"
 EXPECTED_DIRECTIVE_FIRST_FUNCTION = "renderer_first_directive_id"
@@ -301,6 +306,15 @@ class EventStreamModelExecution:
 
 @dataclass(frozen=True, slots=True)
 class EventWriterModelExecution:
+    path: str
+    entrypoint: str
+    expected_return: int
+    actual_return: int
+    covered_by_s3_program_check: bool
+
+
+@dataclass(frozen=True, slots=True)
+class OutputBufferModelExecution:
     path: str
     entrypoint: str
     expected_return: int
@@ -1600,6 +1614,28 @@ def run_event_writer_model() -> EventWriterModelExecution:
     )
 
 
+def run_output_buffer_model() -> OutputBufferModelExecution:
+    inventory_program = find_program(EXPECTED_OUTPUT_BUFFER_MODEL_PATH)
+    if inventory_program is None:
+        raise ValueError(
+            "output buffer model missing from s3_program_check inventory"
+        )
+    if inventory_program.hosted_expected_return != EXPECTED_OUTPUT_BUFFER_MODEL_RETURN:
+        raise ValueError("output buffer model hosted expected return must be 0")
+
+    actual_return = run_hosted_check(
+        inventory_program,
+        entry=EXPECTED_OUTPUT_BUFFER_MODEL_ENTRYPOINT,
+    )
+    return OutputBufferModelExecution(
+        path=EXPECTED_OUTPUT_BUFFER_MODEL_PATH,
+        entrypoint=EXPECTED_OUTPUT_BUFFER_MODEL_ENTRYPOINT,
+        expected_return=EXPECTED_OUTPUT_BUFFER_MODEL_RETURN,
+        actual_return=actual_return,
+        covered_by_s3_program_check=True,
+    )
+
+
 def render_reference_status(fixtures: tuple[ReferenceFixture, ...]) -> str:
     lines = [
         "S3 Assembly renderer Python reference",
@@ -1623,6 +1659,7 @@ def render_candidate_execution(
     line_content_encoding_model: LineContentEncodingModelExecution,
     event_stream_model: EventStreamModelExecution,
     event_writer_model: EventWriterModelExecution,
+    output_buffer_model: OutputBufferModelExecution,
 ) -> str:
     status = (
         candidate.execution_meaning
@@ -1700,6 +1737,15 @@ def render_candidate_execution(
     event_writer_model_coverage = (
         "yes" if event_writer_model.covered_by_s3_program_check else "no"
     )
+    output_buffer_model_passed = (
+        output_buffer_model.actual_return == output_buffer_model.expected_return
+    )
+    output_buffer_model_status = (
+        "passed" if output_buffer_model_passed else "failed"
+    )
+    output_buffer_model_coverage = (
+        "yes" if output_buffer_model.covered_by_s3_program_check else "no"
+    )
     lines = [
         "S3 Assembly renderer candidate execution",
         "",
@@ -1769,6 +1815,13 @@ def render_candidate_execution(
         f"expected return: {event_writer_model.expected_return}",
         f"actual return: {event_writer_model.actual_return}",
         f"covered by s3_program_check: {event_writer_model_coverage}",
+        "",
+        f"s3 output buffer model: {output_buffer_model_status}",
+        f"program: {output_buffer_model.path}",
+        f"entrypoint: {output_buffer_model.entrypoint}",
+        f"expected return: {output_buffer_model.expected_return}",
+        f"actual return: {output_buffer_model.actual_return}",
+        f"covered by s3_program_check: {output_buffer_model_coverage}",
         "renderer implementation: not_implemented",
         "full text rendering: not_implemented",
     ]
@@ -1792,6 +1845,7 @@ def status() -> int:
     print("s3 renderer line content encoding model: available")
     print("s3 renderer event stream model: available")
     print("s3 renderer event writer model: available")
+    print("s3 renderer output buffer model: available")
     print("s3 renderer implementation: not implemented")
     print("string literals: front-end only, runtime not implemented")
     print("status: blocked")
@@ -1945,6 +1999,7 @@ def candidate_run() -> int:
         line_content_encoding_model = run_line_content_encoding_model()
         event_stream_model = run_event_stream_model()
         event_writer_model = run_event_writer_model()
+        output_buffer_model = run_output_buffer_model()
     except (OSError, ValueError) as error:
         print("S3 Assembly renderer candidate execution")
         print()
@@ -1970,6 +2025,7 @@ def candidate_run() -> int:
             line_content_encoding_model,
             event_stream_model,
             event_writer_model,
+            output_buffer_model,
         ),
         end="",
     )
@@ -1993,6 +2049,8 @@ def candidate_run() -> int:
     if event_stream_model.actual_return != event_stream_model.expected_return:
         return 1
     if event_writer_model.actual_return != event_writer_model.expected_return:
+        return 1
+    if output_buffer_model.actual_return != output_buffer_model.expected_return:
         return 1
     return 0
 
