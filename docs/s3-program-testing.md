@@ -115,6 +115,14 @@ validates writer states, line advancement, emitted counts, opened/closed
 function balance, final state, and deterministic signatures without using
 runtime strings or arrays.
 
+S3 0.28 adds the executable hosted renderer output buffer model at
+`examples/self_hosting/assembly_renderer_output_buffer.s3`. It is registered
+with `hosted expected return: 0`, so the program check compiles and executes it
+through the hosted path. The model consumes numeric writer writes and validates
+fixture capacities, cursors, buffer states, write counters, overflow behavior,
+and deterministic final-buffer signatures without using runtime strings or
+arrays.
+
 The same stub is also included in golden inspect coverage as
 `assembly_renderer_stub`, which records its current IR and Assembly outputs
 without treating it as a real renderer.

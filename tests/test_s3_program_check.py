@@ -33,8 +33,11 @@ def test_s3_program_check_inventory_exposes_renderer_stub_hosted_check() -> None
     event_writer = find_program(
         "examples/self_hosting/assembly_renderer_event_writer.s3"
     )
+    output_buffer = find_program(
+        "examples/self_hosting/assembly_renderer_output_buffer.s3"
+    )
 
-    assert len(programs) == 12
+    assert len(programs) == 13
     assert stub is not None
     assert stub.hosted_expected_return == -1
     assert bootstrap is not None
@@ -53,6 +56,8 @@ def test_s3_program_check_inventory_exposes_renderer_stub_hosted_check() -> None
     assert event_stream.hosted_expected_return == 0
     assert event_writer is not None
     assert event_writer.hosted_expected_return == 0
+    assert output_buffer is not None
+    assert output_buffer.hosted_expected_return == 0
 
 
 def test_s3_program_check_matches_registered_programs() -> None:
@@ -64,9 +69,9 @@ def test_s3_program_check_matches_registered_programs() -> None:
     )
 
     assert completed.returncode == 0
-    assert "s3 program check: checked 12 program(s)" in completed.stdout
+    assert "s3 program check: checked 13 program(s)" in completed.stdout
     assert (
-        "s3 program check: hosted execution checked 9 program(s)"
+        "s3 program check: hosted execution checked 10 program(s)"
         in completed.stdout
     )
     assert "examples/self_hosting/assembly_renderer_stub.s3" in completed.stdout
@@ -95,6 +100,10 @@ def test_s3_program_check_matches_registered_programs() -> None:
     )
     assert (
         "examples/self_hosting/assembly_renderer_event_writer.s3"
+        in completed.stdout
+    )
+    assert (
+        "examples/self_hosting/assembly_renderer_output_buffer.s3"
         in completed.stdout
     )
     assert completed.stderr == ""
@@ -149,6 +158,14 @@ def test_s3_program_check_lists_renderer_stub() -> None:
     )
     assert (
         "purpose: Assembly renderer event writer state model"
+        in completed.stdout
+    )
+    assert (
+        "examples/self_hosting/assembly_renderer_output_buffer.s3"
+        in completed.stdout
+    )
+    assert (
+        "purpose: Assembly renderer hosted output buffer model"
         in completed.stdout
     )
     assert completed.stderr == ""

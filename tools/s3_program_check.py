@@ -86,6 +86,14 @@ PROGRAMS = (
         "Assembly renderer event writer state model",
         hosted_expected_return=0,
     ),
+    S3Program(
+        REPO_ROOT
+        / "examples"
+        / "self_hosting"
+        / "assembly_renderer_output_buffer.s3",
+        "Assembly renderer hosted output buffer model",
+        hosted_expected_return=0,
+    ),
 )
 
 

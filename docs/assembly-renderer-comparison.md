@@ -11,7 +11,7 @@ before the S3 renderer exists.
 ## Current status
 
 The Python renderer remains the reference implementation. A compilable S3 stub
-and eight executable S3 renderer bootstrap artifacts now exist, but the S3
+and nine executable S3 renderer bootstrap artifacts now exist, but the S3
 renderer implementation is not available.
 
 String literals are available only as front-end expressions. Runtime string
@@ -65,6 +65,10 @@ S3 0.27 is closed after adding an executable S3 event writer state model that
 consumes those events and records writer states, line advancement, emitted
 counts, final state, and deterministic signatures without runtime strings or
 arrays.
+S3 0.28 is closed after adding an executable hosted S3 output buffer model that
+consumes numeric writer writes and records capacity, cursor progress, write
+counters, buffer states, overflow behavior, final state, and deterministic
+signatures without runtime strings or arrays.
 
 `python tools/compare_assembly_renderer.py --status` reports the current state
 and exits successfully.
@@ -262,6 +266,13 @@ advancement, emitted counters, opened/closed function balance, final state,
 unknown probes, and deterministic final-state signatures, then reports
 `s3 event writer model: passed` while renderer implementation and full text
 rendering remain `not_implemented`.
+The command also executes
+`examples/self_hosting/assembly_renderer_output_buffer.s3` and expects `main`
+to return `0`. That model validates numeric writer writes, capacity, cursor
+progress, final buffer state, counters, unknown probes, overflow, and a
+deterministic final-buffer signature, then reports `s3 output buffer model:
+passed` while renderer implementation and full text rendering remain
+`not_implemented`.
 
 The candidate stub is also covered by `tools/golden_inspect.py check`. Those
 goldens lock the current compiler-facing IR and Assembly output for the stub;
@@ -426,6 +437,15 @@ final state, negative probes, and deterministic final-state signatures.
 `--candidate-run` executes all eight executable renderer bootstrap artifacts
 and reports them as passed while renderer implementation and full text
 rendering remain `not_implemented`.
+
+0.28 adds `examples/self_hosting/assembly_renderer_output_buffer.s3`, an
+executable hosted S3 model of renderer output buffering. It consumes numeric
+writer writes for `first`, `simple_call`, and `sign`, validates capacity,
+cursor movement, write counters, state transitions, overflow, final state,
+negative probes, and deterministic final-buffer signatures. `--candidate-run`
+executes all nine executable renderer bootstrap artifacts and reports them as
+passed while renderer implementation and full text rendering remain
+`not_implemented`.
 
 ## Why check fails today
 
