@@ -11,7 +11,7 @@ before the S3 renderer exists.
 ## Current status
 
 The Python renderer remains the reference implementation. A compilable S3 stub
-and five executable S3 renderer bootstrap artifacts now exist, but the S3
+and seven executable S3 renderer bootstrap artifacts now exist, but the S3
 renderer implementation is not available.
 
 String literals are available only as front-end expressions. Runtime string
@@ -29,8 +29,8 @@ candidate check state safely blocked while clarifying the reason; see
 `docs/roadmap-0.17.md`, `docs/roadmap-0.18.md`, and
 `docs/roadmap-0.19.md`, `docs/roadmap-0.20.md`,
 `docs/roadmap-0.21.md`, `docs/roadmap-0.22.md`,
-`docs/roadmap-0.23.md`, `docs/roadmap-0.24.md`, and
-`docs/roadmap-0.25.md`. S3 0.16 is closed after
+`docs/roadmap-0.23.md`, `docs/roadmap-0.24.md`,
+`docs/roadmap-0.25.md`, and `docs/roadmap-0.26.md`. S3 0.16 is closed after
 routing the three current
 fixture probes through the incremental renderer core. S3 0.17 is closed after
 connecting the `first`, `simple_call`, and `sign` fixture paths to that core
@@ -57,6 +57,9 @@ S3 0.25 is closed after adding an executable S3 line content encoding model that
 records scalar line categories, directive IDs, opcode IDs, register arities,
 operand/source flags, ordinals, totals, and deterministic line encoding
 signatures without runtime strings or arrays.
+S3 0.26 is closed after adding an executable S3 event stream model that records
+ordered renderer emission events, payload classes, transition rules, counts,
+and deterministic event/payload signatures without runtime strings or arrays.
 
 `python tools/compare_assembly_renderer.py --status` reports the current state
 and exits successfully.
@@ -240,6 +243,13 @@ register operand arity, operand/source flags, unknown probes, totals, and
 deterministic content encoding signatures, then reports `s3 line content
 encoding model: passed` while renderer implementation and full text rendering
 remain `not_implemented`.
+The command also executes
+`examples/self_hosting/assembly_renderer_event_stream.s3` and expects `main`
+to return `0`. That model validates renderer event kinds, payload classes,
+payload permissions, event transitions, unknown probes, counts, and
+deterministic event/payload signatures, then reports `s3 event stream model:
+passed` while renderer implementation and full text rendering remain
+`not_implemented`.
 
 The candidate stub is also covered by `tools/golden_inspect.py check`. Those
 goldens lock the current compiler-facing IR and Assembly output for the stub;
@@ -385,6 +395,15 @@ fixture signatures for `first`, `simple_call`, and `sign`. `--candidate-run`
 executes the bootstrap spike, output model, text segment model, line blueprint
 model, line sequence model, and line content encoding model, reporting all six
 as passed while renderer implementation and full text rendering remain
+`not_implemented`.
+
+0.26 adds `examples/self_hosting/assembly_renderer_event_stream.s3`, an
+executable S3 model of renderer emission events. It validates one event per
+current rendered line for `first`, `simple_call`, and `sign`, payload classes
+derived from line encodings, legal event transitions, negative probes, aggregate
+event counts, and deterministic event/payload signatures. `--candidate-run`
+executes all seven executable renderer bootstrap artifacts and reports them as
+passed while renderer implementation and full text rendering remain
 `not_implemented`.
 
 ## Why check fails today
