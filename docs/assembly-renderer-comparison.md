@@ -24,11 +24,14 @@ making `simple_call` available and passed. S3 0.14 is closed after making
 candidate check state safely blocked while clarifying the reason; see
 `docs/roadmap-0.10.md`, `docs/roadmap-0.11.md`,
 `docs/roadmap-0.12.md`, `docs/roadmap-0.13.md`, `docs/roadmap-0.14.md`,
-`docs/roadmap-0.15.md`, and `docs/roadmap-0.16.md`. S3 0.16 is closed after
+`docs/roadmap-0.15.md`, `docs/roadmap-0.16.md`,
+`docs/roadmap-0.17.md`, and `docs/roadmap-0.18.md`. S3 0.16 is closed after
 routing the three current fixture probes through the incremental renderer core.
 S3 0.17 is closed after connecting the `first`, `simple_call`, and `sign`
-fixture paths to that core through controlled `AssemblyProgram` adapters; see
-`docs/roadmap-0.17.md`.
+fixture paths to that core through controlled `AssemblyProgram` adapters. S3
+0.18 is closed after consolidating those controlled adapters behind a common
+supported `AssemblyProgram` renderer subset, while keeping the global `--check`
+mode blocked.
 
 `python tools/compare_assembly_renderer.py --status` reports the current state
 and exits successfully.
@@ -254,6 +257,16 @@ emits through `AssemblyTextRenderer` with byte-for-byte stable output against
 the LF-normalized inspect golden and candidate actual output. This closes S3
 0.17 without replacing `AssemblyProgram.render()` globally and without
 implementing the S3 renderer. The global `--check` mode remains blocked.
+
+0.18 adds `render_supported_program(program)` as the common supported
+`AssemblyProgram` adapter path. The previous `render_first_program`,
+`render_simple_call_program`, and `render_sign_program` wrappers keep their
+fixture-specific validation and delegate byte emission to the common path.
+The supported subset covers only the shapes already proven by `first`,
+`simple_call`, and `sign`, including source metadata, labels, `TCALL`, `TBR3`,
+and the fixture opcodes. Actual outputs and inspect goldens remain unchanged,
+and the global `--check` mode remains blocked because the real S3 renderer is
+not implemented.
 
 ## Why check fails today
 

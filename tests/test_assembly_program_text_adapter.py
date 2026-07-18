@@ -12,6 +12,7 @@ from bootstrap.s3.assembly import (
     AssemblyBlock,
     AssemblyFunction,
     AssemblyInstruction,
+    AssemblyMemoryObject,
     AssemblyOpcode,
     AssemblyParameter,
     AssemblyProgram,
@@ -23,6 +24,7 @@ from bootstrap.s3.assembly_program_text_adapter import (
     render_first_program,
     render_sign_program,
     render_simple_call_program,
+    render_supported_program,
 )
 from bootstrap.s3.assembly_text_renderer import AssemblyTextRenderer
 from bootstrap.s3.diagnostics import SourceLocation
@@ -340,6 +342,221 @@ def _sign_program() -> AssemblyProgram:
             ),
         )
     )
+
+
+def _track_supported_program_delegation(
+    monkeypatch: pytest.MonkeyPatch,
+) -> list[AssemblyProgram]:
+    calls: list[AssemblyProgram] = []
+    original = AssemblyProgramTextAdapter.render_supported_program
+
+    def spy(
+        self: AssemblyProgramTextAdapter,
+        program: AssemblyProgram,
+    ) -> StaticTextDocument:
+        calls.append(program)
+        return original(self, program)
+
+    monkeypatch.setattr(
+        AssemblyProgramTextAdapter,
+        "render_supported_program",
+        spy,
+    )
+    return calls
+
+
+def test_render_supported_program_matches_first_fixture_outputs() -> None:
+    document = render_supported_program(_first_program())
+    expected = _read_lf_normalized_golden_bytes(FIRST_ASSEMBLY_GOLDEN)
+    actual = FIRST_ACTUAL_OUTPUT.read_bytes()
+
+    assert isinstance(document, StaticTextDocument)
+    assert document.utf8_bytes == expected
+    assert document.utf8_bytes == actual
+    assert document.byte_count == 441
+    assert document.line_count == 18
+    assert (
+        document.sha256
+        == "46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67"
+    )
+    assert "\r\n" not in document.text
+    assert b"\r\n" not in document.utf8_bytes
+
+
+def test_render_supported_program_matches_simple_call_fixture_outputs() -> None:
+    document = render_supported_program(_simple_call_program())
+    expected = _read_lf_normalized_golden_bytes(SIMPLE_CALL_ASSEMBLY_GOLDEN)
+    actual = SIMPLE_CALL_ACTUAL_OUTPUT.read_bytes()
+
+    assert isinstance(document, StaticTextDocument)
+    assert document.utf8_bytes == expected
+    assert document.utf8_bytes == actual
+    assert document.byte_count == 448
+    assert document.line_count == 21
+    assert (
+        document.sha256
+        == "d6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f"
+    )
+    assert "\r\n" not in document.text
+    assert b"\r\n" not in document.utf8_bytes
+
+
+def test_render_supported_program_matches_sign_fixture_outputs() -> None:
+    document = render_supported_program(_sign_program())
+    expected = _read_lf_normalized_golden_bytes(SIGN_ASSEMBLY_GOLDEN)
+    actual = SIGN_ACTUAL_OUTPUT.read_bytes()
+
+    assert isinstance(document, StaticTextDocument)
+    assert document.utf8_bytes == expected
+    assert document.utf8_bytes == actual
+    assert document.byte_count == 946
+    assert document.line_count == 36
+    assert (
+        document.sha256
+        == "c077d2c49639b1a033505ec8c1ba1c60c78242e6e09c43f60a8aa5ed8b49e2d9"
+    )
+    assert "\r\n" not in document.text
+    assert b"\r\n" not in document.utf8_bytes
+
+
+def test_render_first_program_delegates_to_supported_program(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    program = _first_program()
+    calls = _track_supported_program_delegation(monkeypatch)
+
+    document = render_first_program(program)
+
+    assert calls == [program]
+    assert document.utf8_bytes == _read_lf_normalized_golden_bytes(
+        FIRST_ASSEMBLY_GOLDEN
+    )
+
+
+def test_render_simple_call_program_delegates_to_supported_program(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    program = _simple_call_program()
+    calls = _track_supported_program_delegation(monkeypatch)
+
+    document = render_simple_call_program(program)
+
+    assert calls == [program]
+    assert document.utf8_bytes == _read_lf_normalized_golden_bytes(
+        SIMPLE_CALL_ASSEMBLY_GOLDEN
+    )
+
+
+def test_render_sign_program_delegates_to_supported_program(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    program = _sign_program()
+    calls = _track_supported_program_delegation(monkeypatch)
+
+    document = render_sign_program(program)
+
+    assert calls == [program]
+    assert document.utf8_bytes == _read_lf_normalized_golden_bytes(
+        SIGN_ASSEMBLY_GOLDEN
+    )
+
+
+def test_render_supported_program_rejects_program_without_functions() -> None:
+    with pytest.raises(
+        AssemblyProgramTextAdapterError,
+        match="supported adapter expects at least one function",
+    ):
+        render_supported_program(AssemblyProgram(()))
+
+
+def test_render_supported_program_rejects_memory_objects() -> None:
+    program = AssemblyProgram(
+        (
+            AssemblyFunction(
+                "main",
+                AssemblyType.TRYTE,
+                (),
+                ((0, AssemblyType.TRYTE),),
+                (
+                    AssemblyBlock(
+                        "entry",
+                        (
+                            AssemblyInstruction(
+                                AssemblyOpcode.TRET,
+                                (0,),
+                                source=SourceLocation(0, 1, 1),
+                            ),
+                        ),
+                    ),
+                ),
+                (
+                    AssemblyMemoryObject(
+                        0,
+                        AssemblyType.TRYTE,
+                        1,
+                        mutable=False,
+                    ),
+                ),
+            ),
+        )
+    )
+
+    with pytest.raises(
+        AssemblyProgramTextAdapterError,
+        match="supported adapter does not support memory objects",
+    ):
+        render_supported_program(program)
+
+
+def test_render_supported_program_rejects_empty_blocks() -> None:
+    program = AssemblyProgram(
+        (
+            AssemblyFunction(
+                "main",
+                AssemblyType.TRYTE,
+                (),
+                (),
+                (AssemblyBlock("entry", ()),),
+            ),
+        )
+    )
+
+    with pytest.raises(
+        AssemblyProgramTextAdapterError,
+        match="supported adapter expects every block to have at least one instruction",
+    ):
+        render_supported_program(program)
+
+
+def test_render_supported_program_rejects_unsupported_opcode() -> None:
+    program = AssemblyProgram(
+        (
+            AssemblyFunction(
+                "main",
+                AssemblyType.TRYTE,
+                (),
+                (),
+                (
+                    AssemblyBlock(
+                        "entry",
+                        (
+                            AssemblyInstruction(
+                                AssemblyOpcode.TJMP,
+                                labels=("entry",),
+                                source=SourceLocation(0, 1, 1),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
+    )
+
+    with pytest.raises(
+        AssemblyProgramTextAdapterError,
+        match="supported adapter does not support opcode TJMP",
+    ):
+        render_supported_program(program)
 
 
 def test_render_first_program_matches_lf_normalized_inspect_golden() -> None:

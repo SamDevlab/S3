@@ -106,6 +106,18 @@ SIGN_MAIN_BLOCKS = (
         ),
     ),
 )
+SUPPORTED_PROGRAM_OPCODES = frozenset(
+    {
+        AssemblyOpcode.TCONST,
+        AssemblyOpcode.TMOV,
+        AssemblyOpcode.TINV,
+        AssemblyOpcode.TADD,
+        AssemblyOpcode.TCMP,
+        AssemblyOpcode.TCALL,
+        AssemblyOpcode.TRET,
+        AssemblyOpcode.TBR3,
+    }
+)
 
 InstructionEmitter = Callable[[AssemblyTextRenderer, AssemblyInstruction], None]
 
@@ -124,42 +136,27 @@ class AssemblyProgramTextAdapter:
 
     def render_first_program(self, program: AssemblyProgram) -> StaticTextDocument:
         _validate_first_program_shape(program)
-
-        function = program.functions[0]
-        renderer = AssemblyTextRenderer()
-        renderer.emit_header(program.version)
-        _emit_function(renderer, function, _emit_first_instruction)
-        return renderer.build()
+        return self.render_supported_program(program)
 
     def render_simple_call_program(
         self,
         program: AssemblyProgram,
     ) -> StaticTextDocument:
         _validate_simple_call_program_shape(program)
-
-        renderer = AssemblyTextRenderer()
-        renderer.emit_header(program.version)
-        _emit_function(
-            renderer,
-            program.functions[0],
-            _emit_simple_call_instruction,
-        )
-        renderer.emit_blank_line()
-        _emit_function(
-            renderer,
-            program.functions[1],
-            _emit_simple_call_instruction,
-        )
-        return renderer.build()
+        return self.render_supported_program(program)
 
     def render_sign_program(self, program: AssemblyProgram) -> StaticTextDocument:
         _validate_sign_program_shape(program)
+        return self.render_supported_program(program)
 
+    def render_supported_program(self, program: AssemblyProgram) -> StaticTextDocument:
+        _validate_supported_program_shape(program)
         renderer = AssemblyTextRenderer()
         renderer.emit_header(program.version)
-        _emit_function(renderer, program.functions[0], _emit_sign_instruction)
-        renderer.emit_blank_line()
-        _emit_function(renderer, program.functions[1], _emit_sign_instruction)
+        for index, function in enumerate(program.functions):
+            if index > 0:
+                renderer.emit_blank_line()
+            _emit_function(renderer, function, _emit_supported_instruction)
         return renderer.build()
 
 
@@ -173,6 +170,10 @@ def render_simple_call_program(program: AssemblyProgram) -> StaticTextDocument:
 
 def render_sign_program(program: AssemblyProgram) -> StaticTextDocument:
     return AssemblyProgramTextAdapter().render_sign_program(program)
+
+
+def render_supported_program(program: AssemblyProgram) -> StaticTextDocument:
+    return AssemblyProgramTextAdapter().render_supported_program(program)
 
 
 def _validate_first_program_shape(program: AssemblyProgram) -> None:
@@ -408,6 +409,69 @@ def _parameter_types(
     )
 
 
+def _validate_supported_program_shape(program: AssemblyProgram) -> None:
+    if not isinstance(program, AssemblyProgram):
+        raise TypeError("supported adapter expects an AssemblyProgram")
+    if program.version != ASSEMBLY_FORMAT_VERSION:
+        raise AssemblyProgramTextAdapterError(
+            "supported adapter expects Assembly format version "
+            f"{ASSEMBLY_FORMAT_VERSION}"
+        )
+    if not program.functions:
+        raise AssemblyProgramTextAdapterError(
+            "supported adapter expects at least one function"
+        )
+
+    function_names: set[str] = set()
+    for function in program.functions:
+        if function.name in function_names:
+            raise AssemblyProgramTextAdapterError(
+                f"supported adapter expects unique function names: {function.name}"
+            )
+        function_names.add(function.name)
+        _validate_supported_function_shape(function)
+
+
+def _validate_supported_function_shape(function: AssemblyFunction) -> None:
+    if function.memory_objects:
+        raise AssemblyProgramTextAdapterError(
+            "supported adapter does not support memory objects"
+        )
+    if not function.blocks:
+        raise AssemblyProgramTextAdapterError(
+            "supported adapter expects every function to have at least one block"
+        )
+
+    block_labels: set[str] = set()
+    for block in function.blocks:
+        if block.label in block_labels:
+            raise AssemblyProgramTextAdapterError(
+                f"supported adapter expects unique labels: {block.label}"
+            )
+        block_labels.add(block.label)
+        if not block.instructions:
+            raise AssemblyProgramTextAdapterError(
+                "supported adapter expects every block to have at least one "
+                "instruction"
+            )
+        for instruction in block.instructions:
+            _validate_supported_instruction_shape(instruction)
+
+
+def _validate_supported_instruction_shape(
+    instruction: AssemblyInstruction,
+) -> None:
+    if instruction.opcode not in SUPPORTED_PROGRAM_OPCODES:
+        opcode = (
+            instruction.opcode.value
+            if isinstance(instruction.opcode, AssemblyOpcode)
+            else str(instruction.opcode)
+        )
+        raise AssemblyProgramTextAdapterError(
+            f"supported adapter does not support opcode {opcode}"
+        )
+
+
 def _emit_function(
     renderer: AssemblyTextRenderer,
     function: AssemblyFunction,
@@ -425,23 +489,23 @@ def _emit_function(
     renderer.emit_end()
 
 
-def _emit_first_instruction(
+def _emit_supported_instruction(
     renderer: AssemblyTextRenderer,
     instruction: AssemblyInstruction,
 ) -> None:
-    source = _source(instruction, "first adapter")
+    source = _source(instruction, "supported adapter")
     opcode = instruction.opcode
 
     if opcode is AssemblyOpcode.TCONST:
-        register = _single_register(instruction, "TCONST", "first adapter")
+        register = _single_register(instruction, "TCONST", "supported adapter")
         if instruction.immediate is None:
             raise AssemblyProgramTextAdapterError(
-                "first adapter expects TCONST immediate"
+                "supported adapter expects TCONST immediate"
             )
         _require_no_extra_operands(
             instruction,
             "TCONST",
-            "first adapter",
+            "supported adapter",
             allow_immediate=True,
         )
         renderer.emit_instruction(
@@ -453,8 +517,12 @@ def _emit_first_instruction(
         return
 
     if opcode in {AssemblyOpcode.TMOV, AssemblyOpcode.TINV}:
-        left, right = _register_pair(instruction, opcode.value, "first adapter")
-        _require_no_extra_operands(instruction, opcode.value, "first adapter")
+        left, right = _register_pair(
+            instruction,
+            opcode.value,
+            "supported adapter",
+        )
+        _require_no_extra_operands(instruction, opcode.value, "supported adapter")
         renderer.emit_instruction(
             opcode.value,
             _register(left),
@@ -463,170 +531,29 @@ def _emit_first_instruction(
         )
         return
 
-    if opcode is AssemblyOpcode.TADD:
-        left, middle, right = _register_triple(instruction, "TADD", "first adapter")
-        _require_no_extra_operands(instruction, "TADD", "first adapter")
-        renderer.emit_instruction(
-            opcode.value,
-            _register(left),
-            _register(middle),
-            _register(right),
-            source=source,
-        )
-        return
-
-    if opcode is AssemblyOpcode.TRET:
-        register = _single_register(instruction, "TRET", "first adapter")
-        _require_no_extra_operands(instruction, "TRET", "first adapter")
-        renderer.emit_instruction(opcode.value, _register(register), source=source)
-        return
-
-    raise AssemblyProgramTextAdapterError(
-        f"first adapter does not support opcode {opcode.value}"
-    )
-
-
-def _emit_simple_call_instruction(
-    renderer: AssemblyTextRenderer,
-    instruction: AssemblyInstruction,
-) -> None:
-    source = _source(instruction, "simple_call adapter")
-    opcode = instruction.opcode
-
-    if opcode is AssemblyOpcode.TCONST:
-        register = _single_register(instruction, "TCONST", "simple_call adapter")
-        if instruction.immediate is None:
-            raise AssemblyProgramTextAdapterError(
-                "simple_call adapter expects TCONST immediate"
-            )
-        _require_no_extra_operands(
-            instruction,
-            "TCONST",
-            "simple_call adapter",
-            allow_immediate=True,
-        )
-        renderer.emit_instruction(
-            opcode.value,
-            _register(register),
-            instruction.immediate,
-            source=source,
-        )
-        return
-
-    if opcode is AssemblyOpcode.TADD:
-        left, middle, right = _register_triple(
-            instruction,
-            "TADD",
-            "simple_call adapter",
-        )
-        _require_no_extra_operands(instruction, "TADD", "simple_call adapter")
-        renderer.emit_instruction(
-            opcode.value,
-            _register(left),
-            _register(middle),
-            _register(right),
-            source=source,
-        )
-        return
-
-    if opcode is AssemblyOpcode.TCALL:
-        target, left, right = _register_triple(
-            instruction,
-            "TCALL",
-            "simple_call adapter",
-        )
-        if instruction.callee is None:
-            raise AssemblyProgramTextAdapterError(
-                "simple_call adapter expects TCALL callee"
-            )
-        _require_no_extra_operands(
-            instruction,
-            "TCALL",
-            "simple_call adapter",
-            allow_callee=True,
-        )
-        renderer.emit_instruction(
-            opcode.value,
-            _register(target),
-            instruction.callee,
-            _register(left),
-            _register(right),
-            source=source,
-        )
-        return
-
-    if opcode is AssemblyOpcode.TRET:
-        register = _single_register(instruction, "TRET", "simple_call adapter")
-        _require_no_extra_operands(instruction, "TRET", "simple_call adapter")
-        renderer.emit_instruction(opcode.value, _register(register), source=source)
-        return
-
-    raise AssemblyProgramTextAdapterError(
-        f"simple_call adapter does not support opcode {opcode.value}"
-    )
-
-
-def _emit_sign_instruction(
-    renderer: AssemblyTextRenderer,
-    instruction: AssemblyInstruction,
-) -> None:
-    source = _source(instruction, "sign adapter")
-    opcode = instruction.opcode
-
-    if opcode is AssemblyOpcode.TCONST:
-        register = _single_register(instruction, "TCONST", "sign adapter")
-        if instruction.immediate is None:
-            raise AssemblyProgramTextAdapterError(
-                "sign adapter expects TCONST immediate"
-            )
-        _require_no_extra_operands(
-            instruction,
-            "TCONST",
-            "sign adapter",
-            allow_immediate=True,
-        )
-        renderer.emit_instruction(
-            opcode.value,
-            _register(register),
-            instruction.immediate,
-            source=source,
-        )
-        return
-
-    if opcode is AssemblyOpcode.TCMP:
+    if opcode in {AssemblyOpcode.TADD, AssemblyOpcode.TCMP}:
         left, middle, right = _register_triple(
             instruction,
             opcode.value,
-            "sign adapter",
+            "supported adapter",
         )
-        _require_no_extra_operands(instruction, opcode.value, "sign adapter")
+        _require_no_extra_operands(instruction, opcode.value, "supported adapter")
         renderer.emit_instruction(
             opcode.value,
             _register(left),
             _register(middle),
-            _register(right),
-            source=source,
-        )
-        return
-
-    if opcode is AssemblyOpcode.TINV:
-        left, right = _register_pair(instruction, "TINV", "sign adapter")
-        _require_no_extra_operands(instruction, "TINV", "sign adapter")
-        renderer.emit_instruction(
-            opcode.value,
-            _register(left),
             _register(right),
             source=source,
         )
         return
 
     if opcode is AssemblyOpcode.TBR3:
-        condition = _single_register(instruction, "TBR3", "sign adapter")
-        labels = _label_triple(instruction, "TBR3", "sign adapter")
+        condition = _single_register(instruction, "TBR3", "supported adapter")
+        labels = _label_triple(instruction, "TBR3", "supported adapter")
         _require_no_extra_operands(
             instruction,
             "TBR3",
-            "sign adapter",
+            "supported adapter",
             allow_labels=True,
         )
         renderer.emit_instruction(
@@ -638,34 +565,36 @@ def _emit_sign_instruction(
         return
 
     if opcode is AssemblyOpcode.TCALL:
-        target, argument = _register_pair(instruction, "TCALL", "sign adapter")
+        registers = _tcall_registers(instruction, "supported adapter")
+        target = registers[0]
+        arguments = registers[1:]
         if instruction.callee is None:
             raise AssemblyProgramTextAdapterError(
-                "sign adapter expects TCALL callee"
+                "supported adapter expects TCALL callee"
             )
         _require_no_extra_operands(
             instruction,
             "TCALL",
-            "sign adapter",
+            "supported adapter",
             allow_callee=True,
         )
         renderer.emit_instruction(
             opcode.value,
             _register(target),
             instruction.callee,
-            _register(argument),
+            *(_register(argument) for argument in arguments),
             source=source,
         )
         return
 
     if opcode is AssemblyOpcode.TRET:
-        register = _single_register(instruction, "TRET", "sign adapter")
-        _require_no_extra_operands(instruction, "TRET", "sign adapter")
+        register = _single_register(instruction, "TRET", "supported adapter")
+        _require_no_extra_operands(instruction, "TRET", "supported adapter")
         renderer.emit_instruction(opcode.value, _register(register), source=source)
         return
 
     raise AssemblyProgramTextAdapterError(
-        f"sign adapter does not support opcode {opcode.value}"
+        f"supported adapter does not support opcode {opcode.value}"
     )
 
 
@@ -724,6 +653,17 @@ def _label_triple(
             f"{adapter_name} expects {opcode} to have three labels"
         )
     return instruction.labels
+
+
+def _tcall_registers(
+    instruction: AssemblyInstruction,
+    adapter_name: str,
+) -> tuple[int, ...]:
+    if len(instruction.registers) not in {2, 3}:
+        raise AssemblyProgramTextAdapterError(
+            f"{adapter_name} expects TCALL to have one or two argument registers"
+        )
+    return instruction.registers
 
 
 def _require_no_extra_operands(
