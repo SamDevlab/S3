@@ -283,6 +283,14 @@ bootstrap artifacts, and
 `python tools/compare_assembly_renderer.py --candidate-run` validates all of
 them while still reporting renderer implementation/full text rendering as
 `not_implemented`.
+S3 0.29 adds `examples/self_hosting/assembly_renderer_pipeline.s3`, an
+executable S3 renderer pipeline model connecting event stream, event writer,
+output buffer, and a final numeric result. It validates stage transitions,
+fixture counters, final states, capacity and cursor, signatures, and negative
+probes for `first`, `simple_call`, and `sign`. There are now ten executable S3
+renderer bootstrap artifacts, and `python tools/compare_assembly_renderer.py
+--candidate-run` validates all of them while renderer implementation and full
+text rendering remain `not_implemented`.
 `python tools/compare_assembly_renderer.py --check` continua bloqueado com
 status 1 porque o renderer S3 real ainda não está implementado; isso evita
 falso positivo de sucesso global.

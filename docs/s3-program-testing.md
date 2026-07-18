@@ -30,6 +30,8 @@ Current checked programs:
 - `examples/self_hosting/assembly_renderer_line_encodings.s3`
 - `examples/self_hosting/assembly_renderer_event_stream.s3`
 - `examples/self_hosting/assembly_renderer_event_writer.s3`
+- `examples/self_hosting/assembly_renderer_output_buffer.s3`
+- `examples/self_hosting/assembly_renderer_pipeline.s3`
 
 Conceptual gap examples under `examples/gaps/` are intentionally excluded
 because they may contain pseudocode and are not part of the compile-check
@@ -122,6 +124,14 @@ through the hosted path. The model consumes numeric writer writes and validates
 fixture capacities, cursors, buffer states, write counters, overflow behavior,
 and deterministic final-buffer signatures without using runtime strings or
 arrays.
+
+S3 0.29 adds the executable renderer pipeline model at
+`examples/self_hosting/assembly_renderer_pipeline.s3`. It is registered with
+`hosted expected return: 0`, so the program check compiles and executes it
+through the hosted path. The model connects numeric event stream, event writer,
+output buffer, and final result IDs; it validates stage transitions, counts,
+states, capacity, cursor, signatures, and negative probes without runtime
+strings or arrays.
 
 The same stub is also included in golden inspect coverage as
 `assembly_renderer_stub`, which records its current IR and Assembly outputs

@@ -84,6 +84,13 @@ hosted output buffer model that consumes numeric writer writes and validates
 capacity, cursor progression, write counters, final buffer state, overflow,
 and deterministic signatures without runtime strings, arrays, or text
 emission; see `docs/roadmap-0.28.md`.
+S3 0.29 adds `examples/self_hosting/assembly_renderer_pipeline.s3`, an
+executable scalar S3 model that links event stream, event writer, output
+buffer, and a final pipeline result for the current fixtures. It validates
+stage order, counts, final writer and buffer states, cursors, capacities,
+signatures, and negative probes without runtime strings, arrays, or text
+emission; see `docs/roadmap-0.29.md`. The full textual renderer remains
+unimplemented and `compare --check` remains blocked.
 
 Recent tools make this pipeline more observable:
 
