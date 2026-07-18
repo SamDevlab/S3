@@ -17,6 +17,7 @@ def test_compare_assembly_renderer_status_reports_blocked_state() -> None:
     assert "s3 renderer stub: available" in completed.stdout
     assert "s3 renderer bootstrap spike: available" in completed.stdout
     assert "s3 renderer output model: available" in completed.stdout
+    assert "s3 renderer text segment model: available" in completed.stdout
     assert "s3 renderer implementation: not implemented" in completed.stdout
     assert (
         "string literals: front-end only, runtime not implemented"
@@ -352,6 +353,11 @@ def test_compare_assembly_renderer_candidate_run_executes_stub_status() -> None:
     assert "s3 output model: passed" in completed.stdout
     assert (
         "program: examples/self_hosting/assembly_renderer_output_model.s3"
+        in completed.stdout
+    )
+    assert "s3 text segment model: passed" in completed.stdout
+    assert (
+        "program: examples/self_hosting/assembly_renderer_text_segments.s3"
         in completed.stdout
     )
     assert "renderer implementation: not_implemented" in completed.stdout

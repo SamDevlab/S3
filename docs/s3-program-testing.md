@@ -24,6 +24,7 @@ Current checked programs:
 - `examples/self_hosting/assembly_renderer_stub.s3`
 - `examples/self_hosting/assembly_renderer_bootstrap.s3`
 - `examples/self_hosting/assembly_renderer_output_model.s3`
+- `examples/self_hosting/assembly_renderer_text_segments.s3`
 
 Conceptual gap examples under `examples/gaps/` are intentionally excluded
 because they may contain pseudocode and are not part of the compile-check
@@ -62,6 +63,14 @@ executes it through the hosted path. The model calculates structural metrics for
 the `first`, `simple_call`, and `sign` Assembly outputs, including line,
 function, parameter, register, memory, label, instruction, directive, and
 distinct opcode counts, without using runtime strings or arrays.
+
+S3 0.22 adds the executable renderer text segment model at
+`examples/self_hosting/assembly_renderer_text_segments.s3`. It is registered
+with `hosted expected return: 0`, so the program check compiles and executes it
+through the hosted path. The model assigns scalar numeric IDs to Assembly text
+segment kinds such as directives, instruction lines, blank lines, and source
+metadata markers, then validates segment metrics for `first`, `simple_call`,
+and `sign` without using runtime strings or arrays.
 
 The same stub is also included in golden inspect coverage as
 `assembly_renderer_stub`, which records its current IR and Assembly outputs

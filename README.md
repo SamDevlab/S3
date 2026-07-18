@@ -228,12 +228,16 @@ completo. S3 0.21 está fechado após adicionar
 `examples/self_hosting/assembly_renderer_output_model.s3`, um output model S3
 executável que calcula métricas estruturais determinísticas de `first`,
 `simple_call` e `sign`, ainda sem strings runtime, arrays ou renderização
-textual completa.
+textual completa. S3 0.22 está fechado após adicionar
+`examples/self_hosting/assembly_renderer_text_segments.s3`, um text segment
+model S3 executável que representa segmentos textuais do renderer por IDs
+numéricos e valida métricas de segmentos dos mesmos fixtures sem strings
+runtime, arrays ou emissão textual completa.
 `python tools/compare_assembly_renderer.py --candidate-compare-available` é o
 modo correto para validar esses outputs disponíveis.
 `python tools/compare_assembly_renderer.py --candidate-run` também valida o
-bootstrap spike e o output model, e reporta que renderer implementation/full
-text rendering continuam `not_implemented`.
+bootstrap spike, o output model e o text segment model, e reporta que renderer
+implementation/full text rendering continuam `not_implemented`.
 `python tools/compare_assembly_renderer.py --check` continua bloqueado com
 status 1 porque o renderer S3 real ainda não está implementado; isso evita
 falso positivo de sucesso global.
