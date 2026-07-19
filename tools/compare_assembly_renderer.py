@@ -41,6 +41,8 @@ BLOCKED_MESSAGE = (
     "assembly renderer comparison is blocked: S3 renderer is not implemented"
 )
 EXPECTED_CANDIDATE_PATH = "examples/self_hosting/assembly_renderer_stub.s3"
+SIMPLE_CALL_S3_RENDERER = "examples/self_hosting/assembly_renderer_simple_call_text.s3"
+SIMPLE_CALL_S3_GOLDEN = "tests/golden/inspect/simple_call.assembly.txt"
 EXPECTED_ENTRYPOINT = "main"
 EXPECTED_STATUS_FUNCTION = "renderer_candidate_status"
 EXPECTED_EXECUTION_MODE = "hosted"
@@ -2276,6 +2278,62 @@ def candidate_run() -> int:
     return 0
 
 
+def candidate_render_simple_call() -> int:
+    path = REPO_ROOT / SIMPLE_CALL_S3_RENDERER
+    if not path.is_file():
+        print("S3 simple_call renderer: missing")
+        print(f"  path: {SIMPLE_CALL_S3_RENDERER}")
+        return 1
+
+    source = path.read_text(encoding="utf-8")
+    try:
+        from bootstrap.s3.pipeline import run_source_with_buffer_capture
+
+        result, capture = run_source_with_buffer_capture(source)
+    except Exception as error:
+        print("S3 simple_call renderer: execution failed")
+        print(f"  error: {error}")
+        return 1
+
+    if result != 0:
+        print("S3 simple_call renderer: unexpected return")
+        print(f"  expected: 0")
+        print(f"  actual: {result}")
+        return 1
+
+    memory = capture[-1]
+    low = memory.get(0, [])
+    high = memory.get(1, [])
+
+    out = bytearray()
+    for v in low:
+        if v is not None and v != 0:
+            out.append(v)
+    for v in high:
+        if v is not None and v != 0:
+            out.append(v)
+
+    import hashlib
+    sha256 = hashlib.sha256(out).hexdigest()
+
+    print("S3 simple_call renderer: ok")
+    print(f"  bytes: {len(out)}")
+    print(f"  lines: {out.count(10)}")
+    print(f"  sha256: {sha256}")
+
+    golden_path = REPO_ROOT / SIMPLE_CALL_S3_GOLDEN
+    if golden_path.is_file():
+        golden = golden_path.read_bytes().replace(b"\r\n", b"\n")
+        if out == golden:
+            print("  comparison: passed")
+        else:
+            mismatch_count = sum(1 for a, b in zip(out, golden) if a != b)
+            print(f"  comparison: failed ({mismatch_count} byte(s) differ)")
+            return 1
+
+    return 0
+
+
 def check() -> int:
     try:
         candidate_status = load_candidate_status()
@@ -2305,6 +2363,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     mode.add_argument("--candidate-actual-outputs", action="store_true")
     mode.add_argument("--candidate-compare-available", action="store_true")
     mode.add_argument("--candidate-run", action="store_true")
+    mode.add_argument("--candidate-render-simple-call", action="store_true")
     mode.add_argument("--check", action="store_true")
     args = parser.parse_args(argv)
 
@@ -2328,6 +2387,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return candidate_compare_available()
     if args.candidate_run:
         return candidate_run()
+    if args.candidate_render_simple_call:
+        return candidate_render_simple_call()
     return check()
 
 
