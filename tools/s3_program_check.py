@@ -118,6 +118,14 @@ PROGRAMS = (
         "Assembly renderer static text fragment model",
         hosted_expected_return=0,
     ),
+    S3Program(
+        REPO_ROOT
+        / "examples"
+        / "self_hosting"
+        / "fixed_tryte_buffer.s3",
+        "Fixed mutable tryte buffer",
+        hosted_expected_return=0,
+    ),
 )
 
 
