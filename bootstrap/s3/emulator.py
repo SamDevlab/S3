@@ -135,7 +135,13 @@ class Emulator:
                     f"entry function '{entry}' must not declare parameters"
                 )
 
-    def execute(self, program: AssemblyProgram, entry: str = "main") -> int:
+    def execute(
+        self,
+        program: AssemblyProgram,
+        entry: str = "main",
+        *,
+        capture_memory: list[dict[int, list[int | None]]] | None = None,
+    ) -> int:
         functions = self._validate_program(program)
         try:
             entry_function = functions[entry]
@@ -345,6 +351,8 @@ class Emulator:
                     )
                     completed = stack.pop()
                     if not stack:
+                        if capture_memory is not None:
+                            capture_memory.append(completed.memory)
                         return result
                     caller = stack[-1]
                     assert completed.return_destination is not None

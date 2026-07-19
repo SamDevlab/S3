@@ -36,6 +36,7 @@ class HostedExecutionBackend(Protocol):
         max_frames: int = DEFAULT_MAX_FRAMES,
         max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
         max_memory_trits: int = DEFAULT_MAX_MEMORY_TRITS,
+        capture_memory: list[dict[int, list[int | None]]] | None = None,
     ) -> int:
         ...
 
@@ -75,12 +76,13 @@ class HostedEmulatorBackend:
         max_frames: int = DEFAULT_MAX_FRAMES,
         max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
         max_memory_trits: int = DEFAULT_MAX_MEMORY_TRITS,
+        capture_memory: list[dict[int, list[int | None]]] | None = None,
     ) -> int:
         return Emulator(
             max_frames=max_frames,
             max_instructions=max_instructions,
             max_memory_trits=max_memory_trits,
-        ).execute(program, entry)
+        ).execute(program, entry, capture_memory=capture_memory)
 
 
 @dataclass(frozen=True, slots=True)

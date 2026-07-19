@@ -264,8 +264,8 @@ def test_s3_program_check_includes_renderer_output_buffer_model() -> None:
 
     assert completed.returncode == 0
     assert "examples/self_hosting/assembly_renderer_output_buffer.s3" in completed.stdout
-    assert "s3 program check: checked 19 program(s)" in completed.stdout
-    assert "s3 program check: hosted execution checked 16 program(s)" in completed.stdout
+    assert "s3 program check: checked 20 program(s)" in completed.stdout
+    assert "s3 program check: hosted execution checked 17 program(s)" in completed.stdout
     assert "hosted expected return: 0" in completed.stdout
     assert "hosted actual return: 0" in completed.stdout
     assert completed.stderr == ""
