@@ -141,6 +141,14 @@ output-buffer/pipeline stages. It validates command order, builder states,
 logical byte pairs, counters, transitions, negative probes, and deterministic
 signatures without runtime strings or arrays.
 
+S3 0.31 adds the executable renderer static text fragment model at
+`examples/self_hosting/assembly_renderer_text_fragments.s3`. It is registered
+with `hosted expected return: 0`, expands the 0.30 command sequence into
+numeric static fragment categories, and verifies deterministic fragment counts,
+states, source metadata, newlines, blank lines, signatures, and normalized
+base-300 byte pairs. `tools/s3_program_check.py check` now reports 16 programs
+and 13 hosted executions. The model has no runtime strings or arrays.
+
 The same stub is also included in golden inspect coverage as
 `assembly_renderer_stub`, which records its current IR and Assembly outputs
 without treating it as a real renderer.

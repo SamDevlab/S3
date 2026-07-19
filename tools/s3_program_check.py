@@ -110,6 +110,14 @@ PROGRAMS = (
         "Assembly renderer text builder command model",
         hosted_expected_return=0,
     ),
+    S3Program(
+        REPO_ROOT
+        / "examples"
+        / "self_hosting"
+        / "assembly_renderer_text_fragments.s3",
+        "Assembly renderer static text fragment model",
+        hosted_expected_return=0,
+    ),
 )
 
 

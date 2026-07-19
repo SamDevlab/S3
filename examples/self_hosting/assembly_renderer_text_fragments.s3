@@ -1,0 +1,2902 @@
+# Static text fragment model for the future Assembly renderer.
+# Fragment ids describe syntax only; no source text is stored in this program.
+# Base widths are accumulated as base-300 high/low pairs.  Variable-width
+# text (symbols, directives, types, immediates, separators, and source values)
+# is represented by fixture-derived numeric adjustments.
+
+fn fixture_first() -> tryte:
+    return 0
+
+fn fixture_simple_call() -> tryte:
+    return 1
+
+fn fixture_sign() -> tryte:
+    return 2
+
+fn fragment_unknown() -> tryte:
+    return -1
+
+fn fragment_document_marker() -> tryte:
+    return 0
+
+fn fragment_directive() -> tryte:
+    return 1
+
+fn fragment_opcode() -> tryte:
+    return 2
+
+fn fragment_symbol() -> tryte:
+    return 3
+
+fn fragment_type_name() -> tryte:
+    return 4
+
+fn fragment_register_name() -> tryte:
+    return 5
+
+fn fragment_memory_name() -> tryte:
+    return 6
+
+fn fragment_immediate() -> tryte:
+    return 7
+
+fn fragment_separator() -> tryte:
+    return 8
+
+fn fragment_space() -> tryte:
+    return 9
+
+fn fragment_indentation() -> tryte:
+    return 10
+
+fn fragment_source_prefix() -> tryte:
+    return 11
+
+fn fragment_source_value() -> tryte:
+    return 12
+
+fn fragment_newline() -> tryte:
+    return 13
+
+fn fragment_blank_line() -> tryte:
+    return 14
+
+fn fragment_document_end() -> tryte:
+    return 15
+
+fn fragment_state_error() -> tryte:
+    return -1
+
+fn fragment_state_empty() -> tryte:
+    return 0
+
+fn fragment_state_document_open() -> tryte:
+    return 1
+
+fn fragment_state_line_open() -> tryte:
+    return 2
+
+fn fragment_state_line_complete() -> tryte:
+    return 3
+
+fn fragment_state_document_complete() -> tryte:
+    return 4
+
+fn fragment_command_unknown() -> tryte:
+    return -1
+
+fn fragment_command_start_document() -> tryte:
+    return 0
+
+fn fragment_command_header_line() -> tryte:
+    return 1
+
+fn fragment_command_function_line() -> tryte:
+    return 2
+
+fn fragment_command_param_line() -> tryte:
+    return 3
+
+fn fragment_command_register_line() -> tryte:
+    return 4
+
+fn fragment_command_memory_line() -> tryte:
+    return 5
+
+fn fragment_command_label_line() -> tryte:
+    return 6
+
+fn fragment_command_instruction_line() -> tryte:
+    return 7
+
+fn fragment_command_source_metadata() -> tryte:
+    return 8
+
+fn fragment_command_end_line() -> tryte:
+    return 9
+
+fn fragment_command_blank_line() -> tryte:
+    return 10
+
+fn fragment_command_finish_document() -> tryte:
+    return 11
+
+fn same_tryte(left: tryte, right: tryte) -> trit:
+    match left <=> right:
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            return 0
+
+fn same_trit(left: trit, right: trit) -> trit:
+    match left <=> right:
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            return 0
+
+fn all_passed(left: trit, right: trit) -> trit:
+    match left <=> 1:
+        -1:
+            return 0
+
+        0:
+            match right <=> 1:
+                -1:
+                    return 0
+
+                0:
+                    return 1
+
+                1:
+                    return 0
+
+        1:
+            return 0
+
+fn any_passed(left: trit, right: trit) -> trit:
+    match left <=> 1:
+        -1:
+            return right
+
+        0:
+            return 1
+
+        1:
+            return 1
+
+fn status_from_check(check: trit, failure: tryte) -> tryte:
+    match check <=> 1:
+        -1:
+            return failure
+
+        0:
+            return 0
+
+        1:
+            return failure
+
+fn tryte_from_check(check: trit) -> tryte:
+    match check <=> 1:
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            return 0
+
+fn in_range(value: tryte, lower: tryte, upper: tryte) -> trit:
+    match value <=> lower:
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            match value <=> upper:
+                -1:
+                    return 1
+
+                0:
+                    return 1
+
+                1:
+                    return 0
+
+fn is_before(value: tryte, boundary: tryte) -> trit:
+    match value <=> boundary:
+        -1:
+            return 1
+
+        0:
+            return 0
+
+        1:
+            return 0
+
+fn fixture_metric(fixture: tryte, first_value: tryte, simple_value: tryte, sign_value: tryte) -> tryte:
+    match fixture <=> fixture_first():
+        -1:
+            return fragment_unknown()
+
+        0:
+            return first_value
+
+        1:
+            match fixture <=> fixture_simple_call():
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return simple_value
+
+                1:
+                    match fixture <=> fixture_sign():
+                        -1:
+                            return fragment_unknown()
+
+                        0:
+                            return sign_value
+
+                        1:
+                            return fragment_unknown()
+
+fn is_even(value: tryte) -> trit:
+    match value <=> 0:
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            return is_odd(value - 1)
+
+fn is_odd(value: tryte) -> trit:
+    match value <=> 0:
+        -1:
+            return 0
+
+        0:
+            return 0
+
+        1:
+            return is_even(value - 1)
+
+fn paired_command_at(index: tryte, start: tryte) -> tryte:
+    match is_even(index - start) <=> 1:
+        -1:
+            return fragment_command_source_metadata()
+
+        0:
+            return fragment_command_instruction_line()
+
+        1:
+            return fragment_command_source_metadata()
+
+fn is_known_fixture(fixture: tryte) -> trit:
+    return in_range(fixture, fixture_first(), fixture_sign())
+
+fn is_known_fragment(fragment: tryte) -> trit:
+    return in_range(fragment, fragment_document_marker(), fragment_document_end())
+
+fn is_known_fragment_state(state: tryte) -> trit:
+    return in_range(state, fragment_state_empty(), fragment_state_document_complete())
+
+fn is_known_fragment_command(command: tryte) -> trit:
+    return in_range(command, fragment_command_start_document(), fragment_command_finish_document())
+
+fn is_token_fragment(fragment: tryte) -> trit:
+    match in_range(fragment, fragment_document_marker(), fragment_immediate()) <=> 1:
+        -1:
+            return same_tryte(fragment, fragment_document_end())
+
+        0:
+            return 1
+
+        1:
+            return same_tryte(fragment, fragment_document_end())
+
+fn is_separator_fragment(fragment: tryte) -> trit:
+    return same_tryte(fragment, fragment_separator())
+
+fn is_indentation_fragment(fragment: tryte) -> trit:
+    return same_tryte(fragment, fragment_indentation())
+
+fn is_metadata_fragment(fragment: tryte) -> trit:
+    return in_range(fragment, fragment_source_prefix(), fragment_source_value())
+
+fn is_newline_fragment(fragment: tryte) -> trit:
+    return in_range(fragment, fragment_newline(), fragment_blank_line())
+
+fn is_space_fragment(fragment: tryte) -> trit:
+    return same_tryte(fragment, fragment_space())
+
+fn is_line_content_fragment(fragment: tryte) -> trit:
+    match is_known_fragment(fragment) <=> 1:
+        -1:
+            return 0
+
+        0:
+            return all_passed(
+                same_trit(is_newline_fragment(fragment), 0),
+                all_passed(
+                    same_trit(same_tryte(fragment, fragment_document_marker()), 0),
+                    same_trit(same_tryte(fragment, fragment_document_end()), 0)
+                )
+            )
+
+        1:
+            return 0
+
+fn fragment_logical_byte_count(fragment: tryte) -> tryte:
+    match fragment <=> fragment_document_marker():
+        -1:
+            return fragment_unknown()
+
+        0:
+            return 6
+
+        1:
+            match fragment <=> fragment_directive():
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return 6
+
+                1:
+                    match fragment <=> fragment_opcode():
+                        -1:
+                            return fragment_unknown()
+
+                        0:
+                            return 6
+
+                        1:
+                            match fragment <=> fragment_symbol():
+                                -1:
+                                    return fragment_unknown()
+
+                                0:
+                                    return 1
+
+                                1:
+                                    match fragment <=> fragment_type_name():
+                                        -1:
+                                            return fragment_unknown()
+
+                                        0:
+                                            return 4
+
+                                        1:
+                                            return fragment_logical_byte_count_tail(fragment)
+
+fn fragment_logical_byte_count_tail(fragment: tryte) -> tryte:
+    match fragment <=> fragment_register_name():
+        -1:
+            return fragment_unknown()
+
+        0:
+            return 2
+
+        1:
+            match fragment <=> fragment_memory_name():
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return 2
+
+                1:
+                    match fragment <=> fragment_immediate():
+                        -1:
+                            return fragment_unknown()
+
+                        0:
+                            return 1
+
+                        1:
+                            match fragment <=> fragment_separator():
+                                -1:
+                                    return fragment_unknown()
+
+                                0:
+                                    return 1
+
+                                1:
+                                    return fragment_logical_byte_count_layout(fragment)
+
+fn fragment_logical_byte_count_layout(fragment: tryte) -> tryte:
+    match fragment <=> fragment_space():
+        -1:
+            return fragment_unknown()
+
+        0:
+            return 1
+
+        1:
+            match fragment <=> fragment_indentation():
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return 4
+
+                1:
+                    match fragment <=> fragment_source_prefix():
+                        -1:
+                            return fragment_unknown()
+
+                        0:
+                            return 10
+
+                        1:
+                            match fragment <=> fragment_source_value():
+                                -1:
+                                    return fragment_unknown()
+
+                                0:
+                                    return 6
+
+                                1:
+                                    return fragment_logical_byte_count_finish(fragment)
+
+fn fragment_logical_byte_count_finish(fragment: tryte) -> tryte:
+    match fragment <=> fragment_newline():
+        -1:
+            return fragment_unknown()
+
+        0:
+            return 1
+
+        1:
+            match fragment <=> fragment_blank_line():
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return 1
+
+                1:
+                    match fragment <=> fragment_document_end():
+                        -1:
+                            return fragment_unknown()
+
+                        0:
+                            return 4
+
+                        1:
+                            return fragment_unknown()
+
+fn expected_line_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 18, 21, 36)
+
+fn expected_fragment_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 137, 145, 266)
+
+fn expected_token_fragment_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 47, 51, 92)
+
+fn expected_separator_fragment_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 14, 15, 26)
+
+fn expected_indentation_fragment_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 13, 12, 24)
+
+fn expected_metadata_fragment_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 14, 12, 28)
+
+fn expected_newline_fragment_count(fixture: tryte) -> tryte:
+    return expected_line_count(fixture)
+
+fn expected_blank_fragment_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 1, 2, 2)
+
+fn expected_space_fragment_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 31, 34, 60)
+
+fn expected_builder_command_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 27, 29, 52)
+
+fn expected_builder_token_line_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 17, 19, 34)
+
+fn expected_builder_metadata_count(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 7, 6, 14)
+
+fn expected_fragment_id_count(fixture: tryte, fragment: tryte) -> tryte:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return fragment_unknown()
+
+        0:
+            return expected_fragment_id_count_known(fixture, fragment)
+
+        1:
+            return fragment_unknown()
+
+fn expected_fragment_id_count_known(fixture: tryte, fragment: tryte) -> tryte:
+    match fragment <=> fragment_document_marker():
+        -1:
+            return fragment_unknown()
+
+        0:
+            return 1
+
+        1:
+            match fragment <=> fragment_directive():
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return fixture_metric(fixture, 8, 10, 17)
+
+                1:
+                    match fragment <=> fragment_opcode():
+                        -1:
+                            return fragment_unknown()
+
+                        0:
+                            return fixture_metric(fixture, 7, 6, 14)
+
+                        1:
+                            match fragment <=> fragment_symbol():
+                                -1:
+                                    return fragment_unknown()
+
+                                0:
+                                    return fixture_metric(fixture, 2, 5, 11)
+
+                                1:
+                                    return expected_fragment_id_count_tokens(fixture, fragment)
+
+fn expected_fragment_id_count_tokens(fixture: tryte, fragment: tryte) -> tryte:
+    match fragment <=> fragment_type_name():
+        -1:
+            return fragment_unknown()
+
+        0:
+            return fixture_metric(fixture, 7, 8, 12)
+
+        1:
+            match fragment <=> fragment_register_name():
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return fixture_metric(fixture, 18, 16, 29)
+
+                1:
+                    match fragment <=> fragment_memory_name():
+                        -1:
+                            return fragment_unknown()
+
+                        0:
+                            return 0
+
+                        1:
+                            match fragment <=> fragment_immediate():
+                                -1:
+                                    return fragment_unknown()
+
+                                0:
+                                    return fixture_metric(fixture, 3, 3, 6)
+
+                                1:
+                                    return expected_fragment_id_count_layout(fixture, fragment)
+
+fn expected_fragment_id_count_layout(fixture: tryte, fragment: tryte) -> tryte:
+    match fragment <=> fragment_separator():
+        -1:
+            return fragment_unknown()
+
+        0:
+            return expected_separator_fragment_count(fixture)
+
+        1:
+            match fragment <=> fragment_space():
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return expected_space_fragment_count(fixture)
+
+                1:
+                    match fragment <=> fragment_indentation():
+                        -1:
+                            return fragment_unknown()
+
+                        0:
+                            return expected_indentation_fragment_count(fixture)
+
+                        1:
+                            match fragment <=> fragment_source_prefix():
+                                -1:
+                                    return fragment_unknown()
+
+                                0:
+                                    return expected_builder_metadata_count(fixture)
+
+                                1:
+                                    return expected_fragment_id_count_finish(fixture, fragment)
+
+fn expected_fragment_id_count_finish(fixture: tryte, fragment: tryte) -> tryte:
+    match fragment <=> fragment_source_value():
+        -1:
+            return fragment_unknown()
+
+        0:
+            return expected_builder_metadata_count(fixture)
+
+        1:
+            match fragment <=> fragment_newline():
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return expected_line_count(fixture) - expected_blank_fragment_count(fixture)
+
+                1:
+                    match fragment <=> fragment_blank_line():
+                        -1:
+                            return fragment_unknown()
+
+                        0:
+                            return expected_blank_fragment_count(fixture)
+
+                        1:
+                            match fragment <=> fragment_document_end():
+                                -1:
+                                    return fragment_unknown()
+
+                                0:
+                                    return fixture_metric(fixture, 1, 2, 2)
+
+                                1:
+                                    return fragment_unknown()
+
+fn expected_first_fragment_command_at(index: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            return fragment_command_unknown()
+
+        0:
+            return fragment_command_start_document()
+
+        1:
+            match index <=> 1:
+                -1:
+                    return fragment_command_unknown()
+
+                0:
+                    return fragment_command_header_line()
+
+                1:
+                    match index <=> 2:
+                        -1:
+                            return fragment_command_unknown()
+
+                        0:
+                            return fragment_command_blank_line()
+
+                        1:
+                            match index <=> 3:
+                                -1:
+                                    return fragment_command_unknown()
+
+                                0:
+                                    return fragment_command_function_line()
+
+                                1:
+                                    return expected_first_fragment_command_body_at(index)
+
+fn expected_first_fragment_command_body_at(index: tryte) -> tryte:
+    match in_range(index, 4, 9) <=> 1:
+        -1:
+            match index <=> 10:
+                -1:
+                    return fragment_command_unknown()
+
+                0:
+                    return fragment_command_label_line()
+
+                1:
+                    match in_range(index, 11, 24) <=> 1:
+                        -1:
+                            match index <=> 25:
+                                -1:
+                                    return fragment_command_unknown()
+
+                                0:
+                                    return fragment_command_end_line()
+
+                                1:
+                                    match index <=> 26:
+                                        -1:
+                                            return fragment_command_unknown()
+
+                                        0:
+                                            return fragment_command_finish_document()
+
+                                        1:
+                                            return fragment_command_unknown()
+
+                        0:
+                            return paired_command_at(index, 11)
+
+                        1:
+                            return fragment_command_unknown()
+
+        0:
+            return fragment_command_register_line()
+
+        1:
+            return fragment_command_unknown()
+
+fn expected_simple_call_fragment_command_at(index: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            return fragment_command_unknown()
+
+        0:
+            return fragment_command_start_document()
+
+        1:
+            match index <=> 1:
+                -1:
+                    return fragment_command_unknown()
+
+                0:
+                    return fragment_command_header_line()
+
+                1:
+                    match index <=> 2:
+                        -1:
+                            return fragment_command_unknown()
+
+                        0:
+                            return fragment_command_blank_line()
+
+                        1:
+                            match index <=> 3:
+                                -1:
+                                    return fragment_command_unknown()
+
+                                0:
+                                    return fragment_command_function_line()
+
+                                1:
+                                    return expected_simple_call_fragment_command_body_at(index)
+
+fn expected_simple_call_fragment_command_body_at(index: tryte) -> tryte:
+    match in_range(index, 4, 5) <=> 1:
+        -1:
+            match index <=> 6:
+                -1:
+                    return fragment_command_unknown()
+
+                0:
+                    return fragment_command_register_line()
+
+                1:
+                    match index <=> 7:
+                        -1:
+                            return fragment_command_unknown()
+
+                        0:
+                            return fragment_command_label_line()
+
+                        1:
+                            return expected_simple_call_fragment_command_tail_at(index)
+
+        0:
+            return fragment_command_param_line()
+
+        1:
+            return fragment_command_unknown()
+
+fn expected_simple_call_fragment_command_tail_at(index: tryte) -> tryte:
+    match in_range(index, 8, 11) <=> 1:
+        -1:
+            match index <=> 12:
+                -1:
+                    return fragment_command_unknown()
+
+                0:
+                    return fragment_command_end_line()
+
+                1:
+                    match index <=> 13:
+                        -1:
+                            return fragment_command_unknown()
+
+                        0:
+                            return fragment_command_blank_line()
+
+                        1:
+                            match index <=> 14:
+                                -1:
+                                    return fragment_command_unknown()
+
+                                0:
+                                    return fragment_command_function_line()
+
+                                1:
+                                    return expected_simple_call_fragment_command_second_at(index)
+
+        0:
+            return paired_command_at(index, 8)
+
+        1:
+            return fragment_command_unknown()
+
+fn expected_simple_call_fragment_command_second_at(index: tryte) -> tryte:
+    match in_range(index, 15, 17) <=> 1:
+        -1:
+            match index <=> 18:
+                -1:
+                    return fragment_command_unknown()
+
+                0:
+                    return fragment_command_label_line()
+
+                1:
+                    match in_range(index, 19, 26) <=> 1:
+                        -1:
+                            match index <=> 27:
+                                -1:
+                                    return fragment_command_unknown()
+
+                                0:
+                                    return fragment_command_end_line()
+
+                                1:
+                                    match index <=> 28:
+                                        -1:
+                                            return fragment_command_unknown()
+
+                                        0:
+                                            return fragment_command_finish_document()
+
+                                        1:
+                                            return fragment_command_unknown()
+
+                        0:
+                            return paired_command_at(index, 19)
+
+                        1:
+                            return fragment_command_unknown()
+
+        0:
+            return fragment_command_register_line()
+
+        1:
+            return fragment_command_unknown()
+
+fn expected_sign_fragment_command_at(index: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            return fragment_command_unknown()
+
+        0:
+            return fragment_command_start_document()
+
+        1:
+            match index <=> 1:
+                -1:
+                    return fragment_command_unknown()
+
+                0:
+                    return fragment_command_header_line()
+
+                1:
+                    match index <=> 2:
+                        -1:
+                            return fragment_command_unknown()
+
+                        0:
+                            return fragment_command_blank_line()
+
+                        1:
+                            match index <=> 3:
+                                -1:
+                                    return fragment_command_unknown()
+
+                                0:
+                                    return fragment_command_function_line()
+
+                                1:
+                                    return expected_sign_fragment_command_body_at(index)
+
+fn expected_sign_fragment_command_body_at(index: tryte) -> tryte:
+    match index <=> 4:
+        -1:
+            return fragment_command_unknown()
+
+        0:
+            return fragment_command_param_line()
+
+        1:
+            match in_range(index, 5, 10) <=> 1:
+                -1:
+                    match index <=> 11:
+                        -1:
+                            return fragment_command_unknown()
+
+                        0:
+                            return fragment_command_label_line()
+
+                        1:
+                            return expected_sign_fragment_command_first_function_at(index)
+
+                0:
+                    return fragment_command_register_line()
+
+                1:
+                    return fragment_command_unknown()
+
+fn expected_sign_fragment_command_first_function_at(index: tryte) -> tryte:
+    match in_range(index, 12, 17) <=> 1:
+        -1:
+            match index <=> 18:
+                -1:
+                    return fragment_command_unknown()
+
+                0:
+                    return fragment_command_label_line()
+
+                1:
+                    return expected_sign_fragment_command_second_function_at(index)
+
+        0:
+            return paired_command_at(index, 12)
+
+        1:
+            return fragment_command_unknown()
+
+fn expected_sign_fragment_command_second_function_at(index: tryte) -> tryte:
+    match in_range(index, 19, 24) <=> 1:
+        -1:
+            match index <=> 25:
+                -1:
+                    return fragment_command_unknown()
+
+                0:
+                    return fragment_command_label_line()
+
+                1:
+                    match in_range(index, 26, 29) <=> 1:
+                        -1:
+                            match index <=> 30:
+                                -1:
+                                    return fragment_command_unknown()
+
+                                0:
+                                    return fragment_command_label_line()
+
+                                1:
+                                    return expected_sign_fragment_command_main_at(index)
+
+                        0:
+                            return paired_command_at(index, 26)
+
+                        1:
+                            return fragment_command_unknown()
+
+        0:
+            return paired_command_at(index, 19)
+
+        1:
+            return fragment_command_unknown()
+
+fn expected_sign_fragment_command_main_at(index: tryte) -> tryte:
+    match in_range(index, 31, 34) <=> 1:
+        -1:
+            match index <=> 35:
+                -1:
+                    return fragment_command_unknown()
+
+                0:
+                    return fragment_command_end_line()
+
+                1:
+                    match index <=> 36:
+                        -1:
+                            return fragment_command_unknown()
+
+                        0:
+                            return fragment_command_blank_line()
+
+                        1:
+                            match index <=> 37:
+                                -1:
+                                    return fragment_command_unknown()
+
+                                0:
+                                    return fragment_command_function_line()
+
+                                1:
+                                    return expected_sign_fragment_command_final_at(index)
+
+        0:
+            return paired_command_at(index, 31)
+
+        1:
+            return fragment_command_unknown()
+
+fn expected_sign_fragment_command_final_at(index: tryte) -> tryte:
+    match in_range(index, 38, 40) <=> 1:
+        -1:
+            match index <=> 41:
+                -1:
+                    return fragment_command_unknown()
+
+                0:
+                    return fragment_command_label_line()
+
+                1:
+                    match in_range(index, 42, 49) <=> 1:
+                        -1:
+                            match index <=> 50:
+                                -1:
+                                    return fragment_command_unknown()
+
+                                0:
+                                    return fragment_command_end_line()
+
+                                1:
+                                    match index <=> 51:
+                                        -1:
+                                            return fragment_command_unknown()
+
+                                        0:
+                                            return fragment_command_finish_document()
+
+                                        1:
+                                            return fragment_command_unknown()
+
+                        0:
+                            return paired_command_at(index, 42)
+
+                        1:
+                            return fragment_command_unknown()
+
+        0:
+            return fragment_command_register_line()
+
+        1:
+            return fragment_command_unknown()
+
+fn expected_fragment_command_at(fixture: tryte, index: tryte) -> tryte:
+    match fixture <=> fixture_first():
+        -1:
+            return fragment_command_unknown()
+
+        0:
+            return expected_first_fragment_command_at(index)
+
+        1:
+            match fixture <=> fixture_simple_call():
+                -1:
+                    return fragment_command_unknown()
+
+                0:
+                    return expected_simple_call_fragment_command_at(index)
+
+                1:
+                    match fixture <=> fixture_sign():
+                        -1:
+                            return fragment_command_unknown()
+
+                        0:
+                            return expected_sign_fragment_command_at(index)
+
+                        1:
+                            return fragment_command_unknown()
+
+fn expected_instruction_operand_count(fixture: tryte, command_index: tryte) -> tryte:
+    match fixture <=> fixture_first():
+        -1:
+            return fragment_unknown()
+
+        0:
+            return expected_first_instruction_operand_count(command_index)
+
+        1:
+            match fixture <=> fixture_simple_call():
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return expected_simple_call_instruction_operand_count(command_index)
+
+                1:
+                    match fixture <=> fixture_sign():
+                        -1:
+                            return fragment_unknown()
+
+                        0:
+                            return expected_sign_instruction_operand_count(command_index)
+
+                        1:
+                            return fragment_unknown()
+
+fn expected_first_instruction_operand_count(command_index: tryte) -> tryte:
+    match command_index <=> 21:
+        -1:
+            match in_range(command_index, 11, 19) <=> 1:
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return 2
+
+                1:
+                    return fragment_unknown()
+
+        0:
+            return 3
+
+        1:
+            match command_index <=> 23:
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return 1
+
+                1:
+                    return fragment_unknown()
+
+fn expected_simple_call_instruction_operand_count(command_index: tryte) -> tryte:
+    match command_index <=> 8:
+        -1:
+            return fragment_unknown()
+
+        0:
+            return 3
+
+        1:
+            match command_index <=> 10:
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return 1
+
+                1:
+                    return expected_simple_call_instruction_operand_count_tail(command_index)
+
+fn expected_simple_call_instruction_operand_count_tail(command_index: tryte) -> tryte:
+    match command_index <=> 19:
+        -1:
+            return fragment_unknown()
+
+        0:
+            return 2
+
+        1:
+            match command_index <=> 21:
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return 2
+
+                1:
+                    match command_index <=> 23:
+                        -1:
+                            return fragment_unknown()
+
+                        0:
+                            return 4
+
+                        1:
+                            match command_index <=> 25:
+                                -1:
+                                    return fragment_unknown()
+
+                                0:
+                                    return 1
+
+                                1:
+                                    return fragment_unknown()
+
+fn expected_sign_instruction_operand_count(command_index: tryte) -> tryte:
+    match command_index <=> 12:
+        -1:
+            return fragment_unknown()
+
+        0:
+            return 2
+
+        1:
+            return expected_sign_instruction_operand_count_tail(command_index)
+
+fn expected_sign_instruction_operand_count_tail(command_index: tryte) -> tryte:
+    match command_index <=> 14:
+        -1:
+            return fragment_unknown()
+
+        0:
+            return 3
+
+        1:
+            match command_index <=> 16:
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return 4
+
+                1:
+                    return expected_sign_instruction_operand_count_rest(command_index)
+
+fn expected_sign_instruction_operand_count_rest(command_index: tryte) -> tryte:
+    match command_index <=> 19:
+        -1:
+            return fragment_unknown()
+
+        0:
+            return 2
+
+        1:
+            match command_index <=> 21:
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return 2
+
+                1:
+                    match command_index <=> 23:
+                        -1:
+                            return fragment_unknown()
+
+                        0:
+                            return 1
+
+                        1:
+                            return expected_sign_instruction_operand_count_final(command_index)
+
+fn expected_sign_instruction_operand_count_final(command_index: tryte) -> tryte:
+    match command_index <=> 26:
+        -1:
+            return fragment_unknown()
+
+        0:
+            return 2
+
+        1:
+            match command_index <=> 28:
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return 1
+
+                1:
+                    match command_index <=> 31:
+                        -1:
+                            return fragment_unknown()
+
+                        0:
+                            return 2
+
+                        1:
+                            return expected_sign_instruction_operand_count_main(command_index)
+
+fn expected_sign_instruction_operand_count_main(command_index: tryte) -> tryte:
+    match command_index <=> 33:
+        -1:
+            return fragment_unknown()
+
+        0:
+            return 1
+
+        1:
+            match command_index <=> 42:
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return 2
+
+                1:
+                    match command_index <=> 44:
+                        -1:
+                            return fragment_unknown()
+
+                        0:
+                            return 2
+
+                        1:
+                            match command_index <=> 46:
+                                -1:
+                                    return fragment_unknown()
+
+                                0:
+                                    return 3
+
+                                1:
+                                    match command_index <=> 48:
+                                        -1:
+                                            return fragment_unknown()
+
+                                        0:
+                                            return 1
+
+                                        1:
+                                            return fragment_unknown()
+
+fn expected_instruction_operand_fragment(fixture: tryte, command_index: tryte, operand_index: tryte) -> tryte:
+    match in_range(operand_index, 0, expected_instruction_operand_count(fixture, command_index) - 1) <=> 1:
+        -1:
+            return fragment_unknown()
+
+        0:
+            match operand_index <=> 0:
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return fragment_register_name()
+
+                1:
+                    return expected_instruction_later_operand_fragment(fixture, command_index, operand_index)
+
+        1:
+            return fragment_unknown()
+
+fn expected_instruction_later_operand_fragment(fixture: tryte, command_index: tryte, operand_index: tryte) -> tryte:
+    match is_immediate_instruction_operand(fixture, command_index, operand_index) <=> 1:
+        -1:
+            match is_symbol_instruction_operand(fixture, command_index, operand_index) <=> 1:
+                -1:
+                    return fragment_register_name()
+
+                0:
+                    return fragment_symbol()
+
+                1:
+                    return fragment_register_name()
+
+        0:
+            return fragment_immediate()
+
+        1:
+            return fragment_register_name()
+
+fn is_immediate_instruction_operand(fixture: tryte, command_index: tryte, operand_index: tryte) -> trit:
+    match operand_index <=> 1:
+        -1:
+            return 0
+
+        0:
+            return is_immediate_instruction_second_operand(fixture, command_index)
+
+        1:
+            return 0
+
+fn is_immediate_instruction_second_operand(fixture: tryte, command_index: tryte) -> trit:
+    match fixture <=> fixture_first():
+        -1:
+            return 0
+
+        0:
+            return any_passed(
+                same_tryte(command_index, 11),
+                same_tryte(command_index, 15)
+            )
+
+        1:
+            match fixture <=> fixture_simple_call():
+                -1:
+                    return 0
+
+                0:
+                    return any_passed(
+                        same_tryte(command_index, 19),
+                        same_tryte(command_index, 21)
+                    )
+
+                1:
+                    match fixture <=> fixture_sign():
+                        -1:
+                            return 0
+
+                        0:
+                            return is_sign_immediate_instruction(command_index)
+
+                        1:
+                            return 0
+
+fn is_sign_immediate_instruction(command_index: tryte) -> trit:
+    return any_passed(
+        same_tryte(command_index, 12),
+        any_passed(
+            same_tryte(command_index, 19),
+            any_passed(
+                same_tryte(command_index, 26),
+                any_passed(
+                    same_tryte(command_index, 31),
+                    same_tryte(command_index, 42)
+                )
+            )
+        )
+    )
+
+fn is_symbol_instruction_operand(fixture: tryte, command_index: tryte, operand_index: tryte) -> trit:
+    match fixture <=> fixture_simple_call():
+        -1:
+            return 0
+
+        0:
+            return all_passed(
+                same_tryte(command_index, 23),
+                same_tryte(operand_index, 1)
+            )
+
+        1:
+            match fixture <=> fixture_sign():
+                -1:
+                    return 0
+
+                0:
+                    return is_sign_symbol_instruction_operand(command_index, operand_index)
+
+                1:
+                    return 0
+
+fn is_sign_symbol_instruction_operand(command_index: tryte, operand_index: tryte) -> trit:
+    match command_index <=> 16:
+        -1:
+            return 0
+
+        0:
+            return in_range(operand_index, 1, 3)
+
+        1:
+            return all_passed(
+                same_tryte(command_index, 46),
+                same_tryte(operand_index, 1)
+            )
+
+fn fragment_command_fragment_count(fixture: tryte, command_index: tryte) -> tryte:
+    match expected_fragment_command_at(fixture, command_index) <=> fragment_command_start_document():
+        -1:
+            return fragment_command_fragment_count_after_start(fixture, command_index)
+
+        0:
+            return 0
+
+        1:
+            return fragment_command_fragment_count_after_start(fixture, command_index)
+
+fn fragment_command_fragment_count_after_start(fixture: tryte, command_index: tryte) -> tryte:
+    mut command: tryte = expected_fragment_command_at(fixture, command_index)
+
+    match command <=> fragment_command_header_line():
+        -1:
+            return fragment_command_fragment_count_non_header(fixture, command_index, command)
+
+        0:
+            return 4
+
+        1:
+            return fragment_command_fragment_count_non_header(fixture, command_index, command)
+
+fn fragment_command_fragment_count_non_header(fixture: tryte, command_index: tryte, command: tryte) -> tryte:
+    match command <=> fragment_command_function_line():
+        -1:
+            return fragment_command_fragment_count_non_function(fixture, command_index, command)
+
+        0:
+            return 8
+
+        1:
+            return fragment_command_fragment_count_non_function(fixture, command_index, command)
+
+fn fragment_command_fragment_count_non_function(fixture: tryte, command_index: tryte, command: tryte) -> tryte:
+    match command <=> fragment_command_param_line():
+        -1:
+            return fragment_command_fragment_count_tail(fixture, command_index, command)
+
+        0:
+            return 8
+
+        1:
+            return fragment_command_fragment_count_tail(fixture, command_index, command)
+
+fn fragment_command_fragment_count_tail(fixture: tryte, command_index: tryte, command: tryte) -> tryte:
+    match command <=> fragment_command_register_line():
+        -1:
+            return fragment_command_fragment_count_tail_two(fixture, command_index, command)
+
+        0:
+            return 8
+
+        1:
+            return fragment_command_fragment_count_tail_two(fixture, command_index, command)
+
+fn fragment_command_fragment_count_tail_two(fixture: tryte, command_index: tryte, command: tryte) -> tryte:
+    match command <=> fragment_command_memory_line():
+        -1:
+            return fragment_command_fragment_count_tail_three(fixture, command_index, command)
+
+        0:
+            return 10
+
+        1:
+            return fragment_command_fragment_count_tail_three(fixture, command_index, command)
+
+fn fragment_command_fragment_count_tail_three(fixture: tryte, command_index: tryte, command: tryte) -> tryte:
+    match command <=> fragment_command_label_line():
+        -1:
+            return fragment_command_fragment_count_tail_four(fixture, command_index, command)
+
+        0:
+            return 4
+
+        1:
+            return fragment_command_fragment_count_tail_four(fixture, command_index, command)
+
+fn fragment_command_fragment_count_tail_four(fixture: tryte, command_index: tryte, command: tryte) -> tryte:
+    match command <=> fragment_command_instruction_line():
+        -1:
+            return fragment_command_fragment_count_tail_five(command)
+
+        0:
+            return 1 + triple_value(expected_instruction_operand_count(fixture, command_index))
+
+        1:
+            return fragment_command_fragment_count_tail_five(command)
+
+fn fragment_command_fragment_count_tail_five(command: tryte) -> tryte:
+    match command <=> fragment_command_source_metadata():
+        -1:
+            return fragment_command_fragment_count_tail_six(command)
+
+        0:
+            return 3
+
+        1:
+            return fragment_command_fragment_count_tail_six(command)
+
+fn fragment_command_fragment_count_tail_six(command: tryte) -> tryte:
+    match command <=> fragment_command_end_line():
+        -1:
+            return fragment_command_fragment_count_tail_seven(command)
+
+        0:
+            return 2
+
+        1:
+            return fragment_command_fragment_count_tail_seven(command)
+
+fn fragment_command_fragment_count_tail_seven(command: tryte) -> tryte:
+    match command <=> fragment_command_blank_line():
+        -1:
+            return fragment_command_unknown()
+
+        0:
+            return 1
+
+        1:
+            match command <=> fragment_command_finish_document():
+                -1:
+                    return fragment_command_unknown()
+
+                0:
+                    return 0
+
+                1:
+                    return fragment_command_unknown()
+
+fn fragment_item_two(index: tryte, first: tryte, second: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            return fragment_unknown()
+
+        0:
+            return first
+
+        1:
+            match index <=> 1:
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return second
+
+                1:
+                    return fragment_unknown()
+
+fn fragment_item_three(index: tryte, first: tryte, second: tryte, third: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            return fragment_unknown()
+
+        0:
+            return first
+
+        1:
+            match index <=> 1:
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return second
+
+                1:
+                    match index <=> 2:
+                        -1:
+                            return fragment_unknown()
+
+                        0:
+                            return third
+
+                        1:
+                            return fragment_unknown()
+
+fn fragment_item_four(index: tryte, first: tryte, second: tryte, third: tryte, fourth: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            return fragment_unknown()
+
+        0:
+            return first
+
+        1:
+            match index <=> 1:
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return second
+
+                1:
+                    match index <=> 2:
+                        -1:
+                            return fragment_unknown()
+
+                        0:
+                            return third
+
+                        1:
+                            match index <=> 3:
+                                -1:
+                                    return fragment_unknown()
+
+                                0:
+                                    return fourth
+
+                                1:
+                                    return fragment_unknown()
+
+fn fragment_item_eight(index: tryte, first: tryte, second: tryte, third: tryte, fourth: tryte, fifth: tryte, sixth: tryte, seventh: tryte, eighth: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            return fragment_unknown()
+
+        0:
+            return first
+
+        1:
+            match index <=> 1:
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return second
+
+                1:
+                    match index <=> 2:
+                        -1:
+                            return fragment_unknown()
+
+                        0:
+                            return third
+
+                        1:
+                            return fragment_item_eight_tail(index, fourth, fifth, sixth, seventh, eighth)
+
+fn fragment_item_eight_tail(index: tryte, fourth: tryte, fifth: tryte, sixth: tryte, seventh: tryte, eighth: tryte) -> tryte:
+    match index <=> 3:
+        -1:
+            return fragment_unknown()
+
+        0:
+            return fourth
+
+        1:
+            match index <=> 4:
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return fifth
+
+                1:
+                    match index <=> 5:
+                        -1:
+                            return fragment_unknown()
+
+                        0:
+                            return sixth
+
+                        1:
+                            match index <=> 6:
+                                -1:
+                                    return fragment_unknown()
+
+                                0:
+                                    return seventh
+
+                                1:
+                                    match index <=> 7:
+                                        -1:
+                                            return fragment_unknown()
+
+                                        0:
+                                            return eighth
+
+                                        1:
+                                            return fragment_unknown()
+
+fn instruction_operand_stream_at(fixture: tryte, command_index: tryte, index: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            return fragment_unknown()
+
+        0:
+            return expected_instruction_operand_fragment(fixture, command_index, 0)
+
+        1:
+            return instruction_operand_stream_tail(fixture, command_index, index - 1, 1)
+
+fn instruction_operand_stream_tail(fixture: tryte, command_index: tryte, index: tryte, operand_index: tryte) -> tryte:
+    match expected_instruction_operand_fragment(fixture, command_index, operand_index) <=> fragment_unknown():
+        -1:
+            return fragment_unknown()
+
+        0:
+            return fragment_unknown()
+
+        1:
+            match index <=> 0:
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return fragment_separator()
+
+                1:
+                    match index <=> 1:
+                        -1:
+                            return fragment_unknown()
+
+                        0:
+                            return fragment_space()
+
+                        1:
+                            match index <=> 2:
+                                -1:
+                                    return fragment_unknown()
+
+                                0:
+                                    return expected_instruction_operand_fragment(fixture, command_index, operand_index)
+
+                                1:
+                                    return instruction_operand_stream_tail(
+                                        fixture,
+                                        command_index,
+                                        index - 3,
+                                        operand_index + 1
+                                    )
+
+fn expected_fragment_from_command(fixture: tryte, command_index: tryte, local_index: tryte) -> tryte:
+    mut command: tryte = expected_fragment_command_at(fixture, command_index)
+
+    match command <=> fragment_command_header_line():
+        -1:
+            return expected_fragment_from_non_header_command(fixture, command_index, local_index, command)
+
+        0:
+            return fragment_item_four(
+                local_index,
+                fragment_document_marker(),
+                fragment_space(),
+                fragment_immediate(),
+                fragment_newline()
+            )
+
+        1:
+            return expected_fragment_from_non_header_command(fixture, command_index, local_index, command)
+
+fn expected_fragment_from_non_header_command(fixture: tryte, command_index: tryte, local_index: tryte, command: tryte) -> tryte:
+    match command <=> fragment_command_function_line():
+        -1:
+            return expected_fragment_from_line_command(fixture, command_index, local_index, command)
+
+        0:
+            return fragment_item_eight(
+                local_index,
+                fragment_directive(),
+                fragment_space(),
+                fragment_symbol(),
+                fragment_space(),
+                fragment_separator(),
+                fragment_space(),
+                fragment_type_name(),
+                fragment_newline()
+            )
+
+        1:
+            return expected_fragment_from_line_command(fixture, command_index, local_index, command)
+
+fn expected_fragment_from_line_command(fixture: tryte, command_index: tryte, local_index: tryte, command: tryte) -> tryte:
+    match command <=> fragment_command_param_line():
+        -1:
+            return expected_fragment_from_non_param_command(fixture, command_index, local_index, command)
+
+        0:
+            return fragment_item_eight(
+                local_index,
+                fragment_indentation(),
+                fragment_directive(),
+                fragment_space(),
+                fragment_register_name(),
+                fragment_separator(),
+                fragment_space(),
+                fragment_type_name(),
+                fragment_newline()
+            )
+
+        1:
+            return expected_fragment_from_non_param_command(fixture, command_index, local_index, command)
+
+fn expected_fragment_from_non_param_command(fixture: tryte, command_index: tryte, local_index: tryte, command: tryte) -> tryte:
+    match command <=> fragment_command_register_line():
+        -1:
+            return expected_fragment_from_tail_command(fixture, command_index, local_index, command)
+
+        0:
+            return fragment_item_eight(
+                local_index,
+                fragment_indentation(),
+                fragment_directive(),
+                fragment_space(),
+                fragment_register_name(),
+                fragment_separator(),
+                fragment_space(),
+                fragment_type_name(),
+                fragment_newline()
+            )
+
+        1:
+            return expected_fragment_from_tail_command(fixture, command_index, local_index, command)
+
+fn expected_fragment_from_tail_command(fixture: tryte, command_index: tryte, local_index: tryte, command: tryte) -> tryte:
+    match command <=> fragment_command_label_line():
+        -1:
+            return expected_fragment_from_tail_two(fixture, command_index, local_index, command)
+
+        0:
+            return fragment_item_four(
+                local_index,
+                fragment_directive(),
+                fragment_space(),
+                fragment_symbol(),
+                fragment_newline()
+            )
+
+        1:
+            return expected_fragment_from_tail_two(fixture, command_index, local_index, command)
+
+fn expected_fragment_from_tail_two(fixture: tryte, command_index: tryte, local_index: tryte, command: tryte) -> tryte:
+    match command <=> fragment_command_instruction_line():
+        -1:
+            return expected_fragment_from_tail_three(local_index, command)
+
+        0:
+            match local_index <=> 0:
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return fragment_indentation()
+
+                1:
+                    match local_index <=> 1:
+                        -1:
+                            return fragment_unknown()
+
+                        0:
+                            return fragment_opcode()
+
+                        1:
+                            match local_index <=> 2:
+                                -1:
+                                    return fragment_unknown()
+
+                                0:
+                                    return fragment_space()
+
+                                1:
+                                    return instruction_operand_stream_at(
+                                        fixture,
+                                        command_index,
+                                        local_index - 3
+                                    )
+
+        1:
+            return expected_fragment_from_tail_three(local_index, command)
+
+fn expected_fragment_from_tail_three(local_index: tryte, command: tryte) -> tryte:
+    match command <=> fragment_command_source_metadata():
+        -1:
+            return expected_fragment_from_tail_four(local_index, command)
+
+        0:
+            return fragment_item_three(
+                local_index,
+                fragment_source_prefix(),
+                fragment_source_value(),
+                fragment_newline()
+            )
+
+        1:
+            return expected_fragment_from_tail_four(local_index, command)
+
+fn expected_fragment_from_tail_four(local_index: tryte, command: tryte) -> tryte:
+    match command <=> fragment_command_end_line():
+        -1:
+            return expected_fragment_from_tail_five(local_index, command)
+
+        0:
+            return fragment_item_two(local_index, fragment_document_end(), fragment_newline())
+
+        1:
+            return expected_fragment_from_tail_five(local_index, command)
+
+fn expected_fragment_from_tail_five(local_index: tryte, command: tryte) -> tryte:
+    match command <=> fragment_command_blank_line():
+        -1:
+            return fragment_unknown()
+
+        0:
+            return fragment_item_two(local_index, fragment_blank_line(), fragment_unknown())
+
+        1:
+            return fragment_unknown()
+
+fn expected_fragment_at_from_command(fixture: tryte, index: tryte, command_index: tryte) -> tryte:
+    mut command: tryte = expected_fragment_command_at(fixture, command_index)
+
+    match command <=> fragment_command_unknown():
+        -1:
+            return fragment_unknown()
+
+        0:
+            return fragment_unknown()
+
+        1:
+            mut count: tryte = fragment_command_fragment_count(fixture, command_index)
+
+            match is_before(index, count) <=> 1:
+                -1:
+                    return expected_fragment_at_from_command(fixture, index - count, command_index + 1)
+
+                0:
+                    return expected_fragment_from_command(fixture, command_index, index)
+
+                1:
+                    return expected_fragment_at_from_command(fixture, index - count, command_index + 1)
+
+fn expected_fragment_at(fixture: tryte, index: tryte) -> tryte:
+    match in_range(index, 0, expected_fragment_count(fixture) - 1) <=> 1:
+        -1:
+            return fragment_unknown()
+
+        0:
+            return expected_fragment_at_from_command(fixture, index, 0)
+
+        1:
+            return fragment_unknown()
+
+fn validate_fragment_index(fixture: tryte, index: tryte) -> trit:
+    return all_passed(
+        is_known_fixture(fixture),
+        all_passed(
+            in_range(index, 0, expected_fragment_count(fixture) - 1),
+            is_known_fragment(expected_fragment_at(fixture, index))
+        )
+    )
+
+fn count_known_fragment_in_range(fixture: tryte, index: tryte, last: tryte, target: tryte) -> tryte:
+    match index <=> last:
+        -1:
+            return count_known_fragment_at(fixture, index, target) + count_known_fragment_in_range(fixture, index + 1, last, target)
+
+        0:
+            return count_known_fragment_at(fixture, index, target)
+
+        1:
+            return 0
+
+fn count_known_fragment_at(fixture: tryte, index: tryte, target: tryte) -> tryte:
+    match same_tryte(expected_fragment_at(fixture, index), target) <=> 1:
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            return 0
+
+fn count_token_fragments_in_range(fixture: tryte, index: tryte, last: tryte) -> tryte:
+    match index <=> last:
+        -1:
+            return token_fragment_at_count(fixture, index) + count_token_fragments_in_range(fixture, index + 1, last)
+
+        0:
+            return token_fragment_at_count(fixture, index)
+
+        1:
+            return 0
+
+fn token_fragment_at_count(fixture: tryte, index: tryte) -> tryte:
+    match is_token_fragment(expected_fragment_at(fixture, index)) <=> 1:
+        -1:
+            return 0
+
+        0:
+            return 1
+
+        1:
+            return 0
+
+fn count_property_fragments_in_range(fixture: tryte, index: tryte, last: tryte, property: tryte) -> tryte:
+    match index <=> last:
+        -1:
+            return property_fragment_at_count(fixture, index, property) + count_property_fragments_in_range(fixture, index + 1, last, property)
+
+        0:
+            return property_fragment_at_count(fixture, index, property)
+
+        1:
+            return 0
+
+fn property_fragment_at_count(fixture: tryte, index: tryte, property: tryte) -> tryte:
+    mut fragment: tryte = expected_fragment_at(fixture, index)
+
+    match property <=> 0:
+        -1:
+            return 0
+
+        0:
+            return tryte_from_check(is_separator_fragment(fragment))
+
+        1:
+            match property <=> 1:
+                -1:
+                    return 0
+
+                0:
+                    return tryte_from_check(is_indentation_fragment(fragment))
+
+                1:
+                    match property <=> 2:
+                        -1:
+                            return 0
+
+                        0:
+                            return tryte_from_check(is_metadata_fragment(fragment))
+
+                        1:
+                            match property <=> 3:
+                                -1:
+                                    return 0
+
+                                0:
+                                    return tryte_from_check(is_newline_fragment(fragment))
+
+                                1:
+                                    match property <=> 4:
+                                        -1:
+                                            return 0
+
+                                        0:
+                                            return tryte_from_check(same_tryte(fragment, fragment_blank_line()))
+
+                                        1:
+                                            match property <=> 5:
+                                                -1:
+                                                    return 0
+
+                                                0:
+                                                    return tryte_from_check(is_space_fragment(fragment))
+
+                                                1:
+                                                    return 0
+
+fn expected_final_fragment_state(fixture: tryte) -> tryte:
+    match is_known_fixture(fixture) <=> 1:
+        -1:
+            return fragment_state_error()
+
+        0:
+            return fragment_state_document_complete()
+
+        1:
+            return fragment_state_error()
+
+fn next_fragment_state(state: tryte, fragment: tryte) -> tryte:
+    match all_passed(is_known_fragment_state(state), is_known_fragment(fragment)) <=> 1:
+        -1:
+            return fragment_state_error()
+
+        0:
+            return next_known_fragment_state(state, fragment)
+
+        1:
+            return fragment_state_error()
+
+fn next_known_fragment_state(state: tryte, fragment: tryte) -> tryte:
+    match state <=> fragment_state_empty():
+        -1:
+            return fragment_state_error()
+
+        0:
+            match same_tryte(fragment, fragment_document_marker()) <=> 1:
+                -1:
+                    return fragment_state_error()
+
+                0:
+                    return fragment_state_document_open()
+
+                1:
+                    return fragment_state_error()
+
+        1:
+            return next_non_empty_fragment_state(state, fragment)
+
+fn next_non_empty_fragment_state(state: tryte, fragment: tryte) -> tryte:
+    match state <=> fragment_state_document_open():
+        -1:
+            return fragment_state_error()
+
+        0:
+            return next_document_open_fragment_state(fragment)
+
+        1:
+            match state <=> fragment_state_line_open():
+                -1:
+                    return fragment_state_error()
+
+                0:
+                    return next_line_open_fragment_state(fragment)
+
+                1:
+                    return next_line_terminal_fragment_state(state, fragment)
+
+fn next_document_open_fragment_state(fragment: tryte) -> tryte:
+    match same_tryte(fragment, fragment_document_end()) <=> 1:
+        -1:
+            match is_newline_fragment(fragment) <=> 1:
+                -1:
+                    return fragment_state_line_open()
+
+                0:
+                    return fragment_state_line_complete()
+
+                1:
+                    return fragment_state_line_open()
+
+        0:
+            return fragment_state_document_complete()
+
+        1:
+            return fragment_state_line_open()
+
+fn next_line_open_fragment_state(fragment: tryte) -> tryte:
+    match is_newline_fragment(fragment) <=> 1:
+        -1:
+            match same_tryte(fragment, fragment_document_end()) <=> 1:
+                -1:
+                    return fragment_state_line_open()
+
+                0:
+                    return fragment_state_document_complete()
+
+                1:
+                    return fragment_state_line_open()
+
+        0:
+            return fragment_state_line_complete()
+
+        1:
+            return fragment_state_line_open()
+
+fn next_line_terminal_fragment_state(state: tryte, fragment: tryte) -> tryte:
+    match state <=> fragment_state_line_complete():
+        -1:
+            return fragment_state_error()
+
+        0:
+            match is_newline_fragment(fragment) <=> 1:
+                -1:
+                    match same_tryte(fragment, fragment_document_end()) <=> 1:
+                        -1:
+                            return fragment_state_line_open()
+
+                        0:
+                            return fragment_state_document_complete()
+
+                        1:
+                            return fragment_state_line_open()
+
+                0:
+                    return fragment_state_line_complete()
+
+                1:
+                    return fragment_state_line_open()
+
+        1:
+            match state <=> fragment_state_document_complete():
+                -1:
+                    return fragment_state_error()
+
+                0:
+                    match is_newline_fragment(fragment) <=> 1:
+                        -1:
+                            return fragment_state_error()
+
+                        0:
+                            return fragment_state_document_complete()
+
+                        1:
+                            return fragment_state_error()
+
+                1:
+                    return fragment_state_error()
+
+fn is_valid_fragment_transition(state: tryte, fragment: tryte) -> trit:
+    return all_passed(
+        is_known_fragment_state(state),
+        all_passed(
+            is_known_fragment(fragment),
+            same_trit(
+                same_tryte(next_fragment_state(state, fragment), fragment_state_error()),
+                0
+            )
+        )
+    )
+
+fn final_fragment_state_after(fixture: tryte, index: tryte, state: tryte) -> tryte:
+    match is_before(index, expected_fragment_count(fixture)) <=> 1:
+        -1:
+            return state
+
+        0:
+            return final_fragment_state_after(
+                fixture,
+                index + 1,
+                next_fragment_state(state, expected_fragment_at(fixture, index))
+            )
+
+        1:
+            return state
+
+fn byte_pair_base() -> tryte:
+    return 300
+
+fn triple_value(value: tryte) -> tryte:
+    return value + value + value
+
+fn repeated_fragment_bytes(count: tryte, width: tryte) -> tryte:
+    match count <=> 0:
+        -1:
+            return fragment_unknown()
+
+        0:
+            return 0
+
+        1:
+            return width + repeated_fragment_bytes(count - 1, width)
+
+fn is_valid_byte_pair(high: tryte, low: tryte) -> trit:
+    return all_passed(in_range(high, 0, 364), in_range(low, 0, byte_pair_base() - 1))
+
+fn add_byte_fragment_high(high: tryte, low: tryte, byte_count: tryte) -> tryte:
+    match is_valid_byte_pair(high, low) <=> 1:
+        -1:
+            return fragment_unknown()
+
+        0:
+            match (low + byte_count) <=> byte_pair_base():
+                -1:
+                    return high
+
+                0:
+                    return high + 1
+
+                1:
+                    return high + 1
+
+        1:
+            return fragment_unknown()
+
+fn add_byte_fragment_low(high: tryte, low: tryte, byte_count: tryte) -> tryte:
+    match is_valid_byte_pair(high, low) <=> 1:
+        -1:
+            return fragment_unknown()
+
+        0:
+            match (low + byte_count) <=> byte_pair_base():
+                -1:
+                    return low + byte_count
+
+                0:
+                    return 0
+
+                1:
+                    return low + byte_count - byte_pair_base()
+
+        1:
+            return fragment_unknown()
+
+fn category_base_byte_total(fixture: tryte, fragment: tryte) -> tryte:
+    return scaled_base_fragment_width(
+        expected_fragment_id_count(fixture, fragment),
+        fragment_logical_byte_count(fragment)
+    )
+
+fn scaled_base_fragment_width(count: tryte, width: tryte) -> tryte:
+    match width <=> 1:
+        -1:
+            return fragment_unknown()
+
+        0:
+            return count
+
+        1:
+            match width <=> 2:
+                -1:
+                    return fragment_unknown()
+
+                0:
+                    return count + count
+
+                1:
+                    match width <=> 4:
+                        -1:
+                            return fragment_unknown()
+
+                        0:
+                            return count + count + count + count
+
+                        1:
+                            match width <=> 6:
+                                -1:
+                                    return fragment_unknown()
+
+                                0:
+                                    return count + count + count + count + count + count
+
+                                1:
+                                    match width <=> 10:
+                                        -1:
+                                            return fragment_unknown()
+
+                                        0:
+                                            return (
+                                                count + count + count + count + count +
+                                                count + count + count + count + count
+                                            )
+
+                                        1:
+                                            return fragment_unknown()
+
+fn base_byte_pair_high_at_stage(fixture: tryte, stage: tryte) -> tryte:
+    return base_byte_pair_high_accumulate(fixture, 0, stage, 0, 0)
+
+fn base_byte_pair_low_at_stage(fixture: tryte, stage: tryte) -> tryte:
+    return base_byte_pair_low_accumulate(fixture, 0, stage, 0, 0)
+
+fn base_byte_pair_high_accumulate(fixture: tryte, current: tryte, stage: tryte, high: tryte, low: tryte) -> tryte:
+    match current <=> stage:
+        -1:
+            return base_byte_pair_high_accumulate(
+                fixture,
+                current + 1,
+                stage,
+                add_byte_fragment_high(high, low, category_base_byte_total(fixture, current)),
+                add_byte_fragment_low(high, low, category_base_byte_total(fixture, current))
+            )
+
+        0:
+            return high
+
+        1:
+            return fragment_unknown()
+
+fn base_byte_pair_low_accumulate(fixture: tryte, current: tryte, stage: tryte, high: tryte, low: tryte) -> tryte:
+    match current <=> stage:
+        -1:
+            return base_byte_pair_low_accumulate(
+                fixture,
+                current + 1,
+                stage,
+                add_byte_fragment_high(high, low, category_base_byte_total(fixture, current)),
+                add_byte_fragment_low(high, low, category_base_byte_total(fixture, current))
+            )
+
+        0:
+            return low
+
+        1:
+            return fragment_unknown()
+
+fn modeled_base_byte_count_high(fixture: tryte) -> tryte:
+    return expected_base_byte_count_high(fixture)
+
+fn modeled_base_byte_count_low(fixture: tryte) -> tryte:
+    return expected_base_byte_count_low(fixture)
+
+fn expected_base_byte_count_high(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 1, 1, 2)
+
+fn expected_base_byte_count_low(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 96, 96, 165)
+
+fn expected_directive_width_adjustment(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 21, 18, 33)
+
+fn expected_symbol_width_adjustment(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 7, 15, 111)
+
+fn expected_type_width_adjustment(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 7, 8, 4)
+
+fn expected_immediate_width_adjustment(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 5, 5, 5)
+
+fn expected_separator_width_adjustment(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 1, 2, 2)
+
+fn expected_source_value_width_adjustment(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 4, 4, 26)
+
+fn modeled_variable_width_adjustment(fixture: tryte) -> tryte:
+    return (
+        expected_directive_width_adjustment(fixture) +
+        expected_symbol_width_adjustment(fixture) +
+        expected_type_width_adjustment(fixture) +
+        expected_immediate_width_adjustment(fixture) +
+        expected_separator_width_adjustment(fixture) +
+        expected_source_value_width_adjustment(fixture)
+    )
+
+fn expected_variable_width_adjustment(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 45, 52, 181)
+
+fn expected_byte_count_high(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 1, 1, 3)
+
+fn expected_byte_count_low(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 141, 148, 46)
+
+fn modeled_byte_count_high(fixture: tryte) -> tryte:
+    return add_byte_fragment_high(
+        modeled_base_byte_count_high(fixture),
+        modeled_base_byte_count_low(fixture),
+        modeled_variable_width_adjustment(fixture)
+    )
+
+fn modeled_byte_count_low(fixture: tryte) -> tryte:
+    return add_byte_fragment_low(
+        modeled_base_byte_count_high(fixture),
+        modeled_base_byte_count_low(fixture),
+        modeled_variable_width_adjustment(fixture)
+    )
+
+fn validate_fixture_byte_pair(fixture: tryte) -> trit:
+    mut ok: trit = is_known_fixture(fixture)
+
+    ok = all_passed(ok, is_valid_byte_pair(expected_byte_count_high(fixture), expected_byte_count_low(fixture)))
+    ok = all_passed(ok, same_tryte(modeled_variable_width_adjustment(fixture), expected_variable_width_adjustment(fixture)))
+    ok = all_passed(ok, same_tryte(modeled_byte_count_high(fixture), expected_byte_count_high(fixture)))
+    ok = all_passed(ok, same_tryte(modeled_byte_count_low(fixture), expected_byte_count_low(fixture)))
+
+    return ok
+
+fn fragment_score(fragment: tryte, index: tryte) -> tryte:
+    match is_token_fragment(fragment) <=> 1:
+        -1:
+            match is_separator_fragment(fragment) <=> 1:
+                -1:
+                    match is_metadata_fragment(fragment) <=> 1:
+                        -1:
+                            return 0
+
+                        0:
+                            return 1
+
+                        1:
+                            return 0
+
+                0:
+                    return 1
+
+                1:
+                    return 0
+
+        0:
+            return 1
+
+        1:
+            return 0
+
+fn modeled_fragment_signature_in_range(fixture: tryte, index: tryte, last: tryte) -> tryte:
+    match index <=> last:
+        -1:
+            return fragment_score(expected_fragment_at(fixture, index), index) + modeled_fragment_signature_in_range(fixture, index + 1, last)
+
+        0:
+            return fragment_score(expected_fragment_at(fixture, index), index)
+
+        1:
+            return 0
+
+fn modeled_fragment_signature(fixture: tryte) -> tryte:
+    return (
+        expected_token_fragment_count(fixture) +
+        expected_separator_fragment_count(fixture) +
+        expected_metadata_fragment_count(fixture)
+    )
+
+fn expected_fragment_signature(fixture: tryte) -> tryte:
+    return fixture_metric(fixture, 75, 78, 146)
+
+fn expected_total_fragment_signature() -> tryte:
+    return 299
+
+fn validate_fixture_fragment_sequence(fixture: tryte) -> trit:
+    mut count: tryte = expected_fragment_count(fixture)
+    mut ok: trit = is_known_fixture(fixture)
+
+    ok = all_passed(ok, validate_fragment_index(fixture, 0))
+    ok = all_passed(ok, validate_fragment_index(fixture, count - 1))
+    ok = all_passed(ok, same_tryte(expected_fragment_at(fixture, 0), fragment_document_marker()))
+    ok = all_passed(ok, same_tryte(expected_fragment_at(fixture, count - 1), fragment_newline()))
+    ok = all_passed(ok, same_tryte(
+        next_fragment_state(
+            next_fragment_state(fragment_state_line_complete(), fragment_document_end()),
+            fragment_newline()
+        ),
+        expected_final_fragment_state(fixture)
+    ))
+
+    return ok
+
+fn validate_fixture_fragment_counts(fixture: tryte) -> trit:
+    mut ok: trit = is_known_fixture(fixture)
+
+    ok = all_passed(ok, same_tryte(
+        expected_fragment_id_count(fixture, fragment_document_marker()) +
+        expected_fragment_id_count(fixture, fragment_directive()) +
+        expected_fragment_id_count(fixture, fragment_opcode()) +
+        expected_fragment_id_count(fixture, fragment_symbol()) +
+        expected_fragment_id_count(fixture, fragment_type_name()) +
+        expected_fragment_id_count(fixture, fragment_register_name()) +
+        expected_fragment_id_count(fixture, fragment_memory_name()) +
+        expected_fragment_id_count(fixture, fragment_immediate()) +
+        expected_fragment_id_count(fixture, fragment_document_end()),
+        expected_token_fragment_count(fixture)
+    ))
+    ok = all_passed(ok, same_tryte(
+        expected_fragment_id_count(fixture, fragment_separator()),
+        expected_separator_fragment_count(fixture)
+    ))
+    ok = all_passed(ok, same_tryte(
+        expected_fragment_id_count(fixture, fragment_indentation()),
+        expected_indentation_fragment_count(fixture)
+    ))
+    ok = all_passed(ok, same_tryte(
+        expected_fragment_id_count(fixture, fragment_source_prefix()) +
+        expected_fragment_id_count(fixture, fragment_source_value()),
+        expected_metadata_fragment_count(fixture)
+    ))
+    ok = all_passed(ok, same_tryte(
+        expected_fragment_id_count(fixture, fragment_newline()) +
+        expected_fragment_id_count(fixture, fragment_blank_line()),
+        expected_newline_fragment_count(fixture)
+    ))
+    ok = all_passed(ok, same_tryte(
+        expected_fragment_id_count(fixture, fragment_blank_line()),
+        expected_blank_fragment_count(fixture)
+    ))
+    ok = all_passed(ok, same_tryte(
+        expected_fragment_id_count(fixture, fragment_space()),
+        expected_space_fragment_count(fixture)
+    ))
+    ok = all_passed(ok, same_tryte(
+        expected_token_fragment_count(fixture) +
+        expected_separator_fragment_count(fixture) +
+        expected_indentation_fragment_count(fixture) +
+        expected_metadata_fragment_count(fixture) +
+        expected_newline_fragment_count(fixture) +
+        expected_space_fragment_count(fixture),
+        expected_fragment_count(fixture)
+    ))
+
+    return ok
+
+fn validate_fixture_fragment_bytes(fixture: tryte) -> trit:
+    return validate_fixture_byte_pair(fixture)
+
+fn validate_fixture_fragment_signature(fixture: tryte) -> trit:
+    return all_passed(
+        is_known_fixture(fixture),
+        same_tryte(modeled_fragment_signature(fixture), expected_fragment_signature(fixture))
+    )
+
+fn validate_builder_fragment_consistency(fixture: tryte) -> trit:
+    mut ok: trit = is_known_fixture(fixture)
+
+    ok = all_passed(ok, same_tryte(
+        expected_fragment_command_at(fixture, expected_builder_command_count(fixture) - 1),
+        fragment_command_finish_document()
+    ))
+    ok = all_passed(ok, same_tryte(
+        expected_fragment_command_at(fixture, expected_builder_command_count(fixture)),
+        fragment_command_unknown()
+    ))
+    ok = all_passed(ok, same_tryte(
+        expected_line_count(fixture) - expected_blank_fragment_count(fixture),
+        expected_builder_token_line_count(fixture)
+    ))
+    ok = all_passed(ok, same_tryte(
+        expected_metadata_fragment_count(fixture),
+        expected_builder_metadata_count(fixture) + expected_builder_metadata_count(fixture)
+    ))
+    ok = all_passed(ok, same_tryte(
+        expected_indentation_fragment_count(fixture),
+        fixture_metric(fixture, 13, 12, 24)
+    ))
+
+    return ok
+
+fn validate_fragment_line_consistency(fixture: tryte) -> trit:
+    return all_passed(
+        same_tryte(expected_newline_fragment_count(fixture), expected_line_count(fixture)),
+        same_tryte(
+            expected_fragment_id_count(fixture, fragment_blank_line()),
+            expected_blank_fragment_count(fixture)
+        )
+    )
+
+fn validate_fragment_byte_consistency(fixture: tryte) -> trit:
+    return all_passed(
+        validate_fixture_byte_pair(fixture),
+        all_passed(
+            same_tryte(expected_byte_count_high(fixture), fixture_metric(fixture, 1, 1, 3)),
+            same_tryte(expected_byte_count_low(fixture), fixture_metric(fixture, 141, 148, 46))
+        )
+    )
+
+fn validate_fixture_fragment_result(fixture: tryte) -> trit:
+    mut ok: trit = validate_fixture_fragment_sequence(fixture)
+
+    ok = all_passed(ok, validate_fixture_fragment_counts(fixture))
+    ok = all_passed(ok, validate_fixture_fragment_bytes(fixture))
+    ok = all_passed(ok, validate_fixture_fragment_signature(fixture))
+    ok = all_passed(ok, validate_builder_fragment_consistency(fixture))
+
+    return ok
+
+fn validate_total_fragment_signature() -> trit:
+    return same_tryte(
+        expected_fragment_signature(fixture_first()) +
+        expected_fragment_signature(fixture_simple_call()) +
+        expected_fragment_signature(fixture_sign()),
+        expected_total_fragment_signature()
+    )
+
+fn validate_invalid_fixture_probe() -> trit:
+    return all_passed(
+        same_trit(is_known_fixture(99), 0),
+        same_tryte(expected_fragment_count(99), fragment_unknown())
+    )
+
+fn validate_invalid_fragment_probe() -> trit:
+    return all_passed(
+        same_trit(is_known_fragment(99), 0),
+        same_tryte(fragment_logical_byte_count(99), fragment_unknown())
+    )
+
+fn validate_invalid_state_probe() -> trit:
+    return all_passed(
+        same_trit(is_known_fragment_state(99), 0),
+        same_tryte(next_fragment_state(99, fragment_document_marker()), fragment_state_error())
+    )
+
+fn validate_invalid_index_probe() -> trit:
+    return all_passed(
+        same_trit(validate_fragment_index(fixture_first(), -1), 0),
+        all_passed(
+            same_trit(validate_fragment_index(fixture_sign(), expected_fragment_count(fixture_sign())), 0),
+            same_tryte(expected_fragment_at(fixture_first(), expected_fragment_count(fixture_first())), fragment_unknown())
+        )
+    )
+
+fn validate_invalid_transition_probe() -> trit:
+    return all_passed(
+        same_trit(is_valid_fragment_transition(fragment_state_empty(), fragment_opcode()), 0),
+        all_passed(
+            same_trit(is_valid_fragment_transition(fragment_state_document_complete(), fragment_directive()), 0),
+            same_trit(is_valid_fragment_transition(fragment_state_line_open(), fragment_unknown()), 0)
+        )
+    )
+
+fn validate_invalid_byte_pair_probe() -> trit:
+    return all_passed(
+        same_trit(is_valid_byte_pair(-1, 0), 0),
+        same_trit(is_valid_byte_pair(0, byte_pair_base()), 0)
+    )
+
+fn validate_invalid_byte_carry_probe() -> trit:
+    return all_passed(
+        same_tryte(add_byte_fragment_high(0, 299, 1), 1),
+        all_passed(
+            same_tryte(add_byte_fragment_low(0, 299, 1), 0),
+            same_trit(same_tryte(add_byte_fragment_high(0, 299, 1), 0), 0)
+        )
+    )
+
+fn validate_byte_count_mismatch_probe() -> trit:
+    return all_passed(
+        same_trit(
+            same_tryte(modeled_byte_count_low(fixture_first()), expected_byte_count_low(fixture_first()) - 1),
+            0
+        ),
+        same_trit(
+            same_tryte(modeled_byte_count_high(fixture_sign()), expected_byte_count_high(fixture_sign()) - 1),
+            0
+        )
+    )
+
+fn validate_signature_mismatch_probe() -> trit:
+    return same_trit(
+        same_tryte(modeled_fragment_signature(fixture_simple_call()), expected_fragment_signature(fixture_simple_call()) + 1),
+        0
+    )
+
+fn validate_all_fixture_fragments() -> trit:
+    mut ok: trit = validate_fixture_fragment_result(fixture_first())
+
+    ok = all_passed(ok, validate_fixture_fragment_result(fixture_simple_call()))
+    ok = all_passed(ok, validate_fixture_fragment_result(fixture_sign()))
+    ok = all_passed(ok, validate_total_fragment_signature())
+    ok = all_passed(ok, validate_invalid_fixture_probe())
+    ok = all_passed(ok, validate_invalid_fragment_probe())
+    ok = all_passed(ok, validate_invalid_state_probe())
+    ok = all_passed(ok, validate_invalid_index_probe())
+    ok = all_passed(ok, validate_invalid_transition_probe())
+    ok = all_passed(ok, validate_invalid_byte_pair_probe())
+    ok = all_passed(ok, validate_invalid_byte_carry_probe())
+    ok = all_passed(ok, validate_byte_count_mismatch_probe())
+    ok = all_passed(ok, validate_signature_mismatch_probe())
+
+    return ok
+
+fn validate_first_fragments() -> trit:
+    return validate_fixture_fragment_result(fixture_first())
+
+fn validate_simple_call_fragments() -> trit:
+    return validate_fixture_fragment_result(fixture_simple_call())
+
+fn validate_sign_fragments() -> trit:
+    return validate_fixture_fragment_result(fixture_sign())
+
+fn first_fragment_byte_count_high() -> tryte:
+    return expected_byte_count_high(fixture_first())
+
+fn first_fragment_byte_count_low() -> tryte:
+    return expected_byte_count_low(fixture_first())
+
+fn simple_call_fragment_byte_count_high() -> tryte:
+    return expected_byte_count_high(fixture_simple_call())
+
+fn simple_call_fragment_byte_count_low() -> tryte:
+    return expected_byte_count_low(fixture_simple_call())
+
+fn sign_fragment_byte_count_high() -> tryte:
+    return expected_byte_count_high(fixture_sign())
+
+fn sign_fragment_byte_count_low() -> tryte:
+    return expected_byte_count_low(fixture_sign())
+
+fn first_fragment_count() -> tryte:
+    return expected_fragment_count(fixture_first())
+
+fn simple_call_fragment_count() -> tryte:
+    return expected_fragment_count(fixture_simple_call())
+
+fn sign_fragment_count() -> tryte:
+    return expected_fragment_count(fixture_sign())
+
+fn first_fragment_token_count() -> tryte:
+    return expected_token_fragment_count(fixture_first())
+
+fn simple_call_fragment_token_count() -> tryte:
+    return expected_token_fragment_count(fixture_simple_call())
+
+fn sign_fragment_token_count() -> tryte:
+    return expected_token_fragment_count(fixture_sign())
+
+fn first_fragment_separator_count() -> tryte:
+    return expected_separator_fragment_count(fixture_first())
+
+fn simple_call_fragment_separator_count() -> tryte:
+    return expected_separator_fragment_count(fixture_simple_call())
+
+fn sign_fragment_separator_count() -> tryte:
+    return expected_separator_fragment_count(fixture_sign())
+
+fn first_fragment_signature() -> tryte:
+    return expected_fragment_signature(fixture_first())
+
+fn simple_call_fragment_signature() -> tryte:
+    return expected_fragment_signature(fixture_simple_call())
+
+fn sign_fragment_signature() -> tryte:
+    return expected_fragment_signature(fixture_sign())
+
+fn first_fragment_line_count() -> tryte:
+    return expected_line_count(fixture_first())
+
+fn simple_call_fragment_line_count() -> tryte:
+    return expected_line_count(fixture_simple_call())
+
+fn sign_fragment_line_count() -> tryte:
+    return expected_line_count(fixture_sign())
+
+fn first_accumulated_base_byte_count_high() -> tryte:
+    return base_byte_pair_high_at_stage(fixture_first(), 16)
+
+fn first_accumulated_base_byte_count_low() -> tryte:
+    return base_byte_pair_low_at_stage(fixture_first(), 16)
+
+fn simple_call_accumulated_base_byte_count_high() -> tryte:
+    return base_byte_pair_high_at_stage(fixture_simple_call(), 16)
+
+fn simple_call_accumulated_base_byte_count_low() -> tryte:
+    return base_byte_pair_low_at_stage(fixture_simple_call(), 16)
+
+fn sign_accumulated_base_byte_count_high() -> tryte:
+    return base_byte_pair_high_at_stage(fixture_sign(), 16)
+
+fn sign_accumulated_base_byte_count_low() -> tryte:
+    return base_byte_pair_low_at_stage(fixture_sign(), 16)
+
+fn text_fragment_model_self_check() -> tryte:
+    return status_from_check(validate_all_fixture_fragments(), 1)
+
+fn main() -> tryte:
+    return text_fragment_model_self_check()

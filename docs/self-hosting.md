@@ -96,6 +96,13 @@ executable scalar command model from output-buffer concepts to text-builder
 commands and final builder state. It validates command order, line and write
 counters, logical byte pairs, transitions, negative probes, and signatures
 without runtime strings, arrays, or text emission; see `docs/roadmap-0.30.md`.
+S3 0.31 adds `examples/self_hosting/assembly_renderer_text_fragments.s3`, an
+executable scalar model from text-builder commands to numeric static text
+fragments and a final document state. It validates fragment order, categories,
+source metadata, newlines, blank lines, deterministic signatures, and base-300
+logical byte pairs for `first`, `simple_call`, and `sign`, without runtime
+strings, arrays, or text emission; see `docs/roadmap-0.31.md`. The full textual
+renderer remains unimplemented and `compare --check` remains blocked.
 
 Recent tools make this pipeline more observable:
 
