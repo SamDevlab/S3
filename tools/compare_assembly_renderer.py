@@ -101,6 +101,11 @@ EXPECTED_TEXT_FRAGMENT_MODEL_PATH = (
 )
 EXPECTED_TEXT_FRAGMENT_MODEL_ENTRYPOINT = "main"
 EXPECTED_TEXT_FRAGMENT_MODEL_RETURN = 0
+EXPECTED_FIXED_TRYTE_BUFFER_MODEL_PATH = (
+    "examples/self_hosting/fixed_tryte_buffer.s3"
+)
+EXPECTED_FIXED_TRYTE_BUFFER_MODEL_ENTRYPOINT = "main"
+EXPECTED_FIXED_TRYTE_BUFFER_MODEL_RETURN = 0
 EXPECTED_DIRECTIVE_COUNT_FUNCTION = "renderer_supported_directive_count"
 EXPECTED_OPCODE_COUNT_FUNCTION = "renderer_supported_opcode_count"
 EXPECTED_DIRECTIVE_FIRST_FUNCTION = "renderer_first_directive_id"
@@ -357,6 +362,15 @@ class TextBuilderModelExecution:
 
 @dataclass(frozen=True, slots=True)
 class TextFragmentModelExecution:
+    path: str
+    entrypoint: str
+    expected_return: int
+    actual_return: int
+    covered_by_s3_program_check: bool
+
+
+@dataclass(frozen=True, slots=True)
+class FixedTryteBufferModelExecution:
     path: str
     entrypoint: str
     expected_return: int
@@ -1738,6 +1752,26 @@ def run_text_fragment_model() -> TextFragmentModelExecution:
     )
 
 
+def run_fixed_tryte_buffer_model() -> FixedTryteBufferModelExecution:
+    inventory_program = find_program(EXPECTED_FIXED_TRYTE_BUFFER_MODEL_PATH)
+    if inventory_program is None:
+        raise ValueError("fixed tryte buffer model missing from s3_program_check inventory")
+    if inventory_program.hosted_expected_return != EXPECTED_FIXED_TRYTE_BUFFER_MODEL_RETURN:
+        raise ValueError("fixed tryte buffer model hosted expected return must be 0")
+
+    actual_return = run_hosted_check(
+        inventory_program,
+        entry=EXPECTED_FIXED_TRYTE_BUFFER_MODEL_ENTRYPOINT,
+    )
+    return FixedTryteBufferModelExecution(
+        path=EXPECTED_FIXED_TRYTE_BUFFER_MODEL_PATH,
+        entrypoint=EXPECTED_FIXED_TRYTE_BUFFER_MODEL_ENTRYPOINT,
+        expected_return=EXPECTED_FIXED_TRYTE_BUFFER_MODEL_RETURN,
+        actual_return=actual_return,
+        covered_by_s3_program_check=True,
+    )
+
+
 def render_reference_status(fixtures: tuple[ReferenceFixture, ...]) -> str:
     lines = [
         "S3 Assembly renderer Python reference",
@@ -1765,6 +1799,7 @@ def render_candidate_execution(
     pipeline_model: PipelineModelExecution,
     text_builder_model: TextBuilderModelExecution,
     text_fragment_model: TextFragmentModelExecution,
+    fixed_tryte_buffer_model: FixedTryteBufferModelExecution,
 ) -> str:
     status = (
         candidate.execution_meaning
@@ -1876,6 +1911,15 @@ def render_candidate_execution(
     text_fragment_model_coverage = (
         "yes" if text_fragment_model.covered_by_s3_program_check else "no"
     )
+    fixed_tryte_buffer_model_passed = (
+        fixed_tryte_buffer_model.actual_return == fixed_tryte_buffer_model.expected_return
+    )
+    fixed_tryte_buffer_model_status = (
+        "passed" if fixed_tryte_buffer_model_passed else "failed"
+    )
+    fixed_tryte_buffer_model_coverage = (
+        "yes" if fixed_tryte_buffer_model.covered_by_s3_program_check else "no"
+    )
     lines = [
         "S3 Assembly renderer candidate execution",
         "",
@@ -1973,6 +2017,13 @@ def render_candidate_execution(
         f"expected return: {text_fragment_model.expected_return}",
         f"actual return: {text_fragment_model.actual_return}",
         f"covered by s3_program_check: {text_fragment_model_coverage}",
+        "",
+        f"s3 fixed mutable tryte buffer: {fixed_tryte_buffer_model_status}",
+        f"program: {fixed_tryte_buffer_model.path}",
+        f"entrypoint: {fixed_tryte_buffer_model.entrypoint}",
+        f"expected return: {fixed_tryte_buffer_model.expected_return}",
+        f"actual return: {fixed_tryte_buffer_model.actual_return}",
+        f"covered by s3_program_check: {fixed_tryte_buffer_model_coverage}",
         "renderer implementation: not_implemented",
         "full text rendering: not_implemented",
     ]
@@ -2157,6 +2208,7 @@ def candidate_run() -> int:
         pipeline_model = run_pipeline_model()
         text_builder_model = run_text_builder_model()
         text_fragment_model = run_text_fragment_model()
+        fixed_tryte_buffer_model = run_fixed_tryte_buffer_model()
     except (OSError, ValueError) as error:
         print("S3 Assembly renderer candidate execution")
         print()
@@ -2186,6 +2238,7 @@ def candidate_run() -> int:
             pipeline_model,
             text_builder_model,
             text_fragment_model,
+            fixed_tryte_buffer_model,
         ),
         end="",
     )
@@ -2217,6 +2270,8 @@ def candidate_run() -> int:
     if text_builder_model.actual_return != text_builder_model.expected_return:
         return 1
     if text_fragment_model.actual_return != text_fragment_model.expected_return:
+        return 1
+    if fixed_tryte_buffer_model.actual_return != fixed_tryte_buffer_model.expected_return:
         return 1
     return 0
 

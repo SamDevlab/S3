@@ -45,8 +45,11 @@ def test_s3_program_check_inventory_exposes_renderer_stub_hosted_check() -> None
     text_fragments = find_program(
         "examples/self_hosting/assembly_renderer_text_fragments.s3"
     )
+    fixed_tryte_buffer = find_program(
+        "examples/self_hosting/fixed_tryte_buffer.s3"
+    )
 
-    assert len(programs) == 16
+    assert len(programs) == 17
     assert stub is not None
     assert stub.hosted_expected_return == -1
     assert bootstrap is not None
@@ -73,6 +76,8 @@ def test_s3_program_check_inventory_exposes_renderer_stub_hosted_check() -> None
     assert text_builder.hosted_expected_return == 0
     assert text_fragments is not None
     assert text_fragments.hosted_expected_return == 0
+    assert fixed_tryte_buffer is not None
+    assert fixed_tryte_buffer.hosted_expected_return == 0
 
 
 def test_s3_program_check_matches_registered_programs() -> None:
@@ -84,9 +89,9 @@ def test_s3_program_check_matches_registered_programs() -> None:
     )
 
     assert completed.returncode == 0
-    assert "s3 program check: checked 16 program(s)" in completed.stdout
+    assert "s3 program check: checked 17 program(s)" in completed.stdout
     assert (
-        "s3 program check: hosted execution checked 13 program(s)"
+        "s3 program check: hosted execution checked 14 program(s)"
         in completed.stdout
     )
     assert "examples/self_hosting/assembly_renderer_stub.s3" in completed.stdout

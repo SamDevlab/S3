@@ -1,0 +1,63 @@
+fn buffer_capacity() -> tryte:
+    return 16
+
+fn can_write(cursor: tryte, capacity: tryte) -> trit:
+    match cursor <=> capacity:
+        -1:
+            return 1
+        0:
+            return -1
+        1:
+            return -1
+
+fn next_cursor(cursor: tryte) -> tryte:
+    return cursor + 1
+
+fn validate_written_value(actual: tryte, expected: tryte) -> trit:
+    match actual <=> expected:
+        0:
+            return 1
+        -1:
+            return -1
+        1:
+            return -1
+
+fn fixed_buffer_self_check() -> tryte:
+    mut buffer: tryte[16] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut cursor: tryte = 0
+    mut capacity: tryte = buffer_capacity()
+
+    match can_write(cursor, capacity):
+        1:
+            buffer[cursor] = 46
+            cursor = next_cursor(cursor)
+        -1:
+            return 1
+        0:
+            return 1
+
+    match can_write(cursor, capacity):
+        1:
+            buffer[cursor] = 115
+            cursor = next_cursor(cursor)
+        -1:
+            return 2
+        0:
+            return 2
+
+    match validate_written_value(buffer[0], 46):
+        1:
+            match validate_written_value(buffer[1], 115):
+                1:
+                    return 0
+                -1:
+                    return 3
+                0:
+                    return 3
+        -1:
+            return 4
+        0:
+            return 4
+
+fn main() -> tryte:
+    return fixed_buffer_self_check()

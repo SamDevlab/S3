@@ -101,7 +101,13 @@ executable scalar model from text-builder commands to numeric static text
 fragments and a final document state. It validates fragment order, categories,
 source metadata, newlines, blank lines, deterministic signatures, and base-300
 logical byte pairs for `first`, `simple_call`, and `sign`, without runtime
-strings, arrays, or text emission; see `docs/roadmap-0.31.md`. The full textual
+strings, arrays, or text emission; see `docs/roadmap-0.31.md`.
+S3 0.32 adds `examples/self_hosting/fixed_tryte_buffer.s3`, transitioning from
+purely numeric renderer models to an actual language capability: a fixed, mutable
+array of `tryte` providing bounds-checked sequential write access. It leverages
+the existing compiler support for arrays, validating indexing, mutability,
+dynamic cursor bounds, and uninitialized memory rejection, serving as the physical
+foundation for future text emission; see `docs/roadmap-0.32.md`. The full textual
 renderer remains unimplemented and `compare --check` remains blocked.
 
 Recent tools make this pipeline more observable:
