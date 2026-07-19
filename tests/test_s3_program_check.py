@@ -49,7 +49,7 @@ def test_s3_program_check_inventory_exposes_renderer_stub_hosted_check() -> None
         "examples/self_hosting/fixed_tryte_buffer.s3"
     )
 
-    assert len(programs) == 19
+    assert len(programs) == 20
     assert stub is not None
     assert stub.hosted_expected_return == -1
     assert bootstrap is not None
@@ -89,9 +89,9 @@ def test_s3_program_check_matches_registered_programs() -> None:
     )
 
     assert completed.returncode == 0
-    assert "s3 program check: checked 19 program(s)" in completed.stdout
+    assert "s3 program check: checked 20 program(s)" in completed.stdout
     assert (
-        "s3 program check: hosted execution checked 16 program(s)"
+        "s3 program check: hosted execution checked 17 program(s)"
         in completed.stdout
     )
     assert "examples/self_hosting/assembly_renderer_stub.s3" in completed.stdout

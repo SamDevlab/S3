@@ -62,6 +62,31 @@ def _compile_source_with_context(
     )
 
 
+def run_source_with_buffer_capture(
+    source: str,
+    entry: str = "main",
+    optimization: OptimizationLevel | str = OptimizationLevel.O0,
+    *,
+    max_frames: int = DEFAULT_MAX_FRAMES,
+    max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
+    mode: SyntaxMode = SyntaxMode.V0_6,
+) -> tuple[int, list[dict[int, list[int | None]]]]:
+    compilation = compile_source(source, optimization, mode=mode)
+    from .backends.registry import create_builtin_backend_registry
+    registry = create_builtin_backend_registry()
+    provider = registry.get_hosted_execution("hosted-emulator")
+    capture: list[dict[int, list[int | None]]] = []
+    result = provider.execute(
+        compilation.assembly,
+        entry,
+        max_frames=max_frames,
+        max_instructions=max_instructions,
+        max_memory_trits=3**8,
+        capture_memory=capture
+    )
+    return result, capture
+
+
 def run_source(
     source: str,
     entry: str = "main",
