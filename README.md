@@ -298,6 +298,15 @@ write counters, transitions, and deterministic signatures for all fixtures.
 There are now eleven executable S3 renderer bootstrap artifacts; `--candidate-run`
 validates all of them while textual rendering remains `not_implemented` and
 `compare --check` remains blocked.
+S3 0.31 adds `examples/self_hosting/assembly_renderer_text_fragments.s3`, an
+executable static text fragment model that expands numeric text-builder commands
+into numeric marker, token, layout, metadata, newline, blank-line, and end
+fragments. It validates the `first`, `simple_call`, and `sign` fragment traces,
+states, category counters, signatures, and base-300 byte pairs for 441, 448,
+and 946 logical bytes. There are now twelve executable S3 renderer bootstrap
+artifacts; `--candidate-run` validates the text fragment model while runtime
+strings, arrays, and complete textual rendering remain `not_implemented` and
+`compare --check` remains blocked.
 `python tools/compare_assembly_renderer.py --check` continua bloqueado com
 status 1 porque o renderer S3 real ainda não está implementado; isso evita
 falso positivo de sucesso global.

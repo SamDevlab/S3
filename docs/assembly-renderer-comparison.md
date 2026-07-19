@@ -11,7 +11,7 @@ before the S3 renderer exists.
 ## Current status
 
 The Python renderer remains the reference implementation. A compilable S3 stub
-and nine executable S3 renderer bootstrap artifacts now exist, but the S3
+and twelve executable S3 renderer bootstrap artifacts now exist, but the S3
 renderer implementation is not available.
 
 String literals are available only as front-end expressions. Runtime string
@@ -463,6 +463,16 @@ logical byte counts, counters, negative probes, and signatures for `first`,
 `simple_call`, and `sign`. `--candidate-run` executes all eleven bootstrap
 artifacts while full text rendering remains `not_implemented` and global
 `--check` remains blocked.
+
+0.31 adds `examples/self_hosting/assembly_renderer_text_fragments.s3`, an
+executable S3 static text fragment model. It decomposes the 0.30 command stream
+into numeric document, token, layout, source metadata, newline, blank-line, and
+end fragments; validates states, category counters, negative probes, and
+deterministic signatures for `first`, `simple_call`, and `sign`. Its normalized
+base-300 pairs represent 441, 448, and 946 logical bytes without storing text.
+`--candidate-run` executes all twelve bootstrap artifacts and reports the text
+fragment model as passed while renderer implementation and full text rendering
+remain `not_implemented`; global `--check` remains blocked.
 
 ## Why check fails today
 
