@@ -126,6 +126,14 @@ PROGRAMS = (
         "Fixed mutable tryte buffer",
         hosted_expected_return=0,
     ),
+    S3Program(
+        REPO_ROOT
+        / "examples"
+        / "self_hosting"
+        / "assembly_renderer_static_text_writer.s3",
+        "Assembly renderer static text writer",
+        hosted_expected_return=0,
+    ),
 )
 
 

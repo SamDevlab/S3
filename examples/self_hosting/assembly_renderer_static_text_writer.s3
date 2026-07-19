@@ -1,0 +1,784 @@
+fn fragment_length(fragment_id: tryte) -> tryte:
+    match fragment_id <=> 1:
+        0:
+            return 6
+        -1:
+            skip_len_1: tryte = 0
+        1:
+            skip_len_1: tryte = 0
+    match fragment_id <=> 2:
+        0:
+            return 9
+        -1:
+            skip_len_2: tryte = 0
+        1:
+            skip_len_2: tryte = 0
+    match fragment_id <=> 3:
+        0:
+            return 6
+        -1:
+            skip_len_3: tryte = 0
+        1:
+            skip_len_3: tryte = 0
+    match fragment_id <=> 4:
+        0:
+            return 9
+        -1:
+            skip_len_4: tryte = 0
+        1:
+            skip_len_4: tryte = 0
+    match fragment_id <=> 5:
+        0:
+            return 7
+        -1:
+            skip_len_5: tryte = 0
+        1:
+            skip_len_5: tryte = 0
+    match fragment_id <=> 6:
+        0:
+            return 6
+        -1:
+            skip_len_6: tryte = 0
+        1:
+            skip_len_6: tryte = 0
+    match fragment_id <=> 7:
+        0:
+            return 4
+        -1:
+            skip_len_7: tryte = 0
+        1:
+            skip_len_7: tryte = 0
+    match fragment_id <=> 8:
+        0:
+            return 1
+        -1:
+            skip_len_8: tryte = 0
+        1:
+            skip_len_8: tryte = 0
+    match fragment_id <=> 9:
+        0:
+            return 1
+        -1:
+            skip_len_9: tryte = 0
+        1:
+            skip_len_9: tryte = 0
+    match fragment_id <=> 10:
+        0:
+            return 2
+        -1:
+            skip_len_10: tryte = 0
+        1:
+            skip_len_10: tryte = 0
+    match fragment_id <=> 11:
+        0:
+            return 1
+        -1:
+            skip_len_11: tryte = 0
+        1:
+            skip_len_11: tryte = 0
+    return -1
+
+fn fragment_byte_at(fragment_id: tryte, index: tryte) -> tryte:
+    match fragment_id <=> 1:
+        0:
+            match index <=> 0:
+                0:
+                    return 46
+                -1:
+                    skip_1_0: tryte = 0
+                1:
+                    skip_1_0: tryte = 0
+            match index <=> 1:
+                0:
+                    return 115
+                -1:
+                    skip_1_1: tryte = 0
+                1:
+                    skip_1_1: tryte = 0
+            match index <=> 2:
+                0:
+                    return 51
+                -1:
+                    skip_1_2: tryte = 0
+                1:
+                    skip_1_2: tryte = 0
+            match index <=> 3:
+                0:
+                    return 97
+                -1:
+                    skip_1_3: tryte = 0
+                1:
+                    skip_1_3: tryte = 0
+            match index <=> 4:
+                0:
+                    return 115
+                -1:
+                    skip_1_4: tryte = 0
+                1:
+                    skip_1_4: tryte = 0
+            match index <=> 5:
+                0:
+                    return 109
+                -1:
+                    skip_1_5: tryte = 0
+                1:
+                    skip_1_5: tryte = 0
+        -1:
+            skip_frag_1: tryte = 0
+        1:
+            skip_frag_1: tryte = 0
+    match fragment_id <=> 2:
+        0:
+            match index <=> 0:
+                0:
+                    return 46
+                -1:
+                    skip_2_0: tryte = 0
+                1:
+                    skip_2_0: tryte = 0
+            match index <=> 1:
+                0:
+                    return 102
+                -1:
+                    skip_2_1: tryte = 0
+                1:
+                    skip_2_1: tryte = 0
+            match index <=> 2:
+                0:
+                    return 117
+                -1:
+                    skip_2_2: tryte = 0
+                1:
+                    skip_2_2: tryte = 0
+            match index <=> 3:
+                0:
+                    return 110
+                -1:
+                    skip_2_3: tryte = 0
+                1:
+                    skip_2_3: tryte = 0
+            match index <=> 4:
+                0:
+                    return 99
+                -1:
+                    skip_2_4: tryte = 0
+                1:
+                    skip_2_4: tryte = 0
+            match index <=> 5:
+                0:
+                    return 116
+                -1:
+                    skip_2_5: tryte = 0
+                1:
+                    skip_2_5: tryte = 0
+            match index <=> 6:
+                0:
+                    return 105
+                -1:
+                    skip_2_6: tryte = 0
+                1:
+                    skip_2_6: tryte = 0
+            match index <=> 7:
+                0:
+                    return 111
+                -1:
+                    skip_2_7: tryte = 0
+                1:
+                    skip_2_7: tryte = 0
+            match index <=> 8:
+                0:
+                    return 110
+                -1:
+                    skip_2_8: tryte = 0
+                1:
+                    skip_2_8: tryte = 0
+        -1:
+            skip_frag_2: tryte = 0
+        1:
+            skip_frag_2: tryte = 0
+    match fragment_id <=> 3:
+        0:
+            match index <=> 0:
+                0:
+                    return 46
+                -1:
+                    skip_3_0: tryte = 0
+                1:
+                    skip_3_0: tryte = 0
+            match index <=> 1:
+                0:
+                    return 112
+                -1:
+                    skip_3_1: tryte = 0
+                1:
+                    skip_3_1: tryte = 0
+            match index <=> 2:
+                0:
+                    return 97
+                -1:
+                    skip_3_2: tryte = 0
+                1:
+                    skip_3_2: tryte = 0
+            match index <=> 3:
+                0:
+                    return 114
+                -1:
+                    skip_3_3: tryte = 0
+                1:
+                    skip_3_3: tryte = 0
+            match index <=> 4:
+                0:
+                    return 97
+                -1:
+                    skip_3_4: tryte = 0
+                1:
+                    skip_3_4: tryte = 0
+            match index <=> 5:
+                0:
+                    return 109
+                -1:
+                    skip_3_5: tryte = 0
+                1:
+                    skip_3_5: tryte = 0
+        -1:
+            skip_frag_3: tryte = 0
+        1:
+            skip_frag_3: tryte = 0
+    match fragment_id <=> 4:
+        0:
+            match index <=> 0:
+                0:
+                    return 46
+                -1:
+                    skip_4_0: tryte = 0
+                1:
+                    skip_4_0: tryte = 0
+            match index <=> 1:
+                0:
+                    return 114
+                -1:
+                    skip_4_1: tryte = 0
+                1:
+                    skip_4_1: tryte = 0
+            match index <=> 2:
+                0:
+                    return 101
+                -1:
+                    skip_4_2: tryte = 0
+                1:
+                    skip_4_2: tryte = 0
+            match index <=> 3:
+                0:
+                    return 103
+                -1:
+                    skip_4_3: tryte = 0
+                1:
+                    skip_4_3: tryte = 0
+            match index <=> 4:
+                0:
+                    return 105
+                -1:
+                    skip_4_4: tryte = 0
+                1:
+                    skip_4_4: tryte = 0
+            match index <=> 5:
+                0:
+                    return 115
+                -1:
+                    skip_4_5: tryte = 0
+                1:
+                    skip_4_5: tryte = 0
+            match index <=> 6:
+                0:
+                    return 116
+                -1:
+                    skip_4_6: tryte = 0
+                1:
+                    skip_4_6: tryte = 0
+            match index <=> 7:
+                0:
+                    return 101
+                -1:
+                    skip_4_7: tryte = 0
+                1:
+                    skip_4_7: tryte = 0
+            match index <=> 8:
+                0:
+                    return 114
+                -1:
+                    skip_4_8: tryte = 0
+                1:
+                    skip_4_8: tryte = 0
+        -1:
+            skip_frag_4: tryte = 0
+        1:
+            skip_frag_4: tryte = 0
+    match fragment_id <=> 5:
+        0:
+            match index <=> 0:
+                0:
+                    return 46
+                -1:
+                    skip_5_0: tryte = 0
+                1:
+                    skip_5_0: tryte = 0
+            match index <=> 1:
+                0:
+                    return 109
+                -1:
+                    skip_5_1: tryte = 0
+                1:
+                    skip_5_1: tryte = 0
+            match index <=> 2:
+                0:
+                    return 101
+                -1:
+                    skip_5_2: tryte = 0
+                1:
+                    skip_5_2: tryte = 0
+            match index <=> 3:
+                0:
+                    return 109
+                -1:
+                    skip_5_3: tryte = 0
+                1:
+                    skip_5_3: tryte = 0
+            match index <=> 4:
+                0:
+                    return 111
+                -1:
+                    skip_5_4: tryte = 0
+                1:
+                    skip_5_4: tryte = 0
+            match index <=> 5:
+                0:
+                    return 114
+                -1:
+                    skip_5_5: tryte = 0
+                1:
+                    skip_5_5: tryte = 0
+            match index <=> 6:
+                0:
+                    return 121
+                -1:
+                    skip_5_6: tryte = 0
+                1:
+                    skip_5_6: tryte = 0
+        -1:
+            skip_frag_5: tryte = 0
+        1:
+            skip_frag_5: tryte = 0
+    match fragment_id <=> 6:
+        0:
+            match index <=> 0:
+                0:
+                    return 46
+                -1:
+                    skip_6_0: tryte = 0
+                1:
+                    skip_6_0: tryte = 0
+            match index <=> 1:
+                0:
+                    return 108
+                -1:
+                    skip_6_1: tryte = 0
+                1:
+                    skip_6_1: tryte = 0
+            match index <=> 2:
+                0:
+                    return 97
+                -1:
+                    skip_6_2: tryte = 0
+                1:
+                    skip_6_2: tryte = 0
+            match index <=> 3:
+                0:
+                    return 98
+                -1:
+                    skip_6_3: tryte = 0
+                1:
+                    skip_6_3: tryte = 0
+            match index <=> 4:
+                0:
+                    return 101
+                -1:
+                    skip_6_4: tryte = 0
+                1:
+                    skip_6_4: tryte = 0
+            match index <=> 5:
+                0:
+                    return 108
+                -1:
+                    skip_6_5: tryte = 0
+                1:
+                    skip_6_5: tryte = 0
+        -1:
+            skip_frag_6: tryte = 0
+        1:
+            skip_frag_6: tryte = 0
+    match fragment_id <=> 7:
+        0:
+            match index <=> 0:
+                0:
+                    return 46
+                -1:
+                    skip_7_0: tryte = 0
+                1:
+                    skip_7_0: tryte = 0
+            match index <=> 1:
+                0:
+                    return 101
+                -1:
+                    skip_7_1: tryte = 0
+                1:
+                    skip_7_1: tryte = 0
+            match index <=> 2:
+                0:
+                    return 110
+                -1:
+                    skip_7_2: tryte = 0
+                1:
+                    skip_7_2: tryte = 0
+            match index <=> 3:
+                0:
+                    return 100
+                -1:
+                    skip_7_3: tryte = 0
+                1:
+                    skip_7_3: tryte = 0
+        -1:
+            skip_frag_7: tryte = 0
+        1:
+            skip_frag_7: tryte = 0
+    match fragment_id <=> 8:
+        0:
+            match index <=> 0:
+                0:
+                    return 32
+                -1:
+                    skip_8_0: tryte = 0
+                1:
+                    skip_8_0: tryte = 0
+        -1:
+            skip_frag_8: tryte = 0
+        1:
+            skip_frag_8: tryte = 0
+    match fragment_id <=> 9:
+        0:
+            match index <=> 0:
+                0:
+                    return 44
+                -1:
+                    skip_9_0: tryte = 0
+                1:
+                    skip_9_0: tryte = 0
+        -1:
+            skip_frag_9: tryte = 0
+        1:
+            skip_frag_9: tryte = 0
+    match fragment_id <=> 10:
+        0:
+            match index <=> 0:
+                0:
+                    return 45
+                -1:
+                    skip_10_0: tryte = 0
+                1:
+                    skip_10_0: tryte = 0
+            match index <=> 1:
+                0:
+                    return 62
+                -1:
+                    skip_10_1: tryte = 0
+                1:
+                    skip_10_1: tryte = 0
+        -1:
+            skip_frag_10: tryte = 0
+        1:
+            skip_frag_10: tryte = 0
+    match fragment_id <=> 11:
+        0:
+            match index <=> 0:
+                0:
+                    return 10
+                -1:
+                    skip_11_0: tryte = 0
+                1:
+                    skip_11_0: tryte = 0
+        -1:
+            skip_frag_11: tryte = 0
+        1:
+            skip_frag_11: tryte = 0
+    return -1
+
+fn check_value(actual: tryte, expected: tryte, err_code: tryte) -> tryte:
+    match actual <=> expected:
+        0:
+            return 0
+        -1:
+            return err_code
+        1:
+            return err_code
+
+fn main() -> tryte:
+    mut output_buffer: tryte[64] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut cursor: tryte = 0
+    capacity: tryte = 64
+
+    # Test unknown fragment length
+    err1: tryte = check_value(fragment_length(99), -1, 1)
+    match err1 <=> 0:
+        0:
+            no_op1: tryte = 0
+        -1:
+            return err1
+        1:
+            return err1
+            
+    # Test unknown fragment byte
+    err2: tryte = check_value(fragment_byte_at(99, 0), -1, 2)
+    match err2 <=> 0:
+        0:
+            no_op2: tryte = 0
+        -1:
+            return err2
+        1:
+            return err2
+
+    # Write .s3asm (fragment_id 1)
+    err3: tryte = check_value(fragment_length(1), 6, 3)
+    match err3 <=> 0:
+        0:
+            no_op3: tryte = 0
+        -1:
+            return err3
+        1:
+            return err3
+
+    output_buffer[cursor] = fragment_byte_at(1, 0)
+    cursor = cursor + 1
+    output_buffer[cursor] = fragment_byte_at(1, 1)
+    cursor = cursor + 1
+    output_buffer[cursor] = fragment_byte_at(1, 2)
+    cursor = cursor + 1
+    output_buffer[cursor] = fragment_byte_at(1, 3)
+    cursor = cursor + 1
+    output_buffer[cursor] = fragment_byte_at(1, 4)
+    cursor = cursor + 1
+    output_buffer[cursor] = fragment_byte_at(1, 5)
+    cursor = cursor + 1
+    
+    err4: tryte = check_value(cursor, 6, 4)
+    match err4 <=> 0:
+        0:
+            no_op4: tryte = 0
+        -1:
+            return err4
+        1:
+            return err4
+
+    # Write space (fragment_id 8)
+    err5: tryte = check_value(fragment_length(8), 1, 5)
+    match err5 <=> 0:
+        0:
+            no_op5: tryte = 0
+        -1:
+            return err5
+        1:
+            return err5
+            
+    output_buffer[cursor] = fragment_byte_at(8, 0)
+    cursor = cursor + 1
+    
+    err6: tryte = check_value(cursor, 7, 6)
+    match err6 <=> 0:
+        0:
+            no_op6: tryte = 0
+        -1:
+            return err6
+        1:
+            return err6
+
+    # Write .end (fragment_id 7)
+    err7: tryte = check_value(fragment_length(7), 4, 7)
+    match err7 <=> 0:
+        0:
+            no_op7: tryte = 0
+        -1:
+            return err7
+        1:
+            return err7
+            
+    output_buffer[cursor] = fragment_byte_at(7, 0)
+    cursor = cursor + 1
+    output_buffer[cursor] = fragment_byte_at(7, 1)
+    cursor = cursor + 1
+    output_buffer[cursor] = fragment_byte_at(7, 2)
+    cursor = cursor + 1
+    output_buffer[cursor] = fragment_byte_at(7, 3)
+    cursor = cursor + 1
+    
+    err8: tryte = check_value(cursor, 11, 8)
+    match err8 <=> 0:
+        0:
+            no_op8: tryte = 0
+        -1:
+            return err8
+        1:
+            return err8
+
+    # Write newline (fragment_id 11)
+    err9: tryte = check_value(fragment_length(11), 1, 9)
+    match err9 <=> 0:
+        0:
+            no_op9: tryte = 0
+        -1:
+            return err9
+        1:
+            return err9
+            
+    output_buffer[cursor] = fragment_byte_at(11, 0)
+    cursor = cursor + 1
+    
+    err10: tryte = check_value(cursor, 12, 10)
+    match err10 <=> 0:
+        0:
+            no_op10: tryte = 0
+        -1:
+            return err10
+        1:
+            return err10
+
+    # Validate out-of-bounds byte index
+    err11: tryte = check_value(fragment_byte_at(7, 4), -1, 11)
+    match err11 <=> 0:
+        0:
+            no_op11: tryte = 0
+        -1:
+            return err11
+        1:
+            return err11
+            
+    err12: tryte = check_value(fragment_byte_at(7, -1), -1, 12)
+    match err12 <=> 0:
+        0:
+            no_op12: tryte = 0
+        -1:
+            return err12
+        1:
+            return err12
+
+    # Validate contents
+    err13: tryte = check_value(output_buffer[0], 46, 13)
+    match err13 <=> 0:
+        0:
+            no_op13: tryte = 0
+        -1:
+            return err13
+        1:
+            return err13
+            
+    err14: tryte = check_value(output_buffer[1], 115, 14)
+    match err14 <=> 0:
+        0:
+            no_op14: tryte = 0
+        -1:
+            return err14
+        1:
+            return err14
+            
+    err15: tryte = check_value(output_buffer[2], 51, 15)
+    match err15 <=> 0:
+        0:
+            no_op15: tryte = 0
+        -1:
+            return err15
+        1:
+            return err15
+            
+    err16: tryte = check_value(output_buffer[3], 97, 16)
+    match err16 <=> 0:
+        0:
+            no_op16: tryte = 0
+        -1:
+            return err16
+        1:
+            return err16
+            
+    err17: tryte = check_value(output_buffer[4], 115, 17)
+    match err17 <=> 0:
+        0:
+            no_op17: tryte = 0
+        -1:
+            return err17
+        1:
+            return err17
+            
+    err18: tryte = check_value(output_buffer[5], 109, 18)
+    match err18 <=> 0:
+        0:
+            no_op18: tryte = 0
+        -1:
+            return err18
+        1:
+            return err18
+
+    # space
+    err19: tryte = check_value(output_buffer[6], 32, 19)
+    match err19 <=> 0:
+        0:
+            no_op19: tryte = 0
+        -1:
+            return err19
+        1:
+            return err19
+
+    # .end
+    err20: tryte = check_value(output_buffer[7], 46, 20)
+    match err20 <=> 0:
+        0:
+            no_op20: tryte = 0
+        -1:
+            return err20
+        1:
+            return err20
+            
+    err21: tryte = check_value(output_buffer[8], 101, 21)
+    match err21 <=> 0:
+        0:
+            no_op21: tryte = 0
+        -1:
+            return err21
+        1:
+            return err21
+            
+    err22: tryte = check_value(output_buffer[9], 110, 22)
+    match err22 <=> 0:
+        0:
+            no_op22: tryte = 0
+        -1:
+            return err22
+        1:
+            return err22
+            
+    err23: tryte = check_value(output_buffer[10], 100, 23)
+    match err23 <=> 0:
+        0:
+            no_op23: tryte = 0
+        -1:
+            return err23
+        1:
+            return err23
+
+    # newline
+    err24: tryte = check_value(output_buffer[11], 10, 24)
+    match err24 <=> 0:
+        0:
+            no_op24: tryte = 0
+        -1:
+            return err24
+        1:
+            return err24
+
+    return 0
+
