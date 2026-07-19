@@ -395,8 +395,8 @@ def test_s3_program_check_includes_renderer_line_content_encoding_model() -> Non
         "examples/self_hosting/assembly_renderer_line_encodings.s3"
         in completed.stdout
     )
-    assert "s3 program check: checked 20 program(s)" in completed.stdout
-    assert "s3 program check: hosted execution checked 17 program(s)" in completed.stdout
+    assert "s3 program check: checked 21 program(s)" in completed.stdout
+    assert "s3 program check: hosted execution checked 18 program(s)" in completed.stdout
     assert "hosted expected return: 0" in completed.stdout
     assert "hosted actual return: 0" in completed.stdout
     assert completed.stderr == ""

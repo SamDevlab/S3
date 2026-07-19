@@ -1,0 +1,1933 @@
+# Fragment table: structural directive names (7 fragments, 49 bytes)
+fn fragment_byte(id: tryte, index: tryte) -> tryte:
+    match id <=> 1:
+        0:
+            match index <=> 0:
+                0:
+                    return 46
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 1:
+                0:
+                    return 115
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 2:
+                0:
+                    return 51
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 3:
+                0:
+                    return 97
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 4:
+                0:
+                    return 115
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 5:
+                0:
+                    return 109
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            return 0
+        -1:
+            skip_id_1: tryte = 0
+        1:
+            skip_id_1: tryte = 0
+    match id <=> 2:
+        0:
+            match index <=> 0:
+                0:
+                    return 46
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 1:
+                0:
+                    return 102
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 2:
+                0:
+                    return 117
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 3:
+                0:
+                    return 110
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 4:
+                0:
+                    return 99
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 5:
+                0:
+                    return 116
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 6:
+                0:
+                    return 105
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 7:
+                0:
+                    return 111
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 8:
+                0:
+                    return 110
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            return 0
+        -1:
+            skip_id_2: tryte = 0
+        1:
+            skip_id_2: tryte = 0
+    match id <=> 3:
+        0:
+            match index <=> 0:
+                0:
+                    return 46
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 1:
+                0:
+                    return 112
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 2:
+                0:
+                    return 97
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 3:
+                0:
+                    return 114
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 4:
+                0:
+                    return 97
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 5:
+                0:
+                    return 109
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            return 0
+        -1:
+            skip_id_3: tryte = 0
+        1:
+            skip_id_3: tryte = 0
+    match id <=> 4:
+        0:
+            match index <=> 0:
+                0:
+                    return 46
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 1:
+                0:
+                    return 114
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 2:
+                0:
+                    return 101
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 3:
+                0:
+                    return 103
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 4:
+                0:
+                    return 105
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 5:
+                0:
+                    return 115
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 6:
+                0:
+                    return 116
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 7:
+                0:
+                    return 101
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 8:
+                0:
+                    return 114
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            return 0
+        -1:
+            skip_id_4: tryte = 0
+        1:
+            skip_id_4: tryte = 0
+    match id <=> 5:
+        0:
+            match index <=> 0:
+                0:
+                    return 46
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 1:
+                0:
+                    return 108
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 2:
+                0:
+                    return 97
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 3:
+                0:
+                    return 98
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 4:
+                0:
+                    return 101
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 5:
+                0:
+                    return 108
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            return 0
+        -1:
+            skip_id_5: tryte = 0
+        1:
+            skip_id_5: tryte = 0
+    match id <=> 6:
+        0:
+            match index <=> 0:
+                0:
+                    return 46
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 1:
+                0:
+                    return 101
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 2:
+                0:
+                    return 110
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 3:
+                0:
+                    return 100
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            return 0
+        -1:
+            skip_id_6: tryte = 0
+        1:
+            skip_id_6: tryte = 0
+    match id <=> 7:
+        0:
+            match index <=> 0:
+                0:
+                    return 59
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 1:
+                0:
+                    return 32
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 2:
+                0:
+                    return 115
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 3:
+                0:
+                    return 111
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 4:
+                0:
+                    return 117
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 5:
+                0:
+                    return 114
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 6:
+                0:
+                    return 99
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 7:
+                0:
+                    return 101
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 8:
+                0:
+                    return 61
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            return 0
+        -1:
+            skip_id_7: tryte = 0
+        1:
+            skip_id_7: tryte = 0
+    return 0
+
+fn fragment_length(id: tryte) -> tryte:
+    match id <=> 1:
+        0:
+            return 6
+        -1:
+            skip_len_1: tryte = 0
+        1:
+            skip_len_1: tryte = 0
+    match id <=> 2:
+        0:
+            return 9
+        -1:
+            skip_len_2: tryte = 0
+        1:
+            skip_len_2: tryte = 0
+    match id <=> 3:
+        0:
+            return 6
+        -1:
+            skip_len_3: tryte = 0
+        1:
+            skip_len_3: tryte = 0
+    match id <=> 4:
+        0:
+            return 9
+        -1:
+            skip_len_4: tryte = 0
+        1:
+            skip_len_4: tryte = 0
+    match id <=> 5:
+        0:
+            return 6
+        -1:
+            skip_len_5: tryte = 0
+        1:
+            skip_len_5: tryte = 0
+    match id <=> 6:
+        0:
+            return 4
+        -1:
+            skip_len_6: tryte = 0
+        1:
+            skip_len_6: tryte = 0
+    match id <=> 7:
+        0:
+            return 9
+        -1:
+            skip_len_7: tryte = 0
+        1:
+            skip_len_7: tryte = 0
+    return 0
+
+# Symbol table: identifiers (7 symbols, 23 bytes)
+fn symbol_byte(id: tryte, index: tryte) -> tryte:
+    match id <=> 1:
+        0:
+            match index <=> 0:
+                0:
+                    return 97
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 1:
+                0:
+                    return 100
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 2:
+                0:
+                    return 100
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            return 0
+        -1:
+            skip_id_1: tryte = 0
+        1:
+            skip_id_1: tryte = 0
+    match id <=> 2:
+        0:
+            match index <=> 0:
+                0:
+                    return 109
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 1:
+                0:
+                    return 97
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 2:
+                0:
+                    return 105
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 3:
+                0:
+                    return 110
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            return 0
+        -1:
+            skip_id_2: tryte = 0
+        1:
+            skip_id_2: tryte = 0
+    match id <=> 3:
+        0:
+            match index <=> 0:
+                0:
+                    return 101
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 1:
+                0:
+                    return 110
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 2:
+                0:
+                    return 116
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 3:
+                0:
+                    return 114
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 4:
+                0:
+                    return 121
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            return 0
+        -1:
+            skip_id_3: tryte = 0
+        1:
+            skip_id_3: tryte = 0
+    match id <=> 4:
+        0:
+            match index <=> 0:
+                0:
+                    return 114
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 1:
+                0:
+                    return 48
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            return 0
+        -1:
+            skip_id_4: tryte = 0
+        1:
+            skip_id_4: tryte = 0
+    match id <=> 5:
+        0:
+            match index <=> 0:
+                0:
+                    return 114
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 1:
+                0:
+                    return 49
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            return 0
+        -1:
+            skip_id_5: tryte = 0
+        1:
+            skip_id_5: tryte = 0
+    match id <=> 6:
+        0:
+            match index <=> 0:
+                0:
+                    return 114
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 1:
+                0:
+                    return 50
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            return 0
+        -1:
+            skip_id_6: tryte = 0
+        1:
+            skip_id_6: tryte = 0
+    match id <=> 7:
+        0:
+            match index <=> 0:
+                0:
+                    return 116
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 1:
+                0:
+                    return 114
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 2:
+                0:
+                    return 121
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 3:
+                0:
+                    return 116
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 4:
+                0:
+                    return 101
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            return 0
+        -1:
+            skip_id_7: tryte = 0
+        1:
+            skip_id_7: tryte = 0
+    return 0
+
+fn symbol_length(id: tryte) -> tryte:
+    match id <=> 1:
+        0:
+            return 3
+        -1:
+            skip_len_1: tryte = 0
+        1:
+            skip_len_1: tryte = 0
+    match id <=> 2:
+        0:
+            return 4
+        -1:
+            skip_len_2: tryte = 0
+        1:
+            skip_len_2: tryte = 0
+    match id <=> 3:
+        0:
+            return 5
+        -1:
+            skip_len_3: tryte = 0
+        1:
+            skip_len_3: tryte = 0
+    match id <=> 4:
+        0:
+            return 2
+        -1:
+            skip_len_4: tryte = 0
+        1:
+            skip_len_4: tryte = 0
+    match id <=> 5:
+        0:
+            return 2
+        -1:
+            skip_len_5: tryte = 0
+        1:
+            skip_len_5: tryte = 0
+    match id <=> 6:
+        0:
+            return 2
+        -1:
+            skip_len_6: tryte = 0
+        1:
+            skip_len_6: tryte = 0
+    match id <=> 7:
+        0:
+            return 5
+        -1:
+            skip_len_7: tryte = 0
+        1:
+            skip_len_7: tryte = 0
+    return 0
+
+# Opcode table: instruction names (4 opcodes, 19 bytes)
+fn opcode_byte(id: tryte, index: tryte) -> tryte:
+    match id <=> 1:
+        0:
+            match index <=> 0:
+                0:
+                    return 84
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 1:
+                0:
+                    return 65
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 2:
+                0:
+                    return 68
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 3:
+                0:
+                    return 68
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            return 0
+        -1:
+            skip_id_1: tryte = 0
+        1:
+            skip_id_1: tryte = 0
+    match id <=> 2:
+        0:
+            match index <=> 0:
+                0:
+                    return 84
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 1:
+                0:
+                    return 82
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 2:
+                0:
+                    return 69
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 3:
+                0:
+                    return 84
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            return 0
+        -1:
+            skip_id_2: tryte = 0
+        1:
+            skip_id_2: tryte = 0
+    match id <=> 3:
+        0:
+            match index <=> 0:
+                0:
+                    return 84
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 1:
+                0:
+                    return 67
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 2:
+                0:
+                    return 79
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 3:
+                0:
+                    return 78
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 4:
+                0:
+                    return 83
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 5:
+                0:
+                    return 84
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            return 0
+        -1:
+            skip_id_3: tryte = 0
+        1:
+            skip_id_3: tryte = 0
+    match id <=> 4:
+        0:
+            match index <=> 0:
+                0:
+                    return 84
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 1:
+                0:
+                    return 67
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 2:
+                0:
+                    return 65
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 3:
+                0:
+                    return 76
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            match index <=> 4:
+                0:
+                    return 76
+                -1:
+                    skip: tryte = 0
+                1:
+                    skip: tryte = 0
+            return 0
+        -1:
+            skip_id_4: tryte = 0
+        1:
+            skip_id_4: tryte = 0
+    return 0
+
+fn opcode_length(id: tryte) -> tryte:
+    match id <=> 1:
+        0:
+            return 4
+        -1:
+            skip_len_1: tryte = 0
+        1:
+            skip_len_1: tryte = 0
+    match id <=> 2:
+        0:
+            return 4
+        -1:
+            skip_len_2: tryte = 0
+        1:
+            skip_len_2: tryte = 0
+    match id <=> 3:
+        0:
+            return 6
+        -1:
+            skip_len_3: tryte = 0
+        1:
+            skip_len_3: tryte = 0
+    match id <=> 4:
+        0:
+            return 5
+        -1:
+            skip_len_4: tryte = 0
+        1:
+            skip_len_4: tryte = 0
+    return 0
+
+# Decimal formatter: converts 0-99 to ASCII digits
+fn decimal_tens_byte(n: tryte) -> tryte:
+    match n <=> 9:
+        -1:
+            return 48
+        0:
+            return 48
+        1:
+            return decimal_tens_byte(n - 10) + 1
+
+fn decimal_ones_byte(n: tryte) -> tryte:
+    match n <=> 9:
+        -1:
+            match n <=> 0:
+                0:
+                    return 48
+                -1:
+                    skip_digit_0: tryte = 0
+                1:
+                    skip_digit_0: tryte = 0
+            match n <=> 1:
+                0:
+                    return 49
+                -1:
+                    skip_digit_1: tryte = 0
+                1:
+                    skip_digit_1: tryte = 0
+            match n <=> 2:
+                0:
+                    return 50
+                -1:
+                    skip_digit_2: tryte = 0
+                1:
+                    skip_digit_2: tryte = 0
+            match n <=> 3:
+                0:
+                    return 51
+                -1:
+                    skip_digit_3: tryte = 0
+                1:
+                    skip_digit_3: tryte = 0
+            match n <=> 4:
+                0:
+                    return 52
+                -1:
+                    skip_digit_4: tryte = 0
+                1:
+                    skip_digit_4: tryte = 0
+            match n <=> 5:
+                0:
+                    return 53
+                -1:
+                    skip_digit_5: tryte = 0
+                1:
+                    skip_digit_5: tryte = 0
+            match n <=> 6:
+                0:
+                    return 54
+                -1:
+                    skip_digit_6: tryte = 0
+                1:
+                    skip_digit_6: tryte = 0
+            match n <=> 7:
+                0:
+                    return 55
+                -1:
+                    skip_digit_7: tryte = 0
+                1:
+                    skip_digit_7: tryte = 0
+            match n <=> 8:
+                0:
+                    return 56
+                -1:
+                    skip_digit_8: tryte = 0
+                1:
+                    skip_digit_8: tryte = 0
+            match n <=> 9:
+                0:
+                    return 57
+                -1:
+                    skip_digit_9: tryte = 0
+                1:
+                    skip_digit_9: tryte = 0
+            return 48
+        0:
+            return 57
+        1:
+            return decimal_ones_byte(n - 10)
+
+fn decimal_length(n: tryte) -> tryte:
+    match n <=> 9:
+        -1:
+            return 1
+        0:
+            return 1
+        1:
+            return 2
+
+fn main() -> tryte:
+    mut buffer_low: tryte[300] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut buffer_high: tryte[300] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut cursor_low: tryte = 0
+    mut cursor_high: tryte = 0
+
+    # Line 1: .s3asm 0.5.0
+    buffer_low[cursor_low] = fragment_byte(1, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(1, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(1, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(1, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(1, 4)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(1, 5)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = decimal_ones_byte(0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 46
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = decimal_ones_byte(5)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 46
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = decimal_ones_byte(0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 10
+    cursor_low = cursor_low + 1
+    # Line 2: blank
+    buffer_low[cursor_low] = 10
+    cursor_low = cursor_low + 1
+    # Line 3: .function add -> tryte
+    buffer_low[cursor_low] = fragment_byte(2, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(2, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(2, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(2, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(2, 4)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(2, 5)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(2, 6)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(2, 7)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(2, 8)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(1, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(1, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(1, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 45
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 62
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 4)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 10
+    cursor_low = cursor_low + 1
+    # Line 4: .param r0, tryte
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(3, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(3, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(3, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(3, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(3, 4)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(3, 5)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(4, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(4, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 44
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 4)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 10
+    cursor_low = cursor_low + 1
+    # Line 5: .param r1, tryte
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(3, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(3, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(3, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(3, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(3, 4)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(3, 5)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(5, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(5, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 44
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 4)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 10
+    cursor_low = cursor_low + 1
+    # Line 6: .register r2, tryte
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 4)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 5)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 6)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 7)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 8)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(6, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(6, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 44
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 4)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 10
+    cursor_low = cursor_low + 1
+    # Line 7: .label entry
+    buffer_low[cursor_low] = fragment_byte(5, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(5, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(5, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(5, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(5, 4)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(5, 5)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(3, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(3, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(3, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(3, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(3, 4)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 10
+    cursor_low = cursor_low + 1
+    # Line 8: TADD r2, r0, r1 ; source=2:14:50
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = opcode_byte(1, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = opcode_byte(1, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = opcode_byte(1, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = opcode_byte(1, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(6, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(6, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 44
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(4, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(4, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 44
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(5, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(5, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(7, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(7, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(7, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(7, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(7, 4)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(7, 5)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(7, 6)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(7, 7)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(7, 8)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = decimal_ones_byte(2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 58
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = decimal_tens_byte(14)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = decimal_ones_byte(14)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 58
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = decimal_tens_byte(50)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = decimal_ones_byte(50)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 10
+    cursor_low = cursor_low + 1
+    # Line 9: TRET r2 ; source=2:5:41
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = opcode_byte(2, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = opcode_byte(2, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = opcode_byte(2, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = opcode_byte(2, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(6, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(6, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(7, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(7, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(7, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(7, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(7, 4)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(7, 5)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(7, 6)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(7, 7)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(7, 8)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = decimal_ones_byte(2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 58
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = decimal_ones_byte(5)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 58
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = decimal_tens_byte(41)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = decimal_ones_byte(41)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 10
+    cursor_low = cursor_low + 1
+    # Line 10: .end
+    buffer_low[cursor_low] = fragment_byte(6, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(6, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(6, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(6, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 10
+    cursor_low = cursor_low + 1
+    # Line 11: blank
+    buffer_low[cursor_low] = 10
+    cursor_low = cursor_low + 1
+    # Line 12: .function main -> tryte
+    buffer_low[cursor_low] = fragment_byte(2, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(2, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(2, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(2, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(2, 4)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(2, 5)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(2, 6)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(2, 7)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(2, 8)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(2, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(2, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(2, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(2, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 45
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 62
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 4)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 10
+    cursor_low = cursor_low + 1
+    # Line 13: .register r0, tryte
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 4)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 5)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 6)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 7)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 8)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(4, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(4, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 44
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 4)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 10
+    cursor_low = cursor_low + 1
+    # Line 14: .register r1, tryte
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 4)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 5)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 6)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 7)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 8)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(5, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(5, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 44
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 4)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 10
+    cursor_low = cursor_low + 1
+    # Line 15: .register r2, tryte
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 4)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 5)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 6)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 7)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(4, 8)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(6, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(6, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 44
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(7, 4)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 10
+    cursor_low = cursor_low + 1
+    # Line 16: .label entry
+    buffer_low[cursor_low] = fragment_byte(5, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(5, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(5, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(5, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(5, 4)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = fragment_byte(5, 5)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 32
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(3, 0)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(3, 1)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(3, 2)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(3, 3)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = symbol_byte(3, 4)
+    cursor_low = cursor_low + 1
+    buffer_low[cursor_low] = 10
+    cursor_low = cursor_low + 1
+    # Line 17: TCONST r0, 10 ; source=5:16:90
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = opcode_byte(3, 0)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = opcode_byte(3, 1)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = opcode_byte(3, 2)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = opcode_byte(3, 3)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = opcode_byte(3, 4)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = opcode_byte(3, 5)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = symbol_byte(4, 0)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = symbol_byte(4, 1)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 44
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = decimal_tens_byte(10)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = decimal_ones_byte(10)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 0)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 1)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 2)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 3)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 4)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 5)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 6)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 7)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 8)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = decimal_ones_byte(5)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 58
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = decimal_tens_byte(16)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = decimal_ones_byte(16)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 58
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = decimal_tens_byte(90)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = decimal_ones_byte(90)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 10
+    cursor_high = cursor_high + 1
+    # Line 18: TCONST r1, 5 ; source=5:20:94
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = opcode_byte(3, 0)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = opcode_byte(3, 1)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = opcode_byte(3, 2)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = opcode_byte(3, 3)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = opcode_byte(3, 4)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = opcode_byte(3, 5)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = symbol_byte(5, 0)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = symbol_byte(5, 1)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 44
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = decimal_ones_byte(5)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 0)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 1)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 2)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 3)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 4)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 5)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 6)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 7)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 8)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = decimal_ones_byte(5)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 58
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = decimal_tens_byte(20)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = decimal_ones_byte(20)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 58
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = decimal_tens_byte(94)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = decimal_ones_byte(94)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 10
+    cursor_high = cursor_high + 1
+    # Line 19: TCALL r2, add, r0, r1 ; source=5:12:86
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = opcode_byte(4, 0)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = opcode_byte(4, 1)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = opcode_byte(4, 2)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = opcode_byte(4, 3)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = opcode_byte(4, 4)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = symbol_byte(6, 0)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = symbol_byte(6, 1)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 44
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = symbol_byte(1, 0)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = symbol_byte(1, 1)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = symbol_byte(1, 2)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 44
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = symbol_byte(4, 0)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = symbol_byte(4, 1)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 44
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = symbol_byte(5, 0)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = symbol_byte(5, 1)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 0)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 1)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 2)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 3)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 4)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 5)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 6)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 7)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 8)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = decimal_ones_byte(5)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 58
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = decimal_tens_byte(12)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = decimal_ones_byte(12)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 58
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = decimal_tens_byte(86)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = decimal_ones_byte(86)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 10
+    cursor_high = cursor_high + 1
+    # Line 20: TRET r2 ; source=5:5:79
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = opcode_byte(2, 0)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = opcode_byte(2, 1)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = opcode_byte(2, 2)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = opcode_byte(2, 3)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = symbol_byte(6, 0)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = symbol_byte(6, 1)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 32
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 0)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 1)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 2)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 3)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 4)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 5)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 6)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 7)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(7, 8)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = decimal_ones_byte(5)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 58
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = decimal_ones_byte(5)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 58
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = decimal_tens_byte(79)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = decimal_ones_byte(79)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 10
+    cursor_high = cursor_high + 1
+    # Line 21: .end
+    buffer_high[cursor_high] = fragment_byte(6, 0)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(6, 1)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(6, 2)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = fragment_byte(6, 3)
+    cursor_high = cursor_high + 1
+    buffer_high[cursor_high] = 10
+    cursor_high = cursor_high + 1
+
+    return 0

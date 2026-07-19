@@ -145,6 +145,14 @@ PROGRAMS = (
     S3Program(
         REPO_ROOT
         / "examples"
+        / "self_hosting"
+        / "assembly_renderer_simple_call_text.s3",
+        "Assembly renderer simple_call textual output via structural primitives",
+        hosted_expected_return=0,
+    ),
+    S3Program(
+        REPO_ROOT
+        / "examples"
         / "performance"
         / "segmented_prime_box.s3",
         "Segmented prime box",

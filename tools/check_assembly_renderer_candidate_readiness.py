@@ -62,8 +62,8 @@ READINESS_STEPS = (
         ("tools/s3_program_check.py", "check"),
         0,
         stdout_contains=(
-            "s3 program check: checked 20 program(s)",
-            "s3 program check: hosted execution checked 17 program(s)",
+            "s3 program check: checked 21 program(s)",
+            "s3 program check: hosted execution checked 18 program(s)",
         ),
     ),
     ReadinessStep(
