@@ -78,7 +78,7 @@ class Base300BigInt:
         if carry:
             out.append(carry)
         return Base300BigInt(out), carry_count
-        
+
     def add_small(self, val: int) -> 'Base300BigInt':
         # Add a small integer (must fit in single logical op initially)
         out = list(self.limbs)
@@ -90,7 +90,7 @@ class Base300BigInt:
             else:
                 s = carry
                 out.append(0)
-            
+
             out[i] = s % self.BASE
             carry = s // self.BASE
             i += 1
@@ -114,7 +114,7 @@ class Base300BigInt:
                 out[i] = diff
                 borrow = 0
         return Base300BigInt(out), borrow_count
-        
+
     def sub_small(self, val: int) -> 'Base300BigInt':
         if val == 0:
             return self.copy()
@@ -299,7 +299,7 @@ class BinaryLimbBigInt:
         while True:
             # Check if current value is smaller than or equal to M_p
             # We will just do a folding pass. If the upper part is 0, we can stop,
-            # except if it's exactly 2^p - 1 which can be reduced to 0 but standard 
+            # except if it's exactly 2^p - 1 which can be reduced to 0 but standard
             # implementations often leave it or check at the end. We'll fold until upper is 0.
             if len(current.limbs) <= limb_idx:
                 break
@@ -307,7 +307,7 @@ class BinaryLimbBigInt:
             # Extract upper bits
             upper_limbs = []
             lower_limbs = current.limbs[:limb_idx]
-            
+
             if bit_idx == 0:
                 upper_limbs = current.limbs[limb_idx:]
             else:
@@ -315,7 +315,7 @@ class BinaryLimbBigInt:
                 mask_lower = (1 << bit_idx) - 1
                 # Lower part retains up to limb_idx + 1 (masked)
                 lower_limbs.append(current.limbs[limb_idx] & mask_lower)
-                
+
                 # Upper part needs shifting
                 carry_shift = 0
                 for i in range(limb_idx, len(current.limbs)):
@@ -328,32 +328,157 @@ class BinaryLimbBigInt:
                         bits_to_pull = next_val & ((1 << bit_idx) - 1)
                         shifted_val |= bits_to_pull << (self.BITS - bit_idx)
                     upper_limbs.append(shifted_val)
-                    
+
             upper = BinaryLimbBigInt(upper_limbs)
             lower = BinaryLimbBigInt(lower_limbs)
-            
+
             if len(upper.limbs) == 1 and upper.limbs[0] == 0:
                 current = lower
                 break
-                
+
             current, _ = lower.add(upper)
 
-        # After folding, current could still be exactly 2^p - 1. 
+        # After folding, current could still be exactly 2^p - 1.
         # But for Lucas-Lehmer it's typically fine, we can do a final subtract if needed.
         # Let's check if it's exactly 2^p - 1
-        
+
         # 2^p - 1 representation
         mp_limbs = [(1 << self.BITS) - 1] * limb_idx
         if bit_idx > 0:
             mp_limbs.append((1 << bit_idx) - 1)
         mp = BinaryLimbBigInt(mp_limbs)
-        
+
         if current == mp:
             return BinaryLimbBigInt([0])
         elif mp < current:
             current, _ = current.sub(mp)
-            
+
         return current
+
+
+def square_symmetric(limbs: list[int], mask: int, bits: int) -> list[int]:
+    """
+    Computes square using symmetry: a[i] * a[j] = a[j] * a[i].
+    Only computes upper triangle (i <= j) and doubles off-diagonal terms.
+    Carry is resolved after full accumulation.
+    """
+    L = len(limbs)
+    out = [0] * (2 * L)
+    for i in range(L):
+        # Diagonal term: a[i] * a[i]
+        out[2 * i] += limbs[i] * limbs[i]
+
+        # Off-diagonal terms: 2 * a[i] * a[j] for j > i
+        for j in range(i + 1, L):
+            out[i + j] += 2 * limbs[i] * limbs[j]
+
+    # Final carry propagation
+    carry = 0
+    for k in range(2 * L):
+        s = out[k] + carry
+        out[k] = s & mask
+        carry = s >> bits
+    while carry > 0:
+        out.append(carry & mask)
+        carry >>= bits
+    return out
+
+
+def square_tiled(limbs: list[int], tile_size: int, mask: int, bits: int) -> list[int]:
+    """
+    Computes square using tiling. Processes tiles where tile_j >= tile_i
+    to exploit symmetry. Each tile produces partial diagonals.
+    """
+    L = len(limbs)
+    out = [0] * (2 * L)
+
+    num_tiles = (L + tile_size - 1) // tile_size
+
+    for tile_i in range(num_tiles):
+        i0 = tile_i * tile_size
+        i1 = min(i0 + tile_size, L)
+
+        for tile_j in range(tile_i, num_tiles):
+            j0 = tile_j * tile_size
+            j1 = min(j0 + tile_size, L)
+
+            # Compute tile products
+            for i in range(i0, i1):
+                limb_i = limbs[i]
+                start_j = j0 if tile_j > tile_i else i
+                for j in range(start_j, j1):
+                    mult = 2 if i != j else 1
+                    out[i + j] += mult * limb_i * limbs[j]
+
+    # Final carry propagation
+    carry = 0
+    for k in range(2 * L):
+        s = out[k] + carry
+        out[k] = s & mask
+        carry = s >> bits
+    while carry > 0:
+        out.append(carry & mask)
+        carry >>= bits
+    return out
+
+
+def square_tiled_worker(args: tuple) -> tuple:
+    """
+    Worker function for parallel tiled square.
+    Args: (limbs, tile_coords, tile_size, mask, bits)
+    Returns: (start_diag, partial_values, metrics)
+    """
+    limbs, tile_coords, tile_size, mask, bits = args
+    L = len(limbs)
+    partials = {}
+
+    for tile_i, tile_j in tile_coords:
+        i0 = tile_i * tile_size
+        i1 = min(i0 + tile_size, L)
+        j0 = tile_j * tile_size
+        j1 = min(j0 + tile_size, L)
+
+        local_partials = {}
+        for i in range(i0, i1):
+            limb_i = limbs[i]
+            start_j = j0 if tile_j > tile_i else i
+            for j in range(start_j, j1):
+                k = i + j
+                mult = 2 if i != j else 1
+                val = mult * limb_i * limbs[j]
+                if k in local_partials:
+                    local_partials[k] += val
+                else:
+                    local_partials[k] = val
+
+        for k, v in local_partials.items():
+            if k in partials:
+                partials[k] += v
+            else:
+                partials[k] = v
+
+    return partials
+
+
+def combine_tiled_partials(partials_list: list[dict], L: int, mask: int, bits: int) -> list[int]:
+    """
+    Combines partial results from multiple workers and resolves carries.
+    """
+    out = [0] * (2 * L)
+    for partials in partials_list:
+        for k, v in partials.items():
+            out[k] += v
+
+    # Final carry propagation
+    carry = 0
+    for k in range(2 * L):
+        s = out[k] + carry
+        out[k] = s & mask
+        carry = s >> bits
+    while carry > 0:
+        out.append(carry & mask)
+        carry >>= bits
+    return out
 
 
 def square_segment(limbs: list[int], start_i: int, end_i: int, full_limbs: list[int], mask: int, bits: int) -> list[int]:
@@ -380,23 +505,23 @@ def combine_segments(segments: list[list[int]], mask: int, bits: int) -> list[in
     """
     if not segments:
         return [0]
-    
+
     max_len = max(len(s) for s in segments)
     out = [0] * max_len
-    
+
     for seg in segments:
         for i in range(len(seg)):
             out[i] += seg[i]
-            
+
     # Resolve carries
     carry = 0
     for i in range(max_len):
         s = out[i] + carry
         out[i] = s & mask
         carry = s >> bits
-        
+
     while carry > 0:
         out.append(carry & mask)
         carry >>= bits
-        
+
     return out
