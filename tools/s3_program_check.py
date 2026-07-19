@@ -134,6 +134,14 @@ PROGRAMS = (
         "Assembly renderer static text writer",
         hosted_expected_return=0,
     ),
+    S3Program(
+        REPO_ROOT
+        / "examples"
+        / "performance"
+        / "segmented_prime_box.s3",
+        "Segmented prime box",
+        hosted_expected_return=0,
+    ),
 )
 
 
