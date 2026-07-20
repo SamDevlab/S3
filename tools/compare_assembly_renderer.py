@@ -41,12 +41,18 @@ BLOCKED_MESSAGE = (
     "assembly renderer comparison is blocked: S3 renderer is not implemented"
 )
 EXPECTED_CANDIDATE_PATH = "examples/self_hosting/assembly_renderer_stub.s3"
-FIRST_S3_RENDERER = "examples/self_hosting/assembly_renderer_first_text.s3"
-FIRST_S3_GOLDEN = "tests/golden/inspect/first.assembly.txt"
-SIMPLE_CALL_S3_RENDERER = "examples/self_hosting/assembly_renderer_simple_call_text.s3"
-SIMPLE_CALL_S3_GOLDEN = "tests/golden/inspect/simple_call.assembly.txt"
-SIGN_S3_RENDERER = "examples/self_hosting/assembly_renderer_sign_text.s3"
-SIGN_S3_GOLDEN = "tests/golden/inspect/sign.assembly.txt"
+from tools.s3_renderer_contract import (
+    FIXTURE_METADATA,
+    _capture_fixture_output,
+    _git_blob_bytes,
+)
+
+FIRST_S3_RENDERER = FIXTURE_METADATA["first"].s3_path
+FIRST_S3_GOLDEN = FIXTURE_METADATA["first"].golden_path
+SIMPLE_CALL_S3_RENDERER = FIXTURE_METADATA["simple_call"].s3_path
+SIMPLE_CALL_S3_GOLDEN = FIXTURE_METADATA["simple_call"].golden_path
+SIGN_S3_RENDERER = FIXTURE_METADATA["sign"].s3_path
+SIGN_S3_GOLDEN = FIXTURE_METADATA["sign"].golden_path
 EXPECTED_ENTRYPOINT = "main"
 EXPECTED_STATUS_FUNCTION = "renderer_candidate_status"
 EXPECTED_EXECUTION_MODE = "hosted"
@@ -2282,19 +2288,6 @@ def candidate_run() -> int:
     return 0
 
 
-def _git_blob_bytes(relative_path: str) -> bytes:
-    """Return canonical bytes of a tracked file via git blob."""
-    import subprocess
-    result = subprocess.run(
-        ["git", "show", f"HEAD:{relative_path}"],
-        capture_output=True,
-        check=False,
-    )
-    if result.returncode != 0:
-        raise FileNotFoundError(f"git blob not found: {relative_path}")
-    return result.stdout
-
-
 def _render_s3_fixture(renderer_path: str, golden_path_str: str, name: str, buffer_count: int = 3) -> int:
     path = REPO_ROOT / renderer_path
     if not path.is_file():
@@ -2304,29 +2297,12 @@ def _render_s3_fixture(renderer_path: str, golden_path_str: str, name: str, buff
 
     source = path.read_text(encoding="utf-8")
     try:
-        from bootstrap.s3.pipeline import run_source_with_buffer_capture
-
-        result, capture = run_source_with_buffer_capture(source)
+        out = _capture_fixture_output(source, buffer_count)
     except Exception as error:
         print(f"S3 {name} renderer: execution failed")
         print(f"  error: {error}")
         return 1
 
-    if result != 0:
-        print(f"S3 {name} renderer: unexpected return")
-        print(f"  expected: 0")
-        print(f"  actual: {result}")
-        return 1
-
-    memory = capture[-1]
-    out = bytearray()
-    for buf_idx in range(buffer_count):
-        buf = memory.get(buf_idx, [])
-        for v in buf:
-            if v is not None and v != 0:
-                out.append(v)
-
-    import hashlib
     sha256 = hashlib.sha256(out).hexdigest()
 
     print(f"S3 {name} renderer: ok")

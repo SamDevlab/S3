@@ -1,46 +1,42 @@
+import hashlib
 import os
-import subprocess
 import unittest
-from bootstrap.s3.pipeline import run_source_with_buffer_capture
+from tools.s3_renderer_contract import (
+    FIXTURE_METADATA,
+    _capture_fixture_output,
+    _git_blob_bytes,
+)
 
-EXPECTED_SHA256 = '46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67'
-EXPECTED_BYTES = 441
-
-
-def _git_blob(path: str) -> bytes:
-    result = subprocess.run(
-        ["git", "show", f"HEAD:{path}"],
-        capture_output=True, check=True,
-    )
-    return result.stdout
+EXPECTED_SHA256 = FIXTURE_METADATA["first"].expected_sha256
+EXPECTED_BYTES = FIXTURE_METADATA["first"].expected_bytes
 
 
 class TestFirstTextRenderer(unittest.TestCase):
     def test_first_text_rendering(self):
-        s3_path = os.path.join('examples', 'self_hosting', 'assembly_renderer_first_text.s3')
+        meta = FIXTURE_METADATA["first"]
+        s3_path = os.path.join(*meta.s3_path.split("/"))
         with open(s3_path) as f:
             source = f.read()
-        
-        result, capture = run_source_with_buffer_capture(source)
-        self.assertEqual(result, 0)
-        self.assertTrue(len(capture) > 0, 'Memory capture must not be empty')
-        
-        memory = capture[-1]
-        low = memory.get(0, [])
-        high = memory.get(1, [])
-        
-        out = bytearray()
-        for v in low:
-            if v is not None and v != 0:
-                out.append(v)
-        for v in high:
-            if v is not None and v != 0:
-                out.append(v)
-                
-        golden = _git_blob('tests/golden/inspect/first.assembly.txt')
-            
-        self.assertEqual(len(out), len(golden), 'Output length must match golden length')
-        self.assertEqual(out, golden, 'Output content must match golden content exactly')
 
-if __name__ == '__main__':
+        output = _capture_fixture_output(source, meta.buffer_count)
+
+        sha256 = hashlib.sha256(output).hexdigest()
+        self.assertEqual(sha256, EXPECTED_SHA256)
+
+        golden = _git_blob_bytes(meta.golden_path)
+
+        self.assertEqual(len(output), len(golden))
+        self.assertEqual(output, golden)
+
+    def test_expected_sha256_constant(self):
+        self.assertEqual(
+            EXPECTED_SHA256,
+            "46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67",
+        )
+
+    def test_expected_bytes_constant(self):
+        self.assertEqual(EXPECTED_BYTES, 441)
+
+
+if __name__ == "__main__":
     unittest.main()

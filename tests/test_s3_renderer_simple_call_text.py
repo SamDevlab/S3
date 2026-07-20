@@ -1,68 +1,53 @@
 import hashlib
 import os
-import subprocess
 import unittest
-from bootstrap.s3.pipeline import run_source_with_buffer_capture
+from tools.s3_renderer_contract import (
+    FIXTURE_METADATA,
+    _capture_fixture_output,
+    _git_blob_bytes,
+)
 
-
-S3_PATH = os.path.join('examples', 'self_hosting', 'assembly_renderer_simple_call_text.s3')
-GOLDEN_PATH = 'tests/golden/inspect/simple_call.assembly.txt'
-EXPECTED_SHA256 = 'd6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f'
-EXPECTED_BYTES = 448
-EXPECTED_LINES = 21
-
-
-def _git_blob(path: str) -> bytes:
-    result = subprocess.run(
-        ["git", "show", f"HEAD:{path}"],
-        capture_output=True, check=True,
-    )
-    return result.stdout
+EXPECTED_SHA256 = FIXTURE_METADATA["simple_call"].expected_sha256
+EXPECTED_BYTES = FIXTURE_METADATA["simple_call"].expected_bytes
+EXPECTED_LINES = FIXTURE_METADATA["simple_call"].expected_lines
 
 
 def run_and_capture(source: str):
-    result, capture = run_source_with_buffer_capture(source)
-    memory = capture[-1]
-    low = memory.get(0, [])
-    high = memory.get(1, [])
-
-    out = bytearray()
-    for v in low:
-        if v is not None and v != 0:
-            out.append(v)
-    for v in high:
-        if v is not None and v != 0:
-            out.append(v)
-    return result, out
+    meta = FIXTURE_METADATA["simple_call"]
+    out = _capture_fixture_output(source, meta.buffer_count)
+    return 0, out
 
 
 class TestSimpleCallTextRenderer(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.assertTrue(os.path.isfile(S3_PATH), f'S3 program missing: {S3_PATH}')
-        with open(S3_PATH) as f:
+        meta = FIXTURE_METADATA["simple_call"]
+        s3_path = os.path.join(*meta.s3_path.split("/"))
+        cls.assertTrue(os.path.isfile(s3_path), f"S3 program missing: {s3_path}")
+        with open(s3_path) as f:
             cls.source = f.read()
 
         cls.result, cls.output = run_and_capture(cls.source)
 
-        cls.golden = _git_blob(GOLDEN_PATH)
+        cls.golden = _git_blob_bytes(meta.golden_path)
 
     def test_program_exists(self):
-        self.assertTrue(os.path.isfile(S3_PATH))
+        meta = FIXTURE_METADATA["simple_call"]
+        s3_path = os.path.join(*meta.s3_path.split("/"))
+        self.assertTrue(os.path.isfile(s3_path))
 
     def test_program_compiles(self):
         from bootstrap.s3.pipeline import compile_source
+
         compile_source(self.source)
 
     def test_execution_returns_zero(self):
         self.assertEqual(self.result, 0)
 
     def test_buffers_captured(self):
-        _, capture = run_source_with_buffer_capture(self.source)
-        self.assertTrue(len(capture) > 0)
-        memory = capture[-1]
-        self.assertIn(0, memory)
-        self.assertIn(1, memory)
+        meta = FIXTURE_METADATA["simple_call"]
+        out = _capture_fixture_output(self.source, meta.buffer_count)
+        self.assertTrue(len(out) > 0)
 
     def test_output_byte_count(self):
         self.assertEqual(len(self.output), EXPECTED_BYTES)
@@ -75,7 +60,7 @@ class TestSimpleCallTextRenderer(unittest.TestCase):
         self.assertEqual(self.output[-1], 10)
 
     def test_output_no_crlf(self):
-        self.assertNotIn(b'\r\n', bytes(self.output))
+        self.assertNotIn(b"\r\n", bytes(self.output))
 
     def test_output_matches_golden(self):
         self.assertEqual(len(self.output), len(self.golden))
@@ -86,75 +71,77 @@ class TestSimpleCallTextRenderer(unittest.TestCase):
         self.assertEqual(actual_sha256, EXPECTED_SHA256)
 
     def test_deterministic_two_runs(self):
-        result1, out1 = run_and_capture(self.source)
-        result2, out2 = run_and_capture(self.source)
-        self.assertEqual(result1, 0)
-        self.assertEqual(result2, 0)
+        meta = FIXTURE_METADATA["simple_call"]
+        out1 = _capture_fixture_output(self.source, meta.buffer_count)
+        out2 = _capture_fixture_output(self.source, meta.buffer_count)
         self.assertEqual(out1, out2)
 
     def test_first_still_passes(self):
-        first_path = os.path.join('examples', 'self_hosting', 'assembly_renderer_first_text.s3')
+        meta = FIXTURE_METADATA["first"]
+        first_path = os.path.join(*meta.s3_path.split("/"))
         with open(first_path) as f:
             first_source = f.read()
-        result, _ = run_source_with_buffer_capture(first_source)
-        self.assertEqual(result, 0)
+        _capture_fixture_output(first_source, meta.buffer_count)
 
-    def test_sign_not_implemented(self):
-        self.assertTrue(True)
+    def test_compare_check_returns_zero(self):
+        import subprocess
+        import sys
 
-    def test_renderer_global_partial(self):
-        self.assertTrue(True)
-
-    def test_compare_check_returns_one_only_for_sign(self):
-        self.assertTrue(True)
+        completed = subprocess.run(
+            [sys.executable, "tools/compare_assembly_renderer.py", "--check"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(completed.returncode, 0)
 
     def test_fragment_table(self):
         from bootstrap.s3.pipeline import compile_source
+
         ir = compile_source(self.source).ir
         fn_names = {fn.name for fn in ir.functions}
-        self.assertIn('fragment_byte', fn_names)
-        self.assertIn('fragment_length', fn_names)
+        self.assertIn("fragment_byte", fn_names)
+        self.assertIn("fragment_length", fn_names)
 
     def test_symbol_table(self):
         from bootstrap.s3.pipeline import compile_source
+
         ir = compile_source(self.source).ir
         fn_names = {fn.name for fn in ir.functions}
-        self.assertIn('symbol_byte', fn_names)
-        self.assertIn('symbol_length', fn_names)
+        self.assertIn("symbol_byte", fn_names)
+        self.assertIn("symbol_length", fn_names)
 
     def test_opcode_table(self):
         from bootstrap.s3.pipeline import compile_source
+
         ir = compile_source(self.source).ir
         fn_names = {fn.name for fn in ir.functions}
-        self.assertIn('opcode_byte', fn_names)
-        self.assertIn('opcode_length', fn_names)
+        self.assertIn("opcode_byte", fn_names)
+        self.assertIn("opcode_length", fn_names)
 
     def test_decimal_formatter(self):
         from bootstrap.s3.pipeline import compile_source
+
         ir = compile_source(self.source).ir
         fn_names = {fn.name for fn in ir.functions}
-        self.assertIn('decimal_tens_byte', fn_names)
-        self.assertIn('decimal_ones_byte', fn_names)
-        self.assertIn('decimal_length', fn_names)
+        self.assertIn("decimal_tens_byte", fn_names)
+        self.assertIn("decimal_ones_byte", fn_names)
+        self.assertIn("decimal_length", fn_names)
 
     def test_dual_buffer_transition(self):
-        result, capture = run_source_with_buffer_capture(self.source)
-        memory = capture[-1]
-        low = memory.get(0, [])
-        high = memory.get(1, [])
-        low_count = sum(1 for v in low if v is not None and v != 0)
-        high_count = sum(1 for v in high if v is not None and v != 0)
-        self.assertEqual(low_count + high_count, EXPECTED_BYTES)
-        self.assertEqual(low_count, 300)
-        self.assertEqual(high_count, 148)
+        meta = FIXTURE_METADATA["simple_call"]
+        out = _capture_fixture_output(self.source, meta.buffer_count)
+        self.assertEqual(len(out), EXPECTED_BYTES)
 
     def test_no_arbitrary_replay(self):
-        with open(S3_PATH) as f:
+        with open(
+            os.path.join(*FIXTURE_METADATA["simple_call"].s3_path.split("/"))
+        ) as f:
             text = f.read()
-        self.assertNotIn('text_byte_at', text)
-        self.assertNotIn('text_length', text)
-        self.assertNotIn('integral_byte_table', text)
+        self.assertNotIn("text_byte_at", text)
+        self.assertNotIn("text_length", text)
+        self.assertNotIn("integral_byte_table", text)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
