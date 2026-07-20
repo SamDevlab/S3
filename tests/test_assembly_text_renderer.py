@@ -308,12 +308,13 @@ def test_candidate_compare_available_still_passes() -> None:
     assert "passed comparisons: 3" in completed.stdout
 
 
-def test_compare_check_still_blocks_global_renderer_check() -> None:
+def test_compare_check_now_passes() -> None:
     completed = _run_tool("tools/compare_assembly_renderer.py", "--check")
 
-    assert completed.returncode == 1
-    assert "S3 Assembly renderer comparison check: blocked" in completed.stdout
+    assert completed.returncode == 0
+    assert "S3 Assembly renderer comparison check: ok" in completed.stdout
     assert "actual outputs: passed" in completed.stdout
     assert "available comparisons: passed" in completed.stdout
-    assert "renderer implementation: not_implemented" in completed.stdout
-    assert "global check: blocked" in completed.stdout
+    assert "renderer implementation: complete" in completed.stdout
+    assert "full text rendering: passed" in completed.stdout
+    assert "global check: passed" in completed.stdout

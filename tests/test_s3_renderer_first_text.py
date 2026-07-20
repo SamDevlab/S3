@@ -1,6 +1,19 @@
 import os
+import subprocess
 import unittest
 from bootstrap.s3.pipeline import run_source_with_buffer_capture
+
+EXPECTED_SHA256 = '46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67'
+EXPECTED_BYTES = 441
+
+
+def _git_blob(path: str) -> bytes:
+    result = subprocess.run(
+        ["git", "show", f"HEAD:{path}"],
+        capture_output=True, check=True,
+    )
+    return result.stdout
+
 
 class TestFirstTextRenderer(unittest.TestCase):
     def test_first_text_rendering(self):
@@ -24,9 +37,7 @@ class TestFirstTextRenderer(unittest.TestCase):
             if v is not None and v != 0:
                 out.append(v)
                 
-        golden_path = os.path.join('tests', 'golden', 'inspect', 'first.assembly.txt')
-        with open(golden_path, 'rb') as f:
-            golden = f.read().replace(b'\r\n', b'\n')
+        golden = _git_blob('tests/golden/inspect/first.assembly.txt')
             
         self.assertEqual(len(out), len(golden), 'Output length must match golden length')
         self.assertEqual(out, golden, 'Output content must match golden content exactly')

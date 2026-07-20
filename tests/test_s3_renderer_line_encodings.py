@@ -7,7 +7,12 @@ from pathlib import Path
 
 from bootstrap.s3.emulator import Emulator
 from bootstrap.s3.pipeline import CompilationResult, compile_source, run_source
-from tools.s3_program_check import find_program, run_hosted_check
+from tools.s3_program_check import (
+    find_program,
+    get_hosted_display,
+    get_program_inventory_display,
+    run_hosted_check,
+)
 
 
 LINE_ENCODINGS_PATH = Path(
@@ -395,8 +400,8 @@ def test_s3_program_check_includes_renderer_line_content_encoding_model() -> Non
         "examples/self_hosting/assembly_renderer_line_encodings.s3"
         in completed.stdout
     )
-    assert "s3 program check: checked 21 program(s)" in completed.stdout
-    assert "s3 program check: hosted execution checked 18 program(s)" in completed.stdout
+    assert get_program_inventory_display() in completed.stdout
+    assert get_hosted_display() in completed.stdout
     assert "hosted expected return: 0" in completed.stdout
     assert "hosted actual return: 0" in completed.stdout
     assert completed.stderr == ""

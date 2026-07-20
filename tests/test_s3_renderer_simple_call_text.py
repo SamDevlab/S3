@@ -1,14 +1,23 @@
 import hashlib
 import os
+import subprocess
 import unittest
 from bootstrap.s3.pipeline import run_source_with_buffer_capture
 
 
 S3_PATH = os.path.join('examples', 'self_hosting', 'assembly_renderer_simple_call_text.s3')
-GOLDEN_PATH = os.path.join('tests', 'golden', 'inspect', 'simple_call.assembly.txt')
+GOLDEN_PATH = 'tests/golden/inspect/simple_call.assembly.txt'
 EXPECTED_SHA256 = 'd6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f'
 EXPECTED_BYTES = 448
 EXPECTED_LINES = 21
+
+
+def _git_blob(path: str) -> bytes:
+    result = subprocess.run(
+        ["git", "show", f"HEAD:{path}"],
+        capture_output=True, check=True,
+    )
+    return result.stdout
 
 
 def run_and_capture(source: str):
@@ -36,8 +45,7 @@ class TestSimpleCallTextRenderer(unittest.TestCase):
 
         cls.result, cls.output = run_and_capture(cls.source)
 
-        with open(GOLDEN_PATH, 'rb') as f:
-            cls.golden = f.read().replace(b'\r\n', b'\n')
+        cls.golden = _git_blob(GOLDEN_PATH)
 
     def test_program_exists(self):
         self.assertTrue(os.path.isfile(S3_PATH))

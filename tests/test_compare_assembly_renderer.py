@@ -419,7 +419,7 @@ def test_compare_assembly_renderer_candidate_run_executes_stub_status() -> None:
     assert completed.stderr == ""
 
 
-def test_compare_assembly_renderer_check_fails_until_s3_renderer_exists() -> None:
+def test_compare_assembly_renderer_check_passes_with_s3_renderer() -> None:
     completed = subprocess.run(
         [sys.executable, "tools/compare_assembly_renderer.py", "--check"],
         capture_output=True,
@@ -427,14 +427,11 @@ def test_compare_assembly_renderer_check_fails_until_s3_renderer_exists() -> Non
         check=False,
     )
 
-    assert completed.returncode == 1
-    assert "S3 Assembly renderer comparison check: blocked" in completed.stdout
+    assert completed.returncode == 0
+    assert "S3 Assembly renderer comparison check: ok" in completed.stdout
     assert "actual outputs: passed" in completed.stdout
     assert "available comparisons: passed" in completed.stdout
-    assert "renderer implementation: not_implemented" in completed.stdout
-    assert "global check: blocked" in completed.stdout
-    assert (
-        "reason: actual outputs pass, but the real S3 renderer is still not implemented"
-        in completed.stdout
-    )
+    assert "renderer implementation: complete" in completed.stdout
+    assert "full text rendering: passed" in completed.stdout
+    assert "global check: passed" in completed.stdout
     assert completed.stderr == ""

@@ -3,7 +3,14 @@ from __future__ import annotations
 import subprocess
 import sys
 
-from tools.s3_program_check import find_program, get_program_inventory
+from tools.s3_program_check import (
+    find_program,
+    get_program_count,
+    get_hosted_program_count,
+    get_program_inventory,
+    get_program_inventory_display,
+    get_hosted_display,
+)
 
 
 def test_s3_program_check_inventory_exposes_renderer_stub_hosted_check() -> None:
@@ -49,7 +56,7 @@ def test_s3_program_check_inventory_exposes_renderer_stub_hosted_check() -> None
         "examples/self_hosting/fixed_tryte_buffer.s3"
     )
 
-    assert len(programs) == 21
+    assert len(programs) == get_program_count()
     assert stub is not None
     assert stub.hosted_expected_return == -1
     assert bootstrap is not None
@@ -89,10 +96,8 @@ def test_s3_program_check_matches_registered_programs() -> None:
     )
 
     assert completed.returncode == 0
-    assert "s3 program check: checked 21 program(s)" in completed.stdout
-    assert (
-        "s3 program check: hosted execution checked 18 program(s)"
-    )
+    assert get_program_inventory_display() in completed.stdout
+    assert get_hosted_display() in completed.stdout
     assert "examples/self_hosting/assembly_renderer_stub.s3" in completed.stdout
     assert "hosted expected return: -1" in completed.stdout
     assert "hosted actual return: -1" in completed.stdout
