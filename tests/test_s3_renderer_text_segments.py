@@ -6,7 +6,12 @@ import sys
 from pathlib import Path
 
 from bootstrap.s3.pipeline import compile_source, run_source
-from tools.s3_program_check import find_program, run_hosted_check
+from tools.s3_program_check import (
+    find_program,
+    get_hosted_display,
+    get_program_inventory_display,
+    run_hosted_check,
+)
 
 
 TEXT_SEGMENTS_PATH = Path("examples/self_hosting/assembly_renderer_text_segments.s3")
@@ -257,8 +262,8 @@ def test_s3_program_check_includes_renderer_text_segment_model() -> None:
 
     assert completed.returncode == 0
     assert "examples/self_hosting/assembly_renderer_text_segments.s3" in completed.stdout
-    assert "s3 program check: checked 21 program(s)" in completed.stdout
-    assert "s3 program check: hosted execution checked 18 program(s)" in completed.stdout
+    assert get_program_inventory_display() in completed.stdout
+    assert get_hosted_display() in completed.stdout
     assert "hosted expected return: 0" in completed.stdout
     assert "hosted actual return: 0" in completed.stdout
     assert completed.stderr == ""

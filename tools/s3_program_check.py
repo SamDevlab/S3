@@ -153,12 +153,28 @@ PROGRAMS = (
     S3Program(
         REPO_ROOT
         / "examples"
+        / "self_hosting"
+        / "assembly_renderer_sign_text.s3",
+        "Assembly renderer sign textual output via structural primitives",
+        hosted_expected_return=0,
+    ),
+    S3Program(
+        REPO_ROOT
+        / "examples"
         / "performance"
         / "segmented_prime_box.s3",
         "Segmented prime box",
         hosted_expected_return=0,
     ),
 )
+
+
+def get_program_count() -> int:
+    return len(PROGRAMS)
+
+
+def get_hosted_program_count() -> int:
+    return sum(1 for p in PROGRAMS if p.hosted_expected_return is not None)
 
 
 def get_program_inventory() -> tuple[S3Program, ...]:
@@ -223,6 +239,16 @@ def list_programs() -> int:
     return 0
 
 
+def get_program_inventory_display() -> str:
+    return f"s3 program check: checked {get_program_count()} program(s)"
+
+def get_hosted_display() -> str:
+    return (
+        "s3 program check: hosted execution checked "
+        f"{get_hosted_program_count()} program(s)"
+    )
+
+
 def check_programs() -> int:
     ok = True
     hosted_checked = 0
@@ -260,11 +286,8 @@ def check_programs() -> int:
             print("  hosted execution: unexpected return")
 
     if ok:
-        print(f"s3 program check: checked {len(programs)} program(s)")
-        print(
-            "s3 program check: hosted execution checked "
-            f"{hosted_checked} program(s)"
-        )
+        print(get_program_inventory_display())
+        print(get_hosted_display())
         return 0
     return 1
 

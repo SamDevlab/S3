@@ -921,12 +921,13 @@ def test_adapter_paths_keep_available_comparisons_passed() -> None:
     assert "passed comparisons: 3" in completed.stdout
 
 
-def test_adapter_paths_keep_compare_check_blocked() -> None:
+def test_adapter_paths_compare_check_passes() -> None:
     completed = _run_tool("tools/compare_assembly_renderer.py", "--check")
 
-    assert completed.returncode == 1
-    assert "S3 Assembly renderer comparison check: blocked" in completed.stdout
+    assert completed.returncode == 0
+    assert "S3 Assembly renderer comparison check: ok" in completed.stdout
     assert "actual outputs: passed" in completed.stdout
     assert "available comparisons: passed" in completed.stdout
-    assert "renderer implementation: not_implemented" in completed.stdout
-    assert "global check: blocked" in completed.stdout
+    assert "renderer implementation: complete" in completed.stdout
+    assert "full text rendering: passed" in completed.stdout
+    assert "global check: passed" in completed.stdout

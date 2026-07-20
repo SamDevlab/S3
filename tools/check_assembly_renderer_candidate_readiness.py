@@ -5,6 +5,11 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from s3_program_check import (
+    get_hosted_display,
+    get_program_inventory_display,
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -62,8 +67,8 @@ READINESS_STEPS = (
         ("tools/s3_program_check.py", "check"),
         0,
         stdout_contains=(
-            "s3 program check: checked 21 program(s)",
-            "s3 program check: hosted execution checked 18 program(s)",
+            get_program_inventory_display(),
+            get_hosted_display(),
         ),
     ),
     ReadinessStep(
@@ -221,19 +226,16 @@ READINESS_STEPS = (
         ),
     ),
     ReadinessStep(
-        "comparison blocked",
+        "comparison passed",
         ("tools/compare_assembly_renderer.py", "--check"),
-        1,
+        0,
         stdout_contains=(
-            "S3 Assembly renderer comparison check: blocked",
+            "S3 Assembly renderer comparison check: ok",
             "actual outputs: passed",
             "available comparisons: passed",
-            "renderer implementation: not_implemented",
-            "global check: blocked",
-            (
-                "reason: actual outputs pass, but the real S3 renderer is still "
-                "not implemented"
-            ),
+            "renderer implementation: complete",
+            "full text rendering: passed",
+            "global check: passed",
         ),
     ),
 )

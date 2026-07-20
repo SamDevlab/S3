@@ -23,6 +23,6 @@ def test_assembly_renderer_candidate_readiness_gate_passes() -> None:
     assert "candidate comparison plan: ok" in completed.stdout
     assert "candidate actual outputs: ok" in completed.stdout
     assert "candidate run: ok" in completed.stdout
-    assert "comparison blocked: ok" in completed.stdout
+    assert "comparison passed: ok" in completed.stdout
     assert "assembly renderer candidate readiness: ok" in completed.stdout
     assert completed.stderr == ""
