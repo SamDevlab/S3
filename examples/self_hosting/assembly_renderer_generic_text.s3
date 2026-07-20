@@ -1,0 +1,345 @@
+# S3 Assembly Renderer - Generic Event-Driven Text Renderer (v0.41)
+# Architecture: structural event plans + recursive traversal
+# No unrolled byte writes, no legacy extraction, no generated code
+
+# ── Event kinds ──
+# 1 FRAGMENT  2 SYMBOL  3 OPCODE  4 DECIMAL
+# 5 SPACE  6 COMMA  7 COLON  8 ARROW  9 NEWLINE
+
+# ── Fragment text table ──
+# 1=.s3asm  2=.function  3=.param  4=.register  5=.label  6=.end  7=0.5.0
+
+fn fragment_byte(id: tryte, idx: tryte) -> tryte:
+    match id <=> 1:
+        -1: return 0
+        0:
+            match idx <=> 0: -1: skip 0: return 46 1: skip
+            match idx <=> 1: -1: skip 0: return 115 1: skip
+            match idx <=> 2: -1: skip 0: return 51 1: skip
+            match idx <=> 3: -1: skip 0: return 97 1: skip
+            match idx <=> 4: -1: skip 0: return 115 1: skip
+            match idx <=> 5: -1: skip 0: return 109 1: skip
+            return 0
+        1:
+            match id <=> 2:
+                -1: return 0
+                0:
+                    match idx <=> 0: -1: skip 0: return 46 1: skip
+                    match idx <=> 1: -1: skip 0: return 102 1: skip
+                    match idx <=> 2: -1: skip 0: return 117 1: skip
+                    match idx <=> 3: -1: skip 0: return 110 1: skip
+                    match idx <=> 4: -1: skip 0: return 99 1: skip
+                    match idx <=> 5: -1: skip 0: return 116 1: skip
+                    match idx <=> 6: -1: skip 0: return 105 1: skip
+                    match idx <=> 7: -1: skip 0: return 111 1: skip
+                    match idx <=> 8: -1: skip 0: return 110 1: skip
+                    return 0
+                1:
+                    match id <=> 3:
+                        -1: return 0
+                        0:
+                            match idx <=> 0: -1: skip 0: return 46 1: skip
+                            match idx <=> 1: -1: skip 0: return 112 1: skip
+                            match idx <=> 2: -1: skip 0: return 97 1: skip
+                            match idx <=> 3: -1: skip 0: return 114 1: skip
+                            match idx <=> 4: -1: skip 0: return 97 1: skip
+                            match idx <=> 5: -1: skip 0: return 109 1: skip
+                            return 0
+                        1:
+                            match id <=> 4:
+                                -1: return 0
+                                0:
+                                    match idx <=> 0: -1: skip 0: return 46 1: skip
+                                    match idx <=> 1: -1: skip 0: return 114 1: skip
+                                    match idx <=> 2: -1: skip 0: return 101 1: skip
+                                    match idx <=> 3: -1: skip 0: return 103 1: skip
+                                    match idx <=> 4: -1: skip 0: return 105 1: skip
+                                    match idx <=> 5: -1: skip 0: return 115 1: skip
+                                    match idx <=> 6: -1: skip 0: return 116 1: skip
+                                    match idx <=> 7: -1: skip 0: return 101 1: skip
+                                    match idx <=> 8: -1: skip 0: return 114 1: skip
+                                    return 0
+                                1:
+                                    match id <=> 5:
+                                        -1: return 0
+                                        0:
+                                            match idx <=> 0: -1: skip 0: return 46 1: skip
+                                            match idx <=> 1: -1: skip 0: return 108 1: skip
+                                            match idx <=> 2: -1: skip 0: return 97 1: skip
+                                            match idx <=> 3: -1: skip 0: return 98 1: skip
+                                            match idx <=> 4: -1: skip 0: return 101 1: skip
+                                            match idx <=> 5: -1: skip 0: return 108 1: skip
+                                            return 0
+                                        1:
+                                            match id <=> 6:
+                                                -1: return 0
+                                                0:
+                                                    match idx <=> 0: -1: skip 0: return 46 1: skip
+                                                    match idx <=> 1: -1: skip 0: return 101 1: skip
+                                                    match idx <=> 2: -1: skip 0: return 110 1: skip
+                                                    match idx <=> 3: -1: skip 0: return 100 1: skip
+                                                    return 0
+                                                1:
+                                                    match id <=> 7:
+                                                        -1: return 0
+                                                        0:
+                                                            match idx <=> 0: -1: skip 0: return 48 1: skip
+                                                            match idx <=> 1: -1: skip 0: return 46 1: skip
+                                                            match idx <=> 2: -1: skip 0: return 53 1: skip
+                                                            match idx <=> 3: -1: skip 0: return 46 1: skip
+                                                            match idx <=> 4: -1: skip 0: return 48 1: skip
+                                                            return 0
+                                                        1: return 0
+
+fn fragment_length(id: tryte) -> tryte:
+    match id <=> 1: -1: return 0 0: return 6 1:
+    match id <=> 2: -1: return 0 0: return 9 1:
+    match id <=> 3: -1: return 0 0: return 6 1:
+    match id <=> 4: -1: return 0 0: return 9 1:
+    match id <=> 5: -1: return 0 0: return 6 1:
+    match id <=> 6: -1: return 0 0: return 4 1:
+    match id <=> 7: -1: return 0 0: return 5 1: return 0
+
+# ── Symbol text table ──
+# 1=main  2=entry  3=r0  4=r1  5=r2  6=r3  7=r4  8=r5  9=tryte
+# 10=add  11=sign  12=trit
+
+fn symbol_byte(id: tryte, idx: tryte) -> tryte:
+    match id <=> 1:
+        -1: return 0
+        0:
+            match idx <=> 0: -1: skip 0: return 109 1: skip
+            match idx <=> 1: -1: skip 0: return 97 1: skip
+            match idx <=> 2: -1: skip 0: return 105 1: skip
+            match idx <=> 3: -1: skip 0: return 110 1: skip
+            return 0
+        1:
+            match id <=> 2:
+                -1: return 0
+                0:
+                    match idx <=> 0: -1: skip 0: return 101 1: skip
+                    match idx <=> 1: -1: skip 0: return 110 1: skip
+                    match idx <=> 2: -1: skip 0: return 116 1: skip
+                    match idx <=> 3: -1: skip 0: return 114 1: skip
+                    match idx <=> 4: -1: skip 0: return 121 1: skip
+                    return 0
+                1:
+                    match id <=> 3:
+                        -1: return 0
+                        0:
+                            match idx <=> 0: -1: skip 0: return 114 1: skip
+                            match idx <=> 1: -1: skip 0: return 48 1: skip
+                            return 0
+                        1:
+                            match id <=> 4:
+                                -1: return 0
+                                0:
+                                    match idx <=> 0: -1: skip 0: return 114 1: skip
+                                    match idx <=> 1: -1: skip 0: return 49 1: skip
+                                    return 0
+                                1:
+                                    match id <=> 5:
+                                        -1: return 0
+                                        0:
+                                            match idx <=> 0: -1: skip 0: return 114 1: skip
+                                            match idx <=> 1: -1: skip 0: return 50 1: skip
+                                            return 0
+                                        1:
+                                            match id <=> 6:
+                                                -1: return 0
+                                                0:
+                                                    match idx <=> 0: -1: skip 0: return 114 1: skip
+                                                    match idx <=> 1: -1: skip 0: return 51 1: skip
+                                                    return 0
+                                                1:
+                                                    match id <=> 7:
+                                                        -1: return 0
+                                                        0:
+                                                            match idx <=> 0: -1: skip 0: return 114 1: skip
+                                                            match idx <=> 1: -1: skip 0: return 52 1: skip
+                                                            return 0
+                                                        1:
+                                                            match id <=> 8:
+                                                                -1: return 0
+                                                                0:
+                                                                    match idx <=> 0: -1: skip 0: return 114 1: skip
+                                                                    match idx <=> 1: -1: skip 0: return 53 1: skip
+                                                                    return 0
+                                                                1:
+                                                                    match id <=> 9:
+                                                                        -1: return 0
+                                                                        0:
+                                                                            match idx <=> 0: -1: skip 0: return 116 1: skip
+                                                                            match idx <=> 1: -1: skip 0: return 114 1: skip
+                                                                            match idx <=> 2: -1: skip 0: return 121 1: skip
+                                                                            match idx <=> 3: -1: skip 0: return 116 1: skip
+                                                                            match idx <=> 4: -1: skip 0: return 101 1: skip
+                                                                            return 0
+                                                                        1:
+                                                                            match id <=> 10:
+                                                                                -1: return 0
+                                                                                0:
+                                                                                    match idx <=> 0: -1: skip 0: return 97 1: skip
+                                                                                    match idx <=> 1: -1: skip 0: return 100 1: skip
+                                                                                    match idx <=> 2: -1: skip 0: return 100 1: skip
+                                                                                    return 0
+                                                                                1:
+                                                                                    match id <=> 11:
+                                                                                        -1: return 0
+                                                                                        0:
+                                                                                            match idx <=> 0: -1: skip 0: return 115 1: skip
+                                                                                            match idx <=> 1: -1: skip 0: return 105 1: skip
+                                                                                            match idx <=> 2: -1: skip 0: return 103 1: skip
+                                                                                            match idx <=> 3: -1: skip 0: return 110 1: skip
+                                                                                            return 0
+                                                                                        1:
+                                                                                            match id <=> 12:
+                                                                                                -1: return 0
+                                                                                                0:
+                                                                                                    match idx <=> 0: -1: skip 0: return 116 1: skip
+                                                                                                    match idx <=> 1: -1: skip 0: return 114 1: skip
+                                                                                                    match idx <=> 2: -1: skip 0: return 105 1: skip
+                                                                                                    match idx <=> 3: -1: skip 0: return 116 1: skip
+                                                                                                    return 0
+                                                                                                1: return 0
+
+fn symbol_length(id: tryte) -> tryte:
+    match id <=> 1: -1: return 0 0: return 4 1:
+    match id <=> 2: -1: return 0 0: return 5 1:
+    match id <=> 3: -1: return 0 0: return 2 1:
+    match id <=> 4: -1: return 0 0: return 2 1:
+    match id <=> 5: -1: return 0 0: return 2 1:
+    match id <=> 6: -1: return 0 0: return 2 1:
+    match id <=> 7: -1: return 0 0: return 2 1:
+    match id <=> 8: -1: return 0 0: return 2 1:
+    match id <=> 9: -1: return 0 0: return 5 1:
+    match id <=> 10: -1: return 0 0: return 3 1:
+    match id <=> 11: -1: return 0 0: return 4 1:
+    match id <=> 12: -1: return 0 0: return 4 1: return 0
+
+# ── Opcode text table ──
+# 1=TCONST  2=TMOV  3=TINV  4=TADD  5=TRET  6=TBR3  7=TCALL  8=TCMP
+
+fn opcode_byte(id: tryte, idx: tryte) -> tryte:
+    match id <=> 1:
+        -1: return 0
+        0:
+            match idx <=> 0: -1: skip 0: return 84 1: skip
+            match idx <=> 1: -1: skip 0: return 67 1: skip
+            match idx <=> 2: -1: skip 0: return 79 1: skip
+            match idx <=> 3: -1: skip 0: return 78 1: skip
+            match idx <=> 4: -1: skip 0: return 83 1: skip
+            match idx <=> 5: -1: skip 0: return 84 1: skip
+            return 0
+        1:
+            match id <=> 2:
+                -1: return 0
+                0:
+                    match idx <=> 0: -1: skip 0: return 84 1: skip
+                    match idx <=> 1: -1: skip 0: return 77 1: skip
+                    match idx <=> 2: -1: skip 0: return 79 1: skip
+                    match idx <=> 3: -1: skip 0: return 86 1: skip
+                    return 0
+                1:
+                    match id <=> 3:
+                        -1: return 0
+                        0:
+                            match idx <=> 0: -1: skip 0: return 84 1: skip
+                            match idx <=> 1: -1: skip 0: return 73 1: skip
+                            match idx <=> 2: -1: skip 0: return 78 1: skip
+                            match idx <=> 3: -1: skip 0: return 86 1: skip
+                            return 0
+                        1:
+                            match id <=> 4:
+                                -1: return 0
+                                0:
+                                    match idx <=> 0: -1: skip 0: return 84 1: skip
+                                    match idx <=> 1: -1: skip 0: return 65 1: skip
+                                    match idx <=> 2: -1: skip 0: return 68 1: skip
+                                    match idx <=> 3: -1: skip 0: return 68 1: skip
+                                    return 0
+                                1:
+                                    match id <=> 5:
+                                        -1: return 0
+                                        0:
+                                            match idx <=> 0: -1: skip 0: return 84 1: skip
+                                            match idx <=> 1: -1: skip 0: return 82 1: skip
+                                            match idx <=> 2: -1: skip 0: return 69 1: skip
+                                            match idx <=> 3: -1: skip 0: return 84 1: skip
+                                            return 0
+                                        1:
+                                            match id <=> 6:
+                                                -1: return 0
+                                                0:
+                                                    match idx <=> 0: -1: skip 0: return 84 1: skip
+                                                    match idx <=> 1: -1: skip 0: return 66 1: skip
+                                                    match idx <=> 2: -1: skip 0: return 82 1: skip
+                                                    match idx <=> 3: -1: skip 0: return 51 1: skip
+                                                    return 0
+                                                1:
+                                                    match id <=> 7:
+                                                        -1: return 0
+                                                        0:
+                                                            match idx <=> 0: -1: skip 0: return 84 1: skip
+                                                            match idx <=> 1: -1: skip 0: return 67 1: skip
+                                                            match idx <=> 2: -1: skip 0: return 65 1: skip
+                                                            match idx <=> 3: -1: skip 0: return 76 1: skip
+                                                            match idx <=> 4: -1: skip 0: return 76 1: skip
+                                                            return 0
+                                                        1:
+                                                            match id <=> 8:
+                                                                -1: return 0
+                                                                0:
+                                                                    match idx <=> 0: -1: skip 0: return 84 1: skip
+                                                                    match idx <=> 1: -1: skip 0: return 67 1: skip
+                                                                    match idx <=> 2: -1: skip 0: return 77 1: skip
+                                                                    match idx <=> 3: -1: skip 0: return 80 1: skip
+                                                                    return 0
+                                                                1: return 0
+
+fn opcode_length(id: tryte) -> tryte:
+    match id <=> 1: -1: return 0 0: return 6 1:
+    match id <=> 2: -1: return 0 0: return 4 1:
+    match id <=> 3: -1: return 0 0: return 4 1:
+    match id <=> 4: -1: return 0 0: return 4 1:
+    match id <=> 5: -1: return 0 0: return 4 1:
+    match id <=> 6: -1: return 0 0: return 4 1:
+    match id <=> 7: -1: return 0 0: return 5 1:
+    match id <=> 8: -1: return 0 0: return 4 1: return 0
+
+# ── Decimal helpers ──
+fn decimal_ones_byte(n: tryte) -> tryte:
+    match n <=> 9:
+        -1:
+            match n <=> 0: 0: return 48 -1: skip 1: skip
+            match n <=> 1: 0: return 49 -1: skip 1: skip
+            match n <=> 2: 0: return 50 -1: skip 1: skip
+            match n <=> 3: 0: return 51 -1: skip 1: skip
+            match n <=> 4: 0: return 52 -1: skip 1: skip
+            match n <=> 5: 0: return 53 -1: skip 1: skip
+            match n <=> 6: 0: return 54 -1: skip 1: skip
+            match n <=> 7: 0: return 55 -1: skip 1: skip
+            match n <=> 8: 0: return 56 -1: skip 1: skip
+            return 0
+        0:
+            match n <=> 0: 0: return 48 -1: skip 1: skip
+            match n <=> 1: 0: return 49 -1: skip 1: skip
+            match n <=> 2: 0: return 50 -1: skip 1: skip
+            match n <=> 3: 0: return 51 -1: skip 1: skip
+            match n <=> 4: 0: return 52 -1: skip 1: skip
+            match n <=> 5: 0: return 53 -1: skip 1: skip
+            match n <=> 6: 0: return 54 -1: skip 1: skip
+            match n <=> 7: 0: return 55 -1: skip 1: skip
+            match n <=> 8: 0: return 56 -1: skip 1: skip
+            return 0
+        1:
+            match n <=> 0: 0: return 48 -1: skip 1: skip
+            match n <=> 1: 0: return 49 -1: skip 1: skip
+            match n <=> 2: 0: return 50 -1: skip 1: skip
+            match n <=> 3: 0: return 51 -1: skip 1: skip
+            match n <=> 4: 0: return 52 -1: skip 1: skip
+            match n <=> 5: 0: return 53 -1: skip 1: skip
+            match n <=> 6: 0: return 54 -1: skip 1: skip
+            match n <=> 7: 0: return 55 -1: skip 1: skip
+            match n <=> 8: 0: return 56 -1: skip 1: skip
+            return 0

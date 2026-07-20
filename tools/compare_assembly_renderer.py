@@ -2288,7 +2288,7 @@ def candidate_run() -> int:
     return 0
 
 
-def _render_s3_fixture(renderer_path: str, golden_path_str: str, name: str, buffer_count: int = 3) -> int:
+def _render_s3_fixture(renderer_path: str, golden_path_str: str, name: str, buffer_count: int = 3, buffer_offset: int = 0, entry: str = "main") -> int:
     path = REPO_ROOT / renderer_path
     if not path.is_file():
         print(f"S3 {name} renderer: missing")
@@ -2297,7 +2297,7 @@ def _render_s3_fixture(renderer_path: str, golden_path_str: str, name: str, buff
 
     source = path.read_text(encoding="utf-8")
     try:
-        out = _capture_fixture_output(source, buffer_count)
+        out = _capture_fixture_output(source, buffer_count, buffer_offset, entry)
     except Exception as error:
         print(f"S3 {name} renderer: execution failed")
         print(f"  error: {error}")
@@ -2327,15 +2327,18 @@ def _render_s3_fixture(renderer_path: str, golden_path_str: str, name: str, buff
 
 
 def candidate_render_first() -> int:
-    return _render_s3_fixture(FIRST_S3_RENDERER, FIRST_S3_GOLDEN, "first", buffer_count=2)
+    meta = FIXTURE_METADATA["first"]
+    return _render_s3_fixture(FIRST_S3_RENDERER, FIRST_S3_GOLDEN, "first", buffer_count=meta.buffer_count, buffer_offset=meta.buffer_offset, entry=meta.entry)
 
 
 def candidate_render_simple_call() -> int:
-    return _render_s3_fixture(SIMPLE_CALL_S3_RENDERER, SIMPLE_CALL_S3_GOLDEN, "simple_call", buffer_count=2)
+    meta = FIXTURE_METADATA["simple_call"]
+    return _render_s3_fixture(SIMPLE_CALL_S3_RENDERER, SIMPLE_CALL_S3_GOLDEN, "simple_call", buffer_count=meta.buffer_count, buffer_offset=meta.buffer_offset, entry=meta.entry)
 
 
 def candidate_render_sign() -> int:
-    return _render_s3_fixture(SIGN_S3_RENDERER, SIGN_S3_GOLDEN, "sign")
+    meta = FIXTURE_METADATA["sign"]
+    return _render_s3_fixture(SIGN_S3_RENDERER, SIGN_S3_GOLDEN, "sign", buffer_count=meta.buffer_count, buffer_offset=meta.buffer_offset, entry=meta.entry)
 
 
 def check() -> int:
