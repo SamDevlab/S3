@@ -23,6 +23,7 @@ class TokenKind(Enum):
     RETURN = auto()
     SWITCH = auto()
     MATCH = auto()
+    WHILE = auto()
     MUT = auto()
     TRIT = auto()
     TRYTE = auto()
@@ -56,6 +57,7 @@ KEYWORDS = {
     "fn": TokenKind.FN,
     "return": TokenKind.RETURN,
     "switch": TokenKind.SWITCH,
+    "while": TokenKind.WHILE,
     "mut": TokenKind.MUT,
     "trit": TokenKind.TRIT,
     "tryte": TokenKind.TRYTE,

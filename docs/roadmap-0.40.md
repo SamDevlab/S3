@@ -48,8 +48,11 @@ Differences specific to each fixture:
 
 S3 has **no** module, import, include, library, or linking mechanism. The only code-reuse facility is defining and calling functions within a single `.s3` file. All three `.s3` files are standalone programs with their own `main()` entry point. Cross-file function sharing is impossible.
 
-Additionally, S3 has no:
-- Loops (no while/for)
+At milestone 0.40, S3 had no loops. Milestone 0.41 added `while` — see
+`roadmap-0.41.md`.
+
+Additionally, S3 still has no:
+
 - References or pointers
 - Structs or records
 - Enums or sum types

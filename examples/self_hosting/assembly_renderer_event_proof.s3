@@ -168,14 +168,10 @@ fn compute_byte(pos: tryte, evt_idx: tryte) -> tryte:
 
 fn strategy_c() -> tryte:
     mut buffer_c: tryte[16] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    buffer_c[0] = compute_byte(0, 0)
-    buffer_c[1] = compute_byte(1, 0)
-    buffer_c[2] = compute_byte(2, 0)
-    buffer_c[3] = compute_byte(3, 0)
-    buffer_c[4] = compute_byte(4, 0)
-    buffer_c[5] = compute_byte(5, 0)
-    buffer_c[6] = compute_byte(6, 0)
-    buffer_c[7] = compute_byte(7, 0)
+    mut i: tryte = 0
+    while i <=> 8:
+        buffer_c[i] = compute_byte(i, 0)
+        i = i + 1
     return 0
 
 fn main() -> tryte:

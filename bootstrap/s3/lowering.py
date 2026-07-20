@@ -156,6 +156,9 @@ class FunctionLowerer:
         if isinstance(statement, ast.SwitchStatement):
             self._lower_switch(statement)
             return
+        if isinstance(statement, ast.WhileStatement):
+            self._lower_while(statement)
+            return
         raise LoweringError("unsupported statement", statement.location)
 
     def _allocate(
@@ -388,6 +391,69 @@ class FunctionLowerer:
                 )
             )
         self.current = continuation
+
+    def _lower_while(self, statement: ast.WhileStatement) -> None:
+        condition_block = self._fresh_block("while_condition", statement.location)
+        body_block = self._fresh_block("while_body", statement.location)
+        exit_block_0 = self._fresh_block("while_exit_0", statement.location)
+        exit_block_1 = self._fresh_block("while_exit_1", statement.location)
+        exit_block = self._fresh_block("while_exit", statement.location)
+
+        self._emit(
+            IRInstruction(
+                IROpcode.JUMP,
+                targets=(condition_block.name,),
+                location=statement.location,
+            )
+        )
+
+        self.current = condition_block
+        condition = self._lower_expression(statement.condition)
+
+        self._emit(
+            IRInstruction(
+                IROpcode.BRANCH3,
+                operands=(condition,),
+                targets=(body_block.name, exit_block_0.name, exit_block_1.name),
+                location=statement.location,
+            )
+        )
+
+        self.current = body_block
+        self._lower_block(statement.body, create_scope=True)
+        body_terminated = self.current is None
+
+        if not body_terminated:
+            self.current.instructions.append(
+                IRInstruction(
+                    IROpcode.JUMP,
+                    targets=(condition_block.name,),
+                    location=statement.location,
+                )
+            )
+
+        self.current = exit_block_0
+        self._emit(
+            IRInstruction(
+                IROpcode.JUMP,
+                targets=(exit_block.name,),
+                location=statement.location,
+            )
+        )
+
+        self.current = exit_block_1
+        self._emit(
+            IRInstruction(
+                IROpcode.JUMP,
+                targets=(exit_block.name,),
+                location=statement.location,
+            )
+        )
+
+        if not body_terminated:
+            self.current = exit_block
+        else:
+            self.current = None
 
     def _lower_expression(self, expression: ast.Expression) -> int:
         expression_type = self.semantic_model.type_of(expression)
