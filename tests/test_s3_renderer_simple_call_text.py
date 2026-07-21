@@ -14,7 +14,7 @@ EXPECTED_LINES = FIXTURE_METADATA["simple_call"].expected_lines
 
 def run_and_capture(source: str):
     meta = FIXTURE_METADATA["simple_call"]
-    out = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry)
+    out = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
     return 0, out
 
 
@@ -46,7 +46,7 @@ class TestSimpleCallTextRenderer(unittest.TestCase):
 
     def test_buffers_captured(self):
         meta = FIXTURE_METADATA["simple_call"]
-        out = _capture_fixture_output(self.source, meta.buffer_count, meta.buffer_offset, meta.entry)
+        out = _capture_fixture_output(self.source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
         self.assertTrue(len(out) > 0)
 
     def test_output_byte_count(self):
@@ -72,8 +72,8 @@ class TestSimpleCallTextRenderer(unittest.TestCase):
 
     def test_deterministic_two_runs(self):
         meta = FIXTURE_METADATA["simple_call"]
-        out1 = _capture_fixture_output(self.source, meta.buffer_count, meta.buffer_offset, meta.entry)
-        out2 = _capture_fixture_output(self.source, meta.buffer_count, meta.buffer_offset, meta.entry)
+        out1 = _capture_fixture_output(self.source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
+        out2 = _capture_fixture_output(self.source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
         self.assertEqual(out1, out2)
 
     def test_first_still_passes(self):
@@ -81,7 +81,7 @@ class TestSimpleCallTextRenderer(unittest.TestCase):
         first_path = os.path.join(*meta.s3_path.split("/"))
         with open(first_path) as f:
             first_source = f.read()
-        _capture_fixture_output(first_source, meta.buffer_count, meta.buffer_offset, meta.entry)
+        _capture_fixture_output(first_source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
 
     def test_compare_check_returns_zero(self):
         import subprocess
@@ -95,13 +95,29 @@ class TestSimpleCallTextRenderer(unittest.TestCase):
         )
         self.assertEqual(completed.returncode, 0)
 
-    def test_text_table_present(self):
+    def test_fragment_table(self):
         from bootstrap.s3.pipeline import compile_source
 
         ir = compile_source(self.source).ir
         fn_names = {fn.name for fn in ir.functions}
-        self.assertIn("text_byte_at", fn_names)
-        self.assertIn("text_length", fn_names)
+        self.assertIn("fragment_byte", fn_names)
+        self.assertIn("fragment_length", fn_names)
+
+    def test_symbol_table(self):
+        from bootstrap.s3.pipeline import compile_source
+
+        ir = compile_source(self.source).ir
+        fn_names = {fn.name for fn in ir.functions}
+        self.assertIn("symbol_byte", fn_names)
+        self.assertIn("symbol_length", fn_names)
+
+    def test_opcode_table(self):
+        from bootstrap.s3.pipeline import compile_source
+
+        ir = compile_source(self.source).ir
+        fn_names = {fn.name for fn in ir.functions}
+        self.assertIn("opcode_byte", fn_names)
+        self.assertIn("opcode_length", fn_names)
 
     def test_decimal_formatter(self):
         from bootstrap.s3.pipeline import compile_source
@@ -110,21 +126,21 @@ class TestSimpleCallTextRenderer(unittest.TestCase):
         fn_names = {fn.name for fn in ir.functions}
         self.assertIn("decimal_tens_byte", fn_names)
         self.assertIn("decimal_ones_byte", fn_names)
+        self.assertIn("decimal_length", fn_names)
 
     def test_dual_buffer_transition(self):
         meta = FIXTURE_METADATA["simple_call"]
-        out = _capture_fixture_output(self.source, meta.buffer_count, meta.buffer_offset, meta.entry)
+        out = _capture_fixture_output(self.source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
         self.assertEqual(len(out), EXPECTED_BYTES)
 
-    def test_unified_table(self):
+    def test_no_arbitrary_replay(self):
         with open(
             os.path.join(*FIXTURE_METADATA["simple_call"].s3_path.split("/"))
         ) as f:
             text = f.read()
-        self.assertIn("text_byte_at", text)
-        self.assertNotIn("fragment_byte", text)
-        self.assertNotIn("symbol_byte", text)
-        self.assertNotIn("opcode_byte", text)
+        self.assertNotIn("text_byte_at", text)
+        self.assertNotIn("text_length", text)
+        self.assertNotIn("integral_byte_table", text)
 
 
 if __name__ == "__main__":

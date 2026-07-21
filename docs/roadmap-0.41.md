@@ -93,8 +93,65 @@ The proof in `examples/self_hosting/assembly_renderer_event_proof.s3` uses a
 real `while` loop (8 iterations) to fill a local buffer, replacing the
 previous unrolled `buffer[N] = ...` pattern.
 
+## Generic Structural Renderer: `first` completed
+
+The generic structural renderer at `examples/self_hosting/assembly_renderer_generic_text.s3`
+replaces the legacy `assembly_renderer_first_text.s3` for the `first` fixture.
+
+### Event model
+
+144 purely structural events produce 441 bytes (18 lines, SHA-256
+`46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67`).
+
+| Kind | Name | Count |
+|------|------|-------|
+| 1 | Fragment | 32 |
+| 2 | Symbol | 20 |
+| 3 | Opcode | 7 |
+| 4 | Decimal | 2 |
+| 6 | Space | 51 |
+| 7 | Comma | 13 |
+| 9 | Arrow | 1 |
+| 10 | Newline | 18 |
+
+- Zero arbitrary-byte events (no `RAW_BYTE`)
+- Zero complete lines stored as fragments
+- Zero position-based events
+- 14 unique fragments, 8 unique symbols, 5 unique opcodes
+- 3.06 bytes per event average
+
+### Architecture
+
+Two nested `while` loops:
+- Outer loop iterates 144 events
+- Inner loop iterates bytes within each event
+- `event_length(kind, arg0)` dispatches to type-specific length functions
+- `event_byte(kind, arg0, idx)` dispatches to type-specific byte functions
+- Two 300-byte buffers (`buffer_low`, `buffer_high`); automatic transition at offset 300
+- Single write: `buffer[buf_offset] = byte_val` — no unrolled assignments
+
+### Performance
+
+- Static IR: 7,508 instructions (compiled; same as assembly)
+- Dynamic cost: **not measured** (emulator does not expose executed instruction count)
+- `max_instructions=500000` applied only to generic renderer; `100000` fails, `500000` passes
+- High cost from O(n) `match` chain lookups in structural tables
+
+### Testing
+
+- `tests/test_s3_renderer_generic_text.py`: 36 tests covering execution, SHA, golden match,
+  event structure, buffer model, while loop architecture
+- Legacy tests remain independent:
+  - `test_s3_renderer_first_text.py` tests `assembly_renderer_first_text.s3`
+  - `test_s3_renderer_simple_call_text.py` tests `assembly_renderer_simple_call_text.s3`
+  - `test_s3_renderer_sign_text.py` tests `assembly_renderer_sign_text.s3`
+
+### Pending
+
+- `simple_call` generic renderer
+- `sign` generic renderer
+
 ## Remaining
 
 - `break` / `continue` — not yet implemented
 - `for` loop — not yet implemented
-- Fixture consolidation (first, simple_call, sign) — separate milestone

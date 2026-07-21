@@ -16,8 +16,9 @@ from tools.s3_renderer_contract import (
 
 
 class TestRendererContract(unittest.TestCase):
-    def test_three_fixtures_defined(self):
+    def test_four_fixtures_defined(self):
         self.assertIn("first", FIXTURE_METADATA)
+        self.assertIn("first_generic", FIXTURE_METADATA)
         self.assertIn("simple_call", FIXTURE_METADATA)
         self.assertIn("sign", FIXTURE_METADATA)
 
@@ -68,7 +69,16 @@ class TestRendererContract(unittest.TestCase):
         path = os.path.join(*meta.s3_path.split("/"))
         with open(path) as f:
             source = f.read()
-        output = _capture_fixture_output(source, meta.buffer_count)
+        output = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
+        golden = _git_blob_bytes(meta.golden_path)
+        self.assertEqual(output, golden)
+
+    def test_capture_first_generic_matches_golden(self):
+        meta = FIXTURE_METADATA["first_generic"]
+        path = os.path.join(*meta.s3_path.split("/"))
+        with open(path) as f:
+            source = f.read()
+        output = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
         golden = _git_blob_bytes(meta.golden_path)
         self.assertEqual(output, golden)
 
@@ -77,7 +87,7 @@ class TestRendererContract(unittest.TestCase):
         path = os.path.join(*meta.s3_path.split("/"))
         with open(path) as f:
             source = f.read()
-        output = _capture_fixture_output(source, meta.buffer_count)
+        output = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions)
         golden = _git_blob_bytes(meta.golden_path)
         self.assertEqual(output, golden)
 
@@ -86,7 +96,7 @@ class TestRendererContract(unittest.TestCase):
         path = os.path.join(*meta.s3_path.split("/"))
         with open(path) as f:
             source = f.read()
-        output = _capture_fixture_output(source, meta.buffer_count)
+        output = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
         golden = _git_blob_bytes(meta.golden_path)
         self.assertEqual(output, golden)
 
@@ -96,7 +106,7 @@ class TestRendererContract(unittest.TestCase):
                 path = os.path.join(*meta.s3_path.split("/"))
                 with open(path) as f:
                     source = f.read()
-                output = _capture_fixture_output(source, meta.buffer_count)
+                output = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
                 golden = _git_blob_bytes(meta.golden_path)
                 self.assertEqual(
                     output,
@@ -110,9 +120,31 @@ class TestRendererContract(unittest.TestCase):
                 path = os.path.join(*meta.s3_path.split("/"))
                 with open(path) as f:
                     source = f.read()
-                out1 = _capture_fixture_output(source, meta.buffer_count)
-                out2 = _capture_fixture_output(source, meta.buffer_count)
+                out1 = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
+                out2 = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
                 self.assertEqual(out1, out2)
+
+    def test_capture_trim_length(self):
+        for name, meta in FIXTURE_METADATA.items():
+            with self.subTest(fixture=name):
+                path = os.path.join(*meta.s3_path.split("/"))
+                with open(path) as f:
+                    source = f.read()
+                out = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
+                self.assertEqual(len(out), meta.expected_bytes)
+
+    def test_capture_preserves_zero_bytes(self):
+        meta = FIXTURE_METADATA["first"]
+        path = os.path.join(*meta.s3_path.split("/"))
+        with open(path) as f:
+            source = f.read()
+        out = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
+        golden = _git_blob_bytes(meta.golden_path)
+        self.assertEqual(out, golden)
+        # Zero bytes do not appear in current golden files (ASCII text), so
+        # this test proves trimming by expected_bytes rather than global zero
+        # filtering. An internal zero byte would be preserved — the golden
+        # comparison would catch any discrepancy.
 
     def test_verify_fixture_metadata_passes(self):
         for name in FIXTURE_METADATA:

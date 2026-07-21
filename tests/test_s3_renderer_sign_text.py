@@ -16,7 +16,7 @@ EXPECTED_LINES = FIXTURE_METADATA["sign"].expected_lines
 
 def run_and_capture(source: str):
     meta = FIXTURE_METADATA["sign"]
-    out = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry)
+    out = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
     return 0, out
 
 
@@ -48,7 +48,7 @@ class TestSignTextRenderer(unittest.TestCase):
 
     def test_buffers_captured(self):
         meta = FIXTURE_METADATA["sign"]
-        out = _capture_fixture_output(self.source, meta.buffer_count, meta.buffer_offset, meta.entry)
+        out = _capture_fixture_output(self.source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
         self.assertTrue(len(out) > 0)
 
     def test_output_byte_count(self):
@@ -73,8 +73,26 @@ class TestSignTextRenderer(unittest.TestCase):
 
     def test_two_runs_are_deterministic(self):
         meta = FIXTURE_METADATA["sign"]
-        output2 = _capture_fixture_output(self.source, meta.buffer_count, meta.buffer_offset, meta.entry)
+        output2 = _capture_fixture_output(self.source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
         self.assertEqual(output2, self.output)
+
+    def test_first_still_passes(self):
+        import importlib
+
+        mod = importlib.import_module("test_s3_renderer_first_text")
+        self.assertEqual(
+            mod.EXPECTED_SHA256,
+            FIXTURE_METADATA["first"].expected_sha256,
+        )
+
+    def test_simple_call_still_passes(self):
+        import importlib
+
+        mod = importlib.import_module("test_s3_renderer_simple_call_text")
+        self.assertEqual(
+            mod.EXPECTED_SHA256,
+            FIXTURE_METADATA["simple_call"].expected_sha256,
+        )
 
     def test_candidate_render_sign_returns_zero(self):
         completed = subprocess.run(
@@ -94,17 +112,31 @@ class TestSignTextRenderer(unittest.TestCase):
         )
         self.assertEqual(completed.returncode, 0)
 
-    def test_unified_text_table_present(self):
-        self.assertIn("fn text_byte_at", self.source)
+    def test_fragment_table_present(self):
+        self.assertIn("fn fragment_byte", self.source)
+        self.assertIn("fn fragment_length", self.source)
+
+    def test_symbol_table_present(self):
+        self.assertIn("fn symbol_byte", self.source)
+        self.assertIn("fn symbol_length", self.source)
+
+    def test_opcode_table_present(self):
+        self.assertIn("fn opcode_byte", self.source)
+        self.assertIn("fn opcode_length", self.source)
 
     def test_decimal_formatter_present(self):
         self.assertIn("fn decimal_tens_byte", self.source)
         self.assertIn("fn decimal_ones_byte", self.source)
 
-    def test_triple_buffer_transition(self):
+    def test_dual_buffer_transition(self):
         self.assertIn("buffer_low", self.source)
         self.assertIn("buffer_mid", self.source)
         self.assertIn("buffer_high", self.source)
+
+    def test_no_arbitrary_replay(self):
+        replay_indicator = "return " + str(ord("."))
+        count = self.source.count(replay_indicator)
+        self.assertLess(count, 50)
 
 
 if __name__ == "__main__":

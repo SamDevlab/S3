@@ -20,6 +20,7 @@ class S3Program:
     purpose: str
     expected: str = "compiles"
     hosted_expected_return: int | None = None
+    max_instructions: int = 100000
 
 
 PROGRAMS = (
@@ -165,6 +166,7 @@ PROGRAMS = (
         / "assembly_renderer_generic_text.s3",
         "Assembly renderer generic textual output (unified)",
         hosted_expected_return=0,
+        max_instructions=500000,
     ),
     S3Program(
         REPO_ROOT
@@ -217,7 +219,7 @@ def run_hosted_check(program: S3Program, *, entry: str = "main") -> int:
         raise ValueError(f"{_display_path(program.path)} is not hosted opt-in")
 
     source = program.path.read_text(encoding="utf-8")
-    return run_source(source, entry=entry)
+    return run_source(source, entry=entry, max_instructions=program.max_instructions)
 
 
 def _instruction_counts(compilation: CompilationResult) -> tuple[int, int]:

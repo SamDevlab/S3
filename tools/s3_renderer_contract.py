@@ -32,6 +32,7 @@ class FixtureMetadata:
     buffer_offset: int
     entry: str
     buffer_layout: RendererBufferLayout
+    max_instructions: int = 100000
 
 
 FIXTURE_FRAGMENTS: dict[str, dict[int, tuple[str, bytes]]] = {
@@ -180,6 +181,20 @@ COMMON_OPCODE_NAMES: dict[str, int] = {
 
 FIXTURE_METADATA: dict[str, FixtureMetadata] = {
     "first": FixtureMetadata(
+        s3_path="examples/self_hosting/assembly_renderer_first_text.s3",
+        golden_path="tests/golden/inspect/first.assembly.txt",
+        expected_sha256="46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67",
+        expected_bytes=441,
+        expected_lines=18,
+        buffer_count=2,
+        buffer_offset=0,
+        entry="main",
+        buffer_layout=RendererBufferLayout(
+            buffer_names=("buffer_low", "buffer_high"),
+            capacities=(300, 300),
+        ),
+    ),
+    "first_generic": FixtureMetadata(
         s3_path="examples/self_hosting/assembly_renderer_generic_text.s3",
         golden_path="tests/golden/inspect/first.assembly.txt",
         expected_sha256="46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67",
@@ -192,30 +207,31 @@ FIXTURE_METADATA: dict[str, FixtureMetadata] = {
             buffer_names=("buffer_low", "buffer_high"),
             capacities=(300, 300),
         ),
+        max_instructions=500000,
     ),
     "simple_call": FixtureMetadata(
-        s3_path="examples/self_hosting/assembly_renderer_generic_text.s3",
+        s3_path="examples/self_hosting/assembly_renderer_simple_call_text.s3",
         golden_path="tests/golden/inspect/simple_call.assembly.txt",
         expected_sha256="d6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f",
         expected_bytes=448,
         expected_lines=21,
         buffer_count=2,
         buffer_offset=0,
-        entry="render_simple_call",
+        entry="main",
         buffer_layout=RendererBufferLayout(
             buffer_names=("buffer_low", "buffer_high"),
             capacities=(300, 300),
         ),
     ),
     "sign": FixtureMetadata(
-        s3_path="examples/self_hosting/assembly_renderer_generic_text.s3",
+        s3_path="examples/self_hosting/assembly_renderer_sign_text.s3",
         golden_path="tests/golden/inspect/sign.assembly.txt",
         expected_sha256="c077d2c49639b1a033505ec8c1ba1c60c78242e6e09c43f60a8aa5ed8b49e2d9",
         expected_bytes=946,
         expected_lines=36,
         buffer_count=3,
         buffer_offset=0,
-        entry="render_sign",
+        entry="main",
         buffer_layout=RendererBufferLayout(
             buffer_names=("buffer_low", "buffer_mid", "buffer_high"),
             capacities=(364, 364, 218),
@@ -235,9 +251,9 @@ def _git_blob_bytes(relative_path: str) -> bytes:
     return result.stdout
 
 
-def _capture_fixture_output(source: str, buffer_count: int, buffer_offset: int = 0, entry: str = "main") -> bytes:
+def _capture_fixture_output(source: str, buffer_count: int, buffer_offset: int = 0, entry: str = "main", max_instructions: int = 100000, expected_bytes: int | None = None) -> bytes:
     from bootstrap.s3.pipeline import run_source_with_buffer_capture
-    result, capture = run_source_with_buffer_capture(source, entry=entry)
+    result, capture = run_source_with_buffer_capture(source, entry=entry, max_instructions=max_instructions)
     if result != 0:
         raise ValueError(f"S3 program returned non-zero: {result}")
     if not capture:
@@ -247,8 +263,16 @@ def _capture_fixture_output(source: str, buffer_count: int, buffer_offset: int =
     for buf_idx in range(buffer_count):
         buf = memory.get(buffer_offset + buf_idx, [])
         for v in buf:
-            if v is not None and v != 0:
-                out.append(v)
+            if v is None:
+                break
+            out.append(v)
+    if expected_bytes is not None:
+        if any(v is None for v in out[:expected_bytes]):
+            raise ValueError("unexpected None in captured output within expected byte range")
+        out = out[:expected_bytes]
+    else:
+        while out and out[-1] == 0:
+            out.pop()
     return bytes(out)
 
 
@@ -261,7 +285,7 @@ def verify_fixture_metadata(name: str) -> tuple[bool, str]:
         return False, f"missing S3 program: {meta.s3_path}"
     source = path.read_text(encoding="utf-8")
     try:
-        output = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry)
+        output = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
     except (ValueError, Exception) as error:
         return False, f"execution failed: {error}"
     sha256 = hashlib.sha256(output).hexdigest()

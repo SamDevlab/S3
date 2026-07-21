@@ -18,7 +18,7 @@ class TestFirstTextRenderer(unittest.TestCase):
         with open(s3_path) as f:
             source = f.read()
 
-        output = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry)
+        output = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
 
         sha256 = hashlib.sha256(output).hexdigest()
         self.assertEqual(sha256, EXPECTED_SHA256)
