@@ -98,7 +98,7 @@ previous unrolled `buffer[N] = ...` pattern.
 The generic structural renderer at `examples/self_hosting/assembly_renderer_generic_text.s3`
 replaces the legacy `assembly_renderer_first_text.s3` for the `first` fixture.
 
-### Event model
+### Event model (`first`)
 
 144 purely structural events produce 441 bytes (18 lines, SHA-256
 `46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67`).
@@ -120,36 +120,149 @@ replaces the legacy `assembly_renderer_first_text.s3` for the `first` fixture.
 - 14 unique fragments, 8 unique symbols, 5 unique opcodes
 - 3.06 bytes per event average
 
-### Architecture
+---
 
-Two nested `while` loops:
-- Outer loop iterates 144 events
-- Inner loop iterates bytes within each event
-- `event_length(kind, arg0)` dispatches to type-specific length functions
-- `event_byte(kind, arg0, idx)` dispatches to type-specific byte functions
+## Generic Structural Renderer: `simple_call` completed
+
+The same `assembly_renderer_generic_text.s3` now also renders the `simple_call`
+fixture via entry `render_simple_call`, replacing the legacy
+`assembly_renderer_simple_call_text.s3`.
+
+### Event model (`simple_call`)
+
+175 purely structural events produce 448 bytes (21 lines, SHA-256
+`d6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f`).
+
+| Kind | Code | Name | Count |
+|------|------|------|-------|
+| Fragment | 1 | Text fragments | 28 |
+| Symbol | 2 | Symbol names | 21 |
+| Opcode | 3 | Opcode mnemonics | 6 |
+| Decimal | 4 | Decimal numbers | 20 |
+| Colon | 5 | `:` separator | 12 |
+| Space | 6 | Whitespace (variable arg0) | 52 |
+| Comma | 7 | `,` separator | 13 |
+| Arrow | 9 | `->` operator | 2 |
+| Newline | 10 | Line breaks | 21 |
+
+- Zero `RAW_BYTE` (kind 11 is not used)
+- Zero complete lines stored as fragments
+- Zero position-based events
+- Fragments, symbols, opcodes tables shared with `render_first`
+- 14 unique fragments (incl. `.end`, `.label`, `; source=`)
+- 7 unique symbols (`add`, `main`, `entry`, `r0`–`r2`, `tryte`)
+- 4 unique opcodes (`TADD`, `TRET`, `TCONST`, `TCALL`)
+- 2.56 bytes per event average
+- Last event is Newline
+
+### Key symbols & opcodes verified
+
+- Symbol `add` (function name)
+- Opcode `TCALL` (call instruction)
+- Colon `:` appears in source comments (`; source=2:14:50`)
+
+---
+
+## Shared architecture
+
+Both `render_first` and `render_simple_call` share the same:
+
+- `event_length(kind, arg0)` / `event_byte(kind, arg0, idx)` dispatch loop
+- `fragment_length` / `fragment_byte` tables
+- `symbol_length` / `symbol_byte` tables
+- `opcode_length` / `opcode_byte` tables
+- `decimal_length` / `decimal_tens_byte` / `decimal_ones_byte` / `decimal_byte_at` functions
 - Two 300-byte buffers (`buffer_low`, `buffer_high`); automatic transition at offset 300
-- Single write: `buffer[buf_offset] = byte_val` — no unrolled assignments
+- `while`-based event iteration (no unrolled assignments)
 
-### Performance
+Event-specific tables (`first_event_kind`/`first_event_arg0`/`first_event_count`
+and `simple_call_event_kind`/`simple_call_event_arg0`/`simple_call_event_count`)
+are separate per entry.
 
-- Static IR: 7,508 instructions (compiled; same as assembly)
-- Dynamic cost: **not measured** (emulator does not expose executed instruction count)
-- `max_instructions=500000` applied only to generic renderer; `100000` fails, `500000` passes
-- High cost from O(n) `match` chain lookups in structural tables
+---
 
-### Testing
+## Decimal bug fix
 
-- `tests/test_s3_renderer_generic_text.py`: 36 tests covering execution, SHA, golden match,
-  event structure, buffer model, while loop architecture
+The `decimal_byte_at` function originally had a bug in the `value > 10` branch:
+it always returned ASCII `"10"` (bytes 49, 48) for any value > 10, because the
+`match value <=> 100:` sub-check was missing.
+
+**Root cause:** the `1:` branch of `match value <=> 10` unconditionally
+returned the tens digit as `49` ('1') and the ones digit as `value - 10 + 48`.
+For values 11–19 this happened to be correct, but for 20–99 the tens digit was
+always `'1'` instead of `'2'`–`'9'`.
+
+**Fix:** Added two helper functions:
+
+- `decimal_tens_byte(n)`: recursive, base case `n ≤ 9` returns 48 (`'0'`),
+  otherwise `decimal_tens_byte(n - 10) + 1`. Correctly computes tens digit for
+  any positive value.
+- `decimal_ones_byte(n)`: recursive, base case `n ≤ 9` returns digit via
+  10-match lookup table, otherwise `decimal_ones_byte(n - 10)`.
+
+**Additionally:** `decimal_byte_at` now correctly handles three-digit values
+100–109 via the `value > 100` branch (hardcoded `'1'`, `'0'`, `decimal_ones_byte(value - 100)`).
+
+### Supported decimal domain
+
+The decimal formatter correctly supports **0–109 inclusive**:
+
+- 0–9: single digit via `value + 48`
+- 10: hardcoded `"10"`
+- 11–99: two digits via `decimal_tens_byte`/`decimal_ones_byte`
+- 100: hardcoded `"100"`
+- 101–109: `'1'` + `'0'` + `decimal_ones_byte(value - 100)`
+
+### Outside domain
+
+- Values > 109 produce silently incorrect output (tens digit omitted).
+- Negative values produce garbage (the `value + 48` path produces non-digit
+  ASCII). These values do not occur in current usage.
+- `decimal_length` has a separate bug: returns 2 for all values >= 100.
+
+### Recursion assessment
+
+- `decimal_tens_byte`: max depth 10 (for value 99). Each call is one
+  subtraction. **Recursion acceptable** — bounded, matches legacy pattern,
+  S3 runtime has no hard stack limit.
+- `decimal_ones_byte`: max depth 10 (for value 99). Base case uses 10-match
+  lookup. **Recursion acceptable.**
+
+---
+
+## Performance
+
+| Fixture | Entry | Min limit | Current limit | Duration (500K) |
+|---------|-------|-----------|---------------|-----------------|
+| `first_generic` | `render_first` | ~200K | 500K | ~110s |
+| `simple_call_generic` | `render_simple_call` | ~250K | 500K | ~115s |
+
+- `simple_call_generic` requires ~50K more instructions than `first_generic`
+  due to larger event tables (175 vs 144 events) and decimal formatting
+  (20 vs 2 decimal events).
+- The current 500K limit provides ~2x safety margin over the minimum.
+- Default max_instructions for other programs remains at 100K; only the
+  generic renderer uses 500K.
+
+---
+
+## Testing
+
+- `tests/test_s3_renderer_generic_text.py`: 36 tests for `render_first`
+- `tests/test_s3_renderer_generic_simple_call.py`: 38 tests for `render_simple_call`
+- `tests/test_decimal_functions.py`: 14 tests for decimal boundary values (0–109)
+- `tests/test_s3_renderer_contract.py`: includes `simple_call_generic` in
+  contract verification; real zero-byte capture test
+- `tools/compare_assembly_renderer.py --check`: validates 6 comparisons
+  (3 legacy + 3 generic)
 - Legacy tests remain independent:
-  - `test_s3_renderer_first_text.py` tests `assembly_renderer_first_text.s3`
-  - `test_s3_renderer_simple_call_text.py` tests `assembly_renderer_simple_call_text.s3`
-  - `test_s3_renderer_sign_text.py` tests `assembly_renderer_sign_text.s3`
+  - `test_s3_renderer_first_text.py` → `assembly_renderer_first_text.s3`
+  - `test_s3_renderer_simple_call_text.py` → `assembly_renderer_simple_call_text.s3`
+  - `test_s3_renderer_sign_text.py` → `assembly_renderer_sign_text.s3`
 
 ### Pending
 
-- `simple_call` generic renderer
-- `sign` generic renderer
+- `sign` generic renderer (`sign_generic`)
 
 ## Remaining
 

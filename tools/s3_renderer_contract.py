@@ -209,6 +209,21 @@ FIXTURE_METADATA: dict[str, FixtureMetadata] = {
         ),
         max_instructions=500000,
     ),
+    "simple_call_generic": FixtureMetadata(
+        s3_path="examples/self_hosting/assembly_renderer_generic_text.s3",
+        golden_path="tests/golden/inspect/simple_call.assembly.txt",
+        expected_sha256="d6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f",
+        expected_bytes=448,
+        expected_lines=21,
+        buffer_count=2,
+        buffer_offset=0,
+        entry="render_simple_call",
+        buffer_layout=RendererBufferLayout(
+            buffer_names=("buffer_low", "buffer_high"),
+            capacities=(300, 300),
+        ),
+        max_instructions=500000,
+    ),
     "simple_call": FixtureMetadata(
         s3_path="examples/self_hosting/assembly_renderer_simple_call_text.s3",
         golden_path="tests/golden/inspect/simple_call.assembly.txt",

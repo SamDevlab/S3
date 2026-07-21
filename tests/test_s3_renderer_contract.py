@@ -16,10 +16,11 @@ from tools.s3_renderer_contract import (
 
 
 class TestRendererContract(unittest.TestCase):
-    def test_four_fixtures_defined(self):
+    def test_all_fixtures_defined(self):
         self.assertIn("first", FIXTURE_METADATA)
         self.assertIn("first_generic", FIXTURE_METADATA)
         self.assertIn("simple_call", FIXTURE_METADATA)
+        self.assertIn("simple_call_generic", FIXTURE_METADATA)
         self.assertIn("sign", FIXTURE_METADATA)
 
     def test_fixture_metadata_has_all_fields(self):
@@ -134,17 +135,39 @@ class TestRendererContract(unittest.TestCase):
                 self.assertEqual(len(out), meta.expected_bytes)
 
     def test_capture_preserves_zero_bytes(self):
-        meta = FIXTURE_METADATA["first"]
-        path = os.path.join(*meta.s3_path.split("/"))
-        with open(path) as f:
-            source = f.read()
-        out = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
-        golden = _git_blob_bytes(meta.golden_path)
-        self.assertEqual(out, golden)
-        # Zero bytes do not appear in current golden files (ASCII text), so
-        # this test proves trimming by expected_bytes rather than global zero
-        # filtering. An internal zero byte would be preserved — the golden
-        # comparison would catch any discrepancy.
+        """Verify internal zero bytes are preserved in captured output."""
+        source = """fn main() -> tryte:
+    mut buf: tryte[5] = [65, 0, 66, 67, 68]
+    return 0
+"""
+        out = _capture_fixture_output(source, buffer_count=1, buffer_offset=0, entry="main", max_instructions=1000, expected_bytes=5)
+        self.assertEqual(out, b"A\x00BCD")
+
+    def test_capture_empty_buffer_yields_no_output(self):
+        source = """fn main() -> tryte:
+    return 0
+"""
+        out = _capture_fixture_output(source, buffer_count=1, buffer_offset=0, entry="main", max_instructions=1000, expected_bytes=0)
+        self.assertEqual(out, b"")
+
+    def test_capture_preserves_buffer_order(self):
+        """Two buffers concatenate in order: buf0 then buf1."""
+        source = """fn main() -> tryte:
+    mut a: tryte[2] = [65, 66]
+    mut b: tryte[2] = [67, 68]
+    return 0
+"""
+        out = _capture_fixture_output(source, buffer_count=2, buffer_offset=0, entry="main", max_instructions=1000, expected_bytes=4)
+        self.assertEqual(out, b"ABCD")
+
+    def test_capture_truncates_expected_bytes(self):
+        source = """fn main() -> tryte:
+    mut buf: tryte[5] = [65, 66, 67, 68, 69]
+    return 0
+"""
+        out = _capture_fixture_output(source, buffer_count=1, buffer_offset=0, entry="main", max_instructions=1000, expected_bytes=3)
+        self.assertEqual(len(out), 3)
+        self.assertEqual(out, b"ABC")
 
     def test_verify_fixture_metadata_passes(self):
         for name in FIXTURE_METADATA:
