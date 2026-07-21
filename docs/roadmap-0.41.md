@@ -215,10 +215,10 @@ The decimal formatter correctly supports **0–109 inclusive**:
 
 ### Outside domain
 
-- Values > 109 produce silently incorrect output (tens digit omitted).
+- Values outside 0–109 return `-1` (sentinel value) for `decimal_length` and are unsupported by the formatting functions.
 - Negative values produce garbage (the `value + 48` path produces non-digit
   ASCII). These values do not occur in current usage.
-- `decimal_length` has a separate bug: returns 2 for all values >= 100.
+- `decimal_length` bug is fixed: it correctly returns `3` for values 100–109.
 
 ### Recursion assessment
 

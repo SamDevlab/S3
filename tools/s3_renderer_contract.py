@@ -266,6 +266,30 @@ def _git_blob_bytes(relative_path: str) -> bytes:
     return result.stdout
 
 
+def flatten_capture(memory: dict[int, list[int | None]], buffer_count: int, buffer_offset: int = 0, expected_bytes: int | None = None) -> bytes:
+    out = bytearray()
+    for buf_idx in range(buffer_count):
+        buf = memory.get(buffer_offset + buf_idx, [])
+        for v in buf:
+            if v is None:
+                # Se encontrarmos None, não lemos mais deste buffer.
+                # Se isso nos deixar com menos bytes do que o esperado, o erro será lançado no final.
+                break
+            out.append(v)
+
+    if expected_bytes is not None:
+        if len(out) < expected_bytes:
+            raise ValueError(f"insufficient data: got {len(out)}, expected {expected_bytes}")
+        return bytes(out[:expected_bytes])
+    else:
+        while out and out[-1] == 0:
+            out.pop()
+        return bytes(out)
+
+
+import functools
+
+@functools.lru_cache(maxsize=None)
 def _capture_fixture_output(source: str, buffer_count: int, buffer_offset: int = 0, entry: str = "main", max_instructions: int = 100000, expected_bytes: int | None = None) -> bytes:
     from bootstrap.s3.pipeline import run_source_with_buffer_capture
     result, capture = run_source_with_buffer_capture(source, entry=entry, max_instructions=max_instructions)
@@ -273,22 +297,7 @@ def _capture_fixture_output(source: str, buffer_count: int, buffer_offset: int =
         raise ValueError(f"S3 program returned non-zero: {result}")
     if not capture:
         raise ValueError("memory capture is empty")
-    memory = capture[-1]
-    out = bytearray()
-    for buf_idx in range(buffer_count):
-        buf = memory.get(buffer_offset + buf_idx, [])
-        for v in buf:
-            if v is None:
-                break
-            out.append(v)
-    if expected_bytes is not None:
-        if any(v is None for v in out[:expected_bytes]):
-            raise ValueError("unexpected None in captured output within expected byte range")
-        out = out[:expected_bytes]
-    else:
-        while out and out[-1] == 0:
-            out.pop()
-    return bytes(out)
+    return flatten_capture(capture[-1], buffer_count, buffer_offset, expected_bytes)
 
 
 def verify_fixture_metadata(name: str) -> tuple[bool, str]:

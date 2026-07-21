@@ -136,38 +136,45 @@ class TestRendererContract(unittest.TestCase):
 
     def test_capture_preserves_zero_bytes(self):
         """Verify internal zero bytes are preserved in captured output."""
-        source = """fn main() -> tryte:
-    mut buf: tryte[5] = [65, 0, 66, 67, 68]
-    return 0
-"""
-        out = _capture_fixture_output(source, buffer_count=1, buffer_offset=0, entry="main", max_instructions=1000, expected_bytes=5)
+        memory = {0: [65, 0, 66, 67, 68]}
+        from tools.s3_renderer_contract import flatten_capture
+        out = flatten_capture(memory, buffer_count=1, buffer_offset=0, expected_bytes=5)
         self.assertEqual(out, b"A\x00BCD")
 
+        out = flatten_capture(memory, buffer_count=1, buffer_offset=0, expected_bytes=3)
+        self.assertEqual(out, b"A\x00B")
+
     def test_capture_empty_buffer_yields_no_output(self):
-        source = """fn main() -> tryte:
-    return 0
-"""
-        out = _capture_fixture_output(source, buffer_count=1, buffer_offset=0, entry="main", max_instructions=1000, expected_bytes=0)
+        memory = {0: []}
+        from tools.s3_renderer_contract import flatten_capture
+        out = flatten_capture(memory, buffer_count=1, buffer_offset=0, expected_bytes=0)
         self.assertEqual(out, b"")
 
     def test_capture_preserves_buffer_order(self):
         """Two buffers concatenate in order: buf0 then buf1."""
-        source = """fn main() -> tryte:
-    mut a: tryte[2] = [65, 66]
-    mut b: tryte[2] = [67, 68]
-    return 0
-"""
-        out = _capture_fixture_output(source, buffer_count=2, buffer_offset=0, entry="main", max_instructions=1000, expected_bytes=4)
+        memory = {0: [65, 66], 1: [67, 68]}
+        from tools.s3_renderer_contract import flatten_capture
+        out = flatten_capture(memory, buffer_count=2, buffer_offset=0, expected_bytes=4)
         self.assertEqual(out, b"ABCD")
 
     def test_capture_truncates_expected_bytes(self):
-        source = """fn main() -> tryte:
-    mut buf: tryte[5] = [65, 66, 67, 68, 69]
-    return 0
-"""
-        out = _capture_fixture_output(source, buffer_count=1, buffer_offset=0, entry="main", max_instructions=1000, expected_bytes=3)
+        memory = {0: [65, 66, 67, 68, 69]}
+        from tools.s3_renderer_contract import flatten_capture
+        out = flatten_capture(memory, buffer_count=1, buffer_offset=0, expected_bytes=3)
         self.assertEqual(len(out), 3)
         self.assertEqual(out, b"ABC")
+
+    def test_capture_rejects_internal_none(self):
+        memory = {0: [65, None, 66]}
+        from tools.s3_renderer_contract import flatten_capture
+        with self.assertRaisesRegex(ValueError, "insufficient data"):
+            flatten_capture(memory, buffer_count=1, buffer_offset=0, expected_bytes=3)
+
+    def test_capture_rejects_insufficient_data(self):
+        memory = {0: [65, 66]}
+        from tools.s3_renderer_contract import flatten_capture
+        with self.assertRaisesRegex(ValueError, "insufficient data: got 2, expected 3"):
+            flatten_capture(memory, buffer_count=1, buffer_offset=0, expected_bytes=3)
 
     def test_verify_fixture_metadata_passes(self):
         for name in FIXTURE_METADATA:

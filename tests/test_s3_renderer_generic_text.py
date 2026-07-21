@@ -20,6 +20,8 @@ class TestGenericFirstTextRenderer(unittest.TestCase):
         with open(s3_path) as f:
             cls.source = f.read()
         cls.meta = meta
+        from bootstrap.s3.pipeline import compile_source
+        cls.ir = compile_source(cls.source).ir
         cls.result, cls.output = 0, _capture_fixture_output(
             cls.source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes
         )
@@ -29,8 +31,7 @@ class TestGenericFirstTextRenderer(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(*self.meta.s3_path.split("/"))))
 
     def test_program_compiles(self):
-        from bootstrap.s3.pipeline import compile_source
-        compile_source(self.source)
+        self.assertIsNotNone(self.ir)
 
     def test_execution_returns_zero(self):
         self.assertEqual(self.result, 0)
@@ -100,18 +101,14 @@ class TestGenericFirstTextRenderer(unittest.TestCase):
         self.assertIn("buffer_high", self.source)
 
     def test_event_count_reasonable(self):
-        from bootstrap.s3.pipeline import compile_source
-        ir = compile_source(self.source).ir
-        for fn in ir.functions:
+        for fn in self.ir.functions:
             if fn.name == "first_event_count":
                 break
         else:
             self.fail("first_event_count not found")
 
     def test_render_first_function_present(self):
-        from bootstrap.s3.pipeline import compile_source
-        ir = compile_source(self.source).ir
-        fn_names = {fn.name for fn in ir.functions}
+        fn_names = {fn.name for fn in self.ir.functions}
         self.assertIn("render_first", fn_names)
 
     def test_main_calls_render_first(self):
@@ -125,15 +122,11 @@ class TestGenericFirstTextRenderer(unittest.TestCase):
         self.assertNotIn("cursor_high", self.source)
 
     def test_first_event_kind_returns_valid_kinds(self):
-        from bootstrap.s3.pipeline import compile_source
-        ir = compile_source(self.source).ir
-        fn_names = {fn.name for fn in ir.functions}
+        fn_names = {fn.name for fn in self.ir.functions}
         self.assertIn("first_event_kind", fn_names)
 
     def test_first_event_arg0_returns_valid_args(self):
-        from bootstrap.s3.pipeline import compile_source
-        ir = compile_source(self.source).ir
-        fn_names = {fn.name for fn in ir.functions}
+        fn_names = {fn.name for fn in self.ir.functions}
         self.assertIn("first_event_arg0", fn_names)
 
     def test_direct_event_iteration(self):

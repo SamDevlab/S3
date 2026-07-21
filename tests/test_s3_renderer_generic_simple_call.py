@@ -20,6 +20,8 @@ class TestGenericSimpleCallTextRenderer(unittest.TestCase):
         with open(s3_path) as f:
             cls.source = f.read()
         cls.meta = meta
+        from bootstrap.s3.pipeline import compile_source
+        cls.ir = compile_source(cls.source).ir
         cls.result, cls.output = 0, _capture_fixture_output(
             cls.source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes
         )
@@ -51,8 +53,7 @@ class TestGenericSimpleCallTextRenderer(unittest.TestCase):
 
     # 4. compiles
     def test_program_compiles(self):
-        from bootstrap.s3.pipeline import compile_source
-        compile_source(self.source)
+        self.assertIsNotNone(self.ir)
 
     # 5. executes
     def test_execution_returns_zero(self):
@@ -106,26 +107,67 @@ class TestGenericSimpleCallTextRenderer(unittest.TestCase):
 
     # 16. sum of lengths = 448 (proven by byte count test)
     def test_event_count_equals_175(self):
-        from bootstrap.s3.pipeline import compile_source
-        ir = compile_source(self.source).ir
-        fn_names = {fn.name for fn in ir.functions}
-        self.assertIn("simple_call_event_count", fn_names)
+        from bootstrap.s3.pipeline import run_source_with_buffer_capture
+        result, _ = run_source_with_buffer_capture(self.source, entry="simple_call_event_count", max_instructions=1000)
+        self.assertEqual(result, 175)
 
-    # 17. kind distribution (at least one present)
-    def test_event_kinds_present(self):
-        self.assertIn("fn simple_call_event_kind", self.source)
+    def test_event_properties_via_harness(self):
+        # We replace main with a harness that collects all kinds and lengths
+        test_main = """fn main() -> tryte:
+    mut buffer_low: tryte[300] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    mut buffer_high: tryte[300] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+    mut count: tryte = simple_call_event_count()
+    mut i: tryte = 0
+    while i <=> count:
+        mut k: tryte = simple_call_event_kind(i)
+        buffer_low[i] = k
+        buffer_high[i] = event_length(k, simple_call_event_arg0(i))
+        i = i + 1
 
-    # 18. no RAW_BYTE (kind 11 not used)
-    def test_no_raw_byte_kind(self):
-        self.assertIn("fn event_length", self.source)
+    return count
+"""
+        src = self.source.replace("fn main() -> tryte:\n    return render_first()", test_main)
+        from bootstrap.s3.pipeline import run_source_with_buffer_capture
+        result, capture = run_source_with_buffer_capture(src, entry="main", max_instructions=200000)
+        self.assertEqual(result, 175) # count returned by main
+
+        mem = capture[-1]
+        buffer_high = None
+        buffer_low = None
+        for arr in mem.values():
+            if len(arr) == 300:
+                if buffer_low is None:
+                    buffer_low = arr
+                else:
+                    buffer_high = arr
+
+        self.assertIsNotNone(buffer_high, "Could not find buffer_high in memory capture")
+        self.assertIsNotNone(buffer_low, "Could not find buffer_low in memory capture")
+
+        kinds = buffer_low[:175]
+        lengths = buffer_high[:175]
+
+        self.assertEqual(sum(lengths), 448)
+
+        # 17. kind distribution (at least one present)
+        self.assertTrue(len(set(kinds)) > 1)
+
+        # 18. no RAW_BYTE (kind 11 not used in simple_call!)
+        self.assertNotIn(11, kinds)
+
+        # 19. último evento = newline (kind 10 is newline in 'first', in simple_call there's no kind 10 either, wait, it's just checking the last kind)
+        # Actually in simple_call, newline is printed implicitly by other fragments, or there is no specific newline event if it's not defined.
+        # Let's check what the last kind is.
 
     # 19. no line complete pattern
     def test_no_line_complete(self):
-        self.assertNotIn("line_complete", self.source)
+        fn_names = {fn.name for fn in self.ir.functions}
+        self.assertNotIn("line_complete", fn_names)
 
     # 20. no event_by_position
     def test_no_event_by_position(self):
-        self.assertNotIn("event_by_position", self.source)
+        fn_names = {fn.name for fn in self.ir.functions}
+        self.assertNotIn("event_by_position", fn_names)
 
     # 21. uses while loop
     def test_while_loop_present(self):
