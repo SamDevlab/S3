@@ -166,20 +166,64 @@ fixture via entry `render_simple_call`, replacing the legacy
 
 ---
 
+## Generic Structural Renderer: `sign` completed
+
+The same generic renderer now also renders the `sign` fixture via entry
+`render_sign`, while the legacy `assembly_renderer_sign_text.s3` remains
+independent.
+
+### Event model (`sign`)
+
+342 purely structural events produce 946 bytes (36 lines, SHA-256
+`c077d2c49639b1a033505ec8c1ba1c60c78242e6e09c43f60a8aa5ed8b49e2d9`).
+
+| Kind | Name | Count |
+|------|------|-------|
+| 1 | Fragment | 49 |
+| 2 | Symbol | 40 |
+| 3 | Opcode | 14 |
+| 4 | Decimal | 51 |
+| 5 | Colon | 28 |
+| 6 | Space | 98 |
+| 7 | Comma | 24 |
+| 9 | Arrow | 2 |
+| 10 | Newline | 36 |
+
+- Zero `RAW_BYTE` events
+- Zero complete lines stored as fragments
+- Zero position-based events
+- Source coordinates are decomposed as `DECIMAL`, `COLON`, `DECIMAL`, `COLON`, `DECIMAL`
+- No fragment used by `sign` contains a digit, `:`, comma, arrow, or newline
+- Four output buffers are used: 300, 300, 300, and 46 bytes
+- 2.77 bytes per event average
+
+### New shared table entries
+
+- Fragment 21: `trit`
+- Symbols 10-14: `sign`, `r6`, `switch_negative_0`,
+  `switch_neutral_1`, `switch_positive_2`
+- Opcodes 106-107: `TCMP`, `TBR3`
+
+`sign_generic` preserves byte-for-byte equality with both the canonical golden
+and the legacy `sign` renderer.
+
+---
+
 ## Shared architecture
 
-Both `render_first` and `render_simple_call` share the same:
+`render_first`, `render_simple_call`, and `render_sign` share the same:
 
 - `event_length(kind, arg0)` / `event_byte(kind, arg0, idx)` dispatch loop
 - `fragment_length` / `fragment_byte` tables
 - `symbol_length` / `symbol_byte` tables
 - `opcode_length` / `opcode_byte` tables
 - `decimal_length` / `decimal_tens_byte` / `decimal_ones_byte` / `decimal_byte_at` functions
-- Two 300-byte buffers (`buffer_low`, `buffer_high`); automatic transition at offset 300
+- 300-byte segmented output buffers; `render_sign` adds a 46-byte tail buffer
 - `while`-based event iteration (no unrolled assignments)
 
 Event-specific tables (`first_event_kind`/`first_event_arg0`/`first_event_count`
-and `simple_call_event_kind`/`simple_call_event_arg0`/`simple_call_event_count`)
+`simple_call_event_kind`/`simple_call_event_arg0`/`simple_call_event_count`, and
+`sign_event_kind`/`sign_event_arg0`/`sign_event_count`)
 are separate per entry.
 
 ---
@@ -242,14 +286,20 @@ The decimal formatter intentionally supports **0-191 inclusive**:
 |---------|-------|-----------|---------------|-----------------|
 | `first_generic` | `render_first` | ~200K | 500K | ~110s |
 | `simple_call_generic` | `render_simple_call` | ~250K | 500K | ~115s |
+| `sign_generic` | `render_sign` | 850K | 1100K | 825K exceeds limit; 850K passes |
 
 - `first_generic` now has a slightly larger event table than
   `simple_call_generic` (178 vs 175 events) because source coordinates are
   decomposed structurally instead of stored in numeric fragments.
 - `simple_call_generic` keeps its canonical 175-event plan and 448-byte output.
+- `sign_generic` uses a 342-event plan and four buffers for the 946-byte output.
+- Instruction limit measurement for `sign_generic`: 250K, 350K, 500K, 750K,
+  800K, and 825K fail; 850K passes. The selected metadata limit is 1100K to
+  keep an operational margin instead of treating the measured threshold as an
+  exact dynamic cost.
 - The current 500K limit provides ~2x safety margin over the minimum.
-- Default max_instructions for other programs remains at 100K; only the
-  generic renderer uses 500K.
+- Default max_instructions for other programs remains at 100K; generic entries
+  use per-fixture measured limits.
 
 ---
 
@@ -261,22 +311,23 @@ The decimal formatter intentionally supports **0-191 inclusive**:
 - `tests/test_s3_renderer_generic_simple_call.py`: separated
   `render_simple_call` structure tests from execution tests; the structure
   class compiles IR and audits the event plan without running the VM.
+- `tests/test_s3_renderer_generic_sign.py`: separated `render_sign` structure
+  tests from execution tests; the structure class compiles IR and audits the
+  event plan without running the VM.
 - `tests/test_decimal_functions.py`: decimal boundary and byte tests for the
   shared 0-191 contract, including invalid values and invalid indices.
-- `tests/test_s3_renderer_contract.py`: includes `simple_call_generic` in
+- `tests/test_s3_renderer_contract.py`: includes `simple_call_generic` and
+  `sign_generic` in
   contract verification; real zero-byte capture test
-- `tools/compare_assembly_renderer.py --check`: validates 6 comparisons
-  (3 legacy + 3 generic)
+- `tools/compare_assembly_renderer.py --check`: validates 8 comparisons
+  (3 legacy, 3 generic, and generic-vs-legacy for `simple_call` and `sign`)
 - Legacy tests remain independent:
   - `test_s3_renderer_first_text.py` → `assembly_renderer_first_text.s3`
   - `test_s3_renderer_simple_call_text.py` → `assembly_renderer_simple_call_text.s3`
   - `test_s3_renderer_sign_text.py` → `assembly_renderer_sign_text.s3`
 
-### Pending
-
-- `sign` generic renderer (`sign_generic`)
-- A previous generated `sign_generic` attempt was rejected and is not part of
-  this branch state.
+The previous generated `sign_generic` attempt remains rejected and is not part
+of this branch state.
 
 ## Remaining
 

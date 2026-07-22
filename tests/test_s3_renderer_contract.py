@@ -22,6 +22,7 @@ class TestRendererContract(unittest.TestCase):
         self.assertIn("simple_call", FIXTURE_METADATA)
         self.assertIn("simple_call_generic", FIXTURE_METADATA)
         self.assertIn("sign", FIXTURE_METADATA)
+        self.assertIn("sign_generic", FIXTURE_METADATA)
 
     def test_fixture_metadata_has_all_fields(self):
         for name, meta in FIXTURE_METADATA.items():
@@ -31,7 +32,7 @@ class TestRendererContract(unittest.TestCase):
                 self.assertEqual(len(meta.expected_sha256), 64)
                 self.assertGreater(meta.expected_bytes, 0)
                 self.assertGreater(meta.expected_lines, 0)
-                self.assertIn(meta.buffer_count, (2, 3))
+                self.assertIn(meta.buffer_count, (2, 3, 4))
 
     def test_golden_sha256_matches_git_blob(self):
         for name, meta in FIXTURE_METADATA.items():
@@ -94,6 +95,15 @@ class TestRendererContract(unittest.TestCase):
 
     def test_capture_sign_matches_golden(self):
         meta = FIXTURE_METADATA["sign"]
+        path = os.path.join(*meta.s3_path.split("/"))
+        with open(path) as f:
+            source = f.read()
+        output = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
+        golden = _git_blob_bytes(meta.golden_path)
+        self.assertEqual(output, golden)
+
+    def test_capture_sign_generic_matches_golden(self):
+        meta = FIXTURE_METADATA["sign_generic"]
         path = os.path.join(*meta.s3_path.split("/"))
         with open(path) as f:
             source = f.read()
@@ -226,6 +236,14 @@ class TestRendererContract(unittest.TestCase):
             layout.buffer_names, ("buffer_low", "buffer_mid", "buffer_high")
         )
         self.assertEqual(layout.capacities, (364, 364, 218))
+
+    def test_sign_generic_buffer_layout(self):
+        layout = FIXTURE_METADATA["sign_generic"].buffer_layout
+        self.assertEqual(
+            layout.buffer_names,
+            ("buffer_low", "buffer_mid", "buffer_high", "buffer_tail"),
+        )
+        self.assertEqual(layout.capacities, (300, 300, 300, 46))
 
     def test_audit_reports_strategy(self):
         audit = audit_duplication()

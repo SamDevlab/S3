@@ -86,6 +86,13 @@ fn fragment_length(id: tryte) -> tryte:
             return 1
         1:
             skip_fragment_length_20p: tryte = 0
+    match id <=> 21:
+        -1:
+            skip_fragment_length_21n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fragment_length_21p: tryte = 0
     return 0
 
 fn fragment_byte(id: tryte, idx: tryte) -> tryte:
@@ -628,6 +635,41 @@ fn fragment_byte(id: tryte, idx: tryte) -> tryte:
             return 0
         1:
             skip_fragment_byte_20p: tryte = 0
+    match id <=> 21:
+        -1:
+            skip_fragment_byte_21n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_fragment_byte_21_0n: tryte = 0
+                0:
+                    return 116
+                1:
+                    skip_fragment_byte_21_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_fragment_byte_21_1n: tryte = 0
+                0:
+                    return 114
+                1:
+                    skip_fragment_byte_21_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_fragment_byte_21_2n: tryte = 0
+                0:
+                    return 105
+                1:
+                    skip_fragment_byte_21_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_fragment_byte_21_3n: tryte = 0
+                0:
+                    return 116
+                1:
+                    skip_fragment_byte_21_3p: tryte = 0
+            return 0
+        1:
+            skip_fragment_byte_21p: tryte = 0
     return 0
 
 fn symbol_length(id: tryte) -> tryte:
@@ -694,6 +736,41 @@ fn symbol_length(id: tryte) -> tryte:
             return 3
         1:
             skip_symbol_length_8p: tryte = 0
+    match id <=> 10:
+        -1:
+            skip_symbol_length_9n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_symbol_length_9p: tryte = 0
+    match id <=> 11:
+        -1:
+            skip_symbol_length_10n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_symbol_length_10p: tryte = 0
+    match id <=> 12:
+        -1:
+            skip_symbol_length_11n: tryte = 0
+        0:
+            return 17
+        1:
+            skip_symbol_length_11p: tryte = 0
+    match id <=> 13:
+        -1:
+            skip_symbol_length_12n: tryte = 0
+        0:
+            return 16
+        1:
+            skip_symbol_length_12p: tryte = 0
+    match id <=> 14:
+        -1:
+            skip_symbol_length_13n: tryte = 0
+        0:
+            return 17
+        1:
+            skip_symbol_length_13p: tryte = 0
     return 0
 
 fn symbol_byte(id: tryte, idx: tryte) -> tryte:
@@ -928,6 +1005,433 @@ fn symbol_byte(id: tryte, idx: tryte) -> tryte:
             return 0
         1:
             skip_symbol_byte_8p: tryte = 0
+    match id <=> 10:
+        -1:
+            skip_symbol_byte_9n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_symbol_byte_9_0n: tryte = 0
+                0:
+                    return 115
+                1:
+                    skip_symbol_byte_9_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_symbol_byte_9_1n: tryte = 0
+                0:
+                    return 105
+                1:
+                    skip_symbol_byte_9_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_symbol_byte_9_2n: tryte = 0
+                0:
+                    return 103
+                1:
+                    skip_symbol_byte_9_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_symbol_byte_9_3n: tryte = 0
+                0:
+                    return 110
+                1:
+                    skip_symbol_byte_9_3p: tryte = 0
+            return 0
+        1:
+            skip_symbol_byte_9p: tryte = 0
+    match id <=> 11:
+        -1:
+            skip_symbol_byte_10n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_symbol_byte_10_0n: tryte = 0
+                0:
+                    return 114
+                1:
+                    skip_symbol_byte_10_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_symbol_byte_10_1n: tryte = 0
+                0:
+                    return 54
+                1:
+                    skip_symbol_byte_10_1p: tryte = 0
+            return 0
+        1:
+            skip_symbol_byte_10p: tryte = 0
+    match id <=> 12:
+        -1:
+            skip_symbol_byte_11n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_symbol_byte_11_0n: tryte = 0
+                0:
+                    return 115
+                1:
+                    skip_symbol_byte_11_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_symbol_byte_11_1n: tryte = 0
+                0:
+                    return 119
+                1:
+                    skip_symbol_byte_11_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_symbol_byte_11_2n: tryte = 0
+                0:
+                    return 105
+                1:
+                    skip_symbol_byte_11_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_symbol_byte_11_3n: tryte = 0
+                0:
+                    return 116
+                1:
+                    skip_symbol_byte_11_3p: tryte = 0
+            match idx <=> 4:
+                -1:
+                    skip_symbol_byte_11_4n: tryte = 0
+                0:
+                    return 99
+                1:
+                    skip_symbol_byte_11_4p: tryte = 0
+            match idx <=> 5:
+                -1:
+                    skip_symbol_byte_11_5n: tryte = 0
+                0:
+                    return 104
+                1:
+                    skip_symbol_byte_11_5p: tryte = 0
+            match idx <=> 6:
+                -1:
+                    skip_symbol_byte_11_6n: tryte = 0
+                0:
+                    return 95
+                1:
+                    skip_symbol_byte_11_6p: tryte = 0
+            match idx <=> 7:
+                -1:
+                    skip_symbol_byte_11_7n: tryte = 0
+                0:
+                    return 110
+                1:
+                    skip_symbol_byte_11_7p: tryte = 0
+            match idx <=> 8:
+                -1:
+                    skip_symbol_byte_11_8n: tryte = 0
+                0:
+                    return 101
+                1:
+                    skip_symbol_byte_11_8p: tryte = 0
+            match idx <=> 9:
+                -1:
+                    skip_symbol_byte_11_9n: tryte = 0
+                0:
+                    return 103
+                1:
+                    skip_symbol_byte_11_9p: tryte = 0
+            match idx <=> 10:
+                -1:
+                    skip_symbol_byte_11_10n: tryte = 0
+                0:
+                    return 97
+                1:
+                    skip_symbol_byte_11_10p: tryte = 0
+            match idx <=> 11:
+                -1:
+                    skip_symbol_byte_11_11n: tryte = 0
+                0:
+                    return 116
+                1:
+                    skip_symbol_byte_11_11p: tryte = 0
+            match idx <=> 12:
+                -1:
+                    skip_symbol_byte_11_12n: tryte = 0
+                0:
+                    return 105
+                1:
+                    skip_symbol_byte_11_12p: tryte = 0
+            match idx <=> 13:
+                -1:
+                    skip_symbol_byte_11_13n: tryte = 0
+                0:
+                    return 118
+                1:
+                    skip_symbol_byte_11_13p: tryte = 0
+            match idx <=> 14:
+                -1:
+                    skip_symbol_byte_11_14n: tryte = 0
+                0:
+                    return 101
+                1:
+                    skip_symbol_byte_11_14p: tryte = 0
+            match idx <=> 15:
+                -1:
+                    skip_symbol_byte_11_15n: tryte = 0
+                0:
+                    return 95
+                1:
+                    skip_symbol_byte_11_15p: tryte = 0
+            match idx <=> 16:
+                -1:
+                    skip_symbol_byte_11_16n: tryte = 0
+                0:
+                    return 48
+                1:
+                    skip_symbol_byte_11_16p: tryte = 0
+            return 0
+        1:
+            skip_symbol_byte_11p: tryte = 0
+    match id <=> 13:
+        -1:
+            skip_symbol_byte_12n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_symbol_byte_12_0n: tryte = 0
+                0:
+                    return 115
+                1:
+                    skip_symbol_byte_12_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_symbol_byte_12_1n: tryte = 0
+                0:
+                    return 119
+                1:
+                    skip_symbol_byte_12_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_symbol_byte_12_2n: tryte = 0
+                0:
+                    return 105
+                1:
+                    skip_symbol_byte_12_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_symbol_byte_12_3n: tryte = 0
+                0:
+                    return 116
+                1:
+                    skip_symbol_byte_12_3p: tryte = 0
+            match idx <=> 4:
+                -1:
+                    skip_symbol_byte_12_4n: tryte = 0
+                0:
+                    return 99
+                1:
+                    skip_symbol_byte_12_4p: tryte = 0
+            match idx <=> 5:
+                -1:
+                    skip_symbol_byte_12_5n: tryte = 0
+                0:
+                    return 104
+                1:
+                    skip_symbol_byte_12_5p: tryte = 0
+            match idx <=> 6:
+                -1:
+                    skip_symbol_byte_12_6n: tryte = 0
+                0:
+                    return 95
+                1:
+                    skip_symbol_byte_12_6p: tryte = 0
+            match idx <=> 7:
+                -1:
+                    skip_symbol_byte_12_7n: tryte = 0
+                0:
+                    return 110
+                1:
+                    skip_symbol_byte_12_7p: tryte = 0
+            match idx <=> 8:
+                -1:
+                    skip_symbol_byte_12_8n: tryte = 0
+                0:
+                    return 101
+                1:
+                    skip_symbol_byte_12_8p: tryte = 0
+            match idx <=> 9:
+                -1:
+                    skip_symbol_byte_12_9n: tryte = 0
+                0:
+                    return 117
+                1:
+                    skip_symbol_byte_12_9p: tryte = 0
+            match idx <=> 10:
+                -1:
+                    skip_symbol_byte_12_10n: tryte = 0
+                0:
+                    return 116
+                1:
+                    skip_symbol_byte_12_10p: tryte = 0
+            match idx <=> 11:
+                -1:
+                    skip_symbol_byte_12_11n: tryte = 0
+                0:
+                    return 114
+                1:
+                    skip_symbol_byte_12_11p: tryte = 0
+            match idx <=> 12:
+                -1:
+                    skip_symbol_byte_12_12n: tryte = 0
+                0:
+                    return 97
+                1:
+                    skip_symbol_byte_12_12p: tryte = 0
+            match idx <=> 13:
+                -1:
+                    skip_symbol_byte_12_13n: tryte = 0
+                0:
+                    return 108
+                1:
+                    skip_symbol_byte_12_13p: tryte = 0
+            match idx <=> 14:
+                -1:
+                    skip_symbol_byte_12_14n: tryte = 0
+                0:
+                    return 95
+                1:
+                    skip_symbol_byte_12_14p: tryte = 0
+            match idx <=> 15:
+                -1:
+                    skip_symbol_byte_12_15n: tryte = 0
+                0:
+                    return 49
+                1:
+                    skip_symbol_byte_12_15p: tryte = 0
+            return 0
+        1:
+            skip_symbol_byte_12p: tryte = 0
+    match id <=> 14:
+        -1:
+            skip_symbol_byte_13n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_symbol_byte_13_0n: tryte = 0
+                0:
+                    return 115
+                1:
+                    skip_symbol_byte_13_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_symbol_byte_13_1n: tryte = 0
+                0:
+                    return 119
+                1:
+                    skip_symbol_byte_13_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_symbol_byte_13_2n: tryte = 0
+                0:
+                    return 105
+                1:
+                    skip_symbol_byte_13_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_symbol_byte_13_3n: tryte = 0
+                0:
+                    return 116
+                1:
+                    skip_symbol_byte_13_3p: tryte = 0
+            match idx <=> 4:
+                -1:
+                    skip_symbol_byte_13_4n: tryte = 0
+                0:
+                    return 99
+                1:
+                    skip_symbol_byte_13_4p: tryte = 0
+            match idx <=> 5:
+                -1:
+                    skip_symbol_byte_13_5n: tryte = 0
+                0:
+                    return 104
+                1:
+                    skip_symbol_byte_13_5p: tryte = 0
+            match idx <=> 6:
+                -1:
+                    skip_symbol_byte_13_6n: tryte = 0
+                0:
+                    return 95
+                1:
+                    skip_symbol_byte_13_6p: tryte = 0
+            match idx <=> 7:
+                -1:
+                    skip_symbol_byte_13_7n: tryte = 0
+                0:
+                    return 112
+                1:
+                    skip_symbol_byte_13_7p: tryte = 0
+            match idx <=> 8:
+                -1:
+                    skip_symbol_byte_13_8n: tryte = 0
+                0:
+                    return 111
+                1:
+                    skip_symbol_byte_13_8p: tryte = 0
+            match idx <=> 9:
+                -1:
+                    skip_symbol_byte_13_9n: tryte = 0
+                0:
+                    return 115
+                1:
+                    skip_symbol_byte_13_9p: tryte = 0
+            match idx <=> 10:
+                -1:
+                    skip_symbol_byte_13_10n: tryte = 0
+                0:
+                    return 105
+                1:
+                    skip_symbol_byte_13_10p: tryte = 0
+            match idx <=> 11:
+                -1:
+                    skip_symbol_byte_13_11n: tryte = 0
+                0:
+                    return 116
+                1:
+                    skip_symbol_byte_13_11p: tryte = 0
+            match idx <=> 12:
+                -1:
+                    skip_symbol_byte_13_12n: tryte = 0
+                0:
+                    return 105
+                1:
+                    skip_symbol_byte_13_12p: tryte = 0
+            match idx <=> 13:
+                -1:
+                    skip_symbol_byte_13_13n: tryte = 0
+                0:
+                    return 118
+                1:
+                    skip_symbol_byte_13_13p: tryte = 0
+            match idx <=> 14:
+                -1:
+                    skip_symbol_byte_13_14n: tryte = 0
+                0:
+                    return 101
+                1:
+                    skip_symbol_byte_13_14p: tryte = 0
+            match idx <=> 15:
+                -1:
+                    skip_symbol_byte_13_15n: tryte = 0
+                0:
+                    return 95
+                1:
+                    skip_symbol_byte_13_15p: tryte = 0
+            match idx <=> 16:
+                -1:
+                    skip_symbol_byte_13_16n: tryte = 0
+                0:
+                    return 50
+                1:
+                    skip_symbol_byte_13_16p: tryte = 0
+            return 0
+        1:
+            skip_symbol_byte_13p: tryte = 0
     return 0
 
 fn opcode_length(id: tryte) -> tryte:
@@ -973,6 +1477,20 @@ fn opcode_length(id: tryte) -> tryte:
             return 5
         1:
             skip_opcode_length_5p: tryte = 0
+    match id <=> 106:
+        -1:
+            skip_opcode_length_6n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_opcode_length_6p: tryte = 0
+    match id <=> 107:
+        -1:
+            skip_opcode_length_7n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_opcode_length_7p: tryte = 0
     return 0
 
 fn opcode_byte(id: tryte, idx: tryte) -> tryte:
@@ -1207,6 +1725,76 @@ fn opcode_byte(id: tryte, idx: tryte) -> tryte:
             return 0
         1:
             skip_opcode_byte_5p: tryte = 0
+    match id <=> 106:
+        -1:
+            skip_opcode_byte_6n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_opcode_byte_6_0n: tryte = 0
+                0:
+                    return 84
+                1:
+                    skip_opcode_byte_6_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_opcode_byte_6_1n: tryte = 0
+                0:
+                    return 67
+                1:
+                    skip_opcode_byte_6_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_opcode_byte_6_2n: tryte = 0
+                0:
+                    return 77
+                1:
+                    skip_opcode_byte_6_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_opcode_byte_6_3n: tryte = 0
+                0:
+                    return 80
+                1:
+                    skip_opcode_byte_6_3p: tryte = 0
+            return 0
+        1:
+            skip_opcode_byte_6p: tryte = 0
+    match id <=> 107:
+        -1:
+            skip_opcode_byte_7n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_opcode_byte_7_0n: tryte = 0
+                0:
+                    return 84
+                1:
+                    skip_opcode_byte_7_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_opcode_byte_7_1n: tryte = 0
+                0:
+                    return 66
+                1:
+                    skip_opcode_byte_7_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_opcode_byte_7_2n: tryte = 0
+                0:
+                    return 82
+                1:
+                    skip_opcode_byte_7_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_opcode_byte_7_3n: tryte = 0
+                0:
+                    return 51
+                1:
+                    skip_opcode_byte_7_3p: tryte = 0
+            return 0
+        1:
+            skip_opcode_byte_7p: tryte = 0
     return 0
 
 fn decimal_length(value: tryte) -> tryte:
@@ -6838,6 +7426,17 @@ fn simple_call_event_arg0(index: tryte) -> tryte:
             skip_scea_174p: tryte = 0
 
     return 0
+
+fn sign_event_count() -> tryte:
+    return 342
+
+fn sign_event_kind(index: tryte) -> tryte:
+    mut kinds: tryte[342] = [1, 4, 1, 6, 4, 1, 4, 1, 4, 10, 10, 1, 6, 2, 6, 9, 6, 1, 10, 6, 1, 6, 2, 7, 6, 1, 10, 6, 1, 6, 2, 7, 6, 1, 10, 6, 1, 6, 2, 7, 6, 1, 10, 6, 1, 6, 2, 7, 6, 1, 10, 6, 1, 6, 2, 7, 6, 1, 10, 6, 1, 6, 2, 7, 6, 1, 10, 6, 1, 6, 2, 7, 6, 1, 10, 1, 6, 2, 10, 6, 3, 6, 2, 7, 6, 4, 6, 1, 4, 5, 4, 5, 4, 10, 6, 3, 6, 2, 7, 6, 2, 7, 6, 2, 6, 1, 4, 5, 4, 5, 4, 10, 6, 3, 6, 2, 7, 6, 2, 7, 6, 2, 7, 6, 2, 6, 1, 4, 5, 4, 5, 4, 10, 1, 6, 2, 10, 6, 3, 6, 2, 7, 6, 4, 6, 1, 4, 5, 4, 5, 4, 10, 6, 3, 6, 2, 7, 6, 2, 6, 1, 4, 5, 4, 5, 4, 10, 6, 3, 6, 2, 6, 1, 4, 5, 4, 5, 4, 10, 1, 6, 2, 10, 6, 3, 6, 2, 7, 6, 4, 6, 1, 4, 5, 4, 5, 4, 10, 6, 3, 6, 2, 6, 1, 4, 5, 4, 5, 4, 10, 1, 6, 2, 10, 6, 3, 6, 2, 7, 6, 4, 6, 1, 4, 5, 4, 5, 4, 10, 6, 3, 6, 2, 6, 1, 4, 5, 4, 5, 4, 10, 1, 10, 10, 1, 6, 2, 6, 9, 6, 1, 10, 6, 1, 6, 2, 7, 6, 1, 10, 6, 1, 6, 2, 7, 6, 1, 10, 6, 1, 6, 2, 7, 6, 1, 10, 1, 6, 2, 10, 6, 3, 6, 2, 7, 6, 4, 6, 1, 4, 5, 4, 5, 4, 10, 6, 3, 6, 2, 7, 6, 2, 6, 1, 4, 5, 4, 5, 4, 10, 6, 3, 6, 2, 7, 6, 2, 7, 6, 2, 6, 1, 4, 5, 4, 5, 4, 10, 6, 3, 6, 2, 6, 1, 4, 5, 4, 5, 4, 10, 1, 10]
+    return kinds[index]
+
+fn sign_event_arg0(index: tryte) -> tryte:
+    mut args: tryte[342] = [18, 3, 19, 1, 0, 20, 5, 20, 0, 0, 0, 2, 1, 10, 1, 0, 1, 21, 0, 4, 3, 1, 3, 0, 1, 11, 0, 4, 4, 1, 4, 0, 1, 11, 0, 4, 4, 1, 5, 0, 1, 21, 0, 4, 4, 1, 6, 0, 1, 21, 0, 4, 4, 1, 7, 0, 1, 21, 0, 4, 4, 1, 8, 0, 1, 21, 0, 4, 4, 1, 11, 0, 1, 21, 0, 5, 1, 2, 0, 4, 100, 1, 4, 0, 1, 0, 1, 8, 2, 0, 21, 0, 51, 0, 4, 106, 3, 5, 0, 1, 3, 0, 1, 4, 1, 8, 2, 0, 17, 0, 47, 0, 4, 107, 3, 5, 0, 1, 12, 0, 1, 13, 0, 1, 14, 1, 8, 2, 0, 5, 0, 35, 0, 5, 1, 12, 0, 4, 100, 1, 6, 0, 1, 1, 1, 8, 4, 0, 21, 0, 86, 0, 4, 102, 3, 7, 0, 1, 6, 1, 8, 4, 0, 20, 0, 85, 0, 4, 104, 3, 7, 1, 8, 4, 0, 13, 0, 78, 0, 5, 1, 13, 0, 4, 100, 1, 8, 0, 1, 0, 1, 8, 7, 0, 20, 0, 119, 0, 4, 104, 3, 8, 1, 8, 7, 0, 13, 0, 112, 0, 5, 1, 14, 0, 4, 100, 1, 11, 0, 1, 1, 1, 8, 10, 0, 20, 0, 152, 0, 4, 104, 3, 11, 1, 8, 10, 0, 13, 0, 145, 0, 6, 0, 0, 2, 1, 1, 1, 0, 1, 21, 0, 4, 4, 1, 3, 0, 1, 11, 0, 4, 4, 1, 4, 0, 1, 11, 0, 4, 4, 1, 5, 0, 1, 21, 0, 5, 1, 2, 0, 4, 100, 1, 3, 0, 1, 20, 1, 8, 13, 0, 18, 0, 191, 0, 4, 102, 3, 4, 0, 1, 3, 1, 8, 13, 0, 17, 0, 190, 0, 4, 105, 2, 5, 0, 1, 10, 0, 1, 4, 1, 8, 13, 0, 12, 0, 185, 0, 4, 104, 3, 5, 1, 8, 13, 0, 5, 0, 178, 0, 6, 0]
+    return args[index]
 # Event-driven render_first
 # Iterates events directly, writes bytes to dual buffers based on cumulative offset
 
@@ -6903,6 +7502,152 @@ fn render_simple_call() -> tryte:
                     skip_switch_sc: tryte = 0
                 1:
                     skip_switch_sc: tryte = 0
+            byte_idx = byte_idx + 1
+        evt_idx = evt_idx + 1
+    return 0
+
+fn render_sign() -> tryte:
+    mut buffer_low: tryte[300] = [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    ]
+    mut buffer_mid: tryte[300] = [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    ]
+    mut buffer_high: tryte[300] = [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    ]
+    mut buffer_tail: tryte[46] = [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0
+    ]
+    mut buffer_idx: tryte = 0
+    mut buf_offset: tryte = 0
+    mut evt_idx: tryte = 0
+    while evt_idx <=> sign_event_count():
+        mut kind: tryte = sign_event_kind(evt_idx)
+        mut arg0: tryte = sign_event_arg0(evt_idx)
+        mut length: tryte = event_length(kind, arg0)
+        mut byte_idx: tryte = 0
+        while byte_idx <=> length:
+            mut byte_val: tryte = event_byte(kind, arg0, byte_idx)
+            match buffer_idx <=> 0:
+                -1:
+                    skip_buf_sign_0n: tryte = 0
+                0:
+                    buffer_low[buf_offset] = byte_val
+                1:
+                    match buffer_idx <=> 1:
+                        -1:
+                            skip_buf_sign_1n: tryte = 0
+                        0:
+                            buffer_mid[buf_offset] = byte_val
+                        1:
+                            match buffer_idx <=> 2:
+                                -1:
+                                    skip_buf_sign_2n: tryte = 0
+                                0:
+                                    buffer_high[buf_offset] = byte_val
+                                1:
+                                    buffer_tail[buf_offset] = byte_val
+            buf_offset = buf_offset + 1
+            match buf_offset <=> 300:
+                0:
+                    buffer_idx = buffer_idx + 1
+                    buf_offset = 0
+                -1:
+                    skip_switch_sign: tryte = 0
+                1:
+                    skip_switch_sign: tryte = 0
             byte_idx = byte_idx + 1
         evt_idx = evt_idx + 1
     return 0

@@ -252,6 +252,21 @@ FIXTURE_METADATA: dict[str, FixtureMetadata] = {
             capacities=(364, 364, 218),
         ),
     ),
+    "sign_generic": FixtureMetadata(
+        s3_path="examples/self_hosting/assembly_renderer_generic_text.s3",
+        golden_path="tests/golden/inspect/sign.assembly.txt",
+        expected_sha256="c077d2c49639b1a033505ec8c1ba1c60c78242e6e09c43f60a8aa5ed8b49e2d9",
+        expected_bytes=946,
+        expected_lines=36,
+        buffer_count=4,
+        buffer_offset=0,
+        entry="render_sign",
+        buffer_layout=RendererBufferLayout(
+            buffer_names=("buffer_low", "buffer_mid", "buffer_high", "buffer_tail"),
+            capacities=(300, 300, 300, 46),
+        ),
+        max_instructions=1100000,
+    ),
 }
 
 
