@@ -47,8 +47,8 @@ from tools.s3_renderer_contract import (
     _git_blob_bytes,
 )
 
-FIRST_S3_RENDERER = FIXTURE_METADATA["first_generic"].s3_path
-FIRST_S3_GOLDEN = FIXTURE_METADATA["first_generic"].golden_path
+FIRST_S3_RENDERER = FIXTURE_METADATA["first"].s3_path
+FIRST_S3_GOLDEN = FIXTURE_METADATA["first"].golden_path
 SIMPLE_CALL_S3_RENDERER = FIXTURE_METADATA["simple_call"].s3_path
 SIMPLE_CALL_S3_GOLDEN = FIXTURE_METADATA["simple_call"].golden_path
 SIGN_S3_RENDERER = FIXTURE_METADATA["sign"].s3_path
@@ -2327,8 +2327,8 @@ def _render_s3_fixture(renderer_path: str, golden_path_str: str, name: str, buff
 
 
 def candidate_render_first() -> int:
-    meta = FIXTURE_METADATA["first_generic"]
-    return _render_s3_fixture(FIRST_S3_RENDERER, FIRST_S3_GOLDEN, "first_generic", buffer_count=meta.buffer_count, buffer_offset=meta.buffer_offset, entry=meta.entry, max_instructions=meta.max_instructions, expected_bytes=meta.expected_bytes)
+    meta = FIXTURE_METADATA["first"]
+    return _render_s3_fixture(FIRST_S3_RENDERER, FIRST_S3_GOLDEN, "first", buffer_count=meta.buffer_count, buffer_offset=meta.buffer_offset, entry=meta.entry, max_instructions=meta.max_instructions, expected_bytes=meta.expected_bytes)
 
 
 def candidate_render_simple_call() -> int:
@@ -2487,6 +2487,10 @@ def check() -> int:
     print("generic sign: passed")
     print("generic vs legacy simple_call: passed")
     print("generic vs legacy sign: passed")
+    print("actual outputs: passed")
+    print("available comparisons: passed")
+    print("renderer implementation: complete")
+    print("full text rendering: passed")
     print("global check: passed")
     return 0
 

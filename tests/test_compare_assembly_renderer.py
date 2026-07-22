@@ -435,3 +435,34 @@ def test_compare_assembly_renderer_check_passes_with_s3_renderer() -> None:
     assert "full text rendering: passed" in completed.stdout
     assert "global check: passed" in completed.stdout
     assert completed.stderr == ""
+
+
+def test_candidate_render_first_uses_legacy_fixture(monkeypatch) -> None:
+    from tools import compare_assembly_renderer
+    from tools.s3_renderer_contract import FIXTURE_METADATA
+
+    calls = []
+
+    def fake_render(*args, **kwargs):
+        calls.append((args, kwargs))
+        return 0
+
+    monkeypatch.setattr(
+        compare_assembly_renderer, "_render_s3_fixture", fake_render
+    )
+
+    assert compare_assembly_renderer.candidate_render_first() == 0
+
+    meta = FIXTURE_METADATA["first"]
+    assert calls == [
+        (
+            (meta.s3_path, meta.golden_path, "first"),
+            {
+                "buffer_count": meta.buffer_count,
+                "buffer_offset": meta.buffer_offset,
+                "entry": meta.entry,
+                "max_instructions": meta.max_instructions,
+                "expected_bytes": meta.expected_bytes,
+            },
+        )
+    ]

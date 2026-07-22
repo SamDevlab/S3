@@ -1,6 +1,6 @@
 # Milestone 0.41 — `while` loop statement
 
-Status: **open**
+Status: **completed**
 
 ## Summary
 
@@ -328,6 +328,37 @@ The decimal formatter intentionally supports **0-191 inclusive**:
 
 The previous generated `sign_generic` attempt remains rejected and is not part
 of this branch state.
+
+## Final audit closure
+
+The 0.41 milestone now has all three generic structural fixtures completed in
+`examples/self_hosting/assembly_renderer_generic_text.s3`:
+
+| Fixture | Entry | Bytes | Lines | Events | SHA-256 |
+|---------|-------|------:|------:|-------:|---------|
+| `first_generic` | `render_first` | 441 | 18 | 178 | `46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67` |
+| `simple_call_generic` | `render_simple_call` | 448 | 21 | 175 | `d6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f` |
+| `sign_generic` | `render_sign` | 946 | 36 | 342 | `c077d2c49639b1a033505ec8c1ba1c60c78242e6e09c43f60a8aa5ed8b49e2d9` |
+
+Final local validation:
+
+- Focused renderer, contract, decimal, comparator, inventory, `compileall`, and
+  `git diff --check` validations passed.
+- Full test suite passed locally: 1114 tests passed, 92 native Linux x86-64
+  tests skipped on Windows AMD64, and 603 subtests passed.
+- `tools/compare_assembly_renderer.py --check` passed 8 comparisons: 3 legacy
+  vs golden, 3 generic vs golden, and generic-vs-legacy for `simple_call` and
+  `sign`.
+- `tools/s3_program_check.py check` passed with 23 programs and 20 hosted
+  executions; `assembly_renderer_generic_text.s3` is counted once even though
+  it exposes three entries.
+- Goldens remain unchanged.
+- GitHub Actions run `29911828792` for commit
+  `2d50bffd41e952334bb6197f2e248b7ca4b3ecb0` failed before the local
+  comparator-readiness correction. No post-correction CI run exists yet because
+  this audit did not commit or push.
+- Final commit is pending.
+- Pull request has not been opened.
 
 ## Remaining
 
