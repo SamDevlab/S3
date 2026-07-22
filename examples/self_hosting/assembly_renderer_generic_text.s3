@@ -4,162 +4,92 @@
 fn fragment_length(id: tryte) -> tryte:
     match id <=> 1:
         -1:
-            skip_fragment_length_0n: tryte = 0
+            skip_fragment_length_1n: tryte = 0
         0:
             return 6
         1:
-            skip_fragment_length_0p: tryte = 0
-    match id <=> 2:
-        -1:
-            skip_fragment_length_1n: tryte = 0
-        0:
-            return 9
-        1:
             skip_fragment_length_1p: tryte = 0
-    match id <=> 3:
+    match id <=> 2:
         -1:
             skip_fragment_length_2n: tryte = 0
         0:
-            return 6
-        1:
-            skip_fragment_length_2p: tryte = 0
-    match id <=> 4:
-        -1:
-            skip_fragment_length_3n: tryte = 0
-        0:
             return 9
         1:
-            skip_fragment_length_3p: tryte = 0
-    match id <=> 5:
+            skip_fragment_length_2p: tryte = 0
+    match id <=> 3:
         -1:
             skip_fragment_length_3n: tryte = 0
         0:
             return 6
         1:
             skip_fragment_length_3p: tryte = 0
-    match id <=> 6:
+    match id <=> 4:
         -1:
             skip_fragment_length_4n: tryte = 0
         0:
-            return 4
+            return 9
         1:
             skip_fragment_length_4p: tryte = 0
-    match id <=> 7:
+    match id <=> 5:
         -1:
             skip_fragment_length_5n: tryte = 0
         0:
-            return 5
+            return 6
         1:
             skip_fragment_length_5p: tryte = 0
-    match id <=> 8:
+    match id <=> 6:
         -1:
             skip_fragment_length_6n: tryte = 0
         0:
-            return 9
+            return 4
         1:
             skip_fragment_length_6p: tryte = 0
-    match id <=> 11:
+    match id <=> 7:
         -1:
             skip_fragment_length_7n: tryte = 0
         0:
             return 5
         1:
             skip_fragment_length_7p: tryte = 0
-    match id <=> 12:
+    match id <=> 8:
         -1:
             skip_fragment_length_8n: tryte = 0
         0:
-            return 7
+            return 9
         1:
             skip_fragment_length_8p: tryte = 0
-    match id <=> 13:
-        -1:
-            skip_fragment_length_9n: tryte = 0
-        0:
-            return 6
-        1:
-            skip_fragment_length_9p: tryte = 0
-    match id <=> 14:
-        -1:
-            skip_fragment_length_10n: tryte = 0
-        0:
-            return 7
-        1:
-            skip_fragment_length_10p: tryte = 0
-    match id <=> 15:
+    match id <=> 11:
         -1:
             skip_fragment_length_11n: tryte = 0
         0:
-            return 6
+            return 5
         1:
             skip_fragment_length_11p: tryte = 0
-    match id <=> 16:
+    match id <=> 18:
         -1:
-            skip_fragment_length_12n: tryte = 0
+            skip_fragment_length_18n: tryte = 0
         0:
-            return 7
+            return 2
         1:
-            skip_fragment_length_12p: tryte = 0
-    match id <=> 17:
+            skip_fragment_length_18p: tryte = 0
+    match id <=> 19:
         -1:
-            skip_fragment_length_13n: tryte = 0
+            skip_fragment_length_19n: tryte = 0
         0:
-            return 6
+            return 3
         1:
-            skip_fragment_length_13p: tryte = 0
+            skip_fragment_length_19p: tryte = 0
+    match id <=> 20:
+        -1:
+            skip_fragment_length_20n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fragment_length_20p: tryte = 0
     return 0
 
 fn fragment_byte(id: tryte, idx: tryte) -> tryte:
     match id <=> 1:
-        -1:
-            skip_fragment_byte_0n: tryte = 0
-        0:
-            match idx <=> 0:
-                -1:
-                    skip_fragment_byte_0_0n: tryte = 0
-                0:
-                    return 46
-                1:
-                    skip_fragment_byte_0_0p: tryte = 0
-            match idx <=> 1:
-                -1:
-                    skip_fragment_byte_0_1n: tryte = 0
-                0:
-                    return 115
-                1:
-                    skip_fragment_byte_0_1p: tryte = 0
-            match idx <=> 2:
-                -1:
-                    skip_fragment_byte_0_2n: tryte = 0
-                0:
-                    return 51
-                1:
-                    skip_fragment_byte_0_2p: tryte = 0
-            match idx <=> 3:
-                -1:
-                    skip_fragment_byte_0_3n: tryte = 0
-                0:
-                    return 97
-                1:
-                    skip_fragment_byte_0_3p: tryte = 0
-            match idx <=> 4:
-                -1:
-                    skip_fragment_byte_0_4n: tryte = 0
-                0:
-                    return 115
-                1:
-                    skip_fragment_byte_0_4p: tryte = 0
-            match idx <=> 5:
-                -1:
-                    skip_fragment_byte_0_5n: tryte = 0
-                0:
-                    return 109
-                1:
-                    skip_fragment_byte_0_5p: tryte = 0
-            return 0
-        1:
-            skip_fragment_byte_0p: tryte = 0
-    match id <=> 2:
         -1:
             skip_fragment_byte_1n: tryte = 0
         0:
@@ -174,113 +104,43 @@ fn fragment_byte(id: tryte, idx: tryte) -> tryte:
                 -1:
                     skip_fragment_byte_1_1n: tryte = 0
                 0:
-                    return 102
+                    return 115
                 1:
                     skip_fragment_byte_1_1p: tryte = 0
             match idx <=> 2:
                 -1:
                     skip_fragment_byte_1_2n: tryte = 0
                 0:
-                    return 117
+                    return 51
                 1:
                     skip_fragment_byte_1_2p: tryte = 0
             match idx <=> 3:
                 -1:
                     skip_fragment_byte_1_3n: tryte = 0
                 0:
-                    return 110
+                    return 97
                 1:
                     skip_fragment_byte_1_3p: tryte = 0
             match idx <=> 4:
                 -1:
                     skip_fragment_byte_1_4n: tryte = 0
                 0:
-                    return 99
+                    return 115
                 1:
                     skip_fragment_byte_1_4p: tryte = 0
             match idx <=> 5:
                 -1:
                     skip_fragment_byte_1_5n: tryte = 0
                 0:
-                    return 116
+                    return 109
                 1:
                     skip_fragment_byte_1_5p: tryte = 0
-            match idx <=> 6:
-                -1:
-                    skip_fragment_byte_1_6n: tryte = 0
-                0:
-                    return 105
-                1:
-                    skip_fragment_byte_1_6p: tryte = 0
-            match idx <=> 7:
-                -1:
-                    skip_fragment_byte_1_7n: tryte = 0
-                0:
-                    return 111
-                1:
-                    skip_fragment_byte_1_7p: tryte = 0
-            match idx <=> 8:
-                -1:
-                    skip_fragment_byte_1_8n: tryte = 0
-                0:
-                    return 110
-                1:
-                    skip_fragment_byte_1_8p: tryte = 0
             return 0
         1:
             skip_fragment_byte_1p: tryte = 0
-    match id <=> 3:
+    match id <=> 2:
         -1:
-            skip_frag_byte_3_n: tryte = 0
-        0:
-            match idx <=> 0:
-                -1:
-                    skip_frag_byte_3_0n: tryte = 0
-                0:
-                    return 46
-                1:
-                    skip_frag_byte_3_0p: tryte = 0
-            match idx <=> 1:
-                -1:
-                    skip_frag_byte_3_1n: tryte = 0
-                0:
-                    return 112
-                1:
-                    skip_frag_byte_3_1p: tryte = 0
-            match idx <=> 2:
-                -1:
-                    skip_frag_byte_3_2n: tryte = 0
-                0:
-                    return 97
-                1:
-                    skip_frag_byte_3_2p: tryte = 0
-            match idx <=> 3:
-                -1:
-                    skip_frag_byte_3_3n: tryte = 0
-                0:
-                    return 114
-                1:
-                    skip_frag_byte_3_3p: tryte = 0
-            match idx <=> 4:
-                -1:
-                    skip_frag_byte_3_4n: tryte = 0
-                0:
-                    return 97
-                1:
-                    skip_frag_byte_3_4p: tryte = 0
-            match idx <=> 5:
-                -1:
-                    skip_frag_byte_3_5n: tryte = 0
-                0:
-                    return 109
-                1:
-                    skip_frag_byte_3_5p: tryte = 0
-            return 0
-        1:
-            skip_frag_byte_3_p: tryte = 0
-    match id <=> 4:
-        -1:
-            skip_fragment_byte_3n: tryte = 0
+            skip_fragment_byte_2n: tryte = 0
         0:
             match idx <=> 0:
                 -1:
@@ -293,62 +153,62 @@ fn fragment_byte(id: tryte, idx: tryte) -> tryte:
                 -1:
                     skip_fragment_byte_2_1n: tryte = 0
                 0:
-                    return 114
+                    return 102
                 1:
                     skip_fragment_byte_2_1p: tryte = 0
             match idx <=> 2:
                 -1:
                     skip_fragment_byte_2_2n: tryte = 0
                 0:
-                    return 101
+                    return 117
                 1:
                     skip_fragment_byte_2_2p: tryte = 0
             match idx <=> 3:
                 -1:
                     skip_fragment_byte_2_3n: tryte = 0
                 0:
-                    return 103
+                    return 110
                 1:
                     skip_fragment_byte_2_3p: tryte = 0
             match idx <=> 4:
                 -1:
                     skip_fragment_byte_2_4n: tryte = 0
                 0:
-                    return 105
+                    return 99
                 1:
                     skip_fragment_byte_2_4p: tryte = 0
             match idx <=> 5:
                 -1:
                     skip_fragment_byte_2_5n: tryte = 0
                 0:
-                    return 115
+                    return 116
                 1:
                     skip_fragment_byte_2_5p: tryte = 0
             match idx <=> 6:
                 -1:
                     skip_fragment_byte_2_6n: tryte = 0
                 0:
-                    return 116
+                    return 105
                 1:
                     skip_fragment_byte_2_6p: tryte = 0
             match idx <=> 7:
                 -1:
                     skip_fragment_byte_2_7n: tryte = 0
                 0:
-                    return 101
+                    return 111
                 1:
                     skip_fragment_byte_2_7p: tryte = 0
             match idx <=> 8:
                 -1:
                     skip_fragment_byte_2_8n: tryte = 0
                 0:
-                    return 114
+                    return 110
                 1:
                     skip_fragment_byte_2_8p: tryte = 0
             return 0
         1:
             skip_fragment_byte_2p: tryte = 0
-    match id <=> 5:
+    match id <=> 3:
         -1:
             skip_fragment_byte_3n: tryte = 0
         0:
@@ -363,7 +223,7 @@ fn fragment_byte(id: tryte, idx: tryte) -> tryte:
                 -1:
                     skip_fragment_byte_3_1n: tryte = 0
                 0:
-                    return 108
+                    return 112
                 1:
                     skip_fragment_byte_3_1p: tryte = 0
             match idx <=> 2:
@@ -377,27 +237,27 @@ fn fragment_byte(id: tryte, idx: tryte) -> tryte:
                 -1:
                     skip_fragment_byte_3_3n: tryte = 0
                 0:
-                    return 98
+                    return 114
                 1:
                     skip_fragment_byte_3_3p: tryte = 0
             match idx <=> 4:
                 -1:
                     skip_fragment_byte_3_4n: tryte = 0
                 0:
-                    return 101
+                    return 97
                 1:
                     skip_fragment_byte_3_4p: tryte = 0
             match idx <=> 5:
                 -1:
                     skip_fragment_byte_3_5n: tryte = 0
                 0:
-                    return 108
+                    return 109
                 1:
                     skip_fragment_byte_3_5p: tryte = 0
             return 0
         1:
             skip_fragment_byte_3p: tryte = 0
-    match id <=> 6:
+    match id <=> 4:
         -1:
             skip_fragment_byte_4n: tryte = 0
         0:
@@ -412,27 +272,62 @@ fn fragment_byte(id: tryte, idx: tryte) -> tryte:
                 -1:
                     skip_fragment_byte_4_1n: tryte = 0
                 0:
-                    return 101
+                    return 114
                 1:
                     skip_fragment_byte_4_1p: tryte = 0
             match idx <=> 2:
                 -1:
                     skip_fragment_byte_4_2n: tryte = 0
                 0:
-                    return 110
+                    return 101
                 1:
                     skip_fragment_byte_4_2p: tryte = 0
             match idx <=> 3:
                 -1:
                     skip_fragment_byte_4_3n: tryte = 0
                 0:
-                    return 100
+                    return 103
                 1:
                     skip_fragment_byte_4_3p: tryte = 0
+            match idx <=> 4:
+                -1:
+                    skip_fragment_byte_4_4n: tryte = 0
+                0:
+                    return 105
+                1:
+                    skip_fragment_byte_4_4p: tryte = 0
+            match idx <=> 5:
+                -1:
+                    skip_fragment_byte_4_5n: tryte = 0
+                0:
+                    return 115
+                1:
+                    skip_fragment_byte_4_5p: tryte = 0
+            match idx <=> 6:
+                -1:
+                    skip_fragment_byte_4_6n: tryte = 0
+                0:
+                    return 116
+                1:
+                    skip_fragment_byte_4_6p: tryte = 0
+            match idx <=> 7:
+                -1:
+                    skip_fragment_byte_4_7n: tryte = 0
+                0:
+                    return 101
+                1:
+                    skip_fragment_byte_4_7p: tryte = 0
+            match idx <=> 8:
+                -1:
+                    skip_fragment_byte_4_8n: tryte = 0
+                0:
+                    return 114
+                1:
+                    skip_fragment_byte_4_8p: tryte = 0
             return 0
         1:
             skip_fragment_byte_4p: tryte = 0
-    match id <=> 7:
+    match id <=> 5:
         -1:
             skip_fragment_byte_5n: tryte = 0
         0:
@@ -440,41 +335,48 @@ fn fragment_byte(id: tryte, idx: tryte) -> tryte:
                 -1:
                     skip_fragment_byte_5_0n: tryte = 0
                 0:
-                    return 48
+                    return 46
                 1:
                     skip_fragment_byte_5_0p: tryte = 0
             match idx <=> 1:
                 -1:
                     skip_fragment_byte_5_1n: tryte = 0
                 0:
-                    return 46
+                    return 108
                 1:
                     skip_fragment_byte_5_1p: tryte = 0
             match idx <=> 2:
                 -1:
                     skip_fragment_byte_5_2n: tryte = 0
                 0:
-                    return 53
+                    return 97
                 1:
                     skip_fragment_byte_5_2p: tryte = 0
             match idx <=> 3:
                 -1:
                     skip_fragment_byte_5_3n: tryte = 0
                 0:
-                    return 46
+                    return 98
                 1:
                     skip_fragment_byte_5_3p: tryte = 0
             match idx <=> 4:
                 -1:
                     skip_fragment_byte_5_4n: tryte = 0
                 0:
-                    return 48
+                    return 101
                 1:
                     skip_fragment_byte_5_4p: tryte = 0
+            match idx <=> 5:
+                -1:
+                    skip_fragment_byte_5_5n: tryte = 0
+                0:
+                    return 108
+                1:
+                    skip_fragment_byte_5_5p: tryte = 0
             return 0
         1:
             skip_fragment_byte_5p: tryte = 0
-    match id <=> 8:
+    match id <=> 6:
         -1:
             skip_fragment_byte_6n: tryte = 0
         0:
@@ -482,69 +384,34 @@ fn fragment_byte(id: tryte, idx: tryte) -> tryte:
                 -1:
                     skip_fragment_byte_6_0n: tryte = 0
                 0:
-                    return 59
+                    return 46
                 1:
                     skip_fragment_byte_6_0p: tryte = 0
             match idx <=> 1:
                 -1:
                     skip_fragment_byte_6_1n: tryte = 0
                 0:
-                    return 32
+                    return 101
                 1:
                     skip_fragment_byte_6_1p: tryte = 0
             match idx <=> 2:
                 -1:
                     skip_fragment_byte_6_2n: tryte = 0
                 0:
-                    return 115
+                    return 110
                 1:
                     skip_fragment_byte_6_2p: tryte = 0
             match idx <=> 3:
                 -1:
                     skip_fragment_byte_6_3n: tryte = 0
                 0:
-                    return 111
+                    return 100
                 1:
                     skip_fragment_byte_6_3p: tryte = 0
-            match idx <=> 4:
-                -1:
-                    skip_fragment_byte_6_4n: tryte = 0
-                0:
-                    return 117
-                1:
-                    skip_fragment_byte_6_4p: tryte = 0
-            match idx <=> 5:
-                -1:
-                    skip_fragment_byte_6_5n: tryte = 0
-                0:
-                    return 114
-                1:
-                    skip_fragment_byte_6_5p: tryte = 0
-            match idx <=> 6:
-                -1:
-                    skip_fragment_byte_6_6n: tryte = 0
-                0:
-                    return 99
-                1:
-                    skip_fragment_byte_6_6p: tryte = 0
-            match idx <=> 7:
-                -1:
-                    skip_fragment_byte_6_7n: tryte = 0
-                0:
-                    return 101
-                1:
-                    skip_fragment_byte_6_7p: tryte = 0
-            match idx <=> 8:
-                -1:
-                    skip_fragment_byte_6_8n: tryte = 0
-                0:
-                    return 61
-                1:
-                    skip_fragment_byte_6_8p: tryte = 0
             return 0
         1:
             skip_fragment_byte_6p: tryte = 0
-    match id <=> 11:
+    match id <=> 7:
         -1:
             skip_fragment_byte_7n: tryte = 0
         0:
@@ -552,41 +419,41 @@ fn fragment_byte(id: tryte, idx: tryte) -> tryte:
                 -1:
                     skip_fragment_byte_7_0n: tryte = 0
                 0:
-                    return 116
+                    return 48
                 1:
                     skip_fragment_byte_7_0p: tryte = 0
             match idx <=> 1:
                 -1:
                     skip_fragment_byte_7_1n: tryte = 0
                 0:
-                    return 114
+                    return 46
                 1:
                     skip_fragment_byte_7_1p: tryte = 0
             match idx <=> 2:
                 -1:
                     skip_fragment_byte_7_2n: tryte = 0
                 0:
-                    return 121
+                    return 53
                 1:
                     skip_fragment_byte_7_2p: tryte = 0
             match idx <=> 3:
                 -1:
                     skip_fragment_byte_7_3n: tryte = 0
                 0:
-                    return 116
+                    return 46
                 1:
                     skip_fragment_byte_7_3p: tryte = 0
             match idx <=> 4:
                 -1:
                     skip_fragment_byte_7_4n: tryte = 0
                 0:
-                    return 101
+                    return 48
                 1:
                     skip_fragment_byte_7_4p: tryte = 0
             return 0
         1:
             skip_fragment_byte_7p: tryte = 0
-    match id <=> 12:
+    match id <=> 8:
         -1:
             skip_fragment_byte_8n: tryte = 0
         0:
@@ -594,160 +461,69 @@ fn fragment_byte(id: tryte, idx: tryte) -> tryte:
                 -1:
                     skip_fragment_byte_8_0n: tryte = 0
                 0:
-                    return 50
+                    return 59
                 1:
                     skip_fragment_byte_8_0p: tryte = 0
             match idx <=> 1:
                 -1:
                     skip_fragment_byte_8_1n: tryte = 0
                 0:
-                    return 58
+                    return 32
                 1:
                     skip_fragment_byte_8_1p: tryte = 0
             match idx <=> 2:
                 -1:
                     skip_fragment_byte_8_2n: tryte = 0
                 0:
-                    return 49
+                    return 115
                 1:
                     skip_fragment_byte_8_2p: tryte = 0
             match idx <=> 3:
                 -1:
                     skip_fragment_byte_8_3n: tryte = 0
                 0:
-                    return 54
+                    return 111
                 1:
                     skip_fragment_byte_8_3p: tryte = 0
             match idx <=> 4:
                 -1:
                     skip_fragment_byte_8_4n: tryte = 0
                 0:
-                    return 58
+                    return 117
                 1:
                     skip_fragment_byte_8_4p: tryte = 0
             match idx <=> 5:
                 -1:
                     skip_fragment_byte_8_5n: tryte = 0
                 0:
-                    return 51
+                    return 114
                 1:
                     skip_fragment_byte_8_5p: tryte = 0
             match idx <=> 6:
                 -1:
                     skip_fragment_byte_8_6n: tryte = 0
                 0:
-                    return 53
+                    return 99
                 1:
                     skip_fragment_byte_8_6p: tryte = 0
+            match idx <=> 7:
+                -1:
+                    skip_fragment_byte_8_7n: tryte = 0
+                0:
+                    return 101
+                1:
+                    skip_fragment_byte_8_7p: tryte = 0
+            match idx <=> 8:
+                -1:
+                    skip_fragment_byte_8_8n: tryte = 0
+                0:
+                    return 61
+                1:
+                    skip_fragment_byte_8_8p: tryte = 0
             return 0
         1:
             skip_fragment_byte_8p: tryte = 0
-    match id <=> 13:
-        -1:
-            skip_fragment_byte_9n: tryte = 0
-        0:
-            match idx <=> 0:
-                -1:
-                    skip_fragment_byte_9_0n: tryte = 0
-                0:
-                    return 50
-                1:
-                    skip_fragment_byte_9_0p: tryte = 0
-            match idx <=> 1:
-                -1:
-                    skip_fragment_byte_9_1n: tryte = 0
-                0:
-                    return 58
-                1:
-                    skip_fragment_byte_9_1p: tryte = 0
-            match idx <=> 2:
-                -1:
-                    skip_fragment_byte_9_2n: tryte = 0
-                0:
-                    return 53
-                1:
-                    skip_fragment_byte_9_2p: tryte = 0
-            match idx <=> 3:
-                -1:
-                    skip_fragment_byte_9_3n: tryte = 0
-                0:
-                    return 58
-                1:
-                    skip_fragment_byte_9_3p: tryte = 0
-            match idx <=> 4:
-                -1:
-                    skip_fragment_byte_9_4n: tryte = 0
-                0:
-                    return 50
-                1:
-                    skip_fragment_byte_9_4p: tryte = 0
-            match idx <=> 5:
-                -1:
-                    skip_fragment_byte_9_5n: tryte = 0
-                0:
-                    return 52
-                1:
-                    skip_fragment_byte_9_5p: tryte = 0
-            return 0
-        1:
-            skip_fragment_byte_9p: tryte = 0
-    match id <=> 14:
-        -1:
-            skip_fragment_byte_10n: tryte = 0
-        0:
-            match idx <=> 0:
-                -1:
-                    skip_fragment_byte_10_0n: tryte = 0
-                0:
-                    return 51
-                1:
-                    skip_fragment_byte_10_0p: tryte = 0
-            match idx <=> 1:
-                -1:
-                    skip_fragment_byte_10_1n: tryte = 0
-                0:
-                    return 58
-                1:
-                    skip_fragment_byte_10_1p: tryte = 0
-            match idx <=> 2:
-                -1:
-                    skip_fragment_byte_10_2n: tryte = 0
-                0:
-                    return 49
-                1:
-                    skip_fragment_byte_10_2p: tryte = 0
-            match idx <=> 3:
-                -1:
-                    skip_fragment_byte_10_3n: tryte = 0
-                0:
-                    return 54
-                1:
-                    skip_fragment_byte_10_3p: tryte = 0
-            match idx <=> 4:
-                -1:
-                    skip_fragment_byte_10_4n: tryte = 0
-                0:
-                    return 58
-                1:
-                    skip_fragment_byte_10_4p: tryte = 0
-            match idx <=> 5:
-                -1:
-                    skip_fragment_byte_10_5n: tryte = 0
-                0:
-                    return 53
-                1:
-                    skip_fragment_byte_10_5p: tryte = 0
-            match idx <=> 6:
-                -1:
-                    skip_fragment_byte_10_6n: tryte = 0
-                0:
-                    return 51
-                1:
-                    skip_fragment_byte_10_6p: tryte = 0
-            return 0
-        1:
-            skip_fragment_byte_10p: tryte = 0
-    match id <=> 15:
+    match id <=> 11:
         -1:
             skip_fragment_byte_11n: tryte = 0
         0:
@@ -755,152 +531,103 @@ fn fragment_byte(id: tryte, idx: tryte) -> tryte:
                 -1:
                     skip_fragment_byte_11_0n: tryte = 0
                 0:
-                    return 51
+                    return 116
                 1:
                     skip_fragment_byte_11_0p: tryte = 0
             match idx <=> 1:
                 -1:
                     skip_fragment_byte_11_1n: tryte = 0
                 0:
-                    return 58
+                    return 114
                 1:
                     skip_fragment_byte_11_1p: tryte = 0
             match idx <=> 2:
                 -1:
                     skip_fragment_byte_11_2n: tryte = 0
                 0:
-                    return 53
+                    return 121
                 1:
                     skip_fragment_byte_11_2p: tryte = 0
             match idx <=> 3:
                 -1:
                     skip_fragment_byte_11_3n: tryte = 0
                 0:
-                    return 58
+                    return 116
                 1:
                     skip_fragment_byte_11_3p: tryte = 0
             match idx <=> 4:
                 -1:
                     skip_fragment_byte_11_4n: tryte = 0
                 0:
-                    return 52
+                    return 101
                 1:
                     skip_fragment_byte_11_4p: tryte = 0
-            match idx <=> 5:
-                -1:
-                    skip_fragment_byte_11_5n: tryte = 0
-                0:
-                    return 50
-                1:
-                    skip_fragment_byte_11_5p: tryte = 0
             return 0
         1:
             skip_fragment_byte_11p: tryte = 0
-    match id <=> 16:
+    match id <=> 18:
         -1:
-            skip_fragment_byte_12n: tryte = 0
+            skip_fragment_byte_18n: tryte = 0
         0:
             match idx <=> 0:
                 -1:
-                    skip_fragment_byte_12_0n: tryte = 0
+                    skip_fragment_byte_18_0n: tryte = 0
                 0:
-                    return 52
+                    return 46
                 1:
-                    skip_fragment_byte_12_0p: tryte = 0
+                    skip_fragment_byte_18_0p: tryte = 0
             match idx <=> 1:
                 -1:
-                    skip_fragment_byte_12_1n: tryte = 0
+                    skip_fragment_byte_18_1n: tryte = 0
                 0:
-                    return 58
+                    return 115
                 1:
-                    skip_fragment_byte_12_1p: tryte = 0
-            match idx <=> 2:
-                -1:
-                    skip_fragment_byte_12_2n: tryte = 0
-                0:
-                    return 49
-                1:
-                    skip_fragment_byte_12_2p: tryte = 0
-            match idx <=> 3:
-                -1:
-                    skip_fragment_byte_12_3n: tryte = 0
-                0:
-                    return 52
-                1:
-                    skip_fragment_byte_12_3p: tryte = 0
-            match idx <=> 4:
-                -1:
-                    skip_fragment_byte_12_4n: tryte = 0
-                0:
-                    return 58
-                1:
-                    skip_fragment_byte_12_4p: tryte = 0
-            match idx <=> 5:
-                -1:
-                    skip_fragment_byte_12_5n: tryte = 0
-                0:
-                    return 54
-                1:
-                    skip_fragment_byte_12_5p: tryte = 0
-            match idx <=> 6:
-                -1:
-                    skip_fragment_byte_12_6n: tryte = 0
-                0:
-                    return 56
-                1:
-                    skip_fragment_byte_12_6p: tryte = 0
+                    skip_fragment_byte_18_1p: tryte = 0
             return 0
         1:
-            skip_fragment_byte_12p: tryte = 0
-    match id <=> 17:
+            skip_fragment_byte_18p: tryte = 0
+    match id <=> 19:
         -1:
-            skip_fragment_byte_13n: tryte = 0
+            skip_fragment_byte_19n: tryte = 0
         0:
             match idx <=> 0:
                 -1:
-                    skip_fragment_byte_13_0n: tryte = 0
+                    skip_fragment_byte_19_0n: tryte = 0
                 0:
-                    return 52
+                    return 97
                 1:
-                    skip_fragment_byte_13_0p: tryte = 0
+                    skip_fragment_byte_19_0p: tryte = 0
             match idx <=> 1:
                 -1:
-                    skip_fragment_byte_13_1n: tryte = 0
+                    skip_fragment_byte_19_1n: tryte = 0
                 0:
-                    return 58
+                    return 115
                 1:
-                    skip_fragment_byte_13_1p: tryte = 0
+                    skip_fragment_byte_19_1p: tryte = 0
             match idx <=> 2:
                 -1:
-                    skip_fragment_byte_13_2n: tryte = 0
+                    skip_fragment_byte_19_2n: tryte = 0
                 0:
-                    return 53
+                    return 109
                 1:
-                    skip_fragment_byte_13_2p: tryte = 0
-            match idx <=> 3:
-                -1:
-                    skip_fragment_byte_13_3n: tryte = 0
-                0:
-                    return 58
-                1:
-                    skip_fragment_byte_13_3p: tryte = 0
-            match idx <=> 4:
-                -1:
-                    skip_fragment_byte_13_4n: tryte = 0
-                0:
-                    return 53
-                1:
-                    skip_fragment_byte_13_4p: tryte = 0
-            match idx <=> 5:
-                -1:
-                    skip_fragment_byte_13_5n: tryte = 0
-                0:
-                    return 57
-                1:
-                    skip_fragment_byte_13_5p: tryte = 0
+                    skip_fragment_byte_19_2p: tryte = 0
             return 0
         1:
-            skip_fragment_byte_13p: tryte = 0
+            skip_fragment_byte_19p: tryte = 0
+    match id <=> 20:
+        -1:
+            skip_fragment_byte_20n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_fragment_byte_20_0n: tryte = 0
+                0:
+                    return 46
+                1:
+                    skip_fragment_byte_20_0p: tryte = 0
+            return 0
+        1:
+            skip_fragment_byte_20p: tryte = 0
     return 0
 
 fn symbol_length(id: tryte) -> tryte:
@@ -1501,7 +1228,7 @@ fn decimal_length(value: tryte) -> tryte:
                         0:
                             return 3
                         1:
-                            match value <=> 110:
+                            match value <=> 192:
                                 -1:
                                     return 3
                                 0:
@@ -1598,85 +1325,50 @@ fn decimal_ones_byte(n: tryte) -> tryte:
             return decimal_ones_byte(n - 10)
 
 fn decimal_byte_at(value: tryte, idx: tryte) -> tryte:
-    match value <=> 10:
+    mut length: tryte = decimal_length(value)
+    match length <=> 0:
         -1:
-            match idx <=> 0:
-                -1:
-                    return 0
-                0:
-                    return value + 48
-                1:
-                    return 0
+            return 0
         0:
+            return 0
+        1:
             match idx <=> 0:
                 -1:
                     return 0
                 0:
-                    return 49
+                    match length <=> 1:
+                        -1:
+                            return 0
+                        0:
+                            return value + 48
+                        1:
+                            match length <=> 2:
+                                -1:
+                                    return 0
+                                0:
+                                    return decimal_tens_byte(value)
+                                1:
+                                    return 49
                 1:
-                    match idx <=> 1:
+                    match idx <=> length:
                         -1:
-                            return 0
-                        0:
-                            return 48
-                        1:
-                            return 0
-        1:
-            match value <=> 100:
-                -1:
-                    match idx <=> 0:
-                        -1:
-                            return 0
-                        0:
-                            return decimal_tens_byte(value)
-                        1:
-                            match idx <=> 1:
+                            match length <=> 2:
                                 -1:
                                     return 0
                                 0:
                                     return decimal_ones_byte(value)
                                 1:
-                                    return 0
-                0:
-                    match idx <=> 0:
-                        -1:
-                            return 0
-                        0:
-                            return 49
-                        1:
-                            match idx <=> 1:
-                                -1:
-                                    return 0
-                                0:
-                                    return 48
-                                1:
-                                    match idx <=> 2:
+                                    match idx <=> 1:
                                         -1:
                                             return 0
                                         0:
-                                            return 48
+                                            return decimal_tens_byte(value - 100)
                                         1:
-                                            return 0
-                1:
-                    match idx <=> 0:
-                        -1:
-                            return 0
-                        0:
-                            return 49
-                        1:
-                            match idx <=> 1:
-                                -1:
-                                    return 0
-                                0:
-                                    return 48
-                                1:
-                                    match idx <=> 2:
-                                        -1:
-                                            return 0
-                                        0:
                                             return decimal_ones_byte(value - 100)
-                                        1:
-                                            return 0
+                        0:
+                            return 0
+                        1:
+                            return 0
 
 fn event_length(kind: tryte, arg0: tryte) -> tryte:
     match kind <=> 1:
@@ -1837,7 +1529,7 @@ fn event_byte(kind: tryte, arg0: tryte, idx: tryte) -> tryte:
     return 0
 
 fn first_event_count() -> tryte:
-    return 144
+    return 178
 
 fn first_event_kind(index: tryte) -> tryte:
     match index <=> 0:
@@ -1851,7 +1543,7 @@ fn first_event_kind(index: tryte) -> tryte:
         -1:
             skip_fek_1n: tryte = 0
         0:
-            return 6
+            return 4
         1:
             skip_fek_1p: tryte = 0
     match index <=> 2:
@@ -1865,14 +1557,14 @@ fn first_event_kind(index: tryte) -> tryte:
         -1:
             skip_fek_3n: tryte = 0
         0:
-            return 10
+            return 6
         1:
             skip_fek_3p: tryte = 0
     match index <=> 4:
         -1:
             skip_fek_4n: tryte = 0
         0:
-            return 10
+            return 4
         1:
             skip_fek_4p: tryte = 0
     match index <=> 5:
@@ -1886,35 +1578,35 @@ fn first_event_kind(index: tryte) -> tryte:
         -1:
             skip_fek_6n: tryte = 0
         0:
-            return 6
+            return 4
         1:
             skip_fek_6p: tryte = 0
     match index <=> 7:
         -1:
             skip_fek_7n: tryte = 0
         0:
-            return 2
+            return 1
         1:
             skip_fek_7p: tryte = 0
     match index <=> 8:
         -1:
             skip_fek_8n: tryte = 0
         0:
-            return 6
+            return 4
         1:
             skip_fek_8p: tryte = 0
     match index <=> 9:
         -1:
             skip_fek_9n: tryte = 0
         0:
-            return 9
+            return 10
         1:
             skip_fek_9p: tryte = 0
     match index <=> 10:
         -1:
             skip_fek_10n: tryte = 0
         0:
-            return 6
+            return 10
         1:
             skip_fek_10p: tryte = 0
     match index <=> 11:
@@ -1928,63 +1620,63 @@ fn first_event_kind(index: tryte) -> tryte:
         -1:
             skip_fek_12n: tryte = 0
         0:
-            return 10
+            return 6
         1:
             skip_fek_12p: tryte = 0
     match index <=> 13:
         -1:
             skip_fek_13n: tryte = 0
         0:
-            return 6
+            return 2
         1:
             skip_fek_13p: tryte = 0
     match index <=> 14:
         -1:
             skip_fek_14n: tryte = 0
         0:
-            return 1
+            return 6
         1:
             skip_fek_14p: tryte = 0
     match index <=> 15:
         -1:
             skip_fek_15n: tryte = 0
         0:
-            return 6
+            return 9
         1:
             skip_fek_15p: tryte = 0
     match index <=> 16:
         -1:
             skip_fek_16n: tryte = 0
         0:
-            return 2
+            return 6
         1:
             skip_fek_16p: tryte = 0
     match index <=> 17:
         -1:
             skip_fek_17n: tryte = 0
         0:
-            return 7
+            return 1
         1:
             skip_fek_17p: tryte = 0
     match index <=> 18:
         -1:
             skip_fek_18n: tryte = 0
         0:
-            return 6
+            return 10
         1:
             skip_fek_18p: tryte = 0
     match index <=> 19:
         -1:
             skip_fek_19n: tryte = 0
         0:
-            return 1
+            return 6
         1:
             skip_fek_19p: tryte = 0
     match index <=> 20:
         -1:
             skip_fek_20n: tryte = 0
         0:
-            return 10
+            return 1
         1:
             skip_fek_20p: tryte = 0
     match index <=> 21:
@@ -1998,49 +1690,49 @@ fn first_event_kind(index: tryte) -> tryte:
         -1:
             skip_fek_22n: tryte = 0
         0:
-            return 1
+            return 2
         1:
             skip_fek_22p: tryte = 0
     match index <=> 23:
         -1:
             skip_fek_23n: tryte = 0
         0:
-            return 6
+            return 7
         1:
             skip_fek_23p: tryte = 0
     match index <=> 24:
         -1:
             skip_fek_24n: tryte = 0
         0:
-            return 2
+            return 6
         1:
             skip_fek_24p: tryte = 0
     match index <=> 25:
         -1:
             skip_fek_25n: tryte = 0
         0:
-            return 7
+            return 1
         1:
             skip_fek_25p: tryte = 0
     match index <=> 26:
         -1:
             skip_fek_26n: tryte = 0
         0:
-            return 6
+            return 10
         1:
             skip_fek_26p: tryte = 0
     match index <=> 27:
         -1:
             skip_fek_27n: tryte = 0
         0:
-            return 1
+            return 6
         1:
             skip_fek_27p: tryte = 0
     match index <=> 28:
         -1:
             skip_fek_28n: tryte = 0
         0:
-            return 10
+            return 1
         1:
             skip_fek_28p: tryte = 0
     match index <=> 29:
@@ -2054,49 +1746,49 @@ fn first_event_kind(index: tryte) -> tryte:
         -1:
             skip_fek_30n: tryte = 0
         0:
-            return 1
+            return 2
         1:
             skip_fek_30p: tryte = 0
     match index <=> 31:
         -1:
             skip_fek_31n: tryte = 0
         0:
-            return 6
+            return 7
         1:
             skip_fek_31p: tryte = 0
     match index <=> 32:
         -1:
             skip_fek_32n: tryte = 0
         0:
-            return 2
+            return 6
         1:
             skip_fek_32p: tryte = 0
     match index <=> 33:
         -1:
             skip_fek_33n: tryte = 0
         0:
-            return 7
+            return 1
         1:
             skip_fek_33p: tryte = 0
     match index <=> 34:
         -1:
             skip_fek_34n: tryte = 0
         0:
-            return 6
+            return 10
         1:
             skip_fek_34p: tryte = 0
     match index <=> 35:
         -1:
             skip_fek_35n: tryte = 0
         0:
-            return 1
+            return 6
         1:
             skip_fek_35p: tryte = 0
     match index <=> 36:
         -1:
             skip_fek_36n: tryte = 0
         0:
-            return 10
+            return 1
         1:
             skip_fek_36p: tryte = 0
     match index <=> 37:
@@ -2110,49 +1802,49 @@ fn first_event_kind(index: tryte) -> tryte:
         -1:
             skip_fek_38n: tryte = 0
         0:
-            return 1
+            return 2
         1:
             skip_fek_38p: tryte = 0
     match index <=> 39:
         -1:
             skip_fek_39n: tryte = 0
         0:
-            return 6
+            return 7
         1:
             skip_fek_39p: tryte = 0
     match index <=> 40:
         -1:
             skip_fek_40n: tryte = 0
         0:
-            return 2
+            return 6
         1:
             skip_fek_40p: tryte = 0
     match index <=> 41:
         -1:
             skip_fek_41n: tryte = 0
         0:
-            return 7
+            return 1
         1:
             skip_fek_41p: tryte = 0
     match index <=> 42:
         -1:
             skip_fek_42n: tryte = 0
         0:
-            return 6
+            return 10
         1:
             skip_fek_42p: tryte = 0
     match index <=> 43:
         -1:
             skip_fek_43n: tryte = 0
         0:
-            return 1
+            return 6
         1:
             skip_fek_43p: tryte = 0
     match index <=> 44:
         -1:
             skip_fek_44n: tryte = 0
         0:
-            return 10
+            return 1
         1:
             skip_fek_44p: tryte = 0
     match index <=> 45:
@@ -2166,49 +1858,49 @@ fn first_event_kind(index: tryte) -> tryte:
         -1:
             skip_fek_46n: tryte = 0
         0:
-            return 1
+            return 2
         1:
             skip_fek_46p: tryte = 0
     match index <=> 47:
         -1:
             skip_fek_47n: tryte = 0
         0:
-            return 6
+            return 7
         1:
             skip_fek_47p: tryte = 0
     match index <=> 48:
         -1:
             skip_fek_48n: tryte = 0
         0:
-            return 2
+            return 6
         1:
             skip_fek_48p: tryte = 0
     match index <=> 49:
         -1:
             skip_fek_49n: tryte = 0
         0:
-            return 7
+            return 1
         1:
             skip_fek_49p: tryte = 0
     match index <=> 50:
         -1:
             skip_fek_50n: tryte = 0
         0:
-            return 6
+            return 10
         1:
             skip_fek_50p: tryte = 0
     match index <=> 51:
         -1:
             skip_fek_51n: tryte = 0
         0:
-            return 1
+            return 6
         1:
             skip_fek_51p: tryte = 0
     match index <=> 52:
         -1:
             skip_fek_52n: tryte = 0
         0:
-            return 10
+            return 1
         1:
             skip_fek_52p: tryte = 0
     match index <=> 53:
@@ -2222,154 +1914,154 @@ fn first_event_kind(index: tryte) -> tryte:
         -1:
             skip_fek_54n: tryte = 0
         0:
-            return 1
+            return 2
         1:
             skip_fek_54p: tryte = 0
     match index <=> 55:
         -1:
             skip_fek_55n: tryte = 0
         0:
-            return 6
+            return 7
         1:
             skip_fek_55p: tryte = 0
     match index <=> 56:
         -1:
             skip_fek_56n: tryte = 0
         0:
-            return 2
+            return 6
         1:
             skip_fek_56p: tryte = 0
     match index <=> 57:
         -1:
             skip_fek_57n: tryte = 0
         0:
-            return 7
+            return 1
         1:
             skip_fek_57p: tryte = 0
     match index <=> 58:
         -1:
             skip_fek_58n: tryte = 0
         0:
-            return 6
+            return 10
         1:
             skip_fek_58p: tryte = 0
     match index <=> 59:
         -1:
             skip_fek_59n: tryte = 0
         0:
-            return 1
+            return 6
         1:
             skip_fek_59p: tryte = 0
     match index <=> 60:
         -1:
             skip_fek_60n: tryte = 0
         0:
-            return 10
+            return 1
         1:
             skip_fek_60p: tryte = 0
     match index <=> 61:
         -1:
             skip_fek_61n: tryte = 0
         0:
-            return 1
+            return 6
         1:
             skip_fek_61p: tryte = 0
     match index <=> 62:
         -1:
             skip_fek_62n: tryte = 0
         0:
-            return 6
+            return 2
         1:
             skip_fek_62p: tryte = 0
     match index <=> 63:
         -1:
             skip_fek_63n: tryte = 0
         0:
-            return 2
+            return 7
         1:
             skip_fek_63p: tryte = 0
     match index <=> 64:
         -1:
             skip_fek_64n: tryte = 0
         0:
-            return 10
+            return 6
         1:
             skip_fek_64p: tryte = 0
     match index <=> 65:
         -1:
             skip_fek_65n: tryte = 0
         0:
-            return 6
+            return 1
         1:
             skip_fek_65p: tryte = 0
     match index <=> 66:
         -1:
             skip_fek_66n: tryte = 0
         0:
-            return 3
+            return 10
         1:
             skip_fek_66p: tryte = 0
     match index <=> 67:
         -1:
             skip_fek_67n: tryte = 0
         0:
-            return 6
+            return 1
         1:
             skip_fek_67p: tryte = 0
     match index <=> 68:
         -1:
             skip_fek_68n: tryte = 0
         0:
-            return 2
+            return 6
         1:
             skip_fek_68p: tryte = 0
     match index <=> 69:
         -1:
             skip_fek_69n: tryte = 0
         0:
-            return 7
+            return 2
         1:
             skip_fek_69p: tryte = 0
     match index <=> 70:
         -1:
             skip_fek_70n: tryte = 0
         0:
-            return 6
+            return 10
         1:
             skip_fek_70p: tryte = 0
     match index <=> 71:
         -1:
             skip_fek_71n: tryte = 0
         0:
-            return 4
+            return 6
         1:
             skip_fek_71p: tryte = 0
     match index <=> 72:
         -1:
             skip_fek_72n: tryte = 0
         0:
-            return 6
+            return 3
         1:
             skip_fek_72p: tryte = 0
     match index <=> 73:
         -1:
             skip_fek_73n: tryte = 0
         0:
-            return 1
+            return 6
         1:
             skip_fek_73p: tryte = 0
     match index <=> 74:
         -1:
             skip_fek_74n: tryte = 0
         0:
-            return 1
+            return 2
         1:
             skip_fek_74p: tryte = 0
     match index <=> 75:
         -1:
             skip_fek_75n: tryte = 0
         0:
-            return 10
+            return 7
         1:
             skip_fek_75p: tryte = 0
     match index <=> 76:
@@ -2383,7 +2075,7 @@ fn first_event_kind(index: tryte) -> tryte:
         -1:
             skip_fek_77n: tryte = 0
         0:
-            return 3
+            return 4
         1:
             skip_fek_77p: tryte = 0
     match index <=> 78:
@@ -2397,168 +2089,168 @@ fn first_event_kind(index: tryte) -> tryte:
         -1:
             skip_fek_79n: tryte = 0
         0:
-            return 2
+            return 1
         1:
             skip_fek_79p: tryte = 0
     match index <=> 80:
         -1:
             skip_fek_80n: tryte = 0
         0:
-            return 7
+            return 4
         1:
             skip_fek_80p: tryte = 0
     match index <=> 81:
         -1:
             skip_fek_81n: tryte = 0
         0:
-            return 6
+            return 5
         1:
             skip_fek_81p: tryte = 0
     match index <=> 82:
         -1:
             skip_fek_82n: tryte = 0
         0:
-            return 2
+            return 4
         1:
             skip_fek_82p: tryte = 0
     match index <=> 83:
         -1:
             skip_fek_83n: tryte = 0
         0:
-            return 6
+            return 5
         1:
             skip_fek_83p: tryte = 0
     match index <=> 84:
         -1:
             skip_fek_84n: tryte = 0
         0:
-            return 1
+            return 4
         1:
             skip_fek_84p: tryte = 0
     match index <=> 85:
         -1:
             skip_fek_85n: tryte = 0
         0:
-            return 1
+            return 10
         1:
             skip_fek_85p: tryte = 0
     match index <=> 86:
         -1:
             skip_fek_86n: tryte = 0
         0:
-            return 10
+            return 6
         1:
             skip_fek_86p: tryte = 0
     match index <=> 87:
         -1:
             skip_fek_87n: tryte = 0
         0:
-            return 6
+            return 3
         1:
             skip_fek_87p: tryte = 0
     match index <=> 88:
         -1:
             skip_fek_88n: tryte = 0
         0:
-            return 3
+            return 6
         1:
             skip_fek_88p: tryte = 0
     match index <=> 89:
         -1:
             skip_fek_89n: tryte = 0
         0:
-            return 6
+            return 2
         1:
             skip_fek_89p: tryte = 0
     match index <=> 90:
         -1:
             skip_fek_90n: tryte = 0
         0:
-            return 2
+            return 7
         1:
             skip_fek_90p: tryte = 0
     match index <=> 91:
         -1:
             skip_fek_91n: tryte = 0
         0:
-            return 7
+            return 6
         1:
             skip_fek_91p: tryte = 0
     match index <=> 92:
         -1:
             skip_fek_92n: tryte = 0
         0:
-            return 6
+            return 2
         1:
             skip_fek_92p: tryte = 0
     match index <=> 93:
         -1:
             skip_fek_93n: tryte = 0
         0:
-            return 4
+            return 6
         1:
             skip_fek_93p: tryte = 0
     match index <=> 94:
         -1:
             skip_fek_94n: tryte = 0
         0:
-            return 6
+            return 1
         1:
             skip_fek_94p: tryte = 0
     match index <=> 95:
         -1:
             skip_fek_95n: tryte = 0
         0:
-            return 1
+            return 4
         1:
             skip_fek_95p: tryte = 0
     match index <=> 96:
         -1:
             skip_fek_96n: tryte = 0
         0:
-            return 1
+            return 5
         1:
             skip_fek_96p: tryte = 0
     match index <=> 97:
         -1:
             skip_fek_97n: tryte = 0
         0:
-            return 10
+            return 4
         1:
             skip_fek_97p: tryte = 0
     match index <=> 98:
         -1:
             skip_fek_98n: tryte = 0
         0:
-            return 6
+            return 5
         1:
             skip_fek_98p: tryte = 0
     match index <=> 99:
         -1:
             skip_fek_99n: tryte = 0
         0:
-            return 3
+            return 4
         1:
             skip_fek_99p: tryte = 0
     match index <=> 100:
         -1:
             skip_fek_100n: tryte = 0
         0:
-            return 6
+            return 10
         1:
             skip_fek_100p: tryte = 0
     match index <=> 101:
         -1:
             skip_fek_101n: tryte = 0
         0:
-            return 2
+            return 6
         1:
             skip_fek_101p: tryte = 0
     match index <=> 102:
         -1:
             skip_fek_102n: tryte = 0
         0:
-            return 7
+            return 3
         1:
             skip_fek_102p: tryte = 0
     match index <=> 103:
@@ -2579,77 +2271,77 @@ fn first_event_kind(index: tryte) -> tryte:
         -1:
             skip_fek_105n: tryte = 0
         0:
-            return 6
+            return 7
         1:
             skip_fek_105p: tryte = 0
     match index <=> 106:
         -1:
             skip_fek_106n: tryte = 0
         0:
-            return 1
+            return 6
         1:
             skip_fek_106p: tryte = 0
     match index <=> 107:
         -1:
             skip_fek_107n: tryte = 0
         0:
-            return 1
+            return 4
         1:
             skip_fek_107p: tryte = 0
     match index <=> 108:
         -1:
             skip_fek_108n: tryte = 0
         0:
-            return 10
+            return 6
         1:
             skip_fek_108p: tryte = 0
     match index <=> 109:
         -1:
             skip_fek_109n: tryte = 0
         0:
-            return 6
+            return 1
         1:
             skip_fek_109p: tryte = 0
     match index <=> 110:
         -1:
             skip_fek_110n: tryte = 0
         0:
-            return 3
+            return 4
         1:
             skip_fek_110p: tryte = 0
     match index <=> 111:
         -1:
             skip_fek_111n: tryte = 0
         0:
-            return 6
+            return 5
         1:
             skip_fek_111p: tryte = 0
     match index <=> 112:
         -1:
             skip_fek_112n: tryte = 0
         0:
-            return 2
+            return 4
         1:
             skip_fek_112p: tryte = 0
     match index <=> 113:
         -1:
             skip_fek_113n: tryte = 0
         0:
-            return 7
+            return 5
         1:
             skip_fek_113p: tryte = 0
     match index <=> 114:
         -1:
             skip_fek_114n: tryte = 0
         0:
-            return 6
+            return 4
         1:
             skip_fek_114p: tryte = 0
     match index <=> 115:
         -1:
             skip_fek_115n: tryte = 0
         0:
-            return 2
+            return 10
         1:
             skip_fek_115p: tryte = 0
     match index <=> 116:
@@ -2663,133 +2355,133 @@ fn first_event_kind(index: tryte) -> tryte:
         -1:
             skip_fek_117n: tryte = 0
         0:
-            return 1
+            return 3
         1:
             skip_fek_117p: tryte = 0
     match index <=> 118:
         -1:
             skip_fek_118n: tryte = 0
         0:
-            return 1
+            return 6
         1:
             skip_fek_118p: tryte = 0
     match index <=> 119:
         -1:
             skip_fek_119n: tryte = 0
         0:
-            return 10
+            return 2
         1:
             skip_fek_119p: tryte = 0
     match index <=> 120:
         -1:
             skip_fek_120n: tryte = 0
         0:
-            return 6
+            return 7
         1:
             skip_fek_120p: tryte = 0
     match index <=> 121:
         -1:
             skip_fek_121n: tryte = 0
         0:
-            return 3
+            return 6
         1:
             skip_fek_121p: tryte = 0
     match index <=> 122:
         -1:
             skip_fek_122n: tryte = 0
         0:
-            return 6
+            return 2
         1:
             skip_fek_122p: tryte = 0
     match index <=> 123:
         -1:
             skip_fek_123n: tryte = 0
         0:
-            return 2
+            return 6
         1:
             skip_fek_123p: tryte = 0
     match index <=> 124:
         -1:
             skip_fek_124n: tryte = 0
         0:
-            return 7
+            return 1
         1:
             skip_fek_124p: tryte = 0
     match index <=> 125:
         -1:
             skip_fek_125n: tryte = 0
         0:
-            return 6
+            return 4
         1:
             skip_fek_125p: tryte = 0
     match index <=> 126:
         -1:
             skip_fek_126n: tryte = 0
         0:
-            return 2
+            return 5
         1:
             skip_fek_126p: tryte = 0
     match index <=> 127:
         -1:
             skip_fek_127n: tryte = 0
         0:
-            return 7
+            return 4
         1:
             skip_fek_127p: tryte = 0
     match index <=> 128:
         -1:
             skip_fek_128n: tryte = 0
         0:
-            return 6
+            return 5
         1:
             skip_fek_128p: tryte = 0
     match index <=> 129:
         -1:
             skip_fek_129n: tryte = 0
         0:
-            return 2
+            return 4
         1:
             skip_fek_129p: tryte = 0
     match index <=> 130:
         -1:
             skip_fek_130n: tryte = 0
         0:
-            return 6
+            return 10
         1:
             skip_fek_130p: tryte = 0
     match index <=> 131:
         -1:
             skip_fek_131n: tryte = 0
         0:
-            return 1
+            return 6
         1:
             skip_fek_131p: tryte = 0
     match index <=> 132:
         -1:
             skip_fek_132n: tryte = 0
         0:
-            return 1
+            return 3
         1:
             skip_fek_132p: tryte = 0
     match index <=> 133:
         -1:
             skip_fek_133n: tryte = 0
         0:
-            return 10
+            return 6
         1:
             skip_fek_133p: tryte = 0
     match index <=> 134:
         -1:
             skip_fek_134n: tryte = 0
         0:
-            return 6
+            return 2
         1:
             skip_fek_134p: tryte = 0
     match index <=> 135:
         -1:
             skip_fek_135n: tryte = 0
         0:
-            return 3
+            return 7
         1:
             skip_fek_135p: tryte = 0
     match index <=> 136:
@@ -2824,30 +2516,268 @@ fn first_event_kind(index: tryte) -> tryte:
         -1:
             skip_fek_140n: tryte = 0
         0:
-            return 1
+            return 4
         1:
             skip_fek_140p: tryte = 0
     match index <=> 141:
         -1:
             skip_fek_141n: tryte = 0
         0:
-            return 10
+            return 5
         1:
             skip_fek_141p: tryte = 0
     match index <=> 142:
         -1:
             skip_fek_142n: tryte = 0
         0:
-            return 1
+            return 4
         1:
             skip_fek_142p: tryte = 0
     match index <=> 143:
         -1:
             skip_fek_143n: tryte = 0
         0:
-            return 10
+            return 5
         1:
             skip_fek_143p: tryte = 0
+    match index <=> 144:
+        -1:
+            skip_fek_144n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_144p: tryte = 0
+    match index <=> 145:
+        -1:
+            skip_fek_145n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_fek_145p: tryte = 0
+    match index <=> 146:
+        -1:
+            skip_fek_146n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_146p: tryte = 0
+    match index <=> 147:
+        -1:
+            skip_fek_147n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_fek_147p: tryte = 0
+    match index <=> 148:
+        -1:
+            skip_fek_148n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_148p: tryte = 0
+    match index <=> 149:
+        -1:
+            skip_fek_149n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_149p: tryte = 0
+    match index <=> 150:
+        -1:
+            skip_fek_150n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_fek_150p: tryte = 0
+    match index <=> 151:
+        -1:
+            skip_fek_151n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_151p: tryte = 0
+    match index <=> 152:
+        -1:
+            skip_fek_152n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_152p: tryte = 0
+    match index <=> 153:
+        -1:
+            skip_fek_153n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_fek_153p: tryte = 0
+    match index <=> 154:
+        -1:
+            skip_fek_154n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_154p: tryte = 0
+    match index <=> 155:
+        -1:
+            skip_fek_155n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_155p: tryte = 0
+    match index <=> 156:
+        -1:
+            skip_fek_156n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_156p: tryte = 0
+    match index <=> 157:
+        -1:
+            skip_fek_157n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_157p: tryte = 0
+    match index <=> 158:
+        -1:
+            skip_fek_158n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_158p: tryte = 0
+    match index <=> 159:
+        -1:
+            skip_fek_159n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fek_159p: tryte = 0
+    match index <=> 160:
+        -1:
+            skip_fek_160n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_160p: tryte = 0
+    match index <=> 161:
+        -1:
+            skip_fek_161n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fek_161p: tryte = 0
+    match index <=> 162:
+        -1:
+            skip_fek_162n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_162p: tryte = 0
+    match index <=> 163:
+        -1:
+            skip_fek_163n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_fek_163p: tryte = 0
+    match index <=> 164:
+        -1:
+            skip_fek_164n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_164p: tryte = 0
+    match index <=> 165:
+        -1:
+            skip_fek_165n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_fek_165p: tryte = 0
+    match index <=> 166:
+        -1:
+            skip_fek_166n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_166p: tryte = 0
+    match index <=> 167:
+        -1:
+            skip_fek_167n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_167p: tryte = 0
+    match index <=> 168:
+        -1:
+            skip_fek_168n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_168p: tryte = 0
+    match index <=> 169:
+        -1:
+            skip_fek_169n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_169p: tryte = 0
+    match index <=> 170:
+        -1:
+            skip_fek_170n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_170p: tryte = 0
+    match index <=> 171:
+        -1:
+            skip_fek_171n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fek_171p: tryte = 0
+    match index <=> 172:
+        -1:
+            skip_fek_172n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_172p: tryte = 0
+    match index <=> 173:
+        -1:
+            skip_fek_173n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fek_173p: tryte = 0
+    match index <=> 174:
+        -1:
+            skip_fek_174n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_174p: tryte = 0
+    match index <=> 175:
+        -1:
+            skip_fek_175n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_fek_175p: tryte = 0
+    match index <=> 176:
+        -1:
+            skip_fek_176n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_176p: tryte = 0
+    match index <=> 177:
+        -1:
+            skip_fek_177n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_fek_177p: tryte = 0
     return 0
 
 fn first_event_arg0(index: tryte) -> tryte:
@@ -2855,21 +2785,21 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_0n: tryte = 0
         0:
-            return 1
+            return 18
         1:
             skip_fea_0p: tryte = 0
     match index <=> 1:
         -1:
             skip_fea_1n: tryte = 0
         0:
-            return 1
+            return 3
         1:
             skip_fea_1p: tryte = 0
     match index <=> 2:
         -1:
             skip_fea_2n: tryte = 0
         0:
-            return 7
+            return 19
         1:
             skip_fea_2p: tryte = 0
     match index <=> 3:
@@ -2883,35 +2813,35 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_4n: tryte = 0
         0:
-            return 1
+            return 0
         1:
             skip_fea_4p: tryte = 0
     match index <=> 5:
         -1:
             skip_fea_5n: tryte = 0
         0:
-            return 2
+            return 20
         1:
             skip_fea_5p: tryte = 0
     match index <=> 6:
         -1:
             skip_fea_6n: tryte = 0
         0:
-            return 1
+            return 5
         1:
             skip_fea_6p: tryte = 0
     match index <=> 7:
         -1:
             skip_fea_7n: tryte = 0
         0:
-            return 1
+            return 20
         1:
             skip_fea_7p: tryte = 0
     match index <=> 8:
         -1:
             skip_fea_8n: tryte = 0
         0:
-            return 1
+            return 0
         1:
             skip_fea_8p: tryte = 0
     match index <=> 9:
@@ -2932,7 +2862,7 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_11n: tryte = 0
         0:
-            return 11
+            return 2
         1:
             skip_fea_11p: tryte = 0
     match index <=> 12:
@@ -2946,14 +2876,14 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_13n: tryte = 0
         0:
-            return 4
+            return 1
         1:
             skip_fea_13p: tryte = 0
     match index <=> 14:
         -1:
             skip_fea_14n: tryte = 0
         0:
-            return 4
+            return 1
         1:
             skip_fea_14p: tryte = 0
     match index <=> 15:
@@ -2967,14 +2897,14 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_16n: tryte = 0
         0:
-            return 3
+            return 1
         1:
             skip_fea_16p: tryte = 0
     match index <=> 17:
         -1:
             skip_fea_17n: tryte = 0
         0:
-            return 1
+            return 11
         1:
             skip_fea_17p: tryte = 0
     match index <=> 18:
@@ -2988,28 +2918,28 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_19n: tryte = 0
         0:
-            return 11
+            return 4
         1:
             skip_fea_19p: tryte = 0
     match index <=> 20:
         -1:
             skip_fea_20n: tryte = 0
         0:
-            return 1
+            return 4
         1:
             skip_fea_20p: tryte = 0
     match index <=> 21:
         -1:
             skip_fea_21n: tryte = 0
         0:
-            return 4
+            return 1
         1:
             skip_fea_21p: tryte = 0
     match index <=> 22:
         -1:
             skip_fea_22n: tryte = 0
         0:
-            return 4
+            return 3
         1:
             skip_fea_22p: tryte = 0
     match index <=> 23:
@@ -3023,14 +2953,14 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_24n: tryte = 0
         0:
-            return 4
+            return 1
         1:
             skip_fea_24p: tryte = 0
     match index <=> 25:
         -1:
             skip_fea_25n: tryte = 0
         0:
-            return 1
+            return 11
         1:
             skip_fea_25p: tryte = 0
     match index <=> 26:
@@ -3044,21 +2974,21 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_27n: tryte = 0
         0:
-            return 11
+            return 4
         1:
             skip_fea_27p: tryte = 0
     match index <=> 28:
         -1:
             skip_fea_28n: tryte = 0
         0:
-            return 1
+            return 4
         1:
             skip_fea_28p: tryte = 0
     match index <=> 29:
         -1:
             skip_fea_29n: tryte = 0
         0:
-            return 4
+            return 1
         1:
             skip_fea_29p: tryte = 0
     match index <=> 30:
@@ -3079,14 +3009,14 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_32n: tryte = 0
         0:
-            return 5
+            return 1
         1:
             skip_fea_32p: tryte = 0
     match index <=> 33:
         -1:
             skip_fea_33n: tryte = 0
         0:
-            return 1
+            return 11
         1:
             skip_fea_33p: tryte = 0
     match index <=> 34:
@@ -3100,28 +3030,28 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_35n: tryte = 0
         0:
-            return 11
+            return 4
         1:
             skip_fea_35p: tryte = 0
     match index <=> 36:
         -1:
             skip_fea_36n: tryte = 0
         0:
-            return 1
+            return 4
         1:
             skip_fea_36p: tryte = 0
     match index <=> 37:
         -1:
             skip_fea_37n: tryte = 0
         0:
-            return 4
+            return 1
         1:
             skip_fea_37p: tryte = 0
     match index <=> 38:
         -1:
             skip_fea_38n: tryte = 0
         0:
-            return 4
+            return 5
         1:
             skip_fea_38p: tryte = 0
     match index <=> 39:
@@ -3135,14 +3065,14 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_40n: tryte = 0
         0:
-            return 6
+            return 1
         1:
             skip_fea_40p: tryte = 0
     match index <=> 41:
         -1:
             skip_fea_41n: tryte = 0
         0:
-            return 1
+            return 11
         1:
             skip_fea_41p: tryte = 0
     match index <=> 42:
@@ -3156,28 +3086,28 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_43n: tryte = 0
         0:
-            return 11
+            return 4
         1:
             skip_fea_43p: tryte = 0
     match index <=> 44:
         -1:
             skip_fea_44n: tryte = 0
         0:
-            return 1
+            return 4
         1:
             skip_fea_44p: tryte = 0
     match index <=> 45:
         -1:
             skip_fea_45n: tryte = 0
         0:
-            return 4
+            return 1
         1:
             skip_fea_45p: tryte = 0
     match index <=> 46:
         -1:
             skip_fea_46n: tryte = 0
         0:
-            return 4
+            return 6
         1:
             skip_fea_46p: tryte = 0
     match index <=> 47:
@@ -3191,14 +3121,14 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_48n: tryte = 0
         0:
-            return 7
+            return 1
         1:
             skip_fea_48p: tryte = 0
     match index <=> 49:
         -1:
             skip_fea_49n: tryte = 0
         0:
-            return 1
+            return 11
         1:
             skip_fea_49p: tryte = 0
     match index <=> 50:
@@ -3212,28 +3142,28 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_51n: tryte = 0
         0:
-            return 11
+            return 4
         1:
             skip_fea_51p: tryte = 0
     match index <=> 52:
         -1:
             skip_fea_52n: tryte = 0
         0:
-            return 1
+            return 4
         1:
             skip_fea_52p: tryte = 0
     match index <=> 53:
         -1:
             skip_fea_53n: tryte = 0
         0:
-            return 4
+            return 1
         1:
             skip_fea_53p: tryte = 0
     match index <=> 54:
         -1:
             skip_fea_54n: tryte = 0
         0:
-            return 4
+            return 7
         1:
             skip_fea_54p: tryte = 0
     match index <=> 55:
@@ -3247,14 +3177,14 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_56n: tryte = 0
         0:
-            return 8
+            return 1
         1:
             skip_fea_56p: tryte = 0
     match index <=> 57:
         -1:
             skip_fea_57n: tryte = 0
         0:
-            return 1
+            return 11
         1:
             skip_fea_57p: tryte = 0
     match index <=> 58:
@@ -3268,35 +3198,35 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_59n: tryte = 0
         0:
-            return 11
+            return 4
         1:
             skip_fea_59p: tryte = 0
     match index <=> 60:
         -1:
             skip_fea_60n: tryte = 0
         0:
-            return 1
+            return 4
         1:
             skip_fea_60p: tryte = 0
     match index <=> 61:
         -1:
             skip_fea_61n: tryte = 0
         0:
-            return 5
+            return 1
         1:
             skip_fea_61p: tryte = 0
     match index <=> 62:
         -1:
             skip_fea_62n: tryte = 0
         0:
-            return 1
+            return 8
         1:
             skip_fea_62p: tryte = 0
     match index <=> 63:
         -1:
             skip_fea_63n: tryte = 0
         0:
-            return 2
+            return 1
         1:
             skip_fea_63p: tryte = 0
     match index <=> 64:
@@ -3310,35 +3240,35 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_65n: tryte = 0
         0:
-            return 4
+            return 11
         1:
             skip_fea_65p: tryte = 0
     match index <=> 66:
         -1:
             skip_fea_66n: tryte = 0
         0:
-            return 100
+            return 1
         1:
             skip_fea_66p: tryte = 0
     match index <=> 67:
         -1:
             skip_fea_67n: tryte = 0
         0:
-            return 1
+            return 5
         1:
             skip_fea_67p: tryte = 0
     match index <=> 68:
         -1:
             skip_fea_68n: tryte = 0
         0:
-            return 3
+            return 1
         1:
             skip_fea_68p: tryte = 0
     match index <=> 69:
         -1:
             skip_fea_69n: tryte = 0
         0:
-            return 1
+            return 2
         1:
             skip_fea_69p: tryte = 0
     match index <=> 70:
@@ -3352,28 +3282,28 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_71n: tryte = 0
         0:
-            return 10
+            return 4
         1:
             skip_fea_71p: tryte = 0
     match index <=> 72:
         -1:
             skip_fea_72n: tryte = 0
         0:
-            return 1
+            return 100
         1:
             skip_fea_72p: tryte = 0
     match index <=> 73:
         -1:
             skip_fea_73n: tryte = 0
         0:
-            return 8
+            return 1
         1:
             skip_fea_73p: tryte = 0
     match index <=> 74:
         -1:
             skip_fea_74n: tryte = 0
         0:
-            return 12
+            return 3
         1:
             skip_fea_74p: tryte = 0
     match index <=> 75:
@@ -3387,105 +3317,105 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_76n: tryte = 0
         0:
-            return 4
+            return 1
         1:
             skip_fea_76p: tryte = 0
     match index <=> 77:
         -1:
             skip_fea_77n: tryte = 0
         0:
-            return 101
+            return 10
         1:
             skip_fea_77p: tryte = 0
     match index <=> 78:
         -1:
             skip_fea_78n: tryte = 0
         0:
-            return 3
+            return 1
         1:
             skip_fea_78p: tryte = 0
     match index <=> 79:
         -1:
             skip_fea_79n: tryte = 0
         0:
-            return 4
+            return 8
         1:
             skip_fea_79p: tryte = 0
     match index <=> 80:
         -1:
             skip_fea_80n: tryte = 0
         0:
-            return 1
+            return 2
         1:
             skip_fea_80p: tryte = 0
     match index <=> 81:
         -1:
             skip_fea_81n: tryte = 0
         0:
-            return 1
+            return 0
         1:
             skip_fea_81p: tryte = 0
     match index <=> 82:
         -1:
             skip_fea_82n: tryte = 0
         0:
-            return 3
+            return 16
         1:
             skip_fea_82p: tryte = 0
     match index <=> 83:
         -1:
             skip_fea_83n: tryte = 0
         0:
-            return 1
+            return 0
         1:
             skip_fea_83p: tryte = 0
     match index <=> 84:
         -1:
             skip_fea_84n: tryte = 0
         0:
-            return 8
+            return 35
         1:
             skip_fea_84p: tryte = 0
     match index <=> 85:
         -1:
             skip_fea_85n: tryte = 0
         0:
-            return 13
+            return 1
         1:
             skip_fea_85p: tryte = 0
     match index <=> 86:
         -1:
             skip_fea_86n: tryte = 0
         0:
-            return 1
+            return 4
         1:
             skip_fea_86p: tryte = 0
     match index <=> 87:
         -1:
             skip_fea_87n: tryte = 0
         0:
-            return 4
+            return 101
         1:
             skip_fea_87p: tryte = 0
     match index <=> 88:
         -1:
             skip_fea_88n: tryte = 0
         0:
-            return 100
+            return 3
         1:
             skip_fea_88p: tryte = 0
     match index <=> 89:
         -1:
             skip_fea_89n: tryte = 0
         0:
-            return 1
+            return 4
         1:
             skip_fea_89p: tryte = 0
     match index <=> 90:
         -1:
             skip_fea_90n: tryte = 0
         0:
-            return 5
+            return 1
         1:
             skip_fea_90p: tryte = 0
     match index <=> 91:
@@ -3499,77 +3429,77 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_92n: tryte = 0
         0:
-            return 1
+            return 3
         1:
             skip_fea_92p: tryte = 0
     match index <=> 93:
         -1:
             skip_fea_93n: tryte = 0
         0:
-            return 4
+            return 1
         1:
             skip_fea_93p: tryte = 0
     match index <=> 94:
         -1:
             skip_fea_94n: tryte = 0
         0:
-            return 1
+            return 8
         1:
             skip_fea_94p: tryte = 0
     match index <=> 95:
         -1:
             skip_fea_95n: tryte = 0
         0:
-            return 8
+            return 2
         1:
             skip_fea_95p: tryte = 0
     match index <=> 96:
         -1:
             skip_fea_96n: tryte = 0
         0:
-            return 14
+            return 0
         1:
             skip_fea_96p: tryte = 0
     match index <=> 97:
         -1:
             skip_fea_97n: tryte = 0
         0:
-            return 1
+            return 5
         1:
             skip_fea_97p: tryte = 0
     match index <=> 98:
         -1:
             skip_fea_98n: tryte = 0
         0:
-            return 4
+            return 0
         1:
             skip_fea_98p: tryte = 0
     match index <=> 99:
         -1:
             skip_fea_99n: tryte = 0
         0:
-            return 101
+            return 24
         1:
             skip_fea_99p: tryte = 0
     match index <=> 100:
         -1:
             skip_fea_100n: tryte = 0
         0:
-            return 3
+            return 1
         1:
             skip_fea_100p: tryte = 0
     match index <=> 101:
         -1:
             skip_fea_101n: tryte = 0
         0:
-            return 6
+            return 4
         1:
             skip_fea_101p: tryte = 0
     match index <=> 102:
         -1:
             skip_fea_102n: tryte = 0
         0:
-            return 1
+            return 100
         1:
             skip_fea_102p: tryte = 0
     match index <=> 103:
@@ -3597,14 +3527,14 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_106n: tryte = 0
         0:
-            return 8
+            return 1
         1:
             skip_fea_106p: tryte = 0
     match index <=> 107:
         -1:
             skip_fea_107n: tryte = 0
         0:
-            return 15
+            return 4
         1:
             skip_fea_107p: tryte = 0
     match index <=> 108:
@@ -3618,147 +3548,147 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_109n: tryte = 0
         0:
-            return 4
+            return 8
         1:
             skip_fea_109p: tryte = 0
     match index <=> 110:
         -1:
             skip_fea_110n: tryte = 0
         0:
-            return 102
+            return 3
         1:
             skip_fea_110p: tryte = 0
     match index <=> 111:
         -1:
             skip_fea_111n: tryte = 0
         0:
-            return 3
+            return 0
         1:
             skip_fea_111p: tryte = 0
     match index <=> 112:
         -1:
             skip_fea_112n: tryte = 0
         0:
-            return 7
+            return 16
         1:
             skip_fea_112p: tryte = 0
     match index <=> 113:
         -1:
             skip_fea_113n: tryte = 0
         0:
-            return 1
+            return 0
         1:
             skip_fea_113p: tryte = 0
     match index <=> 114:
         -1:
             skip_fea_114n: tryte = 0
         0:
-            return 1
+            return 53
         1:
             skip_fea_114p: tryte = 0
     match index <=> 115:
         -1:
             skip_fea_115n: tryte = 0
         0:
-            return 6
+            return 1
         1:
             skip_fea_115p: tryte = 0
     match index <=> 116:
         -1:
             skip_fea_116n: tryte = 0
         0:
-            return 1
+            return 4
         1:
             skip_fea_116p: tryte = 0
     match index <=> 117:
         -1:
             skip_fea_117n: tryte = 0
         0:
-            return 8
+            return 101
         1:
             skip_fea_117p: tryte = 0
     match index <=> 118:
         -1:
             skip_fea_118n: tryte = 0
         0:
-            return 16
+            return 3
         1:
             skip_fea_118p: tryte = 0
     match index <=> 119:
         -1:
             skip_fea_119n: tryte = 0
         0:
-            return 1
+            return 6
         1:
             skip_fea_119p: tryte = 0
     match index <=> 120:
         -1:
             skip_fea_120n: tryte = 0
         0:
-            return 4
+            return 1
         1:
             skip_fea_120p: tryte = 0
     match index <=> 121:
         -1:
             skip_fea_121n: tryte = 0
         0:
-            return 103
+            return 1
         1:
             skip_fea_121p: tryte = 0
     match index <=> 122:
         -1:
             skip_fea_122n: tryte = 0
         0:
-            return 3
+            return 5
         1:
             skip_fea_122p: tryte = 0
     match index <=> 123:
         -1:
             skip_fea_123n: tryte = 0
         0:
-            return 8
+            return 1
         1:
             skip_fea_123p: tryte = 0
     match index <=> 124:
         -1:
             skip_fea_124n: tryte = 0
         0:
-            return 1
+            return 8
         1:
             skip_fea_124p: tryte = 0
     match index <=> 125:
         -1:
             skip_fea_125n: tryte = 0
         0:
-            return 1
+            return 3
         1:
             skip_fea_125p: tryte = 0
     match index <=> 126:
         -1:
             skip_fea_126n: tryte = 0
         0:
-            return 4
+            return 0
         1:
             skip_fea_126p: tryte = 0
     match index <=> 127:
         -1:
             skip_fea_127n: tryte = 0
         0:
-            return 1
+            return 5
         1:
             skip_fea_127p: tryte = 0
     match index <=> 128:
         -1:
             skip_fea_128n: tryte = 0
         0:
-            return 1
+            return 0
         1:
             skip_fea_128p: tryte = 0
     match index <=> 129:
         -1:
             skip_fea_129n: tryte = 0
         0:
-            return 7
+            return 42
         1:
             skip_fea_129p: tryte = 0
     match index <=> 130:
@@ -3772,49 +3702,49 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_131n: tryte = 0
         0:
-            return 8
+            return 4
         1:
             skip_fea_131p: tryte = 0
     match index <=> 132:
         -1:
             skip_fea_132n: tryte = 0
         0:
-            return 16
+            return 102
         1:
             skip_fea_132p: tryte = 0
     match index <=> 133:
         -1:
             skip_fea_133n: tryte = 0
         0:
-            return 1
+            return 3
         1:
             skip_fea_133p: tryte = 0
     match index <=> 134:
         -1:
             skip_fea_134n: tryte = 0
         0:
-            return 4
+            return 7
         1:
             skip_fea_134p: tryte = 0
     match index <=> 135:
         -1:
             skip_fea_135n: tryte = 0
         0:
-            return 104
+            return 1
         1:
             skip_fea_135p: tryte = 0
     match index <=> 136:
         -1:
             skip_fea_136n: tryte = 0
         0:
-            return 3
+            return 1
         1:
             skip_fea_136p: tryte = 0
     match index <=> 137:
         -1:
             skip_fea_137n: tryte = 0
         0:
-            return 8
+            return 6
         1:
             skip_fea_137p: tryte = 0
     match index <=> 138:
@@ -3835,30 +3765,268 @@ fn first_event_arg0(index: tryte) -> tryte:
         -1:
             skip_fea_140n: tryte = 0
         0:
-            return 17
+            return 4
         1:
             skip_fea_140p: tryte = 0
     match index <=> 141:
         -1:
             skip_fea_141n: tryte = 0
         0:
-            return 1
+            return 0
         1:
             skip_fea_141p: tryte = 0
     match index <=> 142:
         -1:
             skip_fea_142n: tryte = 0
         0:
-            return 6
+            return 14
         1:
             skip_fea_142p: tryte = 0
     match index <=> 143:
         -1:
             skip_fea_143n: tryte = 0
         0:
-            return 1
+            return 0
         1:
             skip_fea_143p: tryte = 0
+    match index <=> 144:
+        -1:
+            skip_fea_144n: tryte = 0
+        0:
+            return 68
+        1:
+            skip_fea_144p: tryte = 0
+    match index <=> 145:
+        -1:
+            skip_fea_145n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_145p: tryte = 0
+    match index <=> 146:
+        -1:
+            skip_fea_146n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_146p: tryte = 0
+    match index <=> 147:
+        -1:
+            skip_fea_147n: tryte = 0
+        0:
+            return 103
+        1:
+            skip_fea_147p: tryte = 0
+    match index <=> 148:
+        -1:
+            skip_fea_148n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_fea_148p: tryte = 0
+    match index <=> 149:
+        -1:
+            skip_fea_149n: tryte = 0
+        0:
+            return 8
+        1:
+            skip_fea_149p: tryte = 0
+    match index <=> 150:
+        -1:
+            skip_fea_150n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_150p: tryte = 0
+    match index <=> 151:
+        -1:
+            skip_fea_151n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_151p: tryte = 0
+    match index <=> 152:
+        -1:
+            skip_fea_152n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_152p: tryte = 0
+    match index <=> 153:
+        -1:
+            skip_fea_153n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_153p: tryte = 0
+    match index <=> 154:
+        -1:
+            skip_fea_154n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_154p: tryte = 0
+    match index <=> 155:
+        -1:
+            skip_fea_155n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_fea_155p: tryte = 0
+    match index <=> 156:
+        -1:
+            skip_fea_156n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_156p: tryte = 0
+    match index <=> 157:
+        -1:
+            skip_fea_157n: tryte = 0
+        0:
+            return 8
+        1:
+            skip_fea_157p: tryte = 0
+    match index <=> 158:
+        -1:
+            skip_fea_158n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_158p: tryte = 0
+    match index <=> 159:
+        -1:
+            skip_fea_159n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_fea_159p: tryte = 0
+    match index <=> 160:
+        -1:
+            skip_fea_160n: tryte = 0
+        0:
+            return 14
+        1:
+            skip_fea_160p: tryte = 0
+    match index <=> 161:
+        -1:
+            skip_fea_161n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_fea_161p: tryte = 0
+    match index <=> 162:
+        -1:
+            skip_fea_162n: tryte = 0
+        0:
+            return 68
+        1:
+            skip_fea_162p: tryte = 0
+    match index <=> 163:
+        -1:
+            skip_fea_163n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_163p: tryte = 0
+    match index <=> 164:
+        -1:
+            skip_fea_164n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_164p: tryte = 0
+    match index <=> 165:
+        -1:
+            skip_fea_165n: tryte = 0
+        0:
+            return 104
+        1:
+            skip_fea_165p: tryte = 0
+    match index <=> 166:
+        -1:
+            skip_fea_166n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_fea_166p: tryte = 0
+    match index <=> 167:
+        -1:
+            skip_fea_167n: tryte = 0
+        0:
+            return 8
+        1:
+            skip_fea_167p: tryte = 0
+    match index <=> 168:
+        -1:
+            skip_fea_168n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_168p: tryte = 0
+    match index <=> 169:
+        -1:
+            skip_fea_169n: tryte = 0
+        0:
+            return 8
+        1:
+            skip_fea_169p: tryte = 0
+    match index <=> 170:
+        -1:
+            skip_fea_170n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_170p: tryte = 0
+    match index <=> 171:
+        -1:
+            skip_fea_171n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_fea_171p: tryte = 0
+    match index <=> 172:
+        -1:
+            skip_fea_172n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fea_172p: tryte = 0
+    match index <=> 173:
+        -1:
+            skip_fea_173n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_fea_173p: tryte = 0
+    match index <=> 174:
+        -1:
+            skip_fea_174n: tryte = 0
+        0:
+            return 59
+        1:
+            skip_fea_174p: tryte = 0
+    match index <=> 175:
+        -1:
+            skip_fea_175n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_175p: tryte = 0
+    match index <=> 176:
+        -1:
+            skip_fea_176n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fea_176p: tryte = 0
+    match index <=> 177:
+        -1:
+            skip_fea_177n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_177p: tryte = 0
     return 0
 
 fn simple_call_event_count() -> tryte:
@@ -6670,7 +6838,7 @@ fn simple_call_event_arg0(index: tryte) -> tryte:
             skip_scea_174p: tryte = 0
 
     return 0
-# ── Event-driven render_first ──
+# Event-driven render_first
 # Iterates events directly, writes bytes to dual buffers based on cumulative offset
 
 fn render_first() -> tryte:

@@ -1,219 +1,177 @@
-import hashlib
 import os
 import unittest
 
 from bootstrap.s3.pipeline import run_source_with_buffer_capture
 
 
+LENGTH_VALUES = [
+    -1,
+    0,
+    1,
+    9,
+    10,
+    11,
+    19,
+    20,
+    42,
+    99,
+    100,
+    101,
+    109,
+    110,
+    112,
+    119,
+    145,
+    152,
+    178,
+    185,
+    190,
+    191,
+    192,
+    199,
+    200,
+    364,
+]
+
+EXPECTED_LENGTHS = {
+    -1: -1,
+    0: 1,
+    1: 1,
+    9: 1,
+    10: 2,
+    11: 2,
+    19: 2,
+    20: 2,
+    42: 2,
+    99: 2,
+    100: 3,
+    101: 3,
+    109: 3,
+    110: 3,
+    112: 3,
+    119: 3,
+    145: 3,
+    152: 3,
+    178: 3,
+    185: 3,
+    190: 3,
+    191: 3,
+    192: -1,
+    199: -1,
+    200: -1,
+    364: -1,
+}
+
+BYTE_CASES = [
+    (0, b"0"),
+    (10, b"10"),
+    (99, b"99"),
+    (100, b"100"),
+    (109, b"109"),
+    (110, b"110"),
+    (112, b"112"),
+    (119, b"119"),
+    (145, b"145"),
+    (152, b"152"),
+    (178, b"178"),
+    (185, b"185"),
+    (190, b"190"),
+    (191, b"191"),
+]
+
+INVALID_BYTE_CASES = [
+    (42, -1),
+    (42, 2),
+    (191, 3),
+    (-1, 0),
+    (192, 0),
+    (364, 0),
+]
+
+
+def _zero_array(size: int) -> str:
+    return ", ".join(["0"] * size)
+
+
 def _decimal_test_source() -> str:
-    path = "examples/self_hosting/assembly_renderer_generic_text.s3"
-    with open(path) as f:
+    path = os.path.join("examples", "self_hosting", "assembly_renderer_generic_text.s3")
+    with open(path, encoding="utf-8") as f:
         src = f.read()
 
-    test_main = """fn main() -> tryte:
-    mut lengths: tryte[40] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    mut bytes_buf: tryte[60] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    mut b_off: tryte = 0
-    mut l_off: tryte = 0
-    mut l: tryte = 0
+    byte_count = sum(len(expected) for _, expected in BYTE_CASES)
+    lines = [
+        "fn main() -> tryte:",
+        f"    mut lengths: tryte[{len(LENGTH_VALUES)}] = [{_zero_array(len(LENGTH_VALUES))}]",
+        f"    mut bytes_buf: tryte[{byte_count}] = [{_zero_array(byte_count)}]",
+        f"    mut invalids: tryte[{len(INVALID_BYTE_CASES)}] = [{_zero_array(len(INVALID_BYTE_CASES))}]",
+    ]
 
-    # We will test: -1, 0, 1, 9, 10, 11, 19, 20, 42, 99, 100, 101, 109, 110
+    for index, value in enumerate(LENGTH_VALUES):
+        lines.append(f"    lengths[{index}] = decimal_length({value})")
 
-    # -1
-    lengths[l_off] = decimal_length(-1)
-    l_off = l_off + 1
+    offset = 0
+    for value, expected in BYTE_CASES:
+        for index in range(len(expected)):
+            lines.append(f"    bytes_buf[{offset + index}] = decimal_byte_at({value}, {index})")
+        offset += len(expected)
 
-    # 0
-    l = decimal_length(0)
-    lengths[l_off] = l
-    l_off = l_off + 1
-    bytes_buf[b_off] = decimal_byte_at(0, 0)
-    b_off = b_off + l
+    for index, (value, byte_index) in enumerate(INVALID_BYTE_CASES):
+        lines.append(f"    invalids[{index}] = decimal_byte_at({value}, {byte_index})")
 
-    # 1
-    l = decimal_length(1)
-    lengths[l_off] = l
-    l_off = l_off + 1
-    bytes_buf[b_off] = decimal_byte_at(1, 0)
-    b_off = b_off + l
-
-    # 9
-    l = decimal_length(9)
-    lengths[l_off] = l
-    l_off = l_off + 1
-    bytes_buf[b_off] = decimal_byte_at(9, 0)
-    b_off = b_off + l
-
-    # 10
-    l = decimal_length(10)
-    lengths[l_off] = l
-    l_off = l_off + 1
-    bytes_buf[b_off] = decimal_byte_at(10, 0)
-    bytes_buf[b_off + 1] = decimal_byte_at(10, 1)
-    b_off = b_off + l
-
-    # 11
-    l = decimal_length(11)
-    lengths[l_off] = l
-    l_off = l_off + 1
-    bytes_buf[b_off] = decimal_byte_at(11, 0)
-    bytes_buf[b_off + 1] = decimal_byte_at(11, 1)
-    b_off = b_off + l
-
-    # 19
-    l = decimal_length(19)
-    lengths[l_off] = l
-    l_off = l_off + 1
-    bytes_buf[b_off] = decimal_byte_at(19, 0)
-    bytes_buf[b_off + 1] = decimal_byte_at(19, 1)
-    b_off = b_off + l
-
-    # 20
-    l = decimal_length(20)
-    lengths[l_off] = l
-    l_off = l_off + 1
-    bytes_buf[b_off] = decimal_byte_at(20, 0)
-    bytes_buf[b_off + 1] = decimal_byte_at(20, 1)
-    b_off = b_off + l
-
-    # 42
-    l = decimal_length(42)
-    lengths[l_off] = l
-    l_off = l_off + 1
-    bytes_buf[b_off] = decimal_byte_at(42, 0)
-    bytes_buf[b_off + 1] = decimal_byte_at(42, 1)
-    b_off = b_off + l
-
-    # 99
-    l = decimal_length(99)
-    lengths[l_off] = l
-    l_off = l_off + 1
-    bytes_buf[b_off] = decimal_byte_at(99, 0)
-    bytes_buf[b_off + 1] = decimal_byte_at(99, 1)
-    b_off = b_off + l
-
-    # 100
-    l = decimal_length(100)
-    lengths[l_off] = l
-    l_off = l_off + 1
-    bytes_buf[b_off] = decimal_byte_at(100, 0)
-    bytes_buf[b_off + 1] = decimal_byte_at(100, 1)
-    bytes_buf[b_off + 2] = decimal_byte_at(100, 2)
-    b_off = b_off + l
-
-    # 101
-    l = decimal_length(101)
-    lengths[l_off] = l
-    l_off = l_off + 1
-    bytes_buf[b_off] = decimal_byte_at(101, 0)
-    bytes_buf[b_off + 1] = decimal_byte_at(101, 1)
-    bytes_buf[b_off + 2] = decimal_byte_at(101, 2)
-    b_off = b_off + l
-
-    # 109
-    l = decimal_length(109)
-    lengths[l_off] = l
-    l_off = l_off + 1
-    bytes_buf[b_off] = decimal_byte_at(109, 0)
-    bytes_buf[b_off + 1] = decimal_byte_at(109, 1)
-    bytes_buf[b_off + 2] = decimal_byte_at(109, 2)
-    b_off = b_off + l
-
-    # 110
-    lengths[l_off] = decimal_length(110)
-    l_off = l_off + 1
-
-    return 0
-"""
+    lines.append("    return 0")
+    test_main = "\n".join(lines)
     return src.replace("fn main() -> tryte:\n    return render_first()", test_main)
 
 
-def _run_decimal_test() -> tuple[list[int], bytes]:
+def _capture_array(memory: dict[int, list[int | None]], length: int) -> list[int]:
+    matches = [values for values in memory.values() if len(values) == length]
+    if len(matches) != 1:
+        raise AssertionError(f"expected exactly one captured array of length {length}, got {len(matches)}")
+    return [0 if value is None else value for value in matches[0]]
+
+
+def _run_decimal_test() -> tuple[list[int], bytes, list[int]]:
     src = _decimal_test_source()
     result, capture = run_source_with_buffer_capture(src, entry="main", max_instructions=200000)
     if result != 0:
         raise ValueError(f"S3 program returned non-zero: {result}")
 
     memory = capture[-1]
-    lengths = []
-    for v in memory.get(0, []):
-        if v is None or v == 0:
-            if v == -1:
-                lengths.append(v)
-                continue
-            if len(lengths) == 14:
-                break
-            # we don't break if len == 0 etc, we break at len(lengths) == 14
-            # wait, 0 is not a valid length, so we just break when we have 14
-        lengths.append(v)
-        if len(lengths) == 14:
-            break
-
-    bytes_buf = memory.get(1, [])
-    out = bytearray()
-    for i in range(sum(l for l in lengths if l > 0)):
-        out.append(bytes_buf[i])
-
-    return lengths, bytes(out)
-
-
-EXPECTED = {
-    0: (1, b"0"),
-    1: (1, b"1"),
-    9: (1, b"9"),
-    10: (2, b"10"),
-    11: (2, b"11"),
-    19: (2, b"19"),
-    20: (2, b"20"),
-    42: (2, b"42"),
-    99: (2, b"99"),
-    100: (3, b"100"),
-    101: (3, b"101"),
-    109: (3, b"109"),
-}
-
-VALUES = [-1, 0, 1, 9, 10, 11, 19, 20, 42, 99, 100, 101, 109, 110]
+    byte_count = sum(len(expected) for _, expected in BYTE_CASES)
+    lengths = _capture_array(memory, len(LENGTH_VALUES))
+    bytes_buf = _capture_array(memory, byte_count)
+    invalids = _capture_array(memory, len(INVALID_BYTE_CASES))
+    return lengths, bytes(bytes_buf), invalids
 
 
 class TestDecimalFunctions(unittest.TestCase):
     lengths: list[int] = []
     output: bytes = b""
+    invalids: list[int] = []
 
     @classmethod
     def setUpClass(cls):
-        cls.lengths, cls.output = _run_decimal_test()
+        cls.lengths, cls.output, cls.invalids = _run_decimal_test()
 
-    def test_out_of_bounds(self):
-        """Test rejection of -1 and 110 by returning sentinel -1."""
-        self.assertEqual(self.lengths[0], -1)  # For -1
-        self.assertEqual(self.lengths[13], -1) # For 110
+    def test_decimal_lengths(self):
+        for index, value in enumerate(LENGTH_VALUES):
+            with self.subTest(value=value):
+                self.assertEqual(self.lengths[index], EXPECTED_LENGTHS[value])
 
-    def _extract_value(self, index: int, value: int) -> tuple[int, bytes]:
-        length = self.lengths[index]
-        if length <= 0:
-            return length, b""
+    def test_decimal_bytes(self):
+        offset = 0
+        for value, expected in BYTE_CASES:
+            with self.subTest(value=value):
+                actual = self.output[offset : offset + len(expected)]
+                self.assertEqual(actual, expected)
+            offset += len(expected)
 
-        # Calculate offset
-        off = 0
-        for i in range(1, index):
-            if self.lengths[i] > 0:
-                off += self.lengths[i]
+    def test_invalid_byte_requests_return_zero(self):
+        self.assertEqual(self.invalids, [0] * len(INVALID_BYTE_CASES))
 
-        return length, self.output[off:off+length]
-
-    def test_all_expected_values(self):
-        # We start checking from index 1 (value 0) up to index 12 (value 109)
-        for i, val in enumerate(VALUES[1:13], start=1):
-            with self.subTest(value=val):
-                expected_len, expected_bytes = EXPECTED[val]
-                actual_len, actual_bytes = self._extract_value(i, val)
-                self.assertEqual(actual_len, expected_len, f"Length mismatch for {val}")
-                self.assertEqual(actual_bytes, expected_bytes, f"Bytes mismatch for {val}")
-
-    def test_no_null_bytes_in_range(self):
-        """All bytes in the captured string should be digits."""
-        self.assertTrue(len(self.output) > 0)
-        self.assertTrue(all(48 <= b <= 57 for b in self.output))
+    def test_all_valid_bytes_are_digits(self):
+        self.assertTrue(self.output)
+        self.assertTrue(all(48 <= byte <= 57 for byte in self.output))
 
 
 if __name__ == "__main__":

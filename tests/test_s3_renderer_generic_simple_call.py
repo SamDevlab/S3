@@ -1,253 +1,309 @@
 import hashlib
+import inspect
 import os
+import re
 import unittest
+from collections import Counter
+
 from tools.s3_renderer_contract import (
     FIXTURE_METADATA,
     _capture_fixture_output,
     _git_blob_bytes,
 )
 
+
 EXPECTED_SHA256 = FIXTURE_METADATA["simple_call_generic"].expected_sha256
 EXPECTED_BYTES = FIXTURE_METADATA["simple_call_generic"].expected_bytes
 EXPECTED_LINES = FIXTURE_METADATA["simple_call_generic"].expected_lines
+EXPECTED_EVENT_COUNT = 175
+EXPECTED_DISTRIBUTION = Counter(
+    {
+        1: 28,
+        2: 21,
+        3: 6,
+        4: 20,
+        5: 12,
+        6: 52,
+        7: 13,
+        9: 2,
+        10: 21,
+    }
+)
 
 
-class TestGenericSimpleCallTextRenderer(unittest.TestCase):
+def _read_source(meta_name: str) -> str:
+    meta = FIXTURE_METADATA[meta_name]
+    s3_path = os.path.join(*meta.s3_path.split("/"))
+    with open(s3_path, encoding="utf-8") as f:
+        return f.read()
+
+
+def _function_body(source: str, name: str) -> str:
+    match = re.search(
+        rf"^fn {name}\([^\n]*\)\s*->\s*tryte:\n(.*?)(?=^fn |\Z)",
+        source,
+        re.MULTILINE | re.DOTALL,
+    )
+    if not match:
+        raise AssertionError(f"{name} not found")
+    return match.group(1)
+
+
+def _event_count(source: str, prefix: str) -> int:
+    match = re.search(
+        rf"^fn {prefix}_event_count\(\)\s*->\s*tryte:\n\s*return\s+(\d+)",
+        source,
+        re.MULTILINE,
+    )
+    if not match:
+        raise AssertionError(f"{prefix}_event_count not found")
+    return int(match.group(1))
+
+
+def _indexed_returns(source: str, function_name: str) -> tuple[dict[int, int], list[int]]:
+    body = _function_body(source, function_name)
+    pairs = re.findall(
+        r"match index <=> (\d+):.*?\n\s*0:\n\s*return (-?\d+)",
+        body,
+        re.DOTALL,
+    )
+    indices = [int(index) for index, _ in pairs]
+    values = {int(index): int(value) for index, value in pairs}
+    return values, indices
+
+
+def _event_plan(source: str, prefix: str) -> list[tuple[int, int]]:
+    count = _event_count(source, prefix)
+    kinds, _ = _indexed_returns(source, f"{prefix}_event_kind")
+    args, _ = _indexed_returns(source, f"{prefix}_event_arg0")
+    return [(kinds[index], args[index]) for index in range(count)]
+
+
+def _length_table(source: str, prefix: str) -> dict[int, int]:
+    body = _function_body(source, f"{prefix}_length")
+    result: dict[int, int] = {}
+    for match in re.finditer(
+        r"match id <=> (\d+):(.*?)(?=\n    match id <=>|\n    return 0)",
+        body,
+        re.DOTALL,
+    ):
+        return_match = re.search(r"\n\s*0:\n\s*return (\d+)", match.group(2))
+        if return_match:
+            result[int(match.group(1))] = int(return_match.group(1))
+    return result
+
+
+def _text_table(source: str, prefix: str) -> dict[int, str]:
+    lengths = _length_table(source, prefix)
+    body = _function_body(source, f"{prefix}_byte")
+    result: dict[int, str] = {}
+    for match in re.finditer(
+        r"match id <=> (\d+):(.*?)(?=\n    match id <=>|\n    return 0)",
+        body,
+        re.DOTALL,
+    ):
+        id_value = int(match.group(1))
+        returns = [int(value) for value in re.findall(r"\n\s*0:\n\s*return (\d+)", match.group(2))]
+        result[id_value] = "".join(chr(value) for value in returns[: lengths[id_value]])
+    return result
+
+
+def _event_text(
+    kind: int,
+    arg0: int,
+    fragments: dict[int, str],
+    symbols: dict[int, str],
+    opcodes: dict[int, str],
+) -> str:
+    if kind == 1:
+        return fragments[arg0]
+    if kind == 2:
+        return symbols[arg0]
+    if kind == 3:
+        return opcodes[arg0]
+    if kind == 4:
+        return str(arg0)
+    if kind == 5:
+        return ":"
+    if kind == 6:
+        return " " * arg0
+    if kind == 7:
+        return ","
+    if kind == 9:
+        return "->"
+    if kind == 10:
+        return "\n"
+    raise AssertionError(f"unknown event kind: {kind}")
+
+
+def _reconstruct_bytes(source: str, events: list[tuple[int, int]]) -> bytes:
+    fragments = _text_table(source, "fragment")
+    symbols = _text_table(source, "symbol")
+    opcodes = _text_table(source, "opcode")
+    text = "".join(_event_text(kind, arg0, fragments, symbols, opcodes) for kind, arg0 in events)
+    return text.encode("utf-8")
+
+
+class TestGenericSimpleCallStructure(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        meta = FIXTURE_METADATA["simple_call_generic"]
-        s3_path = os.path.join(*meta.s3_path.split("/"))
-        with open(s3_path) as f:
-            cls.source = f.read()
-        cls.meta = meta
+        cls.meta = FIXTURE_METADATA["simple_call_generic"]
+        cls.source = _read_source("simple_call_generic")
         from bootstrap.s3.pipeline import compile_source
+
         cls.ir = compile_source(cls.source).ir
-        cls.result, cls.output = 0, _capture_fixture_output(
-            cls.source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes
-        )
-        cls.golden = _git_blob_bytes(meta.golden_path)
-        cls.legacy = _capture_fixture_output(
-            *cls._legacy_args()
-        )
+        cls.fn_names = {fn.name for fn in cls.ir.functions}
+        cls.events = _event_plan(cls.source, "simple_call")
+        cls.rendered = _reconstruct_bytes(cls.source, cls.events)
+        cls.golden = _git_blob_bytes(cls.meta.golden_path)
 
-    @staticmethod
-    def _legacy_args():
-        meta = FIXTURE_METADATA["simple_call"]
-        path = os.path.join(*meta.s3_path.split("/"))
-        with open(path) as f:
-            src = f.read()
-        return (src, meta.buffer_count, meta.buffer_offset, meta.entry,
-                meta.max_instructions, meta.expected_bytes)
+    def test_structure_class_does_not_call_vm_helpers(self):
+        forbidden = (
+            "run_" + "source",
+            "run_" + "source_with_buffer_capture",
+            "_capture_fixture_output",
+        )
+        for name, method in type(self).__dict__.items():
+            if name == "test_structure_class_does_not_call_vm_helpers":
+                continue
+            if not inspect.isfunction(method) and not isinstance(method, classmethod):
+                continue
+            if isinstance(method, classmethod):
+                method = method.__func__
+            method_source = inspect.getsource(method)
+            for token in forbidden:
+                with self.subTest(method=name, token=token):
+                    self.assertNotIn(token, method_source)
+            self.assertNotIn("legacy", method_source.lower())
 
-    # 1. metadata exists
-    def test_metadata_exists(self):
+    def test_metadata_and_program_exist(self):
         self.assertIn("simple_call_generic", FIXTURE_METADATA)
-
-    # 2. program exists
-    def test_program_exists(self):
         self.assertTrue(os.path.isfile(os.path.join(*self.meta.s3_path.split("/"))))
 
-    # 3. entry exists
-    def test_entry_render_simple_call_exists(self):
-        self.assertIn("fn render_simple_call", self.source)
-
-    # 4. compiles
     def test_program_compiles(self):
         self.assertIsNotNone(self.ir)
 
-    # 5. executes
-    def test_execution_returns_zero(self):
-        self.assertEqual(self.result, 0)
+    def test_entry_and_dispatch_functions_present(self):
+        self.assertIn("render_simple_call", self.fn_names)
+        self.assertIn("simple_call_event_kind", self.fn_names)
+        self.assertIn("simple_call_event_arg0", self.fn_names)
+        self.assertIn("simple_call_event_count", self.fn_names)
+        self.assertIn("event_length", self.fn_names)
+        self.assertIn("event_byte", self.fn_names)
 
-    # 6. captures buffers
-    def test_buffers_captured(self):
-        self.assertTrue(len(self.output) > 0)
+    def test_shared_tables_present(self):
+        for name in (
+            "fragment_length",
+            "fragment_byte",
+            "symbol_length",
+            "symbol_byte",
+            "opcode_length",
+            "opcode_byte",
+            "decimal_length",
+            "decimal_tens_byte",
+            "decimal_ones_byte",
+            "decimal_byte_at",
+        ):
+            self.assertIn(name, self.fn_names)
 
-    # 7. 448 bytes
+    def test_no_position_or_raw_byte_helpers(self):
+        self.assertNotIn("line_complete", self.fn_names)
+        self.assertNotIn("event_by_position", self.fn_names)
+        self.assertNotIn("raw_byte", self.source.lower())
+        self.assertNotIn(11, [kind for kind, _ in self.events])
+
+    def test_event_indices_are_continuous(self):
+        count = _event_count(self.source, "simple_call")
+        _, kind_indices = _indexed_returns(self.source, "simple_call_event_kind")
+        _, arg_indices = _indexed_returns(self.source, "simple_call_event_arg0")
+        expected = list(range(count))
+        self.assertEqual(sorted(kind_indices), expected)
+        self.assertEqual(sorted(arg_indices), expected)
+        self.assertEqual(len(kind_indices), len(set(kind_indices)))
+        self.assertEqual(len(arg_indices), len(set(arg_indices)))
+
+    def test_event_count_and_distribution_are_preserved(self):
+        self.assertEqual(len(self.events), EXPECTED_EVENT_COUNT)
+        self.assertEqual(Counter(kind for kind, _ in self.events), EXPECTED_DISTRIBUTION)
+
+    def test_last_event_is_newline(self):
+        self.assertEqual(self.events[-1][0], 10)
+
+    def test_reconstructed_output_matches_canonical_golden(self):
+        self.assertEqual(len(self.rendered), EXPECTED_BYTES)
+        self.assertEqual(self.rendered.count(10), EXPECTED_LINES)
+        self.assertEqual(self.rendered, self.golden)
+        self.assertEqual(hashlib.sha256(self.rendered).hexdigest(), EXPECTED_SHA256)
+
+
+class TestGenericSimpleCallExecution(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.meta = FIXTURE_METADATA["simple_call_generic"]
+        cls.source = _read_source("simple_call_generic")
+        cls.output = _capture_fixture_output(
+            cls.source,
+            cls.meta.buffer_count,
+            cls.meta.buffer_offset,
+            cls.meta.entry,
+            cls.meta.max_instructions,
+            cls.meta.expected_bytes,
+        )
+        cls.golden = _git_blob_bytes(cls.meta.golden_path)
+        legacy_meta = FIXTURE_METADATA["simple_call"]
+        legacy_source = _read_source("simple_call")
+        cls.legacy = _capture_fixture_output(
+            legacy_source,
+            legacy_meta.buffer_count,
+            legacy_meta.buffer_offset,
+            legacy_meta.entry,
+            legacy_meta.max_instructions,
+            legacy_meta.expected_bytes,
+        )
+
+    def test_execution_captures_buffers(self):
+        self.assertTrue(self.output)
+
     def test_output_byte_count(self):
         self.assertEqual(len(self.output), EXPECTED_BYTES)
 
-    # 8. 21 lines
     def test_output_line_count(self):
         self.assertEqual(self.output.count(10), EXPECTED_LINES)
 
-    # 9. ends with LF
     def test_output_ends_with_lf(self):
         self.assertEqual(self.output[-1:], b"\n")
 
-    # 10. no CRLF
     def test_output_has_no_crlf(self):
         self.assertNotIn(b"\r\n", self.output)
 
-    # 11. SHA-256 correct
     def test_sha256_matches(self):
         actual = hashlib.sha256(self.output).hexdigest()
         self.assertEqual(actual, EXPECTED_SHA256)
 
-    # 12. raw equality with golden
     def test_output_matches_golden(self):
         self.assertEqual(self.output, self.golden)
 
-    # 13. raw equality with legacy renderer
     def test_output_matches_legacy(self):
         self.assertEqual(self.output, self.legacy)
 
-    # 14. determinism
     def test_two_runs_are_deterministic(self):
         output2 = _capture_fixture_output(
-            self.source, self.meta.buffer_count, self.meta.buffer_offset,
-            self.meta.entry, self.meta.max_instructions, self.meta.expected_bytes
+            self.source,
+            self.meta.buffer_count,
+            self.meta.buffer_offset,
+            self.meta.entry,
+            self.meta.max_instructions,
+            self.meta.expected_bytes,
         )
         self.assertEqual(output2, self.output)
 
-    # 15. event count correct
-    def test_event_count_correct(self):
-        self.assertIn("fn simple_call_event_count", self.source)
-        self.assertIn("return 175", self.source)
-
-    # 16. sum of lengths = 448 (proven by byte count test)
-    def test_event_count_equals_175(self):
-        from bootstrap.s3.pipeline import run_source_with_buffer_capture
-        result, _ = run_source_with_buffer_capture(self.source, entry="simple_call_event_count", max_instructions=1000)
-        self.assertEqual(result, 175)
-
-    def test_event_properties_via_harness(self):
-        # We replace main with a harness that collects all kinds and lengths
-        test_main = """fn main() -> tryte:
-    mut buffer_low: tryte[300] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-    mut buffer_high: tryte[300] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-    mut count: tryte = simple_call_event_count()
-    mut i: tryte = 0
-    while i <=> count:
-        mut k: tryte = simple_call_event_kind(i)
-        buffer_low[i] = k
-        buffer_high[i] = event_length(k, simple_call_event_arg0(i))
-        i = i + 1
-
-    return count
-"""
-        src = self.source.replace("fn main() -> tryte:\n    return render_first()", test_main)
-        from bootstrap.s3.pipeline import run_source_with_buffer_capture
-        result, capture = run_source_with_buffer_capture(src, entry="main", max_instructions=200000)
-        self.assertEqual(result, 175) # count returned by main
-
-        mem = capture[-1]
-        buffer_high = None
-        buffer_low = None
-        for arr in mem.values():
-            if len(arr) == 300:
-                if buffer_low is None:
-                    buffer_low = arr
-                else:
-                    buffer_high = arr
-
-        self.assertIsNotNone(buffer_high, "Could not find buffer_high in memory capture")
-        self.assertIsNotNone(buffer_low, "Could not find buffer_low in memory capture")
-
-        kinds = buffer_low[:175]
-        lengths = buffer_high[:175]
-
-        self.assertEqual(sum(lengths), 448)
-
-        # 17. kind distribution (at least one present)
-        self.assertTrue(len(set(kinds)) > 1)
-
-        # 18. no RAW_BYTE (kind 11 not used in simple_call!)
-        self.assertNotIn(11, kinds)
-
-        # 19. último evento = newline (kind 10 is newline in 'first', in simple_call there's no kind 10 either, wait, it's just checking the last kind)
-        # Actually in simple_call, newline is printed implicitly by other fragments, or there is no specific newline event if it's not defined.
-        # Let's check what the last kind is.
-
-    # 19. no line complete pattern
-    def test_no_line_complete(self):
-        fn_names = {fn.name for fn in self.ir.functions}
-        self.assertNotIn("line_complete", fn_names)
-
-    # 20. no event_by_position
-    def test_no_event_by_position(self):
-        fn_names = {fn.name for fn in self.ir.functions}
-        self.assertNotIn("event_by_position", fn_names)
-
-    # 21. uses while loop
-    def test_while_loop_present(self):
-        self.assertIn("while", self.source)
-
-    # 22. no unrolled writes
-    def test_no_unrolled_assignments(self):
-        self.assertNotIn("cursor_low", self.source)
-        self.assertNotIn("cursor_high", self.source)
-
-    # 23. shared tables present
-    def test_fragment_tables_present(self):
-        self.assertIn("fn fragment_length", self.source)
-        self.assertIn("fn fragment_byte", self.source)
-
-    def test_symbol_tables_present(self):
-        self.assertIn("fn symbol_length", self.source)
-        self.assertIn("fn symbol_byte", self.source)
-
-    def test_opcode_tables_present(self):
-        self.assertIn("fn opcode_length", self.source)
-        self.assertIn("fn opcode_byte", self.source)
-
-    def test_decimal_formatter_present(self):
-        self.assertIn("fn decimal_length", self.source)
-        self.assertIn("fn decimal_tens_byte", self.source)
-        self.assertIn("fn decimal_ones_byte", self.source)
-        self.assertIn("fn decimal_byte_at", self.source)
-
-    # 24. symbol 'add' in output
-    def test_symbol_add_in_output(self):
-        self.assertIn(b"add", self.output)
-
-    # 25. opcode TCALL in output
-    def test_opcode_tcall_in_output(self):
-        self.assertIn(b"TCALL", self.output)
-
-    # 26. colon event present in output
-    def test_colon_in_output(self):
-        self.assertNotEqual(self.output.find(b":"), -1)
-
-    # 27. buffer transition (dual buffer approach)
-    def test_dual_buffer_approach(self):
-        self.assertIn("buffer_low", self.source)
-        self.assertIn("buffer_high", self.source)
-
-    # 28. no writes outside capacity (checked via successful capture)
-    def test_render_first_still_present(self):
-        self.assertIn("fn render_first", self.source)
-
-    # 29. legacy renderers independent
-    def test_legacy_independent(self):
-        self.assertNotIn("assembly_renderer_simple_call_text.s3", self.source)
-        self.assertNotIn("assembly_renderer_first_text.s3", self.source)
-        self.assertNotIn("assembly_renderer_sign_text.s3", self.source)
-
-    # 30. output starts with .s3asm
-    def test_output_starts_with_s3asm(self):
+    def test_output_contains_expected_program_text(self):
         self.assertEqual(self.output[:6], b".s3asm")
-
-    # 31. output contains main function declaration
-    def test_output_contains_main(self):
+        self.assertIn(b".function add", self.output)
         self.assertIn(b".function main", self.output)
-
-    # 32. output contains arrow
-    def test_output_contains_arrow(self):
-        self.assertIn(b" -> ", self.output)
-
-    # 33. output contains source comments
-    def test_output_contains_source_comments(self):
+        self.assertIn(b"TCALL", self.output)
         self.assertIn(b"; source=", self.output)
-
-    # 34. output has two functions
-    def test_output_has_two_function_directives(self):
         self.assertEqual(self.output.count(b".function "), 2)
-
-    # 35. event_dispatch functions present
-    def test_event_dispatch_present(self):
-        self.assertIn("fn event_length", self.source)
-        self.assertIn("fn event_byte", self.source)
 
 
 if __name__ == "__main__":

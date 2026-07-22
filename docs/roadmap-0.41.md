@@ -100,15 +100,16 @@ replaces the legacy `assembly_renderer_first_text.s3` for the `first` fixture.
 
 ### Event model (`first`)
 
-144 purely structural events produce 441 bytes (18 lines, SHA-256
+178 purely structural events produce 441 bytes (18 lines, SHA-256
 `46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67`).
 
 | Kind | Name | Count |
 |------|------|-------|
-| 1 | Fragment | 32 |
+| 1 | Fragment | 27 |
 | 2 | Symbol | 20 |
 | 3 | Opcode | 7 |
-| 4 | Decimal | 2 |
+| 4 | Decimal | 27 |
+| 5 | Colon | 14 |
 | 6 | Space | 51 |
 | 7 | Comma | 13 |
 | 9 | Arrow | 1 |
@@ -117,8 +118,10 @@ replaces the legacy `assembly_renderer_first_text.s3` for the `first` fixture.
 - Zero arbitrary-byte events (no `RAW_BYTE`)
 - Zero complete lines stored as fragments
 - Zero position-based events
-- 14 unique fragments, 8 unique symbols, 5 unique opcodes
-- 3.06 bytes per event average
+- Source coordinates are decomposed as `DECIMAL`, `COLON`, `DECIMAL`, `COLON`, `DECIMAL`
+- No fragment used by `first` contains a digit, `:`, or newline
+- 9 unique fragments, 8 unique symbols, 5 unique opcodes
+- 2.48 bytes per event average
 
 ---
 
@@ -201,24 +204,27 @@ always `'1'` instead of `'2'`–`'9'`.
   10-match lookup table, otherwise `decimal_ones_byte(n - 10)`.
 
 **Additionally:** `decimal_byte_at` now correctly handles three-digit values
-100–109 via the `value > 100` branch (hardcoded `'1'`, `'0'`, `decimal_ones_byte(value - 100)`).
+100-191 as `'1'`, `decimal_tens_byte(value - 100)`, and
+`decimal_ones_byte(value - 100)`.
 
 ### Supported decimal domain
 
-The decimal formatter correctly supports **0–109 inclusive**:
+The decimal formatter intentionally supports **0-191 inclusive**:
 
-- 0–9: single digit via `value + 48`
+- 0-9: single digit via `value + 48`
 - 10: hardcoded `"10"`
-- 11–99: two digits via `decimal_tens_byte`/`decimal_ones_byte`
+- 11-99: two digits via `decimal_tens_byte`/`decimal_ones_byte`
 - 100: hardcoded `"100"`
-- 101–109: `'1'` + `'0'` + `decimal_ones_byte(value - 100)`
+- 101-191: `'1'` + `decimal_tens_byte(value - 100)` + `decimal_ones_byte(value - 100)`
 
 ### Outside domain
 
-- Values outside 0–109 return `-1` (sentinel value) for `decimal_length` and are unsupported by the formatting functions.
-- Negative values produce garbage (the `value + 48` path produces non-digit
-  ASCII). These values do not occur in current usage.
-- `decimal_length` bug is fixed: it correctly returns `3` for values 100–109.
+- Values outside 0-191 return `-1` (sentinel value) for `decimal_length`.
+- `decimal_byte_at` returns `0` for values outside 0-191.
+- `decimal_byte_at` returns `0` for negative indices or indices greater than
+  or equal to the decimal length.
+- Invalid decimal inputs do not produce `/`, `:`, garbage, or partial strings.
+- `decimal_length` is explicitly bounded; values 192 and above return `-1`.
 
 ### Recursion assessment
 
@@ -237,9 +243,10 @@ The decimal formatter correctly supports **0–109 inclusive**:
 | `first_generic` | `render_first` | ~200K | 500K | ~110s |
 | `simple_call_generic` | `render_simple_call` | ~250K | 500K | ~115s |
 
-- `simple_call_generic` requires ~50K more instructions than `first_generic`
-  due to larger event tables (175 vs 144 events) and decimal formatting
-  (20 vs 2 decimal events).
+- `first_generic` now has a slightly larger event table than
+  `simple_call_generic` (178 vs 175 events) because source coordinates are
+  decomposed structurally instead of stored in numeric fragments.
+- `simple_call_generic` keeps its canonical 175-event plan and 448-byte output.
 - The current 500K limit provides ~2x safety margin over the minimum.
 - Default max_instructions for other programs remains at 100K; only the
   generic renderer uses 500K.
@@ -248,9 +255,14 @@ The decimal formatter correctly supports **0–109 inclusive**:
 
 ## Testing
 
-- `tests/test_s3_renderer_generic_text.py`: 36 tests for `render_first`
-- `tests/test_s3_renderer_generic_simple_call.py`: 38 tests for `render_simple_call`
-- `tests/test_decimal_functions.py`: 14 tests for decimal boundary values (0–109)
+- `tests/test_s3_renderer_generic_text.py`: separated `render_first`
+  structure tests from execution tests; the structure class compiles IR and
+  audits the event plan without running the VM.
+- `tests/test_s3_renderer_generic_simple_call.py`: separated
+  `render_simple_call` structure tests from execution tests; the structure
+  class compiles IR and audits the event plan without running the VM.
+- `tests/test_decimal_functions.py`: decimal boundary and byte tests for the
+  shared 0-191 contract, including invalid values and invalid indices.
 - `tests/test_s3_renderer_contract.py`: includes `simple_call_generic` in
   contract verification; real zero-byte capture test
 - `tools/compare_assembly_renderer.py --check`: validates 6 comparisons
@@ -263,6 +275,8 @@ The decimal formatter correctly supports **0–109 inclusive**:
 ### Pending
 
 - `sign` generic renderer (`sign_generic`)
+- A previous generated `sign_generic` attempt was rejected and is not part of
+  this branch state.
 
 ## Remaining
 
