@@ -82,9 +82,9 @@ Da maior para a menor precedência:
 
 Operadores relacionais comparam dois operandos do mesmo tipo escalar (`tryte` com `tryte`, ou `trit` com `trit`) e retornam `trit` (`-1` para verdadeiro, `0` para falso). `<=>` retorna `trit`. Subtração é reduzida exclusivamente a `INVERT` seguido de `ADD`; não existe opcode de subtração nativo.
 
-## Controle de fluxo: match e while
+## Controle de fluxo: match, while e for
 
-Os comandos de controle de fluxo de laço `break` e `continue` são suportados exclusivamente dentro de laços `while`. `break` encerra imediatamente a iteração e transfere o controle para o bloco após o `while` mais interno. `continue` encerra a iteração corrente e transfere o controle para a reavaliação da condição do `while` mais interno. Não possuem rótulos (labels) ou argumentos de expressão.
+Os comandos de controle de fluxo de laço `break` e `continue` são suportados dentro de laços `while` e `for`. `break` encerra imediatamente o laço e transfere o controle para o bloco após o laço mais interno. `continue` encerra a iteração corrente e transfere o controle para a reavaliação da condição do `while` ou para o passo de incremento do `for`. Não possuem rótulos (labels) ou argumentos de expressão.
 
 O `match` substitui o antigo `switch` e exige um seletor do tipo `trit`. Exige o mapeamento explícito e obrigatório dos três casos `-1`, `0` e `1`. Além do statement `match`, o `match` também é aceito no nível de expressão (`MatchExpression`). Em modo expressão, cada braço contém uma única expressão de resultado e apenas o braço selecionado é avaliado em tempo de execução.
 
@@ -104,12 +104,14 @@ O `while` avalia uma condição do tipo `trit`:
 - Se for `0`, o laço termina.
 - Se for `1`, o laço termina.
 
+O laço `for` itera deterministicamente sobre intervalos `range(start, end)` de `tryte` no intervalo meio-aberto `[start, end)`:
+
 ```s3
 fn main() -> tryte:
-    mut i: tryte = 0
-    while i <=> 5:
-        i = i + 1
-    return i
+    mut total: tryte = 0
+    for i: tryte in range(0, 5):
+        total = total + i
+    return total
 ```
 
 ## Retorno

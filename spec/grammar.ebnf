@@ -35,6 +35,7 @@ match-statement      = "match", expression, ":", NEWLINE, INDENT, { ternary-case
 ternary-case         = signed-integer, block ;
 
 while-statement      = "while", expression, block ;
+for-statement        = "for", identifier, ":", type-name, "in", "range", "(", expression, ",", expression, ")", block ;
 
 signed-integer       = [ "-" ], integer ;
 

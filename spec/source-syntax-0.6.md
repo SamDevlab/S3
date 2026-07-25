@@ -100,6 +100,12 @@ To maintain static typing without ambiguity and enforce "menos é mais":
 - **Rule:** Each arm contains a single result expression. All arm expressions must evaluate to the same scalar type (`trit` or `tryte`).
 - **Rule:** Only the selected arm expression is evaluated at runtime (lazy evaluation of unselected arms).
 
+### 4.10. For Loop Statement
+- **Rule:** `for var: tryte in range(start, end):` iterates over the half-open range `[start, end)`.
+- **Rule:** `start` and `end` bounds must evaluate to `tryte`.
+- **Rule:** The loop variable `var` is bound for the scope of the loop body and is immutable (`is_mutable=False`).
+- **Rule:** `break` and `continue` statements inside the loop body transfer control to the loop exit or loop step, respectively.
+
 ## 5. Normative Examples
 
 ### Example 1: Simple Return
