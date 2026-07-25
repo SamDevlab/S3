@@ -24,6 +24,8 @@ class TokenKind(Enum):
     SWITCH = auto()
     MATCH = auto()
     WHILE = auto()
+    BREAK = auto()
+    CONTINUE = auto()
     MUT = auto()
     TRIT = auto()
     TRYTE = auto()
@@ -264,8 +266,13 @@ class Lexer:
             self._advance()
         text = self.source[start:self.position]
         kind = KEYWORDS.get(text, TokenKind.IDENTIFIER)
-        if self.mode == SyntaxMode.V0_6 and text == "match":
-            kind = TokenKind.MATCH
+        if self.mode == SyntaxMode.V0_6:
+            if text == "match":
+                kind = TokenKind.MATCH
+            elif text == "break":
+                kind = TokenKind.BREAK
+            elif text == "continue":
+                kind = TokenKind.CONTINUE
         return Token(kind, text, line, column, start)
 
     @staticmethod
