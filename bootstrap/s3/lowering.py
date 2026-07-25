@@ -732,7 +732,17 @@ class FunctionLowerer:
             return self._lower_binary(expression, expression_type)
         if isinstance(expression, ast.MatchExpression):
             return self._lower_match_expression(expression)
+        if isinstance(expression, ast.LenExpression):
+            return self._lower_len(expression)
         raise LoweringError("unsupported expression", expression.location)
+
+    def _lower_len(self, expression: ast.LenExpression) -> int:
+        array_type = self.semantic_model.array_type_of(expression.argument)
+        return self._emit_constant(
+            array_type.length,
+            ast.TypeName.TRYTE,
+            expression.location,
+        )
 
     def _lower_binary(
         self,

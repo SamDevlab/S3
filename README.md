@@ -25,7 +25,7 @@ A implementação atual oferece:
 - sintaxe V0.5 mantida apenas como compatibilidade legada/deprecated;
 - bindings imutáveis e `mut` explícito;
 - atribuição escalar e indexada;
-- arrays estáticos unidimensionais de `trit`/`tryte`;
+- arrays estáticos unidimensionais de `trit`/`tryte` e expressão `len(array)` estática;
 - bounds estático para índices constantes e dinâmico para calculados;
 - objetos de memória locais ao frame, sem ponteiros ou aliasing;
 - IR SSA com CFG, dominância, `LOAD` e `STORE`;

@@ -106,6 +106,12 @@ To maintain static typing without ambiguity and enforce "menos é mais":
 - **Rule:** The loop variable `var` is bound for the scope of the loop body and is immutable (`is_mutable=False`).
 - **Rule:** `break` and `continue` statements inside the loop body transfer control to the loop exit or loop step, respectively.
 
+### 4.11. Static Array Len Expression
+- **Rule:** `len(array_expression)` returns the compile-time element count of a static array.
+- **Rule:** The argument must evaluate to a static array type (`tryte[N]` or `trit[N]`). Scalar values, indexed elements, and non-array expressions are rejected with a semantic error.
+- **Rule:** `len` returns a scalar of type `tryte`.
+- **Rule:** Evaluation is purely static during compilation; zero runtime memory instructions or call instructions are emitted.
+
 ## 5. Normative Examples
 
 ### Example 1: Simple Return

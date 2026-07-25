@@ -443,6 +443,8 @@ class Parser:
     def _parse_primary(self) -> ast.Expression:
         if self.mode == SyntaxMode.V0_6 and self._match(TokenKind.MATCH):
             return self._parse_match_expression_v0_6(self._previous())
+        if self.mode == SyntaxMode.V0_6 and self._match(TokenKind.LEN):
+            return self._parse_len_v0_6(self._previous())
         if self._match(TokenKind.INTEGER):
             token = self._previous()
             return ast.IntegerLiteral(int(token.text), token.location)
@@ -463,6 +465,12 @@ class Parser:
             self._consume(TokenKind.RIGHT_PAREN, "expected ')' after expression")
             return expression
         raise ParseError("expected expression", self._peek().location)
+
+    def _parse_len_v0_6(self, start: Token) -> ast.LenExpression:
+        self._consume(TokenKind.LEFT_PAREN, "expected '(' after 'len'")
+        argument = self._parse_expression()
+        self._consume(TokenKind.RIGHT_PAREN, "expected ')' after 'len' argument")
+        return ast.LenExpression(argument, start.location)
 
     def _parse_match_expression_v0_6(self, start: Token) -> ast.MatchExpression:
         selector = self._parse_expression()

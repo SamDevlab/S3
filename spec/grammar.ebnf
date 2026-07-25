@@ -50,7 +50,10 @@ unary                = ("~" | "-"), unary | primary ;
 primary              = integer
                      | identifier-expression
                      | match-expression
+                     | len-expression
                      | "(", expression, ")" ;
+
+len-expression       = "len", "(", expression, ")" ;
 
 match-expression     = "match", expression, ":", NEWLINE, INDENT, match-expression-case, { match-expression-case }, DEDENT ;
 match-expression-case = signed-integer, ":", expression, NEWLINE ;
