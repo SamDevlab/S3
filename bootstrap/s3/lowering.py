@@ -608,6 +608,7 @@ class FunctionLowerer:
     def _lower_for(self, statement: ast.ForStatement) -> None:
         start_val = self._lower_expression(statement.start_expression)
         end_val = self._lower_expression(statement.end_expression)
+        step_val = self._lower_expression(statement.step_expression)
         memory = self._allocate_memory(
             statement.variable_type,
             1,
@@ -660,11 +661,24 @@ class FunctionLowerer:
                 location=statement.location,
             )
         )
+        def _is_negative_constant(expr: ast.Expression) -> bool:
+            if isinstance(expr, ast.IntegerLiteral):
+                return expr.value < 0
+            if isinstance(expr, ast.UnaryExpression) and expr.operator == ast.UnaryOperator.NEGATE:
+                if isinstance(expr.operand, ast.IntegerLiteral):
+                    return expr.operand.value > 0
+            return False
+
+        if _is_negative_constant(statement.step_expression):
+            branch_targets = (exit_block_0.name, exit_block_1.name, body_block.name)
+        else:
+            branch_targets = (body_block.name, exit_block_0.name, exit_block_1.name)
+
         self._emit(
             IRInstruction(
                 IROpcode.BRANCH3,
                 operands=(cmp_reg,),
-                targets=(body_block.name, exit_block_0.name, exit_block_1.name),
+                targets=branch_targets,
                 location=statement.location,
             )
         )
@@ -709,13 +723,12 @@ class FunctionLowerer:
                 location=statement.location,
             )
         )
-        one_const = self._emit_constant(1, ast.TypeName.TRYTE, statement.location)
         next_val = self._allocate(statement.variable_type, statement.location)
         self._emit(
             IRInstruction(
                 IROpcode.ADD,
                 result=next_val,
-                operands=(step_cur, one_const),
+                operands=(step_cur, step_val),
                 location=statement.location,
             )
         )

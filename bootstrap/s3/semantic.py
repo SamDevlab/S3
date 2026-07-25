@@ -243,6 +243,21 @@ class SemanticAnalyzer:
             statement.end_expression.location,
             "for loop range end bound",
         )
+        step_type = self._analyze_expression(
+            statement.step_expression,
+            ast.TypeName.TRYTE,
+        )
+        self._require_type(
+            step_type,
+            ast.TypeName.TRYTE,
+            statement.step_expression.location,
+            "for loop range step",
+        )
+        if isinstance(statement.step_expression, ast.IntegerLiteral) and statement.step_expression.value == 0:
+            raise SemanticError(
+                "range step cannot be zero",
+                statement.step_expression.location,
+            )
         self._require_type(
             statement.variable_type,
             ast.TypeName.TRYTE,

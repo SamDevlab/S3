@@ -214,6 +214,7 @@ class ForStatement:
     variable_type: TypeName
     start_expression: Expression
     end_expression: Expression
+    step_expression: Expression
     body: Block
     location: SourceLocation
 
