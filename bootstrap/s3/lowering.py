@@ -34,6 +34,12 @@ class _MutableBlock:
 
 
 @dataclass(frozen=True, slots=True)
+class LoopContext:
+    continue_target: str
+    break_target: str
+
+
+@dataclass(frozen=True, slots=True)
 class _LoweredBinding:
     type_name: ast.DeclaredType
     mutable: bool
@@ -56,6 +62,7 @@ class FunctionLowerer:
         self.current: _MutableBlock | None = None
         self.variable_scopes: list[dict[str, _LoweredBinding]] = [{}]
         self.block_counter = 0
+        self.loop_stack: list[LoopContext] = []
 
     def lower(self) -> IRFunction:
         for parameter in self.function.parameters:
@@ -148,6 +155,30 @@ class FunctionLowerer:
                 IRInstruction(
                     IROpcode.RETURN,
                     operands=(value,),
+                    location=statement.location,
+                )
+            )
+            self.current = None
+            return
+        if isinstance(statement, ast.BreakStatement):
+            assert self.loop_stack, "break outside loop"
+            target = self.loop_stack[-1].break_target
+            self._emit(
+                IRInstruction(
+                    IROpcode.JUMP,
+                    targets=(target,),
+                    location=statement.location,
+                )
+            )
+            self.current = None
+            return
+        if isinstance(statement, ast.ContinueStatement):
+            assert self.loop_stack, "continue outside loop"
+            target = self.loop_stack[-1].continue_target
+            self._emit(
+                IRInstruction(
+                    IROpcode.JUMP,
+                    targets=(target,),
                     location=statement.location,
                 )
             )
@@ -420,7 +451,16 @@ class FunctionLowerer:
         )
 
         self.current = body_block
-        self._lower_block(statement.body, create_scope=True)
+        self.loop_stack.append(
+            LoopContext(
+                continue_target=condition_block.name,
+                break_target=exit_block.name,
+            )
+        )
+        try:
+            self._lower_block(statement.body, create_scope=True)
+        finally:
+            self.loop_stack.pop()
         body_terminated = self.current is None
 
         if not body_terminated:

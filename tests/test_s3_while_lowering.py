@@ -173,3 +173,86 @@ def test_continuation_after_terminating_body() -> None:
     body_blocks = [b for b in blocks if "body" in b.name]
     assert body_blocks
     assert body_blocks[0].instructions[-1].opcode is IROpcode.RETURN
+
+
+def test_break_lowers_to_exit_jump() -> None:
+    ir = _compile(
+        "fn foo(cond: trit) -> tryte:\n"
+        "    while cond:\n"
+        "        break\n"
+        "    return 0\n"
+        "fn main() -> tryte:\n"
+        "    return 0\n"
+    ).ir
+    func = ir.functions[0]
+    body = [b for b in func.blocks if "body" in b.name][0]
+    exit_block = [b for b in func.blocks if b.name.startswith("while_exit") and not "exit_0" in b.name and not "exit_1" in b.name][0]
+    assert body.instructions[-1].opcode is IROpcode.JUMP
+    assert body.instructions[-1].targets[0] == exit_block.name
+
+
+def test_continue_lowers_to_condition_jump() -> None:
+    ir = _compile(
+        "fn foo(cond: trit) -> tryte:\n"
+        "    while cond:\n"
+        "        continue\n"
+        "    return 0\n"
+        "fn main() -> tryte:\n"
+        "    return 0\n"
+    ).ir
+    func = ir.functions[0]
+    body = [b for b in func.blocks if "body" in b.name][0]
+    cond_block = [b for b in func.blocks if "condition" in b.name][0]
+    assert body.instructions[-1].opcode is IROpcode.JUMP
+    assert body.instructions[-1].targets[0] == cond_block.name
+
+
+def test_nested_loop_jumps_target_innermost() -> None:
+    ir = _compile(
+        "fn foo(c1: trit, c2: trit) -> tryte:\n"
+        "    while c1:\n"
+        "        while c2:\n"
+        "            break\n"
+        "        continue\n"
+        "    return 0\n"
+        "fn main() -> tryte:\n"
+        "    return 0\n"
+    ).ir
+    func = ir.functions[0]
+    body_blocks = [b for b in func.blocks if "while_body" in b.name]
+    assert len(body_blocks) == 2
+    outer_body, inner_body = body_blocks[0], body_blocks[1]
+
+    cond_blocks = [b for b in func.blocks if "while_condition" in b.name]
+    assert len(cond_blocks) == 2
+    outer_cond = cond_blocks[0]
+
+    exit_blocks = [b for b in func.blocks if b.name.startswith("while_exit") and not "exit_0" in b.name and not "exit_1" in b.name]
+    assert len(exit_blocks) == 2
+    outer_exit, inner_exit = exit_blocks[0], exit_blocks[1]
+
+    assert inner_body.instructions[-1].opcode is IROpcode.JUMP
+    assert inner_body.instructions[-1].targets[0] == inner_exit.name
+
+    continue_block = [b for b in func.blocks if b.instructions and b.instructions[-1].targets == (outer_cond.name,)][0]
+    assert continue_block.instructions[-1].opcode is IROpcode.JUMP
+
+
+def test_match_arm_break_and_continue_lowering() -> None:
+    ir = _compile(
+        "fn foo(cond: trit) -> tryte:\n"
+        "    while cond:\n"
+        "        match cond:\n"
+        "            -1:\n"
+        "                continue\n"
+        "            0:\n"
+        "                break\n"
+        "            1:\n"
+        "                break\n"
+        "    return 0\n"
+        "fn main() -> tryte:\n"
+        "    return 0\n"
+    ).ir
+    from bootstrap.s3.verifier import verify_ir
+    verify_ir(ir)
+
