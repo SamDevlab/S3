@@ -110,6 +110,12 @@ class MatchExpression:
     location: SourceLocation
 
 
+@dataclass(frozen=True, slots=True)
+class LenExpression:
+    argument: Expression
+    location: SourceLocation
+
+
 Expression: TypeAlias = (
     IntegerLiteral
     | StringLiteral
@@ -119,6 +125,7 @@ Expression: TypeAlias = (
     | UnaryExpression
     | BinaryExpression
     | MatchExpression
+    | LenExpression
 )
 
 
