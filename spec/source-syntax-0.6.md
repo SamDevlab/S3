@@ -93,6 +93,13 @@ To maintain static typing without ambiguity and enforce "menos é mais":
 - **Rule:** Relational expressions evaluate to a `trit` (`-1` for true, `0` for false).
 - **Rule:** When evaluated as a `while` condition, `-1` (true) executes the loop body, while `0` (false) exits the loop.
 
+### 4.9. Match Expression
+- **Rule:** `match selector:` can be used as an expression.
+- **Rule:** The selector must evaluate to a `trit`.
+- **Rule:** Exactly three arms (`-1`, `0`, `1`) must be provided inside an indented block.
+- **Rule:** Each arm contains a single result expression. All arm expressions must evaluate to the same scalar type (`trit` or `tryte`).
+- **Rule:** Only the selected arm expression is evaluated at runtime (lazy evaluation of unselected arms).
+
 ## 5. Normative Examples
 
 ### Example 1: Simple Return

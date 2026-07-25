@@ -48,7 +48,11 @@ additive             = unary, { ("+" | "-"), unary } ;
 unary                = ("~" | "-"), unary | primary ;
 primary              = integer
                      | identifier-expression
+                     | match-expression
                      | "(", expression, ")" ;
+
+match-expression     = "match", expression, ":", NEWLINE, INDENT, match-expression-case, { match-expression-case }, DEDENT ;
+match-expression-case = signed-integer, ":", expression, NEWLINE ;
 
 identifier-expression = identifier, [ postfix-suffix ] ;
 postfix-suffix       = call-suffix | index-suffix ;

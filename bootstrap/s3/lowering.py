@@ -575,6 +575,8 @@ class FunctionLowerer:
             return result
         if isinstance(expression, ast.BinaryExpression):
             return self._lower_binary(expression, expression_type)
+        if isinstance(expression, ast.MatchExpression):
+            return self._lower_match_expression(expression)
         raise LoweringError("unsupported expression", expression.location)
 
     def _lower_binary(
@@ -717,6 +719,68 @@ class FunctionLowerer:
         self.current = cont_block
         idx = self._emit_constant(0, ast.TypeName.TRYTE, expression.location)
         result_reg = self._allocate(ast.TypeName.TRIT, expression.location)
+        self._emit(
+            IRInstruction(
+                IROpcode.LOAD,
+                result=result_reg,
+                operands=(idx,),
+                memory=memory,
+                location=expression.location,
+            )
+        )
+        return result_reg
+
+    def _lower_match_expression(
+        self,
+        expression: ast.MatchExpression,
+    ) -> int:
+        selector_reg = self._lower_expression(expression.selector)
+        result_type = self.semantic_model.expression_types[id(expression)]
+        memory = self._allocate_memory(result_type, 1, True, expression.location)
+        cases_map = {case.label: case for case in expression.cases}
+        case_blocks = {
+            label: self._fresh_block(
+                f"match_expr_{label}",
+                cases_map[label].location,
+            )
+            for label in (-1, 0, 1)
+        }
+        continuation = self._fresh_block("match_expr_cont", expression.location)
+
+        self._emit(
+            IRInstruction(
+                IROpcode.BRANCH3,
+                operands=(selector_reg,),
+                targets=tuple(case_blocks[label].name for label in (-1, 0, 1)),
+                location=expression.location,
+            )
+        )
+
+        for label in (-1, 0, 1):
+            case = cases_map[label]
+            self.current = case_blocks[label]
+            val_reg = self._lower_expression(case.expression)
+            idx = self._emit_constant(0, ast.TypeName.TRYTE, case.location)
+            self._emit(
+                IRInstruction(
+                    IROpcode.STORE,
+                    operands=(idx, val_reg),
+                    memory=memory,
+                    initialization=True,
+                    location=case.location,
+                )
+            )
+            self._emit(
+                IRInstruction(
+                    IROpcode.JUMP,
+                    targets=(continuation.name,),
+                    location=case.location,
+                )
+            )
+
+        self.current = continuation
+        idx = self._emit_constant(0, ast.TypeName.TRYTE, expression.location)
+        result_reg = self._allocate(result_type, expression.location)
         self._emit(
             IRInstruction(
                 IROpcode.LOAD,

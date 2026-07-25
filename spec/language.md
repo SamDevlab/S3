@@ -86,7 +86,7 @@ Operadores relacionais comparam dois operandos do mesmo tipo escalar (`tryte` co
 
 Os comandos de controle de fluxo de laço `break` e `continue` são suportados exclusivamente dentro de laços `while`. `break` encerra imediatamente a iteração e transfere o controle para o bloco após o `while` mais interno. `continue` encerra a iteração corrente e transfere o controle para a reavaliação da condição do `while` mais interno. Não possuem rótulos (labels) ou argumentos de expressão.
 
-O `match` substitui o antigo `switch` e exige um seletor do tipo `trit`. Exige o mapeamento explícito e obrigatório dos três casos `-1`, `0` e `1`.
+O `match` substitui o antigo `switch` e exige um seletor do tipo `trit`. Exige o mapeamento explícito e obrigatório dos três casos `-1`, `0` e `1`. Além do statement `match`, o `match` também é aceito no nível de expressão (`MatchExpression`). Em modo expressão, cada braço contém uma única expressão de resultado e apenas o braço selecionado é avaliado em tempo de execução.
 
 ```s3
 fn sign(value: tryte) -> trit:

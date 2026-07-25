@@ -96,6 +96,20 @@ class BinaryExpression:
     location: SourceLocation
 
 
+@dataclass(frozen=True, slots=True)
+class MatchExpressionCase:
+    label: int
+    expression: Expression
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
+class MatchExpression:
+    selector: Expression
+    cases: tuple[MatchExpressionCase, ...]
+    location: SourceLocation
+
+
 Expression: TypeAlias = (
     IntegerLiteral
     | StringLiteral
@@ -104,6 +118,7 @@ Expression: TypeAlias = (
     | IndexExpression
     | UnaryExpression
     | BinaryExpression
+    | MatchExpression
 )
 
 

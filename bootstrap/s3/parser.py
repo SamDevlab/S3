@@ -165,7 +165,7 @@ class Parser:
         initializer = self._parse_initializer()
         if self._check(TokenKind.SEMICOLON):
             raise ParseError("obsolete ';' syntax", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_OBSOLETE_SEMICOLON)
-        self._consume(TokenKind.NEWLINE, "expected newline after declaration")
+        self._consume_statement_newline("expected newline after declaration")
         return ast.VariableDeclaration(
             type_name,
             name.text,
@@ -187,14 +187,14 @@ class Parser:
         value = self._parse_initializer()
         if self._check(TokenKind.SEMICOLON):
             raise ParseError("obsolete ';' syntax", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_OBSOLETE_SEMICOLON)
-        self._consume(TokenKind.NEWLINE, "expected newline after assignment")
+        self._consume_statement_newline("expected newline after assignment")
         return ast.AssignmentStatement(target, value, name.location)
 
     def _parse_return_v0_6(self, start: Token) -> ast.ReturnStatement:
         expression = self._parse_expression()
         if self._check(TokenKind.SEMICOLON):
             raise ParseError("obsolete ';' syntax", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_OBSOLETE_SEMICOLON)
-        self._consume(TokenKind.NEWLINE, "expected newline after return value")
+        self._consume_statement_newline("expected newline after return value")
         return ast.ReturnStatement(expression, start.location)
 
     def _parse_match_v0_6(self, start: Token) -> ast.SwitchStatement:
@@ -413,6 +413,8 @@ class Parser:
         return self._parse_primary()
 
     def _parse_primary(self) -> ast.Expression:
+        if self.mode == SyntaxMode.V0_6 and self._match(TokenKind.MATCH):
+            return self._parse_match_expression_v0_6(self._previous())
         if self._match(TokenKind.INTEGER):
             token = self._previous()
             return ast.IntegerLiteral(int(token.text), token.location)
@@ -433,6 +435,37 @@ class Parser:
             self._consume(TokenKind.RIGHT_PAREN, "expected ')' after expression")
             return expression
         raise ParseError("expected expression", self._peek().location)
+
+    def _parse_match_expression_v0_6(self, start: Token) -> ast.MatchExpression:
+        selector = self._parse_expression()
+        self._consume(TokenKind.COLON, "expected ':' after match expression selector")
+        self._consume(TokenKind.NEWLINE, "expected newline after ':'")
+        self._consume(TokenKind.INDENT, "expected block indentation")
+        cases: list[ast.MatchExpressionCase] = []
+        while not self._check(TokenKind.DEDENT) and not self._check(TokenKind.EOF):
+            cases.append(self._parse_match_expression_case_v0_6())
+        if not cases:
+            raise ParseError(
+                "expected at least one match arm",
+                self._peek().location,
+            )
+        self._consume(TokenKind.DEDENT, "expected dedent after match arms")
+        return ast.MatchExpression(selector, tuple(cases), start.location)
+
+    def _parse_match_expression_case_v0_6(self) -> ast.MatchExpressionCase:
+        negative = self._match(TokenKind.MINUS)
+        start = self._previous() if negative else self._peek()
+        integer = self._consume(
+            TokenKind.INTEGER,
+            "expected integer case label",
+        )
+        value = int(integer.text)
+        if negative:
+            value = -value
+        self._consume(TokenKind.COLON, "expected ':' after case label")
+        expr = self._parse_expression()
+        self._consume_statement_newline("expected newline after match arm expression")
+        return ast.MatchExpressionCase(value, expr, start.location)
 
     def _finish_call(self, function: Token) -> ast.CallExpression:
         arguments: list[ast.CallArgument] = []
@@ -466,6 +499,12 @@ class Parser:
         found = self._peek()
         suffix = "end of file" if found.kind is TokenKind.EOF else repr(found.text)
         raise ParseError(f"{message}; found {suffix}", found.location)
+
+    def _consume_statement_newline(self, message: str) -> None:
+        if self._previous().kind == TokenKind.DEDENT or self._check(TokenKind.DEDENT) or self._check(TokenKind.EOF):
+            self._match(TokenKind.NEWLINE)
+        else:
+            self._consume(TokenKind.NEWLINE, message)
 
     def _check(self, kind: TokenKind) -> bool:
         return self._peek().kind is kind

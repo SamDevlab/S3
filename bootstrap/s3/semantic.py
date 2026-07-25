@@ -487,6 +487,8 @@ class SemanticAnalyzer:
             result = self._analyze_expression(expression.operand, expected)
         elif isinstance(expression, ast.BinaryExpression):
             result = self._analyze_binary(expression, expected)
+        elif isinstance(expression, ast.MatchExpression):
+            result = self._analyze_match_expression(expression, expected)
         else:
             raise SemanticError("unsupported expression", expression.location)
         self.expression_types[id(expression)] = result
@@ -644,7 +646,55 @@ class SemanticAnalyzer:
             )
         ):
             return ast.TypeName.TRIT
+        if isinstance(expression, ast.MatchExpression):
+            for case in expression.cases:
+                known = self._known_expression_type(case.expression)
+                if known is not None:
+                    return known
+            return None
         return None
+
+    def _analyze_match_expression(
+        self,
+        expression: ast.MatchExpression,
+        expected: ast.TypeName | None,
+    ) -> ast.TypeName:
+        selector_type = self._analyze_expression(expression.selector, ast.TypeName.TRIT)
+        self._require_type(
+            selector_type,
+            ast.TypeName.TRIT,
+            expression.selector.location,
+            "match expression selector",
+        )
+        labels = [case.label for case in expression.cases]
+        if len(labels) != 3 or sorted(labels) != [-1, 0, 1]:
+            raise SemanticError(
+                "match expression arms must exhaustively cover -1, 0, and 1 exactly once",
+                expression.location,
+            )
+        cases_map = {case.label: case for case in expression.cases}
+        arm_types: list[ast.TypeName] = []
+        for label in (-1, 0, 1):
+            case = cases_map[label]
+            arm_expected = expected or (arm_types[0] if arm_types else None)
+            arm_type = self._analyze_expression(case.expression, arm_expected)
+            if arm_types:
+                self._require_type(
+                    arm_type,
+                    arm_types[0],
+                    case.expression.location,
+                    "match expression arm",
+                )
+            arm_types.append(arm_type)
+        result_type = arm_types[0]
+        if expected is not None:
+            self._require_type(
+                result_type,
+                expected,
+                expression.location,
+                "match expression result",
+            )
+        return result_type
 
     def _lookup_binding(self, name: str) -> Binding | None:
         for scope in reversed(self.scopes):

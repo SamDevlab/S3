@@ -80,6 +80,10 @@ def collect_static_string_literals(program: ast.Program) -> StaticStringTable:
                 visit_expression(argument.expression)
         elif isinstance(expression, ast.IndexExpression):
             visit_expression(expression.index)
+        elif isinstance(expression, ast.MatchExpression):
+            visit_expression(expression.selector)
+            for case in expression.cases:
+                visit_expression(case.expression)
 
     def visit_initializer(initializer: ast.Initializer) -> None:
         if isinstance(initializer, ast.ArrayLiteral):
