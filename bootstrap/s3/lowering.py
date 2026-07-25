@@ -184,6 +184,12 @@ class FunctionLowerer:
             )
             self.current = None
             return
+        if isinstance(statement, ast.AssignmentStatement):
+            self._lower_assignment(statement)
+            return
+        if isinstance(statement, ast.CompoundAssignmentStatement):
+            self._lower_compound_assignment(statement)
+            return
         if isinstance(statement, ast.SwitchStatement):
             self._lower_switch(statement)
             return
@@ -359,6 +365,110 @@ class FunctionLowerer:
             IRInstruction(
                 IROpcode.STORE,
                 operands=(index, value),
+                memory=binding.memory,
+                location=statement.location,
+            )
+        )
+
+    def _lower_compound_assignment(
+        self,
+        statement: ast.CompoundAssignmentStatement,
+    ) -> None:
+        if isinstance(statement.target, ast.VariableTarget):
+            binding = self._lookup_variable(
+                statement.target.name,
+                statement.target.location,
+            )
+            assert binding.memory is not None
+            assert isinstance(binding.type_name, ast.TypeName)
+            idx_zero = self._emit_constant(
+                0,
+                ast.TypeName.TRYTE,
+                statement.target.location,
+            )
+            cur_val = self._allocate(binding.type_name, statement.location)
+            self._emit(
+                IRInstruction(
+                    IROpcode.LOAD,
+                    result=cur_val,
+                    operands=(idx_zero,),
+                    memory=binding.memory,
+                    location=statement.location,
+                )
+            )
+            rhs_val = self._lower_expression(statement.value)
+            res_val = self._allocate(binding.type_name, statement.location)
+            self._emit(
+                IRInstruction(
+                    IROpcode.ADD,
+                    result=res_val,
+                    operands=(cur_val, rhs_val),
+                    location=statement.location,
+                )
+            )
+            idx_zero_2 = self._emit_constant(
+                0,
+                ast.TypeName.TRYTE,
+                statement.target.location,
+            )
+            self._emit(
+                IRInstruction(
+                    IROpcode.STORE,
+                    operands=(idx_zero_2, res_val),
+                    memory=binding.memory,
+                    location=statement.location,
+                )
+            )
+            return
+
+        binding = self._lookup_variable(
+            statement.target.array_name,
+            statement.target.location,
+        )
+        assert binding.memory is not None
+        assert isinstance(binding.type_name, ast.ArrayType)
+        assert isinstance(binding.type_name.element_type, ast.TypeName)
+
+        # 1. Lower index ONCE
+        idx_reg = self._lower_expression(statement.target.index)
+
+        # 2. Load current element ONCE
+        cur_val = self._allocate(
+            binding.type_name.element_type,
+            statement.location,
+        )
+        self._emit(
+            IRInstruction(
+                IROpcode.LOAD,
+                result=cur_val,
+                operands=(idx_reg,),
+                memory=binding.memory,
+                location=statement.location,
+            )
+        )
+
+        # 3. Lower RHS ONCE
+        rhs_val = self._lower_expression(statement.value)
+
+        # 4. Perform operation
+        res_val = self._allocate(
+            binding.type_name.element_type,
+            statement.location,
+        )
+        self._emit(
+            IRInstruction(
+                IROpcode.ADD,
+                result=res_val,
+                operands=(cur_val, rhs_val),
+                location=statement.location,
+            )
+        )
+
+        # 5. Store back into same array index
+        self._emit(
+            IRInstruction(
+                IROpcode.STORE,
+                operands=(idx_reg, res_val),
                 memory=binding.memory,
                 location=statement.location,
             )

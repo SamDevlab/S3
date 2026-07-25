@@ -210,6 +210,10 @@ class SemanticAnalyzer:
             if self.loop_depth == 0:
                 raise SemanticError("continue outside loop", statement.location)
             return BlockFlow(terminates=True, definitely_returns=False)
+        if isinstance(statement, ast.AssignmentStatement):
+            return self._analyze_assignment(statement)
+        if isinstance(statement, ast.CompoundAssignmentStatement):
+            return self._analyze_compound_assignment(statement)
         if isinstance(statement, ast.SwitchStatement):
             return self._analyze_switch(statement)
         if isinstance(statement, ast.WhileStatement):
@@ -463,6 +467,69 @@ class SemanticAnalyzer:
             statement.value.location,
             "array element assignment",
         )
+
+    def _analyze_compound_assignment(
+        self,
+        statement: ast.CompoundAssignmentStatement,
+    ) -> BlockFlow:
+        if isinstance(statement.target, ast.VariableTarget):
+            binding = self._assignment_binding(
+                statement.target.name,
+                statement.target.location,
+            )
+            if isinstance(binding.type_name, ast.ArrayType):
+                raise SemanticError(
+                    "whole-array assignment is not supported",
+                    statement.target.location,
+                )
+            self._require_mutable(binding, statement.target.location)
+            if isinstance(statement.value, ast.ArrayLiteral):
+                raise SemanticError(
+                    "scalar assignment requires a scalar expression",
+                    statement.value.location,
+                )
+            assert isinstance(binding.type_name, ast.TypeName)
+            actual = self._analyze_expression(statement.value, binding.type_name)
+            self._require_type(
+                actual,
+                binding.type_name,
+                statement.value.location,
+                "assigned value",
+            )
+            return BlockFlow(definitely_returns=False, terminates=False)
+
+        binding = self._assignment_binding(
+            statement.target.array_name,
+            statement.target.location,
+        )
+        if not isinstance(binding.type_name, ast.ArrayType):
+            raise SemanticError(
+                f"variable '{statement.target.array_name}' is not an array",
+                statement.target.location,
+            )
+        self._require_mutable(binding, statement.target.location)
+        self._analyze_index(
+            statement.target.array_name,
+            statement.target.index,
+            binding.type_name,
+        )
+        if isinstance(statement.value, ast.ArrayLiteral):
+            raise SemanticError(
+                "array element assignment requires a scalar expression",
+                statement.value.location,
+            )
+        assert isinstance(binding.type_name.element_type, ast.TypeName)
+        actual = self._analyze_expression(
+            statement.value,
+            binding.type_name.element_type,
+        )
+        self._require_type(
+            actual,
+            binding.type_name.element_type,
+            statement.value.location,
+            "array element assignment",
+        )
+        return BlockFlow(definitely_returns=False, terminates=False)
 
     def _assignment_binding(self, name: str, location: SourceLocation) -> Binding:
         binding = self._lookup_binding(name)

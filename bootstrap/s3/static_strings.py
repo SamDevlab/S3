@@ -102,7 +102,7 @@ def collect_static_string_literals(program: ast.Program) -> StaticStringTable:
         for statement in block.statements:
             if isinstance(statement, ast.VariableDeclaration):
                 visit_initializer(statement.initializer)
-            elif isinstance(statement, ast.AssignmentStatement):
+            elif isinstance(statement, (ast.AssignmentStatement, ast.CompoundAssignmentStatement)):
                 visit_target(statement.target)
                 visit_initializer(statement.value)
             elif isinstance(statement, ast.ReturnStatement):
