@@ -107,6 +107,8 @@ def collect_static_string_literals(program: ast.Program) -> StaticStringTable:
                     visit_block(case.body)
             elif isinstance(statement, ast.WhileStatement):
                 visit_block(statement.body)
+            elif isinstance(statement, (ast.BreakStatement, ast.ContinueStatement)):
+                pass
 
     for function in program.functions:
         visit_block(function.body)

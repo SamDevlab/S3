@@ -119,6 +119,10 @@ class Parser:
             if self._check(TokenKind.SWITCH):
                 raise ParseError("obsolete 'switch' syntax, use 'match'", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_OBSOLETE_SWITCH)
 
+            if self._match(TokenKind.BREAK):
+                return self._parse_break_v0_6(self._previous())
+            if self._match(TokenKind.CONTINUE):
+                return self._parse_continue_v0_6(self._previous())
             if self._match(TokenKind.RETURN):
                 return self._parse_return_v0_6(self._previous())
             if self._match(TokenKind.MATCH):
@@ -132,7 +136,7 @@ class Parser:
                 if next_token and next_token.kind is TokenKind.COLON:
                     return self._parse_variable_declaration_v0_6()
                 return self._parse_assignment_v0_6()
-            raise ParseError("expected variable declaration, 'return', 'while', or assignment", self._peek().location)
+            raise ParseError("expected variable declaration, 'return', 'while', 'break', 'continue', or assignment", self._peek().location)
 
         if (
             self._check(TokenKind.MUT)
@@ -218,6 +222,18 @@ class Parser:
         body = self._parse_block_v0_6()
 
         return ast.WhileStatement(condition, body, start.location)
+
+    def _parse_break_v0_6(self, start: Token) -> ast.BreakStatement:
+        if self._check(TokenKind.SEMICOLON):
+            raise ParseError("obsolete ';' syntax", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_OBSOLETE_SEMICOLON)
+        self._consume(TokenKind.NEWLINE, "expected newline after break")
+        return ast.BreakStatement(start.location)
+
+    def _parse_continue_v0_6(self, start: Token) -> ast.ContinueStatement:
+        if self._check(TokenKind.SEMICOLON):
+            raise ParseError("obsolete ';' syntax", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_OBSOLETE_SEMICOLON)
+        self._consume(TokenKind.NEWLINE, "expected newline after continue")
+        return ast.ContinueStatement(start.location)
 
     def _parse_ternary_case_v0_6(self) -> ast.TernaryCase:
         negative = self._match(TokenKind.MINUS)

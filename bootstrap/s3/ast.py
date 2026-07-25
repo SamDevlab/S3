@@ -169,13 +169,27 @@ class WhileStatement:
     location: SourceLocation
 
 
+@dataclass(frozen=True, slots=True)
+class BreakStatement:
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
+class ContinueStatement:
+    location: SourceLocation
+
+
+
 Statement: TypeAlias = (
     VariableDeclaration
     | AssignmentStatement
     | ReturnStatement
     | SwitchStatement
     | WhileStatement
+    | BreakStatement
+    | ContinueStatement
 )
+
 
 
 @dataclass(frozen=True, slots=True)

@@ -26,6 +26,12 @@ class Binding:
 
 
 @dataclass(frozen=True, slots=True)
+class BlockFlow:
+    terminates: bool
+    definitely_returns: bool
+
+
+@dataclass(frozen=True, slots=True)
 class SemanticModel:
     """Scalar expression types and the complete file-level function table."""
 
@@ -55,6 +61,7 @@ class SemanticAnalyzer:
         self.scopes: list[dict[str, Binding]] = []
         self.parameter_names: set[str] = set()
         self.return_type = ast.TypeName.TRYTE
+        self.loop_depth = 0
 
     def analyze(self, program: ast.Program) -> SemanticModel:
         self._collect_signatures(program)
@@ -123,38 +130,43 @@ class SemanticAnalyzer:
                 for parameter in function.parameters
             }
         ]
-        definitely_returns = self._analyze_block(function.body, create_scope=False)
-        if not definitely_returns:
+        flow = self._analyze_block(function.body, create_scope=False)
+        if not flow.definitely_returns:
             raise SemanticError(
                 f"function '{function.name}' has a path without returning "
                 f"{self.return_type.value}",
                 function.location,
             )
 
-    def _analyze_block(self, block: ast.Block, *, create_scope: bool) -> bool:
+    def _analyze_block(self, block: ast.Block, *, create_scope: bool) -> BlockFlow:
         if create_scope:
             self.scopes.append({})
+        block_terminates = False
         definitely_returns = False
         try:
             for statement in block.statements:
-                if definitely_returns:
+                if block_terminates:
                     raise SemanticError(
                         "unreachable statement after return or terminating switch",
                         statement.location,
                     )
-                definitely_returns = self._analyze_statement(statement)
-            return definitely_returns
+                flow = self._analyze_statement(statement)
+                if flow.terminates:
+                    block_terminates = True
+                if flow.definitely_returns:
+                    definitely_returns = True
+            return BlockFlow(terminates=block_terminates, definitely_returns=definitely_returns)
         finally:
             if create_scope:
                 self.scopes.pop()
 
-    def _analyze_statement(self, statement: ast.Statement) -> bool:
+    def _analyze_statement(self, statement: ast.Statement) -> BlockFlow:
         if isinstance(statement, ast.VariableDeclaration):
             self._analyze_declaration(statement)
-            return False
+            return BlockFlow(terminates=False, definitely_returns=False)
         if isinstance(statement, ast.AssignmentStatement):
             self._analyze_assignment(statement)
-            return False
+            return BlockFlow(terminates=False, definitely_returns=False)
         if isinstance(statement, ast.ReturnStatement):
             if (
                 isinstance(statement.expression, ast.Identifier)
@@ -176,14 +188,22 @@ class SemanticAnalyzer:
                 statement.expression.location,
                 "returned expression",
             )
-            return True
+            return BlockFlow(terminates=True, definitely_returns=True)
+        if isinstance(statement, ast.BreakStatement):
+            if self.loop_depth == 0:
+                raise SemanticError("break outside loop", statement.location)
+            return BlockFlow(terminates=True, definitely_returns=False)
+        if isinstance(statement, ast.ContinueStatement):
+            if self.loop_depth == 0:
+                raise SemanticError("continue outside loop", statement.location)
+            return BlockFlow(terminates=True, definitely_returns=False)
         if isinstance(statement, ast.SwitchStatement):
             return self._analyze_switch(statement)
         if isinstance(statement, ast.WhileStatement):
             return self._analyze_while(statement)
         raise SemanticError("unsupported statement", statement.location)
 
-    def _analyze_while(self, statement: ast.WhileStatement) -> bool:
+    def _analyze_while(self, statement: ast.WhileStatement) -> BlockFlow:
         condition_type = self._analyze_expression(
             statement.condition,
             ast.TypeName.TRIT,
@@ -194,10 +214,14 @@ class SemanticAnalyzer:
             statement.condition.location,
             "while condition",
         )
-        self._analyze_block(statement.body, create_scope=True)
-        return False
+        self.loop_depth += 1
+        try:
+            self._analyze_block(statement.body, create_scope=True)
+        finally:
+            self.loop_depth -= 1
+        return BlockFlow(terminates=False, definitely_returns=False)
 
-    def _analyze_switch(self, statement: ast.SwitchStatement) -> bool:
+    def _analyze_switch(self, statement: ast.SwitchStatement) -> BlockFlow:
         selector_type = self._analyze_expression(
             statement.expression,
             ast.TypeName.TRIT,
@@ -228,11 +252,14 @@ class SemanticAnalyzer:
                 f"ternary switch is missing case(s): {rendered}",
                 statement.location,
             )
-        returns = [
+        case_flows = [
             self._analyze_block(cases[label].body, create_scope=True)
             for label in (-1, 0, 1)
         ]
-        return all(returns)
+        return BlockFlow(
+            terminates=all(flow.terminates for flow in case_flows),
+            definitely_returns=all(flow.definitely_returns for flow in case_flows),
+        )
 
     def _analyze_declaration(self, declaration: ast.VariableDeclaration) -> None:
         current_scope = self.scopes[-1]

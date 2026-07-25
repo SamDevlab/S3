@@ -110,3 +110,60 @@ def test_match_inside_while() -> None:
     body = stmt.body
     match_stmt = body.statements[0]
     assert isinstance(match_stmt, ast.SwitchStatement)
+
+
+def test_break_inside_while() -> None:
+    stmt = _parse_simple("fn main() -> tryte:\n    while 1:\n        break\n")
+    assert len(stmt.body.statements) == 1
+    assert isinstance(stmt.body.statements[0], ast.BreakStatement)
+    assert stmt.body.statements[0].location.line == 3
+
+
+def test_continue_inside_while() -> None:
+    stmt = _parse_simple("fn main() -> tryte:\n    while 1:\n        continue\n")
+    assert len(stmt.body.statements) == 1
+    assert isinstance(stmt.body.statements[0], ast.ContinueStatement)
+    assert stmt.body.statements[0].location.line == 3
+
+
+def test_nested_while_break_and_continue() -> None:
+    program = parse(
+        "fn main() -> tryte:\n"
+        "    while 1:\n"
+        "        while 1:\n"
+        "            break\n"
+        "        continue\n",
+        mode=SyntaxMode.V0_6,
+    )
+    outer = _get_while(program, 0)
+    inner = outer.body.statements[0]
+    assert isinstance(inner, ast.WhileStatement)
+    assert isinstance(inner.body.statements[0], ast.BreakStatement)
+    assert isinstance(outer.body.statements[1], ast.ContinueStatement)
+
+
+def test_break_argument_rejected() -> None:
+    with pytest.raises(ParseError, match="expected newline after break"):
+        parse("fn main() -> tryte:\n    while 1:\n        break 1\n", mode=SyntaxMode.V0_6)
+
+
+def test_continue_argument_rejected() -> None:
+    with pytest.raises(ParseError, match="expected newline after continue"):
+        parse("fn main() -> tryte:\n    while 1:\n        continue value\n", mode=SyntaxMode.V0_6)
+
+
+def test_break_colon_rejected() -> None:
+    with pytest.raises(ParseError, match="expected newline after break"):
+        parse("fn main() -> tryte:\n    while 1:\n        break:\n", mode=SyntaxMode.V0_6)
+
+
+def test_continue_colon_rejected() -> None:
+    with pytest.raises(ParseError, match="expected newline after continue"):
+        parse("fn main() -> tryte:\n    while 1:\n        continue:\n", mode=SyntaxMode.V0_6)
+
+
+def test_break_continue_in_v0_5_are_identifiers() -> None:
+    tokens = tokenize("break continue\n", mode=SyntaxMode.V0_5)
+    kinds = [t.kind for t in tokens if t.kind is not TokenKind.EOF]
+    assert kinds == [TokenKind.IDENTIFIER, TokenKind.IDENTIFIER]
+

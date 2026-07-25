@@ -16,7 +16,9 @@ statement            = variable-declaration
                      | assignment-statement
                      | return-statement
                      | match-statement
-                     | while-statement ;
+                     | while-statement
+                     | break-statement
+                     | continue-statement ;
 
 variable-declaration = [ "mut" ], identifier, ":", type, "=", initializer, NEWLINE ;
 assignment-statement = assignment-target, "=", initializer, NEWLINE ;
@@ -26,6 +28,8 @@ initializer          = expression | array-literal ;
 array-literal        = "[", [ expression, { ",", expression } ], "]" ;
 
 return-statement     = "return", expression, NEWLINE ;
+break-statement      = "break", NEWLINE ;
+continue-statement   = "continue", NEWLINE ;
 
 match-statement      = "match", expression, ":", NEWLINE, INDENT, { ternary-case }, DEDENT ;
 ternary-case         = signed-integer, block ;

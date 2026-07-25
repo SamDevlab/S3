@@ -84,7 +84,9 @@ To maintain static typing without ambiguity and enforce "menos é mais":
 - **Rule:** A condition of `-1` executes the loop body.
 - **Rule:** A condition of `0` terminates the loop.
 - **Rule:** A condition of `1` terminates the loop.
-- **Rule:** The `break` and `continue` keywords do not exist yet.
+- **Rule:** The `break` statement immediately terminates the loop and transfers control to the continuation after the innermost `while` loop.
+- **Rule:** The `continue` statement immediately terminates the current iteration and transfers control to the re-evaluation of the condition of the innermost `while` loop.
+- **Rule:** `break` and `continue` do not take labels or expressions.
 
 ## 5. Normative Examples
 

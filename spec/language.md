@@ -83,7 +83,7 @@ Da maior para a menor precedência:
 
 ## Controle de fluxo: match e while
 
-Não existem `break` ou `continue`. O controle de fluxo depende de retorno, laços, e roteamento ternário.
+Os comandos de controle de fluxo de laço `break` e `continue` são suportados exclusivamente dentro de laços `while`. `break` encerra imediatamente a iteração e transfere o controle para o bloco após o `while` mais interno. `continue` encerra a iteração corrente e transfere o controle para a reavaliação da condição do `while` mais interno. Não possuem rótulos (labels) ou argumentos de expressão.
 
 O `match` substitui o antigo `switch` e exige um seletor do tipo `trit`. Exige o mapeamento explícito e obrigatório dos três casos `-1`, `0` e `1`.
 
@@ -113,4 +113,4 @@ fn main() -> tryte:
 
 ## Retorno
 
-Funções não retornam implicitamente. Todas as rotas de código devem convergir para um `return` compatível. Um `while` não garante execução de seu corpo (mesmo com `-1` constante na sintaxe atual, por segurança conservadora), então o código subsequente deve tratar a continuação do fluxo. Código inalcançável (após `return` ou `match` terminante) é rejeitado na compilação.
+Funções não retornam implicitamente. Todas as rotas de código devem convergir para um `return` compatível. Um `while` não garante execução de seu corpo (mesmo com `-1` constante na sintaxe atual, por segurança conservadora), então o código subsequente deve tratar a continuação do fluxo. Instruções `break` e `continue` terminam o bloco local mas não satisfazem o retorno da função. Código inalcançável (após `return`, `break`, `continue` ou `match` terminante) é rejeitado na compilação.
