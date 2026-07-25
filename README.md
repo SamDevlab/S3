@@ -21,8 +21,8 @@ Python está isolado em `bootstrap/`; a fonte normativa é [`spec/`](spec/).
 A implementação atual oferece:
 
 - `trit` e `tryte`, overflow detectável e sem unsigned;
-- funções, chamadas, recursão e `match` ternário exaustivo no default V0.6;
-- `switch` ternário exaustivo somente no modo V0.5 explícito;
+- funções, chamadas, recursão, laços `while` e `match` ternário exaustivo no default V0.6;
+- sintaxe V0.5 mantida apenas como compatibilidade legada/deprecated;
 - bindings imutáveis e `mut` explícito;
 - atribuição escalar e indexada;
 - arrays estáticos unidimensionais de `trit`/`tryte`;
@@ -60,7 +60,7 @@ diagnósticos em texto e JSON; CLI pública; e suporte a Python 3.11, 3.12 e 3.1
 
 Ficam fora deste MVP: ponteiros, heap, memória global, structs, strings,
 módulos, I/O da linguagem, package manager, LSP, depurador, generics, macros,
-concorrência, ARM64, backends Windows/macOS, self-hosting, ABI C pública e
+concorrência, ARM64, backends Windows/macOS, ABI C pública e
 arrays dinâmicos ou multidimensionais. Esses limites definem o escopo do MVP;
 não são pendências da Entrega E.
 
@@ -94,9 +94,9 @@ desenvolvimento.
 
 A CLI usa a sintaxe fonte 0.6 por padrão. Os exemplos oficiais já usam V0.6,
 portanto os comandos comuns não precisam de uma opção de versão. A sintaxe
-V0.5 permanece temporariamente disponível com `--source-syntax 0.5`. Não há
-autodetecção, fallback ou migração automática; consulte o
-[guia de migração 0.6](docs/migration-source-0.5-to-0.6.md).
+V0.5 permanece temporariamente disponível com `--source-syntax 0.5` como
+compatibilidade legada/deprecated. Não há autodetecção, fallback ou migração automática;
+consulte o [guia de migração 0.6](docs/migration-source-0.5-to-0.6.md).
 
 A versão da fonte é independente dos artefatos: IR JSON e S3 Assembly
 continuam em 0.5.0. O Marco 0.7 está concluído.
@@ -220,8 +220,9 @@ S3 0.18 está fechado após consolidar esses adapters atrás de
 outputs versionados ou goldens. S3 0.19 está fechado após expandir esse caminho
 Python-side para cobrir a saída atual de `AssemblyProgram.render()` e fazer
 `AssemblyProgram.render()` delegar a ele. Isso preserva os inspect goldens e os
-actual outputs; o renderer S3 real continua não implementado. S3 0.20 está
-fechado após adicionar
+actual outputs; o compilador Python continua sendo a implementação de referência
+e o harness, enquanto renderers estruturais genéricos estão sendo escritos em S3.
+S3 0.20 está fechado após adicionar
 `examples/self_hosting/assembly_renderer_bootstrap.s3`, um spike S3 executável
 que valida invariantes escalares do subset suportado sem emitir texto Assembly
 completo. S3 0.21 está fechado após adicionar
@@ -307,9 +308,11 @@ and 946 logical bytes. There are now twelve executable S3 renderer bootstrap
 artifacts; `--candidate-run` validates the text fragment model while runtime
 strings, arrays, and complete textual rendering remain `not_implemented` and
 `compare --check` remains blocked.
-`python tools/compare_assembly_renderer.py --check` continua bloqueado com
-status 1 porque o renderer S3 real ainda não está implementado; isso evita
-falso positivo de sucesso global.
+`python tools/compare_assembly_renderer.py --check` valida os renderers estruturais
+escritos em S3 para `first`, `simple_call` e `sign`, confirmando que seus
+outputs coincidem com os renderers legados e goldens. O compilador S3
+completo e compilador self-hosted não existem; esta é uma prova parcial e
+incremental de self-hosting.
 
 Integrações ELF são coletadas e puladas em hosts que não são Linux. Os
 resultados atuais devem ser consultados no workflow; os números abaixo

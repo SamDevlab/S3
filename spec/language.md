@@ -1,110 +1,116 @@
-# Especificação da linguagem S3 0.3
+# Especificação da linguagem S3
 
-Status: normativa para o bootstrap.
+Status: normativa para o compilador atual. Reflete a sintaxe 0.6 (indentation-based).
+A sintaxe 0.5 (com `{`, `}`, `;` e `switch`) é considerada legada/deprecated e mantida apenas para compatibilidade.
 
 ## Funções e tipos escalares
 
-Uma unidade contém funções com nomes únicos e exatamente uma `main` sem
-parâmetros. Assinaturas são coletadas antes dos corpos, permitindo forward
-calls e recursão. Parâmetros e retornos são somente `trit` ou `tryte`.
+Uma unidade contém funções com nomes únicos e exatamente uma `main` sem parâmetros.
+Assinaturas são coletadas antes dos corpos, permitindo forward calls e recursão.
+Parâmetros e retornos possuem tipos explícitos, que devem ser `trit` ou `tryte`.
 
-`trit` representa `-1`, `0`, `1`; `tryte` representa `[-364, 364]`. Não há
-conversão implícita nem tipos unsigned. Overflow continua sendo erro.
+`trit` representa `-1`, `0`, `1`; `tryte` representa `[-364, 364]`. Não há conversão implícita nem tipos unsigned. Overflow continua sendo erro. Não existem ponteiros nem alocação no heap.
 
-## Léxico
-
-Palavras-chave:
-
-```text
-fn return switch mut trit tryte
+```s3
+fn main() -> tryte:
+    return 0
 ```
 
-Símbolos:
+## Léxico e blocos por indentação
 
-```text
--> <=> ~ & | + - = ( ) { } [ ] : ; ,
-```
+A linguagem S3 (sintaxe 0.6) é baseada em indentação, abandonando `{}` e `;`.
 
-Identificadores seguem `[A-Za-z_][A-Za-z0-9_]*`. Comentários começam em `//`.
-Linha/coluna e offset são preservados. O sinal nunca faz parte do inteiro:
-`[-1]` contém `LEFT_BRACKET`, `MINUS`, `INTEGER`, `RIGHT_BRACKET`.
+Palavras-chave: `fn`, `return`, `match`, `while`, `mut`, `trit`, `tryte`, `case` (removido no parser atual, usa-se literais diretos no match).
+
+Identificadores seguem `[A-Za-z_][A-Za-z0-9_]*`.
+Comentários começam com `#` (não mais `//`).
+
+Blocos de código iniciam-se após um `:` seguido de quebra de linha e indentação.
+
+Não existem módulos nem imports. O código reside num único arquivo compilado (ou múltiplos concatenados conceitualmente).
 
 ## Bindings e mutabilidade
 
-Declarações são imutáveis por padrão:
+Declarações possuem tipos explícitos e são imutáveis por padrão:
 
 ```s3
-tryte value = 10;
+value: tryte = 10
 ```
 
-`mut` permite atribuição posterior:
+A palavra-chave `mut` permite atribuição posterior:
 
 ```s3
-mut tryte value = 10;
-value = value + 1;
+mut value: tryte = 10
+value = value + 1
 ```
 
-Atribuição é statement e não produz valor. O alvo deve existir, ser mutável e
-ter o mesmo tipo do valor. Parâmetros, funções e bindings imutáveis não podem
-ser atribuídos. Toda declaração exige inicializador.
-
-Escopos continuam lexicais. Uma atribuição em caso de `switch` pode alcançar
-mutável declarado em escopo pai.
+A atribuição é um statement e não produz valor. O alvo deve existir, ser mutável e ter o mesmo tipo do valor. Toda declaração exige inicializador.
 
 ## Arrays estáticos
 
+Arrays têm tamanho fixo avaliado em tempo de compilação:
+
 ```s3
-mut tryte[4] values = [1, 2, 3, 4];
-values[1] = 5;
-return values[0];
+mut values: tryte[4] = [1, 2, 3, 4]
+values[1] = 5
+return values[0]
 ```
 
-Regras:
+- Elementos devem ser `trit` ou `tryte`.
+- Uma única dimensão. Arrays aninhados são erro.
+- Literal obrigatório com exatamente o comprimento declarado.
+- Apenas arrays mutáveis aceitam atribuição indexada.
+- Não há atribuição/cópia de array inteiro.
+- Arrays não podem ser passados como argumentos nem retornados de funções.
+- O índice tem tipo `tryte`. Índice fora da faixa é erro (semântico se constante, em execução se calculado).
 
-- elemento somente `trit` ou `tryte`;
-- comprimento entre 1 e 365, conhecido na compilação;
-- uma dimensão; arrays aninhados são erro;
-- literal obrigatório com exatamente o comprimento declarado;
-- elementos avaliados da esquerda para a direita e tipados individualmente;
-- arrays imutáveis podem ser lidos, mas não alterados;
-- somente arrays mutáveis aceitam atribuição indexada;
-- não há atribuição/cópia de array inteiro;
-- arrays não são argumentos, retornos ou operandos;
-- somente a indexação produz escalar;
-- índice tem tipo `tryte`;
-- índice constante fora de `[0, length)` é erro semântico;
-- índice calculado fora da faixa é erro de execução.
+## Strings estáticas
 
-## Expressões e precedência
+Strings estáticas são suportadas apenas como literais definidos na compilação. O tempo de execução não fornece manipulação nativa de strings arbitrárias. Literais de string estão presentes na sintaxe para suporte a chamadas nativas de diagnóstico (renderização).
 
-Da maior para a menor:
+## Expressões e operadores
 
-1. chamada, indexação, primários e parênteses;
-2. `~` e `-` unários;
-3. `+` e `-`;
-4. `&`;
-5. `|`;
-6. `<=>`.
+Da maior para a menor precedência:
 
-Um identificador aceita no máximo um sufixo postfix no subconjunto atual:
-chamada ou indexação. Chamadas aninhadas continuam possíveis nos argumentos.
+1. Chamada, indexação, parênteses
+2. Inversão unária `~` e negação `-`
+3. Adição `+` e subtração `-`
+4. Mínimo tritwise `&`
+5. Máximo tritwise `|`
+6. Comparação ternária `<=>`
 
-`<=>` retorna `trit`. `&`/`|` são mínimo/máximo tritwise. Subtração é reduzida
-exclusivamente a `INVERT` seguido de `ADD`; não existe opcode de subtração.
+`<=>` retorna `trit`. Subtração é reduzida exclusivamente a `INVERT` seguido de `ADD`; não existe opcode de subtração nativo.
 
-## Controle ternário e retorno
+## Controle de fluxo: match e while
 
-`switch` exige seletor `trit`, avaliado uma vez, e exatamente os casos únicos
-`-1`, `0`, `1`, sem default ou fallthrough. Cada caso cria escopo.
+Não existem `break` ou `continue`. O controle de fluxo depende de retorno, laços, e roteamento ternário.
 
-Todas as rotas da função devem retornar. Código após retorno ou switch cujos
-três casos retornam é inalcançável. Um mutável declarado antes do switch pode
-receber stores nos ramos e ser lido após o join sem `PHI`.
+O `match` substitui o antigo `switch` e exige um seletor do tipo `trit`. Exige o mapeamento explícito e obrigatório dos três casos `-1`, `0` e `1`.
 
-## Diagnósticos
+```s3
+fn sign(value: tryte) -> trit:
+    match value <=> 0:
+        -1:
+            return -1
+        0:
+            return 0
+        1:
+            return 1
+```
 
-São erros: atribuição inválida, tipo incompatível, array mal formado, array em
-contexto escalar, índice constante inválido, caso ternário inválido, chamada
-incorreta, caminho sem retorno e código inalcançável. Diagnósticos de
-compilação incluem origem S3; falhas dinâmicas de memória incluem função,
-bloco, opcode, origem, objeto, índice e comprimento quando disponíveis.
+O `while` avalia uma condição do tipo `trit`:
+- Se for `-1`, o corpo é executado.
+- Se for `0`, o laço termina.
+- Se for `1`, o laço termina.
+
+```s3
+fn main() -> tryte:
+    mut i: tryte = 0
+    while i <=> 5:
+        i = i + 1
+    return i
+```
+
+## Retorno
+
+Funções não retornam implicitamente. Todas as rotas de código devem convergir para um `return` compatível. Um `while` não garante execução de seu corpo (mesmo com `-1` constante na sintaxe atual, por segurança conservadora), então o código subsequente deve tratar a continuação do fluxo. Código inalcançável (após `return` ou `match` terminante) é rejeitado na compilação.

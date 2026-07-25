@@ -86,13 +86,11 @@ Falhas usam IDs de site determinísticos e informam categoria, função, bloco,
 opcode, origem S3 ou `source unknown`, linha assembly quando disponível e
 valor dinâmico relevante. Veja `native-diagnostics.md`.
 
-## Limite de instruções do Marco 0.7
+## Limite de instruções
 
-Aprovado para o Marco 0.7; implementação pendente.
-
-O runtime adotará `max_instructions = 100000` por padrão, igual ao emulador.
-Cada opcode S3 Assembly efetivamente executado consumirá uma unidade. Prólogos,
-epílogos, helpers, checks físicos, instruções x86-64 e syscalls não serão
+O runtime adota `max_instructions = 100000` por padrão, igual ao emulador.
+O backend instrumenta cada opcode S3 Assembly efetivamente executado, consumindo uma unidade. Prólogos,
+epílogos, helpers, checks físicos, instruções x86-64 e syscalls não são
 contados.
 
 O contador começará em zero antes de `main`, será global para a execução,

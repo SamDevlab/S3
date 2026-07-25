@@ -45,19 +45,17 @@ invalid runtime state
 Falha ocorre antes de acesso perigoso ou publicação de valor inválido. Não há
 traceback, libc, C ou Python no executável.
 
-## Limite de instruções do Marco 0.7
+## Limite de instruções
 
-Aprovado para o Marco 0.7; implementação pendente.
-
-O runtime acrescentará a categoria:
+O runtime reporta a categoria:
 
 ```text
 instruction limit
 ```
 
-A falha ocorrerá no site do opcode S3 pendente, antes de seus efeitos, e usará
-stderr e status 1. O diagnóstico informará limite, função, bloco, opcode e
-origem quando disponíveis. O formato continuará textual:
+A falha ocorre no site do opcode S3 correspondente, antes de seus efeitos, e usa
+stderr e status 1. O diagnóstico informa limite, função, bloco, opcode e
+origem quando disponíveis. O formato é textual:
 
 ```text
 runtime error [instruction limit] in function 'main'

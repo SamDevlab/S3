@@ -107,8 +107,8 @@ purely numeric renderer models to an actual language capability: a fixed, mutabl
 array of `tryte` providing bounds-checked sequential write access. It leverages
 the existing compiler support for arrays, validating indexing, mutability,
 dynamic cursor bounds, and uninitialized memory rejection, serving as the physical
-foundation for future text emission; see `docs/roadmap-0.32.md`. The full textual
 renderer remains unimplemented and `compare --check` remains blocked.
+S3 0.41 is closed after establishing a generic structural fixture renderer authored in S3 (a bootstrap renderer component). There are now entry points for `render_first`, `render_simple_call`, and `render_sign`. These generic paths are successfully compared against both the preserved legacy renderers and the golden artifacts. `compare_assembly_renderer.py` is fully functional and proves these generic paths. This serves as a partial self-hosting proof, though the Python compiler remains the reference implementation and a full S3 compiler does not yet exist.
 
 Recent tools make this pipeline more observable:
 
