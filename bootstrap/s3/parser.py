@@ -176,7 +176,7 @@ class Parser:
             mutable,
         )
 
-    def _parse_assignment_v0_6(self) -> ast.AssignmentStatement:
+    def _parse_assignment_v0_6(self) -> ast.Statement:
         name = self._consume(TokenKind.IDENTIFIER, "expected assignment target")
         target: ast.AssignmentTarget
         if self._match(TokenKind.LEFT_BRACKET):
@@ -185,11 +185,17 @@ class Parser:
             target = ast.IndexTarget(name.text, index, name.location)
         else:
             target = ast.VariableTarget(name.text, name.location)
-        self._consume(TokenKind.EQUAL, "expected '=' after assignment target")
+        if self._match(TokenKind.PLUS_EQUAL):
+            op = ast.BinaryOperator.ADD
+        else:
+            self._consume(TokenKind.EQUAL, "expected '=' or '+=' after assignment target")
+            op = None
         value = self._parse_initializer()
         if self._check(TokenKind.SEMICOLON):
             raise ParseError("obsolete ';' syntax", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_OBSOLETE_SEMICOLON)
         self._consume_statement_newline("expected newline after assignment")
+        if op is not None:
+            return ast.CompoundAssignmentStatement(target, op, value, name.location)
         return ast.AssignmentStatement(target, value, name.location)
 
     def _parse_return_v0_6(self, start: Token) -> ast.ReturnStatement:

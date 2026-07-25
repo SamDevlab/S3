@@ -218,15 +218,24 @@ class ForStatement:
     location: SourceLocation
 
 
+@dataclass(frozen=True, slots=True)
+class CompoundAssignmentStatement:
+    target: AssignmentTarget
+    operator: BinaryOperator
+    value: Initializer
+    location: SourceLocation
+
+
 Statement: TypeAlias = (
     VariableDeclaration
     | AssignmentStatement
+    | CompoundAssignmentStatement
     | ReturnStatement
     | SwitchStatement
     | WhileStatement
-    | ForStatement
     | BreakStatement
     | ContinueStatement
+    | ForStatement
 )
 
 

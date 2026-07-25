@@ -49,6 +49,9 @@ class TokenKind(Enum):
     PIPE = auto()
     PLUS = auto()
     MINUS = auto()
+    STAR = auto()
+    PLUS_EQUAL = auto()
+    STAR_EQUAL = auto()
     EQUAL = auto()
     LEFT_PAREN = auto()
     RIGHT_PAREN = auto()
@@ -369,12 +372,21 @@ class Lexer:
             self._advance()
             self._advance()
             return Token(TokenKind.GREATER_EQUAL, two, line, column, start)
+        if two == "+=":
+            self._advance()
+            self._advance()
+            return Token(TokenKind.PLUS_EQUAL, two, line, column, start)
+        if two == "*=":
+            self._advance()
+            self._advance()
+            return Token(TokenKind.STAR_EQUAL, two, line, column, start)
         single_tokens = {
             "~": TokenKind.TILDE,
             "&": TokenKind.AMPERSAND,
             "|": TokenKind.PIPE,
             "+": TokenKind.PLUS,
             "-": TokenKind.MINUS,
+            "*": TokenKind.STAR,
             "=": TokenKind.EQUAL,
             "<": TokenKind.LESS,
             ">": TokenKind.GREATER,
