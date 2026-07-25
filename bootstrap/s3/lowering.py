@@ -190,6 +190,9 @@ class FunctionLowerer:
         if isinstance(statement, ast.WhileStatement):
             self._lower_while(statement)
             return
+        if isinstance(statement, ast.ForStatement):
+            self._lower_for(statement)
+            return
         raise LoweringError("unsupported statement", statement.location)
 
     def _allocate(
@@ -471,6 +474,158 @@ class FunctionLowerer:
                     location=statement.location,
                 )
             )
+
+        self.current = exit_block_0
+        self._emit(
+            IRInstruction(
+                IROpcode.JUMP,
+                targets=(exit_block.name,),
+                location=statement.location,
+            )
+        )
+
+        self.current = exit_block_1
+        self._emit(
+            IRInstruction(
+                IROpcode.JUMP,
+                targets=(exit_block.name,),
+                location=statement.location,
+            )
+        )
+
+        self.current = exit_block
+
+    def _lower_for(self, statement: ast.ForStatement) -> None:
+        start_val = self._lower_expression(statement.start_expression)
+        end_val = self._lower_expression(statement.end_expression)
+        memory = self._allocate_memory(
+            statement.variable_type,
+            1,
+            True,
+            statement.location,
+        )
+        idx_zero = self._emit_constant(0, ast.TypeName.TRYTE, statement.location)
+        self._emit(
+            IRInstruction(
+                IROpcode.STORE,
+                operands=(idx_zero, start_val),
+                memory=memory,
+                initialization=True,
+                location=statement.location,
+            )
+        )
+        cond_block = self._fresh_block("for_cond", statement.location)
+        body_block = self._fresh_block("for_body", statement.location)
+        step_block = self._fresh_block("for_step", statement.location)
+        exit_block_0 = self._fresh_block("for_exit_0", statement.location)
+        exit_block_1 = self._fresh_block("for_exit_1", statement.location)
+        exit_block = self._fresh_block("for_exit", statement.location)
+
+        self._emit(
+            IRInstruction(
+                IROpcode.JUMP,
+                targets=(cond_block.name,),
+                location=statement.location,
+            )
+        )
+
+        self.current = cond_block
+        cur_val = self._allocate(statement.variable_type, statement.location)
+        idx_zero_c = self._emit_constant(0, ast.TypeName.TRYTE, statement.location)
+        self._emit(
+            IRInstruction(
+                IROpcode.LOAD,
+                result=cur_val,
+                operands=(idx_zero_c,),
+                memory=memory,
+                location=statement.location,
+            )
+        )
+        cmp_reg = self._allocate(ast.TypeName.TRIT, statement.location)
+        self._emit(
+            IRInstruction(
+                IROpcode.COMPARE,
+                result=cmp_reg,
+                operands=(cur_val, end_val),
+                location=statement.location,
+            )
+        )
+        self._emit(
+            IRInstruction(
+                IROpcode.BRANCH3,
+                operands=(cmp_reg,),
+                targets=(body_block.name, exit_block_0.name, exit_block_1.name),
+                location=statement.location,
+            )
+        )
+
+        self.current = body_block
+        self.loop_stack.append(
+            LoopContext(
+                continue_target=step_block.name,
+                break_target=exit_block.name,
+            )
+        )
+        self.variable_scopes.append({})
+        self.variable_scopes[-1][statement.variable_name] = _LoweredBinding(
+            statement.variable_type,
+            mutable=False,
+            memory=memory,
+        )
+        try:
+            self._lower_block(statement.body, create_scope=False)
+        finally:
+            self.variable_scopes.pop()
+            self.loop_stack.pop()
+
+        if self.current is not None:
+            self.current.instructions.append(
+                IRInstruction(
+                    IROpcode.JUMP,
+                    targets=(step_block.name,),
+                    location=statement.location,
+                )
+            )
+
+        self.current = step_block
+        step_cur = self._allocate(statement.variable_type, statement.location)
+        idx_zero_s = self._emit_constant(0, ast.TypeName.TRYTE, statement.location)
+        self._emit(
+            IRInstruction(
+                IROpcode.LOAD,
+                result=step_cur,
+                operands=(idx_zero_s,),
+                memory=memory,
+                location=statement.location,
+            )
+        )
+        one_const = self._emit_constant(1, ast.TypeName.TRYTE, statement.location)
+        next_val = self._allocate(statement.variable_type, statement.location)
+        self._emit(
+            IRInstruction(
+                IROpcode.ADD,
+                result=next_val,
+                operands=(step_cur, one_const),
+                location=statement.location,
+            )
+        )
+        idx_zero_s2 = self._emit_constant(0, ast.TypeName.TRYTE, statement.location)
+        self._emit(
+            IRInstruction(
+                IROpcode.STORE,
+                operands=(idx_zero_s2, next_val),
+                memory=memory,
+                initialization=False,
+                location=statement.location,
+            )
+        )
+        self._emit(
+            IRInstruction(
+                IROpcode.JUMP,
+                targets=(cond_block.name,),
+                location=statement.location,
+            )
+        )
 
         self.current = exit_block_0
         self._emit(

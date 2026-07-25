@@ -111,6 +111,10 @@ def collect_static_string_literals(program: ast.Program) -> StaticStringTable:
                     visit_block(case.body)
             elif isinstance(statement, ast.WhileStatement):
                 visit_block(statement.body)
+            elif isinstance(statement, ast.ForStatement):
+                visit_expression(statement.start_expression)
+                visit_expression(statement.end_expression)
+                visit_block(statement.body)
             elif isinstance(statement, (ast.BreakStatement, ast.ContinueStatement)):
                 pass
 

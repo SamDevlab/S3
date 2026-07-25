@@ -201,7 +201,52 @@ class SemanticAnalyzer:
             return self._analyze_switch(statement)
         if isinstance(statement, ast.WhileStatement):
             return self._analyze_while(statement)
+        if isinstance(statement, ast.ForStatement):
+            return self._analyze_for(statement)
         raise SemanticError("unsupported statement", statement.location)
+
+    def _analyze_for(self, statement: ast.ForStatement) -> BlockFlow:
+        start_type = self._analyze_expression(
+            statement.start_expression,
+            ast.TypeName.TRYTE,
+        )
+        self._require_type(
+            start_type,
+            ast.TypeName.TRYTE,
+            statement.start_expression.location,
+            "for loop range start bound",
+        )
+        end_type = self._analyze_expression(
+            statement.end_expression,
+            ast.TypeName.TRYTE,
+        )
+        self._require_type(
+            end_type,
+            ast.TypeName.TRYTE,
+            statement.end_expression.location,
+            "for loop range end bound",
+        )
+        self._require_type(
+            statement.variable_type,
+            ast.TypeName.TRYTE,
+            statement.location,
+            "for loop variable type",
+        )
+        self.scopes.append({})
+        current_scope = self.scopes[-1]
+        current_scope[statement.variable_name] = Binding(
+            statement.variable_type,
+            mutable=False,
+            parameter=False,
+            location=statement.location,
+        )
+        self.loop_depth += 1
+        try:
+            self._analyze_block(statement.body, create_scope=False)
+        finally:
+            self.loop_depth -= 1
+            self.scopes.pop()
+        return BlockFlow(definitely_returns=False, terminates=False)
 
     def _analyze_while(self, statement: ast.WhileStatement) -> BlockFlow:
         condition_type = self._analyze_expression(
