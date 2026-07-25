@@ -33,17 +33,30 @@ class BlockFlow:
 
 @dataclass(frozen=True, slots=True)
 class SemanticModel:
-    """Scalar expression types and the complete file-level function table."""
+    """Expression types and the complete file-level function table."""
 
-    expression_types: dict[int, ast.TypeName]
+    expression_types: dict[int, ast.DeclaredType]
     functions: dict[str, FunctionType]
 
     def type_of(self, expression: ast.Expression) -> ast.TypeName:
         try:
-            return self.expression_types[id(expression)]
-        except KeyError as error:
+            result = self.expression_types[id(expression)]
+            assert isinstance(result, ast.TypeName)
+            return result
+        except (KeyError, AssertionError) as error:
             raise SemanticError(
                 "internal error: expression has no scalar semantic type",
+                expression.location,
+            ) from error
+
+    def array_type_of(self, expression: ast.Expression) -> ast.ArrayType:
+        try:
+            result = self.expression_types[id(expression)]
+            assert isinstance(result, ast.ArrayType)
+            return result
+        except (KeyError, AssertionError) as error:
+            raise SemanticError(
+                "internal error: expression has no array semantic type",
                 expression.location,
             ) from error
 
@@ -56,7 +69,7 @@ class SemanticModel:
 
 class SemanticAnalyzer:
     def __init__(self) -> None:
-        self.expression_types: dict[int, ast.TypeName] = {}
+        self.expression_types: dict[int, ast.DeclaredType] = {}
         self.functions: dict[str, FunctionType] = {}
         self.scopes: list[dict[str, Binding]] = []
         self.parameter_names: set[str] = set()
@@ -534,9 +547,49 @@ class SemanticAnalyzer:
             result = self._analyze_binary(expression, expected)
         elif isinstance(expression, ast.MatchExpression):
             result = self._analyze_match_expression(expression, expected)
+        elif isinstance(expression, ast.LenExpression):
+            result = self._analyze_len(expression, expected)
         else:
             raise SemanticError("unsupported expression", expression.location)
         self.expression_types[id(expression)] = result
+        return result
+
+    def _analyze_len(
+        self,
+        expression: ast.LenExpression,
+        expected: ast.TypeName | None = None,
+    ) -> ast.TypeName:
+        if isinstance(expression.argument, ast.Identifier):
+            binding = self._lookup_binding(expression.argument.name)
+            if binding is None:
+                raise SemanticError(
+                    f"undeclared variable '{expression.argument.name}'",
+                    expression.argument.location,
+                )
+            if not isinstance(binding.type_name, ast.ArrayType):
+                raise SemanticError(
+                    f"len() argument must be a static array, got '{binding.type_name.value}'",
+                    expression.argument.location,
+                )
+            self.expression_types[id(expression.argument)] = binding.type_name
+        elif isinstance(expression.argument, ast.IndexExpression):
+            raise SemanticError(
+                "len() argument must be a static array, not an array element",
+                expression.argument.location,
+            )
+        else:
+            raise SemanticError(
+                "len() argument must be a static array",
+                expression.argument.location,
+            )
+        result = ast.TypeName.TRYTE
+        if expected is not None:
+            self._require_type(
+                result,
+                expected,
+                expression.location,
+                "len expression",
+            )
         return result
 
     def _analyze_index(
