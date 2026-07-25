@@ -63,6 +63,14 @@ return values[0]
 - Não há atribuição/cópia de array inteiro.
 - Arrays não podem ser passados como argumentos nem retornados de funções.
 - O índice tem tipo `tryte`. Índice fora da faixa é erro (semântico se constante, em execução se calculado).
+- A operação `len(array)` retorna a quantidade de elementos do array como um `tryte` avaliado estaticamente em tempo de compilação.
+
+```s3
+values: tryte[5] = [10, 20, 30, 40, 50]
+mut total: tryte = 0
+for i: tryte in range(0, len(values)):
+    total = total + values[i]
+```
 
 ## Strings estáticas
 
