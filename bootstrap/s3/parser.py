@@ -238,9 +238,13 @@ class Parser:
         self._consume(TokenKind.IN, "expected 'in' after loop variable type")
         self._consume(TokenKind.RANGE, "expected 'range' after 'in'")
         self._consume(TokenKind.LEFT_PAREN, "expected '(' after 'range'")
-        start_expression = self._parse_expression()
-        self._consume(TokenKind.COMMA, "expected ',' between range bounds")
-        end_expression = self._parse_expression()
+        first_expr = self._parse_expression()
+        if self._match(TokenKind.COMMA):
+            start_expression = first_expr
+            end_expression = self._parse_expression()
+        else:
+            start_expression = ast.IntegerLiteral(0, first_expr.location)
+            end_expression = first_expr
         self._consume(TokenKind.RIGHT_PAREN, "expected ')' after range bounds")
         self._consume(TokenKind.COLON, "expected ':' after range clause")
         self._consume(TokenKind.NEWLINE, "expected newline after ':'")
