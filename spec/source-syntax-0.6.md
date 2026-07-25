@@ -2,13 +2,10 @@
 
 ## Status
 
-Implementada como default do frontend. V0.5 permanece selecionável
-explicitamente, sem autodetecção ou fallback. As versões de sintaxe fonte, IR
-JSON e S3 Assembly são independentes. A seção 9 registra o plano histórico:
-Entregas A–D estão concluídas e a Entrega E aguarda validação remota final.
+V0.6 é a source syntax atual e padrão do S3. A sintaxe 0.5 permanece disponível estritamente como compatibilidade legada/deprecated, sem autodetecção ou fallback. As versões de sintaxe fonte, IR JSON e S3 Assembly são independentes.
 
 ## 1. Objective
-This document outlines the proposed indentation-based source syntax for S3, designed for Milestone 0.6. The primary goal is to adhere to the "Less is more" principle by providing a low-ceremony, Python-like ergonomic syntax while retaining the explicit, predictable, and low-level characteristics of a systems programming language.
+This document outlines the indentation-based source syntax for S3, standard in Milestone 0.6 and later. The primary goal is to adhere to the "Less is more" principle by providing a low-ceremony, Python-like ergonomic syntax while retaining the explicit, predictable, and low-level characteristics of a systems programming language.
 
 ## 2. Syntactic Audit & Comparison
 
@@ -26,6 +23,7 @@ This document outlines the proposed indentation-based source syntax for S3, desi
 | **Recursion** | `f(a);` | `f(a)` | None | Parser semicolon |
 | **Ternary Compare** | `<=>` | `<=>` | None | None |
 | **Control Flow** | `switch (a <=> b) { ... }` | `match a <=> b:\n    ...` | None | Lexer (match keyword), Parser |
+| **Loops** | N/A | `while c:\n    ...` | None | Parser |
 | **Comments** | `// comment` | `# comment` | None | None |
 | **Blocks** | `{ ... }` | `:\n    ...` | None | Lexer (INDENT/DEDENT) |
 | **Statement End** | `;` | `NEWLINE` | None | Lexer (NEWLINE), Parser |
@@ -72,13 +70,21 @@ To maintain static typing without ambiguity and enforce "menos é mais":
 - **Rule:** Compound operators (e.g., `+=`, `-=`) do not exist.
 - **Why:** Keeps the implementation simple and enforces explicit operations (`a = a + 1`), which makes overflow boundaries and ternary limits mathematically visible.
 
+### 4.5. Multiline Expressions
+- **Rule:** Line breaks are freely allowed inside matching `( )` and `[ ]`. Outside of these delimiters, a newline produces a logical `NEWLINE` token which terminates the statement.
+
 ### 4.6. Ternary Literals
 - **Rule:** The explicit type annotation in the declaration and the expression context determine if a literal represents a trit or tryte.
 - **Example:** `sign: trit = 1` and `value: tryte = 1`.
 - **Rule:** There is no autonomous inference rule for unannotated local literals. Values outside -1, 0, and 1 remain invalid for trit.
 
-### 4.5. Multiline Expressions
-- **Rule:** Line breaks are freely allowed inside matching `( )` and `[ ]`. Outside of these delimiters, a newline produces a logical `NEWLINE` token which terminates the statement.
+### 4.7. Loops
+- **Rule:** The `while` keyword introduces a loop.
+- **Rule:** The loop condition must be a `trit` expression.
+- **Rule:** A condition of `-1` executes the loop body.
+- **Rule:** A condition of `0` terminates the loop.
+- **Rule:** A condition of `1` terminates the loop.
+- **Rule:** The `break` and `continue` keywords do not exist yet.
 
 ## 5. Normative Examples
 
@@ -215,8 +221,19 @@ fn main() -> tryte:
     return 0
 ```
 
+### Example 16: While Loop
+```s3
+fn main() -> tryte:
+    mut index: tryte = 0
+
+    while index <=> 5:
+        index = index + 1
+
+    return index
+```
+
 ## 6. Migration Strategy
-S3 is currently experimental. There will be **no permanent support** for both syntaxes to avoid parser bloat.
+S3 is currently experimental. The older 0.5 syntax is deprecated.
 - **Action:** Direct syntax replacement in the compiler.
 - **Errors:** If the compiler encounters `{`, `}`, or `;`, it will emit a clear diagnostic explaining that the syntax has evolved to 0.6 and these characters are obsolete.
 
@@ -226,7 +243,7 @@ S3 is currently experimental. There will be **no permanent support** for both sy
 - The IR JSON schema and S3 Assembly schema will remain `0.5.0` as they are semantically unaffected by this surface change.
 
 ## 8. Diagnostics
-New diagnostics will be designed to integrate with the existing structured schema:
+New diagnostics integrate with the existing structured schema:
 - `S3E_LEX_UNEXPECTED_INDENT`: Emitted when an indentation increases without a preceding `:`.
 - `S3E_LEX_INVALID_DEDENT`: Emitted when dedent does not match any previous indentation level.
 - `S3E_LEX_TAB_IN_INDENT`: Emitted when a tab character is used for indentation.
@@ -234,12 +251,3 @@ New diagnostics will be designed to integrate with the existing structured schem
 - `S3E_PARSE_EXPECTED_STATEMENT`: Emitted on an empty block.
 - `S3E_PARSE_OBSOLETE_BRACE`: Emitted on `{` or `}`.
 - `S3E_PARSE_OBSOLETE_SEMICOLON`: Emitted on `;`.
-
-## 9. Future Implementation Plan
-This architectural proposal will be implemented in future work across the following phases:
-
-- **Entrega A — infraestrutura de indentação:** Lexer `NEWLINE`, `INDENT`, `DEDENT`, and indentation diagnostic codes.
-- **Entrega B — funções e instruções simples:** Parsing functions without braces, removal of semicolons, returns, and declarations/assignments.
-- **Entrega C — construções compostas:** Parsing `match`, arrays, comments, and multiline rules.
-- **Entrega D — migração:** Update all `examples/*.s3` files, rewrite frontend tests, remove old grammar code.
-- **Entrega E — validação:** Full CI pipeline execution, structural diagnostics validation, and x86-64 native testing.

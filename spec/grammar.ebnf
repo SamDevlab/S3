@@ -1,28 +1,37 @@
-(* Gramática normativa do subconjunto S3 0.3. *)
+(* Gramática normativa S3 (Sintaxe 0.6 - Indentation-based) *)
 
-program              = function, { function }, EOF ;
+program              = { NEWLINE }, function, { { NEWLINE }, function }, { NEWLINE }, EOF ;
+
 function             = "fn", identifier, "(", [ parameter-list ], ")",
                        "->", type, block ;
 parameter-list       = parameter, { ",", parameter } ;
 parameter            = identifier, ":", type ;
 
 scalar-type          = "trit" | "tryte" ;
-type                 = scalar-type, { "[", signed-integer, "]" } ;
+type                 = scalar-type, { "[", integer, "]" } ;
 
-block                = "{", { statement }, "}" ;
+block                = ":", NEWLINE, INDENT, statement, { statement }, DEDENT ;
+
 statement            = variable-declaration
                      | assignment-statement
                      | return-statement
-                     | switch-statement ;
-variable-declaration = [ "mut" ], type, identifier, "=", initializer, ";" ;
-assignment-statement = assignment-target, "=", initializer, ";" ;
+                     | match-statement
+                     | while-statement ;
+
+variable-declaration = [ "mut" ], identifier, ":", type, "=", initializer, NEWLINE ;
+assignment-statement = assignment-target, "=", initializer, NEWLINE ;
 assignment-target    = identifier, [ index-suffix ] ;
+
 initializer          = expression | array-literal ;
 array-literal        = "[", [ expression, { ",", expression } ], "]" ;
-return-statement     = "return", expression, ";" ;
-switch-statement     = "switch", "(", expression, ")", "{",
-                       { ternary-case }, "}" ;
-ternary-case         = signed-integer, ":", block ;
+
+return-statement     = "return", expression, NEWLINE ;
+
+match-statement      = "match", expression, ":", NEWLINE, INDENT, { ternary-case }, DEDENT ;
+ternary-case         = signed-integer, block ;
+
+while-statement      = "while", expression, block ;
+
 signed-integer       = [ "-" ], integer ;
 
 expression           = comparison ;
@@ -34,6 +43,7 @@ unary                = ("~" | "-"), unary | primary ;
 primary              = integer
                      | identifier-expression
                      | "(", expression, ")" ;
+
 identifier-expression = identifier, [ postfix-suffix ] ;
 postfix-suffix       = call-suffix | index-suffix ;
 call-suffix          = "(", [ argument-list ], ")" ;
@@ -46,8 +56,13 @@ identifier-continue  = letter | digit | "_" ;
 integer              = digit, { digit } ;
 digit                = "0" | "1" | "2" | "3" | "4"
                      | "5" | "6" | "7" | "8" | "9" ;
+letter               = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I"
+                     | "J" | "K" | "L" | "M" | "N" | "O" | "P" | "Q" | "R"
+                     | "S" | "T" | "U" | "V" | "W" | "X" | "Y" | "Z"
+                     | "a" | "b" | "c" | "d" | "e" | "f" | "g" | "h" | "i"
+                     | "j" | "k" | "l" | "m" | "n" | "o" | "p" | "q" | "r"
+                     | "s" | "t" | "u" | "v" | "w" | "x" | "y" | "z" ;
 
-(* Espaço em branco e comentários // até LF são ignorados entre tokens. *)
-(* A semântica restringe casos a -1/0/1, arrays a uma dimensão e *)
-(* parâmetros/retornos a tipos escalares. *)
-
+(* Comentários iniciam com # e vão até o fim da linha. Linhas vazias são ignoradas *)
+(* pela emissão de NEWLINE. O analisador léxico abstrai os espaços para INDENT/DEDENT. *)
+(* Compatibilidade legada/deprecated 0.5 ainda aceita '{', '}', ';' e 'switch'. *)

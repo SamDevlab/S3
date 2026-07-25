@@ -146,3 +146,30 @@ def test_no_recursive_call_produced() -> None:
         for block in func.blocks:
             for inst in block.instructions:
                 assert inst.opcode is not IROpcode.CALL
+
+
+def test_continuation_after_terminating_body() -> None:
+    ir = _compile(
+        "fn foo(condition: trit) -> tryte:\n    while condition:\n        return 1\n    return 0\nfn main() -> tryte:\n    return 0\n"
+    ).ir
+    blocks = ir.functions[0].blocks
+
+    # Check that there is an exit block
+    exit_blocks = [b for b in blocks if b.name.startswith("while_exit") and not b.name.startswith("while_exit_0") and not b.name.startswith("while_exit_1")]
+    assert exit_blocks
+
+    # Check that the exit block contains the post-loop return
+    last_block = blocks[-1]
+    assert last_block.instructions
+    assert last_block.instructions[-1].opcode is IROpcode.RETURN
+
+    # Check that exit_0 and exit_1 converge to the exit block
+    exit_0 = [b for b in blocks if "exit_0" in b.name][0]
+    exit_1 = [b for b in blocks if "exit_1" in b.name][0]
+    assert exit_0.instructions[-1].targets[0] == exit_blocks[0].name
+    assert exit_1.instructions[-1].targets[0] == exit_blocks[0].name
+
+    # Check that body block has no jump back
+    body_blocks = [b for b in blocks if "body" in b.name]
+    assert body_blocks
+    assert body_blocks[0].instructions[-1].opcode is IROpcode.RETURN

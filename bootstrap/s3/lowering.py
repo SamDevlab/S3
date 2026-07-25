@@ -450,10 +450,7 @@ class FunctionLowerer:
             )
         )
 
-        if not body_terminated:
-            self.current = exit_block
-        else:
-            self.current = None
+        self.current = exit_block
 
     def _lower_expression(self, expression: ast.Expression) -> int:
         expression_type = self.semantic_model.type_of(expression)
