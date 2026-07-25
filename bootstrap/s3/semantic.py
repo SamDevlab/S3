@@ -561,7 +561,16 @@ class SemanticAnalyzer:
         expression: ast.BinaryExpression,
         expected: ast.TypeName | None,
     ) -> ast.TypeName:
-        if expression.operator is ast.BinaryOperator.COMPARE:
+        RELATIONAL_OPERATORS = {
+            ast.BinaryOperator.COMPARE,
+            ast.BinaryOperator.EQUAL,
+            ast.BinaryOperator.NOT_EQUAL,
+            ast.BinaryOperator.LESS,
+            ast.BinaryOperator.LESS_EQUAL,
+            ast.BinaryOperator.GREATER,
+            ast.BinaryOperator.GREATER_EQUAL,
+        }
+        if expression.operator in RELATIONAL_OPERATORS:
             if expected is not None:
                 self._require_type(
                     ast.TypeName.TRIT,
@@ -624,7 +633,15 @@ class SemanticAnalyzer:
             return self._known_expression_type(expression.operand)
         if (
             isinstance(expression, ast.BinaryExpression)
-            and expression.operator is ast.BinaryOperator.COMPARE
+            and expression.operator in (
+                ast.BinaryOperator.COMPARE,
+                ast.BinaryOperator.EQUAL,
+                ast.BinaryOperator.NOT_EQUAL,
+                ast.BinaryOperator.LESS,
+                ast.BinaryOperator.LESS_EQUAL,
+                ast.BinaryOperator.GREATER,
+                ast.BinaryOperator.GREATER_EQUAL,
+            )
         ):
             return ast.TypeName.TRIT
         return None
