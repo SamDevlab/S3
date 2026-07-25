@@ -4,11 +4,12 @@ import pytest
 
 from bootstrap.s3.diagnostics import SemanticError
 from bootstrap.s3.lexer import SyntaxMode
-from bootstrap.s3.pipeline import compile_source
+from bootstrap.s3.parser import parse
+from bootstrap.s3.semantic import analyze
 
 
 def _compile(source: str):
-    return compile_source(source, mode=SyntaxMode.V0_6)
+    return analyze(parse(source, mode=SyntaxMode.V0_6))
 
 
 def test_condition_zero_returns() -> None:
@@ -147,3 +148,103 @@ def test_pipeline_stops_before_lowering(monkeypatch: pytest.MonkeyPatch) -> None
         )
 
     assert not called
+
+
+def test_break_outside_loop_rejected() -> None:
+    with pytest.raises(SemanticError, match="break outside loop"):
+        _compile(
+            "fn foo() -> tryte:\n"
+            "    break\n"
+            "    return 0\n"
+            "fn main() -> tryte:\n"
+            "    return 0\n"
+        )
+
+
+def test_continue_outside_loop_rejected() -> None:
+    with pytest.raises(SemanticError, match="continue outside loop"):
+        _compile(
+            "fn foo() -> tryte:\n"
+            "    continue\n"
+            "    return 0\n"
+            "fn main() -> tryte:\n"
+            "    return 0\n"
+        )
+
+
+def test_valid_break_and_continue_inside_while() -> None:
+    _compile(
+        "fn foo(cond: trit) -> tryte:\n"
+        "    while cond:\n"
+        "        match cond:\n"
+        "            -1:\n"
+        "                continue\n"
+        "            0:\n"
+        "                break\n"
+        "            1:\n"
+        "                break\n"
+        "    return 0\n"
+        "fn main() -> tryte:\n"
+        "    return 0\n"
+    )
+
+
+def test_unreachable_after_break() -> None:
+    with pytest.raises(SemanticError, match="unreachable statement"):
+        _compile(
+            "fn foo(cond: trit) -> tryte:\n"
+            "    while cond:\n"
+            "        break\n"
+            "        mut x: tryte = 1\n"
+            "    return 0\n"
+            "fn main() -> tryte:\n"
+            "    return 0\n"
+        )
+
+
+def test_unreachable_after_continue() -> None:
+    with pytest.raises(SemanticError, match="unreachable statement"):
+        _compile(
+            "fn foo(cond: trit) -> tryte:\n"
+            "    while cond:\n"
+            "        continue\n"
+            "        mut x: tryte = 1\n"
+            "    return 0\n"
+            "fn main() -> tryte:\n"
+            "    return 0\n"
+        )
+
+
+def test_break_does_not_satisfy_return() -> None:
+    with pytest.raises(SemanticError, match="has a path without returning"):
+        _compile(
+            "fn foo(cond: trit) -> tryte:\n"
+            "    while cond:\n"
+            "        break\n"
+            "fn main() -> tryte:\n"
+            "    return 0\n"
+        )
+
+
+def test_continue_does_not_satisfy_return() -> None:
+    with pytest.raises(SemanticError, match="has a path without returning"):
+        _compile(
+            "fn foo(cond: trit) -> tryte:\n"
+            "    while cond:\n"
+            "        continue\n"
+            "fn main() -> tryte:\n"
+            "    return 0\n"
+        )
+
+
+def test_loop_depth_restored_on_body_error() -> None:
+    with pytest.raises(SemanticError, match="undeclared variable"):
+        _compile(
+            "fn foo(cond: trit) -> tryte:\n"
+            "    while cond:\n"
+            "        invalid_var = 1\n"
+            "    return 0\n"
+            "fn main() -> tryte:\n"
+            "    return 0\n"
+        )
+
