@@ -78,8 +78,9 @@ Da maior para a menor precedência:
 4. Mínimo tritwise `&`
 5. Máximo tritwise `|`
 6. Comparação ternária `<=>`
+7. Operadores relacionais `==`, `!=`, `<`, `<=`, `>`, `>=`
 
-`<=>` retorna `trit`. Subtração é reduzida exclusivamente a `INVERT` seguido de `ADD`; não existe opcode de subtração nativo.
+Operadores relacionais comparam dois operandos do mesmo tipo escalar (`tryte` com `tryte`, ou `trit` com `trit`) e retornam `trit` (`-1` para verdadeiro, `0` para falso). `<=>` retorna `trit`. Subtração é reduzida exclusivamente a `INVERT` seguido de `ADD`; não existe opcode de subtração nativo.
 
 ## Controle de fluxo: match e while
 

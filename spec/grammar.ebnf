@@ -38,7 +38,9 @@ while-statement      = "while", expression, block ;
 
 signed-integer       = [ "-" ], integer ;
 
-expression           = comparison ;
+relational-operator  = "==" | "!=" | "<=" | ">=" | "<" | ">" ;
+expression           = relational ;
+relational           = comparison, { relational-operator, comparison } ;
 comparison           = maximum, { "<=>", maximum } ;
 maximum              = minimum, { "|", minimum } ;
 minimum              = additive, { "&", additive } ;
