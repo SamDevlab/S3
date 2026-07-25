@@ -162,11 +162,19 @@ class SwitchStatement:
     location: SourceLocation
 
 
+@dataclass(frozen=True, slots=True)
+class WhileStatement:
+    condition: Expression
+    body: Block
+    location: SourceLocation
+
+
 Statement: TypeAlias = (
     VariableDeclaration
     | AssignmentStatement
     | ReturnStatement
     | SwitchStatement
+    | WhileStatement
 )
 
 

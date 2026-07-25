@@ -130,7 +130,7 @@ def test_invalid_syntax_v0_6_rejected():
     source_old_style_decl = "fn main() -> tryte:\n    tryte[3] values = [1, 2, 3]\n    return 0\n"
     with pytest.raises(ParseError) as exc_info:
         parse(source_old_style_decl, mode=SyntaxMode.V0_6)
-    assert "expected variable declaration, 'return', or assignment" in str(exc_info.value)
+    assert "expected variable declaration, 'return', 'while', or assignment" in str(exc_info.value)
     
     source_old_style_mut = "fn main() -> tryte:\n    mut tryte[3] values = [1, 2, 3]\n    return 0\n"
     with pytest.raises(ParseError) as exc_info:

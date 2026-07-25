@@ -16,10 +16,13 @@ from tools.s3_renderer_contract import (
 
 
 class TestRendererContract(unittest.TestCase):
-    def test_three_fixtures_defined(self):
+    def test_all_fixtures_defined(self):
         self.assertIn("first", FIXTURE_METADATA)
+        self.assertIn("first_generic", FIXTURE_METADATA)
         self.assertIn("simple_call", FIXTURE_METADATA)
+        self.assertIn("simple_call_generic", FIXTURE_METADATA)
         self.assertIn("sign", FIXTURE_METADATA)
+        self.assertIn("sign_generic", FIXTURE_METADATA)
 
     def test_fixture_metadata_has_all_fields(self):
         for name, meta in FIXTURE_METADATA.items():
@@ -29,7 +32,7 @@ class TestRendererContract(unittest.TestCase):
                 self.assertEqual(len(meta.expected_sha256), 64)
                 self.assertGreater(meta.expected_bytes, 0)
                 self.assertGreater(meta.expected_lines, 0)
-                self.assertIn(meta.buffer_count, (2, 3))
+                self.assertIn(meta.buffer_count, (2, 3, 4))
 
     def test_golden_sha256_matches_git_blob(self):
         for name, meta in FIXTURE_METADATA.items():
@@ -68,7 +71,16 @@ class TestRendererContract(unittest.TestCase):
         path = os.path.join(*meta.s3_path.split("/"))
         with open(path) as f:
             source = f.read()
-        output = _capture_fixture_output(source, meta.buffer_count)
+        output = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
+        golden = _git_blob_bytes(meta.golden_path)
+        self.assertEqual(output, golden)
+
+    def test_capture_first_generic_matches_golden(self):
+        meta = FIXTURE_METADATA["first_generic"]
+        path = os.path.join(*meta.s3_path.split("/"))
+        with open(path) as f:
+            source = f.read()
+        output = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
         golden = _git_blob_bytes(meta.golden_path)
         self.assertEqual(output, golden)
 
@@ -77,7 +89,7 @@ class TestRendererContract(unittest.TestCase):
         path = os.path.join(*meta.s3_path.split("/"))
         with open(path) as f:
             source = f.read()
-        output = _capture_fixture_output(source, meta.buffer_count)
+        output = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions)
         golden = _git_blob_bytes(meta.golden_path)
         self.assertEqual(output, golden)
 
@@ -86,7 +98,16 @@ class TestRendererContract(unittest.TestCase):
         path = os.path.join(*meta.s3_path.split("/"))
         with open(path) as f:
             source = f.read()
-        output = _capture_fixture_output(source, meta.buffer_count)
+        output = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
+        golden = _git_blob_bytes(meta.golden_path)
+        self.assertEqual(output, golden)
+
+    def test_capture_sign_generic_matches_golden(self):
+        meta = FIXTURE_METADATA["sign_generic"]
+        path = os.path.join(*meta.s3_path.split("/"))
+        with open(path) as f:
+            source = f.read()
+        output = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
         golden = _git_blob_bytes(meta.golden_path)
         self.assertEqual(output, golden)
 
@@ -96,7 +117,7 @@ class TestRendererContract(unittest.TestCase):
                 path = os.path.join(*meta.s3_path.split("/"))
                 with open(path) as f:
                     source = f.read()
-                output = _capture_fixture_output(source, meta.buffer_count)
+                output = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
                 golden = _git_blob_bytes(meta.golden_path)
                 self.assertEqual(
                     output,
@@ -110,9 +131,60 @@ class TestRendererContract(unittest.TestCase):
                 path = os.path.join(*meta.s3_path.split("/"))
                 with open(path) as f:
                     source = f.read()
-                out1 = _capture_fixture_output(source, meta.buffer_count)
-                out2 = _capture_fixture_output(source, meta.buffer_count)
+                out1 = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
+                out2 = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
                 self.assertEqual(out1, out2)
+
+    def test_capture_trim_length(self):
+        for name, meta in FIXTURE_METADATA.items():
+            with self.subTest(fixture=name):
+                path = os.path.join(*meta.s3_path.split("/"))
+                with open(path) as f:
+                    source = f.read()
+                out = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
+                self.assertEqual(len(out), meta.expected_bytes)
+
+    def test_capture_preserves_zero_bytes(self):
+        """Verify internal zero bytes are preserved in captured output."""
+        memory = {0: [65, 0, 66, 67, 68]}
+        from tools.s3_renderer_contract import flatten_capture
+        out = flatten_capture(memory, buffer_count=1, buffer_offset=0, expected_bytes=5)
+        self.assertEqual(out, b"A\x00BCD")
+
+        out = flatten_capture(memory, buffer_count=1, buffer_offset=0, expected_bytes=3)
+        self.assertEqual(out, b"A\x00B")
+
+    def test_capture_empty_buffer_yields_no_output(self):
+        memory = {0: []}
+        from tools.s3_renderer_contract import flatten_capture
+        out = flatten_capture(memory, buffer_count=1, buffer_offset=0, expected_bytes=0)
+        self.assertEqual(out, b"")
+
+    def test_capture_preserves_buffer_order(self):
+        """Two buffers concatenate in order: buf0 then buf1."""
+        memory = {0: [65, 66], 1: [67, 68]}
+        from tools.s3_renderer_contract import flatten_capture
+        out = flatten_capture(memory, buffer_count=2, buffer_offset=0, expected_bytes=4)
+        self.assertEqual(out, b"ABCD")
+
+    def test_capture_truncates_expected_bytes(self):
+        memory = {0: [65, 66, 67, 68, 69]}
+        from tools.s3_renderer_contract import flatten_capture
+        out = flatten_capture(memory, buffer_count=1, buffer_offset=0, expected_bytes=3)
+        self.assertEqual(len(out), 3)
+        self.assertEqual(out, b"ABC")
+
+    def test_capture_rejects_internal_none(self):
+        memory = {0: [65, None, 66]}
+        from tools.s3_renderer_contract import flatten_capture
+        with self.assertRaisesRegex(ValueError, "insufficient data"):
+            flatten_capture(memory, buffer_count=1, buffer_offset=0, expected_bytes=3)
+
+    def test_capture_rejects_insufficient_data(self):
+        memory = {0: [65, 66]}
+        from tools.s3_renderer_contract import flatten_capture
+        with self.assertRaisesRegex(ValueError, "insufficient data: got 2, expected 3"):
+            flatten_capture(memory, buffer_count=1, buffer_offset=0, expected_bytes=3)
 
     def test_verify_fixture_metadata_passes(self):
         for name in FIXTURE_METADATA:
@@ -164,6 +236,14 @@ class TestRendererContract(unittest.TestCase):
             layout.buffer_names, ("buffer_low", "buffer_mid", "buffer_high")
         )
         self.assertEqual(layout.capacities, (364, 364, 218))
+
+    def test_sign_generic_buffer_layout(self):
+        layout = FIXTURE_METADATA["sign_generic"].buffer_layout
+        self.assertEqual(
+            layout.buffer_names,
+            ("buffer_low", "buffer_mid", "buffer_high", "buffer_tail"),
+        )
+        self.assertEqual(layout.capacities, (300, 300, 300, 46))
 
     def test_audit_reports_strategy(self):
         audit = audit_duplication()

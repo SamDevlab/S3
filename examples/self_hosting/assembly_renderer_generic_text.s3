@@ -1,0 +1,7656 @@
+# S3 Assembly Renderer - Generic Event-Driven Text Renderer (v0.41)
+# Iterates over events, writes bytes directly to dual buffers
+
+fn fragment_length(id: tryte) -> tryte:
+    match id <=> 1:
+        -1:
+            skip_fragment_length_1n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fragment_length_1p: tryte = 0
+    match id <=> 2:
+        -1:
+            skip_fragment_length_2n: tryte = 0
+        0:
+            return 9
+        1:
+            skip_fragment_length_2p: tryte = 0
+    match id <=> 3:
+        -1:
+            skip_fragment_length_3n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fragment_length_3p: tryte = 0
+    match id <=> 4:
+        -1:
+            skip_fragment_length_4n: tryte = 0
+        0:
+            return 9
+        1:
+            skip_fragment_length_4p: tryte = 0
+    match id <=> 5:
+        -1:
+            skip_fragment_length_5n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fragment_length_5p: tryte = 0
+    match id <=> 6:
+        -1:
+            skip_fragment_length_6n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fragment_length_6p: tryte = 0
+    match id <=> 7:
+        -1:
+            skip_fragment_length_7n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fragment_length_7p: tryte = 0
+    match id <=> 8:
+        -1:
+            skip_fragment_length_8n: tryte = 0
+        0:
+            return 9
+        1:
+            skip_fragment_length_8p: tryte = 0
+    match id <=> 11:
+        -1:
+            skip_fragment_length_11n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fragment_length_11p: tryte = 0
+    match id <=> 18:
+        -1:
+            skip_fragment_length_18n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fragment_length_18p: tryte = 0
+    match id <=> 19:
+        -1:
+            skip_fragment_length_19n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_fragment_length_19p: tryte = 0
+    match id <=> 20:
+        -1:
+            skip_fragment_length_20n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fragment_length_20p: tryte = 0
+    match id <=> 21:
+        -1:
+            skip_fragment_length_21n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fragment_length_21p: tryte = 0
+    return 0
+
+fn fragment_byte(id: tryte, idx: tryte) -> tryte:
+    match id <=> 1:
+        -1:
+            skip_fragment_byte_1n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_fragment_byte_1_0n: tryte = 0
+                0:
+                    return 46
+                1:
+                    skip_fragment_byte_1_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_fragment_byte_1_1n: tryte = 0
+                0:
+                    return 115
+                1:
+                    skip_fragment_byte_1_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_fragment_byte_1_2n: tryte = 0
+                0:
+                    return 51
+                1:
+                    skip_fragment_byte_1_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_fragment_byte_1_3n: tryte = 0
+                0:
+                    return 97
+                1:
+                    skip_fragment_byte_1_3p: tryte = 0
+            match idx <=> 4:
+                -1:
+                    skip_fragment_byte_1_4n: tryte = 0
+                0:
+                    return 115
+                1:
+                    skip_fragment_byte_1_4p: tryte = 0
+            match idx <=> 5:
+                -1:
+                    skip_fragment_byte_1_5n: tryte = 0
+                0:
+                    return 109
+                1:
+                    skip_fragment_byte_1_5p: tryte = 0
+            return 0
+        1:
+            skip_fragment_byte_1p: tryte = 0
+    match id <=> 2:
+        -1:
+            skip_fragment_byte_2n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_fragment_byte_2_0n: tryte = 0
+                0:
+                    return 46
+                1:
+                    skip_fragment_byte_2_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_fragment_byte_2_1n: tryte = 0
+                0:
+                    return 102
+                1:
+                    skip_fragment_byte_2_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_fragment_byte_2_2n: tryte = 0
+                0:
+                    return 117
+                1:
+                    skip_fragment_byte_2_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_fragment_byte_2_3n: tryte = 0
+                0:
+                    return 110
+                1:
+                    skip_fragment_byte_2_3p: tryte = 0
+            match idx <=> 4:
+                -1:
+                    skip_fragment_byte_2_4n: tryte = 0
+                0:
+                    return 99
+                1:
+                    skip_fragment_byte_2_4p: tryte = 0
+            match idx <=> 5:
+                -1:
+                    skip_fragment_byte_2_5n: tryte = 0
+                0:
+                    return 116
+                1:
+                    skip_fragment_byte_2_5p: tryte = 0
+            match idx <=> 6:
+                -1:
+                    skip_fragment_byte_2_6n: tryte = 0
+                0:
+                    return 105
+                1:
+                    skip_fragment_byte_2_6p: tryte = 0
+            match idx <=> 7:
+                -1:
+                    skip_fragment_byte_2_7n: tryte = 0
+                0:
+                    return 111
+                1:
+                    skip_fragment_byte_2_7p: tryte = 0
+            match idx <=> 8:
+                -1:
+                    skip_fragment_byte_2_8n: tryte = 0
+                0:
+                    return 110
+                1:
+                    skip_fragment_byte_2_8p: tryte = 0
+            return 0
+        1:
+            skip_fragment_byte_2p: tryte = 0
+    match id <=> 3:
+        -1:
+            skip_fragment_byte_3n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_fragment_byte_3_0n: tryte = 0
+                0:
+                    return 46
+                1:
+                    skip_fragment_byte_3_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_fragment_byte_3_1n: tryte = 0
+                0:
+                    return 112
+                1:
+                    skip_fragment_byte_3_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_fragment_byte_3_2n: tryte = 0
+                0:
+                    return 97
+                1:
+                    skip_fragment_byte_3_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_fragment_byte_3_3n: tryte = 0
+                0:
+                    return 114
+                1:
+                    skip_fragment_byte_3_3p: tryte = 0
+            match idx <=> 4:
+                -1:
+                    skip_fragment_byte_3_4n: tryte = 0
+                0:
+                    return 97
+                1:
+                    skip_fragment_byte_3_4p: tryte = 0
+            match idx <=> 5:
+                -1:
+                    skip_fragment_byte_3_5n: tryte = 0
+                0:
+                    return 109
+                1:
+                    skip_fragment_byte_3_5p: tryte = 0
+            return 0
+        1:
+            skip_fragment_byte_3p: tryte = 0
+    match id <=> 4:
+        -1:
+            skip_fragment_byte_4n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_fragment_byte_4_0n: tryte = 0
+                0:
+                    return 46
+                1:
+                    skip_fragment_byte_4_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_fragment_byte_4_1n: tryte = 0
+                0:
+                    return 114
+                1:
+                    skip_fragment_byte_4_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_fragment_byte_4_2n: tryte = 0
+                0:
+                    return 101
+                1:
+                    skip_fragment_byte_4_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_fragment_byte_4_3n: tryte = 0
+                0:
+                    return 103
+                1:
+                    skip_fragment_byte_4_3p: tryte = 0
+            match idx <=> 4:
+                -1:
+                    skip_fragment_byte_4_4n: tryte = 0
+                0:
+                    return 105
+                1:
+                    skip_fragment_byte_4_4p: tryte = 0
+            match idx <=> 5:
+                -1:
+                    skip_fragment_byte_4_5n: tryte = 0
+                0:
+                    return 115
+                1:
+                    skip_fragment_byte_4_5p: tryte = 0
+            match idx <=> 6:
+                -1:
+                    skip_fragment_byte_4_6n: tryte = 0
+                0:
+                    return 116
+                1:
+                    skip_fragment_byte_4_6p: tryte = 0
+            match idx <=> 7:
+                -1:
+                    skip_fragment_byte_4_7n: tryte = 0
+                0:
+                    return 101
+                1:
+                    skip_fragment_byte_4_7p: tryte = 0
+            match idx <=> 8:
+                -1:
+                    skip_fragment_byte_4_8n: tryte = 0
+                0:
+                    return 114
+                1:
+                    skip_fragment_byte_4_8p: tryte = 0
+            return 0
+        1:
+            skip_fragment_byte_4p: tryte = 0
+    match id <=> 5:
+        -1:
+            skip_fragment_byte_5n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_fragment_byte_5_0n: tryte = 0
+                0:
+                    return 46
+                1:
+                    skip_fragment_byte_5_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_fragment_byte_5_1n: tryte = 0
+                0:
+                    return 108
+                1:
+                    skip_fragment_byte_5_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_fragment_byte_5_2n: tryte = 0
+                0:
+                    return 97
+                1:
+                    skip_fragment_byte_5_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_fragment_byte_5_3n: tryte = 0
+                0:
+                    return 98
+                1:
+                    skip_fragment_byte_5_3p: tryte = 0
+            match idx <=> 4:
+                -1:
+                    skip_fragment_byte_5_4n: tryte = 0
+                0:
+                    return 101
+                1:
+                    skip_fragment_byte_5_4p: tryte = 0
+            match idx <=> 5:
+                -1:
+                    skip_fragment_byte_5_5n: tryte = 0
+                0:
+                    return 108
+                1:
+                    skip_fragment_byte_5_5p: tryte = 0
+            return 0
+        1:
+            skip_fragment_byte_5p: tryte = 0
+    match id <=> 6:
+        -1:
+            skip_fragment_byte_6n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_fragment_byte_6_0n: tryte = 0
+                0:
+                    return 46
+                1:
+                    skip_fragment_byte_6_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_fragment_byte_6_1n: tryte = 0
+                0:
+                    return 101
+                1:
+                    skip_fragment_byte_6_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_fragment_byte_6_2n: tryte = 0
+                0:
+                    return 110
+                1:
+                    skip_fragment_byte_6_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_fragment_byte_6_3n: tryte = 0
+                0:
+                    return 100
+                1:
+                    skip_fragment_byte_6_3p: tryte = 0
+            return 0
+        1:
+            skip_fragment_byte_6p: tryte = 0
+    match id <=> 7:
+        -1:
+            skip_fragment_byte_7n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_fragment_byte_7_0n: tryte = 0
+                0:
+                    return 48
+                1:
+                    skip_fragment_byte_7_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_fragment_byte_7_1n: tryte = 0
+                0:
+                    return 46
+                1:
+                    skip_fragment_byte_7_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_fragment_byte_7_2n: tryte = 0
+                0:
+                    return 53
+                1:
+                    skip_fragment_byte_7_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_fragment_byte_7_3n: tryte = 0
+                0:
+                    return 46
+                1:
+                    skip_fragment_byte_7_3p: tryte = 0
+            match idx <=> 4:
+                -1:
+                    skip_fragment_byte_7_4n: tryte = 0
+                0:
+                    return 48
+                1:
+                    skip_fragment_byte_7_4p: tryte = 0
+            return 0
+        1:
+            skip_fragment_byte_7p: tryte = 0
+    match id <=> 8:
+        -1:
+            skip_fragment_byte_8n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_fragment_byte_8_0n: tryte = 0
+                0:
+                    return 59
+                1:
+                    skip_fragment_byte_8_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_fragment_byte_8_1n: tryte = 0
+                0:
+                    return 32
+                1:
+                    skip_fragment_byte_8_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_fragment_byte_8_2n: tryte = 0
+                0:
+                    return 115
+                1:
+                    skip_fragment_byte_8_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_fragment_byte_8_3n: tryte = 0
+                0:
+                    return 111
+                1:
+                    skip_fragment_byte_8_3p: tryte = 0
+            match idx <=> 4:
+                -1:
+                    skip_fragment_byte_8_4n: tryte = 0
+                0:
+                    return 117
+                1:
+                    skip_fragment_byte_8_4p: tryte = 0
+            match idx <=> 5:
+                -1:
+                    skip_fragment_byte_8_5n: tryte = 0
+                0:
+                    return 114
+                1:
+                    skip_fragment_byte_8_5p: tryte = 0
+            match idx <=> 6:
+                -1:
+                    skip_fragment_byte_8_6n: tryte = 0
+                0:
+                    return 99
+                1:
+                    skip_fragment_byte_8_6p: tryte = 0
+            match idx <=> 7:
+                -1:
+                    skip_fragment_byte_8_7n: tryte = 0
+                0:
+                    return 101
+                1:
+                    skip_fragment_byte_8_7p: tryte = 0
+            match idx <=> 8:
+                -1:
+                    skip_fragment_byte_8_8n: tryte = 0
+                0:
+                    return 61
+                1:
+                    skip_fragment_byte_8_8p: tryte = 0
+            return 0
+        1:
+            skip_fragment_byte_8p: tryte = 0
+    match id <=> 11:
+        -1:
+            skip_fragment_byte_11n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_fragment_byte_11_0n: tryte = 0
+                0:
+                    return 116
+                1:
+                    skip_fragment_byte_11_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_fragment_byte_11_1n: tryte = 0
+                0:
+                    return 114
+                1:
+                    skip_fragment_byte_11_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_fragment_byte_11_2n: tryte = 0
+                0:
+                    return 121
+                1:
+                    skip_fragment_byte_11_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_fragment_byte_11_3n: tryte = 0
+                0:
+                    return 116
+                1:
+                    skip_fragment_byte_11_3p: tryte = 0
+            match idx <=> 4:
+                -1:
+                    skip_fragment_byte_11_4n: tryte = 0
+                0:
+                    return 101
+                1:
+                    skip_fragment_byte_11_4p: tryte = 0
+            return 0
+        1:
+            skip_fragment_byte_11p: tryte = 0
+    match id <=> 18:
+        -1:
+            skip_fragment_byte_18n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_fragment_byte_18_0n: tryte = 0
+                0:
+                    return 46
+                1:
+                    skip_fragment_byte_18_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_fragment_byte_18_1n: tryte = 0
+                0:
+                    return 115
+                1:
+                    skip_fragment_byte_18_1p: tryte = 0
+            return 0
+        1:
+            skip_fragment_byte_18p: tryte = 0
+    match id <=> 19:
+        -1:
+            skip_fragment_byte_19n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_fragment_byte_19_0n: tryte = 0
+                0:
+                    return 97
+                1:
+                    skip_fragment_byte_19_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_fragment_byte_19_1n: tryte = 0
+                0:
+                    return 115
+                1:
+                    skip_fragment_byte_19_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_fragment_byte_19_2n: tryte = 0
+                0:
+                    return 109
+                1:
+                    skip_fragment_byte_19_2p: tryte = 0
+            return 0
+        1:
+            skip_fragment_byte_19p: tryte = 0
+    match id <=> 20:
+        -1:
+            skip_fragment_byte_20n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_fragment_byte_20_0n: tryte = 0
+                0:
+                    return 46
+                1:
+                    skip_fragment_byte_20_0p: tryte = 0
+            return 0
+        1:
+            skip_fragment_byte_20p: tryte = 0
+    match id <=> 21:
+        -1:
+            skip_fragment_byte_21n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_fragment_byte_21_0n: tryte = 0
+                0:
+                    return 116
+                1:
+                    skip_fragment_byte_21_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_fragment_byte_21_1n: tryte = 0
+                0:
+                    return 114
+                1:
+                    skip_fragment_byte_21_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_fragment_byte_21_2n: tryte = 0
+                0:
+                    return 105
+                1:
+                    skip_fragment_byte_21_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_fragment_byte_21_3n: tryte = 0
+                0:
+                    return 116
+                1:
+                    skip_fragment_byte_21_3p: tryte = 0
+            return 0
+        1:
+            skip_fragment_byte_21p: tryte = 0
+    return 0
+
+fn symbol_length(id: tryte) -> tryte:
+    match id <=> 1:
+        -1:
+            skip_symbol_length_0n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_symbol_length_0p: tryte = 0
+    match id <=> 2:
+        -1:
+            skip_symbol_length_1n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_symbol_length_1p: tryte = 0
+    match id <=> 3:
+        -1:
+            skip_symbol_length_2n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_symbol_length_2p: tryte = 0
+    match id <=> 4:
+        -1:
+            skip_symbol_length_3n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_symbol_length_3p: tryte = 0
+    match id <=> 5:
+        -1:
+            skip_symbol_length_4n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_symbol_length_4p: tryte = 0
+    match id <=> 6:
+        -1:
+            skip_symbol_length_5n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_symbol_length_5p: tryte = 0
+    match id <=> 7:
+        -1:
+            skip_symbol_length_6n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_symbol_length_6p: tryte = 0
+    match id <=> 8:
+        -1:
+            skip_symbol_length_7n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_symbol_length_7p: tryte = 0
+    match id <=> 9:
+        -1:
+            skip_symbol_length_8n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_symbol_length_8p: tryte = 0
+    match id <=> 10:
+        -1:
+            skip_symbol_length_9n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_symbol_length_9p: tryte = 0
+    match id <=> 11:
+        -1:
+            skip_symbol_length_10n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_symbol_length_10p: tryte = 0
+    match id <=> 12:
+        -1:
+            skip_symbol_length_11n: tryte = 0
+        0:
+            return 17
+        1:
+            skip_symbol_length_11p: tryte = 0
+    match id <=> 13:
+        -1:
+            skip_symbol_length_12n: tryte = 0
+        0:
+            return 16
+        1:
+            skip_symbol_length_12p: tryte = 0
+    match id <=> 14:
+        -1:
+            skip_symbol_length_13n: tryte = 0
+        0:
+            return 17
+        1:
+            skip_symbol_length_13p: tryte = 0
+    return 0
+
+fn symbol_byte(id: tryte, idx: tryte) -> tryte:
+    match id <=> 1:
+        -1:
+            skip_symbol_byte_0n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_symbol_byte_0_0n: tryte = 0
+                0:
+                    return 109
+                1:
+                    skip_symbol_byte_0_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_symbol_byte_0_1n: tryte = 0
+                0:
+                    return 97
+                1:
+                    skip_symbol_byte_0_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_symbol_byte_0_2n: tryte = 0
+                0:
+                    return 105
+                1:
+                    skip_symbol_byte_0_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_symbol_byte_0_3n: tryte = 0
+                0:
+                    return 110
+                1:
+                    skip_symbol_byte_0_3p: tryte = 0
+            return 0
+        1:
+            skip_symbol_byte_0p: tryte = 0
+    match id <=> 2:
+        -1:
+            skip_symbol_byte_1n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_symbol_byte_1_0n: tryte = 0
+                0:
+                    return 101
+                1:
+                    skip_symbol_byte_1_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_symbol_byte_1_1n: tryte = 0
+                0:
+                    return 110
+                1:
+                    skip_symbol_byte_1_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_symbol_byte_1_2n: tryte = 0
+                0:
+                    return 116
+                1:
+                    skip_symbol_byte_1_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_symbol_byte_1_3n: tryte = 0
+                0:
+                    return 114
+                1:
+                    skip_symbol_byte_1_3p: tryte = 0
+            match idx <=> 4:
+                -1:
+                    skip_symbol_byte_1_4n: tryte = 0
+                0:
+                    return 121
+                1:
+                    skip_symbol_byte_1_4p: tryte = 0
+            return 0
+        1:
+            skip_symbol_byte_1p: tryte = 0
+    match id <=> 3:
+        -1:
+            skip_symbol_byte_2n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_symbol_byte_2_0n: tryte = 0
+                0:
+                    return 114
+                1:
+                    skip_symbol_byte_2_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_symbol_byte_2_1n: tryte = 0
+                0:
+                    return 48
+                1:
+                    skip_symbol_byte_2_1p: tryte = 0
+            return 0
+        1:
+            skip_symbol_byte_2p: tryte = 0
+    match id <=> 4:
+        -1:
+            skip_symbol_byte_3n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_symbol_byte_3_0n: tryte = 0
+                0:
+                    return 114
+                1:
+                    skip_symbol_byte_3_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_symbol_byte_3_1n: tryte = 0
+                0:
+                    return 49
+                1:
+                    skip_symbol_byte_3_1p: tryte = 0
+            return 0
+        1:
+            skip_symbol_byte_3p: tryte = 0
+    match id <=> 5:
+        -1:
+            skip_symbol_byte_4n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_symbol_byte_4_0n: tryte = 0
+                0:
+                    return 114
+                1:
+                    skip_symbol_byte_4_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_symbol_byte_4_1n: tryte = 0
+                0:
+                    return 50
+                1:
+                    skip_symbol_byte_4_1p: tryte = 0
+            return 0
+        1:
+            skip_symbol_byte_4p: tryte = 0
+    match id <=> 6:
+        -1:
+            skip_symbol_byte_5n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_symbol_byte_5_0n: tryte = 0
+                0:
+                    return 114
+                1:
+                    skip_symbol_byte_5_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_symbol_byte_5_1n: tryte = 0
+                0:
+                    return 51
+                1:
+                    skip_symbol_byte_5_1p: tryte = 0
+            return 0
+        1:
+            skip_symbol_byte_5p: tryte = 0
+    match id <=> 7:
+        -1:
+            skip_symbol_byte_6n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_symbol_byte_6_0n: tryte = 0
+                0:
+                    return 114
+                1:
+                    skip_symbol_byte_6_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_symbol_byte_6_1n: tryte = 0
+                0:
+                    return 52
+                1:
+                    skip_symbol_byte_6_1p: tryte = 0
+            return 0
+        1:
+            skip_symbol_byte_6p: tryte = 0
+    match id <=> 8:
+        -1:
+            skip_symbol_byte_7n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_symbol_byte_7_0n: tryte = 0
+                0:
+                    return 114
+                1:
+                    skip_symbol_byte_7_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_symbol_byte_7_1n: tryte = 0
+                0:
+                    return 53
+                1:
+                    skip_symbol_byte_7_1p: tryte = 0
+            return 0
+        1:
+            skip_symbol_byte_7p: tryte = 0
+    match id <=> 9:
+        -1:
+            skip_symbol_byte_8n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_symbol_byte_8_0n: tryte = 0
+                0:
+                    return 97
+                1:
+                    skip_symbol_byte_8_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_symbol_byte_8_1n: tryte = 0
+                0:
+                    return 100
+                1:
+                    skip_symbol_byte_8_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_symbol_byte_8_2n: tryte = 0
+                0:
+                    return 100
+                1:
+                    skip_symbol_byte_8_2p: tryte = 0
+            return 0
+        1:
+            skip_symbol_byte_8p: tryte = 0
+    match id <=> 10:
+        -1:
+            skip_symbol_byte_9n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_symbol_byte_9_0n: tryte = 0
+                0:
+                    return 115
+                1:
+                    skip_symbol_byte_9_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_symbol_byte_9_1n: tryte = 0
+                0:
+                    return 105
+                1:
+                    skip_symbol_byte_9_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_symbol_byte_9_2n: tryte = 0
+                0:
+                    return 103
+                1:
+                    skip_symbol_byte_9_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_symbol_byte_9_3n: tryte = 0
+                0:
+                    return 110
+                1:
+                    skip_symbol_byte_9_3p: tryte = 0
+            return 0
+        1:
+            skip_symbol_byte_9p: tryte = 0
+    match id <=> 11:
+        -1:
+            skip_symbol_byte_10n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_symbol_byte_10_0n: tryte = 0
+                0:
+                    return 114
+                1:
+                    skip_symbol_byte_10_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_symbol_byte_10_1n: tryte = 0
+                0:
+                    return 54
+                1:
+                    skip_symbol_byte_10_1p: tryte = 0
+            return 0
+        1:
+            skip_symbol_byte_10p: tryte = 0
+    match id <=> 12:
+        -1:
+            skip_symbol_byte_11n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_symbol_byte_11_0n: tryte = 0
+                0:
+                    return 115
+                1:
+                    skip_symbol_byte_11_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_symbol_byte_11_1n: tryte = 0
+                0:
+                    return 119
+                1:
+                    skip_symbol_byte_11_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_symbol_byte_11_2n: tryte = 0
+                0:
+                    return 105
+                1:
+                    skip_symbol_byte_11_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_symbol_byte_11_3n: tryte = 0
+                0:
+                    return 116
+                1:
+                    skip_symbol_byte_11_3p: tryte = 0
+            match idx <=> 4:
+                -1:
+                    skip_symbol_byte_11_4n: tryte = 0
+                0:
+                    return 99
+                1:
+                    skip_symbol_byte_11_4p: tryte = 0
+            match idx <=> 5:
+                -1:
+                    skip_symbol_byte_11_5n: tryte = 0
+                0:
+                    return 104
+                1:
+                    skip_symbol_byte_11_5p: tryte = 0
+            match idx <=> 6:
+                -1:
+                    skip_symbol_byte_11_6n: tryte = 0
+                0:
+                    return 95
+                1:
+                    skip_symbol_byte_11_6p: tryte = 0
+            match idx <=> 7:
+                -1:
+                    skip_symbol_byte_11_7n: tryte = 0
+                0:
+                    return 110
+                1:
+                    skip_symbol_byte_11_7p: tryte = 0
+            match idx <=> 8:
+                -1:
+                    skip_symbol_byte_11_8n: tryte = 0
+                0:
+                    return 101
+                1:
+                    skip_symbol_byte_11_8p: tryte = 0
+            match idx <=> 9:
+                -1:
+                    skip_symbol_byte_11_9n: tryte = 0
+                0:
+                    return 103
+                1:
+                    skip_symbol_byte_11_9p: tryte = 0
+            match idx <=> 10:
+                -1:
+                    skip_symbol_byte_11_10n: tryte = 0
+                0:
+                    return 97
+                1:
+                    skip_symbol_byte_11_10p: tryte = 0
+            match idx <=> 11:
+                -1:
+                    skip_symbol_byte_11_11n: tryte = 0
+                0:
+                    return 116
+                1:
+                    skip_symbol_byte_11_11p: tryte = 0
+            match idx <=> 12:
+                -1:
+                    skip_symbol_byte_11_12n: tryte = 0
+                0:
+                    return 105
+                1:
+                    skip_symbol_byte_11_12p: tryte = 0
+            match idx <=> 13:
+                -1:
+                    skip_symbol_byte_11_13n: tryte = 0
+                0:
+                    return 118
+                1:
+                    skip_symbol_byte_11_13p: tryte = 0
+            match idx <=> 14:
+                -1:
+                    skip_symbol_byte_11_14n: tryte = 0
+                0:
+                    return 101
+                1:
+                    skip_symbol_byte_11_14p: tryte = 0
+            match idx <=> 15:
+                -1:
+                    skip_symbol_byte_11_15n: tryte = 0
+                0:
+                    return 95
+                1:
+                    skip_symbol_byte_11_15p: tryte = 0
+            match idx <=> 16:
+                -1:
+                    skip_symbol_byte_11_16n: tryte = 0
+                0:
+                    return 48
+                1:
+                    skip_symbol_byte_11_16p: tryte = 0
+            return 0
+        1:
+            skip_symbol_byte_11p: tryte = 0
+    match id <=> 13:
+        -1:
+            skip_symbol_byte_12n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_symbol_byte_12_0n: tryte = 0
+                0:
+                    return 115
+                1:
+                    skip_symbol_byte_12_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_symbol_byte_12_1n: tryte = 0
+                0:
+                    return 119
+                1:
+                    skip_symbol_byte_12_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_symbol_byte_12_2n: tryte = 0
+                0:
+                    return 105
+                1:
+                    skip_symbol_byte_12_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_symbol_byte_12_3n: tryte = 0
+                0:
+                    return 116
+                1:
+                    skip_symbol_byte_12_3p: tryte = 0
+            match idx <=> 4:
+                -1:
+                    skip_symbol_byte_12_4n: tryte = 0
+                0:
+                    return 99
+                1:
+                    skip_symbol_byte_12_4p: tryte = 0
+            match idx <=> 5:
+                -1:
+                    skip_symbol_byte_12_5n: tryte = 0
+                0:
+                    return 104
+                1:
+                    skip_symbol_byte_12_5p: tryte = 0
+            match idx <=> 6:
+                -1:
+                    skip_symbol_byte_12_6n: tryte = 0
+                0:
+                    return 95
+                1:
+                    skip_symbol_byte_12_6p: tryte = 0
+            match idx <=> 7:
+                -1:
+                    skip_symbol_byte_12_7n: tryte = 0
+                0:
+                    return 110
+                1:
+                    skip_symbol_byte_12_7p: tryte = 0
+            match idx <=> 8:
+                -1:
+                    skip_symbol_byte_12_8n: tryte = 0
+                0:
+                    return 101
+                1:
+                    skip_symbol_byte_12_8p: tryte = 0
+            match idx <=> 9:
+                -1:
+                    skip_symbol_byte_12_9n: tryte = 0
+                0:
+                    return 117
+                1:
+                    skip_symbol_byte_12_9p: tryte = 0
+            match idx <=> 10:
+                -1:
+                    skip_symbol_byte_12_10n: tryte = 0
+                0:
+                    return 116
+                1:
+                    skip_symbol_byte_12_10p: tryte = 0
+            match idx <=> 11:
+                -1:
+                    skip_symbol_byte_12_11n: tryte = 0
+                0:
+                    return 114
+                1:
+                    skip_symbol_byte_12_11p: tryte = 0
+            match idx <=> 12:
+                -1:
+                    skip_symbol_byte_12_12n: tryte = 0
+                0:
+                    return 97
+                1:
+                    skip_symbol_byte_12_12p: tryte = 0
+            match idx <=> 13:
+                -1:
+                    skip_symbol_byte_12_13n: tryte = 0
+                0:
+                    return 108
+                1:
+                    skip_symbol_byte_12_13p: tryte = 0
+            match idx <=> 14:
+                -1:
+                    skip_symbol_byte_12_14n: tryte = 0
+                0:
+                    return 95
+                1:
+                    skip_symbol_byte_12_14p: tryte = 0
+            match idx <=> 15:
+                -1:
+                    skip_symbol_byte_12_15n: tryte = 0
+                0:
+                    return 49
+                1:
+                    skip_symbol_byte_12_15p: tryte = 0
+            return 0
+        1:
+            skip_symbol_byte_12p: tryte = 0
+    match id <=> 14:
+        -1:
+            skip_symbol_byte_13n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_symbol_byte_13_0n: tryte = 0
+                0:
+                    return 115
+                1:
+                    skip_symbol_byte_13_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_symbol_byte_13_1n: tryte = 0
+                0:
+                    return 119
+                1:
+                    skip_symbol_byte_13_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_symbol_byte_13_2n: tryte = 0
+                0:
+                    return 105
+                1:
+                    skip_symbol_byte_13_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_symbol_byte_13_3n: tryte = 0
+                0:
+                    return 116
+                1:
+                    skip_symbol_byte_13_3p: tryte = 0
+            match idx <=> 4:
+                -1:
+                    skip_symbol_byte_13_4n: tryte = 0
+                0:
+                    return 99
+                1:
+                    skip_symbol_byte_13_4p: tryte = 0
+            match idx <=> 5:
+                -1:
+                    skip_symbol_byte_13_5n: tryte = 0
+                0:
+                    return 104
+                1:
+                    skip_symbol_byte_13_5p: tryte = 0
+            match idx <=> 6:
+                -1:
+                    skip_symbol_byte_13_6n: tryte = 0
+                0:
+                    return 95
+                1:
+                    skip_symbol_byte_13_6p: tryte = 0
+            match idx <=> 7:
+                -1:
+                    skip_symbol_byte_13_7n: tryte = 0
+                0:
+                    return 112
+                1:
+                    skip_symbol_byte_13_7p: tryte = 0
+            match idx <=> 8:
+                -1:
+                    skip_symbol_byte_13_8n: tryte = 0
+                0:
+                    return 111
+                1:
+                    skip_symbol_byte_13_8p: tryte = 0
+            match idx <=> 9:
+                -1:
+                    skip_symbol_byte_13_9n: tryte = 0
+                0:
+                    return 115
+                1:
+                    skip_symbol_byte_13_9p: tryte = 0
+            match idx <=> 10:
+                -1:
+                    skip_symbol_byte_13_10n: tryte = 0
+                0:
+                    return 105
+                1:
+                    skip_symbol_byte_13_10p: tryte = 0
+            match idx <=> 11:
+                -1:
+                    skip_symbol_byte_13_11n: tryte = 0
+                0:
+                    return 116
+                1:
+                    skip_symbol_byte_13_11p: tryte = 0
+            match idx <=> 12:
+                -1:
+                    skip_symbol_byte_13_12n: tryte = 0
+                0:
+                    return 105
+                1:
+                    skip_symbol_byte_13_12p: tryte = 0
+            match idx <=> 13:
+                -1:
+                    skip_symbol_byte_13_13n: tryte = 0
+                0:
+                    return 118
+                1:
+                    skip_symbol_byte_13_13p: tryte = 0
+            match idx <=> 14:
+                -1:
+                    skip_symbol_byte_13_14n: tryte = 0
+                0:
+                    return 101
+                1:
+                    skip_symbol_byte_13_14p: tryte = 0
+            match idx <=> 15:
+                -1:
+                    skip_symbol_byte_13_15n: tryte = 0
+                0:
+                    return 95
+                1:
+                    skip_symbol_byte_13_15p: tryte = 0
+            match idx <=> 16:
+                -1:
+                    skip_symbol_byte_13_16n: tryte = 0
+                0:
+                    return 50
+                1:
+                    skip_symbol_byte_13_16p: tryte = 0
+            return 0
+        1:
+            skip_symbol_byte_13p: tryte = 0
+    return 0
+
+fn opcode_length(id: tryte) -> tryte:
+    match id <=> 100:
+        -1:
+            skip_opcode_length_0n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_opcode_length_0p: tryte = 0
+    match id <=> 101:
+        -1:
+            skip_opcode_length_1n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_opcode_length_1p: tryte = 0
+    match id <=> 102:
+        -1:
+            skip_opcode_length_2n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_opcode_length_2p: tryte = 0
+    match id <=> 103:
+        -1:
+            skip_opcode_length_3n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_opcode_length_3p: tryte = 0
+    match id <=> 104:
+        -1:
+            skip_opcode_length_4n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_opcode_length_4p: tryte = 0
+    match id <=> 105:
+        -1:
+            skip_opcode_length_5n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_opcode_length_5p: tryte = 0
+    match id <=> 106:
+        -1:
+            skip_opcode_length_6n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_opcode_length_6p: tryte = 0
+    match id <=> 107:
+        -1:
+            skip_opcode_length_7n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_opcode_length_7p: tryte = 0
+    return 0
+
+fn opcode_byte(id: tryte, idx: tryte) -> tryte:
+    match id <=> 100:
+        -1:
+            skip_opcode_byte_0n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_opcode_byte_0_0n: tryte = 0
+                0:
+                    return 84
+                1:
+                    skip_opcode_byte_0_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_opcode_byte_0_1n: tryte = 0
+                0:
+                    return 67
+                1:
+                    skip_opcode_byte_0_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_opcode_byte_0_2n: tryte = 0
+                0:
+                    return 79
+                1:
+                    skip_opcode_byte_0_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_opcode_byte_0_3n: tryte = 0
+                0:
+                    return 78
+                1:
+                    skip_opcode_byte_0_3p: tryte = 0
+            match idx <=> 4:
+                -1:
+                    skip_opcode_byte_0_4n: tryte = 0
+                0:
+                    return 83
+                1:
+                    skip_opcode_byte_0_4p: tryte = 0
+            match idx <=> 5:
+                -1:
+                    skip_opcode_byte_0_5n: tryte = 0
+                0:
+                    return 84
+                1:
+                    skip_opcode_byte_0_5p: tryte = 0
+            return 0
+        1:
+            skip_opcode_byte_0p: tryte = 0
+    match id <=> 101:
+        -1:
+            skip_opcode_byte_1n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_opcode_byte_1_0n: tryte = 0
+                0:
+                    return 84
+                1:
+                    skip_opcode_byte_1_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_opcode_byte_1_1n: tryte = 0
+                0:
+                    return 77
+                1:
+                    skip_opcode_byte_1_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_opcode_byte_1_2n: tryte = 0
+                0:
+                    return 79
+                1:
+                    skip_opcode_byte_1_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_opcode_byte_1_3n: tryte = 0
+                0:
+                    return 86
+                1:
+                    skip_opcode_byte_1_3p: tryte = 0
+            return 0
+        1:
+            skip_opcode_byte_1p: tryte = 0
+    match id <=> 102:
+        -1:
+            skip_opcode_byte_2n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_opcode_byte_2_0n: tryte = 0
+                0:
+                    return 84
+                1:
+                    skip_opcode_byte_2_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_opcode_byte_2_1n: tryte = 0
+                0:
+                    return 73
+                1:
+                    skip_opcode_byte_2_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_opcode_byte_2_2n: tryte = 0
+                0:
+                    return 78
+                1:
+                    skip_opcode_byte_2_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_opcode_byte_2_3n: tryte = 0
+                0:
+                    return 86
+                1:
+                    skip_opcode_byte_2_3p: tryte = 0
+            return 0
+        1:
+            skip_opcode_byte_2p: tryte = 0
+    match id <=> 103:
+        -1:
+            skip_opcode_byte_3n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_opcode_byte_3_0n: tryte = 0
+                0:
+                    return 84
+                1:
+                    skip_opcode_byte_3_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_opcode_byte_3_1n: tryte = 0
+                0:
+                    return 65
+                1:
+                    skip_opcode_byte_3_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_opcode_byte_3_2n: tryte = 0
+                0:
+                    return 68
+                1:
+                    skip_opcode_byte_3_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_opcode_byte_3_3n: tryte = 0
+                0:
+                    return 68
+                1:
+                    skip_opcode_byte_3_3p: tryte = 0
+            return 0
+        1:
+            skip_opcode_byte_3p: tryte = 0
+    match id <=> 104:
+        -1:
+            skip_opcode_byte_4n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_opcode_byte_4_0n: tryte = 0
+                0:
+                    return 84
+                1:
+                    skip_opcode_byte_4_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_opcode_byte_4_1n: tryte = 0
+                0:
+                    return 82
+                1:
+                    skip_opcode_byte_4_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_opcode_byte_4_2n: tryte = 0
+                0:
+                    return 69
+                1:
+                    skip_opcode_byte_4_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_opcode_byte_4_3n: tryte = 0
+                0:
+                    return 84
+                1:
+                    skip_opcode_byte_4_3p: tryte = 0
+            return 0
+        1:
+            skip_opcode_byte_4p: tryte = 0
+    match id <=> 105:
+        -1:
+            skip_opcode_byte_5n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_opcode_byte_5_0n: tryte = 0
+                0:
+                    return 84
+                1:
+                    skip_opcode_byte_5_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_opcode_byte_5_1n: tryte = 0
+                0:
+                    return 67
+                1:
+                    skip_opcode_byte_5_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_opcode_byte_5_2n: tryte = 0
+                0:
+                    return 65
+                1:
+                    skip_opcode_byte_5_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_opcode_byte_5_3n: tryte = 0
+                0:
+                    return 76
+                1:
+                    skip_opcode_byte_5_3p: tryte = 0
+            match idx <=> 4:
+                -1:
+                    skip_opcode_byte_5_4n: tryte = 0
+                0:
+                    return 76
+                1:
+                    skip_opcode_byte_5_4p: tryte = 0
+            return 0
+        1:
+            skip_opcode_byte_5p: tryte = 0
+    match id <=> 106:
+        -1:
+            skip_opcode_byte_6n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_opcode_byte_6_0n: tryte = 0
+                0:
+                    return 84
+                1:
+                    skip_opcode_byte_6_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_opcode_byte_6_1n: tryte = 0
+                0:
+                    return 67
+                1:
+                    skip_opcode_byte_6_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_opcode_byte_6_2n: tryte = 0
+                0:
+                    return 77
+                1:
+                    skip_opcode_byte_6_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_opcode_byte_6_3n: tryte = 0
+                0:
+                    return 80
+                1:
+                    skip_opcode_byte_6_3p: tryte = 0
+            return 0
+        1:
+            skip_opcode_byte_6p: tryte = 0
+    match id <=> 107:
+        -1:
+            skip_opcode_byte_7n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    skip_opcode_byte_7_0n: tryte = 0
+                0:
+                    return 84
+                1:
+                    skip_opcode_byte_7_0p: tryte = 0
+            match idx <=> 1:
+                -1:
+                    skip_opcode_byte_7_1n: tryte = 0
+                0:
+                    return 66
+                1:
+                    skip_opcode_byte_7_1p: tryte = 0
+            match idx <=> 2:
+                -1:
+                    skip_opcode_byte_7_2n: tryte = 0
+                0:
+                    return 82
+                1:
+                    skip_opcode_byte_7_2p: tryte = 0
+            match idx <=> 3:
+                -1:
+                    skip_opcode_byte_7_3n: tryte = 0
+                0:
+                    return 51
+                1:
+                    skip_opcode_byte_7_3p: tryte = 0
+            return 0
+        1:
+            skip_opcode_byte_7p: tryte = 0
+    return 0
+
+fn decimal_length(value: tryte) -> tryte:
+    match value <=> 0:
+        -1:
+            return -1
+        0:
+            return 1
+        1:
+            match value <=> 10:
+                -1:
+                    return 1
+                0:
+                    return 2
+                1:
+                    match value <=> 100:
+                        -1:
+                            return 2
+                        0:
+                            return 3
+                        1:
+                            match value <=> 192:
+                                -1:
+                                    return 3
+                                0:
+                                    return -1
+                                1:
+                                    return -1
+
+fn decimal_tens_byte(n: tryte) -> tryte:
+    match n <=> 9:
+        -1:
+            return 48
+        0:
+            return 48
+        1:
+            return decimal_tens_byte(n - 10) + 1
+
+fn decimal_ones_byte(n: tryte) -> tryte:
+    match n <=> 9:
+        -1:
+            match n <=> 0:
+                0:
+                    return 48
+                -1:
+                    skip_digit_0: tryte = 0
+                1:
+                    skip_digit_0: tryte = 0
+            match n <=> 1:
+                0:
+                    return 49
+                -1:
+                    skip_digit_1: tryte = 0
+                1:
+                    skip_digit_1: tryte = 0
+            match n <=> 2:
+                0:
+                    return 50
+                -1:
+                    skip_digit_2: tryte = 0
+                1:
+                    skip_digit_2: tryte = 0
+            match n <=> 3:
+                0:
+                    return 51
+                -1:
+                    skip_digit_3: tryte = 0
+                1:
+                    skip_digit_3: tryte = 0
+            match n <=> 4:
+                0:
+                    return 52
+                -1:
+                    skip_digit_4: tryte = 0
+                1:
+                    skip_digit_4: tryte = 0
+            match n <=> 5:
+                0:
+                    return 53
+                -1:
+                    skip_digit_5: tryte = 0
+                1:
+                    skip_digit_5: tryte = 0
+            match n <=> 6:
+                0:
+                    return 54
+                -1:
+                    skip_digit_6: tryte = 0
+                1:
+                    skip_digit_6: tryte = 0
+            match n <=> 7:
+                0:
+                    return 55
+                -1:
+                    skip_digit_7: tryte = 0
+                1:
+                    skip_digit_7: tryte = 0
+            match n <=> 8:
+                0:
+                    return 56
+                -1:
+                    skip_digit_8: tryte = 0
+                1:
+                    skip_digit_8: tryte = 0
+            match n <=> 9:
+                0:
+                    return 57
+                -1:
+                    skip_digit_9: tryte = 0
+                1:
+                    skip_digit_9: tryte = 0
+            return 48
+        0:
+            return 57
+        1:
+            return decimal_ones_byte(n - 10)
+
+fn decimal_byte_at(value: tryte, idx: tryte) -> tryte:
+    mut length: tryte = decimal_length(value)
+    match length <=> 0:
+        -1:
+            return 0
+        0:
+            return 0
+        1:
+            match idx <=> 0:
+                -1:
+                    return 0
+                0:
+                    match length <=> 1:
+                        -1:
+                            return 0
+                        0:
+                            return value + 48
+                        1:
+                            match length <=> 2:
+                                -1:
+                                    return 0
+                                0:
+                                    return decimal_tens_byte(value)
+                                1:
+                                    return 49
+                1:
+                    match idx <=> length:
+                        -1:
+                            match length <=> 2:
+                                -1:
+                                    return 0
+                                0:
+                                    return decimal_ones_byte(value)
+                                1:
+                                    match idx <=> 1:
+                                        -1:
+                                            return 0
+                                        0:
+                                            return decimal_tens_byte(value - 100)
+                                        1:
+                                            return decimal_ones_byte(value - 100)
+                        0:
+                            return 0
+                        1:
+                            return 0
+
+fn event_length(kind: tryte, arg0: tryte) -> tryte:
+    match kind <=> 1:
+        -1:
+            skip_evlen_1n: tryte = 0
+        0:
+            return fragment_length(arg0)
+        1:
+            skip_evlen_1p: tryte = 0
+    match kind <=> 2:
+        -1:
+            skip_evlen_2n: tryte = 0
+        0:
+            return symbol_length(arg0)
+        1:
+            skip_evlen_2p: tryte = 0
+    match kind <=> 3:
+        -1:
+            skip_evlen_3n: tryte = 0
+        0:
+            return opcode_length(arg0)
+        1:
+            skip_evlen_3p: tryte = 0
+    match kind <=> 4:
+        -1:
+            skip_evlen_4n: tryte = 0
+        0:
+            return decimal_length(arg0)
+        1:
+            skip_evlen_4p: tryte = 0
+    match kind <=> 5:
+        -1:
+            skip_evlen_5n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_evlen_5p: tryte = 0
+    match kind <=> 6:
+        -1:
+            skip_evlen_6n: tryte = 0
+        0:
+            return arg0
+        1:
+            skip_evlen_6p: tryte = 0
+    match kind <=> 7:
+        -1:
+            skip_evlen_7n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_evlen_7p: tryte = 0
+    match kind <=> 9:
+        -1:
+            skip_evlen_9n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_evlen_9p: tryte = 0
+    match kind <=> 10:
+        -1:
+            skip_evlen_10n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_evlen_10p: tryte = 0
+    match kind <=> 11:
+        -1:
+            skip_evlen_11n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_evlen_11p: tryte = 0
+    return 0
+
+fn event_byte(kind: tryte, arg0: tryte, idx: tryte) -> tryte:
+    match kind <=> 1:
+        -1:
+            skip_evbyte_1n: tryte = 0
+        0:
+            return fragment_byte(arg0, idx)
+        1:
+            skip_evbyte_1p: tryte = 0
+    match kind <=> 2:
+        -1:
+            skip_evbyte_2n: tryte = 0
+        0:
+            return symbol_byte(arg0, idx)
+        1:
+            skip_evbyte_2p: tryte = 0
+    match kind <=> 3:
+        -1:
+            skip_evbyte_3n: tryte = 0
+        0:
+            return opcode_byte(arg0, idx)
+        1:
+            skip_evbyte_3p: tryte = 0
+    match kind <=> 4:
+        -1:
+            skip_evbyte_4n: tryte = 0
+        0:
+            return decimal_byte_at(arg0, idx)
+        1:
+            skip_evbyte_4p: tryte = 0
+    match kind <=> 5:
+        -1:
+            skip_evbyte_5n: tryte = 0
+        0:
+            return 58
+        1:
+            skip_evbyte_5p: tryte = 0
+    match kind <=> 6:
+        -1:
+            skip_evbyte_6n: tryte = 0
+        0:
+            return 32
+        1:
+            skip_evbyte_6p: tryte = 0
+    match kind <=> 7:
+        -1:
+            skip_evbyte_7n: tryte = 0
+        0:
+            return 44
+        1:
+            skip_evbyte_7p: tryte = 0
+    match kind <=> 9:
+        -1:
+            skip_evbyte_9n: tryte = 0
+        0:
+            match idx <=> 0:
+                -1:
+                    return 0
+                0:
+                    return 45
+                1:
+                    match idx <=> 1:
+                        -1:
+                            return 0
+                        0:
+                            return 62
+                        1:
+                            return 0
+        1:
+            skip_evbyte_9p: tryte = 0
+    match kind <=> 10:
+        -1:
+            skip_evbyte_10n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_evbyte_10p: tryte = 0
+    match kind <=> 11:
+        -1:
+            skip_evbyte_11n: tryte = 0
+        0:
+            return 59
+        1:
+            skip_evbyte_11p: tryte = 0
+    return 0
+
+fn first_event_count() -> tryte:
+    return 178
+
+fn first_event_kind(index: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            skip_fek_0n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_0p: tryte = 0
+    match index <=> 1:
+        -1:
+            skip_fek_1n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_1p: tryte = 0
+    match index <=> 2:
+        -1:
+            skip_fek_2n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_2p: tryte = 0
+    match index <=> 3:
+        -1:
+            skip_fek_3n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_3p: tryte = 0
+    match index <=> 4:
+        -1:
+            skip_fek_4n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_4p: tryte = 0
+    match index <=> 5:
+        -1:
+            skip_fek_5n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_5p: tryte = 0
+    match index <=> 6:
+        -1:
+            skip_fek_6n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_6p: tryte = 0
+    match index <=> 7:
+        -1:
+            skip_fek_7n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_7p: tryte = 0
+    match index <=> 8:
+        -1:
+            skip_fek_8n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_8p: tryte = 0
+    match index <=> 9:
+        -1:
+            skip_fek_9n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_fek_9p: tryte = 0
+    match index <=> 10:
+        -1:
+            skip_fek_10n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_fek_10p: tryte = 0
+    match index <=> 11:
+        -1:
+            skip_fek_11n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_11p: tryte = 0
+    match index <=> 12:
+        -1:
+            skip_fek_12n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_12p: tryte = 0
+    match index <=> 13:
+        -1:
+            skip_fek_13n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_13p: tryte = 0
+    match index <=> 14:
+        -1:
+            skip_fek_14n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_14p: tryte = 0
+    match index <=> 15:
+        -1:
+            skip_fek_15n: tryte = 0
+        0:
+            return 9
+        1:
+            skip_fek_15p: tryte = 0
+    match index <=> 16:
+        -1:
+            skip_fek_16n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_16p: tryte = 0
+    match index <=> 17:
+        -1:
+            skip_fek_17n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_17p: tryte = 0
+    match index <=> 18:
+        -1:
+            skip_fek_18n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_fek_18p: tryte = 0
+    match index <=> 19:
+        -1:
+            skip_fek_19n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_19p: tryte = 0
+    match index <=> 20:
+        -1:
+            skip_fek_20n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_20p: tryte = 0
+    match index <=> 21:
+        -1:
+            skip_fek_21n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_21p: tryte = 0
+    match index <=> 22:
+        -1:
+            skip_fek_22n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_22p: tryte = 0
+    match index <=> 23:
+        -1:
+            skip_fek_23n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_fek_23p: tryte = 0
+    match index <=> 24:
+        -1:
+            skip_fek_24n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_24p: tryte = 0
+    match index <=> 25:
+        -1:
+            skip_fek_25n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_25p: tryte = 0
+    match index <=> 26:
+        -1:
+            skip_fek_26n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_fek_26p: tryte = 0
+    match index <=> 27:
+        -1:
+            skip_fek_27n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_27p: tryte = 0
+    match index <=> 28:
+        -1:
+            skip_fek_28n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_28p: tryte = 0
+    match index <=> 29:
+        -1:
+            skip_fek_29n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_29p: tryte = 0
+    match index <=> 30:
+        -1:
+            skip_fek_30n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_30p: tryte = 0
+    match index <=> 31:
+        -1:
+            skip_fek_31n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_fek_31p: tryte = 0
+    match index <=> 32:
+        -1:
+            skip_fek_32n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_32p: tryte = 0
+    match index <=> 33:
+        -1:
+            skip_fek_33n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_33p: tryte = 0
+    match index <=> 34:
+        -1:
+            skip_fek_34n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_fek_34p: tryte = 0
+    match index <=> 35:
+        -1:
+            skip_fek_35n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_35p: tryte = 0
+    match index <=> 36:
+        -1:
+            skip_fek_36n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_36p: tryte = 0
+    match index <=> 37:
+        -1:
+            skip_fek_37n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_37p: tryte = 0
+    match index <=> 38:
+        -1:
+            skip_fek_38n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_38p: tryte = 0
+    match index <=> 39:
+        -1:
+            skip_fek_39n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_fek_39p: tryte = 0
+    match index <=> 40:
+        -1:
+            skip_fek_40n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_40p: tryte = 0
+    match index <=> 41:
+        -1:
+            skip_fek_41n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_41p: tryte = 0
+    match index <=> 42:
+        -1:
+            skip_fek_42n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_fek_42p: tryte = 0
+    match index <=> 43:
+        -1:
+            skip_fek_43n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_43p: tryte = 0
+    match index <=> 44:
+        -1:
+            skip_fek_44n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_44p: tryte = 0
+    match index <=> 45:
+        -1:
+            skip_fek_45n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_45p: tryte = 0
+    match index <=> 46:
+        -1:
+            skip_fek_46n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_46p: tryte = 0
+    match index <=> 47:
+        -1:
+            skip_fek_47n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_fek_47p: tryte = 0
+    match index <=> 48:
+        -1:
+            skip_fek_48n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_48p: tryte = 0
+    match index <=> 49:
+        -1:
+            skip_fek_49n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_49p: tryte = 0
+    match index <=> 50:
+        -1:
+            skip_fek_50n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_fek_50p: tryte = 0
+    match index <=> 51:
+        -1:
+            skip_fek_51n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_51p: tryte = 0
+    match index <=> 52:
+        -1:
+            skip_fek_52n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_52p: tryte = 0
+    match index <=> 53:
+        -1:
+            skip_fek_53n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_53p: tryte = 0
+    match index <=> 54:
+        -1:
+            skip_fek_54n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_54p: tryte = 0
+    match index <=> 55:
+        -1:
+            skip_fek_55n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_fek_55p: tryte = 0
+    match index <=> 56:
+        -1:
+            skip_fek_56n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_56p: tryte = 0
+    match index <=> 57:
+        -1:
+            skip_fek_57n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_57p: tryte = 0
+    match index <=> 58:
+        -1:
+            skip_fek_58n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_fek_58p: tryte = 0
+    match index <=> 59:
+        -1:
+            skip_fek_59n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_59p: tryte = 0
+    match index <=> 60:
+        -1:
+            skip_fek_60n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_60p: tryte = 0
+    match index <=> 61:
+        -1:
+            skip_fek_61n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_61p: tryte = 0
+    match index <=> 62:
+        -1:
+            skip_fek_62n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_62p: tryte = 0
+    match index <=> 63:
+        -1:
+            skip_fek_63n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_fek_63p: tryte = 0
+    match index <=> 64:
+        -1:
+            skip_fek_64n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_64p: tryte = 0
+    match index <=> 65:
+        -1:
+            skip_fek_65n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_65p: tryte = 0
+    match index <=> 66:
+        -1:
+            skip_fek_66n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_fek_66p: tryte = 0
+    match index <=> 67:
+        -1:
+            skip_fek_67n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_67p: tryte = 0
+    match index <=> 68:
+        -1:
+            skip_fek_68n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_68p: tryte = 0
+    match index <=> 69:
+        -1:
+            skip_fek_69n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_69p: tryte = 0
+    match index <=> 70:
+        -1:
+            skip_fek_70n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_fek_70p: tryte = 0
+    match index <=> 71:
+        -1:
+            skip_fek_71n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_71p: tryte = 0
+    match index <=> 72:
+        -1:
+            skip_fek_72n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_fek_72p: tryte = 0
+    match index <=> 73:
+        -1:
+            skip_fek_73n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_73p: tryte = 0
+    match index <=> 74:
+        -1:
+            skip_fek_74n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_74p: tryte = 0
+    match index <=> 75:
+        -1:
+            skip_fek_75n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_fek_75p: tryte = 0
+    match index <=> 76:
+        -1:
+            skip_fek_76n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_76p: tryte = 0
+    match index <=> 77:
+        -1:
+            skip_fek_77n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_77p: tryte = 0
+    match index <=> 78:
+        -1:
+            skip_fek_78n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_78p: tryte = 0
+    match index <=> 79:
+        -1:
+            skip_fek_79n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_79p: tryte = 0
+    match index <=> 80:
+        -1:
+            skip_fek_80n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_80p: tryte = 0
+    match index <=> 81:
+        -1:
+            skip_fek_81n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fek_81p: tryte = 0
+    match index <=> 82:
+        -1:
+            skip_fek_82n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_82p: tryte = 0
+    match index <=> 83:
+        -1:
+            skip_fek_83n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fek_83p: tryte = 0
+    match index <=> 84:
+        -1:
+            skip_fek_84n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_84p: tryte = 0
+    match index <=> 85:
+        -1:
+            skip_fek_85n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_fek_85p: tryte = 0
+    match index <=> 86:
+        -1:
+            skip_fek_86n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_86p: tryte = 0
+    match index <=> 87:
+        -1:
+            skip_fek_87n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_fek_87p: tryte = 0
+    match index <=> 88:
+        -1:
+            skip_fek_88n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_88p: tryte = 0
+    match index <=> 89:
+        -1:
+            skip_fek_89n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_89p: tryte = 0
+    match index <=> 90:
+        -1:
+            skip_fek_90n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_fek_90p: tryte = 0
+    match index <=> 91:
+        -1:
+            skip_fek_91n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_91p: tryte = 0
+    match index <=> 92:
+        -1:
+            skip_fek_92n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_92p: tryte = 0
+    match index <=> 93:
+        -1:
+            skip_fek_93n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_93p: tryte = 0
+    match index <=> 94:
+        -1:
+            skip_fek_94n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_94p: tryte = 0
+    match index <=> 95:
+        -1:
+            skip_fek_95n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_95p: tryte = 0
+    match index <=> 96:
+        -1:
+            skip_fek_96n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fek_96p: tryte = 0
+    match index <=> 97:
+        -1:
+            skip_fek_97n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_97p: tryte = 0
+    match index <=> 98:
+        -1:
+            skip_fek_98n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fek_98p: tryte = 0
+    match index <=> 99:
+        -1:
+            skip_fek_99n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_99p: tryte = 0
+    match index <=> 100:
+        -1:
+            skip_fek_100n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_fek_100p: tryte = 0
+    match index <=> 101:
+        -1:
+            skip_fek_101n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_101p: tryte = 0
+    match index <=> 102:
+        -1:
+            skip_fek_102n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_fek_102p: tryte = 0
+    match index <=> 103:
+        -1:
+            skip_fek_103n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_103p: tryte = 0
+    match index <=> 104:
+        -1:
+            skip_fek_104n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_104p: tryte = 0
+    match index <=> 105:
+        -1:
+            skip_fek_105n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_fek_105p: tryte = 0
+    match index <=> 106:
+        -1:
+            skip_fek_106n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_106p: tryte = 0
+    match index <=> 107:
+        -1:
+            skip_fek_107n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_107p: tryte = 0
+    match index <=> 108:
+        -1:
+            skip_fek_108n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_108p: tryte = 0
+    match index <=> 109:
+        -1:
+            skip_fek_109n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_109p: tryte = 0
+    match index <=> 110:
+        -1:
+            skip_fek_110n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_110p: tryte = 0
+    match index <=> 111:
+        -1:
+            skip_fek_111n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fek_111p: tryte = 0
+    match index <=> 112:
+        -1:
+            skip_fek_112n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_112p: tryte = 0
+    match index <=> 113:
+        -1:
+            skip_fek_113n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fek_113p: tryte = 0
+    match index <=> 114:
+        -1:
+            skip_fek_114n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_114p: tryte = 0
+    match index <=> 115:
+        -1:
+            skip_fek_115n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_fek_115p: tryte = 0
+    match index <=> 116:
+        -1:
+            skip_fek_116n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_116p: tryte = 0
+    match index <=> 117:
+        -1:
+            skip_fek_117n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_fek_117p: tryte = 0
+    match index <=> 118:
+        -1:
+            skip_fek_118n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_118p: tryte = 0
+    match index <=> 119:
+        -1:
+            skip_fek_119n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_119p: tryte = 0
+    match index <=> 120:
+        -1:
+            skip_fek_120n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_fek_120p: tryte = 0
+    match index <=> 121:
+        -1:
+            skip_fek_121n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_121p: tryte = 0
+    match index <=> 122:
+        -1:
+            skip_fek_122n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_122p: tryte = 0
+    match index <=> 123:
+        -1:
+            skip_fek_123n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_123p: tryte = 0
+    match index <=> 124:
+        -1:
+            skip_fek_124n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_124p: tryte = 0
+    match index <=> 125:
+        -1:
+            skip_fek_125n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_125p: tryte = 0
+    match index <=> 126:
+        -1:
+            skip_fek_126n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fek_126p: tryte = 0
+    match index <=> 127:
+        -1:
+            skip_fek_127n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_127p: tryte = 0
+    match index <=> 128:
+        -1:
+            skip_fek_128n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fek_128p: tryte = 0
+    match index <=> 129:
+        -1:
+            skip_fek_129n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_129p: tryte = 0
+    match index <=> 130:
+        -1:
+            skip_fek_130n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_fek_130p: tryte = 0
+    match index <=> 131:
+        -1:
+            skip_fek_131n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_131p: tryte = 0
+    match index <=> 132:
+        -1:
+            skip_fek_132n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_fek_132p: tryte = 0
+    match index <=> 133:
+        -1:
+            skip_fek_133n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_133p: tryte = 0
+    match index <=> 134:
+        -1:
+            skip_fek_134n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_134p: tryte = 0
+    match index <=> 135:
+        -1:
+            skip_fek_135n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_fek_135p: tryte = 0
+    match index <=> 136:
+        -1:
+            skip_fek_136n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_136p: tryte = 0
+    match index <=> 137:
+        -1:
+            skip_fek_137n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_137p: tryte = 0
+    match index <=> 138:
+        -1:
+            skip_fek_138n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_138p: tryte = 0
+    match index <=> 139:
+        -1:
+            skip_fek_139n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_139p: tryte = 0
+    match index <=> 140:
+        -1:
+            skip_fek_140n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_140p: tryte = 0
+    match index <=> 141:
+        -1:
+            skip_fek_141n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fek_141p: tryte = 0
+    match index <=> 142:
+        -1:
+            skip_fek_142n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_142p: tryte = 0
+    match index <=> 143:
+        -1:
+            skip_fek_143n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fek_143p: tryte = 0
+    match index <=> 144:
+        -1:
+            skip_fek_144n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_144p: tryte = 0
+    match index <=> 145:
+        -1:
+            skip_fek_145n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_fek_145p: tryte = 0
+    match index <=> 146:
+        -1:
+            skip_fek_146n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_146p: tryte = 0
+    match index <=> 147:
+        -1:
+            skip_fek_147n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_fek_147p: tryte = 0
+    match index <=> 148:
+        -1:
+            skip_fek_148n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_148p: tryte = 0
+    match index <=> 149:
+        -1:
+            skip_fek_149n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_149p: tryte = 0
+    match index <=> 150:
+        -1:
+            skip_fek_150n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_fek_150p: tryte = 0
+    match index <=> 151:
+        -1:
+            skip_fek_151n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_151p: tryte = 0
+    match index <=> 152:
+        -1:
+            skip_fek_152n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_152p: tryte = 0
+    match index <=> 153:
+        -1:
+            skip_fek_153n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_fek_153p: tryte = 0
+    match index <=> 154:
+        -1:
+            skip_fek_154n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_154p: tryte = 0
+    match index <=> 155:
+        -1:
+            skip_fek_155n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_155p: tryte = 0
+    match index <=> 156:
+        -1:
+            skip_fek_156n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_156p: tryte = 0
+    match index <=> 157:
+        -1:
+            skip_fek_157n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_157p: tryte = 0
+    match index <=> 158:
+        -1:
+            skip_fek_158n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_158p: tryte = 0
+    match index <=> 159:
+        -1:
+            skip_fek_159n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fek_159p: tryte = 0
+    match index <=> 160:
+        -1:
+            skip_fek_160n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_160p: tryte = 0
+    match index <=> 161:
+        -1:
+            skip_fek_161n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fek_161p: tryte = 0
+    match index <=> 162:
+        -1:
+            skip_fek_162n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_162p: tryte = 0
+    match index <=> 163:
+        -1:
+            skip_fek_163n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_fek_163p: tryte = 0
+    match index <=> 164:
+        -1:
+            skip_fek_164n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_164p: tryte = 0
+    match index <=> 165:
+        -1:
+            skip_fek_165n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_fek_165p: tryte = 0
+    match index <=> 166:
+        -1:
+            skip_fek_166n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_166p: tryte = 0
+    match index <=> 167:
+        -1:
+            skip_fek_167n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fek_167p: tryte = 0
+    match index <=> 168:
+        -1:
+            skip_fek_168n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fek_168p: tryte = 0
+    match index <=> 169:
+        -1:
+            skip_fek_169n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_169p: tryte = 0
+    match index <=> 170:
+        -1:
+            skip_fek_170n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_170p: tryte = 0
+    match index <=> 171:
+        -1:
+            skip_fek_171n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fek_171p: tryte = 0
+    match index <=> 172:
+        -1:
+            skip_fek_172n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_172p: tryte = 0
+    match index <=> 173:
+        -1:
+            skip_fek_173n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fek_173p: tryte = 0
+    match index <=> 174:
+        -1:
+            skip_fek_174n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fek_174p: tryte = 0
+    match index <=> 175:
+        -1:
+            skip_fek_175n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_fek_175p: tryte = 0
+    match index <=> 176:
+        -1:
+            skip_fek_176n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fek_176p: tryte = 0
+    match index <=> 177:
+        -1:
+            skip_fek_177n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_fek_177p: tryte = 0
+    return 0
+
+fn first_event_arg0(index: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            skip_fea_0n: tryte = 0
+        0:
+            return 18
+        1:
+            skip_fea_0p: tryte = 0
+    match index <=> 1:
+        -1:
+            skip_fea_1n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_fea_1p: tryte = 0
+    match index <=> 2:
+        -1:
+            skip_fea_2n: tryte = 0
+        0:
+            return 19
+        1:
+            skip_fea_2p: tryte = 0
+    match index <=> 3:
+        -1:
+            skip_fea_3n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_3p: tryte = 0
+    match index <=> 4:
+        -1:
+            skip_fea_4n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_fea_4p: tryte = 0
+    match index <=> 5:
+        -1:
+            skip_fea_5n: tryte = 0
+        0:
+            return 20
+        1:
+            skip_fea_5p: tryte = 0
+    match index <=> 6:
+        -1:
+            skip_fea_6n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fea_6p: tryte = 0
+    match index <=> 7:
+        -1:
+            skip_fea_7n: tryte = 0
+        0:
+            return 20
+        1:
+            skip_fea_7p: tryte = 0
+    match index <=> 8:
+        -1:
+            skip_fea_8n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_fea_8p: tryte = 0
+    match index <=> 9:
+        -1:
+            skip_fea_9n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_9p: tryte = 0
+    match index <=> 10:
+        -1:
+            skip_fea_10n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_10p: tryte = 0
+    match index <=> 11:
+        -1:
+            skip_fea_11n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fea_11p: tryte = 0
+    match index <=> 12:
+        -1:
+            skip_fea_12n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_12p: tryte = 0
+    match index <=> 13:
+        -1:
+            skip_fea_13n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_13p: tryte = 0
+    match index <=> 14:
+        -1:
+            skip_fea_14n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_14p: tryte = 0
+    match index <=> 15:
+        -1:
+            skip_fea_15n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_15p: tryte = 0
+    match index <=> 16:
+        -1:
+            skip_fea_16n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_16p: tryte = 0
+    match index <=> 17:
+        -1:
+            skip_fea_17n: tryte = 0
+        0:
+            return 11
+        1:
+            skip_fea_17p: tryte = 0
+    match index <=> 18:
+        -1:
+            skip_fea_18n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_18p: tryte = 0
+    match index <=> 19:
+        -1:
+            skip_fea_19n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_19p: tryte = 0
+    match index <=> 20:
+        -1:
+            skip_fea_20n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_20p: tryte = 0
+    match index <=> 21:
+        -1:
+            skip_fea_21n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_21p: tryte = 0
+    match index <=> 22:
+        -1:
+            skip_fea_22n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_fea_22p: tryte = 0
+    match index <=> 23:
+        -1:
+            skip_fea_23n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_23p: tryte = 0
+    match index <=> 24:
+        -1:
+            skip_fea_24n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_24p: tryte = 0
+    match index <=> 25:
+        -1:
+            skip_fea_25n: tryte = 0
+        0:
+            return 11
+        1:
+            skip_fea_25p: tryte = 0
+    match index <=> 26:
+        -1:
+            skip_fea_26n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_26p: tryte = 0
+    match index <=> 27:
+        -1:
+            skip_fea_27n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_27p: tryte = 0
+    match index <=> 28:
+        -1:
+            skip_fea_28n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_28p: tryte = 0
+    match index <=> 29:
+        -1:
+            skip_fea_29n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_29p: tryte = 0
+    match index <=> 30:
+        -1:
+            skip_fea_30n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_30p: tryte = 0
+    match index <=> 31:
+        -1:
+            skip_fea_31n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_31p: tryte = 0
+    match index <=> 32:
+        -1:
+            skip_fea_32n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_32p: tryte = 0
+    match index <=> 33:
+        -1:
+            skip_fea_33n: tryte = 0
+        0:
+            return 11
+        1:
+            skip_fea_33p: tryte = 0
+    match index <=> 34:
+        -1:
+            skip_fea_34n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_34p: tryte = 0
+    match index <=> 35:
+        -1:
+            skip_fea_35n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_35p: tryte = 0
+    match index <=> 36:
+        -1:
+            skip_fea_36n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_36p: tryte = 0
+    match index <=> 37:
+        -1:
+            skip_fea_37n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_37p: tryte = 0
+    match index <=> 38:
+        -1:
+            skip_fea_38n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fea_38p: tryte = 0
+    match index <=> 39:
+        -1:
+            skip_fea_39n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_39p: tryte = 0
+    match index <=> 40:
+        -1:
+            skip_fea_40n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_40p: tryte = 0
+    match index <=> 41:
+        -1:
+            skip_fea_41n: tryte = 0
+        0:
+            return 11
+        1:
+            skip_fea_41p: tryte = 0
+    match index <=> 42:
+        -1:
+            skip_fea_42n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_42p: tryte = 0
+    match index <=> 43:
+        -1:
+            skip_fea_43n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_43p: tryte = 0
+    match index <=> 44:
+        -1:
+            skip_fea_44n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_44p: tryte = 0
+    match index <=> 45:
+        -1:
+            skip_fea_45n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_45p: tryte = 0
+    match index <=> 46:
+        -1:
+            skip_fea_46n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fea_46p: tryte = 0
+    match index <=> 47:
+        -1:
+            skip_fea_47n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_47p: tryte = 0
+    match index <=> 48:
+        -1:
+            skip_fea_48n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_48p: tryte = 0
+    match index <=> 49:
+        -1:
+            skip_fea_49n: tryte = 0
+        0:
+            return 11
+        1:
+            skip_fea_49p: tryte = 0
+    match index <=> 50:
+        -1:
+            skip_fea_50n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_50p: tryte = 0
+    match index <=> 51:
+        -1:
+            skip_fea_51n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_51p: tryte = 0
+    match index <=> 52:
+        -1:
+            skip_fea_52n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_52p: tryte = 0
+    match index <=> 53:
+        -1:
+            skip_fea_53n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_53p: tryte = 0
+    match index <=> 54:
+        -1:
+            skip_fea_54n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_fea_54p: tryte = 0
+    match index <=> 55:
+        -1:
+            skip_fea_55n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_55p: tryte = 0
+    match index <=> 56:
+        -1:
+            skip_fea_56n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_56p: tryte = 0
+    match index <=> 57:
+        -1:
+            skip_fea_57n: tryte = 0
+        0:
+            return 11
+        1:
+            skip_fea_57p: tryte = 0
+    match index <=> 58:
+        -1:
+            skip_fea_58n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_58p: tryte = 0
+    match index <=> 59:
+        -1:
+            skip_fea_59n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_59p: tryte = 0
+    match index <=> 60:
+        -1:
+            skip_fea_60n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_60p: tryte = 0
+    match index <=> 61:
+        -1:
+            skip_fea_61n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_61p: tryte = 0
+    match index <=> 62:
+        -1:
+            skip_fea_62n: tryte = 0
+        0:
+            return 8
+        1:
+            skip_fea_62p: tryte = 0
+    match index <=> 63:
+        -1:
+            skip_fea_63n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_63p: tryte = 0
+    match index <=> 64:
+        -1:
+            skip_fea_64n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_64p: tryte = 0
+    match index <=> 65:
+        -1:
+            skip_fea_65n: tryte = 0
+        0:
+            return 11
+        1:
+            skip_fea_65p: tryte = 0
+    match index <=> 66:
+        -1:
+            skip_fea_66n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_66p: tryte = 0
+    match index <=> 67:
+        -1:
+            skip_fea_67n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fea_67p: tryte = 0
+    match index <=> 68:
+        -1:
+            skip_fea_68n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_68p: tryte = 0
+    match index <=> 69:
+        -1:
+            skip_fea_69n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fea_69p: tryte = 0
+    match index <=> 70:
+        -1:
+            skip_fea_70n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_70p: tryte = 0
+    match index <=> 71:
+        -1:
+            skip_fea_71n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_71p: tryte = 0
+    match index <=> 72:
+        -1:
+            skip_fea_72n: tryte = 0
+        0:
+            return 100
+        1:
+            skip_fea_72p: tryte = 0
+    match index <=> 73:
+        -1:
+            skip_fea_73n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_73p: tryte = 0
+    match index <=> 74:
+        -1:
+            skip_fea_74n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_fea_74p: tryte = 0
+    match index <=> 75:
+        -1:
+            skip_fea_75n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_75p: tryte = 0
+    match index <=> 76:
+        -1:
+            skip_fea_76n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_76p: tryte = 0
+    match index <=> 77:
+        -1:
+            skip_fea_77n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_fea_77p: tryte = 0
+    match index <=> 78:
+        -1:
+            skip_fea_78n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_78p: tryte = 0
+    match index <=> 79:
+        -1:
+            skip_fea_79n: tryte = 0
+        0:
+            return 8
+        1:
+            skip_fea_79p: tryte = 0
+    match index <=> 80:
+        -1:
+            skip_fea_80n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fea_80p: tryte = 0
+    match index <=> 81:
+        -1:
+            skip_fea_81n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_fea_81p: tryte = 0
+    match index <=> 82:
+        -1:
+            skip_fea_82n: tryte = 0
+        0:
+            return 16
+        1:
+            skip_fea_82p: tryte = 0
+    match index <=> 83:
+        -1:
+            skip_fea_83n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_fea_83p: tryte = 0
+    match index <=> 84:
+        -1:
+            skip_fea_84n: tryte = 0
+        0:
+            return 35
+        1:
+            skip_fea_84p: tryte = 0
+    match index <=> 85:
+        -1:
+            skip_fea_85n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_85p: tryte = 0
+    match index <=> 86:
+        -1:
+            skip_fea_86n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_86p: tryte = 0
+    match index <=> 87:
+        -1:
+            skip_fea_87n: tryte = 0
+        0:
+            return 101
+        1:
+            skip_fea_87p: tryte = 0
+    match index <=> 88:
+        -1:
+            skip_fea_88n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_fea_88p: tryte = 0
+    match index <=> 89:
+        -1:
+            skip_fea_89n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_89p: tryte = 0
+    match index <=> 90:
+        -1:
+            skip_fea_90n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_90p: tryte = 0
+    match index <=> 91:
+        -1:
+            skip_fea_91n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_91p: tryte = 0
+    match index <=> 92:
+        -1:
+            skip_fea_92n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_fea_92p: tryte = 0
+    match index <=> 93:
+        -1:
+            skip_fea_93n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_93p: tryte = 0
+    match index <=> 94:
+        -1:
+            skip_fea_94n: tryte = 0
+        0:
+            return 8
+        1:
+            skip_fea_94p: tryte = 0
+    match index <=> 95:
+        -1:
+            skip_fea_95n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_fea_95p: tryte = 0
+    match index <=> 96:
+        -1:
+            skip_fea_96n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_fea_96p: tryte = 0
+    match index <=> 97:
+        -1:
+            skip_fea_97n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fea_97p: tryte = 0
+    match index <=> 98:
+        -1:
+            skip_fea_98n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_fea_98p: tryte = 0
+    match index <=> 99:
+        -1:
+            skip_fea_99n: tryte = 0
+        0:
+            return 24
+        1:
+            skip_fea_99p: tryte = 0
+    match index <=> 100:
+        -1:
+            skip_fea_100n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_100p: tryte = 0
+    match index <=> 101:
+        -1:
+            skip_fea_101n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_101p: tryte = 0
+    match index <=> 102:
+        -1:
+            skip_fea_102n: tryte = 0
+        0:
+            return 100
+        1:
+            skip_fea_102p: tryte = 0
+    match index <=> 103:
+        -1:
+            skip_fea_103n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_103p: tryte = 0
+    match index <=> 104:
+        -1:
+            skip_fea_104n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fea_104p: tryte = 0
+    match index <=> 105:
+        -1:
+            skip_fea_105n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_105p: tryte = 0
+    match index <=> 106:
+        -1:
+            skip_fea_106n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_106p: tryte = 0
+    match index <=> 107:
+        -1:
+            skip_fea_107n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_107p: tryte = 0
+    match index <=> 108:
+        -1:
+            skip_fea_108n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_108p: tryte = 0
+    match index <=> 109:
+        -1:
+            skip_fea_109n: tryte = 0
+        0:
+            return 8
+        1:
+            skip_fea_109p: tryte = 0
+    match index <=> 110:
+        -1:
+            skip_fea_110n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_fea_110p: tryte = 0
+    match index <=> 111:
+        -1:
+            skip_fea_111n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_fea_111p: tryte = 0
+    match index <=> 112:
+        -1:
+            skip_fea_112n: tryte = 0
+        0:
+            return 16
+        1:
+            skip_fea_112p: tryte = 0
+    match index <=> 113:
+        -1:
+            skip_fea_113n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_fea_113p: tryte = 0
+    match index <=> 114:
+        -1:
+            skip_fea_114n: tryte = 0
+        0:
+            return 53
+        1:
+            skip_fea_114p: tryte = 0
+    match index <=> 115:
+        -1:
+            skip_fea_115n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_115p: tryte = 0
+    match index <=> 116:
+        -1:
+            skip_fea_116n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_116p: tryte = 0
+    match index <=> 117:
+        -1:
+            skip_fea_117n: tryte = 0
+        0:
+            return 101
+        1:
+            skip_fea_117p: tryte = 0
+    match index <=> 118:
+        -1:
+            skip_fea_118n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_fea_118p: tryte = 0
+    match index <=> 119:
+        -1:
+            skip_fea_119n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fea_119p: tryte = 0
+    match index <=> 120:
+        -1:
+            skip_fea_120n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_120p: tryte = 0
+    match index <=> 121:
+        -1:
+            skip_fea_121n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_121p: tryte = 0
+    match index <=> 122:
+        -1:
+            skip_fea_122n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fea_122p: tryte = 0
+    match index <=> 123:
+        -1:
+            skip_fea_123n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_123p: tryte = 0
+    match index <=> 124:
+        -1:
+            skip_fea_124n: tryte = 0
+        0:
+            return 8
+        1:
+            skip_fea_124p: tryte = 0
+    match index <=> 125:
+        -1:
+            skip_fea_125n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_fea_125p: tryte = 0
+    match index <=> 126:
+        -1:
+            skip_fea_126n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_fea_126p: tryte = 0
+    match index <=> 127:
+        -1:
+            skip_fea_127n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fea_127p: tryte = 0
+    match index <=> 128:
+        -1:
+            skip_fea_128n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_fea_128p: tryte = 0
+    match index <=> 129:
+        -1:
+            skip_fea_129n: tryte = 0
+        0:
+            return 42
+        1:
+            skip_fea_129p: tryte = 0
+    match index <=> 130:
+        -1:
+            skip_fea_130n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_130p: tryte = 0
+    match index <=> 131:
+        -1:
+            skip_fea_131n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_131p: tryte = 0
+    match index <=> 132:
+        -1:
+            skip_fea_132n: tryte = 0
+        0:
+            return 102
+        1:
+            skip_fea_132p: tryte = 0
+    match index <=> 133:
+        -1:
+            skip_fea_133n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_fea_133p: tryte = 0
+    match index <=> 134:
+        -1:
+            skip_fea_134n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_fea_134p: tryte = 0
+    match index <=> 135:
+        -1:
+            skip_fea_135n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_135p: tryte = 0
+    match index <=> 136:
+        -1:
+            skip_fea_136n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_136p: tryte = 0
+    match index <=> 137:
+        -1:
+            skip_fea_137n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fea_137p: tryte = 0
+    match index <=> 138:
+        -1:
+            skip_fea_138n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_138p: tryte = 0
+    match index <=> 139:
+        -1:
+            skip_fea_139n: tryte = 0
+        0:
+            return 8
+        1:
+            skip_fea_139p: tryte = 0
+    match index <=> 140:
+        -1:
+            skip_fea_140n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_140p: tryte = 0
+    match index <=> 141:
+        -1:
+            skip_fea_141n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_fea_141p: tryte = 0
+    match index <=> 142:
+        -1:
+            skip_fea_142n: tryte = 0
+        0:
+            return 14
+        1:
+            skip_fea_142p: tryte = 0
+    match index <=> 143:
+        -1:
+            skip_fea_143n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_fea_143p: tryte = 0
+    match index <=> 144:
+        -1:
+            skip_fea_144n: tryte = 0
+        0:
+            return 68
+        1:
+            skip_fea_144p: tryte = 0
+    match index <=> 145:
+        -1:
+            skip_fea_145n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_145p: tryte = 0
+    match index <=> 146:
+        -1:
+            skip_fea_146n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_146p: tryte = 0
+    match index <=> 147:
+        -1:
+            skip_fea_147n: tryte = 0
+        0:
+            return 103
+        1:
+            skip_fea_147p: tryte = 0
+    match index <=> 148:
+        -1:
+            skip_fea_148n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_fea_148p: tryte = 0
+    match index <=> 149:
+        -1:
+            skip_fea_149n: tryte = 0
+        0:
+            return 8
+        1:
+            skip_fea_149p: tryte = 0
+    match index <=> 150:
+        -1:
+            skip_fea_150n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_150p: tryte = 0
+    match index <=> 151:
+        -1:
+            skip_fea_151n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_151p: tryte = 0
+    match index <=> 152:
+        -1:
+            skip_fea_152n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_152p: tryte = 0
+    match index <=> 153:
+        -1:
+            skip_fea_153n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_153p: tryte = 0
+    match index <=> 154:
+        -1:
+            skip_fea_154n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_154p: tryte = 0
+    match index <=> 155:
+        -1:
+            skip_fea_155n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_fea_155p: tryte = 0
+    match index <=> 156:
+        -1:
+            skip_fea_156n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_156p: tryte = 0
+    match index <=> 157:
+        -1:
+            skip_fea_157n: tryte = 0
+        0:
+            return 8
+        1:
+            skip_fea_157p: tryte = 0
+    match index <=> 158:
+        -1:
+            skip_fea_158n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_158p: tryte = 0
+    match index <=> 159:
+        -1:
+            skip_fea_159n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_fea_159p: tryte = 0
+    match index <=> 160:
+        -1:
+            skip_fea_160n: tryte = 0
+        0:
+            return 14
+        1:
+            skip_fea_160p: tryte = 0
+    match index <=> 161:
+        -1:
+            skip_fea_161n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_fea_161p: tryte = 0
+    match index <=> 162:
+        -1:
+            skip_fea_162n: tryte = 0
+        0:
+            return 68
+        1:
+            skip_fea_162p: tryte = 0
+    match index <=> 163:
+        -1:
+            skip_fea_163n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_163p: tryte = 0
+    match index <=> 164:
+        -1:
+            skip_fea_164n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_164p: tryte = 0
+    match index <=> 165:
+        -1:
+            skip_fea_165n: tryte = 0
+        0:
+            return 104
+        1:
+            skip_fea_165p: tryte = 0
+    match index <=> 166:
+        -1:
+            skip_fea_166n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_fea_166p: tryte = 0
+    match index <=> 167:
+        -1:
+            skip_fea_167n: tryte = 0
+        0:
+            return 8
+        1:
+            skip_fea_167p: tryte = 0
+    match index <=> 168:
+        -1:
+            skip_fea_168n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_168p: tryte = 0
+    match index <=> 169:
+        -1:
+            skip_fea_169n: tryte = 0
+        0:
+            return 8
+        1:
+            skip_fea_169p: tryte = 0
+    match index <=> 170:
+        -1:
+            skip_fea_170n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_fea_170p: tryte = 0
+    match index <=> 171:
+        -1:
+            skip_fea_171n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_fea_171p: tryte = 0
+    match index <=> 172:
+        -1:
+            skip_fea_172n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_fea_172p: tryte = 0
+    match index <=> 173:
+        -1:
+            skip_fea_173n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_fea_173p: tryte = 0
+    match index <=> 174:
+        -1:
+            skip_fea_174n: tryte = 0
+        0:
+            return 59
+        1:
+            skip_fea_174p: tryte = 0
+    match index <=> 175:
+        -1:
+            skip_fea_175n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_175p: tryte = 0
+    match index <=> 176:
+        -1:
+            skip_fea_176n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_fea_176p: tryte = 0
+    match index <=> 177:
+        -1:
+            skip_fea_177n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_fea_177p: tryte = 0
+    return 0
+
+fn simple_call_event_count() -> tryte:
+    return 175
+
+fn simple_call_event_kind(index: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            skip_scek_0n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_0p: tryte = 0
+
+    match index <=> 1:
+        -1:
+            skip_scek_1n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_1p: tryte = 0
+
+    match index <=> 2:
+        -1:
+            skip_scek_2n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_2p: tryte = 0
+
+    match index <=> 3:
+        -1:
+            skip_scek_3n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_scek_3p: tryte = 0
+
+    match index <=> 4:
+        -1:
+            skip_scek_4n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_scek_4p: tryte = 0
+
+    match index <=> 5:
+        -1:
+            skip_scek_5n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_5p: tryte = 0
+
+    match index <=> 6:
+        -1:
+            skip_scek_6n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_6p: tryte = 0
+
+    match index <=> 7:
+        -1:
+            skip_scek_7n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scek_7p: tryte = 0
+
+    match index <=> 8:
+        -1:
+            skip_scek_8n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_8p: tryte = 0
+
+    match index <=> 9:
+        -1:
+            skip_scek_9n: tryte = 0
+        0:
+            return 9
+        1:
+            skip_scek_9p: tryte = 0
+
+    match index <=> 10:
+        -1:
+            skip_scek_10n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_10p: tryte = 0
+
+    match index <=> 11:
+        -1:
+            skip_scek_11n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_11p: tryte = 0
+
+    match index <=> 12:
+        -1:
+            skip_scek_12n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_scek_12p: tryte = 0
+
+    match index <=> 13:
+        -1:
+            skip_scek_13n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_13p: tryte = 0
+
+    match index <=> 14:
+        -1:
+            skip_scek_14n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_14p: tryte = 0
+
+    match index <=> 15:
+        -1:
+            skip_scek_15n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_15p: tryte = 0
+
+    match index <=> 16:
+        -1:
+            skip_scek_16n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scek_16p: tryte = 0
+
+    match index <=> 17:
+        -1:
+            skip_scek_17n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_scek_17p: tryte = 0
+
+    match index <=> 18:
+        -1:
+            skip_scek_18n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_18p: tryte = 0
+
+    match index <=> 19:
+        -1:
+            skip_scek_19n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_19p: tryte = 0
+
+    match index <=> 20:
+        -1:
+            skip_scek_20n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_scek_20p: tryte = 0
+
+    match index <=> 21:
+        -1:
+            skip_scek_21n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_21p: tryte = 0
+
+    match index <=> 22:
+        -1:
+            skip_scek_22n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_22p: tryte = 0
+
+    match index <=> 23:
+        -1:
+            skip_scek_23n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_23p: tryte = 0
+
+    match index <=> 24:
+        -1:
+            skip_scek_24n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scek_24p: tryte = 0
+
+    match index <=> 25:
+        -1:
+            skip_scek_25n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_scek_25p: tryte = 0
+
+    match index <=> 26:
+        -1:
+            skip_scek_26n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_26p: tryte = 0
+
+    match index <=> 27:
+        -1:
+            skip_scek_27n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_27p: tryte = 0
+
+    match index <=> 28:
+        -1:
+            skip_scek_28n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_scek_28p: tryte = 0
+
+    match index <=> 29:
+        -1:
+            skip_scek_29n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_29p: tryte = 0
+
+    match index <=> 30:
+        -1:
+            skip_scek_30n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_30p: tryte = 0
+
+    match index <=> 31:
+        -1:
+            skip_scek_31n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_31p: tryte = 0
+
+    match index <=> 32:
+        -1:
+            skip_scek_32n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scek_32p: tryte = 0
+
+    match index <=> 33:
+        -1:
+            skip_scek_33n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_scek_33p: tryte = 0
+
+    match index <=> 34:
+        -1:
+            skip_scek_34n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_34p: tryte = 0
+
+    match index <=> 35:
+        -1:
+            skip_scek_35n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_35p: tryte = 0
+
+    match index <=> 36:
+        -1:
+            skip_scek_36n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_scek_36p: tryte = 0
+
+    match index <=> 37:
+        -1:
+            skip_scek_37n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_37p: tryte = 0
+
+    match index <=> 38:
+        -1:
+            skip_scek_38n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_38p: tryte = 0
+
+    match index <=> 39:
+        -1:
+            skip_scek_39n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scek_39p: tryte = 0
+
+    match index <=> 40:
+        -1:
+            skip_scek_40n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_scek_40p: tryte = 0
+
+    match index <=> 41:
+        -1:
+            skip_scek_41n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_41p: tryte = 0
+
+    match index <=> 42:
+        -1:
+            skip_scek_42n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_scek_42p: tryte = 0
+
+    match index <=> 43:
+        -1:
+            skip_scek_43n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_43p: tryte = 0
+
+    match index <=> 44:
+        -1:
+            skip_scek_44n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scek_44p: tryte = 0
+
+    match index <=> 45:
+        -1:
+            skip_scek_45n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_scek_45p: tryte = 0
+
+    match index <=> 46:
+        -1:
+            skip_scek_46n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_46p: tryte = 0
+
+    match index <=> 47:
+        -1:
+            skip_scek_47n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scek_47p: tryte = 0
+
+    match index <=> 48:
+        -1:
+            skip_scek_48n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_scek_48p: tryte = 0
+
+    match index <=> 49:
+        -1:
+            skip_scek_49n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_49p: tryte = 0
+
+    match index <=> 50:
+        -1:
+            skip_scek_50n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scek_50p: tryte = 0
+
+    match index <=> 51:
+        -1:
+            skip_scek_51n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_51p: tryte = 0
+
+    match index <=> 52:
+        -1:
+            skip_scek_52n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_52p: tryte = 0
+
+    match index <=> 53:
+        -1:
+            skip_scek_53n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scek_53p: tryte = 0
+
+    match index <=> 54:
+        -1:
+            skip_scek_54n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scek_54p: tryte = 0
+
+    match index <=> 55:
+        -1:
+            skip_scek_55n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scek_55p: tryte = 0
+
+    match index <=> 56:
+        -1:
+            skip_scek_56n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scek_56p: tryte = 0
+
+    match index <=> 57:
+        -1:
+            skip_scek_57n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scek_57p: tryte = 0
+
+    match index <=> 58:
+        -1:
+            skip_scek_58n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_scek_58p: tryte = 0
+
+    match index <=> 59:
+        -1:
+            skip_scek_59n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_59p: tryte = 0
+
+    match index <=> 60:
+        -1:
+            skip_scek_60n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_scek_60p: tryte = 0
+
+    match index <=> 61:
+        -1:
+            skip_scek_61n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_61p: tryte = 0
+
+    match index <=> 62:
+        -1:
+            skip_scek_62n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scek_62p: tryte = 0
+
+    match index <=> 63:
+        -1:
+            skip_scek_63n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_63p: tryte = 0
+
+    match index <=> 64:
+        -1:
+            skip_scek_64n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_64p: tryte = 0
+
+    match index <=> 65:
+        -1:
+            skip_scek_65n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scek_65p: tryte = 0
+
+    match index <=> 66:
+        -1:
+            skip_scek_66n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scek_66p: tryte = 0
+
+    match index <=> 67:
+        -1:
+            skip_scek_67n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scek_67p: tryte = 0
+
+    match index <=> 68:
+        -1:
+            skip_scek_68n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scek_68p: tryte = 0
+
+    match index <=> 69:
+        -1:
+            skip_scek_69n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scek_69p: tryte = 0
+
+    match index <=> 70:
+        -1:
+            skip_scek_70n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_scek_70p: tryte = 0
+
+    match index <=> 71:
+        -1:
+            skip_scek_71n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_71p: tryte = 0
+
+    match index <=> 72:
+        -1:
+            skip_scek_72n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_scek_72p: tryte = 0
+
+    match index <=> 73:
+        -1:
+            skip_scek_73n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_scek_73p: tryte = 0
+
+    match index <=> 74:
+        -1:
+            skip_scek_74n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_74p: tryte = 0
+
+    match index <=> 75:
+        -1:
+            skip_scek_75n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_75p: tryte = 0
+
+    match index <=> 76:
+        -1:
+            skip_scek_76n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scek_76p: tryte = 0
+
+    match index <=> 77:
+        -1:
+            skip_scek_77n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_77p: tryte = 0
+
+    match index <=> 78:
+        -1:
+            skip_scek_78n: tryte = 0
+        0:
+            return 9
+        1:
+            skip_scek_78p: tryte = 0
+
+    match index <=> 79:
+        -1:
+            skip_scek_79n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_79p: tryte = 0
+
+    match index <=> 80:
+        -1:
+            skip_scek_80n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_80p: tryte = 0
+
+    match index <=> 81:
+        -1:
+            skip_scek_81n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_scek_81p: tryte = 0
+
+    match index <=> 82:
+        -1:
+            skip_scek_82n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_82p: tryte = 0
+
+    match index <=> 83:
+        -1:
+            skip_scek_83n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_83p: tryte = 0
+
+    match index <=> 84:
+        -1:
+            skip_scek_84n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_84p: tryte = 0
+
+    match index <=> 85:
+        -1:
+            skip_scek_85n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scek_85p: tryte = 0
+
+    match index <=> 86:
+        -1:
+            skip_scek_86n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_scek_86p: tryte = 0
+
+    match index <=> 87:
+        -1:
+            skip_scek_87n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_87p: tryte = 0
+
+    match index <=> 88:
+        -1:
+            skip_scek_88n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_88p: tryte = 0
+
+    match index <=> 89:
+        -1:
+            skip_scek_89n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_scek_89p: tryte = 0
+
+    match index <=> 90:
+        -1:
+            skip_scek_90n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_90p: tryte = 0
+
+    match index <=> 91:
+        -1:
+            skip_scek_91n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_91p: tryte = 0
+
+    match index <=> 92:
+        -1:
+            skip_scek_92n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_92p: tryte = 0
+
+    match index <=> 93:
+        -1:
+            skip_scek_93n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scek_93p: tryte = 0
+
+    match index <=> 94:
+        -1:
+            skip_scek_94n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_scek_94p: tryte = 0
+
+    match index <=> 95:
+        -1:
+            skip_scek_95n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_95p: tryte = 0
+
+    match index <=> 96:
+        -1:
+            skip_scek_96n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_96p: tryte = 0
+
+    match index <=> 97:
+        -1:
+            skip_scek_97n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_scek_97p: tryte = 0
+
+    match index <=> 98:
+        -1:
+            skip_scek_98n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_98p: tryte = 0
+
+    match index <=> 99:
+        -1:
+            skip_scek_99n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_99p: tryte = 0
+
+    match index <=> 100:
+        -1:
+            skip_scek_100n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_100p: tryte = 0
+
+    match index <=> 101:
+        -1:
+            skip_scek_101n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scek_101p: tryte = 0
+
+    match index <=> 102:
+        -1:
+            skip_scek_102n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_scek_102p: tryte = 0
+
+    match index <=> 103:
+        -1:
+            skip_scek_103n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_103p: tryte = 0
+
+    match index <=> 104:
+        -1:
+            skip_scek_104n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_104p: tryte = 0
+
+    match index <=> 105:
+        -1:
+            skip_scek_105n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_scek_105p: tryte = 0
+
+    match index <=> 106:
+        -1:
+            skip_scek_106n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_106p: tryte = 0
+
+    match index <=> 107:
+        -1:
+            skip_scek_107n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_107p: tryte = 0
+
+    match index <=> 108:
+        -1:
+            skip_scek_108n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scek_108p: tryte = 0
+
+    match index <=> 109:
+        -1:
+            skip_scek_109n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_scek_109p: tryte = 0
+
+    match index <=> 110:
+        -1:
+            skip_scek_110n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_110p: tryte = 0
+
+    match index <=> 111:
+        -1:
+            skip_scek_111n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_scek_111p: tryte = 0
+
+    match index <=> 112:
+        -1:
+            skip_scek_112n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_112p: tryte = 0
+
+    match index <=> 113:
+        -1:
+            skip_scek_113n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scek_113p: tryte = 0
+
+    match index <=> 114:
+        -1:
+            skip_scek_114n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_scek_114p: tryte = 0
+
+    match index <=> 115:
+        -1:
+            skip_scek_115n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_115p: tryte = 0
+
+    match index <=> 116:
+        -1:
+            skip_scek_116n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scek_116p: tryte = 0
+
+    match index <=> 117:
+        -1:
+            skip_scek_117n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_117p: tryte = 0
+
+    match index <=> 118:
+        -1:
+            skip_scek_118n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_118p: tryte = 0
+
+    match index <=> 119:
+        -1:
+            skip_scek_119n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scek_119p: tryte = 0
+
+    match index <=> 120:
+        -1:
+            skip_scek_120n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scek_120p: tryte = 0
+
+    match index <=> 121:
+        -1:
+            skip_scek_121n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scek_121p: tryte = 0
+
+    match index <=> 122:
+        -1:
+            skip_scek_122n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scek_122p: tryte = 0
+
+    match index <=> 123:
+        -1:
+            skip_scek_123n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scek_123p: tryte = 0
+
+    match index <=> 124:
+        -1:
+            skip_scek_124n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_scek_124p: tryte = 0
+
+    match index <=> 125:
+        -1:
+            skip_scek_125n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_125p: tryte = 0
+
+    match index <=> 126:
+        -1:
+            skip_scek_126n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_scek_126p: tryte = 0
+
+    match index <=> 127:
+        -1:
+            skip_scek_127n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_127p: tryte = 0
+
+    match index <=> 128:
+        -1:
+            skip_scek_128n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scek_128p: tryte = 0
+
+    match index <=> 129:
+        -1:
+            skip_scek_129n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_scek_129p: tryte = 0
+
+    match index <=> 130:
+        -1:
+            skip_scek_130n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_130p: tryte = 0
+
+    match index <=> 131:
+        -1:
+            skip_scek_131n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scek_131p: tryte = 0
+
+    match index <=> 132:
+        -1:
+            skip_scek_132n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_132p: tryte = 0
+
+    match index <=> 133:
+        -1:
+            skip_scek_133n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_133p: tryte = 0
+
+    match index <=> 134:
+        -1:
+            skip_scek_134n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scek_134p: tryte = 0
+
+    match index <=> 135:
+        -1:
+            skip_scek_135n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scek_135p: tryte = 0
+
+    match index <=> 136:
+        -1:
+            skip_scek_136n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scek_136p: tryte = 0
+
+    match index <=> 137:
+        -1:
+            skip_scek_137n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scek_137p: tryte = 0
+
+    match index <=> 138:
+        -1:
+            skip_scek_138n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scek_138p: tryte = 0
+
+    match index <=> 139:
+        -1:
+            skip_scek_139n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_scek_139p: tryte = 0
+
+    match index <=> 140:
+        -1:
+            skip_scek_140n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_140p: tryte = 0
+
+    match index <=> 141:
+        -1:
+            skip_scek_141n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_scek_141p: tryte = 0
+
+    match index <=> 142:
+        -1:
+            skip_scek_142n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_142p: tryte = 0
+
+    match index <=> 143:
+        -1:
+            skip_scek_143n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scek_143p: tryte = 0
+
+    match index <=> 144:
+        -1:
+            skip_scek_144n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_scek_144p: tryte = 0
+
+    match index <=> 145:
+        -1:
+            skip_scek_145n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_145p: tryte = 0
+
+    match index <=> 146:
+        -1:
+            skip_scek_146n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scek_146p: tryte = 0
+
+    match index <=> 147:
+        -1:
+            skip_scek_147n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_scek_147p: tryte = 0
+
+    match index <=> 148:
+        -1:
+            skip_scek_148n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_148p: tryte = 0
+
+    match index <=> 149:
+        -1:
+            skip_scek_149n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scek_149p: tryte = 0
+
+    match index <=> 150:
+        -1:
+            skip_scek_150n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_scek_150p: tryte = 0
+
+    match index <=> 151:
+        -1:
+            skip_scek_151n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_151p: tryte = 0
+
+    match index <=> 152:
+        -1:
+            skip_scek_152n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scek_152p: tryte = 0
+
+    match index <=> 153:
+        -1:
+            skip_scek_153n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_153p: tryte = 0
+
+    match index <=> 154:
+        -1:
+            skip_scek_154n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_154p: tryte = 0
+
+    match index <=> 155:
+        -1:
+            skip_scek_155n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scek_155p: tryte = 0
+
+    match index <=> 156:
+        -1:
+            skip_scek_156n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scek_156p: tryte = 0
+
+    match index <=> 157:
+        -1:
+            skip_scek_157n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scek_157p: tryte = 0
+
+    match index <=> 158:
+        -1:
+            skip_scek_158n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scek_158p: tryte = 0
+
+    match index <=> 159:
+        -1:
+            skip_scek_159n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scek_159p: tryte = 0
+
+    match index <=> 160:
+        -1:
+            skip_scek_160n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_scek_160p: tryte = 0
+
+    match index <=> 161:
+        -1:
+            skip_scek_161n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_161p: tryte = 0
+
+    match index <=> 162:
+        -1:
+            skip_scek_162n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_scek_162p: tryte = 0
+
+    match index <=> 163:
+        -1:
+            skip_scek_163n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_163p: tryte = 0
+
+    match index <=> 164:
+        -1:
+            skip_scek_164n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scek_164p: tryte = 0
+
+    match index <=> 165:
+        -1:
+            skip_scek_165n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scek_165p: tryte = 0
+
+    match index <=> 166:
+        -1:
+            skip_scek_166n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_166p: tryte = 0
+
+    match index <=> 167:
+        -1:
+            skip_scek_167n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scek_167p: tryte = 0
+
+    match index <=> 168:
+        -1:
+            skip_scek_168n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scek_168p: tryte = 0
+
+    match index <=> 169:
+        -1:
+            skip_scek_169n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scek_169p: tryte = 0
+
+    match index <=> 170:
+        -1:
+            skip_scek_170n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scek_170p: tryte = 0
+
+    match index <=> 171:
+        -1:
+            skip_scek_171n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scek_171p: tryte = 0
+
+    match index <=> 172:
+        -1:
+            skip_scek_172n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_scek_172p: tryte = 0
+
+    match index <=> 173:
+        -1:
+            skip_scek_173n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scek_173p: tryte = 0
+
+    match index <=> 174:
+        -1:
+            skip_scek_174n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_scek_174p: tryte = 0
+
+    return 0
+
+
+fn simple_call_event_arg0(index: tryte) -> tryte:
+    match index <=> 0:
+        -1:
+            skip_scea_0n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_0p: tryte = 0
+
+    match index <=> 1:
+        -1:
+            skip_scea_1n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_1p: tryte = 0
+
+    match index <=> 2:
+        -1:
+            skip_scea_2n: tryte = 0
+        0:
+            return 7
+        1:
+            skip_scea_2p: tryte = 0
+
+    match index <=> 3:
+        -1:
+            skip_scea_3n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_3p: tryte = 0
+
+    match index <=> 4:
+        -1:
+            skip_scea_4n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_4p: tryte = 0
+
+    match index <=> 5:
+        -1:
+            skip_scea_5n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scea_5p: tryte = 0
+
+    match index <=> 6:
+        -1:
+            skip_scea_6n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_6p: tryte = 0
+
+    match index <=> 7:
+        -1:
+            skip_scea_7n: tryte = 0
+        0:
+            return 9
+        1:
+            skip_scea_7p: tryte = 0
+
+    match index <=> 8:
+        -1:
+            skip_scea_8n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_8p: tryte = 0
+
+    match index <=> 9:
+        -1:
+            skip_scea_9n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_9p: tryte = 0
+
+    match index <=> 10:
+        -1:
+            skip_scea_10n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_10p: tryte = 0
+
+    match index <=> 11:
+        -1:
+            skip_scea_11n: tryte = 0
+        0:
+            return 11
+        1:
+            skip_scea_11p: tryte = 0
+
+    match index <=> 12:
+        -1:
+            skip_scea_12n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_12p: tryte = 0
+
+    match index <=> 13:
+        -1:
+            skip_scea_13n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scea_13p: tryte = 0
+
+    match index <=> 14:
+        -1:
+            skip_scea_14n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_scea_14p: tryte = 0
+
+    match index <=> 15:
+        -1:
+            skip_scea_15n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_15p: tryte = 0
+
+    match index <=> 16:
+        -1:
+            skip_scea_16n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_scea_16p: tryte = 0
+
+    match index <=> 17:
+        -1:
+            skip_scea_17n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_17p: tryte = 0
+
+    match index <=> 18:
+        -1:
+            skip_scea_18n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_18p: tryte = 0
+
+    match index <=> 19:
+        -1:
+            skip_scea_19n: tryte = 0
+        0:
+            return 11
+        1:
+            skip_scea_19p: tryte = 0
+
+    match index <=> 20:
+        -1:
+            skip_scea_20n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_20p: tryte = 0
+
+    match index <=> 21:
+        -1:
+            skip_scea_21n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scea_21p: tryte = 0
+
+    match index <=> 22:
+        -1:
+            skip_scea_22n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_scea_22p: tryte = 0
+
+    match index <=> 23:
+        -1:
+            skip_scea_23n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_23p: tryte = 0
+
+    match index <=> 24:
+        -1:
+            skip_scea_24n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scea_24p: tryte = 0
+
+    match index <=> 25:
+        -1:
+            skip_scea_25n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_25p: tryte = 0
+
+    match index <=> 26:
+        -1:
+            skip_scea_26n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_26p: tryte = 0
+
+    match index <=> 27:
+        -1:
+            skip_scea_27n: tryte = 0
+        0:
+            return 11
+        1:
+            skip_scea_27p: tryte = 0
+
+    match index <=> 28:
+        -1:
+            skip_scea_28n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_28p: tryte = 0
+
+    match index <=> 29:
+        -1:
+            skip_scea_29n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scea_29p: tryte = 0
+
+    match index <=> 30:
+        -1:
+            skip_scea_30n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scea_30p: tryte = 0
+
+    match index <=> 31:
+        -1:
+            skip_scea_31n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_31p: tryte = 0
+
+    match index <=> 32:
+        -1:
+            skip_scea_32n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scea_32p: tryte = 0
+
+    match index <=> 33:
+        -1:
+            skip_scea_33n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_33p: tryte = 0
+
+    match index <=> 34:
+        -1:
+            skip_scea_34n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_34p: tryte = 0
+
+    match index <=> 35:
+        -1:
+            skip_scea_35n: tryte = 0
+        0:
+            return 11
+        1:
+            skip_scea_35p: tryte = 0
+
+    match index <=> 36:
+        -1:
+            skip_scea_36n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_36p: tryte = 0
+
+    match index <=> 37:
+        -1:
+            skip_scea_37n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scea_37p: tryte = 0
+
+    match index <=> 38:
+        -1:
+            skip_scea_38n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_38p: tryte = 0
+
+    match index <=> 39:
+        -1:
+            skip_scea_39n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scea_39p: tryte = 0
+
+    match index <=> 40:
+        -1:
+            skip_scea_40n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_40p: tryte = 0
+
+    match index <=> 41:
+        -1:
+            skip_scea_41n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scea_41p: tryte = 0
+
+    match index <=> 42:
+        -1:
+            skip_scea_42n: tryte = 0
+        0:
+            return 103
+        1:
+            skip_scea_42p: tryte = 0
+
+    match index <=> 43:
+        -1:
+            skip_scea_43n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_scea_43p: tryte = 0
+
+    match index <=> 44:
+        -1:
+            skip_scea_44n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scea_44p: tryte = 0
+
+    match index <=> 45:
+        -1:
+            skip_scea_45n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_45p: tryte = 0
+
+    match index <=> 46:
+        -1:
+            skip_scea_46n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_46p: tryte = 0
+
+    match index <=> 47:
+        -1:
+            skip_scea_47n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_scea_47p: tryte = 0
+
+    match index <=> 48:
+        -1:
+            skip_scea_48n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_48p: tryte = 0
+
+    match index <=> 49:
+        -1:
+            skip_scea_49n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_49p: tryte = 0
+
+    match index <=> 50:
+        -1:
+            skip_scea_50n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scea_50p: tryte = 0
+
+    match index <=> 51:
+        -1:
+            skip_scea_51n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_51p: tryte = 0
+
+    match index <=> 52:
+        -1:
+            skip_scea_52n: tryte = 0
+        0:
+            return 8
+        1:
+            skip_scea_52p: tryte = 0
+
+    match index <=> 53:
+        -1:
+            skip_scea_53n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scea_53p: tryte = 0
+
+    match index <=> 54:
+        -1:
+            skip_scea_54n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_54p: tryte = 0
+
+    match index <=> 55:
+        -1:
+            skip_scea_55n: tryte = 0
+        0:
+            return 14
+        1:
+            skip_scea_55p: tryte = 0
+
+    match index <=> 56:
+        -1:
+            skip_scea_56n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_56p: tryte = 0
+
+    match index <=> 57:
+        -1:
+            skip_scea_57n: tryte = 0
+        0:
+            return 50
+        1:
+            skip_scea_57p: tryte = 0
+
+    match index <=> 58:
+        -1:
+            skip_scea_58n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_58p: tryte = 0
+
+    match index <=> 59:
+        -1:
+            skip_scea_59n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scea_59p: tryte = 0
+
+    match index <=> 60:
+        -1:
+            skip_scea_60n: tryte = 0
+        0:
+            return 104
+        1:
+            skip_scea_60p: tryte = 0
+
+    match index <=> 61:
+        -1:
+            skip_scea_61n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_scea_61p: tryte = 0
+
+    match index <=> 62:
+        -1:
+            skip_scea_62n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scea_62p: tryte = 0
+
+    match index <=> 63:
+        -1:
+            skip_scea_63n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_63p: tryte = 0
+
+    match index <=> 64:
+        -1:
+            skip_scea_64n: tryte = 0
+        0:
+            return 8
+        1:
+            skip_scea_64p: tryte = 0
+
+    match index <=> 65:
+        -1:
+            skip_scea_65n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scea_65p: tryte = 0
+
+    match index <=> 66:
+        -1:
+            skip_scea_66n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_66p: tryte = 0
+
+    match index <=> 67:
+        -1:
+            skip_scea_67n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scea_67p: tryte = 0
+
+    match index <=> 68:
+        -1:
+            skip_scea_68n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_68p: tryte = 0
+
+    match index <=> 69:
+        -1:
+            skip_scea_69n: tryte = 0
+        0:
+            return 41
+        1:
+            skip_scea_69p: tryte = 0
+
+    match index <=> 70:
+        -1:
+            skip_scea_70n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_70p: tryte = 0
+
+    match index <=> 71:
+        -1:
+            skip_scea_71n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scea_71p: tryte = 0
+
+    match index <=> 72:
+        -1:
+            skip_scea_72n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_72p: tryte = 0
+
+    match index <=> 73:
+        -1:
+            skip_scea_73n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_73p: tryte = 0
+
+    match index <=> 74:
+        -1:
+            skip_scea_74n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scea_74p: tryte = 0
+
+    match index <=> 75:
+        -1:
+            skip_scea_75n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_75p: tryte = 0
+
+    match index <=> 76:
+        -1:
+            skip_scea_76n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_76p: tryte = 0
+
+    match index <=> 77:
+        -1:
+            skip_scea_77n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_77p: tryte = 0
+
+    match index <=> 78:
+        -1:
+            skip_scea_78n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_78p: tryte = 0
+
+    match index <=> 79:
+        -1:
+            skip_scea_79n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_79p: tryte = 0
+
+    match index <=> 80:
+        -1:
+            skip_scea_80n: tryte = 0
+        0:
+            return 11
+        1:
+            skip_scea_80p: tryte = 0
+
+    match index <=> 81:
+        -1:
+            skip_scea_81n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_81p: tryte = 0
+
+    match index <=> 82:
+        -1:
+            skip_scea_82n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scea_82p: tryte = 0
+
+    match index <=> 83:
+        -1:
+            skip_scea_83n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scea_83p: tryte = 0
+
+    match index <=> 84:
+        -1:
+            skip_scea_84n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_84p: tryte = 0
+
+    match index <=> 85:
+        -1:
+            skip_scea_85n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_scea_85p: tryte = 0
+
+    match index <=> 86:
+        -1:
+            skip_scea_86n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_86p: tryte = 0
+
+    match index <=> 87:
+        -1:
+            skip_scea_87n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_87p: tryte = 0
+
+    match index <=> 88:
+        -1:
+            skip_scea_88n: tryte = 0
+        0:
+            return 11
+        1:
+            skip_scea_88p: tryte = 0
+
+    match index <=> 89:
+        -1:
+            skip_scea_89n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_89p: tryte = 0
+
+    match index <=> 90:
+        -1:
+            skip_scea_90n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scea_90p: tryte = 0
+
+    match index <=> 91:
+        -1:
+            skip_scea_91n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scea_91p: tryte = 0
+
+    match index <=> 92:
+        -1:
+            skip_scea_92n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_92p: tryte = 0
+
+    match index <=> 93:
+        -1:
+            skip_scea_93n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scea_93p: tryte = 0
+
+    match index <=> 94:
+        -1:
+            skip_scea_94n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_94p: tryte = 0
+
+    match index <=> 95:
+        -1:
+            skip_scea_95n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_95p: tryte = 0
+
+    match index <=> 96:
+        -1:
+            skip_scea_96n: tryte = 0
+        0:
+            return 11
+        1:
+            skip_scea_96p: tryte = 0
+
+    match index <=> 97:
+        -1:
+            skip_scea_97n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_97p: tryte = 0
+
+    match index <=> 98:
+        -1:
+            skip_scea_98n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scea_98p: tryte = 0
+
+    match index <=> 99:
+        -1:
+            skip_scea_99n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scea_99p: tryte = 0
+
+    match index <=> 100:
+        -1:
+            skip_scea_100n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_100p: tryte = 0
+
+    match index <=> 101:
+        -1:
+            skip_scea_101n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scea_101p: tryte = 0
+
+    match index <=> 102:
+        -1:
+            skip_scea_102n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_102p: tryte = 0
+
+    match index <=> 103:
+        -1:
+            skip_scea_103n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_103p: tryte = 0
+
+    match index <=> 104:
+        -1:
+            skip_scea_104n: tryte = 0
+        0:
+            return 11
+        1:
+            skip_scea_104p: tryte = 0
+
+    match index <=> 105:
+        -1:
+            skip_scea_105n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_105p: tryte = 0
+
+    match index <=> 106:
+        -1:
+            skip_scea_106n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scea_106p: tryte = 0
+
+    match index <=> 107:
+        -1:
+            skip_scea_107n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_107p: tryte = 0
+
+    match index <=> 108:
+        -1:
+            skip_scea_108n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scea_108p: tryte = 0
+
+    match index <=> 109:
+        -1:
+            skip_scea_109n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_109p: tryte = 0
+
+    match index <=> 110:
+        -1:
+            skip_scea_110n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scea_110p: tryte = 0
+
+    match index <=> 111:
+        -1:
+            skip_scea_111n: tryte = 0
+        0:
+            return 100
+        1:
+            skip_scea_111p: tryte = 0
+
+    match index <=> 112:
+        -1:
+            skip_scea_112n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_112p: tryte = 0
+
+    match index <=> 113:
+        -1:
+            skip_scea_113n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_scea_113p: tryte = 0
+
+    match index <=> 114:
+        -1:
+            skip_scea_114n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_114p: tryte = 0
+
+    match index <=> 115:
+        -1:
+            skip_scea_115n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_115p: tryte = 0
+
+    match index <=> 116:
+        -1:
+            skip_scea_116n: tryte = 0
+        0:
+            return 10
+        1:
+            skip_scea_116p: tryte = 0
+
+    match index <=> 117:
+        -1:
+            skip_scea_117n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_117p: tryte = 0
+
+    match index <=> 118:
+        -1:
+            skip_scea_118n: tryte = 0
+        0:
+            return 8
+        1:
+            skip_scea_118p: tryte = 0
+
+    match index <=> 119:
+        -1:
+            skip_scea_119n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scea_119p: tryte = 0
+
+    match index <=> 120:
+        -1:
+            skip_scea_120n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_120p: tryte = 0
+
+    match index <=> 121:
+        -1:
+            skip_scea_121n: tryte = 0
+        0:
+            return 16
+        1:
+            skip_scea_121p: tryte = 0
+
+    match index <=> 122:
+        -1:
+            skip_scea_122n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_122p: tryte = 0
+
+    match index <=> 123:
+        -1:
+            skip_scea_123n: tryte = 0
+        0:
+            return 90
+        1:
+            skip_scea_123p: tryte = 0
+
+    match index <=> 124:
+        -1:
+            skip_scea_124n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_124p: tryte = 0
+
+    match index <=> 125:
+        -1:
+            skip_scea_125n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scea_125p: tryte = 0
+
+    match index <=> 126:
+        -1:
+            skip_scea_126n: tryte = 0
+        0:
+            return 100
+        1:
+            skip_scea_126p: tryte = 0
+
+    match index <=> 127:
+        -1:
+            skip_scea_127n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_127p: tryte = 0
+
+    match index <=> 128:
+        -1:
+            skip_scea_128n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scea_128p: tryte = 0
+
+    match index <=> 129:
+        -1:
+            skip_scea_129n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_129p: tryte = 0
+
+    match index <=> 130:
+        -1:
+            skip_scea_130n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_130p: tryte = 0
+
+    match index <=> 131:
+        -1:
+            skip_scea_131n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scea_131p: tryte = 0
+
+    match index <=> 132:
+        -1:
+            skip_scea_132n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_132p: tryte = 0
+
+    match index <=> 133:
+        -1:
+            skip_scea_133n: tryte = 0
+        0:
+            return 8
+        1:
+            skip_scea_133p: tryte = 0
+
+    match index <=> 134:
+        -1:
+            skip_scea_134n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scea_134p: tryte = 0
+
+    match index <=> 135:
+        -1:
+            skip_scea_135n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_135p: tryte = 0
+
+    match index <=> 136:
+        -1:
+            skip_scea_136n: tryte = 0
+        0:
+            return 20
+        1:
+            skip_scea_136p: tryte = 0
+
+    match index <=> 137:
+        -1:
+            skip_scea_137n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_137p: tryte = 0
+
+    match index <=> 138:
+        -1:
+            skip_scea_138n: tryte = 0
+        0:
+            return 94
+        1:
+            skip_scea_138p: tryte = 0
+
+    match index <=> 139:
+        -1:
+            skip_scea_139n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_139p: tryte = 0
+
+    match index <=> 140:
+        -1:
+            skip_scea_140n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scea_140p: tryte = 0
+
+    match index <=> 141:
+        -1:
+            skip_scea_141n: tryte = 0
+        0:
+            return 105
+        1:
+            skip_scea_141p: tryte = 0
+
+    match index <=> 142:
+        -1:
+            skip_scea_142n: tryte = 0
+        0:
+            return 2
+        1:
+            skip_scea_142p: tryte = 0
+
+    match index <=> 143:
+        -1:
+            skip_scea_143n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scea_143p: tryte = 0
+
+    match index <=> 144:
+        -1:
+            skip_scea_144n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_144p: tryte = 0
+
+    match index <=> 145:
+        -1:
+            skip_scea_145n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_145p: tryte = 0
+
+    match index <=> 146:
+        -1:
+            skip_scea_146n: tryte = 0
+        0:
+            return 9
+        1:
+            skip_scea_146p: tryte = 0
+
+    match index <=> 147:
+        -1:
+            skip_scea_147n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_147p: tryte = 0
+
+    match index <=> 148:
+        -1:
+            skip_scea_148n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_148p: tryte = 0
+
+    match index <=> 149:
+        -1:
+            skip_scea_149n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_scea_149p: tryte = 0
+
+    match index <=> 150:
+        -1:
+            skip_scea_150n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_150p: tryte = 0
+
+    match index <=> 151:
+        -1:
+            skip_scea_151n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_151p: tryte = 0
+
+    match index <=> 152:
+        -1:
+            skip_scea_152n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scea_152p: tryte = 0
+
+    match index <=> 153:
+        -1:
+            skip_scea_153n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_153p: tryte = 0
+
+    match index <=> 154:
+        -1:
+            skip_scea_154n: tryte = 0
+        0:
+            return 8
+        1:
+            skip_scea_154p: tryte = 0
+
+    match index <=> 155:
+        -1:
+            skip_scea_155n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scea_155p: tryte = 0
+
+    match index <=> 156:
+        -1:
+            skip_scea_156n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_156p: tryte = 0
+
+    match index <=> 157:
+        -1:
+            skip_scea_157n: tryte = 0
+        0:
+            return 12
+        1:
+            skip_scea_157p: tryte = 0
+
+    match index <=> 158:
+        -1:
+            skip_scea_158n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_158p: tryte = 0
+
+    match index <=> 159:
+        -1:
+            skip_scea_159n: tryte = 0
+        0:
+            return 86
+        1:
+            skip_scea_159p: tryte = 0
+
+    match index <=> 160:
+        -1:
+            skip_scea_160n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_160p: tryte = 0
+
+    match index <=> 161:
+        -1:
+            skip_scea_161n: tryte = 0
+        0:
+            return 4
+        1:
+            skip_scea_161p: tryte = 0
+
+    match index <=> 162:
+        -1:
+            skip_scea_162n: tryte = 0
+        0:
+            return 104
+        1:
+            skip_scea_162p: tryte = 0
+
+    match index <=> 163:
+        -1:
+            skip_scea_163n: tryte = 0
+        0:
+            return 3
+        1:
+            skip_scea_163p: tryte = 0
+
+    match index <=> 164:
+        -1:
+            skip_scea_164n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scea_164p: tryte = 0
+
+    match index <=> 165:
+        -1:
+            skip_scea_165n: tryte = 0
+        0:
+            return 1
+        1:
+            skip_scea_165p: tryte = 0
+
+    match index <=> 166:
+        -1:
+            skip_scea_166n: tryte = 0
+        0:
+            return 8
+        1:
+            skip_scea_166p: tryte = 0
+
+    match index <=> 167:
+        -1:
+            skip_scea_167n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scea_167p: tryte = 0
+
+    match index <=> 168:
+        -1:
+            skip_scea_168n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_168p: tryte = 0
+
+    match index <=> 169:
+        -1:
+            skip_scea_169n: tryte = 0
+        0:
+            return 5
+        1:
+            skip_scea_169p: tryte = 0
+
+    match index <=> 170:
+        -1:
+            skip_scea_170n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_170p: tryte = 0
+
+    match index <=> 171:
+        -1:
+            skip_scea_171n: tryte = 0
+        0:
+            return 79
+        1:
+            skip_scea_171p: tryte = 0
+
+    match index <=> 172:
+        -1:
+            skip_scea_172n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_172p: tryte = 0
+
+    match index <=> 173:
+        -1:
+            skip_scea_173n: tryte = 0
+        0:
+            return 6
+        1:
+            skip_scea_173p: tryte = 0
+
+    match index <=> 174:
+        -1:
+            skip_scea_174n: tryte = 0
+        0:
+            return 0
+        1:
+            skip_scea_174p: tryte = 0
+
+    return 0
+
+fn sign_event_count() -> tryte:
+    return 342
+
+fn sign_event_kind(index: tryte) -> tryte:
+    mut kinds: tryte[342] = [1, 4, 1, 6, 4, 1, 4, 1, 4, 10, 10, 1, 6, 2, 6, 9, 6, 1, 10, 6, 1, 6, 2, 7, 6, 1, 10, 6, 1, 6, 2, 7, 6, 1, 10, 6, 1, 6, 2, 7, 6, 1, 10, 6, 1, 6, 2, 7, 6, 1, 10, 6, 1, 6, 2, 7, 6, 1, 10, 6, 1, 6, 2, 7, 6, 1, 10, 6, 1, 6, 2, 7, 6, 1, 10, 1, 6, 2, 10, 6, 3, 6, 2, 7, 6, 4, 6, 1, 4, 5, 4, 5, 4, 10, 6, 3, 6, 2, 7, 6, 2, 7, 6, 2, 6, 1, 4, 5, 4, 5, 4, 10, 6, 3, 6, 2, 7, 6, 2, 7, 6, 2, 7, 6, 2, 6, 1, 4, 5, 4, 5, 4, 10, 1, 6, 2, 10, 6, 3, 6, 2, 7, 6, 4, 6, 1, 4, 5, 4, 5, 4, 10, 6, 3, 6, 2, 7, 6, 2, 6, 1, 4, 5, 4, 5, 4, 10, 6, 3, 6, 2, 6, 1, 4, 5, 4, 5, 4, 10, 1, 6, 2, 10, 6, 3, 6, 2, 7, 6, 4, 6, 1, 4, 5, 4, 5, 4, 10, 6, 3, 6, 2, 6, 1, 4, 5, 4, 5, 4, 10, 1, 6, 2, 10, 6, 3, 6, 2, 7, 6, 4, 6, 1, 4, 5, 4, 5, 4, 10, 6, 3, 6, 2, 6, 1, 4, 5, 4, 5, 4, 10, 1, 10, 10, 1, 6, 2, 6, 9, 6, 1, 10, 6, 1, 6, 2, 7, 6, 1, 10, 6, 1, 6, 2, 7, 6, 1, 10, 6, 1, 6, 2, 7, 6, 1, 10, 1, 6, 2, 10, 6, 3, 6, 2, 7, 6, 4, 6, 1, 4, 5, 4, 5, 4, 10, 6, 3, 6, 2, 7, 6, 2, 6, 1, 4, 5, 4, 5, 4, 10, 6, 3, 6, 2, 7, 6, 2, 7, 6, 2, 6, 1, 4, 5, 4, 5, 4, 10, 6, 3, 6, 2, 6, 1, 4, 5, 4, 5, 4, 10, 1, 10]
+    return kinds[index]
+
+fn sign_event_arg0(index: tryte) -> tryte:
+    mut args: tryte[342] = [18, 3, 19, 1, 0, 20, 5, 20, 0, 0, 0, 2, 1, 10, 1, 0, 1, 21, 0, 4, 3, 1, 3, 0, 1, 11, 0, 4, 4, 1, 4, 0, 1, 11, 0, 4, 4, 1, 5, 0, 1, 21, 0, 4, 4, 1, 6, 0, 1, 21, 0, 4, 4, 1, 7, 0, 1, 21, 0, 4, 4, 1, 8, 0, 1, 21, 0, 4, 4, 1, 11, 0, 1, 21, 0, 5, 1, 2, 0, 4, 100, 1, 4, 0, 1, 0, 1, 8, 2, 0, 21, 0, 51, 0, 4, 106, 3, 5, 0, 1, 3, 0, 1, 4, 1, 8, 2, 0, 17, 0, 47, 0, 4, 107, 3, 5, 0, 1, 12, 0, 1, 13, 0, 1, 14, 1, 8, 2, 0, 5, 0, 35, 0, 5, 1, 12, 0, 4, 100, 1, 6, 0, 1, 1, 1, 8, 4, 0, 21, 0, 86, 0, 4, 102, 3, 7, 0, 1, 6, 1, 8, 4, 0, 20, 0, 85, 0, 4, 104, 3, 7, 1, 8, 4, 0, 13, 0, 78, 0, 5, 1, 13, 0, 4, 100, 1, 8, 0, 1, 0, 1, 8, 7, 0, 20, 0, 119, 0, 4, 104, 3, 8, 1, 8, 7, 0, 13, 0, 112, 0, 5, 1, 14, 0, 4, 100, 1, 11, 0, 1, 1, 1, 8, 10, 0, 20, 0, 152, 0, 4, 104, 3, 11, 1, 8, 10, 0, 13, 0, 145, 0, 6, 0, 0, 2, 1, 1, 1, 0, 1, 21, 0, 4, 4, 1, 3, 0, 1, 11, 0, 4, 4, 1, 4, 0, 1, 11, 0, 4, 4, 1, 5, 0, 1, 21, 0, 5, 1, 2, 0, 4, 100, 1, 3, 0, 1, 20, 1, 8, 13, 0, 18, 0, 191, 0, 4, 102, 3, 4, 0, 1, 3, 1, 8, 13, 0, 17, 0, 190, 0, 4, 105, 2, 5, 0, 1, 10, 0, 1, 4, 1, 8, 13, 0, 12, 0, 185, 0, 4, 104, 3, 5, 1, 8, 13, 0, 5, 0, 178, 0, 6, 0]
+    return args[index]
+# Event-driven render_first
+# Iterates events directly, writes bytes to dual buffers based on cumulative offset
+
+fn render_first() -> tryte:
+    mut buffer_low: tryte[300] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut buffer_high: tryte[300] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut buffer_idx: tryte = 0
+    mut buf_offset: tryte = 0
+    mut evt_idx: tryte = 0
+    while evt_idx <=> first_event_count():
+        mut kind: tryte = first_event_kind(evt_idx)
+        mut arg0: tryte = first_event_arg0(evt_idx)
+        mut length: tryte = event_length(kind, arg0)
+        mut byte_idx: tryte = 0
+        while byte_idx <=> length:
+            mut byte_val: tryte = event_byte(kind, arg0, byte_idx)
+            match buffer_idx <=> 0:
+                -1:
+                    skip_buf: tryte = 0
+                0:
+                    buffer_low[buf_offset] = byte_val
+                1:
+                    buffer_high[buf_offset] = byte_val
+            buf_offset = buf_offset + 1
+            match buf_offset <=> 300:
+                0:
+                    buffer_idx = 1
+                    buf_offset = 0
+                -1:
+                    skip_switch: tryte = 0
+                1:
+                    skip_switch: tryte = 0
+            byte_idx = byte_idx + 1
+        evt_idx = evt_idx + 1
+    return 0
+
+fn render_simple_call() -> tryte:
+    mut buffer_low: tryte[300] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut buffer_high: tryte[300] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut buffer_idx: tryte = 0
+    mut buf_offset: tryte = 0
+    mut evt_idx: tryte = 0
+    while evt_idx <=> simple_call_event_count():
+        mut kind: tryte = simple_call_event_kind(evt_idx)
+        mut arg0: tryte = simple_call_event_arg0(evt_idx)
+        mut length: tryte = event_length(kind, arg0)
+        mut byte_idx: tryte = 0
+        while byte_idx <=> length:
+            mut byte_val: tryte = event_byte(kind, arg0, byte_idx)
+            match buffer_idx <=> 0:
+                -1:
+                    skip_buf_sc: tryte = 0
+                0:
+                    buffer_low[buf_offset] = byte_val
+                1:
+                    buffer_high[buf_offset] = byte_val
+            buf_offset = buf_offset + 1
+            match buf_offset <=> 300:
+                0:
+                    buffer_idx = 1
+                    buf_offset = 0
+                -1:
+                    skip_switch_sc: tryte = 0
+                1:
+                    skip_switch_sc: tryte = 0
+            byte_idx = byte_idx + 1
+        evt_idx = evt_idx + 1
+    return 0
+
+fn render_sign() -> tryte:
+    mut buffer_low: tryte[300] = [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    ]
+    mut buffer_mid: tryte[300] = [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    ]
+    mut buffer_high: tryte[300] = [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    ]
+    mut buffer_tail: tryte[46] = [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0
+    ]
+    mut buffer_idx: tryte = 0
+    mut buf_offset: tryte = 0
+    mut evt_idx: tryte = 0
+    while evt_idx <=> sign_event_count():
+        mut kind: tryte = sign_event_kind(evt_idx)
+        mut arg0: tryte = sign_event_arg0(evt_idx)
+        mut length: tryte = event_length(kind, arg0)
+        mut byte_idx: tryte = 0
+        while byte_idx <=> length:
+            mut byte_val: tryte = event_byte(kind, arg0, byte_idx)
+            match buffer_idx <=> 0:
+                -1:
+                    skip_buf_sign_0n: tryte = 0
+                0:
+                    buffer_low[buf_offset] = byte_val
+                1:
+                    match buffer_idx <=> 1:
+                        -1:
+                            skip_buf_sign_1n: tryte = 0
+                        0:
+                            buffer_mid[buf_offset] = byte_val
+                        1:
+                            match buffer_idx <=> 2:
+                                -1:
+                                    skip_buf_sign_2n: tryte = 0
+                                0:
+                                    buffer_high[buf_offset] = byte_val
+                                1:
+                                    buffer_tail[buf_offset] = byte_val
+            buf_offset = buf_offset + 1
+            match buf_offset <=> 300:
+                0:
+                    buffer_idx = buffer_idx + 1
+                    buf_offset = 0
+                -1:
+                    skip_switch_sign: tryte = 0
+                1:
+                    skip_switch_sign: tryte = 0
+            byte_idx = byte_idx + 1
+        evt_idx = evt_idx + 1
+    return 0
+
+fn main() -> tryte:
+    return render_first()

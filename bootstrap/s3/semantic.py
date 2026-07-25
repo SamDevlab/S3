@@ -179,7 +179,22 @@ class SemanticAnalyzer:
             return True
         if isinstance(statement, ast.SwitchStatement):
             return self._analyze_switch(statement)
+        if isinstance(statement, ast.WhileStatement):
+            return self._analyze_while(statement)
         raise SemanticError("unsupported statement", statement.location)
+
+    def _analyze_while(self, statement: ast.WhileStatement) -> bool:
+        condition_type = self._analyze_expression(
+            statement.condition,
+            ast.TypeName.TRIT,
+        )
+        self._require_type(
+            condition_type,
+            ast.TypeName.TRIT,
+            statement.condition.location,
+            "while condition",
+        )
+        return self._analyze_block(statement.body, create_scope=True)
 
     def _analyze_switch(self, statement: ast.SwitchStatement) -> bool:
         selector_type = self._analyze_expression(

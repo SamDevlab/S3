@@ -1,0 +1,178 @@
+# Strategy C Proof: compute_byte(pos) walks events to determine output byte
+
+fn event_kind(evt_idx: tryte) -> tryte:
+    match evt_idx <=> 0:
+        0:
+            return 1
+        -1:
+            skip_0: tryte = 0
+        1:
+            skip_1: tryte = 0
+    match evt_idx <=> 1:
+        0:
+            return 5
+        -1:
+            skip_2: tryte = 0
+        1:
+            skip_3: tryte = 0
+    match evt_idx <=> 2:
+        0:
+            return 9
+        -1:
+            skip_4: tryte = 0
+        1:
+            skip_5: tryte = 0
+    return 0
+
+fn event_data(evt_idx: tryte) -> tryte:
+    match evt_idx <=> 0:
+        0:
+            return 1
+        -1:
+            skip_6: tryte = 0
+        1:
+            skip_7: tryte = 0
+    return 0
+
+fn event_count() -> tryte:
+    return 3
+
+fn fragment_byte(id: tryte, idx: tryte) -> tryte:
+    match id <=> 1:
+        0:
+            match idx <=> 0:
+                0:
+                    return 46
+                -1:
+                    skip_8: tryte = 0
+                1:
+                    skip_9: tryte = 0
+            match idx <=> 1:
+                0:
+                    return 115
+                -1:
+                    skip_10: tryte = 0
+                1:
+                    skip_11: tryte = 0
+            match idx <=> 2:
+                0:
+                    return 51
+                -1:
+                    skip_12: tryte = 0
+                1:
+                    skip_13: tryte = 0
+            match idx <=> 3:
+                0:
+                    return 97
+                -1:
+                    skip_14: tryte = 0
+                1:
+                    skip_15: tryte = 0
+            match idx <=> 4:
+                0:
+                    return 115
+                -1:
+                    skip_16: tryte = 0
+                1:
+                    skip_17: tryte = 0
+            match idx <=> 5:
+                0:
+                    return 109
+                -1:
+                    skip_18: tryte = 0
+                1:
+                    skip_19: tryte = 0
+            return 0
+        -1:
+            skip_20: tryte = 0
+        1:
+            skip_21: tryte = 0
+    return 0
+
+fn fragment_length(id: tryte) -> tryte:
+    match id <=> 1:
+        0:
+            return 6
+        -1:
+            skip_22: tryte = 0
+        1:
+            skip_23: tryte = 0
+    return 0
+
+fn kind_length(kind: tryte, data: tryte) -> tryte:
+    match kind <=> 1:
+        0:
+            return fragment_length(data)
+        -1:
+            skip_24: tryte = 0
+        1:
+            skip_25: tryte = 0
+    match kind <=> 5:
+        0:
+            return 1
+        -1:
+            skip_26: tryte = 0
+        1:
+            skip_27: tryte = 0
+    match kind <=> 9:
+        0:
+            return 1
+        -1:
+            skip_28: tryte = 0
+        1:
+            skip_29: tryte = 0
+    return 0
+
+fn kind_byte(kind: tryte, data: tryte, pos: tryte) -> tryte:
+    match kind <=> 1:
+        0:
+            return fragment_byte(data, pos)
+        -1:
+            skip_30: tryte = 0
+        1:
+            skip_31: tryte = 0
+    match kind <=> 5:
+        0:
+            return 32
+        -1:
+            skip_32: tryte = 0
+        1:
+            skip_33: tryte = 0
+    match kind <=> 9:
+        0:
+            return 10
+        -1:
+            skip_34: tryte = 0
+        1:
+            skip_35: tryte = 0
+    return 0
+
+fn compute_byte(pos: tryte, evt_idx: tryte) -> tryte:
+    match evt_idx <=> event_count():
+        0:
+            return 0
+        -1:
+            skip_36: tryte = 0
+        1:
+            skip_37: tryte = 0
+    mut kind: tryte = event_kind(evt_idx)
+    mut data: tryte = event_data(evt_idx)
+    mut length: tryte = kind_length(kind, data)
+    match pos <=> length:
+        -1:
+            return kind_byte(kind, data, pos)
+        0:
+            return compute_byte(pos - length, evt_idx + 1)
+        1:
+            return compute_byte(pos - length, evt_idx + 1)
+
+fn strategy_c() -> tryte:
+    mut buffer_c: tryte[16] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut i: tryte = 0
+    while i <=> 8:
+        buffer_c[i] = compute_byte(i, 0)
+        i = i + 1
+    return 0
+
+fn main() -> tryte:
+    return strategy_c()

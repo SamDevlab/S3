@@ -123,6 +123,8 @@ class Parser:
                 return self._parse_return_v0_6(self._previous())
             if self._match(TokenKind.MATCH):
                 return self._parse_match_v0_6(self._previous())
+            if self._match(TokenKind.WHILE):
+                return self._parse_while_v0_6(self._previous())
             if self._check(TokenKind.MUT):
                 return self._parse_variable_declaration_v0_6()
             if self._check(TokenKind.IDENTIFIER):
@@ -130,7 +132,7 @@ class Parser:
                 if next_token and next_token.kind is TokenKind.COLON:
                     return self._parse_variable_declaration_v0_6()
                 return self._parse_assignment_v0_6()
-            raise ParseError("expected variable declaration, 'return', or assignment", self._peek().location)
+            raise ParseError("expected variable declaration, 'return', 'while', or assignment", self._peek().location)
 
         if (
             self._check(TokenKind.MUT)
@@ -206,6 +208,16 @@ class Parser:
 
         self._consume(TokenKind.DEDENT, "expected dedent after match block")
         return ast.SwitchStatement(expression, tuple(cases), start.location)
+
+    def _parse_while_v0_6(self, start: Token) -> ast.WhileStatement:
+        condition = self._parse_expression()
+        self._consume(TokenKind.COLON, "expected ':' after while condition")
+        self._consume(TokenKind.NEWLINE, "expected newline after ':'")
+        self._consume(TokenKind.INDENT, "expected indented block")
+
+        body = self._parse_block_v0_6()
+
+        return ast.WhileStatement(condition, body, start.location)
 
     def _parse_ternary_case_v0_6(self) -> ast.TernaryCase:
         negative = self._match(TokenKind.MINUS)

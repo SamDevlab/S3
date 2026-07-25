@@ -2288,7 +2288,7 @@ def candidate_run() -> int:
     return 0
 
 
-def _render_s3_fixture(renderer_path: str, golden_path_str: str, name: str, buffer_count: int = 3) -> int:
+def _render_s3_fixture(renderer_path: str, golden_path_str: str, name: str, buffer_count: int = 3, buffer_offset: int = 0, entry: str = "main", max_instructions: int = 100000, expected_bytes: int = 0) -> int:
     path = REPO_ROOT / renderer_path
     if not path.is_file():
         print(f"S3 {name} renderer: missing")
@@ -2297,7 +2297,7 @@ def _render_s3_fixture(renderer_path: str, golden_path_str: str, name: str, buff
 
     source = path.read_text(encoding="utf-8")
     try:
-        out = _capture_fixture_output(source, buffer_count)
+        out = _capture_fixture_output(source, buffer_count, buffer_offset, entry, max_instructions, expected_bytes)
     except Exception as error:
         print(f"S3 {name} renderer: execution failed")
         print(f"  error: {error}")
@@ -2327,32 +2327,166 @@ def _render_s3_fixture(renderer_path: str, golden_path_str: str, name: str, buff
 
 
 def candidate_render_first() -> int:
-    return _render_s3_fixture(FIRST_S3_RENDERER, FIRST_S3_GOLDEN, "first", buffer_count=2)
+    meta = FIXTURE_METADATA["first"]
+    return _render_s3_fixture(FIRST_S3_RENDERER, FIRST_S3_GOLDEN, "first", buffer_count=meta.buffer_count, buffer_offset=meta.buffer_offset, entry=meta.entry, max_instructions=meta.max_instructions, expected_bytes=meta.expected_bytes)
 
 
 def candidate_render_simple_call() -> int:
-    return _render_s3_fixture(SIMPLE_CALL_S3_RENDERER, SIMPLE_CALL_S3_GOLDEN, "simple_call", buffer_count=2)
+    meta = FIXTURE_METADATA["simple_call"]
+    return _render_s3_fixture(SIMPLE_CALL_S3_RENDERER, SIMPLE_CALL_S3_GOLDEN, "simple_call", buffer_count=meta.buffer_count, buffer_offset=meta.buffer_offset, entry=meta.entry, expected_bytes=meta.expected_bytes)
 
 
 def candidate_render_sign() -> int:
-    return _render_s3_fixture(SIGN_S3_RENDERER, SIGN_S3_GOLDEN, "sign")
+    meta = FIXTURE_METADATA["sign"]
+    return _render_s3_fixture(SIGN_S3_RENDERER, SIGN_S3_GOLDEN, "sign", buffer_count=meta.buffer_count, buffer_offset=meta.buffer_offset, entry=meta.entry, expected_bytes=meta.expected_bytes)
+
+
+def generic_render_first() -> int:
+    meta = FIXTURE_METADATA["first_generic"]
+    return _render_s3_fixture(
+        meta.s3_path, meta.golden_path, "generic_first",
+        buffer_count=meta.buffer_count, buffer_offset=meta.buffer_offset,
+        entry=meta.entry, max_instructions=meta.max_instructions,
+        expected_bytes=meta.expected_bytes,
+    )
+
+
+def generic_render_simple_call() -> int:
+    meta = FIXTURE_METADATA["simple_call_generic"]
+    return _render_s3_fixture(
+        meta.s3_path, meta.golden_path, "generic_simple_call",
+        buffer_count=meta.buffer_count, buffer_offset=meta.buffer_offset,
+        entry=meta.entry, max_instructions=meta.max_instructions,
+        expected_bytes=meta.expected_bytes,
+    )
+
+
+def generic_render_sign() -> int:
+    meta = FIXTURE_METADATA["sign_generic"]
+    return _render_s3_fixture(
+        meta.s3_path, meta.golden_path, "generic_sign",
+        buffer_count=meta.buffer_count, buffer_offset=meta.buffer_offset,
+        entry=meta.entry, max_instructions=meta.max_instructions,
+        expected_bytes=meta.expected_bytes,
+    )
+
+
+def generic_vs_legacy_simple_call() -> int:
+    """Compare generic simple_call output to legacy simple_call output."""
+    generic_meta = FIXTURE_METADATA["simple_call_generic"]
+    legacy_meta = FIXTURE_METADATA["simple_call"]
+    g_path = REPO_ROOT / generic_meta.s3_path
+    l_path = REPO_ROOT / legacy_meta.s3_path
+    if not g_path.is_file():
+        print("generic renderer: missing")
+        return 1
+    if not l_path.is_file():
+        print("legacy renderer: missing")
+        return 1
+    g_src = g_path.read_text(encoding="utf-8")
+    l_src = l_path.read_text(encoding="utf-8")
+    try:
+        g_out = _capture_fixture_output(
+            g_src, generic_meta.buffer_count, generic_meta.buffer_offset,
+            generic_meta.entry, generic_meta.max_instructions,
+            generic_meta.expected_bytes,
+        )
+        l_out = _capture_fixture_output(
+            l_src, legacy_meta.buffer_count, legacy_meta.buffer_offset,
+            legacy_meta.entry, legacy_meta.max_instructions,
+            legacy_meta.expected_bytes,
+        )
+    except Exception as error:
+        print(f"generic vs legacy comparison: execution failed: {error}")
+        return 1
+    if g_out == l_out:
+        print("generic vs legacy simple_call: passed")
+        return 0
+    mismatch_count = sum(1 for a, b in zip(g_out, l_out) if a != b)
+    print(f"generic vs legacy simple_call: failed ({mismatch_count} byte(s) differ)")
+    return 1
+
+
+def generic_vs_legacy_sign() -> int:
+    """Compare generic sign output to legacy sign output."""
+    generic_meta = FIXTURE_METADATA["sign_generic"]
+    legacy_meta = FIXTURE_METADATA["sign"]
+    g_path = REPO_ROOT / generic_meta.s3_path
+    l_path = REPO_ROOT / legacy_meta.s3_path
+    if not g_path.is_file():
+        print("generic renderer: missing")
+        return 1
+    if not l_path.is_file():
+        print("legacy renderer: missing")
+        return 1
+    g_src = g_path.read_text(encoding="utf-8")
+    l_src = l_path.read_text(encoding="utf-8")
+    try:
+        g_out = _capture_fixture_output(
+            g_src, generic_meta.buffer_count, generic_meta.buffer_offset,
+            generic_meta.entry, generic_meta.max_instructions,
+            generic_meta.expected_bytes,
+        )
+        l_out = _capture_fixture_output(
+            l_src, legacy_meta.buffer_count, legacy_meta.buffer_offset,
+            legacy_meta.entry, legacy_meta.max_instructions,
+            legacy_meta.expected_bytes,
+        )
+    except Exception as error:
+        print(f"generic vs legacy sign comparison: execution failed: {error}")
+        return 1
+    if g_out == l_out:
+        print("generic vs legacy sign: passed")
+        return 0
+    mismatch_count = sum(1 for a, b in zip(g_out, l_out) if a != b)
+    print(f"generic vs legacy sign: failed ({mismatch_count} byte(s) differ)")
+    return 1
 
 
 def check() -> int:
-    first_ok = candidate_render_first()
-    if first_ok != 0:
-        print("S3 Assembly renderer comparison check: first fixture failed")
+    legacy_first_ok = candidate_render_first()
+    if legacy_first_ok != 0:
+        print("S3 Assembly renderer comparison check: legacy first fixture failed")
         return 1
-    simple_call_ok = candidate_render_simple_call()
-    if simple_call_ok != 0:
-        print("S3 Assembly renderer comparison check: simple_call fixture failed")
+    legacy_simple_call_ok = candidate_render_simple_call()
+    if legacy_simple_call_ok != 0:
+        print("S3 Assembly renderer comparison check: legacy simple_call fixture failed")
         return 1
-    sign_ok = candidate_render_sign()
-    if sign_ok != 0:
-        print("S3 Assembly renderer comparison check: sign fixture failed")
+    legacy_sign_ok = candidate_render_sign()
+    if legacy_sign_ok != 0:
+        print("S3 Assembly renderer comparison check: legacy sign fixture failed")
+        return 1
+
+    generic_first_ok = generic_render_first()
+    if generic_first_ok != 0:
+        print("S3 Assembly renderer comparison check: generic first failed")
+        return 1
+    generic_simple_call_ok = generic_render_simple_call()
+    if generic_simple_call_ok != 0:
+        print("S3 Assembly renderer comparison check: generic simple_call failed")
+        return 1
+    generic_sign_ok = generic_render_sign()
+    if generic_sign_ok != 0:
+        print("S3 Assembly renderer comparison check: generic sign failed")
+        return 1
+    generic_vs_legacy_ok = generic_vs_legacy_simple_call()
+    if generic_vs_legacy_ok != 0:
+        print("S3 Assembly renderer comparison check: generic vs legacy simple_call failed")
+        return 1
+    generic_vs_legacy_sign_ok = generic_vs_legacy_sign()
+    if generic_vs_legacy_sign_ok != 0:
+        print("S3 Assembly renderer comparison check: generic vs legacy sign failed")
         return 1
 
     print("S3 Assembly renderer comparison check: ok")
+    print("legacy first: passed")
+    print("legacy simple_call: passed")
+    print("legacy sign: passed")
+    print("generic first: passed")
+    print("generic simple_call: passed")
+    print("generic sign: passed")
+    print("generic vs legacy simple_call: passed")
+    print("generic vs legacy sign: passed")
     print("actual outputs: passed")
     print("available comparisons: passed")
     print("renderer implementation: complete")

@@ -16,7 +16,7 @@ EXPECTED_LINES = FIXTURE_METADATA["sign"].expected_lines
 
 def run_and_capture(source: str):
     meta = FIXTURE_METADATA["sign"]
-    out = _capture_fixture_output(source, meta.buffer_count)
+    out = _capture_fixture_output(source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
     return 0, out
 
 
@@ -48,7 +48,7 @@ class TestSignTextRenderer(unittest.TestCase):
 
     def test_buffers_captured(self):
         meta = FIXTURE_METADATA["sign"]
-        out = _capture_fixture_output(self.source, meta.buffer_count)
+        out = _capture_fixture_output(self.source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
         self.assertTrue(len(out) > 0)
 
     def test_output_byte_count(self):
@@ -73,7 +73,7 @@ class TestSignTextRenderer(unittest.TestCase):
 
     def test_two_runs_are_deterministic(self):
         meta = FIXTURE_METADATA["sign"]
-        output2 = _capture_fixture_output(self.source, meta.buffer_count)
+        output2 = _capture_fixture_output(self.source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
         self.assertEqual(output2, self.output)
 
     def test_first_still_passes(self):
