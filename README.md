@@ -21,7 +21,7 @@ Python está isolado em `bootstrap/`; a fonte normativa é [`spec/`](spec/).
 A implementação atual oferece:
 
 - `trit` e `tryte`, overflow detectável e sem unsigned;
-- funções, chamadas, recursão, laços `while`, `break` e `continue` em `while`, operadores relacionais (`==`, `!=`, `<`, `<=`, `>`, `>=`), e `match` ternário exaustivo no default V0.6;
+- funções, chamadas, recursão, laços `while`, `break` e `continue` em `while`, operadores relacionais (`==`, `!=`, `<`, `<=`, `>`, `>=`), e `match` ternário exaustivo em statement e expressão no default V0.6;
 - sintaxe V0.5 mantida apenas como compatibilidade legada/deprecated;
 - bindings imutáveis e `mut` explícito;
 - atribuição escalar e indexada;
