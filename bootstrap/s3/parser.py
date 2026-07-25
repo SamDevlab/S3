@@ -131,6 +131,8 @@ class Parser:
                 return self._parse_while_v0_6(self._previous())
             if self._match(TokenKind.FOR):
                 return self._parse_for_v0_6(self._previous())
+            if self._match(TokenKind.DISCARD):
+                return self._parse_discard_v0_6(self._previous())
             if self._check(TokenKind.MUT):
                 return self._parse_variable_declaration_v0_6()
             if self._check(TokenKind.IDENTIFIER):
@@ -270,6 +272,13 @@ class Parser:
             body,
             start.location,
         )
+
+    def _parse_discard_v0_6(self, start: Token) -> ast.DiscardStatement:
+        expression = self._parse_expression()
+        if self._check(TokenKind.SEMICOLON):
+            raise ParseError("obsolete ';' syntax", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_OBSOLETE_SEMICOLON)
+        self._consume_statement_newline("expected newline after discard expression")
+        return ast.DiscardStatement(expression, start.location)
 
     def _parse_break_v0_6(self, start: Token) -> ast.BreakStatement:
         if self._check(TokenKind.SEMICOLON):

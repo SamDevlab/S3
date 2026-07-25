@@ -227,10 +227,17 @@ class CompoundAssignmentStatement:
     location: SourceLocation
 
 
+@dataclass(frozen=True, slots=True)
+class DiscardStatement:
+    expression: Expression
+    location: SourceLocation
+
+
 Statement: TypeAlias = (
     VariableDeclaration
     | AssignmentStatement
     | CompoundAssignmentStatement
+    | DiscardStatement
     | ReturnStatement
     | SwitchStatement
     | WhileStatement

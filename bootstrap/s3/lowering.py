@@ -190,6 +190,9 @@ class FunctionLowerer:
         if isinstance(statement, ast.CompoundAssignmentStatement):
             self._lower_compound_assignment(statement)
             return
+        if isinstance(statement, ast.DiscardStatement):
+            self._lower_expression(statement.expression)
+            return
         if isinstance(statement, ast.SwitchStatement):
             self._lower_switch(statement)
             return

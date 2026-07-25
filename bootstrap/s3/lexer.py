@@ -30,6 +30,7 @@ class TokenKind(Enum):
     IN = auto()
     RANGE = auto()
     LEN = auto()
+    DISCARD = auto()
     MUT = auto()
     TRIT = auto()
     TRYTE = auto()
@@ -294,6 +295,8 @@ class Lexer:
                 kind = TokenKind.RANGE
             elif text == "len":
                 kind = TokenKind.LEN
+            elif text == "discard":
+                kind = TokenKind.DISCARD
         return Token(kind, text, line, column, start)
 
     @staticmethod

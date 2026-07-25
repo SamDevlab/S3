@@ -105,6 +105,8 @@ def collect_static_string_literals(program: ast.Program) -> StaticStringTable:
             elif isinstance(statement, (ast.AssignmentStatement, ast.CompoundAssignmentStatement)):
                 visit_target(statement.target)
                 visit_initializer(statement.value)
+            elif isinstance(statement, ast.DiscardStatement):
+                visit_expression(statement.expression)
             elif isinstance(statement, ast.ReturnStatement):
                 visit_expression(statement.expression)
             elif isinstance(statement, ast.SwitchStatement):

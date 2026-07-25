@@ -214,6 +214,9 @@ class SemanticAnalyzer:
             return self._analyze_assignment(statement)
         if isinstance(statement, ast.CompoundAssignmentStatement):
             return self._analyze_compound_assignment(statement)
+        if isinstance(statement, ast.DiscardStatement):
+            self._analyze_expression(statement.expression, None)
+            return BlockFlow(definitely_returns=False, terminates=False)
         if isinstance(statement, ast.SwitchStatement):
             return self._analyze_switch(statement)
         if isinstance(statement, ast.WhileStatement):
