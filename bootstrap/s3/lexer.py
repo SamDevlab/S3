@@ -26,6 +26,9 @@ class TokenKind(Enum):
     WHILE = auto()
     BREAK = auto()
     CONTINUE = auto()
+    FOR = auto()
+    IN = auto()
+    RANGE = auto()
     MUT = auto()
     TRIT = auto()
     TRYTE = auto()
@@ -279,6 +282,12 @@ class Lexer:
                 kind = TokenKind.BREAK
             elif text == "continue":
                 kind = TokenKind.CONTINUE
+            elif text == "for":
+                kind = TokenKind.FOR
+            elif text == "in":
+                kind = TokenKind.IN
+            elif text == "range":
+                kind = TokenKind.RANGE
         return Token(kind, text, line, column, start)
 
     @staticmethod

@@ -129,6 +129,8 @@ class Parser:
                 return self._parse_match_v0_6(self._previous())
             if self._match(TokenKind.WHILE):
                 return self._parse_while_v0_6(self._previous())
+            if self._match(TokenKind.FOR):
+                return self._parse_for_v0_6(self._previous())
             if self._check(TokenKind.MUT):
                 return self._parse_variable_declaration_v0_6()
             if self._check(TokenKind.IDENTIFIER):
@@ -136,7 +138,7 @@ class Parser:
                 if next_token and next_token.kind is TokenKind.COLON:
                     return self._parse_variable_declaration_v0_6()
                 return self._parse_assignment_v0_6()
-            raise ParseError("expected variable declaration, 'return', 'while', 'break', 'continue', or assignment", self._peek().location)
+            raise ParseError("expected variable declaration, 'return', 'while', 'for', 'break', 'continue', or assignment", self._peek().location)
 
         if (
             self._check(TokenKind.MUT)
@@ -222,6 +224,32 @@ class Parser:
         body = self._parse_block_v0_6()
 
         return ast.WhileStatement(condition, body, start.location)
+
+    def _parse_for_v0_6(self, start: Token) -> ast.ForStatement:
+        variable_name = self._consume(TokenKind.IDENTIFIER, "expected loop variable name")
+        self._consume(TokenKind.COLON, "expected ':' after loop variable name")
+        variable_type = self._parse_type()
+        self._consume(TokenKind.IN, "expected 'in' after loop variable type")
+        self._consume(TokenKind.RANGE, "expected 'range' after 'in'")
+        self._consume(TokenKind.LEFT_PAREN, "expected '(' after 'range'")
+        start_expression = self._parse_expression()
+        self._consume(TokenKind.COMMA, "expected ',' between range bounds")
+        end_expression = self._parse_expression()
+        self._consume(TokenKind.RIGHT_PAREN, "expected ')' after range bounds")
+        self._consume(TokenKind.COLON, "expected ':' after range clause")
+        self._consume(TokenKind.NEWLINE, "expected newline after ':'")
+        self._consume(TokenKind.INDENT, "expected indented block")
+
+        body = self._parse_block_v0_6()
+
+        return ast.ForStatement(
+            variable_name.text,
+            variable_type,
+            start_expression,
+            end_expression,
+            body,
+            start.location,
+        )
 
     def _parse_break_v0_6(self, start: Token) -> ast.BreakStatement:
         if self._check(TokenKind.SEMICOLON):

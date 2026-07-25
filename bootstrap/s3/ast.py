@@ -201,12 +201,23 @@ class ContinueStatement:
 
 
 
+@dataclass(frozen=True, slots=True)
+class ForStatement:
+    variable_name: str
+    variable_type: TypeName
+    start_expression: Expression
+    end_expression: Expression
+    body: Block
+    location: SourceLocation
+
+
 Statement: TypeAlias = (
     VariableDeclaration
     | AssignmentStatement
     | ReturnStatement
     | SwitchStatement
     | WhileStatement
+    | ForStatement
     | BreakStatement
     | ContinueStatement
 )
