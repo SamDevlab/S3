@@ -34,6 +34,12 @@ class TokenKind(Enum):
     STRING_LITERAL = auto()
     ARROW = auto()
     COMPARE = auto()
+    EQUAL_EQUAL = auto()
+    NOT_EQUAL = auto()
+    LESS = auto()
+    LESS_EQUAL = auto()
+    GREATER = auto()
+    GREATER_EQUAL = auto()
     TILDE = auto()
     AMPERSAND = auto()
     PIPE = auto()
@@ -335,6 +341,22 @@ class Lexer:
             self._advance()
             self._advance()
             return Token(TokenKind.ARROW, two, line, column, start)
+        if two == "==":
+            self._advance()
+            self._advance()
+            return Token(TokenKind.EQUAL_EQUAL, two, line, column, start)
+        if two == "!=":
+            self._advance()
+            self._advance()
+            return Token(TokenKind.NOT_EQUAL, two, line, column, start)
+        if two == "<=":
+            self._advance()
+            self._advance()
+            return Token(TokenKind.LESS_EQUAL, two, line, column, start)
+        if two == ">=":
+            self._advance()
+            self._advance()
+            return Token(TokenKind.GREATER_EQUAL, two, line, column, start)
         single_tokens = {
             "~": TokenKind.TILDE,
             "&": TokenKind.AMPERSAND,
@@ -342,6 +364,8 @@ class Lexer:
             "+": TokenKind.PLUS,
             "-": TokenKind.MINUS,
             "=": TokenKind.EQUAL,
+            "<": TokenKind.LESS,
+            ">": TokenKind.GREATER,
             "(": TokenKind.LEFT_PAREN,
             ")": TokenKind.RIGHT_PAREN,
             "{": TokenKind.LEFT_BRACE,
