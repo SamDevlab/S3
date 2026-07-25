@@ -194,7 +194,8 @@ class SemanticAnalyzer:
             statement.condition.location,
             "while condition",
         )
-        return self._analyze_block(statement.body, create_scope=True)
+        self._analyze_block(statement.body, create_scope=True)
+        return False
 
     def _analyze_switch(self, statement: ast.SwitchStatement) -> bool:
         selector_type = self._analyze_expression(
