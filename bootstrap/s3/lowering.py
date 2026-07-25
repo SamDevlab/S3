@@ -608,6 +608,16 @@ class FunctionLowerer:
             )
             return result
 
+        if expression.operator in (
+            ast.BinaryOperator.EQUAL,
+            ast.BinaryOperator.NOT_EQUAL,
+            ast.BinaryOperator.LESS,
+            ast.BinaryOperator.LESS_EQUAL,
+            ast.BinaryOperator.GREATER,
+            ast.BinaryOperator.GREATER_EQUAL,
+        ):
+            return self._lower_relational_expression(expression)
+
         opcode_map = {
             ast.BinaryOperator.ADD: IROpcode.ADD,
             ast.BinaryOperator.MINIMUM: IROpcode.MINIMUM,
@@ -631,6 +641,92 @@ class FunctionLowerer:
             )
         )
         return result
+
+    def _lower_relational_expression(
+        self,
+        expression: ast.BinaryExpression,
+    ) -> int:
+        left = self._lower_expression(expression.left)
+        right = self._lower_expression(expression.right)
+        cmp_reg = self._allocate(ast.TypeName.TRIT, expression.location)
+        self._emit(
+            IRInstruction(
+                IROpcode.COMPARE,
+                result=cmp_reg,
+                operands=(left, right),
+                location=expression.location,
+            )
+        )
+        op = expression.operator
+        if op is ast.BinaryOperator.EQUAL:
+            neg_val, zero_val, pos_val = 0, -1, 0
+        elif op is ast.BinaryOperator.NOT_EQUAL:
+            neg_val, zero_val, pos_val = -1, 0, -1
+        elif op is ast.BinaryOperator.LESS:
+            neg_val, zero_val, pos_val = -1, 0, 0
+        elif op is ast.BinaryOperator.LESS_EQUAL:
+            neg_val, zero_val, pos_val = -1, -1, 0
+        elif op is ast.BinaryOperator.GREATER:
+            neg_val, zero_val, pos_val = 0, 0, -1
+        elif op is ast.BinaryOperator.GREATER_EQUAL:
+            neg_val, zero_val, pos_val = 0, -1, -1
+        else:
+            raise LoweringError(f"unsupported relational operator '{op.value}'", expression.location)
+
+        memory = self._allocate_memory(ast.TypeName.TRIT, 1, True, expression.location)
+
+        neg_block = self._fresh_block("rel_neg", expression.location)
+        zero_block = self._fresh_block("rel_zero", expression.location)
+        pos_block = self._fresh_block("rel_pos", expression.location)
+        cont_block = self._fresh_block("rel_cont", expression.location)
+
+        self._emit(
+            IRInstruction(
+                IROpcode.BRANCH3,
+                operands=(cmp_reg,),
+                targets=(neg_block.name, zero_block.name, pos_block.name),
+                location=expression.location,
+            )
+        )
+
+        for blk, val in (
+            (neg_block, neg_val),
+            (zero_block, zero_val),
+            (pos_block, pos_val),
+        ):
+            self.current = blk
+            idx = self._emit_constant(0, ast.TypeName.TRYTE, expression.location)
+            val_reg = self._emit_constant(val, ast.TypeName.TRIT, expression.location)
+            self._emit(
+                IRInstruction(
+                    IROpcode.STORE,
+                    operands=(idx, val_reg),
+                    memory=memory,
+                    initialization=True,
+                    location=expression.location,
+                )
+            )
+            self._emit(
+                IRInstruction(
+                    IROpcode.JUMP,
+                    targets=(cont_block.name,),
+                    location=expression.location,
+                )
+            )
+
+        self.current = cont_block
+        idx = self._emit_constant(0, ast.TypeName.TRYTE, expression.location)
+        result_reg = self._allocate(ast.TypeName.TRIT, expression.location)
+        self._emit(
+            IRInstruction(
+                IROpcode.LOAD,
+                result=result_reg,
+                operands=(idx,),
+                memory=memory,
+                location=expression.location,
+            )
+        )
+        return result_reg
 
 
 def lower(program: ast.Program, semantic_model: SemanticModel) -> IRModule:

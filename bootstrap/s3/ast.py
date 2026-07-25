@@ -35,6 +35,12 @@ class BinaryOperator(Enum):
     MINIMUM = "&"
     MAXIMUM = "|"
     COMPARE = "<=>"
+    EQUAL = "=="
+    NOT_EQUAL = "!="
+    LESS = "<"
+    LESS_EQUAL = "<="
+    GREATER = ">"
+    GREATER_EQUAL = ">="
 
 
 @dataclass(frozen=True, slots=True)

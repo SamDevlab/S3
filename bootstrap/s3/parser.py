@@ -336,7 +336,20 @@ class Parser:
         return ast.TernaryCase(value, body, start.location)
 
     def _parse_expression(self) -> ast.Expression:
-        return self._parse_compare()
+        return self._parse_relational()
+
+    def _parse_relational(self) -> ast.Expression:
+        return self._parse_left_associative(
+            self._parse_compare,
+            {
+                TokenKind.EQUAL_EQUAL: ast.BinaryOperator.EQUAL,
+                TokenKind.NOT_EQUAL: ast.BinaryOperator.NOT_EQUAL,
+                TokenKind.LESS: ast.BinaryOperator.LESS,
+                TokenKind.LESS_EQUAL: ast.BinaryOperator.LESS_EQUAL,
+                TokenKind.GREATER: ast.BinaryOperator.GREATER,
+                TokenKind.GREATER_EQUAL: ast.BinaryOperator.GREATER_EQUAL,
+            },
+        )
 
     def _parse_compare(self) -> ast.Expression:
         return self._parse_left_associative(

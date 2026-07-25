@@ -88,6 +88,11 @@ To maintain static typing without ambiguity and enforce "menos é mais":
 - **Rule:** The `continue` statement immediately terminates the current iteration and transfers control to the re-evaluation of the condition of the innermost `while` loop.
 - **Rule:** `break` and `continue` do not take labels or expressions.
 
+### 4.8. Relational Operators
+- **Rule:** Binary relational operators `==`, `!=`, `<`, `<=`, `>`, `>=` compare two operands of the same scalar type (`tryte` with `tryte`, or `trit` with `trit`).
+- **Rule:** Relational expressions evaluate to a `trit` (`-1` for true, `0` for false).
+- **Rule:** When evaluated as a `while` condition, `-1` (true) executes the loop body, while `0` (false) exits the loop.
+
 ## 5. Normative Examples
 
 ### Example 1: Simple Return
