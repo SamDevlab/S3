@@ -214,8 +214,14 @@ class Parser:
         self._consume(TokenKind.INDENT, "expected indented block")
 
         cases: list[ast.TernaryCase] = []
+        had_fallback = False
         while not self._check(TokenKind.DEDENT) and not self._check(TokenKind.EOF):
-            cases.append(self._parse_ternary_case_v0_6())
+            if had_fallback:
+                raise ParseError("explicit case arm after fallback arm in match statement", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_INVALID_MATCH_ARM)
+            case = self._parse_ternary_case_v0_6()
+            if case.label is None:
+                had_fallback = True
+            cases.append(case)
 
         if not cases:
             raise ParseError("expected at least one match arm", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_EXPECTED_MATCH_ARM)
@@ -293,11 +299,19 @@ class Parser:
         return ast.ContinueStatement(start.location)
 
     def _parse_ternary_case_v0_6(self) -> ast.TernaryCase:
+        if self._match(TokenKind.ELSE):
+            start = self._previous()
+            self._consume(TokenKind.COLON, "expected ':' after 'else'")
+            self._consume(TokenKind.NEWLINE, "expected newline after ':'")
+            self._consume(TokenKind.INDENT, "expected indented block")
+            body = self._parse_block_v0_6()
+            return ast.TernaryCase(None, body, start.location)
+
         negative = self._match(TokenKind.MINUS)
         start = self._previous() if negative else self._peek()
 
         if not self._check(TokenKind.INTEGER):
-            raise ParseError("expected integer case label", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_INVALID_MATCH_ARM)
+            raise ParseError("expected integer case label or 'else'", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_INVALID_MATCH_ARM)
 
         integer = self._advance()
         value = int(integer.text)
@@ -507,8 +521,14 @@ class Parser:
         self._consume(TokenKind.NEWLINE, "expected newline after ':'")
         self._consume(TokenKind.INDENT, "expected block indentation")
         cases: list[ast.MatchExpressionCase] = []
+        had_fallback = False
         while not self._check(TokenKind.DEDENT) and not self._check(TokenKind.EOF):
-            cases.append(self._parse_match_expression_case_v0_6())
+            if had_fallback:
+                raise ParseError("explicit case arm after fallback arm in match expression", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_INVALID_MATCH_ARM)
+            case = self._parse_match_expression_case_v0_6()
+            if case.label is None:
+                had_fallback = True
+            cases.append(case)
         if not cases:
             raise ParseError(
                 "expected at least one match arm",
@@ -518,12 +538,18 @@ class Parser:
         return ast.MatchExpression(selector, tuple(cases), start.location)
 
     def _parse_match_expression_case_v0_6(self) -> ast.MatchExpressionCase:
+        if self._match(TokenKind.ELSE):
+            start = self._previous()
+            self._consume(TokenKind.COLON, "expected ':' after 'else'")
+            expr = self._parse_expression()
+            self._consume_statement_newline("expected newline after match arm expression")
+            return ast.MatchExpressionCase(None, expr, start.location)
+
         negative = self._match(TokenKind.MINUS)
         start = self._previous() if negative else self._peek()
-        integer = self._consume(
-            TokenKind.INTEGER,
-            "expected integer case label",
-        )
+        if not self._check(TokenKind.INTEGER):
+            raise ParseError("expected integer case label or 'else'", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_INVALID_MATCH_ARM)
+        integer = self._advance()
         value = int(integer.text)
         if negative:
             value = -value

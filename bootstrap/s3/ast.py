@@ -98,7 +98,7 @@ class BinaryExpression:
 
 @dataclass(frozen=True, slots=True)
 class MatchExpressionCase:
-    label: int
+    label: int | None
     expression: Expression
     location: SourceLocation
 
@@ -178,7 +178,7 @@ class ReturnStatement:
 
 @dataclass(frozen=True, slots=True)
 class TernaryCase:
-    label: int
+    label: int | None
     body: Block
     location: SourceLocation
 

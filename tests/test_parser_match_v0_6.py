@@ -279,9 +279,9 @@ def test_use_case_keyword():
         parse(source, mode=SyntaxMode.V0_6)
 
 def test_use_else_keyword():
-    source = "fn main() -> tryte:\n    match 0:\n        else:\n            return -1\n"
-    with pytest.raises(ParseError, match="expected integer case label"):
-        parse(source, mode=SyntaxMode.V0_6)
+    source = "fn main() -> tryte:\n    match 0:\n        0:\n            return 0\n        else:\n            return -1\n"
+    program = parse(source, mode=SyntaxMode.V0_6)
+    assert program is not None
 
 def test_use_underscore():
     source = "fn main() -> tryte:\n    match 0:\n        _:\n            return -1\n"

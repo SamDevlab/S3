@@ -31,6 +31,7 @@ class TokenKind(Enum):
     RANGE = auto()
     LEN = auto()
     DISCARD = auto()
+    ELSE = auto()
     MUT = auto()
     TRIT = auto()
     TRYTE = auto()
@@ -77,6 +78,7 @@ KEYWORDS = {
     "mut": TokenKind.MUT,
     "trit": TokenKind.TRIT,
     "tryte": TokenKind.TRYTE,
+    "else": TokenKind.ELSE,
 }
 
 
@@ -297,6 +299,8 @@ class Lexer:
                 kind = TokenKind.LEN
             elif text == "discard":
                 kind = TokenKind.DISCARD
+            elif text == "else":
+                kind = TokenKind.ELSE
         return Token(kind, text, line, column, start)
 
     @staticmethod
