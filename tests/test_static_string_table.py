@@ -116,11 +116,8 @@ def test_static_string_literal_table_walks_nested_expressions() -> None:
     ]
 
 
-def test_static_string_literals_still_fail_before_lowering() -> None:
+def test_static_string_literal_used_as_tryte_fails_semantic_type_check() -> None:
     with pytest.raises(SemanticError) as captured:
         compile_source('fn main() -> tryte:\n    return "hello"\n')
 
-    assert (
-        captured.value.diagnostic_code
-        is DiagnosticCode.SEMANTIC_STRING_LITERAL_RUNTIME_UNSUPPORTED
-    )
+    assert captured.value.diagnostic_code is DiagnosticCode.SEMANTIC_TYPE_MISMATCH

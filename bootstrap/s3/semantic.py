@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from . import ast
 from .diagnostics import DiagnosticCode, SemanticError, SourceLocation
+from .static_text import StaticTextDecodeError, decode_static_text
 from .ternary import TRIT_MAX, TRIT_MIN, TRYTE_MAX, TRYTE_MIN
 
 
@@ -85,6 +86,12 @@ class SemanticAnalyzer:
             raise SemanticError(
                 "entry function 'main' must not declare parameters",
                 main.location,
+            )
+        if main.return_type is ast.TypeName.STRING:
+            raise SemanticError(
+                "entry function 'main' cannot return string",
+                main.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
             )
         for function in program.functions:
             try:
@@ -200,6 +207,7 @@ class SemanticAnalyzer:
                 self.return_type,
                 statement.expression.location,
                 "returned expression",
+                diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
             )
             return BlockFlow(terminates=True, definitely_returns=True)
         if isinstance(statement, ast.BreakStatement):
@@ -428,6 +436,11 @@ class SemanticAnalyzer:
                 "nested arrays are not supported",
                 type_name.location,
             )
+        if type_name.element_type is ast.TypeName.STRING:
+            raise SemanticError(
+                "arrays of string are not supported in milestone 0.53",
+                type_name.location,
+            )
         if type_name.length <= 0:
             raise SemanticError(
                 f"array length must be positive, got {type_name.length}",
@@ -492,6 +505,14 @@ class SemanticAnalyzer:
             statement.target.location,
         )
         if not isinstance(binding.type_name, ast.ArrayType):
+            if binding.type_name is ast.TypeName.STRING:
+                raise SemanticError(
+                    "string indexing is not supported",
+                    statement.target.location,
+                    diagnostic_code=(
+                        DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
+                    ),
+                )
             raise SemanticError(
                 f"variable '{statement.target.array_name}' is not an array",
                 statement.target.location,
@@ -540,6 +561,11 @@ class SemanticAnalyzer:
                     statement.value.location,
                 )
             assert isinstance(binding.type_name, ast.TypeName)
+            self._reject_string_operation(
+                binding.type_name,
+                statement.location,
+                "compound assignment is not supported for string values",
+            )
             actual = self._analyze_expression(statement.value, binding.type_name)
             self._require_type(
                 actual,
@@ -554,6 +580,14 @@ class SemanticAnalyzer:
             statement.target.location,
         )
         if not isinstance(binding.type_name, ast.ArrayType):
+            if binding.type_name is ast.TypeName.STRING:
+                raise SemanticError(
+                    "string indexing is not supported",
+                    statement.target.location,
+                    diagnostic_code=(
+                        DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
+                    ),
+                )
             raise SemanticError(
                 f"variable '{statement.target.array_name}' is not an array",
                 statement.target.location,
@@ -606,17 +640,22 @@ class SemanticAnalyzer:
         expected: ast.TypeName | None = None,
     ) -> ast.TypeName:
         if isinstance(expression, ast.IntegerLiteral):
-            result = expected or ast.TypeName.TRYTE
+            result = (
+                expected
+                if expected in (ast.TypeName.TRIT, ast.TypeName.TRYTE)
+                else ast.TypeName.TRYTE
+            )
             self._validate_literal(expression, result)
         elif isinstance(expression, ast.StringLiteral):
-            raise SemanticError(
-                "string literals are parsed as static literals but runtime "
-                "support is not implemented",
-                expression.location,
-                diagnostic_code=(
-                    DiagnosticCode.SEMANTIC_STRING_LITERAL_RUNTIME_UNSUPPORTED
-                ),
-            )
+            self._validate_static_string_literal(expression)
+            result = ast.TypeName.STRING
+            if expected is not None:
+                self._require_type(
+                    result,
+                    expected,
+                    expression.location,
+                    "string literal",
+                )
         elif isinstance(expression, ast.Identifier):
             result = self._identifier_type(expression)
             if expected is not None:
@@ -634,6 +673,14 @@ class SemanticAnalyzer:
                     expression.location,
                 )
             if not isinstance(binding.type_name, ast.ArrayType):
+                if binding.type_name is ast.TypeName.STRING:
+                    raise SemanticError(
+                        "string indexing is not supported",
+                        expression.location,
+                        diagnostic_code=(
+                            DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
+                        ),
+                    )
                 raise SemanticError(
                     f"variable '{expression.array_name}' is not an array",
                     expression.location,
@@ -661,6 +708,11 @@ class SemanticAnalyzer:
                 )
         elif isinstance(expression, ast.UnaryExpression):
             result = self._analyze_expression(expression.operand, expected)
+            self._reject_string_operation(
+                result,
+                expression.location,
+                f"operator '{expression.operator.value}' is not supported for string values",
+            )
         elif isinstance(expression, ast.BinaryExpression):
             result = self._analyze_binary(expression, expected)
         elif isinstance(expression, ast.MatchExpression):
@@ -685,6 +737,14 @@ class SemanticAnalyzer:
                     expression.argument.location,
                 )
             if not isinstance(binding.type_name, ast.ArrayType):
+                if binding.type_name is ast.TypeName.STRING:
+                    raise SemanticError(
+                        "len() is not supported for string values",
+                        expression.argument.location,
+                        diagnostic_code=(
+                            DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
+                        ),
+                    )
                 raise SemanticError(
                     f"len() argument must be a static array, got '{binding.type_name.value}'",
                     expression.argument.location,
@@ -694,6 +754,15 @@ class SemanticAnalyzer:
             raise SemanticError(
                 "len() argument must be a static array, not an array element",
                 expression.argument.location,
+            )
+        elif isinstance(expression.argument, ast.StringLiteral):
+            self._validate_static_string_literal(expression.argument)
+            raise SemanticError(
+                "len() is not supported for string values",
+                expression.argument.location,
+                diagnostic_code=(
+                    DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
+                ),
             )
         else:
             raise SemanticError(
@@ -771,6 +840,7 @@ class SemanticAnalyzer:
                 parameter_type,
                 argument.location,
                 f"argument {index} to '{expression.function_name}'",
+                diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
             )
         return signature.return_type
 
@@ -789,6 +859,12 @@ class SemanticAnalyzer:
             ast.BinaryOperator.GREATER_EQUAL,
         }
         if expression.operator in RELATIONAL_OPERATORS:
+            operand_type = self._comparison_operand_type(expression)
+            self._reject_string_operation(
+                operand_type,
+                expression.location,
+                f"operator '{expression.operator.value}' is not supported for string values",
+            )
             if expected is not None:
                 self._require_type(
                     ast.TypeName.TRIT,
@@ -796,7 +872,6 @@ class SemanticAnalyzer:
                     expression.location,
                     "comparison result",
                 )
-            operand_type = self._comparison_operand_type(expression)
             left_type = self._analyze_expression(expression.left, operand_type)
             right_type = self._analyze_expression(expression.right, operand_type)
             self._require_type(
@@ -806,7 +881,14 @@ class SemanticAnalyzer:
                 "comparison operands",
             )
             return ast.TypeName.TRIT
-        operand_type = expected or self._binary_operand_type(expression)
+        operand_type = self._binary_operand_type(expression)
+        self._reject_string_operation(
+            operand_type,
+            expression.location,
+            f"operator '{expression.operator.value}' is not supported for string values",
+        )
+        if expected is not None:
+            operand_type = expected
         left_type = self._analyze_expression(expression.left, operand_type)
         right_type = self._analyze_expression(expression.right, operand_type)
         self._require_type(
@@ -821,14 +903,17 @@ class SemanticAnalyzer:
         self,
         expression: ast.BinaryExpression,
     ) -> ast.TypeName:
-        known = self._known_expression_type(expression.left)
-        if known is None:
-            known = self._known_expression_type(expression.right)
-        return known or ast.TypeName.TRYTE
+        left = self._known_expression_type(expression.left)
+        right = self._known_expression_type(expression.right)
+        if left is ast.TypeName.STRING or right is ast.TypeName.STRING:
+            return ast.TypeName.STRING
+        return left or right or ast.TypeName.TRYTE
 
     def _binary_operand_type(self, expression: ast.BinaryExpression) -> ast.TypeName:
         left = self._known_expression_type(expression.left)
         right = self._known_expression_type(expression.right)
+        if left is ast.TypeName.STRING or right is ast.TypeName.STRING:
+            return ast.TypeName.STRING
         if left is not None and right is not None:
             self._require_type(left, right, expression.location, "binary operands")
         return left or right or ast.TypeName.TRYTE
@@ -839,6 +924,8 @@ class SemanticAnalyzer:
     ) -> ast.TypeName | None:
         if isinstance(expression, ast.Identifier):
             return self._identifier_type(expression)
+        if isinstance(expression, ast.StringLiteral):
+            return ast.TypeName.STRING
         if isinstance(expression, ast.IndexExpression):
             binding = self._lookup_binding(expression.array_name)
             if binding is not None and isinstance(binding.type_name, ast.ArrayType):
@@ -1004,6 +1091,29 @@ class SemanticAnalyzer:
         return None
 
     @staticmethod
+    def _validate_static_string_literal(literal: ast.StringLiteral) -> None:
+        try:
+            decode_static_text(literal.value)
+        except StaticTextDecodeError as error:
+            raise SemanticError(
+                str(error),
+                literal.location,
+            ) from error
+
+    @staticmethod
+    def _reject_string_operation(
+        type_name: ast.TypeName,
+        location: SourceLocation,
+        message: str,
+    ) -> None:
+        if type_name is ast.TypeName.STRING:
+            raise SemanticError(
+                message,
+                location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION,
+            )
+
+    @staticmethod
     def _validate_literal(
         literal: ast.IntegerLiteral,
         type_name: ast.TypeName,
@@ -1026,11 +1136,14 @@ class SemanticAnalyzer:
         expected: ast.TypeName,
         location: SourceLocation,
         subject: str,
+        *,
+        diagnostic_code: DiagnosticCode = DiagnosticCode.SEMANTIC_TYPE_MISMATCH,
     ) -> None:
         if actual is not expected:
             raise SemanticError(
                 f"{subject} has type {actual.value}; expected {expected.value}",
                 location,
+                diagnostic_code=diagnostic_code,
             )
 
 
