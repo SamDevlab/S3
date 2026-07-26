@@ -207,7 +207,6 @@
   },
   "purpose": "Conceptual data contract for the future S3 Assembly renderer subset",
   "required_language_features": [
-    "strings",
     "arrays",
     "records_or_structs",
     "enums_or_tagged_unions",

@@ -1,17 +1,17 @@
 [
   {
     "category": "semantic",
-    "code": "S3E_SEMANTIC_STRING_LITERAL_RUNTIME_UNSUPPORTED",
+    "code": "S3E_SEMANTIC_UNSUPPORTED_STRING_OPERATION",
     "function": "main",
-    "message": "string literals are parsed as static literals but runtime support is not implemented",
+    "message": "operator '+' is not supported for string values",
     "phase": "semantic",
     "schema": "s3-diagnostic",
     "schema_version": "1.0.0",
     "severity": "error",
     "source": {
-      "column": 12,
-      "line": 2,
-      "offset": 30
+      "column": 26,
+      "line": 4,
+      "offset": 99
     }
   }
 ]

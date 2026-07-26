@@ -28,11 +28,8 @@ def test_compare_assembly_renderer_status_reports_blocked_state() -> None:
     assert "s3 renderer text builder model: available" in completed.stdout
     assert "s3 renderer static text fragment model: available" in completed.stdout
     assert "s3 renderer implementation: not implemented" in completed.stdout
-    assert (
-        "string literals: front-end only, runtime not implemented"
-        in completed.stdout
-    )
-    assert "string runtime support" in completed.stdout
+    assert "typed static text values: available" in completed.stdout
+    assert "string runtime support" not in completed.stdout
     assert "status: blocked" in completed.stdout
     assert completed.stderr == ""
 
