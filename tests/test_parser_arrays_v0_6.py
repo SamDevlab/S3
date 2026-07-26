@@ -130,7 +130,7 @@ def test_invalid_syntax_v0_6_rejected():
     source_old_style_decl = "fn main() -> tryte:\n    tryte[3] values = [1, 2, 3]\n    return 0\n"
     with pytest.raises(ParseError) as exc_info:
         parse(source_old_style_decl, mode=SyntaxMode.V0_6)
-    assert "expected variable declaration, 'return', 'while', 'break', 'continue', or assignment" in str(exc_info.value)
+    assert "expected variable declaration, 'return', 'while', 'for', 'break', 'continue', or assignment" in str(exc_info.value)
     
     source_old_style_mut = "fn main() -> tryte:\n    mut tryte[3] values = [1, 2, 3]\n    return 0\n"
     with pytest.raises(ParseError) as exc_info:
@@ -146,9 +146,9 @@ def test_invalid_syntax_v0_6_rejected_parameterized():
         ("fn main() -> tryte:\n    values: tryte[3] = [1, 2, 3,]\n    return 0\n", "expected array element after ','"),
         ("fn main() -> tryte:\n    values: tryte[3] = [1, 2, 3\n    return 0\n", "expected ']' after array literal"),
         ("fn main() -> tryte:\n    return values[0:2]\n", "expected ']' after index"),
-        ("fn main() -> tryte:\n    values[0] 1\n    return 0\n", "expected '=' after assignment target"),
+        ("fn main() -> tryte:\n    values[0] 1\n    return 0\n", "expected '=' or '+=' after assignment target"),
         ("fn main() -> tryte:\n    values: tryte[3]\n    return 0\n", "expected '=' after variable type"),
-        ("fn main() -> tryte:\n    values[0][1] = 2\n    return 0\n", "expected '=' after assignment target"),
+        ("fn main() -> tryte:\n    values[0][1] = 2\n    return 0\n", "expected '=' or '+=' after assignment target"),
         ("fn main() -> tryte:\n    return values[0][1]\n", "expected newline after return value; found '['"),
     ]
     for src, expected_msg in invalid_cases:

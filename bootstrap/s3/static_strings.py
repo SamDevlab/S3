@@ -102,9 +102,11 @@ def collect_static_string_literals(program: ast.Program) -> StaticStringTable:
         for statement in block.statements:
             if isinstance(statement, ast.VariableDeclaration):
                 visit_initializer(statement.initializer)
-            elif isinstance(statement, ast.AssignmentStatement):
+            elif isinstance(statement, (ast.AssignmentStatement, ast.CompoundAssignmentStatement)):
                 visit_target(statement.target)
                 visit_initializer(statement.value)
+            elif isinstance(statement, ast.DiscardStatement):
+                visit_expression(statement.expression)
             elif isinstance(statement, ast.ReturnStatement):
                 visit_expression(statement.expression)
             elif isinstance(statement, ast.SwitchStatement):
@@ -116,6 +118,7 @@ def collect_static_string_literals(program: ast.Program) -> StaticStringTable:
             elif isinstance(statement, ast.ForStatement):
                 visit_expression(statement.start_expression)
                 visit_expression(statement.end_expression)
+                visit_expression(statement.step_expression)
                 visit_block(statement.body)
             elif isinstance(statement, (ast.BreakStatement, ast.ContinueStatement)):
                 pass

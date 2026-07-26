@@ -30,6 +30,8 @@ class TokenKind(Enum):
     IN = auto()
     RANGE = auto()
     LEN = auto()
+    DISCARD = auto()
+    ELSE = auto()
     MUT = auto()
     TRIT = auto()
     TRYTE = auto()
@@ -49,6 +51,9 @@ class TokenKind(Enum):
     PIPE = auto()
     PLUS = auto()
     MINUS = auto()
+    STAR = auto()
+    PLUS_EQUAL = auto()
+    STAR_EQUAL = auto()
     EQUAL = auto()
     LEFT_PAREN = auto()
     RIGHT_PAREN = auto()
@@ -73,6 +78,7 @@ KEYWORDS = {
     "mut": TokenKind.MUT,
     "trit": TokenKind.TRIT,
     "tryte": TokenKind.TRYTE,
+    "else": TokenKind.ELSE,
 }
 
 
@@ -291,6 +297,10 @@ class Lexer:
                 kind = TokenKind.RANGE
             elif text == "len":
                 kind = TokenKind.LEN
+            elif text == "discard":
+                kind = TokenKind.DISCARD
+            elif text == "else":
+                kind = TokenKind.ELSE
         return Token(kind, text, line, column, start)
 
     @staticmethod
@@ -369,12 +379,21 @@ class Lexer:
             self._advance()
             self._advance()
             return Token(TokenKind.GREATER_EQUAL, two, line, column, start)
+        if two == "+=":
+            self._advance()
+            self._advance()
+            return Token(TokenKind.PLUS_EQUAL, two, line, column, start)
+        if two == "*=":
+            self._advance()
+            self._advance()
+            return Token(TokenKind.STAR_EQUAL, two, line, column, start)
         single_tokens = {
             "~": TokenKind.TILDE,
             "&": TokenKind.AMPERSAND,
             "|": TokenKind.PIPE,
             "+": TokenKind.PLUS,
             "-": TokenKind.MINUS,
+            "*": TokenKind.STAR,
             "=": TokenKind.EQUAL,
             "<": TokenKind.LESS,
             ">": TokenKind.GREATER,

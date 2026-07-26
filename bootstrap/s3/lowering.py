@@ -184,6 +184,15 @@ class FunctionLowerer:
             )
             self.current = None
             return
+        if isinstance(statement, ast.AssignmentStatement):
+            self._lower_assignment(statement)
+            return
+        if isinstance(statement, ast.CompoundAssignmentStatement):
+            self._lower_compound_assignment(statement)
+            return
+        if isinstance(statement, ast.DiscardStatement):
+            self._lower_expression(statement.expression)
+            return
         if isinstance(statement, ast.SwitchStatement):
             self._lower_switch(statement)
             return
@@ -364,6 +373,110 @@ class FunctionLowerer:
             )
         )
 
+    def _lower_compound_assignment(
+        self,
+        statement: ast.CompoundAssignmentStatement,
+    ) -> None:
+        if isinstance(statement.target, ast.VariableTarget):
+            binding = self._lookup_variable(
+                statement.target.name,
+                statement.target.location,
+            )
+            assert binding.memory is not None
+            assert isinstance(binding.type_name, ast.TypeName)
+            idx_zero = self._emit_constant(
+                0,
+                ast.TypeName.TRYTE,
+                statement.target.location,
+            )
+            cur_val = self._allocate(binding.type_name, statement.location)
+            self._emit(
+                IRInstruction(
+                    IROpcode.LOAD,
+                    result=cur_val,
+                    operands=(idx_zero,),
+                    memory=binding.memory,
+                    location=statement.location,
+                )
+            )
+            rhs_val = self._lower_expression(statement.value)
+            res_val = self._allocate(binding.type_name, statement.location)
+            self._emit(
+                IRInstruction(
+                    IROpcode.ADD,
+                    result=res_val,
+                    operands=(cur_val, rhs_val),
+                    location=statement.location,
+                )
+            )
+            idx_zero_2 = self._emit_constant(
+                0,
+                ast.TypeName.TRYTE,
+                statement.target.location,
+            )
+            self._emit(
+                IRInstruction(
+                    IROpcode.STORE,
+                    operands=(idx_zero_2, res_val),
+                    memory=binding.memory,
+                    location=statement.location,
+                )
+            )
+            return
+
+        binding = self._lookup_variable(
+            statement.target.array_name,
+            statement.target.location,
+        )
+        assert binding.memory is not None
+        assert isinstance(binding.type_name, ast.ArrayType)
+        assert isinstance(binding.type_name.element_type, ast.TypeName)
+
+        # 1. Lower index ONCE
+        idx_reg = self._lower_expression(statement.target.index)
+
+        # 2. Load current element ONCE
+        cur_val = self._allocate(
+            binding.type_name.element_type,
+            statement.location,
+        )
+        self._emit(
+            IRInstruction(
+                IROpcode.LOAD,
+                result=cur_val,
+                operands=(idx_reg,),
+                memory=binding.memory,
+                location=statement.location,
+            )
+        )
+
+        # 3. Lower RHS ONCE
+        rhs_val = self._lower_expression(statement.value)
+
+        # 4. Perform operation
+        res_val = self._allocate(
+            binding.type_name.element_type,
+            statement.location,
+        )
+        self._emit(
+            IRInstruction(
+                IROpcode.ADD,
+                result=res_val,
+                operands=(cur_val, rhs_val),
+                location=statement.location,
+            )
+        )
+
+        # 5. Store back into same array index
+        self._emit(
+            IRInstruction(
+                IROpcode.STORE,
+                operands=(idx_reg, res_val),
+                memory=binding.memory,
+                location=statement.location,
+            )
+        )
+
     def _emit_constant(
         self,
         value: int,
@@ -383,15 +496,22 @@ class FunctionLowerer:
 
     def _lower_switch(self, statement: ast.SwitchStatement) -> None:
         condition = self._lower_expression(statement.expression)
-        cases = {case.label: case for case in statement.cases}
+        explicit_cases = {c.label: c for c in statement.cases if c.label is not None}
+        fallback_case = next((c for c in statement.cases if c.label is None), None)
+        cases_by_label = {
+            lbl: explicit_cases.get(lbl, fallback_case)
+            for lbl in (-1, 0, 1)
+        }
         suffixes = {-1: "negative", 0: "neutral", 1: "positive"}
+
         case_blocks = {
             label: self._fresh_block(
                 f"switch_{suffixes[label]}",
-                cases[label].location,
+                cases_by_label[label].location,
             )
             for label in (-1, 0, 1)
         }
+
         self._emit(
             IRInstruction(
                 IROpcode.BRANCH3,
@@ -402,9 +522,22 @@ class FunctionLowerer:
         )
 
         open_blocks: list[tuple[_MutableBlock, SourceLocation]] = []
+        lowered_cases: dict[int, _MutableBlock] = {}
         for label in (-1, 0, 1):
-            case = cases[label]
+            case = cases_by_label[label]
+            case_id = id(case)
+            if case_id in lowered_cases:
+                orig_block = lowered_cases[case_id]
+                case_blocks[label].instructions.append(
+                    IRInstruction(
+                        IROpcode.JUMP,
+                        targets=(orig_block.name,),
+                        location=case.location,
+                    )
+                )
+                continue
             self.current = case_blocks[label]
+            lowered_cases[case_id] = case_blocks[label]
             self._lower_block(case.body, create_scope=True)
             if self.current is not None:
                 open_blocks.append((self.current, case.location))
@@ -498,6 +631,7 @@ class FunctionLowerer:
     def _lower_for(self, statement: ast.ForStatement) -> None:
         start_val = self._lower_expression(statement.start_expression)
         end_val = self._lower_expression(statement.end_expression)
+        step_val = self._lower_expression(statement.step_expression)
         memory = self._allocate_memory(
             statement.variable_type,
             1,
@@ -550,11 +684,24 @@ class FunctionLowerer:
                 location=statement.location,
             )
         )
+        def _is_negative_constant(expr: ast.Expression) -> bool:
+            if isinstance(expr, ast.IntegerLiteral):
+                return expr.value < 0
+            if isinstance(expr, ast.UnaryExpression) and expr.operator == ast.UnaryOperator.NEGATE:
+                if isinstance(expr.operand, ast.IntegerLiteral):
+                    return expr.operand.value > 0
+            return False
+
+        if _is_negative_constant(statement.step_expression):
+            branch_targets = (exit_block_0.name, exit_block_1.name, body_block.name)
+        else:
+            branch_targets = (body_block.name, exit_block_0.name, exit_block_1.name)
+
         self._emit(
             IRInstruction(
                 IROpcode.BRANCH3,
                 operands=(cmp_reg,),
-                targets=(body_block.name, exit_block_0.name, exit_block_1.name),
+                targets=branch_targets,
                 location=statement.location,
             )
         )
@@ -599,13 +746,12 @@ class FunctionLowerer:
                 location=statement.location,
             )
         )
-        one_const = self._emit_constant(1, ast.TypeName.TRYTE, statement.location)
         next_val = self._allocate(statement.variable_type, statement.location)
         self._emit(
             IRInstruction(
                 IROpcode.ADD,
                 result=next_val,
-                operands=(step_cur, one_const),
+                operands=(step_cur, step_val),
                 location=statement.location,
             )
         )
@@ -902,14 +1048,21 @@ class FunctionLowerer:
         selector_reg = self._lower_expression(expression.selector)
         result_type = self.semantic_model.expression_types[id(expression)]
         memory = self._allocate_memory(result_type, 1, True, expression.location)
-        cases_map = {case.label: case for case in expression.cases}
+        explicit_cases = {c.label: c for c in expression.cases if c.label is not None}
+        fallback_case = next((c for c in expression.cases if c.label is None), None)
+        cases_by_label = {
+            lbl: explicit_cases.get(lbl, fallback_case)
+            for lbl in (-1, 0, 1)
+        }
+
         case_blocks = {
             label: self._fresh_block(
                 f"match_expr_{label}",
-                cases_map[label].location,
+                cases_by_label[label].location,
             )
             for label in (-1, 0, 1)
         }
+
         continuation = self._fresh_block("match_expr_cont", expression.location)
 
         self._emit(
@@ -921,9 +1074,22 @@ class FunctionLowerer:
             )
         )
 
+        lowered_cases: dict[int, _MutableBlock] = {}
         for label in (-1, 0, 1):
-            case = cases_map[label]
+            case = cases_by_label[label]
+            case_id = id(case)
+            if case_id in lowered_cases:
+                orig_block = lowered_cases[case_id]
+                case_blocks[label].instructions.append(
+                    IRInstruction(
+                        IROpcode.JUMP,
+                        targets=(orig_block.name,),
+                        location=case.location,
+                    )
+                )
+                continue
             self.current = case_blocks[label]
+            lowered_cases[case_id] = case_blocks[label]
             val_reg = self._lower_expression(case.expression)
             idx = self._emit_constant(0, ast.TypeName.TRYTE, case.location)
             self._emit(
@@ -944,14 +1110,14 @@ class FunctionLowerer:
             )
 
         self.current = continuation
-        idx = self._emit_constant(0, ast.TypeName.TRYTE, expression.location)
+        val_idx = self._emit_constant(0, ast.TypeName.TRYTE, expression.location)
         result_reg = self._allocate(result_type, expression.location)
         self._emit(
             IRInstruction(
                 IROpcode.LOAD,
-                result=result_reg,
-                operands=(idx,),
+                operands=(val_idx,),
                 memory=memory,
+                result=result_reg,
                 location=expression.location,
             )
         )

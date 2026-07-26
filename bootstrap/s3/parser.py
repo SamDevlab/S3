@@ -131,6 +131,8 @@ class Parser:
                 return self._parse_while_v0_6(self._previous())
             if self._match(TokenKind.FOR):
                 return self._parse_for_v0_6(self._previous())
+            if self._match(TokenKind.DISCARD):
+                return self._parse_discard_v0_6(self._previous())
             if self._check(TokenKind.MUT):
                 return self._parse_variable_declaration_v0_6()
             if self._check(TokenKind.IDENTIFIER):
@@ -176,7 +178,7 @@ class Parser:
             mutable,
         )
 
-    def _parse_assignment_v0_6(self) -> ast.AssignmentStatement:
+    def _parse_assignment_v0_6(self) -> ast.Statement:
         name = self._consume(TokenKind.IDENTIFIER, "expected assignment target")
         target: ast.AssignmentTarget
         if self._match(TokenKind.LEFT_BRACKET):
@@ -185,11 +187,17 @@ class Parser:
             target = ast.IndexTarget(name.text, index, name.location)
         else:
             target = ast.VariableTarget(name.text, name.location)
-        self._consume(TokenKind.EQUAL, "expected '=' after assignment target")
+        if self._match(TokenKind.PLUS_EQUAL):
+            op = ast.BinaryOperator.ADD
+        else:
+            self._consume(TokenKind.EQUAL, "expected '=' or '+=' after assignment target")
+            op = None
         value = self._parse_initializer()
         if self._check(TokenKind.SEMICOLON):
             raise ParseError("obsolete ';' syntax", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_OBSOLETE_SEMICOLON)
         self._consume_statement_newline("expected newline after assignment")
+        if op is not None:
+            return ast.CompoundAssignmentStatement(target, op, value, name.location)
         return ast.AssignmentStatement(target, value, name.location)
 
     def _parse_return_v0_6(self, start: Token) -> ast.ReturnStatement:
@@ -206,8 +214,14 @@ class Parser:
         self._consume(TokenKind.INDENT, "expected indented block")
 
         cases: list[ast.TernaryCase] = []
+        had_fallback = False
         while not self._check(TokenKind.DEDENT) and not self._check(TokenKind.EOF):
-            cases.append(self._parse_ternary_case_v0_6())
+            if had_fallback:
+                raise ParseError("explicit case arm after fallback arm in match statement", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_INVALID_MATCH_ARM)
+            case = self._parse_ternary_case_v0_6()
+            if case.label is None:
+                had_fallback = True
+            cases.append(case)
 
         if not cases:
             raise ParseError("expected at least one match arm", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_EXPECTED_MATCH_ARM)
@@ -232,9 +246,22 @@ class Parser:
         self._consume(TokenKind.IN, "expected 'in' after loop variable type")
         self._consume(TokenKind.RANGE, "expected 'range' after 'in'")
         self._consume(TokenKind.LEFT_PAREN, "expected '(' after 'range'")
-        start_expression = self._parse_expression()
-        self._consume(TokenKind.COMMA, "expected ',' between range bounds")
-        end_expression = self._parse_expression()
+        arg1 = self._parse_expression()
+        if self._match(TokenKind.COMMA):
+            arg2 = self._parse_expression()
+            if self._match(TokenKind.COMMA):
+                arg3 = self._parse_expression()
+                start_expression = arg1
+                end_expression = arg2
+                step_expression = arg3
+            else:
+                start_expression = arg1
+                end_expression = arg2
+                step_expression = ast.IntegerLiteral(1, start_expression.location)
+        else:
+            start_expression = ast.IntegerLiteral(0, arg1.location)
+            end_expression = arg1
+            step_expression = ast.IntegerLiteral(1, arg1.location)
         self._consume(TokenKind.RIGHT_PAREN, "expected ')' after range bounds")
         self._consume(TokenKind.COLON, "expected ':' after range clause")
         self._consume(TokenKind.NEWLINE, "expected newline after ':'")
@@ -247,9 +274,17 @@ class Parser:
             variable_type,
             start_expression,
             end_expression,
+            step_expression,
             body,
             start.location,
         )
+
+    def _parse_discard_v0_6(self, start: Token) -> ast.DiscardStatement:
+        expression = self._parse_expression()
+        if self._check(TokenKind.SEMICOLON):
+            raise ParseError("obsolete ';' syntax", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_OBSOLETE_SEMICOLON)
+        self._consume_statement_newline("expected newline after discard expression")
+        return ast.DiscardStatement(expression, start.location)
 
     def _parse_break_v0_6(self, start: Token) -> ast.BreakStatement:
         if self._check(TokenKind.SEMICOLON):
@@ -264,11 +299,19 @@ class Parser:
         return ast.ContinueStatement(start.location)
 
     def _parse_ternary_case_v0_6(self) -> ast.TernaryCase:
+        if self._match(TokenKind.ELSE):
+            start = self._previous()
+            self._consume(TokenKind.COLON, "expected ':' after 'else'")
+            self._consume(TokenKind.NEWLINE, "expected newline after ':'")
+            self._consume(TokenKind.INDENT, "expected indented block")
+            body = self._parse_block_v0_6()
+            return ast.TernaryCase(None, body, start.location)
+
         negative = self._match(TokenKind.MINUS)
         start = self._previous() if negative else self._peek()
 
         if not self._check(TokenKind.INTEGER):
-            raise ParseError("expected integer case label", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_INVALID_MATCH_ARM)
+            raise ParseError("expected integer case label or 'else'", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_INVALID_MATCH_ARM)
 
         integer = self._advance()
         value = int(integer.text)
@@ -478,8 +521,14 @@ class Parser:
         self._consume(TokenKind.NEWLINE, "expected newline after ':'")
         self._consume(TokenKind.INDENT, "expected block indentation")
         cases: list[ast.MatchExpressionCase] = []
+        had_fallback = False
         while not self._check(TokenKind.DEDENT) and not self._check(TokenKind.EOF):
-            cases.append(self._parse_match_expression_case_v0_6())
+            if had_fallback:
+                raise ParseError("explicit case arm after fallback arm in match expression", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_INVALID_MATCH_ARM)
+            case = self._parse_match_expression_case_v0_6()
+            if case.label is None:
+                had_fallback = True
+            cases.append(case)
         if not cases:
             raise ParseError(
                 "expected at least one match arm",
@@ -489,12 +538,18 @@ class Parser:
         return ast.MatchExpression(selector, tuple(cases), start.location)
 
     def _parse_match_expression_case_v0_6(self) -> ast.MatchExpressionCase:
+        if self._match(TokenKind.ELSE):
+            start = self._previous()
+            self._consume(TokenKind.COLON, "expected ':' after 'else'")
+            expr = self._parse_expression()
+            self._consume_statement_newline("expected newline after match arm expression")
+            return ast.MatchExpressionCase(None, expr, start.location)
+
         negative = self._match(TokenKind.MINUS)
         start = self._previous() if negative else self._peek()
-        integer = self._consume(
-            TokenKind.INTEGER,
-            "expected integer case label",
-        )
+        if not self._check(TokenKind.INTEGER):
+            raise ParseError("expected integer case label or 'else'", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_INVALID_MATCH_ARM)
+        integer = self._advance()
         value = int(integer.text)
         if negative:
             value = -value

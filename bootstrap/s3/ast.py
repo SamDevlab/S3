@@ -98,7 +98,7 @@ class BinaryExpression:
 
 @dataclass(frozen=True, slots=True)
 class MatchExpressionCase:
-    label: int
+    label: int | None
     expression: Expression
     location: SourceLocation
 
@@ -178,7 +178,7 @@ class ReturnStatement:
 
 @dataclass(frozen=True, slots=True)
 class TernaryCase:
-    label: int
+    label: int | None
     body: Block
     location: SourceLocation
 
@@ -214,19 +214,36 @@ class ForStatement:
     variable_type: TypeName
     start_expression: Expression
     end_expression: Expression
+    step_expression: Expression
     body: Block
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
+class CompoundAssignmentStatement:
+    target: AssignmentTarget
+    operator: BinaryOperator
+    value: Initializer
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
+class DiscardStatement:
+    expression: Expression
     location: SourceLocation
 
 
 Statement: TypeAlias = (
     VariableDeclaration
     | AssignmentStatement
+    | CompoundAssignmentStatement
+    | DiscardStatement
     | ReturnStatement
     | SwitchStatement
     | WhileStatement
-    | ForStatement
     | BreakStatement
     | ContinueStatement
+    | ForStatement
 )
 
 

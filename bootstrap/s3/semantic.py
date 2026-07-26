@@ -210,6 +210,13 @@ class SemanticAnalyzer:
             if self.loop_depth == 0:
                 raise SemanticError("continue outside loop", statement.location)
             return BlockFlow(terminates=True, definitely_returns=False)
+        if isinstance(statement, ast.AssignmentStatement):
+            return self._analyze_assignment(statement)
+        if isinstance(statement, ast.CompoundAssignmentStatement):
+            return self._analyze_compound_assignment(statement)
+        if isinstance(statement, ast.DiscardStatement):
+            self._analyze_expression(statement.expression, None)
+            return BlockFlow(definitely_returns=False, terminates=False)
         if isinstance(statement, ast.SwitchStatement):
             return self._analyze_switch(statement)
         if isinstance(statement, ast.WhileStatement):
@@ -239,6 +246,21 @@ class SemanticAnalyzer:
             statement.end_expression.location,
             "for loop range end bound",
         )
+        step_type = self._analyze_expression(
+            statement.step_expression,
+            ast.TypeName.TRYTE,
+        )
+        self._require_type(
+            step_type,
+            ast.TypeName.TRYTE,
+            statement.step_expression.location,
+            "for loop range step",
+        )
+        if isinstance(statement.step_expression, ast.IntegerLiteral) and statement.step_expression.value == 0:
+            raise SemanticError(
+                "range step cannot be zero",
+                statement.step_expression.location,
+            )
         self._require_type(
             statement.variable_type,
             ast.TypeName.TRYTE,
@@ -290,28 +312,61 @@ class SemanticAnalyzer:
             statement.expression.location,
             "switch expression",
         )
-        cases: dict[int, ast.TernaryCase] = {}
-        for case in statement.cases:
-            if case.label not in {-1, 0, 1}:
-                raise SemanticError(
-                    f"invalid ternary case {case.label}; expected -1, 0, or 1",
-                    case.location,
-                )
-            if case.label in cases:
-                raise SemanticError(
-                    f"duplicate ternary case {case.label}",
-                    case.location,
-                )
-            cases[case.label] = case
-        missing = sorted({-1, 0, 1} - cases.keys())
-        if missing:
-            rendered = ", ".join(str(label) for label in missing)
+        explicit_cases: dict[int, ast.TernaryCase] = {}
+        fallback_case: ast.TernaryCase | None = None
+        for i, case in enumerate(statement.cases):
+            if case.label is None:
+                if fallback_case is not None:
+                    raise SemanticError(
+                        "duplicate fallback arm in match statement",
+                        case.location,
+                    )
+                if i != len(statement.cases) - 1:
+                    raise SemanticError(
+                        "fallback arm must be the last arm in match statement",
+                        case.location,
+                    )
+                fallback_case = case
+            else:
+                if fallback_case is not None:
+                    raise SemanticError(
+                        "explicit case arm after fallback arm in match statement",
+                        case.location,
+                    )
+                if case.label not in {-1, 0, 1}:
+                    raise SemanticError(
+                        f"invalid ternary case {case.label}; expected -1, 0, or 1",
+                        case.location,
+                    )
+                if case.label in explicit_cases:
+                    raise SemanticError(
+                        f"duplicate ternary case {case.label}",
+                        case.location,
+                    )
+                explicit_cases[case.label] = case
+
+        if fallback_case is not None and len(explicit_cases) == 3:
             raise SemanticError(
-                f"ternary switch is missing case(s): {rendered}",
-                statement.location,
+                "redundant fallback arm in match statement",
+                fallback_case.location,
             )
+
+        cases_by_label: dict[int, ast.TernaryCase] = {}
+        for label in (-1, 0, 1):
+            if label in explicit_cases:
+                cases_by_label[label] = explicit_cases[label]
+            elif fallback_case is not None:
+                cases_by_label[label] = fallback_case
+            else:
+                missing = sorted({-1, 0, 1} - explicit_cases.keys())
+                rendered = ", ".join(str(lbl) for lbl in missing)
+                raise SemanticError(
+                    f"ternary switch is missing case(s): {rendered}",
+                    statement.location,
+                )
+
         case_flows = [
-            self._analyze_block(cases[label].body, create_scope=True)
+            self._analyze_block(cases_by_label[label].body, create_scope=True)
             for label in (-1, 0, 1)
         ]
         return BlockFlow(
@@ -463,6 +518,69 @@ class SemanticAnalyzer:
             statement.value.location,
             "array element assignment",
         )
+
+    def _analyze_compound_assignment(
+        self,
+        statement: ast.CompoundAssignmentStatement,
+    ) -> BlockFlow:
+        if isinstance(statement.target, ast.VariableTarget):
+            binding = self._assignment_binding(
+                statement.target.name,
+                statement.target.location,
+            )
+            if isinstance(binding.type_name, ast.ArrayType):
+                raise SemanticError(
+                    "whole-array assignment is not supported",
+                    statement.target.location,
+                )
+            self._require_mutable(binding, statement.target.location)
+            if isinstance(statement.value, ast.ArrayLiteral):
+                raise SemanticError(
+                    "scalar assignment requires a scalar expression",
+                    statement.value.location,
+                )
+            assert isinstance(binding.type_name, ast.TypeName)
+            actual = self._analyze_expression(statement.value, binding.type_name)
+            self._require_type(
+                actual,
+                binding.type_name,
+                statement.value.location,
+                "assigned value",
+            )
+            return BlockFlow(definitely_returns=False, terminates=False)
+
+        binding = self._assignment_binding(
+            statement.target.array_name,
+            statement.target.location,
+        )
+        if not isinstance(binding.type_name, ast.ArrayType):
+            raise SemanticError(
+                f"variable '{statement.target.array_name}' is not an array",
+                statement.target.location,
+            )
+        self._require_mutable(binding, statement.target.location)
+        self._analyze_index(
+            statement.target.array_name,
+            statement.target.index,
+            binding.type_name,
+        )
+        if isinstance(statement.value, ast.ArrayLiteral):
+            raise SemanticError(
+                "array element assignment requires a scalar expression",
+                statement.value.location,
+            )
+        assert isinstance(binding.type_name.element_type, ast.TypeName)
+        actual = self._analyze_expression(
+            statement.value,
+            binding.type_name.element_type,
+        )
+        self._require_type(
+            actual,
+            binding.type_name.element_type,
+            statement.value.location,
+            "array element assignment",
+        )
+        return BlockFlow(definitely_returns=False, terminates=False)
 
     def _assignment_binding(self, name: str, location: SourceLocation) -> Binding:
         binding = self._lookup_binding(name)
@@ -764,16 +882,62 @@ class SemanticAnalyzer:
             expression.selector.location,
             "match expression selector",
         )
-        labels = [case.label for case in expression.cases]
-        if len(labels) != 3 or sorted(labels) != [-1, 0, 1]:
+        explicit_cases: dict[int, ast.MatchExpressionCase] = {}
+        fallback_case: ast.MatchExpressionCase | None = None
+        for i, case in enumerate(expression.cases):
+            if case.label is None:
+                if fallback_case is not None:
+                    raise SemanticError(
+                        "duplicate fallback arm in match expression",
+                        case.location,
+                    )
+                if i != len(expression.cases) - 1:
+                    raise SemanticError(
+                        "fallback arm must be the last arm in match expression",
+                        case.location,
+                    )
+                fallback_case = case
+            else:
+                if fallback_case is not None:
+                    raise SemanticError(
+                        "explicit case arm after fallback arm in match expression",
+                        case.location,
+                    )
+                if case.label not in {-1, 0, 1}:
+                    raise SemanticError(
+                        f"invalid ternary case {case.label}; expected -1, 0, or 1",
+                        case.location,
+                    )
+                if case.label in explicit_cases:
+                    raise SemanticError(
+                        f"duplicate ternary case {case.label}",
+                        case.location,
+                    )
+                explicit_cases[case.label] = case
+
+        if fallback_case is not None and len(explicit_cases) == 3:
             raise SemanticError(
-                "match expression arms must exhaustively cover -1, 0, and 1 exactly once",
-                expression.location,
+                "redundant fallback arm in match expression",
+                fallback_case.location,
             )
-        cases_map = {case.label: case for case in expression.cases}
+
+        cases_by_label: dict[int, ast.MatchExpressionCase] = {}
+        for label in (-1, 0, 1):
+            if label in explicit_cases:
+                cases_by_label[label] = explicit_cases[label]
+            elif fallback_case is not None:
+                cases_by_label[label] = fallback_case
+            else:
+                missing = sorted({-1, 0, 1} - explicit_cases.keys())
+                rendered = ", ".join(str(lbl) for lbl in missing)
+                raise SemanticError(
+                    f"match expression is missing case(s): {rendered}",
+                    expression.location,
+                )
+
         arm_types: list[ast.TypeName] = []
         for label in (-1, 0, 1):
-            case = cases_map[label]
+            case = cases_by_label[label]
             arm_expected = expected or (arm_types[0] if arm_types else None)
             arm_type = self._analyze_expression(case.expression, arm_expected)
             if arm_types:
@@ -784,7 +948,9 @@ class SemanticAnalyzer:
                     "match expression arm",
                 )
             arm_types.append(arm_type)
+
         result_type = arm_types[0]
+        self.expression_types[id(expression)] = result_type
         if expected is not None:
             self._require_type(
                 result_type,
