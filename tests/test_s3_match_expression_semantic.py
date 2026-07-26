@@ -66,14 +66,13 @@ def test_match_expression_mismatched_arm_types_rejected() -> None:
 
 
 def test_match_expression_non_exhaustive_rejected() -> None:
-    with pytest.raises(SemanticError, match="match expression arms must exhaustively cover"):
+    with pytest.raises(SemanticError, match="match expression is missing case\\(s\\): 1"):
         _analyze(
             "fn main() -> tryte:\n"
             "    mut sel: trit = 0\n"
             "    val: tryte = match sel:\n"
             "        -1: 10\n"
             "        0: 20\n"
-            "        0: 30\n"
             "    return val\n"
         )
 
