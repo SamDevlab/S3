@@ -69,7 +69,7 @@ class MemorySlot:
 
     @property
     def element_size(self) -> int:
-        return 1 if self.element_type is AssemblyType.TRIT else 2
+        return _element_size(self.element_type)
 
 
 @dataclass(frozen=True, slots=True)
@@ -121,7 +121,13 @@ class _Allocator:
 
 
 def _element_size(type_name: AssemblyType) -> int:
-    return 1 if type_name is AssemblyType.TRIT else 2
+    if type_name is AssemblyType.TRIT:
+        return 1
+    if type_name is AssemblyType.TRYTE:
+        return 2
+    if type_name is AssemblyType.STRING:
+        return 8
+    raise NativeBackendError(f"unsupported memory element type {type_name!r}")
 
 
 def _logical_cost(memory: AssemblyMemoryObject) -> int:

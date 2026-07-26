@@ -59,6 +59,12 @@ def mangle_block(function_name: str, block_name: str) -> str:
     )
 
 
+def mangle_static_string(static_string: str) -> str:
+    if re.fullmatch(r"s[0-9]+", static_string) is None:
+        raise NativeBackendError(f"unsafe static string identifier {static_string!r}")
+    return f".L{static_string}"
+
+
 def _address(
     region: StackRegion,
     *,
@@ -95,6 +101,7 @@ class X8664Emitter:
             lines.extend(self._emit_function(function))
             lines.append("")
         lines.extend(self._render_failure_handlers())
+        lines.extend(self._render_static_string_data())
         lines.extend(self._render_failure_data())
         lines.append(render_runtime().rstrip())
         return "\n".join(lines) + "\n"
@@ -268,6 +275,12 @@ class X8664Emitter:
             assert instruction.immediate is not None
             return instrumentation + [
                 f"    mov rax, {instruction.immediate}",
+                *self._write_register(layout, registers[0], "rax"),
+            ]
+        if opcode is AssemblyOpcode.TCONST_STR:
+            assert instruction.static_string is not None
+            return instrumentation + [
+                f"    lea rax, [rip + {mangle_static_string(instruction.static_string)}]",
                 *self._write_register(layout, registers[0], "rax"),
             ]
         if opcode is AssemblyOpcode.TMOV:
@@ -451,9 +464,12 @@ class X8664Emitter:
             detail_suffix=f" is uninitialized in m{memory.index}\n",
             value_register="r10",
         )
-        load = "movsx rax, byte ptr" if memory.element_size == 1 else (
-            "movsx rax, word ptr"
-        )
+        if memory.element_type is AssemblyType.STRING:
+            load = "mov rax, qword ptr"
+        elif memory.element_size == 1:
+            load = "movsx rax, byte ptr"
+        else:
+            load = "movsx rax, word ptr"
         return [
             *self._read_register(layout, index_register, "r10"),
             *self._memory_bounds(memory, "r10"),
@@ -477,13 +493,14 @@ class X8664Emitter:
         index_register, source_register = instruction.registers
         assert instruction.memory is not None
         memory = layout.memory(instruction.memory)
-        overflow = self._overflow_failure(memory.element_type, "r10")
         lines = [
             *self._read_register(layout, index_register, "rax"),
             *self._read_register(layout, source_register, "r10"),
             *self._memory_bounds(memory, "rax"),
-            *self._range_check(memory.element_type, "r10", overflow),
         ]
+        if memory.element_type is not AssemblyType.STRING:
+            overflow = self._overflow_failure(memory.element_type, "r10")
+            lines.extend(self._range_check(memory.element_type, "r10", overflow))
         init_address = _address(memory.initialized, index="rax")
         if not memory.mutable:
             immutable = self._instruction_failure(
@@ -505,8 +522,15 @@ class X8664Emitter:
             index="rax",
             scale=memory.element_size,
         )
-        source = "r10b" if memory.element_size == 1 else "r10w"
-        size = "byte" if memory.element_size == 1 else "word"
+        if memory.element_type is AssemblyType.STRING:
+            source = "r10"
+            size = "qword"
+        elif memory.element_size == 1:
+            source = "r10b"
+            size = "byte"
+        else:
+            source = "r10w"
+            size = "word"
         lines.extend(
             (
                 f"    mov {size} ptr {data_address}, {source}",
@@ -625,6 +649,20 @@ class X8664Emitter:
                         "    jmp __s3_fail_value",
                     )
                 )
+        lines.append("")
+        return lines
+
+    def _render_static_string_data(self) -> list[str]:
+        if not self.program.static_strings:
+            return []
+        lines = [".section .rodata"]
+        for entry in self.program.static_strings:
+            lines.extend(
+                (
+                    f"{mangle_static_string(entry.id)}:",
+                    f'    .asciz "{self._escape_ascii(entry.value)}"',
+                )
+            )
         lines.append("")
         return lines
 
