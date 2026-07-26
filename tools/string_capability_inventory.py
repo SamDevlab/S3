@@ -7,7 +7,7 @@ def main() -> int:
     print("current:")
     print("  lexer: STRING_LITERAL reserved")
     print("  parser: string type and static string literal expression")
-    print("  semantic: typed static string values")
+    print("  semantic: typed static string values with literal-only compile-time concat")
     print("  ir: IRType.STRING, static_strings, CONST_STR")
     print("  assembly: string type, .data, TCONST_STR")
     print("  hosted runtime: static string handles")
@@ -22,7 +22,8 @@ def main() -> int:
     print()
     print("self-hosting status:")
     print("  required for Assembly renderer subset")
-    print("  strings no longer block 0.53 static renderer data paths")
+    print("  literal-only static text concat no longer blocks fixed token composition")
+    print("  strings no longer block 0.54 static renderer data paths")
     print("  still blocked by records/enums and deterministic formatting helpers")
     return 0
 

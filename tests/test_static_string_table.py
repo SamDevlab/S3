@@ -68,7 +68,7 @@ def test_static_string_literal_entry_exposes_deterministic_text_metadata() -> No
 
     first = table.entries[0]
     assert first.id == "s0"
-    assert first.value == r"line\nnext"
+    assert first.value == "line\nnext"
     assert first.text == "line\nnext"
     assert first.utf8_bytes == b"line\nnext"
     assert first.byte_count == 9
@@ -95,24 +95,34 @@ def test_static_string_literal_table_keeps_stable_ids_with_escaped_literals() ->
     )
 
     assert [(entry.id, entry.value) for entry in table.entries] == [
-        ("s0", r"same\ntext"),
+        ("s0", "same\ntext"),
         ("s1", "other"),
     ]
 
 
-def test_static_string_literal_entry_reports_unsupported_escape_when_decoded() -> None:
-    table = _table('fn main() -> tryte:\n' r'    return "bad\t"' "\n")
-
+def test_static_string_literal_table_reports_unsupported_escape_when_collected() -> None:
     with pytest.raises(StaticTextDecodeError):
-        _ = table.entries[0].text
+        _table('fn main() -> tryte:\n' r'    return "bad\t"' "\n")
 
 
 def test_static_string_literal_table_walks_nested_expressions() -> None:
     table = _table('fn main() -> tryte:\n    return "left" + ("right" + "left")\n')
 
     assert [(entry.id, entry.value) for entry in table.entries] == [
-        ("s0", "left"),
-        ("s1", "right"),
+        ("s0", "leftrightleft"),
+    ]
+
+
+def test_static_string_literal_table_deduplicates_folded_concat_with_literal() -> None:
+    table = _table(
+        "fn main() -> tryte:\n"
+        '    first: string = "a" + "b"\n'
+        '    second: string = "ab"\n'
+        "    return 0\n"
+    )
+
+    assert [(entry.id, entry.value) for entry in table.entries] == [
+        ("s0", "ab"),
     ]
 
 

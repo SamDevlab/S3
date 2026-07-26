@@ -146,10 +146,11 @@ Não integram o Marco 0.7 e não estão implementados:
 
 Arrays em assinaturas, heap, ponteiros públicos, strings dinâmicas, módulos e
 I/O continuam fora do MVP até receberem contratos próprios. O Marco 0.53 cobre
-somente valores `string` estáticos tipados.
+valores `string` estáticos tipados, e o Marco 0.54 adiciona concatenação
+estática literal-only em tempo de compilação.
 
 ## Autohospedagem
 
-Assembler e frontend em S3 dependem de strings, módulos e uma biblioteca
-padrão mínima. Python será removido gradualmente somente após bootstrap
-reprodutível.
+Assembler e frontend em S3 dependem de strings além de concatenação estática
+literal-only, módulos e uma biblioteca padrão mínima. Python será removido
+gradualmente somente após bootstrap reprodutível.

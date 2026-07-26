@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 
 from . import ast
 from .static_text import (
     StaticTextMetadata,
     decode_static_text,
-    encode_static_text,
-    static_text_metadata,
+    normalize_static_text_newlines,
 )
 
 
@@ -21,15 +21,21 @@ class StaticStringEntry:
 
     @property
     def text(self) -> str:
-        return decode_static_text(self.value)
+        return self.value
 
     @property
     def utf8_bytes(self) -> bytes:
-        return encode_static_text(self.value)
+        return self.value.encode("utf-8")
 
     @property
     def metadata(self) -> StaticTextMetadata:
-        return static_text_metadata(self.value)
+        data = self.utf8_bytes
+        line_count = 0 if self.value == "" else len(self.value.splitlines())
+        return StaticTextMetadata(
+            byte_count=len(data),
+            line_count=line_count,
+            sha256=hashlib.sha256(data).hexdigest(),
+        )
 
     @property
     def byte_count(self) -> int:
@@ -67,9 +73,26 @@ def collect_static_string_literals(program: ast.Program) -> StaticStringTable:
         seen[value] = entry
         entries.append(entry)
 
-    def visit_expression(expression: ast.Expression) -> None:
+    def constant_text(expression: ast.Expression) -> str | None:
         if isinstance(expression, ast.StringLiteral):
-            add(expression.value)
+            return decode_static_text(expression.value)
+        if (
+            isinstance(expression, ast.BinaryExpression)
+            and expression.operator is ast.BinaryOperator.ADD
+        ):
+            left = constant_text(expression.left)
+            right = constant_text(expression.right)
+            if left is not None and right is not None:
+                return normalize_static_text_newlines(left + right)
+        return None
+
+    def visit_expression(expression: ast.Expression) -> None:
+        folded = constant_text(expression)
+        if folded is not None:
+            add(folded)
+            return
+        if isinstance(expression, ast.StringLiteral):
+            add(decode_static_text(expression.value))
         elif isinstance(expression, ast.UnaryExpression):
             visit_expression(expression.operand)
         elif isinstance(expression, ast.BinaryExpression):

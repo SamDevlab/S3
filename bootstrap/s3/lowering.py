@@ -20,6 +20,7 @@ from .ir import (
 )
 from .semantic import SemanticModel
 from .static_strings import collect_static_string_literals
+from .static_text import decode_static_text, normalize_static_text_newlines
 
 
 TYPE_MAP = {
@@ -808,10 +809,35 @@ class FunctionLowerer:
             )
         if isinstance(expression, ast.StringLiteral):
             try:
-                static_string = self.static_string_ids[expression.value]
+                static_string = self.static_string_ids[
+                    decode_static_text(expression.value)
+                ]
             except KeyError as error:
                 raise LoweringError(
                     "string literal is missing from static string table",
+                    expression.location,
+                ) from error
+            result = self._allocate(ast.TypeName.STRING, expression.location)
+            self._emit(
+                IRInstruction(
+                    IROpcode.CONST_STR,
+                    result=result,
+                    static_string=static_string,
+                    location=expression.location,
+                )
+            )
+            return result
+        if (
+            isinstance(expression, ast.BinaryExpression)
+            and expression.operator is ast.BinaryOperator.ADD
+            and expression_type is ast.TypeName.STRING
+        ):
+            text = evaluate_constant_static_text_expression(expression)
+            try:
+                static_string = self.static_string_ids[text]
+            except KeyError as error:
+                raise LoweringError(
+                    "constant static text expression is missing from static string table",
                     expression.location,
                 ) from error
             result = self._allocate(ast.TypeName.STRING, expression.location)
@@ -1145,6 +1171,23 @@ class FunctionLowerer:
             )
         )
         return result_reg
+
+
+def evaluate_constant_static_text_expression(expression: ast.Expression) -> str:
+    if isinstance(expression, ast.StringLiteral):
+        return decode_static_text(expression.value)
+    if (
+        isinstance(expression, ast.BinaryExpression)
+        and expression.operator is ast.BinaryOperator.ADD
+    ):
+        return normalize_static_text_newlines(
+            evaluate_constant_static_text_expression(expression.left)
+            + evaluate_constant_static_text_expression(expression.right)
+        )
+    raise LoweringError(
+        "expected a compile-time static text expression",
+        expression.location,
+    )
 
 
 def lower(program: ast.Program, semantic_model: SemanticModel) -> IRModule:

@@ -108,3 +108,68 @@ def test_lowering_match_expression_can_select_static_string_value() -> None:
         for instruction in main.instructions
         if instruction.result is not None
     )
+
+
+def test_lowering_folds_constant_static_text_concatenation_to_const_str() -> None:
+    module = _lower(
+        "fn main() -> tryte:\n"
+        '    value: string = "TRET " + "r1"\n'
+        "    return 0\n"
+    )
+
+    assert [(entry.id, entry.value) for entry in module.static_strings] == [
+        ("s0", "TRET r1"),
+    ]
+    main = module.functions[0]
+    assert [
+        instruction.static_string
+        for instruction in main.instructions
+        if instruction.opcode is IROpcode.CONST_STR
+    ] == ["s0"]
+    assert IROpcode.ADD not in {
+        instruction.opcode for instruction in main.instructions
+    }
+
+
+def test_lowering_deduplicates_folded_text_with_direct_literal() -> None:
+    module = _lower(
+        "fn main() -> tryte:\n"
+        '    first: string = "a" + "b"\n'
+        '    second: string = "ab"\n'
+        "    return 0\n"
+    )
+
+    assert [(entry.id, entry.value) for entry in module.static_strings] == [
+        ("s0", "ab"),
+    ]
+    main = module.functions[0]
+    assert [
+        instruction.static_string
+        for instruction in main.instructions
+        if instruction.opcode is IROpcode.CONST_STR
+    ] == ["s0", "s0"]
+
+
+def test_lowering_folds_grouped_empty_unicode_and_escaped_text() -> None:
+    module = _lower(
+        "fn main() -> tryte:\n"
+        '    grouped: string = "a" + ("b" + "c")\n'
+        '    empty: string = "" + ""\n'
+        '    unicode: string = "á" + "β"\n'
+        r'    escaped: string = "line\n" + "next"'
+        "\n"
+        r'    quoted: string = "a\"" + "b"'
+        "\n"
+        r'    slash: string = "a\\" + "b"'
+        "\n"
+        "    return 0\n"
+    )
+
+    assert [(entry.id, entry.value) for entry in module.static_strings] == [
+        ("s0", "abc"),
+        ("s1", ""),
+        ("s2", "áβ"),
+        ("s3", "line\nnext"),
+        ("s4", 'a"b'),
+        ("s5", "a\\b"),
+    ]

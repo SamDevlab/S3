@@ -36,7 +36,7 @@ comparison path is working.
 
 | Resource | Priority | Why it is needed | Components unlocked | Current status | Minimal desired example | Risks | Recommended next delivery |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Strings | P0 | Compiler components need names, source text slices, rendered Assembly, diagnostic messages, and serialized artifacts. | lexer, diagnostics, Assembly renderer, diagnostic formatter | S3 0.53 supports first-class typed static text values only; dynamic construction, concatenation, indexing, comparison, formatting, file I/O, and broad text operations are not available. | static `string` literal handle plus future concatenation | Text rules can become large quickly. | Specify the next minimal text operation required by a selected migration target. |
+| Strings | P0 | Compiler components need names, source text slices, rendered Assembly, diagnostic messages, and serialized artifacts. | lexer, diagnostics, Assembly renderer, diagnostic formatter | S3 0.54 supports first-class typed static text values plus literal-only compile-time concatenation; dynamic construction, binding-based concatenation, indexing, comparison, formatting, file I/O, and broad text operations are not available. | static `string` literal handle plus literal-only concatenation | Text rules can become large quickly. | Specify the next minimal text operation required by a selected migration target. |
 | Arrays or vectors | P0 | Compiler data is ordered: tokens, blocks, instructions, registers, notes, and arguments. | token streams, IR lists, Assembly lists, diagnostics | Static arrays exist, but compiler components need reusable ordered collections. | array of `tryte` and vector-like append/read operations | Dynamic growth and bounds rules can complicate runtime behavior. | Specify minimal vector operations or a constrained fixed-array subset. |
 | Reusable helper functions | P0 | Early migrated code should share formatting, normalization, and comparison helpers. | Assembly renderer, IR normalizer, small static checker | Functions exist, but reusable multi-file organization is limited. | shared pure helper called from two small functions | Duplication grows if helpers cannot be organized. | Define a small helper-library convention for single-file examples first. |
 | Program tests for S3 code | P0 | Migrated components need automated tests independent of Python implementation details. | all migrated components | End-to-end tests exist for compiler behavior, not a dedicated S3 component test harness. | compile a small S3 program and compare return or output artifact | Tests can become brittle if they compare unstable details. | Add a minimal S3 program test pattern using existing CLI utilities. |
@@ -82,7 +82,7 @@ feature already exists.
 
 | Gap | Useful minimal example | Notes |
 | --- | --- | --- |
-| String literal and concatenation | Build `"TRET " + register_name`. | Needed by renderers and diagnostics. |
+| String literal and concatenation | Build `"TRET " + "r1"` as compile-time static text. | Runtime-dependent forms such as `"TRET " + register_name` still need a later string model. |
 | Array of trytes | Store a short ordered list and read by index. | Current fixed arrays help, but compiler data needs reusable collection patterns. |
 | Record | Represent `{ line, column, offset }` for a source span. | Records unlock named compiler data. |
 | Enum | Define an opcode-like closed set: `TCONST`, `TRET`. | Start without payloads. |
@@ -97,7 +97,7 @@ so existing compiler tests do not treat them as runnable S3 programs.
 
 ## Ordem recomendada de implementacao da linguagem
 
-1. Minimal strings.
+1. Minimal strings, including literal-only compile-time concatenation.
 2. Arrays or vectors for reusable ordered data.
 3. Records or structs with named fields.
 4. Enums or sum types.
@@ -118,7 +118,7 @@ to compare with Python output.
 The project is ready to migrate the first real component only when:
 
 - S3 can represent simple compound data;
-- S3 can manipulate strings or render simple text;
+- S3 can manipulate enough static text to render simple fixed fragments;
 - S3 can organize code into reusable helper functions;
 - there is a way to test S3 programs automatically;
 - there is a Python-vs-S3 comparison path;
@@ -131,7 +131,7 @@ The project is ready to migrate the first real component only when:
 Before implementing the first compiler component in S3, the next phase should
 prioritize:
 
-- minimal strings;
+- minimal strings beyond literal-only static concatenation;
 - arrays or vectors;
 - records;
 - tests for S3 programs;

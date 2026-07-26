@@ -2,11 +2,12 @@
 
 ## Status
 
-Specification complete; implementation not started.
+Implementation complete locally; CI validation pending through the 0.54 Draft PR.
 
-This milestone is documentation and architecture only. It does not implement
-runtime concatenation, dynamic strings, heap allocation, garbage collection,
-FFI, libc integration, public pointers, ABI changes, or any 0.54 runtime code.
+This milestone implements compile-time, literal-only static text concatenation.
+It does not implement runtime concatenation, dynamic strings, heap allocation,
+garbage collection, FFI, libc integration, public pointers, ABI changes, or any
+new runtime string model.
 
 ## Context
 
@@ -17,9 +18,9 @@ pipeline carries these handles through semantic analysis, IR `CONST_STR`, S3
 Assembly `.data` plus `TCONST_STR`, hosted execution, and x86-64 native
 read-only data.
 
-Milestone 0.53 deliberately left string concatenation out of scope. Today,
-`string + string` is rejected as an unsupported string operation even when both
-operands are literals.
+Milestone 0.53 deliberately left string concatenation out of scope. Milestone
+0.54 accepts `string + string` only when the whole expression is directly formed
+from string literals and `+`.
 
 ## Motivation
 
@@ -223,9 +224,9 @@ surface, test burden, and an avoidable failure mode for O0 builds.
 
 ### Chosen Direction
 
-Use Approach A or the narrow form of Approach B: validate constant-only string
-concatenation in semantic analysis and ensure lowering emits only the final
-interned `CONST_STR`.
+Use the narrow form of Approach B: validate constant-only string concatenation
+in semantic analysis and ensure lowering emits only the final interned
+`CONST_STR`.
 
 No IR concatenation opcode is introduced.
 
@@ -456,9 +457,25 @@ correct without optimizer elimination.
 Rejected because accepted 0.54 programs should reach Assembly as ordinary
 static strings loaded by `TCONST_STR`.
 
-## Future Composite PR Plan
+## Implementation Summary
 
-The future implementation PR should be split into small reviewable commits:
+The 0.54 implementation keeps the runtime and backend model unchanged:
+
+- semantic analysis accepts only literal-only `BinaryOperator.ADD` trees whose
+  whole expression is compile-time static text;
+- semantic analysis rejects identifiers, bindings, parameters, calls, arrays,
+  numeric operands, and partial static/dynamic trees;
+- lowering evaluates the accepted AST subtree to decoded text and emits one
+  final `CONST_STR`;
+- the static string table interns by decoded final content, so `"a" + "b"` and
+  `"ab"` deduplicate;
+- IR, S3 Assembly, emulator, optimizer, and x86-64 backend do not gain concat
+  opcodes, helpers, ABI changes, heap allocation, GC, FFI, libc dependencies,
+  or public pointer exposure.
+
+## Composite PR Plan
+
+The implementation PR is split into small reviewable commits:
 
 1. `feat(0.54): define constant static text concatenation semantics`
 2. `feat(0.54): fold constant text expressions before IR`
@@ -467,9 +484,8 @@ The future implementation PR should be split into small reviewable commits:
 5. `test(0.54): cover assembly and emulator behavior`
 6. `test(0.54): cover native static text concatenation`
 7. `docs(0.54): record implementation boundaries`
-8. `chore(roadmap): mark 0.54 complete after implementation`
 
-The future PR must not retroactively change the delivered scope of 0.53.
+The PR must not retroactively change the delivered scope of 0.53.
 
 ## Definition of Done
 
@@ -482,5 +498,5 @@ The future PR must not retroactively change the delivered scope of 0.53.
 - deterministic interning is covered by tests;
 - emulator and native behavior remain equivalent for the folded result;
 - all 0.53 static text tests and repository regression checks pass;
-- documentation marks 0.54 implemented only after code, tests, and CI are
-  complete.
+- documentation marks 0.54 implemented after code and local validation are
+  complete, with CI status tracked by the Draft PR.
