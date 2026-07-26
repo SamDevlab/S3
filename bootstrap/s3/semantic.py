@@ -881,6 +881,41 @@ class SemanticAnalyzer:
                 "comparison operands",
             )
             return ast.TypeName.TRIT
+        if expression.operator is ast.BinaryOperator.ADD:
+            left_known = self._known_expression_type(expression.left)
+            right_known = self._known_expression_type(expression.right)
+            if left_known is ast.TypeName.STRING or right_known is ast.TypeName.STRING:
+                if self._is_constant_static_text_expression(expression):
+                    self._validate_constant_static_text_expression(expression)
+                    if expected is not None:
+                        self._require_type(
+                            ast.TypeName.STRING,
+                            expected,
+                            expression.location,
+                            "constant static text concatenation",
+                        )
+                    self.expression_types[id(expression)] = ast.TypeName.STRING
+                    return ast.TypeName.STRING
+                if (
+                    left_known is not None
+                    and right_known is not None
+                    and left_known is not right_known
+                ):
+                    left_type = self._analyze_expression(expression.left, left_known)
+                    right_type = self._analyze_expression(expression.right, right_known)
+                    self._require_type(
+                        left_type,
+                        right_type,
+                        expression.location,
+                        "operands of '+'",
+                    )
+                self._analyze_expression(expression.left, left_known)
+                self._analyze_expression(expression.right, right_known)
+                raise SemanticError(
+                    "string concatenation requires a compile-time static text expression",
+                    expression.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION,
+                )
         operand_type = self._binary_operand_type(expression)
         self._reject_string_operation(
             operand_type,
@@ -922,6 +957,8 @@ class SemanticAnalyzer:
         self,
         expression: ast.Expression,
     ) -> ast.TypeName | None:
+        if isinstance(expression, ast.IntegerLiteral):
+            return ast.TypeName.TRYTE
         if isinstance(expression, ast.Identifier):
             return self._identifier_type(expression)
         if isinstance(expression, ast.StringLiteral):
@@ -936,6 +973,16 @@ class SemanticAnalyzer:
             return None if signature is None else signature.return_type
         if isinstance(expression, ast.UnaryExpression):
             return self._known_expression_type(expression.operand)
+        if (
+            isinstance(expression, ast.BinaryExpression)
+            and expression.operator is ast.BinaryOperator.ADD
+        ):
+            left = self._known_expression_type(expression.left)
+            right = self._known_expression_type(expression.right)
+            if left is ast.TypeName.STRING or right is ast.TypeName.STRING:
+                return ast.TypeName.STRING
+            if left is not None and right is not None and left is right:
+                return left
         if (
             isinstance(expression, ast.BinaryExpression)
             and expression.operator in (
@@ -1099,6 +1146,39 @@ class SemanticAnalyzer:
                 str(error),
                 literal.location,
             ) from error
+
+    def _validate_constant_static_text_expression(
+        self,
+        expression: ast.Expression,
+    ) -> None:
+        if isinstance(expression, ast.StringLiteral):
+            self._validate_static_string_literal(expression)
+            self.expression_types[id(expression)] = ast.TypeName.STRING
+            return
+        if (
+            isinstance(expression, ast.BinaryExpression)
+            and expression.operator is ast.BinaryOperator.ADD
+        ):
+            self._validate_constant_static_text_expression(expression.left)
+            self._validate_constant_static_text_expression(expression.right)
+            self.expression_types[id(expression)] = ast.TypeName.STRING
+            return
+        raise SemanticError(
+            "string concatenation requires a compile-time static text expression",
+            expression.location,
+            diagnostic_code=DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION,
+        )
+
+    @staticmethod
+    def _is_constant_static_text_expression(expression: ast.Expression) -> bool:
+        if isinstance(expression, ast.StringLiteral):
+            return True
+        return (
+            isinstance(expression, ast.BinaryExpression)
+            and expression.operator is ast.BinaryOperator.ADD
+            and SemanticAnalyzer._is_constant_static_text_expression(expression.left)
+            and SemanticAnalyzer._is_constant_static_text_expression(expression.right)
+        )
 
     @staticmethod
     def _reject_string_operation(
