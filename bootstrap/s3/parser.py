@@ -74,8 +74,14 @@ class Parser:
             result: ast.DeclaredType = ast.TypeName.TRIT
         elif self._match(TokenKind.TRYTE):
             result = ast.TypeName.TRYTE
+        elif self._check(TokenKind.IDENTIFIER) and self._peek().text == "string":
+            self._advance()
+            result = ast.TypeName.STRING
         else:
-            raise ParseError("expected type 'trit' or 'tryte'", self._peek().location)
+            raise ParseError(
+                "expected type 'trit', 'tryte', or 'string'",
+                self._peek().location,
+            )
         while self._match(TokenKind.LEFT_BRACKET):
             negative = self._match(TokenKind.MINUS)
             length = self._consume(

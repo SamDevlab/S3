@@ -12,6 +12,7 @@ from .diagnostics import SourceLocation
 class TypeName(Enum):
     TRIT = "trit"
     TRYTE = "tryte"
+    STRING = "string"
 
 
 @dataclass(frozen=True, slots=True)
