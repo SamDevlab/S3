@@ -1,7 +1,7 @@
 # Architecture Specification S3 0.53 — Typed Static Text Values
 
 ## Status
-**Especificação Arquitetural Aprovada para o Milestone 0.53** (Fase de Especificação e Contrato. Nenhuma funcionalidade runtime ou alteração no compilador foi implementada nesta entrega).
+**Milestone 0.53 implementado para valores de texto estático tipados**. A entrega runtime aceita `string` como tipo fonte para literais estáticos imutáveis, transporta handles estáticos por IR, S3 Assembly, emulador hospedado e backend nativo x86-64, e mantém fora de escopo strings dinâmicas, concatenação, indexação, comparação, heap, GC, FFI e qualquer API pública de ponteiros.
 
 ---
 
@@ -10,7 +10,7 @@ O compilador S3 já possui suporte parcial a literais de string no front-end:
 - **Lexer:** Reconhece literais entre aspas duplas como `TokenKind.STRING_LITERAL`.
 - **AST:** Constrói nós `ast.StringLiteral`.
 - **StaticStringTable:** Coleta e deduplica literais (`s0`, `s1`, ...) calculando hashes SHA-256 e metadata de bytes UTF-8 em `bootstrap/s3/static_strings.py`.
-- **Validação Semântica:** Rejeita explicitamente a execução/lowering de literais com o código de diagnóstico `S3E_SEMANTIC_STRING_LITERAL_RUNTIME_UNSUPPORTED`.
+- **Validação Semântica pré-0.53:** Rejeitava execução/lowering de literais com `S3E_SEMANTIC_STRING_LITERAL_RUNTIME_UNSUPPORTED`. A 0.53 substitui esse bloqueio para usos válidos de texto estático por um contrato tipado `string`, mantendo diagnósticos explícitos para operações fora de escopo.
 
 ---
 
@@ -50,9 +50,9 @@ O identificador do handle é abstrato e não depende de endereços de memória f
 
 ---
 
-## 4. Escopo Exato da Futura Implementação Runtime (Milestone 0.53 Runtime)
+## 4. Escopo Exato Implementado no Runtime (Milestone 0.53 Runtime)
 
-### 4.1. Incluído no Escopo Runtime Futuro
+### 4.1. Incluído no Escopo Runtime
 - Tipo fonte `string` em anotações de tipo.
 - Literais de string como expressões válidas (`"hello"`).
 - Bindings imutáveis (`s: string = "..."`) e mutáveis (`mut s: string = "..."`) contendo referências a handles estáticos.
@@ -86,11 +86,11 @@ O identificador do handle é abstrato e não depende de endereços de memória f
 
 2. **Tipos e Instruções IR:**
    - O tipo `IRType.STRING` é adicionado aos tipos de registradores IR.
-   - Uma nova instrução ou operando IR representa o carregamento da referência constante do handle estático: `IROpcode.CONST` estendido para strings ou instrução dedicada.
+   - `IROpcode.CONST_STR` carrega a referência constante do handle estático.
    - Registradores de tipo `IRType.STRING` transportam o identificador da constante sem alocação dinâmica.
 
 3. **Serialização IR JSON:**
-   - O envelope `s3-ir` 0.5.0 é preservado ou estendido de forma retrocompatível adicionando o campo `static_strings` no objeto raiz do programa.
+   - O envelope `s3-ir` 0.5.0 é preservado e estendido de forma retrocompatível adicionando o campo opcional `static_strings` no objeto `module`.
 
 ---
 
@@ -106,7 +106,7 @@ O identificador do handle é abstrato e não depende de endereços de memória f
    ```
 2. **Carregamento e Instrução Assembly:**
    - Registradores podem ser declarados com o tipo `string`.
-   - Instrução `TCONST_STR r0:string, s0` para carregar a referência estática.
+   - Instrução `TCONST_STR r0, s0` para carregar a referência estática em registrador `string` já declarado.
    - Passagem de argumentos e retornos utiliza os opcodes `TCALL` e `TRET` padronizados.
 
 ---
@@ -140,7 +140,7 @@ O identificador do handle é abstrato e não depende de endereços de memória f
    - No nível nativo x86-64, o registrador do frame armazena o endereço de 64 bits do rótulo estático (`lea rax, [rip + .Ls0]`).
 3. **Passagem pela ABI System V AMD64:**
    - Os primeiros 6 argumentos do tipo `string` são passados via registradores de propósito geral (`rdi`, `rsi`, `rdx`, `rcx`, `r8`, `r9`) como ponteiros de 64 bits para `.rodata`.
-   - Retornos de função do tipo `string` usam `rax`.
+   - Retornos internos de função do tipo `string` usam `rax`; a entrada nativa pública `main -> string` é rejeitada explicitamente porque o processo não expõe ponteiros públicos como resultado observável.
    - Nenhum heap ou alocador runtime C/libc é utilizado.
 
 ---
@@ -156,9 +156,9 @@ Os seguintes códigos de erro devem ser aplicados ou adicionados:
 
 ---
 
-## 10. Critérios de Aceitação para Futura Implementação Runtime
+## 10. Critérios de Aceitação da Implementação Runtime
 
-A futura entrega de código do Milestone 0.53 Runtime só será considerada aprovada se satisfizer todos os testes a seguir:
+A entrega de código do Milestone 0.53 Runtime é considerada aprovada quando satisfaz os testes a seguir:
 
 1. **Parser & AST:**
    - Parsing correto de `x: string = "abc"`, `fn f(s: string) -> string`.

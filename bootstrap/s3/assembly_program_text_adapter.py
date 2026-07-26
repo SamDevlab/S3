@@ -11,6 +11,7 @@ from bootstrap.s3.assembly import (
     AssemblyMemoryObject,
     AssemblyOpcode,
     AssemblyProgram,
+    AssemblyStaticString,
     AssemblyType,
 )
 from bootstrap.s3.assembly_text_renderer import (
@@ -110,6 +111,7 @@ SIGN_MAIN_BLOCKS = (
 SUPPORTED_PROGRAM_OPCODES = frozenset(
     {
         AssemblyOpcode.TCONST,
+        AssemblyOpcode.TCONST_STR,
         AssemblyOpcode.TMOV,
         AssemblyOpcode.TINV,
         AssemblyOpcode.TADD,
@@ -159,6 +161,9 @@ class AssemblyProgramTextAdapter:
         _validate_supported_program_shape(program)
         renderer = AssemblyTextRenderer()
         renderer.emit_header(program.version)
+        if program.static_strings:
+            _emit_static_strings(renderer, program.static_strings)
+            renderer.emit_blank_line()
         functions = tuple(program.functions)
         if not functions:
             renderer.emit_blank_line()
@@ -426,8 +431,34 @@ def _parameter_types(
 def _validate_supported_program_shape(program: AssemblyProgram) -> None:
     if not isinstance(program, AssemblyProgram):
         raise TypeError("supported adapter expects an AssemblyProgram")
+    _validate_supported_static_strings(program.static_strings)
     for function in program.functions:
         _validate_supported_function_shape(function)
+
+
+def _validate_supported_static_strings(
+    static_strings: tuple[AssemblyStaticString, ...],
+) -> None:
+    seen: set[str] = set()
+    for index, entry in enumerate(static_strings):
+        if not isinstance(entry, AssemblyStaticString):
+            raise AssemblyProgramTextAdapterError(
+                "supported adapter expects static strings to be AssemblyStaticString"
+            )
+        expected = f"s{index}"
+        if entry.id != expected:
+            raise AssemblyProgramTextAdapterError(
+                f"supported adapter expects static string {expected}"
+            )
+        if entry.id in seen:
+            raise AssemblyProgramTextAdapterError(
+                f"supported adapter found duplicate static string {entry.id}"
+            )
+        seen.add(entry.id)
+        if not isinstance(entry.value, str):
+            raise AssemblyProgramTextAdapterError(
+                "supported adapter expects static string value to be text"
+            )
 
 
 def _validate_supported_function_shape(function: AssemblyFunction) -> None:
@@ -513,6 +544,15 @@ def _emit_function(
     renderer.emit_end()
 
 
+def _emit_static_strings(
+    renderer: AssemblyTextRenderer,
+    static_strings: tuple[AssemblyStaticString, ...],
+) -> None:
+    renderer.emit_line(".data")
+    for entry in static_strings:
+        renderer.emit_line(entry.render())
+
+
 def _emit_supported_instruction(
     renderer: AssemblyTextRenderer,
     instruction: AssemblyInstruction,
@@ -536,6 +576,26 @@ def _emit_supported_instruction(
             opcode.value,
             _register(register),
             instruction.immediate,
+            source=source,
+        )
+        return
+
+    if opcode is AssemblyOpcode.TCONST_STR:
+        register = _single_register(instruction, "TCONST_STR", "supported adapter")
+        if instruction.static_string is None:
+            raise AssemblyProgramTextAdapterError(
+                "supported adapter expects TCONST_STR static string id"
+            )
+        _require_no_extra_operands(
+            instruction,
+            "TCONST_STR",
+            "supported adapter",
+            allow_static_string=True,
+        )
+        renderer.emit_instruction(
+            opcode.value,
+            _register(register),
+            instruction.static_string,
             source=source,
         )
         return
@@ -784,12 +844,14 @@ def _require_no_extra_operands(
     allow_callee: bool = False,
     allow_labels: bool = False,
     allow_memory: bool = False,
+    allow_static_string: bool = False,
 ) -> None:
     if (
         (instruction.immediate is not None and not allow_immediate)
         or (instruction.callee is not None and not allow_callee)
         or (instruction.labels and not allow_labels)
         or (instruction.memory is not None and not allow_memory)
+        or (instruction.static_string is not None and not allow_static_string)
     ):
         raise AssemblyProgramTextAdapterError(
             f"{adapter_name} found unsupported {opcode} operands"

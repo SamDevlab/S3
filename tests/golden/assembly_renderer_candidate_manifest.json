@@ -1,6 +1,5 @@
 {
   "blockers": [
-    "string runtime or static string output support",
     "structured data representation",
     "deterministic formatting helpers",
     "real S3 renderer implementation"

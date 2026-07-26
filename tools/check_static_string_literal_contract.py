@@ -18,24 +18,29 @@ REQUIRED_KEYS = {
 }
 
 EXPECTED_DIAGNOSTICS = {
-    "runtime_unsupported": "S3E_SEMANTIC_STRING_LITERAL_RUNTIME_UNSUPPORTED",
+    "invalid_argument_type": "S3E_SEMANTIC_INVALID_ARGUMENT_TYPE",
+    "invalid_return_type": "S3E_SEMANTIC_INVALID_RETURN_TYPE",
+    "type_mismatch": "S3E_SEMANTIC_TYPE_MISMATCH",
     "unterminated": "S3E_LEX_UNTERMINATED_STRING_LITERAL",
+    "unsupported_operation": "S3E_SEMANTIC_UNSUPPORTED_STRING_OPERATION",
 }
 
 EXPECTED_CURRENT_STATE = {
     "ast": "StringLiteral",
-    "backend": "not supported",
-    "ir": "not supported",
+    "assembly": "string type, .data table, TCONST_STR",
+    "backend": "native .rodata labels for static strings",
+    "emulator": "static string handles",
+    "ir": "IRType.STRING with static_strings and CONST_STR",
     "lexer": "STRING_LITERAL",
-    "parser": "front-end expression",
-    "runtime": "not supported",
-    "semantic": "runtime-unsupported diagnostic",
+    "parser": "string type and string literal expressions",
+    "runtime": "static handles only",
+    "semantic": "typed static string values",
 }
 
 EXPECTED_STATIC_LITERAL_TABLE = {
     "deduplication": True,
     "id_scheme": "deterministic_sN",
-    "scope": "front-end only",
+    "scope": "front-end, IR, Assembly, emulator, native",
 }
 
 
@@ -75,11 +80,15 @@ def _validate_contract(data: dict[str, object], text: str) -> None:
     behavior = data["first_supported_behavior"]
     if not isinstance(behavior, dict):
         raise ValueError("contract first_supported_behavior must be an object")
-    if behavior.get("storage") != "static_literal_table":
-        raise ValueError("contract storage must be static_literal_table")
-    if behavior.get("encoding") != "ascii_subset_utf8_compatible":
-        raise ValueError("contract encoding must be ascii_subset_utf8_compatible")
-    for key in ("concat", "indexing", "length", "mutable"):
+    if behavior.get("storage") != "static_string_table":
+        raise ValueError("contract storage must be static_string_table")
+    if behavior.get("encoding") != "utf8_static_text":
+        raise ValueError("contract encoding must be utf8_static_text")
+    if behavior.get("binding_assignment") is not True:
+        raise ValueError("contract binding_assignment must be true")
+    if behavior.get("mutable_binding") is not True:
+        raise ValueError("contract mutable_binding must be true")
+    for key in ("concat", "indexing", "length", "string_byte_mutation"):
         if behavior.get(key) is not False:
             raise ValueError(f"contract {key} must be false")
 

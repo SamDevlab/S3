@@ -34,6 +34,7 @@ def test_subtraction_lowers_to_invert_then_add() -> None:
     assert opcodes[invert_index + 1] is IROpcode.ADD
     assert set(IROpcode) == {
         IROpcode.CONST,
+        IROpcode.CONST_STR,
         IROpcode.MOVE,
         IROpcode.INVERT,
         IROpcode.ADD,

@@ -23,6 +23,7 @@ from .ir import (
     IROpcode,
     IRParameter,
     IRRegister,
+    IRStaticString,
     IRType,
 )
 from .verifier import verify_ir
@@ -31,6 +32,7 @@ from .verifier import verify_ir
 IR_FORMAT = "s3-ir"
 IR_FORMAT_VERSION = "0.5.0"
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+_STATIC_STRING_ID = re.compile(r"^s[0-9]+$")
 
 
 class IRSerializationError(S3Error):
@@ -45,7 +47,7 @@ def _source_to_data(location: SourceLocation | None) -> dict[str, int] | None:
 
 
 def _instruction_to_data(instruction: IRInstruction) -> dict[str, Any]:
-    return {
+    result = {
         "callee": instruction.callee,
         "immediate": instruction.immediate,
         "initialization": instruction.initialization,
@@ -56,59 +58,77 @@ def _instruction_to_data(instruction: IRInstruction) -> dict[str, Any]:
         "source": _source_to_data(instruction.location),
         "targets": list(instruction.targets),
     }
+    if instruction.static_string is not None:
+        result["static_string"] = instruction.static_string
+    return result
+
+
+def _static_string_to_data(entry: IRStaticString) -> dict[str, Any]:
+    return {
+        "id": entry.id,
+        "value": entry.value,
+        "utf8_bytes": list(entry.utf8_bytes),
+        "byte_count": entry.byte_count,
+        "sha256": entry.sha256,
+    }
 
 
 def _module_to_data(module: IRModule) -> dict[str, Any]:
+    module_data: dict[str, Any] = {
+        "functions": [
+            {
+                "blocks": [
+                    {
+                        "instructions": [
+                            _instruction_to_data(instruction)
+                            for instruction in block.instructions
+                        ],
+                        "name": block.name,
+                        "source": _source_to_data(block.location),
+                    }
+                    for block in function.blocks
+                ],
+                "memory_objects": [
+                    {
+                        "element_type": memory.element_type.value,
+                        "index": memory.index,
+                        "length": memory.length,
+                        "mutable": memory.mutable,
+                        "source": _source_to_data(memory.location),
+                    }
+                    for memory in function.memory_objects
+                ],
+                "name": function.name,
+                "parameters": [
+                    {
+                        "name": parameter.name,
+                        "register": parameter.register,
+                        "source": _source_to_data(parameter.location),
+                        "type": parameter.type.value,
+                    }
+                    for parameter in function.parameters
+                ],
+                "registers": [
+                    {
+                        "index": register.index,
+                        "source": _source_to_data(register.location),
+                        "type": register.type.value,
+                    }
+                    for register in function.registers
+                ],
+                "return_type": function.return_type.value,
+                "source": _source_to_data(function.location),
+            }
+            for function in module.functions
+        ]
+    }
+    if module.static_strings:
+        module_data["static_strings"] = [
+            _static_string_to_data(entry) for entry in module.static_strings
+        ]
     return {
         "format": IR_FORMAT,
-        "module": {
-            "functions": [
-                {
-                    "blocks": [
-                        {
-                            "instructions": [
-                                _instruction_to_data(instruction)
-                                for instruction in block.instructions
-                            ],
-                            "name": block.name,
-                            "source": _source_to_data(block.location),
-                        }
-                        for block in function.blocks
-                    ],
-                    "memory_objects": [
-                        {
-                            "element_type": memory.element_type.value,
-                            "index": memory.index,
-                            "length": memory.length,
-                            "mutable": memory.mutable,
-                            "source": _source_to_data(memory.location),
-                        }
-                        for memory in function.memory_objects
-                    ],
-                    "name": function.name,
-                    "parameters": [
-                        {
-                            "name": parameter.name,
-                            "register": parameter.register,
-                            "source": _source_to_data(parameter.location),
-                            "type": parameter.type.value,
-                        }
-                        for parameter in function.parameters
-                    ],
-                    "registers": [
-                        {
-                            "index": register.index,
-                            "source": _source_to_data(register.location),
-                            "type": register.type.value,
-                        }
-                        for register in function.registers
-                    ],
-                    "return_type": function.return_type.value,
-                    "source": _source_to_data(function.location),
-                }
-                for function in module.functions
-            ]
-        },
+        "module": module_data,
         "version": IR_FORMAT_VERSION,
     }
 
@@ -157,6 +177,24 @@ def _exact_keys(
         )
 
 
+def _keys(
+    value: dict[str, Any],
+    required: set[str],
+    optional: set[str],
+    path: str,
+) -> None:
+    missing = sorted(required - value.keys())
+    unknown = sorted(value.keys() - required - optional)
+    if missing:
+        raise IRSerializationError(
+            f"{path} is missing required field(s): {', '.join(missing)}"
+        )
+    if unknown:
+        raise IRSerializationError(
+            f"{path} has unknown field(s): {', '.join(unknown)}"
+        )
+
+
 def _string(value: Any, path: str) -> str:
     if not isinstance(value, str):
         raise IRSerializationError(f"{path} must be a string")
@@ -170,6 +208,13 @@ def _identifier(value: Any, path: str) -> str:
     return result
 
 
+def _static_string_id(value: Any, path: str) -> str:
+    result = _string(value, path)
+    if _STATIC_STRING_ID.fullmatch(result) is None:
+        raise IRSerializationError(f"{path} is not a valid static string id")
+    return result
+
+
 def _integer(value: Any, path: str) -> int:
     if isinstance(value, bool) or not isinstance(value, int):
         raise IRSerializationError(f"{path} must be an integer")
@@ -178,6 +223,18 @@ def _integer(value: Any, path: str) -> int:
 
 def _optional_integer(value: Any, path: str) -> int | None:
     return None if value is None else _integer(value, path)
+
+
+def _byte_array(value: Any, path: str) -> list[int]:
+    result: list[int] = []
+    for index, raw in enumerate(_array(value, path)):
+        byte = _integer(raw, f"{path}[{index}]")
+        if not 0 <= byte <= 255:
+            raise IRSerializationError(
+                f"{path}[{index}] must be a byte in range [0, 255]"
+            )
+        result.append(byte)
+    return result
 
 
 def _boolean(value: Any, path: str) -> bool:
@@ -211,7 +268,7 @@ def _ir_type(value: Any, path: str) -> IRType:
 
 def _instruction(value: Any, path: str) -> IRInstruction:
     data = _object(value, path)
-    _exact_keys(
+    _keys(
         data,
         {
             "callee",
@@ -224,6 +281,7 @@ def _instruction(value: Any, path: str) -> IRInstruction:
             "source",
             "targets",
         },
+        {"static_string"},
         path,
     )
     opcode_text = _string(data["opcode"], f"{path}.opcode")
@@ -255,6 +313,11 @@ def _instruction(value: Any, path: str) -> IRInstruction:
         result=_optional_integer(data["result"], f"{path}.result"),
         operands=operands,
         immediate=_optional_integer(data["immediate"], f"{path}.immediate"),
+        static_string=(
+            None
+            if "static_string" not in data
+            else _static_string_id(data["static_string"], f"{path}.static_string")
+        ),
         callee=callee,
         targets=targets,
         memory=_optional_integer(data["memory"], f"{path}.memory"),
@@ -264,6 +327,29 @@ def _instruction(value: Any, path: str) -> IRInstruction:
         ),
         location=_location(data["source"], f"{path}.source"),
     )
+
+
+def _static_string(value: Any, path: str) -> IRStaticString:
+    data = _object(value, path)
+    _exact_keys(
+        data,
+        {"byte_count", "id", "sha256", "utf8_bytes", "value"},
+        path,
+    )
+    entry = IRStaticString(
+        _static_string_id(data["id"], f"{path}.id"),
+        _string(data["value"], f"{path}.value"),
+    )
+    utf8_bytes = _byte_array(data["utf8_bytes"], f"{path}.utf8_bytes")
+    byte_count = _integer(data["byte_count"], f"{path}.byte_count")
+    sha256 = _string(data["sha256"], f"{path}.sha256")
+    if utf8_bytes != list(entry.utf8_bytes):
+        raise IRSerializationError(f"{path}.utf8_bytes does not match value")
+    if byte_count != entry.byte_count:
+        raise IRSerializationError(f"{path}.byte_count does not match value")
+    if sha256 != entry.sha256:
+        raise IRSerializationError(f"{path}.sha256 does not match value")
+    return entry
 
 
 def _function(value: Any, path: str) -> IRFunction:
@@ -400,7 +486,16 @@ def deserialize_ir(source: str) -> IRModule:
             diagnostic_code=DiagnosticCode.ARTIFACT_UNSUPPORTED_VERSION,
         )
     module_data = _object(envelope["module"], "artifact.module")
-    _exact_keys(module_data, {"functions"}, "artifact.module")
+    _keys(module_data, {"functions"}, {"static_strings"}, "artifact.module")
+    static_strings = tuple(
+        _static_string(entry, f"artifact.module.static_strings[{index}]")
+        for index, entry in enumerate(
+            _array(
+                module_data.get("static_strings", []),
+                "artifact.module.static_strings",
+            )
+        )
+    )
     module = IRModule(
         tuple(
             _function(function, f"artifact.module.functions[{index}]")
@@ -410,7 +505,8 @@ def deserialize_ir(source: str) -> IRModule:
                     "artifact.module.functions",
                 )
             )
-        )
+        ),
+        static_strings,
     )
     verify_ir(module)
     return module

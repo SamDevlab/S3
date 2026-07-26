@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ...assembly import AssemblyProgram
+from ...assembly import AssemblyProgram, AssemblyType
 from ...emulator import (
     DEFAULT_MAX_FRAMES,
     DEFAULT_MAX_INSTRUCTIONS,
@@ -36,6 +36,11 @@ class X8664Backend:
             program,
             entry="main",
         )
+        main = next(function for function in program.functions if function.name == "main")
+        if main.return_type is AssemblyType.STRING:
+            raise NativeBackendError(
+                "native entry function 'main' cannot return string"
+            )
         return X8664Emitter(
             program,
             max_frames=self.max_frames,

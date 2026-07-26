@@ -109,6 +109,14 @@ def test_native_backend_emits_every_current_opcode() -> None:
     ]
     programs.append(
         compile_source(
+            "fn main() -> tryte:\n"
+            '    text: string = "native"\n'
+            "    return 0\n",
+            mode=SyntaxMode.V0_6,
+        ).assembly
+    )
+    programs.append(
+        compile_source(
             """\
 fn main() -> tryte {
     tryte left = -10;

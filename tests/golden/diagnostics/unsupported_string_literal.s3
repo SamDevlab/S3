@@ -1,2 +1,5 @@
-fn main() -> trit:
-    return "hello"
+fn main() -> tryte:
+    left: string = "left"
+    right: string = "right"
+    value: string = left + right
+    return 0

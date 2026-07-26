@@ -478,7 +478,6 @@ remain `not_implemented`; global `--check` remains blocked.
 
 Failure is correct today because real comparison is still blocked by:
 
-- string runtime support;
 - records/structs or an equivalent representation;
 - enums/sum types or safe tags;
 - deterministic formatting helpers.

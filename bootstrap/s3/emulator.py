@@ -69,6 +69,7 @@ WIDTH_MAP = {
     AssemblyType.TRIT: TernaryWidth.TRIT,
     AssemblyType.TRYTE: TernaryWidth.TRYTE,
 }
+AssemblyValue = int | str
 
 DEFAULT_MAX_MEMORY_TRITS = 6561
 DEFAULT_MAX_FRAMES = 1024
@@ -78,8 +79,8 @@ DEFAULT_MAX_INSTRUCTIONS = 100_000
 @dataclass(slots=True)
 class Frame:
     function: AssemblyFunction
-    registers: dict[int, int] = field(default_factory=dict)
-    memory: dict[int, list[int | None]] = field(default_factory=dict)
+    registers: dict[int, AssemblyValue] = field(default_factory=dict)
+    memory: dict[int, list[AssemblyValue | None]] = field(default_factory=dict)
     block_label: str = "entry"
     instruction_index: int = 0
     return_destination: int | None = None
@@ -140,8 +141,8 @@ class Emulator:
         program: AssemblyProgram,
         entry: str = "main",
         *,
-        capture_memory: list[dict[int, list[int | None]]] | None = None,
-    ) -> int:
+        capture_memory: list[dict[int, list[AssemblyValue | None]]] | None = None,
+    ) -> AssemblyValue:
         functions = self._validate_program(program)
         try:
             entry_function = functions[entry]
@@ -206,6 +207,15 @@ class Emulator:
                         instruction,
                     )
                     frame.instruction_index += 1
+                elif opcode is AssemblyOpcode.TCONST_STR:
+                    assert instruction.static_string is not None
+                    self._write(
+                        frame,
+                        instruction.registers[0],
+                        instruction.static_string,
+                        instruction,
+                    )
+                    frame.instruction_index += 1
                 elif opcode is AssemblyOpcode.TMOV:
                     self._write(
                         frame,
@@ -221,7 +231,7 @@ class Emulator:
                         frame,
                         instruction.registers[0],
                         invert(
-                            self._read(frame, source, instruction),
+                            self._read_int(frame, source, instruction),
                             WIDTH_MAP[type_name],
                         ),
                         instruction,
@@ -247,8 +257,8 @@ class Emulator:
                         frame,
                         destination,
                         operation(
-                            self._read(frame, left_register, instruction),
-                            self._read(frame, right_register, instruction),
+                            self._read_int(frame, left_register, instruction),
+                            self._read_int(frame, right_register, instruction),
                             WIDTH_MAP[type_name],
                         ),
                         instruction,
@@ -265,8 +275,8 @@ class Emulator:
                         frame,
                         destination,
                         compare(
-                            self._read(frame, left_register, instruction),
-                            self._read(frame, right_register, instruction),
+                            self._read_int(frame, left_register, instruction),
+                            self._read_int(frame, right_register, instruction),
                             WIDTH_MAP[source_type],
                         ),
                         instruction,
@@ -274,7 +284,7 @@ class Emulator:
                     frame.instruction_index += 1
                 elif opcode is AssemblyOpcode.TSTORE:
                     index_register, source_register = instruction.registers
-                    index = self._read(frame, index_register, instruction)
+                    index = self._read_int(frame, index_register, instruction)
                     value = self._read(frame, source_register, instruction)
                     self._store_memory(
                         frame,
@@ -286,7 +296,7 @@ class Emulator:
                     frame.instruction_index += 1
                 elif opcode is AssemblyOpcode.TLOAD:
                     destination, index_register = instruction.registers
-                    index = self._read(frame, index_register, instruction)
+                    index = self._read_int(frame, index_register, instruction)
                     value = self._load_memory(frame, instruction, index)
                     self._write(frame, destination, value, instruction)
                     frame.instruction_index += 1
@@ -294,7 +304,7 @@ class Emulator:
                     frame.block_label = instruction.labels[0]
                     frame.instruction_index = 0
                 elif opcode is AssemblyOpcode.TBR3:
-                    condition = self._read(
+                    condition = self._read_int(
                         frame,
                         instruction.registers[0],
                         instruction,
@@ -411,19 +421,36 @@ class Emulator:
                 f"unsupported S3 Assembly version {program.version}; "
                 f"expected {ASSEMBLY_FORMAT_VERSION}"
             )
+        static_string_ids = self._validate_static_strings(program)
         functions: dict[str, AssemblyFunction] = {}
         for function in program.functions:
             if function.name in functions:
                 raise EmulatorError(f"duplicate function '{function.name}'")
             functions[function.name] = function
         for function in program.functions:
-            self._validate_function(function, functions)
+            self._validate_function(function, functions, static_string_ids)
         return functions
+
+    def _validate_static_strings(self, program: AssemblyProgram) -> set[str]:
+        result: set[str] = set()
+        for index, entry in enumerate(program.static_strings):
+            if entry.id in result:
+                raise EmulatorError(f"duplicate static string '{entry.id}'")
+            expected = f"s{index}"
+            if entry.id != expected:
+                raise EmulatorError(
+                    f"static string '{entry.id}' must be ordered as '{expected}'"
+                )
+            if not isinstance(entry.value, str):
+                raise EmulatorError(f"static string '{entry.id}' has invalid value")
+            result.add(entry.id)
+        return result
 
     def _validate_function(
         self,
         function: AssemblyFunction,
         functions: dict[str, AssemblyFunction],
+        static_string_ids: set[str],
     ) -> None:
         declared_types: dict[int, AssemblyType] = {}
         for parameter in function.parameters:
@@ -508,6 +535,7 @@ class Emulator:
                     memory_objects,
                     blocks,
                     functions,
+                    static_string_ids,
                 )
         if not any(
             instruction.opcode is AssemblyOpcode.TRET
@@ -527,6 +555,7 @@ class Emulator:
         memory_objects: dict[int, AssemblyMemoryObject],
         blocks: dict[str, AssemblyBlock],
         functions: dict[str, AssemblyFunction],
+        static_string_ids: set[str],
     ) -> None:
         def register_type(register: int) -> AssemblyType:
             try:
@@ -568,6 +597,15 @@ class Emulator:
         opcode = instruction.opcode
         if opcode is AssemblyOpcode.TCONST:
             type_name = register_type(instruction.registers[0])
+            if type_name is AssemblyType.STRING:
+                raise EmulatorError(
+                    self._static_context(
+                        function,
+                        block,
+                        instruction,
+                        "TCONST destination must not be a string register",
+                    )
+                )
             assert instruction.immediate is not None
             try:
                 validate(instruction.immediate, WIDTH_MAP[type_name])
@@ -580,14 +618,64 @@ class Emulator:
                         str(error),
                     )
                 ) from error
-        elif opcode in {AssemblyOpcode.TMOV, AssemblyOpcode.TINV}:
+        elif opcode is AssemblyOpcode.TCONST_STR:
+            type_name = register_type(instruction.registers[0])
+            if type_name is not AssemblyType.STRING:
+                raise EmulatorError(
+                    self._static_context(
+                        function,
+                        block,
+                        instruction,
+                        "TCONST_STR destination must be a string register",
+                    )
+                )
+            if instruction.static_string is None:
+                raise EmulatorError(
+                    self._static_context(
+                        function,
+                        block,
+                        instruction,
+                        "TCONST_STR requires a static string id",
+                    )
+                )
+            if instruction.static_string not in static_string_ids:
+                raise EmulatorError(
+                    self._static_context(
+                        function,
+                        block,
+                        instruction,
+                        f"TCONST_STR references unknown static string "
+                        f"'{instruction.static_string}'",
+                    )
+                )
+        elif opcode is AssemblyOpcode.TMOV:
             same_type(instruction.registers)
+        elif opcode is AssemblyOpcode.TINV:
+            type_name = same_type(instruction.registers)
+            if type_name is AssemblyType.STRING:
+                raise EmulatorError(
+                    self._static_context(
+                        function,
+                        block,
+                        instruction,
+                        "TINV does not support string values",
+                    )
+                )
         elif opcode in {
             AssemblyOpcode.TADD,
             AssemblyOpcode.TMIN,
             AssemblyOpcode.TMAX,
         }:
-            same_type(instruction.registers)
+            type_name = same_type(instruction.registers)
+            if type_name is AssemblyType.STRING:
+                raise EmulatorError(
+                    self._static_context(
+                        function,
+                        block,
+                        instruction,
+                        f"{opcode.value} does not support string values",
+                    )
+                )
         elif opcode is AssemblyOpcode.TCMP:
             destination, *sources = instruction.registers
             if register_type(destination) is not AssemblyType.TRIT:
@@ -599,7 +687,16 @@ class Emulator:
                         "TCMP destination must be a trit register",
                     )
                 )
-            same_type(tuple(sources))
+            source_type = same_type(tuple(sources))
+            if source_type is AssemblyType.STRING:
+                raise EmulatorError(
+                    self._static_context(
+                        function,
+                        block,
+                        instruction,
+                        "TCMP does not support string values",
+                    )
+                )
         elif opcode is AssemblyOpcode.TLOAD:
             destination, index = instruction.registers
             if instruction.memory not in memory_objects:
@@ -851,7 +948,7 @@ class Emulator:
         frame: Frame,
         instruction: AssemblyInstruction,
         index: int,
-        value: int,
+        value: AssemblyValue,
         source_register: int,
     ) -> None:
         memory = self._memory_definition(frame, instruction.memory, instruction)
@@ -866,21 +963,43 @@ class Emulator:
                     f"got {source_type.value}",
                 )
             )
-        try:
-            validate(value, WIDTH_MAP[memory.element_type])
-        except TernaryRangeError as error:
-            raise self._runtime_error(
-                frame,
-                instruction,
-                f"memory m{memory.index} index {index}: {error}",
-                DiagnosticCategory.OVERFLOW,
-                DiagnosticCode.RUNTIME_OVERFLOW,
-                memory=f"m{memory.index}",
-                index=index,
-                value=error.value,
-                lower_bound=error.lower_bound,
-                upper_bound=error.upper_bound,
-            ) from error
+        if memory.element_type is AssemblyType.STRING:
+            if not isinstance(value, str):
+                raise self._runtime_error(
+                    frame,
+                    instruction,
+                    f"memory m{memory.index} expects a string handle",
+                    DiagnosticCategory.INTERNAL,
+                    DiagnosticCode.RUNTIME_INVALID_STATE,
+                    memory=f"m{memory.index}",
+                    index=index,
+                )
+        else:
+            if not isinstance(value, int):
+                raise self._runtime_error(
+                    frame,
+                    instruction,
+                    f"memory m{memory.index} expects a numeric value",
+                    DiagnosticCategory.INTERNAL,
+                    DiagnosticCode.RUNTIME_INVALID_STATE,
+                    memory=f"m{memory.index}",
+                    index=index,
+                )
+            try:
+                validate(value, WIDTH_MAP[memory.element_type])
+            except TernaryRangeError as error:
+                raise self._runtime_error(
+                    frame,
+                    instruction,
+                    f"memory m{memory.index} index {index}: {error}",
+                    DiagnosticCategory.OVERFLOW,
+                    DiagnosticCode.RUNTIME_OVERFLOW,
+                    memory=f"m{memory.index}",
+                    index=index,
+                    value=error.value,
+                    lower_bound=error.lower_bound,
+                    upper_bound=error.upper_bound,
+                ) from error
         cells = frame.memory[memory.index]
         if not memory.mutable and cells[index] is not None:
             raise self._runtime_error(
@@ -900,7 +1019,7 @@ class Emulator:
         frame: Frame,
         instruction: AssemblyInstruction,
         index: int,
-    ) -> int:
+    ) -> AssemblyValue:
         memory = self._memory_definition(frame, instruction.memory, instruction)
         index = self._checked_memory_index(frame, instruction, memory, index)
         value = frame.memory[memory.index][index]
@@ -936,7 +1055,7 @@ class Emulator:
         frame: Frame,
         register: int,
         instruction: AssemblyInstruction,
-    ) -> int:
+    ) -> AssemblyValue:
         self._register_type(frame, register, instruction)
         try:
             return frame.registers[register]
@@ -950,27 +1069,65 @@ class Emulator:
                 notes=(f"register r{register}",),
             ) from error
 
+    def _read_int(
+        self,
+        frame: Frame,
+        register: int,
+        instruction: AssemblyInstruction,
+    ) -> int:
+        value = self._read(frame, register, instruction)
+        if not isinstance(value, int):
+            raise self._runtime_error(
+                frame,
+                instruction,
+                f"register r{register} does not contain a numeric value",
+                DiagnosticCategory.INTERNAL,
+                DiagnosticCode.RUNTIME_INVALID_STATE,
+                notes=(f"register r{register}",),
+            )
+        return value
+
     def _write(
         self,
         frame: Frame,
         register: int,
-        value: int,
+        value: AssemblyValue,
         instruction: AssemblyInstruction,
     ) -> None:
         type_name = self._register_type(frame, register, instruction)
-        try:
-            validate(value, WIDTH_MAP[type_name])
-        except TernaryRangeError as error:
-            raise self._runtime_error(
-                frame,
-                instruction,
-                str(error),
-                DiagnosticCategory.OVERFLOW,
-                DiagnosticCode.RUNTIME_OVERFLOW,
-                value=error.value,
-                lower_bound=error.lower_bound,
-                upper_bound=error.upper_bound,
-            ) from error
+        if type_name is AssemblyType.STRING:
+            if not isinstance(value, str):
+                raise self._runtime_error(
+                    frame,
+                    instruction,
+                    f"register r{register} expects a string handle",
+                    DiagnosticCategory.INTERNAL,
+                    DiagnosticCode.RUNTIME_INVALID_STATE,
+                    notes=(f"register r{register}",),
+                )
+        else:
+            if not isinstance(value, int):
+                raise self._runtime_error(
+                    frame,
+                    instruction,
+                    f"register r{register} expects a numeric value",
+                    DiagnosticCategory.INTERNAL,
+                    DiagnosticCode.RUNTIME_INVALID_STATE,
+                    notes=(f"register r{register}",),
+                )
+            try:
+                validate(value, WIDTH_MAP[type_name])
+            except TernaryRangeError as error:
+                raise self._runtime_error(
+                    frame,
+                    instruction,
+                    str(error),
+                    DiagnosticCategory.OVERFLOW,
+                    DiagnosticCode.RUNTIME_OVERFLOW,
+                    value=error.value,
+                    lower_bound=error.lower_bound,
+                    upper_bound=error.upper_bound,
+                ) from error
         frame.registers[register] = value
 
     @classmethod
@@ -1047,7 +1204,7 @@ def execute_assembly(
     max_frames: int = DEFAULT_MAX_FRAMES,
     max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
     max_memory_trits: int = DEFAULT_MAX_MEMORY_TRITS,
-) -> int:
+) -> AssemblyValue:
     program = parse_assembly(assembly) if isinstance(assembly, str) else assembly
     from .backends._hosted_execution import _execute_hosted_assembly
 

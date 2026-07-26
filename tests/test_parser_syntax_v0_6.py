@@ -195,7 +195,7 @@ def test_string_literal_is_parsed_as_static_front_end_node():
     )
 
 
-def test_string_literal_is_rejected_by_semantic_until_runtime_exists():
+def test_string_literal_used_as_tryte_is_rejected_by_semantic():
     program = parse(
         'fn main() -> tryte:\n    return "hello"\n',
         mode=SyntaxMode.V0_6,
@@ -206,12 +206,9 @@ def test_string_literal_is_rejected_by_semantic_until_runtime_exists():
 
     assert (
         exc.value.diagnostic_code
-        is DiagnosticCode.SEMANTIC_STRING_LITERAL_RUNTIME_UNSUPPORTED
+        is DiagnosticCode.SEMANTIC_TYPE_MISMATCH
     )
-    assert (
-        exc.value.message
-        == "string literals are parsed as static literals but runtime support is not implemented"
-    )
+    assert exc.value.message == "string literal has type string; expected tryte"
     assert exc.value.location is not None
     assert (exc.value.location.line, exc.value.location.column) == (2, 12)
 

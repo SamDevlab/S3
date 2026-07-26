@@ -144,8 +144,9 @@ Não integram o Marco 0.7 e não estão implementados:
 3. otimizações entre blocos provadas sem `PHI`;
 4. backend ou execução ARM64 experimental.
 
-Arrays em assinaturas, heap, ponteiros, strings, módulos e I/O continuam fora
-do MVP até receberem contratos próprios.
+Arrays em assinaturas, heap, ponteiros públicos, strings dinâmicas, módulos e
+I/O continuam fora do MVP até receberem contratos próprios. O Marco 0.53 cobre
+somente valores `string` estáticos tipados.
 
 ## Autohospedagem
 

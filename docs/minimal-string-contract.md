@@ -1,5 +1,10 @@
 # Minimal String Contract for Self-Hosting
 
+Status update for S3 0.53: this is a historical self-hosting contract. The
+compiler now supports typed static text values as specified in
+`docs/roadmap-0.53.md`; dynamic strings, text formatting helpers, and broader
+self-hosting string operations remain future work.
+
 ## Purpose
 
 This document defines the smallest future string contract needed for partial

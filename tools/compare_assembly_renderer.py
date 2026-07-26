@@ -131,7 +131,6 @@ EXPECTED_SMOKE_KINDS = {"hosted_reachability", "hosted_assertion"}
 
 
 BLOCKER_BY_FEATURE = {
-    "strings": "string runtime support",
     "records_or_structs": "records/structs or equivalent tagged data",
     "enums_or_tagged_unions": "enums/sum types or safe tags",
     "deterministic_formatting_helpers": "deterministic formatting helpers",
@@ -2064,7 +2063,7 @@ def status() -> int:
     print("s3 renderer text builder model: available")
     print("s3 renderer static text fragment model: available")
     print("s3 renderer implementation: not implemented")
-    print("string literals: front-end only, runtime not implemented")
+    print("typed static text values: available")
     print("status: blocked")
     print()
     print("fixtures:")

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ..assembly import AssemblyProgram
 from ..emulator import (
+    AssemblyValue,
     DEFAULT_MAX_FRAMES,
     DEFAULT_MAX_INSTRUCTIONS,
     DEFAULT_MAX_MEMORY_TRITS,
@@ -21,7 +22,7 @@ def _execute_hosted_assembly(
     max_frames: int = DEFAULT_MAX_FRAMES,
     max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
     max_memory_trits: int = DEFAULT_MAX_MEMORY_TRITS,
-) -> int:
+) -> AssemblyValue:
     return _execute_hosted_assembly_with_registry(
         program,
         entry,
@@ -40,7 +41,7 @@ def _execute_hosted_assembly_with_registry(
     max_instructions: int,
     max_memory_trits: int,
     registry: BackendRegistry,
-) -> int:
+) -> AssemblyValue:
     provider = registry.get_hosted_execution(_HOSTED_EMULATOR_PROVIDER)
     return provider.execute(
         program,

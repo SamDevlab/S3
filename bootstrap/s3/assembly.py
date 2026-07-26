@@ -13,6 +13,7 @@ from .diagnostics import (
     DiagnosticSource,
     SourceLocation,
 )
+from .static_text import StaticTextDecodeError, decode_static_text
 
 
 ASSEMBLY_FORMAT_VERSION = "0.5.0"
@@ -55,10 +56,12 @@ class AssemblyParseError(AssemblyError):
 class AssemblyType(Enum):
     TRIT = "trit"
     TRYTE = "tryte"
+    STRING = "string"
 
 
 class AssemblyOpcode(Enum):
     TCONST = "TCONST"
+    TCONST_STR = "TCONST_STR"
     TMOV = "TMOV"
     TINV = "TINV"
     TADD = "TADD"
@@ -78,6 +81,15 @@ TERMINATOR_OPCODES = {
     AssemblyOpcode.TJMP,
     AssemblyOpcode.TBR3,
 }
+
+
+@dataclass(frozen=True, slots=True)
+class AssemblyStaticString:
+    id: str
+    value: str
+
+    def render(self) -> str:
+        return f'{self.id} "{_escape_static_string(self.value)}"'
 
 
 @dataclass(frozen=True, slots=True)
@@ -113,6 +125,7 @@ class AssemblyInstruction:
     opcode: AssemblyOpcode
     registers: tuple[int, ...] = ()
     immediate: int | None = None
+    static_string: str | None = None
     callee: str | None = None
     labels: tuple[str, ...] = ()
     memory: int | None = None
@@ -127,6 +140,9 @@ class AssemblyInstruction:
         if self.opcode is AssemblyOpcode.TCONST:
             assert self.immediate is not None
             operands = f"r{self.registers[0]}, {self.immediate}"
+        elif self.opcode is AssemblyOpcode.TCONST_STR:
+            assert self.static_string is not None
+            operands = f"r{self.registers[0]}, {self.static_string}"
         elif self.opcode is AssemblyOpcode.TCALL:
             assert self.callee is not None
             parts = [f"r{self.registers[0]}", self.callee]
@@ -220,6 +236,7 @@ class AssemblyFunction:
 class AssemblyProgram:
     functions: tuple[AssemblyFunction, ...]
     version: str = ASSEMBLY_FORMAT_VERSION
+    static_strings: tuple[AssemblyStaticString, ...] = ()
 
     def render(self) -> str:
         from .assembly_program_text_adapter import render_supported_program
@@ -228,14 +245,16 @@ class AssemblyProgram:
 
 
 _IDENTIFIER = r"[A-Za-z_][A-Za-z0-9_]*"
+_TYPE = r"trit|tryte|string"
+_STATIC_STRING_ID = r"s[0-9]+"
 _FUNCTION_PATTERN = re.compile(
-    rf"^\.function\s+({_IDENTIFIER})\s*->\s*(trit|tryte)$"
+    rf"^\.function\s+({_IDENTIFIER})\s*->\s*({_TYPE})$"
 )
 _DECLARATION_PATTERN = re.compile(
-    r"^\.(param|register)\s+(r[0-9]+)\s*,\s*(trit|tryte)$"
+    rf"^\.(param|register)\s+(r[0-9]+)\s*,\s*({_TYPE})$"
 )
 _MEMORY_DECLARATION_PATTERN = re.compile(
-    r"^\.memory\s+(m[0-9]+)\s*,\s*(trit|tryte)\s*,\s*"
+    rf"^\.memory\s+(m[0-9]+)\s*,\s*({_TYPE})\s*,\s*"
     r"(-?[0-9]+)(?:\s*,\s*(mutable|immutable))?$"
 )
 _LABEL_PATTERN = re.compile(rf"^\.label\s+({_IDENTIFIER})$")
@@ -243,8 +262,18 @@ _INSTRUCTION_PATTERN = re.compile(r"^([A-Za-z0-9_]+)(?:\s+(.*))?$")
 _REGISTER_PATTERN = re.compile(r"^r([0-9]+)$")
 _MEMORY_PATTERN = re.compile(r"^m([0-9]+)$")
 _IDENTIFIER_PATTERN = re.compile(rf"^{_IDENTIFIER}$")
+_STATIC_STRING_ID_PATTERN = re.compile(rf"^{_STATIC_STRING_ID}$")
+_STATIC_STRING_PATTERN = re.compile(rf"^({_STATIC_STRING_ID})\s+\"(.*)\"$")
 _SOURCE_PATTERN = re.compile(r"^source=([0-9]+):([0-9]+):([0-9]+)$")
 _VERSION_PATTERN = re.compile(r"^\.s3asm\s+([0-9]+\.[0-9]+\.[0-9]+)$")
+
+
+def _escape_static_string(value: str) -> str:
+    return (
+        value.replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\n", "\\n")
+    )
 
 
 def _parse_register(text: str, line: int) -> int:
@@ -266,6 +295,28 @@ def _parse_label(text: str, line: int) -> str:
     if _IDENTIFIER_PATTERN.fullmatch(label) is None:
         raise AssemblyParseError(f"invalid label '{label}'", line)
     return label
+
+
+def _parse_static_string_id(text: str, line: int) -> str:
+    static_string = text.strip()
+    if _STATIC_STRING_ID_PATTERN.fullmatch(static_string) is None:
+        raise AssemblyParseError(
+            f"invalid static string id '{static_string}'",
+            line,
+        )
+    return static_string
+
+
+def _parse_static_string(text: str, line: int) -> AssemblyStaticString:
+    match = _STATIC_STRING_PATTERN.fullmatch(text)
+    if match is None:
+        raise AssemblyParseError("invalid static string entry", line)
+    static_id, raw_value = match.groups()
+    try:
+        value = decode_static_text(raw_value)
+    except StaticTextDecodeError as error:
+        raise AssemblyParseError(str(error), line) from error
+    return AssemblyStaticString(static_id, value)
 
 
 def _parse_source_metadata(
@@ -309,6 +360,7 @@ def _parse_instruction(
 
     fixed_counts = {
         AssemblyOpcode.TCONST: 2,
+        AssemblyOpcode.TCONST_STR: 2,
         AssemblyOpcode.TMOV: 2,
         AssemblyOpcode.TINV: 2,
         AssemblyOpcode.TADD: 3,
@@ -348,6 +400,15 @@ def _parse_instruction(
             opcode,
             (destination,),
             immediate=immediate,
+            source=source,
+            line=line,
+        )
+    if opcode is AssemblyOpcode.TCONST_STR:
+        destination = _parse_register(operands[0], line)
+        return AssemblyInstruction(
+            opcode,
+            (destination,),
+            static_string=_parse_static_string_id(operands[1], line),
             source=source,
             line=line,
         )
@@ -413,6 +474,8 @@ def _parse_instruction(
 
 
 def parse_assembly(source: str) -> AssemblyProgram:
+    static_strings: list[AssemblyStaticString] = []
+    static_string_ids: set[str] = set()
     functions: list[AssemblyFunction] = []
     function_names: set[str] = set()
     current_name: str | None = None
@@ -426,6 +489,8 @@ def parse_assembly(source: str) -> AssemblyProgram:
     instructions: list[AssemblyInstruction] = []
     code_started = False
     artifact_started = False
+    data_started = False
+    in_data_section = False
 
     def flush_block() -> None:
         nonlocal current_label, instructions
@@ -445,7 +510,13 @@ def parse_assembly(source: str) -> AssemblyProgram:
         if not text:
             continue
         if text.startswith(".s3asm"):
-            if artifact_started or current_name is not None or functions:
+            if (
+                artifact_started
+                or current_name is not None
+                or functions
+                or static_strings
+                or data_started
+            ):
                 raise AssemblyParseError(
                     ".s3asm version must precede all functions",
                     line_number,
@@ -485,7 +556,29 @@ def parse_assembly(source: str) -> AssemblyProgram:
             artifact_started = True
             continue
         artifact_started = True
+        if text == ".data":
+            if current_name is not None or functions:
+                raise AssemblyParseError(
+                    ".data section must precede all functions",
+                    line_number,
+                )
+            if data_started:
+                raise AssemblyParseError("duplicate .data section", line_number)
+            data_started = True
+            in_data_section = True
+            continue
         if current_name is None:
+            if in_data_section and not text.startswith(".function"):
+                entry = _parse_static_string(text, line_number)
+                if entry.id in static_string_ids:
+                    raise AssemblyParseError(
+                        f"duplicate static string '{entry.id}'",
+                        line_number,
+                    )
+                static_string_ids.add(entry.id)
+                static_strings.append(entry)
+                continue
+            in_data_section = False
             match = _FUNCTION_PATTERN.fullmatch(text)
             if match is None:
                 raise AssemblyParseError("expected '.function name -> type'", line_number)
@@ -609,4 +702,8 @@ def parse_assembly(source: str) -> AssemblyProgram:
         )
     if not functions:
         raise AssemblyParseError("assembly contains no functions", 1)
-    return AssemblyProgram(tuple(functions), ASSEMBLY_FORMAT_VERSION)
+    return AssemblyProgram(
+        tuple(functions),
+        ASSEMBLY_FORMAT_VERSION,
+        tuple(static_strings),
+    )

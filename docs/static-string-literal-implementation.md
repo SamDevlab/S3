@@ -1,5 +1,10 @@
 # Static String Literal Implementation Plan
 
+Status update for S3 0.53: this is a historical planning document. Typed
+static text values are now implemented in the scoped runtime described by
+`docs/roadmap-0.53.md`; broad string behavior remains intentionally out of
+scope.
+
 ## Purpose
 
 This document defines the first implementable plan for real strings in S3:

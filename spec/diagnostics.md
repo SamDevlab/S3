@@ -168,6 +168,10 @@ S3E_PARSE_OBSOLETE_SWITCH
 S3E_PARSE_EXPECTED_MATCH_ARM
 S3E_PARSE_INVALID_MATCH_ARM
 S3E_SEMANTIC_INVALID_PROGRAM
+S3E_SEMANTIC_TYPE_MISMATCH
+S3E_SEMANTIC_UNSUPPORTED_STRING_OPERATION
+S3E_SEMANTIC_INVALID_RETURN_TYPE
+S3E_SEMANTIC_INVALID_ARGUMENT_TYPE
 S3E_SEMANTIC_STRING_LITERAL_RUNTIME_UNSUPPORTED
 S3E_LOWERING_INVALID_PROGRAM
 S3E_VERIFY_INVALID_IR
@@ -200,6 +204,13 @@ S3E_INTERNAL
 
 Uma mensagem pode ser melhorada sem mudar `code`. Uma mudança semântica de
 categoria ou código exige revisão deliberada do contrato.
+
+`S3E_SEMANTIC_TYPE_MISMATCH` pertence à categoria `semantic` e ocorre quando
+análise semântica encontra tipos incompatíveis, incluindo combinações entre
+`string`, `tryte` e `trit`. Exemplos incluem inicializar uma variável `string`
+com valor `tryte`, passar `string` para parâmetro `tryte`, retornar `string` em
+função declarada como `trit` ou atribuir uma expressão `trit` a uma variável
+`string`.
 
 ## Exemplos
 
