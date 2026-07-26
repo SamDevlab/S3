@@ -8,6 +8,7 @@ from typing import Protocol, runtime_checkable
 
 from ..assembly import AssemblyProgram
 from ..emulator import (
+    AssemblyValue,
     DEFAULT_MAX_FRAMES,
     DEFAULT_MAX_INSTRUCTIONS,
     DEFAULT_MAX_MEMORY_TRITS,
@@ -36,8 +37,8 @@ class HostedExecutionBackend(Protocol):
         max_frames: int = DEFAULT_MAX_FRAMES,
         max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
         max_memory_trits: int = DEFAULT_MAX_MEMORY_TRITS,
-        capture_memory: list[dict[int, list[int | None]]] | None = None,
-    ) -> int:
+        capture_memory: list[dict[int, list[AssemblyValue | None]]] | None = None,
+    ) -> AssemblyValue:
         ...
 
 
@@ -76,8 +77,8 @@ class HostedEmulatorBackend:
         max_frames: int = DEFAULT_MAX_FRAMES,
         max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
         max_memory_trits: int = DEFAULT_MAX_MEMORY_TRITS,
-        capture_memory: list[dict[int, list[int | None]]] | None = None,
-    ) -> int:
+        capture_memory: list[dict[int, list[AssemblyValue | None]]] | None = None,
+    ) -> AssemblyValue:
         return Emulator(
             max_frames=max_frames,
             max_instructions=max_instructions,
