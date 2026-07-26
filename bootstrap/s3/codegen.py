@@ -15,6 +15,7 @@ from .assembly import (
     AssemblyOpcode,
     AssemblyParameter,
     AssemblyProgram,
+    AssemblyStaticString,
     AssemblyType,
 )
 from .ir import IRInstruction, IROpcode, IRProgram, IRType
@@ -33,10 +34,12 @@ class CodegenError(Exception):
 TYPE_MAP = {
     IRType.TRIT: AssemblyType.TRIT,
     IRType.TRYTE: AssemblyType.TRYTE,
+    IRType.STRING: AssemblyType.STRING,
 }
 
 OPCODE_MAP = {
     IROpcode.CONST: AssemblyOpcode.TCONST,
+    IROpcode.CONST_STR: AssemblyOpcode.TCONST_STR,
     IROpcode.MOVE: AssemblyOpcode.TMOV,
     IROpcode.INVERT: AssemblyOpcode.TINV,
     IROpcode.ADD: AssemblyOpcode.TADD,
@@ -65,6 +68,14 @@ def _generate_instruction(instruction: IRInstruction) -> AssemblyInstruction:
             opcode,
             (instruction.result,),
             immediate=instruction.immediate,
+            source=instruction.location,
+        )
+    if opcode is AssemblyOpcode.TCONST_STR:
+        assert instruction.result is not None
+        return AssemblyInstruction(
+            opcode,
+            (instruction.result,),
+            static_string=instruction.static_string,
             source=instruction.location,
         )
     if opcode is AssemblyOpcode.TCALL:
@@ -154,7 +165,13 @@ def generate_assembly(ir_program: IRProgram) -> AssemblyProgram:
                 ),
             )
         )
-    return AssemblyProgram(tuple(functions))
+    return AssemblyProgram(
+        tuple(functions),
+        static_strings=tuple(
+            AssemblyStaticString(entry.id, entry.value)
+            for entry in ir_program.static_strings
+        ),
+    )
 
 
 def generate_assembly_text(ir_program: IRProgram) -> str:
