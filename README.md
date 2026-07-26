@@ -26,6 +26,7 @@ A implementação atual oferece:
 - bindings imutáveis e `mut` explícito;
 - atribuição escalar e indexada;
 - arrays estáticos unidimensionais de `trit`/`tryte` e expressão `len(array)` estática;
+- valores `string` estáticos tipados e concatenação literal-only em tempo de compilação;
 - bounds estático para índices constantes e dinâmico para calculados;
 - objetos de memória locais ao frame, sem ponteiros ou aliasing;
 - IR SSA com CFG, dominância, `LOAD` e `STORE`;
@@ -58,11 +59,11 @@ x86-64 com ELF independente de Python depois do build; limite de instruções
 hospedado e nativo compartilhado (default 100000); limite de frames nativo;
 diagnósticos em texto e JSON; CLI pública; e suporte a Python 3.11, 3.12 e 3.13.
 
-Ficam fora deste MVP: ponteiros, heap, memória global, structs, strings,
-módulos, I/O da linguagem, package manager, LSP, depurador, generics, macros,
-concorrência, ARM64, backends Windows/macOS, ABI C pública e
-arrays dinâmicos ou multidimensionais. Esses limites definem o escopo do MVP;
-não são pendências da Entrega E.
+Ficam fora deste MVP: ponteiros, heap, memória global, structs, strings
+dinâmicas ou dependentes de runtime, módulos, I/O da linguagem, package
+manager, LSP, depurador, generics, macros, concorrência, ARM64, backends
+Windows/macOS, ABI C pública e arrays dinâmicos ou multidimensionais. Esses
+limites definem o escopo do MVP; não são pendências da Entrega E.
 
 ## Instalação
 
@@ -420,9 +421,10 @@ selfhost/        fronteira da futura implementação em S3
 ## Limitações e próximo marco
 
 Não há ponteiros, heap, globals, arrays dinâmicos ou multidimensionais, arrays
-em assinaturas, strings, estruturas, módulos, I/O, package manager, LSP,
-depurador, generics, macros, concorrência, linker próprio, ABI C pública,
-self-hosting ou backend para Windows, macOS ou ARM64.
+em assinaturas, strings dinâmicas ou dependentes de runtime, estruturas,
+módulos, I/O, package manager, LSP, depurador, generics, macros, concorrência,
+linker próprio, ABI C pública, self-hosting ou backend para Windows, macOS ou
+ARM64.
 
 O target nativo é somente Linux x86-64. Não há interoperabilidade C, JIT, TCO
 ou otimização interprocedural. ARM64 possui apenas um
