@@ -15,14 +15,17 @@ from .ir import (
     IROpcode,
     IRParameter,
     IRRegister,
+    IRStaticString,
     IRType,
 )
 from .semantic import SemanticModel
+from .static_strings import collect_static_string_literals
 
 
 TYPE_MAP = {
     ast.TypeName.TRIT: IRType.TRIT,
     ast.TypeName.TRYTE: IRType.TRYTE,
+    ast.TypeName.STRING: IRType.STRING,
 }
 
 
@@ -52,9 +55,11 @@ class FunctionLowerer:
         self,
         function: ast.FunctionDeclaration,
         semantic_model: SemanticModel,
+        static_string_ids: dict[str, str],
     ):
         self.function = function
         self.semantic_model = semantic_model
+        self.static_string_ids = static_string_ids
         self.registers: list[IRRegister] = []
         self.memory_objects: list[IRMemoryObject] = []
         self.parameters: list[IRParameter] = []
@@ -801,6 +806,24 @@ class FunctionLowerer:
                 expression_type,
                 expression.location,
             )
+        if isinstance(expression, ast.StringLiteral):
+            try:
+                static_string = self.static_string_ids[expression.value]
+            except KeyError as error:
+                raise LoweringError(
+                    "string literal is missing from static string table",
+                    expression.location,
+                ) from error
+            result = self._allocate(ast.TypeName.STRING, expression.location)
+            self._emit(
+                IRInstruction(
+                    IROpcode.CONST_STR,
+                    result=result,
+                    static_string=static_string,
+                    location=expression.location,
+                )
+            )
+            return result
         if isinstance(expression, ast.Identifier):
             binding = self._lookup_variable(expression.name, expression.location)
             if binding.register is not None:
@@ -1125,11 +1148,24 @@ class FunctionLowerer:
 
 
 def lower(program: ast.Program, semantic_model: SemanticModel) -> IRModule:
+    static_table = collect_static_string_literals(program)
+    static_strings = tuple(
+        IRStaticString(entry.id, entry.text) for entry in static_table.entries
+    )
+    static_string_ids = {
+        entry.value: entry.id for entry in static_table.entries
+    }
     functions: list[IRFunction] = []
     for function in program.functions:
         try:
-            functions.append(FunctionLowerer(function, semantic_model).lower())
+            functions.append(
+                FunctionLowerer(
+                    function,
+                    semantic_model,
+                    static_string_ids,
+                ).lower()
+            )
         except LoweringError as error:
             error.add_diagnostic_context(function=function.name)
             raise
-    return IRModule(tuple(functions))
+    return IRModule(tuple(functions), static_strings)
