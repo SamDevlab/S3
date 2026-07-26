@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 from enum import Enum
 
@@ -11,10 +12,12 @@ from .diagnostics import SourceLocation
 class IRType(Enum):
     TRIT = "trit"
     TRYTE = "tryte"
+    STRING = "string"
 
 
 class IROpcode(Enum):
     CONST = "const"
+    CONST_STR = "const_str"
     MOVE = "move"
     INVERT = "invert"
     ADD = "add"
@@ -34,6 +37,33 @@ TERMINATOR_OPCODES = {
     IROpcode.JUMP,
     IROpcode.BRANCH3,
 }
+
+
+@dataclass(frozen=True, slots=True)
+class IRStaticString:
+    id: str
+    value: str
+
+    @property
+    def utf8_bytes(self) -> tuple[int, ...]:
+        return tuple(self.value.encode("utf-8"))
+
+    @property
+    def byte_count(self) -> int:
+        return len(self.utf8_bytes)
+
+    @property
+    def sha256(self) -> str:
+        return hashlib.sha256(self.value.encode("utf-8")).hexdigest()
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "id": self.id,
+            "value": self.value,
+            "utf8_bytes": list(self.utf8_bytes),
+            "byte_count": self.byte_count,
+            "sha256": self.sha256,
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -106,6 +136,7 @@ class IRInstruction:
     result: int | None = None
     operands: tuple[int, ...] = ()
     immediate: int | None = None
+    static_string: str | None = None
     callee: str | None = None
     targets: tuple[str, ...] = ()
     memory: int | None = None
@@ -129,6 +160,8 @@ class IRInstruction:
             result["operands"] = [f"r{operand}" for operand in self.operands]
         if self.immediate is not None:
             result["immediate"] = self.immediate
+        if self.static_string is not None:
+            result["static_string"] = self.static_string
         if self.callee is not None:
             result["callee"] = self.callee
         if self.targets:
@@ -201,15 +234,19 @@ class IRFunction:
 @dataclass(frozen=True, slots=True)
 class IRModule:
     functions: tuple[IRFunction, ...]
+    static_strings: tuple[IRStaticString, ...] = ()
 
     def to_dict(self) -> dict[str, object]:
-        return {
-            "module": {
-                "functions": [
-                    function.to_dict() for function in self.functions
-                ]
-            }
+        module: dict[str, object] = {
+            "functions": [
+                function.to_dict() for function in self.functions
+            ]
         }
+        if self.static_strings:
+            module["static_strings"] = [
+                entry.to_dict() for entry in self.static_strings
+            ]
+        return {"module": module}
 
 
 # Backward-compatible public name used by the 0.1 pipeline.

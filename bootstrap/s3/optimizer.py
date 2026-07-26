@@ -55,6 +55,7 @@ _FOLDABLE = {
 
 _REMOVABLE_WHEN_DEAD = {
     IROpcode.CONST,
+    IROpcode.CONST_STR,
     IROpcode.MOVE,
     IROpcode.INVERT,
     IROpcode.MINIMUM,

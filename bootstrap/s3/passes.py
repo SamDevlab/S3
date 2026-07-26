@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Protocol
 
 from .ir import IRFunction, IRModule
@@ -55,8 +55,11 @@ class _PassManager:
     def run(self, module: IRModule) -> IRModule:
         if not self.passes:
             return module
-        return IRModule(
-            tuple(self._run_function(function) for function in module.functions)
+        return replace(
+            module,
+            functions=tuple(
+                self._run_function(function) for function in module.functions
+            ),
         )
 
     def _run_function(self, function: IRFunction) -> IRFunction:

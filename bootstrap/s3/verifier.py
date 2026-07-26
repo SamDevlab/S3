@@ -41,8 +41,10 @@ class IRVerifier:
         self.current_function: str | None = None
         self.current_block: str | None = None
         self.current_opcode: str | None = None
+        self.static_string_ids: set[str] = set()
 
     def verify(self, module: IRModule) -> None:
+        self.static_string_ids = self._collect_static_strings(module)
         functions: dict[str, IRFunction] = {}
         for function in module.functions:
             self.current_function = function.name
@@ -56,6 +58,22 @@ class IRVerifier:
             functions[function.name] = function
         for function in module.functions:
             self._verify_function(function, functions)
+
+    def _collect_static_strings(self, module: IRModule) -> set[str]:
+        result: set[str] = set()
+        for index, entry in enumerate(module.static_strings):
+            if entry.id in result:
+                self._error(f"duplicate static string '{entry.id}'", None)
+            expected = f"s{index}"
+            if entry.id != expected:
+                self._error(
+                    f"static string '{entry.id}' must be ordered as '{expected}'",
+                    None,
+                )
+            if not isinstance(entry.value, str):
+                self._error(f"static string '{entry.id}' has invalid value", None)
+            result.add(entry.id)
+        return result
 
     def _verify_function(
         self,
@@ -320,8 +338,12 @@ class IRVerifier:
         if opcode is IROpcode.CONST:
             _, result_type = require_result()
             require_operands(0)
+            if result_type is IRType.STRING:
+                self._error("const cannot produce string values", instruction.location)
             if instruction.immediate is None:
                 self._error("const requires an immediate", instruction.location)
+            if instruction.static_string is not None:
+                self._error("const must not have a static string id", instruction.location)
             try:
                 assert instruction.immediate is not None
                 validate(instruction.immediate, WIDTH_MAP[result_type])
@@ -329,7 +351,24 @@ class IRVerifier:
                 self._error(str(error), instruction.location)
             return
 
-        if opcode in {IROpcode.MOVE, IROpcode.INVERT}:
+        if opcode is IROpcode.CONST_STR:
+            _, result_type = require_result()
+            require_operands(0)
+            if result_type is not IRType.STRING:
+                self._error("const_str result must have type string", instruction.location)
+            if instruction.static_string is None:
+                self._error("const_str requires a static string id", instruction.location)
+            if instruction.static_string not in self.static_string_ids:
+                self._error(
+                    f"const_str references unknown static string "
+                    f"'{instruction.static_string}'",
+                    instruction.location,
+                )
+            if instruction.immediate is not None:
+                self._error("const_str must not have an immediate", instruction.location)
+            return
+
+        if opcode is IROpcode.MOVE:
             _, result_type = require_result()
             operand_types = require_operands(1)
             self._require_same_types(
@@ -337,6 +376,18 @@ class IRVerifier:
                 opcode.value,
                 instruction.location,
             )
+            return
+
+        if opcode is IROpcode.INVERT:
+            _, result_type = require_result()
+            operand_types = require_operands(1)
+            self._require_same_types(
+                (result_type, *operand_types),
+                opcode.value,
+                instruction.location,
+            )
+            if result_type is IRType.STRING:
+                self._error("invert does not support string values", instruction.location)
             return
 
         if opcode in {IROpcode.ADD, IROpcode.MINIMUM, IROpcode.MAXIMUM}:
@@ -347,6 +398,11 @@ class IRVerifier:
                 opcode.value,
                 instruction.location,
             )
+            if result_type is IRType.STRING:
+                self._error(
+                    f"{opcode.value} does not support string values",
+                    instruction.location,
+                )
             return
 
         if opcode is IROpcode.COMPARE:
@@ -359,6 +415,8 @@ class IRVerifier:
                 "compare operands",
                 instruction.location,
             )
+            if operand_types and operand_types[0] is IRType.STRING:
+                self._error("compare does not support string values", instruction.location)
             return
 
         if opcode is IROpcode.CALL:
