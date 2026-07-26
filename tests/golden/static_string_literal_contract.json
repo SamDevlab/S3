@@ -1,6 +1,6 @@
 {
   "blocked_by": [],
-  "contract_version": "2.0.0",
+  "contract_version": "2.1.0",
   "current_state": {
     "assembly": "string type, .data table, TCONST_STR",
     "ast": "StringLiteral",
@@ -10,7 +10,7 @@
     "lexer": "STRING_LITERAL",
     "parser": "string type and string literal expressions",
     "runtime": "static handles only",
-    "semantic": "typed static string values"
+    "semantic": "typed static string values with literal-only compile-time concat"
   },
   "diagnostics": {
     "invalid_argument_type": "S3E_SEMANTIC_INVALID_ARGUMENT_TYPE",
@@ -22,7 +22,7 @@
   "feature": "static_string_literal",
   "first_supported_behavior": {
     "binding_assignment": true,
-    "concat": false,
+    "concat": "compile_time_literal_only",
     "encoding": "utf8_static_text",
     "indexing": false,
     "length": false,
