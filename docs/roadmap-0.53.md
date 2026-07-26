@@ -55,7 +55,8 @@ O identificador do handle é abstrato e não depende de endereços de memória f
 ### 4.1. Incluído no Escopo Runtime Futuro
 - Tipo fonte `string` em anotações de tipo.
 - Literais de string como expressões válidas (`"hello"`).
-- Bindings imutáveis (`let s: string = "..."`) e mutáveis (`let mut s: string = "..."`) contendo referências a handles estáticos.
+- Bindings imutáveis (`s: string = "..."`) e mutáveis (`mut s: string = "..."`) contendo referências a handles estáticos.
+- Static text bindings use the existing S3 declaration grammar. Immutable bindings use `name: string = expression`; mutable bindings use `mut name: string = expression`. Milestone 0.53 does not introduce a `let` keyword.
 - Passagem de `string` como parâmetro de função.
 - Retorno de `string` em funções.
 - Atribuição entre variáveis do tipo `string`.
@@ -160,7 +161,7 @@ Os seguintes códigos de erro devem ser aplicados ou adicionados:
 A futura entrega de código do Milestone 0.53 Runtime só será considerada aprovada se satisfizer todos os testes a seguir:
 
 1. **Parser & AST:**
-   - Parsing correto de `let x: string = "abc"`, `fn f(s: string) -> string`.
+   - Parsing correto de `x: string = "abc"`, `fn f(s: string) -> string`.
 2. **Análise Semântica:**
    - Validação de tipos em assignments, chamadas e retornos.
    - Rejeição estrita de operações não suportadas (`+`, `[i]`, `len()`, `==`).
