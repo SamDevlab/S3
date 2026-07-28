@@ -956,6 +956,24 @@ class FunctionLowerer:
         expression: ast.BinaryExpression,
         result_type: ast.TypeName,
     ) -> int:
+        if (
+            expression.operator
+            in (ast.BinaryOperator.EQUAL, ast.BinaryOperator.NOT_EQUAL)
+            and self.semantic_model.declared_type_of(expression.left)
+            is ast.TypeName.STRING
+            and self.semantic_model.declared_type_of(expression.right)
+            is ast.TypeName.STRING
+        ):
+            left_text = evaluate_constant_static_text_expression(expression.left)
+            right_text = evaluate_constant_static_text_expression(expression.right)
+            equal = left_text == right_text
+            if expression.operator is ast.BinaryOperator.NOT_EQUAL:
+                equal = not equal
+            return self._emit_constant(
+                -1 if equal else 0,
+                ast.TypeName.TRIT,
+                expression.location,
+            )
         left = self._lower_expression(expression.left)
         right = self._lower_expression(expression.right)
         if expression.operator is ast.BinaryOperator.SUBTRACT:
