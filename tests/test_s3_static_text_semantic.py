@@ -117,7 +117,7 @@ def test_wrong_string_argument_type_uses_argument_diagnostic() -> None:
             '    value: string = "abc"\n'
             "    size: tryte = len(value)\n"
             "    return size\n",
-            "len() is not supported for string values",
+            "len() argument must be a static array or a compile-time static text expression",
         ),
         (
             "fn main() -> tryte:\n"

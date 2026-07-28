@@ -108,6 +108,8 @@ def collect_static_string_literals(program: ast.Program) -> StaticStringTable:
             for case in expression.cases:
                 visit_expression(case.expression)
         elif isinstance(expression, ast.LenExpression):
+            if constant_text(expression.argument) is not None:
+                return
             visit_expression(expression.argument)
 
     def visit_initializer(initializer: ast.Initializer) -> None:

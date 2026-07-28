@@ -43,7 +43,7 @@ def test_len_semantic_rejects_scalar_variable() -> None:
 
 
 def test_len_semantic_rejects_index_expression() -> None:
-    with pytest.raises(SemanticError, match="len\\(\\) argument must be a static array, not an array element"):
+    with pytest.raises(SemanticError, match="not an array element"):
         _analyze(
             "fn main() -> tryte:\n"
             "    values: tryte[5] = [1, 2, 3, 4, 5]\n"
