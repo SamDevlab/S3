@@ -1,5 +1,5 @@
 fn main() -> tryte:
-    left: string = "left"
+    mut left: string = "left"
     right: string = "right"
     value: string = left + right
     return 0

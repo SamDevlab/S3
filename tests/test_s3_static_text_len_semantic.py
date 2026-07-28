@@ -41,16 +41,13 @@ def test_len_semantic_accepts_static_text_in_return() -> None:
     assert model is not None
 
 
-def test_len_semantic_rejects_static_text_binding_operand() -> None:
-    with pytest.raises(
-        SemanticError,
-        match="len\\(\\) argument must be a static array or a compile-time static text expression",
-    ):
-        _analyze(
-            "fn main() -> tryte:\n"
-            '    value: string = "abc"\n'
-            "    return len(value)\n"
-        )
+def test_len_semantic_accepts_static_text_binding_operand() -> None:
+    model = _analyze(
+        "fn main() -> tryte:\n"
+        '    value: string = "abc"\n'
+        "    return len(value)\n"
+    )
+    assert model is not None
 
 
 def test_len_semantic_rejects_runtime_static_text_concatenation() -> None:

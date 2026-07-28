@@ -98,7 +98,7 @@ def test_wrong_string_argument_type_uses_argument_diagnostic() -> None:
     [
         (
             "fn main() -> tryte:\n"
-            '    left: string = "a"\n'
+            '    mut left: string = "a"\n'
             '    right: string = "b"\n'
             "    combined: string = left + right\n"
             "    return 0\n",
@@ -106,7 +106,7 @@ def test_wrong_string_argument_type_uses_argument_diagnostic() -> None:
         ),
         (
             "fn main() -> tryte:\n"
-            '    left: string = "a"\n'
+            '    mut left: string = "a"\n'
             '    right: string = "b"\n'
             "    same: trit = left == right\n"
             "    return 0\n",
@@ -114,7 +114,7 @@ def test_wrong_string_argument_type_uses_argument_diagnostic() -> None:
         ),
         (
             "fn main() -> tryte:\n"
-            '    value: string = "abc"\n'
+            '    mut value: string = "abc"\n'
             "    size: tryte = len(value)\n"
             "    return size\n",
             "len() argument must be a static array or a compile-time static text expression",

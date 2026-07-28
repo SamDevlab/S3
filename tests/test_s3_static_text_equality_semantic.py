@@ -72,23 +72,14 @@ def test_static_text_equality_can_be_used_in_match() -> None:
         '"abc" == value',
     ],
 )
-def test_static_text_equality_rejects_bindings(expression: str) -> None:
-    with pytest.raises(SemanticError) as captured:
-        _analyze(
-            "fn main() -> tryte:\n"
-            '    value: string = "abc"\n'
-            f"    same: trit = {expression}\n"
-            "    return 0\n"
-        )
-
-    assert (
-        captured.value.diagnostic_code
-        is DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
+def test_static_text_equality_accepts_bindings(expression: str) -> None:
+    model = _analyze(
+        "fn main() -> tryte:\n"
+        '    value: string = "abc"\n'
+        f"    same: trit = {expression}\n"
+        "    return 0\n"
     )
-    assert (
-        captured.value.message
-        == "string equality requires compile-time static text expressions"
-    )
+    assert model is not None
 
 
 def test_static_text_equality_rejects_string_call() -> None:

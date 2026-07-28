@@ -446,6 +446,7 @@ class SemanticAnalyzer:
             if (
                 declaration.type_name is ast.TypeName.STRING
                 and not declaration.mutable
+                and self._is_constant_static_text_expression(declaration.initializer)
             ):
                 static_text = self._constant_static_text_value(
                     declaration.initializer,
