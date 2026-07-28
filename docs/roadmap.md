@@ -148,10 +148,13 @@ Arrays em assinaturas, heap, ponteiros públicos, strings dinâmicas, módulos e
 I/O continuam fora do MVP até receberem contratos próprios. O Marco 0.53 cobre
 valores `string` estáticos tipados, e o Marco 0.54 adiciona concatenação
 estática literal-only em tempo de compilação. O Marco 0.55 estende `len(...)`
-para calcular comprimento de texto estático em tempo de compilação.
+para calcular comprimento de texto estático em tempo de compilação. O Marco
+0.56 adiciona igualdade e desigualdade de texto estático em tempo de
+compilação.
 
 ## Autohospedagem
 
 Assembler e frontend em S3 dependem de strings além de concatenação estática
-literal-only e comprimento estático, módulos e uma biblioteca padrão mínima.
-Python será removido gradualmente somente após bootstrap reprodutível.
+literal-only, comprimento estático e igualdade estática, módulos e uma
+biblioteca padrão mínima. Python será removido gradualmente somente após
+bootstrap reprodutível.
