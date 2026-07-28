@@ -150,11 +150,12 @@ valores `string` estáticos tipados, e o Marco 0.54 adiciona concatenação
 estática literal-only em tempo de compilação. O Marco 0.55 estende `len(...)`
 para calcular comprimento de texto estático em tempo de compilação. O Marco
 0.56 adiciona igualdade e desigualdade de texto estático em tempo de
-compilação.
+compilação. O Marco 0.57 permite propagar texto estático por bindings
+imutáveis locais.
 
 ## Autohospedagem
 
 Assembler e frontend em S3 dependem de strings além de concatenação estática
-literal-only, comprimento estático e igualdade estática, módulos e uma
-biblioteca padrão mínima. Python será removido gradualmente somente após
-bootstrap reprodutível.
+literal-only, comprimento estático, igualdade estática e propagação por
+bindings imutáveis, módulos e uma biblioteca padrão mínima. Python será
+removido gradualmente somente após bootstrap reprodutível.
