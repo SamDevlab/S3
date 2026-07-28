@@ -50,6 +50,15 @@ class SemanticModel:
                 expression.location,
             ) from error
 
+    def declared_type_of(self, expression: ast.Expression) -> ast.DeclaredType:
+        try:
+            return self.expression_types[id(expression)]
+        except KeyError as error:
+            raise SemanticError(
+                "internal error: expression has no semantic type",
+                expression.location,
+            ) from error
+
     def array_type_of(self, expression: ast.Expression) -> ast.ArrayType:
         try:
             result = self.expression_types[id(expression)]
