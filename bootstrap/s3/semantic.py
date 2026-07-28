@@ -729,6 +729,22 @@ class SemanticAnalyzer:
         expression: ast.LenExpression,
         expected: ast.TypeName | None = None,
     ) -> ast.TypeName:
+        if self._is_constant_static_text_expression(expression.argument):
+            length = self._constant_static_text_length(expression.argument)
+            if length > TRYTE_MAX:
+                raise SemanticError(
+                    f"static text length {length} exceeds tryte maximum {TRYTE_MAX}",
+                    expression.argument.location,
+                )
+            result = ast.TypeName.TRYTE
+            if expected is not None:
+                self._require_type(
+                    result,
+                    expected,
+                    expression.location,
+                    "len expression",
+                )
+            return result
         if isinstance(expression.argument, ast.Identifier):
             binding = self._lookup_binding(expression.argument.name)
             if binding is None:
@@ -739,34 +755,35 @@ class SemanticAnalyzer:
             if not isinstance(binding.type_name, ast.ArrayType):
                 if binding.type_name is ast.TypeName.STRING:
                     raise SemanticError(
-                        "len() is not supported for string values",
+                        "len() argument must be a static array or a compile-time static text expression",
                         expression.argument.location,
                         diagnostic_code=(
                             DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
                         ),
                     )
                 raise SemanticError(
-                    f"len() argument must be a static array, got '{binding.type_name.value}'",
+                    "len() argument must be a static array or a compile-time static text expression, "
+                    f"got '{binding.type_name.value}'",
                     expression.argument.location,
                 )
             self.expression_types[id(expression.argument)] = binding.type_name
         elif isinstance(expression.argument, ast.IndexExpression):
             raise SemanticError(
-                "len() argument must be a static array, not an array element",
+                "len() argument must be a static array or a compile-time static text expression, not an array element",
                 expression.argument.location,
-            )
-        elif isinstance(expression.argument, ast.StringLiteral):
-            self._validate_static_string_literal(expression.argument)
-            raise SemanticError(
-                "len() is not supported for string values",
-                expression.argument.location,
-                diagnostic_code=(
-                    DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
-                ),
             )
         else:
+            known_type = self._known_expression_type(expression.argument)
+            if known_type is ast.TypeName.STRING:
+                raise SemanticError(
+                    "len() argument must be a static array or a compile-time static text expression",
+                    expression.argument.location,
+                    diagnostic_code=(
+                        DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
+                    ),
+                )
             raise SemanticError(
-                "len() argument must be a static array",
+                "len() argument must be a static array or a compile-time static text expression",
                 expression.argument.location,
             )
         result = ast.TypeName.TRYTE
@@ -1165,6 +1182,25 @@ class SemanticAnalyzer:
             return
         raise SemanticError(
             "string concatenation requires a compile-time static text expression",
+            expression.location,
+            diagnostic_code=DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION,
+        )
+
+    def _constant_static_text_length(self, expression: ast.Expression) -> int:
+        if isinstance(expression, ast.StringLiteral):
+            self._validate_static_string_literal(expression)
+            self.expression_types[id(expression)] = ast.TypeName.STRING
+            return len(decode_static_text(expression.value))
+        if (
+            isinstance(expression, ast.BinaryExpression)
+            and expression.operator is ast.BinaryOperator.ADD
+        ):
+            left = self._constant_static_text_length(expression.left)
+            right = self._constant_static_text_length(expression.right)
+            self.expression_types[id(expression)] = ast.TypeName.STRING
+            return left + right
+        raise SemanticError(
+            "len() argument must be a static array or a compile-time static text expression",
             expression.location,
             diagnostic_code=DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION,
         )

@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from . import ast
-from .diagnostics import LoweringError, SourceLocation
+from .diagnostics import LoweringError, SemanticError, SourceLocation
 from .ir import (
     IRBasicBlock,
     IRFunction,
@@ -932,7 +932,16 @@ class FunctionLowerer:
         raise LoweringError("unsupported expression", expression.location)
 
     def _lower_len(self, expression: ast.LenExpression) -> int:
-        array_type = self.semantic_model.array_type_of(expression.argument)
+        if self.semantic_model.type_of(expression) is ast.TypeName.TRYTE:
+            try:
+                array_type = self.semantic_model.array_type_of(expression.argument)
+            except SemanticError:
+                text = evaluate_constant_static_text_expression(expression.argument)
+                return self._emit_constant(
+                    len(text),
+                    ast.TypeName.TRYTE,
+                    expression.location,
+                )
         return self._emit_constant(
             array_type.length,
             ast.TypeName.TRYTE,
