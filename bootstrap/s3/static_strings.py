@@ -96,6 +96,13 @@ def collect_static_string_literals(program: ast.Program) -> StaticStringTable:
         elif isinstance(expression, ast.UnaryExpression):
             visit_expression(expression.operand)
         elif isinstance(expression, ast.BinaryExpression):
+            if (
+                expression.operator
+                in (ast.BinaryOperator.EQUAL, ast.BinaryOperator.NOT_EQUAL)
+                and constant_text(expression.left) is not None
+                and constant_text(expression.right) is not None
+            ):
+                return
             visit_expression(expression.left)
             visit_expression(expression.right)
         elif isinstance(expression, ast.CallExpression):

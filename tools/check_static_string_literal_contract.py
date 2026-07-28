@@ -34,7 +34,7 @@ EXPECTED_CURRENT_STATE = {
     "lexer": "STRING_LITERAL",
     "parser": "string type and string literal expressions",
     "runtime": "static handles only",
-    "semantic": "typed static string values with literal-only compile-time concat",
+    "semantic": "typed static string values with literal-only compile-time concat, length, and equality",
 }
 
 EXPECTED_STATIC_LITERAL_TABLE = {
@@ -90,7 +90,11 @@ def _validate_contract(data: dict[str, object], text: str) -> None:
         raise ValueError("contract mutable_binding must be true")
     if behavior.get("concat") != "compile_time_literal_only":
         raise ValueError("contract concat must be compile_time_literal_only")
-    for key in ("indexing", "length", "string_byte_mutation"):
+    if behavior.get("length") != "compile_time_static_text":
+        raise ValueError("contract length must be compile_time_static_text")
+    if behavior.get("equality") != "compile_time_static_text":
+        raise ValueError("contract equality must be compile_time_static_text")
+    for key in ("indexing", "string_byte_mutation"):
         if behavior.get(key) is not False:
             raise ValueError(f"contract {key} must be false")
 

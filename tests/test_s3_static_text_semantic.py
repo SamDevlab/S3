@@ -110,7 +110,7 @@ def test_wrong_string_argument_type_uses_argument_diagnostic() -> None:
             '    right: string = "b"\n'
             "    same: trit = left == right\n"
             "    return 0\n",
-            "operator '==' is not supported for string values",
+            "string equality requires compile-time static text expressions",
         ),
         (
             "fn main() -> tryte:\n"

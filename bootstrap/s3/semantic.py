@@ -885,6 +885,58 @@ class SemanticAnalyzer:
             ast.BinaryOperator.GREATER_EQUAL,
         }
         if expression.operator in RELATIONAL_OPERATORS:
+            if expression.operator in (
+                ast.BinaryOperator.EQUAL,
+                ast.BinaryOperator.NOT_EQUAL,
+            ):
+                left_known = self._known_expression_type(expression.left)
+                right_known = self._known_expression_type(expression.right)
+                if (
+                    left_known is ast.TypeName.STRING
+                    or right_known is ast.TypeName.STRING
+                ):
+                    if (
+                        self._is_constant_static_text_expression(expression.left)
+                        and self._is_constant_static_text_expression(expression.right)
+                    ):
+                        self._validate_constant_static_text_expression(expression.left)
+                        self._validate_constant_static_text_expression(expression.right)
+                        if expected is not None:
+                            self._require_type(
+                                ast.TypeName.TRIT,
+                                expected,
+                                expression.location,
+                                "static text equality result",
+                            )
+                        return ast.TypeName.TRIT
+                    if (
+                        left_known is not None
+                        and right_known is not None
+                        and left_known is not right_known
+                    ):
+                        left_type = self._analyze_expression(
+                            expression.left,
+                            left_known,
+                        )
+                        right_type = self._analyze_expression(
+                            expression.right,
+                            right_known,
+                        )
+                        self._require_type(
+                            left_type,
+                            right_type,
+                            expression.location,
+                            "comparison operands",
+                        )
+                    self._analyze_expression(expression.left, left_known)
+                    self._analyze_expression(expression.right, right_known)
+                    raise SemanticError(
+                        "string equality requires compile-time static text expressions",
+                        expression.location,
+                        diagnostic_code=(
+                            DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
+                        ),
+                    )
             operand_type = self._comparison_operand_type(expression)
             self._reject_string_operation(
                 operand_type,
