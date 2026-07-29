@@ -89,7 +89,7 @@ def _first_program() -> AssemblyProgram:
                 "main",
                 AssemblyType.TRYTE,
                 (),
-                tuple((register, AssemblyType.TRYTE) for register in range(6)),
+                tuple((register, AssemblyType.TRYTE) for register in range(5)),
                 (
                     AssemblyBlock(
                         "entry",
@@ -117,18 +117,14 @@ def _first_program() -> AssemblyProgram:
                                 source=SourceLocation(42, 3, 5),
                             ),
                             AssemblyInstruction(
-                                AssemblyOpcode.TINV,
-                                (4, 3),
-                                source=SourceLocation(68, 4, 14),
-                            ),
-                            AssemblyInstruction(
-                                AssemblyOpcode.TADD,
-                                (5, 1, 4),
+                                AssemblyOpcode.TCONST,
+                                (4,),
+                                immediate=6,
                                 source=SourceLocation(68, 4, 14),
                             ),
                             AssemblyInstruction(
                                 AssemblyOpcode.TRET,
-                                (5,),
+                                (4,),
                                 source=SourceLocation(59, 4, 5),
                             ),
                         ),
@@ -221,7 +217,6 @@ def _sign_program() -> AssemblyProgram:
                     (3, AssemblyType.TRIT),
                     (4, AssemblyType.TRIT),
                     (5, AssemblyType.TRIT),
-                    (6, AssemblyType.TRIT),
                 ),
                 (
                     AssemblyBlock(
@@ -256,17 +251,12 @@ def _sign_program() -> AssemblyProgram:
                             AssemblyInstruction(
                                 AssemblyOpcode.TCONST,
                                 (3,),
-                                immediate=1,
-                                source=SourceLocation(86, 4, 21),
-                            ),
-                            AssemblyInstruction(
-                                AssemblyOpcode.TINV,
-                                (4, 3),
+                                immediate=-1,
                                 source=SourceLocation(85, 4, 20),
                             ),
                             AssemblyInstruction(
                                 AssemblyOpcode.TRET,
-                                (4,),
+                                (3,),
                                 source=SourceLocation(78, 4, 13),
                             ),
                         ),
@@ -276,13 +266,13 @@ def _sign_program() -> AssemblyProgram:
                         (
                             AssemblyInstruction(
                                 AssemblyOpcode.TCONST,
-                                (5,),
+                                (4,),
                                 immediate=0,
                                 source=SourceLocation(119, 7, 20),
                             ),
                             AssemblyInstruction(
                                 AssemblyOpcode.TRET,
-                                (5,),
+                                (4,),
                                 source=SourceLocation(112, 7, 13),
                             ),
                         ),
@@ -292,13 +282,13 @@ def _sign_program() -> AssemblyProgram:
                         (
                             AssemblyInstruction(
                                 AssemblyOpcode.TCONST,
-                                (6,),
+                                (5,),
                                 immediate=1,
                                 source=SourceLocation(152, 10, 20),
                             ),
                             AssemblyInstruction(
                                 AssemblyOpcode.TRET,
-                                (6,),
+                                (5,),
                                 source=SourceLocation(145, 10, 13),
                             ),
                         ),
@@ -311,8 +301,7 @@ def _sign_program() -> AssemblyProgram:
                 (),
                 (
                     (0, AssemblyType.TRYTE),
-                    (1, AssemblyType.TRYTE),
-                    (2, AssemblyType.TRIT),
+                    (1, AssemblyType.TRIT),
                 ),
                 (
                     AssemblyBlock(
@@ -321,23 +310,18 @@ def _sign_program() -> AssemblyProgram:
                             AssemblyInstruction(
                                 AssemblyOpcode.TCONST,
                                 (0,),
-                                immediate=20,
-                                source=SourceLocation(191, 13, 18),
-                            ),
-                            AssemblyInstruction(
-                                AssemblyOpcode.TINV,
-                                (1, 0),
+                                immediate=-20,
                                 source=SourceLocation(190, 13, 17),
                             ),
                             AssemblyInstruction(
                                 AssemblyOpcode.TCALL,
-                                (2, 1),
+                                (1, 0),
                                 callee="sign",
                                 source=SourceLocation(185, 13, 12),
                             ),
                             AssemblyInstruction(
                                 AssemblyOpcode.TRET,
-                                (2,),
+                                (1,),
                                 source=SourceLocation(178, 13, 5),
                             ),
                         ),
@@ -377,11 +361,11 @@ def test_render_supported_program_matches_first_fixture_outputs() -> None:
     assert isinstance(document, StaticTextDocument)
     assert document.utf8_bytes == expected
     assert document.utf8_bytes == actual
-    assert document.byte_count == 441
-    assert document.line_count == 18
+    assert document.byte_count == 377
+    assert document.line_count == 16
     assert (
         document.sha256
-        == "46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67"
+        == "a144d584ed40287d10cff5ecc50a170823aac7ddd0a7fed455837b936131a90f"
     )
     assert "\r\n" not in document.text
     assert b"\r\n" not in document.utf8_bytes
@@ -413,11 +397,11 @@ def test_render_supported_program_matches_sign_fixture_outputs() -> None:
     assert isinstance(document, StaticTextDocument)
     assert document.utf8_bytes == expected
     assert document.utf8_bytes == actual
-    assert document.byte_count == 946
-    assert document.line_count == 36
+    assert document.byte_count == 829
+    assert document.line_count == 32
     assert (
         document.sha256
-        == "c077d2c49639b1a033505ec8c1ba1c60c78242e6e09c43f60a8aa5ed8b49e2d9"
+        == "2002bbcdf4f893efafb34d3e194dd6b5602eb2d023a2d0d064a5d2642d48f880"
     )
     assert "\r\n" not in document.text
     assert b"\r\n" not in document.utf8_bytes
@@ -700,11 +684,11 @@ def test_render_first_program_matches_lf_normalized_inspect_golden() -> None:
 
     assert isinstance(document, StaticTextDocument)
     assert document.utf8_bytes == expected
-    assert document.byte_count == 441
-    assert document.line_count == 18
+    assert document.byte_count == 377
+    assert document.line_count == 16
     assert (
         document.sha256
-        == "46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67"
+        == "a144d584ed40287d10cff5ecc50a170823aac7ddd0a7fed455837b936131a90f"
     )
     assert document.sha256 == hashlib.sha256(expected).hexdigest()
     assert document.text.endswith("\n")
@@ -717,7 +701,7 @@ def test_render_first_program_matches_candidate_actual_output() -> None:
     actual = FIRST_ACTUAL_OUTPUT.read_bytes()
 
     assert actual == document.utf8_bytes
-    assert len(actual) == 441
+    assert len(actual) == 377
     assert hashlib.sha256(actual).hexdigest() == document.sha256
     assert b"\r\n" not in actual
     assert actual.endswith(b"\n")
@@ -847,11 +831,11 @@ def test_render_sign_program_matches_lf_normalized_inspect_golden() -> None:
 
     assert isinstance(document, StaticTextDocument)
     assert document.utf8_bytes == expected
-    assert document.byte_count == 946
-    assert document.line_count == 36
+    assert document.byte_count == 829
+    assert document.line_count == 32
     assert (
         document.sha256
-        == "c077d2c49639b1a033505ec8c1ba1c60c78242e6e09c43f60a8aa5ed8b49e2d9"
+        == "2002bbcdf4f893efafb34d3e194dd6b5602eb2d023a2d0d064a5d2642d48f880"
     )
     assert document.sha256 == hashlib.sha256(expected).hexdigest()
     assert document.text.endswith("\n")
@@ -864,7 +848,7 @@ def test_render_sign_program_matches_candidate_actual_output() -> None:
     actual = SIGN_ACTUAL_OUTPUT.read_bytes()
 
     assert actual == document.utf8_bytes
-    assert len(actual) == 946
+    assert len(actual) == 829
     assert hashlib.sha256(actual).hexdigest() == document.sha256
     assert b"\r\n" not in actual
     assert actual.endswith(b"\n")

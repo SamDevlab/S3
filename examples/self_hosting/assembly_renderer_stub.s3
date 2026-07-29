@@ -5,7 +5,7 @@ fn renderer_supported_directive_count() -> tryte:
     return 6
 
 fn renderer_supported_opcode_count() -> tryte:
-    return 8
+    return 7
 
 fn renderer_first_directive_id() -> tryte:
     return 0
@@ -17,7 +17,7 @@ fn renderer_first_opcode_id() -> tryte:
     return 0
 
 fn renderer_last_opcode_id() -> tryte:
-    return 7
+    return 6
 
 fn renderer_supports_directive_id(id: tryte) -> trit:
     match id <=> renderer_first_directive_id():
@@ -90,14 +90,12 @@ fn renderer_opcode_tcmp_id() -> tryte:
 fn renderer_opcode_tconst_id() -> tryte:
     return 4
 
-fn renderer_opcode_tinv_id() -> tryte:
-    return 5
 
 fn renderer_opcode_tmov_id() -> tryte:
-    return 6
+    return 5
 
 fn renderer_opcode_tret_id() -> tryte:
-    return 7
+    return 6
 
 fn renderer_candidate_capability_smoke() -> trit:
     mut result: trit = -1
@@ -112,7 +110,7 @@ fn renderer_candidate_capability_smoke() -> trit:
         1:
             result = 0
 
-    match renderer_supported_opcode_count() <=> 8:
+    match renderer_supported_opcode_count() <=> 7:
         -1:
             result = 0
 
@@ -152,7 +150,7 @@ fn renderer_candidate_capability_smoke() -> trit:
         1:
             result = 0
 
-    match renderer_last_opcode_id() <=> 7:
+    match renderer_last_opcode_id() <=> 6:
         -1:
             result = 0
 
@@ -248,4 +246,4 @@ fn renderer_candidate_status() -> trit:
     return renderer_candidate_capability_smoke()
 
 fn main() -> trit:
-    return renderer_candidate_status()
+    return -1

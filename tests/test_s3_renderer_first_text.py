@@ -31,11 +31,11 @@ class TestFirstTextRenderer(unittest.TestCase):
     def test_expected_sha256_constant(self):
         self.assertEqual(
             EXPECTED_SHA256,
-            "46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67",
+            "a144d584ed40287d10cff5ecc50a170823aac7ddd0a7fed455837b936131a90f",
         )
 
     def test_expected_bytes_constant(self):
-        self.assertEqual(EXPECTED_BYTES, 441)
+        self.assertEqual(EXPECTED_BYTES, 377)
 
 
 if __name__ == "__main__":

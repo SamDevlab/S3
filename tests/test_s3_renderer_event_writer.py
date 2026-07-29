@@ -211,9 +211,9 @@ def test_renderer_event_writer_model_metrics_match_current_goldens() -> None:
         for name, path in GOLDEN_PATHS.items()
     }
 
-    assert expected["first"]["writer_signature"] == 70
+    assert expected["first"]["writer_signature"] == 64
     assert expected["simple_call"]["writer_signature"] == 81
-    assert expected["sign"]["writer_signature"] == 126
+    assert expected["sign"]["writer_signature"] == 114
     for name, entrypoints in FIXTURE_ENTRYPOINTS.items():
         assert _execute(compilation, entrypoints["final_state"]) == expected[name][
             "final_state"
@@ -244,13 +244,13 @@ def test_renderer_event_writer_model_totals_match_current_goldens() -> None:
     }
 
     assert totals == {
-        "line_advance_count": 75,
-        "directive_count": 43,
-        "instruction_count": 27,
+        "line_advance_count": 69,
+        "directive_count": 40,
+        "instruction_count": 24,
         "blank_count": 5,
         "function_count": 5,
         "end_count": 5,
-        "writer_signature": 277,
+        "writer_signature": 259,
     }
     for metric_name, entrypoint in TOTAL_ENTRYPOINTS.items():
         assert _execute(compilation, entrypoint) == totals[metric_name]

@@ -6,11 +6,11 @@
   "component": "assembly_renderer_candidate_fixture_expectations",
   "expectations": [
     {
-      "byte_count": 441,
+      "byte_count": 377,
       "expected_assembly": "tests/golden/inspect/first.assembly.txt",
-      "line_count": 18,
+      "line_count": 16,
       "name": "first",
-      "sha256": "46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67",
+      "sha256": "a144d584ed40287d10cff5ecc50a170823aac7ddd0a7fed455837b936131a90f",
       "source": "examples/first.s3",
       "status": "expected"
     },
@@ -24,11 +24,11 @@
       "status": "expected"
     },
     {
-      "byte_count": 946,
+      "byte_count": 829,
       "expected_assembly": "tests/golden/inspect/sign.assembly.txt",
-      "line_count": 36,
+      "line_count": 32,
       "name": "sign",
-      "sha256": "c077d2c49639b1a033505ec8c1ba1c60c78242e6e09c43f60a8aa5ed8b49e2d9",
+      "sha256": "2002bbcdf4f893efafb34d3e194dd6b5602eb2d023a2d0d064a5d2642d48f880",
       "source": "examples/sign.s3",
       "status": "expected"
     }

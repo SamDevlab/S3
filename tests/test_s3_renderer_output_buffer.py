@@ -191,9 +191,9 @@ def test_renderer_output_buffer_model_matches_current_fixture_writes() -> None:
         name: _derive_buffer_metrics(path) for name, path in GOLDEN_PATHS.items()
     }
 
-    assert expected["first"]["signature"] == 86
+    assert expected["first"]["signature"] == 77
     assert expected["simple_call"]["signature"] == 101
-    assert expected["sign"]["signature"] == 168
+    assert expected["sign"]["signature"] == 150
     for name, entrypoints in FIXTURE_ENTRYPOINTS.items():
         assert _execute(compilation, entrypoints["sequence"]) == 1
         assert _execute(compilation, entrypoints["state"]) == expected[name]["state"]
@@ -216,20 +216,20 @@ def test_renderer_output_buffer_model_totals_match_current_goldens() -> None:
         totals[write] = sum(metric[write] for metric in metrics)
 
     assert totals == {
-        "capacity": 75,
-        "cursor": 75,
-        "writes": 75,
-        "directive": 43,
-        "instruction": 27,
+        "capacity": 69,
+        "cursor": 69,
+        "writes": 69,
+        "directive": 40,
+        "instruction": 24,
         "blank": 5,
         "header": 3,
         "function": 5,
         "param": 3,
-        "register": 19,
+        "register": 16,
         "memory": 0,
         "label": 8,
         "end": 5,
-        "signature": 355,
+        "signature": 328,
     }
     for metric_name, entrypoint in TOTAL_ENTRYPOINTS.items():
         assert _execute(compilation, entrypoint) == totals[metric_name]

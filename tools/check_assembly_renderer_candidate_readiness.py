@@ -78,7 +78,7 @@ READINESS_STEPS = (
         stdout_contains=(
             "status: stub",
             "directive id range: 0..5",
-            "opcode id range: 0..7",
+            "opcode id range: 0..6",
         ),
     ),
     ReadinessStep(
@@ -88,7 +88,7 @@ READINESS_STEPS = (
         stdout_contains=(
             "S3 Assembly renderer candidate symbols",
             "0 .end renderer_directive_end_id",
-            "7 TRET renderer_opcode_tret_id",
+            "6 TRET renderer_opcode_tret_id",
         ),
     ),
     ReadinessStep(
@@ -142,9 +142,9 @@ READINESS_STEPS = (
             "exists=true",
             "status=available",
             "comparison=passed",
-            "sha256=46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67",
-            "bytes=441",
-            "lines=18",
+            "sha256=a144d584ed40287d10cff5ecc50a170823aac7ddd0a7fed455837b936131a90f",
+            "bytes=377",
+            "lines=16",
             "simple_call planned=tests/golden/assembly_renderer_candidate_actual/simple_call.assembly.txt",
             "exists=true",
             "comparison=passed",
@@ -154,9 +154,9 @@ READINESS_STEPS = (
             "sign planned=tests/golden/assembly_renderer_candidate_actual/sign.assembly.txt",
             "exists=true",
             "comparison=passed",
-            "sha256=c077d2c49639b1a033505ec8c1ba1c60c78242e6e09c43f60a8aa5ed8b49e2d9",
-            "bytes=946",
-            "lines=36",
+            "sha256=2002bbcdf4f893efafb34d3e194dd6b5602eb2d023a2d0d064a5d2642d48f880",
+            "bytes=829",
+            "lines=32",
             "status: partial",
             "comparison: blocked",
         ),

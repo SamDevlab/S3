@@ -209,16 +209,16 @@ def test_fragment_metrics_are_derived_from_the_real_goldens() -> None:
 
     assert expected == {
         "first": {
-            "fragments": 137,
-            "tokens": 47,
-            "indentation": 13,
-            "separators": 14,
-            "metadata": 14,
-            "newlines": 18,
+            "fragments": 116,
+            "tokens": 40,
+            "indentation": 11,
+            "separators": 11,
+            "metadata": 12,
+            "newlines": 16,
             "blank": 1,
-            "spaces": 31,
-            "lines": 18,
-            "bytes": 441,
+            "spaces": 26,
+            "lines": 16,
+            "bytes": 377,
         },
         "simple_call": {
             "fragments": 145,
@@ -233,16 +233,16 @@ def test_fragment_metrics_are_derived_from_the_real_goldens() -> None:
             "bytes": 448,
         },
         "sign": {
-            "fragments": 266,
-            "tokens": 92,
-            "indentation": 24,
-            "separators": 26,
-            "metadata": 28,
-            "newlines": 36,
+            "fragments": 230,
+            "tokens": 80,
+            "indentation": 20,
+            "separators": 22,
+            "metadata": 24,
+            "newlines": 32,
             "blank": 2,
-            "spaces": 60,
-            "lines": 36,
-            "bytes": 946,
+            "spaces": 52,
+            "lines": 32,
+            "bytes": 829,
         },
     }
 
@@ -292,9 +292,9 @@ def test_byte_pairs_represent_all_fixture_byte_counts_without_overflow(
     compilation: CompilationResult,
 ) -> None:
     expected_pairs = {
-        "first": (1, 141, 1, 96),
+        "first": (1, 77, 1, 59),
         "simple_call": (1, 148, 1, 96),
-        "sign": (3, 46, 2, 165),
+        "sign": (2, 229, 2, 65),
     }
     for fixture, (high, low, base_high, base_low) in expected_pairs.items():
         assert _execute(compilation, f"{fixture}_fragment_byte_count_high") == high
@@ -324,9 +324,9 @@ def test_fragment_ids_states_indexes_and_transitions_reject_invalid_values(
 def test_fragment_signatures_and_line_consistency_are_deterministic(
     compilation: CompilationResult,
 ) -> None:
-    assert _execute(compilation, "first_fragment_signature") == 75
+    assert _execute(compilation, "first_fragment_signature") == 64
     assert _execute(compilation, "simple_call_fragment_signature") == 78
-    assert _execute(compilation, "sign_fragment_signature") == 146
+    assert _execute(compilation, "sign_fragment_signature") == 127
     assert _execute(compilation, "validate_total_fragment_signature") == 1
 
     probe_source = _source() + """

@@ -17,18 +17,18 @@ from tools.s3_renderer_contract import (
 EXPECTED_SHA256 = FIXTURE_METADATA["sign_generic"].expected_sha256
 EXPECTED_BYTES = FIXTURE_METADATA["sign_generic"].expected_bytes
 EXPECTED_LINES = FIXTURE_METADATA["sign_generic"].expected_lines
-EXPECTED_EVENT_COUNT = 342
+EXPECTED_EVENT_COUNT = 296
 EXPECTED_DISTRIBUTION = Counter(
     {
-        1: 49,
-        2: 40,
-        3: 14,
-        4: 51,
-        5: 28,
-        6: 98,
-        7: 24,
+        1: 43,
+        2: 34,
+        3: 12,
+        4: 45,
+        5: 24,
+        6: 84,
+        7: 20,
         9: 2,
-        10: 36,
+        10: 32,
     }
 )
 
@@ -272,8 +272,8 @@ class TestGenericSignStructure(unittest.TestCase):
                 elif kind == 3:
                     self.assertIn(arg0, self.opcodes)
                 elif kind == 4:
-                    self.assertGreaterEqual(arg0, 0)
-                    self.assertLessEqual(arg0, 191)
+                    self.assertGreaterEqual(arg0, -20)
+                    self.assertLessEqual(arg0, 190)
                 elif kind == 6:
                     self.assertGreaterEqual(arg0, 0)
 
@@ -307,12 +307,12 @@ class TestGenericSignStructure(unittest.TestCase):
         prefix_positions = [
             index for index, event in enumerate(self.events) if event == (1, 8)
         ]
-        self.assertEqual(len(prefix_positions), 14)
+        self.assertEqual(len(prefix_positions), 12)
         for position in prefix_positions:
             window = self.events[position + 1 : position + 6]
             self.assertEqual([kind for kind, _ in window], [4, 5, 4, 5, 4])
-        self.assertEqual(Counter(kind for kind, _ in self.events)[4], 51)
-        self.assertEqual(Counter(kind for kind, _ in self.events)[5], 28)
+        self.assertEqual(Counter(kind for kind, _ in self.events)[4], 45)
+        self.assertEqual(Counter(kind for kind, _ in self.events)[5], 24)
 
     def test_render_sign_uses_four_buffers_and_loops(self):
         body = _function_body(self.source, "render_sign")
@@ -415,13 +415,11 @@ class TestGenericSignExecution(unittest.TestCase):
         self.assertEqual(self.memory[1][0], self.output[300])
         self.assertEqual(self.memory[1][299], self.output[599])
         self.assertEqual(self.memory[2][0], self.output[600])
-        self.assertEqual(self.memory[2][299], self.output[899])
-        self.assertEqual(self.memory[3][0], self.output[900])
-        self.assertEqual(self.memory[3][45], self.output[945])
+        self.assertEqual(self.memory[2][228], self.output[828])
 
     def test_no_write_beyond_expected_tail(self):
         self.assertEqual(len(self.memory[3]), 46)
-        self.assertEqual(bytes(self.memory[3]), self.output[900:946])
+        self.assertTrue(all(value == 0 for value in self.memory[3]))
 
 
 if __name__ == "__main__":

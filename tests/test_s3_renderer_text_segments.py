@@ -190,9 +190,9 @@ def test_renderer_text_segment_model_metrics_match_current_goldens() -> None:
         for name, path in GOLDEN_PATHS.items()
     }
 
-    assert expected["first"]["segment_count"] == 25
+    assert expected["first"]["segment_count"] == 22
     assert expected["simple_call"]["segment_count"] == 27
-    assert expected["sign"]["segment_count"] == 50
+    assert expected["sign"]["segment_count"] == 44
 
     for metric_name, by_fixture in METRIC_ENTRYPOINTS.items():
         for fixture, entrypoint in by_fixture.items():

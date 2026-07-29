@@ -109,14 +109,14 @@ def test_renderer_pipeline_model_matches_current_fixture_pipeline_metrics() -> N
     expected = {name: _metrics(path) for name, path in GOLDEN_PATHS.items()}
 
     assert expected == {
-        "first": {"lines": 18, "directives": 10, "instructions": 7, "blanks": 1},
+        "first": {"lines": 16, "directives": 9, "instructions": 6, "blanks": 1},
         "simple_call": {
             "lines": 21,
             "directives": 13,
             "instructions": 6,
             "blanks": 2,
         },
-        "sign": {"lines": 36, "directives": 20, "instructions": 14, "blanks": 2},
+        "sign": {"lines": 32, "directives": 18, "instructions": 12, "blanks": 2},
     }
     expected_pipeline_signatures = {
         name: EVENT_SIGNATURES[name]
@@ -126,9 +126,9 @@ def test_renderer_pipeline_model_matches_current_fixture_pipeline_metrics() -> N
         for name, metrics in expected.items()
     }
     assert expected_pipeline_signatures == {
-        "first": 119,
+        "first": 113,
         "simple_call": 137,
-        "sign": 236,
+        "sign": 224,
     }
     for name, entrypoints in FIXTURE_ENTRYPOINTS.items():
         assert _execute(compilation, entrypoints["pipeline"]) == 1
@@ -141,19 +141,19 @@ def test_renderer_pipeline_model_matches_current_fixture_pipeline_metrics() -> N
 def test_renderer_pipeline_model_validates_totals_and_negative_probes() -> None:
     compilation = compile_source(_source())
 
-    assert _execute(compilation, "total_event_count") == 75
-    assert _execute(compilation, "total_write_count") == 75
-    assert _execute(compilation, "total_line_advance_count") == 75
-    assert _execute(compilation, "total_buffer_capacity") == 75
-    assert _execute(compilation, "total_buffer_cursor") == 75
-    assert _execute(compilation, "total_directive_count") == 43
-    assert _execute(compilation, "total_instruction_count") == 27
+    assert _execute(compilation, "total_event_count") == 69
+    assert _execute(compilation, "total_write_count") == 69
+    assert _execute(compilation, "total_line_advance_count") == 69
+    assert _execute(compilation, "total_buffer_capacity") == 69
+    assert _execute(compilation, "total_buffer_cursor") == 69
+    assert _execute(compilation, "total_directive_count") == 40
+    assert _execute(compilation, "total_instruction_count") == 24
     assert _execute(compilation, "total_blank_count") == 5
-    assert _execute(compilation, "total_event_signature") == 345
-    assert _execute(compilation, "total_writer_signature") == 277
-    assert _execute(compilation, "total_buffer_signature") == 355
-    assert _execute(compilation, "expected_total_pipeline_signature") == 235
-    assert _execute(compilation, "modeled_total_pipeline_signature") == 235
+    assert _execute(compilation, "total_event_signature") == 318
+    assert _execute(compilation, "total_writer_signature") == 259
+    assert _execute(compilation, "total_buffer_signature") == 328
+    assert _execute(compilation, "expected_total_pipeline_signature") == 220
+    assert _execute(compilation, "modeled_total_pipeline_signature") == 220
     assert _execute(compilation, "pipeline_counts_probe") == 0
     assert _execute(compilation, "pipeline_signature_probe") == 0
     for entry in (

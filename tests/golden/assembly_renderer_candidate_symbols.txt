@@ -14,11 +14,10 @@ opcodes:
   2 TCALL renderer_opcode_tcall_id
   3 TCMP renderer_opcode_tcmp_id
   4 TCONST renderer_opcode_tconst_id
-  5 TINV renderer_opcode_tinv_id
-  6 TMOV renderer_opcode_tmov_id
-  7 TRET renderer_opcode_tret_id
+  5 TMOV renderer_opcode_tmov_id
+  6 TRET renderer_opcode_tret_id
 
 directive id range: 0..5
-opcode id range: 0..7
+opcode id range: 0..6
 status: stub
 comparison: blocked

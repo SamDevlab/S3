@@ -22,15 +22,14 @@ from bootstrap.s3.static_text import StaticTextDocument
 
 
 FIRST_PROGRAM_REGISTER_TYPES = tuple(
-    (register, AssemblyType.TRYTE) for register in range(6)
+    (register, AssemblyType.TRYTE) for register in range(5)
 )
 FIRST_PROGRAM_OPCODES = (
     AssemblyOpcode.TCONST,
     AssemblyOpcode.TMOV,
     AssemblyOpcode.TCONST,
     AssemblyOpcode.TMOV,
-    AssemblyOpcode.TINV,
-    AssemblyOpcode.TADD,
+    AssemblyOpcode.TCONST,
     AssemblyOpcode.TRET,
 )
 SIMPLE_CALL_ADD_PARAMETER_TYPES = (
@@ -58,7 +57,6 @@ SIGN_FUNCTION_REGISTER_TYPES = (
     (3, AssemblyType.TRIT),
     (4, AssemblyType.TRIT),
     (5, AssemblyType.TRIT),
-    (6, AssemblyType.TRIT),
 )
 SIGN_FUNCTION_BLOCKS = (
     (
@@ -73,7 +71,6 @@ SIGN_FUNCTION_BLOCKS = (
         "switch_negative_0",
         (
             AssemblyOpcode.TCONST,
-            AssemblyOpcode.TINV,
             AssemblyOpcode.TRET,
         ),
     ),
@@ -94,15 +91,13 @@ SIGN_FUNCTION_BLOCKS = (
 )
 SIGN_MAIN_REGISTER_TYPES = (
     (0, AssemblyType.TRYTE),
-    (1, AssemblyType.TRYTE),
-    (2, AssemblyType.TRIT),
+    (1, AssemblyType.TRIT),
 )
 SIGN_MAIN_BLOCKS = (
     (
         "entry",
         (
             AssemblyOpcode.TCONST,
-            AssemblyOpcode.TINV,
             AssemblyOpcode.TCALL,
             AssemblyOpcode.TRET,
         ),
@@ -220,10 +215,10 @@ def _validate_first_program_shape(program: AssemblyProgram) -> None:
         raise AssemblyProgramTextAdapterError(
             "first adapter does not support memory objects"
         )
-    if function.register_types != FIRST_PROGRAM_REGISTER_TYPES:
-        raise AssemblyProgramTextAdapterError(
-            "first adapter expects registers r0..r5 as tryte"
-        )
+        if function.register_types != FIRST_PROGRAM_REGISTER_TYPES:
+            raise AssemblyProgramTextAdapterError(
+                "first adapter expects registers r0..r4 as tryte"
+            )
     if len(function.blocks) != 1:
         raise AssemblyProgramTextAdapterError(
             "first adapter expects exactly one block"
@@ -369,7 +364,7 @@ def _validate_sign_function(function: AssemblyFunction) -> None:
         )
     if function.register_types != SIGN_FUNCTION_REGISTER_TYPES:
         raise AssemblyProgramTextAdapterError(
-            "sign adapter expects sign registers r1..r6 with fixture types"
+            "sign adapter expects sign registers r1..r5 with fixture types"
         )
     _validate_blocks(function, SIGN_FUNCTION_BLOCKS, "sign adapter", "sign")
     _validate_source_metadata(function, "sign adapter")

@@ -78,7 +78,7 @@ def test_compare_assembly_renderer_candidate_reports_stub() -> None:
     assert "directive id functions: 6" in completed.stdout
     assert "opcode id functions: 8" in completed.stdout
     assert "directive id range: 0..5" in completed.stdout
-    assert "opcode id range: 0..7" in completed.stdout
+    assert "opcode id range: 0..6" in completed.stdout
     assert (
         "directive support predicate: renderer_supports_directive_id"
         in completed.stdout
@@ -106,9 +106,9 @@ def test_compare_assembly_renderer_candidate_symbols_reports_table() -> None:
     assert "5 .s3asm renderer_directive_s3asm_id" in completed.stdout
     assert "opcodes:" in completed.stdout
     assert "0 TADD renderer_opcode_tadd_id" in completed.stdout
-    assert "7 TRET renderer_opcode_tret_id" in completed.stdout
+    assert "6 TRET renderer_opcode_tret_id" in completed.stdout
     assert "directive id range: 0..5" in completed.stdout
-    assert "opcode id range: 0..7" in completed.stdout
+    assert "opcode id range: 0..6" in completed.stdout
     assert "status: stub" in completed.stdout
     assert "comparison: blocked" in completed.stdout
     assert completed.stderr == ""
@@ -251,11 +251,11 @@ def test_compare_assembly_renderer_candidate_actual_outputs_reports_contract() -
     assert "status=available" in completed.stdout
     assert "comparison=passed" in completed.stdout
     assert (
-        "sha256=46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67"
+        "sha256=a144d584ed40287d10cff5ecc50a170823aac7ddd0a7fed455837b936131a90f"
         in completed.stdout
     )
-    assert "bytes=441" in completed.stdout
-    assert "lines=18" in completed.stdout
+    assert "bytes=377" in completed.stdout
+    assert "lines=16" in completed.stdout
     assert (
         "simple_call planned=tests/golden/assembly_renderer_candidate_actual/simple_call.assembly.txt"
         in completed.stdout
@@ -274,8 +274,8 @@ def test_compare_assembly_renderer_candidate_actual_outputs_reports_contract() -
     assert (
         "sign planned=tests/golden/assembly_renderer_candidate_actual/sign.assembly.txt "
         "exists=true status=available comparison=passed "
-        "sha256=c077d2c49639b1a033505ec8c1ba1c60c78242e6e09c43f60a8aa5ed8b49e2d9 "
-        "bytes=946 lines=36"
+        "sha256=2002bbcdf4f893efafb34d3e194dd6b5602eb2d023a2d0d064a5d2642d48f880 "
+        "bytes=829 lines=32"
         in completed.stdout
     )
     assert "status: partial" in completed.stdout
@@ -306,11 +306,11 @@ def test_compare_assembly_renderer_candidate_compare_available_reports_first_pas
         in completed.stdout
     )
     assert (
-        "sha256=46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67"
+        "sha256=a144d584ed40287d10cff5ecc50a170823aac7ddd0a7fed455837b936131a90f"
         in completed.stdout
     )
-    assert "bytes=441" in completed.stdout
-    assert "lines=18" in completed.stdout
+    assert "bytes=377" in completed.stdout
+    assert "lines=16" in completed.stdout
     assert (
         "simple_call expected=tests/golden/inspect/simple_call.assembly.txt "
         "actual=tests/golden/assembly_renderer_candidate_actual/simple_call.assembly.txt "

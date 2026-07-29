@@ -2337,7 +2337,16 @@ def candidate_render_simple_call() -> int:
 
 def candidate_render_sign() -> int:
     meta = FIXTURE_METADATA["sign"]
-    return _render_s3_fixture(SIGN_S3_RENDERER, SIGN_S3_GOLDEN, "sign", buffer_count=meta.buffer_count, buffer_offset=meta.buffer_offset, entry=meta.entry, expected_bytes=meta.expected_bytes)
+    return _render_s3_fixture(
+        SIGN_S3_RENDERER,
+        SIGN_S3_GOLDEN,
+        "sign",
+        buffer_count=meta.buffer_count,
+        buffer_offset=meta.buffer_offset,
+        entry=meta.entry,
+        max_instructions=meta.max_instructions,
+        expected_bytes=meta.expected_bytes,
+    )
 
 
 def generic_render_first() -> int:

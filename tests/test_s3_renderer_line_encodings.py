@@ -280,9 +280,9 @@ def test_renderer_line_content_encoding_model_metrics_match_current_goldens() ->
         for name, path in GOLDEN_PATHS.items()
     }
 
-    assert expected["first"]["encoding_signature"] == 61
+    assert expected["first"]["encoding_signature"] == 49
     assert expected["simple_call"]["encoding_signature"] == 73
-    assert expected["sign"]["encoding_signature"] == 156
+    assert expected["sign"]["encoding_signature"] == 140
 
     for metric_name, by_fixture in METRIC_ENTRYPOINTS.items():
         for fixture, entrypoint in by_fixture.items():
@@ -296,25 +296,25 @@ def test_renderer_line_content_encoding_model_key_lines_match_current_goldens() 
         for name, path in GOLDEN_PATHS.items()
     }
 
-    assert expected["first"]["encodings"][15]["score"] == 9
-    assert _execute(compilation, "first_line_15_register_operand_count") == 3
-    assert _execute(compilation, "first_line_15_encoding_score") == 9
+    assert expected["first"]["encodings"][13]["score"] == 5
+    assert _execute(compilation, "first_line_13_register_operand_count") == 1
+    assert _execute(compilation, "first_line_13_encoding_score") == 5
 
     assert expected["simple_call"]["encodings"][18]["score"] == 14
     assert _execute(compilation, "simple_call_line_18_register_operand_count") == 3
     assert _execute(compilation, "simple_call_line_18_encoding_score") == 14
 
-    assert expected["sign"]["encodings"][13]["score"] == 17
+    assert expected["sign"]["encodings"][13]["score"] == 1
     assert _execute(compilation, "sign_line_13_register_operand_count") == 1
-    assert _execute(compilation, "sign_line_13_encoding_score") == 17
+    assert _execute(compilation, "sign_line_13_encoding_score") == 1
 
-    assert expected["sign"]["encodings"][33]["score"] == 13
-    assert _execute(compilation, "sign_line_33_opcode_id") == OPCODE_IDS["TCALL"]
-    assert _execute(compilation, "sign_line_33_category_id") == CATEGORY_INSTRUCTION
-    assert _execute(compilation, "sign_line_33_register_operand_count") == 2
-    assert _execute(compilation, "sign_line_33_has_callee") == 1
-    assert _execute(compilation, "sign_line_33_has_source_metadata") == 1
-    assert _execute(compilation, "sign_line_33_encoding_score") == 13
+    assert expected["sign"]["encodings"][29]["score"] == 13
+    assert _execute(compilation, "sign_line_29_opcode_id") == OPCODE_IDS["TCALL"]
+    assert _execute(compilation, "sign_line_29_category_id") == CATEGORY_INSTRUCTION
+    assert _execute(compilation, "sign_line_29_register_operand_count") == 2
+    assert _execute(compilation, "sign_line_29_has_callee") == 1
+    assert _execute(compilation, "sign_line_29_has_source_metadata") == 1
+    assert _execute(compilation, "sign_line_29_encoding_score") == 13
 
 
 def test_renderer_line_content_encoding_model_totals_match_current_goldens() -> None:
