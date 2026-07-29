@@ -10,6 +10,14 @@ from .static_text import StaticTextDecodeError, decode_static_text
 from .ternary import TRIT_MAX, TRIT_MIN, TRYTE_MAX, TRYTE_MIN
 
 
+STATIC_TEXT_QUERY_BUILTINS = {
+    "contains": ast.TypeName.TRIT,
+    "starts_with": ast.TypeName.TRIT,
+    "ends_with": ast.TypeName.TRIT,
+    "find": ast.TypeName.TRYTE,
+}
+
+
 @dataclass(frozen=True, slots=True)
 class FunctionType:
     name: str
@@ -40,6 +48,7 @@ class SemanticModel:
     expression_types: dict[int, ast.DeclaredType]
     functions: dict[str, FunctionType]
     static_text_values: dict[int, str]
+    constant_values: dict[int, int]
 
     def type_of(self, expression: ast.Expression) -> ast.TypeName:
         try:
@@ -75,6 +84,9 @@ class SemanticModel:
     def static_text_of(self, expression: ast.Expression) -> str | None:
         return self.static_text_values.get(id(expression))
 
+    def constant_value_of(self, expression: ast.Expression) -> int | None:
+        return self.constant_values.get(id(expression))
+
     def function(self, name: str) -> FunctionType:
         try:
             return self.functions[name]
@@ -86,6 +98,7 @@ class SemanticAnalyzer:
     def __init__(self) -> None:
         self.expression_types: dict[int, ast.DeclaredType] = {}
         self.static_text_values: dict[int, str] = {}
+        self.constant_values: dict[int, int] = {}
         self.functions: dict[str, FunctionType] = {}
         self.scopes: list[dict[str, Binding]] = []
         self.parameter_names: set[str] = set()
@@ -118,6 +131,7 @@ class SemanticAnalyzer:
             dict(self.expression_types),
             dict(self.functions),
             dict(self.static_text_values),
+            dict(self.constant_values),
         )
 
     def _collect_signatures(self, program: ast.Program) -> None:
@@ -736,6 +750,27 @@ class SemanticAnalyzer:
                     expression.location,
                     "index expression",
                 )
+        elif isinstance(expression, ast.SliceExpression):
+            if isinstance(expression.target, ast.Identifier):
+                binding = self._lookup_binding(expression.target.name)
+                if binding is not None and isinstance(binding.type_name, ast.ArrayType):
+                    raise SemanticError(
+                        "array slicing is not supported",
+                        expression.location,
+                    )
+            text = self._constant_static_text_value(
+                expression,
+                "static text slicing requires a compile-time static text expression",
+            )
+            self.static_text_values[id(expression)] = text
+            result = ast.TypeName.STRING
+            if expected is not None:
+                self._require_type(
+                    result,
+                    expected,
+                    expression.location,
+                    "slice expression",
+                )
         elif isinstance(expression, ast.CallExpression):
             result = self._analyze_call(expression)
             if expected is not None:
@@ -880,6 +915,8 @@ class SemanticAnalyzer:
                 f"variable '{expression.function_name}' cannot be called",
                 expression.location,
             )
+        if expression.function_name in STATIC_TEXT_QUERY_BUILTINS:
+            return self._analyze_static_text_query_call(expression)
         signature = self.functions.get(expression.function_name)
         if signature is None:
             raise SemanticError(
@@ -915,6 +952,48 @@ class SemanticAnalyzer:
                 diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
             )
         return signature.return_type
+
+    def _analyze_static_text_query_call(
+        self,
+        expression: ast.CallExpression,
+    ) -> ast.TypeName:
+        if len(expression.arguments) != 2:
+            raise SemanticError(
+                f"builtin '{expression.function_name}' expects 2 argument(s), got "
+                f"{len(expression.arguments)}",
+                expression.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+            )
+        left = self._constant_static_text_value(
+            expression.arguments[0].expression,
+            f"builtin '{expression.function_name}' requires compile-time static text arguments",
+        )
+        right = self._constant_static_text_value(
+            expression.arguments[1].expression,
+            f"builtin '{expression.function_name}' requires compile-time static text arguments",
+        )
+        if expression.function_name == "contains":
+            value = -1 if right in left else 0
+        elif expression.function_name == "starts_with":
+            value = -1 if left.startswith(right) else 0
+        elif expression.function_name == "ends_with":
+            value = -1 if left.endswith(right) else 0
+        elif expression.function_name == "find":
+            value = left.find(right)
+            if not TRYTE_MIN <= value <= TRYTE_MAX:
+                raise SemanticError(
+                    f"find result {value} is outside tryte range [{TRYTE_MIN}, {TRYTE_MAX}]",
+                    expression.location,
+                )
+        else:
+            raise SemanticError(
+                f"unknown static text builtin '{expression.function_name}'",
+                expression.location,
+            )
+        self.constant_values[id(expression)] = value
+        result = STATIC_TEXT_QUERY_BUILTINS[expression.function_name]
+        self.expression_types[id(expression)] = result
+        return result
 
     def _analyze_binary(
         self,
@@ -1097,7 +1176,14 @@ class SemanticAnalyzer:
                 return element if isinstance(element, ast.TypeName) else None
             if self._known_expression_type(expression.target) is ast.TypeName.STRING:
                 return ast.TypeName.STRING
+        if isinstance(expression, ast.SliceExpression):
+            target_type = self._known_expression_type(expression.target)
+            if target_type is ast.TypeName.STRING:
+                return ast.TypeName.STRING
+            return target_type
         if isinstance(expression, ast.CallExpression):
+            if expression.function_name in STATIC_TEXT_QUERY_BUILTINS:
+                return STATIC_TEXT_QUERY_BUILTINS[expression.function_name]
             signature = self.functions.get(expression.function_name)
             return None if signature is None else signature.return_type
         if isinstance(expression, ast.UnaryExpression):
@@ -1370,6 +1456,60 @@ class SemanticAnalyzer:
             text = source[index]
             self.static_text_values[id(expression)] = text
             return text
+        if isinstance(expression, ast.SliceExpression):
+            source = self._constant_static_text_value(expression.target, error_message)
+            start_type = self._analyze_expression(expression.start, ast.TypeName.TRYTE)
+            self._require_type(
+                start_type,
+                ast.TypeName.TRYTE,
+                expression.start.location,
+                "static text slice start",
+            )
+            end_type = self._analyze_expression(expression.end, ast.TypeName.TRYTE)
+            self._require_type(
+                end_type,
+                ast.TypeName.TRYTE,
+                expression.end.location,
+                "static text slice end",
+            )
+            start = self._static_text_index_literal(expression.start)
+            end = self._static_text_index_literal(expression.end)
+            if start is None or end is None:
+                raise SemanticError(
+                    "static text slice bounds must be non-negative integer literals known at compile time",
+                    expression.location,
+                    diagnostic_code=(
+                        DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
+                    ),
+                )
+            if start < 0 or end < 0:
+                raise SemanticError(
+                    "static text slice bounds must be non-negative",
+                    expression.location,
+                    diagnostic_code=(
+                        DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
+                    ),
+                )
+            if start > end:
+                raise SemanticError(
+                    f"static text slice start {start} exceeds end {end}",
+                    expression.location,
+                    diagnostic_code=(
+                        DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
+                    ),
+                )
+            if end > len(source):
+                raise SemanticError(
+                    f"static text slice end {end} is outside text bounds [0, {len(source)}]",
+                    expression.end.location,
+                    diagnostic_code=(
+                        DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
+                    ),
+                )
+            self.expression_types[id(expression)] = ast.TypeName.STRING
+            text = source[start:end]
+            self.static_text_values[id(expression)] = text
+            return text
         raise SemanticError(
             error_message,
             expression.location,
@@ -1386,6 +1526,12 @@ class SemanticAnalyzer:
             return (
                 self._is_constant_static_text_expression(expression.target)
                 and self._static_text_index_literal(expression.index) is not None
+            )
+        if isinstance(expression, ast.SliceExpression):
+            return (
+                self._is_constant_static_text_expression(expression.target)
+                and self._static_text_index_literal(expression.start) is not None
+                and self._static_text_index_literal(expression.end) is not None
             )
         return (
             isinstance(expression, ast.BinaryExpression)
