@@ -89,6 +89,14 @@ class IndexExpression:
 
 
 @dataclass(frozen=True, slots=True)
+class SliceExpression:
+    target: Expression
+    start: Expression
+    end: Expression
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
 class UnaryExpression:
     operator: UnaryOperator
     operand: Expression
@@ -129,6 +137,7 @@ Expression: TypeAlias = (
     | Identifier
     | CallExpression
     | IndexExpression
+    | SliceExpression
     | UnaryExpression
     | BinaryExpression
     | MatchExpression

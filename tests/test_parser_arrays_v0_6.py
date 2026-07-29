@@ -145,7 +145,6 @@ def test_invalid_syntax_v0_6_rejected_parameterized():
         ("fn main() -> tryte:\n    values: tryte[3] = [1 2 3]\n    return 0\n", "expected ']' after array literal"),
         ("fn main() -> tryte:\n    values: tryte[3] = [1, 2, 3,]\n    return 0\n", "expected array element after ','"),
         ("fn main() -> tryte:\n    values: tryte[3] = [1, 2, 3\n    return 0\n", "expected ']' after array literal"),
-        ("fn main() -> tryte:\n    return values[0:2]\n", "expected ']' after index"),
         ("fn main() -> tryte:\n    values[0] 1\n    return 0\n", "expected '=' or '+=' after assignment target"),
         ("fn main() -> tryte:\n    values: tryte[3]\n    return 0\n", "expected '=' after variable type"),
         ("fn main() -> tryte:\n    values[0][1] = 2\n    return 0\n", "expected '=' or '+=' after assignment target"),
@@ -173,6 +172,8 @@ def test_semantic_failures_preserved_parameterized():
         ("fn main() -> tryte:\n    mut values: tryte = 1\n    values[0] = 2\n    return 0\n", "variable 'values' is not an array"),
         # Reading non-array
         ("fn main() -> tryte:\n    values: tryte = 1\n    return values[0]\n", "variable 'values' is not an array"),
+        # Array slicing
+        ("fn main() -> tryte:\n    values: tryte[3] = [1, 2, 3]\n    part: tryte = values[0:2]\n    return part\n", "array slicing is not supported"),
         # Type mismatch in literal
         ("fn main() -> tryte:\n    values: trit[1] = [10]\n    return 0\n", "literal 10 is outside trit range [-1, 1]"),
     ]

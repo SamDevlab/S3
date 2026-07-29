@@ -14,6 +14,11 @@ from .static_text import (
 )
 
 
+STATIC_TEXT_QUERY_BUILTINS = frozenset(
+    ("contains", "starts_with", "ends_with", "find")
+)
+
+
 @dataclass(frozen=True, slots=True)
 class StaticStringEntry:
     id: str
@@ -124,10 +129,25 @@ def collect_static_string_literals(
             visit_expression(expression.left)
             visit_expression(expression.right)
         elif isinstance(expression, ast.CallExpression):
+            if expression.function_name in STATIC_TEXT_QUERY_BUILTINS:
+                argument_texts = [
+                    (
+                        static_text_of(argument.expression)
+                        if static_text_of is not None
+                        else constant_text(argument.expression)
+                    )
+                    for argument in expression.arguments
+                ]
+                if argument_texts and all(text is not None for text in argument_texts):
+                    return
             for argument in expression.arguments:
                 visit_expression(argument.expression)
         elif isinstance(expression, ast.IndexExpression):
             visit_expression(expression.index)
+        elif isinstance(expression, ast.SliceExpression):
+            visit_expression(expression.target)
+            visit_expression(expression.start)
+            visit_expression(expression.end)
         elif isinstance(expression, ast.MatchExpression):
             visit_expression(expression.selector)
             for case in expression.cases:
