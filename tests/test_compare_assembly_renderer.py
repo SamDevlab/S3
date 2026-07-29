@@ -76,7 +76,7 @@ def test_compare_assembly_renderer_candidate_reports_stub() -> None:
         in completed.stdout
     )
     assert "directive id functions: 6" in completed.stdout
-    assert "opcode id functions: 8" in completed.stdout
+    assert "opcode id functions: 7" in completed.stdout
     assert "directive id range: 0..5" in completed.stdout
     assert "opcode id range: 0..6" in completed.stdout
     assert (

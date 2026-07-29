@@ -1906,6 +1906,24 @@ fn decimal_ones_byte(n: tryte) -> tryte:
         1:
             return decimal_ones_byte(n - 10)
 
+fn decimal_hundreds_byte(n: tryte) -> tryte:
+    match n <=> 99:
+        -1:
+            return 48
+        0:
+            return 48
+        1:
+            return decimal_hundreds_byte(n - 100) + 1
+
+fn decimal_hundreds_remainder(n: tryte) -> tryte:
+    match n <=> 99:
+        -1:
+            return n
+        0:
+            return n
+        1:
+            return decimal_hundreds_remainder(n - 100)
+
 fn decimal_byte_at(value: tryte, idx: tryte) -> tryte:
     match value <=> 0:
         -1:
@@ -1917,9 +1935,16 @@ fn decimal_byte_at(value: tryte, idx: tryte) -> tryte:
                 1:
                     return decimal_byte_at(0 - value, idx - 1)
         0:
-            return 48
+            match idx <=> 0:
+                -1:
+                    return 0
+                0:
+                    return 48
+                1:
+                    return 0
         1:
             mut length: tryte = decimal_length(value)
+            mut remainder: tryte = decimal_hundreds_remainder(value)
             match idx <=> 0:
                 -1:
                     return 0
@@ -1936,7 +1961,7 @@ fn decimal_byte_at(value: tryte, idx: tryte) -> tryte:
                                 0:
                                     return decimal_tens_byte(value)
                                 1:
-                                    return 49
+                                    return decimal_hundreds_byte(value)
                 1:
                     match idx <=> length:
                         -1:
@@ -1950,9 +1975,9 @@ fn decimal_byte_at(value: tryte, idx: tryte) -> tryte:
                                         -1:
                                             return 0
                                         0:
-                                            return decimal_tens_byte(value - 100)
+                                            return decimal_tens_byte(remainder)
                                         1:
-                                            return decimal_ones_byte(value - 100)
+                                            return decimal_ones_byte(remainder)
                         0:
                             return 0
                         1:

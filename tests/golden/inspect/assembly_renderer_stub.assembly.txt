@@ -549,7 +549,7 @@
     TJMP   switch_continue_35 ; source=190:9:3420
 .label switch_continue_35
     TCALL  r92, renderer_opcode_tret_id ; source=193:11:3457
-    TCONST r93, 7 ; source=193:41:3487
+    TCONST r93, 6 ; source=193:41:3487
     TCMP   r94, r92, r93 ; source=193:37:3483
     TBR3   r94, switch_negative_36, switch_neutral_37, switch_positive_38 ; source=193:5:3451
 .label switch_negative_36
@@ -635,7 +635,7 @@
     TSTORE m0, r134, r133 ; source=231:13:4126
     TJMP   switch_continue_51 ; source=230:9:4111
 .label switch_continue_51
-    TCONST r135, 8 ; source=233:39:4176
+    TCONST r135, 7 ; source=233:39:4176
     TCALL  r136, renderer_supports_opcode_id, r135 ; source=233:11:4148
     TCONST r137, -1 ; source=233:46:4183
     TCMP   r138, r136, r137 ; source=233:42:4179

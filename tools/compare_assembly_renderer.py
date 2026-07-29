@@ -2310,8 +2310,8 @@ def _render_s3_fixture(renderer_path: str, golden_path_str: str, name: str, buff
     print(f"  sha256: {sha256}")
 
     try:
-        golden = _git_blob_bytes(golden_path_str)
-    except FileNotFoundError:
+        golden = _lf_normalized_file_bytes(golden_path_str, "S3 renderer golden")
+    except ValueError:
         print(f"  golden blob not found: {golden_path_str}")
         return 1
 

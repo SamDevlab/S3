@@ -3978,7 +3978,7 @@
                 }
               },
               {
-                "immediate": 7,
+                "immediate": 6,
                 "opcode": "const",
                 "result": "r93",
                 "source": {
@@ -4943,7 +4943,7 @@
           {
             "instructions": [
               {
-                "immediate": 8,
+                "immediate": 7,
                 "opcode": "const",
                 "result": "r135",
                 "source": {

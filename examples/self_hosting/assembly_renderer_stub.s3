@@ -190,7 +190,7 @@ fn renderer_candidate_capability_smoke() -> trit:
         1:
             result = 0
 
-    match renderer_opcode_tret_id() <=> 7:
+    match renderer_opcode_tret_id() <=> 6:
         -1:
             result = 0
 
@@ -230,7 +230,7 @@ fn renderer_candidate_capability_smoke() -> trit:
         1:
             result = 0
 
-    match renderer_supports_opcode_id(8) <=> -1:
+    match renderer_supports_opcode_id(7) <=> -1:
         -1:
             result = 0
 
