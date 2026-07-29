@@ -490,6 +490,14 @@ class Parser:
         return self._parse_primary()
 
     def _parse_primary(self) -> ast.Expression:
+        expression = self._parse_primary_atom()
+        if self._match(TokenKind.LEFT_BRACKET):
+            index = self._parse_expression()
+            self._consume(TokenKind.RIGHT_BRACKET, "expected ']' after index")
+            return ast.IndexExpression(expression, index, expression.location)
+        return expression
+
+    def _parse_primary_atom(self) -> ast.Expression:
         if self.mode == SyntaxMode.V0_6 and self._match(TokenKind.MATCH):
             return self._parse_match_expression_v0_6(self._previous())
         if self.mode == SyntaxMode.V0_6 and self._match(TokenKind.LEN):
@@ -504,10 +512,6 @@ class Parser:
             token = self._previous()
             if self._match(TokenKind.LEFT_PAREN):
                 return self._finish_call(token)
-            if self._match(TokenKind.LEFT_BRACKET):
-                index = self._parse_expression()
-                self._consume(TokenKind.RIGHT_BRACKET, "expected ']' after index")
-                return ast.IndexExpression(token.text, index, token.location)
             return ast.Identifier(token.text, token.location)
         if self._match(TokenKind.LEFT_PAREN):
             expression = self._parse_expression()

@@ -77,9 +77,15 @@ class CallExpression:
 
 @dataclass(frozen=True, slots=True)
 class IndexExpression:
-    array_name: str
+    target: Expression
     index: Expression
     location: SourceLocation
+
+    @property
+    def array_name(self) -> str:
+        if isinstance(self.target, Identifier):
+            return self.target.name
+        raise AttributeError("non-identifier index expression has no array_name")
 
 
 @dataclass(frozen=True, slots=True)

@@ -702,36 +702,39 @@ class SemanticAnalyzer:
                     f"variable '{expression.name}'",
                 )
         elif isinstance(expression, ast.IndexExpression):
-            binding = self._lookup_binding(expression.array_name)
-            if binding is None:
-                raise SemanticError(
-                    f"undeclared variable '{expression.array_name}'",
-                    expression.location,
+            array_binding = self._index_expression_array_binding(expression)
+            if array_binding is not None:
+                result = self._analyze_index(
+                    expression.array_name,
+                    expression.index,
+                    array_binding.type_name,
                 )
-            if not isinstance(binding.type_name, ast.ArrayType):
-                if binding.type_name is ast.TypeName.STRING:
-                    raise SemanticError(
-                        "string indexing is not supported",
-                        expression.location,
-                        diagnostic_code=(
-                            DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
-                        ),
+            else:
+                target_type = self._known_expression_type(expression.target)
+                if target_type is ast.TypeName.STRING:
+                    text = self._constant_static_text_value(
+                        expression,
+                        "string indexing requires a compile-time static text expression",
                     )
-                raise SemanticError(
-                    f"variable '{expression.array_name}' is not an array",
-                    expression.location,
-                )
-            result = self._analyze_index(
-                expression.array_name,
-                expression.index,
-                binding.type_name,
-            )
+                    self.static_text_values[id(expression)] = text
+                    result = ast.TypeName.STRING
+                elif isinstance(expression.target, ast.Identifier):
+                    raise SemanticError(
+                        f"variable '{expression.target.name}' is not an array",
+                        expression.location,
+                    )
+                else:
+                    result = self._analyze_expression(expression.target)
+                    raise SemanticError(
+                        f"indexed target has type {result.value}; expected array or compile-time static text",
+                        expression.target.location,
+                    )
             if expected is not None:
                 self._require_type(
                     result,
                     expected,
                     expression.location,
-                    f"array element '{expression.array_name}'",
+                    "index expression",
                 )
         elif isinstance(expression, ast.CallExpression):
             result = self._analyze_call(expression)
@@ -759,6 +762,22 @@ class SemanticAnalyzer:
             raise SemanticError("unsupported expression", expression.location)
         self.expression_types[id(expression)] = result
         return result
+
+    def _index_expression_array_binding(
+        self,
+        expression: ast.IndexExpression,
+    ) -> Binding | None:
+        if not isinstance(expression.target, ast.Identifier):
+            return None
+        binding = self._lookup_binding(expression.target.name)
+        if binding is None:
+            raise SemanticError(
+                f"undeclared variable '{expression.target.name}'",
+                expression.location,
+            )
+        if isinstance(binding.type_name, ast.ArrayType):
+            return binding
+        return None
 
     def _analyze_len(
         self,
@@ -1069,10 +1088,15 @@ class SemanticAnalyzer:
         if isinstance(expression, ast.StringLiteral):
             return ast.TypeName.STRING
         if isinstance(expression, ast.IndexExpression):
-            binding = self._lookup_binding(expression.array_name)
-            if binding is not None and isinstance(binding.type_name, ast.ArrayType):
+            try:
+                binding = self._index_expression_array_binding(expression)
+            except SemanticError:
+                binding = None
+            if binding is not None:
                 element = binding.type_name.element_type
                 return element if isinstance(element, ast.TypeName) else None
+            if self._known_expression_type(expression.target) is ast.TypeName.STRING:
+                return ast.TypeName.STRING
         if isinstance(expression, ast.CallExpression):
             signature = self.functions.get(expression.function_name)
             return None if signature is None else signature.return_type
@@ -1243,6 +1267,18 @@ class SemanticAnalyzer:
         return None
 
     @staticmethod
+    def _static_text_index_literal(expression: ast.Expression) -> int | None:
+        if isinstance(expression, ast.IntegerLiteral):
+            return expression.value
+        if (
+            isinstance(expression, ast.UnaryExpression)
+            and expression.operator is ast.UnaryOperator.NEGATE
+            and isinstance(expression.operand, ast.IntegerLiteral)
+        ):
+            return -expression.operand.value
+        return None
+
+    @staticmethod
     def _validate_static_string_literal(literal: ast.StringLiteral) -> None:
         try:
             decode_static_text(literal.value)
@@ -1296,6 +1332,44 @@ class SemanticAnalyzer:
             text = left + right
             self.static_text_values[id(expression)] = text
             return text
+        if isinstance(expression, ast.IndexExpression):
+            source = self._constant_static_text_value(expression.target, error_message)
+            index_type = self._analyze_expression(expression.index, ast.TypeName.TRYTE)
+            self._require_type(
+                index_type,
+                ast.TypeName.TRYTE,
+                expression.index.location,
+                "static text index",
+            )
+            index = self._static_text_index_literal(expression.index)
+            if index is None:
+                raise SemanticError(
+                    "static text index must be a non-negative integer literal known at compile time",
+                    expression.index.location,
+                    diagnostic_code=(
+                        DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
+                    ),
+                )
+            if index < 0:
+                raise SemanticError(
+                    "static text index must be non-negative",
+                    expression.index.location,
+                    diagnostic_code=(
+                        DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
+                    ),
+                )
+            if index >= len(source):
+                raise SemanticError(
+                    f"static text index {index} is outside text bounds [0, {len(source)})",
+                    expression.index.location,
+                    diagnostic_code=(
+                        DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
+                    ),
+                )
+            self.expression_types[id(expression)] = ast.TypeName.STRING
+            text = source[index]
+            self.static_text_values[id(expression)] = text
+            return text
         raise SemanticError(
             error_message,
             expression.location,
@@ -1308,6 +1382,11 @@ class SemanticAnalyzer:
         if isinstance(expression, ast.Identifier):
             binding = self._lookup_binding(expression.name)
             return binding is not None and binding.static_text is not None
+        if isinstance(expression, ast.IndexExpression):
+            return (
+                self._is_constant_static_text_expression(expression.target)
+                and self._static_text_index_literal(expression.index) is not None
+            )
         return (
             isinstance(expression, ast.BinaryExpression)
             and expression.operator is ast.BinaryOperator.ADD
