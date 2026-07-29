@@ -801,6 +801,14 @@ class FunctionLowerer:
 
     def _lower_expression(self, expression: ast.Expression) -> int:
         expression_type = self.semantic_model.type_of(expression)
+        if expression_type in (ast.TypeName.TRIT, ast.TypeName.TRYTE):
+            constant = self.semantic_model.constant_value_of(expression)
+            if constant is not None:
+                return self._emit_constant(
+                    constant,
+                    expression_type,
+                    expression.location,
+                )
         if isinstance(expression, ast.IntegerLiteral):
             return self._emit_constant(
                 expression.value,

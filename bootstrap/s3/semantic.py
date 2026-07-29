@@ -7,7 +7,19 @@ from dataclasses import dataclass
 from . import ast
 from .diagnostics import DiagnosticCode, SemanticError, SourceLocation
 from .static_text import StaticTextDecodeError, decode_static_text
-from .ternary import TRIT_MAX, TRIT_MIN, TRYTE_MAX, TRYTE_MIN
+from .ternary import (
+    TRIT_MAX,
+    TRIT_MIN,
+    TRYTE_MAX,
+    TRYTE_MIN,
+    TernaryRangeError,
+    TernaryWidth,
+    add,
+    compare,
+    invert,
+    tritwise_max,
+    tritwise_min,
+)
 
 
 STATIC_TEXT_QUERY_BUILTINS = {
@@ -33,6 +45,7 @@ class Binding:
     parameter: bool
     location: SourceLocation
     static_text: str | None = None
+    constant_value: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -430,6 +443,7 @@ class SemanticAnalyzer:
             )
 
         static_text: str | None = None
+        constant_value: int | None = None
         if isinstance(declaration.type_name, ast.ArrayType):
             self._validate_array_type(declaration.type_name)
             if not isinstance(declaration.initializer, ast.ArrayLiteral):
@@ -466,12 +480,18 @@ class SemanticAnalyzer:
                     declaration.initializer,
                     "string initializer requires a compile-time static text expression",
                 )
+            elif (
+                declaration.type_name in (ast.TypeName.TRIT, ast.TypeName.TRYTE)
+                and not declaration.mutable
+            ):
+                constant_value = self.constant_values.get(id(declaration.initializer))
         current_scope[declaration.name] = Binding(
             declaration.type_name,
             declaration.mutable,
             parameter=False,
             location=declaration.location,
             static_text=static_text,
+            constant_value=constant_value,
         )
 
     def _validate_array_type(self, type_name: ast.ArrayType) -> None:
@@ -690,6 +710,7 @@ class SemanticAnalyzer:
                 else ast.TypeName.TRYTE
             )
             self._validate_literal(expression, result)
+            self.constant_values[id(expression)] = expression.value
         elif isinstance(expression, ast.StringLiteral):
             self._validate_static_string_literal(expression)
             self.static_text_values[id(expression)] = decode_static_text(
@@ -708,6 +729,8 @@ class SemanticAnalyzer:
             binding = self._lookup_binding(expression.name)
             if binding is not None and binding.static_text is not None:
                 self.static_text_values[id(expression)] = binding.static_text
+            if binding is not None and binding.constant_value is not None:
+                self.constant_values[id(expression)] = binding.constant_value
             if expected is not None:
                 self._require_type(
                     result,
@@ -787,6 +810,7 @@ class SemanticAnalyzer:
                 expression.location,
                 f"operator '{expression.operator.value}' is not supported for string values",
             )
+            self._fold_unary_constant(expression, result)
         elif isinstance(expression, ast.BinaryExpression):
             result = self._analyze_binary(expression, expected)
         elif isinstance(expression, ast.MatchExpression):
@@ -819,6 +843,7 @@ class SemanticAnalyzer:
         expression: ast.LenExpression,
         expected: ast.TypeName | None = None,
     ) -> ast.TypeName:
+        array_length: int | None = None
         if self._is_constant_static_text_expression(expression.argument):
             length = self._constant_static_text_length(expression.argument)
             if length > TRYTE_MAX:
@@ -834,6 +859,7 @@ class SemanticAnalyzer:
                     expression.location,
                     "len expression",
                 )
+            self.constant_values[id(expression)] = length
             return result
         if isinstance(expression.argument, ast.Identifier):
             binding = self._lookup_binding(expression.argument.name)
@@ -857,6 +883,7 @@ class SemanticAnalyzer:
                     expression.argument.location,
                 )
             self.expression_types[id(expression.argument)] = binding.type_name
+            array_length = binding.type_name.length
         elif isinstance(expression.argument, ast.IndexExpression):
             raise SemanticError(
                 "len() argument must be a static array or a compile-time static text expression, not an array element",
@@ -884,6 +911,8 @@ class SemanticAnalyzer:
                 expression.location,
                 "len expression",
             )
+        assert array_length is not None
+        self.constant_values[id(expression)] = array_length
         return result
 
     def _analyze_index(
@@ -1033,6 +1062,20 @@ class SemanticAnalyzer:
                                 expression.location,
                                 "static text equality result",
                             )
+                        left_text = self._constant_static_text_value(
+                            expression.left,
+                            "string equality requires compile-time static text expressions",
+                        )
+                        right_text = self._constant_static_text_value(
+                            expression.right,
+                            "string equality requires compile-time static text expressions",
+                        )
+                        equal = left_text == right_text
+                        if expression.operator is ast.BinaryOperator.NOT_EQUAL:
+                            equal = not equal
+                        self.constant_values[id(expression)] = (
+                            self._comparison_result(equal)
+                        )
                         return ast.TypeName.TRIT
                     if (
                         left_known is not None
@@ -1083,6 +1126,7 @@ class SemanticAnalyzer:
                 expression.location,
                 "comparison operands",
             )
+            self._fold_binary_constant(expression, ast.TypeName.TRIT)
             return ast.TypeName.TRIT
         if expression.operator is ast.BinaryOperator.ADD:
             left_known = self._known_expression_type(expression.left)
@@ -1135,6 +1179,12 @@ class SemanticAnalyzer:
             expression.location,
             f"operands of '{expression.operator.value}'",
         )
+        result_type = (
+            ast.TypeName.TRIT
+            if expression.operator in RELATIONAL_OPERATORS
+            else left_type
+        )
+        self._fold_binary_constant(expression, result_type)
         return left_type
 
     def _comparison_operand_type(
@@ -1190,7 +1240,13 @@ class SemanticAnalyzer:
             return self._known_expression_type(expression.operand)
         if (
             isinstance(expression, ast.BinaryExpression)
-            and expression.operator is ast.BinaryOperator.ADD
+            and expression.operator
+            in (
+                ast.BinaryOperator.ADD,
+                ast.BinaryOperator.SUBTRACT,
+                ast.BinaryOperator.MINIMUM,
+                ast.BinaryOperator.MAXIMUM,
+            )
         ):
             left = self._known_expression_type(expression.left)
             right = self._known_expression_type(expression.right)
@@ -1353,16 +1409,119 @@ class SemanticAnalyzer:
         return None
 
     @staticmethod
-    def _static_text_index_literal(expression: ast.Expression) -> int | None:
+    def _width(type_name: ast.TypeName) -> TernaryWidth:
+        return (
+            TernaryWidth.TRIT
+            if type_name is ast.TypeName.TRIT
+            else TernaryWidth.TRYTE
+        )
+
+    @staticmethod
+    def _comparison_result(value: bool) -> int:
+        return -1 if value else 0
+
+    def _constant_tryte_value(self, expression: ast.Expression) -> int | None:
+        if self.expression_types.get(id(expression)) is not ast.TypeName.TRYTE:
+            return None
+        return self.constant_values.get(id(expression))
+
+    def _is_constant_tryte_expression(self, expression: ast.Expression) -> bool:
         if isinstance(expression, ast.IntegerLiteral):
-            return expression.value
+            return True
+        if isinstance(expression, ast.Identifier):
+            binding = self._lookup_binding(expression.name)
+            return (
+                binding is not None
+                and binding.type_name is ast.TypeName.TRYTE
+                and binding.constant_value is not None
+            )
+        if isinstance(expression, ast.UnaryExpression):
+            return self._is_constant_tryte_expression(expression.operand)
         if (
-            isinstance(expression, ast.UnaryExpression)
-            and expression.operator is ast.UnaryOperator.NEGATE
-            and isinstance(expression.operand, ast.IntegerLiteral)
+            isinstance(expression, ast.BinaryExpression)
+            and expression.operator
+            in (
+                ast.BinaryOperator.ADD,
+                ast.BinaryOperator.SUBTRACT,
+                ast.BinaryOperator.MINIMUM,
+                ast.BinaryOperator.MAXIMUM,
+            )
         ):
-            return -expression.operand.value
-        return None
+            return (
+                self._is_constant_tryte_expression(expression.left)
+                and self._is_constant_tryte_expression(expression.right)
+            )
+        if isinstance(expression, ast.LenExpression):
+            if self._is_constant_static_text_expression(expression.argument):
+                return True
+            if isinstance(expression.argument, ast.Identifier):
+                binding = self._lookup_binding(expression.argument.name)
+                return binding is not None and isinstance(binding.type_name, ast.ArrayType)
+        if isinstance(expression, ast.CallExpression):
+            return (
+                expression.function_name == "find"
+                and len(expression.arguments) == 2
+                and all(
+                    self._is_constant_static_text_expression(argument.expression)
+                    for argument in expression.arguments
+                )
+            )
+        return False
+
+    def _fold_unary_constant(
+        self,
+        expression: ast.UnaryExpression,
+        result_type: ast.TypeName,
+    ) -> None:
+        operand = self.constant_values.get(id(expression.operand))
+        if operand is None:
+            return
+        try:
+            value = invert(operand, self._width(result_type))
+        except TernaryRangeError as error:
+            raise SemanticError(str(error), expression.location) from error
+        self.constant_values[id(expression)] = value
+
+    def _fold_binary_constant(
+        self,
+        expression: ast.BinaryExpression,
+        result_type: ast.TypeName,
+    ) -> None:
+        left = self.constant_values.get(id(expression.left))
+        right = self.constant_values.get(id(expression.right))
+        if left is None or right is None:
+            return
+        try:
+            if expression.operator is ast.BinaryOperator.ADD:
+                value = add(left, right, self._width(result_type))
+            elif expression.operator is ast.BinaryOperator.SUBTRACT:
+                width = self._width(result_type)
+                value = add(left, invert(right, width), width)
+            elif expression.operator is ast.BinaryOperator.MINIMUM:
+                value = tritwise_min(left, right, self._width(result_type))
+            elif expression.operator is ast.BinaryOperator.MAXIMUM:
+                value = tritwise_max(left, right, self._width(result_type))
+            elif expression.operator is ast.BinaryOperator.COMPARE:
+                source_type = self.expression_types.get(id(expression.left))
+                assert isinstance(source_type, ast.TypeName)
+                value = compare(left, right, self._width(source_type))
+            elif expression.operator is ast.BinaryOperator.EQUAL:
+                value = self._comparison_result(left == right)
+            elif expression.operator is ast.BinaryOperator.NOT_EQUAL:
+                value = self._comparison_result(left != right)
+            elif expression.operator is ast.BinaryOperator.LESS:
+                value = self._comparison_result(left < right)
+            elif expression.operator is ast.BinaryOperator.LESS_EQUAL:
+                value = self._comparison_result(left <= right)
+            elif expression.operator is ast.BinaryOperator.GREATER:
+                value = self._comparison_result(left > right)
+            elif expression.operator is ast.BinaryOperator.GREATER_EQUAL:
+                value = self._comparison_result(left >= right)
+            else:
+                return
+        except TernaryRangeError as error:
+            raise SemanticError(str(error), expression.location) from error
+        self.constant_values[id(expression)] = value
 
     @staticmethod
     def _validate_static_string_literal(literal: ast.StringLiteral) -> None:
@@ -1427,10 +1586,10 @@ class SemanticAnalyzer:
                 expression.index.location,
                 "static text index",
             )
-            index = self._static_text_index_literal(expression.index)
+            index = self._constant_tryte_value(expression.index)
             if index is None:
                 raise SemanticError(
-                    "static text index must be a non-negative integer literal known at compile time",
+                    "static text index must be a tryte expression known at compile time",
                     expression.index.location,
                     diagnostic_code=(
                         DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
@@ -1472,11 +1631,11 @@ class SemanticAnalyzer:
                 expression.end.location,
                 "static text slice end",
             )
-            start = self._static_text_index_literal(expression.start)
-            end = self._static_text_index_literal(expression.end)
+            start = self._constant_tryte_value(expression.start)
+            end = self._constant_tryte_value(expression.end)
             if start is None or end is None:
                 raise SemanticError(
-                    "static text slice bounds must be non-negative integer literals known at compile time",
+                    "static text slice bounds must be tryte expressions known at compile time",
                     expression.location,
                     diagnostic_code=(
                         DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
@@ -1525,13 +1684,13 @@ class SemanticAnalyzer:
         if isinstance(expression, ast.IndexExpression):
             return (
                 self._is_constant_static_text_expression(expression.target)
-                and self._static_text_index_literal(expression.index) is not None
+                and self._is_constant_tryte_expression(expression.index)
             )
         if isinstance(expression, ast.SliceExpression):
             return (
                 self._is_constant_static_text_expression(expression.target)
-                and self._static_text_index_literal(expression.start) is not None
-                and self._static_text_index_literal(expression.end) is not None
+                and self._is_constant_tryte_expression(expression.start)
+                and self._is_constant_tryte_expression(expression.end)
             )
         return (
             isinstance(expression, ast.BinaryExpression)
