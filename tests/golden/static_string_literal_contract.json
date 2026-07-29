@@ -1,6 +1,6 @@
 {
   "blocked_by": [],
-  "contract_version": "2.6.0",
+  "contract_version": "2.7.0",
   "current_state": {
     "assembly": "string type, .data table, TCONST_STR",
     "ast": "StringLiteral, IndexExpression, SliceExpression",
@@ -10,7 +10,7 @@
     "lexer": "STRING_LITERAL",
     "parser": "string type, string literal expressions, indexing, and slicing",
     "runtime": "static handles only",
-    "semantic": "typed static string values with literal-only compile-time concat, length, equality, immutable binding propagation, static text indexing, slicing, and queries"
+    "semantic": "typed static string values plus immutable scalar constants, constant arithmetic, constant comparisons, static text indexing, slicing, and queries"
   },
   "diagnostics": {
     "invalid_argument_type": "S3E_SEMANTIC_INVALID_ARGUMENT_TYPE",
@@ -23,19 +23,27 @@
   "first_supported_behavior": {
     "binding_assignment": true,
     "concat": "compile_time_literal_only",
+    "constant_arithmetic": "supported_existing_operators",
+    "constant_comparisons": "supported_existing_operators",
     "constant_propagation": "immutable_static_text_bindings_only",
     "contains": "compile_time_static_text",
     "encoding": "utf8_static_text",
     "ends_with": "compile_time_static_text",
     "equality": "compile_time_static_text",
     "find": "compile_time_static_text",
+    "find_result_propagation": true,
     "indexing": "compile_time_static_text_with_literal_index",
+    "len_result_propagation": true,
     "length": "compile_time_static_text",
     "mutable_binding": true,
+    "numeric_constant_propagation": "immutable_tryte_bindings",
     "slicing": "compile_time_static_text_literal_bounds",
     "starts_with": "compile_time_static_text",
+    "static_text_index_bounds": "compile_time_tryte_expression",
+    "static_text_slice_bounds": "compile_time_tryte_expression",
     "storage": "static_string_table",
-    "string_byte_mutation": false
+    "string_byte_mutation": false,
+    "trit_constant_propagation": "immutable_trit_bindings"
   },
   "static_literal_table": {
     "deduplication": true,

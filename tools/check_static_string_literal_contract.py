@@ -34,7 +34,7 @@ EXPECTED_CURRENT_STATE = {
     "lexer": "STRING_LITERAL",
     "parser": "string type, string literal expressions, indexing, and slicing",
     "runtime": "static handles only",
-    "semantic": "typed static string values with literal-only compile-time concat, length, equality, immutable binding propagation, static text indexing, slicing, and queries",
+    "semantic": "typed static string values plus immutable scalar constants, constant arithmetic, constant comparisons, static text indexing, slicing, and queries",
 }
 
 EXPECTED_STATIC_LITERAL_TABLE = {
@@ -93,6 +93,34 @@ def _validate_contract(data: dict[str, object], text: str) -> None:
     if behavior.get("constant_propagation") != "immutable_static_text_bindings_only":
         raise ValueError(
             "contract constant_propagation must be immutable_static_text_bindings_only"
+        )
+    if behavior.get("numeric_constant_propagation") != "immutable_tryte_bindings":
+        raise ValueError(
+            "contract numeric_constant_propagation must be immutable_tryte_bindings"
+        )
+    if behavior.get("trit_constant_propagation") != "immutable_trit_bindings":
+        raise ValueError(
+            "contract trit_constant_propagation must be immutable_trit_bindings"
+        )
+    if behavior.get("constant_arithmetic") != "supported_existing_operators":
+        raise ValueError(
+            "contract constant_arithmetic must be supported_existing_operators"
+        )
+    if behavior.get("constant_comparisons") != "supported_existing_operators":
+        raise ValueError(
+            "contract constant_comparisons must be supported_existing_operators"
+        )
+    if behavior.get("len_result_propagation") is not True:
+        raise ValueError("contract len_result_propagation must be true")
+    if behavior.get("find_result_propagation") is not True:
+        raise ValueError("contract find_result_propagation must be true")
+    if behavior.get("static_text_index_bounds") != "compile_time_tryte_expression":
+        raise ValueError(
+            "contract static_text_index_bounds must be compile_time_tryte_expression"
+        )
+    if behavior.get("static_text_slice_bounds") != "compile_time_tryte_expression":
+        raise ValueError(
+            "contract static_text_slice_bounds must be compile_time_tryte_expression"
         )
     if behavior.get("length") != "compile_time_static_text":
         raise ValueError("contract length must be compile_time_static_text")
