@@ -118,11 +118,11 @@ def test_native_backend_emits_every_current_opcode() -> None:
     programs.append(
         compile_source(
             """\
+fn pick(left: tryte, right: tryte) -> tryte {
+    return (left & right) | right;
+}
 fn main() -> tryte {
-    tryte left = -10;
-    tryte right = 4;
-    tryte minimum = left & right;
-    return minimum | right;
+    return pick(-10, 4);
 }
 """,
             mode=SyntaxMode.V0_5,
@@ -378,16 +378,19 @@ def test_native_asm_cli_accepts_max_frames(
 
 def test_native_failure_sites_have_deterministic_source_context() -> None:
     source = """\
+fn increment(value: tryte) -> tryte {
+    return value + 1;
+}
 fn main() -> tryte {
-    return 364 + 1;
+    return increment(364);
 }
 """
     program = compile_source(source, mode=SyntaxMode.V0_5).assembly
     first = generate_native_assembly(program)
     second = generate_native_assembly(program)
     assert first == second
-    assert "runtime error [overflow] in function 'main'\\n" in first
-    assert "at source 2:16 (block entry, TADD)" in first
+    assert "runtime error [overflow] in function 'increment'\\n" in first
+    assert "at source 2:18 (block entry, TADD)" in first
     assert "tryte result " in first
     assert " outside [-364, 364]\\n" in first
 
