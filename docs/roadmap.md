@@ -153,12 +153,15 @@ para calcular comprimento de texto estático em tempo de compilação. O Marco
 compilação. O Marco 0.57 permite propagar texto estático por bindings
 imutáveis locais. O Marco 0.58 adiciona indexação de texto estático em tempo
 de compilação com índices literais. O Marco 0.59 adiciona slicing e consultas
-de texto estático em tempo de compilação.
+de texto estático em tempo de compilação. O Marco 0.60 adiciona propagação de
+constantes escalares imutáveis e folding de expressões constantes para alimentar
+índices e bounds estáticos.
 
 ## Autohospedagem
 
 Assembler e frontend em S3 dependem de strings além de concatenação estática
 literal-only, comprimento estático, igualdade estática, propagação por
 bindings imutáveis, indexação estática de texto, slicing e consultas estáticas
-de texto, módulos e uma biblioteca padrão mínima. Python será removido
+de texto, propagação de constantes escalares imutáveis, folding de expressões
+constantes, módulos e uma biblioteca padrão mínima. Python será removido
 gradualmente somente após bootstrap reprodutível.
