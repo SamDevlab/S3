@@ -1,16 +1,16 @@
 {
   "blocked_by": [],
-  "contract_version": "2.5.0",
+  "contract_version": "2.6.0",
   "current_state": {
     "assembly": "string type, .data table, TCONST_STR",
-    "ast": "StringLiteral",
+    "ast": "StringLiteral, IndexExpression, SliceExpression",
     "backend": "native .rodata labels for static strings",
     "emulator": "static string handles",
     "ir": "IRType.STRING with static_strings and CONST_STR",
     "lexer": "STRING_LITERAL",
-    "parser": "string type and string literal expressions",
+    "parser": "string type, string literal expressions, indexing, and slicing",
     "runtime": "static handles only",
-    "semantic": "typed static string values with literal-only compile-time concat, length, equality, immutable binding propagation, and static text indexing"
+    "semantic": "typed static string values with literal-only compile-time concat, length, equality, immutable binding propagation, static text indexing, slicing, and queries"
   },
   "diagnostics": {
     "invalid_argument_type": "S3E_SEMANTIC_INVALID_ARGUMENT_TYPE",
@@ -24,11 +24,16 @@
     "binding_assignment": true,
     "concat": "compile_time_literal_only",
     "constant_propagation": "immutable_static_text_bindings_only",
+    "contains": "compile_time_static_text",
     "encoding": "utf8_static_text",
+    "ends_with": "compile_time_static_text",
     "equality": "compile_time_static_text",
+    "find": "compile_time_static_text",
     "indexing": "compile_time_static_text_with_literal_index",
     "length": "compile_time_static_text",
     "mutable_binding": true,
+    "slicing": "compile_time_static_text_literal_bounds",
+    "starts_with": "compile_time_static_text",
     "storage": "static_string_table",
     "string_byte_mutation": false
   },

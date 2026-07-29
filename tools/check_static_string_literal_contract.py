@@ -26,15 +26,15 @@ EXPECTED_DIAGNOSTICS = {
 }
 
 EXPECTED_CURRENT_STATE = {
-    "ast": "StringLiteral",
+    "ast": "StringLiteral, IndexExpression, SliceExpression",
     "assembly": "string type, .data table, TCONST_STR",
     "backend": "native .rodata labels for static strings",
     "emulator": "static string handles",
     "ir": "IRType.STRING with static_strings and CONST_STR",
     "lexer": "STRING_LITERAL",
-    "parser": "string type and string literal expressions",
+    "parser": "string type, string literal expressions, indexing, and slicing",
     "runtime": "static handles only",
-    "semantic": "typed static string values with literal-only compile-time concat, length, equality, immutable binding propagation, and static text indexing",
+    "semantic": "typed static string values with literal-only compile-time concat, length, equality, immutable binding propagation, static text indexing, slicing, and queries",
 }
 
 EXPECTED_STATIC_LITERAL_TABLE = {
@@ -102,6 +102,13 @@ def _validate_contract(data: dict[str, object], text: str) -> None:
         raise ValueError(
             "contract indexing must be compile_time_static_text_with_literal_index"
         )
+    if behavior.get("slicing") != "compile_time_static_text_literal_bounds":
+        raise ValueError(
+            "contract slicing must be compile_time_static_text_literal_bounds"
+        )
+    for key in ("contains", "starts_with", "ends_with", "find"):
+        if behavior.get(key) != "compile_time_static_text":
+            raise ValueError(f"contract {key} must be compile_time_static_text")
     if behavior.get("string_byte_mutation") is not False:
         raise ValueError("contract string_byte_mutation must be false")
 
