@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
+from typing import Callable
 
 from . import ast
 from .static_text import (
@@ -61,7 +62,10 @@ class StaticStringTable:
         return None
 
 
-def collect_static_string_literals(program: ast.Program) -> StaticStringTable:
+def collect_static_string_literals(
+    program: ast.Program,
+    static_text_of: Callable[[ast.Expression], str | None] | None = None,
+) -> StaticStringTable:
     entries: list[StaticStringEntry] = []
     seen: dict[str, StaticStringEntry] = {}
 
@@ -87,7 +91,11 @@ def collect_static_string_literals(program: ast.Program) -> StaticStringTable:
         return None
 
     def visit_expression(expression: ast.Expression) -> None:
-        folded = constant_text(expression)
+        folded = (
+            static_text_of(expression)
+            if static_text_of is not None
+            else constant_text(expression)
+        )
         if folded is not None:
             add(folded)
             return
@@ -96,11 +104,21 @@ def collect_static_string_literals(program: ast.Program) -> StaticStringTable:
         elif isinstance(expression, ast.UnaryExpression):
             visit_expression(expression.operand)
         elif isinstance(expression, ast.BinaryExpression):
+            left_text = (
+                static_text_of(expression.left)
+                if static_text_of is not None
+                else constant_text(expression.left)
+            )
+            right_text = (
+                static_text_of(expression.right)
+                if static_text_of is not None
+                else constant_text(expression.right)
+            )
             if (
                 expression.operator
                 in (ast.BinaryOperator.EQUAL, ast.BinaryOperator.NOT_EQUAL)
-                and constant_text(expression.left) is not None
-                and constant_text(expression.right) is not None
+                and left_text is not None
+                and right_text is not None
             ):
                 return
             visit_expression(expression.left)
@@ -115,7 +133,12 @@ def collect_static_string_literals(program: ast.Program) -> StaticStringTable:
             for case in expression.cases:
                 visit_expression(case.expression)
         elif isinstance(expression, ast.LenExpression):
-            if constant_text(expression.argument) is not None:
+            text = (
+                static_text_of(expression.argument)
+                if static_text_of is not None
+                else constant_text(expression.argument)
+            )
+            if text is not None:
                 return
             visit_expression(expression.argument)
 

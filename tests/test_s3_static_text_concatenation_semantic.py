@@ -76,7 +76,7 @@ def test_constant_static_text_concatenation_can_be_argument_and_return() -> None
     [
         (
             "fn main() -> tryte:\n"
-            '    prefix: string = "TRET "\n'
+            '    mut prefix: string = "TRET "\n'
             '    message: string = prefix + "r1"\n'
             "    return 0\n"
         ),
@@ -97,12 +97,6 @@ def test_constant_static_text_concatenation_can_be_argument_and_return() -> None
             '    return "r1"\n'
             "fn main() -> tryte:\n"
             '    message: string = "TRET " + make()\n'
-            "    return 0\n"
-        ),
-        (
-            "fn main() -> tryte:\n"
-            '    name: string = "c"\n'
-            '    message: string = "a" + ("b" + name)\n'
             "    return 0\n"
         ),
     ],

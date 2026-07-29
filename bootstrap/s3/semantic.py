@@ -24,6 +24,7 @@ class Binding:
     mutable: bool
     parameter: bool
     location: SourceLocation
+    static_text: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,6 +39,7 @@ class SemanticModel:
 
     expression_types: dict[int, ast.DeclaredType]
     functions: dict[str, FunctionType]
+    static_text_values: dict[int, str]
 
     def type_of(self, expression: ast.Expression) -> ast.TypeName:
         try:
@@ -70,6 +72,9 @@ class SemanticModel:
                 expression.location,
             ) from error
 
+    def static_text_of(self, expression: ast.Expression) -> str | None:
+        return self.static_text_values.get(id(expression))
+
     def function(self, name: str) -> FunctionType:
         try:
             return self.functions[name]
@@ -80,6 +85,7 @@ class SemanticModel:
 class SemanticAnalyzer:
     def __init__(self) -> None:
         self.expression_types: dict[int, ast.DeclaredType] = {}
+        self.static_text_values: dict[int, str] = {}
         self.functions: dict[str, FunctionType] = {}
         self.scopes: list[dict[str, Binding]] = []
         self.parameter_names: set[str] = set()
@@ -108,7 +114,11 @@ class SemanticAnalyzer:
             except SemanticError as error:
                 error.add_diagnostic_context(function=function.name)
                 raise
-        return SemanticModel(dict(self.expression_types), dict(self.functions))
+        return SemanticModel(
+            dict(self.expression_types),
+            dict(self.functions),
+            dict(self.static_text_values),
+        )
 
     def _collect_signatures(self, program: ast.Program) -> None:
         for function in program.functions:
@@ -405,6 +415,7 @@ class SemanticAnalyzer:
                 declaration.location,
             )
 
+        static_text: str | None = None
         if isinstance(declaration.type_name, ast.ArrayType):
             self._validate_array_type(declaration.type_name)
             if not isinstance(declaration.initializer, ast.ArrayLiteral):
@@ -432,11 +443,21 @@ class SemanticAnalyzer:
                 declaration.initializer.location,
                 f"initializer for '{declaration.name}'",
             )
+            if (
+                declaration.type_name is ast.TypeName.STRING
+                and not declaration.mutable
+                and self._is_constant_static_text_expression(declaration.initializer)
+            ):
+                static_text = self._constant_static_text_value(
+                    declaration.initializer,
+                    "string initializer requires a compile-time static text expression",
+                )
         current_scope[declaration.name] = Binding(
             declaration.type_name,
             declaration.mutable,
             parameter=False,
             location=declaration.location,
+            static_text=static_text,
         )
 
     def _validate_array_type(self, type_name: ast.ArrayType) -> None:
@@ -657,6 +678,9 @@ class SemanticAnalyzer:
             self._validate_literal(expression, result)
         elif isinstance(expression, ast.StringLiteral):
             self._validate_static_string_literal(expression)
+            self.static_text_values[id(expression)] = decode_static_text(
+                expression.value
+            )
             result = ast.TypeName.STRING
             if expected is not None:
                 self._require_type(
@@ -667,6 +691,9 @@ class SemanticAnalyzer:
                 )
         elif isinstance(expression, ast.Identifier):
             result = self._identifier_type(expression)
+            binding = self._lookup_binding(expression.name)
+            if binding is not None and binding.static_text is not None:
+                self.static_text_values[id(expression)] = binding.static_text
             if expected is not None:
                 self._require_type(
                     result,
@@ -1229,52 +1256,63 @@ class SemanticAnalyzer:
         self,
         expression: ast.Expression,
     ) -> None:
-        if isinstance(expression, ast.StringLiteral):
-            self._validate_static_string_literal(expression)
-            self.expression_types[id(expression)] = ast.TypeName.STRING
-            return
-        if (
-            isinstance(expression, ast.BinaryExpression)
-            and expression.operator is ast.BinaryOperator.ADD
-        ):
-            self._validate_constant_static_text_expression(expression.left)
-            self._validate_constant_static_text_expression(expression.right)
-            self.expression_types[id(expression)] = ast.TypeName.STRING
-            return
-        raise SemanticError(
+        self._constant_static_text_value(
+            expression,
             "string concatenation requires a compile-time static text expression",
-            expression.location,
-            diagnostic_code=DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION,
         )
 
     def _constant_static_text_length(self, expression: ast.Expression) -> int:
+        return len(
+            self._constant_static_text_value(
+                expression,
+                "len() argument must be a static array or a compile-time static text expression",
+            )
+        )
+
+    def _constant_static_text_value(
+        self,
+        expression: ast.Expression,
+        error_message: str,
+    ) -> str:
         if isinstance(expression, ast.StringLiteral):
             self._validate_static_string_literal(expression)
             self.expression_types[id(expression)] = ast.TypeName.STRING
-            return len(decode_static_text(expression.value))
+            text = decode_static_text(expression.value)
+            self.static_text_values[id(expression)] = text
+            return text
+        if isinstance(expression, ast.Identifier):
+            binding = self._lookup_binding(expression.name)
+            if binding is not None and binding.static_text is not None:
+                self.expression_types[id(expression)] = ast.TypeName.STRING
+                self.static_text_values[id(expression)] = binding.static_text
+                return binding.static_text
         if (
             isinstance(expression, ast.BinaryExpression)
             and expression.operator is ast.BinaryOperator.ADD
         ):
-            left = self._constant_static_text_length(expression.left)
-            right = self._constant_static_text_length(expression.right)
+            left = self._constant_static_text_value(expression.left, error_message)
+            right = self._constant_static_text_value(expression.right, error_message)
             self.expression_types[id(expression)] = ast.TypeName.STRING
-            return left + right
+            text = left + right
+            self.static_text_values[id(expression)] = text
+            return text
         raise SemanticError(
-            "len() argument must be a static array or a compile-time static text expression",
+            error_message,
             expression.location,
             diagnostic_code=DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION,
         )
 
-    @staticmethod
-    def _is_constant_static_text_expression(expression: ast.Expression) -> bool:
+    def _is_constant_static_text_expression(self, expression: ast.Expression) -> bool:
         if isinstance(expression, ast.StringLiteral):
             return True
+        if isinstance(expression, ast.Identifier):
+            binding = self._lookup_binding(expression.name)
+            return binding is not None and binding.static_text is not None
         return (
             isinstance(expression, ast.BinaryExpression)
             and expression.operator is ast.BinaryOperator.ADD
-            and SemanticAnalyzer._is_constant_static_text_expression(expression.left)
-            and SemanticAnalyzer._is_constant_static_text_expression(expression.right)
+            and self._is_constant_static_text_expression(expression.left)
+            and self._is_constant_static_text_expression(expression.right)
         )
 
     @staticmethod
