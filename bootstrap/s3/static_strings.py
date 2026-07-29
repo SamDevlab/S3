@@ -17,6 +17,9 @@ from .static_text import (
 STATIC_TEXT_QUERY_BUILTINS = frozenset(
     ("contains", "starts_with", "ends_with", "find")
 )
+STATIC_TEXT_TRANSFORM_BUILTINS = frozenset(
+    ("upper", "lower", "trim", "repeat", "replace")
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,6 +96,22 @@ def collect_static_string_literals(
             right = constant_text(expression.right)
             if left is not None and right is not None:
                 return normalize_static_text_newlines(left + right)
+        if isinstance(expression, ast.CallExpression):
+            if expression.function_name in STATIC_TEXT_TRANSFORM_BUILTINS:
+                args = [constant_text(arg.expression) for arg in expression.arguments]
+                if expression.function_name in ("upper", "lower", "trim") and len(args) == 1 and args[0] is not None:
+                    if expression.function_name == "upper":
+                        return args[0].upper()
+                    if expression.function_name == "lower":
+                        return args[0].lower()
+                    return args[0].strip()
+                if expression.function_name == "repeat" and len(args) == 2 and args[0] is not None:
+                    if isinstance(expression.arguments[1].expression, ast.IntegerLiteral):
+                        cnt = expression.arguments[1].expression.value
+                        if cnt >= 0:
+                            return args[0] * cnt
+                if expression.function_name == "replace" and len(args) == 3 and all(a is not None for a in args):
+                    return args[0].replace(args[1], args[2])
         return None
 
     def visit_expression(expression: ast.Expression) -> None:
