@@ -94,7 +94,7 @@ def test_wrong_string_argument_type_uses_argument_diagnostic() -> None:
 
 
 @pytest.mark.parametrize(
-    "source,message",
+    "source,message,diagnostic_code",
     [
         (
             "fn main() -> tryte:\n"
@@ -103,6 +103,7 @@ def test_wrong_string_argument_type_uses_argument_diagnostic() -> None:
             "    combined: string = left + right\n"
             "    return 0\n",
             "string concatenation requires a compile-time static text expression",
+            DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION,
         ),
         (
             "fn main() -> tryte:\n"
@@ -111,6 +112,7 @@ def test_wrong_string_argument_type_uses_argument_diagnostic() -> None:
             "    same: trit = left == right\n"
             "    return 0\n",
             "string equality requires compile-time static text expressions",
+            DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION,
         ),
         (
             "fn main() -> tryte:\n"
@@ -118,13 +120,15 @@ def test_wrong_string_argument_type_uses_argument_diagnostic() -> None:
             "    size: tryte = len(value)\n"
             "    return size\n",
             "len() argument must be a static array or a compile-time static text expression",
+            DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION,
         ),
         (
             "fn main() -> tryte:\n"
             '    value: string = "abc"\n'
             "    first: tryte = value[0]\n"
             "    return first\n",
-            "string indexing is not supported",
+            "index expression has type string; expected tryte",
+            DiagnosticCode.SEMANTIC_TYPE_MISMATCH,
         ),
         (
             "fn main() -> tryte:\n"
@@ -132,20 +136,19 @@ def test_wrong_string_argument_type_uses_argument_diagnostic() -> None:
             '    value += "b"\n'
             "    return 0\n",
             "compound assignment is not supported for string values",
+            DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION,
         ),
     ],
 )
 def test_static_string_operations_outside_0_53_are_rejected(
     source: str,
     message: str,
+    diagnostic_code: DiagnosticCode,
 ) -> None:
     with pytest.raises(SemanticError) as captured:
         _analyze(source)
 
-    assert (
-        captured.value.diagnostic_code
-        is DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
-    )
+    assert captured.value.diagnostic_code is diagnostic_code
     assert captured.value.message == message
 
 

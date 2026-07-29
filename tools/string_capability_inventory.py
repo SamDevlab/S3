@@ -7,7 +7,7 @@ def main() -> int:
     print("current:")
     print("  lexer: STRING_LITERAL reserved")
     print("  parser: string type and static string literal expression")
-    print("  semantic: typed static string values with literal-only compile-time concat, length, equality, and immutable binding propagation")
+    print("  semantic: typed static string values with literal-only compile-time concat, length, equality, immutable binding propagation, and static text indexing")
     print("  ir: IRType.STRING, static_strings, CONST_STR")
     print("  assembly: string type, .data, TCONST_STR")
     print("  hosted runtime: static string handles")
@@ -25,6 +25,7 @@ def main() -> int:
     print("  literal-only static text concat no longer blocks fixed token composition")
     print("  static text length and equality are available for fixed text checks")
     print("  immutable static text bindings can name and reuse fixed fragments")
+    print("  static text indexing can select literal code-point positions at compile time")
     print("  strings no longer block 0.57 static renderer data paths")
     print("  still blocked by records/enums and deterministic formatting helpers")
     return 0

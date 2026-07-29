@@ -876,6 +876,28 @@ class FunctionLowerer:
             )
             return result
         if isinstance(expression, ast.IndexExpression):
+            if expression_type is ast.TypeName.STRING:
+                text = evaluate_constant_static_text_expression(
+                    expression,
+                    self.semantic_model,
+                )
+                try:
+                    static_string = self.static_string_ids[text]
+                except KeyError as error:
+                    raise LoweringError(
+                        "constant static text index expression is missing from static string table",
+                        expression.location,
+                    ) from error
+                result = self._allocate(ast.TypeName.STRING, expression.location)
+                self._emit(
+                    IRInstruction(
+                        IROpcode.CONST_STR,
+                        result=result,
+                        static_string=static_string,
+                        location=expression.location,
+                    )
+                )
+                return result
             binding = self._lookup_variable(
                 expression.array_name,
                 expression.location,
