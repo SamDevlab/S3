@@ -492,7 +492,12 @@ class Parser:
     def _parse_primary(self) -> ast.Expression:
         expression = self._parse_primary_atom()
         if self._match(TokenKind.LEFT_BRACKET):
-            index = self._parse_expression()
+            start = self._parse_expression()
+            if self._match(TokenKind.COLON):
+                end = self._parse_expression()
+                self._consume(TokenKind.RIGHT_BRACKET, "expected ']' after slice")
+                return ast.SliceExpression(expression, start, end, expression.location)
+            index = start
             self._consume(TokenKind.RIGHT_BRACKET, "expected ']' after index")
             return ast.IndexExpression(expression, index, expression.location)
         return expression
