@@ -7,30 +7,26 @@
     .register r3, trit
     .register r4, trit
     .register r5, trit
-    .register r6, trit
 .label entry
     TCONST r1, 0 ; source=2:21:51
     TCMP   r2, r0, r1 ; source=2:17:47
     TBR3   r2, switch_negative_0, switch_neutral_1, switch_positive_2 ; source=2:5:35
 .label switch_negative_0
-    TCONST r3, 1 ; source=4:21:86
-    TINV   r4, r3 ; source=4:20:85
-    TRET   r4 ; source=4:13:78
+    TCONST r3, -1 ; source=4:20:85
+    TRET   r3 ; source=4:13:78
 .label switch_neutral_1
-    TCONST r5, 0 ; source=7:20:119
-    TRET   r5 ; source=7:13:112
+    TCONST r4, 0 ; source=7:20:119
+    TRET   r4 ; source=7:13:112
 .label switch_positive_2
-    TCONST r6, 1 ; source=10:20:152
-    TRET   r6 ; source=10:13:145
+    TCONST r5, 1 ; source=10:20:152
+    TRET   r5 ; source=10:13:145
 .end
 
 .function main -> trit
     .register r0, tryte
-    .register r1, tryte
-    .register r2, trit
+    .register r1, trit
 .label entry
-    TCONST r0, 20 ; source=13:18:191
-    TINV   r1, r0 ; source=13:17:190
-    TCALL  r2, sign, r1 ; source=13:12:185
-    TRET   r2 ; source=13:5:178
+    TCONST r0, -20 ; source=13:17:190
+    TCALL  r1, sign, r0 ; source=13:12:185
+    TRET   r1 ; source=13:5:178
 .end

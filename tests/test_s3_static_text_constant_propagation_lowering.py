@@ -101,7 +101,8 @@ def test_lowering_numeric_and_array_behavior_remains_available() -> None:
     module = _lower(
         "fn main() -> tryte:\n"
         "    values: tryte[3] = [1, 2, 3]\n"
-        "    same: trit = 1 == 1\n"
+        "    mut index: tryte = 1\n"
+        "    same: trit = index == 1\n"
         "    return len(values)\n"
     )
 

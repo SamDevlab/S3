@@ -55,21 +55,9 @@
           {
             "instructions": [
               {
-                "immediate": 1,
+                "immediate": -1,
                 "opcode": "const",
                 "result": "r3",
-                "source": {
-                  "column": 21,
-                  "line": 4,
-                  "offset": 86
-                }
-              },
-              {
-                "opcode": "invert",
-                "operands": [
-                  "r3"
-                ],
-                "result": "r4",
                 "source": {
                   "column": 20,
                   "line": 4,
@@ -79,7 +67,7 @@
               {
                 "opcode": "return",
                 "operands": [
-                  "r4"
+                  "r3"
                 ],
                 "source": {
                   "column": 13,
@@ -100,7 +88,7 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r5",
+                "result": "r4",
                 "source": {
                   "column": 20,
                   "line": 7,
@@ -110,7 +98,7 @@
               {
                 "opcode": "return",
                 "operands": [
-                  "r5"
+                  "r4"
                 ],
                 "source": {
                   "column": 13,
@@ -131,7 +119,7 @@
               {
                 "immediate": 1,
                 "opcode": "const",
-                "result": "r6",
+                "result": "r5",
                 "source": {
                   "column": 20,
                   "line": 10,
@@ -141,7 +129,7 @@
               {
                 "opcode": "return",
                 "operands": [
-                  "r6"
+                  "r5"
                 ],
                 "source": {
                   "column": 13,
@@ -207,9 +195,9 @@
             "index": 3,
             "name": "r3",
             "source": {
-              "column": 21,
+              "column": 20,
               "line": 4,
-              "offset": 86
+              "offset": 85
             },
             "type": "trit"
           },
@@ -218,24 +206,14 @@
             "name": "r4",
             "source": {
               "column": 20,
-              "line": 4,
-              "offset": 85
-            },
-            "type": "trit"
-          },
-          {
-            "index": 5,
-            "name": "r5",
-            "source": {
-              "column": 20,
               "line": 7,
               "offset": 119
             },
             "type": "trit"
           },
           {
-            "index": 6,
-            "name": "r6",
+            "index": 5,
+            "name": "r5",
             "source": {
               "column": 20,
               "line": 10,
@@ -256,21 +234,9 @@
           {
             "instructions": [
               {
-                "immediate": 20,
+                "immediate": -20,
                 "opcode": "const",
                 "result": "r0",
-                "source": {
-                  "column": 18,
-                  "line": 13,
-                  "offset": 191
-                }
-              },
-              {
-                "opcode": "invert",
-                "operands": [
-                  "r0"
-                ],
-                "result": "r1",
                 "source": {
                   "column": 17,
                   "line": 13,
@@ -281,9 +247,9 @@
                 "callee": "sign",
                 "opcode": "call",
                 "operands": [
-                  "r1"
+                  "r0"
                 ],
-                "result": "r2",
+                "result": "r1",
                 "source": {
                   "column": 12,
                   "line": 13,
@@ -293,7 +259,7 @@
               {
                 "opcode": "return",
                 "operands": [
-                  "r2"
+                  "r1"
                 ],
                 "source": {
                   "column": 5,
@@ -318,16 +284,6 @@
             "index": 0,
             "name": "r0",
             "source": {
-              "column": 18,
-              "line": 13,
-              "offset": 191
-            },
-            "type": "tryte"
-          },
-          {
-            "index": 1,
-            "name": "r1",
-            "source": {
               "column": 17,
               "line": 13,
               "offset": 190
@@ -335,8 +291,8 @@
             "type": "tryte"
           },
           {
-            "index": 2,
-            "name": "r2",
+            "index": 1,
+            "name": "r1",
             "source": {
               "column": 12,
               "line": 13,

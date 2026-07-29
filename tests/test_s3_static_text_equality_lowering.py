@@ -117,10 +117,11 @@ def test_lowering_preserves_interning_for_text_used_as_value() -> None:
     ]
 
 
-def test_lowering_numeric_equality_still_uses_compare_path() -> None:
+def test_lowering_runtime_numeric_equality_still_uses_compare_path() -> None:
     module = _lower(
         "fn main() -> trit:\n"
-        "    return 1 == 1\n"
+        "    mut value: tryte = 1\n"
+        "    return value == 1\n"
     )
     function = module.functions[0]
     assert IROpcode.COMPARE in {
