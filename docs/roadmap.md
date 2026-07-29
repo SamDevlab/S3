@@ -155,7 +155,9 @@ imutáveis locais. O Marco 0.58 adiciona indexação de texto estático em tempo
 de compilação com índices literais. O Marco 0.59 adiciona slicing e consultas
 de texto estático em tempo de compilação. O Marco 0.60 adiciona propagação de
 constantes escalares imutáveis e folding de expressões constantes para alimentar
-índices e bounds estáticos.
+índices e bounds estáticos. O Marco 0.61 consolida constantes escalares e texto
+estático em um avaliador semântico unificado e especifica transformações de
+texto estático em tempo de compilação.
 
 ## Autohospedagem
 
@@ -163,5 +165,5 @@ Assembler e frontend em S3 dependem de strings além de concatenação estática
 literal-only, comprimento estático, igualdade estática, propagação por
 bindings imutáveis, indexação estática de texto, slicing e consultas estáticas
 de texto, propagação de constantes escalares imutáveis, folding de expressões
-constantes, módulos e uma biblioteca padrão mínima. Python será removido
-gradualmente somente após bootstrap reprodutível.
+constantes, transformações de texto estático, módulos e uma biblioteca padrão
+mínima. Python será removido gradualmente somente após bootstrap reprodutível.
