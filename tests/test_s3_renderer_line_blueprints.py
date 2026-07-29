@@ -209,9 +209,9 @@ def test_renderer_line_blueprint_model_metrics_match_current_goldens() -> None:
         for name, path in GOLDEN_PATHS.items()
     }
 
-    assert expected["first"]["blueprint_count"] == 18
+    assert expected["first"]["blueprint_count"] == 16
     assert expected["simple_call"]["blueprint_count"] == 21
-    assert expected["sign"]["blueprint_count"] == 36
+    assert expected["sign"]["blueprint_count"] == 32
     assert expected["first"]["instruction_without_source_line_count"] == 0
     assert expected["simple_call"]["instruction_without_source_line_count"] == 0
     assert expected["sign"]["instruction_without_source_line_count"] == 0

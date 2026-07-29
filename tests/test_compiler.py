@@ -6,7 +6,7 @@ import pytest
 
 from bootstrap.s3.assembly import AssemblyOpcode, parse_assembly
 from bootstrap.s3.diagnostics import SemanticError
-from bootstrap.s3.emulator import EmulatorError, execute_assembly
+from bootstrap.s3.emulator import execute_assembly
 from bootstrap.s3.ir import IROpcode
 from bootstrap.s3.pipeline import compile_source, run_source
 from bootstrap.s3.lexer import SyntaxMode
@@ -24,7 +24,13 @@ def test_first_program_compiles_through_every_stage() -> None:
 
 
 def test_subtraction_lowers_to_invert_then_add() -> None:
-    result = compile_source(FIRST_PROGRAM, mode=SyntaxMode.V0_6)
+    result = compile_source(
+        "fn main() -> tryte:\n"
+        "    mut value: tryte = 2\n"
+        "    value = value + 1\n"
+        "    return value - 1\n",
+        mode=SyntaxMode.V0_6,
+    )
     opcodes = [
         instruction.opcode
         for instruction in result.ir.functions[0].instructions
@@ -125,9 +131,9 @@ fn main() -> tryte {
         compile_source(source, mode=SyntaxMode.V0_5)
 
 
-def test_source_arithmetic_overflow_is_detected_at_runtime() -> None:
+def test_constant_source_arithmetic_overflow_is_detected_semantically() -> None:
     source = "fn main() -> tryte { return 364 + 1; }"
-    with pytest.raises(EmulatorError, match="tryte overflow"):
+    with pytest.raises(SemanticError, match="tryte overflow"):
         run_source(source, mode=SyntaxMode.V0_5)
 
 

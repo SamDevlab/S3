@@ -121,10 +121,6 @@ def test_static_text_indexing_uses_shadowed_static_binding() -> None:
             '    letter: string = "abc"[-1]\n',
             "static text index must be non-negative",
         ),
-        (
-            '    letter: string = "abc"[1 + 1]\n',
-            "static text index must be a non-negative integer literal known at compile time",
-        ),
     ],
 )
 def test_static_text_indexing_rejects_invalid_literal_bounds(
@@ -139,11 +135,6 @@ def test_static_text_indexing_rejects_invalid_literal_bounds(
 @pytest.mark.parametrize(
     ("source", "message"),
     [
-        (
-            "    index: tryte = 1\n"
-            '    letter: string = "abc"[index]\n',
-            "static text index must be a non-negative integer literal known at compile time",
-        ),
         (
             "    index: string = \"1\"\n"
             '    letter: string = "abc"[index]\n',

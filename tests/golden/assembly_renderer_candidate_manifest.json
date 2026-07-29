@@ -15,7 +15,7 @@
   "candidate_capabilities": {
     "directive_count_function": "renderer_supported_directive_count",
     "expected_directive_count": 6,
-    "expected_opcode_count": 8,
+    "expected_opcode_count": 7,
     "opcode_count_function": "renderer_supported_opcode_count"
   },
   "candidate_execution": {
@@ -78,17 +78,13 @@
         "function": "renderer_opcode_tconst_id",
         "id": 4
       },
-      "TINV": {
-        "function": "renderer_opcode_tinv_id",
-        "id": 5
-      },
       "TMOV": {
         "function": "renderer_opcode_tmov_id",
-        "id": 6
+        "id": 5
       },
       "TRET": {
         "function": "renderer_opcode_tret_id",
-        "id": 7
+        "id": 6
       }
     }
   },
@@ -109,7 +105,7 @@
       "first_function": "renderer_first_opcode_id",
       "first_id": 0,
       "last_function": "renderer_last_opcode_id",
-      "last_id": 7
+      "last_id": 6
     }
   },
   "comparison": {

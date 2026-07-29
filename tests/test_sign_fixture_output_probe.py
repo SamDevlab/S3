@@ -29,13 +29,13 @@ def test_sign_fixture_output_probe_matches_lf_normalized_inspect_golden() -> Non
     assert document.text
     assert document.utf8_bytes == expected
     assert document.byte_count == len(expected)
-    assert document.byte_count == 946
+    assert document.byte_count == 829
     assert document.line_count == expected.count(b"\n")
-    assert document.line_count == 36
+    assert document.line_count == 32
     assert document.sha256 == hashlib.sha256(expected).hexdigest()
     assert (
         document.sha256
-        == "c077d2c49639b1a033505ec8c1ba1c60c78242e6e09c43f60a8aa5ed8b49e2d9"
+        == "2002bbcdf4f893efafb34d3e194dd6b5602eb2d023a2d0d064a5d2642d48f880"
     )
     assert document.text.endswith("\n")
     assert document.utf8_bytes.endswith(b"\n")
@@ -53,11 +53,11 @@ def test_sign_fixture_actual_output_matches_probe_and_golden() -> None:
     assert SIGN_ACTUAL_OUTPUT.is_file()
     assert actual == document.utf8_bytes
     assert actual == expected
-    assert len(actual) == 946
-    assert len(actual.decode("utf-8").splitlines()) == 36
+    assert len(actual) == 829
+    assert len(actual.decode("utf-8").splitlines()) == 32
     assert (
         hashlib.sha256(actual).hexdigest()
-        == "c077d2c49639b1a033505ec8c1ba1c60c78242e6e09c43f60a8aa5ed8b49e2d9"
+        == "2002bbcdf4f893efafb34d3e194dd6b5602eb2d023a2d0d064a5d2642d48f880"
     )
     assert b"\r\n" not in actual
     assert actual.endswith(b"\n")

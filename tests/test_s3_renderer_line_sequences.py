@@ -282,9 +282,7 @@ def test_renderer_line_sequence_model_sequences_match_current_goldens() -> None:
         3,
         3,
         3,
-        3,
         5,
-        7,
         7,
         7,
         7,
@@ -326,13 +324,11 @@ def test_renderer_line_sequence_model_sequences_match_current_goldens() -> None:
         3,
         3,
         3,
-        3,
         5,
         7,
         7,
         7,
         5,
-        7,
         7,
         7,
         5,
@@ -346,9 +342,7 @@ def test_renderer_line_sequence_model_sequences_match_current_goldens() -> None:
         1,
         3,
         3,
-        3,
         5,
-        7,
         7,
         7,
         7,
@@ -367,12 +361,12 @@ def test_renderer_line_sequence_model_metrics_match_current_goldens() -> None:
         for name, path in GOLDEN_PATHS.items()
     }
 
-    assert expected["first"]["transition_count"] == 17
+    assert expected["first"]["transition_count"] == 15
     assert expected["simple_call"]["transition_count"] == 20
-    assert expected["sign"]["transition_count"] == 35
-    assert expected["first"]["sequence_signature"] == 72
+    assert expected["sign"]["transition_count"] == 31
+    assert expected["first"]["sequence_signature"] == 64
     assert expected["simple_call"]["sequence_signature"] == 83
-    assert expected["sign"]["sequence_signature"] == 152
+    assert expected["sign"]["sequence_signature"] == 136
 
     for metric_name, by_fixture in METRIC_ENTRYPOINTS.items():
         for fixture, entrypoint in by_fixture.items():
@@ -387,11 +381,11 @@ def test_renderer_line_sequence_model_function_boundaries_match_goldens() -> Non
     }
 
     assert expected["first"]["function_start_indices"] == (2,)
-    assert expected["first"]["function_end_indices"] == (17,)
+    assert expected["first"]["function_end_indices"] == (15,)
     assert expected["simple_call"]["function_start_indices"] == (2, 11)
     assert expected["simple_call"]["function_end_indices"] == (9, 20)
-    assert expected["sign"]["function_start_indices"] == (2, 26)
-    assert expected["sign"]["function_end_indices"] == (24, 35)
+    assert expected["sign"]["function_start_indices"] == (2, 24)
+    assert expected["sign"]["function_end_indices"] == (22, 31)
 
     for fixture, entrypoint_pairs in FUNCTION_BOUNDARY_ENTRYPOINTS.items():
         starts = expected[fixture]["function_start_indices"]

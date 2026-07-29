@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from bootstrap.s3.diagnostics import SemanticError
 from bootstrap.s3.emulator import Emulator, EmulatorError
 from bootstrap.s3.cli import main as cli_main
 from bootstrap.s3.ir import (
@@ -69,12 +70,30 @@ fn main() -> tryte {
     verify_ir(o1.ir)
 
 
-def test_o1_does_not_hide_constant_overflow() -> None:
+def test_constant_overflow_is_rejected_before_optimization() -> None:
     source = "fn main() -> tryte { return 364 + 1; }"
+    for level in ("O0", "O1"):
+        with pytest.raises(
+            SemanticError,
+            match=r"1:33: semantic error: tryte overflow: 364 \+ 1 = 365",
+        ):
+            compile_source(source, level, mode=SyntaxMode.V0_5)
+
+
+def test_o1_does_not_hide_runtime_overflow() -> None:
+    source = """\
+fn increment(value: tryte) -> tryte {
+    return value + 1;
+}
+fn main() -> tryte {
+    return increment(364);
+}
+"""
     o1 = compile_source(source, "O1", mode=SyntaxMode.V0_5)
     assert IROpcode.ADD in {
         instruction.opcode
-        for instruction in o1.ir.functions[0].instructions
+        for function in o1.ir.functions
+        for instruction in function.instructions
     }
     for level in ("O0", "O1"):
         with pytest.raises(EmulatorError, match="overflow"):

@@ -29,7 +29,6 @@
     "TCALL",
     "TCMP",
     "TCONST",
-    "TINV",
     "TMOV",
     "TRET"
   ],

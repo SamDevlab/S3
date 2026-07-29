@@ -152,8 +152,8 @@ def test_instruction_limit_is_enforced() -> None:
 
 def test_overflow_in_called_function_has_function_context() -> None:
     source = """\
-fn overflow() -> tryte { return 364 + 1; }
-fn main() -> tryte { return overflow(); }
+fn overflow(value: tryte) -> tryte { return value + 1; }
+fn main() -> tryte { return overflow(364); }
 """
     with pytest.raises(
         EmulatorError,

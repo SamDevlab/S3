@@ -233,9 +233,10 @@ class TestRendererContract(unittest.TestCase):
     def test_sign_buffer_layout(self):
         layout = FIXTURE_METADATA["sign"].buffer_layout
         self.assertEqual(
-            layout.buffer_names, ("buffer_low", "buffer_mid", "buffer_high")
+            layout.buffer_names,
+            ("buffer_low", "buffer_mid", "buffer_high", "buffer_tail"),
         )
-        self.assertEqual(layout.capacities, (364, 364, 218))
+        self.assertEqual(layout.capacities, (300, 300, 300, 46))
 
     def test_sign_generic_buffer_layout(self):
         layout = FIXTURE_METADATA["sign_generic"].buffer_layout

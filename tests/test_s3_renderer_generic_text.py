@@ -15,18 +15,18 @@ from tools.s3_renderer_contract import (
 EXPECTED_SHA256 = FIXTURE_METADATA["first_generic"].expected_sha256
 EXPECTED_BYTES = FIXTURE_METADATA["first_generic"].expected_bytes
 EXPECTED_LINES = FIXTURE_METADATA["first_generic"].expected_lines
-EXPECTED_EVENT_COUNT = 178
+EXPECTED_EVENT_COUNT = 152
 EXPECTED_DISTRIBUTION = Counter(
     {
-        1: 27,
-        2: 20,
-        3: 7,
-        4: 27,
-        5: 14,
-        6: 51,
-        7: 13,
+        1: 24,
+        2: 15,
+        3: 6,
+        4: 25,
+        5: 12,
+        6: 43,
+        7: 10,
         9: 1,
-        10: 18,
+        10: 16,
     }
 )
 
@@ -250,11 +250,11 @@ class TestGenericFirstStructure(unittest.TestCase):
         prefix_positions = [
             index for index, event in enumerate(self.events) if event == (1, 8)
         ]
-        self.assertEqual(len(prefix_positions), 7)
+        self.assertEqual(len(prefix_positions), 6)
         for position in prefix_positions:
             window = self.events[position + 1 : position + 6]
             self.assertEqual([kind for kind, _ in window], [4, 5, 4, 5, 4])
-        self.assertEqual(Counter(kind for kind, _ in self.events)[5], 14)
+        self.assertEqual(Counter(kind for kind, _ in self.events)[5], 12)
 
     def test_sum_of_event_lengths(self):
         total = len(self.rendered)
@@ -332,9 +332,9 @@ class TestGenericFirstExecution(unittest.TestCase):
         self.assertIn(b".function main", self.output)
         self.assertIn(b"TCONST r0", self.output)
         self.assertIn(b"TMOV   r1", self.output)
-        self.assertIn(b"TINV   r4", self.output)
-        self.assertIn(b"TADD   r5", self.output)
-        self.assertIn(b"TRET   r5", self.output)
+        self.assertIn(b"TCONST r4, 6", self.output)
+        self.assertIn(b"TRET   r4", self.output)
+        self.assertNotIn(b"TINV", self.output)
         self.assertIn(b"; source=2:16:35", self.output)
 
 

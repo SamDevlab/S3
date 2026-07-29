@@ -117,11 +117,11 @@ def test_renderer_text_builder_model_matches_current_fixture_metrics() -> None:
     expected = {name: _metrics(path) for name, path in GOLDEN_PATHS.items()}
 
     assert expected == {
-        "first": {"lines": 18, "bytes": 441, "newlines": 18, "metadata": 7, "tokens": 17, "indentation": 13},
+        "first": {"lines": 16, "bytes": 377, "newlines": 16, "metadata": 6, "tokens": 15, "indentation": 11},
         "simple_call": {"lines": 21, "bytes": 448, "newlines": 21, "metadata": 6, "tokens": 19, "indentation": 12},
-        "sign": {"lines": 36, "bytes": 946, "newlines": 36, "metadata": 14, "tokens": 34, "indentation": 24},
+        "sign": {"lines": 32, "bytes": 829, "newlines": 32, "metadata": 12, "tokens": 30, "indentation": 20},
     }
-    expected_signatures = {"first": 87, "simple_call": 96, "sign": 172}
+    expected_signatures = {"first": 77, "simple_call": 96, "sign": 152}
     for name, entrypoints in FIXTURE_ENTRYPOINTS.items():
         assert _execute(compilation, entrypoints["validate"]) == 1
         assert _execute(compilation, entrypoints["commands"]) == 1
@@ -138,16 +138,16 @@ def test_renderer_text_builder_model_matches_current_fixture_metrics() -> None:
 def test_renderer_text_builder_model_validates_totals_and_negative_probes() -> None:
     compilation = compile_source(_source())
 
-    assert _execute(compilation, "total_line_count") == 75
-    assert _execute(compilation, "total_command_count") == 108
-    assert _execute(compilation, "total_newline_count") == 75
-    assert _execute(compilation, "total_indentation_write_count") == 49
-    assert _execute(compilation, "total_token_write_count") == 70
-    assert _execute(compilation, "total_source_metadata_write_count") == 27
+    assert _execute(compilation, "total_line_count") == 69
+    assert _execute(compilation, "total_command_count") == 99
+    assert _execute(compilation, "total_newline_count") == 69
+    assert _execute(compilation, "total_indentation_write_count") == 43
+    assert _execute(compilation, "total_token_write_count") == 64
+    assert _execute(compilation, "total_source_metadata_write_count") == 24
     assert _execute(compilation, "total_logical_byte_chunk_count") == 5
-    assert _execute(compilation, "total_logical_byte_remainder") == 335
-    assert _execute(compilation, "total_builder_signature") == 355
-    assert _execute(compilation, "expected_total_builder_signature") == 355
+    assert _execute(compilation, "total_logical_byte_remainder") == 154
+    assert _execute(compilation, "total_builder_signature") == 325
+    assert _execute(compilation, "expected_total_builder_signature") == 325
     for entry in (
         "validate_invalid_fixture_probe",
         "validate_unknown_command_probe",

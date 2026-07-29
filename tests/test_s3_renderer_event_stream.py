@@ -182,12 +182,12 @@ def test_renderer_event_stream_model_metrics_match_current_goldens() -> None:
         for name, path in GOLDEN_PATHS.items()
     }
 
-    assert expected["first"]["event_signature"] == 81
+    assert expected["first"]["event_signature"] == 72
     assert expected["simple_call"]["event_signature"] == 94
-    assert expected["sign"]["event_signature"] == 170
-    assert expected["first"]["payload_signature"] == 80
+    assert expected["sign"]["event_signature"] == 152
+    assert expected["first"]["payload_signature"] == 72
     assert expected["simple_call"]["payload_signature"] == 93
-    assert expected["sign"]["payload_signature"] == 165
+    assert expected["sign"]["payload_signature"] == 147
 
     assert _execute(compilation, "total_event_signature") == sum(
         metric["event_signature"] for metric in expected.values()
@@ -214,17 +214,17 @@ def test_renderer_event_stream_model_totals_match_current_goldens() -> None:
         totals[event] = sum(metric[event] for metric in metrics)
 
     assert totals == {
-        "event_count": 75,
-        "transition_count": 72,
-        "event_signature": 345,
-        "payload_signature": 338,
+        "event_count": 69,
+        "transition_count": 66,
+        "event_signature": 318,
+        "payload_signature": 312,
         "header": 3,
         "function": 5,
         "param": 3,
-        "register": 19,
+        "register": 16,
         "memory": 0,
         "label": 8,
-        "instruction": 27,
+        "instruction": 24,
         "end": 5,
         "blank": 5,
     }

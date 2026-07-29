@@ -5,6 +5,9 @@ from bootstrap.s3.pipeline import run_source_with_buffer_capture
 
 
 LENGTH_VALUES = [
+    -364,
+    -200,
+    -192,
     -1,
     0,
     1,
@@ -30,11 +33,15 @@ LENGTH_VALUES = [
     192,
     199,
     200,
+    363,
     364,
 ]
 
 EXPECTED_LENGTHS = {
-    -1: -1,
+    -364: 4,
+    -200: 4,
+    -192: 4,
+    -1: 2,
     0: 1,
     1: 1,
     9: 1,
@@ -56,14 +63,21 @@ EXPECTED_LENGTHS = {
     185: 3,
     190: 3,
     191: 3,
-    192: -1,
-    199: -1,
-    200: -1,
-    364: -1,
+    192: 3,
+    199: 3,
+    200: 3,
+    363: 3,
+    364: 3,
 }
 
 BYTE_CASES = [
+    (-364, b"-364"),
+    (-200, b"-200"),
+    (-192, b"-192"),
+    (-1, b"-1"),
     (0, b"0"),
+    (1, b"1"),
+    (9, b"9"),
     (10, b"10"),
     (99, b"99"),
     (100, b"100"),
@@ -77,15 +91,28 @@ BYTE_CASES = [
     (185, b"185"),
     (190, b"190"),
     (191, b"191"),
+    (192, b"192"),
+    (199, b"199"),
+    (200, b"200"),
+    (363, b"363"),
+    (364, b"364"),
 ]
 
 INVALID_BYTE_CASES = [
+    (-364, -1),
+    (-364, 4),
+    (-200, 4),
+    (-192, 4),
+    (-1, 2),
+    (0, -1),
+    (0, 1),
     (42, -1),
     (42, 2),
     (191, 3),
-    (-1, 0),
-    (192, 0),
-    (364, 0),
+    (192, 3),
+    (200, 3),
+    (364, 3),
+    (364, 4),
 ]
 
 
@@ -171,7 +198,7 @@ class TestDecimalFunctions(unittest.TestCase):
 
     def test_all_valid_bytes_are_digits(self):
         self.assertTrue(self.output)
-        self.assertTrue(all(48 <= byte <= 57 for byte in self.output))
+        self.assertTrue(all(byte == 45 or 48 <= byte <= 57 for byte in self.output))
 
 
 if __name__ == "__main__":

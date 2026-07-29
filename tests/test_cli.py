@@ -191,7 +191,12 @@ def test_json_mode_preserves_normal_stdout_on_success(
     (
         (
             "overflow",
-            "fn main() -> tryte:\n    return 364 + 1\n",
+            """\
+fn increment(value: tryte) -> tryte:
+    return value + 1
+fn main() -> tryte:
+    return increment(364)
+""",
             (),
             "overflow",
             "S3E_RUNTIME_OVERFLOW",
@@ -247,6 +252,34 @@ def test_runtime_failures_flow_through_the_cli_schema(
     assert payload["code"] == code
     assert payload["phase"] == "emulation"
     assert payload["file"] == str(source)
+
+
+def test_constant_overflow_flows_through_cli_schema_before_backend(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    source = _write_source(
+        tmp_path / "constant-overflow.s3",
+        "fn main() -> tryte:\n    return 364 + 1\n",
+    )
+
+    for command in ("check", "inspect", "run"):
+        assert cli.main(
+            [
+                command,
+                str(source),
+                "--diagnostic-format",
+                "json",
+            ]
+        ) == 1
+        payload = _json_stderr(capsys)
+        assert payload["category"] == "semantic"
+        assert payload["phase"] == "semantic"
+        assert payload["code"] == "S3E_SEMANTIC_INVALID_PROGRAM"
+        assert payload["message"] == "tryte overflow: 364 + 1 = 365"
+        assert payload["function"] == "main"
+        assert payload["file"] == str(source)
+        assert payload["source"] == {"offset": 35, "line": 2, "column": 16}
 
 
 def test_json_mode_covers_cli_usage_without_mixing_argparse_text(
@@ -434,8 +467,8 @@ def test_inspect_command_reports_compilation_summary_without_running(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     source = _write_source(
-        tmp_path / "overflow.s3",
-        "fn main() -> tryte:\n    return 364 + 1\n",
+        tmp_path / "valid.s3",
+        "fn main() -> tryte:\n    return 364\n",
     )
 
     assert cli.main(["inspect", str(source)]) == 0
@@ -461,8 +494,8 @@ def test_inspect_command_explicit_summary_reports_compilation_summary(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     source = _write_source(
-        tmp_path / "overflow.s3",
-        "fn main() -> tryte:\n    return 364 + 1\n",
+        tmp_path / "valid.s3",
+        "fn main() -> tryte:\n    return 364\n",
     )
 
     assert cli.main(["inspect", str(source), "--emit", "summary"]) == 0
@@ -492,8 +525,8 @@ def test_inspect_command_emits_requested_artifact_without_running(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     source = _write_source(
-        tmp_path / "overflow.s3",
-        "fn main() -> tryte:\n    return 364 + 1\n",
+        tmp_path / "valid.s3",
+        "fn main() -> tryte:\n    return 364\n",
     )
 
     assert cli.main(["inspect", str(source), "--emit", emit]) == 0
@@ -512,8 +545,8 @@ def test_check_command_reports_ok_without_running(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     source = _write_source(
-        tmp_path / "overflow.s3",
-        "fn main() -> tryte:\n    return 364 + 1\n",
+        tmp_path / "valid.s3",
+        "fn main() -> tryte:\n    return 364\n",
     )
 
     assert cli.main(["check", str(source)]) == 0

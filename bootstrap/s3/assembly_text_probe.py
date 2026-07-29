@@ -33,7 +33,7 @@ def _build_first_fixture_assembly_program() -> AssemblyProgram:
                 "main",
                 AssemblyType.TRYTE,
                 (),
-                tuple((register, AssemblyType.TRYTE) for register in range(6)),
+                tuple((register, AssemblyType.TRYTE) for register in range(5)),
                 (
                     AssemblyBlock(
                         "entry",
@@ -61,18 +61,14 @@ def _build_first_fixture_assembly_program() -> AssemblyProgram:
                                 source=SourceLocation(42, 3, 5),
                             ),
                             AssemblyInstruction(
-                                AssemblyOpcode.TINV,
-                                (4, 3),
-                                source=SourceLocation(68, 4, 14),
-                            ),
-                            AssemblyInstruction(
-                                AssemblyOpcode.TADD,
-                                (5, 1, 4),
+                                AssemblyOpcode.TCONST,
+                                (4,),
+                                immediate=6,
                                 source=SourceLocation(68, 4, 14),
                             ),
                             AssemblyInstruction(
                                 AssemblyOpcode.TRET,
-                                (5,),
+                                (4,),
                                 source=SourceLocation(59, 4, 5),
                             ),
                         ),
@@ -177,7 +173,6 @@ def _build_sign_fixture_assembly_program() -> AssemblyProgram:
                     (3, AssemblyType.TRIT),
                     (4, AssemblyType.TRIT),
                     (5, AssemblyType.TRIT),
-                    (6, AssemblyType.TRIT),
                 ),
                 (
                     AssemblyBlock(
@@ -212,17 +207,12 @@ def _build_sign_fixture_assembly_program() -> AssemblyProgram:
                             AssemblyInstruction(
                                 AssemblyOpcode.TCONST,
                                 (3,),
-                                immediate=1,
-                                source=SourceLocation(86, 4, 21),
-                            ),
-                            AssemblyInstruction(
-                                AssemblyOpcode.TINV,
-                                (4, 3),
+                                immediate=-1,
                                 source=SourceLocation(85, 4, 20),
                             ),
                             AssemblyInstruction(
                                 AssemblyOpcode.TRET,
-                                (4,),
+                                (3,),
                                 source=SourceLocation(78, 4, 13),
                             ),
                         ),
@@ -232,13 +222,13 @@ def _build_sign_fixture_assembly_program() -> AssemblyProgram:
                         (
                             AssemblyInstruction(
                                 AssemblyOpcode.TCONST,
-                                (5,),
+                                (4,),
                                 immediate=0,
                                 source=SourceLocation(119, 7, 20),
                             ),
                             AssemblyInstruction(
                                 AssemblyOpcode.TRET,
-                                (5,),
+                                (4,),
                                 source=SourceLocation(112, 7, 13),
                             ),
                         ),
@@ -248,13 +238,13 @@ def _build_sign_fixture_assembly_program() -> AssemblyProgram:
                         (
                             AssemblyInstruction(
                                 AssemblyOpcode.TCONST,
-                                (6,),
+                                (5,),
                                 immediate=1,
                                 source=SourceLocation(152, 10, 20),
                             ),
                             AssemblyInstruction(
                                 AssemblyOpcode.TRET,
-                                (6,),
+                                (5,),
                                 source=SourceLocation(145, 10, 13),
                             ),
                         ),
@@ -267,8 +257,7 @@ def _build_sign_fixture_assembly_program() -> AssemblyProgram:
                 (),
                 (
                     (0, AssemblyType.TRYTE),
-                    (1, AssemblyType.TRYTE),
-                    (2, AssemblyType.TRIT),
+                    (1, AssemblyType.TRIT),
                 ),
                 (
                     AssemblyBlock(
@@ -277,23 +266,18 @@ def _build_sign_fixture_assembly_program() -> AssemblyProgram:
                             AssemblyInstruction(
                                 AssemblyOpcode.TCONST,
                                 (0,),
-                                immediate=20,
-                                source=SourceLocation(191, 13, 18),
-                            ),
-                            AssemblyInstruction(
-                                AssemblyOpcode.TINV,
-                                (1, 0),
+                                immediate=-20,
                                 source=SourceLocation(190, 13, 17),
                             ),
                             AssemblyInstruction(
                                 AssemblyOpcode.TCALL,
-                                (2, 1),
+                                (1, 0),
                                 callee="sign",
                                 source=SourceLocation(185, 13, 12),
                             ),
                             AssemblyInstruction(
                                 AssemblyOpcode.TRET,
-                                (2,),
+                                (1,),
                                 source=SourceLocation(178, 13, 5),
                             ),
                         ),

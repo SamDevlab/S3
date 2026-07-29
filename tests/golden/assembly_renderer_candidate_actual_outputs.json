@@ -4,11 +4,11 @@
   "component": "assembly_renderer_candidate_actual_outputs",
   "outputs": [
     {
-      "actual_byte_count": 441,
-      "actual_line_count": 18,
+      "actual_byte_count": 377,
+      "actual_line_count": 16,
       "actual_output_exists": true,
       "actual_output_status": "available",
-      "actual_sha256": "46ebd2aef715d7a7e9f7ada01ca844b8ae23494ff6a5333f78c75db2eaca2f67",
+      "actual_sha256": "a144d584ed40287d10cff5ecc50a170823aac7ddd0a7fed455837b936131a90f",
       "comparison_status": "passed",
       "expected_assembly": "tests/golden/inspect/first.assembly.txt",
       "name": "first",
@@ -30,11 +30,11 @@
       "source": "examples/simple_call.s3"
     },
     {
-      "actual_byte_count": 946,
-      "actual_line_count": 36,
+      "actual_byte_count": 829,
+      "actual_line_count": 32,
       "actual_output_exists": true,
       "actual_output_status": "available",
-      "actual_sha256": "c077d2c49639b1a033505ec8c1ba1c60c78242e6e09c43f60a8aa5ed8b49e2d9",
+      "actual_sha256": "2002bbcdf4f893efafb34d3e194dd6b5602eb2d023a2d0d064a5d2642d48f880",
       "comparison_status": "passed",
       "expected_assembly": "tests/golden/inspect/sign.assembly.txt",
       "name": "sign",

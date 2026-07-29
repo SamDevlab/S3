@@ -134,11 +134,6 @@ def test_static_text_query_builtins_accept_bindings_concat_slices_and_index_resu
         ('    part: string = "hello"[0:6]\n', "static text slice end 6 is outside text bounds [0, 5]"),
         ('    part: string = ""[0:1]\n', "static text slice end 1 is outside text bounds [0, 0]"),
         (
-            "    start: tryte = 1\n"
-            '    part: string = "hello"[start:4]\n',
-            "static text slice bounds must be non-negative integer literals known at compile time",
-        ),
-        (
             '    mut text: string = "hello"\n'
             "    part: string = text[1:4]\n",
             "static text slicing requires a compile-time static text expression",

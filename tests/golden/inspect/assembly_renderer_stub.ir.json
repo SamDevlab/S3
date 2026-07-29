@@ -62,7 +62,7 @@
           {
             "instructions": [
               {
-                "immediate": 8,
+                "immediate": 7,
                 "opcode": "const",
                 "result": "r0",
                 "source": {
@@ -286,7 +286,7 @@
           {
             "instructions": [
               {
-                "immediate": 7,
+                "immediate": 6,
                 "opcode": "const",
                 "result": "r0",
                 "source": {
@@ -391,21 +391,9 @@
           {
             "instructions": [
               {
-                "immediate": 1,
+                "immediate": -1,
                 "opcode": "const",
                 "result": "r3",
-                "source": {
-                  "column": 21,
-                  "line": 25,
-                  "offset": 603
-                }
-              },
-              {
-                "opcode": "invert",
-                "operands": [
-                  "r3"
-                ],
-                "result": "r4",
                 "source": {
                   "column": 20,
                   "line": 25,
@@ -415,7 +403,7 @@
               {
                 "opcode": "return",
                 "operands": [
-                  "r4"
+                  "r3"
                 ],
                 "source": {
                   "column": 13,
@@ -436,7 +424,7 @@
               {
                 "immediate": 1,
                 "opcode": "const",
-                "result": "r5",
+                "result": "r4",
                 "source": {
                   "column": 20,
                   "line": 28,
@@ -446,7 +434,7 @@
               {
                 "opcode": "return",
                 "operands": [
-                  "r5"
+                  "r4"
                 ],
                 "source": {
                   "column": 13,
@@ -467,7 +455,7 @@
               {
                 "callee": "renderer_last_directive_id",
                 "opcode": "call",
-                "result": "r6",
+                "result": "r5",
                 "source": {
                   "column": 26,
                   "line": 31,
@@ -478,9 +466,9 @@
                 "opcode": "compare",
                 "operands": [
                   "r0",
-                  "r6"
+                  "r5"
                 ],
-                "result": "r7",
+                "result": "r6",
                 "source": {
                   "column": 22,
                   "line": 31,
@@ -490,7 +478,7 @@
               {
                 "opcode": "branch3",
                 "operands": [
-                  "r7"
+                  "r6"
                 ],
                 "source": {
                   "column": 13,
@@ -516,7 +504,7 @@
               {
                 "immediate": 1,
                 "opcode": "const",
-                "result": "r8",
+                "result": "r7",
                 "source": {
                   "column": 28,
                   "line": 33,
@@ -526,7 +514,7 @@
               {
                 "opcode": "return",
                 "operands": [
-                  "r8"
+                  "r7"
                 ],
                 "source": {
                   "column": 21,
@@ -547,7 +535,7 @@
               {
                 "immediate": 1,
                 "opcode": "const",
-                "result": "r9",
+                "result": "r8",
                 "source": {
                   "column": 28,
                   "line": 36,
@@ -557,7 +545,7 @@
               {
                 "opcode": "return",
                 "operands": [
-                  "r9"
+                  "r8"
                 ],
                 "source": {
                   "column": 21,
@@ -576,21 +564,9 @@
           {
             "instructions": [
               {
-                "immediate": 1,
+                "immediate": -1,
                 "opcode": "const",
-                "result": "r10",
-                "source": {
-                  "column": 29,
-                  "line": 39,
-                  "offset": 851
-                }
-              },
-              {
-                "opcode": "invert",
-                "operands": [
-                  "r10"
-                ],
-                "result": "r11",
+                "result": "r9",
                 "source": {
                   "column": 28,
                   "line": 39,
@@ -600,7 +576,7 @@
               {
                 "opcode": "return",
                 "operands": [
-                  "r11"
+                  "r9"
                 ],
                 "source": {
                   "column": 21,
@@ -666,9 +642,9 @@
             "index": 3,
             "name": "r3",
             "source": {
-              "column": 21,
+              "column": 20,
               "line": 25,
-              "offset": 603
+              "offset": 602
             },
             "type": "trit"
           },
@@ -677,24 +653,14 @@
             "name": "r4",
             "source": {
               "column": 20,
-              "line": 25,
-              "offset": 602
-            },
-            "type": "trit"
-          },
-          {
-            "index": 5,
-            "name": "r5",
-            "source": {
-              "column": 20,
               "line": 28,
               "offset": 636
             },
             "type": "trit"
           },
           {
-            "index": 6,
-            "name": "r6",
+            "index": 5,
+            "name": "r5",
             "source": {
               "column": 26,
               "line": 31,
@@ -703,8 +669,8 @@
             "type": "tryte"
           },
           {
-            "index": 7,
-            "name": "r7",
+            "index": 6,
+            "name": "r6",
             "source": {
               "column": 22,
               "line": 31,
@@ -713,8 +679,8 @@
             "type": "trit"
           },
           {
-            "index": 8,
-            "name": "r8",
+            "index": 7,
+            "name": "r7",
             "source": {
               "column": 28,
               "line": 33,
@@ -723,8 +689,8 @@
             "type": "trit"
           },
           {
-            "index": 9,
-            "name": "r9",
+            "index": 8,
+            "name": "r8",
             "source": {
               "column": 28,
               "line": 36,
@@ -733,18 +699,8 @@
             "type": "trit"
           },
           {
-            "index": 10,
-            "name": "r10",
-            "source": {
-              "column": 29,
-              "line": 39,
-              "offset": 851
-            },
-            "type": "trit"
-          },
-          {
-            "index": 11,
-            "name": "r11",
+            "index": 9,
+            "name": "r9",
             "source": {
               "column": 28,
               "line": 39,
@@ -814,21 +770,9 @@
           {
             "instructions": [
               {
-                "immediate": 1,
+                "immediate": -1,
                 "opcode": "const",
                 "result": "r3",
-                "source": {
-                  "column": 21,
-                  "line": 44,
-                  "offset": 982
-                }
-              },
-              {
-                "opcode": "invert",
-                "operands": [
-                  "r3"
-                ],
-                "result": "r4",
                 "source": {
                   "column": 20,
                   "line": 44,
@@ -838,7 +782,7 @@
               {
                 "opcode": "return",
                 "operands": [
-                  "r4"
+                  "r3"
                 ],
                 "source": {
                   "column": 13,
@@ -859,7 +803,7 @@
               {
                 "immediate": 1,
                 "opcode": "const",
-                "result": "r5",
+                "result": "r4",
                 "source": {
                   "column": 20,
                   "line": 47,
@@ -869,7 +813,7 @@
               {
                 "opcode": "return",
                 "operands": [
-                  "r5"
+                  "r4"
                 ],
                 "source": {
                   "column": 13,
@@ -890,7 +834,7 @@
               {
                 "callee": "renderer_last_opcode_id",
                 "opcode": "call",
-                "result": "r6",
+                "result": "r5",
                 "source": {
                   "column": 26,
                   "line": 50,
@@ -901,9 +845,9 @@
                 "opcode": "compare",
                 "operands": [
                   "r0",
-                  "r6"
+                  "r5"
                 ],
-                "result": "r7",
+                "result": "r6",
                 "source": {
                   "column": 22,
                   "line": 50,
@@ -913,7 +857,7 @@
               {
                 "opcode": "branch3",
                 "operands": [
-                  "r7"
+                  "r6"
                 ],
                 "source": {
                   "column": 13,
@@ -939,7 +883,7 @@
               {
                 "immediate": 1,
                 "opcode": "const",
-                "result": "r8",
+                "result": "r7",
                 "source": {
                   "column": 28,
                   "line": 52,
@@ -949,7 +893,7 @@
               {
                 "opcode": "return",
                 "operands": [
-                  "r8"
+                  "r7"
                 ],
                 "source": {
                   "column": 21,
@@ -970,7 +914,7 @@
               {
                 "immediate": 1,
                 "opcode": "const",
-                "result": "r9",
+                "result": "r8",
                 "source": {
                   "column": 28,
                   "line": 55,
@@ -980,7 +924,7 @@
               {
                 "opcode": "return",
                 "operands": [
-                  "r9"
+                  "r8"
                 ],
                 "source": {
                   "column": 21,
@@ -999,21 +943,9 @@
           {
             "instructions": [
               {
-                "immediate": 1,
+                "immediate": -1,
                 "opcode": "const",
-                "result": "r10",
-                "source": {
-                  "column": 29,
-                  "line": 58,
-                  "offset": 1227
-                }
-              },
-              {
-                "opcode": "invert",
-                "operands": [
-                  "r10"
-                ],
-                "result": "r11",
+                "result": "r9",
                 "source": {
                   "column": 28,
                   "line": 58,
@@ -1023,7 +955,7 @@
               {
                 "opcode": "return",
                 "operands": [
-                  "r11"
+                  "r9"
                 ],
                 "source": {
                   "column": 21,
@@ -1089,9 +1021,9 @@
             "index": 3,
             "name": "r3",
             "source": {
-              "column": 21,
+              "column": 20,
               "line": 44,
-              "offset": 982
+              "offset": 981
             },
             "type": "trit"
           },
@@ -1100,24 +1032,14 @@
             "name": "r4",
             "source": {
               "column": 20,
-              "line": 44,
-              "offset": 981
-            },
-            "type": "trit"
-          },
-          {
-            "index": 5,
-            "name": "r5",
-            "source": {
-              "column": 20,
               "line": 47,
               "offset": 1015
             },
             "type": "trit"
           },
           {
-            "index": 6,
-            "name": "r6",
+            "index": 5,
+            "name": "r5",
             "source": {
               "column": 26,
               "line": 50,
@@ -1126,8 +1048,8 @@
             "type": "tryte"
           },
           {
-            "index": 7,
-            "name": "r7",
+            "index": 6,
+            "name": "r6",
             "source": {
               "column": 22,
               "line": 50,
@@ -1136,8 +1058,8 @@
             "type": "trit"
           },
           {
-            "index": 8,
-            "name": "r8",
+            "index": 7,
+            "name": "r7",
             "source": {
               "column": 28,
               "line": 52,
@@ -1146,8 +1068,8 @@
             "type": "trit"
           },
           {
-            "index": 9,
-            "name": "r9",
+            "index": 8,
+            "name": "r8",
             "source": {
               "column": 28,
               "line": 55,
@@ -1156,18 +1078,8 @@
             "type": "trit"
           },
           {
-            "index": 10,
-            "name": "r10",
-            "source": {
-              "column": 29,
-              "line": 58,
-              "offset": 1227
-            },
-            "type": "trit"
-          },
-          {
-            "index": 11,
-            "name": "r11",
+            "index": 9,
+            "name": "r9",
             "source": {
               "column": 28,
               "line": 58,
@@ -1809,8 +1721,8 @@
                 "result": "r0",
                 "source": {
                   "column": 12,
-                  "line": 94,
-                  "offset": 1894
+                  "line": 95,
+                  "offset": 1895
                 }
               },
               {
@@ -1820,72 +1732,16 @@
                 ],
                 "source": {
                   "column": 5,
-                  "line": 94,
-                  "offset": 1887
+                  "line": 95,
+                  "offset": 1888
                 }
               }
             ],
             "name": "entry",
             "source": {
               "column": 5,
-              "line": 94,
-              "offset": 1887
-            }
-          }
-        ],
-        "memory_objects": [],
-        "name": "renderer_opcode_tinv_id",
-        "parameters": [],
-        "registers": [
-          {
-            "index": 0,
-            "name": "r0",
-            "source": {
-              "column": 12,
-              "line": 94,
-              "offset": 1894
-            },
-            "type": "tryte"
-          }
-        ],
-        "return_type": "tryte",
-        "source": {
-          "column": 1,
-          "line": 93,
-          "offset": 1844
-        }
-      },
-      {
-        "blocks": [
-          {
-            "instructions": [
-              {
-                "immediate": 6,
-                "opcode": "const",
-                "result": "r0",
-                "source": {
-                  "column": 12,
-                  "line": 97,
-                  "offset": 1947
-                }
-              },
-              {
-                "opcode": "return",
-                "operands": [
-                  "r0"
-                ],
-                "source": {
-                  "column": 5,
-                  "line": 97,
-                  "offset": 1940
-                }
-              }
-            ],
-            "name": "entry",
-            "source": {
-              "column": 5,
-              "line": 97,
-              "offset": 1940
+              "line": 95,
+              "offset": 1888
             }
           }
         ],
@@ -1898,8 +1754,8 @@
             "name": "r0",
             "source": {
               "column": 12,
-              "line": 97,
-              "offset": 1947
+              "line": 95,
+              "offset": 1895
             },
             "type": "tryte"
           }
@@ -1907,8 +1763,8 @@
         "return_type": "tryte",
         "source": {
           "column": 1,
-          "line": 96,
-          "offset": 1897
+          "line": 94,
+          "offset": 1845
         }
       },
       {
@@ -1916,13 +1772,13 @@
           {
             "instructions": [
               {
-                "immediate": 7,
+                "immediate": 6,
                 "opcode": "const",
                 "result": "r0",
                 "source": {
                   "column": 12,
-                  "line": 100,
-                  "offset": 2000
+                  "line": 98,
+                  "offset": 1948
                 }
               },
               {
@@ -1932,16 +1788,16 @@
                 ],
                 "source": {
                   "column": 5,
-                  "line": 100,
-                  "offset": 1993
+                  "line": 98,
+                  "offset": 1941
                 }
               }
             ],
             "name": "entry",
             "source": {
               "column": 5,
-              "line": 100,
-              "offset": 1993
+              "line": 98,
+              "offset": 1941
             }
           }
         ],
@@ -1954,8 +1810,8 @@
             "name": "r0",
             "source": {
               "column": 12,
-              "line": 100,
-              "offset": 2000
+              "line": 98,
+              "offset": 1948
             },
             "type": "tryte"
           }
@@ -1963,8 +1819,8 @@
         "return_type": "tryte",
         "source": {
           "column": 1,
-          "line": 99,
-          "offset": 1950
+          "line": 97,
+          "offset": 1898
         }
       },
       {
@@ -1972,35 +1828,23 @@
           {
             "instructions": [
               {
-                "immediate": 1,
+                "immediate": -1,
                 "opcode": "const",
                 "result": "r0",
                 "source": {
-                  "column": 25,
-                  "line": 103,
-                  "offset": 2077
-                }
-              },
-              {
-                "opcode": "invert",
-                "operands": [
-                  "r0"
-                ],
-                "result": "r1",
-                "source": {
                   "column": 24,
-                  "line": 103,
-                  "offset": 2076
+                  "line": 101,
+                  "offset": 2024
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r2",
+                "result": "r1",
                 "source": {
                   "column": 5,
-                  "line": 103,
-                  "offset": 2057
+                  "line": 101,
+                  "offset": 2005
                 }
               },
               {
@@ -2008,57 +1852,57 @@
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r2",
-                  "r1"
+                  "r1",
+                  "r0"
                 ],
                 "source": {
                   "column": 5,
-                  "line": 103,
-                  "offset": 2057
+                  "line": 101,
+                  "offset": 2005
                 }
               },
               {
                 "callee": "renderer_supported_directive_count",
                 "opcode": "call",
-                "result": "r3",
+                "result": "r2",
                 "source": {
                   "column": 11,
-                  "line": 105,
-                  "offset": 2090
+                  "line": 103,
+                  "offset": 2038
                 }
               },
               {
                 "immediate": 6,
                 "opcode": "const",
-                "result": "r4",
+                "result": "r3",
                 "source": {
                   "column": 52,
-                  "line": 105,
-                  "offset": 2131
+                  "line": 103,
+                  "offset": 2079
                 }
               },
               {
                 "opcode": "compare",
                 "operands": [
-                  "r3",
-                  "r4"
+                  "r2",
+                  "r3"
                 ],
-                "result": "r5",
+                "result": "r4",
                 "source": {
                   "column": 48,
-                  "line": 105,
-                  "offset": 2127
+                  "line": 103,
+                  "offset": 2075
                 }
               },
               {
                 "opcode": "branch3",
                 "operands": [
-                  "r5"
+                  "r4"
                 ],
                 "source": {
                   "column": 5,
-                  "line": 105,
-                  "offset": 2084
+                  "line": 103,
+                  "offset": 2032
                 },
                 "targets": [
                   "switch_negative_0",
@@ -2070,8 +1914,8 @@
             "name": "entry",
             "source": {
               "column": 5,
-              "line": 103,
-              "offset": 2057
+              "line": 101,
+              "offset": 2005
             }
           },
           {
@@ -2079,42 +1923,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r6",
+                "result": "r5",
                 "source": {
                   "column": 22,
-                  "line": 107,
-                  "offset": 2167
+                  "line": 105,
+                  "offset": 2115
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r7",
+                "result": "r6",
                 "source": {
                   "column": 13,
-                  "line": 107,
-                  "offset": 2158
+                  "line": 105,
+                  "offset": 2106
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r7",
-                  "r6"
+                  "r6",
+                  "r5"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 107,
-                  "offset": 2158
+                  "line": 105,
+                  "offset": 2106
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 106,
-                  "offset": 2142
+                  "line": 104,
+                  "offset": 2090
                 },
                 "targets": [
                   "switch_continue_3"
@@ -2124,8 +1968,8 @@
             "name": "switch_negative_0",
             "source": {
               "column": 9,
-              "line": 106,
-              "offset": 2142
+              "line": 104,
+              "offset": 2090
             }
           },
           {
@@ -2133,55 +1977,55 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r8",
+                "result": "r7",
                 "source": {
                   "column": 22,
-                  "line": 110,
-                  "offset": 2202
+                  "line": 108,
+                  "offset": 2150
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "load",
                 "operands": [
-                  "r8"
+                  "r7"
                 ],
-                "result": "r9",
+                "result": "r8",
                 "source": {
                   "column": 22,
-                  "line": 110,
-                  "offset": 2202
+                  "line": 108,
+                  "offset": 2150
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r10",
+                "result": "r9",
                 "source": {
                   "column": 13,
-                  "line": 110,
-                  "offset": 2193
+                  "line": 108,
+                  "offset": 2141
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r10",
-                  "r9"
+                  "r9",
+                  "r8"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 110,
-                  "offset": 2193
+                  "line": 108,
+                  "offset": 2141
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 109,
-                  "offset": 2178
+                  "line": 107,
+                  "offset": 2126
                 },
                 "targets": [
                   "switch_continue_3"
@@ -2191,8 +2035,8 @@
             "name": "switch_neutral_1",
             "source": {
               "column": 9,
-              "line": 109,
-              "offset": 2178
+              "line": 107,
+              "offset": 2126
             }
           },
           {
@@ -2200,42 +2044,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r11",
+                "result": "r10",
                 "source": {
                   "column": 22,
-                  "line": 113,
-                  "offset": 2242
+                  "line": 111,
+                  "offset": 2190
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r12",
+                "result": "r11",
                 "source": {
                   "column": 13,
-                  "line": 113,
-                  "offset": 2233
+                  "line": 111,
+                  "offset": 2181
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r12",
-                  "r11"
+                  "r11",
+                  "r10"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 113,
-                  "offset": 2233
+                  "line": 111,
+                  "offset": 2181
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 112,
-                  "offset": 2218
+                  "line": 110,
+                  "offset": 2166
                 },
                 "targets": [
                   "switch_continue_3"
@@ -2245,8 +2089,8 @@
             "name": "switch_positive_2",
             "source": {
               "column": 9,
-              "line": 112,
-              "offset": 2218
+              "line": 110,
+              "offset": 2166
             }
           },
           {
@@ -2254,45 +2098,45 @@
               {
                 "callee": "renderer_supported_opcode_count",
                 "opcode": "call",
-                "result": "r13",
+                "result": "r12",
                 "source": {
                   "column": 11,
-                  "line": 115,
-                  "offset": 2255
+                  "line": 113,
+                  "offset": 2203
                 }
               },
               {
-                "immediate": 8,
+                "immediate": 7,
                 "opcode": "const",
-                "result": "r14",
+                "result": "r13",
                 "source": {
                   "column": 49,
-                  "line": 115,
-                  "offset": 2293
+                  "line": 113,
+                  "offset": 2241
                 }
               },
               {
                 "opcode": "compare",
                 "operands": [
-                  "r13",
-                  "r14"
+                  "r12",
+                  "r13"
                 ],
-                "result": "r15",
+                "result": "r14",
                 "source": {
                   "column": 45,
-                  "line": 115,
-                  "offset": 2289
+                  "line": 113,
+                  "offset": 2237
                 }
               },
               {
                 "opcode": "branch3",
                 "operands": [
-                  "r15"
+                  "r14"
                 ],
                 "source": {
                   "column": 5,
-                  "line": 115,
-                  "offset": 2249
+                  "line": 113,
+                  "offset": 2197
                 },
                 "targets": [
                   "switch_negative_4",
@@ -2304,8 +2148,8 @@
             "name": "switch_continue_3",
             "source": {
               "column": 5,
-              "line": 105,
-              "offset": 2084
+              "line": 103,
+              "offset": 2032
             }
           },
           {
@@ -2313,42 +2157,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r16",
+                "result": "r15",
                 "source": {
                   "column": 22,
-                  "line": 117,
-                  "offset": 2329
+                  "line": 115,
+                  "offset": 2277
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r17",
+                "result": "r16",
                 "source": {
                   "column": 13,
-                  "line": 117,
-                  "offset": 2320
+                  "line": 115,
+                  "offset": 2268
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r17",
-                  "r16"
+                  "r16",
+                  "r15"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 117,
-                  "offset": 2320
+                  "line": 115,
+                  "offset": 2268
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 116,
-                  "offset": 2304
+                  "line": 114,
+                  "offset": 2252
                 },
                 "targets": [
                   "switch_continue_7"
@@ -2358,8 +2202,8 @@
             "name": "switch_negative_4",
             "source": {
               "column": 9,
-              "line": 116,
-              "offset": 2304
+              "line": 114,
+              "offset": 2252
             }
           },
           {
@@ -2367,55 +2211,55 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r18",
+                "result": "r17",
                 "source": {
                   "column": 22,
-                  "line": 120,
-                  "offset": 2364
+                  "line": 118,
+                  "offset": 2312
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "load",
                 "operands": [
-                  "r18"
+                  "r17"
                 ],
-                "result": "r19",
+                "result": "r18",
                 "source": {
                   "column": 22,
-                  "line": 120,
-                  "offset": 2364
+                  "line": 118,
+                  "offset": 2312
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r20",
+                "result": "r19",
                 "source": {
                   "column": 13,
-                  "line": 120,
-                  "offset": 2355
+                  "line": 118,
+                  "offset": 2303
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r20",
-                  "r19"
+                  "r19",
+                  "r18"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 120,
-                  "offset": 2355
+                  "line": 118,
+                  "offset": 2303
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 119,
-                  "offset": 2340
+                  "line": 117,
+                  "offset": 2288
                 },
                 "targets": [
                   "switch_continue_7"
@@ -2425,8 +2269,8 @@
             "name": "switch_neutral_5",
             "source": {
               "column": 9,
-              "line": 119,
-              "offset": 2340
+              "line": 117,
+              "offset": 2288
             }
           },
           {
@@ -2434,42 +2278,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r21",
+                "result": "r20",
                 "source": {
                   "column": 22,
-                  "line": 123,
-                  "offset": 2404
+                  "line": 121,
+                  "offset": 2352
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r22",
+                "result": "r21",
                 "source": {
                   "column": 13,
-                  "line": 123,
-                  "offset": 2395
+                  "line": 121,
+                  "offset": 2343
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r22",
-                  "r21"
+                  "r21",
+                  "r20"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 123,
-                  "offset": 2395
+                  "line": 121,
+                  "offset": 2343
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 122,
-                  "offset": 2380
+                  "line": 120,
+                  "offset": 2328
                 },
                 "targets": [
                   "switch_continue_7"
@@ -2479,8 +2323,8 @@
             "name": "switch_positive_6",
             "source": {
               "column": 9,
-              "line": 122,
-              "offset": 2380
+              "line": 120,
+              "offset": 2328
             }
           },
           {
@@ -2488,45 +2332,45 @@
               {
                 "callee": "renderer_first_directive_id",
                 "opcode": "call",
-                "result": "r23",
+                "result": "r22",
                 "source": {
                   "column": 11,
-                  "line": 125,
-                  "offset": 2417
+                  "line": 123,
+                  "offset": 2365
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r24",
+                "result": "r23",
                 "source": {
                   "column": 45,
-                  "line": 125,
-                  "offset": 2451
+                  "line": 123,
+                  "offset": 2399
                 }
               },
               {
                 "opcode": "compare",
                 "operands": [
-                  "r23",
-                  "r24"
+                  "r22",
+                  "r23"
                 ],
-                "result": "r25",
+                "result": "r24",
                 "source": {
                   "column": 41,
-                  "line": 125,
-                  "offset": 2447
+                  "line": 123,
+                  "offset": 2395
                 }
               },
               {
                 "opcode": "branch3",
                 "operands": [
-                  "r25"
+                  "r24"
                 ],
                 "source": {
                   "column": 5,
-                  "line": 125,
-                  "offset": 2411
+                  "line": 123,
+                  "offset": 2359
                 },
                 "targets": [
                   "switch_negative_8",
@@ -2538,8 +2382,8 @@
             "name": "switch_continue_7",
             "source": {
               "column": 5,
-              "line": 115,
-              "offset": 2249
+              "line": 113,
+              "offset": 2197
             }
           },
           {
@@ -2547,42 +2391,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r26",
+                "result": "r25",
                 "source": {
                   "column": 22,
-                  "line": 127,
-                  "offset": 2487
+                  "line": 125,
+                  "offset": 2435
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r27",
+                "result": "r26",
                 "source": {
                   "column": 13,
-                  "line": 127,
-                  "offset": 2478
+                  "line": 125,
+                  "offset": 2426
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r27",
-                  "r26"
+                  "r26",
+                  "r25"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 127,
-                  "offset": 2478
+                  "line": 125,
+                  "offset": 2426
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 126,
-                  "offset": 2462
+                  "line": 124,
+                  "offset": 2410
                 },
                 "targets": [
                   "switch_continue_11"
@@ -2592,8 +2436,8 @@
             "name": "switch_negative_8",
             "source": {
               "column": 9,
-              "line": 126,
-              "offset": 2462
+              "line": 124,
+              "offset": 2410
             }
           },
           {
@@ -2601,55 +2445,55 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r28",
+                "result": "r27",
                 "source": {
                   "column": 22,
-                  "line": 130,
-                  "offset": 2522
+                  "line": 128,
+                  "offset": 2470
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "load",
                 "operands": [
-                  "r28"
+                  "r27"
                 ],
-                "result": "r29",
+                "result": "r28",
                 "source": {
                   "column": 22,
-                  "line": 130,
-                  "offset": 2522
+                  "line": 128,
+                  "offset": 2470
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r30",
+                "result": "r29",
                 "source": {
                   "column": 13,
-                  "line": 130,
-                  "offset": 2513
+                  "line": 128,
+                  "offset": 2461
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r30",
-                  "r29"
+                  "r29",
+                  "r28"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 130,
-                  "offset": 2513
+                  "line": 128,
+                  "offset": 2461
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 129,
-                  "offset": 2498
+                  "line": 127,
+                  "offset": 2446
                 },
                 "targets": [
                   "switch_continue_11"
@@ -2659,8 +2503,8 @@
             "name": "switch_neutral_9",
             "source": {
               "column": 9,
-              "line": 129,
-              "offset": 2498
+              "line": 127,
+              "offset": 2446
             }
           },
           {
@@ -2668,42 +2512,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r31",
+                "result": "r30",
                 "source": {
                   "column": 22,
-                  "line": 133,
-                  "offset": 2562
+                  "line": 131,
+                  "offset": 2510
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r32",
+                "result": "r31",
                 "source": {
                   "column": 13,
-                  "line": 133,
-                  "offset": 2553
+                  "line": 131,
+                  "offset": 2501
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r32",
-                  "r31"
+                  "r31",
+                  "r30"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 133,
-                  "offset": 2553
+                  "line": 131,
+                  "offset": 2501
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 132,
-                  "offset": 2538
+                  "line": 130,
+                  "offset": 2486
                 },
                 "targets": [
                   "switch_continue_11"
@@ -2713,8 +2557,8 @@
             "name": "switch_positive_10",
             "source": {
               "column": 9,
-              "line": 132,
-              "offset": 2538
+              "line": 130,
+              "offset": 2486
             }
           },
           {
@@ -2722,45 +2566,45 @@
               {
                 "callee": "renderer_last_directive_id",
                 "opcode": "call",
-                "result": "r33",
+                "result": "r32",
                 "source": {
                   "column": 11,
-                  "line": 135,
-                  "offset": 2575
+                  "line": 133,
+                  "offset": 2523
                 }
               },
               {
                 "immediate": 5,
                 "opcode": "const",
-                "result": "r34",
+                "result": "r33",
                 "source": {
                   "column": 44,
-                  "line": 135,
-                  "offset": 2608
+                  "line": 133,
+                  "offset": 2556
                 }
               },
               {
                 "opcode": "compare",
                 "operands": [
-                  "r33",
-                  "r34"
+                  "r32",
+                  "r33"
                 ],
-                "result": "r35",
+                "result": "r34",
                 "source": {
                   "column": 40,
-                  "line": 135,
-                  "offset": 2604
+                  "line": 133,
+                  "offset": 2552
                 }
               },
               {
                 "opcode": "branch3",
                 "operands": [
-                  "r35"
+                  "r34"
                 ],
                 "source": {
                   "column": 5,
-                  "line": 135,
-                  "offset": 2569
+                  "line": 133,
+                  "offset": 2517
                 },
                 "targets": [
                   "switch_negative_12",
@@ -2772,8 +2616,8 @@
             "name": "switch_continue_11",
             "source": {
               "column": 5,
-              "line": 125,
-              "offset": 2411
+              "line": 123,
+              "offset": 2359
             }
           },
           {
@@ -2781,42 +2625,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r36",
+                "result": "r35",
                 "source": {
                   "column": 22,
-                  "line": 137,
-                  "offset": 2644
+                  "line": 135,
+                  "offset": 2592
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r37",
+                "result": "r36",
                 "source": {
                   "column": 13,
-                  "line": 137,
-                  "offset": 2635
+                  "line": 135,
+                  "offset": 2583
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r37",
-                  "r36"
+                  "r36",
+                  "r35"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 137,
-                  "offset": 2635
+                  "line": 135,
+                  "offset": 2583
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 136,
-                  "offset": 2619
+                  "line": 134,
+                  "offset": 2567
                 },
                 "targets": [
                   "switch_continue_15"
@@ -2826,8 +2670,8 @@
             "name": "switch_negative_12",
             "source": {
               "column": 9,
-              "line": 136,
-              "offset": 2619
+              "line": 134,
+              "offset": 2567
             }
           },
           {
@@ -2835,55 +2679,55 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r38",
+                "result": "r37",
                 "source": {
                   "column": 22,
-                  "line": 140,
-                  "offset": 2679
+                  "line": 138,
+                  "offset": 2627
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "load",
                 "operands": [
-                  "r38"
+                  "r37"
                 ],
-                "result": "r39",
+                "result": "r38",
                 "source": {
                   "column": 22,
-                  "line": 140,
-                  "offset": 2679
+                  "line": 138,
+                  "offset": 2627
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r40",
+                "result": "r39",
                 "source": {
                   "column": 13,
-                  "line": 140,
-                  "offset": 2670
+                  "line": 138,
+                  "offset": 2618
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r40",
-                  "r39"
+                  "r39",
+                  "r38"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 140,
-                  "offset": 2670
+                  "line": 138,
+                  "offset": 2618
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 139,
-                  "offset": 2655
+                  "line": 137,
+                  "offset": 2603
                 },
                 "targets": [
                   "switch_continue_15"
@@ -2893,8 +2737,8 @@
             "name": "switch_neutral_13",
             "source": {
               "column": 9,
-              "line": 139,
-              "offset": 2655
+              "line": 137,
+              "offset": 2603
             }
           },
           {
@@ -2902,42 +2746,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r41",
+                "result": "r40",
                 "source": {
                   "column": 22,
-                  "line": 143,
-                  "offset": 2719
+                  "line": 141,
+                  "offset": 2667
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r42",
+                "result": "r41",
                 "source": {
                   "column": 13,
-                  "line": 143,
-                  "offset": 2710
+                  "line": 141,
+                  "offset": 2658
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r42",
-                  "r41"
+                  "r41",
+                  "r40"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 143,
-                  "offset": 2710
+                  "line": 141,
+                  "offset": 2658
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 142,
-                  "offset": 2695
+                  "line": 140,
+                  "offset": 2643
                 },
                 "targets": [
                   "switch_continue_15"
@@ -2947,8 +2791,8 @@
             "name": "switch_positive_14",
             "source": {
               "column": 9,
-              "line": 142,
-              "offset": 2695
+              "line": 140,
+              "offset": 2643
             }
           },
           {
@@ -2956,45 +2800,45 @@
               {
                 "callee": "renderer_first_opcode_id",
                 "opcode": "call",
-                "result": "r43",
+                "result": "r42",
                 "source": {
                   "column": 11,
-                  "line": 145,
-                  "offset": 2732
+                  "line": 143,
+                  "offset": 2680
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r44",
+                "result": "r43",
                 "source": {
                   "column": 42,
-                  "line": 145,
-                  "offset": 2763
+                  "line": 143,
+                  "offset": 2711
                 }
               },
               {
                 "opcode": "compare",
                 "operands": [
-                  "r43",
-                  "r44"
+                  "r42",
+                  "r43"
                 ],
-                "result": "r45",
+                "result": "r44",
                 "source": {
                   "column": 38,
-                  "line": 145,
-                  "offset": 2759
+                  "line": 143,
+                  "offset": 2707
                 }
               },
               {
                 "opcode": "branch3",
                 "operands": [
-                  "r45"
+                  "r44"
                 ],
                 "source": {
                   "column": 5,
-                  "line": 145,
-                  "offset": 2726
+                  "line": 143,
+                  "offset": 2674
                 },
                 "targets": [
                   "switch_negative_16",
@@ -3006,8 +2850,8 @@
             "name": "switch_continue_15",
             "source": {
               "column": 5,
-              "line": 135,
-              "offset": 2569
+              "line": 133,
+              "offset": 2517
             }
           },
           {
@@ -3015,42 +2859,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r46",
+                "result": "r45",
                 "source": {
                   "column": 22,
-                  "line": 147,
-                  "offset": 2799
+                  "line": 145,
+                  "offset": 2747
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r47",
+                "result": "r46",
                 "source": {
                   "column": 13,
-                  "line": 147,
-                  "offset": 2790
+                  "line": 145,
+                  "offset": 2738
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r47",
-                  "r46"
+                  "r46",
+                  "r45"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 147,
-                  "offset": 2790
+                  "line": 145,
+                  "offset": 2738
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 146,
-                  "offset": 2774
+                  "line": 144,
+                  "offset": 2722
                 },
                 "targets": [
                   "switch_continue_19"
@@ -3060,8 +2904,8 @@
             "name": "switch_negative_16",
             "source": {
               "column": 9,
-              "line": 146,
-              "offset": 2774
+              "line": 144,
+              "offset": 2722
             }
           },
           {
@@ -3069,55 +2913,55 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r48",
+                "result": "r47",
                 "source": {
                   "column": 22,
-                  "line": 150,
-                  "offset": 2834
+                  "line": 148,
+                  "offset": 2782
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "load",
                 "operands": [
-                  "r48"
+                  "r47"
                 ],
-                "result": "r49",
+                "result": "r48",
                 "source": {
                   "column": 22,
-                  "line": 150,
-                  "offset": 2834
+                  "line": 148,
+                  "offset": 2782
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r50",
+                "result": "r49",
                 "source": {
                   "column": 13,
-                  "line": 150,
-                  "offset": 2825
+                  "line": 148,
+                  "offset": 2773
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r50",
-                  "r49"
+                  "r49",
+                  "r48"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 150,
-                  "offset": 2825
+                  "line": 148,
+                  "offset": 2773
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 149,
-                  "offset": 2810
+                  "line": 147,
+                  "offset": 2758
                 },
                 "targets": [
                   "switch_continue_19"
@@ -3127,8 +2971,8 @@
             "name": "switch_neutral_17",
             "source": {
               "column": 9,
-              "line": 149,
-              "offset": 2810
+              "line": 147,
+              "offset": 2758
             }
           },
           {
@@ -3136,42 +2980,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r51",
+                "result": "r50",
                 "source": {
                   "column": 22,
-                  "line": 153,
-                  "offset": 2874
+                  "line": 151,
+                  "offset": 2822
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r52",
+                "result": "r51",
                 "source": {
                   "column": 13,
-                  "line": 153,
-                  "offset": 2865
+                  "line": 151,
+                  "offset": 2813
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r52",
-                  "r51"
+                  "r51",
+                  "r50"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 153,
-                  "offset": 2865
+                  "line": 151,
+                  "offset": 2813
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 152,
-                  "offset": 2850
+                  "line": 150,
+                  "offset": 2798
                 },
                 "targets": [
                   "switch_continue_19"
@@ -3181,8 +3025,8 @@
             "name": "switch_positive_18",
             "source": {
               "column": 9,
-              "line": 152,
-              "offset": 2850
+              "line": 150,
+              "offset": 2798
             }
           },
           {
@@ -3190,45 +3034,45 @@
               {
                 "callee": "renderer_last_opcode_id",
                 "opcode": "call",
-                "result": "r53",
+                "result": "r52",
                 "source": {
                   "column": 11,
-                  "line": 155,
-                  "offset": 2887
+                  "line": 153,
+                  "offset": 2835
                 }
               },
               {
-                "immediate": 7,
+                "immediate": 6,
                 "opcode": "const",
-                "result": "r54",
+                "result": "r53",
                 "source": {
                   "column": 41,
-                  "line": 155,
-                  "offset": 2917
+                  "line": 153,
+                  "offset": 2865
                 }
               },
               {
                 "opcode": "compare",
                 "operands": [
-                  "r53",
-                  "r54"
+                  "r52",
+                  "r53"
                 ],
-                "result": "r55",
+                "result": "r54",
                 "source": {
                   "column": 37,
-                  "line": 155,
-                  "offset": 2913
+                  "line": 153,
+                  "offset": 2861
                 }
               },
               {
                 "opcode": "branch3",
                 "operands": [
-                  "r55"
+                  "r54"
                 ],
                 "source": {
                   "column": 5,
-                  "line": 155,
-                  "offset": 2881
+                  "line": 153,
+                  "offset": 2829
                 },
                 "targets": [
                   "switch_negative_20",
@@ -3240,8 +3084,8 @@
             "name": "switch_continue_19",
             "source": {
               "column": 5,
-              "line": 145,
-              "offset": 2726
+              "line": 143,
+              "offset": 2674
             }
           },
           {
@@ -3249,42 +3093,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r56",
+                "result": "r55",
                 "source": {
                   "column": 22,
-                  "line": 157,
-                  "offset": 2953
+                  "line": 155,
+                  "offset": 2901
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r57",
+                "result": "r56",
                 "source": {
                   "column": 13,
-                  "line": 157,
-                  "offset": 2944
+                  "line": 155,
+                  "offset": 2892
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r57",
-                  "r56"
+                  "r56",
+                  "r55"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 157,
-                  "offset": 2944
+                  "line": 155,
+                  "offset": 2892
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 156,
-                  "offset": 2928
+                  "line": 154,
+                  "offset": 2876
                 },
                 "targets": [
                   "switch_continue_23"
@@ -3294,8 +3138,8 @@
             "name": "switch_negative_20",
             "source": {
               "column": 9,
-              "line": 156,
-              "offset": 2928
+              "line": 154,
+              "offset": 2876
             }
           },
           {
@@ -3303,55 +3147,55 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r58",
+                "result": "r57",
                 "source": {
                   "column": 22,
-                  "line": 160,
-                  "offset": 2988
+                  "line": 158,
+                  "offset": 2936
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "load",
                 "operands": [
-                  "r58"
+                  "r57"
                 ],
-                "result": "r59",
+                "result": "r58",
                 "source": {
                   "column": 22,
-                  "line": 160,
-                  "offset": 2988
+                  "line": 158,
+                  "offset": 2936
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r60",
+                "result": "r59",
                 "source": {
                   "column": 13,
-                  "line": 160,
-                  "offset": 2979
+                  "line": 158,
+                  "offset": 2927
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r60",
-                  "r59"
+                  "r59",
+                  "r58"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 160,
-                  "offset": 2979
+                  "line": 158,
+                  "offset": 2927
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 159,
-                  "offset": 2964
+                  "line": 157,
+                  "offset": 2912
                 },
                 "targets": [
                   "switch_continue_23"
@@ -3361,8 +3205,8 @@
             "name": "switch_neutral_21",
             "source": {
               "column": 9,
-              "line": 159,
-              "offset": 2964
+              "line": 157,
+              "offset": 2912
             }
           },
           {
@@ -3370,42 +3214,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r61",
+                "result": "r60",
                 "source": {
                   "column": 22,
-                  "line": 163,
-                  "offset": 3028
+                  "line": 161,
+                  "offset": 2976
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r62",
+                "result": "r61",
                 "source": {
                   "column": 13,
-                  "line": 163,
-                  "offset": 3019
+                  "line": 161,
+                  "offset": 2967
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r62",
-                  "r61"
+                  "r61",
+                  "r60"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 163,
-                  "offset": 3019
+                  "line": 161,
+                  "offset": 2967
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 162,
-                  "offset": 3004
+                  "line": 160,
+                  "offset": 2952
                 },
                 "targets": [
                   "switch_continue_23"
@@ -3415,8 +3259,8 @@
             "name": "switch_positive_22",
             "source": {
               "column": 9,
-              "line": 162,
-              "offset": 3004
+              "line": 160,
+              "offset": 2952
             }
           },
           {
@@ -3424,45 +3268,45 @@
               {
                 "callee": "renderer_directive_end_id",
                 "opcode": "call",
-                "result": "r63",
+                "result": "r62",
                 "source": {
                   "column": 11,
-                  "line": 165,
-                  "offset": 3041
+                  "line": 163,
+                  "offset": 2989
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r64",
+                "result": "r63",
                 "source": {
                   "column": 43,
-                  "line": 165,
-                  "offset": 3073
+                  "line": 163,
+                  "offset": 3021
                 }
               },
               {
                 "opcode": "compare",
                 "operands": [
-                  "r63",
-                  "r64"
+                  "r62",
+                  "r63"
                 ],
-                "result": "r65",
+                "result": "r64",
                 "source": {
                   "column": 39,
-                  "line": 165,
-                  "offset": 3069
+                  "line": 163,
+                  "offset": 3017
                 }
               },
               {
                 "opcode": "branch3",
                 "operands": [
-                  "r65"
+                  "r64"
                 ],
                 "source": {
                   "column": 5,
-                  "line": 165,
-                  "offset": 3035
+                  "line": 163,
+                  "offset": 2983
                 },
                 "targets": [
                   "switch_negative_24",
@@ -3474,8 +3318,8 @@
             "name": "switch_continue_23",
             "source": {
               "column": 5,
-              "line": 155,
-              "offset": 2881
+              "line": 153,
+              "offset": 2829
             }
           },
           {
@@ -3483,42 +3327,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r66",
+                "result": "r65",
                 "source": {
                   "column": 22,
-                  "line": 167,
-                  "offset": 3109
+                  "line": 165,
+                  "offset": 3057
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r67",
+                "result": "r66",
                 "source": {
                   "column": 13,
-                  "line": 167,
-                  "offset": 3100
+                  "line": 165,
+                  "offset": 3048
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r67",
-                  "r66"
+                  "r66",
+                  "r65"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 167,
-                  "offset": 3100
+                  "line": 165,
+                  "offset": 3048
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 166,
-                  "offset": 3084
+                  "line": 164,
+                  "offset": 3032
                 },
                 "targets": [
                   "switch_continue_27"
@@ -3528,8 +3372,8 @@
             "name": "switch_negative_24",
             "source": {
               "column": 9,
-              "line": 166,
-              "offset": 3084
+              "line": 164,
+              "offset": 3032
             }
           },
           {
@@ -3537,55 +3381,55 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r68",
+                "result": "r67",
                 "source": {
                   "column": 22,
-                  "line": 170,
-                  "offset": 3144
+                  "line": 168,
+                  "offset": 3092
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "load",
                 "operands": [
-                  "r68"
+                  "r67"
                 ],
-                "result": "r69",
+                "result": "r68",
                 "source": {
                   "column": 22,
-                  "line": 170,
-                  "offset": 3144
+                  "line": 168,
+                  "offset": 3092
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r70",
+                "result": "r69",
                 "source": {
                   "column": 13,
-                  "line": 170,
-                  "offset": 3135
+                  "line": 168,
+                  "offset": 3083
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r70",
-                  "r69"
+                  "r69",
+                  "r68"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 170,
-                  "offset": 3135
+                  "line": 168,
+                  "offset": 3083
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 169,
-                  "offset": 3120
+                  "line": 167,
+                  "offset": 3068
                 },
                 "targets": [
                   "switch_continue_27"
@@ -3595,8 +3439,8 @@
             "name": "switch_neutral_25",
             "source": {
               "column": 9,
-              "line": 169,
-              "offset": 3120
+              "line": 167,
+              "offset": 3068
             }
           },
           {
@@ -3604,42 +3448,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r71",
+                "result": "r70",
                 "source": {
                   "column": 22,
-                  "line": 173,
-                  "offset": 3184
+                  "line": 171,
+                  "offset": 3132
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r72",
+                "result": "r71",
                 "source": {
                   "column": 13,
-                  "line": 173,
-                  "offset": 3175
+                  "line": 171,
+                  "offset": 3123
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r72",
-                  "r71"
+                  "r71",
+                  "r70"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 173,
-                  "offset": 3175
+                  "line": 171,
+                  "offset": 3123
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 172,
-                  "offset": 3160
+                  "line": 170,
+                  "offset": 3108
                 },
                 "targets": [
                   "switch_continue_27"
@@ -3649,8 +3493,8 @@
             "name": "switch_positive_26",
             "source": {
               "column": 9,
-              "line": 172,
-              "offset": 3160
+              "line": 170,
+              "offset": 3108
             }
           },
           {
@@ -3658,45 +3502,45 @@
               {
                 "callee": "renderer_directive_s3asm_id",
                 "opcode": "call",
-                "result": "r73",
+                "result": "r72",
                 "source": {
                   "column": 11,
-                  "line": 175,
-                  "offset": 3197
+                  "line": 173,
+                  "offset": 3145
                 }
               },
               {
                 "immediate": 5,
                 "opcode": "const",
-                "result": "r74",
+                "result": "r73",
                 "source": {
                   "column": 45,
-                  "line": 175,
-                  "offset": 3231
+                  "line": 173,
+                  "offset": 3179
                 }
               },
               {
                 "opcode": "compare",
                 "operands": [
-                  "r73",
-                  "r74"
+                  "r72",
+                  "r73"
                 ],
-                "result": "r75",
+                "result": "r74",
                 "source": {
                   "column": 41,
-                  "line": 175,
-                  "offset": 3227
+                  "line": 173,
+                  "offset": 3175
                 }
               },
               {
                 "opcode": "branch3",
                 "operands": [
-                  "r75"
+                  "r74"
                 ],
                 "source": {
                   "column": 5,
-                  "line": 175,
-                  "offset": 3191
+                  "line": 173,
+                  "offset": 3139
                 },
                 "targets": [
                   "switch_negative_28",
@@ -3708,8 +3552,8 @@
             "name": "switch_continue_27",
             "source": {
               "column": 5,
-              "line": 165,
-              "offset": 3035
+              "line": 163,
+              "offset": 2983
             }
           },
           {
@@ -3717,42 +3561,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r76",
+                "result": "r75",
                 "source": {
                   "column": 22,
-                  "line": 177,
-                  "offset": 3267
+                  "line": 175,
+                  "offset": 3215
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r77",
+                "result": "r76",
                 "source": {
                   "column": 13,
-                  "line": 177,
-                  "offset": 3258
+                  "line": 175,
+                  "offset": 3206
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r77",
-                  "r76"
+                  "r76",
+                  "r75"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 177,
-                  "offset": 3258
+                  "line": 175,
+                  "offset": 3206
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 176,
-                  "offset": 3242
+                  "line": 174,
+                  "offset": 3190
                 },
                 "targets": [
                   "switch_continue_31"
@@ -3762,8 +3606,8 @@
             "name": "switch_negative_28",
             "source": {
               "column": 9,
-              "line": 176,
-              "offset": 3242
+              "line": 174,
+              "offset": 3190
             }
           },
           {
@@ -3771,55 +3615,55 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r78",
+                "result": "r77",
                 "source": {
                   "column": 22,
-                  "line": 180,
-                  "offset": 3302
+                  "line": 178,
+                  "offset": 3250
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "load",
                 "operands": [
-                  "r78"
+                  "r77"
                 ],
-                "result": "r79",
+                "result": "r78",
                 "source": {
                   "column": 22,
-                  "line": 180,
-                  "offset": 3302
+                  "line": 178,
+                  "offset": 3250
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r80",
+                "result": "r79",
                 "source": {
                   "column": 13,
-                  "line": 180,
-                  "offset": 3293
+                  "line": 178,
+                  "offset": 3241
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r80",
-                  "r79"
+                  "r79",
+                  "r78"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 180,
-                  "offset": 3293
+                  "line": 178,
+                  "offset": 3241
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 179,
-                  "offset": 3278
+                  "line": 177,
+                  "offset": 3226
                 },
                 "targets": [
                   "switch_continue_31"
@@ -3829,8 +3673,8 @@
             "name": "switch_neutral_29",
             "source": {
               "column": 9,
-              "line": 179,
-              "offset": 3278
+              "line": 177,
+              "offset": 3226
             }
           },
           {
@@ -3838,42 +3682,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r81",
+                "result": "r80",
                 "source": {
                   "column": 22,
-                  "line": 183,
-                  "offset": 3342
+                  "line": 181,
+                  "offset": 3290
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r82",
+                "result": "r81",
                 "source": {
                   "column": 13,
-                  "line": 183,
-                  "offset": 3333
+                  "line": 181,
+                  "offset": 3281
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r82",
-                  "r81"
+                  "r81",
+                  "r80"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 183,
-                  "offset": 3333
+                  "line": 181,
+                  "offset": 3281
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 182,
-                  "offset": 3318
+                  "line": 180,
+                  "offset": 3266
                 },
                 "targets": [
                   "switch_continue_31"
@@ -3883,8 +3727,8 @@
             "name": "switch_positive_30",
             "source": {
               "column": 9,
-              "line": 182,
-              "offset": 3318
+              "line": 180,
+              "offset": 3266
             }
           },
           {
@@ -3892,45 +3736,45 @@
               {
                 "callee": "renderer_opcode_tadd_id",
                 "opcode": "call",
-                "result": "r83",
+                "result": "r82",
                 "source": {
                   "column": 11,
-                  "line": 185,
-                  "offset": 3355
+                  "line": 183,
+                  "offset": 3303
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r84",
+                "result": "r83",
                 "source": {
                   "column": 41,
-                  "line": 185,
-                  "offset": 3385
+                  "line": 183,
+                  "offset": 3333
                 }
               },
               {
                 "opcode": "compare",
                 "operands": [
-                  "r83",
-                  "r84"
+                  "r82",
+                  "r83"
                 ],
-                "result": "r85",
+                "result": "r84",
                 "source": {
                   "column": 37,
-                  "line": 185,
-                  "offset": 3381
+                  "line": 183,
+                  "offset": 3329
                 }
               },
               {
                 "opcode": "branch3",
                 "operands": [
-                  "r85"
+                  "r84"
                 ],
                 "source": {
                   "column": 5,
-                  "line": 185,
-                  "offset": 3349
+                  "line": 183,
+                  "offset": 3297
                 },
                 "targets": [
                   "switch_negative_32",
@@ -3942,8 +3786,8 @@
             "name": "switch_continue_31",
             "source": {
               "column": 5,
-              "line": 175,
-              "offset": 3191
+              "line": 173,
+              "offset": 3139
             }
           },
           {
@@ -3951,42 +3795,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r86",
+                "result": "r85",
                 "source": {
                   "column": 22,
-                  "line": 187,
-                  "offset": 3421
+                  "line": 185,
+                  "offset": 3369
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r87",
+                "result": "r86",
                 "source": {
                   "column": 13,
-                  "line": 187,
-                  "offset": 3412
+                  "line": 185,
+                  "offset": 3360
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r87",
-                  "r86"
+                  "r86",
+                  "r85"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 187,
-                  "offset": 3412
+                  "line": 185,
+                  "offset": 3360
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 186,
-                  "offset": 3396
+                  "line": 184,
+                  "offset": 3344
                 },
                 "targets": [
                   "switch_continue_35"
@@ -3996,8 +3840,8 @@
             "name": "switch_negative_32",
             "source": {
               "column": 9,
-              "line": 186,
-              "offset": 3396
+              "line": 184,
+              "offset": 3344
             }
           },
           {
@@ -4005,55 +3849,55 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r88",
+                "result": "r87",
                 "source": {
                   "column": 22,
-                  "line": 190,
-                  "offset": 3456
+                  "line": 188,
+                  "offset": 3404
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "load",
                 "operands": [
-                  "r88"
+                  "r87"
                 ],
-                "result": "r89",
+                "result": "r88",
                 "source": {
                   "column": 22,
-                  "line": 190,
-                  "offset": 3456
+                  "line": 188,
+                  "offset": 3404
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r90",
+                "result": "r89",
                 "source": {
                   "column": 13,
-                  "line": 190,
-                  "offset": 3447
+                  "line": 188,
+                  "offset": 3395
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r90",
-                  "r89"
+                  "r89",
+                  "r88"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 190,
-                  "offset": 3447
+                  "line": 188,
+                  "offset": 3395
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 189,
-                  "offset": 3432
+                  "line": 187,
+                  "offset": 3380
                 },
                 "targets": [
                   "switch_continue_35"
@@ -4063,8 +3907,8 @@
             "name": "switch_neutral_33",
             "source": {
               "column": 9,
-              "line": 189,
-              "offset": 3432
+              "line": 187,
+              "offset": 3380
             }
           },
           {
@@ -4072,42 +3916,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r91",
+                "result": "r90",
                 "source": {
                   "column": 22,
-                  "line": 193,
-                  "offset": 3496
+                  "line": 191,
+                  "offset": 3444
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r92",
+                "result": "r91",
                 "source": {
                   "column": 13,
-                  "line": 193,
-                  "offset": 3487
+                  "line": 191,
+                  "offset": 3435
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r92",
-                  "r91"
+                  "r91",
+                  "r90"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 193,
-                  "offset": 3487
+                  "line": 191,
+                  "offset": 3435
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 192,
-                  "offset": 3472
+                  "line": 190,
+                  "offset": 3420
                 },
                 "targets": [
                   "switch_continue_35"
@@ -4117,8 +3961,8 @@
             "name": "switch_positive_34",
             "source": {
               "column": 9,
-              "line": 192,
-              "offset": 3472
+              "line": 190,
+              "offset": 3420
             }
           },
           {
@@ -4126,45 +3970,45 @@
               {
                 "callee": "renderer_opcode_tret_id",
                 "opcode": "call",
-                "result": "r93",
+                "result": "r92",
                 "source": {
                   "column": 11,
-                  "line": 195,
-                  "offset": 3509
+                  "line": 193,
+                  "offset": 3457
                 }
               },
               {
-                "immediate": 7,
+                "immediate": 6,
                 "opcode": "const",
-                "result": "r94",
+                "result": "r93",
                 "source": {
                   "column": 41,
-                  "line": 195,
-                  "offset": 3539
+                  "line": 193,
+                  "offset": 3487
                 }
               },
               {
                 "opcode": "compare",
                 "operands": [
-                  "r93",
-                  "r94"
+                  "r92",
+                  "r93"
                 ],
-                "result": "r95",
+                "result": "r94",
                 "source": {
                   "column": 37,
-                  "line": 195,
-                  "offset": 3535
+                  "line": 193,
+                  "offset": 3483
                 }
               },
               {
                 "opcode": "branch3",
                 "operands": [
-                  "r95"
+                  "r94"
                 ],
                 "source": {
                   "column": 5,
-                  "line": 195,
-                  "offset": 3503
+                  "line": 193,
+                  "offset": 3451
                 },
                 "targets": [
                   "switch_negative_36",
@@ -4176,8 +4020,8 @@
             "name": "switch_continue_35",
             "source": {
               "column": 5,
-              "line": 185,
-              "offset": 3349
+              "line": 183,
+              "offset": 3297
             }
           },
           {
@@ -4185,42 +4029,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r96",
+                "result": "r95",
                 "source": {
                   "column": 22,
-                  "line": 197,
-                  "offset": 3575
+                  "line": 195,
+                  "offset": 3523
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r97",
+                "result": "r96",
                 "source": {
                   "column": 13,
-                  "line": 197,
-                  "offset": 3566
+                  "line": 195,
+                  "offset": 3514
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r97",
-                  "r96"
+                  "r96",
+                  "r95"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 197,
-                  "offset": 3566
+                  "line": 195,
+                  "offset": 3514
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 196,
-                  "offset": 3550
+                  "line": 194,
+                  "offset": 3498
                 },
                 "targets": [
                   "switch_continue_39"
@@ -4230,8 +4074,8 @@
             "name": "switch_negative_36",
             "source": {
               "column": 9,
-              "line": 196,
-              "offset": 3550
+              "line": 194,
+              "offset": 3498
             }
           },
           {
@@ -4239,55 +4083,55 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r98",
+                "result": "r97",
                 "source": {
                   "column": 22,
-                  "line": 200,
-                  "offset": 3610
+                  "line": 198,
+                  "offset": 3558
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "load",
                 "operands": [
-                  "r98"
+                  "r97"
                 ],
-                "result": "r99",
+                "result": "r98",
                 "source": {
                   "column": 22,
-                  "line": 200,
-                  "offset": 3610
+                  "line": 198,
+                  "offset": 3558
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r100",
+                "result": "r99",
                 "source": {
                   "column": 13,
-                  "line": 200,
-                  "offset": 3601
+                  "line": 198,
+                  "offset": 3549
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r100",
-                  "r99"
+                  "r99",
+                  "r98"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 200,
-                  "offset": 3601
+                  "line": 198,
+                  "offset": 3549
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 199,
-                  "offset": 3586
+                  "line": 197,
+                  "offset": 3534
                 },
                 "targets": [
                   "switch_continue_39"
@@ -4297,8 +4141,8 @@
             "name": "switch_neutral_37",
             "source": {
               "column": 9,
-              "line": 199,
-              "offset": 3586
+              "line": 197,
+              "offset": 3534
             }
           },
           {
@@ -4306,42 +4150,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r101",
+                "result": "r100",
                 "source": {
                   "column": 22,
-                  "line": 203,
-                  "offset": 3650
+                  "line": 201,
+                  "offset": 3598
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r102",
+                "result": "r101",
                 "source": {
                   "column": 13,
-                  "line": 203,
-                  "offset": 3641
+                  "line": 201,
+                  "offset": 3589
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r102",
-                  "r101"
+                  "r101",
+                  "r100"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 203,
-                  "offset": 3641
+                  "line": 201,
+                  "offset": 3589
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 202,
-                  "offset": 3626
+                  "line": 200,
+                  "offset": 3574
                 },
                 "targets": [
                   "switch_continue_39"
@@ -4351,8 +4195,8 @@
             "name": "switch_positive_38",
             "source": {
               "column": 9,
-              "line": 202,
-              "offset": 3626
+              "line": 200,
+              "offset": 3574
             }
           },
           {
@@ -4360,58 +4204,58 @@
               {
                 "callee": "renderer_first_directive_id",
                 "opcode": "call",
-                "result": "r103",
+                "result": "r102",
                 "source": {
                   "column": 42,
-                  "line": 205,
-                  "offset": 3694
+                  "line": 203,
+                  "offset": 3642
                 }
               },
               {
                 "callee": "renderer_supports_directive_id",
                 "opcode": "call",
                 "operands": [
-                  "r103"
+                  "r102"
                 ],
-                "result": "r104",
+                "result": "r103",
                 "source": {
                   "column": 11,
-                  "line": 205,
-                  "offset": 3663
+                  "line": 203,
+                  "offset": 3611
                 }
               },
               {
                 "immediate": 1,
                 "opcode": "const",
-                "result": "r105",
+                "result": "r104",
                 "source": {
                   "column": 77,
-                  "line": 205,
-                  "offset": 3729
+                  "line": 203,
+                  "offset": 3677
                 }
               },
               {
                 "opcode": "compare",
                 "operands": [
-                  "r104",
-                  "r105"
+                  "r103",
+                  "r104"
                 ],
-                "result": "r106",
+                "result": "r105",
                 "source": {
                   "column": 73,
-                  "line": 205,
-                  "offset": 3725
+                  "line": 203,
+                  "offset": 3673
                 }
               },
               {
                 "opcode": "branch3",
                 "operands": [
-                  "r106"
+                  "r105"
                 ],
                 "source": {
                   "column": 5,
-                  "line": 205,
-                  "offset": 3657
+                  "line": 203,
+                  "offset": 3605
                 },
                 "targets": [
                   "switch_negative_40",
@@ -4423,8 +4267,8 @@
             "name": "switch_continue_39",
             "source": {
               "column": 5,
-              "line": 195,
-              "offset": 3503
+              "line": 193,
+              "offset": 3451
             }
           },
           {
@@ -4432,42 +4276,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r107",
+                "result": "r106",
                 "source": {
                   "column": 22,
-                  "line": 207,
-                  "offset": 3765
+                  "line": 205,
+                  "offset": 3713
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r108",
+                "result": "r107",
                 "source": {
                   "column": 13,
-                  "line": 207,
-                  "offset": 3756
+                  "line": 205,
+                  "offset": 3704
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r108",
-                  "r107"
+                  "r107",
+                  "r106"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 207,
-                  "offset": 3756
+                  "line": 205,
+                  "offset": 3704
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 206,
-                  "offset": 3740
+                  "line": 204,
+                  "offset": 3688
                 },
                 "targets": [
                   "switch_continue_43"
@@ -4477,8 +4321,8 @@
             "name": "switch_negative_40",
             "source": {
               "column": 9,
-              "line": 206,
-              "offset": 3740
+              "line": 204,
+              "offset": 3688
             }
           },
           {
@@ -4486,55 +4330,55 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r109",
+                "result": "r108",
                 "source": {
                   "column": 22,
-                  "line": 210,
-                  "offset": 3800
+                  "line": 208,
+                  "offset": 3748
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "load",
                 "operands": [
-                  "r109"
+                  "r108"
                 ],
-                "result": "r110",
+                "result": "r109",
                 "source": {
                   "column": 22,
-                  "line": 210,
-                  "offset": 3800
+                  "line": 208,
+                  "offset": 3748
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r111",
+                "result": "r110",
                 "source": {
                   "column": 13,
-                  "line": 210,
-                  "offset": 3791
+                  "line": 208,
+                  "offset": 3739
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r111",
-                  "r110"
+                  "r110",
+                  "r109"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 210,
-                  "offset": 3791
+                  "line": 208,
+                  "offset": 3739
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 209,
-                  "offset": 3776
+                  "line": 207,
+                  "offset": 3724
                 },
                 "targets": [
                   "switch_continue_43"
@@ -4544,8 +4388,8 @@
             "name": "switch_neutral_41",
             "source": {
               "column": 9,
-              "line": 209,
-              "offset": 3776
+              "line": 207,
+              "offset": 3724
             }
           },
           {
@@ -4553,42 +4397,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r112",
+                "result": "r111",
                 "source": {
                   "column": 22,
-                  "line": 213,
-                  "offset": 3840
+                  "line": 211,
+                  "offset": 3788
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r113",
+                "result": "r112",
                 "source": {
                   "column": 13,
-                  "line": 213,
-                  "offset": 3831
+                  "line": 211,
+                  "offset": 3779
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r113",
-                  "r112"
+                  "r112",
+                  "r111"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 213,
-                  "offset": 3831
+                  "line": 211,
+                  "offset": 3779
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 212,
-                  "offset": 3816
+                  "line": 210,
+                  "offset": 3764
                 },
                 "targets": [
                   "switch_continue_43"
@@ -4598,91 +4442,67 @@
             "name": "switch_positive_42",
             "source": {
               "column": 9,
-              "line": 212,
-              "offset": 3816
+              "line": 210,
+              "offset": 3764
             }
           },
           {
             "instructions": [
               {
-                "immediate": 1,
+                "immediate": -1,
                 "opcode": "const",
-                "result": "r114",
-                "source": {
-                  "column": 43,
-                  "line": 215,
-                  "offset": 3885
-                }
-              },
-              {
-                "opcode": "invert",
-                "operands": [
-                  "r114"
-                ],
-                "result": "r115",
+                "result": "r113",
                 "source": {
                   "column": 42,
-                  "line": 215,
-                  "offset": 3884
+                  "line": 213,
+                  "offset": 3832
                 }
               },
               {
                 "callee": "renderer_supports_directive_id",
                 "opcode": "call",
                 "operands": [
-                  "r115"
+                  "r113"
                 ],
-                "result": "r116",
+                "result": "r114",
                 "source": {
                   "column": 11,
-                  "line": 215,
-                  "offset": 3853
+                  "line": 213,
+                  "offset": 3801
                 }
               },
               {
-                "immediate": 1,
+                "immediate": -1,
                 "opcode": "const",
-                "result": "r117",
-                "source": {
-                  "column": 51,
-                  "line": 215,
-                  "offset": 3893
-                }
-              },
-              {
-                "opcode": "invert",
-                "operands": [
-                  "r117"
-                ],
-                "result": "r118",
+                "result": "r115",
                 "source": {
                   "column": 50,
-                  "line": 215,
-                  "offset": 3892
+                  "line": 213,
+                  "offset": 3840
                 }
               },
               {
                 "opcode": "compare",
                 "operands": [
-                  "r116",
-                  "r118"
+                  "r114",
+                  "r115"
                 ],
-                "result": "r119",
+                "result": "r116",
                 "source": {
                   "column": 46,
-                  "line": 215,
-                  "offset": 3888
+                  "line": 213,
+                  "offset": 3836
                 }
               },
               {
                 "opcode": "branch3",
                 "operands": [
-                  "r119"
+                  "r116"
                 ],
                 "source": {
                   "column": 5,
-                  "line": 215,
-                  "offset": 3847
+                  "line": 213,
+                  "offset": 3795
                 },
                 "targets": [
                   "switch_negative_44",
@@ -4694,8 +4514,8 @@
             "name": "switch_continue_43",
             "source": {
               "column": 5,
-              "line": 205,
-              "offset": 3657
+              "line": 203,
+              "offset": 3605
             }
           },
           {
@@ -4703,11 +4523,78 @@
               {
                 "immediate": 0,
                 "opcode": "const",
+                "result": "r117",
+                "source": {
+                  "column": 22,
+                  "line": 215,
+                  "offset": 3877
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r118",
+                "source": {
+                  "column": 13,
+                  "line": 215,
+                  "offset": 3868
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r118",
+                  "r117"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 215,
+                  "offset": 3868
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 214,
+                  "offset": 3852
+                },
+                "targets": [
+                  "switch_continue_47"
+                ]
+              }
+            ],
+            "name": "switch_negative_44",
+            "source": {
+              "column": 9,
+              "line": 214,
+              "offset": 3852
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r119",
+                "source": {
+                  "column": 22,
+                  "line": 218,
+                  "offset": 3912
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "load",
+                "operands": [
+                  "r119"
+                ],
                 "result": "r120",
                 "source": {
                   "column": 22,
-                  "line": 217,
-                  "offset": 3929
+                  "line": 218,
+                  "offset": 3912
                 }
               },
               {
@@ -4716,8 +4603,8 @@
                 "result": "r121",
                 "source": {
                   "column": 13,
-                  "line": 217,
-                  "offset": 3920
+                  "line": 218,
+                  "offset": 3903
                 }
               },
               {
@@ -4729,27 +4616,27 @@
                 ],
                 "source": {
                   "column": 13,
-                  "line": 217,
-                  "offset": 3920
+                  "line": 218,
+                  "offset": 3903
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 216,
-                  "offset": 3904
+                  "line": 217,
+                  "offset": 3888
                 },
                 "targets": [
                   "switch_continue_47"
                 ]
               }
             ],
-            "name": "switch_negative_44",
+            "name": "switch_neutral_45",
             "source": {
               "column": 9,
-              "line": 216,
-              "offset": 3904
+              "line": 217,
+              "offset": 3888
             }
           },
           {
@@ -4760,106 +4647,39 @@
                 "result": "r122",
                 "source": {
                   "column": 22,
-                  "line": 220,
-                  "offset": 3964
+                  "line": 221,
+                  "offset": 3952
                 }
               },
               {
-                "memory": "m0",
-                "opcode": "load",
-                "operands": [
-                  "r122"
-                ],
+                "immediate": 0,
+                "opcode": "const",
                 "result": "r123",
                 "source": {
-                  "column": 22,
-                  "line": 220,
-                  "offset": 3964
-                }
-              },
-              {
-                "immediate": 0,
-                "opcode": "const",
-                "result": "r124",
-                "source": {
                   "column": 13,
-                  "line": 220,
-                  "offset": 3955
+                  "line": 221,
+                  "offset": 3943
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r124",
-                  "r123"
+                  "r123",
+                  "r122"
                 ],
                 "source": {
                   "column": 13,
+                  "line": 221,
+                  "offset": 3943
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
                   "line": 220,
-                  "offset": 3955
-                }
-              },
-              {
-                "opcode": "jump",
-                "source": {
-                  "column": 9,
-                  "line": 219,
-                  "offset": 3940
-                },
-                "targets": [
-                  "switch_continue_47"
-                ]
-              }
-            ],
-            "name": "switch_neutral_45",
-            "source": {
-              "column": 9,
-              "line": 219,
-              "offset": 3940
-            }
-          },
-          {
-            "instructions": [
-              {
-                "immediate": 0,
-                "opcode": "const",
-                "result": "r125",
-                "source": {
-                  "column": 22,
-                  "line": 223,
-                  "offset": 4004
-                }
-              },
-              {
-                "immediate": 0,
-                "opcode": "const",
-                "result": "r126",
-                "source": {
-                  "column": 13,
-                  "line": 223,
-                  "offset": 3995
-                }
-              },
-              {
-                "memory": "m0",
-                "opcode": "store",
-                "operands": [
-                  "r126",
-                  "r125"
-                ],
-                "source": {
-                  "column": 13,
-                  "line": 223,
-                  "offset": 3995
-                }
-              },
-              {
-                "opcode": "jump",
-                "source": {
-                  "column": 9,
-                  "line": 222,
-                  "offset": 3980
+                  "offset": 3928
                 },
                 "targets": [
                   "switch_continue_47"
@@ -4869,8 +4689,8 @@
             "name": "switch_positive_46",
             "source": {
               "column": 9,
-              "line": 222,
-              "offset": 3980
+              "line": 220,
+              "offset": 3928
             }
           },
           {
@@ -4878,58 +4698,58 @@
               {
                 "callee": "renderer_last_opcode_id",
                 "opcode": "call",
-                "result": "r127",
+                "result": "r124",
                 "source": {
                   "column": 39,
-                  "line": 225,
-                  "offset": 4045
+                  "line": 223,
+                  "offset": 3993
                 }
               },
               {
                 "callee": "renderer_supports_opcode_id",
                 "opcode": "call",
                 "operands": [
-                  "r127"
+                  "r124"
                 ],
-                "result": "r128",
+                "result": "r125",
                 "source": {
                   "column": 11,
-                  "line": 225,
-                  "offset": 4017
+                  "line": 223,
+                  "offset": 3965
                 }
               },
               {
                 "immediate": 1,
                 "opcode": "const",
-                "result": "r129",
+                "result": "r126",
                 "source": {
                   "column": 70,
-                  "line": 225,
-                  "offset": 4076
+                  "line": 223,
+                  "offset": 4024
                 }
               },
               {
                 "opcode": "compare",
                 "operands": [
-                  "r128",
-                  "r129"
+                  "r125",
+                  "r126"
                 ],
-                "result": "r130",
+                "result": "r127",
                 "source": {
                   "column": 66,
-                  "line": 225,
-                  "offset": 4072
+                  "line": 223,
+                  "offset": 4020
                 }
               },
               {
                 "opcode": "branch3",
                 "operands": [
-                  "r130"
+                  "r127"
                 ],
                 "source": {
                   "column": 5,
-                  "line": 225,
-                  "offset": 4011
+                  "line": 223,
+                  "offset": 3959
                 },
                 "targets": [
                   "switch_negative_48",
@@ -4941,8 +4761,8 @@
             "name": "switch_continue_47",
             "source": {
               "column": 5,
-              "line": 215,
-              "offset": 3847
+              "line": 213,
+              "offset": 3795
             }
           },
           {
@@ -4950,11 +4770,78 @@
               {
                 "immediate": 0,
                 "opcode": "const",
+                "result": "r128",
+                "source": {
+                  "column": 22,
+                  "line": 225,
+                  "offset": 4060
+                }
+              },
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r129",
+                "source": {
+                  "column": 13,
+                  "line": 225,
+                  "offset": 4051
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "store",
+                "operands": [
+                  "r129",
+                  "r128"
+                ],
+                "source": {
+                  "column": 13,
+                  "line": 225,
+                  "offset": 4051
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
+                  "line": 224,
+                  "offset": 4035
+                },
+                "targets": [
+                  "switch_continue_51"
+                ]
+              }
+            ],
+            "name": "switch_negative_48",
+            "source": {
+              "column": 9,
+              "line": 224,
+              "offset": 4035
+            }
+          },
+          {
+            "instructions": [
+              {
+                "immediate": 0,
+                "opcode": "const",
+                "result": "r130",
+                "source": {
+                  "column": 22,
+                  "line": 228,
+                  "offset": 4095
+                }
+              },
+              {
+                "memory": "m0",
+                "opcode": "load",
+                "operands": [
+                  "r130"
+                ],
                 "result": "r131",
                 "source": {
                   "column": 22,
-                  "line": 227,
-                  "offset": 4112
+                  "line": 228,
+                  "offset": 4095
                 }
               },
               {
@@ -4963,8 +4850,8 @@
                 "result": "r132",
                 "source": {
                   "column": 13,
-                  "line": 227,
-                  "offset": 4103
+                  "line": 228,
+                  "offset": 4086
                 }
               },
               {
@@ -4976,27 +4863,27 @@
                 ],
                 "source": {
                   "column": 13,
-                  "line": 227,
-                  "offset": 4103
+                  "line": 228,
+                  "offset": 4086
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 226,
-                  "offset": 4087
+                  "line": 227,
+                  "offset": 4071
                 },
                 "targets": [
                   "switch_continue_51"
                 ]
               }
             ],
-            "name": "switch_negative_48",
+            "name": "switch_neutral_49",
             "source": {
               "column": 9,
-              "line": 226,
-              "offset": 4087
+              "line": 227,
+              "offset": 4071
             }
           },
           {
@@ -5007,106 +4894,39 @@
                 "result": "r133",
                 "source": {
                   "column": 22,
-                  "line": 230,
-                  "offset": 4147
+                  "line": 231,
+                  "offset": 4135
                 }
               },
               {
-                "memory": "m0",
-                "opcode": "load",
-                "operands": [
-                  "r133"
-                ],
+                "immediate": 0,
+                "opcode": "const",
                 "result": "r134",
                 "source": {
-                  "column": 22,
-                  "line": 230,
-                  "offset": 4147
-                }
-              },
-              {
-                "immediate": 0,
-                "opcode": "const",
-                "result": "r135",
-                "source": {
                   "column": 13,
-                  "line": 230,
-                  "offset": 4138
+                  "line": 231,
+                  "offset": 4126
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r135",
-                  "r134"
+                  "r134",
+                  "r133"
                 ],
                 "source": {
                   "column": 13,
+                  "line": 231,
+                  "offset": 4126
+                }
+              },
+              {
+                "opcode": "jump",
+                "source": {
+                  "column": 9,
                   "line": 230,
-                  "offset": 4138
-                }
-              },
-              {
-                "opcode": "jump",
-                "source": {
-                  "column": 9,
-                  "line": 229,
-                  "offset": 4123
-                },
-                "targets": [
-                  "switch_continue_51"
-                ]
-              }
-            ],
-            "name": "switch_neutral_49",
-            "source": {
-              "column": 9,
-              "line": 229,
-              "offset": 4123
-            }
-          },
-          {
-            "instructions": [
-              {
-                "immediate": 0,
-                "opcode": "const",
-                "result": "r136",
-                "source": {
-                  "column": 22,
-                  "line": 233,
-                  "offset": 4187
-                }
-              },
-              {
-                "immediate": 0,
-                "opcode": "const",
-                "result": "r137",
-                "source": {
-                  "column": 13,
-                  "line": 233,
-                  "offset": 4178
-                }
-              },
-              {
-                "memory": "m0",
-                "opcode": "store",
-                "operands": [
-                  "r137",
-                  "r136"
-                ],
-                "source": {
-                  "column": 13,
-                  "line": 233,
-                  "offset": 4178
-                }
-              },
-              {
-                "opcode": "jump",
-                "source": {
-                  "column": 9,
-                  "line": 232,
-                  "offset": 4163
+                  "offset": 4111
                 },
                 "targets": [
                   "switch_continue_51"
@@ -5116,79 +4936,67 @@
             "name": "switch_positive_50",
             "source": {
               "column": 9,
-              "line": 232,
-              "offset": 4163
+              "line": 230,
+              "offset": 4111
             }
           },
           {
             "instructions": [
               {
-                "immediate": 8,
+                "immediate": 7,
                 "opcode": "const",
-                "result": "r138",
+                "result": "r135",
                 "source": {
                   "column": 39,
-                  "line": 235,
-                  "offset": 4228
+                  "line": 233,
+                  "offset": 4176
                 }
               },
               {
                 "callee": "renderer_supports_opcode_id",
                 "opcode": "call",
                 "operands": [
-                  "r138"
+                  "r135"
                 ],
-                "result": "r139",
+                "result": "r136",
                 "source": {
                   "column": 11,
-                  "line": 235,
-                  "offset": 4200
+                  "line": 233,
+                  "offset": 4148
                 }
               },
               {
-                "immediate": 1,
+                "immediate": -1,
                 "opcode": "const",
-                "result": "r140",
-                "source": {
-                  "column": 47,
-                  "line": 235,
-                  "offset": 4236
-                }
-              },
-              {
-                "opcode": "invert",
-                "operands": [
-                  "r140"
-                ],
-                "result": "r141",
+                "result": "r137",
                 "source": {
                   "column": 46,
-                  "line": 235,
-                  "offset": 4235
+                  "line": 233,
+                  "offset": 4183
                 }
               },
               {
                 "opcode": "compare",
                 "operands": [
-                  "r139",
-                  "r141"
+                  "r136",
+                  "r137"
                 ],
-                "result": "r142",
+                "result": "r138",
                 "source": {
                   "column": 42,
-                  "line": 235,
-                  "offset": 4231
+                  "line": 233,
+                  "offset": 4179
                 }
               },
               {
                 "opcode": "branch3",
                 "operands": [
-                  "r142"
+                  "r138"
                 ],
                 "source": {
                   "column": 5,
-                  "line": 235,
-                  "offset": 4194
+                  "line": 233,
+                  "offset": 4142
                 },
                 "targets": [
                   "switch_negative_52",
@@ -5200,8 +5008,8 @@
             "name": "switch_continue_51",
             "source": {
               "column": 5,
-              "line": 225,
-              "offset": 4011
+              "line": 223,
+              "offset": 3959
             }
           },
           {
@@ -5209,42 +5017,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r143",
+                "result": "r139",
                 "source": {
                   "column": 22,
-                  "line": 237,
-                  "offset": 4272
+                  "line": 235,
+                  "offset": 4220
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r144",
+                "result": "r140",
                 "source": {
                   "column": 13,
-                  "line": 237,
-                  "offset": 4263
+                  "line": 235,
+                  "offset": 4211
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r144",
-                  "r143"
+                  "r140",
+                  "r139"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 237,
-                  "offset": 4263
+                  "line": 235,
+                  "offset": 4211
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 236,
-                  "offset": 4247
+                  "line": 234,
+                  "offset": 4195
                 },
                 "targets": [
                   "switch_continue_55"
@@ -5254,8 +5062,8 @@
             "name": "switch_negative_52",
             "source": {
               "column": 9,
-              "line": 236,
-              "offset": 4247
+              "line": 234,
+              "offset": 4195
             }
           },
           {
@@ -5263,55 +5071,55 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r145",
+                "result": "r141",
                 "source": {
                   "column": 22,
-                  "line": 240,
-                  "offset": 4307
+                  "line": 238,
+                  "offset": 4255
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "load",
                 "operands": [
-                  "r145"
+                  "r141"
                 ],
-                "result": "r146",
+                "result": "r142",
                 "source": {
                   "column": 22,
-                  "line": 240,
-                  "offset": 4307
+                  "line": 238,
+                  "offset": 4255
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r147",
+                "result": "r143",
                 "source": {
                   "column": 13,
-                  "line": 240,
-                  "offset": 4298
+                  "line": 238,
+                  "offset": 4246
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r147",
-                  "r146"
+                  "r143",
+                  "r142"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 240,
-                  "offset": 4298
+                  "line": 238,
+                  "offset": 4246
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 239,
-                  "offset": 4283
+                  "line": 237,
+                  "offset": 4231
                 },
                 "targets": [
                   "switch_continue_55"
@@ -5321,8 +5129,8 @@
             "name": "switch_neutral_53",
             "source": {
               "column": 9,
-              "line": 239,
-              "offset": 4283
+              "line": 237,
+              "offset": 4231
             }
           },
           {
@@ -5330,42 +5138,42 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r148",
+                "result": "r144",
                 "source": {
                   "column": 22,
-                  "line": 243,
-                  "offset": 4347
+                  "line": 241,
+                  "offset": 4295
                 }
               },
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r149",
+                "result": "r145",
                 "source": {
                   "column": 13,
-                  "line": 243,
-                  "offset": 4338
+                  "line": 241,
+                  "offset": 4286
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "store",
                 "operands": [
-                  "r149",
-                  "r148"
+                  "r145",
+                  "r144"
                 ],
                 "source": {
                   "column": 13,
-                  "line": 243,
-                  "offset": 4338
+                  "line": 241,
+                  "offset": 4286
                 }
               },
               {
                 "opcode": "jump",
                 "source": {
                   "column": 9,
-                  "line": 242,
-                  "offset": 4323
+                  "line": 240,
+                  "offset": 4271
                 },
                 "targets": [
                   "switch_continue_55"
@@ -5375,8 +5183,8 @@
             "name": "switch_positive_54",
             "source": {
               "column": 9,
-              "line": 242,
-              "offset": 4323
+              "line": 240,
+              "offset": 4271
             }
           },
           {
@@ -5384,43 +5192,43 @@
               {
                 "immediate": 0,
                 "opcode": "const",
-                "result": "r150",
+                "result": "r146",
                 "source": {
                   "column": 12,
-                  "line": 245,
-                  "offset": 4361
+                  "line": 243,
+                  "offset": 4309
                 }
               },
               {
                 "memory": "m0",
                 "opcode": "load",
                 "operands": [
-                  "r150"
+                  "r146"
                 ],
-                "result": "r151",
+                "result": "r147",
                 "source": {
                   "column": 12,
-                  "line": 245,
-                  "offset": 4361
+                  "line": 243,
+                  "offset": 4309
                 }
               },
               {
                 "opcode": "return",
                 "operands": [
-                  "r151"
+                  "r147"
                 ],
                 "source": {
                   "column": 5,
-                  "line": 245,
-                  "offset": 4354
+                  "line": 243,
+                  "offset": 4302
                 }
               }
             ],
             "name": "switch_continue_55",
             "source": {
               "column": 5,
-              "line": 235,
-              "offset": 4194
+              "line": 233,
+              "offset": 4142
             }
           }
         ],
@@ -5433,8 +5241,8 @@
             "name": "m0",
             "source": {
               "column": 5,
-              "line": 103,
-              "offset": 2057
+              "line": 101,
+              "offset": 2005
             }
           }
         ],
@@ -5445,9 +5253,9 @@
             "index": 0,
             "name": "r0",
             "source": {
-              "column": 25,
-              "line": 103,
-              "offset": 2077
+              "column": 24,
+              "line": 101,
+              "offset": 2024
             },
             "type": "trit"
           },
@@ -5455,19 +5263,19 @@
             "index": 1,
             "name": "r1",
             "source": {
-              "column": 24,
-              "line": 103,
-              "offset": 2076
+              "column": 5,
+              "line": 101,
+              "offset": 2005
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 2,
             "name": "r2",
             "source": {
-              "column": 5,
+              "column": 11,
               "line": 103,
-              "offset": 2057
+              "offset": 2038
             },
             "type": "tryte"
           },
@@ -5475,9 +5283,9 @@
             "index": 3,
             "name": "r3",
             "source": {
-              "column": 11,
-              "line": 105,
-              "offset": 2090
+              "column": 52,
+              "line": 103,
+              "offset": 2079
             },
             "type": "tryte"
           },
@@ -5485,19 +5293,19 @@
             "index": 4,
             "name": "r4",
             "source": {
-              "column": 52,
-              "line": 105,
-              "offset": 2131
+              "column": 48,
+              "line": 103,
+              "offset": 2075
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 5,
             "name": "r5",
             "source": {
-              "column": 48,
+              "column": 22,
               "line": 105,
-              "offset": 2127
+              "offset": 2115
             },
             "type": "trit"
           },
@@ -5505,19 +5313,19 @@
             "index": 6,
             "name": "r6",
             "source": {
-              "column": 22,
-              "line": 107,
-              "offset": 2167
+              "column": 13,
+              "line": 105,
+              "offset": 2106
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 7,
             "name": "r7",
             "source": {
-              "column": 13,
-              "line": 107,
-              "offset": 2158
+              "column": 22,
+              "line": 108,
+              "offset": 2150
             },
             "type": "tryte"
           },
@@ -5526,48 +5334,48 @@
             "name": "r8",
             "source": {
               "column": 22,
-              "line": 110,
-              "offset": 2202
+              "line": 108,
+              "offset": 2150
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 9,
             "name": "r9",
             "source": {
-              "column": 22,
-              "line": 110,
-              "offset": 2202
+              "column": 13,
+              "line": 108,
+              "offset": 2141
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 10,
             "name": "r10",
             "source": {
-              "column": 13,
-              "line": 110,
-              "offset": 2193
+              "column": 22,
+              "line": 111,
+              "offset": 2190
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 11,
             "name": "r11",
             "source": {
-              "column": 22,
-              "line": 113,
-              "offset": 2242
+              "column": 13,
+              "line": 111,
+              "offset": 2181
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 12,
             "name": "r12",
             "source": {
-              "column": 13,
+              "column": 11,
               "line": 113,
-              "offset": 2233
+              "offset": 2203
             },
             "type": "tryte"
           },
@@ -5575,9 +5383,9 @@
             "index": 13,
             "name": "r13",
             "source": {
-              "column": 11,
-              "line": 115,
-              "offset": 2255
+              "column": 49,
+              "line": 113,
+              "offset": 2241
             },
             "type": "tryte"
           },
@@ -5585,19 +5393,19 @@
             "index": 14,
             "name": "r14",
             "source": {
-              "column": 49,
-              "line": 115,
-              "offset": 2293
+              "column": 45,
+              "line": 113,
+              "offset": 2237
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 15,
             "name": "r15",
             "source": {
-              "column": 45,
+              "column": 22,
               "line": 115,
-              "offset": 2289
+              "offset": 2277
             },
             "type": "trit"
           },
@@ -5605,19 +5413,19 @@
             "index": 16,
             "name": "r16",
             "source": {
-              "column": 22,
-              "line": 117,
-              "offset": 2329
+              "column": 13,
+              "line": 115,
+              "offset": 2268
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 17,
             "name": "r17",
             "source": {
-              "column": 13,
-              "line": 117,
-              "offset": 2320
+              "column": 22,
+              "line": 118,
+              "offset": 2312
             },
             "type": "tryte"
           },
@@ -5626,48 +5434,48 @@
             "name": "r18",
             "source": {
               "column": 22,
-              "line": 120,
-              "offset": 2364
+              "line": 118,
+              "offset": 2312
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 19,
             "name": "r19",
             "source": {
-              "column": 22,
-              "line": 120,
-              "offset": 2364
+              "column": 13,
+              "line": 118,
+              "offset": 2303
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 20,
             "name": "r20",
             "source": {
-              "column": 13,
-              "line": 120,
-              "offset": 2355
+              "column": 22,
+              "line": 121,
+              "offset": 2352
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 21,
             "name": "r21",
             "source": {
-              "column": 22,
-              "line": 123,
-              "offset": 2404
+              "column": 13,
+              "line": 121,
+              "offset": 2343
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 22,
             "name": "r22",
             "source": {
-              "column": 13,
+              "column": 11,
               "line": 123,
-              "offset": 2395
+              "offset": 2365
             },
             "type": "tryte"
           },
@@ -5675,9 +5483,9 @@
             "index": 23,
             "name": "r23",
             "source": {
-              "column": 11,
-              "line": 125,
-              "offset": 2417
+              "column": 45,
+              "line": 123,
+              "offset": 2399
             },
             "type": "tryte"
           },
@@ -5685,19 +5493,19 @@
             "index": 24,
             "name": "r24",
             "source": {
-              "column": 45,
-              "line": 125,
-              "offset": 2451
+              "column": 41,
+              "line": 123,
+              "offset": 2395
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 25,
             "name": "r25",
             "source": {
-              "column": 41,
+              "column": 22,
               "line": 125,
-              "offset": 2447
+              "offset": 2435
             },
             "type": "trit"
           },
@@ -5705,19 +5513,19 @@
             "index": 26,
             "name": "r26",
             "source": {
-              "column": 22,
-              "line": 127,
-              "offset": 2487
+              "column": 13,
+              "line": 125,
+              "offset": 2426
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 27,
             "name": "r27",
             "source": {
-              "column": 13,
-              "line": 127,
-              "offset": 2478
+              "column": 22,
+              "line": 128,
+              "offset": 2470
             },
             "type": "tryte"
           },
@@ -5726,48 +5534,48 @@
             "name": "r28",
             "source": {
               "column": 22,
-              "line": 130,
-              "offset": 2522
+              "line": 128,
+              "offset": 2470
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 29,
             "name": "r29",
             "source": {
-              "column": 22,
-              "line": 130,
-              "offset": 2522
+              "column": 13,
+              "line": 128,
+              "offset": 2461
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 30,
             "name": "r30",
             "source": {
-              "column": 13,
-              "line": 130,
-              "offset": 2513
+              "column": 22,
+              "line": 131,
+              "offset": 2510
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 31,
             "name": "r31",
             "source": {
-              "column": 22,
-              "line": 133,
-              "offset": 2562
+              "column": 13,
+              "line": 131,
+              "offset": 2501
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 32,
             "name": "r32",
             "source": {
-              "column": 13,
+              "column": 11,
               "line": 133,
-              "offset": 2553
+              "offset": 2523
             },
             "type": "tryte"
           },
@@ -5775,9 +5583,9 @@
             "index": 33,
             "name": "r33",
             "source": {
-              "column": 11,
-              "line": 135,
-              "offset": 2575
+              "column": 44,
+              "line": 133,
+              "offset": 2556
             },
             "type": "tryte"
           },
@@ -5785,19 +5593,19 @@
             "index": 34,
             "name": "r34",
             "source": {
-              "column": 44,
-              "line": 135,
-              "offset": 2608
+              "column": 40,
+              "line": 133,
+              "offset": 2552
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 35,
             "name": "r35",
             "source": {
-              "column": 40,
+              "column": 22,
               "line": 135,
-              "offset": 2604
+              "offset": 2592
             },
             "type": "trit"
           },
@@ -5805,19 +5613,19 @@
             "index": 36,
             "name": "r36",
             "source": {
-              "column": 22,
-              "line": 137,
-              "offset": 2644
+              "column": 13,
+              "line": 135,
+              "offset": 2583
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 37,
             "name": "r37",
             "source": {
-              "column": 13,
-              "line": 137,
-              "offset": 2635
+              "column": 22,
+              "line": 138,
+              "offset": 2627
             },
             "type": "tryte"
           },
@@ -5826,48 +5634,48 @@
             "name": "r38",
             "source": {
               "column": 22,
-              "line": 140,
-              "offset": 2679
+              "line": 138,
+              "offset": 2627
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 39,
             "name": "r39",
             "source": {
-              "column": 22,
-              "line": 140,
-              "offset": 2679
+              "column": 13,
+              "line": 138,
+              "offset": 2618
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 40,
             "name": "r40",
             "source": {
-              "column": 13,
-              "line": 140,
-              "offset": 2670
+              "column": 22,
+              "line": 141,
+              "offset": 2667
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 41,
             "name": "r41",
             "source": {
-              "column": 22,
-              "line": 143,
-              "offset": 2719
+              "column": 13,
+              "line": 141,
+              "offset": 2658
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 42,
             "name": "r42",
             "source": {
-              "column": 13,
+              "column": 11,
               "line": 143,
-              "offset": 2710
+              "offset": 2680
             },
             "type": "tryte"
           },
@@ -5875,9 +5683,9 @@
             "index": 43,
             "name": "r43",
             "source": {
-              "column": 11,
-              "line": 145,
-              "offset": 2732
+              "column": 42,
+              "line": 143,
+              "offset": 2711
             },
             "type": "tryte"
           },
@@ -5885,19 +5693,19 @@
             "index": 44,
             "name": "r44",
             "source": {
-              "column": 42,
-              "line": 145,
-              "offset": 2763
+              "column": 38,
+              "line": 143,
+              "offset": 2707
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 45,
             "name": "r45",
             "source": {
-              "column": 38,
+              "column": 22,
               "line": 145,
-              "offset": 2759
+              "offset": 2747
             },
             "type": "trit"
           },
@@ -5905,19 +5713,19 @@
             "index": 46,
             "name": "r46",
             "source": {
-              "column": 22,
-              "line": 147,
-              "offset": 2799
+              "column": 13,
+              "line": 145,
+              "offset": 2738
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 47,
             "name": "r47",
             "source": {
-              "column": 13,
-              "line": 147,
-              "offset": 2790
+              "column": 22,
+              "line": 148,
+              "offset": 2782
             },
             "type": "tryte"
           },
@@ -5926,48 +5734,48 @@
             "name": "r48",
             "source": {
               "column": 22,
-              "line": 150,
-              "offset": 2834
+              "line": 148,
+              "offset": 2782
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 49,
             "name": "r49",
             "source": {
-              "column": 22,
-              "line": 150,
-              "offset": 2834
+              "column": 13,
+              "line": 148,
+              "offset": 2773
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 50,
             "name": "r50",
             "source": {
-              "column": 13,
-              "line": 150,
-              "offset": 2825
+              "column": 22,
+              "line": 151,
+              "offset": 2822
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 51,
             "name": "r51",
             "source": {
-              "column": 22,
-              "line": 153,
-              "offset": 2874
+              "column": 13,
+              "line": 151,
+              "offset": 2813
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 52,
             "name": "r52",
             "source": {
-              "column": 13,
+              "column": 11,
               "line": 153,
-              "offset": 2865
+              "offset": 2835
             },
             "type": "tryte"
           },
@@ -5975,9 +5783,9 @@
             "index": 53,
             "name": "r53",
             "source": {
-              "column": 11,
-              "line": 155,
-              "offset": 2887
+              "column": 41,
+              "line": 153,
+              "offset": 2865
             },
             "type": "tryte"
           },
@@ -5985,19 +5793,19 @@
             "index": 54,
             "name": "r54",
             "source": {
-              "column": 41,
-              "line": 155,
-              "offset": 2917
+              "column": 37,
+              "line": 153,
+              "offset": 2861
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 55,
             "name": "r55",
             "source": {
-              "column": 37,
+              "column": 22,
               "line": 155,
-              "offset": 2913
+              "offset": 2901
             },
             "type": "trit"
           },
@@ -6005,19 +5813,19 @@
             "index": 56,
             "name": "r56",
             "source": {
-              "column": 22,
-              "line": 157,
-              "offset": 2953
+              "column": 13,
+              "line": 155,
+              "offset": 2892
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 57,
             "name": "r57",
             "source": {
-              "column": 13,
-              "line": 157,
-              "offset": 2944
+              "column": 22,
+              "line": 158,
+              "offset": 2936
             },
             "type": "tryte"
           },
@@ -6026,48 +5834,48 @@
             "name": "r58",
             "source": {
               "column": 22,
-              "line": 160,
-              "offset": 2988
+              "line": 158,
+              "offset": 2936
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 59,
             "name": "r59",
             "source": {
-              "column": 22,
-              "line": 160,
-              "offset": 2988
+              "column": 13,
+              "line": 158,
+              "offset": 2927
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 60,
             "name": "r60",
             "source": {
-              "column": 13,
-              "line": 160,
-              "offset": 2979
+              "column": 22,
+              "line": 161,
+              "offset": 2976
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 61,
             "name": "r61",
             "source": {
-              "column": 22,
-              "line": 163,
-              "offset": 3028
+              "column": 13,
+              "line": 161,
+              "offset": 2967
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 62,
             "name": "r62",
             "source": {
-              "column": 13,
+              "column": 11,
               "line": 163,
-              "offset": 3019
+              "offset": 2989
             },
             "type": "tryte"
           },
@@ -6075,9 +5883,9 @@
             "index": 63,
             "name": "r63",
             "source": {
-              "column": 11,
-              "line": 165,
-              "offset": 3041
+              "column": 43,
+              "line": 163,
+              "offset": 3021
             },
             "type": "tryte"
           },
@@ -6085,19 +5893,19 @@
             "index": 64,
             "name": "r64",
             "source": {
-              "column": 43,
-              "line": 165,
-              "offset": 3073
+              "column": 39,
+              "line": 163,
+              "offset": 3017
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 65,
             "name": "r65",
             "source": {
-              "column": 39,
+              "column": 22,
               "line": 165,
-              "offset": 3069
+              "offset": 3057
             },
             "type": "trit"
           },
@@ -6105,19 +5913,19 @@
             "index": 66,
             "name": "r66",
             "source": {
-              "column": 22,
-              "line": 167,
-              "offset": 3109
+              "column": 13,
+              "line": 165,
+              "offset": 3048
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 67,
             "name": "r67",
             "source": {
-              "column": 13,
-              "line": 167,
-              "offset": 3100
+              "column": 22,
+              "line": 168,
+              "offset": 3092
             },
             "type": "tryte"
           },
@@ -6126,48 +5934,48 @@
             "name": "r68",
             "source": {
               "column": 22,
-              "line": 170,
-              "offset": 3144
+              "line": 168,
+              "offset": 3092
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 69,
             "name": "r69",
             "source": {
-              "column": 22,
-              "line": 170,
-              "offset": 3144
+              "column": 13,
+              "line": 168,
+              "offset": 3083
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 70,
             "name": "r70",
             "source": {
-              "column": 13,
-              "line": 170,
-              "offset": 3135
+              "column": 22,
+              "line": 171,
+              "offset": 3132
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 71,
             "name": "r71",
             "source": {
-              "column": 22,
-              "line": 173,
-              "offset": 3184
+              "column": 13,
+              "line": 171,
+              "offset": 3123
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 72,
             "name": "r72",
             "source": {
-              "column": 13,
+              "column": 11,
               "line": 173,
-              "offset": 3175
+              "offset": 3145
             },
             "type": "tryte"
           },
@@ -6175,9 +5983,9 @@
             "index": 73,
             "name": "r73",
             "source": {
-              "column": 11,
-              "line": 175,
-              "offset": 3197
+              "column": 45,
+              "line": 173,
+              "offset": 3179
             },
             "type": "tryte"
           },
@@ -6185,19 +5993,19 @@
             "index": 74,
             "name": "r74",
             "source": {
-              "column": 45,
-              "line": 175,
-              "offset": 3231
+              "column": 41,
+              "line": 173,
+              "offset": 3175
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 75,
             "name": "r75",
             "source": {
-              "column": 41,
+              "column": 22,
               "line": 175,
-              "offset": 3227
+              "offset": 3215
             },
             "type": "trit"
           },
@@ -6205,19 +6013,19 @@
             "index": 76,
             "name": "r76",
             "source": {
-              "column": 22,
-              "line": 177,
-              "offset": 3267
+              "column": 13,
+              "line": 175,
+              "offset": 3206
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 77,
             "name": "r77",
             "source": {
-              "column": 13,
-              "line": 177,
-              "offset": 3258
+              "column": 22,
+              "line": 178,
+              "offset": 3250
             },
             "type": "tryte"
           },
@@ -6226,48 +6034,48 @@
             "name": "r78",
             "source": {
               "column": 22,
-              "line": 180,
-              "offset": 3302
+              "line": 178,
+              "offset": 3250
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 79,
             "name": "r79",
             "source": {
-              "column": 22,
-              "line": 180,
-              "offset": 3302
+              "column": 13,
+              "line": 178,
+              "offset": 3241
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 80,
             "name": "r80",
             "source": {
-              "column": 13,
-              "line": 180,
-              "offset": 3293
+              "column": 22,
+              "line": 181,
+              "offset": 3290
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 81,
             "name": "r81",
             "source": {
-              "column": 22,
-              "line": 183,
-              "offset": 3342
+              "column": 13,
+              "line": 181,
+              "offset": 3281
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 82,
             "name": "r82",
             "source": {
-              "column": 13,
+              "column": 11,
               "line": 183,
-              "offset": 3333
+              "offset": 3303
             },
             "type": "tryte"
           },
@@ -6275,9 +6083,9 @@
             "index": 83,
             "name": "r83",
             "source": {
-              "column": 11,
-              "line": 185,
-              "offset": 3355
+              "column": 41,
+              "line": 183,
+              "offset": 3333
             },
             "type": "tryte"
           },
@@ -6285,19 +6093,19 @@
             "index": 84,
             "name": "r84",
             "source": {
-              "column": 41,
-              "line": 185,
-              "offset": 3385
+              "column": 37,
+              "line": 183,
+              "offset": 3329
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 85,
             "name": "r85",
             "source": {
-              "column": 37,
+              "column": 22,
               "line": 185,
-              "offset": 3381
+              "offset": 3369
             },
             "type": "trit"
           },
@@ -6305,19 +6113,19 @@
             "index": 86,
             "name": "r86",
             "source": {
-              "column": 22,
-              "line": 187,
-              "offset": 3421
+              "column": 13,
+              "line": 185,
+              "offset": 3360
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 87,
             "name": "r87",
             "source": {
-              "column": 13,
-              "line": 187,
-              "offset": 3412
+              "column": 22,
+              "line": 188,
+              "offset": 3404
             },
             "type": "tryte"
           },
@@ -6326,48 +6134,48 @@
             "name": "r88",
             "source": {
               "column": 22,
-              "line": 190,
-              "offset": 3456
+              "line": 188,
+              "offset": 3404
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 89,
             "name": "r89",
             "source": {
-              "column": 22,
-              "line": 190,
-              "offset": 3456
+              "column": 13,
+              "line": 188,
+              "offset": 3395
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 90,
             "name": "r90",
             "source": {
-              "column": 13,
-              "line": 190,
-              "offset": 3447
+              "column": 22,
+              "line": 191,
+              "offset": 3444
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 91,
             "name": "r91",
             "source": {
-              "column": 22,
-              "line": 193,
-              "offset": 3496
+              "column": 13,
+              "line": 191,
+              "offset": 3435
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 92,
             "name": "r92",
             "source": {
-              "column": 13,
+              "column": 11,
               "line": 193,
-              "offset": 3487
+              "offset": 3457
             },
             "type": "tryte"
           },
@@ -6375,9 +6183,9 @@
             "index": 93,
             "name": "r93",
             "source": {
-              "column": 11,
-              "line": 195,
-              "offset": 3509
+              "column": 41,
+              "line": 193,
+              "offset": 3487
             },
             "type": "tryte"
           },
@@ -6385,19 +6193,19 @@
             "index": 94,
             "name": "r94",
             "source": {
-              "column": 41,
-              "line": 195,
-              "offset": 3539
+              "column": 37,
+              "line": 193,
+              "offset": 3483
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 95,
             "name": "r95",
             "source": {
-              "column": 37,
+              "column": 22,
               "line": 195,
-              "offset": 3535
+              "offset": 3523
             },
             "type": "trit"
           },
@@ -6405,19 +6213,19 @@
             "index": 96,
             "name": "r96",
             "source": {
-              "column": 22,
-              "line": 197,
-              "offset": 3575
+              "column": 13,
+              "line": 195,
+              "offset": 3514
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 97,
             "name": "r97",
             "source": {
-              "column": 13,
-              "line": 197,
-              "offset": 3566
+              "column": 22,
+              "line": 198,
+              "offset": 3558
             },
             "type": "tryte"
           },
@@ -6426,48 +6234,48 @@
             "name": "r98",
             "source": {
               "column": 22,
-              "line": 200,
-              "offset": 3610
+              "line": 198,
+              "offset": 3558
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 99,
             "name": "r99",
             "source": {
-              "column": 22,
-              "line": 200,
-              "offset": 3610
+              "column": 13,
+              "line": 198,
+              "offset": 3549
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 100,
             "name": "r100",
             "source": {
-              "column": 13,
-              "line": 200,
-              "offset": 3601
+              "column": 22,
+              "line": 201,
+              "offset": 3598
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 101,
             "name": "r101",
             "source": {
-              "column": 22,
-              "line": 203,
-              "offset": 3650
+              "column": 13,
+              "line": 201,
+              "offset": 3589
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 102,
             "name": "r102",
             "source": {
-              "column": 13,
+              "column": 42,
               "line": 203,
-              "offset": 3641
+              "offset": 3642
             },
             "type": "tryte"
           },
@@ -6475,19 +6283,19 @@
             "index": 103,
             "name": "r103",
             "source": {
-              "column": 42,
-              "line": 205,
-              "offset": 3694
+              "column": 11,
+              "line": 203,
+              "offset": 3611
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 104,
             "name": "r104",
             "source": {
-              "column": 11,
-              "line": 205,
-              "offset": 3663
+              "column": 77,
+              "line": 203,
+              "offset": 3677
             },
             "type": "trit"
           },
@@ -6495,9 +6303,9 @@
             "index": 105,
             "name": "r105",
             "source": {
-              "column": 77,
-              "line": 205,
-              "offset": 3729
+              "column": 73,
+              "line": 203,
+              "offset": 3673
             },
             "type": "trit"
           },
@@ -6505,9 +6313,9 @@
             "index": 106,
             "name": "r106",
             "source": {
-              "column": 73,
+              "column": 22,
               "line": 205,
-              "offset": 3725
+              "offset": 3713
             },
             "type": "trit"
           },
@@ -6515,19 +6323,19 @@
             "index": 107,
             "name": "r107",
             "source": {
-              "column": 22,
-              "line": 207,
-              "offset": 3765
+              "column": 13,
+              "line": 205,
+              "offset": 3704
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 108,
             "name": "r108",
             "source": {
-              "column": 13,
-              "line": 207,
-              "offset": 3756
+              "column": 22,
+              "line": 208,
+              "offset": 3748
             },
             "type": "tryte"
           },
@@ -6536,48 +6344,48 @@
             "name": "r109",
             "source": {
               "column": 22,
-              "line": 210,
-              "offset": 3800
+              "line": 208,
+              "offset": 3748
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 110,
             "name": "r110",
             "source": {
-              "column": 22,
-              "line": 210,
-              "offset": 3800
+              "column": 13,
+              "line": 208,
+              "offset": 3739
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 111,
             "name": "r111",
             "source": {
-              "column": 13,
-              "line": 210,
-              "offset": 3791
+              "column": 22,
+              "line": 211,
+              "offset": 3788
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 112,
             "name": "r112",
             "source": {
-              "column": 22,
-              "line": 213,
-              "offset": 3840
+              "column": 13,
+              "line": 211,
+              "offset": 3779
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 113,
             "name": "r113",
             "source": {
-              "column": 13,
+              "column": 42,
               "line": 213,
-              "offset": 3831
+              "offset": 3832
             },
             "type": "tryte"
           },
@@ -6585,29 +6393,29 @@
             "index": 114,
             "name": "r114",
             "source": {
-              "column": 43,
-              "line": 215,
-              "offset": 3885
+              "column": 11,
+              "line": 213,
+              "offset": 3801
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 115,
             "name": "r115",
             "source": {
-              "column": 42,
-              "line": 215,
-              "offset": 3884
+              "column": 50,
+              "line": 213,
+              "offset": 3840
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 116,
             "name": "r116",
             "source": {
-              "column": 11,
-              "line": 215,
-              "offset": 3853
+              "column": 46,
+              "line": 213,
+              "offset": 3836
             },
             "type": "trit"
           },
@@ -6615,9 +6423,9 @@
             "index": 117,
             "name": "r117",
             "source": {
-              "column": 51,
+              "column": 22,
               "line": 215,
-              "offset": 3893
+              "offset": 3877
             },
             "type": "trit"
           },
@@ -6625,29 +6433,29 @@
             "index": 118,
             "name": "r118",
             "source": {
-              "column": 50,
+              "column": 13,
               "line": 215,
-              "offset": 3892
+              "offset": 3868
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 119,
             "name": "r119",
             "source": {
-              "column": 46,
-              "line": 215,
-              "offset": 3888
+              "column": 22,
+              "line": 218,
+              "offset": 3912
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 120,
             "name": "r120",
             "source": {
               "column": 22,
-              "line": 217,
-              "offset": 3929
+              "line": 218,
+              "offset": 3912
             },
             "type": "trit"
           },
@@ -6656,8 +6464,8 @@
             "name": "r121",
             "source": {
               "column": 13,
-              "line": 217,
-              "offset": 3920
+              "line": 218,
+              "offset": 3903
             },
             "type": "tryte"
           },
@@ -6666,28 +6474,28 @@
             "name": "r122",
             "source": {
               "column": 22,
-              "line": 220,
-              "offset": 3964
+              "line": 221,
+              "offset": 3952
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 123,
             "name": "r123",
             "source": {
-              "column": 22,
-              "line": 220,
-              "offset": 3964
+              "column": 13,
+              "line": 221,
+              "offset": 3943
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 124,
             "name": "r124",
             "source": {
-              "column": 13,
-              "line": 220,
-              "offset": 3955
+              "column": 39,
+              "line": 223,
+              "offset": 3993
             },
             "type": "tryte"
           },
@@ -6695,9 +6503,9 @@
             "index": 125,
             "name": "r125",
             "source": {
-              "column": 22,
+              "column": 11,
               "line": 223,
-              "offset": 4004
+              "offset": 3965
             },
             "type": "trit"
           },
@@ -6705,29 +6513,29 @@
             "index": 126,
             "name": "r126",
             "source": {
-              "column": 13,
+              "column": 70,
               "line": 223,
-              "offset": 3995
+              "offset": 4024
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 127,
             "name": "r127",
             "source": {
-              "column": 39,
-              "line": 225,
-              "offset": 4045
+              "column": 66,
+              "line": 223,
+              "offset": 4020
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 128,
             "name": "r128",
             "source": {
-              "column": 11,
+              "column": 22,
               "line": 225,
-              "offset": 4017
+              "offset": 4060
             },
             "type": "trit"
           },
@@ -6735,29 +6543,29 @@
             "index": 129,
             "name": "r129",
             "source": {
-              "column": 70,
+              "column": 13,
               "line": 225,
-              "offset": 4076
+              "offset": 4051
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 130,
             "name": "r130",
             "source": {
-              "column": 66,
-              "line": 225,
-              "offset": 4072
+              "column": 22,
+              "line": 228,
+              "offset": 4095
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 131,
             "name": "r131",
             "source": {
               "column": 22,
-              "line": 227,
-              "offset": 4112
+              "line": 228,
+              "offset": 4095
             },
             "type": "trit"
           },
@@ -6766,8 +6574,8 @@
             "name": "r132",
             "source": {
               "column": 13,
-              "line": 227,
-              "offset": 4103
+              "line": 228,
+              "offset": 4086
             },
             "type": "tryte"
           },
@@ -6776,28 +6584,28 @@
             "name": "r133",
             "source": {
               "column": 22,
-              "line": 230,
-              "offset": 4147
+              "line": 231,
+              "offset": 4135
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 134,
             "name": "r134",
             "source": {
-              "column": 22,
-              "line": 230,
-              "offset": 4147
+              "column": 13,
+              "line": 231,
+              "offset": 4126
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 135,
             "name": "r135",
             "source": {
-              "column": 13,
-              "line": 230,
-              "offset": 4138
+              "column": 39,
+              "line": 233,
+              "offset": 4176
             },
             "type": "tryte"
           },
@@ -6805,9 +6613,9 @@
             "index": 136,
             "name": "r136",
             "source": {
-              "column": 22,
+              "column": 11,
               "line": 233,
-              "offset": 4187
+              "offset": 4148
             },
             "type": "trit"
           },
@@ -6815,29 +6623,29 @@
             "index": 137,
             "name": "r137",
             "source": {
-              "column": 13,
+              "column": 46,
               "line": 233,
-              "offset": 4178
+              "offset": 4183
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 138,
             "name": "r138",
             "source": {
-              "column": 39,
-              "line": 235,
-              "offset": 4228
+              "column": 42,
+              "line": 233,
+              "offset": 4179
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 139,
             "name": "r139",
             "source": {
-              "column": 11,
+              "column": 22,
               "line": 235,
-              "offset": 4200
+              "offset": 4220
             },
             "type": "trit"
           },
@@ -6845,29 +6653,29 @@
             "index": 140,
             "name": "r140",
             "source": {
-              "column": 47,
+              "column": 13,
               "line": 235,
-              "offset": 4236
+              "offset": 4211
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 141,
             "name": "r141",
             "source": {
-              "column": 46,
-              "line": 235,
-              "offset": 4235
+              "column": 22,
+              "line": 238,
+              "offset": 4255
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 142,
             "name": "r142",
             "source": {
-              "column": 42,
-              "line": 235,
-              "offset": 4231
+              "column": 22,
+              "line": 238,
+              "offset": 4255
             },
             "type": "trit"
           },
@@ -6875,29 +6683,29 @@
             "index": 143,
             "name": "r143",
             "source": {
-              "column": 22,
-              "line": 237,
-              "offset": 4272
+              "column": 13,
+              "line": 238,
+              "offset": 4246
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 144,
             "name": "r144",
             "source": {
-              "column": 13,
-              "line": 237,
-              "offset": 4263
+              "column": 22,
+              "line": 241,
+              "offset": 4295
             },
-            "type": "tryte"
+            "type": "trit"
           },
           {
             "index": 145,
             "name": "r145",
             "source": {
-              "column": 22,
-              "line": 240,
-              "offset": 4307
+              "column": 13,
+              "line": 241,
+              "offset": 4286
             },
             "type": "tryte"
           },
@@ -6905,59 +6713,19 @@
             "index": 146,
             "name": "r146",
             "source": {
-              "column": 22,
-              "line": 240,
-              "offset": 4307
+              "column": 12,
+              "line": 243,
+              "offset": 4309
             },
-            "type": "trit"
+            "type": "tryte"
           },
           {
             "index": 147,
             "name": "r147",
             "source": {
-              "column": 13,
-              "line": 240,
-              "offset": 4298
-            },
-            "type": "tryte"
-          },
-          {
-            "index": 148,
-            "name": "r148",
-            "source": {
-              "column": 22,
-              "line": 243,
-              "offset": 4347
-            },
-            "type": "trit"
-          },
-          {
-            "index": 149,
-            "name": "r149",
-            "source": {
-              "column": 13,
-              "line": 243,
-              "offset": 4338
-            },
-            "type": "tryte"
-          },
-          {
-            "index": 150,
-            "name": "r150",
-            "source": {
               "column": 12,
-              "line": 245,
-              "offset": 4361
-            },
-            "type": "tryte"
-          },
-          {
-            "index": 151,
-            "name": "r151",
-            "source": {
-              "column": 12,
-              "line": 245,
-              "offset": 4361
+              "line": 243,
+              "offset": 4309
             },
             "type": "trit"
           }
@@ -6965,8 +6733,8 @@
         "return_type": "trit",
         "source": {
           "column": 1,
-          "line": 102,
-          "offset": 2003
+          "line": 100,
+          "offset": 1951
         }
       },
       {
@@ -6979,8 +6747,8 @@
                 "result": "r0",
                 "source": {
                   "column": 12,
-                  "line": 248,
-                  "offset": 4420
+                  "line": 246,
+                  "offset": 4368
                 }
               },
               {
@@ -6990,16 +6758,16 @@
                 ],
                 "source": {
                   "column": 5,
-                  "line": 248,
-                  "offset": 4413
+                  "line": 246,
+                  "offset": 4361
                 }
               }
             ],
             "name": "entry",
             "source": {
               "column": 5,
-              "line": 248,
-              "offset": 4413
+              "line": 246,
+              "offset": 4361
             }
           }
         ],
@@ -7012,8 +6780,8 @@
             "name": "r0",
             "source": {
               "column": 12,
-              "line": 248,
-              "offset": 4420
+              "line": 246,
+              "offset": 4368
             },
             "type": "trit"
           }
@@ -7021,8 +6789,8 @@
         "return_type": "trit",
         "source": {
           "column": 1,
-          "line": 247,
-          "offset": 4369
+          "line": 245,
+          "offset": 4317
         }
       },
       {
@@ -7030,13 +6798,13 @@
           {
             "instructions": [
               {
-                "callee": "renderer_candidate_status",
-                "opcode": "call",
+                "immediate": -1,
+                "opcode": "const",
                 "result": "r0",
                 "source": {
                   "column": 12,
-                  "line": 251,
-                  "offset": 4489
+                  "line": 249,
+                  "offset": 4437
                 }
               },
               {
@@ -7046,16 +6814,16 @@
                 ],
                 "source": {
                   "column": 5,
-                  "line": 251,
-                  "offset": 4482
+                  "line": 249,
+                  "offset": 4430
                 }
               }
             ],
             "name": "entry",
             "source": {
               "column": 5,
-              "line": 251,
-              "offset": 4482
+              "line": 249,
+              "offset": 4430
             }
           }
         ],
@@ -7068,8 +6836,8 @@
             "name": "r0",
             "source": {
               "column": 12,
-              "line": 251,
-              "offset": 4489
+              "line": 249,
+              "offset": 4437
             },
             "type": "trit"
           }
@@ -7077,8 +6845,8 @@
         "return_type": "trit",
         "source": {
           "column": 1,
-          "line": 250,
-          "offset": 4459
+          "line": 248,
+          "offset": 4407
         }
       }
     ]

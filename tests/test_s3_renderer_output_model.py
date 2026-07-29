@@ -131,9 +131,9 @@ def test_renderer_output_model_metrics_match_current_goldens() -> None:
         for name, path in GOLDEN_PATHS.items()
     }
 
-    assert expected["first"]["line_count"] == 18
+    assert expected["first"]["line_count"] == 16
     assert expected["simple_call"]["line_count"] == 21
-    assert expected["sign"]["line_count"] == 36
+    assert expected["sign"]["line_count"] == 32
 
     for metric_name, by_fixture in METRIC_ENTRYPOINTS.items():
         for fixture, entrypoint in by_fixture.items():

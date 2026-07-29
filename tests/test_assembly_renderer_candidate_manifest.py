@@ -105,7 +105,7 @@ def test_assembly_renderer_candidate_manifest_symbol_ranges_match_subset() -> No
     assert "fn renderer_first_directive_id() -> tryte:\n    return 0" in source
     assert "fn renderer_last_directive_id() -> tryte:\n    return 5" in source
     assert "fn renderer_first_opcode_id() -> tryte:\n    return 0" in source
-    assert "fn renderer_last_opcode_id() -> tryte:\n    return 7" in source
+    assert "fn renderer_last_opcode_id() -> tryte:\n    return 6" in source
 
 
 def test_assembly_renderer_candidate_manifest_symbol_predicates_match_stub() -> None:

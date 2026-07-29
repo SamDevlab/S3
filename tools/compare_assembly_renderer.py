@@ -2310,8 +2310,8 @@ def _render_s3_fixture(renderer_path: str, golden_path_str: str, name: str, buff
     print(f"  sha256: {sha256}")
 
     try:
-        golden = _git_blob_bytes(golden_path_str)
-    except FileNotFoundError:
+        golden = _lf_normalized_file_bytes(golden_path_str, "S3 renderer golden")
+    except ValueError:
         print(f"  golden blob not found: {golden_path_str}")
         return 1
 
@@ -2337,7 +2337,16 @@ def candidate_render_simple_call() -> int:
 
 def candidate_render_sign() -> int:
     meta = FIXTURE_METADATA["sign"]
-    return _render_s3_fixture(SIGN_S3_RENDERER, SIGN_S3_GOLDEN, "sign", buffer_count=meta.buffer_count, buffer_offset=meta.buffer_offset, entry=meta.entry, expected_bytes=meta.expected_bytes)
+    return _render_s3_fixture(
+        SIGN_S3_RENDERER,
+        SIGN_S3_GOLDEN,
+        "sign",
+        buffer_count=meta.buffer_count,
+        buffer_offset=meta.buffer_offset,
+        entry=meta.entry,
+        max_instructions=meta.max_instructions,
+        expected_bytes=meta.expected_bytes,
+    )
 
 
 def generic_render_first() -> int:

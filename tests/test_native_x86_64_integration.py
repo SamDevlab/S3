@@ -486,8 +486,18 @@ def test_deterministic_differential_corpus(
 @pytest.mark.parametrize(
     ("source_or_program", "category"),
     (
-        ("fn main() -> tryte:\n    return 364 + 1\n", "overflow"),
-        ("fn main() -> tryte:\n    return -364 + -1\n", "overflow"),
+        (
+            "fn main() -> tryte:\n"
+            "    mut value: tryte = 364\n"
+            "    return value + 1\n",
+            "overflow",
+        ),
+        (
+            "fn main() -> tryte:\n"
+            "    mut value: tryte = -364\n"
+            "    return value + -1\n",
+            "overflow",
+        ),
         (
             """\
 fn read(index: tryte) -> tryte:
@@ -714,7 +724,12 @@ def test_same_toolchain_build_is_byte_reproducible(
 @pytest.mark.parametrize(
     ("source", "category"),
     (
-        ("fn main() -> tryte:\n    return 364 + 1\n", "overflow"),
+        (
+            "fn main() -> tryte:\n"
+            "    mut value: tryte = 364\n"
+            "    return value + 1\n",
+            "overflow",
+        ),
         (
             """\
 fn read(index: tryte) -> tryte:
