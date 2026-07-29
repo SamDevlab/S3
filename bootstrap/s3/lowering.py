@@ -958,6 +958,25 @@ class FunctionLowerer:
                     expression_type,
                     expression.location,
                 )
+            text = self.semantic_model.static_text_of(expression)
+            if text is not None:
+                try:
+                    static_string = self.static_string_ids[text]
+                except KeyError as error:
+                    raise LoweringError(
+                        "constant static text call expression is missing from static string table",
+                        expression.location,
+                    ) from error
+                result = self._allocate(ast.TypeName.STRING, expression.location)
+                self._emit(
+                    IRInstruction(
+                        IROpcode.CONST_STR,
+                        result=result,
+                        static_string=static_string,
+                        location=expression.location,
+                    )
+                )
+                return result
             arguments = tuple(
                 self._lower_expression(argument.expression)
                 for argument in expression.arguments

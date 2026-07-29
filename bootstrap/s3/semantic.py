@@ -29,6 +29,14 @@ STATIC_TEXT_QUERY_BUILTINS = {
     "find": ast.TypeName.TRYTE,
 }
 
+STATIC_TEXT_TRANSFORM_BUILTINS = {
+    "upper": 1,
+    "lower": 1,
+    "trim": 1,
+    "repeat": 2,
+    "replace": 3,
+}
+
 
 @dataclass(frozen=True, slots=True)
 class FunctionType:
@@ -946,6 +954,9 @@ class SemanticAnalyzer:
             )
         if expression.function_name in STATIC_TEXT_QUERY_BUILTINS:
             return self._analyze_static_text_query_call(expression)
+        if expression.function_name in STATIC_TEXT_TRANSFORM_BUILTINS:
+            if expression.function_name not in self.functions or self._is_constant_static_text_transform_call(expression):
+                return self._analyze_static_text_transform_call(expression)
         signature = self.functions.get(expression.function_name)
         if signature is None:
             raise SemanticError(
@@ -1023,6 +1034,106 @@ class SemanticAnalyzer:
         result = STATIC_TEXT_QUERY_BUILTINS[expression.function_name]
         self.expression_types[id(expression)] = result
         return result
+
+    def _is_constant_static_text_transform_call(
+        self,
+        expression: ast.CallExpression,
+    ) -> bool:
+        if expression.function_name not in STATIC_TEXT_TRANSFORM_BUILTINS:
+            return False
+        expected_count = STATIC_TEXT_TRANSFORM_BUILTINS[expression.function_name]
+        if len(expression.arguments) != expected_count:
+            return False
+        if expression.function_name in ("upper", "lower", "trim"):
+            return self._is_constant_static_text_expression(expression.arguments[0].expression)
+        if expression.function_name == "repeat":
+            return (
+                self._is_constant_static_text_expression(expression.arguments[0].expression)
+                and self._is_constant_tryte_expression(expression.arguments[1].expression)
+            )
+        if expression.function_name == "replace":
+            return all(
+                self._is_constant_static_text_expression(argument.expression)
+                for argument in expression.arguments
+            )
+        return False
+
+    def _analyze_static_text_transform_call(
+        self,
+        expression: ast.CallExpression,
+    ) -> ast.TypeName:
+        expected_count = STATIC_TEXT_TRANSFORM_BUILTINS[expression.function_name]
+        if len(expression.arguments) != expected_count:
+            raise SemanticError(
+                f"builtin '{expression.function_name}' expects {expected_count} argument(s), got "
+                f"{len(expression.arguments)}",
+                expression.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+            )
+        name = expression.function_name
+        if name in ("upper", "lower", "trim"):
+            text = self._constant_static_text_value(
+                expression.arguments[0].expression,
+                f"builtin '{name}' requires compile-time static text arguments",
+            )
+            if name == "upper":
+                result_text = text.upper()
+            elif name == "lower":
+                result_text = text.lower()
+            else:
+                result_text = text.strip()
+        elif name == "repeat":
+            text = self._constant_static_text_value(
+                expression.arguments[0].expression,
+                "builtin 'repeat' requires compile-time static text and count arguments",
+            )
+            count_type = self._analyze_expression(
+                expression.arguments[1].expression,
+                ast.TypeName.TRYTE,
+            )
+            self._require_type(
+                count_type,
+                ast.TypeName.TRYTE,
+                expression.arguments[1].expression.location,
+                "repeat count argument",
+                diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+            )
+            count = self._constant_tryte_value(expression.arguments[1].expression)
+            if count is None:
+                raise SemanticError(
+                    "builtin 'repeat' requires compile-time static text and count arguments",
+                    expression.arguments[1].expression.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION,
+                )
+            if count < 0:
+                raise SemanticError(
+                    "repeat count must be non-negative",
+                    expression.arguments[1].expression.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION,
+                )
+            result_text = text * count
+        elif name == "replace":
+            text = self._constant_static_text_value(
+                expression.arguments[0].expression,
+                "builtin 'replace' requires compile-time static text arguments",
+            )
+            old = self._constant_static_text_value(
+                expression.arguments[1].expression,
+                "builtin 'replace' requires compile-time static text arguments",
+            )
+            new = self._constant_static_text_value(
+                expression.arguments[2].expression,
+                "builtin 'replace' requires compile-time static text arguments",
+            )
+            result_text = text.replace(old, new)
+        else:
+            raise SemanticError(
+                f"unknown static text transform builtin '{name}'",
+                expression.location,
+            )
+        self.static_text_values[id(expression)] = result_text
+        self.expression_types[id(expression)] = ast.TypeName.STRING
+        return ast.TypeName.STRING
 
     def _analyze_binary(
         self,
@@ -1234,6 +1345,8 @@ class SemanticAnalyzer:
         if isinstance(expression, ast.CallExpression):
             if expression.function_name in STATIC_TEXT_QUERY_BUILTINS:
                 return STATIC_TEXT_QUERY_BUILTINS[expression.function_name]
+            if expression.function_name in STATIC_TEXT_TRANSFORM_BUILTINS:
+                return ast.TypeName.STRING
             signature = self.functions.get(expression.function_name)
             return None if signature is None else signature.return_type
         if isinstance(expression, ast.UnaryExpression):
@@ -1669,6 +1782,12 @@ class SemanticAnalyzer:
             text = source[start:end]
             self.static_text_values[id(expression)] = text
             return text
+        if isinstance(expression, ast.CallExpression):
+            if expression.function_name in STATIC_TEXT_TRANSFORM_BUILTINS:
+                self._analyze_static_text_transform_call(expression)
+                text = self.static_text_values.get(id(expression))
+                if text is not None:
+                    return text
         raise SemanticError(
             error_message,
             expression.location,
@@ -1692,6 +1811,8 @@ class SemanticAnalyzer:
                 and self._is_constant_tryte_expression(expression.start)
                 and self._is_constant_tryte_expression(expression.end)
             )
+        if isinstance(expression, ast.CallExpression):
+            return self._is_constant_static_text_transform_call(expression)
         return (
             isinstance(expression, ast.BinaryExpression)
             and expression.operator is ast.BinaryOperator.ADD
