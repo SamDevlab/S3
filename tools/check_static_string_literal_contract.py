@@ -34,7 +34,7 @@ EXPECTED_CURRENT_STATE = {
     "lexer": "STRING_LITERAL",
     "parser": "string type and string literal expressions",
     "runtime": "static handles only",
-    "semantic": "typed static string values with literal-only compile-time concat, length, equality, and immutable binding propagation",
+    "semantic": "typed static string values with literal-only compile-time concat, length, equality, immutable binding propagation, and static text indexing",
 }
 
 EXPECTED_STATIC_LITERAL_TABLE = {
@@ -98,9 +98,12 @@ def _validate_contract(data: dict[str, object], text: str) -> None:
         raise ValueError("contract length must be compile_time_static_text")
     if behavior.get("equality") != "compile_time_static_text":
         raise ValueError("contract equality must be compile_time_static_text")
-    for key in ("indexing", "string_byte_mutation"):
-        if behavior.get(key) is not False:
-            raise ValueError(f"contract {key} must be false")
+    if behavior.get("indexing") != "compile_time_static_text_with_literal_index":
+        raise ValueError(
+            "contract indexing must be compile_time_static_text_with_literal_index"
+        )
+    if behavior.get("string_byte_mutation") is not False:
+        raise ValueError("contract string_byte_mutation must be false")
 
 
 def main() -> int:
