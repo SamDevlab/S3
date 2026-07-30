@@ -252,9 +252,19 @@ def _eliminate_dead_pure_instructions(function: IRFunction) -> IRFunction:
     )
 
 
+def _run_ssa_optimizations(function: IRFunction) -> IRFunction:
+    from .ssa import SSABuilder
+    from .ssa_opt import run_fixpoint_pipeline
+
+    ssa_fn = SSABuilder.build_function(function)
+    ssa_fn, _telemetry = run_fixpoint_pipeline(ssa_fn)
+    return ssa_fn.to_ir()
+
+
 _O1_PASSES = (
     _FunctionPass("remove-unreachable-blocks", _remove_unreachable),
     _FunctionPass("thread-empty-jumps", _thread_jumps),
+    _FunctionPass("ssa-optimizations", _run_ssa_optimizations),
     _FunctionPass("fold-constants", _fold_constants),
     _FunctionPass(
         "eliminate-dead-pure-instructions",

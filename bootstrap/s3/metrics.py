@@ -150,3 +150,15 @@ def measure_optimization(before: IRModule, after: IRModule) -> OptimizationMetri
         before=ProgramMetrics.from_module(before),
         after=ProgramMetrics.from_module(after),
     )
+
+
+@dataclass(slots=True)
+class FixpointTelemetry:
+    """Telemetry metrics collected during SSA optimization fixpoint loop."""
+
+    iterations: int = 0
+    expressions_eliminated: int = 0
+    licm_moves: int = 0
+    strength_reductions: int = 0
+    branches_removed: int = 0
+    converged: bool = True

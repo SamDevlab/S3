@@ -9,6 +9,7 @@ from .diagnostics import SourceLocation
 from .dominance import DominatorTree
 from .ir import (
     IRFunction,
+    IRMemoryObject,
     IROpcode,
     IRType,
 )
@@ -81,6 +82,12 @@ class SSAFunction:
     parameters: tuple[SSAParameter, ...]
     blocks: tuple[SSABlock, ...]
     values: tuple[SSAValue, ...]
+    memory_objects: tuple[IRMemoryObject, ...] = ()
+
+    def to_ir(self) -> IRFunction:
+        from .ssa_opt import to_ir
+        return to_ir(self)
+
 
 
 @dataclass(slots=True)
@@ -199,7 +206,7 @@ class SSABuilder:
                     opcode=inst.opcode,
                     result=res_val,
                     operands=op_vals,
-                    immediate=inst.immediate,
+                    immediate=inst.immediate if inst.immediate is not None else (inst.static_string or inst.callee),
                     targets=inst.targets,
                     memory=inst.memory,
                     initialization=inst.initialization,
@@ -232,6 +239,7 @@ class SSABuilder:
             parameters=tuple(ssa_params),
             blocks=ssa_blocks_list,
             values=tuple(all_ssa_values),
+            memory_objects=function.memory_objects,
         )
 
 
