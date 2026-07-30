@@ -67,17 +67,17 @@ def test_distribution_version(monkeypatch):
     assert isinstance(ver2, str)
 
 def test_cli_help():
-    res = subprocess.run([sys.executable, "tools/benchmark.py", "--help"], capture_output=True, text=True)
+    res = subprocess.run([sys.executable, "tools/benchmark.py", "--help"], capture_output=True, text=True, timeout=30)
     assert res.returncode == 0
     assert "In-process benchmark runner" in res.stdout
 
 def test_cli_list():
-    res = subprocess.run([sys.executable, "tools/benchmark.py", "--list"], capture_output=True, text=True)
+    res = subprocess.run([sys.executable, "tools/benchmark.py", "--list"], capture_output=True, text=True, timeout=30)
     assert res.returncode == 0
     assert "minimal" in res.stdout
 
 def test_cli_list_json():
-    res = subprocess.run([sys.executable, "tools/benchmark.py", "--list", "--format", "json"], capture_output=True, text=True)
+    res = subprocess.run([sys.executable, "tools/benchmark.py", "--list", "--format", "json"], capture_output=True, text=True, timeout=30)
     assert res.returncode == 0
     data = json.loads(res.stdout)
     assert data["status"] == "success"
@@ -86,31 +86,31 @@ def test_cli_list_json():
 
 def test_cli_invalid_args():
     # mode missing
-    res = subprocess.run([sys.executable, "tools/benchmark.py", "--optimization", "O0", "--workload", "minimal"], capture_output=True, text=True)
+    res = subprocess.run([sys.executable, "tools/benchmark.py", "--optimization", "O0", "--workload", "minimal"], capture_output=True, text=True, timeout=30)
     assert res.returncode != 0
 
     # invalid mode
-    res = subprocess.run([sys.executable, "tools/benchmark.py", "--mode", "invalid", "--format", "json"], capture_output=True, text=True)
+    res = subprocess.run([sys.executable, "tools/benchmark.py", "--mode", "invalid", "--format", "json"], capture_output=True, text=True, timeout=30)
     assert res.returncode != 0
     data = json.loads(res.stdout)
     assert data["status"] == "error"
     assert "invalid choice" in data["error"]["message"].lower()
 
     # runs negative
-    res = subprocess.run([sys.executable, "tools/benchmark.py", "--mode", "hosted-pipeline", "--optimization", "O0", "--workload", "minimal", "--runs", "-1", "--format", "json"], capture_output=True, text=True)
+    res = subprocess.run([sys.executable, "tools/benchmark.py", "--mode", "hosted-pipeline", "--optimization", "O0", "--workload", "minimal", "--runs", "-1", "--format", "json"], capture_output=True, text=True, timeout=30)
     assert res.returncode != 0
     data = json.loads(res.stdout)
     assert "Runs must be > 0" in data["error"]["message"]
 
 def test_cli_hosted_execution():
-    res = subprocess.run([sys.executable, "tools/benchmark.py", "--mode", "hosted-pipeline", "--optimization", "O0", "--workload", "minimal", "--runs", "1", "--warmups", "1", "--format", "json"], capture_output=True, text=True)
+    res = subprocess.run([sys.executable, "tools/benchmark.py", "--mode", "hosted-pipeline", "--optimization", "O0", "--workload", "minimal", "--runs", "1", "--warmups", "1", "--format", "json"], capture_output=True, text=True, timeout=30)
     assert res.returncode == 0
     data = json.loads(res.stdout)
     assert data["results"][0]["status"] == "passed"
     assert data["results"][0]["actual_return"] == 0
 
 def test_cli_native_execution():
-    res = subprocess.run([sys.executable, "tools/benchmark.py", "--mode", "native-asm-pipeline", "--optimization", "O1", "--workload", "minimal", "--runs", "1", "--warmups", "1", "--format", "json"], capture_output=True, text=True)
+    res = subprocess.run([sys.executable, "tools/benchmark.py", "--mode", "native-asm-pipeline", "--optimization", "O1", "--workload", "minimal", "--runs", "1", "--warmups", "1", "--format", "json"], capture_output=True, text=True, timeout=30)
     assert res.returncode == 0
     data = json.loads(res.stdout)
     assert data["results"][0]["status"] == "passed"
@@ -121,7 +121,7 @@ def test_cli_native_execution():
 
 def test_file_output(tmp_path):
     out_file = tmp_path / "out.json"
-    res = subprocess.run([sys.executable, "tools/benchmark.py", "--mode", "hosted-pipeline", "--optimization", "O0", "--workload", "minimal", "--runs", "1", "--warmups", "0", "--format", "json", "--output", str(out_file)], capture_output=True, text=True)
+    res = subprocess.run([sys.executable, "tools/benchmark.py", "--mode", "hosted-pipeline", "--optimization", "O0", "--workload", "minimal", "--runs", "1", "--warmups", "0", "--format", "json", "--output", str(out_file)], capture_output=True, text=True, timeout=30)
     assert res.returncode == 0
     assert out_file.exists()
     data = json.loads(out_file.read_text(encoding="utf-8"))
@@ -129,7 +129,7 @@ def test_file_output(tmp_path):
 
 def test_invalid_output_path():
     invalid_path = "/invalid_dir_does_not_exist/out.json" if sys.platform != "win32" else "Z:\\invalid_dir\\out.json"
-    res = subprocess.run([sys.executable, "tools/benchmark.py", "--mode", "hosted-pipeline", "--optimization", "O0", "--workload", "minimal", "--runs", "1", "--warmups", "0", "--format", "json", "--output", invalid_path], capture_output=True, text=True)
+    res = subprocess.run([sys.executable, "tools/benchmark.py", "--mode", "hosted-pipeline", "--optimization", "O0", "--workload", "minimal", "--runs", "1", "--warmups", "0", "--format", "json", "--output", invalid_path], capture_output=True, text=True, timeout=30)
     assert res.returncode != 0
     assert res.stdout == ""
     assert "S3_BENCH_WRITE_FAILED" in res.stderr

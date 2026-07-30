@@ -89,6 +89,7 @@ def test_official_examples_via_public_cli(example_path: Path) -> None:
             ],
             capture_output=True,
             text=True,
+            timeout=15,
         )
         assert result.returncode == 0, (
             f"CLI command {cmd} failed for {example_path.name}:\n"

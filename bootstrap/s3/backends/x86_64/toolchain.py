@@ -69,7 +69,7 @@ class NativeToolchain:
                 self._invoke(source_path, output)
         return output
 
-    def _invoke(self, source: Path, output: Path) -> None:
+    def _invoke(self, source: Path, output: Path, *, timeout: float = 30.0) -> None:
         obj_name = source.with_suffix(".o").name
         
         compile_command = [
@@ -101,7 +101,12 @@ class NativeToolchain:
                     capture_output=True,
                     text=True,
                     shell=False,
+                    timeout=timeout,
                 )
+            except subprocess.TimeoutExpired as error:
+                raise NativeToolchainError(
+                    f"native toolchain '{self.compiler}' timed out after {timeout}s"
+                ) from error
             except OSError as error:
                 raise NativeToolchainError(
                     f"could not start native toolchain '{self.compiler}': {error}"
@@ -128,6 +133,7 @@ class NativeToolchain:
         executable: Path,
         *,
         check: bool = False,
+        timeout: float = 30.0,
     ) -> subprocess.CompletedProcess[str]:
         executable = executable.resolve()
         if not executable.is_file():
@@ -141,7 +147,12 @@ class NativeToolchain:
                 capture_output=True,
                 text=True,
                 shell=False,
+                timeout=timeout,
             )
+        except subprocess.TimeoutExpired as error:
+            raise NativeToolchainError(
+                f"native executable timed out after {timeout}s: '{executable}'"
+            ) from error
         except OSError as error:
             raise NativeToolchainError(
                 f"could not execute native program '{executable}': {error}"
@@ -157,3 +168,4 @@ class NativeToolchain:
                 },
             )
         return completed
+
