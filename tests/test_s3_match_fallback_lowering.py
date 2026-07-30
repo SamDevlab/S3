@@ -9,12 +9,14 @@ from bootstrap.s3.verifier import verify_ir
 
 def test_lowering_match_statement_fallback():
     program = parse("""
-fn main() -> tryte:
-    match 0:
+fn helper(val: trit) -> tryte:
+    match val:
         1:
             return 10
         else:
             return 20
+fn main() -> tryte:
+    return helper(0)
 """)
     semantic_model = analyze(program)
     ir_module = lower(program, semantic_model)
@@ -37,15 +39,18 @@ fn main() -> tryte:
 
 def test_lowering_match_expression_fallback():
     program = parse("""
-fn main() -> tryte:
-    x: tryte = match 0:
+fn helper(val: trit) -> tryte:
+    x: tryte = match val:
         0: 100
         else: 200
     return x
+fn main() -> tryte:
+    return helper(0)
 """)
     semantic_model = analyze(program)
     ir_module = lower(program, semantic_model)
     verify_ir(ir_module)
+
 
     fn = ir_module.functions[0]
     branch3_insts = [i for b in fn.blocks for i in b.instructions if i.opcode == IROpcode.BRANCH3]

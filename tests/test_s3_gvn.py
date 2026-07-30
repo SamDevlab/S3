@@ -8,12 +8,12 @@ from bootstrap.s3.ssa_opt import run_ssa_gvn
 
 def test_gvn_detects_equivalent_expressions() -> None:
     source = (
-        "fn main() -> tryte:\n"
-        "    a: tryte = 10\n"
-        "    b: tryte = 20\n"
+        "fn helper(a: tryte, b: tryte) -> tryte:\n"
         "    x: tryte = a + b\n"
         "    y: tryte = a + b\n"
         "    return x + y\n"
+        "fn main() -> tryte:\n"
+        "    return helper(10, 20)\n"
     )
     compilation = compile_source(source, mode=SyntaxMode.V0_6)
     fn = compilation.ir.functions[0]
@@ -23,6 +23,7 @@ def test_gvn_detects_equivalent_expressions() -> None:
     assert eliminated >= 1
     res = run_source(source, optimization="O1", mode=SyntaxMode.V0_6)
     assert res == 60
+
 
 
 def test_gvn_across_dominating_blocks() -> None:

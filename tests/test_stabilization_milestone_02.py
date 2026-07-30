@@ -78,8 +78,8 @@ def test_ci_workflow_has_required_matrix_and_commands() -> None:
     assert "pull_request:" in workflow
     assert "ubuntu-latest" in workflow
     assert '["3.11", "3.12", "3.13"]' in workflow
-    assert "actions/checkout@v6" in workflow
-    assert "actions/setup-python@v6" in workflow
+    assert "actions/checkout@v4" in workflow
+    assert "actions/setup-python@v5" in workflow
     assert 'python -m pip install -e ".[dev]"' in workflow
     assert "python -m pytest" in workflow
     assert "native-x86-64:" in workflow

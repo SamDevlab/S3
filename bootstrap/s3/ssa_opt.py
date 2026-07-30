@@ -724,13 +724,18 @@ def run_ssa_gvn(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
                 and inst.opcode in _PURE_REMOVABLE_OPCODES
                 and inst.opcode not in {IROpcode.CONST, IROpcode.CONST_STR, IROpcode.MOVE}
             ):
+                op_keys = tuple(
+                    replacements.get(op.name, op).original_register
+                    for op in inst.operands
+                )
                 key = (
                     inst.opcode,
-                    tuple(op.name for op in inst.operands),
+                    op_keys,
                     inst.immediate,
                     inst.memory,
                     inst.result.type,
                 )
+
                 if key in value_table:
                     canonical_val = value_table[key]
                     replacements[inst.result.name] = canonical_val
@@ -1163,18 +1168,24 @@ def run_ssa_dse(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
     mem_ssa = MemorySSA.build(ssa_fn, cfg, dom_tree)
 
     dead_stores: Set[SSAInstruction] = set()
+    known_consts: Dict[str, int] = {}
+    for block in ssa_fn.blocks:
+        for inst in block.instructions:
+            if inst.opcode is IROpcode.CONST and inst.result and isinstance(inst.immediate, int):
+                known_consts[inst.result.name] = inst.immediate
 
     for block in ssa_fn.blocks:
-        last_store_per_cell: Dict[Tuple[int, str], SSAInstruction] = {}
+        last_store_per_cell: Dict[Tuple[int, int | str], SSAInstruction] = {}
 
         for inst in block.instructions:
-            if inst.opcode is IROpcode.STORE and inst.memory is not None and inst.operands:
-                cell = (inst.memory, inst.operands[0].name)
-                if cell in last_store_per_cell:
-                    prev_store = last_store_per_cell[cell]
-                    dead_stores.add(prev_store)
+            if inst.opcode is IROpcode.STORE and inst.operands:
+                idx_op = inst.operands[0]
+                idx_key = known_consts.get(idx_op.name, idx_op.original_register)
+                cell_key = (inst.memory, idx_key)
+                if cell_key in last_store_per_cell:
+                    dead_stores.add(last_store_per_cell[cell_key])
+                last_store_per_cell[cell_key] = inst
 
-                last_store_per_cell[cell] = inst
             elif inst.opcode is IROpcode.LOAD and inst.memory is not None:
                 # Clear pending stores for aliased memory locations
                 mem_idx = inst.memory

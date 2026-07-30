@@ -1690,15 +1690,16 @@ class SemanticAnalyzer:
             if right_const == 0:
                 self.simplified_expressions[id(expression)] = expression.left
         elif expression.operator is ast.BinaryOperator.MINIMUM:
-            if right_const in (-1, 1, TRYTE_MAX):
+            if right_const == TRYTE_MAX:
                 self.simplified_expressions[id(expression)] = expression.left
-            elif left_const in (-1, 1, TRYTE_MAX):
+            elif left_const == TRYTE_MAX:
                 self.simplified_expressions[id(expression)] = expression.right
         elif expression.operator is ast.BinaryOperator.MAXIMUM:
-            if right_const in (0, -1, TRYTE_MIN):
+            if right_const == TRYTE_MIN:
                 self.simplified_expressions[id(expression)] = expression.left
-            elif left_const in (0, -1, TRYTE_MIN):
+            elif left_const == TRYTE_MIN:
                 self.simplified_expressions[id(expression)] = expression.right
+
 
     def _simplify_unary_expression(self, expression: ast.UnaryExpression) -> None:
         if isinstance(expression.operand, ast.UnaryExpression):
