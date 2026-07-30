@@ -112,11 +112,12 @@ def test_static_text_equality_rejects_mixed_types(expression: str) -> None:
         )
 
 
-def test_static_text_equality_rejects_string_ordering() -> None:
+def test_static_text_ordering_non_constant_rejects_string_ordering() -> None:
     with pytest.raises(SemanticError) as captured:
         _analyze(
+            "fn check(s: string) -> trit:\n"
+            '    return s < "b"\n'
             "fn main() -> tryte:\n"
-            '    ordered: trit = "a" < "b"\n'
             "    return 0\n"
         )
 
@@ -125,6 +126,18 @@ def test_static_text_equality_rejects_string_ordering() -> None:
         is DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
     )
     assert captured.value.message == "operator '<' is not supported for string values"
+
+
+def test_static_text_constant_string_ordering_supported() -> None:
+    program = _parse(
+        "fn main() -> tryte:\n"
+        '    ordered: trit = "a" < "b"\n'
+        "    return 0\n"
+    )
+    model = analyze(program)
+    decl = program.functions[0].body.statements[0]
+    assert isinstance(decl, ast.VariableDeclaration)
+    assert model.constant_value_of(decl.initializer) == -1
 
 
 def test_numeric_equality_is_preserved() -> None:

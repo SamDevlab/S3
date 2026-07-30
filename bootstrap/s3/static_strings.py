@@ -138,9 +138,16 @@ def collect_static_string_literals(
                 if static_text_of is not None
                 else constant_text(expression.right)
             )
+            RELATIONAL_OPS = (
+                ast.BinaryOperator.EQUAL,
+                ast.BinaryOperator.NOT_EQUAL,
+                ast.BinaryOperator.LESS,
+                ast.BinaryOperator.LESS_EQUAL,
+                ast.BinaryOperator.GREATER,
+                ast.BinaryOperator.GREATER_EQUAL,
+            )
             if (
-                expression.operator
-                in (ast.BinaryOperator.EQUAL, ast.BinaryOperator.NOT_EQUAL)
+                expression.operator in RELATIONAL_OPS
                 and left_text is not None
                 and right_text is not None
             ):

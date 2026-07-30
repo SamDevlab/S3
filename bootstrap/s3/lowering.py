@@ -840,10 +840,8 @@ class FunctionLowerer:
             and expression.operator is ast.BinaryOperator.ADD
             and expression_type is ast.TypeName.STRING
         ):
-            text = evaluate_constant_static_text_expression(
-                expression,
-                self.semantic_model,
-            )
+            text = self.semantic_model.static_text_of(expression)
+            assert text is not None
             try:
                 static_string = self.static_string_ids[text]
             except KeyError as error:
@@ -885,10 +883,8 @@ class FunctionLowerer:
             return result
         if isinstance(expression, ast.IndexExpression):
             if expression_type is ast.TypeName.STRING:
-                text = evaluate_constant_static_text_expression(
-                    expression,
-                    self.semantic_model,
-                )
+                text = self.semantic_model.static_text_of(expression)
+                assert text is not None
                 try:
                     static_string = self.static_string_ids[text]
                 except KeyError as error:
@@ -929,10 +925,8 @@ class FunctionLowerer:
             )
             return result
         if isinstance(expression, ast.SliceExpression):
-            text = evaluate_constant_static_text_expression(
-                expression,
-                self.semantic_model,
-            )
+            text = self.semantic_model.static_text_of(expression)
+            assert text is not None
             try:
                 static_string = self.static_string_ids[text]
             except KeyError as error:
@@ -1021,10 +1015,8 @@ class FunctionLowerer:
                 expression.location,
             )
         if argument_type is ast.TypeName.STRING:
-            text = evaluate_constant_static_text_expression(
-                expression.argument,
-                self.semantic_model,
-            )
+            text = self.semantic_model.static_text_of(expression.argument)
+            assert text is not None
             return self._emit_constant(
                 len(text),
                 ast.TypeName.TRYTE,
@@ -1040,30 +1032,14 @@ class FunctionLowerer:
         expression: ast.BinaryExpression,
         result_type: ast.TypeName,
     ) -> int:
-        if (
-            expression.operator
-            in (ast.BinaryOperator.EQUAL, ast.BinaryOperator.NOT_EQUAL)
-            and self.semantic_model.declared_type_of(expression.left)
-            is ast.TypeName.STRING
-            and self.semantic_model.declared_type_of(expression.right)
-            is ast.TypeName.STRING
-        ):
-            left_text = evaluate_constant_static_text_expression(
-                expression.left,
-                self.semantic_model,
-            )
-            right_text = evaluate_constant_static_text_expression(
-                expression.right,
-                self.semantic_model,
-            )
-            equal = left_text == right_text
-            if expression.operator is ast.BinaryOperator.NOT_EQUAL:
-                equal = not equal
-            return self._emit_constant(
-                -1 if equal else 0,
-                ast.TypeName.TRIT,
-                expression.location,
-            )
+        RELATIONAL_OPS = (
+            ast.BinaryOperator.EQUAL,
+            ast.BinaryOperator.NOT_EQUAL,
+            ast.BinaryOperator.LESS,
+            ast.BinaryOperator.LESS_EQUAL,
+            ast.BinaryOperator.GREATER,
+            ast.BinaryOperator.GREATER_EQUAL,
+        )
         left = self._lower_expression(expression.left)
         right = self._lower_expression(expression.right)
         if expression.operator is ast.BinaryOperator.SUBTRACT:
@@ -1291,30 +1267,6 @@ class FunctionLowerer:
             )
         )
         return result_reg
-
-
-def evaluate_constant_static_text_expression(
-    expression: ast.Expression,
-    semantic_model: SemanticModel | None = None,
-) -> str:
-    if semantic_model is not None:
-        text = semantic_model.static_text_of(expression)
-        if text is not None:
-            return text
-    if isinstance(expression, ast.StringLiteral):
-        return decode_static_text(expression.value)
-    if (
-        isinstance(expression, ast.BinaryExpression)
-        and expression.operator is ast.BinaryOperator.ADD
-    ):
-        return normalize_static_text_newlines(
-            evaluate_constant_static_text_expression(expression.left, semantic_model)
-            + evaluate_constant_static_text_expression(expression.right, semantic_model)
-        )
-    raise LoweringError(
-        "expected a compile-time static text expression",
-        expression.location,
-    )
 
 
 def lower(program: ast.Program, semantic_model: SemanticModel) -> IRModule:
