@@ -11,6 +11,9 @@ import time
 import hashlib
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+
 # Direct imports
 from bootstrap.s3 import OptimizationLevel
 from bootstrap.s3.lexer import SyntaxMode, tokenize

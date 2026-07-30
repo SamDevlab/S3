@@ -8,10 +8,11 @@ from bootstrap.s3.ssa_opt import run_ssa_strength_reduction
 
 def test_strength_reduction_self_addition() -> None:
     source = (
-        "fn main() -> tryte:\n"
-        "    a: tryte = 15\n"
+        "fn helper(a: tryte) -> tryte:\n"
         "    double_a: tryte = a + a\n"
         "    return double_a\n"
+        "fn main() -> tryte:\n"
+        "    return helper(15)\n"
     )
     compilation = compile_source(source, mode=SyntaxMode.V0_6)
     fn = compilation.ir.functions[0]
@@ -25,11 +26,12 @@ def test_strength_reduction_self_addition() -> None:
 
 def test_strength_reduction_double_inversion() -> None:
     source = (
-        "fn main() -> tryte:\n"
-        "    x: tryte = 7\n"
+        "fn helper(x: tryte) -> tryte:\n"
         "    inv1: tryte = ~x\n"
         "    inv2: tryte = ~inv1\n"
         "    return inv2\n"
+        "fn main() -> tryte:\n"
+        "    return helper(7)\n"
     )
     compilation = compile_source(source, mode=SyntaxMode.V0_6)
     fn = compilation.ir.functions[0]
@@ -39,3 +41,4 @@ def test_strength_reduction_double_inversion() -> None:
     assert reductions >= 1
     res = run_source(source, optimization="O1", mode=SyntaxMode.V0_6)
     assert res == 7
+

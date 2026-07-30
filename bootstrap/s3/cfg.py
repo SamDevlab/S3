@@ -41,8 +41,9 @@ class ControlFlowGraph:
                         node.successors.add(target)
                         nodes[target].predecessors.add(block.name)
 
-        entry_name = function.blocks[0].name if function.blocks else "entry"
+        entry_name = "entry" if "entry" in nodes else (function.blocks[0].name if function.blocks else "entry")
         return cls(entry_name=entry_name, nodes=nodes)
+
 
     def reachable_nodes(self) -> set[str]:
         """Returns the set of block names reachable from the entry block."""

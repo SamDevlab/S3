@@ -86,14 +86,17 @@ def test_lowering_mutable_string_binding_uses_string_memory_slot() -> None:
 
 def test_lowering_match_expression_can_select_static_string_value() -> None:
     module = _lower(
-        "fn main() -> tryte:\n"
-        "    selector: trit = 0\n"
-        "    value: string = match selector:\n"
+        "fn select(selector: trit) -> string:\n"
+        "    return match selector:\n"
         '        -1: "negative"\n'
         '        0: "zero"\n'
         '        1: "positive"\n'
+        "fn main() -> tryte:\n"
+        '    value: string = select(0)\n'
         "    return 0\n"
     )
+
+
 
     main = module.functions[0]
     assert [(entry.id, entry.value) for entry in module.static_strings] == [

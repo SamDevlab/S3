@@ -228,15 +228,23 @@ def test_source_metadata_appears_in_runtime_error() -> None:
 
 def test_unconditional_jump_from_source_switch_continuation() -> None:
     source = """\
-fn main() -> tryte {
-    switch (0) {
+fn helper(x: trit) -> tryte {
+    switch (x) {
         -1: {}
         0: {}
         1: {}
     }
     return 7;
 }
+
+fn main() -> tryte {
+    return helper(0);
+}
 """
     compilation = compile_source(source, mode=SyntaxMode.V0_5)
     assert "TJMP" in compilation.assembly_text
     assert run_source(source, mode=SyntaxMode.V0_5) == 7
+
+
+
+

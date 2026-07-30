@@ -135,9 +135,11 @@ def test_o1_pass_order_is_explicit_and_stable() -> None:
     assert tuple(pass_.name for pass_ in _o1_passes()) == (
         "remove-unreachable-blocks",
         "thread-empty-jumps",
+        "ssa-optimizations",
         "fold-constants",
         "eliminate-dead-pure-instructions",
     )
+
 
 
 def test_optimize_ir_o0_preserves_existing_identity_and_assembly() -> None:

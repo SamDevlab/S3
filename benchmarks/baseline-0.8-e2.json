@@ -202,8 +202,8 @@
           "function_count": 2,
           "block_count": 5,
           "opcode_count": 16,
-          "textual_size_bytes": 1101,
-          "sha256": "917f75e9bf51361260e56e39da2bf7e32273fed37b05a91fa924e7b6bffbcf86"
+          "textual_size_bytes": 1095,
+          "sha256": "36c2b6e35d7d8d3abce12a39fdd4765554c595db99b147f352feb62c1cb1fdfb"
         },
         "execution": {
           "executed_s3_opcodes": 1327,

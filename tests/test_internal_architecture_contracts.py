@@ -174,6 +174,8 @@ def test_pass_manager_contract_stays_private_and_function_major() -> None:
     assert tuple(pass_.name for pass_ in _o1_passes()) == (
         "remove-unreachable-blocks",
         "thread-empty-jumps",
+        "ssa-optimizations",
         "fold-constants",
         "eliminate-dead-pure-instructions",
     )
+

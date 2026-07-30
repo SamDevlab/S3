@@ -43,6 +43,8 @@ class SSAPhiNode:
     operands: dict[str, SSAValue] = field(default_factory=dict)
     location: SourceLocation | None = None
 
+    __hash__ = object.__hash__
+
 
 @dataclass(slots=True)
 class SSAInstruction:
@@ -56,6 +58,8 @@ class SSAInstruction:
     memory: int | None = None
     initialization: bool = False
     location: SourceLocation | None = None
+
+    __hash__ = object.__hash__
 
 
 @dataclass(slots=True)
@@ -83,6 +87,8 @@ class SSAFunction:
     blocks: tuple[SSABlock, ...]
     values: tuple[SSAValue, ...]
     memory_objects: tuple[IRMemoryObject, ...] = ()
+    return_type: IRType = IRType.TRYTE
+
 
     def to_ir(self) -> IRFunction:
         from .ssa_opt import to_ir
@@ -240,7 +246,9 @@ class SSABuilder:
             blocks=ssa_blocks_list,
             values=tuple(all_ssa_values),
             memory_objects=function.memory_objects,
+            return_type=function.return_type,
         )
+
 
 
 def validate_ssa(function: SSAFunction, cfg: ControlFlowGraph, dom_tree: DominatorTree) -> None:

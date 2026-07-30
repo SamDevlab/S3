@@ -105,7 +105,10 @@ def to_ir(ssa_fn: SSAFunction) -> IRFunction:
                 pending_phi_moves.setdefault(pred_name, []).append(move_inst)
 
     ir_blocks: List[IRBasicBlock] = []
-    for block in ssa_fn.blocks:
+    entry_blocks = [b for b in ssa_fn.blocks if b.name == "entry"]
+    other_blocks = [b for b in ssa_fn.blocks if b.name != "entry"]
+    for block in entry_blocks + other_blocks:
+
         instructions: List[IRInstruction] = []
 
         for ssa_inst in block.instructions:
@@ -155,9 +158,8 @@ def to_ir(ssa_fn: SSAFunction) -> IRFunction:
             )
         )
 
-    ret_type = IRType.TRYTE
-    if ssa_fn.values:
-        ret_type = ssa_fn.values[0].type
+    ret_type = getattr(ssa_fn, "return_type", IRType.TRYTE)
+
 
     return IRFunction(
         name=ssa_fn.name,
@@ -295,6 +297,7 @@ def run_ssa_constant_propagation(ssa_fn: SSAFunction) -> SSAFunction:
         blocks=tuple(new_blocks),
         values=ssa_fn.values,
         memory_objects=ssa_fn.memory_objects,
+        return_type=ssa_fn.return_type,
     )
 
 
@@ -332,9 +335,10 @@ def run_ssa_copy_propagation(ssa_fn: SSAFunction) -> SSAFunction:
                 if inst.opcode is IROpcode.MOVE and inst.result and inst.operands:
                     if inst.result.name not in copies:
                         canonical_src = get_canonical(inst.operands[0])
-                        if canonical_src.name != inst.result.name:
+                        if canonical_src.name != inst.result.name and canonical_src.type == inst.result.type:
                             copies[inst.result.name] = canonical_src
                             changed = True
+
 
     new_blocks: List[SSABlock] = []
     for block in ssa_fn.blocks:
@@ -386,7 +390,9 @@ def run_ssa_copy_propagation(ssa_fn: SSAFunction) -> SSAFunction:
         blocks=tuple(new_blocks),
         values=ssa_fn.values,
         memory_objects=ssa_fn.memory_objects,
+        return_type=ssa_fn.return_type,
     )
+
 
 
 # -----------------------------------------------------------------------------
@@ -442,6 +448,7 @@ def run_ssa_dead_code_elimination(ssa_fn: SSAFunction) -> SSAFunction:
         blocks=tuple(blocks),
         values=ssa_fn.values,
         memory_objects=ssa_fn.memory_objects,
+        return_type=ssa_fn.return_type,
     )
 
 
@@ -686,7 +693,9 @@ def run_ssa_peephole(ssa_fn: SSAFunction) -> SSAFunction:
         blocks=tuple(new_blocks),
         values=ssa_fn.values,
         memory_objects=ssa_fn.memory_objects,
+        return_type=ssa_fn.return_type,
     )
+
 
 
 # -----------------------------------------------------------------------------
@@ -800,7 +809,8 @@ def run_ssa_licm(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
                         inst.result is not None
                         and inst.result.name not in invariant_defs
                         and inst.opcode in _PURE_REMOVABLE_OPCODES
-                        and inst.opcode not in {IROpcode.JUMP, IROpcode.BRANCH3, IROpcode.CALL, IROpcode.STORE}
+                        and inst.opcode not in {IROpcode.JUMP, IROpcode.BRANCH3, IROpcode.CALL, IROpcode.STORE, IROpcode.LOAD}
+
                     ):
                         if all(
                             (op.name not in defined_in_loop or op.name in invariant_defs)
@@ -844,6 +854,7 @@ def run_ssa_licm(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
             blocks=tuple(new_blocks),
             values=ssa_fn.values,
             memory_objects=ssa_fn.memory_objects,
+            return_type=ssa_fn.return_type,
         )
 
     return ssa_fn, hoisted_count
@@ -869,24 +880,27 @@ def run_ssa_strength_reduction(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
         for inst in block.instructions:
             if inst.opcode is IROpcode.ADD and inst.result and len(inst.operands) == 2:
                 op0, op1 = inst.operands[0], inst.operands[1]
-                if op0.name == op1.name:
+                if op0.name == op1.name or (op0.original_register is not None and op0.original_register == op1.original_register):
                     reductions_count += 1
+
 
             if inst.opcode is IROpcode.INVERT and inst.result and len(inst.operands) == 1:
                 op0 = inst.operands[0]
-                if op0.name in def_inst_map:
-                    def0 = def_inst_map[op0.name]
-                    if def0.opcode is IROpcode.INVERT and def0.operands:
-                        reductions_count += 1
-                        new_instructions.append(
-                            SSAInstruction(
-                                opcode=IROpcode.MOVE,
-                                result=inst.result,
-                                operands=(def0.operands[0],),
-                                location=inst.location,
-                            )
+                def0 = def_inst_map.get(op0.name)
+                while def0 and def0.opcode is IROpcode.MOVE and def0.operands:
+                    def0 = def_inst_map.get(def0.operands[0].name)
+                if def0 and def0.opcode is IROpcode.INVERT and def0.operands:
+                    reductions_count += 1
+                    new_instructions.append(
+                        SSAInstruction(
+                            opcode=IROpcode.MOVE,
+                            result=inst.result,
+                            operands=(def0.operands[0],),
+                            location=inst.location,
                         )
-                        continue
+                    )
+                    continue
+
 
             new_instructions.append(inst)
 
@@ -904,6 +918,7 @@ def run_ssa_strength_reduction(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
         blocks=tuple(new_blocks),
         values=ssa_fn.values,
         memory_objects=ssa_fn.memory_objects,
+        return_type=ssa_fn.return_type,
     ), reductions_count
 
 
@@ -1052,6 +1067,7 @@ def run_ssa_sccp(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int, int]:
         blocks=tuple(new_blocks),
         values=ssa_fn.values,
         memory_objects=ssa_fn.memory_objects,
+        return_type=ssa_fn.return_type,
     ), expressions_folded, branches_removed
 
 
@@ -1131,6 +1147,7 @@ def run_ssa_adce(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
         blocks=tuple(new_blocks),
         values=ssa_fn.values,
         memory_objects=ssa_fn.memory_objects,
+        return_type=ssa_fn.return_type,
     ), removed_count
 
 
@@ -1148,28 +1165,29 @@ def run_ssa_dse(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
     dead_stores: Set[SSAInstruction] = set()
 
     for block in ssa_fn.blocks:
-        last_store_per_mem: Dict[int, SSAInstruction] = {}
+        last_store_per_cell: Dict[Tuple[int, str], SSAInstruction] = {}
 
         for inst in block.instructions:
-            if inst.opcode is IROpcode.STORE and inst.memory is not None:
-                mem_idx = inst.memory
-                if mem_idx in last_store_per_mem:
-                    prev_store = last_store_per_mem[mem_idx]
+            if inst.opcode is IROpcode.STORE and inst.memory is not None and inst.operands:
+                cell = (inst.memory, inst.operands[0].name)
+                if cell in last_store_per_cell:
+                    prev_store = last_store_per_cell[cell]
                     dead_stores.add(prev_store)
 
-                last_store_per_mem[mem_idx] = inst
+                last_store_per_cell[cell] = inst
             elif inst.opcode is IROpcode.LOAD and inst.memory is not None:
                 # Clear pending stores for aliased memory locations
                 mem_idx = inst.memory
                 to_clear = [
-                    m for m in last_store_per_mem
-                    if AliasAnalysis.may_alias(m, mem_idx)
+                    c for c in last_store_per_cell
+                    if AliasAnalysis.may_alias(c[0], mem_idx)
                 ]
-                for m in to_clear:
-                    del last_store_per_mem[m]
+                for c in to_clear:
+                    del last_store_per_cell[c]
             elif inst.opcode is IROpcode.CALL:
                 # Calls may observe any memory location
-                last_store_per_mem.clear()
+                last_store_per_cell.clear()
+
 
     if not dead_stores:
         return ssa_fn, 0
@@ -1191,6 +1209,7 @@ def run_ssa_dse(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
         blocks=tuple(new_blocks),
         values=ssa_fn.values,
         memory_objects=ssa_fn.memory_objects,
+        return_type=ssa_fn.return_type,
     ), len(dead_stores)
 
 
