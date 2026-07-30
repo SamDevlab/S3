@@ -238,17 +238,17 @@
         "ir": {
           "function_count": 1,
           "block_count": 1,
-          "instruction_count": 31
+          "instruction_count": 25
         },
         "s3_assembly": {
           "function_count": 1,
           "block_count": 1,
-          "opcode_count": 31,
-          "textual_size_bytes": 1839,
-          "sha256": "c49fed4584d996f485830df7475beaedd2af3a950559b9ce15ded340656c9e3d"
+          "opcode_count": 25,
+          "textual_size_bytes": 1517,
+          "sha256": "45e8e8aa95942e271c179abcc33c516e3c7a4e6dd0bf97615574f2cf5b0182b6"
         },
         "execution": {
-          "executed_s3_opcodes": 31,
+          "executed_s3_opcodes": 25,
           "maximum_frame_depth_observed": 1,
           "function_call_count": 0
         }
