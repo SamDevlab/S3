@@ -30,7 +30,7 @@ jobs:
         run: python tools/golden_inspect.py check
 
       - name: Run tests
-        run: python -m pytest
+        run: python -m pytest -v --tb=short
 
   native-x86-64:
     runs-on: ubuntu-latest
