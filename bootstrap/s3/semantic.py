@@ -70,6 +70,7 @@ class SemanticModel:
     functions: dict[str, FunctionType]
     static_text_values: dict[int, str]
     constant_values: dict[int, int]
+    simplified_expressions: dict[int, ast.Expression]
 
     def type_of(self, expression: ast.Expression) -> ast.TypeName:
         try:
@@ -108,6 +109,14 @@ class SemanticModel:
     def constant_value_of(self, expression: ast.Expression) -> int | None:
         return self.constant_values.get(id(expression))
 
+    def simplified_expression_of(self, expression: ast.Expression) -> ast.Expression | None:
+        current = expression
+        target = None
+        while id(current) in self.simplified_expressions:
+            current = self.simplified_expressions[id(current)]
+            target = current
+        return target
+
     def function(self, name: str) -> FunctionType:
         try:
             return self.functions[name]
@@ -120,6 +129,7 @@ class SemanticAnalyzer:
         self.expression_types: dict[int, ast.DeclaredType] = {}
         self.static_text_values: dict[int, str] = {}
         self.constant_values: dict[int, int] = {}
+        self.simplified_expressions: dict[int, ast.Expression] = {}
         self.functions: dict[str, FunctionType] = {}
         self.scopes: list[dict[str, Binding]] = []
         self.parameter_names: set[str] = set()
@@ -153,6 +163,7 @@ class SemanticAnalyzer:
             dict(self.functions),
             dict(self.static_text_values),
             dict(self.constant_values),
+            dict(self.simplified_expressions),
         )
 
     def _collect_signatures(self, program: ast.Program) -> None:
@@ -819,6 +830,7 @@ class SemanticAnalyzer:
                 f"operator '{expression.operator.value}' is not supported for string values",
             )
             self._fold_unary_constant(expression, result)
+            self._simplify_unary_expression(expression)
         elif isinstance(expression, ast.BinaryExpression):
             result = self._analyze_binary(expression, expected)
         elif isinstance(expression, ast.MatchExpression):
@@ -1315,6 +1327,7 @@ class SemanticAnalyzer:
             else left_type
         )
         self._fold_binary_constant(expression, result_type)
+        self._simplify_binary_expression(expression)
         return left_type
 
     def _comparison_operand_type(
@@ -1495,6 +1508,16 @@ class SemanticAnalyzer:
                 expression.location,
                 "match expression result",
             )
+        selector_val = self.constant_values.get(id(expression.selector))
+        if selector_val is not None and selector_val in cases_by_label:
+            target_case = cases_by_label[selector_val]
+            self.simplified_expressions[id(expression)] = target_case.expression
+            val = self.constant_values.get(id(target_case.expression))
+            if val is not None:
+                self.constant_values[id(expression)] = val
+            text = self.static_text_values.get(id(target_case.expression))
+            if text is not None:
+                self.static_text_values[id(expression)] = text
         return result_type
 
     def _lookup_binding(self, name: str) -> Binding | None:
@@ -1654,6 +1677,34 @@ class SemanticAnalyzer:
         except TernaryRangeError as error:
             raise SemanticError(str(error), expression.location) from error
         self.constant_values[id(expression)] = value
+
+    def _simplify_binary_expression(self, expression: ast.BinaryExpression) -> None:
+        left_const = self.constant_values.get(id(expression.left))
+        right_const = self.constant_values.get(id(expression.right))
+        if expression.operator is ast.BinaryOperator.ADD:
+            if right_const == 0:
+                self.simplified_expressions[id(expression)] = expression.left
+            elif left_const == 0:
+                self.simplified_expressions[id(expression)] = expression.right
+        elif expression.operator is ast.BinaryOperator.SUBTRACT:
+            if right_const == 0:
+                self.simplified_expressions[id(expression)] = expression.left
+        elif expression.operator is ast.BinaryOperator.MINIMUM:
+            if right_const in (-1, 1, TRYTE_MAX):
+                self.simplified_expressions[id(expression)] = expression.left
+            elif left_const in (-1, 1, TRYTE_MAX):
+                self.simplified_expressions[id(expression)] = expression.right
+        elif expression.operator is ast.BinaryOperator.MAXIMUM:
+            if right_const in (0, -1, TRYTE_MIN):
+                self.simplified_expressions[id(expression)] = expression.left
+            elif left_const in (0, -1, TRYTE_MIN):
+                self.simplified_expressions[id(expression)] = expression.right
+
+    def _simplify_unary_expression(self, expression: ast.UnaryExpression) -> None:
+        if isinstance(expression.operand, ast.UnaryExpression):
+            if expression.operator is expression.operand.operator:
+                if expression.operator in (ast.UnaryOperator.INVERT, ast.UnaryOperator.NEGATE):
+                    self.simplified_expressions[id(expression)] = expression.operand.operand
 
     @staticmethod
     def _validate_static_string_literal(literal: ast.StringLiteral) -> None:

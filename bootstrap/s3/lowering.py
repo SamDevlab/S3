@@ -502,7 +502,7 @@ class FunctionLowerer:
 
     def _lower_switch(self, statement: ast.SwitchStatement) -> None:
         cond_val = self.semantic_model.constant_value_of(statement.expression)
-        if cond_val is not None and cond_val in (-1, 0, 1):
+        if cond_val is not None:
             explicit_cases = {c.label: c for c in statement.cases if c.label is not None}
             fallback_case = next((c for c in statement.cases if c.label is None), None)
             target_case = explicit_cases.get(cond_val, fallback_case)
@@ -811,6 +811,9 @@ class FunctionLowerer:
         self.current = exit_block
 
     def _lower_expression(self, expression: ast.Expression) -> int:
+        simplified = self.semantic_model.simplified_expression_of(expression)
+        if simplified is not None:
+            return self._lower_expression(simplified)
         expression_type = self.semantic_model.type_of(expression)
         if expression_type in (ast.TypeName.TRIT, ast.TypeName.TRYTE):
             constant = self.semantic_model.constant_value_of(expression)
@@ -1202,7 +1205,7 @@ class FunctionLowerer:
         expression: ast.MatchExpression,
     ) -> int:
         cond_val = self.semantic_model.constant_value_of(expression.selector)
-        if cond_val is not None and cond_val in (-1, 0, 1):
+        if cond_val is not None:
             explicit_cases = {c.label: c for c in expression.cases if c.label is not None}
             fallback_case = next((c for c in expression.cases if c.label is None), None)
             target_case = explicit_cases.get(cond_val, fallback_case)
