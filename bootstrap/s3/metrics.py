@@ -6,6 +6,8 @@ import time
 from dataclasses import dataclass
 from typing import Callable
 
+from .ir import IRModule, IROpcode
+
 
 @dataclass
 class EmulationMetrics:
@@ -86,3 +88,77 @@ class PhaseTimer:
         if self._current_phase is not None:
             raise ValueError(f"Cannot snapshot while phase '{self._current_phase}' is active")
         return dict(self._phases)
+
+
+@dataclass(frozen=True, slots=True)
+class ProgramMetrics:
+    """Quantitative metrics for an IR module."""
+
+    block_count: int
+    instruction_count: int
+    branch_count: int
+
+    @classmethod
+    def from_module(cls, module: IRModule) -> ProgramMetrics:
+        blocks = 0
+        instructions = 0
+        branches = 0
+        for function in module.functions:
+            blocks += len(function.blocks)
+            for block in function.blocks:
+                instructions += len(block.instructions)
+                for inst in block.instructions:
+                    if inst.opcode in (IROpcode.JUMP, IROpcode.BRANCH3):
+                        branches += 1
+        return cls(
+            block_count=blocks,
+            instruction_count=instructions,
+            branch_count=branches,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class OptimizationMetrics:
+    """Comparison metrics before and after an optimization pipeline."""
+
+    before: ProgramMetrics
+    after: ProgramMetrics
+
+    @property
+    def blocks_removed(self) -> int:
+        return self.before.block_count - self.after.block_count
+
+    @property
+    def instructions_removed(self) -> int:
+        return self.before.instruction_count - self.after.instruction_count
+
+    @property
+    def branches_removed(self) -> int:
+        return self.before.branch_count - self.after.branch_count
+
+    def summary(self) -> str:
+        return (
+            f"Blocks: {self.before.block_count} -> {self.after.block_count} ({self.blocks_removed} removed)\n"
+            f"Instructions: {self.before.instruction_count} -> {self.after.instruction_count} ({self.instructions_removed} removed)\n"
+            f"Branches: {self.before.branch_count} -> {self.after.branch_count} ({self.branches_removed} removed)"
+        )
+
+
+def measure_optimization(before: IRModule, after: IRModule) -> OptimizationMetrics:
+    """Measures optimization metrics between an input IR module and output IR module."""
+    return OptimizationMetrics(
+        before=ProgramMetrics.from_module(before),
+        after=ProgramMetrics.from_module(after),
+    )
+
+
+@dataclass(slots=True)
+class FixpointTelemetry:
+    """Telemetry metrics collected during SSA optimization fixpoint loop."""
+
+    iterations: int = 0
+    expressions_eliminated: int = 0
+    licm_moves: int = 0
+    strength_reductions: int = 0
+    branches_removed: int = 0
+    converged: bool = True
