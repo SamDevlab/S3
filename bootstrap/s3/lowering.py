@@ -501,6 +501,14 @@ class FunctionLowerer:
         return result
 
     def _lower_switch(self, statement: ast.SwitchStatement) -> None:
+        cond_val = self.semantic_model.constant_value_of(statement.expression)
+        if cond_val is not None and cond_val in (-1, 0, 1):
+            explicit_cases = {c.label: c for c in statement.cases if c.label is not None}
+            fallback_case = next((c for c in statement.cases if c.label is None), None)
+            target_case = explicit_cases.get(cond_val, fallback_case)
+            if target_case is not None:
+                self._lower_block(target_case.body, create_scope=True)
+                return
         condition = self._lower_expression(statement.expression)
         explicit_cases = {c.label: c for c in statement.cases if c.label is not None}
         fallback_case = next((c for c in statement.cases if c.label is None), None)
@@ -566,6 +574,9 @@ class FunctionLowerer:
         self.current = continuation
 
     def _lower_while(self, statement: ast.WhileStatement) -> None:
+        cond_val = self.semantic_model.constant_value_of(statement.condition)
+        if cond_val in (0, 1):
+            return
         condition_block = self._fresh_block("while_condition", statement.location)
         body_block = self._fresh_block("while_body", statement.location)
         exit_block_0 = self._fresh_block("while_exit_0", statement.location)
@@ -1190,6 +1201,13 @@ class FunctionLowerer:
         self,
         expression: ast.MatchExpression,
     ) -> int:
+        cond_val = self.semantic_model.constant_value_of(expression.selector)
+        if cond_val is not None and cond_val in (-1, 0, 1):
+            explicit_cases = {c.label: c for c in expression.cases if c.label is not None}
+            fallback_case = next((c for c in expression.cases if c.label is None), None)
+            target_case = explicit_cases.get(cond_val, fallback_case)
+            if target_case is not None:
+                return self._lower_expression(target_case.expression)
         selector_reg = self._lower_expression(expression.selector)
         result_type = self.semantic_model.expression_types[id(expression)]
         memory = self._allocate_memory(result_type, 1, True, expression.location)
