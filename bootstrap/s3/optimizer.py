@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import replace
 from enum import Enum
 
+from .cfg import ControlFlowGraph, remove_unreachable_blocks_cfg
 from .initialization import analyze_initialization
 from .ir import (
     IRBasicBlock,
@@ -72,41 +73,11 @@ def instruction_count(module: IRModule) -> int:
     )
 
 
-def _successors(function: IRFunction) -> dict[str, tuple[str, ...]]:
-    return {
-        block.name: (
-            block.instructions[-1].targets
-            if block.instructions[-1].opcode
-            in {IROpcode.JUMP, IROpcode.BRANCH3}
-            else ()
-        )
-        for block in function.blocks
-    }
 
-
-def _reachable(function: IRFunction) -> set[str]:
-    successors = _successors(function)
-    result: set[str] = set()
-    pending = ["entry"]
-    while pending:
-        name = pending.pop()
-        if name in result:
-            continue
-        result.add(name)
-        pending.extend(
-            target for target in successors[name] if target not in result
-        )
-    return result
 
 
 def _remove_unreachable(function: IRFunction) -> IRFunction:
-    reachable = _reachable(function)
-    return replace(
-        function,
-        blocks=tuple(
-            block for block in function.blocks if block.name in reachable
-        ),
-    )
+    return remove_unreachable_blocks_cfg(function)
 
 
 def _jump_redirects(function: IRFunction) -> dict[str, str]:
