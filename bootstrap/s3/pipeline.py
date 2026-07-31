@@ -13,6 +13,7 @@ from .emulator import DEFAULT_MAX_FRAMES, DEFAULT_MAX_INSTRUCTIONS
 from .ir import IRProgram
 from .lexer import SyntaxMode, Token, tokenize
 from .lowering import lower
+from .module_compilation import SourceCollection, prepare_module_compilation
 from .optimizer import OptimizationLevel, optimize_ir
 from .parser import parse_tokens
 from .semantic import SemanticModel, analyze
@@ -39,6 +40,34 @@ def compile_source(
 ) -> CompilationResult:
     context = CompilationContext(optimization=optimization, mode=mode)
     return _compile_source_with_context(source, context)
+
+
+def compile_sources(
+    sources: SourceCollection,
+    optimization: OptimizationLevel | str = OptimizationLevel.O0,
+    *,
+    entry_module: str = "main",
+    mode: SyntaxMode = SyntaxMode.V0_6,
+) -> CompilationResult:
+    context = CompilationContext(optimization=optimization, mode=mode)
+    plan = prepare_module_compilation(
+        sources,
+        entry_module=entry_module,
+        mode=context.mode,
+    )
+    semantic_model = analyze(plan.program)
+    ir_program = optimize_ir(
+        lower(plan.program, semantic_model),
+        context.optimization,
+    )
+    assembly_program = generate_assembly(ir_program)
+    return CompilationResult(
+        plan.tokens,
+        plan.program,
+        semantic_model,
+        ir_program,
+        assembly_program,
+    )
 
 
 def _compile_source_with_context(
