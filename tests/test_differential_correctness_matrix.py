@@ -480,6 +480,23 @@ HOSTED_CORPUS = (
         max_instructions=5,
         tags=("error", "instruction-limit"),
     ),
+    DifferentialCase(
+        "constant-infinite-loop-instruction-limit",
+        (
+            "fn main() -> tryte:\n"
+            "    mut value: tryte = 0\n"
+            "    while -1:\n"
+            "        value = value + 0\n"
+            "    return value\n"
+        ),
+        DifferentialExpectation(
+            error_category=DiagnosticCategory.INSTRUCTION_LIMIT,
+            error_code=DiagnosticCode.RUNTIME_INSTRUCTION_LIMIT,
+        ),
+        max_instructions=20,
+        tags=("error", "instruction-limit", "sccp"),
+        exercised_passes=("sccp",),
+    ),
 )
 
 

@@ -1250,6 +1250,17 @@ def run_ssa_sccp(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int, int]:
             )
         )
 
+    if not any(
+        inst.opcode is IROpcode.RETURN
+        for block in new_blocks
+        for inst in block.instructions
+    ):
+        for block in ssa_fn.blocks:
+            if any(inst.opcode is IROpcode.RETURN for inst in block.instructions):
+                new_blocks.append(block)
+                branches_removed -= 1
+                break
+
     return SSAFunction(
         name=ssa_fn.name,
         parameters=ssa_fn.parameters,
