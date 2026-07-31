@@ -18,6 +18,7 @@ class Parser:
     def parse_program(self) -> ast.Program:
         functions: list[ast.FunctionDeclaration] = []
         records: list[ast.RecordDeclaration] = []
+        enums: list[ast.EnumDeclaration] = []
         location = self._peek().location
         self._skip_newlines()
         module = self._parse_module_declaration()
@@ -32,6 +33,8 @@ class Parser:
                 break
             if self.mode is SyntaxMode.V0_6 and self._check(TokenKind.RECORD):
                 records.append(self._parse_record_declaration())
+            elif self.mode is SyntaxMode.V0_6 and self._check(TokenKind.ENUM):
+                enums.append(self._parse_enum_declaration())
             else:
                 functions.append(self._parse_function())
         if not functions:
@@ -39,9 +42,10 @@ class Parser:
         return ast.Program(
             tuple(functions),
             location,
-            module,
-            tuple(imports),
-            tuple(records),
+            module=module,
+            imports=tuple(imports),
+            records=tuple(records),
+            enums=tuple(enums),
         )
 
     def _parse_module_declaration(self) -> ast.ModuleDeclaration | None:
@@ -132,6 +136,25 @@ class Parser:
             raise ParseError("expected at least one record field", name.location)
         self._consume(TokenKind.DEDENT, "expected dedent after record declaration")
         return ast.RecordDeclaration(name.text, tuple(fields), start.location)
+
+    def _parse_enum_declaration(self) -> ast.EnumDeclaration:
+        start = self._consume(TokenKind.ENUM, "expected 'enum'")
+        name = self._consume(TokenKind.IDENTIFIER, "expected enum name")
+        self._consume(TokenKind.COLON, "expected ':' after enum name")
+        self._consume(TokenKind.NEWLINE, "expected newline after enum ':'")
+        self._consume(TokenKind.INDENT, "expected indented enum variants")
+        variants: list[ast.EnumVariant] = []
+        while not self._check(TokenKind.DEDENT) and not self._check(TokenKind.EOF):
+            variant = self._consume(
+                TokenKind.IDENTIFIER,
+                "expected enum variant name",
+            )
+            self._consume_statement_newline("expected newline after enum variant")
+            variants.append(ast.EnumVariant(variant.text, variant.location))
+        if not variants:
+            raise ParseError("expected at least one enum variant", name.location)
+        self._consume(TokenKind.DEDENT, "expected dedent after enum declaration")
+        return ast.EnumDeclaration(name.text, tuple(variants), start.location)
 
     def _parse_parameters(self) -> list[ast.Parameter]:
         parameters: list[ast.Parameter] = []

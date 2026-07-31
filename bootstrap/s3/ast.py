@@ -349,12 +349,26 @@ class RecordDeclaration:
 
 
 @dataclass(frozen=True, slots=True)
+class EnumVariant:
+    name: str
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
+class EnumDeclaration:
+    name: str
+    variants: tuple[EnumVariant, ...]
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
 class Program:
     functions: tuple[FunctionDeclaration, ...]
     location: SourceLocation
     module: ModuleDeclaration | None = None
     imports: tuple[ImportDeclaration, ...] = ()
     records: tuple[RecordDeclaration, ...] = ()
+    enums: tuple[EnumDeclaration, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

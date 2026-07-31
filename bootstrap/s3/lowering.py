@@ -73,13 +73,13 @@ class FunctionLowerer:
 
     def lower(self) -> IRFunction:
         for parameter in self.function.parameters:
-            assert isinstance(parameter.type_name, ast.TypeName)
-            register = self._allocate(parameter.type_name, parameter.location)
+            storage_type = self._storage_type(parameter.type_name, parameter.location)
+            register = self._allocate(storage_type, parameter.location)
             self.parameters.append(
                 IRParameter(
                     parameter.name,
                     register,
-                    TYPE_MAP[parameter.type_name],
+                    TYPE_MAP[storage_type],
                     parameter.location,
                 )
             )
@@ -95,11 +95,14 @@ class FunctionLowerer:
                 f"function '{self.function.name}' ended without a terminator",
                 self.function.location,
             )
-        assert isinstance(self.function.return_type, ast.TypeName)
+        return_type = self._storage_type(
+            self.function.return_type,
+            self.function.signature.location,
+        )
         return IRFunction(
             name=self.function.name,
             parameters=tuple(self.parameters),
-            return_type=TYPE_MAP[self.function.return_type],
+            return_type=TYPE_MAP[return_type],
             registers=tuple(self.registers),
             blocks=tuple(
                 IRBasicBlock(
@@ -239,15 +242,43 @@ class FunctionLowerer:
         )
         return index
 
+    def _storage_type(
+        self,
+        type_name: ast.DeclaredType,
+        location: SourceLocation | None,
+    ) -> ast.TypeName:
+        if isinstance(type_name, ast.TypeName):
+            return type_name
+        if (
+            isinstance(type_name, ast.NominalType)
+            and self.semantic_model.is_enum_type(type_name)
+        ):
+            return ast.TypeName.TRYTE
+        if (
+            isinstance(type_name, ast.NominalType)
+            and self.semantic_model.is_record_type(type_name)
+        ):
+            raise LoweringError(
+                "record value cannot be lowered as a scalar value",
+                location,
+            )
+        raise LoweringError("unsupported storage type", location)
+
     def _lookup_variable(
         self,
         name: str,
         location: SourceLocation,
     ) -> _LoweredBinding:
+        binding = self._lookup_variable_or_none(name)
+        if binding is not None:
+            return binding
+        raise LoweringError(f"unknown variable '{name}'", location)
+
+    def _lookup_variable_or_none(self, name: str) -> _LoweredBinding | None:
         for scope in reversed(self.variable_scopes):
             if name in scope:
                 return scope[name]
-        raise LoweringError(f"unknown variable '{name}'", location)
+        return None
 
     def _lower_declaration(self, declaration: ast.VariableDeclaration) -> None:
         if isinstance(declaration.type_name, ast.ArrayType):
@@ -282,7 +313,10 @@ class FunctionLowerer:
             )
             return
 
-        if isinstance(declaration.type_name, ast.NominalType):
+        if (
+            isinstance(declaration.type_name, ast.NominalType)
+            and self.semantic_model.is_record_type(declaration.type_name)
+        ):
             if declaration.mutable:
                 raise LoweringError(
                     "mutable record bindings are not supported yet",
@@ -300,7 +334,6 @@ class FunctionLowerer:
             }
             lowered_fields: dict[str, _LoweredBinding] = {}
             for field in record.fields:
-                assert isinstance(field.type_name, ast.TypeName)
                 value = self._lower_expression(values[field.name])
                 lowered_fields[field.name] = _LoweredBinding(
                     field.type_name,
@@ -319,10 +352,11 @@ class FunctionLowerer:
                 "scalar declaration received an array initializer",
                 declaration.initializer.location,
             )
+        storage_type = self._storage_type(declaration.type_name, declaration.location)
         initializer = self._lower_expression(declaration.initializer)
         if declaration.mutable:
             memory = self._allocate_memory(
-                declaration.type_name,
+                storage_type,
                 1,
                 True,
                 declaration.location,
@@ -348,7 +382,7 @@ class FunctionLowerer:
             )
             return
 
-        variable = self._allocate(declaration.type_name, declaration.location)
+        variable = self._allocate(storage_type, declaration.location)
         self._emit(
             IRInstruction(
                 IROpcode.MOVE,
@@ -847,7 +881,8 @@ class FunctionLowerer:
         simplified = self.semantic_model.simplified_expression_of(expression)
         if simplified is not None:
             return self._lower_expression(simplified)
-        expression_type = self.semantic_model.type_of(expression)
+        declared_type = self.semantic_model.declared_type_of(expression)
+        expression_type = self._storage_type(declared_type, expression.location)
         if expression_type in (ast.TypeName.TRIT, ast.TypeName.TRYTE):
             constant = self.semantic_model.constant_value_of(expression)
             if constant is not None:
@@ -911,13 +946,13 @@ class FunctionLowerer:
             if binding.register is not None:
                 return binding.register
             assert binding.memory is not None
-            assert isinstance(binding.type_name, ast.TypeName)
+            storage_type = self._storage_type(binding.type_name, expression.location)
             index = self._emit_constant(
                 0,
                 ast.TypeName.TRYTE,
                 expression.location,
             )
-            result = self._allocate(binding.type_name, expression.location)
+            result = self._allocate(storage_type, expression.location)
             self._emit(
                 IRInstruction(
                     IROpcode.LOAD,
@@ -1062,10 +1097,31 @@ class FunctionLowerer:
 
     def _lower_field_access(self, expression: ast.FieldAccessExpression) -> int:
         if isinstance(expression.target, ast.Identifier):
-            binding = self._lookup_variable(
-                expression.target.name,
-                expression.target.location,
-            )
+            binding = self._lookup_variable_or_none(expression.target.name)
+            if binding is None and (
+                enum := self.semantic_model.enums.get(expression.target.name)
+            ) is not None:
+                try:
+                    discriminant = enum.discriminant(expression.field_name)
+                except KeyError as error:
+                    raise LoweringError(
+                        (
+                            f"enum '{enum.name}' has no variant "
+                            f"'{expression.field_name}'"
+                        ),
+                        expression.location,
+                    ) from error
+                return self._emit_constant(
+                    discriminant,
+                    ast.TypeName.TRYTE,
+                    expression.location,
+                )
+        if isinstance(expression.target, ast.Identifier):
+            if binding is None:
+                binding = self._lookup_variable(
+                    expression.target.name,
+                    expression.target.location,
+                )
             if binding.fields is None:
                 raise LoweringError(
                     f"variable '{expression.target.name}' is not a record",
@@ -1125,7 +1181,10 @@ class FunctionLowerer:
         right = self._lower_expression(expression.right)
         if expression.operator is ast.BinaryOperator.SUBTRACT:
             inverted = self._allocate(
-                self.semantic_model.type_of(expression.right),
+                self._storage_type(
+                    self.semantic_model.declared_type_of(expression.right),
+                    expression.right.location,
+                ),
                 expression.right.location,
             )
             self._emit(

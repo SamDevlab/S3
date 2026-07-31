@@ -60,6 +60,25 @@ class RecordType:
 
 
 @dataclass(frozen=True, slots=True)
+class EnumType:
+    name: str
+    variants: tuple[ast.EnumVariant, ...]
+    location: SourceLocation
+
+    def variant(self, name: str) -> ast.EnumVariant | None:
+        for variant in self.variants:
+            if variant.name == name:
+                return variant
+        return None
+
+    def discriminant(self, name: str) -> int:
+        for index, variant in enumerate(self.variants):
+            if variant.name == name:
+                return index
+        raise KeyError(name)
+
+
+@dataclass(frozen=True, slots=True)
 class Binding:
     type_name: ast.DeclaredType
     mutable: bool
@@ -82,6 +101,7 @@ class SemanticModel:
     expression_types: dict[int, ast.DeclaredType]
     functions: dict[str, FunctionType]
     records: dict[str, RecordType]
+    enums: dict[str, EnumType]
     static_text_values: dict[int, str]
     constant_values: dict[int, int]
     simplified_expressions: dict[int, ast.Expression]
@@ -143,6 +163,18 @@ class SemanticModel:
         except KeyError as error:
             raise SemanticError(f"unknown record type '{name}'") from error
 
+    def enum(self, name: str) -> EnumType:
+        try:
+            return self.enums[name]
+        except KeyError as error:
+            raise SemanticError(f"unknown enum type '{name}'") from error
+
+    def is_enum_type(self, type_name: ast.DeclaredType) -> bool:
+        return isinstance(type_name, ast.NominalType) and type_name.name in self.enums
+
+    def is_record_type(self, type_name: ast.DeclaredType) -> bool:
+        return isinstance(type_name, ast.NominalType) and type_name.name in self.records
+
 
 class SemanticAnalyzer:
     def __init__(self) -> None:
@@ -152,12 +184,14 @@ class SemanticAnalyzer:
         self.simplified_expressions: dict[int, ast.Expression] = {}
         self.functions: dict[str, FunctionType] = {}
         self.records: dict[str, RecordType] = {}
+        self.enums: dict[str, EnumType] = {}
         self.scopes: list[dict[str, Binding]] = []
         self.parameter_names: set[str] = set()
-        self.return_type = ast.TypeName.TRYTE
+        self.return_type: ast.DeclaredType = ast.TypeName.TRYTE
         self.loop_depth = 0
 
     def analyze(self, program: ast.Program) -> SemanticModel:
+        self._collect_enums(program)
         self._collect_records(program)
         self._collect_signatures(program)
         if "main" not in self.functions:
@@ -184,14 +218,46 @@ class SemanticAnalyzer:
             dict(self.expression_types),
             dict(self.functions),
             dict(self.records),
+            dict(self.enums),
             dict(self.static_text_values),
             dict(self.constant_values),
             dict(self.simplified_expressions),
         )
 
+    def _collect_enums(self, program: ast.Program) -> None:
+        for enum in program.enums:
+            if enum.name in self.enums or enum.name in self.records:
+                raise SemanticError(
+                    f"duplicate type '{enum.name}'",
+                    enum.location,
+                    diagnostic_code=DiagnosticCode.TYPE_DUPLICATE,
+                )
+            if len(enum.variants) > TRYTE_MAX + 1:
+                raise SemanticError(
+                    (
+                        f"enum '{enum.name}' has {len(enum.variants)} variants; "
+                        f"at most {TRYTE_MAX + 1} fit the tryte discriminant range"
+                    ),
+                    enum.location,
+                )
+            variant_names: set[str] = set()
+            for variant in enum.variants:
+                if variant.name in variant_names:
+                    raise SemanticError(
+                        f"duplicate variant '{variant.name}' in enum '{enum.name}'",
+                        variant.location,
+                        diagnostic_code=DiagnosticCode.ENUM_VARIANT_DUPLICATE,
+                    )
+                variant_names.add(variant.name)
+            self.enums[enum.name] = EnumType(
+                enum.name,
+                enum.variants,
+                enum.location,
+            )
+
     def _collect_records(self, program: ast.Program) -> None:
         for record in program.records:
-            if record.name in self.records:
+            if record.name in self.records or record.name in self.enums:
                 raise SemanticError(
                     f"duplicate type '{record.name}'",
                     record.location,
@@ -217,6 +283,8 @@ class SemanticAnalyzer:
                         field.location,
                     )
                 if isinstance(field.type_name, ast.NominalType):
+                    if field.type_name.name in self.enums:
+                        continue
                     raise SemanticError(
                         "nested record fields are not supported yet",
                         field.location,
@@ -229,7 +297,7 @@ class SemanticAnalyzer:
 
     def _collect_signatures(self, program: ast.Program) -> None:
         for function in program.functions:
-            if function.name in self.records:
+            if function.name in self.records or function.name in self.enums:
                 raise SemanticError(
                     f"function '{function.name}' conflicts with type '{function.name}'",
                     function.location,
@@ -241,7 +309,7 @@ class SemanticAnalyzer:
                     function.location,
                 )
             parameter_names: set[str] = set()
-            parameter_types: list[ast.TypeName] = []
+            parameter_types: list[ast.DeclaredType] = []
             for parameter in function.parameters:
                 if parameter.name in parameter_names:
                     raise SemanticError(
@@ -255,10 +323,16 @@ class SemanticAnalyzer:
                         parameter.location,
                     )
                 if isinstance(parameter.type_name, ast.NominalType):
-                    raise SemanticError(
-                        "record parameters require a future aggregate ABI",
-                        parameter.location,
-                    )
+                    if parameter.type_name.name in self.records:
+                        raise SemanticError(
+                            "record parameters require a future aggregate ABI",
+                            parameter.location,
+                        )
+                    if parameter.type_name.name not in self.enums:
+                        raise SemanticError(
+                            f"unknown type '{parameter.type_name.name}'",
+                            parameter.location,
+                        )
                 parameter_types.append(parameter.type_name)
             if isinstance(function.return_type, ast.ArrayType):
                 raise SemanticError(
@@ -266,10 +340,16 @@ class SemanticAnalyzer:
                     function.signature.location,
                 )
             if isinstance(function.return_type, ast.NominalType):
-                raise SemanticError(
-                    "record returns require a future aggregate ABI",
-                    function.signature.location,
-                )
+                if function.return_type.name in self.records:
+                    raise SemanticError(
+                        "record returns require a future aggregate ABI",
+                        function.signature.location,
+                    )
+                if function.return_type.name not in self.enums:
+                    raise SemanticError(
+                        f"unknown type '{function.return_type.name}'",
+                        function.signature.location,
+                    )
             self.functions[function.name] = FunctionType(
                 function.name,
                 tuple(parameter_types),
@@ -296,7 +376,7 @@ class SemanticAnalyzer:
         if not flow.definitely_returns:
             raise SemanticError(
                 f"function '{function.name}' has a path without returning "
-                f"{self.return_type.value}",
+                f"{_type_display(self.return_type)}",
                 function.location,
             )
 
@@ -592,7 +672,11 @@ class SemanticAnalyzer:
         )
 
     def _validate_declared_type(self, type_name: ast.DeclaredType) -> None:
-        if isinstance(type_name, ast.NominalType) and type_name.name not in self.records:
+        if (
+            isinstance(type_name, ast.NominalType)
+            and type_name.name not in self.records
+            and type_name.name not in self.enums
+        ):
             raise SemanticError(
                 f"unknown type '{type_name.name}'",
                 type_name.location,
@@ -1000,6 +1084,12 @@ class SemanticAnalyzer:
         self,
         expression: ast.FieldAccessExpression,
     ) -> ast.DeclaredType:
+        enum_access = self._enum_variant_access(expression)
+        if enum_access is not None:
+            enum, variant = enum_access
+            self.constant_values[id(expression)] = enum.discriminant(variant.name)
+            return ast.NominalType(enum.name, expression.location)
+
         target_type = self._analyze_expression(expression.target)
         if not isinstance(target_type, ast.NominalType):
             raise SemanticError(
@@ -1021,6 +1111,26 @@ class SemanticAnalyzer:
                 diagnostic_code=DiagnosticCode.RECORD_FIELD_UNKNOWN,
             )
         return field.type_name
+
+    def _enum_variant_access(
+        self,
+        expression: ast.FieldAccessExpression,
+    ) -> tuple[EnumType, ast.EnumVariant] | None:
+        if not isinstance(expression.target, ast.Identifier):
+            return None
+        if self._lookup_binding(expression.target.name) is not None:
+            return None
+        enum = self.enums.get(expression.target.name)
+        if enum is None:
+            return None
+        variant = enum.variant(expression.field_name)
+        if variant is None:
+            raise SemanticError(
+                f"enum '{enum.name}' has no variant '{expression.field_name}'",
+                expression.location,
+                diagnostic_code=DiagnosticCode.ENUM_VARIANT_UNKNOWN,
+            )
+        return enum, variant
 
     def _index_expression_array_binding(
         self,
@@ -1079,7 +1189,7 @@ class SemanticAnalyzer:
                     )
                 raise SemanticError(
                     "len() argument must be a static array or a compile-time static text expression, "
-                    f"got '{binding.type_name.value}'",
+                    f"got '{_type_display(binding.type_name)}'",
                     expression.argument.location,
                 )
             self.expression_types[id(expression.argument)] = binding.type_name
@@ -1138,7 +1248,7 @@ class SemanticAnalyzer:
         assert isinstance(type_name.element_type, ast.TypeName)
         return type_name.element_type
 
-    def _analyze_call(self, expression: ast.CallExpression) -> ast.TypeName:
+    def _analyze_call(self, expression: ast.CallExpression) -> ast.DeclaredType:
         if self._lookup_binding(expression.function_name) is not None:
             raise SemanticError(
                 f"variable '{expression.function_name}' cannot be called",
@@ -1344,6 +1454,40 @@ class SemanticAnalyzer:
         if expression.operator in RELATIONAL_OPERATORS:
             left_known = self._known_expression_type(expression.left)
             right_known = self._known_expression_type(expression.right)
+            if isinstance(left_known, ast.NominalType) or isinstance(
+                right_known,
+                ast.NominalType,
+            ):
+                left_type = self._analyze_expression(expression.left, left_known)
+                right_type = self._analyze_expression(expression.right, right_known)
+                self._require_type(
+                    left_type,
+                    right_type,
+                    expression.location,
+                    "comparison operands",
+                )
+                if not self._is_enum_type(left_type):
+                    raise SemanticError(
+                        f"operator '{expression.operator.value}' is not supported for record values",
+                        expression.location,
+                    )
+                if expression.operator not in (
+                    ast.BinaryOperator.EQUAL,
+                    ast.BinaryOperator.NOT_EQUAL,
+                ):
+                    raise SemanticError(
+                        f"operator '{expression.operator.value}' is not supported for enum values",
+                        expression.location,
+                    )
+                if expected is not None:
+                    self._require_type(
+                        ast.TypeName.TRIT,
+                        expected,
+                        expression.location,
+                        "enum comparison result",
+                    )
+                self._fold_binary_constant(expression, ast.TypeName.TRIT)
+                return ast.TypeName.TRIT
             if (
                 left_known is ast.TypeName.STRING
                 or right_known is ast.TypeName.STRING
@@ -1486,6 +1630,13 @@ class SemanticAnalyzer:
                     diagnostic_code=DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION,
                 )
         operand_type = self._binary_operand_type(expression)
+        if isinstance(operand_type, ast.NominalType):
+            self._analyze_expression(expression.left, operand_type)
+            self._analyze_expression(expression.right, operand_type)
+            raise SemanticError(
+                f"operator '{expression.operator.value}' is not supported for nominal values",
+                expression.location,
+            )
         self._reject_string_operation(
             operand_type,
             expression.location,
@@ -1513,14 +1664,14 @@ class SemanticAnalyzer:
     def _comparison_operand_type(
         self,
         expression: ast.BinaryExpression,
-    ) -> ast.TypeName:
+    ) -> ast.DeclaredType:
         left = self._known_expression_type(expression.left)
         right = self._known_expression_type(expression.right)
         if left is ast.TypeName.STRING or right is ast.TypeName.STRING:
             return ast.TypeName.STRING
         return left or right or ast.TypeName.TRYTE
 
-    def _binary_operand_type(self, expression: ast.BinaryExpression) -> ast.TypeName:
+    def _binary_operand_type(self, expression: ast.BinaryExpression) -> ast.DeclaredType:
         left = self._known_expression_type(expression.left)
         right = self._known_expression_type(expression.right)
         if left is ast.TypeName.STRING or right is ast.TypeName.STRING:
@@ -1566,6 +1717,10 @@ class SemanticAnalyzer:
                 return ast.NominalType(expression.type_name, expression.location)
             return None
         if isinstance(expression, ast.FieldAccessExpression):
+            enum_access = self._enum_variant_access(expression)
+            if enum_access is not None:
+                enum, _variant = enum_access
+                return ast.NominalType(enum.name, expression.location)
             target_type = self._known_expression_type(expression.target)
             if isinstance(target_type, ast.NominalType):
                 record = self.records.get(target_type.name)
@@ -1718,7 +1873,10 @@ class SemanticAnalyzer:
                 return scope[name]
         return None
 
-    def _identifier_type(self, expression: ast.Identifier) -> ast.TypeName:
+    def _is_enum_type(self, type_name: ast.DeclaredType) -> bool:
+        return isinstance(type_name, ast.NominalType) and type_name.name in self.enums
+
+    def _identifier_type(self, expression: ast.Identifier) -> ast.DeclaredType:
         binding = self._lookup_binding(expression.name)
         if binding is not None:
             if isinstance(binding.type_name, ast.ArrayType):
@@ -2085,7 +2243,7 @@ class SemanticAnalyzer:
 
     @staticmethod
     def _reject_string_operation(
-        type_name: ast.TypeName,
+        type_name: ast.DeclaredType,
         location: SourceLocation,
         message: str,
     ) -> None:
