@@ -560,15 +560,7 @@ def run_ssa_cse(ssa_fn: SSAFunction) -> SSAFunction:
             )
         )
 
-    return run_ssa_copy_propagation(
-        SSAFunction(
-            name=ssa_fn.name,
-            parameters=ssa_fn.parameters,
-            blocks=tuple(new_blocks),
-            values=ssa_fn.values,
-            memory_objects=ssa_fn.memory_objects,
-        )
-    )
+    return run_ssa_copy_propagation(replace(ssa_fn, blocks=tuple(new_blocks)))
 
 
 # -----------------------------------------------------------------------------
@@ -712,6 +704,17 @@ def run_ssa_gvn(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
     value_table: Dict[Tuple, SSAValue] = {}
     replacements: Dict[str, SSAValue] = {}
     eliminated_count = 0
+    eligible_opcodes = _PURE_REMOVABLE_OPCODES - {
+        IROpcode.LOAD,
+        IROpcode.CONST,
+        IROpcode.CONST_STR,
+        IROpcode.MOVE,
+    }
+
+    def value_key(value: SSAValue) -> int | str:
+        if value.original_register is not None:
+            return value.original_register
+        return value.name
 
     def visit(block_name: str) -> None:
         nonlocal eliminated_count
@@ -721,11 +724,10 @@ def run_ssa_gvn(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
         for inst in block.instructions:
             if (
                 inst.result is not None
-                and inst.opcode in _PURE_REMOVABLE_OPCODES
-                and inst.opcode not in {IROpcode.CONST, IROpcode.CONST_STR, IROpcode.MOVE}
+                and inst.opcode in eligible_opcodes
             ):
                 op_keys = tuple(
-                    replacements.get(op.name, op).original_register
+                    value_key(replacements.get(op.name, op))
                     for op in inst.operands
                 )
                 key = (
@@ -733,6 +735,8 @@ def run_ssa_gvn(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
                     op_keys,
                     inst.immediate,
                     inst.memory,
+                    inst.targets,
+                    inst.initialization,
                     inst.result.type,
                 )
 
@@ -756,8 +760,61 @@ def run_ssa_gvn(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
     if not replacements:
         return ssa_fn, 0
 
-    opt_fn = run_ssa_copy_propagation(ssa_fn)
-    return opt_fn, eliminated_count
+    def get_rep(val: SSAValue) -> SSAValue:
+        curr = val
+        visited: Set[str] = set()
+        while curr.name in replacements and curr.name not in visited:
+            visited.add(curr.name)
+            curr = replacements[curr.name]
+        return curr
+
+    removed_count = 0
+    new_blocks: List[SSABlock] = []
+    for block in ssa_fn.blocks:
+        new_phis: List[SSAPhiNode] = []
+        for phi in block.phis:
+            new_phis.append(
+                SSAPhiNode(
+                    target=phi.target,
+                    original_register=phi.original_register,
+                    operands={p: get_rep(v) for p, v in phi.operands.items()},
+                    location=phi.location,
+                )
+            )
+
+        new_instructions: List[SSAInstruction] = []
+        for inst in block.instructions:
+            if inst.result and inst.result.name in replacements:
+                removed_count += 1
+                continue
+            updated_ops = tuple(get_rep(op) for op in inst.operands)
+            new_instructions.append(
+                SSAInstruction(
+                    opcode=inst.opcode,
+                    result=inst.result,
+                    operands=updated_ops,
+                    immediate=inst.immediate,
+                    targets=inst.targets,
+                    memory=inst.memory,
+                    initialization=inst.initialization,
+                    location=inst.location,
+                )
+            )
+
+        new_blocks.append(
+            SSABlock(
+                name=block.name,
+                phis=new_phis,
+                instructions=new_instructions,
+            )
+        )
+
+    if removed_count == 0:
+        return ssa_fn, 0
+
+    transformed = replace(ssa_fn, blocks=tuple(new_blocks))
+    opt_fn = run_ssa_copy_propagation(transformed)
+    return opt_fn, removed_count
 
 
 # -----------------------------------------------------------------------------
