@@ -81,7 +81,7 @@ len-expression       = "len", "(", expression, ")" ;
 match-expression     = "match", expression, ":", NEWLINE, INDENT, match-expression-case, { match-expression-case }, DEDENT ;
 match-expression-case = signed-integer, ":", expression, NEWLINE ;
 
-identifier-expression = identifier, [ call-suffix ], { postfix-suffix } ;
+identifier-expression = identifier, [ call-suffix ], [ postfix-suffix ] ;
 qualified-name       = identifier, ".", identifier ;
 postfix-suffix       = index-suffix | field-suffix ;
 call-suffix          = "(", [ argument-list ], ")" ;

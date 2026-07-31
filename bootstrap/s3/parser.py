@@ -619,39 +619,34 @@ class Parser:
 
     def _parse_primary(self) -> ast.Expression:
         expression = self._parse_primary_atom()
-        while True:
-            if self._match(TokenKind.LEFT_BRACKET):
-                start = self._parse_expression()
-                if self._match(TokenKind.COLON):
-                    end = self._parse_expression()
-                    self._consume(TokenKind.RIGHT_BRACKET, "expected ']' after slice")
-                    expression = ast.SliceExpression(
-                        expression,
-                        start,
-                        end,
-                        expression.location,
-                    )
-                    continue
-                index = start
-                self._consume(TokenKind.RIGHT_BRACKET, "expected ']' after index")
-                expression = ast.IndexExpression(
+        if self._match(TokenKind.LEFT_BRACKET):
+            start = self._parse_expression()
+            if self._match(TokenKind.COLON):
+                end = self._parse_expression()
+                self._consume(TokenKind.RIGHT_BRACKET, "expected ']' after slice")
+                return ast.SliceExpression(
                     expression,
-                    index,
+                    start,
+                    end,
                     expression.location,
                 )
-                continue
-            if self._match(TokenKind.DOT):
-                field = self._consume(
-                    TokenKind.IDENTIFIER,
-                    "expected field name after '.'",
-                )
-                expression = ast.FieldAccessExpression(
-                    expression,
-                    field.text,
-                    field.location,
-                )
-                continue
-            break
+            index = start
+            self._consume(TokenKind.RIGHT_BRACKET, "expected ']' after index")
+            return ast.IndexExpression(
+                expression,
+                index,
+                expression.location,
+            )
+        if self._match(TokenKind.DOT):
+            field = self._consume(
+                TokenKind.IDENTIFIER,
+                "expected field name after '.'",
+            )
+            return ast.FieldAccessExpression(
+                expression,
+                field.text,
+                field.location,
+            )
         return expression
 
     def _parse_primary_atom(self) -> ast.Expression:
