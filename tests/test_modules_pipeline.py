@@ -118,6 +118,102 @@ def test_compile_sources_is_deterministic_for_input_order() -> None:
     assert forward == backward
 
 
+def test_compile_sources_preserves_entry_module_composite_types() -> None:
+    sources = {
+        "main.s3": (
+            "module main\n"
+            "enum Sign:\n"
+            "    Negative\n"
+            "    Zero\n"
+            "    Positive\n"
+            "record Tagged:\n"
+            "    sign: Sign\n"
+            "    value: tryte\n"
+            "fn main() -> tryte:\n"
+            "    item: Tagged = Tagged(sign=Sign.Positive, value=11)\n"
+            "    match item.sign:\n"
+            "        Sign.Negative:\n"
+            "            return -1\n"
+            "        Sign.Zero:\n"
+            "            return 0\n"
+            "        Sign.Positive:\n"
+            "            return item.value\n"
+        ),
+        "math.s3": (
+            "module math\n"
+            "export fn inc(value: tryte) -> tryte:\n"
+            "    return value + 1\n"
+        ),
+    }
+
+    assert _run_sources(sources, optimization=OptimizationLevel.O0) == 11
+    assert _run_sources(sources, optimization=OptimizationLevel.O1) == 11
+
+
+def test_compile_sources_rewrites_imported_module_composite_types() -> None:
+    sources = {
+        "main.s3": (
+            "module main\n"
+            "from logic import classify\n"
+            "fn main() -> tryte:\n"
+            "    return classify(2)\n"
+        ),
+        "logic.s3": (
+            "module logic\n"
+            "enum Kind:\n"
+            "    Small\n"
+            "    Large\n"
+            "record Classified:\n"
+            "    kind: Kind\n"
+            "    value: tryte\n"
+            "export fn classify(value: tryte) -> tryte:\n"
+            "    item: Classified = Classified(kind=Kind.Large, value=value)\n"
+            "    match item.kind:\n"
+            "        Kind.Small:\n"
+            "            return -1\n"
+            "        Kind.Large:\n"
+            "            return item.value\n"
+        ),
+    }
+
+    assert _run_sources(sources, optimization=OptimizationLevel.O0) == 2
+    assert _run_sources(sources, optimization=OptimizationLevel.O1) == 2
+
+
+def test_compile_sources_type_names_are_module_local() -> None:
+    sources = {
+        "main.s3": (
+            "module main\n"
+            "from left import left_value\n"
+            "from right import right_value\n"
+            "record Box:\n"
+            "    value: tryte\n"
+            "fn main() -> tryte:\n"
+            "    box: Box = Box(value=1)\n"
+            "    return box.value + left_value() + right_value()\n"
+        ),
+        "left.s3": (
+            "module left\n"
+            "record Box:\n"
+            "    value: tryte\n"
+            "export fn left_value() -> tryte:\n"
+            "    box: Box = Box(value=2)\n"
+            "    return box.value\n"
+        ),
+        "right.s3": (
+            "module right\n"
+            "record Box:\n"
+            "    value: tryte\n"
+            "export fn right_value() -> tryte:\n"
+            "    box: Box = Box(value=3)\n"
+            "    return box.value\n"
+        ),
+    }
+
+    assert _run_sources(sources, optimization=OptimizationLevel.O0) == 6
+    assert _run_sources(sources, optimization=OptimizationLevel.O1) == 6
+
+
 def test_compile_sources_rejects_private_import() -> None:
     with pytest.raises(SemanticError) as error:
         compile_sources(

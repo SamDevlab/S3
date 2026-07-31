@@ -57,6 +57,90 @@ def test_record_field_literal_can_be_accessed_directly() -> None:
     assert run_source(source) == 9
 
 
+def test_record_parameter_is_flattened_in_declared_field_order() -> None:
+    source = (
+        "record Pair:\n"
+        "    left: tryte\n"
+        "    right: tryte\n"
+        "fn sum(pair: Pair) -> tryte:\n"
+        "    return pair.left + pair.right\n"
+        "fn main() -> tryte:\n"
+        "    pair: Pair = Pair(left=7, right=5)\n"
+        "    return sum(pair)\n"
+    )
+
+    assert run_source(source, optimization="O0") == 12
+    assert run_source(source, optimization="O1") == 12
+
+
+def test_record_literal_can_be_passed_as_flattened_argument() -> None:
+    source = (
+        "record Pair:\n"
+        "    left: tryte\n"
+        "    right: tryte\n"
+        "fn sum(pair: Pair) -> tryte:\n"
+        "    return pair.left + pair.right\n"
+        "fn main() -> tryte:\n"
+        "    return sum(Pair(left=4, right=6))\n"
+    )
+
+    assert run_source(source, optimization="O0") == 10
+    assert run_source(source, optimization="O1") == 10
+
+
+def test_single_field_record_return_uses_scalar_result_register() -> None:
+    source = (
+        "record Box:\n"
+        "    value: tryte\n"
+        "fn make() -> Box:\n"
+        "    return Box(value=9)\n"
+        "fn main() -> tryte:\n"
+        "    box: Box = make()\n"
+        "    return box.value\n"
+    )
+
+    assert run_source(source, optimization="O0") == 9
+    assert run_source(source, optimization="O1") == 9
+
+
+def test_single_field_record_return_can_be_accessed_directly() -> None:
+    source = (
+        "record Box:\n"
+        "    value: tryte\n"
+        "fn make() -> Box:\n"
+        "    return Box(value=8)\n"
+        "fn main() -> tryte:\n"
+        "    return make().value\n"
+    )
+
+    assert run_source(source, optimization="O0") == 8
+    assert run_source(source, optimization="O1") == 8
+
+
+def test_record_field_can_store_enum_value() -> None:
+    source = (
+        "enum Sign:\n"
+        "    Negative\n"
+        "    Zero\n"
+        "    Positive\n"
+        "record Tagged:\n"
+        "    sign: Sign\n"
+        "    value: tryte\n"
+        "fn main() -> tryte:\n"
+        "    item: Tagged = Tagged(sign=Sign.Positive, value=11)\n"
+        "    match item.sign:\n"
+        "        Sign.Negative:\n"
+        "            return -1\n"
+        "        Sign.Zero:\n"
+        "            return 0\n"
+        "        Sign.Positive:\n"
+        "            return item.value\n"
+    )
+
+    assert run_source(source, optimization="O0") == 11
+    assert run_source(source, optimization="O1") == 11
+
+
 def test_record_rejects_duplicate_missing_and_unknown_fields() -> None:
     with pytest.raises(SemanticError) as duplicate:
         compile_source(
@@ -93,10 +177,11 @@ def test_record_rejects_duplicate_missing_and_unknown_fields() -> None:
 def test_record_return_is_blocked_until_aggregate_abi_exists() -> None:
     with pytest.raises(SemanticError, match="aggregate ABI"):
         compile_source(
-            "record Box:\n"
-            "    value: tryte\n"
-            "fn make() -> Box:\n"
-            "    return Box(value=1)\n"
+            "record Pair:\n"
+            "    left: tryte\n"
+            "    right: tryte\n"
+            "fn make() -> Pair:\n"
+            "    return Pair(left=1, right=2)\n"
             "fn main() -> tryte:\n"
             "    return 0\n"
         )

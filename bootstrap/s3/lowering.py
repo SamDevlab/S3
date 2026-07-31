@@ -73,6 +73,38 @@ class FunctionLowerer:
 
     def lower(self) -> IRFunction:
         for parameter in self.function.parameters:
+            if (
+                isinstance(parameter.type_name, ast.NominalType)
+                and self.semantic_model.is_record_type(parameter.type_name)
+            ):
+                record = self.semantic_model.record(parameter.type_name.name)
+                fields: dict[str, _LoweredBinding] = {}
+                for field in record.fields:
+                    storage_type = self._storage_type(
+                        field.type_name,
+                        field.location,
+                    )
+                    register = self._allocate(storage_type, field.location)
+                    self.parameters.append(
+                        IRParameter(
+                            f"{parameter.name}__{field.name}",
+                            register,
+                            TYPE_MAP[storage_type],
+                            field.location,
+                        )
+                    )
+                    fields[field.name] = _LoweredBinding(
+                        field.type_name,
+                        mutable=False,
+                        register=register,
+                    )
+                self.variable_scopes[0][parameter.name] = _LoweredBinding(
+                    parameter.type_name,
+                    mutable=False,
+                    fields=fields,
+                )
+                continue
+
             storage_type = self._storage_type(parameter.type_name, parameter.location)
             register = self._allocate(storage_type, parameter.location)
             self.parameters.append(
@@ -160,7 +192,7 @@ class FunctionLowerer:
             self._lower_assignment(statement)
             return
         if isinstance(statement, ast.ReturnStatement):
-            value = self._lower_expression(statement.expression)
+            value = self._lower_return_expression(statement.expression)
             self._emit(
                 IRInstruction(
                     IROpcode.RETURN,
@@ -258,8 +290,11 @@ class FunctionLowerer:
             isinstance(type_name, ast.NominalType)
             and self.semantic_model.is_record_type(type_name)
         ):
+            record = self.semantic_model.record(type_name.name)
+            if len(record.fields) == 1:
+                return self._storage_type(record.fields[0].type_name, location)
             raise LoweringError(
-                "record value cannot be lowered as a scalar value",
+                "multi-field record value cannot be lowered as a scalar value",
                 location,
             )
         raise LoweringError("unsupported storage type", location)
@@ -279,6 +314,73 @@ class FunctionLowerer:
             if name in scope:
                 return scope[name]
         return None
+
+    def _lower_record_fields_from_expression(
+        self,
+        expression: ast.Initializer,
+        record,
+        location: SourceLocation,
+    ) -> dict[str, _LoweredBinding]:
+        if isinstance(expression, ast.ArrayLiteral):
+            raise LoweringError(
+                "record value cannot be initialized from an array literal",
+                expression.location,
+            )
+        if isinstance(expression, ast.RecordExpression):
+            values = {field.name: field.expression for field in expression.fields}
+            return {
+                field.name: _LoweredBinding(
+                    field.type_name,
+                    mutable=False,
+                    register=self._lower_expression(values[field.name]),
+                )
+                for field in record.fields
+            }
+        if isinstance(expression, ast.Identifier):
+            binding = self._lookup_variable(expression.name, expression.location)
+            if binding.fields is not None:
+                return {
+                    field.name: binding.fields[field.name]
+                    for field in record.fields
+                }
+        if len(record.fields) == 1:
+            field = record.fields[0]
+            return {
+                field.name: _LoweredBinding(
+                    field.type_name,
+                    mutable=False,
+                    register=self._lower_expression(expression),
+                )
+            }
+        raise LoweringError(
+            "multi-field record value requires an explicit record literal or binding",
+            location,
+        )
+
+    def _lower_return_expression(self, expression: ast.Expression) -> int:
+        if (
+            isinstance(self.function.return_type, ast.NominalType)
+            and self.semantic_model.is_record_type(self.function.return_type)
+        ):
+            record = self.semantic_model.record(self.function.return_type.name)
+            if len(record.fields) != 1:
+                raise LoweringError(
+                    "multi-field record returns require a future aggregate ABI",
+                    expression.location,
+                )
+            fields = self._lower_record_fields_from_expression(
+                expression,
+                record,
+                expression.location,
+            )
+            register = fields[record.fields[0].name].register
+            if register is None:
+                raise LoweringError(
+                    "single-field record return is missing its scalar field",
+                    expression.location,
+                )
+            return register
+        return self._lower_expression(expression)
 
     def _lower_declaration(self, declaration: ast.VariableDeclaration) -> None:
         if isinstance(declaration.type_name, ast.ArrayType):
@@ -322,24 +424,12 @@ class FunctionLowerer:
                     "mutable record bindings are not supported yet",
                     declaration.location,
                 )
-            if not isinstance(declaration.initializer, ast.RecordExpression):
-                raise LoweringError(
-                    "record declaration requires a record initializer",
-                    declaration.initializer.location,
-                )
             record = self.semantic_model.record(declaration.type_name.name)
-            values = {
-                field.name: field.expression
-                for field in declaration.initializer.fields
-            }
-            lowered_fields: dict[str, _LoweredBinding] = {}
-            for field in record.fields:
-                value = self._lower_expression(values[field.name])
-                lowered_fields[field.name] = _LoweredBinding(
-                    field.type_name,
-                    mutable=False,
-                    register=value,
-                )
+            lowered_fields = self._lower_record_fields_from_expression(
+                declaration.initializer,
+                record,
+                declaration.location,
+            )
             self.variable_scopes[-1][declaration.name] = _LoweredBinding(
                 declaration.type_name,
                 mutable=False,
@@ -1139,10 +1229,7 @@ class FunctionLowerer:
                     )
                 )
                 return result
-            arguments = tuple(
-                self._lower_expression(argument.expression)
-                for argument in expression.arguments
-            )
+            arguments = self._lower_call_arguments(expression)
             result = self._allocate(expression_type, expression.location)
             self._emit(
                 IRInstruction(
@@ -1224,10 +1311,48 @@ class FunctionLowerer:
             for field in expression.target.fields:
                 if field.name == expression.field_name:
                     return self._lower_expression(field.expression)
+        target_type = self.semantic_model.declared_type_of(expression.target)
+        if (
+            isinstance(target_type, ast.NominalType)
+            and self.semantic_model.is_record_type(target_type)
+        ):
+            record = self.semantic_model.record(target_type.name)
+            if len(record.fields) == 1 and record.fields[0].name == expression.field_name:
+                return self._lower_expression(expression.target)
         raise LoweringError(
             "field access requires a lowered record binding",
             expression.location,
         )
+
+    def _lower_call_arguments(self, expression: ast.CallExpression) -> tuple[int, ...]:
+        signature = self.semantic_model.function(expression.function_name)
+        registers: list[int] = []
+        for argument, parameter_type in zip(
+            expression.arguments,
+            signature.parameter_types,
+            strict=True,
+        ):
+            if (
+                isinstance(parameter_type, ast.NominalType)
+                and self.semantic_model.is_record_type(parameter_type)
+            ):
+                record = self.semantic_model.record(parameter_type.name)
+                fields = self._lower_record_fields_from_expression(
+                    argument.expression,
+                    record,
+                    argument.location,
+                )
+                for field in record.fields:
+                    register = fields[field.name].register
+                    if register is None:
+                        raise LoweringError(
+                            f"record argument field '{field.name}' is unavailable",
+                            argument.location,
+                        )
+                    registers.append(register)
+                continue
+            registers.append(self._lower_expression(argument.expression))
+        return tuple(registers)
 
     def _match_label_discriminant(self, label: ast.MatchCaseLabel) -> int:
         if isinstance(label, int):

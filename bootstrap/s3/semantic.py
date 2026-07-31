@@ -323,12 +323,10 @@ class SemanticAnalyzer:
                         parameter.location,
                     )
                 if isinstance(parameter.type_name, ast.NominalType):
-                    if parameter.type_name.name in self.records:
-                        raise SemanticError(
-                            "record parameters require a future aggregate ABI",
-                            parameter.location,
-                        )
-                    if parameter.type_name.name not in self.enums:
+                    if (
+                        parameter.type_name.name not in self.records
+                        and parameter.type_name.name not in self.enums
+                    ):
                         raise SemanticError(
                             f"unknown type '{parameter.type_name.name}'",
                             parameter.location,
@@ -341,11 +339,13 @@ class SemanticAnalyzer:
                 )
             if isinstance(function.return_type, ast.NominalType):
                 if function.return_type.name in self.records:
-                    raise SemanticError(
-                        "record returns require a future aggregate ABI",
-                        function.signature.location,
-                    )
-                if function.return_type.name not in self.enums:
+                    record = self.records[function.return_type.name]
+                    if len(record.fields) != 1:
+                        raise SemanticError(
+                            "multi-field record returns require a future aggregate ABI",
+                            function.signature.location,
+                        )
+                elif function.return_type.name not in self.enums:
                     raise SemanticError(
                         f"unknown type '{function.return_type.name}'",
                         function.signature.location,
