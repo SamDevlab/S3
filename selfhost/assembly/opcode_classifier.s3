@@ -1,0 +1,318 @@
+module selfhost.assembly.opcode_classifier
+from selfhost.assembly.opcode_ids import opcode_tconst_id
+from selfhost.assembly.opcode_ids import opcode_tconst_str_id
+from selfhost.assembly.opcode_ids import opcode_tmov_id
+from selfhost.assembly.opcode_ids import opcode_tinv_id
+from selfhost.assembly.opcode_ids import opcode_tadd_id
+from selfhost.assembly.opcode_ids import opcode_tmin_id
+from selfhost.assembly.opcode_ids import opcode_tmax_id
+from selfhost.assembly.opcode_ids import opcode_tcmp_id
+from selfhost.assembly.opcode_ids import opcode_tcall_id
+from selfhost.assembly.opcode_ids import opcode_tload_id
+from selfhost.assembly.opcode_ids import opcode_tstore_id
+from selfhost.assembly.opcode_ids import opcode_tret_id
+from selfhost.assembly.opcode_ids import opcode_tjmp_id
+from selfhost.assembly.opcode_ids import opcode_tbr3_id
+from selfhost.assembly.opcode_ids import opcode_count
+
+enum AssemblyOpcode:
+    TCONST
+    TCONST_STR
+    TMOV
+    TINV
+    TADD
+    TMIN
+    TMAX
+    TCMP
+    TCALL
+    TLOAD
+    TSTORE
+    TRET
+    TJMP
+    TBR3
+
+enum OpcodeKind:
+    Value
+    Memory
+    Terminator
+
+record OpcodeQuery:
+    opcode: AssemblyOpcode
+    operand_count: tryte
+
+fn opcode_from_id(id: tryte) -> AssemblyOpcode:
+    mut opcode: AssemblyOpcode = AssemblyOpcode.TBR3
+    match id <=> opcode_tconst_id():
+        -1:
+            opcode = opcode
+        0:
+            opcode = AssemblyOpcode.TCONST
+        1:
+            opcode = opcode
+    match id <=> opcode_tconst_str_id():
+        -1:
+            opcode = opcode
+        0:
+            opcode = AssemblyOpcode.TCONST_STR
+        1:
+            opcode = opcode
+    match id <=> opcode_tmov_id():
+        -1:
+            opcode = opcode
+        0:
+            opcode = AssemblyOpcode.TMOV
+        1:
+            opcode = opcode
+    match id <=> opcode_tinv_id():
+        -1:
+            opcode = opcode
+        0:
+            opcode = AssemblyOpcode.TINV
+        1:
+            opcode = opcode
+    match id <=> opcode_tadd_id():
+        -1:
+            opcode = opcode
+        0:
+            opcode = AssemblyOpcode.TADD
+        1:
+            opcode = opcode
+    match id <=> opcode_tmin_id():
+        -1:
+            opcode = opcode
+        0:
+            opcode = AssemblyOpcode.TMIN
+        1:
+            opcode = opcode
+    match id <=> opcode_tmax_id():
+        -1:
+            opcode = opcode
+        0:
+            opcode = AssemblyOpcode.TMAX
+        1:
+            opcode = opcode
+    match id <=> opcode_tcmp_id():
+        -1:
+            opcode = opcode
+        0:
+            opcode = AssemblyOpcode.TCMP
+        1:
+            opcode = opcode
+    match id <=> opcode_tcall_id():
+        -1:
+            opcode = opcode
+        0:
+            opcode = AssemblyOpcode.TCALL
+        1:
+            opcode = opcode
+    match id <=> opcode_tload_id():
+        -1:
+            opcode = opcode
+        0:
+            opcode = AssemblyOpcode.TLOAD
+        1:
+            opcode = opcode
+    match id <=> opcode_tstore_id():
+        -1:
+            opcode = opcode
+        0:
+            opcode = AssemblyOpcode.TSTORE
+        1:
+            opcode = opcode
+    match id <=> opcode_tret_id():
+        -1:
+            opcode = opcode
+        0:
+            opcode = AssemblyOpcode.TRET
+        1:
+            opcode = opcode
+    match id <=> opcode_tjmp_id():
+        -1:
+            opcode = opcode
+        0:
+            opcode = AssemblyOpcode.TJMP
+        1:
+            opcode = opcode
+    match id <=> opcode_tbr3_id():
+        -1:
+            opcode = opcode
+        0:
+            opcode = AssemblyOpcode.TBR3
+        1:
+            opcode = opcode
+    return opcode
+
+export fn opcode_is_known_id(id: tryte) -> trit:
+    match id <=> 0:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match id <=> opcode_tbr3_id():
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn opcode_kind(opcode: AssemblyOpcode) -> OpcodeKind:
+    match opcode:
+        AssemblyOpcode.TCONST:
+            return OpcodeKind.Value
+        AssemblyOpcode.TCONST_STR:
+            return OpcodeKind.Value
+        AssemblyOpcode.TMOV:
+            return OpcodeKind.Value
+        AssemblyOpcode.TINV:
+            return OpcodeKind.Value
+        AssemblyOpcode.TADD:
+            return OpcodeKind.Value
+        AssemblyOpcode.TMIN:
+            return OpcodeKind.Value
+        AssemblyOpcode.TMAX:
+            return OpcodeKind.Value
+        AssemblyOpcode.TCMP:
+            return OpcodeKind.Value
+        AssemblyOpcode.TCALL:
+            return OpcodeKind.Value
+        AssemblyOpcode.TLOAD:
+            return OpcodeKind.Memory
+        AssemblyOpcode.TSTORE:
+            return OpcodeKind.Memory
+        AssemblyOpcode.TRET:
+            return OpcodeKind.Terminator
+        AssemblyOpcode.TJMP:
+            return OpcodeKind.Terminator
+        AssemblyOpcode.TBR3:
+            return OpcodeKind.Terminator
+
+fn opcode_kind_code(kind: OpcodeKind) -> tryte:
+    match kind:
+        OpcodeKind.Value:
+            return 0
+        OpcodeKind.Memory:
+            return 1
+        OpcodeKind.Terminator:
+            return 2
+
+export fn opcode_kind_code_at(id: tryte) -> tryte:
+    match opcode_is_known_id(id) <=> -1:
+        -1:
+            return -1
+        0:
+            return opcode_kind_code(opcode_kind(opcode_from_id(id)))
+        1:
+            return -1
+
+fn opcode_min_operand_count(opcode: AssemblyOpcode) -> tryte:
+    match opcode:
+        AssemblyOpcode.TCONST:
+            return 2
+        AssemblyOpcode.TCONST_STR:
+            return 2
+        AssemblyOpcode.TMOV:
+            return 2
+        AssemblyOpcode.TINV:
+            return 2
+        AssemblyOpcode.TADD:
+            return 3
+        AssemblyOpcode.TMIN:
+            return 3
+        AssemblyOpcode.TMAX:
+            return 3
+        AssemblyOpcode.TCMP:
+            return 3
+        AssemblyOpcode.TCALL:
+            return 2
+        AssemblyOpcode.TLOAD:
+            return 3
+        AssemblyOpcode.TSTORE:
+            return 3
+        AssemblyOpcode.TRET:
+            return 1
+        AssemblyOpcode.TJMP:
+            return 1
+        AssemblyOpcode.TBR3:
+            return 4
+
+export fn opcode_min_operand_count_at(id: tryte) -> tryte:
+    match opcode_is_known_id(id) <=> -1:
+        -1:
+            return -1
+        0:
+            return opcode_min_operand_count(opcode_from_id(id))
+        1:
+            return -1
+
+fn opcode_is_variadic(opcode: AssemblyOpcode) -> trit:
+    match opcode:
+        AssemblyOpcode.TCONST:
+            return 0
+        AssemblyOpcode.TCONST_STR:
+            return 0
+        AssemblyOpcode.TMOV:
+            return 0
+        AssemblyOpcode.TINV:
+            return 0
+        AssemblyOpcode.TADD:
+            return 0
+        AssemblyOpcode.TMIN:
+            return 0
+        AssemblyOpcode.TMAX:
+            return 0
+        AssemblyOpcode.TCMP:
+            return 0
+        AssemblyOpcode.TCALL:
+            return -1
+        AssemblyOpcode.TLOAD:
+            return 0
+        AssemblyOpcode.TSTORE:
+            return 0
+        AssemblyOpcode.TRET:
+            return 0
+        AssemblyOpcode.TJMP:
+            return 0
+        AssemblyOpcode.TBR3:
+            return 0
+
+export fn opcode_is_variadic_at(id: tryte) -> trit:
+    match opcode_is_known_id(id) <=> -1:
+        -1:
+            return 0
+        0:
+            return opcode_is_variadic(opcode_from_id(id))
+        1:
+            return 0
+
+fn opcode_accepts_operand_count(query: OpcodeQuery) -> trit:
+    match query.operand_count <=> opcode_min_operand_count(query.opcode):
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match opcode_is_variadic(query.opcode) <=> -1:
+                -1:
+                    return 0
+                0:
+                    return -1
+                1:
+                    return 0
+
+export fn opcode_accepts_operand_count_id(id: tryte, count: tryte) -> trit:
+    match opcode_is_known_id(id) <=> -1:
+        -1:
+            return 0
+        0:
+            query: OpcodeQuery = OpcodeQuery(opcode=opcode_from_id(id), operand_count=count)
+            return opcode_accepts_operand_count(query)
+        1:
+            return 0
+
+export fn opcode_classifier_smoke() -> tryte:
+    return opcode_count()
+
+fn main() -> tryte:
+    return opcode_classifier_smoke()
