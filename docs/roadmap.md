@@ -227,6 +227,39 @@ Nao houve wildcard import, qualified calls, package manager, registry,
 download de dependencias, formato publico de linking, alteracao de ABI ou bump
 de versao publica.
 
+## Marco 1.00 - Records and Enums
+
+O Marco 1.00 adiciona tipos compostos nominais minimos para programas S3
+maiores, sem alterar formatos publicos, CLI, goldens, baselines ou versao
+publica.
+
+Entregas:
+
+- sintaxe `record` com campos nomeados em ordem declarada;
+- sintaxe `enum` com variants fechadas e discriminants `tryte`
+  deterministicos iniciando em `0`;
+- construcao de records por campos nomeados e acesso por `valor.campo`;
+- construcao de enums por `Enum.Variant`;
+- comparacao nominal de enums com `==` e `!=`;
+- `match` exaustivo sobre enum, com fallback `else` permitido;
+- diagnosticos estaveis para tipos duplicados, campos duplicados, campos
+  ausentes/desconhecidos, variants duplicadas/desconhecidas e match enum
+  incompleto/duplicado;
+- lowering deterministico de records por scalarizacao em ordem declarada;
+- parametros record expandidos no ABI interno de IR;
+- retorno de record single-field pelo registrador escalar existente;
+- retorno de record multi-field bloqueado ate uma ABI de retorno agregado;
+- nomes de tipos compostos module-local preservados em `compile_sources(...)`
+  por reescrita interna deterministica;
+- cobertura hospedada O0/O1 e cobertura nativa x86-64 para records/enums.
+
+Nao houve classes, metodos, heranca, traits, interfaces, generics, reflection,
+enum payloads, heap, layout aberto, novo opcode, formato publico novo ou bump
+de versao publica.
+
+Contrato documentado em [spec/composite-types.md](../spec/composite-types.md) e
+no [plano do marco](milestone-1.00.md).
+
 ## Autohospedagem
 
 Assembler e frontend em S3 dependem de strings além de concatenação estática
