@@ -260,6 +260,38 @@ de versao publica.
 Contrato documentado em [spec/composite-types.md](../spec/composite-types.md) e
 no [plano do marco](milestone-1.00.md).
 
+## Marco 1.01 - First Self-hosting Component
+
+O Marco 1.01 implementa o primeiro componente pequeno do toolchain escrito em
+S3 e validado contra uma referencia Python, sem substituir o caminho padrao do
+compilador.
+
+Componente escolhido:
+
+- classificador de opcodes de S3 Assembly;
+- subcomponente estreito do futuro renderer de Assembly;
+- referencia Python baseada em `bootstrap/s3/assembly.py` e no inventario
+  `AssemblyOpcode`.
+
+Entregas:
+
+- `selfhost/assembly/opcode_ids.s3` com ids escalares deterministicos para os
+  opcodes atuais;
+- `selfhost/assembly/opcode_classifier.s3` usando modulos, records, enums e
+  `match` exaustivo;
+- classificacao de opcode conhecido, kind, contagem minima de operandos,
+  variadicidade de `TCALL` e aceitacao de contagem de operandos;
+- teste diferencial Python/S3 cobrindo todas as variants atuais, entradas
+  invalidas, comportamento variadic e determinismo de compilacao multi-file;
+- checksum nativo x86-64 coletavel quando o toolchain nativo estiver
+  disponivel.
+
+Estado de maturidade: `differential reference`. O componente nao foi adotado
+como caminho padrao; Python permanece a referencia.
+
+Contrato documentado em [docs/milestone-1.01.md](milestone-1.01.md) e na
+selecao em [docs/self-hosting-first-component.md](self-hosting-first-component.md).
+
 ## Autohospedagem
 
 Assembler e frontend em S3 dependem de strings além de concatenação estática
