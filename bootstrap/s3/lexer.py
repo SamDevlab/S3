@@ -19,6 +19,11 @@ class SyntaxMode(Enum):
 
 
 class TokenKind(Enum):
+    MODULE = auto()
+    FROM = auto()
+    IMPORT = auto()
+    AS = auto()
+    EXPORT = auto()
     FN = auto()
     RETURN = auto()
     SWITCH = auto()
@@ -64,6 +69,7 @@ class TokenKind(Enum):
     COLON = auto()
     SEMICOLON = auto()
     COMMA = auto()
+    DOT = auto()
     NEWLINE = auto()
     INDENT = auto()
     DEDENT = auto()
@@ -301,6 +307,16 @@ class Lexer:
                 kind = TokenKind.DISCARD
             elif text == "else":
                 kind = TokenKind.ELSE
+            elif text == "module":
+                kind = TokenKind.MODULE
+            elif text == "from":
+                kind = TokenKind.FROM
+            elif text == "import":
+                kind = TokenKind.IMPORT
+            elif text == "as":
+                kind = TokenKind.AS
+            elif text == "export":
+                kind = TokenKind.EXPORT
         return Token(kind, text, line, column, start)
 
     @staticmethod
@@ -406,6 +422,7 @@ class Lexer:
             ":": TokenKind.COLON,
             ";": TokenKind.SEMICOLON,
             ",": TokenKind.COMMA,
+            ".": TokenKind.DOT,
         }
         char = self._peek()
         kind = single_tokens.get(char)

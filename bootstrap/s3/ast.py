@@ -290,6 +290,7 @@ class FunctionDeclaration:
     signature: FunctionSignature
     body: Block
     location: SourceLocation
+    exported: bool = False
 
     @property
     def name(self) -> str:
@@ -307,6 +308,22 @@ class FunctionDeclaration:
 @dataclass(frozen=True, slots=True)
 class Program:
     functions: tuple[FunctionDeclaration, ...]
+    location: SourceLocation
+    module: ModuleDeclaration | None = None
+    imports: tuple[ImportDeclaration, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class ModuleDeclaration:
+    name: str
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
+class ImportDeclaration:
+    module_name: str
+    symbol_name: str
+    alias: str | None
     location: SourceLocation
 
 

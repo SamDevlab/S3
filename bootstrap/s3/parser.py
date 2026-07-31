@@ -18,13 +18,64 @@ class Parser:
     def parse_program(self) -> ast.Program:
         functions: list[ast.FunctionDeclaration] = []
         location = self._peek().location
+        self._skip_newlines()
+        module = self._parse_module_declaration()
+        self._skip_newlines()
+        imports: list[ast.ImportDeclaration] = []
+        while self.mode is SyntaxMode.V0_6 and self._check(TokenKind.FROM):
+            imports.append(self._parse_import_declaration())
+            self._skip_newlines()
         while not self._check(TokenKind.EOF):
+            self._skip_newlines()
+            if self._check(TokenKind.EOF):
+                break
             functions.append(self._parse_function())
         if not functions:
             raise ParseError("expected at least one function", self._peek().location)
-        return ast.Program(tuple(functions), location)
+        return ast.Program(tuple(functions), location, module, tuple(imports))
+
+    def _parse_module_declaration(self) -> ast.ModuleDeclaration | None:
+        if self.mode is not SyntaxMode.V0_6 or not self._match(TokenKind.MODULE):
+            return None
+        start = self._previous()
+        module_name = self._parse_module_name()
+        self._consume_statement_newline("expected newline after module declaration")
+        return ast.ModuleDeclaration(module_name, start.location)
+
+    def _parse_import_declaration(self) -> ast.ImportDeclaration:
+        start = self._consume(TokenKind.FROM, "expected 'from'")
+        module_name = self._parse_module_name()
+        self._consume(TokenKind.IMPORT, "expected 'import' after module name")
+        symbol = self._consume(TokenKind.IDENTIFIER, "expected imported symbol")
+        alias = None
+        if self._match(TokenKind.AS):
+            alias_token = self._consume(TokenKind.IDENTIFIER, "expected import alias")
+            alias = alias_token.text
+        self._consume_statement_newline("expected newline after import declaration")
+        return ast.ImportDeclaration(
+            module_name,
+            symbol.text,
+            alias,
+            start.location,
+        )
+
+    def _parse_module_name(self) -> str:
+        parts = [
+            self._consume(TokenKind.IDENTIFIER, "expected module name").text
+        ]
+        while self._match(TokenKind.DOT):
+            parts.append(
+                self._consume(
+                    TokenKind.IDENTIFIER,
+                    "expected module name after '.'",
+                ).text
+            )
+        return ".".join(parts)
 
     def _parse_function(self) -> ast.FunctionDeclaration:
+        exported = False
+        if self.mode is SyntaxMode.V0_6 and self._match(TokenKind.EXPORT):
+            exported = True
         start = self._consume(TokenKind.FN, "expected 'fn'")
         name = self._consume(TokenKind.IDENTIFIER, "expected function name")
         self._consume(TokenKind.LEFT_PAREN, "expected '(' after function name")
@@ -49,7 +100,7 @@ class Parser:
             return_type,
             name.location,
         )
-        return ast.FunctionDeclaration(signature, body, start.location)
+        return ast.FunctionDeclaration(signature, body, start.location, exported)
 
     def _parse_parameters(self) -> list[ast.Parameter]:
         parameters: list[ast.Parameter] = []
@@ -626,6 +677,10 @@ class Parser:
 
     def _previous(self) -> Token:
         return self.tokens[self.current - 1]
+
+    def _skip_newlines(self) -> None:
+        while self._match(TokenKind.NEWLINE):
+            pass
 
 
 def parse_tokens(tokens: tuple[Token, ...], *, mode: SyntaxMode = SyntaxMode.V0_6) -> ast.Program:

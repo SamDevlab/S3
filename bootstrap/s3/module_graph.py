@@ -6,6 +6,7 @@ import re
 from dataclasses import dataclass
 from pathlib import PurePosixPath
 
+from . import ast
 from .diagnostics import DiagnosticCode, SemanticError, SourceLocation
 
 _IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -134,6 +135,35 @@ def normalize_logical_path(logical_path: str) -> str:
     if not parts:
         raise ValueError("logical path must contain a file name")
     return "/".join(parts)
+
+
+def source_unit_from_program(
+    logical_path: str,
+    source: str,
+    program: ast.Program,
+) -> SourceUnit:
+    declared = (
+        ModuleId.parse(program.module.name)
+        if program.module is not None
+        else None
+    )
+    return SourceUnit(logical_path, source, declared)
+
+
+def import_edges_from_program(
+    module: ModuleId,
+    program: ast.Program,
+) -> tuple[ImportEdge, ...]:
+    return tuple(
+        ImportEdge(
+            importing_module=module,
+            imported_module=ModuleId.parse(declaration.module_name),
+            symbol=declaration.symbol_name,
+            alias=declaration.alias,
+            location=declaration.location,
+        )
+        for declaration in program.imports
+    )
 
 
 def _collect_units(units: tuple[SourceUnit, ...]) -> dict[ModuleId, SourceUnit]:
