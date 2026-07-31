@@ -201,6 +201,32 @@ Entregas:
 Nao houve novo passe de otimizacao, sintaxe publica, SSA publica, modulo/import
 de linguagem, records, enums ou componente autohospedado.
 
+## Marco 0.99 - Modules and Imports
+
+O Marco 0.99 adiciona compilacao deterministica de multiplos arquivos, mantendo
+compatibilidade com programas de arquivo unico e sem introduzir package manager.
+
+Entregas:
+
+- sintaxe opcional `module`, `from ... import ...`, alias com `as` e
+  `export fn`;
+- graph deterministico com `ModuleId`, `SourceUnit`, `ImportEdge` e
+  ordenacao topologica;
+- diagnosticos para modulo duplicado, modulo ausente, ciclos, imports
+  duplicados, conflitos, simbolos privados e simbolos ausentes;
+- resolucao por namespace de modulo com funcoes privadas por default;
+- API `compile_sources(...)` separada de `compile_source(...)`;
+- nomes internos deterministicos para linking dentro do compilador, preservando
+  `main` no modulo de entrada;
+- cobertura hospedada O0/O1 e cobertura nativa multi-modulo no job
+  `native-x86-64`;
+- contrato documentado em [spec/modules.md](../spec/modules.md) e no
+  [plano do marco](milestone-0.99.md).
+
+Nao houve wildcard import, qualified calls, package manager, registry,
+download de dependencias, formato publico de linking, alteracao de ABI ou bump
+de versao publica.
+
 ## Autohospedagem
 
 Assembler e frontend em S3 dependem de strings além de concatenação estática
