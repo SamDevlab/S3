@@ -1,8 +1,15 @@
 (* Gramática normativa S3 (Sintaxe 0.6 - Indentation-based) *)
 
-program              = { NEWLINE }, function, { { NEWLINE }, function }, { NEWLINE }, EOF ;
+program              = { NEWLINE }, [ module-declaration ],
+                       { { NEWLINE }, import-declaration },
+                       function, { { NEWLINE }, function }, { NEWLINE }, EOF ;
 
-function             = "fn", identifier, "(", [ parameter-list ], ")",
+module-declaration   = "module", module-id, NEWLINE ;
+import-declaration   = "from", module-id, "import", identifier,
+                       [ "as", identifier ], NEWLINE ;
+module-id            = identifier, { ".", identifier } ;
+
+function             = [ "export" ], "fn", identifier, "(", [ parameter-list ], ")",
                        "->", type, block ;
 parameter-list       = parameter, { ",", parameter } ;
 parameter            = identifier, ":", type ;

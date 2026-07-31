@@ -20,14 +20,20 @@ fn main() -> tryte:
 
 A linguagem S3 (sintaxe 0.6) é baseada em indentação, abandonando `{}` e `;`.
 
-Palavras-chave: `fn`, `return`, `match`, `while`, `mut`, `trit`, `tryte`, `case` (removido no parser atual, usa-se literais diretos no match).
+Palavras-chave: `module`, `from`, `import`, `as`, `export`, `fn`, `return`,
+`match`, `while`, `mut`, `trit`, `tryte`, `case` (removido no parser atual,
+usa-se literais diretos no match).
 
 Identificadores seguem `[A-Za-z_][A-Za-z0-9_]*`.
 Comentários começam com `#` (não mais `//`).
 
 Blocos de código iniciam-se após um `:` seguido de quebra de linha e indentação.
 
-Não existem módulos nem imports. O código reside num único arquivo compilado (ou múltiplos concatenados conceitualmente).
+Programas de arquivo unico continuam validos sem declaracao de modulo. A
+compilacao multi-file usa declaracoes opcionais `module`, imports explicitos
+`from ... import ...` e funcoes exportadas com `export fn`, conforme
+[modules.md](modules.md). Nao ha package manager, wildcard import ou resolucao
+baseada em ordem acidental do filesystem.
 
 ## Bindings e mutabilidade
 
