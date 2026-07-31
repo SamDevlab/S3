@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..ssa import SSAFunction
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,6 +29,22 @@ class SSAPassContract:
         _require_unique("required analyses", self.required_analyses)
         _require_unique("invalidated analyses", self.invalidated_analyses)
         _require_unique("telemetry fields", self.telemetry_fields)
+
+
+@dataclass(frozen=True, slots=True)
+class PassResult:
+    function: SSAFunction
+    changed: bool
+    telemetry: tuple[tuple[str, int], ...] = ()
+
+    def __post_init__(self) -> None:
+        _require_unique(
+            "telemetry fields",
+            tuple(field for field, _count in self.telemetry),
+        )
+        for _field, count in self.telemetry:
+            if count < 0:
+                raise ValueError("pass result telemetry counts must be non-negative")
 
 
 def _require_unique(label: str, values: tuple[str, ...]) -> None:

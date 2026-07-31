@@ -4,7 +4,7 @@ import pytest
 
 from bootstrap.s3.metrics import FixpointTelemetry
 from bootstrap.s3.ssa_opt import SSA_PASS_CONTRACTS, _FIXPOINT_PASSES
-from bootstrap.s3.ssa_optimizer import SSAPassContract
+from bootstrap.s3.ssa_optimizer import PassResult, SSAPassContract
 
 
 def test_ssa_pass_contract_inventory_matches_active_fixpoint_passes() -> None:
@@ -57,4 +57,34 @@ def test_ssa_pass_contract_rejects_invalid_shape() -> None:
             True,
             False,
             required_analyses=("cfg", "cfg"),
+        )
+
+
+def test_pass_result_accepts_unmetered_structural_change() -> None:
+    token = object()
+
+    result = PassResult(function=token, changed=True)
+
+    assert result.function is token
+    assert result.changed is True
+    assert result.telemetry == ()
+
+
+def test_pass_result_rejects_invalid_telemetry() -> None:
+    token = object()
+
+    with pytest.raises(ValueError, match="non-negative"):
+        PassResult(
+            function=token,
+            changed=True,
+            telemetry=(("expressions_eliminated", -1),),
+        )
+    with pytest.raises(ValueError, match="duplicate telemetry fields"):
+        PassResult(
+            function=token,
+            changed=True,
+            telemetry=(
+                ("expressions_eliminated", 1),
+                ("expressions_eliminated", 1),
+            ),
         )

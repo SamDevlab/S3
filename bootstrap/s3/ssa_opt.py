@@ -9,7 +9,7 @@ from .dominance import DominatorTree
 from .ir import IRModule
 from .metrics import FixpointTelemetry
 from .ssa import SSAFunction, validate_ssa
-from .ssa_optimizer.contracts import SSA_PASS_CONTRACTS
+from .ssa_optimizer.contracts import PassResult, SSA_PASS_CONTRACTS
 from .ssa_optimizer.elimination import (
     run_ssa_adce,
     run_ssa_dead_code_elimination,
@@ -70,14 +70,25 @@ def run_fixpoint_pipeline(
     def pass_enabled(name: str) -> bool:
         return name not in disabled
 
-    def apply_pass(next_fn: SSAFunction) -> bool:
+    def make_pass_result(
+        next_fn: SSAFunction,
+        pass_telemetry: tuple[tuple[str, int], ...] = (),
+    ) -> PassResult:
+        return PassResult(
+            function=next_fn,
+            changed=_ssa_structure(next_fn) != _ssa_structure(curr_fn),
+            telemetry=pass_telemetry,
+        )
+
+    def apply_pass(result: PassResult) -> bool:
         nonlocal curr_fn
-        before = _ssa_structure(curr_fn)
-        curr_fn = next_fn
-        changed = _ssa_structure(curr_fn) != before
+        curr_fn = result.function
         if verify_each_pass:
             _verify_pipeline_ssa(curr_fn)
-        return changed
+        if result.changed:
+            for field, count in result.telemetry:
+                setattr(telemetry, field, getattr(telemetry, field) + count)
+        return result.changed
 
     if verify_each_pass:
         _verify_pipeline_ssa(curr_fn)
@@ -89,68 +100,88 @@ def run_fixpoint_pipeline(
         # 1. GVN
         if pass_enabled("gvn"):
             next_fn, gvn_cnt = run_ssa_gvn(curr_fn)
-            pass_changed = apply_pass(next_fn)
-            if pass_changed:
-                telemetry.expressions_eliminated += gvn_cnt
+            if apply_pass(
+                make_pass_result(
+                    next_fn,
+                    (("expressions_eliminated", gvn_cnt),),
+                )
+            ):
                 changed = True
 
         # 2. Copy Propagation
         if pass_enabled("copy_propagation"):
             next_fn = run_ssa_copy_propagation(curr_fn)
-            if apply_pass(next_fn):
+            if apply_pass(make_pass_result(next_fn)):
                 changed = True
 
         # 3. DSE (Dead Store Elimination - Milestone 0.92)
         if pass_enabled("dse"):
             next_fn, dse_cnt = run_ssa_dse(curr_fn)
-            pass_changed = apply_pass(next_fn)
-            if pass_changed:
-                telemetry.stores_removed += dse_cnt
+            if apply_pass(
+                make_pass_result(
+                    next_fn,
+                    (("stores_removed", dse_cnt),),
+                )
+            ):
                 changed = True
 
         # 4. DCE
         if pass_enabled("dce"):
             next_fn = run_ssa_dead_code_elimination(curr_fn)
-            if apply_pass(next_fn):
+            if apply_pass(make_pass_result(next_fn)):
                 changed = True
 
         # 5. ADCE (Aggressive DCE - Milestone 0.91)
         if pass_enabled("adce"):
             next_fn, adce_cnt = run_ssa_adce(curr_fn)
-            pass_changed = apply_pass(next_fn)
-            if pass_changed:
-                telemetry.dead_instructions_removed += adce_cnt
+            if apply_pass(
+                make_pass_result(
+                    next_fn,
+                    (("dead_instructions_removed", adce_cnt),),
+                )
+            ):
                 changed = True
 
         # 6. LICM
         if pass_enabled("licm"):
             next_fn, licm_cnt = run_ssa_licm(curr_fn)
-            pass_changed = apply_pass(next_fn)
-            if pass_changed:
-                telemetry.licm_moves += licm_cnt
+            if apply_pass(
+                make_pass_result(
+                    next_fn,
+                    (("licm_moves", licm_cnt),),
+                )
+            ):
                 changed = True
 
         # 7. SCCP
         if pass_enabled("sccp"):
             next_fn, sccp_expr_cnt, sccp_br_cnt = run_ssa_sccp(curr_fn)
-            pass_changed = apply_pass(next_fn)
-            if pass_changed:
-                telemetry.expressions_eliminated += sccp_expr_cnt
-                telemetry.branches_removed += sccp_br_cnt
+            if apply_pass(
+                make_pass_result(
+                    next_fn,
+                    (
+                        ("expressions_eliminated", sccp_expr_cnt),
+                        ("branches_removed", sccp_br_cnt),
+                    ),
+                )
+            ):
                 changed = True
 
         # 8. Strength Reduction
         if pass_enabled("strength_reduction"):
             next_fn, sr_cnt = run_ssa_strength_reduction(curr_fn)
-            pass_changed = apply_pass(next_fn)
-            if pass_changed:
-                telemetry.strength_reductions += sr_cnt
+            if apply_pass(
+                make_pass_result(
+                    next_fn,
+                    (("strength_reductions", sr_cnt),),
+                )
+            ):
                 changed = True
 
         # 9. Peephole
         if pass_enabled("peephole"):
             next_fn = run_ssa_peephole(curr_fn)
-            if apply_pass(next_fn):
+            if apply_pass(make_pass_result(next_fn)):
                 changed = True
 
         if not changed:
