@@ -804,6 +804,110 @@ def test_o0_o1_native_multi_module_compilation(
 
 
 @pytest.mark.parametrize(
+    ("name", "source", "expected"),
+    (
+        (
+            "record-parameter",
+            """\
+record Pair:
+    left: tryte
+    right: tryte
+fn sum(pair: Pair) -> tryte:
+    return pair.left + pair.right
+fn main() -> tryte:
+    return sum(Pair(left=4, right=6))
+""",
+            10,
+        ),
+        (
+            "single-field-record-return",
+            """\
+record Box:
+    value: tryte
+fn make() -> Box:
+    return Box(value=8)
+fn main() -> tryte:
+    return make().value
+""",
+            8,
+        ),
+        (
+            "enum-match",
+            """\
+enum Opcode:
+    Add
+    Subtract
+    Minimum
+    Maximum
+fn main() -> tryte:
+    value: Opcode = Opcode.Maximum
+    match value:
+        Opcode.Add:
+            return 0
+        Opcode.Subtract:
+            return 1
+        Opcode.Minimum:
+            return 2
+        Opcode.Maximum:
+            return 3
+""",
+            3,
+        ),
+    ),
+)
+def test_o0_o1_native_composite_types(
+    name: str,
+    source: str,
+    expected: int,
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    _assert_o0_o1_native_equivalence(
+        source,
+        expected,
+        native_toolchain,
+        tmp_path / f"composite-{name}",
+    )
+
+
+def test_o0_o1_native_imported_module_composite_types(
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    sources = {
+        "main.s3": (
+            "module main\n"
+            "from logic import classify\n"
+            "fn main() -> tryte:\n"
+            "    return classify(2)\n"
+        ),
+        "logic.s3": (
+            "module logic\n"
+            "enum Kind:\n"
+            "    Small\n"
+            "    Large\n"
+            "record Classified:\n"
+            "    kind: Kind\n"
+            "    value: tryte\n"
+            "export fn classify(value: tryte) -> tryte:\n"
+            "    item: Classified = Classified(kind=Kind.Large, value=value)\n"
+            "    match item.kind:\n"
+            "        Kind.Small:\n"
+            "            return -1\n"
+            "        Kind.Large:\n"
+            "            return item.value\n"
+        ),
+    }
+
+    _assert_o0_o1_native_sources_equivalence(
+        sources,
+        2,
+        native_toolchain,
+        tmp_path / "composite-module",
+    )
+
+
+@pytest.mark.parametrize(
     (
         "name",
         "source",
