@@ -179,6 +179,28 @@ Entregas:
 Nao houve mudanca de sintaxe publica, formatos estaveis, ABI, CLI, goldens,
 baselines ou versao publica.
 
+## Marco 0.98 - Optimizer Architecture
+
+O Marco 0.98 torna a arquitetura interna do otimizador O1 explicita sem alterar
+semantica da linguagem, formatos publicos, ABI, CLI, goldens, baselines ou
+versao publica.
+
+Entregas:
+
+- `bootstrap.s3.ssa_opt` preservado como fachada de compatibilidade;
+- passes SSA separados em `bootstrap.s3.ssa_optimizer` por responsabilidade;
+- contratos de passes e inventario O1 mantidos em uma unica fonte interna;
+- `PassResult` usado pela pipeline para padronizar funcao transformada,
+  mudanca estrutural e telemetria;
+- convergencia ainda definida por diferenca estrutural real na SSA retornada,
+  conforme [ADR-0016](decisions/ADR-0016-ssa-optimization-correctness.md);
+- limites de modulo documentados em
+  [ADR-0017](decisions/ADR-0017-ssa-optimizer-module-boundaries.md) e no
+  [plano do marco](milestone-0.98.md).
+
+Nao houve novo passe de otimizacao, sintaxe publica, SSA publica, modulo/import
+de linguagem, records, enums ou componente autohospedado.
+
 ## Autohospedagem
 
 Assembler e frontend em S3 dependem de strings além de concatenação estática
