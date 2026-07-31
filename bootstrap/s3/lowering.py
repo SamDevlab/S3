@@ -568,6 +568,11 @@ class FunctionLowerer:
         return result
 
     def _lower_switch(self, statement: ast.SwitchStatement) -> None:
+        selector_type = self.semantic_model.declared_type_of(statement.expression)
+        if self.semantic_model.is_enum_type(selector_type):
+            self._lower_enum_switch(statement)
+            return
+
         cond_val = self.semantic_model.constant_value_of(statement.expression)
         if cond_val is not None:
             explicit_cases = {c.label: c for c in statement.cases if c.label is not None}
@@ -628,6 +633,87 @@ class FunctionLowerer:
             return
         continuation = self._fresh_block(
             "switch_continue",
+            statement.location,
+        )
+        for block, location in open_blocks:
+            block.instructions.append(
+                IRInstruction(
+                    IROpcode.JUMP,
+                    targets=(continuation.name,),
+                    location=location,
+                )
+            )
+        self.current = continuation
+
+    def _lower_enum_switch(self, statement: ast.SwitchStatement) -> None:
+        explicit_entries = self._enum_case_entries(statement.cases)
+        explicit_cases = dict(explicit_entries)
+        fallback_case = next((c for c in statement.cases if c.label is None), None)
+        cond_val = self.semantic_model.constant_value_of(statement.expression)
+        if cond_val is not None:
+            target_case = explicit_cases.get(cond_val, fallback_case)
+            if target_case is not None:
+                self._lower_block(target_case.body, create_scope=True)
+                return
+
+        selector_reg = self._lower_expression(statement.expression)
+        default_case = fallback_case or explicit_entries[-1][1]
+        test_entries = explicit_entries if fallback_case is not None else explicit_entries[:-1]
+        open_blocks: list[tuple[_MutableBlock, SourceLocation]] = []
+
+        for discriminant, case in test_entries:
+            less_block = self._fresh_block("enum_match_less", case.location)
+            case_block = self._fresh_block("enum_match_case", case.location)
+            greater_block = self._fresh_block("enum_match_greater", case.location)
+            next_block = self._fresh_block("enum_match_next", statement.location)
+            discriminant_reg = self._emit_constant(
+                discriminant,
+                ast.TypeName.TRYTE,
+                case.location,
+            )
+            compare_reg = self._allocate(ast.TypeName.TRIT, case.location)
+            self._emit(
+                IRInstruction(
+                    IROpcode.COMPARE,
+                    result=compare_reg,
+                    operands=(selector_reg, discriminant_reg),
+                    location=case.location,
+                )
+            )
+            self._emit(
+                IRInstruction(
+                    IROpcode.BRANCH3,
+                    operands=(compare_reg,),
+                    targets=(less_block.name, case_block.name, greater_block.name),
+                    location=case.location,
+                )
+            )
+
+            for branch_block in (less_block, greater_block):
+                self.current = branch_block
+                self._emit(
+                    IRInstruction(
+                        IROpcode.JUMP,
+                        targets=(next_block.name,),
+                        location=case.location,
+                    )
+                )
+
+            self.current = case_block
+            self._lower_block(case.body, create_scope=True)
+            if self.current is not None:
+                open_blocks.append((self.current, case.location))
+            self.current = next_block
+
+        self._lower_block(default_case.body, create_scope=True)
+        if self.current is not None:
+            open_blocks.append((self.current, default_case.location))
+
+        if not open_blocks:
+            self.current = None
+            return
+        continuation = self._fresh_block(
+            "enum_match_continue",
             statement.location,
         )
         for block, location in open_blocks:
@@ -1143,6 +1229,35 @@ class FunctionLowerer:
             expression.location,
         )
 
+    def _match_label_discriminant(self, label: ast.MatchCaseLabel) -> int:
+        if isinstance(label, int):
+            return label
+        if isinstance(label, ast.FieldAccessExpression):
+            discriminant = self.semantic_model.constant_value_of(label)
+            if discriminant is not None:
+                return discriminant
+            if isinstance(label.target, ast.Identifier):
+                enum = self.semantic_model.enums.get(label.target.name)
+                if enum is not None:
+                    try:
+                        return enum.discriminant(label.field_name)
+                    except KeyError as error:
+                        raise LoweringError(
+                            (
+                                f"enum '{enum.name}' has no variant "
+                                f"'{label.field_name}'"
+                            ),
+                            label.location,
+                        ) from error
+        raise LoweringError("unsupported match case label")
+
+    def _enum_case_entries(self, cases):
+        return tuple(
+            (self._match_label_discriminant(case.label), case)
+            for case in cases
+            if case.label is not None
+        )
+
     def _lower_len(self, expression: ast.LenExpression) -> int:
         argument_type = self.semantic_model.declared_type_of(expression.argument)
         if isinstance(argument_type, ast.ArrayType):
@@ -1330,6 +1445,10 @@ class FunctionLowerer:
         self,
         expression: ast.MatchExpression,
     ) -> int:
+        selector_type = self.semantic_model.declared_type_of(expression.selector)
+        if self.semantic_model.is_enum_type(selector_type):
+            return self._lower_enum_match_expression(expression)
+
         cond_val = self.semantic_model.constant_value_of(expression.selector)
         if cond_val is not None:
             explicit_cases = {c.label: c for c in expression.cases if c.label is not None}
@@ -1338,7 +1457,10 @@ class FunctionLowerer:
             if target_case is not None:
                 return self._lower_expression(target_case.expression)
         selector_reg = self._lower_expression(expression.selector)
-        result_type = self.semantic_model.expression_types[id(expression)]
+        result_type = self._storage_type(
+            self.semantic_model.expression_types[id(expression)],
+            expression.location,
+        )
         memory = self._allocate_memory(result_type, 1, True, expression.location)
         explicit_cases = {c.label: c for c in expression.cases if c.label is not None}
         fallback_case = next((c for c in expression.cases if c.label is None), None)
@@ -1400,6 +1522,121 @@ class FunctionLowerer:
                     location=case.location,
                 )
             )
+
+        self.current = continuation
+        val_idx = self._emit_constant(0, ast.TypeName.TRYTE, expression.location)
+        result_reg = self._allocate(result_type, expression.location)
+        self._emit(
+            IRInstruction(
+                IROpcode.LOAD,
+                operands=(val_idx,),
+                memory=memory,
+                result=result_reg,
+                location=expression.location,
+            )
+        )
+        return result_reg
+
+    def _lower_enum_match_expression(
+        self,
+        expression: ast.MatchExpression,
+    ) -> int:
+        explicit_entries = self._enum_case_entries(expression.cases)
+        explicit_cases = dict(explicit_entries)
+        fallback_case = next((c for c in expression.cases if c.label is None), None)
+        cond_val = self.semantic_model.constant_value_of(expression.selector)
+        if cond_val is not None:
+            target_case = explicit_cases.get(cond_val, fallback_case)
+            if target_case is not None:
+                return self._lower_expression(target_case.expression)
+
+        selector_reg = self._lower_expression(expression.selector)
+        result_type = self._storage_type(
+            self.semantic_model.expression_types[id(expression)],
+            expression.location,
+        )
+        memory = self._allocate_memory(result_type, 1, True, expression.location)
+        default_case = fallback_case or explicit_entries[-1][1]
+        test_entries = explicit_entries if fallback_case is not None else explicit_entries[:-1]
+        continuation = self._fresh_block("enum_match_expr_cont", expression.location)
+
+        for discriminant, case in test_entries:
+            less_block = self._fresh_block("enum_match_expr_less", case.location)
+            case_block = self._fresh_block("enum_match_expr_case", case.location)
+            greater_block = self._fresh_block("enum_match_expr_greater", case.location)
+            next_block = self._fresh_block("enum_match_expr_next", expression.location)
+            discriminant_reg = self._emit_constant(
+                discriminant,
+                ast.TypeName.TRYTE,
+                case.location,
+            )
+            compare_reg = self._allocate(ast.TypeName.TRIT, case.location)
+            self._emit(
+                IRInstruction(
+                    IROpcode.COMPARE,
+                    result=compare_reg,
+                    operands=(selector_reg, discriminant_reg),
+                    location=case.location,
+                )
+            )
+            self._emit(
+                IRInstruction(
+                    IROpcode.BRANCH3,
+                    operands=(compare_reg,),
+                    targets=(less_block.name, case_block.name, greater_block.name),
+                    location=case.location,
+                )
+            )
+
+            for branch_block in (less_block, greater_block):
+                self.current = branch_block
+                self._emit(
+                    IRInstruction(
+                        IROpcode.JUMP,
+                        targets=(next_block.name,),
+                        location=case.location,
+                    )
+                )
+
+            self.current = case_block
+            val_reg = self._lower_expression(case.expression)
+            idx = self._emit_constant(0, ast.TypeName.TRYTE, case.location)
+            self._emit(
+                IRInstruction(
+                    IROpcode.STORE,
+                    operands=(idx, val_reg),
+                    memory=memory,
+                    initialization=True,
+                    location=case.location,
+                )
+            )
+            self._emit(
+                IRInstruction(
+                    IROpcode.JUMP,
+                    targets=(continuation.name,),
+                    location=case.location,
+                )
+            )
+            self.current = next_block
+
+        val_reg = self._lower_expression(default_case.expression)
+        idx = self._emit_constant(0, ast.TypeName.TRYTE, default_case.location)
+        self._emit(
+            IRInstruction(
+                IROpcode.STORE,
+                operands=(idx, val_reg),
+                memory=memory,
+                initialization=True,
+                location=default_case.location,
+            )
+        )
+        self._emit(
+            IRInstruction(
+                IROpcode.JUMP,
+                targets=(continuation.name,),
+                location=default_case.location,
+            )
+        )
 
         self.current = continuation
         val_idx = self._emit_constant(0, ast.TypeName.TRYTE, expression.location)

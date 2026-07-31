@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from . import ast
-from .diagnostics import DiagnosticCode, ParseError
+from .diagnostics import DiagnosticCode, ParseError, SourceLocation
 from .lexer import SyntaxMode, Token, TokenKind, tokenize
 
 
@@ -421,21 +421,41 @@ class Parser:
             body = self._parse_block_v0_6()
             return ast.TernaryCase(None, body, start.location)
 
-        negative = self._match(TokenKind.MINUS)
-        start = self._previous() if negative else self._peek()
-
-        if not self._check(TokenKind.INTEGER):
-            raise ParseError("expected integer case label or 'else'", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_INVALID_MATCH_ARM)
-
-        integer = self._advance()
-        value = int(integer.text)
-        if negative:
-            value = -value
+        label, location = self._parse_match_case_label_v0_6()
         self._consume(TokenKind.COLON, "expected ':' after case label")
         self._consume(TokenKind.NEWLINE, "expected newline after ':'")
         self._consume(TokenKind.INDENT, "expected indented block")
         body = self._parse_block_v0_6()
-        return ast.TernaryCase(value, body, start.location)
+        return ast.TernaryCase(label, body, location)
+
+    def _parse_match_case_label_v0_6(self) -> tuple[ast.MatchCaseLabel, SourceLocation]:
+        negative = self._match(TokenKind.MINUS)
+        start = self._previous() if negative else self._peek()
+        if self._check(TokenKind.INTEGER):
+            integer = self._advance()
+            value = int(integer.text)
+            if negative:
+                value = -value
+            return value, start.location
+        if negative:
+            raise ParseError("expected integer case label or 'else'", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_INVALID_MATCH_ARM)
+        if self._check(TokenKind.IDENTIFIER):
+            enum_name = self._advance()
+            if not self._match(TokenKind.DOT):
+                raise ParseError("expected integer case label or 'else'", enum_name.location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_INVALID_MATCH_ARM)
+            variant = self._consume(
+                TokenKind.IDENTIFIER,
+                "expected enum variant in case label",
+            )
+            return (
+                ast.FieldAccessExpression(
+                    ast.Identifier(enum_name.text, enum_name.location),
+                    variant.text,
+                    enum_name.location,
+                ),
+                enum_name.location,
+            )
+        raise ParseError("expected integer case label, enum variant, or 'else'", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_INVALID_MATCH_ARM)
 
     def _parse_variable_declaration(self) -> ast.VariableDeclaration:
         start = self._peek()
@@ -718,18 +738,11 @@ class Parser:
             self._consume_statement_newline("expected newline after match arm expression")
             return ast.MatchExpressionCase(None, expr, start.location)
 
-        negative = self._match(TokenKind.MINUS)
-        start = self._previous() if negative else self._peek()
-        if not self._check(TokenKind.INTEGER):
-            raise ParseError("expected integer case label or 'else'", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_INVALID_MATCH_ARM)
-        integer = self._advance()
-        value = int(integer.text)
-        if negative:
-            value = -value
+        label, location = self._parse_match_case_label_v0_6()
         self._consume(TokenKind.COLON, "expected ':' after case label")
         expr = self._parse_expression()
         self._consume_statement_newline("expected newline after match arm expression")
-        return ast.MatchExpressionCase(value, expr, start.location)
+        return ast.MatchExpressionCase(label, expr, location)
 
     def _finish_call(self, function: Token) -> ast.CallExpression:
         arguments: list[ast.CallArgument] = []

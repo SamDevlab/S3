@@ -532,10 +532,18 @@ class SemanticAnalyzer:
         return BlockFlow(terminates=False, definitely_returns=False)
 
     def _analyze_switch(self, statement: ast.SwitchStatement) -> BlockFlow:
-        selector_type = self._analyze_expression(
-            statement.expression,
-            ast.TypeName.TRIT,
-        )
+        selector_known = self._known_expression_type(statement.expression)
+        if isinstance(selector_known, ast.NominalType) and self._is_enum_type(
+            selector_known,
+        ):
+            selector_type = self._analyze_expression(
+                statement.expression,
+                selector_known,
+            )
+            assert isinstance(selector_type, ast.NominalType)
+            return self._analyze_enum_switch(statement, selector_type)
+
+        selector_type = self._analyze_expression(statement.expression, ast.TypeName.TRIT)
         self._require_type(
             selector_type,
             ast.TypeName.TRIT,
@@ -603,6 +611,99 @@ class SemanticAnalyzer:
             terminates=all(flow.terminates for flow in case_flows),
             definitely_returns=all(flow.definitely_returns for flow in case_flows),
         )
+
+    def _analyze_enum_switch(
+        self,
+        statement: ast.SwitchStatement,
+        selector_type: ast.NominalType,
+    ) -> BlockFlow:
+        enum = self.enums[selector_type.name]
+        explicit_cases: dict[int, ast.TernaryCase] = {}
+        fallback_case: ast.TernaryCase | None = None
+        for i, case in enumerate(statement.cases):
+            if case.label is None:
+                if fallback_case is not None:
+                    raise SemanticError(
+                        "duplicate fallback arm in enum match statement",
+                        case.location,
+                    )
+                if i != len(statement.cases) - 1:
+                    raise SemanticError(
+                        "fallback arm must be the last arm in enum match statement",
+                        case.location,
+                    )
+                fallback_case = case
+                continue
+            discriminant = self._enum_case_discriminant(
+                case.label,
+                selector_type,
+                case.location,
+                "enum match statement",
+            )
+            if discriminant in explicit_cases:
+                raise SemanticError(
+                    f"duplicate enum match arm for discriminant {discriminant}",
+                    case.location,
+                    diagnostic_code=DiagnosticCode.MATCH_DUPLICATE_ARM,
+                )
+            explicit_cases[discriminant] = case
+
+        if fallback_case is not None and len(explicit_cases) == len(enum.variants):
+            raise SemanticError(
+                "redundant fallback arm in enum match statement",
+                fallback_case.location,
+            )
+
+        cases_by_label: dict[int, ast.TernaryCase] = {}
+        missing: list[str] = []
+        for variant in enum.variants:
+            discriminant = enum.discriminant(variant.name)
+            if discriminant in explicit_cases:
+                cases_by_label[discriminant] = explicit_cases[discriminant]
+            elif fallback_case is not None:
+                cases_by_label[discriminant] = fallback_case
+            else:
+                missing.append(f"{enum.name}.{variant.name}")
+        if missing:
+            raise SemanticError(
+                "enum match statement is missing case(s): " + ", ".join(missing),
+                statement.location,
+                diagnostic_code=DiagnosticCode.MATCH_NON_EXHAUSTIVE,
+            )
+
+        case_flows = [
+            self._analyze_block(cases_by_label[enum.discriminant(variant.name)].body, create_scope=True)
+            for variant in enum.variants
+        ]
+        return BlockFlow(
+            terminates=all(flow.terminates for flow in case_flows),
+            definitely_returns=all(flow.definitely_returns for flow in case_flows),
+        )
+
+    def _enum_case_discriminant(
+        self,
+        label: ast.MatchCaseLabel,
+        selector_type: ast.NominalType,
+        location: SourceLocation,
+        context: str,
+    ) -> int:
+        if isinstance(label, int):
+            raise SemanticError(
+                f"{context} requires enum variant labels",
+                location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_TYPE_MISMATCH,
+            )
+        assert isinstance(label, ast.FieldAccessExpression)
+        label_type = self._analyze_expression(label, selector_type)
+        self._require_type(
+            label_type,
+            selector_type,
+            label.location,
+            f"{context} label",
+        )
+        discriminant = self.constant_values.get(id(label))
+        assert discriminant is not None
+        return discriminant
 
     def _analyze_declaration(self, declaration: ast.VariableDeclaration) -> None:
         current_scope = self.scopes[-1]
@@ -1770,8 +1871,23 @@ class SemanticAnalyzer:
     def _analyze_match_expression(
         self,
         expression: ast.MatchExpression,
-        expected: ast.TypeName | None,
-    ) -> ast.TypeName:
+        expected: ast.DeclaredType | None,
+    ) -> ast.DeclaredType:
+        selector_known = self._known_expression_type(expression.selector)
+        if isinstance(selector_known, ast.NominalType) and self._is_enum_type(
+            selector_known,
+        ):
+            selector_type = self._analyze_expression(
+                expression.selector,
+                selector_known,
+            )
+            assert isinstance(selector_type, ast.NominalType)
+            return self._analyze_enum_match_expression(
+                expression,
+                selector_type,
+                expected,
+            )
+
         selector_type = self._analyze_expression(expression.selector, ast.TypeName.TRIT)
         self._require_type(
             selector_type,
@@ -1832,7 +1948,7 @@ class SemanticAnalyzer:
                     expression.location,
                 )
 
-        arm_types: list[ast.TypeName] = []
+        arm_types: list[ast.DeclaredType] = []
         for label in (-1, 0, 1):
             case = cases_by_label[label]
             arm_expected = expected or (arm_types[0] if arm_types else None)
@@ -1854,6 +1970,102 @@ class SemanticAnalyzer:
                 expected,
                 expression.location,
                 "match expression result",
+            )
+        selector_val = self.constant_values.get(id(expression.selector))
+        if selector_val is not None and selector_val in cases_by_label:
+            target_case = cases_by_label[selector_val]
+            self.simplified_expressions[id(expression)] = target_case.expression
+            val = self.constant_values.get(id(target_case.expression))
+            if val is not None:
+                self.constant_values[id(expression)] = val
+            text = self.static_text_values.get(id(target_case.expression))
+            if text is not None:
+                self.static_text_values[id(expression)] = text
+        return result_type
+
+    def _analyze_enum_match_expression(
+        self,
+        expression: ast.MatchExpression,
+        selector_type: ast.NominalType,
+        expected: ast.DeclaredType | None,
+    ) -> ast.DeclaredType:
+        enum = self.enums[selector_type.name]
+        explicit_cases: dict[int, ast.MatchExpressionCase] = {}
+        fallback_case: ast.MatchExpressionCase | None = None
+        for i, case in enumerate(expression.cases):
+            if case.label is None:
+                if fallback_case is not None:
+                    raise SemanticError(
+                        "duplicate fallback arm in enum match expression",
+                        case.location,
+                    )
+                if i != len(expression.cases) - 1:
+                    raise SemanticError(
+                        "fallback arm must be the last arm in enum match expression",
+                        case.location,
+                    )
+                fallback_case = case
+                continue
+            discriminant = self._enum_case_discriminant(
+                case.label,
+                selector_type,
+                case.location,
+                "enum match expression",
+            )
+            if discriminant in explicit_cases:
+                raise SemanticError(
+                    f"duplicate enum match arm for discriminant {discriminant}",
+                    case.location,
+                    diagnostic_code=DiagnosticCode.MATCH_DUPLICATE_ARM,
+                )
+            explicit_cases[discriminant] = case
+
+        if fallback_case is not None and len(explicit_cases) == len(enum.variants):
+            raise SemanticError(
+                "redundant fallback arm in enum match expression",
+                fallback_case.location,
+            )
+
+        cases_by_label: dict[int, ast.MatchExpressionCase] = {}
+        missing: list[str] = []
+        for variant in enum.variants:
+            discriminant = enum.discriminant(variant.name)
+            if discriminant in explicit_cases:
+                cases_by_label[discriminant] = explicit_cases[discriminant]
+            elif fallback_case is not None:
+                cases_by_label[discriminant] = fallback_case
+            else:
+                missing.append(f"{enum.name}.{variant.name}")
+        if missing:
+            raise SemanticError(
+                "enum match expression is missing case(s): " + ", ".join(missing),
+                expression.location,
+                diagnostic_code=DiagnosticCode.MATCH_NON_EXHAUSTIVE,
+            )
+
+        arm_types: list[ast.DeclaredType] = []
+        for variant in enum.variants:
+            label = enum.discriminant(variant.name)
+            case = cases_by_label[label]
+            arm_expected = expected or (arm_types[0] if arm_types else None)
+            arm_type = self._analyze_expression(case.expression, arm_expected)
+            if arm_types:
+                self._require_type(
+                    arm_type,
+                    arm_types[0],
+                    case.expression.location,
+                    "enum match expression arm",
+                )
+            arm_types.append(arm_type)
+
+        result_type = arm_types[0]
+        self.expression_types[id(expression)] = result_type
+        if expected is not None:
+            self._require_type(
+                result_type,
+                expected,
+                expression.location,
+                "enum match expression result",
             )
         selector_val = self.constant_values.get(id(expression.selector))
         if selector_val is not None and selector_val in cases_by_label:

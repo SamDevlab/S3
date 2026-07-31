@@ -132,3 +132,133 @@ def test_enum_rejects_ordering_operator() -> None:
             "fn main() -> trit:\n"
             "    return Sign.Negative < Sign.Zero\n"
         )
+
+
+def test_exhaustive_enum_match_statement_runs_in_hosted_o0_and_o1() -> None:
+    source = (
+        "enum Sign:\n"
+        "    Negative\n"
+        "    Zero\n"
+        "    Positive\n"
+        "fn main() -> tryte:\n"
+        "    value: Sign = Sign.Positive\n"
+        "    match value:\n"
+        "        Sign.Negative:\n"
+        "            return -1\n"
+        "        Sign.Zero:\n"
+        "            return 0\n"
+        "        Sign.Positive:\n"
+        "            return 1\n"
+    )
+
+    assert run_source(source, optimization="O0") == 1
+    assert run_source(source, optimization="O1") == 1
+
+
+def test_enum_match_expression_runs_in_hosted_o0_and_o1() -> None:
+    source = (
+        "enum Sign:\n"
+        "    Negative\n"
+        "    Zero\n"
+        "    Positive\n"
+        "fn main() -> tryte:\n"
+        "    value: Sign = Sign.Negative\n"
+        "    return match value:\n"
+        "        Sign.Negative: -1\n"
+        "        Sign.Zero: 0\n"
+        "        Sign.Positive: 1\n"
+    )
+
+    assert run_source(source, optimization="O0") == -1
+    assert run_source(source, optimization="O1") == -1
+
+
+def test_enum_match_fallback_covers_missing_variants() -> None:
+    source = (
+        "enum Sign:\n"
+        "    Negative\n"
+        "    Zero\n"
+        "    Positive\n"
+        "fn main() -> tryte:\n"
+        "    value: Sign = Sign.Zero\n"
+        "    match value:\n"
+        "        Sign.Negative:\n"
+        "            return -1\n"
+        "        else:\n"
+        "            return 1\n"
+    )
+
+    assert run_source(source, optimization="O0") == 1
+    assert run_source(source, optimization="O1") == 1
+
+
+def test_enum_match_supports_more_than_three_variants() -> None:
+    source = (
+        "enum Opcode:\n"
+        "    Add\n"
+        "    Subtract\n"
+        "    Minimum\n"
+        "    Maximum\n"
+        "fn main() -> tryte:\n"
+        "    value: Opcode = Opcode.Maximum\n"
+        "    match value:\n"
+        "        Opcode.Add:\n"
+        "            return 0\n"
+        "        Opcode.Subtract:\n"
+        "            return 1\n"
+        "        Opcode.Minimum:\n"
+        "            return 2\n"
+        "        Opcode.Maximum:\n"
+        "            return 3\n"
+    )
+
+    assert run_source(source, optimization="O0") == 3
+    assert run_source(source, optimization="O1") == 3
+
+
+def test_enum_match_rejects_missing_and_duplicate_arms() -> None:
+    with pytest.raises(SemanticError) as missing:
+        compile_source(
+            "enum Sign:\n"
+            "    Negative\n"
+            "    Zero\n"
+            "fn main() -> tryte:\n"
+            "    value: Sign = Sign.Negative\n"
+            "    match value:\n"
+            "        Sign.Negative:\n"
+            "            return -1\n"
+        )
+    assert _semantic_code(missing) is DiagnosticCode.MATCH_NON_EXHAUSTIVE
+
+    with pytest.raises(SemanticError) as duplicate:
+        compile_source(
+            "enum Sign:\n"
+            "    Negative\n"
+            "    Zero\n"
+            "fn main() -> tryte:\n"
+            "    value: Sign = Sign.Negative\n"
+            "    match value:\n"
+            "        Sign.Negative:\n"
+            "            return -1\n"
+            "        Sign.Negative:\n"
+            "            return 0\n"
+            "        Sign.Zero:\n"
+            "            return 1\n"
+        )
+    assert _semantic_code(duplicate) is DiagnosticCode.MATCH_DUPLICATE_ARM
+
+
+def test_enum_match_rejects_arms_from_another_enum() -> None:
+    with pytest.raises(SemanticError) as incompatible:
+        compile_source(
+            "enum Sign:\n"
+            "    Negative\n"
+            "enum Other:\n"
+            "    Negative\n"
+            "fn main() -> tryte:\n"
+            "    value: Sign = Sign.Negative\n"
+            "    match value:\n"
+            "        Other.Negative:\n"
+            "            return -1\n"
+        )
+    assert _semantic_code(incompatible) is DiagnosticCode.SEMANTIC_TYPE_MISMATCH

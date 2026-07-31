@@ -138,9 +138,12 @@ class BinaryExpression:
     location: SourceLocation
 
 
+MatchCaseLabel: TypeAlias = int | FieldAccessExpression | None
+
+
 @dataclass(frozen=True, slots=True)
 class MatchExpressionCase:
-    label: int | None
+    label: MatchCaseLabel
     expression: Expression
     location: SourceLocation
 
@@ -223,7 +226,7 @@ class ReturnStatement:
 
 @dataclass(frozen=True, slots=True)
 class TernaryCase:
-    label: int | None
+    label: MatchCaseLabel
     body: Block
     location: SourceLocation
 
