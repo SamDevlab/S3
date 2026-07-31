@@ -159,6 +159,32 @@ def _reference_accepts_operand_count_id(opcode_id: int, count: int) -> int:
     return 0
 
 
+def _checksum_tryte_expression() -> str:
+    return (
+        "opcode_classifier_smoke()"
+        " + opcode_kind_code_at(9)"
+        " + opcode_kind_code_at(13)"
+        " + opcode_min_operand_count_at(0)"
+        " + opcode_min_operand_count_at(8)"
+        " + opcode_min_operand_count_at(13)"
+        " + opcode_kind_code_at(-1)"
+        " + opcode_min_operand_count_at(14)"
+    )
+
+
+def _reference_checksum_tryte() -> int:
+    return (
+        len(OPCODES)
+        + _reference_kind_code_at(9)
+        + _reference_kind_code_at(13)
+        + _reference_min_operand_count_at(0)
+        + _reference_min_operand_count_at(8)
+        + _reference_min_operand_count_at(13)
+        + _reference_kind_code_at(-1)
+        + _reference_min_operand_count_at(14)
+    )
+
+
 def test_python_reference_covers_current_assembly_opcode_inventory() -> None:
     assert OPCODES == tuple(AssemblyOpcode)
     assert set(KIND_CODES) == set(OPCODES)
@@ -240,41 +266,45 @@ def test_s3_opcode_classifier_compilation_is_deterministic() -> None:
     assert forward == backward
 
 
+def test_opcode_classifier_checksum_matches_python_reference() -> None:
+    tryte_expression = _checksum_tryte_expression()
+    tryte_expected = _reference_checksum_tryte()
+    trit_expression = "opcode_is_variadic_at(8)"
+    trit_expected = _reference_is_variadic_at(8)
+
+    for level in ("O0", "O1"):
+        assert _run_s3(tryte_expression, "tryte", level) == tryte_expected
+        assert _run_s3(trit_expression, "trit", level) == trit_expected
+
+
 def test_native_opcode_classifier_checksum_matches_python_reference(
     native_toolchain: NativeToolchain,
     tmp_path: Path,
 ) -> None:
-    expression = (
-        "opcode_classifier_smoke()"
-        " + opcode_kind_code_at(9)"
-        " + opcode_kind_code_at(13)"
-        " + opcode_min_operand_count_at(0)"
-        " + opcode_min_operand_count_at(8)"
-        " + opcode_min_operand_count_at(13)"
-        " + opcode_is_variadic_at(8)"
-        " + opcode_kind_code_at(-1)"
-        " + opcode_min_operand_count_at(14)"
-    )
-    expected = (
-        len(OPCODES)
-        + _reference_kind_code_at(9)
-        + _reference_kind_code_at(13)
-        + _reference_min_operand_count_at(0)
-        + _reference_min_operand_count_at(8)
-        + _reference_min_operand_count_at(13)
-        + _reference_is_variadic_at(8)
-        + _reference_kind_code_at(-1)
-        + _reference_min_operand_count_at(14)
-    )
+    tryte_expression = _checksum_tryte_expression()
+    tryte_expected = _reference_checksum_tryte()
+    trit_expression = "opcode_is_variadic_at(8)"
+    trit_expected = _reference_is_variadic_at(8)
 
     for level in ("O0", "O1"):
-        program = _assembly_for(expression, "tryte", level)
-        assert Emulator().execute(program) == expected
+        program = _assembly_for(tryte_expression, "tryte", level)
+        assert Emulator().execute(program) == tryte_expected
         executable = native_toolchain.build(
             generate_native_assembly(program),
-            tmp_path / level.lower(),
+            tmp_path / f"{level.lower()}-tryte",
         )
         completed = native_toolchain.run(executable)
         assert completed.returncode == 0
         assert completed.stderr == ""
-        assert completed.stdout == f"program returned: {expected}\n"
+        assert completed.stdout == f"program returned: {tryte_expected}\n"
+
+        trit_program = _assembly_for(trit_expression, "trit", level)
+        assert Emulator().execute(trit_program) == trit_expected
+        trit_executable = native_toolchain.build(
+            generate_native_assembly(trit_program),
+            tmp_path / f"{level.lower()}-trit",
+        )
+        trit_completed = native_toolchain.run(trit_executable)
+        assert trit_completed.returncode == 0
+        assert trit_completed.stderr == ""
+        assert trit_completed.stdout == f"program returned: {trit_expected}\n"
