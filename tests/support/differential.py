@@ -3,10 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
+from bootstrap.s3.assembly import AssemblyError
+from bootstrap.s3.codegen import CodegenError
 from bootstrap.s3.diagnostics import (
     DiagnosticCategory,
     DiagnosticCode,
     DiagnosticPhase,
+    S3Error,
     diagnostic_from_exception,
 )
 from bootstrap.s3.emulator import (
@@ -18,6 +21,7 @@ from bootstrap.s3.emulator import (
 from bootstrap.s3.lexer import SyntaxMode
 from bootstrap.s3.optimizer import OptimizationLevel
 from bootstrap.s3.pipeline import compile_source
+from bootstrap.s3.ternary import TernaryRangeError
 
 
 MemorySnapshot = tuple[tuple[int, tuple[AssemblyValue | None, ...]], ...]
@@ -107,7 +111,12 @@ def _run_hosted(
             case.entry,
             capture_memory=memory_capture,
         )
-    except Exception as error:
+    except (
+        AssemblyError,
+        CodegenError,
+        S3Error,
+        TernaryRangeError,
+    ) as error:
         diagnostic = diagnostic_from_exception(error)
         return ObservedResult(
             DifferentialEngine.HOSTED_EMULATOR,
@@ -200,11 +209,13 @@ def _assert_pairwise_equivalent(
             )
 
 
-def _enum_value(value: DiagnosticCategory | DiagnosticCode | str | None) -> str | None:
+def _enum_value(
+    value: DiagnosticCategory | DiagnosticCode | DiagnosticPhase | str | None,
+) -> str | None:
     if value is None:
         return None
-    if isinstance(value, DiagnosticCategory | DiagnosticCode | DiagnosticPhase):
-        return value.value
+    if isinstance(value, Enum):
+        return str(value.value)
     return value
 
 
