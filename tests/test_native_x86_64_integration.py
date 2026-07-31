@@ -455,6 +455,18 @@ fn main() -> tryte:
         (
             """\
 fn main() -> tryte:
+    mut values: tryte[3] = [0, 0, 0]
+    mut i: tryte = 0
+    values[i] = 5
+    i = 1
+    values[i] = 7
+    return values[0]
+""",
+            5,
+        ),
+        (
+            """\
+fn main() -> tryte:
     left: tryte = -100
     right: tryte = 40
     return (left & right) | 1

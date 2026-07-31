@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Dict, List, Set, Tuple
 
-from .alias_analysis import AliasAnalysis, AliasResult
+from .alias_analysis import AliasAnalysis
 from .cfg import ControlFlowGraph
 from .dominance import DominatorTree
 from .ir import (
@@ -17,7 +17,6 @@ from .ir import (
     IRRegister,
     IRType,
 )
-from .memory_ssa import MemorySSA
 from .metrics import FixpointTelemetry
 from .ssa import (
     SSABlock,
@@ -1218,12 +1217,7 @@ def run_ssa_adce(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
 # -----------------------------------------------------------------------------
 
 def run_ssa_dse(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
-    """Eliminates redundant STORE operations using Alias Analysis and Memory SSA."""
-    ir_temp = to_ir(ssa_fn)
-    cfg = ControlFlowGraph.build(ir_temp)
-    dom_tree = DominatorTree.build(cfg)
-    mem_ssa = MemorySSA.build(ssa_fn, cfg, dom_tree)
-
+    """Eliminates intra-block redundant STORE operations using Alias Analysis."""
     dead_stores: Set[SSAInstruction] = set()
     known_consts: Dict[str, int] = {}
     for block in ssa_fn.blocks:
@@ -1231,24 +1225,37 @@ def run_ssa_dse(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
             if inst.opcode is IROpcode.CONST and inst.result and isinstance(inst.immediate, int):
                 known_consts[inst.result.name] = inst.immediate
 
+    def index_key(value: SSAValue) -> int | str:
+        if value.name in known_consts:
+            return known_consts[value.name]
+        return value.name
+
     for block in ssa_fn.blocks:
         last_store_per_cell: Dict[Tuple[int, int | str], SSAInstruction] = {}
 
         for inst in block.instructions:
-            if inst.opcode is IROpcode.STORE and inst.operands:
+            if inst.opcode is IROpcode.STORE and inst.operands and inst.memory is not None:
                 idx_op = inst.operands[0]
-                idx_key = known_consts.get(idx_op.name, idx_op.original_register)
+                idx_key = index_key(idx_op)
                 cell_key = (inst.memory, idx_key)
-                if cell_key in last_store_per_cell:
-                    dead_stores.add(last_store_per_cell[cell_key])
+                for pending_key, pending_store in tuple(last_store_per_cell.items()):
+                    if AliasAnalysis.must_alias_cell(
+                        pending_key[0],
+                        pending_key[1],
+                        cell_key[0],
+                        cell_key[1],
+                    ):
+                        dead_stores.add(pending_store)
+                        del last_store_per_cell[pending_key]
                 last_store_per_cell[cell_key] = inst
 
             elif inst.opcode is IROpcode.LOAD and inst.memory is not None:
-                # Clear pending stores for aliased memory locations
+                # A load may observe any pending store that aliases its cell.
                 mem_idx = inst.memory
+                load_idx = index_key(inst.operands[0]) if inst.operands else None
                 to_clear = [
                     c for c in last_store_per_cell
-                    if AliasAnalysis.may_alias(c[0], mem_idx)
+                    if AliasAnalysis.may_alias_cell(c[0], c[1], mem_idx, load_idx)
                 ]
                 for c in to_clear:
                     del last_store_per_cell[c]
