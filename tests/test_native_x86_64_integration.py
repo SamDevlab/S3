@@ -19,7 +19,7 @@ from bootstrap.s3.cli import main as cli_main
 from bootstrap.s3.diagnostics import diagnostic_from_exception
 from bootstrap.s3.emulator import Emulator, EmulatorError
 from bootstrap.s3.lexer import SyntaxMode
-from bootstrap.s3.pipeline import compile_source
+from bootstrap.s3.pipeline import compile_source, compile_sources
 from bootstrap.s3.ternary import TernaryWidth, tritwise_max, tritwise_min
 
 
@@ -88,6 +88,28 @@ def _assert_o0_o1_native_equivalence(
             optimization=level,
             mode=SyntaxMode.V0_6,
         )
+
+
+def _assert_o0_o1_native_sources_equivalence(
+    sources: dict[str, str] | tuple[tuple[str, str], ...],
+    expected: int,
+    toolchain: NativeToolchain,
+    output: Path,
+    *,
+    entry_module: str = "main",
+) -> None:
+    for level in ("O0", "O1"):
+        program = compile_sources(
+            sources,
+            level,
+            entry_module=entry_module,
+            mode=SyntaxMode.V0_6,
+        ).assembly
+        assert Emulator().execute(program) == expected
+        completed = _run_native(program, toolchain, output / level.lower())
+        assert completed.returncode == 0
+        assert completed.stderr == ""
+        assert completed.stdout == f"program returned: {expected}\n"
 
 
 def _assert_o0_o1_native_error_category(
@@ -718,6 +740,66 @@ def test_o0_o1_native_differential_matrix_successes(
         expected,
         native_toolchain,
         tmp_path / f"matrix-{name}",
+    )
+
+
+@pytest.mark.parametrize(
+    ("name", "sources", "expected"),
+    (
+        (
+            "simple-import",
+            {
+                "main.s3": (
+                    "module main\n"
+                    "from math import inc\n"
+                    "fn main() -> tryte:\n"
+                    "    return inc(8)\n"
+                ),
+                "math.s3": (
+                    "module math\n"
+                    "export fn inc(value: tryte) -> tryte:\n"
+                    "    return value + 1\n"
+                ),
+            },
+            9,
+        ),
+        (
+            "transitive-alias-import",
+            {
+                "main.s3": (
+                    "module main\n"
+                    "from app.logic import compute as answer\n"
+                    "fn main() -> tryte:\n"
+                    "    return answer(3)\n"
+                ),
+                "app/logic.s3": (
+                    "module app.logic\n"
+                    "from math import inc\n"
+                    "export fn compute(value: tryte) -> tryte:\n"
+                    "    return inc(value) + inc(1)\n"
+                ),
+                "math.s3": (
+                    "module math\n"
+                    "export fn inc(value: tryte) -> tryte:\n"
+                    "    return value + 1\n"
+                ),
+            },
+            6,
+        ),
+    ),
+)
+def test_o0_o1_native_multi_module_compilation(
+    name: str,
+    sources: dict[str, str],
+    expected: int,
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    _assert_o0_o1_native_sources_equivalence(
+        sources,
+        expected,
+        native_toolchain,
+        tmp_path / f"modules-{name}",
     )
 
 
