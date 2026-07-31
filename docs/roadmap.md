@@ -159,6 +159,26 @@ constantes escalares imutáveis e folding de expressões constantes para aliment
 estático em um avaliador semântico unificado e especifica transformações de
 texto estático em tempo de compilação.
 
+## Marco 0.97 - Differential Correctness Matrix
+
+O Marco 0.97 adiciona uma matriz diferencial interna para validar equivalencia
+entre emulador O0, emulador O1, ELF Linux x86-64 O0 e ELF Linux x86-64 O1.
+
+Entregas:
+
+- harness interno table-driven em `tests/support/differential.py`;
+- corpus hospedado cobrindo tipos ternarios, operacoes, controle, chamadas,
+  recursao, memoria, erros e formas SSA/de-SSA;
+- inventario testado dos passes O1 ativos, com `cse` mantido fora do pipeline;
+- probes estruturais e telemetria por passe quando disponivel;
+- 12 casos nativos de sucesso e 4 casos nativos de erro no job
+  `native-x86-64`;
+- regressao SCCP corrigida para preservar o contrato de `TRET` em funcoes que
+  O1 prova como nao retornantes.
+
+Nao houve mudanca de sintaxe publica, formatos estaveis, ABI, CLI, goldens,
+baselines ou versao publica.
+
 ## Autohospedagem
 
 Assembler e frontend em S3 dependem de strings além de concatenação estática
