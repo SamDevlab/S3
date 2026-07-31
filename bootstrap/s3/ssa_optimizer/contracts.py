@@ -39,3 +39,80 @@ def _require_unique(label: str, values: tuple[str, ...]) -> None:
     if duplicates:
         rendered = ", ".join(sorted(duplicates))
         raise ValueError(f"duplicate {label}: {rendered}")
+
+
+SSA_PASS_CONTRACTS = (
+    SSAPassContract(
+        "gvn",
+        requires_ssa=True,
+        preserves_ssa=True,
+        mutates_cfg=False,
+        required_analyses=("cfg", "dominance"),
+        invalidated_analyses=("value-numbering", "uses"),
+        telemetry_fields=("expressions_eliminated",),
+    ),
+    SSAPassContract(
+        "copy_propagation",
+        requires_ssa=True,
+        preserves_ssa=True,
+        mutates_cfg=False,
+        invalidated_analyses=("uses",),
+    ),
+    SSAPassContract(
+        "dse",
+        requires_ssa=True,
+        preserves_ssa=True,
+        mutates_cfg=False,
+        required_analyses=("alias-analysis",),
+        invalidated_analyses=("memory-uses",),
+        telemetry_fields=("stores_removed",),
+    ),
+    SSAPassContract(
+        "dce",
+        requires_ssa=True,
+        preserves_ssa=True,
+        mutates_cfg=False,
+        invalidated_analyses=("uses",),
+    ),
+    SSAPassContract(
+        "adce",
+        requires_ssa=True,
+        preserves_ssa=True,
+        mutates_cfg=False,
+        invalidated_analyses=("uses",),
+        telemetry_fields=("dead_instructions_removed",),
+    ),
+    SSAPassContract(
+        "licm",
+        requires_ssa=True,
+        preserves_ssa=True,
+        mutates_cfg=False,
+        required_analyses=("cfg", "dominance"),
+        invalidated_analyses=("uses",),
+        telemetry_fields=("licm_moves",),
+    ),
+    SSAPassContract(
+        "sccp",
+        requires_ssa=True,
+        preserves_ssa=True,
+        mutates_cfg=True,
+        required_analyses=("cfg",),
+        invalidated_analyses=("cfg", "dominance", "uses"),
+        telemetry_fields=("expressions_eliminated", "branches_removed"),
+    ),
+    SSAPassContract(
+        "strength_reduction",
+        requires_ssa=True,
+        preserves_ssa=True,
+        mutates_cfg=False,
+        invalidated_analyses=("uses",),
+        telemetry_fields=("strength_reductions",),
+    ),
+    SSAPassContract(
+        "peephole",
+        requires_ssa=True,
+        preserves_ssa=True,
+        mutates_cfg=False,
+        invalidated_analyses=("uses",),
+    ),
+)
