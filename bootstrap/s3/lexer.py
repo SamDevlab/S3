@@ -24,6 +24,8 @@ class TokenKind(Enum):
     IMPORT = auto()
     AS = auto()
     EXPORT = auto()
+    RECORD = auto()
+    ENUM = auto()
     FN = auto()
     RETURN = auto()
     SWITCH = auto()
@@ -317,6 +319,10 @@ class Lexer:
                 kind = TokenKind.AS
             elif text == "export":
                 kind = TokenKind.EXPORT
+            elif text == "record":
+                kind = TokenKind.RECORD
+            elif text == "enum":
+                kind = TokenKind.ENUM
         return Token(kind, text, line, column, start)
 
     @staticmethod

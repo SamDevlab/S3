@@ -49,6 +49,7 @@ class _LoweredBinding:
     mutable: bool
     register: int | None = None
     memory: int | None = None
+    fields: dict[str, _LoweredBinding] | None = None
 
 
 class FunctionLowerer:
@@ -278,6 +279,38 @@ class FunctionLowerer:
                 declaration.type_name,
                 declaration.mutable,
                 memory=memory,
+            )
+            return
+
+        if isinstance(declaration.type_name, ast.NominalType):
+            if declaration.mutable:
+                raise LoweringError(
+                    "mutable record bindings are not supported yet",
+                    declaration.location,
+                )
+            if not isinstance(declaration.initializer, ast.RecordExpression):
+                raise LoweringError(
+                    "record declaration requires a record initializer",
+                    declaration.initializer.location,
+                )
+            record = self.semantic_model.record(declaration.type_name.name)
+            values = {
+                field.name: field.expression
+                for field in declaration.initializer.fields
+            }
+            lowered_fields: dict[str, _LoweredBinding] = {}
+            for field in record.fields:
+                assert isinstance(field.type_name, ast.TypeName)
+                value = self._lower_expression(values[field.name])
+                lowered_fields[field.name] = _LoweredBinding(
+                    field.type_name,
+                    mutable=False,
+                    register=value,
+                )
+            self.variable_scopes[-1][declaration.name] = _LoweredBinding(
+                declaration.type_name,
+                mutable=False,
+                fields=lowered_fields,
             )
             return
 
@@ -1000,6 +1033,13 @@ class FunctionLowerer:
                 )
             )
             return result
+        if isinstance(expression, ast.RecordExpression):
+            raise LoweringError(
+                "record literal cannot be lowered as a scalar value",
+                expression.location,
+            )
+        if isinstance(expression, ast.FieldAccessExpression):
+            return self._lower_field_access(expression)
         if isinstance(expression, ast.UnaryExpression):
             operand = self._lower_expression(expression.operand)
             result = self._allocate(expression_type, expression.location)
@@ -1019,6 +1059,33 @@ class FunctionLowerer:
         if isinstance(expression, ast.LenExpression):
             return self._lower_len(expression)
         raise LoweringError("unsupported expression", expression.location)
+
+    def _lower_field_access(self, expression: ast.FieldAccessExpression) -> int:
+        if isinstance(expression.target, ast.Identifier):
+            binding = self._lookup_variable(
+                expression.target.name,
+                expression.target.location,
+            )
+            if binding.fields is None:
+                raise LoweringError(
+                    f"variable '{expression.target.name}' is not a record",
+                    expression.location,
+                )
+            field = binding.fields.get(expression.field_name)
+            if field is None or field.register is None:
+                raise LoweringError(
+                    f"record field '{expression.field_name}' is unavailable",
+                    expression.location,
+                )
+            return field.register
+        if isinstance(expression.target, ast.RecordExpression):
+            for field in expression.target.fields:
+                if field.name == expression.field_name:
+                    return self._lower_expression(field.expression)
+        raise LoweringError(
+            "field access requires a lowered record binding",
+            expression.location,
+        )
 
     def _lower_len(self, expression: ast.LenExpression) -> int:
         argument_type = self.semantic_model.declared_type_of(expression.argument)

@@ -41,9 +41,22 @@ STATIC_TEXT_TRANSFORM_BUILTINS = {
 @dataclass(frozen=True, slots=True)
 class FunctionType:
     name: str
-    parameter_types: tuple[ast.TypeName, ...]
-    return_type: ast.TypeName
+    parameter_types: tuple[ast.DeclaredType, ...]
+    return_type: ast.DeclaredType
     location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
+class RecordType:
+    name: str
+    fields: tuple[ast.RecordField, ...]
+    location: SourceLocation
+
+    def field(self, name: str) -> ast.RecordField | None:
+        for field in self.fields:
+            if field.name == name:
+                return field
+        return None
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,6 +81,7 @@ class SemanticModel:
 
     expression_types: dict[int, ast.DeclaredType]
     functions: dict[str, FunctionType]
+    records: dict[str, RecordType]
     static_text_values: dict[int, str]
     constant_values: dict[int, int]
     simplified_expressions: dict[int, ast.Expression]
@@ -123,6 +137,12 @@ class SemanticModel:
         except KeyError as error:
             raise SemanticError(f"unknown function '{name}'") from error
 
+    def record(self, name: str) -> RecordType:
+        try:
+            return self.records[name]
+        except KeyError as error:
+            raise SemanticError(f"unknown record type '{name}'") from error
+
 
 class SemanticAnalyzer:
     def __init__(self) -> None:
@@ -131,12 +151,14 @@ class SemanticAnalyzer:
         self.constant_values: dict[int, int] = {}
         self.simplified_expressions: dict[int, ast.Expression] = {}
         self.functions: dict[str, FunctionType] = {}
+        self.records: dict[str, RecordType] = {}
         self.scopes: list[dict[str, Binding]] = []
         self.parameter_names: set[str] = set()
         self.return_type = ast.TypeName.TRYTE
         self.loop_depth = 0
 
     def analyze(self, program: ast.Program) -> SemanticModel:
+        self._collect_records(program)
         self._collect_signatures(program)
         if "main" not in self.functions:
             raise SemanticError("program must declare a 'main' function", program.location)
@@ -161,13 +183,58 @@ class SemanticAnalyzer:
         return SemanticModel(
             dict(self.expression_types),
             dict(self.functions),
+            dict(self.records),
             dict(self.static_text_values),
             dict(self.constant_values),
             dict(self.simplified_expressions),
         )
 
+    def _collect_records(self, program: ast.Program) -> None:
+        for record in program.records:
+            if record.name in self.records:
+                raise SemanticError(
+                    f"duplicate type '{record.name}'",
+                    record.location,
+                    diagnostic_code=DiagnosticCode.TYPE_DUPLICATE,
+                )
+            field_names: set[str] = set()
+            for field in record.fields:
+                if field.name in field_names:
+                    raise SemanticError(
+                        f"duplicate field '{field.name}' in record '{record.name}'",
+                        field.location,
+                        diagnostic_code=DiagnosticCode.RECORD_FIELD_DUPLICATE,
+                    )
+                field_names.add(field.name)
+                if isinstance(field.type_name, ast.ArrayType):
+                    raise SemanticError(
+                        "record fields cannot be arrays in milestone 1.00",
+                        field.location,
+                    )
+                if field.type_name is ast.TypeName.STRING:
+                    raise SemanticError(
+                        "record fields cannot be string in milestone 1.00",
+                        field.location,
+                    )
+                if isinstance(field.type_name, ast.NominalType):
+                    raise SemanticError(
+                        "nested record fields are not supported yet",
+                        field.location,
+                    )
+            self.records[record.name] = RecordType(
+                record.name,
+                record.fields,
+                record.location,
+            )
+
     def _collect_signatures(self, program: ast.Program) -> None:
         for function in program.functions:
+            if function.name in self.records:
+                raise SemanticError(
+                    f"function '{function.name}' conflicts with type '{function.name}'",
+                    function.location,
+                    diagnostic_code=DiagnosticCode.TYPE_DUPLICATE,
+                )
             if function.name in self.functions:
                 raise SemanticError(
                     f"duplicate function '{function.name}'",
@@ -187,10 +254,20 @@ class SemanticAnalyzer:
                         "arrays cannot be function parameters",
                         parameter.location,
                     )
+                if isinstance(parameter.type_name, ast.NominalType):
+                    raise SemanticError(
+                        "record parameters require a future aggregate ABI",
+                        parameter.location,
+                    )
                 parameter_types.append(parameter.type_name)
             if isinstance(function.return_type, ast.ArrayType):
                 raise SemanticError(
                     "functions cannot return arrays",
+                    function.signature.location,
+                )
+            if isinstance(function.return_type, ast.NominalType):
+                raise SemanticError(
+                    "record returns require a future aggregate ABI",
                     function.signature.location,
                 )
             self.functions[function.name] = FunctionType(
@@ -463,6 +540,7 @@ class SemanticAnalyzer:
 
         static_text: str | None = None
         constant_value: int | None = None
+        self._validate_declared_type(declaration.type_name)
         if isinstance(declaration.type_name, ast.ArrayType):
             self._validate_array_type(declaration.type_name)
             if not isinstance(declaration.initializer, ast.ArrayLiteral):
@@ -513,6 +591,13 @@ class SemanticAnalyzer:
             constant_value=constant_value,
         )
 
+    def _validate_declared_type(self, type_name: ast.DeclaredType) -> None:
+        if isinstance(type_name, ast.NominalType) and type_name.name not in self.records:
+            raise SemanticError(
+                f"unknown type '{type_name.name}'",
+                type_name.location,
+            )
+
     def _validate_array_type(self, type_name: ast.ArrayType) -> None:
         if isinstance(type_name.element_type, ast.ArrayType):
             raise SemanticError(
@@ -522,6 +607,11 @@ class SemanticAnalyzer:
         if type_name.element_type is ast.TypeName.STRING:
             raise SemanticError(
                 "arrays of string are not supported in milestone 0.53",
+                type_name.location,
+            )
+        if isinstance(type_name.element_type, ast.NominalType):
+            raise SemanticError(
+                "arrays of nominal types are not supported",
                 type_name.location,
             )
         if type_name.length <= 0:
@@ -720,8 +810,8 @@ class SemanticAnalyzer:
     def _analyze_expression(
         self,
         expression: ast.Expression,
-        expected: ast.TypeName | None = None,
-    ) -> ast.TypeName:
+        expected: ast.DeclaredType | None = None,
+    ) -> ast.DeclaredType:
         if isinstance(expression, ast.IntegerLiteral):
             result = (
                 expected
@@ -822,6 +912,24 @@ class SemanticAnalyzer:
                     expression.location,
                     f"call to '{expression.function_name}'",
                 )
+        elif isinstance(expression, ast.RecordExpression):
+            result = self._analyze_record_expression(expression)
+            if expected is not None:
+                self._require_type(
+                    result,
+                    expected,
+                    expression.location,
+                    f"record literal '{expression.type_name}'",
+                )
+        elif isinstance(expression, ast.FieldAccessExpression):
+            result = self._analyze_field_access(expression)
+            if expected is not None:
+                self._require_type(
+                    result,
+                    expected,
+                    expression.location,
+                    f"field '{expression.field_name}'",
+                )
         elif isinstance(expression, ast.UnaryExpression):
             result = self._analyze_expression(expression.operand, expected)
             self._reject_string_operation(
@@ -841,6 +949,78 @@ class SemanticAnalyzer:
             raise SemanticError("unsupported expression", expression.location)
         self.expression_types[id(expression)] = result
         return result
+
+    def _analyze_record_expression(
+        self,
+        expression: ast.RecordExpression,
+    ) -> ast.NominalType:
+        record = self.records.get(expression.type_name)
+        if record is None:
+            raise SemanticError(
+                f"unknown record type '{expression.type_name}'",
+                expression.location,
+            )
+        fields_by_name = {field.name: field for field in record.fields}
+        seen: set[str] = set()
+        for value in expression.fields:
+            if value.name in seen:
+                raise SemanticError(
+                    f"duplicate field '{value.name}' in record literal",
+                    value.location,
+                    diagnostic_code=DiagnosticCode.RECORD_FIELD_DUPLICATE,
+                )
+            seen.add(value.name)
+            field = fields_by_name.get(value.name)
+            if field is None:
+                raise SemanticError(
+                    f"record '{record.name}' has no field '{value.name}'",
+                    value.location,
+                    diagnostic_code=DiagnosticCode.RECORD_FIELD_UNKNOWN,
+                )
+            actual = self._analyze_expression(value.expression, field.type_name)
+            self._require_type(
+                actual,
+                field.type_name,
+                value.location,
+                f"field '{value.name}'",
+            )
+        missing = [field.name for field in record.fields if field.name not in seen]
+        if missing:
+            raise SemanticError(
+                (
+                    f"record '{record.name}' literal is missing field(s): "
+                    + ", ".join(missing)
+                ),
+                expression.location,
+                diagnostic_code=DiagnosticCode.RECORD_FIELD_MISSING,
+            )
+        return ast.NominalType(record.name, expression.location)
+
+    def _analyze_field_access(
+        self,
+        expression: ast.FieldAccessExpression,
+    ) -> ast.DeclaredType:
+        target_type = self._analyze_expression(expression.target)
+        if not isinstance(target_type, ast.NominalType):
+            raise SemanticError(
+                "field access requires a record value",
+                expression.location,
+                diagnostic_code=DiagnosticCode.RECORD_FIELD_UNKNOWN,
+            )
+        record = self.records.get(target_type.name)
+        if record is None:
+            raise SemanticError(
+                f"unknown record type '{target_type.name}'",
+                expression.location,
+            )
+        field = record.field(expression.field_name)
+        if field is None:
+            raise SemanticError(
+                f"record '{record.name}' has no field '{expression.field_name}'",
+                expression.location,
+                diagnostic_code=DiagnosticCode.RECORD_FIELD_UNKNOWN,
+            )
+        return field.type_name
 
     def _index_expression_array_binding(
         self,
@@ -1352,7 +1532,7 @@ class SemanticAnalyzer:
     def _known_expression_type(
         self,
         expression: ast.Expression,
-    ) -> ast.TypeName | None:
+    ) -> ast.DeclaredType | None:
         if isinstance(expression, ast.IntegerLiteral):
             return ast.TypeName.TRYTE
         if isinstance(expression, ast.Identifier):
@@ -1381,6 +1561,18 @@ class SemanticAnalyzer:
                 return ast.TypeName.STRING
             signature = self.functions.get(expression.function_name)
             return None if signature is None else signature.return_type
+        if isinstance(expression, ast.RecordExpression):
+            if expression.type_name in self.records:
+                return ast.NominalType(expression.type_name, expression.location)
+            return None
+        if isinstance(expression, ast.FieldAccessExpression):
+            target_type = self._known_expression_type(expression.target)
+            if isinstance(target_type, ast.NominalType):
+                record = self.records.get(target_type.name)
+                if record is not None:
+                    field = record.field(expression.field_name)
+                    return None if field is None else field.type_name
+            return None
         if isinstance(expression, ast.UnaryExpression):
             return self._known_expression_type(expression.operand)
         if (
@@ -1923,19 +2115,45 @@ class SemanticAnalyzer:
 
     @staticmethod
     def _require_type(
-        actual: ast.TypeName,
-        expected: ast.TypeName,
+        actual: ast.DeclaredType,
+        expected: ast.DeclaredType,
         location: SourceLocation,
         subject: str,
         *,
         diagnostic_code: DiagnosticCode = DiagnosticCode.SEMANTIC_TYPE_MISMATCH,
     ) -> None:
-        if actual is not expected:
+        if not _types_equal(actual, expected):
             raise SemanticError(
-                f"{subject} has type {actual.value}; expected {expected.value}",
+                (
+                    f"{subject} has type {_type_display(actual)}; "
+                    f"expected {_type_display(expected)}"
+                ),
                 location,
                 diagnostic_code=diagnostic_code,
             )
+
+
+def _types_equal(left: ast.DeclaredType, right: ast.DeclaredType) -> bool:
+    if isinstance(left, ast.TypeName) or isinstance(right, ast.TypeName):
+        return left is right
+    if isinstance(left, ast.NominalType) and isinstance(right, ast.NominalType):
+        return left.name == right.name
+    if isinstance(left, ast.ArrayType) and isinstance(right, ast.ArrayType):
+        return (
+            left.length == right.length
+            and _types_equal(left.element_type, right.element_type)
+        )
+    return False
+
+
+def _type_display(type_name: ast.DeclaredType) -> str:
+    if isinstance(type_name, ast.TypeName):
+        return type_name.value
+    if isinstance(type_name, ast.NominalType):
+        return type_name.name
+    if isinstance(type_name, ast.ArrayType):
+        return f"{_type_display(type_name.element_type)}[{type_name.length}]"
+    raise AssertionError(f"unknown declared type {type_name!r}")
 
 
 def analyze(program: ast.Program) -> SemanticModel:

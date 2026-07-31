@@ -22,7 +22,13 @@ class ArrayType:
     location: SourceLocation
 
 
-DeclaredType: TypeAlias = TypeName | ArrayType
+@dataclass(frozen=True, slots=True)
+class NominalType:
+    name: str
+    location: SourceLocation
+
+
+DeclaredType: TypeAlias = TypeName | ArrayType | NominalType
 
 
 class UnaryOperator(Enum):
@@ -76,6 +82,20 @@ class CallExpression:
 
 
 @dataclass(frozen=True, slots=True)
+class RecordFieldValue:
+    name: str
+    expression: Expression
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
+class RecordExpression:
+    type_name: str
+    fields: tuple[RecordFieldValue, ...]
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
 class IndexExpression:
     target: Expression
     index: Expression
@@ -93,6 +113,13 @@ class SliceExpression:
     target: Expression
     start: Expression
     end: Expression
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
+class FieldAccessExpression:
+    target: Expression
+    field_name: str
     location: SourceLocation
 
 
@@ -136,8 +163,10 @@ Expression: TypeAlias = (
     | StringLiteral
     | Identifier
     | CallExpression
+    | RecordExpression
     | IndexExpression
     | SliceExpression
+    | FieldAccessExpression
     | UnaryExpression
     | BinaryExpression
     | MatchExpression
@@ -306,11 +335,26 @@ class FunctionDeclaration:
 
 
 @dataclass(frozen=True, slots=True)
+class RecordField:
+    name: str
+    type_name: DeclaredType
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
+class RecordDeclaration:
+    name: str
+    fields: tuple[RecordField, ...]
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
 class Program:
     functions: tuple[FunctionDeclaration, ...]
     location: SourceLocation
     module: ModuleDeclaration | None = None
     imports: tuple[ImportDeclaration, ...] = ()
+    records: tuple[RecordDeclaration, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

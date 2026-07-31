@@ -17,6 +17,7 @@ class Parser:
 
     def parse_program(self) -> ast.Program:
         functions: list[ast.FunctionDeclaration] = []
+        records: list[ast.RecordDeclaration] = []
         location = self._peek().location
         self._skip_newlines()
         module = self._parse_module_declaration()
@@ -29,10 +30,19 @@ class Parser:
             self._skip_newlines()
             if self._check(TokenKind.EOF):
                 break
-            functions.append(self._parse_function())
+            if self.mode is SyntaxMode.V0_6 and self._check(TokenKind.RECORD):
+                records.append(self._parse_record_declaration())
+            else:
+                functions.append(self._parse_function())
         if not functions:
             raise ParseError("expected at least one function", self._peek().location)
-        return ast.Program(tuple(functions), location, module, tuple(imports))
+        return ast.Program(
+            tuple(functions),
+            location,
+            module,
+            tuple(imports),
+            tuple(records),
+        )
 
     def _parse_module_declaration(self) -> ast.ModuleDeclaration | None:
         if self.mode is not SyntaxMode.V0_6 or not self._match(TokenKind.MODULE):
@@ -102,6 +112,27 @@ class Parser:
         )
         return ast.FunctionDeclaration(signature, body, start.location, exported)
 
+    def _parse_record_declaration(self) -> ast.RecordDeclaration:
+        start = self._consume(TokenKind.RECORD, "expected 'record'")
+        name = self._consume(TokenKind.IDENTIFIER, "expected record name")
+        self._consume(TokenKind.COLON, "expected ':' after record name")
+        self._consume(TokenKind.NEWLINE, "expected newline after record ':'")
+        self._consume(TokenKind.INDENT, "expected indented record fields")
+        fields: list[ast.RecordField] = []
+        while not self._check(TokenKind.DEDENT) and not self._check(TokenKind.EOF):
+            field_name = self._consume(
+                TokenKind.IDENTIFIER,
+                "expected record field name",
+            )
+            self._consume(TokenKind.COLON, "expected ':' after record field name")
+            type_name = self._parse_type()
+            self._consume_statement_newline("expected newline after record field")
+            fields.append(ast.RecordField(field_name.text, type_name, field_name.location))
+        if not fields:
+            raise ParseError("expected at least one record field", name.location)
+        self._consume(TokenKind.DEDENT, "expected dedent after record declaration")
+        return ast.RecordDeclaration(name.text, tuple(fields), start.location)
+
     def _parse_parameters(self) -> list[ast.Parameter]:
         parameters: list[ast.Parameter] = []
         if self._check(TokenKind.RIGHT_PAREN):
@@ -128,9 +159,12 @@ class Parser:
         elif self._check(TokenKind.IDENTIFIER) and self._peek().text == "string":
             self._advance()
             result = ast.TypeName.STRING
+        elif self._check(TokenKind.IDENTIFIER):
+            nominal = self._advance()
+            result = ast.NominalType(nominal.text, nominal.location)
         else:
             raise ParseError(
-                "expected type 'trit', 'tryte', or 'string'",
+                "expected type 'trit', 'tryte', 'string', or nominal type",
                 self._peek().location,
             )
         while self._match(TokenKind.LEFT_BRACKET):
@@ -542,15 +576,39 @@ class Parser:
 
     def _parse_primary(self) -> ast.Expression:
         expression = self._parse_primary_atom()
-        if self._match(TokenKind.LEFT_BRACKET):
-            start = self._parse_expression()
-            if self._match(TokenKind.COLON):
-                end = self._parse_expression()
-                self._consume(TokenKind.RIGHT_BRACKET, "expected ']' after slice")
-                return ast.SliceExpression(expression, start, end, expression.location)
-            index = start
-            self._consume(TokenKind.RIGHT_BRACKET, "expected ']' after index")
-            return ast.IndexExpression(expression, index, expression.location)
+        while True:
+            if self._match(TokenKind.LEFT_BRACKET):
+                start = self._parse_expression()
+                if self._match(TokenKind.COLON):
+                    end = self._parse_expression()
+                    self._consume(TokenKind.RIGHT_BRACKET, "expected ']' after slice")
+                    expression = ast.SliceExpression(
+                        expression,
+                        start,
+                        end,
+                        expression.location,
+                    )
+                    continue
+                index = start
+                self._consume(TokenKind.RIGHT_BRACKET, "expected ']' after index")
+                expression = ast.IndexExpression(
+                    expression,
+                    index,
+                    expression.location,
+                )
+                continue
+            if self._match(TokenKind.DOT):
+                field = self._consume(
+                    TokenKind.IDENTIFIER,
+                    "expected field name after '.'",
+                )
+                expression = ast.FieldAccessExpression(
+                    expression,
+                    field.text,
+                    field.location,
+                )
+                continue
+            break
         return expression
 
     def _parse_primary_atom(self) -> ast.Expression:
@@ -567,6 +625,8 @@ class Parser:
         if self._match(TokenKind.IDENTIFIER):
             token = self._previous()
             if self._match(TokenKind.LEFT_PAREN):
+                if self._is_record_field_argument_start():
+                    return self._finish_record_expression(token)
                 return self._finish_call(token)
             return ast.Identifier(token.text, token.location)
         if self._match(TokenKind.LEFT_PAREN):
@@ -574,6 +634,30 @@ class Parser:
             self._consume(TokenKind.RIGHT_PAREN, "expected ')' after expression")
             return expression
         raise ParseError("expected expression", self._peek().location)
+
+    def _is_record_field_argument_start(self) -> bool:
+        return (
+            self._check(TokenKind.IDENTIFIER)
+            and self.current + 1 < len(self.tokens)
+            and self.tokens[self.current + 1].kind is TokenKind.EQUAL
+        )
+
+    def _finish_record_expression(self, type_name: Token) -> ast.RecordExpression:
+        fields: list[ast.RecordFieldValue] = []
+        while True:
+            field = self._consume(TokenKind.IDENTIFIER, "expected record field name")
+            self._consume(TokenKind.EQUAL, "expected '=' after record field name")
+            expression = self._parse_expression()
+            fields.append(ast.RecordFieldValue(field.text, expression, field.location))
+            if not self._match(TokenKind.COMMA):
+                break
+            if self._check(TokenKind.RIGHT_PAREN):
+                raise ParseError(
+                    "expected record field after ','",
+                    self._peek().location,
+                )
+        self._consume(TokenKind.RIGHT_PAREN, "expected ')' after record fields")
+        return ast.RecordExpression(type_name.text, tuple(fields), type_name.location)
 
     def _parse_len_v0_6(self, start: Token) -> ast.LenExpression:
         self._consume(TokenKind.LEFT_PAREN, "expected '(' after 'len'")
