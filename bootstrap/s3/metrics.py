@@ -158,7 +158,10 @@ class FixpointTelemetry:
 
     iterations: int = 0
     expressions_eliminated: int = 0
+    stores_removed: int = 0
+    dead_instructions_removed: int = 0
     licm_moves: int = 0
     strength_reductions: int = 0
     branches_removed: int = 0
     converged: bool = True
+    max_iterations_reached: bool = False

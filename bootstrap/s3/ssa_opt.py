@@ -13,6 +13,7 @@ from .ir import (
     IRFunction,
     IRInstruction,
     IRMemoryObject,
+    IRModule,
     IROpcode,
     IRParameter,
     IRRegister,
@@ -26,6 +27,7 @@ from .ssa import (
     SSAParameter,
     SSAPhiNode,
     SSAValue,
+    validate_ssa,
 )
 from .ternary import (
     TernaryRangeError,
@@ -36,6 +38,7 @@ from .ternary import (
     tritwise_max,
     tritwise_min,
 )
+from .verifier import verify_ir
 
 _FOLDABLE_OPCODES = {
     IROpcode.MOVE,
@@ -1071,12 +1074,6 @@ def run_ssa_strength_reduction(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
     for block in ssa_fn.blocks:
         new_instructions: List[SSAInstruction] = []
         for inst in block.instructions:
-            if inst.opcode is IROpcode.ADD and inst.result and len(inst.operands) == 2:
-                op0, op1 = inst.operands[0], inst.operands[1]
-                if op0.name == op1.name or (op0.original_register is not None and op0.original_register == op1.original_register):
-                    reductions_count += 1
-
-
             if inst.opcode is IROpcode.INVERT and inst.result and len(inst.operands) == 1:
                 op0 = inst.operands[0]
                 def0 = def_inst_map.get(op0.name)
@@ -1423,74 +1420,149 @@ def run_ssa_dse(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
 # Milestone 0.90 & 0.95: Optimization Fixpoint Pipeline & Memory Pipeline
 # -----------------------------------------------------------------------------
 
+_FIXPOINT_PASSES = {
+    "gvn",
+    "copy_propagation",
+    "dse",
+    "dce",
+    "adce",
+    "licm",
+    "sccp",
+    "strength_reduction",
+    "peephole",
+}
+
+
+def _ssa_structure(ssa_fn: SSAFunction) -> tuple[object, ...]:
+    return (
+        ssa_fn.parameters,
+        ssa_fn.blocks,
+        ssa_fn.memory_objects,
+        ssa_fn.return_type,
+    )
+
+
+def _verify_pipeline_ssa(ssa_fn: SSAFunction) -> None:
+    cfg = _cfg_from_ssa(ssa_fn)
+    dom_tree = DominatorTree.build(cfg)
+    validate_ssa(ssa_fn, cfg, dom_tree)
+
+
+def _verify_pipeline_ir(ssa_fn: SSAFunction) -> None:
+    verify_ir(IRModule((to_ir(ssa_fn),)))
+
+
 def run_fixpoint_pipeline(
-    ssa_fn: SSAFunction, max_iterations: int = 10
+    ssa_fn: SSAFunction,
+    max_iterations: int = 10,
+    *,
+    disabled_passes: Set[str] | None = None,
+    verify_each_pass: bool = False,
 ) -> Tuple[SSAFunction, FixpointTelemetry]:
     """Iteratively executes optimization passes until reaching fixpoint or max iterations."""
     telemetry = FixpointTelemetry()
     curr_fn = ssa_fn
+    disabled = set(disabled_passes or set())
+    unknown_passes = disabled - _FIXPOINT_PASSES
+    if unknown_passes:
+        names = ", ".join(sorted(unknown_passes))
+        raise ValueError(f"unknown SSA optimization pass(es): {names}")
+
+    def pass_enabled(name: str) -> bool:
+        return name not in disabled
+
+    def apply_pass(next_fn: SSAFunction) -> bool:
+        nonlocal curr_fn
+        before = _ssa_structure(curr_fn)
+        curr_fn = next_fn
+        changed = _ssa_structure(curr_fn) != before
+        if verify_each_pass:
+            _verify_pipeline_ssa(curr_fn)
+        return changed
+
+    if verify_each_pass:
+        _verify_pipeline_ssa(curr_fn)
 
     for it in range(1, max_iterations + 1):
         telemetry.iterations = it
         changed = False
 
         # 1. GVN
-        curr_fn, gvn_cnt = run_ssa_gvn(curr_fn)
-        if gvn_cnt > 0:
-            telemetry.expressions_eliminated += gvn_cnt
-            changed = True
+        if pass_enabled("gvn"):
+            next_fn, gvn_cnt = run_ssa_gvn(curr_fn)
+            pass_changed = apply_pass(next_fn)
+            if pass_changed:
+                telemetry.expressions_eliminated += gvn_cnt
+                changed = True
 
         # 2. Copy Propagation
-        prev_blocks = curr_fn.blocks
-        curr_fn = run_ssa_copy_propagation(curr_fn)
-        if curr_fn.blocks != prev_blocks:
-            changed = True
+        if pass_enabled("copy_propagation"):
+            next_fn = run_ssa_copy_propagation(curr_fn)
+            if apply_pass(next_fn):
+                changed = True
 
         # 3. DSE (Dead Store Elimination - Milestone 0.92)
-        curr_fn, dse_cnt = run_ssa_dse(curr_fn)
-        if dse_cnt > 0:
-            changed = True
+        if pass_enabled("dse"):
+            next_fn, dse_cnt = run_ssa_dse(curr_fn)
+            pass_changed = apply_pass(next_fn)
+            if pass_changed:
+                telemetry.stores_removed += dse_cnt
+                changed = True
 
         # 4. DCE
-        prev_blocks = curr_fn.blocks
-        curr_fn = run_ssa_dead_code_elimination(curr_fn)
-        if curr_fn.blocks != prev_blocks:
-            changed = True
+        if pass_enabled("dce"):
+            next_fn = run_ssa_dead_code_elimination(curr_fn)
+            if apply_pass(next_fn):
+                changed = True
 
         # 5. ADCE (Aggressive DCE - Milestone 0.91)
-        curr_fn, adce_cnt = run_ssa_adce(curr_fn)
-        if adce_cnt > 0:
-            changed = True
+        if pass_enabled("adce"):
+            next_fn, adce_cnt = run_ssa_adce(curr_fn)
+            pass_changed = apply_pass(next_fn)
+            if pass_changed:
+                telemetry.dead_instructions_removed += adce_cnt
+                changed = True
 
         # 6. LICM
-        curr_fn, licm_cnt = run_ssa_licm(curr_fn)
-        if licm_cnt > 0:
-            telemetry.licm_moves += licm_cnt
-            changed = True
+        if pass_enabled("licm"):
+            next_fn, licm_cnt = run_ssa_licm(curr_fn)
+            pass_changed = apply_pass(next_fn)
+            if pass_changed:
+                telemetry.licm_moves += licm_cnt
+                changed = True
 
         # 7. SCCP
-        curr_fn, sccp_expr_cnt, sccp_br_cnt = run_ssa_sccp(curr_fn)
-        if sccp_expr_cnt > 0 or sccp_br_cnt > 0:
-            telemetry.expressions_eliminated += sccp_expr_cnt
-            telemetry.branches_removed += sccp_br_cnt
-            changed = True
+        if pass_enabled("sccp"):
+            next_fn, sccp_expr_cnt, sccp_br_cnt = run_ssa_sccp(curr_fn)
+            pass_changed = apply_pass(next_fn)
+            if pass_changed:
+                telemetry.expressions_eliminated += sccp_expr_cnt
+                telemetry.branches_removed += sccp_br_cnt
+                changed = True
 
         # 8. Strength Reduction
-        curr_fn, sr_cnt = run_ssa_strength_reduction(curr_fn)
-        if sr_cnt > 0:
-            telemetry.strength_reductions += sr_cnt
-            changed = True
+        if pass_enabled("strength_reduction"):
+            next_fn, sr_cnt = run_ssa_strength_reduction(curr_fn)
+            pass_changed = apply_pass(next_fn)
+            if pass_changed:
+                telemetry.strength_reductions += sr_cnt
+                changed = True
 
         # 9. Peephole
-        prev_blocks = curr_fn.blocks
-        curr_fn = run_ssa_peephole(curr_fn)
-        if curr_fn.blocks != prev_blocks:
-            changed = True
+        if pass_enabled("peephole"):
+            next_fn = run_ssa_peephole(curr_fn)
+            if apply_pass(next_fn):
+                changed = True
 
         if not changed:
             telemetry.converged = True
+            telemetry.max_iterations_reached = False
             break
     else:
         telemetry.converged = False
+        telemetry.max_iterations_reached = True
+
+    if verify_each_pass:
+        _verify_pipeline_ir(curr_fn)
 
     return curr_fn, telemetry
