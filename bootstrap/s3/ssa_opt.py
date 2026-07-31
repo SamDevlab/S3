@@ -29,6 +29,7 @@ from .ssa import (
     SSAValue,
     validate_ssa,
 )
+from .ssa_optimizer import SSAPassContract
 from .ternary import (
     TernaryRangeError,
     TernaryWidth,
@@ -1431,17 +1432,83 @@ def run_ssa_dse(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
 # Milestone 0.90 & 0.95: Optimization Fixpoint Pipeline & Memory Pipeline
 # -----------------------------------------------------------------------------
 
-_FIXPOINT_PASSES = {
-    "gvn",
-    "copy_propagation",
-    "dse",
-    "dce",
-    "adce",
-    "licm",
-    "sccp",
-    "strength_reduction",
-    "peephole",
-}
+SSA_PASS_CONTRACTS = (
+    SSAPassContract(
+        "gvn",
+        requires_ssa=True,
+        preserves_ssa=True,
+        mutates_cfg=False,
+        required_analyses=("cfg", "dominance"),
+        invalidated_analyses=("value-numbering", "uses"),
+        telemetry_fields=("expressions_eliminated",),
+    ),
+    SSAPassContract(
+        "copy_propagation",
+        requires_ssa=True,
+        preserves_ssa=True,
+        mutates_cfg=False,
+        invalidated_analyses=("uses",),
+    ),
+    SSAPassContract(
+        "dse",
+        requires_ssa=True,
+        preserves_ssa=True,
+        mutates_cfg=False,
+        required_analyses=("alias-analysis",),
+        invalidated_analyses=("memory-uses",),
+        telemetry_fields=("stores_removed",),
+    ),
+    SSAPassContract(
+        "dce",
+        requires_ssa=True,
+        preserves_ssa=True,
+        mutates_cfg=False,
+        invalidated_analyses=("uses",),
+    ),
+    SSAPassContract(
+        "adce",
+        requires_ssa=True,
+        preserves_ssa=True,
+        mutates_cfg=False,
+        invalidated_analyses=("uses",),
+        telemetry_fields=("dead_instructions_removed",),
+    ),
+    SSAPassContract(
+        "licm",
+        requires_ssa=True,
+        preserves_ssa=True,
+        mutates_cfg=False,
+        required_analyses=("cfg", "dominance"),
+        invalidated_analyses=("uses",),
+        telemetry_fields=("licm_moves",),
+    ),
+    SSAPassContract(
+        "sccp",
+        requires_ssa=True,
+        preserves_ssa=True,
+        mutates_cfg=True,
+        required_analyses=("cfg",),
+        invalidated_analyses=("cfg", "dominance", "uses"),
+        telemetry_fields=("expressions_eliminated", "branches_removed"),
+    ),
+    SSAPassContract(
+        "strength_reduction",
+        requires_ssa=True,
+        preserves_ssa=True,
+        mutates_cfg=False,
+        invalidated_analyses=("uses",),
+        telemetry_fields=("strength_reductions",),
+    ),
+    SSAPassContract(
+        "peephole",
+        requires_ssa=True,
+        preserves_ssa=True,
+        mutates_cfg=False,
+        invalidated_analyses=("uses",),
+    ),
+)
+
+_FIXPOINT_PASSES = frozenset(contract.name for contract in SSA_PASS_CONTRACTS)
 
 
 def _ssa_structure(ssa_fn: SSAFunction) -> tuple[object, ...]:
