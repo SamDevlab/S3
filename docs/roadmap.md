@@ -159,6 +159,139 @@ constantes escalares imutáveis e folding de expressões constantes para aliment
 estático em um avaliador semântico unificado e especifica transformações de
 texto estático em tempo de compilação.
 
+## Marco 0.97 - Differential Correctness Matrix
+
+O Marco 0.97 adiciona uma matriz diferencial interna para validar equivalencia
+entre emulador O0, emulador O1, ELF Linux x86-64 O0 e ELF Linux x86-64 O1.
+
+Entregas:
+
+- harness interno table-driven em `tests/support/differential.py`;
+- corpus hospedado cobrindo tipos ternarios, operacoes, controle, chamadas,
+  recursao, memoria, erros e formas SSA/de-SSA;
+- inventario testado dos passes O1 ativos, com `cse` mantido fora do pipeline;
+- probes estruturais e telemetria por passe quando disponivel;
+- 12 casos nativos de sucesso e 4 casos nativos de erro no job
+  `native-x86-64`;
+- regressao SCCP corrigida para preservar o contrato de `TRET` em funcoes que
+  O1 prova como nao retornantes.
+
+Nao houve mudanca de sintaxe publica, formatos estaveis, ABI, CLI, goldens,
+baselines ou versao publica.
+
+## Marco 0.98 - Optimizer Architecture
+
+O Marco 0.98 torna a arquitetura interna do otimizador O1 explicita sem alterar
+semantica da linguagem, formatos publicos, ABI, CLI, goldens, baselines ou
+versao publica.
+
+Entregas:
+
+- `bootstrap.s3.ssa_opt` preservado como fachada de compatibilidade;
+- passes SSA separados em `bootstrap.s3.ssa_optimizer` por responsabilidade;
+- contratos de passes e inventario O1 mantidos em uma unica fonte interna;
+- `PassResult` usado pela pipeline para padronizar funcao transformada,
+  mudanca estrutural e telemetria;
+- convergencia ainda definida por diferenca estrutural real na SSA retornada,
+  conforme [ADR-0016](decisions/ADR-0016-ssa-optimization-correctness.md);
+- limites de modulo documentados em
+  [ADR-0017](decisions/ADR-0017-ssa-optimizer-module-boundaries.md) e no
+  [plano do marco](milestone-0.98.md).
+
+Nao houve novo passe de otimizacao, sintaxe publica, SSA publica, modulo/import
+de linguagem, records, enums ou componente autohospedado.
+
+## Marco 0.99 - Modules and Imports
+
+O Marco 0.99 adiciona compilacao deterministica de multiplos arquivos, mantendo
+compatibilidade com programas de arquivo unico e sem introduzir package manager.
+
+Entregas:
+
+- sintaxe opcional `module`, `from ... import ...`, alias com `as` e
+  `export fn`;
+- graph deterministico com `ModuleId`, `SourceUnit`, `ImportEdge` e
+  ordenacao topologica;
+- diagnosticos para modulo duplicado, modulo ausente, ciclos, imports
+  duplicados, conflitos, simbolos privados e simbolos ausentes;
+- resolucao por namespace de modulo com funcoes privadas por default;
+- API `compile_sources(...)` separada de `compile_source(...)`;
+- nomes internos deterministicos para linking dentro do compilador, preservando
+  `main` no modulo de entrada;
+- cobertura hospedada O0/O1 e cobertura nativa multi-modulo no job
+  `native-x86-64`;
+- contrato documentado em [spec/modules.md](../spec/modules.md) e no
+  [plano do marco](milestone-0.99.md).
+
+Nao houve wildcard import, qualified calls, package manager, registry,
+download de dependencias, formato publico de linking, alteracao de ABI ou bump
+de versao publica.
+
+## Marco 1.00 - Records and Enums
+
+O Marco 1.00 adiciona tipos compostos nominais minimos para programas S3
+maiores, sem alterar formatos publicos, CLI, goldens, baselines ou versao
+publica.
+
+Entregas:
+
+- sintaxe `record` com campos nomeados em ordem declarada;
+- sintaxe `enum` com variants fechadas e discriminants `tryte`
+  deterministicos iniciando em `0`;
+- construcao de records por campos nomeados e acesso por `valor.campo`;
+- construcao de enums por `Enum.Variant`;
+- comparacao nominal de enums com `==` e `!=`;
+- `match` exaustivo sobre enum, com fallback `else` permitido;
+- diagnosticos estaveis para tipos duplicados, campos duplicados, campos
+  ausentes/desconhecidos, variants duplicadas/desconhecidas e match enum
+  incompleto/duplicado;
+- lowering deterministico de records por scalarizacao em ordem declarada;
+- parametros record expandidos no ABI interno de IR;
+- retorno de record single-field pelo registrador escalar existente;
+- retorno de record multi-field bloqueado ate uma ABI de retorno agregado;
+- nomes de tipos compostos module-local preservados em `compile_sources(...)`
+  por reescrita interna deterministica;
+- cobertura hospedada O0/O1 e cobertura nativa x86-64 para records/enums.
+
+Nao houve classes, metodos, heranca, traits, interfaces, generics, reflection,
+enum payloads, heap, layout aberto, novo opcode, formato publico novo ou bump
+de versao publica.
+
+Contrato documentado em [spec/composite-types.md](../spec/composite-types.md) e
+no [plano do marco](milestone-1.00.md).
+
+## Marco 1.01 - First Self-hosting Component
+
+O Marco 1.01 implementa o primeiro componente pequeno do toolchain escrito em
+S3 e validado contra uma referencia Python, sem substituir o caminho padrao do
+compilador.
+
+Componente escolhido:
+
+- classificador de opcodes de S3 Assembly;
+- subcomponente estreito do futuro renderer de Assembly;
+- referencia Python baseada em `bootstrap/s3/assembly.py` e no inventario
+  `AssemblyOpcode`.
+
+Entregas:
+
+- `selfhost/assembly/opcode_ids.s3` com ids escalares deterministicos para os
+  opcodes atuais;
+- `selfhost/assembly/opcode_classifier.s3` usando modulos, records, enums e
+  `match` exaustivo;
+- classificacao de opcode conhecido, kind, contagem minima de operandos,
+  variadicidade de `TCALL` e aceitacao de contagem de operandos;
+- teste diferencial Python/S3 cobrindo todas as variants atuais, entradas
+  invalidas, comportamento variadic e determinismo de compilacao multi-file;
+- checksum nativo x86-64 coletavel quando o toolchain nativo estiver
+  disponivel.
+
+Estado de maturidade: `differential reference`. O componente nao foi adotado
+como caminho padrao; Python permanece a referencia.
+
+Contrato documentado em [docs/milestone-1.01.md](milestone-1.01.md) e na
+selecao em [docs/self-hosting-first-component.md](self-hosting-first-component.md).
+
 ## Autohospedagem
 
 Assembler e frontend em S3 dependem de strings além de concatenação estática

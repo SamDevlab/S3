@@ -230,3 +230,39 @@ The candidate can move from decision to implementation only when:
 
 Do not promise immediate implementation of the renderer while the required
 language features are still missing.
+
+## Milestone 1.01 selection
+
+Milestone 1.01 selects the Assembly opcode classifier as the first implemented
+S3 toolchain component.
+
+The opcode classifier is a narrow subcomponent of the Assembly renderer subset.
+It does not render text. It classifies Assembly opcodes into deterministic
+metadata used by renderer and verifier logic:
+
+- whether an opcode is value-producing, memory-related, or terminating;
+- the expected textual operand count for the supported Assembly shape;
+- whether a candidate operand count matches the opcode contract.
+
+The component is small enough to implement with the current language:
+
+- module declarations and imports keep the id table separate from the
+  classifier;
+- records model classifier queries;
+- enums model opcodes and opcode categories;
+- exhaustive enum `match` covers every supported opcode;
+- scalar public entry points make Python-vs-S3 differential tests possible
+  before type imports and dynamic strings exist.
+
+Alternatives rejected for Milestone 1.01:
+
+- full Assembly text rendering still requires runtime text construction beyond
+  this milestone;
+- an IR normalizer needs broader IR-shaped data and serialization;
+- a diagnostic formatter needs dynamic strings or JSON-like output;
+- lexer, parser, optimizer, backend, emulator, and CLI remain too broad for the
+  first implementation.
+
+Maturity target for this component is `differential reference`: Python remains
+the reference implementation, and the S3 component is validated beside it
+without becoming the default compiler path.

@@ -112,6 +112,23 @@ To maintain static typing without ambiguity and enforce "menos é mais":
 - **Rule:** `len` returns a scalar of type `tryte`.
 - **Rule:** Evaluation is purely static during compilation; zero runtime memory instructions or call instructions are emitted.
 
+### 4.12. Modules and Imports
+- **Rule:** `module name.parts` may appear once at the beginning of a source unit.
+- **Rule:** `from name.parts import symbol` and `from name.parts import symbol as alias` may appear after the optional module declaration and before functions.
+- **Rule:** `export fn` marks a top-level function as importable by other modules.
+- **Rule:** Source units without `module` remain valid single-file programs.
+- **Rule:** Modules and imports extend V0.6 compatibly; V0.5 remains legacy and does not accept this syntax.
+- **Rule:** Wildcard imports, package-manager behavior, conditional imports, and qualified calls are not part of this milestone.
+
+### 4.13. Records and Enums
+- **Rule:** `record Name:` declares a nominal record with indented `field: type` entries.
+- **Rule:** `enum Name:` declares a closed enum with indented payload-free variants.
+- **Rule:** `Name(field=value)` constructs a record by naming every field exactly once.
+- **Rule:** `value.field` accesses a record field.
+- **Rule:** `Enum.Variant` constructs an enum variant.
+- **Rule:** `match` over enum values must cover every variant or provide `else`.
+- **Rule:** Records and enums extend V0.6 compatibly; V0.5 remains legacy and does not accept this syntax.
+
 ## 5. Normative Examples
 
 ### Example 1: Simple Return

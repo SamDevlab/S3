@@ -59,6 +59,28 @@ seguros e mortos, blocos inalcançáveis e trampolins de salto. ADD potencialmen
 overflow, efeitos e terminadores não são apagados. Verificador e análise rodam
 antes e depois.
 
+## Arquitetura interna do otimizador SSA
+
+O otimizador O1 usa SSA apenas como representacao interna. A fachada historica
+`bootstrap.s3.ssa_opt` permanece estavel para o compilador e testes existentes,
+mas as responsabilidades internas ficam separadas em `bootstrap.s3.ssa_optimizer`.
+
+Os limites atuais sao:
+
+- `contracts.py`: contratos, inventario O1 e `PassResult`;
+- `common.py`: helpers compartilhados;
+- `lowering.py`: SSA para IR e CFG reconstruido de blocos SSA;
+- `propagation.py`: propagacao de constantes e copias;
+- `value_numbering.py`: CSE e GVN;
+- `elimination.py`: DCE, ADCE e DSE;
+- `loops.py`: LICM e strength reduction;
+- `sccp.py`: propagacao condicional esparsa;
+- `peephole.py`: reescritas locais.
+
+A convergencia do fixpoint continua baseada em mudanca estrutural real na SSA
+retornada. Contadores alimentam telemetria, mas nao sao prova de convergencia
+nem autorizam transformacoes que a estrutura retornada nao realizou.
+
 ## Artefatos
 
 S3 Assembly usa `.s3asm 0.5.0`; texto legado é normalizado. IR persistente usa

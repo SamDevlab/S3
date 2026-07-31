@@ -1,0 +1,46 @@
+module selfhost.assembly.opcode_ids
+
+export fn opcode_tconst_id() -> tryte:
+    return 0
+
+export fn opcode_tconst_str_id() -> tryte:
+    return 1
+
+export fn opcode_tmov_id() -> tryte:
+    return 2
+
+export fn opcode_tinv_id() -> tryte:
+    return 3
+
+export fn opcode_tadd_id() -> tryte:
+    return 4
+
+export fn opcode_tmin_id() -> tryte:
+    return 5
+
+export fn opcode_tmax_id() -> tryte:
+    return 6
+
+export fn opcode_tcmp_id() -> tryte:
+    return 7
+
+export fn opcode_tcall_id() -> tryte:
+    return 8
+
+export fn opcode_tload_id() -> tryte:
+    return 9
+
+export fn opcode_tstore_id() -> tryte:
+    return 10
+
+export fn opcode_tret_id() -> tryte:
+    return 11
+
+export fn opcode_tjmp_id() -> tryte:
+    return 12
+
+export fn opcode_tbr3_id() -> tryte:
+    return 13
+
+export fn opcode_count() -> tryte:
+    return 14

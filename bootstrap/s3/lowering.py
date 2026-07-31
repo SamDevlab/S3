@@ -49,6 +49,7 @@ class _LoweredBinding:
     mutable: bool
     register: int | None = None
     memory: int | None = None
+    fields: dict[str, _LoweredBinding] | None = None
 
 
 class FunctionLowerer:
@@ -72,13 +73,45 @@ class FunctionLowerer:
 
     def lower(self) -> IRFunction:
         for parameter in self.function.parameters:
-            assert isinstance(parameter.type_name, ast.TypeName)
-            register = self._allocate(parameter.type_name, parameter.location)
+            if (
+                isinstance(parameter.type_name, ast.NominalType)
+                and self.semantic_model.is_record_type(parameter.type_name)
+            ):
+                record = self.semantic_model.record(parameter.type_name.name)
+                fields: dict[str, _LoweredBinding] = {}
+                for field in record.fields:
+                    storage_type = self._storage_type(
+                        field.type_name,
+                        field.location,
+                    )
+                    register = self._allocate(storage_type, field.location)
+                    self.parameters.append(
+                        IRParameter(
+                            f"{parameter.name}__{field.name}",
+                            register,
+                            TYPE_MAP[storage_type],
+                            field.location,
+                        )
+                    )
+                    fields[field.name] = _LoweredBinding(
+                        field.type_name,
+                        mutable=False,
+                        register=register,
+                    )
+                self.variable_scopes[0][parameter.name] = _LoweredBinding(
+                    parameter.type_name,
+                    mutable=False,
+                    fields=fields,
+                )
+                continue
+
+            storage_type = self._storage_type(parameter.type_name, parameter.location)
+            register = self._allocate(storage_type, parameter.location)
             self.parameters.append(
                 IRParameter(
                     parameter.name,
                     register,
-                    TYPE_MAP[parameter.type_name],
+                    TYPE_MAP[storage_type],
                     parameter.location,
                 )
             )
@@ -94,11 +127,14 @@ class FunctionLowerer:
                 f"function '{self.function.name}' ended without a terminator",
                 self.function.location,
             )
-        assert isinstance(self.function.return_type, ast.TypeName)
+        return_type = self._storage_type(
+            self.function.return_type,
+            self.function.signature.location,
+        )
         return IRFunction(
             name=self.function.name,
             parameters=tuple(self.parameters),
-            return_type=TYPE_MAP[self.function.return_type],
+            return_type=TYPE_MAP[return_type],
             registers=tuple(self.registers),
             blocks=tuple(
                 IRBasicBlock(
@@ -156,7 +192,7 @@ class FunctionLowerer:
             self._lower_assignment(statement)
             return
         if isinstance(statement, ast.ReturnStatement):
-            value = self._lower_expression(statement.expression)
+            value = self._lower_return_expression(statement.expression)
             self._emit(
                 IRInstruction(
                     IROpcode.RETURN,
@@ -238,15 +274,113 @@ class FunctionLowerer:
         )
         return index
 
+    def _storage_type(
+        self,
+        type_name: ast.DeclaredType,
+        location: SourceLocation | None,
+    ) -> ast.TypeName:
+        if isinstance(type_name, ast.TypeName):
+            return type_name
+        if (
+            isinstance(type_name, ast.NominalType)
+            and self.semantic_model.is_enum_type(type_name)
+        ):
+            return ast.TypeName.TRYTE
+        if (
+            isinstance(type_name, ast.NominalType)
+            and self.semantic_model.is_record_type(type_name)
+        ):
+            record = self.semantic_model.record(type_name.name)
+            if len(record.fields) == 1:
+                return self._storage_type(record.fields[0].type_name, location)
+            raise LoweringError(
+                "multi-field record value cannot be lowered as a scalar value",
+                location,
+            )
+        raise LoweringError("unsupported storage type", location)
+
     def _lookup_variable(
         self,
         name: str,
         location: SourceLocation,
     ) -> _LoweredBinding:
+        binding = self._lookup_variable_or_none(name)
+        if binding is not None:
+            return binding
+        raise LoweringError(f"unknown variable '{name}'", location)
+
+    def _lookup_variable_or_none(self, name: str) -> _LoweredBinding | None:
         for scope in reversed(self.variable_scopes):
             if name in scope:
                 return scope[name]
-        raise LoweringError(f"unknown variable '{name}'", location)
+        return None
+
+    def _lower_record_fields_from_expression(
+        self,
+        expression: ast.Initializer,
+        record,
+        location: SourceLocation,
+    ) -> dict[str, _LoweredBinding]:
+        if isinstance(expression, ast.ArrayLiteral):
+            raise LoweringError(
+                "record value cannot be initialized from an array literal",
+                expression.location,
+            )
+        if isinstance(expression, ast.RecordExpression):
+            values = {field.name: field.expression for field in expression.fields}
+            return {
+                field.name: _LoweredBinding(
+                    field.type_name,
+                    mutable=False,
+                    register=self._lower_expression(values[field.name]),
+                )
+                for field in record.fields
+            }
+        if isinstance(expression, ast.Identifier):
+            binding = self._lookup_variable(expression.name, expression.location)
+            if binding.fields is not None:
+                return {
+                    field.name: binding.fields[field.name]
+                    for field in record.fields
+                }
+        if len(record.fields) == 1:
+            field = record.fields[0]
+            return {
+                field.name: _LoweredBinding(
+                    field.type_name,
+                    mutable=False,
+                    register=self._lower_expression(expression),
+                )
+            }
+        raise LoweringError(
+            "multi-field record value requires an explicit record literal or binding",
+            location,
+        )
+
+    def _lower_return_expression(self, expression: ast.Expression) -> int:
+        if (
+            isinstance(self.function.return_type, ast.NominalType)
+            and self.semantic_model.is_record_type(self.function.return_type)
+        ):
+            record = self.semantic_model.record(self.function.return_type.name)
+            if len(record.fields) != 1:
+                raise LoweringError(
+                    "multi-field record returns require a future aggregate ABI",
+                    expression.location,
+                )
+            fields = self._lower_record_fields_from_expression(
+                expression,
+                record,
+                expression.location,
+            )
+            register = fields[record.fields[0].name].register
+            if register is None:
+                raise LoweringError(
+                    "single-field record return is missing its scalar field",
+                    expression.location,
+                )
+            return register
+        return self._lower_expression(expression)
 
     def _lower_declaration(self, declaration: ast.VariableDeclaration) -> None:
         if isinstance(declaration.type_name, ast.ArrayType):
@@ -281,15 +415,38 @@ class FunctionLowerer:
             )
             return
 
+        if (
+            isinstance(declaration.type_name, ast.NominalType)
+            and self.semantic_model.is_record_type(declaration.type_name)
+        ):
+            if declaration.mutable:
+                raise LoweringError(
+                    "mutable record bindings are not supported yet",
+                    declaration.location,
+                )
+            record = self.semantic_model.record(declaration.type_name.name)
+            lowered_fields = self._lower_record_fields_from_expression(
+                declaration.initializer,
+                record,
+                declaration.location,
+            )
+            self.variable_scopes[-1][declaration.name] = _LoweredBinding(
+                declaration.type_name,
+                mutable=False,
+                fields=lowered_fields,
+            )
+            return
+
         if isinstance(declaration.initializer, ast.ArrayLiteral):
             raise LoweringError(
                 "scalar declaration received an array initializer",
                 declaration.initializer.location,
             )
+        storage_type = self._storage_type(declaration.type_name, declaration.location)
         initializer = self._lower_expression(declaration.initializer)
         if declaration.mutable:
             memory = self._allocate_memory(
-                declaration.type_name,
+                storage_type,
                 1,
                 True,
                 declaration.location,
@@ -315,7 +472,7 @@ class FunctionLowerer:
             )
             return
 
-        variable = self._allocate(declaration.type_name, declaration.location)
+        variable = self._allocate(storage_type, declaration.location)
         self._emit(
             IRInstruction(
                 IROpcode.MOVE,
@@ -501,6 +658,11 @@ class FunctionLowerer:
         return result
 
     def _lower_switch(self, statement: ast.SwitchStatement) -> None:
+        selector_type = self.semantic_model.declared_type_of(statement.expression)
+        if self.semantic_model.is_enum_type(selector_type):
+            self._lower_enum_switch(statement)
+            return
+
         cond_val = self.semantic_model.constant_value_of(statement.expression)
         if cond_val is not None:
             explicit_cases = {c.label: c for c in statement.cases if c.label is not None}
@@ -561,6 +723,87 @@ class FunctionLowerer:
             return
         continuation = self._fresh_block(
             "switch_continue",
+            statement.location,
+        )
+        for block, location in open_blocks:
+            block.instructions.append(
+                IRInstruction(
+                    IROpcode.JUMP,
+                    targets=(continuation.name,),
+                    location=location,
+                )
+            )
+        self.current = continuation
+
+    def _lower_enum_switch(self, statement: ast.SwitchStatement) -> None:
+        explicit_entries = self._enum_case_entries(statement.cases)
+        explicit_cases = dict(explicit_entries)
+        fallback_case = next((c for c in statement.cases if c.label is None), None)
+        cond_val = self.semantic_model.constant_value_of(statement.expression)
+        if cond_val is not None:
+            target_case = explicit_cases.get(cond_val, fallback_case)
+            if target_case is not None:
+                self._lower_block(target_case.body, create_scope=True)
+                return
+
+        selector_reg = self._lower_expression(statement.expression)
+        default_case = fallback_case or explicit_entries[-1][1]
+        test_entries = explicit_entries if fallback_case is not None else explicit_entries[:-1]
+        open_blocks: list[tuple[_MutableBlock, SourceLocation]] = []
+
+        for discriminant, case in test_entries:
+            less_block = self._fresh_block("enum_match_less", case.location)
+            case_block = self._fresh_block("enum_match_case", case.location)
+            greater_block = self._fresh_block("enum_match_greater", case.location)
+            next_block = self._fresh_block("enum_match_next", statement.location)
+            discriminant_reg = self._emit_constant(
+                discriminant,
+                ast.TypeName.TRYTE,
+                case.location,
+            )
+            compare_reg = self._allocate(ast.TypeName.TRIT, case.location)
+            self._emit(
+                IRInstruction(
+                    IROpcode.COMPARE,
+                    result=compare_reg,
+                    operands=(selector_reg, discriminant_reg),
+                    location=case.location,
+                )
+            )
+            self._emit(
+                IRInstruction(
+                    IROpcode.BRANCH3,
+                    operands=(compare_reg,),
+                    targets=(less_block.name, case_block.name, greater_block.name),
+                    location=case.location,
+                )
+            )
+
+            for branch_block in (less_block, greater_block):
+                self.current = branch_block
+                self._emit(
+                    IRInstruction(
+                        IROpcode.JUMP,
+                        targets=(next_block.name,),
+                        location=case.location,
+                    )
+                )
+
+            self.current = case_block
+            self._lower_block(case.body, create_scope=True)
+            if self.current is not None:
+                open_blocks.append((self.current, case.location))
+            self.current = next_block
+
+        self._lower_block(default_case.body, create_scope=True)
+        if self.current is not None:
+            open_blocks.append((self.current, default_case.location))
+
+        if not open_blocks:
+            self.current = None
+            return
+        continuation = self._fresh_block(
+            "enum_match_continue",
             statement.location,
         )
         for block, location in open_blocks:
@@ -814,7 +1057,8 @@ class FunctionLowerer:
         simplified = self.semantic_model.simplified_expression_of(expression)
         if simplified is not None:
             return self._lower_expression(simplified)
-        expression_type = self.semantic_model.type_of(expression)
+        declared_type = self.semantic_model.declared_type_of(expression)
+        expression_type = self._storage_type(declared_type, expression.location)
         if expression_type in (ast.TypeName.TRIT, ast.TypeName.TRYTE):
             constant = self.semantic_model.constant_value_of(expression)
             if constant is not None:
@@ -878,13 +1122,13 @@ class FunctionLowerer:
             if binding.register is not None:
                 return binding.register
             assert binding.memory is not None
-            assert isinstance(binding.type_name, ast.TypeName)
+            storage_type = self._storage_type(binding.type_name, expression.location)
             index = self._emit_constant(
                 0,
                 ast.TypeName.TRYTE,
                 expression.location,
             )
-            result = self._allocate(binding.type_name, expression.location)
+            result = self._allocate(storage_type, expression.location)
             self._emit(
                 IRInstruction(
                     IROpcode.LOAD,
@@ -985,10 +1229,7 @@ class FunctionLowerer:
                     )
                 )
                 return result
-            arguments = tuple(
-                self._lower_expression(argument.expression)
-                for argument in expression.arguments
-            )
+            arguments = self._lower_call_arguments(expression)
             result = self._allocate(expression_type, expression.location)
             self._emit(
                 IRInstruction(
@@ -1000,6 +1241,13 @@ class FunctionLowerer:
                 )
             )
             return result
+        if isinstance(expression, ast.RecordExpression):
+            raise LoweringError(
+                "record literal cannot be lowered as a scalar value",
+                expression.location,
+            )
+        if isinstance(expression, ast.FieldAccessExpression):
+            return self._lower_field_access(expression)
         if isinstance(expression, ast.UnaryExpression):
             operand = self._lower_expression(expression.operand)
             result = self._allocate(expression_type, expression.location)
@@ -1019,6 +1267,121 @@ class FunctionLowerer:
         if isinstance(expression, ast.LenExpression):
             return self._lower_len(expression)
         raise LoweringError("unsupported expression", expression.location)
+
+    def _lower_field_access(self, expression: ast.FieldAccessExpression) -> int:
+        if isinstance(expression.target, ast.Identifier):
+            binding = self._lookup_variable_or_none(expression.target.name)
+            if binding is None and (
+                enum := self.semantic_model.enums.get(expression.target.name)
+            ) is not None:
+                try:
+                    discriminant = enum.discriminant(expression.field_name)
+                except KeyError as error:
+                    raise LoweringError(
+                        (
+                            f"enum '{enum.name}' has no variant "
+                            f"'{expression.field_name}'"
+                        ),
+                        expression.location,
+                    ) from error
+                return self._emit_constant(
+                    discriminant,
+                    ast.TypeName.TRYTE,
+                    expression.location,
+                )
+        if isinstance(expression.target, ast.Identifier):
+            if binding is None:
+                binding = self._lookup_variable(
+                    expression.target.name,
+                    expression.target.location,
+                )
+            if binding.fields is None:
+                raise LoweringError(
+                    f"variable '{expression.target.name}' is not a record",
+                    expression.location,
+                )
+            field = binding.fields.get(expression.field_name)
+            if field is None or field.register is None:
+                raise LoweringError(
+                    f"record field '{expression.field_name}' is unavailable",
+                    expression.location,
+                )
+            return field.register
+        if isinstance(expression.target, ast.RecordExpression):
+            for field in expression.target.fields:
+                if field.name == expression.field_name:
+                    return self._lower_expression(field.expression)
+        target_type = self.semantic_model.declared_type_of(expression.target)
+        if (
+            isinstance(target_type, ast.NominalType)
+            and self.semantic_model.is_record_type(target_type)
+        ):
+            record = self.semantic_model.record(target_type.name)
+            if len(record.fields) == 1 and record.fields[0].name == expression.field_name:
+                return self._lower_expression(expression.target)
+        raise LoweringError(
+            "field access requires a lowered record binding",
+            expression.location,
+        )
+
+    def _lower_call_arguments(self, expression: ast.CallExpression) -> tuple[int, ...]:
+        signature = self.semantic_model.function(expression.function_name)
+        registers: list[int] = []
+        for argument, parameter_type in zip(
+            expression.arguments,
+            signature.parameter_types,
+            strict=True,
+        ):
+            if (
+                isinstance(parameter_type, ast.NominalType)
+                and self.semantic_model.is_record_type(parameter_type)
+            ):
+                record = self.semantic_model.record(parameter_type.name)
+                fields = self._lower_record_fields_from_expression(
+                    argument.expression,
+                    record,
+                    argument.location,
+                )
+                for field in record.fields:
+                    register = fields[field.name].register
+                    if register is None:
+                        raise LoweringError(
+                            f"record argument field '{field.name}' is unavailable",
+                            argument.location,
+                        )
+                    registers.append(register)
+                continue
+            registers.append(self._lower_expression(argument.expression))
+        return tuple(registers)
+
+    def _match_label_discriminant(self, label: ast.MatchCaseLabel) -> int:
+        if isinstance(label, int):
+            return label
+        if isinstance(label, ast.FieldAccessExpression):
+            discriminant = self.semantic_model.constant_value_of(label)
+            if discriminant is not None:
+                return discriminant
+            if isinstance(label.target, ast.Identifier):
+                enum = self.semantic_model.enums.get(label.target.name)
+                if enum is not None:
+                    try:
+                        return enum.discriminant(label.field_name)
+                    except KeyError as error:
+                        raise LoweringError(
+                            (
+                                f"enum '{enum.name}' has no variant "
+                                f"'{label.field_name}'"
+                            ),
+                            label.location,
+                        ) from error
+        raise LoweringError("unsupported match case label")
+
+    def _enum_case_entries(self, cases):
+        return tuple(
+            (self._match_label_discriminant(case.label), case)
+            for case in cases
+            if case.label is not None
+        )
 
     def _lower_len(self, expression: ast.LenExpression) -> int:
         argument_type = self.semantic_model.declared_type_of(expression.argument)
@@ -1058,7 +1421,10 @@ class FunctionLowerer:
         right = self._lower_expression(expression.right)
         if expression.operator is ast.BinaryOperator.SUBTRACT:
             inverted = self._allocate(
-                self.semantic_model.type_of(expression.right),
+                self._storage_type(
+                    self.semantic_model.declared_type_of(expression.right),
+                    expression.right.location,
+                ),
                 expression.right.location,
             )
             self._emit(
@@ -1204,6 +1570,10 @@ class FunctionLowerer:
         self,
         expression: ast.MatchExpression,
     ) -> int:
+        selector_type = self.semantic_model.declared_type_of(expression.selector)
+        if self.semantic_model.is_enum_type(selector_type):
+            return self._lower_enum_match_expression(expression)
+
         cond_val = self.semantic_model.constant_value_of(expression.selector)
         if cond_val is not None:
             explicit_cases = {c.label: c for c in expression.cases if c.label is not None}
@@ -1212,7 +1582,10 @@ class FunctionLowerer:
             if target_case is not None:
                 return self._lower_expression(target_case.expression)
         selector_reg = self._lower_expression(expression.selector)
-        result_type = self.semantic_model.expression_types[id(expression)]
+        result_type = self._storage_type(
+            self.semantic_model.expression_types[id(expression)],
+            expression.location,
+        )
         memory = self._allocate_memory(result_type, 1, True, expression.location)
         explicit_cases = {c.label: c for c in expression.cases if c.label is not None}
         fallback_case = next((c for c in expression.cases if c.label is None), None)
@@ -1274,6 +1647,121 @@ class FunctionLowerer:
                     location=case.location,
                 )
             )
+
+        self.current = continuation
+        val_idx = self._emit_constant(0, ast.TypeName.TRYTE, expression.location)
+        result_reg = self._allocate(result_type, expression.location)
+        self._emit(
+            IRInstruction(
+                IROpcode.LOAD,
+                operands=(val_idx,),
+                memory=memory,
+                result=result_reg,
+                location=expression.location,
+            )
+        )
+        return result_reg
+
+    def _lower_enum_match_expression(
+        self,
+        expression: ast.MatchExpression,
+    ) -> int:
+        explicit_entries = self._enum_case_entries(expression.cases)
+        explicit_cases = dict(explicit_entries)
+        fallback_case = next((c for c in expression.cases if c.label is None), None)
+        cond_val = self.semantic_model.constant_value_of(expression.selector)
+        if cond_val is not None:
+            target_case = explicit_cases.get(cond_val, fallback_case)
+            if target_case is not None:
+                return self._lower_expression(target_case.expression)
+
+        selector_reg = self._lower_expression(expression.selector)
+        result_type = self._storage_type(
+            self.semantic_model.expression_types[id(expression)],
+            expression.location,
+        )
+        memory = self._allocate_memory(result_type, 1, True, expression.location)
+        default_case = fallback_case or explicit_entries[-1][1]
+        test_entries = explicit_entries if fallback_case is not None else explicit_entries[:-1]
+        continuation = self._fresh_block("enum_match_expr_cont", expression.location)
+
+        for discriminant, case in test_entries:
+            less_block = self._fresh_block("enum_match_expr_less", case.location)
+            case_block = self._fresh_block("enum_match_expr_case", case.location)
+            greater_block = self._fresh_block("enum_match_expr_greater", case.location)
+            next_block = self._fresh_block("enum_match_expr_next", expression.location)
+            discriminant_reg = self._emit_constant(
+                discriminant,
+                ast.TypeName.TRYTE,
+                case.location,
+            )
+            compare_reg = self._allocate(ast.TypeName.TRIT, case.location)
+            self._emit(
+                IRInstruction(
+                    IROpcode.COMPARE,
+                    result=compare_reg,
+                    operands=(selector_reg, discriminant_reg),
+                    location=case.location,
+                )
+            )
+            self._emit(
+                IRInstruction(
+                    IROpcode.BRANCH3,
+                    operands=(compare_reg,),
+                    targets=(less_block.name, case_block.name, greater_block.name),
+                    location=case.location,
+                )
+            )
+
+            for branch_block in (less_block, greater_block):
+                self.current = branch_block
+                self._emit(
+                    IRInstruction(
+                        IROpcode.JUMP,
+                        targets=(next_block.name,),
+                        location=case.location,
+                    )
+                )
+
+            self.current = case_block
+            val_reg = self._lower_expression(case.expression)
+            idx = self._emit_constant(0, ast.TypeName.TRYTE, case.location)
+            self._emit(
+                IRInstruction(
+                    IROpcode.STORE,
+                    operands=(idx, val_reg),
+                    memory=memory,
+                    initialization=True,
+                    location=case.location,
+                )
+            )
+            self._emit(
+                IRInstruction(
+                    IROpcode.JUMP,
+                    targets=(continuation.name,),
+                    location=case.location,
+                )
+            )
+            self.current = next_block
+
+        val_reg = self._lower_expression(default_case.expression)
+        idx = self._emit_constant(0, ast.TypeName.TRYTE, default_case.location)
+        self._emit(
+            IRInstruction(
+                IROpcode.STORE,
+                operands=(idx, val_reg),
+                memory=memory,
+                initialization=True,
+                location=default_case.location,
+            )
+        )
+        self._emit(
+            IRInstruction(
+                IROpcode.JUMP,
+                targets=(continuation.name,),
+                location=default_case.location,
+            )
+        )
 
         self.current = continuation
         val_idx = self._emit_constant(0, ast.TypeName.TRYTE, expression.location)

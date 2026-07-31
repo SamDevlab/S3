@@ -95,8 +95,9 @@ def test_ci_workflow_has_required_matrix_and_commands() -> None:
 
 def test_normative_ebnf_factors_identifier_postfix() -> None:
     grammar = (ROOT / "spec" / "grammar.ebnf").read_text(encoding="utf-8")
-    assert "identifier-expression = identifier, [ postfix-suffix ]" in grammar
-    assert "postfix-suffix       = call-suffix | index-suffix" in grammar
+    assert "identifier-expression = identifier, [ call-suffix ], [ postfix-suffix ]" in grammar
+    assert "postfix-suffix       = index-suffix | field-suffix" in grammar
     assert 'call-suffix          = "(", [ argument-list ], ")"' in grammar
     assert 'index-suffix         = "[", expression, "]"' in grammar
+    assert 'field-suffix         = ".", identifier' in grammar
     assert "primary              = integer | identifier | call" not in grammar

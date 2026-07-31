@@ -16,9 +16,10 @@ from bootstrap.s3.backends.x86_64 import (
     generate_native_assembly,
 )
 from bootstrap.s3.cli import main as cli_main
+from bootstrap.s3.diagnostics import diagnostic_from_exception
 from bootstrap.s3.emulator import Emulator, EmulatorError
 from bootstrap.s3.lexer import SyntaxMode
-from bootstrap.s3.pipeline import compile_source
+from bootstrap.s3.pipeline import compile_source, compile_sources
 from bootstrap.s3.ternary import TernaryWidth, tritwise_max, tritwise_min
 
 
@@ -70,6 +71,78 @@ def _assert_differential(
     assert completed.returncode == 0
     assert completed.stderr == ""
     assert completed.stdout == f"program returned: {expected}\n"
+
+
+def _assert_o0_o1_native_equivalence(
+    source: str,
+    expected: int,
+    toolchain: NativeToolchain,
+    output: Path,
+) -> None:
+    for level in ("O0", "O1"):
+        _assert_differential(
+            source,
+            expected,
+            toolchain,
+            output / level.lower(),
+            optimization=level,
+            mode=SyntaxMode.V0_6,
+        )
+
+
+def _assert_o0_o1_native_sources_equivalence(
+    sources: dict[str, str] | tuple[tuple[str, str], ...],
+    expected: int,
+    toolchain: NativeToolchain,
+    output: Path,
+    *,
+    entry_module: str = "main",
+) -> None:
+    for level in ("O0", "O1"):
+        program = compile_sources(
+            sources,
+            level,
+            entry_module=entry_module,
+            mode=SyntaxMode.V0_6,
+        ).assembly
+        assert Emulator().execute(program) == expected
+        completed = _run_native(program, toolchain, output / level.lower())
+        assert completed.returncode == 0
+        assert completed.stderr == ""
+        assert completed.stdout == f"program returned: {expected}\n"
+
+
+def _assert_o0_o1_native_error_category(
+    source: str,
+    diagnostic_category: str,
+    native_fragment: str,
+    toolchain: NativeToolchain,
+    output: Path,
+    *,
+    max_frames: int = 1024,
+    max_instructions: int = 100_000,
+) -> None:
+    for level in ("O0", "O1"):
+        program = compile_source(source, level, mode=SyntaxMode.V0_6).assembly
+        with pytest.raises(EmulatorError) as captured:
+            Emulator(
+                max_frames=max_frames,
+                max_instructions=max_instructions,
+            ).execute(program)
+        diagnostic = diagnostic_from_exception(captured.value)
+        assert diagnostic.category.value == diagnostic_category
+
+        native = generate_native_assembly(
+            program,
+            max_frames=max_frames,
+            max_instructions=max_instructions,
+        )
+        executable = toolchain.build(native, output / level.lower())
+        completed = toolchain.run(executable)
+        assert completed.returncode != 0
+        assert completed.returncode not in {-11, 139}
+        assert completed.stdout == ""
+        assert native_fragment in completed.stderr.lower()
 
 
 @pytest.mark.parametrize(
@@ -492,6 +565,420 @@ def test_deterministic_differential_corpus(
         native_toolchain,
         tmp_path / f"corpus-{case}",
         mode=SyntaxMode.V0_6,
+    )
+
+
+@pytest.mark.parametrize(
+    ("name", "source", "expected"),
+    (
+        (
+            "trit-return",
+            """\
+fn main() -> trit:
+    mut value: trit = -1
+    return value
+""",
+            -1,
+        ),
+        (
+            "source-subtraction",
+            """\
+fn main() -> tryte:
+    mut left: tryte = 10
+    mut right: tryte = 4
+    return left - right
+""",
+            6,
+        ),
+        (
+            "tritwise-minimum",
+            """\
+fn main() -> tryte:
+    mut left: tryte = -100
+    mut right: tryte = 40
+    return left & right
+""",
+            -100,
+        ),
+        (
+            "nested-call",
+            """\
+fn add_one(value: tryte) -> tryte:
+    return value + 1
+fn add_two(value: tryte) -> tryte:
+    return add_one(add_one(value))
+fn main() -> tryte:
+    return add_two(8)
+""",
+            10,
+        ),
+        (
+            "recursion",
+            """\
+fn sum_to(value: tryte) -> tryte:
+    match value <=> 0:
+        -1:
+            return 0
+        0:
+            return 0
+        1:
+            return value + sum_to(value - 1)
+fn main() -> tryte:
+    return sum_to(4)
+""",
+            10,
+        ),
+        (
+            "diamond-join",
+            """\
+fn choose(value: tryte) -> tryte:
+    mut result: tryte = 0
+    match value <=> 0:
+        -1:
+            result = 3
+        0:
+            result = 5
+        else:
+            result = 7
+    return result
+fn main() -> tryte:
+    return choose(1)
+""",
+            7,
+        ),
+        (
+            "while-loop",
+            """\
+fn main() -> tryte:
+    mut i: tryte = 0
+    mut total: tryte = 0
+    while i < 3:
+        total = total + 2
+        i = i + 1
+    return total
+""",
+            6,
+        ),
+        (
+            "for-loop",
+            """\
+fn main() -> tryte:
+    mut total: tryte = 0
+    for i: tryte in range(0, 4):
+        total = total + i
+    return total
+""",
+            6,
+        ),
+        (
+            "mutable-array-dynamic-index",
+            """\
+fn read(index: tryte) -> tryte:
+    mut values: tryte[3] = [2, 4, 6]
+    values[index] = values[index] + 1
+    return values[index]
+fn main() -> tryte:
+    return read(1)
+""",
+            5,
+        ),
+        (
+            "consecutive-stores",
+            """\
+fn main() -> tryte:
+    mut value: tryte = 1
+    value = 2
+    value = 3
+    return value
+""",
+            3,
+        ),
+        (
+            "memory-in-loop",
+            """\
+fn main() -> tryte:
+    mut i: tryte = 0
+    mut values: tryte[3] = [0, 0, 0]
+    while i < 3:
+        values[i] = i + 1
+        i = i + 1
+    return values[0] + values[1] + values[2]
+""",
+            6,
+        ),
+        (
+            "critical-edge-phi",
+            """\
+fn choose(value: tryte) -> tryte:
+    mut result: tryte = 0
+    match value <=> 0:
+        -1:
+            result = 3
+        0:
+            result = 5
+        else:
+            result = 7
+    return result + 1
+fn seed() -> tryte:
+    return -1
+fn main() -> tryte:
+    return choose(seed())
+""",
+            4,
+        ),
+    ),
+)
+def test_o0_o1_native_differential_matrix_successes(
+    name: str,
+    source: str,
+    expected: int,
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    _assert_o0_o1_native_equivalence(
+        source,
+        expected,
+        native_toolchain,
+        tmp_path / f"matrix-{name}",
+    )
+
+
+@pytest.mark.parametrize(
+    ("name", "sources", "expected"),
+    (
+        (
+            "simple-import",
+            {
+                "main.s3": (
+                    "module main\n"
+                    "from math import inc\n"
+                    "fn main() -> tryte:\n"
+                    "    return inc(8)\n"
+                ),
+                "math.s3": (
+                    "module math\n"
+                    "export fn inc(value: tryte) -> tryte:\n"
+                    "    return value + 1\n"
+                ),
+            },
+            9,
+        ),
+        (
+            "transitive-alias-import",
+            {
+                "main.s3": (
+                    "module main\n"
+                    "from app.logic import compute as answer\n"
+                    "fn main() -> tryte:\n"
+                    "    return answer(3)\n"
+                ),
+                "app/logic.s3": (
+                    "module app.logic\n"
+                    "from math import inc\n"
+                    "export fn compute(value: tryte) -> tryte:\n"
+                    "    return inc(value) + inc(1)\n"
+                ),
+                "math.s3": (
+                    "module math\n"
+                    "export fn inc(value: tryte) -> tryte:\n"
+                    "    return value + 1\n"
+                ),
+            },
+            6,
+        ),
+    ),
+)
+def test_o0_o1_native_multi_module_compilation(
+    name: str,
+    sources: dict[str, str],
+    expected: int,
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    _assert_o0_o1_native_sources_equivalence(
+        sources,
+        expected,
+        native_toolchain,
+        tmp_path / f"modules-{name}",
+    )
+
+
+@pytest.mark.parametrize(
+    ("name", "source", "expected"),
+    (
+        (
+            "record-parameter",
+            """\
+record Pair:
+    left: tryte
+    right: tryte
+fn sum(pair: Pair) -> tryte:
+    return pair.left + pair.right
+fn main() -> tryte:
+    return sum(Pair(left=4, right=6))
+""",
+            10,
+        ),
+        (
+            "single-field-record-return",
+            """\
+record Box:
+    value: tryte
+fn make() -> Box:
+    return Box(value=8)
+fn main() -> tryte:
+    return make().value
+""",
+            8,
+        ),
+        (
+            "enum-match",
+            """\
+enum Opcode:
+    Add
+    Subtract
+    Minimum
+    Maximum
+fn main() -> tryte:
+    value: Opcode = Opcode.Maximum
+    match value:
+        Opcode.Add:
+            return 0
+        Opcode.Subtract:
+            return 1
+        Opcode.Minimum:
+            return 2
+        Opcode.Maximum:
+            return 3
+""",
+            3,
+        ),
+    ),
+)
+def test_o0_o1_native_composite_types(
+    name: str,
+    source: str,
+    expected: int,
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    _assert_o0_o1_native_equivalence(
+        source,
+        expected,
+        native_toolchain,
+        tmp_path / f"composite-{name}",
+    )
+
+
+def test_o0_o1_native_imported_module_composite_types(
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    sources = {
+        "main.s3": (
+            "module main\n"
+            "from logic import classify\n"
+            "fn main() -> tryte:\n"
+            "    return classify(2)\n"
+        ),
+        "logic.s3": (
+            "module logic\n"
+            "enum Kind:\n"
+            "    Small\n"
+            "    Large\n"
+            "record Classified:\n"
+            "    kind: Kind\n"
+            "    value: tryte\n"
+            "export fn classify(value: tryte) -> tryte:\n"
+            "    item: Classified = Classified(kind=Kind.Large, value=value)\n"
+            "    match item.kind:\n"
+            "        Kind.Small:\n"
+            "            return -1\n"
+            "        Kind.Large:\n"
+            "            return item.value\n"
+        ),
+    }
+
+    _assert_o0_o1_native_sources_equivalence(
+        sources,
+        2,
+        native_toolchain,
+        tmp_path / "composite-module",
+    )
+
+
+@pytest.mark.parametrize(
+    (
+        "name",
+        "source",
+        "diagnostic_category",
+        "native_fragment",
+        "max_frames",
+        "max_instructions",
+    ),
+    (
+        (
+            "overflow",
+            """\
+fn main() -> tryte:
+    mut value: tryte = 364
+    return value + 1
+""",
+            "overflow",
+            "overflow",
+            1024,
+            100_000,
+        ),
+        (
+            "bounds",
+            """\
+fn read(index: tryte) -> tryte:
+    values: tryte[2] = [10, 20]
+    return values[index]
+fn main() -> tryte:
+    return read(2)
+""",
+            "bounds",
+            "bounds",
+            1024,
+            100_000,
+        ),
+        (
+            "frame-limit",
+            RECURSIVE_DEPTH_SOURCE.replace("return descend(3)", "return descend(10)"),
+            "frame-limit",
+            "frame limit",
+            4,
+            100_000,
+        ),
+        (
+            "instruction-limit",
+            RECURSIVE_DEPTH_SOURCE,
+            "instruction-limit",
+            "instruction limit",
+            1024,
+            5,
+        ),
+    ),
+)
+def test_o0_o1_native_differential_matrix_errors(
+    name: str,
+    source: str,
+    diagnostic_category: str,
+    native_fragment: str,
+    max_frames: int,
+    max_instructions: int,
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    _assert_o0_o1_native_error_category(
+        source,
+        diagnostic_category,
+        native_fragment,
+        native_toolchain,
+        tmp_path / f"matrix-error-{name}",
+        max_frames=max_frames,
+        max_instructions=max_instructions,
     )
 
 

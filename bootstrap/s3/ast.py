@@ -22,7 +22,13 @@ class ArrayType:
     location: SourceLocation
 
 
-DeclaredType: TypeAlias = TypeName | ArrayType
+@dataclass(frozen=True, slots=True)
+class NominalType:
+    name: str
+    location: SourceLocation
+
+
+DeclaredType: TypeAlias = TypeName | ArrayType | NominalType
 
 
 class UnaryOperator(Enum):
@@ -76,6 +82,20 @@ class CallExpression:
 
 
 @dataclass(frozen=True, slots=True)
+class RecordFieldValue:
+    name: str
+    expression: Expression
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
+class RecordExpression:
+    type_name: str
+    fields: tuple[RecordFieldValue, ...]
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
 class IndexExpression:
     target: Expression
     index: Expression
@@ -97,6 +117,13 @@ class SliceExpression:
 
 
 @dataclass(frozen=True, slots=True)
+class FieldAccessExpression:
+    target: Expression
+    field_name: str
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
 class UnaryExpression:
     operator: UnaryOperator
     operand: Expression
@@ -111,9 +138,12 @@ class BinaryExpression:
     location: SourceLocation
 
 
+MatchCaseLabel: TypeAlias = int | FieldAccessExpression | None
+
+
 @dataclass(frozen=True, slots=True)
 class MatchExpressionCase:
-    label: int | None
+    label: MatchCaseLabel
     expression: Expression
     location: SourceLocation
 
@@ -136,8 +166,10 @@ Expression: TypeAlias = (
     | StringLiteral
     | Identifier
     | CallExpression
+    | RecordExpression
     | IndexExpression
     | SliceExpression
+    | FieldAccessExpression
     | UnaryExpression
     | BinaryExpression
     | MatchExpression
@@ -194,7 +226,7 @@ class ReturnStatement:
 
 @dataclass(frozen=True, slots=True)
 class TernaryCase:
-    label: int | None
+    label: MatchCaseLabel
     body: Block
     location: SourceLocation
 
@@ -290,6 +322,7 @@ class FunctionDeclaration:
     signature: FunctionSignature
     body: Block
     location: SourceLocation
+    exported: bool = False
 
     @property
     def name(self) -> str:
@@ -305,8 +338,53 @@ class FunctionDeclaration:
 
 
 @dataclass(frozen=True, slots=True)
+class RecordField:
+    name: str
+    type_name: DeclaredType
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
+class RecordDeclaration:
+    name: str
+    fields: tuple[RecordField, ...]
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
+class EnumVariant:
+    name: str
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
+class EnumDeclaration:
+    name: str
+    variants: tuple[EnumVariant, ...]
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
 class Program:
     functions: tuple[FunctionDeclaration, ...]
+    location: SourceLocation
+    module: ModuleDeclaration | None = None
+    imports: tuple[ImportDeclaration, ...] = ()
+    records: tuple[RecordDeclaration, ...] = ()
+    enums: tuple[EnumDeclaration, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class ModuleDeclaration:
+    name: str
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
+class ImportDeclaration:
+    module_name: str
+    symbol_name: str
+    alias: str | None
     location: SourceLocation
 
 
