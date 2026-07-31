@@ -2,7 +2,13 @@
 
 program              = { NEWLINE }, [ module-declaration ],
                        { { NEWLINE }, import-declaration },
-                       function, { { NEWLINE }, function }, { NEWLINE }, EOF ;
+                       top-level-declaration,
+                       { { NEWLINE }, top-level-declaration },
+                       { NEWLINE }, EOF ;
+
+top-level-declaration = record-declaration
+                      | enum-declaration
+                      | function ;
 
 module-declaration   = "module", module-id, NEWLINE ;
 import-declaration   = "from", module-id, "import", identifier,
@@ -15,7 +21,16 @@ parameter-list       = parameter, { ",", parameter } ;
 parameter            = identifier, ":", type ;
 
 scalar-type          = "trit" | "tryte" ;
-type                 = scalar-type, { "[", integer, "]" } ;
+nominal-type         = identifier ;
+type                 = ( scalar-type | nominal-type ), { "[", integer, "]" } ;
+
+record-declaration   = "record", identifier, ":", NEWLINE, INDENT,
+                       record-field, { record-field }, DEDENT ;
+record-field         = identifier, ":", type, NEWLINE ;
+
+enum-declaration     = "enum", identifier, ":", NEWLINE, INDENT,
+                       enum-variant, { enum-variant }, DEDENT ;
+enum-variant         = identifier, NEWLINE ;
 
 block                = ":", NEWLINE, INDENT, statement, { statement }, DEDENT ;
 
@@ -55,6 +70,7 @@ minimum              = additive, { "&", additive } ;
 additive             = unary, { ("+" | "-"), unary } ;
 unary                = ("~" | "-"), unary | primary ;
 primary              = integer
+                     | qualified-name
                      | identifier-expression
                      | match-expression
                      | len-expression
@@ -65,10 +81,12 @@ len-expression       = "len", "(", expression, ")" ;
 match-expression     = "match", expression, ":", NEWLINE, INDENT, match-expression-case, { match-expression-case }, DEDENT ;
 match-expression-case = signed-integer, ":", expression, NEWLINE ;
 
-identifier-expression = identifier, [ postfix-suffix ] ;
-postfix-suffix       = call-suffix | index-suffix ;
+identifier-expression = identifier, [ call-suffix ], { postfix-suffix } ;
+qualified-name       = identifier, ".", identifier ;
+postfix-suffix       = index-suffix | field-suffix ;
 call-suffix          = "(", [ argument-list ], ")" ;
 index-suffix         = "[", expression, "]" ;
+field-suffix         = ".", identifier ;
 argument-list        = expression, { ",", expression } ;
 
 identifier           = identifier-start, { identifier-continue } ;

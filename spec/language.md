@@ -20,9 +20,9 @@ fn main() -> tryte:
 
 A linguagem S3 (sintaxe 0.6) é baseada em indentação, abandonando `{}` e `;`.
 
-Palavras-chave: `module`, `from`, `import`, `as`, `export`, `fn`, `return`,
-`match`, `while`, `mut`, `trit`, `tryte`, `case` (removido no parser atual,
-usa-se literais diretos no match).
+Palavras-chave: `module`, `from`, `import`, `as`, `export`, `record`, `enum`,
+`fn`, `return`, `match`, `while`, `mut`, `trit`, `tryte`, `case` (removido no
+parser atual, usa-se literais diretos no match).
 
 Identificadores seguem `[A-Za-z_][A-Za-z0-9_]*`.
 Comentários começam com `#` (não mais `//`).
@@ -81,6 +81,17 @@ for i: tryte in range(0, len(values)):
 ## Strings estáticas
 
 Strings estáticas são suportadas apenas como literais definidos na compilação. O tempo de execução não fornece manipulação nativa de strings arbitrárias. Literais de string estão presentes na sintaxe para suporte a chamadas nativas de diagnóstico (renderização).
+
+## Records e enums
+
+Records e enums fechados sao tipos nominais especificados em
+[composite-types.md](composite-types.md). Records possuem campos nomeados em
+ordem declarada e sao scalarizados internamente. Enums nao possuem payload nesta
+milestone e usam discriminants `tryte` deterministicos.
+
+Records multi-campo nao podem ser retornados ate que exista uma ABI agregada
+propria. Enums podem ser passados e retornados como valores nominais baixados
+para discriminants. `match` sobre enum exige cobertura exaustiva ou `else`.
 
 ## Expressões e operadores
 
