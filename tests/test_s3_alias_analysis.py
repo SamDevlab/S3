@@ -18,3 +18,13 @@ def test_alias_analysis_queries() -> None:
     assert AliasAnalysis.alias(None, 0) == AliasResult.MAY_ALIAS
     assert AliasAnalysis.may_alias(None, 0)
     assert not AliasAnalysis.must_alias(None, 0)
+
+
+def test_alias_analysis_cell_queries() -> None:
+    assert AliasAnalysis.alias_cell(0, 0, 1, 0) == AliasResult.NO_ALIAS
+    assert AliasAnalysis.alias_cell(0, 0, 0, 0) == AliasResult.MUST_ALIAS
+    assert AliasAnalysis.alias_cell(0, 0, 0, 1) == AliasResult.NO_ALIAS
+    assert AliasAnalysis.alias_cell(0, "i_v0", 0, "i_v0") == AliasResult.MUST_ALIAS
+    assert AliasAnalysis.alias_cell(0, "i_v0", 0, "i_v1") == AliasResult.MAY_ALIAS
+    assert AliasAnalysis.alias_cell(0, None, 0, 0) == AliasResult.MAY_ALIAS
+    assert AliasAnalysis.alias_cell(None, 0, 0, 0) == AliasResult.MAY_ALIAS

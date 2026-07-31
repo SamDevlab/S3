@@ -5,19 +5,20 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Dict, List, Set, Tuple
 
-from .alias_analysis import AliasAnalysis, AliasResult
+from .alias_analysis import AliasAnalysis
 from .cfg import ControlFlowGraph
 from .dominance import DominatorTree
 from .ir import (
     IRBasicBlock,
     IRFunction,
     IRInstruction,
+    IRMemoryObject,
+    IRModule,
     IROpcode,
     IRParameter,
     IRRegister,
     IRType,
 )
-from .memory_ssa import MemorySSA
 from .metrics import FixpointTelemetry
 from .ssa import (
     SSABlock,
@@ -26,6 +27,7 @@ from .ssa import (
     SSAParameter,
     SSAPhiNode,
     SSAValue,
+    validate_ssa,
 )
 from .ternary import (
     TernaryRangeError,
@@ -36,6 +38,7 @@ from .ternary import (
     tritwise_max,
     tritwise_min,
 )
+from .verifier import verify_ir
 
 _FOLDABLE_OPCODES = {
     IROpcode.MOVE,
@@ -71,6 +74,11 @@ def to_ir(ssa_fn: SSAFunction) -> IRFunction:
     """Converts an SSAFunction back into standard IRFunction (out-of-SSA)."""
     ssa_val_to_reg: Dict[str, int] = {}
     ir_registers: List[IRRegister] = []
+    next_memory_index = (
+        max((memory.index for memory in ssa_fn.memory_objects), default=-1) + 1
+    )
+    phi_memory: Dict[str, int] = {}
+    additional_memory: List[IRMemoryObject] = []
 
     def get_reg_index(val: SSAValue) -> int:
         if val.name not in ssa_val_to_reg:
@@ -78,6 +86,107 @@ def to_ir(ssa_fn: SSAFunction) -> IRFunction:
             ssa_val_to_reg[val.name] = idx
             ir_registers.append(IRRegister(index=idx, type=val.type))
         return ssa_val_to_reg[val.name]
+
+    def new_register(type_name: IRType) -> int:
+        idx = len(ir_registers)
+        ir_registers.append(IRRegister(index=idx, type=type_name))
+        return idx
+
+    def zero_index_instruction() -> tuple[IRInstruction, int]:
+        idx = new_register(IRType.TRYTE)
+        return IRInstruction(opcode=IROpcode.CONST, result=idx, immediate=0), idx
+
+    def phi_memory_index(phi: SSAPhiNode) -> int:
+        nonlocal next_memory_index
+        if phi.target.name not in phi_memory:
+            memory_index = next_memory_index
+            next_memory_index += 1
+            phi_memory[phi.target.name] = memory_index
+            additional_memory.append(
+                IRMemoryObject(
+                    index=memory_index,
+                    element_type=phi.target.type,
+                    length=1,
+                    mutable=True,
+                    location=phi.location,
+                )
+            )
+        return phi_memory[phi.target.name]
+
+    phis_by_block: Dict[str, List[SSAPhiNode]] = {
+        block.name: list(block.phis) for block in ssa_fn.blocks if block.phis
+    }
+    edge_phi_copies: Dict[tuple[str, str], List[tuple[SSAPhiNode, SSAValue]]] = {}
+    for block in ssa_fn.blocks:
+        for phi in block.phis:
+            phi_memory_index(phi)
+            for pred_name, op_val in phi.operands.items():
+                edge_phi_copies.setdefault((pred_name, block.name), []).append(
+                    (phi, op_val)
+                )
+
+    def edge_copy_instructions(pred_name: str, succ_name: str) -> List[IRInstruction]:
+        copies = edge_phi_copies.get((pred_name, succ_name), [])
+        if not copies:
+            return []
+        zero_inst, zero_reg = zero_index_instruction()
+        instructions = [zero_inst]
+        for phi, op_val in copies:
+            instructions.append(
+                IRInstruction(
+                    opcode=IROpcode.STORE,
+                    operands=(zero_reg, get_reg_index(op_val)),
+                    memory=phi_memory_index(phi),
+                    location=phi.location,
+                )
+            )
+        return instructions
+
+    used_block_names = {block.name for block in ssa_fn.blocks}
+
+    def sanitize_block_part(value: str) -> str:
+        return "".join(ch if ch.isalnum() or ch == "_" else "_" for ch in value)
+
+    def split_block_name(pred_name: str, succ_name: str) -> str:
+        base = (
+            f"ssa_edge_{sanitize_block_part(pred_name)}"
+            f"_to_{sanitize_block_part(succ_name)}"
+        )
+        candidate = base
+        suffix = 1
+        while candidate in used_block_names:
+            suffix += 1
+            candidate = f"{base}_{suffix}"
+        used_block_names.add(candidate)
+        return candidate
+
+    def convert_instruction(ssa_inst: SSAInstruction) -> IRInstruction:
+        res_reg = get_reg_index(ssa_inst.result) if ssa_inst.result else None
+        op_regs = tuple(get_reg_index(op) for op in ssa_inst.operands)
+
+        imm_val: int | None = None
+        static_str: str | None = None
+        callee_val: str | None = None
+
+        if ssa_inst.opcode is IROpcode.CONST_STR:
+            static_str = str(ssa_inst.immediate) if ssa_inst.immediate is not None else None
+        elif ssa_inst.opcode is IROpcode.CALL:
+            callee_val = str(ssa_inst.immediate) if ssa_inst.immediate is not None else None
+        elif isinstance(ssa_inst.immediate, int):
+            imm_val = ssa_inst.immediate
+
+        return IRInstruction(
+            opcode=ssa_inst.opcode,
+            result=res_reg,
+            operands=op_regs,
+            immediate=imm_val,
+            static_string=static_str,
+            callee=callee_val,
+            targets=ssa_inst.targets,
+            memory=ssa_inst.memory,
+            initialization=ssa_inst.initialization,
+            location=ssa_inst.location,
+        )
 
     ir_params: List[IRParameter] = []
     for param in ssa_fn.parameters:
@@ -90,66 +199,72 @@ def to_ir(ssa_fn: SSAFunction) -> IRFunction:
             )
         )
 
-    pending_phi_moves: Dict[str, List[IRInstruction]] = {}
-    for block in ssa_fn.blocks:
-        for phi in block.phis:
-            target_reg = get_reg_index(phi.target)
-            for pred_name, op_val in phi.operands.items():
-                src_reg = get_reg_index(op_val)
-                move_inst = IRInstruction(
-                    opcode=IROpcode.MOVE,
-                    result=target_reg,
-                    operands=(src_reg,),
-                    location=phi.location,
-                )
-                pending_phi_moves.setdefault(pred_name, []).append(move_inst)
-
     ir_blocks: List[IRBasicBlock] = []
     entry_blocks = [b for b in ssa_fn.blocks if b.name == "entry"]
     other_blocks = [b for b in ssa_fn.blocks if b.name != "entry"]
     for block in entry_blocks + other_blocks:
 
         instructions: List[IRInstruction] = []
-
-        for ssa_inst in block.instructions:
-            res_reg = get_reg_index(ssa_inst.result) if ssa_inst.result else None
-            op_regs = tuple(get_reg_index(op) for op in ssa_inst.operands)
-
-            imm_val: int | None = None
-            static_str: str | None = None
-            callee_val: str | None = None
-
-            if ssa_inst.opcode is IROpcode.CONST_STR:
-                static_str = str(ssa_inst.immediate) if ssa_inst.immediate is not None else None
-            elif ssa_inst.opcode is IROpcode.CALL:
-                callee_val = str(ssa_inst.immediate) if ssa_inst.immediate is not None else None
-            else:
-                if isinstance(ssa_inst.immediate, int):
-                    imm_val = ssa_inst.immediate
-
+        for phi in phis_by_block.get(block.name, []):
+            zero_inst, zero_reg = zero_index_instruction()
+            instructions.append(zero_inst)
             instructions.append(
                 IRInstruction(
-                    opcode=ssa_inst.opcode,
-                    result=res_reg,
-                    operands=op_regs,
-                    immediate=imm_val,
-                    static_string=static_str,
-                    callee=callee_val,
-                    targets=ssa_inst.targets,
-                    memory=ssa_inst.memory,
-                    initialization=ssa_inst.initialization,
-                    location=ssa_inst.location,
+                    opcode=IROpcode.LOAD,
+                    result=get_reg_index(phi.target),
+                    operands=(zero_reg,),
+                    memory=phi_memory_index(phi),
+                    location=phi.location,
                 )
             )
 
-        if block.name in pending_phi_moves and pending_phi_moves[block.name]:
-            moves = pending_phi_moves[block.name]
-            if instructions and instructions[-1].is_terminator:
-                terminator = instructions.pop()
-                instructions.extend(moves)
-                instructions.append(terminator)
-            else:
-                instructions.extend(moves)
+        for ssa_inst in block.instructions:
+            instructions.append(convert_instruction(ssa_inst))
+
+        split_blocks: List[IRBasicBlock] = []
+        if instructions and instructions[-1].is_terminator:
+            terminator = instructions.pop()
+            updated_targets: List[str] = []
+            direct_edge_copies: List[IRInstruction] = []
+            for target in terminator.targets:
+                copies = edge_copy_instructions(block.name, target)
+                if copies and len(terminator.targets) > 1:
+                    edge_name = split_block_name(block.name, target)
+                    updated_targets.append(edge_name)
+                    split_blocks.append(
+                        IRBasicBlock(
+                            name=edge_name,
+                            instructions=tuple(
+                                copies
+                                + [
+                                    IRInstruction(
+                                        opcode=IROpcode.JUMP,
+                                        targets=(target,),
+                                        location=terminator.location,
+                                    )
+                                ]
+                            ),
+                        )
+                    )
+                else:
+                    direct_edge_copies.extend(copies)
+                    updated_targets.append(target)
+
+            instructions.extend(direct_edge_copies)
+            instructions.append(
+                IRInstruction(
+                    opcode=terminator.opcode,
+                    result=terminator.result,
+                    operands=terminator.operands,
+                    immediate=terminator.immediate,
+                    static_string=terminator.static_string,
+                    callee=terminator.callee,
+                    targets=tuple(updated_targets),
+                    memory=terminator.memory,
+                    initialization=terminator.initialization,
+                    location=terminator.location,
+                )
+            )
 
         ir_blocks.append(
             IRBasicBlock(
@@ -157,6 +272,7 @@ def to_ir(ssa_fn: SSAFunction) -> IRFunction:
                 instructions=tuple(instructions),
             )
         )
+        ir_blocks.extend(split_blocks)
 
     ret_type = getattr(ssa_fn, "return_type", IRType.TRYTE)
 
@@ -167,7 +283,28 @@ def to_ir(ssa_fn: SSAFunction) -> IRFunction:
         return_type=ret_type,
         registers=tuple(ir_registers),
         blocks=tuple(ir_blocks),
-        memory_objects=ssa_fn.memory_objects,
+        memory_objects=ssa_fn.memory_objects + tuple(additional_memory),
+    )
+
+
+def _cfg_from_ssa(ssa_fn: SSAFunction) -> ControlFlowGraph:
+    """Build a CFG from SSA blocks without lowering Phi edges."""
+    blocks: List[IRBasicBlock] = []
+    for block in ssa_fn.blocks:
+        instructions = tuple(
+            IRInstruction(opcode=inst.opcode, targets=inst.targets)
+            for inst in block.instructions
+        )
+        blocks.append(IRBasicBlock(name=block.name, instructions=instructions))
+    return ControlFlowGraph.build(
+        IRFunction(
+            name=ssa_fn.name,
+            parameters=(),
+            return_type=ssa_fn.return_type,
+            registers=(),
+            blocks=tuple(blocks),
+            memory_objects=ssa_fn.memory_objects,
+        )
     )
 
 
@@ -458,8 +595,7 @@ def run_ssa_dead_code_elimination(ssa_fn: SSAFunction) -> SSAFunction:
 
 def run_ssa_cse(ssa_fn: SSAFunction) -> SSAFunction:
     """Eliminates common subexpressions in SSA form using dominator tree traversal."""
-    ir_temp = to_ir(ssa_fn)
-    cfg = ControlFlowGraph.build(ir_temp)
+    cfg = _cfg_from_ssa(ssa_fn)
     dom_tree = DominatorTree.build(cfg)
 
     ssa_block_dict = {b.name: b for b in ssa_fn.blocks}
@@ -696,8 +832,7 @@ def run_ssa_peephole(ssa_fn: SSAFunction) -> SSAFunction:
 
 def run_ssa_gvn(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
     """Computes Global Value Numbers for SSA expressions and eliminates redundant computations."""
-    ir_temp = to_ir(ssa_fn)
-    cfg = ControlFlowGraph.build(ir_temp)
+    cfg = _cfg_from_ssa(ssa_fn)
     dom_tree = DominatorTree.build(cfg)
 
     ssa_block_dict = {b.name: b for b in ssa_fn.blocks}
@@ -823,8 +958,7 @@ def run_ssa_gvn(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
 
 def run_ssa_licm(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
     """Hoists pure loop-invariant computations out of loops into pre-headers."""
-    ir_temp = to_ir(ssa_fn)
-    cfg = ControlFlowGraph.build(ir_temp)
+    cfg = _cfg_from_ssa(ssa_fn)
     dom_tree = DominatorTree.build(cfg)
 
     back_edges: List[Tuple[str, str]] = []
@@ -940,12 +1074,6 @@ def run_ssa_strength_reduction(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
     for block in ssa_fn.blocks:
         new_instructions: List[SSAInstruction] = []
         for inst in block.instructions:
-            if inst.opcode is IROpcode.ADD and inst.result and len(inst.operands) == 2:
-                op0, op1 = inst.operands[0], inst.operands[1]
-                if op0.name == op1.name or (op0.original_register is not None and op0.original_register == op1.original_register):
-                    reductions_count += 1
-
-
             if inst.opcode is IROpcode.INVERT and inst.result and len(inst.operands) == 1:
                 op0 = inst.operands[0]
                 def0 = def_inst_map.get(op0.name)
@@ -990,8 +1118,7 @@ def run_ssa_strength_reduction(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
 
 def run_ssa_sccp(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int, int]:
     """Sparse Conditional Constant Propagation using dual CFG and SSA edge tracking."""
-    ir_temp = to_ir(ssa_fn)
-    cfg = ControlFlowGraph.build(ir_temp)
+    cfg = _cfg_from_ssa(ssa_fn)
 
     known_constants: Dict[str, int] = {}
     executable_blocks: Set[str] = {cfg.entry_name}
@@ -1218,12 +1345,7 @@ def run_ssa_adce(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
 # -----------------------------------------------------------------------------
 
 def run_ssa_dse(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
-    """Eliminates redundant STORE operations using Alias Analysis and Memory SSA."""
-    ir_temp = to_ir(ssa_fn)
-    cfg = ControlFlowGraph.build(ir_temp)
-    dom_tree = DominatorTree.build(cfg)
-    mem_ssa = MemorySSA.build(ssa_fn, cfg, dom_tree)
-
+    """Eliminates intra-block redundant STORE operations using Alias Analysis."""
     dead_stores: Set[SSAInstruction] = set()
     known_consts: Dict[str, int] = {}
     for block in ssa_fn.blocks:
@@ -1231,24 +1353,37 @@ def run_ssa_dse(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
             if inst.opcode is IROpcode.CONST and inst.result and isinstance(inst.immediate, int):
                 known_consts[inst.result.name] = inst.immediate
 
+    def index_key(value: SSAValue) -> int | str:
+        if value.name in known_consts:
+            return known_consts[value.name]
+        return value.name
+
     for block in ssa_fn.blocks:
         last_store_per_cell: Dict[Tuple[int, int | str], SSAInstruction] = {}
 
         for inst in block.instructions:
-            if inst.opcode is IROpcode.STORE and inst.operands:
+            if inst.opcode is IROpcode.STORE and inst.operands and inst.memory is not None:
                 idx_op = inst.operands[0]
-                idx_key = known_consts.get(idx_op.name, idx_op.original_register)
+                idx_key = index_key(idx_op)
                 cell_key = (inst.memory, idx_key)
-                if cell_key in last_store_per_cell:
-                    dead_stores.add(last_store_per_cell[cell_key])
+                for pending_key, pending_store in tuple(last_store_per_cell.items()):
+                    if AliasAnalysis.must_alias_cell(
+                        pending_key[0],
+                        pending_key[1],
+                        cell_key[0],
+                        cell_key[1],
+                    ):
+                        dead_stores.add(pending_store)
+                        del last_store_per_cell[pending_key]
                 last_store_per_cell[cell_key] = inst
 
             elif inst.opcode is IROpcode.LOAD and inst.memory is not None:
-                # Clear pending stores for aliased memory locations
+                # A load may observe any pending store that aliases its cell.
                 mem_idx = inst.memory
+                load_idx = index_key(inst.operands[0]) if inst.operands else None
                 to_clear = [
                     c for c in last_store_per_cell
-                    if AliasAnalysis.may_alias(c[0], mem_idx)
+                    if AliasAnalysis.may_alias_cell(c[0], c[1], mem_idx, load_idx)
                 ]
                 for c in to_clear:
                     del last_store_per_cell[c]
@@ -1285,74 +1420,149 @@ def run_ssa_dse(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
 # Milestone 0.90 & 0.95: Optimization Fixpoint Pipeline & Memory Pipeline
 # -----------------------------------------------------------------------------
 
+_FIXPOINT_PASSES = {
+    "gvn",
+    "copy_propagation",
+    "dse",
+    "dce",
+    "adce",
+    "licm",
+    "sccp",
+    "strength_reduction",
+    "peephole",
+}
+
+
+def _ssa_structure(ssa_fn: SSAFunction) -> tuple[object, ...]:
+    return (
+        ssa_fn.parameters,
+        ssa_fn.blocks,
+        ssa_fn.memory_objects,
+        ssa_fn.return_type,
+    )
+
+
+def _verify_pipeline_ssa(ssa_fn: SSAFunction) -> None:
+    cfg = _cfg_from_ssa(ssa_fn)
+    dom_tree = DominatorTree.build(cfg)
+    validate_ssa(ssa_fn, cfg, dom_tree)
+
+
+def _verify_pipeline_ir(ssa_fn: SSAFunction) -> None:
+    verify_ir(IRModule((to_ir(ssa_fn),)))
+
+
 def run_fixpoint_pipeline(
-    ssa_fn: SSAFunction, max_iterations: int = 10
+    ssa_fn: SSAFunction,
+    max_iterations: int = 10,
+    *,
+    disabled_passes: Set[str] | None = None,
+    verify_each_pass: bool = False,
 ) -> Tuple[SSAFunction, FixpointTelemetry]:
     """Iteratively executes optimization passes until reaching fixpoint or max iterations."""
     telemetry = FixpointTelemetry()
     curr_fn = ssa_fn
+    disabled = set(disabled_passes or set())
+    unknown_passes = disabled - _FIXPOINT_PASSES
+    if unknown_passes:
+        names = ", ".join(sorted(unknown_passes))
+        raise ValueError(f"unknown SSA optimization pass(es): {names}")
+
+    def pass_enabled(name: str) -> bool:
+        return name not in disabled
+
+    def apply_pass(next_fn: SSAFunction) -> bool:
+        nonlocal curr_fn
+        before = _ssa_structure(curr_fn)
+        curr_fn = next_fn
+        changed = _ssa_structure(curr_fn) != before
+        if verify_each_pass:
+            _verify_pipeline_ssa(curr_fn)
+        return changed
+
+    if verify_each_pass:
+        _verify_pipeline_ssa(curr_fn)
 
     for it in range(1, max_iterations + 1):
         telemetry.iterations = it
         changed = False
 
         # 1. GVN
-        curr_fn, gvn_cnt = run_ssa_gvn(curr_fn)
-        if gvn_cnt > 0:
-            telemetry.expressions_eliminated += gvn_cnt
-            changed = True
+        if pass_enabled("gvn"):
+            next_fn, gvn_cnt = run_ssa_gvn(curr_fn)
+            pass_changed = apply_pass(next_fn)
+            if pass_changed:
+                telemetry.expressions_eliminated += gvn_cnt
+                changed = True
 
         # 2. Copy Propagation
-        prev_blocks = curr_fn.blocks
-        curr_fn = run_ssa_copy_propagation(curr_fn)
-        if curr_fn.blocks != prev_blocks:
-            changed = True
+        if pass_enabled("copy_propagation"):
+            next_fn = run_ssa_copy_propagation(curr_fn)
+            if apply_pass(next_fn):
+                changed = True
 
         # 3. DSE (Dead Store Elimination - Milestone 0.92)
-        curr_fn, dse_cnt = run_ssa_dse(curr_fn)
-        if dse_cnt > 0:
-            changed = True
+        if pass_enabled("dse"):
+            next_fn, dse_cnt = run_ssa_dse(curr_fn)
+            pass_changed = apply_pass(next_fn)
+            if pass_changed:
+                telemetry.stores_removed += dse_cnt
+                changed = True
 
         # 4. DCE
-        prev_blocks = curr_fn.blocks
-        curr_fn = run_ssa_dead_code_elimination(curr_fn)
-        if curr_fn.blocks != prev_blocks:
-            changed = True
+        if pass_enabled("dce"):
+            next_fn = run_ssa_dead_code_elimination(curr_fn)
+            if apply_pass(next_fn):
+                changed = True
 
         # 5. ADCE (Aggressive DCE - Milestone 0.91)
-        curr_fn, adce_cnt = run_ssa_adce(curr_fn)
-        if adce_cnt > 0:
-            changed = True
+        if pass_enabled("adce"):
+            next_fn, adce_cnt = run_ssa_adce(curr_fn)
+            pass_changed = apply_pass(next_fn)
+            if pass_changed:
+                telemetry.dead_instructions_removed += adce_cnt
+                changed = True
 
         # 6. LICM
-        curr_fn, licm_cnt = run_ssa_licm(curr_fn)
-        if licm_cnt > 0:
-            telemetry.licm_moves += licm_cnt
-            changed = True
+        if pass_enabled("licm"):
+            next_fn, licm_cnt = run_ssa_licm(curr_fn)
+            pass_changed = apply_pass(next_fn)
+            if pass_changed:
+                telemetry.licm_moves += licm_cnt
+                changed = True
 
         # 7. SCCP
-        curr_fn, sccp_expr_cnt, sccp_br_cnt = run_ssa_sccp(curr_fn)
-        if sccp_expr_cnt > 0 or sccp_br_cnt > 0:
-            telemetry.expressions_eliminated += sccp_expr_cnt
-            telemetry.branches_removed += sccp_br_cnt
-            changed = True
+        if pass_enabled("sccp"):
+            next_fn, sccp_expr_cnt, sccp_br_cnt = run_ssa_sccp(curr_fn)
+            pass_changed = apply_pass(next_fn)
+            if pass_changed:
+                telemetry.expressions_eliminated += sccp_expr_cnt
+                telemetry.branches_removed += sccp_br_cnt
+                changed = True
 
         # 8. Strength Reduction
-        curr_fn, sr_cnt = run_ssa_strength_reduction(curr_fn)
-        if sr_cnt > 0:
-            telemetry.strength_reductions += sr_cnt
-            changed = True
+        if pass_enabled("strength_reduction"):
+            next_fn, sr_cnt = run_ssa_strength_reduction(curr_fn)
+            pass_changed = apply_pass(next_fn)
+            if pass_changed:
+                telemetry.strength_reductions += sr_cnt
+                changed = True
 
         # 9. Peephole
-        prev_blocks = curr_fn.blocks
-        curr_fn = run_ssa_peephole(curr_fn)
-        if curr_fn.blocks != prev_blocks:
-            changed = True
+        if pass_enabled("peephole"):
+            next_fn = run_ssa_peephole(curr_fn)
+            if apply_pass(next_fn):
+                changed = True
 
         if not changed:
             telemetry.converged = True
+            telemetry.max_iterations_reached = False
             break
     else:
         telemetry.converged = False
+        telemetry.max_iterations_reached = True
+
+    if verify_each_pass:
+        _verify_pipeline_ir(curr_fn)
 
     return curr_fn, telemetry

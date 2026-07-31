@@ -455,6 +455,18 @@ fn main() -> tryte:
         (
             """\
 fn main() -> tryte:
+    mut values: tryte[3] = [0, 0, 0]
+    mut i: tryte = 0
+    values[i] = 5
+    i = 1
+    values[i] = 7
+    return values[0]
+""",
+            5,
+        ),
+        (
+            """\
+fn main() -> tryte:
     left: tryte = -100
     right: tryte = 40
     return (left & right) | 1
@@ -479,6 +491,82 @@ def test_deterministic_differential_corpus(
         expected,
         native_toolchain,
         tmp_path / f"corpus-{case}",
+        mode=SyntaxMode.V0_6,
+    )
+
+
+@pytest.mark.parametrize(
+    ("source", "expected"),
+    (
+        (
+            """\
+fn choose(value: tryte) -> tryte:
+    mut result: tryte = 0
+    match value <=> 0:
+        -1:
+            result = 3
+        0:
+            result = 5
+        else:
+            result = 7
+    return result
+fn seed() -> tryte:
+    return 1
+fn main() -> tryte:
+    return choose(seed())
+""",
+            7,
+        ),
+        (
+            """\
+fn pair(value: tryte) -> tryte:
+    mut a: tryte = 0
+    mut b: tryte = 0
+    match value <=> 0:
+        -1:
+            a = 1
+            b = 2
+        0:
+            a = 3
+            b = 4
+        else:
+            a = 5
+            b = 6
+    return a + b
+fn seed() -> tryte:
+    return -1
+fn main() -> tryte:
+    return pair(seed())
+""",
+            3,
+        ),
+        (
+            """\
+fn main() -> tryte:
+    mut i: tryte = 0
+    mut total: tryte = 0
+    while i <=> 3:
+        total = total + 2
+        i = i + 1
+    return total
+""",
+            6,
+        ),
+    ),
+)
+def test_native_o1_phi_lowering_cases(
+    source: str,
+    expected: int,
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    case = sum(ord(character) for character in source)
+    _assert_differential(
+        source,
+        expected,
+        native_toolchain,
+        tmp_path / f"o1-phi-{case}",
+        optimization="O1",
         mode=SyntaxMode.V0_6,
     )
 
