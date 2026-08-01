@@ -26,9 +26,9 @@ Rules:
 - record names share the module type namespace;
 - field order is declaration order and is part of layout;
 - field names must be unique;
-- field types may be `trit`, `tryte`, closed enum types, or acyclic record
-  types;
-- arrays and `string` fields are not part of this milestone;
+- field types may be `trit`, `tryte`, `string`, closed enum types, or acyclic
+  record types;
+- array fields are not part of this milestone;
 - record equality is not part of this milestone;
 - field mutation syntax is not part of this milestone.
 
@@ -51,6 +51,7 @@ Leaf rules:
 
 - `trit` contributes one scalar leaf;
 - `tryte` contributes one scalar leaf;
+- `string` contributes one scalar handle leaf;
 - a closed enum contributes one `tryte` scalar leaf;
 - a nested record contributes its leaves recursively in declared order.
 

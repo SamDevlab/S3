@@ -172,7 +172,11 @@ def collect_static_string_literals(
                 visit_expression(expression.callee)
             for argument in expression.arguments:
                 visit_expression(argument.expression)
+        elif isinstance(expression, ast.RecordExpression):
+            for field in expression.fields:
+                visit_expression(field.expression)
         elif isinstance(expression, ast.IndexExpression):
+            visit_expression(expression.target)
             visit_expression(expression.index)
         elif isinstance(expression, ast.SliceExpression):
             visit_expression(expression.target)

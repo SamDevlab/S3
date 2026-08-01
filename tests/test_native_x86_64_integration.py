@@ -1271,9 +1271,25 @@ fn main() -> tryte:
 """
 
 
+STATIC_TEXT_NESTED_RECORD_SOURCE = """\
+record Label:
+    text: string
+record Packet:
+    flag: trit
+    label: Label
+fn pick(packet: Packet) -> string:
+    return packet.label.text
+fn main() -> tryte:
+    packet: Packet = Packet(label=Label(text="hello"), flag=-1)
+    selected: string = pick(packet)
+    return len("hello")
+"""
+
+
 NESTED_RECORD_NATIVE_SOURCE_CASES = (
     ("local-nested-records", LOCAL_NESTED_NATIVE_SOURCE, 12),
     ("single-leaf-nested-return", SINGLE_LEAF_NESTED_RETURN_SOURCE, 5),
+    ("static-text-nested-record", STATIC_TEXT_NESTED_RECORD_SOURCE, 5),
 )
 
 
@@ -1345,6 +1361,44 @@ NESTED_RECORD_NATIVE_MODULE_ORDER_CASES = (
 )
 
 
+STATIC_TEXT_NESTED_RECORD_MODULE_SOURCES = (
+    (
+        "main.s3",
+        "module main\n"
+        "from model import Label\n"
+        "from model import Packet\n"
+        "from consumer import pick\n"
+        "fn main() -> tryte:\n"
+        "    packet: Packet = model.Packet(label=model.Label(text=\"hello\"), flag=-1)\n"
+        "    selected: string = consumer.pick(packet)\n"
+        "    return len(\"hello\")\n",
+    ),
+    (
+        "model.s3",
+        "module model\n"
+        "export record Label:\n"
+        "    text: string\n"
+        "export record Packet:\n"
+        "    label: Label\n"
+        "    flag: trit\n"
+        "export fn marker() -> tryte:\n"
+        "    return 0\n",
+    ),
+    (
+        "consumer.s3",
+        "module consumer\n"
+        "from model import Packet\n"
+        "export fn pick(packet: Packet) -> string:\n"
+        "    return packet.label.text\n",
+    ),
+)
+
+
+NESTED_RECORD_TEXT_NATIVE_MODULE_CASES = (
+    ("static-text-record-module", STATIC_TEXT_NESTED_RECORD_MODULE_SOURCES, 5),
+)
+
+
 @pytest.mark.parametrize(
     ("name", "source", "expected"),
     NESTED_RECORD_NATIVE_SOURCE_CASES,
@@ -1404,6 +1458,38 @@ def test_o0_o1_native_nested_record_modules(
         10,
         native_toolchain,
         tmp_path / f"nested-record-modules-{name}",
+    )
+
+
+@pytest.mark.parametrize(
+    ("name", "sources", "expected"),
+    NESTED_RECORD_TEXT_NATIVE_MODULE_CASES,
+)
+def test_nested_record_static_text_modules_match_emulator_o0_o1(
+    name: str,
+    sources: tuple[tuple[str, str], ...],
+    expected: int,
+) -> None:
+    del name
+    _assert_o0_o1_emulator_sources_equivalence(sources, expected)
+
+
+@pytest.mark.parametrize(
+    ("name", "sources", "expected"),
+    NESTED_RECORD_TEXT_NATIVE_MODULE_CASES,
+)
+def test_o0_o1_native_nested_record_static_text_modules(
+    name: str,
+    sources: tuple[tuple[str, str], ...],
+    expected: int,
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    _assert_o0_o1_native_sources_equivalence(
+        sources,
+        expected,
+        native_toolchain,
+        tmp_path / f"nested-record-text-modules-{name}",
     )
 
 
@@ -1579,15 +1665,6 @@ def test_o0_o1_native_nested_record_modules(
             "    values: Inner[1] = [Inner(value=1)]\n"
             "    return 0\n",
             "arrays of nominal types are not supported",
-            DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
-        ),
-        (
-            "string-field",
-            "record Outer:\n"
-            "    text: string\n"
-            "fn main() -> tryte:\n"
-            "    return 0\n",
-            "record fields cannot be string in milestone 1.00",
             DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
         ),
     ),

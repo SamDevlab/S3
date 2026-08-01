@@ -328,11 +328,6 @@ class SemanticAnalyzer:
                         "record fields cannot be arrays in milestone 1.00",
                         field.location,
                     )
-                if field.type_name is ast.TypeName.STRING:
-                    raise SemanticError(
-                        "record fields cannot be string in milestone 1.00",
-                        field.location,
-                    )
                 if isinstance(field.type_name, ast.NominalType):
                     if field.type_name.name in self.enums:
                         continue

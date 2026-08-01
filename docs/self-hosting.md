@@ -133,6 +133,15 @@ without changing the public IR, S3 Assembly, native ABI, goldens, baselines, or
 package version. Multi-leaf returns are still rejected, so self-hosted
 components must keep public results scalar or explicitly project a scalar field.
 
+Milestone 1.04 is complete as a fixed-capacity static text foundation. The
+existing `string` model remains a compile-time-known static text value lowered
+to a scalar handle, with no heap and no dynamic text construction. It now
+participates in record and nested-record layouts as a scalar leaf, which helps
+small self-hosted components carry names, fragments, categories, and fixed
+diagnostic text through nominal data. It still does not provide a general
+runtime string builder, parser input stream, file I/O, formatting, or dynamic
+serialization.
+
 Recent tools make this pipeline more observable:
 
 - `s3 targets` lists internal target and backend names.

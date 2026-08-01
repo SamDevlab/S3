@@ -134,13 +134,6 @@ def test_module_record_composition_stays_module_local_without_nesting() -> None:
             "record fields cannot be arrays in milestone 1.00",
         ),
         (
-            "record Label:\n"
-            "    text: string\n"
-            "fn main() -> tryte:\n"
-            "    return 0\n",
-            "record fields cannot be string in milestone 1.00",
-        ),
-        (
             "record Box:\n"
             "    value: tryte\n"
             "fn main() -> tryte:\n"
@@ -155,6 +148,21 @@ def test_record_composition_rejects_unsupported_aggregate_shapes(
     message: str,
 ) -> None:
     _assert_semantic_rejection(source, message)
+
+
+def test_record_composition_accepts_static_text_field() -> None:
+    source = (
+        "record Label:\n"
+        "    text: string\n"
+        "fn main() -> tryte:\n"
+        "    label: Label = Label(text=\"hello\")\n"
+        "    selected: string = label.text\n"
+        "    return len(\"hello\")\n"
+    )
+
+    for optimization in ("O0", "O1"):
+        compilation = compile_source(source, optimization)
+        assert execute_assembly(compilation.assembly) == 5
 
 
 def test_acyclic_nested_record_fields_are_accepted_semantically() -> None:

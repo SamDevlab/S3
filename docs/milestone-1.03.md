@@ -66,9 +66,10 @@ Nested records are supported in:
 - branch, loop, and match contexts whose observable result is scalar;
 - multi-file compilation with deterministic source-order independence.
 
-Fields may currently be `trit`, `tryte`, no-payload enum types, or acyclic
-record types. Arrays, `string` fields, recursive layouts, and arrays of records
-remain rejected.
+At the 1.03 boundary, fields may be `trit`, `tryte`, no-payload enum types, or
+acyclic record types. Arrays, recursive layouts, and arrays of records remain
+rejected. `string` fields are covered by the later Milestone 1.04 fixed-text
+contract.
 
 ## Return Contract
 
@@ -98,7 +99,8 @@ The compiler rejects before lowering:
 - missing or extra fields in nested constructors;
 - invalid member chains;
 - arrays of records;
-- string fields;
+- string fields at the 1.03 boundary, before the Milestone 1.04 fixed-text
+  extension;
 - multi-leaf record returns.
 
 ## Validation
@@ -123,7 +125,7 @@ locally. On Linux x86-64 CI, the same native tests build and run ELF O0/O1.
 
 - recursive record layouts;
 - arrays as record fields;
-- strings as record fields;
+- strings as record fields before the Milestone 1.04 fixed-text extension;
 - arrays of records;
 - aggregate returns;
 - hidden return pointers;

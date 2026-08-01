@@ -401,11 +401,38 @@ Limites preservados:
 - nao ha hidden return pointer, retorno multi-register, offsets publicos ou
   alignment nominal.
 
+## Marco 1.04 - Fixed-Capacity Static Text Foundation
+
+Status: Complete
+
+O Marco 1.04 consolida `string` como texto estatico de capacidade fixa:
+conteudo conhecido em tempo de compilacao, capacidade igual ao byte length
+UTF-8 decodificado, handle escalar interno, sem heap, sem buffer mutavel, sem
+ponteiro publico e sem mudanca de ABI.
+
+Concluido:
+
+- auditoria da infraestrutura existente de static text;
+- especificacao em [docs/milestone-1.04.md](milestone-1.04.md);
+- preservacao de `IRType.STRING`, `IRStaticString`, `CONST_STR`, `.data`,
+  `TCONST_STR`, emulador e `.rodata` nativo;
+- operacoes compile-time existentes: `len`, index, slice, igualdade,
+  `contains`, `starts_with`, `ends_with`, `find`, `upper`, `lower`, `trim`,
+  `repeat` e `replace`;
+- `string` como folha escalar em records, nested records e imported records;
+- cobertura hospedada O0/O1 e harness nativo para record fields textuais.
+
+Limites preservados:
+
+- operacoes runtime sobre texto nao estatico continuam rejeitadas;
+- `main -> string` continua rejeitado;
+- arrays de string e arrays de records continuam fora;
+- retorno agregado e retorno multi-leaf continuam rejeitados.
+
 ### Later language-composition milestones
 
 Status: Planned
 
-- 1.04 - texto de capacidade fixa;
 - 1.05 - enums com payload e erros estruturados;
 - 1.06 - componentes adicionais de self-hosting.
 
@@ -413,8 +440,8 @@ Status: Planned
 
 Status: Out of scope
 
-Arrays e strings como record fields, recursive layouts, methods, generics,
-heap, package manager, aggregate returns e self-hosting completo continuam fora
+Arrays como record fields, recursive layouts, methods, generics, heap, dynamic
+text, package manager, aggregate returns e self-hosting completo continuam fora
 deste checkpoint documental.
 
 ## Autohospedagem

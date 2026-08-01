@@ -82,6 +82,20 @@ for i: tryte in range(0, len(values)):
 
 Strings estáticas são suportadas apenas como literais definidos na compilação. O tempo de execução não fornece manipulação nativa de strings arbitrárias. Literais de string estão presentes na sintaxe para suporte a chamadas nativas de diagnóstico (renderização).
 
+Uma `string` e um valor de texto estatico de capacidade fixa. A capacidade e o
+byte length UTF-8 do texto decodificado conhecido em tempo de compilacao; o
+terminador NUL usado pelo backend nativo em `.rodata` nao faz parte do valor da
+linguagem. O valor em runtime e um handle escalar imutavel para armazenamento
+estatico. S3 nao expoe ponteiros, aritmetica de handles, heap, desalocacao,
+garbage collection ou buffers mutaveis de texto.
+
+Operacoes de texto como `len(text)`, index, slice, igualdade, `contains`,
+`starts_with`, `ends_with`, `find`, `upper`, `lower`, `trim`, `repeat` e
+`replace` sao avaliadas somente quando seus operandos sao expressoes de texto
+estatico conhecidas pela analise semantica. Operacoes equivalentes sobre texto
+dependente de parametros, bindings mutaveis ou chamadas nao constantes
+continuam rejeitadas.
+
 ## Records e enums
 
 Records e enums fechados sao tipos nominais especificados em

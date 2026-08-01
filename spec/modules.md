@@ -144,6 +144,12 @@ not affect the resulting IR or Assembly. Same-name or same-shape records from
 different modules remain incompatible because nominal identity is still the
 defining `ModuleId + TypeName`.
 
+Beginning with Milestone 1.04, `string` may appear as a scalar static-text leaf
+inside local or imported records. Its module behavior is the same as other
+scalar leaves: the defining record owns the declared field order, and consumers
+receive the scalarized handle through explicit imports and calls. This does not
+add dynamic text, heap allocation, or an aggregate-return convention.
+
 ## Graph order
 
 The compiler builds a module graph from source units, validates import edges,

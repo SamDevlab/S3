@@ -230,6 +230,78 @@ def test_nested_single_leaf_return_produces_one_ir_return_value() -> None:
     assert execute_assembly(compilation.assembly) == 5
 
 
+def test_static_text_record_fields_are_scalar_nested_leaves() -> None:
+    source = (
+        "record Label:\n"
+        "    text: string\n"
+        "record Packet:\n"
+        "    flag: trit\n"
+        "    label: Label\n"
+        "    tail: tryte\n"
+        "fn pick(packet: Packet) -> string:\n"
+        "    return packet.label.text\n"
+        "fn main() -> tryte:\n"
+        "    packet: Packet = Packet(tail=4, label=Label(text=\"hello\"), flag=-1)\n"
+        "    selected: string = pick(packet)\n"
+        "    return len(\"hello\")\n"
+    )
+
+    compilation = compile_source(source, OptimizationLevel.O0)
+    verify_ir(compilation.ir)
+    assert execute_assembly(compilation.assembly) == 5
+
+    pick = next(function for function in compilation.ir.functions if function.name == "pick")
+    assert [(parameter.name, parameter.type) for parameter in pick.parameters] == [
+        ("packet__flag", IRType.TRIT),
+        ("packet__label__text", IRType.STRING),
+        ("packet__tail", IRType.TRYTE),
+    ]
+    assert [
+        leaf.path
+        for leaf in compilation.semantic_model.record_leaves("Packet")
+    ] == [
+        ("flag",),
+        ("label", "text"),
+        ("tail",),
+    ]
+
+
+def test_imported_static_text_record_fields_compose_across_modules() -> None:
+    sources = (
+        (
+            "main.s3",
+            "module main\n"
+            "from model import Packet\n"
+            "from model import Label\n"
+            "from consumer import pick\n"
+            "fn main() -> tryte:\n"
+            "    packet: Packet = model.Packet(flag=-1, label=model.Label(text=\"hello\"))\n"
+            "    selected: string = consumer.pick(packet)\n"
+            "    return len(\"hello\")\n",
+        ),
+        (
+            "model.s3",
+            "module model\n"
+            "export record Label:\n"
+            "    text: string\n"
+            "export record Packet:\n"
+            "    flag: trit\n"
+            "    label: Label\n"
+            "export fn marker() -> tryte:\n"
+            "    return 0\n",
+        ),
+        (
+            "consumer.s3",
+            "module consumer\n"
+            "from model import Packet\n"
+            "export fn pick(packet: Packet) -> string:\n"
+            "    return packet.label.text\n",
+        ),
+    )
+
+    assert _run_sources_o0_o1(sources) == (5, 5)
+
+
 @pytest.mark.parametrize(
     ("source", "message", "code"),
     (
@@ -332,14 +404,6 @@ def test_nested_single_leaf_return_produces_one_ir_return_value() -> None:
             "    values: Inner[1] = [Inner(value=1)]\n"
             "    return 0\n",
             "arrays of nominal types are not supported",
-            DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
-        ),
-        (
-            "record Outer:\n"
-            "    text: string\n"
-            "fn main() -> tryte:\n"
-            "    return 0\n",
-            "record fields cannot be string in milestone 1.00",
             DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
         ),
     ),

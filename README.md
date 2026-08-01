@@ -83,13 +83,18 @@ baselines unless an explicit milestone says so.
   leaves. The feature covers local and imported record fields, qualified nested
   constructors, copies, parameters, member chains, multi-module determinism,
   O0/O1 execution, and native x86-64 coverage.
+- Milestone 1.04 completed fixed-capacity static text values as scalar handles.
+  It preserved the existing static string table, `CONST_STR`/`TCONST_STR`,
+  emulator handles, and native `.rodata` path while allowing `string` leaves in
+  records and nested records. Text operations remain compile-time-only unless
+  their operands are known static text.
 
 The current scalar return convention remains unchanged: `RETURN`, `TRET`, and
 the native x86-64 result path carry one scalar value. Single-field record returns
 reuse that existing scalar convention. Multi-field record returns and aggregate
 returns remain rejected before lowering until a future aggregate-return ABI is
 specified. Multi-leaf nested record returns follow that same rejection rule.
-Arrays or strings as record fields, recursive types, general heap allocation,
+Arrays as record fields, recursive types, general heap allocation, dynamic text,
 and complete self-hosting are still not implemented.
 
 ## Contrato do Marco 0.7
