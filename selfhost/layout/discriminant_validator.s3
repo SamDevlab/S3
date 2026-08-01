@@ -1,0 +1,97 @@
+module selfhost.layout.discriminant_validator
+
+export fn enum_tag_cell() -> tryte:
+    return 0
+
+export fn enum_max_variant_count() -> tryte:
+    return 14
+
+export fn enum_max_payload_width() -> tryte:
+    return 25
+
+export fn enum_variant_count_is_valid(variant_count: tryte) -> trit:
+    match variant_count <=> 1:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match variant_count <=> enum_max_variant_count():
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+export fn enum_discriminant_is_valid(discriminant: tryte, variant_count: tryte) -> trit:
+    match enum_variant_count_is_valid(variant_count) <=> -1:
+        -1:
+            return 0
+        0:
+            match discriminant <=> 0:
+                -1:
+                    return 0
+                0:
+                    return -1
+                1:
+                    match discriminant <=> variant_count:
+                        -1:
+                            return -1
+                        0:
+                            return 0
+                        1:
+                            return 0
+        1:
+            return 0
+
+export fn enum_payload_width_is_valid(payload_width: tryte) -> trit:
+    match payload_width <=> 0:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match payload_width <=> enum_max_payload_width():
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+export fn enum_total_width_for_payload(payload_width: tryte) -> tryte:
+    match enum_payload_width_is_valid(payload_width) <=> -1:
+        -1:
+            return -1
+        0:
+            return payload_width + 1
+        1:
+            return -1
+
+export fn enum_inactive_slot_count(total_payload_width: tryte, variant_payload_width: tryte) -> tryte:
+    match enum_payload_width_is_valid(total_payload_width) <=> -1:
+        -1:
+            return -1
+        0:
+            match enum_payload_width_is_valid(variant_payload_width) <=> -1:
+                -1:
+                    return -1
+                0:
+                    match variant_payload_width <=> total_payload_width:
+                        -1:
+                            return total_payload_width - variant_payload_width
+                        0:
+                            return 0
+                        1:
+                            return -1
+                1:
+                    return -1
+        1:
+            return -1
+
+export fn enum_layout_validator_smoke() -> tryte:
+    return enum_tag_cell() + enum_max_variant_count()
+
+fn main() -> tryte:
+    return enum_layout_validator_smoke()
