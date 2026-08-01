@@ -122,8 +122,16 @@ member access, exported nominal record and enum symbols, imported nominal
 values, deterministic cross-module nominal layout, and focused native coverage.
 It does not make S3 self-hosted and does not replace any Python compiler path.
 The scalar return convention remains unchanged; aggregate returns, multi-field
-record returns, nested records, imported records as fields, heap allocation, and
-complete self-hosting remain future work.
+record returns, heap allocation, and complete self-hosting remain future work.
+
+Milestone 1.03 is complete as the acyclic nested record foundation. It allows
+local and imported records to appear as fields when the full nominal layout
+graph is acyclic, and it scalarizes those values through
+`SemanticModel.record_leaves()` in depth-first declaration order. This gives
+future self-hosted components a safer way to model small nested compiler data
+without changing the public IR, S3 Assembly, native ABI, goldens, baselines, or
+package version. Multi-leaf returns are still rejected, so self-hosted
+components must keep public results scalar or explicitly project a scalar field.
 
 Recent tools make this pipeline more observable:
 

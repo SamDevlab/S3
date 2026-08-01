@@ -370,9 +370,9 @@ Concluido:
 
 ## Marco 1.03 - Acyclic Nested Records
 
-Status: In progress
+Status: Complete
 
-O Marco 1.03 especifica nested records aciclicos e layout composto
+O Marco 1.03 especifica e implementa nested records aciclicos e layout composto
 deterministico sem alterar ABI, IR publico, Assembly publico, goldens,
 baselines ou versao publica.
 
@@ -382,7 +382,17 @@ Concluido:
 - gate inicial confirmando que locals, constructors, copias, parametros e
   member access podem ser representados por scalarizacao de folhas no IR atual;
 - [ADR-0020](decisions/ADR-0020-acyclic-nested-record-layout.md);
-- contrato normativo em [spec/composite-types.md](../spec/composite-types.md).
+- contrato normativo em [spec/composite-types.md](../spec/composite-types.md);
+- `SemanticModel.record_leaves()` como fonte canonica de paths, tipos, ordem
+  depth-first/declarada, scalarizacao, copias, parametros, member access e
+  classificacao de retorno;
+- nested records locais de dois, tres e quatro niveis;
+- records importados como fields;
+- constructors qualificados e constructors nested qualificados;
+- initializers fora da ordem declarada preservando layout declarado;
+- determinismo multi-module e independencia de source order;
+- cobertura hospedada O0/O1 e cobertura nativa Linux x86-64 para nested record
+  execution.
 
 Limites preservados:
 
@@ -399,13 +409,13 @@ Status: Planned
 - 1.05 - enums com payload e erros estruturados;
 - 1.06 - componentes adicionais de self-hosting.
 
-### Out of scope for this checkpoint
+### Out of scope after 1.03
 
 Status: Out of scope
 
-Nested records, imported record fields, arrays e strings como record fields,
-recursive layouts, methods, generics, heap, package manager e self-hosting
-completo continuam fora deste checkpoint documental.
+Arrays e strings como record fields, recursive layouts, methods, generics,
+heap, package manager, aggregate returns e self-hosting completo continuam fora
+deste checkpoint documental.
 
 ## Autohospedagem
 

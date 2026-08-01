@@ -41,6 +41,11 @@ has a known scalar representation.
 Nested layout is logical scalar leaf order, not public offsets or alignment.
 Flattening is depth-first and follows declaration order at every record level.
 The compiler must not sort nested fields alphabetically or by source-unit order.
+`SemanticModel.record_leaves()` is the canonical implementation contract for
+leaf paths, leaf types, flattening order, parameter scalarization, copies,
+member access, and return classification. `record_leaf_count()` is a derived
+query over that same layout. Lowering, tests, and native coverage must not
+maintain a parallel layout algorithm.
 
 Leaf rules:
 
@@ -145,8 +150,8 @@ is its defining `ModuleId + TypeName`.
 
 Cross-module use of composite values is limited to functions and types visible
 through the module/import system and to supported scalarized ABI positions.
-Record fields cannot use record types from local or imported modules until the
-nested-record milestone changes that composition limit.
+Record fields may use local or imported record types when the full nested
+layout graph is acyclic.
 
 Milestone 1.02-B adds qualified source syntax for module functions and enum
 variants. It does not change the module-local ownership of record and enum
@@ -162,7 +167,8 @@ Milestone 1.02-C extends that ownership model across module boundaries:
 - imported enum values may be matched using the defining enum's variants;
 - imported record values may be declared, passed, returned, constructed, and
   projected through their fields when their field types are otherwise supported;
-- imported records may be used as fields when their layout graph is acyclic;
+- imported records may be used as fields beginning with Milestone 1.03 when
+  their layout graph is acyclic;
 - imported multi-leaf record values may be passed and projected in supported
   scalarized positions, but returning them remains rejected until an
   aggregate-return ABI is specified.

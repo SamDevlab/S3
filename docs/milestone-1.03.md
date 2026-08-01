@@ -1,103 +1,123 @@
 # Milestone 1.03 - Acyclic Nested Records and Deterministic Composite Layout
 
-Status:
-In progress
+Status: Complete
 
 Milestone 1.03 extends the 1.00 and 1.02 record contracts to allow acyclic
 nested record fields. It preserves the existing public IR, S3 Assembly,
 diagnostic schema, native ABI, CLI, golden artifacts, baselines, tags, releases,
 and package version.
 
-## Architectural Audit
+## Completed Scope
 
-The 1.03-A audit found:
+- architectural audit of AST, parser, semantic analysis, module rewriting,
+  lowering, IR, verifier, SSA/optimizer, emulator, native backend, and record
+  tests;
+- architecture gate confirming that non-return nested record values fit the
+  current scalar IR and Assembly model;
+- [ADR-0020](decisions/ADR-0020-acyclic-nested-record-layout.md);
+- semantic layout graph and deterministic recursive-layout rejection;
+- local nested records with two, three, and four record levels;
+- imported records as fields;
+- multi-module A/B/C nested record composition;
+- qualified record constructors and nested qualified constructors;
+- named initializers independent of declaration order;
+- nonalphabetic field declaration order preserved by layout;
+- member chains through nested fields;
+- value copies, branches, loops, and nested parameters;
+- `trit`, `tryte`, and no-payload enum scalar leaves;
+- single-leaf nested record returns through the existing scalar return path;
+- O0/O1 emulator coverage;
+- Linux x86-64 native harness coverage for ELF O0/O1 when available.
 
-- AST and parser already represent record fields as general declared types, so
-  local and module-qualified nominal record field types require no syntax
-  change.
-- Module rewriting already rewrites field type annotations and qualified record
-  constructors to deterministic internal nominal names.
-- Semantic analysis currently rejects any record field whose nominal type is not
-  an enum with `nested record fields are not supported yet`.
-- Record identity is the rewritten nominal type name derived from
-  `ModuleId + TypeName`, for example `__s3mod_geometry__type_Point`.
-- Lowering currently stores record values as `_LoweredBinding.fields` and
-  expands shallow record parameters into scalar IR parameters in declaration
-  order.
-- Single-field record returns use the existing scalar return path.
-- Multi-field record returns are rejected before lowering and again guarded in
-  lowering.
-- IR, verifier, SSA, optimizer, Assembly, emulator, and native x86-64 backend
-  operate on scalar registers and scalar parameters after lowering.
+## Canonical Layout Contract
 
-Conclusion:
+`SemanticModel.record_leaves()` is the canonical source for nested record
+layout. It defines:
 
-Nested records for literals, immutable locals, copies, parameters, field access,
-member chains, and imported record fields are representable with the existing
-scalar IR and Assembly formats when lowering expands all scalar leaves. Multi
-leaf returns remain incompatible with the current return convention and must
-stay rejected.
+- scalar leaf paths;
+- scalar leaf types;
+- depth-first traversal;
+- declaration-order traversal at every record level;
+- parameter scalarization;
+- copies;
+- member access;
+- return classification.
 
-## 1.03-B - Initial Architecture Gate
+`record_leaf_count()` is derived from the same model and is used only as a
+counting/query operation. Implementations must not add a second independent
+flattening algorithm for lowering, optimization, native code generation, or
+tests.
 
-Status:
-Passed for non-return nested record contexts.
+The logical layout has no public offsets, alignment, padding, object header,
+hidden pointer, physical aggregate metadata, or nominal alignment rule. It is a
+deterministic scalar leaf list used before public IR and Assembly are emitted.
 
-The implementation may proceed without public format changes for:
+## Supported Forms
 
-- local record fields;
+Nested records are supported in:
+
+- literals and nested literals;
+- qualified constructors such as `model.Outer(...)`;
 - imported record fields;
-- nested and qualified record constructors;
-- immutable local bindings;
+- immutable locals;
 - copies by value;
-- parameters;
+- function parameters;
 - chained member access;
-- branch, loop, and match contexts whose observable value is scalar;
-- multi-file and source-order deterministic programs.
+- branch, loop, and match contexts whose observable result is scalar;
+- multi-file compilation with deterministic source-order independence.
 
-The implementation must reject before lowering:
+Fields may currently be `trit`, `tryte`, no-payload enum types, or acyclic
+record types. Arrays, `string` fields, recursive layouts, and arrays of records
+remain rejected.
 
-- direct and indirect layout cycles;
-- unsupported leaf types;
-- multi-leaf record returns;
-- arrays and strings as record fields;
-- recursive layouts that would otherwise cause Python `RecursionError`.
+## Return Contract
 
-## 1.03-C - Specification
+The public return convention remains scalar:
 
-Status:
-Complete
+- IR: one `RETURN` operand;
+- S3 Assembly: one `TRET` operand;
+- native x86-64: one result through `rax`.
 
-Normative decision:
+A record, including a nested record, may be returned only when it contains
+exactly one scalar leaf. Multi-leaf record returns are rejected before backend
+code generation. Milestone 1.03 does not introduce hidden return pointers,
+multi-register returns, stack return areas, aggregate return opcodes, implicit
+packing, or truncation to the first leaf.
 
-- [ADR-0020](decisions/ADR-0020-acyclic-nested-record-layout.md).
+## Diagnostics and Rejections
 
-Nested record layout is a logical list of scalar leaves. Flattening is
-depth-first and follows declaration order at each record level. It does not
-define public offsets, alignment, padding, aggregate objects, hidden pointers,
-or physical layout metadata.
+The compiler rejects before lowering:
 
-Leaf rules:
+- direct self-recursive record layouts;
+- indirect local layout cycles;
+- cross-module layout cycles;
+- private nested types imported from another module;
+- missing nested types;
+- nominal mismatches, including same-name/same-shape types from different
+  modules;
+- missing or extra fields in nested constructors;
+- invalid member chains;
+- arrays of records;
+- string fields;
+- multi-leaf record returns.
 
-- `trit` contributes one scalar leaf;
-- `tryte` contributes one scalar leaf;
-- a closed enum without payload contributes one `tryte` scalar leaf;
-- an acyclic nested record contributes its leaves recursively.
+## Validation
 
-Return rule:
+Local focused validation for the final 1.03 checkpoint covered:
 
-- a record with exactly one scalar leaf may use the existing scalar return path;
-- a record with more than one scalar leaf is rejected until an aggregate-return
-  ABI is specified.
+- nested record composition integration;
+- recursive composite layout rejection;
+- record composition contracts;
+- native x86-64 integration harness collection;
+- instruction-limit tests that share the native CI job;
+- compileall;
+- golden inspect;
+- Assembly renderer comparison;
+- whitespace checking.
 
-## Planned Units
-
-- 1.03-D - cycle tests first;
-- 1.03-E - semantic cycle detection and leaf layout;
-- 1.03-F - nested record value semantics;
-- 1.03-G - fixed nested record lowering;
-- 1.03-H - native coverage;
-- 1.03-I - documentation closure.
+On Windows hosts, ELF execution tests are collected and skipped by the native
+toolchain fixture. Emulator O0/O1 and semantic pre-backend tests still execute
+locally. On Linux x86-64 CI, the same native tests build and run ELF O0/O1.
 
 ## Explicitly Unsupported
 
@@ -110,4 +130,5 @@ Return rule:
 - multi-register returns;
 - heap allocation;
 - public offsets or alignment metadata;
-- structural typing across modules.
+- structural typing across modules;
+- methods, inheritance, traits, interfaces, or generics.

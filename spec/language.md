@@ -153,3 +153,9 @@ fn main() -> tryte:
 ## Retorno
 
 Funções não retornam implicitamente. Todas as rotas de código devem convergir para um `return` compatível. Um `while` não garante execução de seu corpo (mesmo com `-1` constante na sintaxe atual, por segurança conservadora), então o código subsequente deve tratar a continuação do fluxo. Instruções `break` e `continue` terminam o bloco local mas não satisfazem o retorno da função. Código inalcançável (após `return`, `break`, `continue` ou `match` terminante) é rejeitado na compilação.
+
+O contrato de retorno publico permanece escalar. `RETURN`, `TRET` e o caminho
+nativo x86-64 retornam um unico valor. Records, incluindo nested records,
+podem ser retornados somente quando o layout canonico contem exatamente uma
+folha escalar. Records com multiplas folhas sao rejeitados antes do backend ate
+que uma ABI explicita de retorno agregado exista.

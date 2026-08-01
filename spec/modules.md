@@ -1,7 +1,8 @@
 # S3 modules and imports
 
-Status: normative for Milestone 0.99 modules and Milestone 1.02-C exported
-nominal types.
+Status: normative for Milestone 0.99 modules, Milestone 1.02-C exported
+nominal types, and Milestone 1.03 imported records used as acyclic nested
+fields.
 
 ## Goals
 
@@ -134,6 +135,14 @@ Imported nominal values keep that defining identity when they flow through
 variables, parameters, supported single-field returns, construction, field
 access, enum variants, and match. Multi-field record returns remain outside the
 current scalar-return ABI and are rejected before lowering.
+
+Beginning with Milestone 1.03, an imported record type may be used as a field of
+another record when the full nominal layout graph is acyclic. The leaf order is
+the defining modules' declared field order, recursively expanded depth-first by
+the canonical record layout model. Source-unit input order and import order must
+not affect the resulting IR or Assembly. Same-name or same-shape records from
+different modules remain incompatible because nominal identity is still the
+defining `ModuleId + TypeName`.
 
 ## Graph order
 

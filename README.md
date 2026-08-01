@@ -34,7 +34,7 @@ A implementação atual oferece:
   `export fn`, qualified calls e type imports explícitos;
 - records e enums nominais mínimos, com `export record`, `export enum`,
   tipos pontuados, constructors qualificados e campos de record limitados a
-  `trit`, `tryte` e enums fechados;
+  `trit`, `tryte`, enums fechados e records acíclicos;
 - assembly com `.memory`, `TLOAD` e `TSTORE`;
 - leitura não inicializada sempre diagnosticada;
 - backend nativo experimental Linux x86-64 para todos os opcodes atuais;
@@ -76,14 +76,21 @@ baselines unless an explicit milestone says so.
   qualified postfix lowering checks, exported nominal type symbols, imported
   nominal record and enum values, deterministic cross-module nominal layout,
   O0/O1 coverage, and Linux x86-64 native coverage.
+- Milestone 1.03 completed acyclic nested records without changing public IR,
+  S3 Assembly, diagnostics schema, ABI, CLI, goldens, baselines, or package
+  version. Nested records are flattened internally through the canonical
+  `SemanticModel.record_leaves()` order: depth-first, declaration-order scalar
+  leaves. The feature covers local and imported record fields, qualified nested
+  constructors, copies, parameters, member chains, multi-module determinism,
+  O0/O1 execution, and native x86-64 coverage.
 
 The current scalar return convention remains unchanged: `RETURN`, `TRET`, and
 the native x86-64 result path carry one scalar value. Single-field record returns
 reuse that existing scalar convention. Multi-field record returns and aggregate
 returns remain rejected before lowering until a future aggregate-return ABI is
-specified. Nested records, imported records as fields, arrays or strings as
-fields, recursive types, general heap allocation, and complete self-hosting are
-still not implemented.
+specified. Multi-leaf nested record returns follow that same rejection rule.
+Arrays or strings as record fields, recursive types, general heap allocation,
+and complete self-hosting are still not implemented.
 
 ## Contrato do Marco 0.7
 
