@@ -439,8 +439,10 @@ Status: 1.05 complete locally in Draft PR #126; 1.06 next in the same campaign
   deterministicos, construcao qualificada, imports, parametros, copias,
   branches, loops, match bindings, O0/O1, harness nativo e ABI de retorno
   escalar preservada;
-- 1.06 - componentes adicionais de self-hosting: seleciona componentes pequenos,
-  puros e diferenciais, mantendo Python como referencia e default.
+- 1.06 - componentes adicionais de self-hosting: seleciona o classificador de
+  opcodes existente, um classificador de diagnostics e um validador de
+  discriminants/layout escalar como componentes pequenos, puros e diferenciais,
+  mantendo Python como referencia e default.
 - A campanha 1.05-1.06 nao implementa retorno agregado, heap, mudanca de ABI,
   bump de IR, bump de S3 Assembly, generics, exceptions ou substituicao do
   bootstrap Python.

@@ -156,6 +156,16 @@ propagation. Milestone 1.06 therefore keeps Python as the reference compiler and
 may add only opt-in, pure, differential S3 components whose inputs and outputs
 fit the existing scalar conventions.
 
+Milestone 1.06 selects three second-stage self-hosting components:
+
+- the existing Assembly opcode classifier;
+- a diagnostic classifier over scalar category/phase ids;
+- a discriminant layout validator over scalar enum layout facts.
+
+The diagnostic classifier is the required Milestone 1.05 exercise: it may use a
+payload enum internally, but it still returns only scalar values. None of these
+components replaces Python or becomes a default compiler path in this milestone.
+
 Recent tools make this pipeline more observable:
 
 - `s3 targets` lists internal target and backend names.
