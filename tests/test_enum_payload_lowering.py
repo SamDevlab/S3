@@ -146,3 +146,42 @@ def test_imported_qualified_enum_payload_construction_executes() -> None:
     for optimization in (OptimizationLevel.O0, OptimizationLevel.O1):
         compilation = compile_sources(sources, optimization=optimization)
         assert _execute_hosted_assembly(compilation.assembly, "main") == 6
+
+
+def test_enum_payload_match_expression_binding_executes() -> None:
+    source = (
+        "enum Result:\n"
+        "    Empty\n"
+        "    Ok(value: tryte)\n"
+        "fn inspect(result: Result) -> tryte:\n"
+        "    return match result:\n"
+        "        Result.Empty: 0\n"
+        "        Result.Ok(value): value\n"
+        "fn main() -> tryte:\n"
+        "    return inspect(Result.Ok(value=9))\n"
+    )
+
+    assert _run_o0_o1(source) == (9, 9)
+
+
+def test_enum_payload_nested_record_binding_executes() -> None:
+    source = (
+        "record Inner:\n"
+        "    code: tryte\n"
+        "record Detail:\n"
+        "    inner: Inner\n"
+        "enum Result:\n"
+        "    Empty\n"
+        "    Err(detail: Detail)\n"
+        "fn inspect(result: Result) -> tryte:\n"
+        "    match result:\n"
+        "        Result.Empty:\n"
+        "            return 0\n"
+        "        Result.Err(detail):\n"
+        "            return detail.inner.code\n"
+        "fn main() -> tryte:\n"
+        "    result: Result = Result.Err(detail=Detail(inner=Inner(code=7)))\n"
+        "    return inspect(result)\n"
+    )
+
+    assert _run_o0_o1(source) == (7, 7)
