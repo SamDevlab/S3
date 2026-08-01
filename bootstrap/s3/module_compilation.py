@@ -815,6 +815,18 @@ def _rewrite_qualified_module_member(
     enum_name = member_parts[0]
     enum = _module_enum(module, enum_name, context)
     if enum is None:
+        function = context.module_functions[module].get(enum_name)
+        if function is not None:
+            if not function.exported:
+                raise SemanticError(
+                    f"function '{enum_name}' in module '{module}' is private",
+                    expression.location,
+                    diagnostic_code=DiagnosticCode.IMPORT_PRIVATE_SYMBOL,
+                )
+            raise SemanticError(
+                f"function '{module}.{enum_name}' cannot be used as a value",
+                expression.location,
+            )
         raise SemanticError(
             f"module '{module}' has no member '{enum_name}'",
             expression.location,

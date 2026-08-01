@@ -1194,6 +1194,26 @@ class SemanticAnalyzer:
             self.constant_values[id(expression)] = enum.discriminant(variant.name)
             return ast.NominalType(enum.name, expression.location)
 
+        if isinstance(expression.target, ast.Identifier):
+            binding = self._lookup_binding(expression.target.name)
+            if binding is None:
+                if expression.target.name in self.records:
+                    raise SemanticError(
+                        f"type '{expression.target.name}' cannot be used as a value",
+                        expression.location,
+                    )
+                if expression.target.name in self.functions:
+                    raise SemanticError(
+                        f"function '{expression.target.name}' cannot be used as a value",
+                        expression.location,
+                    )
+            elif isinstance(binding.type_name, ast.ArrayType):
+                raise SemanticError(
+                    "field access requires a record value",
+                    expression.location,
+                    diagnostic_code=DiagnosticCode.RECORD_FIELD_UNKNOWN,
+                )
+
         target_type = self._analyze_expression(expression.target)
         if not isinstance(target_type, ast.NominalType):
             raise SemanticError(
