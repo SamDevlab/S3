@@ -87,7 +87,7 @@ len-expression       = "len", "(", expression, ")" ;
 match-expression     = "match", expression, ":", NEWLINE, INDENT, match-expression-case, { match-expression-case }, DEDENT ;
 match-expression-case = match-label, [ "(", match-binding-list, ")" ], ":", expression, NEWLINE ;
 
-record-expression    = qualified-name, "(", named-argument, { ",", named-argument }, ")" ;
+record-expression    = qualified-name, "(", [ named-argument-list ], ")" ;
 postfix-suffix       = call-suffix | index-suffix | member-suffix ;
 call-suffix          = "(", [ argument-list | named-argument-list ], ")" ;
 index-suffix         = "[", expression, "]" ;

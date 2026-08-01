@@ -88,19 +88,24 @@ baselines unless an explicit milestone says so.
   emulator handles, and native `.rodata` path while allowing `string` leaves in
   records and nested records. Text operations remain compile-time-only unless
   their operands are known static text.
-- Milestone 1.05 is an architectural gate, not a failed implementation.
-  Payload enums and structured results require a public tag-plus-payload layout
-  decision before implementation. `docs/decisions/ADR-0021-enum-payload-layout-gate.md`
-  records the required decision.
-- Milestone 1.06 is deferred until the 1.05 decision is resolved. No new
-  self-hosted compiler component is adopted by this campaign; Python remains
-  the reference compiler and default path.
+- Milestone 1.05 implements the accepted ADR-0021 fixed-layout enum payload
+  model. Payload enum values use a tag-first fixed cell layout, named payload
+  fields, deterministic inactive slots, qualified construction, imported
+  nominal layouts, match payload bindings, O0/O1 execution, and native harness
+  coverage without changing the public IR, S3 Assembly, diagnostic schema, ABI,
+  CLI, goldens, baselines, or package version. Structured results are explicit
+  nominal enum conventions; there are no generics, exceptions, `?`, unwinding,
+  or implicit propagation.
+- Milestone 1.06 is the next self-hosting step. Python remains the reference
+  compiler and default path; any second-stage S3 component remains opt-in and
+  differential until explicitly adopted.
 
 The current scalar return convention remains unchanged: `RETURN`, `TRET`, and
 the native x86-64 result path carry one scalar value. Single-field record returns
-reuse that existing scalar convention. Multi-field record returns and aggregate
-returns remain rejected before lowering until a future aggregate-return ABI is
-specified. Multi-leaf nested record returns follow that same rejection rule.
+reuse that existing scalar convention. Multi-field record returns, multi-cell
+payload enum returns, and aggregate returns remain rejected before lowering
+until a future aggregate-return ABI is specified. Multi-leaf nested record
+returns follow that same rejection rule.
 Arrays as record fields, recursive types, general heap allocation, dynamic text,
 and complete self-hosting are still not implemented.
 

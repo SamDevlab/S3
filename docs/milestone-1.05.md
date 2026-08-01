@@ -1,11 +1,11 @@
 # Milestone 1.05 - Fixed-Layout Enum Payloads and Structured Errors
 
-Status: In progress - architecture accepted
+Status: Complete - local implementation delivered in Draft PR #126
 
 Milestone 1.05 was audited after the completion of acyclic nested records and
 fixed-capacity static text values. The audit found that payload enums required
-a public syntax and layout decision before implementation. ADR-0021 is now
-accepted and selects a fixed tagged multi-cell layout.
+a public syntax and layout decision before implementation. ADR-0021 is accepted
+and the branch implements its fixed tagged multi-cell layout locally.
 
 ## Architecture Audit
 
@@ -41,9 +41,9 @@ architecture decision. The selected representation is:
 - inactive slots initialized deterministically;
 - no public IR, Assembly, or scalar ABI change.
 
-The branch keeps `tests/test_enum_payload_architecture_gate.py` as an xfail
-until parser, semantic analysis, lowering, and match bindings implement the
-accepted contract.
+Parser, semantic analysis, lowering, match bindings, structured result flows,
+O0/O1 hosted execution, and the native harness now exercise the accepted
+contract. The public IR JSON and S3 Assembly versions remain unchanged.
 
 ## Specification
 
@@ -73,6 +73,29 @@ match value:
 ```
 
 Bindings are arm-local and typed from the variant declaration.
+
+## Implementation
+
+The implementation exposes a canonical semantic layout through
+`SemanticModel.enum_layout()`, `SemanticModel.enum_payload_leaves()`, and
+`SemanticModel.enum_cell_count()`. The layout records declaration-order
+variants, discriminants, tag cell 0, payload leaves, total width, inactive slot
+count, and canonical payload slot scalar types. Slot types are a single source
+of truth for lowering: incompatible leaf kinds at the same payload cell position
+are rejected semantically instead of being guessed later.
+
+Lowering expands payload enum values into existing scalar cells in fixed
+tag-plus-payload order. Locals, parameters, calls, copies, branches, loops,
+qualified construction, imported enums, match statements, and match expressions
+consume the semantic layout. Inactive slots are initialized deterministically
+according to their canonical scalar slot type and are not exposed as source
+payload values.
+
+Structured results are explicit nominal enum conventions over the same payload
+model. They are proven for local values, parameters, explicit matches, success
+and error arms, nested record error payloads, imported result types, and hosted
+O0/O1 execution. Multi-cell structured results and other multi-cell payload
+enums remain rejected as function returns under the current scalar ABI.
 
 ## Preserved Invariants
 

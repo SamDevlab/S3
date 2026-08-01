@@ -120,8 +120,12 @@ Payload enum layout is fixed by enum type:
 - cell 0 is the `tryte` tag discriminant;
 - payload cells begin at cell 1;
 - the enum width is `1 + max(payload_leaf_count)` across variants;
+- each payload cell position has one canonical scalar slot type;
+- variants whose payload leaves conflict with the canonical slot type at the
+  same position are semantic errors;
 - no-payload variants in a payload enum still occupy the full enum width;
-- inactive payload slots are initialized deterministically;
+- inactive payload slots are initialized deterministically according to their
+  canonical scalar slot type;
 - payload record leaves use `SemanticModel.record_leaves()` order;
 - payload enum leaves are allowed only when acyclic and statically sized.
 
@@ -181,7 +185,9 @@ No-payload enums lower to existing `tryte` registers holding the documented
 discriminant. Payload-carrying enums lower to existing scalar registers in the
 fixed tag-plus-payload cell order. Record field expressions lower to their
 supported field values. Record and payload enum parameters are expanded in
-canonical cell order before IR generation.
+canonical cell order before IR generation. Lowering consumes
+`SemanticModel.enum_layout()` and its canonical slot types rather than
+recalculating enum payload layout.
 
 No new S3 Assembly opcode is introduced by this milestone. No public format
 version is bumped.

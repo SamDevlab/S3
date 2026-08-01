@@ -154,10 +154,10 @@ add dynamic text, heap allocation, or an aggregate-return convention.
 Beginning with Milestone 1.05, imported payload enum values preserve the
 defining enum's fixed tag-plus-payload layout. Qualified construction and
 qualified match labels use the defining module's discriminants, payload field
-order, cell width, and inactive slot policy. Payload field types must be visible
-where they are named in source, and nominal identity remains `ModuleId +
-TypeName`; same-name or same-shape payload enums from different modules remain
-incompatible.
+order, canonical payload slot types, cell width, and inactive slot policy.
+Payload field types must be visible where they are named in source, and nominal
+identity remains `ModuleId + TypeName`; same-name or same-shape payload enums
+from different modules remain incompatible.
 
 ## Graph order
 

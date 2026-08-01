@@ -142,17 +142,19 @@ diagnostic text through nominal data. It still does not provide a general
 runtime string builder, parser input stream, file I/O, formatting, or dynamic
 serialization.
 
-Milestone 1.05 is blocked by an architecture decision. Payload enums and
-structured result values require public syntax, match binding rules, and a
-canonical tag+payload layout before S3 components can use `Result.Ok(value)` or
-`Result.Err(error)` style flows. Until that decision is accepted, second-stage
-self-hosting candidates should continue to use scalar status codes, no-payload
-enums, and records separately rather than pretending a structured result ABI
-exists.
+Milestone 1.05 resolves ADR-0021 with a fixed tag-plus-payload enum layout.
+Payload enum values now have public syntax, canonical semantic layout, match
+payload bindings, deterministic inactive slots, and O0/O1 lowering through the
+existing scalar IR cells. Structured result values can be modeled as explicit
+nominal enums such as `Result.Ok(value)` and `Result.Err(error)` in locals,
+parameters, branches, loops, and match arms.
 
-The next self-hosting-related campaign should therefore start by resolving
-ADR-0021, not by adding another component. No component from Milestone 1.06 is
-implemented or adopted by the current 1.02-1.04 delivery campaign.
+The current scalar return ABI is still unchanged. Multi-cell payload enum and
+structured result values are not returnable, and there is no generic `Result`,
+exception mechanism, `?` operator, unwinding, heap allocation, or implicit
+propagation. Milestone 1.06 therefore keeps Python as the reference compiler and
+may add only opt-in, pure, differential S3 components whose inputs and outputs
+fit the existing scalar conventions.
 
 Recent tools make this pipeline more observable:
 

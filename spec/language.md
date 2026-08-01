@@ -114,9 +114,12 @@ tipos same-name ou same-shape de modulos diferentes continuam incompatíveis.
 Records multi-campo nao podem ser retornados ate que exista uma ABI agregada
 propria. Enums sem payload continuam retornaveis como discriminants escalares.
 Enums com largura total maior que uma celula podem ser usados em locals,
-parametros, copias, branches, loops e match, mas nao podem ser retornados pela
-ABI atual. `match` sobre enum exige cobertura exaustiva ou `else`; arms
-explicitos de variants com payload podem introduzir bindings locais tipados.
+parametros, copias, chamadas, branches, loops e match, mas nao podem ser
+retornados pela ABI atual. Cada posicao de payload possui um tipo escalar
+canonico; variants que exigiriam tipos incompatíveis no mesmo slot sao
+rejeitadas semanticamente. `match` sobre enum exige cobertura exaustiva ou
+`else`; arms explicitos de variants com payload podem introduzir bindings
+locais tipados.
 
 ## Expressões e operadores
 

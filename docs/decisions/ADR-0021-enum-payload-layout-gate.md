@@ -71,6 +71,10 @@ Rules:
 - payload enum leaves are allowed only when their layout graph is acyclic and
   statically sized;
 - the enum type width is fixed and equals `1 + max(payload_leaf_count)`;
+- each payload cell position has one canonical scalar slot type for the enum
+  type;
+- variants whose leaves would require incompatible scalar kinds at the same
+  payload cell position are rejected semantically;
 - no-payload variants in a payload enum still occupy the enum type's fixed
   width;
 - inactive payload slots are deterministically initialized to zero-equivalent
@@ -85,6 +89,7 @@ answer:
 - variant discriminants;
 - payload field names;
 - payload leaf paths and scalar types;
+- canonical payload slot scalar types;
 - fixed cell count;
 - tag position;
 - inactive slot policy;
@@ -304,9 +309,9 @@ unavoidable.
 
 ## Consequences
 
-- Milestone 1.05 may implement payload enum syntax, semantic layout, lowering,
+- Milestone 1.05 implements payload enum syntax, semantic layout, lowering,
   match payload bindings, structured result conventions, O0/O1, and native
-  coverage.
+  harness coverage without changing public artifact versions.
 - Milestone 1.06 may use structured results only where the result value does
   not need to cross the current scalar return boundary.
 - ABI remains unchanged.
