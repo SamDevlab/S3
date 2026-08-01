@@ -403,6 +403,53 @@ fn main() -> trit {{ return sign({argument}); }}
     )
 
 
+def test_native_enum_payload_scalar_and_match_binding_o0_o1(
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    _assert_o0_o1_native_equivalence(
+        "enum Result:\n"
+        "    Empty\n"
+        "    Ok(value: tryte)\n"
+        "fn inspect(result: Result) -> tryte:\n"
+        "    match result:\n"
+        "        Result.Empty:\n"
+        "            return 0\n"
+        "        Result.Ok(value):\n"
+        "            return value\n"
+        "fn main() -> tryte:\n"
+        "    return inspect(Result.Ok(value=7))\n",
+        7,
+        native_toolchain,
+        tmp_path / "enum-payload-scalar",
+    )
+
+
+def test_native_structured_result_error_record_o0_o1(
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    _assert_o0_o1_native_equivalence(
+        "record Error:\n"
+        "    code: tryte\n"
+        "enum Result:\n"
+        "    Ok(value: tryte)\n"
+        "    Err(error: Error)\n"
+        "fn handle(result: Result) -> tryte:\n"
+        "    match result:\n"
+        "        Result.Ok(value):\n"
+        "            return value\n"
+        "        Result.Err(error):\n"
+        "            return error.code\n"
+        "fn main() -> tryte:\n"
+        "    result: Result = Result.Err(error=Error(code=5))\n"
+        "    return handle(result)\n",
+        5,
+        native_toolchain,
+        tmp_path / "structured-result-error",
+    )
+
+
 @pytest.mark.parametrize(
     ("left", "right"),
     (
