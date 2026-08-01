@@ -35,14 +35,14 @@ def test_enum_without_payload_keeps_scalar_tag_layout() -> None:
 def test_enum_payload_layout_uses_largest_variant_width_and_source_order() -> None:
     model = _semantic_model(
         "record Inner:\n"
-        "    flag: trit\n"
+        "    flag: tryte\n"
         "    amount: tryte\n"
         "record Outer:\n"
         "    inner: Inner\n"
         "    text: string\n"
         "enum Result:\n"
         "    Empty\n"
-        "    One(value: trit)\n"
+        "    One(value: tryte)\n"
         "    Many(payload: Outer)\n"
         "    Code(code: tryte)\n"
         "fn main() -> tryte:\n"
@@ -65,7 +65,7 @@ def test_enum_payload_layout_uses_largest_variant_width_and_source_order() -> No
         ("payload", "text"),
     ]
     assert [leaf.type_name.value for leaf in layout.variant("Many").payload_leaves] == [
-        "trit",
+        "tryte",
         "tryte",
         "string",
     ]

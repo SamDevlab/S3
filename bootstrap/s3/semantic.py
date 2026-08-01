@@ -88,6 +88,7 @@ class EnumLayout:
     name: str
     variants: tuple[EnumVariantLayout, ...]
     cell_count: int
+    slot_types: tuple[ast.TypeName, ...]
     tag_type: ast.TypeName
     inactive_slot_policy: str
     location: SourceLocation
@@ -358,7 +359,7 @@ def _enum_layout(
 ) -> EnumLayout:
     enum = enums[name]
     variants: list[EnumVariantLayout] = []
-    max_payload = 0
+    payload_slot_types: list[ast.TypeName | None] = []
     for discriminant, variant in enumerate(enum.variants):
         leaves = _enum_payload_leaves(
             records,
@@ -366,7 +367,20 @@ def _enum_layout(
             variant.name,
             variant.payload_fields,
         )
-        max_payload = max(max_payload, len(leaves))
+        for index, leaf in enumerate(leaves):
+            if index == len(payload_slot_types):
+                payload_slot_types.append(leaf.type_name)
+                continue
+            current = payload_slot_types[index]
+            if current is not leaf.type_name:
+                raise SemanticError(
+                    (
+                        f"enum '{enum.name}' payload slot {index + 1} has "
+                        f"incompatible types {current.value} and {leaf.type_name.value}"
+                    ),
+                    leaf.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_TYPE_MISMATCH,
+                )
         variants.append(
             EnumVariantLayout(
                 variant.name,
@@ -379,7 +393,8 @@ def _enum_layout(
     return EnumLayout(
         name,
         tuple(variants),
-        1 + max_payload,
+        1 + len(payload_slot_types),
+        (ast.TypeName.TRYTE, *tuple(slot for slot in payload_slot_types if slot is not None)),
         ast.TypeName.TRYTE,
         "zero-equivalent scalar cells",
         enum.location,

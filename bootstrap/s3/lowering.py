@@ -75,6 +75,31 @@ class FunctionLowerer:
         for parameter in self.function.parameters:
             if (
                 isinstance(parameter.type_name, ast.NominalType)
+                and self.semantic_model.is_enum_type(parameter.type_name)
+                and self.semantic_model.enum_cell_count(parameter.type_name.name) > 1
+            ):
+                fields: dict[str, _LoweredBinding] = {}
+                layout = self.semantic_model.enum_layout(parameter.type_name.name)
+                for index, slot_type in enumerate(layout.slot_types):
+                    register = self._allocate(slot_type, parameter.location)
+                    self.parameters.append(
+                        IRParameter(
+                            parameter.name + "__" + self._enum_cell_name(index),
+                            register,
+                            TYPE_MAP[slot_type],
+                            parameter.location,
+                        )
+                    )
+                    self._set_enum_cell_binding(fields, index, slot_type, register)
+                self.variable_scopes[0][parameter.name] = _LoweredBinding(
+                    parameter.type_name,
+                    mutable=False,
+                    fields=fields,
+                )
+                continue
+
+            if (
+                isinstance(parameter.type_name, ast.NominalType)
                 and self.semantic_model.is_record_type(parameter.type_name)
             ):
                 record = self.semantic_model.record(parameter.type_name.name)
@@ -297,6 +322,57 @@ class FunctionLowerer:
             )
         raise LoweringError("unsupported storage type", location)
 
+    @staticmethod
+    def _enum_cell_name(index: int) -> str:
+        return f"cell{index}"
+
+    @staticmethod
+    def _enum_cell_index(name: str, location: SourceLocation) -> int:
+        if not name.startswith("cell"):
+            raise LoweringError(f"enum cell '{name}' is unavailable", location)
+        try:
+            return int(name[4:])
+        except ValueError as error:
+            raise LoweringError(f"enum cell '{name}' is unavailable", location) from error
+
+    def _set_enum_cell_binding(
+        self,
+        fields: dict[str, _LoweredBinding],
+        index: int,
+        slot_type: ast.TypeName,
+        register: int,
+    ) -> None:
+        fields[self._enum_cell_name(index)] = _LoweredBinding(
+            slot_type,
+            mutable=False,
+            register=register,
+        )
+
+    def _zero_value(
+        self,
+        type_name: ast.TypeName,
+        location: SourceLocation,
+    ) -> int:
+        if type_name is ast.TypeName.STRING:
+            try:
+                static_string = self.static_string_ids[""]
+            except KeyError as error:
+                raise LoweringError(
+                    "empty static string is missing from static string table",
+                    location,
+                ) from error
+            result = self._allocate(ast.TypeName.STRING, location)
+            self._emit(
+                IRInstruction(
+                    IROpcode.CONST_STR,
+                    result=result,
+                    static_string=static_string,
+                    location=location,
+                )
+            )
+            return result
+        return self._emit_constant(0, type_name, location)
+
     def _set_leaf_binding(
         self,
         fields: dict[str, _LoweredBinding],
@@ -314,6 +390,26 @@ class FunctionLowerer:
             )
             return
         assert isinstance(field.type_name, ast.NominalType)
+        if self.semantic_model.is_enum_type(field.type_name):
+            layout = self.semantic_model.enum_layout(field.type_name.name)
+            index = self._enum_cell_index(path[1], field.location)
+            binding = fields.get(field.name)
+            if binding is None:
+                nested_fields: dict[str, _LoweredBinding] = {}
+                binding = _LoweredBinding(
+                    field.type_name,
+                    mutable=False,
+                    fields=nested_fields,
+                )
+                fields[field.name] = binding
+            assert binding.fields is not None
+            self._set_enum_cell_binding(
+                binding.fields,
+                index,
+                layout.slot_types[index],
+                register,
+            )
+            return
         nested = self.semantic_model.record(field.type_name.name)
         binding = fields.get(field.name)
         if binding is None:
@@ -439,6 +535,17 @@ class FunctionLowerer:
                         value.location,
                     )
                     continue
+                if (
+                    isinstance(field.type_name, ast.NominalType)
+                    and self.semantic_model.is_enum_type(field.type_name)
+                    and self.semantic_model.enum_cell_count(field.type_name.name) > 1
+                ):
+                    fields[field.name] = self._lower_enum_binding_from_expression(
+                        value,
+                        field.type_name.name,
+                        value.location,
+                    )
+                    continue
                 fields[field.name] = _LoweredBinding(
                     field.type_name,
                     mutable=False,
@@ -487,6 +594,209 @@ class FunctionLowerer:
             "multi-field record value requires an explicit record literal or binding",
             location,
         )
+
+    def _lower_enum_binding_from_expression(
+        self,
+        expression: ast.Initializer,
+        enum_name: str,
+        location: SourceLocation,
+    ) -> _LoweredBinding:
+        layout = self.semantic_model.enum_layout(enum_name)
+        if isinstance(expression, ast.ArrayLiteral):
+            raise LoweringError(
+                "enum value cannot be initialized from an array literal",
+                expression.location,
+            )
+        if isinstance(expression, ast.RecordExpression):
+            constructor = self._enum_constructor(expression)
+            if constructor is None:
+                raise LoweringError(
+                    f"enum '{enum_name}' requires an enum variant constructor",
+                    expression.location,
+                )
+            constructor_enum, variant = constructor
+            if constructor_enum.name != enum_name:
+                raise LoweringError(
+                    f"enum constructor has type {constructor_enum.name}; expected {enum_name}",
+                    expression.location,
+                )
+            values = {field.name: field.expression for field in expression.fields}
+            registers: list[int] = [
+                self._emit_constant(
+                    constructor_enum.discriminant(variant.name),
+                    ast.TypeName.TRYTE,
+                    expression.location,
+                )
+            ]
+            for field in variant.payload_fields:
+                registers.extend(
+                    self._lower_payload_field_registers(
+                        values[field.name],
+                        field.type_name,
+                        values[field.name].location,
+                    )
+                )
+            while len(registers) < layout.cell_count:
+                registers.append(
+                    self._zero_value(
+                        layout.slot_types[len(registers)],
+                        expression.location,
+                    )
+                )
+            return self._enum_binding_from_registers(enum_name, tuple(registers), location)
+        if isinstance(expression, ast.FieldAccessExpression):
+            constructor = self._enum_variant_access(expression)
+            if constructor is not None:
+                constructor_enum, variant = constructor
+                if constructor_enum.name != enum_name:
+                    raise LoweringError(
+                        f"enum constructor has type {constructor_enum.name}; expected {enum_name}",
+                        expression.location,
+                    )
+                registers = [
+                    self._emit_constant(
+                        constructor_enum.discriminant(variant.name),
+                        ast.TypeName.TRYTE,
+                        expression.location,
+                    )
+                ]
+                while len(registers) < layout.cell_count:
+                    registers.append(
+                        self._zero_value(
+                            layout.slot_types[len(registers)],
+                            expression.location,
+                        )
+                    )
+                return self._enum_binding_from_registers(enum_name, tuple(registers), location)
+        if isinstance(expression, ast.Identifier):
+            binding = self._lookup_variable(expression.name, expression.location)
+            if binding.fields is not None:
+                return _LoweredBinding(
+                    ast.NominalType(enum_name, location),
+                    mutable=False,
+                    fields={
+                        self._enum_cell_name(index): binding.fields[
+                            self._enum_cell_name(index)
+                        ]
+                        for index in range(layout.cell_count)
+                    },
+                )
+        if layout.cell_count == 1:
+            register = self._lower_expression(expression)
+            return self._enum_binding_from_registers(enum_name, (register,), location)
+        raise LoweringError(
+            "multi-cell enum value requires an explicit enum literal or binding",
+            location,
+        )
+
+    def _lower_payload_field_registers(
+        self,
+        expression: ast.Expression,
+        type_name: ast.DeclaredType,
+        location: SourceLocation,
+    ) -> tuple[int, ...]:
+        if isinstance(type_name, ast.TypeName):
+            return (self._lower_expression(expression),)
+        if (
+            isinstance(type_name, ast.NominalType)
+            and self.semantic_model.is_record_type(type_name)
+        ):
+            record = self.semantic_model.record(type_name.name)
+            fields = self._lower_record_fields_from_expression(
+                expression,
+                record,
+                location,
+            )
+            return self._flatten_record_registers(record.name, fields, location)
+        if (
+            isinstance(type_name, ast.NominalType)
+            and self.semantic_model.is_enum_type(type_name)
+        ):
+            binding = self._lower_enum_binding_from_expression(
+                expression,
+                type_name.name,
+                location,
+            )
+            return self._flatten_enum_registers(type_name.name, binding, location)
+        raise LoweringError("unsupported enum payload field type", location)
+
+    def _enum_binding_from_registers(
+        self,
+        enum_name: str,
+        registers: tuple[int, ...],
+        location: SourceLocation,
+    ) -> _LoweredBinding:
+        layout = self.semantic_model.enum_layout(enum_name)
+        if len(registers) != layout.cell_count:
+            raise LoweringError(
+                f"enum '{enum_name}' expected {layout.cell_count} cells; got {len(registers)}",
+                location,
+            )
+        fields: dict[str, _LoweredBinding] = {}
+        for index, register in enumerate(registers):
+            self._set_enum_cell_binding(fields, index, layout.slot_types[index], register)
+        return _LoweredBinding(
+            ast.NominalType(enum_name, location),
+            mutable=False,
+            fields=fields,
+        )
+
+    def _flatten_enum_registers(
+        self,
+        enum_name: str,
+        binding: _LoweredBinding,
+        location: SourceLocation,
+    ) -> tuple[int, ...]:
+        layout = self.semantic_model.enum_layout(enum_name)
+        if binding.fields is None:
+            if layout.cell_count == 1 and binding.register is not None:
+                return (binding.register,)
+            raise LoweringError(f"enum '{enum_name}' cells are unavailable", location)
+        registers: list[int] = []
+        for index in range(layout.cell_count):
+            cell = binding.fields.get(self._enum_cell_name(index))
+            if cell is None or cell.register is None:
+                raise LoweringError(
+                    f"enum '{enum_name}' cell {index} is unavailable",
+                    location,
+                )
+            registers.append(cell.register)
+        return tuple(registers)
+
+    def _enum_constructor(
+        self,
+        expression: ast.RecordExpression,
+    ) -> tuple | None:
+        if "." not in expression.type_name:
+            return None
+        enum_name, variant_name = expression.type_name.rsplit(".", 1)
+        enum = self.semantic_model.enums.get(enum_name)
+        if enum is None:
+            return None
+        variant = enum.variant(variant_name)
+        if variant is None:
+            raise LoweringError(
+                f"enum '{enum.name}' has no variant '{variant_name}'",
+                expression.location,
+            )
+        return enum, variant
+
+    def _enum_variant_access(
+        self,
+        expression: ast.FieldAccessExpression,
+    ) -> tuple | None:
+        if not isinstance(expression.target, ast.Identifier):
+            return None
+        enum = self.semantic_model.enums.get(expression.target.name)
+        if enum is None:
+            return None
+        variant = enum.variant(expression.field_name)
+        if variant is None:
+            raise LoweringError(
+                f"enum '{enum.name}' has no variant '{expression.field_name}'",
+                expression.location,
+            )
+        return enum, variant
 
     def _lower_return_expression(self, expression: ast.Expression) -> int:
         if (
@@ -570,6 +880,24 @@ class FunctionLowerer:
                 mutable=False,
                 fields=lowered_fields,
             )
+            return
+
+        if (
+            isinstance(declaration.type_name, ast.NominalType)
+            and self.semantic_model.is_enum_type(declaration.type_name)
+            and self.semantic_model.enum_cell_count(declaration.type_name.name) > 1
+        ):
+            if declaration.mutable:
+                raise LoweringError(
+                    "mutable enum payload bindings are not supported yet",
+                    declaration.location,
+                )
+            binding = self._lower_enum_binding_from_expression(
+                declaration.initializer,
+                declaration.type_name.name,
+                declaration.location,
+            )
+            self.variable_scopes[-1][declaration.name] = binding
             return
 
         if isinstance(declaration.initializer, ast.ArrayLiteral):
@@ -870,6 +1198,26 @@ class FunctionLowerer:
             )
         self.current = continuation
 
+    def _lower_enum_selector_registers(
+        self,
+        expression: ast.Expression,
+        location: SourceLocation,
+    ) -> tuple[int, ...]:
+        selector_type = self.semantic_model.declared_type_of(expression)
+        if not (
+            isinstance(selector_type, ast.NominalType)
+            and self.semantic_model.is_enum_type(selector_type)
+        ):
+            raise LoweringError("enum selector has unsupported type", location)
+        if self.semantic_model.enum_cell_count(selector_type.name) == 1:
+            return (self._lower_expression(expression),)
+        binding = self._lower_enum_binding_from_expression(
+            expression,
+            selector_type.name,
+            location,
+        )
+        return self._flatten_enum_registers(selector_type.name, binding, location)
+
     def _lower_enum_switch(self, statement: ast.SwitchStatement) -> None:
         explicit_entries = self._enum_case_entries(statement.cases)
         explicit_cases = dict(explicit_entries)
@@ -881,7 +1229,11 @@ class FunctionLowerer:
                 self._lower_block(target_case.body, create_scope=True)
                 return
 
-        selector_reg = self._lower_expression(statement.expression)
+        selector_registers = self._lower_enum_selector_registers(
+            statement.expression,
+            statement.location,
+        )
+        selector_reg = selector_registers[0]
         default_case = fallback_case or explicit_entries[-1][1]
         test_entries = explicit_entries if fallback_case is not None else explicit_entries[:-1]
         open_blocks: list[tuple[_MutableBlock, SourceLocation]] = []
@@ -925,12 +1277,20 @@ class FunctionLowerer:
                 )
 
             self.current = case_block
-            self._lower_block(case.body, create_scope=True)
+            self._lower_enum_case_block(
+                case,
+                self.semantic_model.declared_type_of(statement.expression),
+                selector_registers,
+            )
             if self.current is not None:
                 open_blocks.append((self.current, case.location))
             self.current = next_block
 
-        self._lower_block(default_case.body, create_scope=True)
+        self._lower_enum_case_block(
+            default_case,
+            self.semantic_model.declared_type_of(statement.expression),
+            selector_registers,
+        )
         if self.current is not None:
             open_blocks.append((self.current, default_case.location))
 
@@ -950,6 +1310,100 @@ class FunctionLowerer:
                 )
             )
         self.current = continuation
+
+    def _lower_enum_case_block(
+        self,
+        case: ast.TernaryCase,
+        selector_type: ast.DeclaredType,
+        selector_registers: tuple[int, ...],
+    ) -> None:
+        self.variable_scopes.append({})
+        try:
+            self._bind_enum_payload_case(case.label, selector_type, selector_registers)
+            self._lower_block(case.body, create_scope=False)
+        finally:
+            self.variable_scopes.pop()
+
+    def _bind_enum_payload_case(
+        self,
+        label: ast.MatchCaseLabel,
+        selector_type: ast.DeclaredType,
+        selector_registers: tuple[int, ...],
+    ) -> None:
+        if not isinstance(label, ast.MatchPayloadLabel):
+            return
+        assert isinstance(selector_type, ast.NominalType)
+        enum = self.semantic_model.enum(selector_type.name)
+        discriminant = self._match_label_discriminant(label)
+        variant = enum.variants[discriminant]
+        offset = 1
+        fields_by_name = {field.name: field for field in variant.payload_fields}
+        for binding_name in label.bindings:
+            field = fields_by_name[binding_name]
+            registers = self._payload_field_register_slice(
+                field.type_name,
+                selector_registers,
+                offset,
+                label.location,
+            )
+            self.variable_scopes[-1][binding_name] = self._binding_from_payload_registers(
+                field.type_name,
+                registers,
+                label.location,
+            )
+            offset += len(registers)
+
+    def _payload_field_register_slice(
+        self,
+        type_name: ast.DeclaredType,
+        selector_registers: tuple[int, ...],
+        offset: int,
+        location: SourceLocation,
+    ) -> tuple[int, ...]:
+        width = 1
+        if (
+            isinstance(type_name, ast.NominalType)
+            and self.semantic_model.is_record_type(type_name)
+        ):
+            width = self.semantic_model.record_leaf_count(type_name.name)
+        elif (
+            isinstance(type_name, ast.NominalType)
+            and self.semantic_model.is_enum_type(type_name)
+        ):
+            width = self.semantic_model.enum_cell_count(type_name.name)
+        return selector_registers[offset : offset + width]
+
+    def _binding_from_payload_registers(
+        self,
+        type_name: ast.DeclaredType,
+        registers: tuple[int, ...],
+        location: SourceLocation,
+    ) -> _LoweredBinding:
+        if isinstance(type_name, ast.TypeName):
+            return _LoweredBinding(
+                type_name,
+                mutable=False,
+                register=registers[0],
+            )
+        if (
+            isinstance(type_name, ast.NominalType)
+            and self.semantic_model.is_record_type(type_name)
+        ):
+            record = self.semantic_model.record(type_name.name)
+            fields: dict[str, _LoweredBinding] = {}
+            for leaf, register in zip(
+                self.semantic_model.record_leaves(record.name),
+                registers,
+                strict=True,
+            ):
+                self._set_leaf_binding(fields, record, leaf.path, register)
+            return _LoweredBinding(type_name, mutable=False, fields=fields)
+        if (
+            isinstance(type_name, ast.NominalType)
+            and self.semantic_model.is_enum_type(type_name)
+        ):
+            return self._enum_binding_from_registers(type_name.name, registers, location)
+        raise LoweringError("unsupported enum payload binding type", location)
 
     def _lower_while(self, statement: ast.WhileStatement) -> None:
         cond_val = self.semantic_model.constant_value_of(statement.condition)
@@ -1505,12 +1959,32 @@ class FunctionLowerer:
                     )
                 )
                 continue
+            if (
+                isinstance(parameter_type, ast.NominalType)
+                and self.semantic_model.is_enum_type(parameter_type)
+                and self.semantic_model.enum_cell_count(parameter_type.name) > 1
+            ):
+                binding = self._lower_enum_binding_from_expression(
+                    argument.expression,
+                    parameter_type.name,
+                    argument.location,
+                )
+                registers.extend(
+                    self._flatten_enum_registers(
+                        parameter_type.name,
+                        binding,
+                        argument.location,
+                    )
+                )
+                continue
             registers.append(self._lower_expression(argument.expression))
         return tuple(registers)
 
     def _match_label_discriminant(self, label: ast.MatchCaseLabel) -> int:
         if isinstance(label, int):
             return label
+        if isinstance(label, ast.MatchPayloadLabel):
+            return self._match_label_discriminant(label.variant)
         if isinstance(label, ast.FieldAccessExpression):
             discriminant = self.semantic_model.constant_value_of(label)
             if discriminant is not None:
@@ -1735,7 +2209,11 @@ class FunctionLowerer:
             target_case = explicit_cases.get(cond_val, fallback_case)
             if target_case is not None:
                 return self._lower_expression(target_case.expression)
-        selector_reg = self._lower_expression(expression.selector)
+        selector_registers = self._lower_enum_selector_registers(
+            expression.selector,
+            expression.location,
+        )
+        selector_reg = selector_registers[0]
         result_type = self._storage_type(
             self.semantic_model.expression_types[id(expression)],
             expression.location,
@@ -1829,7 +2307,11 @@ class FunctionLowerer:
             if target_case is not None:
                 return self._lower_expression(target_case.expression)
 
-        selector_reg = self._lower_expression(expression.selector)
+        selector_registers = self._lower_enum_selector_registers(
+            expression.selector,
+            expression.location,
+        )
+        selector_reg = selector_registers[0]
         result_type = self._storage_type(
             self.semantic_model.expression_types[id(expression)],
             expression.location,
@@ -1878,7 +2360,11 @@ class FunctionLowerer:
                 )
 
             self.current = case_block
-            val_reg = self._lower_expression(case.expression)
+            val_reg = self._lower_enum_case_expression(
+                case,
+                self.semantic_model.declared_type_of(expression.selector),
+                selector_registers,
+            )
             idx = self._emit_constant(0, ast.TypeName.TRYTE, case.location)
             self._emit(
                 IRInstruction(
@@ -1898,7 +2384,11 @@ class FunctionLowerer:
             )
             self.current = next_block
 
-        val_reg = self._lower_expression(default_case.expression)
+        val_reg = self._lower_enum_case_expression(
+            default_case,
+            self.semantic_model.declared_type_of(expression.selector),
+            selector_registers,
+        )
         idx = self._emit_constant(0, ast.TypeName.TRYTE, default_case.location)
         self._emit(
             IRInstruction(
@@ -1931,18 +2421,39 @@ class FunctionLowerer:
         )
         return result_reg
 
+    def _lower_enum_case_expression(
+        self,
+        case: ast.MatchExpressionCase,
+        selector_type: ast.DeclaredType,
+        selector_registers: tuple[int, ...],
+    ) -> int:
+        self.variable_scopes.append({})
+        try:
+            self._bind_enum_payload_case(case.label, selector_type, selector_registers)
+            return self._lower_expression(case.expression)
+        finally:
+            self.variable_scopes.pop()
+
 
 def lower(program: ast.Program, semantic_model: SemanticModel) -> IRModule:
     static_table = collect_static_string_literals(
         program,
         semantic_model.static_text_of,
     )
-    static_strings = tuple(
+    static_strings = [
         IRStaticString(entry.id, entry.text) for entry in static_table.entries
-    )
+    ]
     static_string_ids = {
         entry.value: entry.id for entry in static_table.entries
     }
+    needs_empty_static_string = any(
+        ast.TypeName.STRING in semantic_model.enum_layout(name).slot_types
+        for name in semantic_model.enums
+    )
+    if needs_empty_static_string and "" not in static_string_ids:
+        static_id = f"s{len(static_strings)}"
+        static_strings.append(IRStaticString(static_id, ""))
+        static_string_ids[""] = static_id
     functions: list[IRFunction] = []
     for function in program.functions:
         try:
@@ -1956,4 +2467,4 @@ def lower(program: ast.Program, semantic_model: SemanticModel) -> IRModule:
         except LoweringError as error:
             error.add_diagnostic_context(function=function.name)
             raise
-    return IRModule(tuple(functions), static_strings)
+    return IRModule(tuple(functions), tuple(static_strings))

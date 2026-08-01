@@ -86,6 +86,19 @@ def test_enum_payload_construction_rejects_nominal_mismatch() -> None:
     assert error.diagnostic_code is DiagnosticCode.SEMANTIC_TYPE_MISMATCH
 
 
+def test_enum_payload_layout_rejects_incompatible_slot_types() -> None:
+    error = _semantic_error(
+        "enum Result:\n"
+        "    Trit(value: trit)\n"
+        "    Tryte(value: tryte)\n"
+        "fn main() -> tryte:\n"
+        "    return 0\n"
+    )
+
+    assert error.diagnostic_code is DiagnosticCode.SEMANTIC_TYPE_MISMATCH
+    assert "payload slot 1 has incompatible types trit and tryte" in str(error)
+
+
 def test_enum_payload_match_bindings_are_scoped_to_the_case() -> None:
     _semantic_model(
         "enum Result:\n"
