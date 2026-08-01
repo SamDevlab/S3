@@ -30,6 +30,10 @@ A implementação atual oferece:
 - bounds estático para índices constantes e dinâmico para calculados;
 - objetos de memória locais ao frame, sem ponteiros ou aliasing;
 - IR SSA com CFG, dominância, `LOAD` e `STORE`;
+- módulos multi-file determinísticos com `module`, imports explícitos e
+  `export fn`;
+- records e enums nominais mínimos, com campos de record limitados a `trit`,
+  `tryte` e enums fechados;
 - assembly com `.memory`, `TLOAD` e `TSTORE`;
 - leitura não inicializada sempre diagnosticada;
 - backend nativo experimental Linux x86-64 para todos os opcodes atuais;
@@ -48,6 +52,35 @@ A implementação atual oferece:
 - CI bootstrap em Python 3.11–3.13 e job nativo obrigatório em Ubuntu.
 
 Não existem `PHI`, `SUBTRACT`, `TSUB`, heap ou memória global.
+
+## Current development status
+
+Current 1.x internal milestones do not change the published package version or
+the public IR, S3 Assembly, diagnostic schema, ABI, CLI, golden artifacts, or
+baselines unless an explicit milestone says so.
+
+- Milestones 0.60-0.95 built the optimization foundation: CFG and SSA
+  infrastructure, O1 pass orchestration, constant propagation and folding,
+  static-text semantic evaluation, de-SSA lowering, verification boundaries, and
+  differential coverage.
+- Milestone 0.96 stabilized GVN, DSE, Memory SSA, de-SSA, optimizer telemetry,
+  and the correctness contracts around those passes.
+- Milestones 0.97-1.01 delivered the differential correctness matrix, optimizer
+  architecture split, deterministic modules/imports, minimal nominal records and
+  enums, and the first S3 self-hosting component as a differential reference.
+- Milestone 1.02 is in progress. The 1.02-A unit completed record composition
+  contract alignment: supported record fields are `trit`, `tryte`, and closed
+  enums; nested records, recursive records, arrays, strings, and imported
+  records as fields remain rejected.
+- The 1.02-B1 unit is complete at the specification level only: postfix grammar
+  and ADR-0018 define the architecture for postfix composition and qualified
+  name resolution.
+- The next implementation unit is 1.02-B2 - Unified Postfix Parser and AST.
+
+The 1.02-B runtime work has not started. The unified runtime member-access
+contract, qualified-name resolution, qualified postfix lowering, nested records,
+imported records as fields, arrays or strings as fields, recursive types,
+general heap allocation, and complete self-hosting are still not implemented.
 
 ## Contrato do Marco 0.7
 
@@ -421,18 +454,18 @@ selfhost/        fronteira da futura implementação em S3
 ## Limitações e próximo marco
 
 Não há ponteiros, heap, globals, arrays dinâmicos ou multidimensionais, arrays
-em assinaturas, strings dinâmicas ou dependentes de runtime, estruturas,
-módulos, I/O, package manager, LSP, depurador, generics, macros, concorrência,
-linker próprio, ABI C pública, self-hosting ou backend para Windows, macOS ou
-ARM64.
+em assinaturas, strings dinâmicas ou dependentes de runtime, classes, métodos,
+generics, macros, I/O de linguagem, package manager, LSP, depurador,
+concorrência, linker próprio, ABI C pública, self-hosting completo ou backend
+para Windows, macOS ou ARM64.
 
 O target nativo é somente Linux x86-64. Não há interoperabilidade C, JIT, TCO
 ou otimização interprocedural. ARM64 possui apenas um
 [estudo de viabilidade](docs/arm64-feasibility.md).
 
-O Marco 0.7 está concluído e a versão 0.7.0 está publicada. O desenvolvimento
-encontra-se estruturando normativamente a medição de desempenho do
-[Marco 0.8](docs/milestone-0.8.md) (trabalho em andamento).
-Os demais recursos classificados como Pós-MVP continuam não implementados. Consulte
-o [roadmap](docs/roadmap.md) e as
-[notas de lançamento](docs/releases/0.7.0.md).
+O Marco 0.7 está concluído e a versão 0.7.0 está publicada. O trabalho atual no
+checkout está na Milestone 1.02, ainda em andamento, com 1.02-B1 concluída em
+nível de especificação e 1.02-B2 planejada como a próxima unidade. Os demais
+recursos classificados como Pós-MVP continuam não implementados. Consulte o
+[roadmap](docs/roadmap.md), o [plano da Milestone 1.02](docs/milestone-1.02.md)
+e as [notas de lançamento](docs/releases/0.7.0.md).

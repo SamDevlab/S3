@@ -144,8 +144,9 @@ Não integram o Marco 0.7 e não estão implementados:
 3. otimizações entre blocos provadas sem `PHI`;
 4. backend ou execução ARM64 experimental.
 
-Arrays em assinaturas, heap, ponteiros públicos, strings dinâmicas, módulos e
-I/O continuam fora do MVP até receberem contratos próprios. O Marco 0.53 cobre
+Arrays em assinaturas, heap, ponteiros públicos, strings dinâmicas e I/O
+continuam fora do MVP até receberem contratos próprios. Módulos e imports
+determinísticos foram entregues no Marco 0.99. O Marco 0.53 cobre
 valores `string` estáticos tipados, e o Marco 0.54 adiciona concatenação
 estática literal-only em tempo de compilação. O Marco 0.55 estende `len(...)`
 para calcular comprimento de texto estático em tempo de compilação. O Marco
@@ -292,20 +293,67 @@ como caminho padrao; Python permanece a referencia.
 Contrato documentado em [docs/milestone-1.01.md](milestone-1.01.md) e na
 selecao em [docs/self-hosting-first-component.md](self-hosting-first-component.md).
 
-## Marco 1.02 - Architectural Contract Stabilization
+## Marco 1.02 - Language Composition
 
-O Marco 1.02 estabiliza contratos arquiteturais identificados apos a integracao
-da campanha 0.97-1.01, sem adicionar funcionalidade de linguagem ou alterar ABI,
-IR, Assembly, goldens, baselines ou versao publica.
+Status: In progress
 
-A unidade 1.02-A alinha o contrato de composicao de records com o comportamento
-entregue no Marco 1.00: campos de record permanecem limitados a `trit`, `tryte`
-e enums fechados; records aninhados, ciclos indiretos, arrays em records e
-arrays de records continuam fora do escopo atual.
+O Marco 1.02 estabiliza contratos de composicao de linguagem identificados apos
+a integracao da campanha 0.97-1.01. Ele nao altera ABI, IR, Assembly, goldens,
+baselines ou versao publica por si so.
 
-A unidade 1.02-B fica reservada para definir, por ADR e matriz de testes, o
-contrato de composicao postfix e nomes qualificados antes de qualquer mudanca no
-parser.
+### 1.02-A - Record contract alignment
+
+Status: Complete
+
+Resultado:
+
+- fields suportados: `trit`, `tryte` e enum fechado;
+- ainda rejeitados: nested records, records recursivos, arrays, string e
+  imported records como fields;
+- contrato alinhado em [spec/composite-types.md](../spec/composite-types.md) e
+  no plano da [Milestone 1.02](milestone-1.02.md).
+
+### 1.02-B - Postfix composition and qualified names
+
+Status: In progress
+
+Concluido:
+
+- B1: especificacao em [spec/postfix-expressions.md](../spec/postfix-expressions.md);
+- [ADR-0018](decisions/ADR-0018-postfix-qualified-resolution.md);
+- gramatica normativa em [spec/grammar.ebnf](../spec/grammar.ebnf);
+- contrato para diferenciar modulos, enums e record members durante a analise
+  semantica.
+
+Proximo:
+
+- B2: parser postfix unificado e AST.
+
+Ainda nao iniciado:
+
+- B3: resolucao semantica;
+- B4: member access;
+- B5: lowering;
+- B6: integracao O0/O1;
+- B7: cobertura nativa.
+
+### Later language-composition milestones
+
+Status: Planned
+
+- 1.02-C - cross-module nominal types;
+- 1.03 - nested records aciclicos;
+- 1.04 - texto de capacidade fixa;
+- 1.05 - enums com payload e erros estruturados;
+- 1.06 - componentes adicionais de self-hosting.
+
+### Out of scope for this checkpoint
+
+Status: Out of scope
+
+Nested records, imported record fields, arrays e strings como record fields,
+recursive layouts, methods, generics, heap, package manager e self-hosting
+completo continuam fora deste checkpoint documental.
 
 ## Autohospedagem
 

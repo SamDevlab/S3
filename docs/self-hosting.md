@@ -110,6 +110,16 @@ dynamic cursor bounds, and uninitialized memory rejection, serving as the physic
 renderer remains unimplemented and `compare --check` remains blocked.
 S3 0.41 is closed after establishing a generic structural fixture renderer authored in S3 (a bootstrap renderer component). There are now entry points for `render_first`, `render_simple_call`, and `render_sign`. These generic paths are successfully compared against both the preserved legacy renderers and the golden artifacts. `compare_assembly_renderer.py` is fully functional and proves these generic paths. This serves as a partial self-hosting proof, though the Python compiler remains the reference implementation and a full S3 compiler does not yet exist.
 
+Milestones 0.99 through 1.01 add important foundations for this plan:
+deterministic modules/imports, minimal records/enums, and a first S3
+opcode-classifier component validated as a differential reference. They do not
+make the compiler self-hosted, do not replace the Python implementation, and do
+not promote any S3 component to the default compiler path.
+
+Milestone 1.02-B has begun only at the specification and ADR level for postfix
+composition and qualified names. The unified parser, semantic resolution,
+lowering, and runtime behavior for that contract are not implemented.
+
 Recent tools make this pipeline more observable:
 
 - `s3 targets` lists internal target and backend names.
