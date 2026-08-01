@@ -151,8 +151,24 @@ def _build_synthetic_program(
         program = program_by_module[module]
         namespace = namespaces.functions[module]
         type_namespace = namespaces.types[module]
+        context = _RewriteContext(
+            module,
+            graph,
+            program_by_module,
+            module_functions,
+            namespace,
+            type_namespace,
+            internal_names,
+            internal_type_names,
+            frozenset(
+                edge.imported_module
+                for edge in graph.imports
+                if edge.importing_module == module
+            ),
+            frozenset(),
+        )
         records.extend(
-            _rewrite_record(record, type_namespace)
+            _rewrite_record(record, context)
             for record in program.records
         )
         enums.extend(
@@ -164,21 +180,9 @@ def _build_synthetic_program(
                 _rewrite_function(
                     function,
                     internal_names[(module, function.name)],
-                    _RewriteContext(
-                        module,
-                        graph,
-                        program_by_module,
-                        module_functions,
-                        namespace,
-                        type_namespace,
-                        internal_names,
-                        internal_type_names,
-                        frozenset(
-                            edge.imported_module
-                            for edge in graph.imports
-                            if edge.importing_module == module
-                        ),
-                        _function_local_names(function),
+                    replace(
+                        context,
+                        local_names=_function_local_names(function),
                     ),
                 )
             )
@@ -394,11 +398,11 @@ def _rewrite_function(
         parameters=tuple(
             replace(
                 parameter,
-                type_name=_rewrite_type(parameter.type_name, context.type_namespace),
+                type_name=_rewrite_type(parameter.type_name, context),
             )
             for parameter in function.parameters
         ),
-        return_type=_rewrite_type(function.return_type, context.type_namespace),
+        return_type=_rewrite_type(function.return_type, context),
     )
     return ast.FunctionDeclaration(
         signature,
@@ -410,15 +414,15 @@ def _rewrite_function(
 
 def _rewrite_record(
     record: ast.RecordDeclaration,
-    type_namespace: dict[str, str],
+    context: _RewriteContext,
 ) -> ast.RecordDeclaration:
     return replace(
         record,
-        name=type_namespace.get(record.name, record.name),
+        name=context.type_namespace.get(record.name, record.name),
         fields=tuple(
             replace(
                 field,
-                type_name=_rewrite_type(field.type_name, type_namespace),
+                type_name=_rewrite_type(field.type_name, context),
             )
             for field in record.fields
         ),
@@ -434,19 +438,63 @@ def _rewrite_enum(
 
 def _rewrite_type(
     type_name: ast.DeclaredType,
-    type_namespace: dict[str, str],
+    context: _RewriteContext,
 ) -> ast.DeclaredType:
     if isinstance(type_name, ast.NominalType):
         return replace(
             type_name,
-            name=type_namespace.get(type_name.name, type_name.name),
+            name=_rewrite_nominal_type_name(
+                type_name.name,
+                type_name.location,
+                context,
+            ),
         )
     if isinstance(type_name, ast.ArrayType):
         return replace(
             type_name,
-            element_type=_rewrite_type(type_name.element_type, type_namespace),
+            element_type=_rewrite_type(type_name.element_type, context),
         )
     return type_name
+
+
+def _rewrite_nominal_type_name(
+    name: str,
+    location,
+    context: _RewriteContext,
+) -> str:
+    if "." not in name:
+        return context.type_namespace.get(name, name)
+    parts = tuple(name.split("."))
+    module_match = _module_for_parts(parts, context)
+    if module_match is None:
+        return context.type_namespace.get(name, name)
+    module, module_length = module_match
+    member_parts = parts[module_length:]
+    if len(member_parts) != 1:
+        raise SemanticError(
+            f"type '{name}' is not a nominal type",
+            location,
+        )
+    member = member_parts[0]
+    type_member = _module_type(module, member, context)
+    if type_member is None:
+        if context.module_functions[module].get(member) is not None:
+            raise SemanticError(
+                f"function '{module}.{member}' cannot be used as a type",
+                location,
+            )
+        raise SemanticError(
+            f"module '{module}' has no type '{member}'",
+            location,
+            diagnostic_code=DiagnosticCode.IMPORT_UNKNOWN_SYMBOL,
+        )
+    if not type_member.exported:
+        raise SemanticError(
+            f"type '{member}' in module '{module}' is private",
+            location,
+            diagnostic_code=DiagnosticCode.IMPORT_PRIVATE_SYMBOL,
+        )
+    return context.internal_type_names[module][member]
 
 
 def _rewrite_block(
@@ -469,7 +517,7 @@ def _rewrite_statement(
     if isinstance(statement, ast.VariableDeclaration):
         return replace(
             statement,
-            type_name=_rewrite_type(statement.type_name, context.type_namespace),
+            type_name=_rewrite_type(statement.type_name, context),
             initializer=_rewrite_initializer(
                 statement.initializer,
                 context,
@@ -625,7 +673,11 @@ def _rewrite_expression(
     if isinstance(expression, ast.RecordExpression):
         return replace(
             expression,
-            type_name=context.type_namespace.get(expression.type_name, expression.type_name),
+            type_name=_rewrite_nominal_type_name(
+                expression.type_name,
+                expression.location,
+                context,
+            ),
             fields=tuple(
                 replace(
                     field,

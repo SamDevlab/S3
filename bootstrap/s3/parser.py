@@ -648,7 +648,10 @@ class Parser:
         expression = self._parse_primary_atom()
         while True:
             if self._match(TokenKind.LEFT_PAREN):
-                if isinstance(expression, ast.Identifier) and self._is_record_field_argument_start():
+                if (
+                    self._expression_to_qualified_name(expression) is not None
+                    and self._is_record_field_argument_start()
+                ):
                     expression = self._finish_record_expression(expression)
                 else:
                     expression = self._finish_call(expression)
@@ -714,7 +717,23 @@ class Parser:
             and self.tokens[self.current + 1].kind is TokenKind.EQUAL
         )
 
-    def _finish_record_expression(self, type_name: ast.Identifier) -> ast.RecordExpression:
+    def _expression_to_qualified_name(self, expression: ast.Expression) -> str | None:
+        if isinstance(expression, ast.Identifier):
+            return expression.name
+        if isinstance(expression, ast.FieldAccessExpression):
+            prefix = self._expression_to_qualified_name(expression.target)
+            if prefix is None:
+                return None
+            return f"{prefix}.{expression.field_name}"
+        return None
+
+    def _finish_record_expression(self, type_name: ast.Expression) -> ast.RecordExpression:
+        record_name = self._expression_to_qualified_name(type_name)
+        if record_name is None:
+            raise ParseError(
+                "record constructor must be a nominal type name",
+                type_name.location,
+            )
         fields: list[ast.RecordFieldValue] = []
         while True:
             field = self._consume(TokenKind.IDENTIFIER, "expected record field name")
@@ -729,7 +748,7 @@ class Parser:
                     self._peek().location,
                 )
         self._consume(TokenKind.RIGHT_PAREN, "expected ')' after record fields")
-        return ast.RecordExpression(type_name.name, tuple(fields), type_name.location)
+        return ast.RecordExpression(record_name, tuple(fields), type_name.location)
 
     def _parse_len_v0_6(self, start: Token) -> ast.LenExpression:
         self._consume(TokenKind.LEFT_PAREN, "expected '(' after 'len'")
