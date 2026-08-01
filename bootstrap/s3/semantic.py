@@ -1095,7 +1095,7 @@ class SemanticAnalyzer:
                     result,
                     expected,
                     expression.location,
-                    f"call to '{expression.function_name}'",
+                    f"call expression",
                 )
         elif isinstance(expression, ast.RecordExpression):
             result = self._analyze_record_expression(expression)
@@ -1350,6 +1350,11 @@ class SemanticAnalyzer:
         return type_name.element_type
 
     def _analyze_call(self, expression: ast.CallExpression) -> ast.DeclaredType:
+        if expression.simple_function_name is None:
+            raise SemanticError(
+                "call target must be an unqualified function name",
+                expression.location,
+            )
         if self._lookup_binding(expression.function_name) is not None:
             raise SemanticError(
                 f"variable '{expression.function_name}' cannot be called",

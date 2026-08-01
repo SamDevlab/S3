@@ -97,20 +97,21 @@ def collect_static_string_literals(
             if left is not None and right is not None:
                 return normalize_static_text_newlines(left + right)
         if isinstance(expression, ast.CallExpression):
-            if expression.function_name in STATIC_TEXT_TRANSFORM_BUILTINS:
+            function_name = expression.simple_function_name
+            if function_name in STATIC_TEXT_TRANSFORM_BUILTINS:
                 args = [constant_text(arg.expression) for arg in expression.arguments]
-                if expression.function_name in ("upper", "lower", "trim") and len(args) == 1 and args[0] is not None:
-                    if expression.function_name == "upper":
+                if function_name in ("upper", "lower", "trim") and len(args) == 1 and args[0] is not None:
+                    if function_name == "upper":
                         return args[0].upper()
-                    if expression.function_name == "lower":
+                    if function_name == "lower":
                         return args[0].lower()
                     return args[0].strip()
-                if expression.function_name == "repeat" and len(args) == 2 and args[0] is not None:
+                if function_name == "repeat" and len(args) == 2 and args[0] is not None:
                     if isinstance(expression.arguments[1].expression, ast.IntegerLiteral):
                         cnt = expression.arguments[1].expression.value
                         if cnt >= 0:
                             return args[0] * cnt
-                if expression.function_name == "replace" and len(args) == 3 and all(a is not None for a in args):
+                if function_name == "replace" and len(args) == 3 and all(a is not None for a in args):
                     return args[0].replace(args[1], args[2])
         return None
 
@@ -155,7 +156,8 @@ def collect_static_string_literals(
             visit_expression(expression.left)
             visit_expression(expression.right)
         elif isinstance(expression, ast.CallExpression):
-            if expression.function_name in STATIC_TEXT_QUERY_BUILTINS:
+            function_name = expression.simple_function_name
+            if function_name in STATIC_TEXT_QUERY_BUILTINS:
                 argument_texts = [
                     (
                         static_text_of(argument.expression)
@@ -166,6 +168,8 @@ def collect_static_string_literals(
                 ]
                 if argument_texts and all(text is not None for text in argument_texts):
                     return
+            if function_name is None:
+                visit_expression(expression.callee)
             for argument in expression.arguments:
                 visit_expression(argument.expression)
         elif isinstance(expression, ast.IndexExpression):

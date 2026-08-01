@@ -487,12 +487,17 @@ def _rewrite_expression(
     type_namespace: dict[str, str],
 ) -> ast.Expression:
     if isinstance(expression, ast.CallExpression):
+        callee = expression.callee
+        if isinstance(callee, ast.Identifier):
+            callee = replace(
+                callee,
+                name=namespace.get(callee.name, callee.name),
+            )
+        else:
+            callee = _rewrite_expression(callee, namespace, type_namespace)
         return replace(
             expression,
-            function_name=namespace.get(
-                expression.function_name,
-                expression.function_name,
-            ),
+            callee=callee,
             arguments=tuple(
                 replace(
                     argument,

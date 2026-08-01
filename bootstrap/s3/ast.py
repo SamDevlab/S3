@@ -76,9 +76,21 @@ class CallArgument:
 
 @dataclass(frozen=True, slots=True)
 class CallExpression:
-    function_name: str
+    callee: Expression
     arguments: tuple[CallArgument, ...]
     location: SourceLocation
+
+    @property
+    def function_name(self) -> str:
+        if isinstance(self.callee, Identifier):
+            return self.callee.name
+        raise AttributeError("non-identifier call expression has no function_name")
+
+    @property
+    def simple_function_name(self) -> str | None:
+        if isinstance(self.callee, Identifier):
+            return self.callee.name
+        return None
 
 
 @dataclass(frozen=True, slots=True)

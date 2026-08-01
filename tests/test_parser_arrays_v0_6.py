@@ -147,13 +147,23 @@ def test_invalid_syntax_v0_6_rejected_parameterized():
         ("fn main() -> tryte:\n    values: tryte[3] = [1, 2, 3\n    return 0\n", "expected ']' after array literal"),
         ("fn main() -> tryte:\n    values[0] 1\n    return 0\n", "expected '=' or '+=' after assignment target"),
         ("fn main() -> tryte:\n    values: tryte[3]\n    return 0\n", "expected '=' after variable type"),
-        ("fn main() -> tryte:\n    values[0][1] = 2\n    return 0\n", "expected '=' or '+=' after assignment target"),
-        ("fn main() -> tryte:\n    return values[0][1]\n", "expected newline after return value; found '['"),
     ]
     for src, expected_msg in invalid_cases:
         with pytest.raises(ParseError) as exc:
             parse(src, mode=SyntaxMode.V0_6)
         assert expected_msg in str(exc.value), f"Expected '{expected_msg}' in '{exc.value}' for:\n{src}"
+
+
+def test_chained_array_indexing_parses_as_postfix_expression_v0_6():
+    program = parse(
+        "fn main() -> tryte:\n"
+        "    return values[0][1]\n",
+        mode=SyntaxMode.V0_6,
+    )
+    statement = program.functions[0].body.statements[0]
+    assert isinstance(statement, ast.ReturnStatement)
+    assert isinstance(statement.expression, ast.IndexExpression)
+    assert isinstance(statement.expression.target, ast.IndexExpression)
 
 def test_semantic_failures_preserved_parameterized():
     # Semantic verification
