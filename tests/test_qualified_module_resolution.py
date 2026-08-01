@@ -120,7 +120,7 @@ def test_qualified_module_enum_variant_flows_through_values_arguments_and_match(
         ),
         "signlib.s3": (
             "module signlib\n"
-            "enum Sign:\n"
+            "export enum Sign:\n"
             "    Negative\n"
             "    Zero\n"
             "    Positive\n"
@@ -227,7 +227,7 @@ def test_qualified_module_resolution_rejects_invalid_member_uses(
                 "main.s3": main_source,
                 "math.s3": (
                     "module math\n"
-                    "enum Sign:\n"
+                    "export enum Sign:\n"
                     "    Negative\n"
                     "    Positive\n"
                     "export fn inc() -> tryte:\n"

@@ -44,6 +44,21 @@ class _RewriteContext:
     local_names: frozenset[str]
 
 
+@dataclass(frozen=True, slots=True)
+class _ModuleTypeSymbols:
+    records: dict[str, ast.RecordDeclaration]
+    enums: dict[str, ast.EnumDeclaration]
+
+    def get(self, name: str) -> ast.RecordDeclaration | ast.EnumDeclaration | None:
+        return self.records.get(name) or self.enums.get(name)
+
+
+@dataclass(frozen=True, slots=True)
+class _ResolvedNamespaces:
+    functions: dict[ModuleId, dict[str, str]]
+    types: dict[ModuleId, dict[str, str]]
+
+
 def prepare_module_compilation(
     sources: SourceCollection,
     *,
@@ -109,6 +124,7 @@ def _build_synthetic_program(
     program_by_module: dict[ModuleId, ast.Program],
 ) -> ast.Program:
     module_functions = _collect_module_functions(graph, program_by_module)
+    module_types = _collect_module_types(graph, program_by_module)
     internal_names = _internal_function_names(
         graph,
         module_functions,
@@ -123,7 +139,9 @@ def _build_synthetic_program(
         graph,
         program_by_module,
         module_functions,
+        module_types,
         internal_names,
+        internal_type_names,
     )
 
     functions: list[ast.FunctionDeclaration] = []
@@ -131,8 +149,8 @@ def _build_synthetic_program(
     enums: list[ast.EnumDeclaration] = []
     for module in graph.ordered_modules:
         program = program_by_module[module]
-        namespace = namespaces[module]
-        type_namespace = internal_type_names[module]
+        namespace = namespaces.functions[module]
+        type_namespace = namespaces.types[module]
         records.extend(
             _rewrite_record(record, type_namespace)
             for record in program.records
@@ -191,6 +209,32 @@ def _collect_module_functions(
     return result
 
 
+def _collect_module_types(
+    graph: ModuleGraph,
+    program_by_module: dict[ModuleId, ast.Program],
+) -> dict[ModuleId, _ModuleTypeSymbols]:
+    result: dict[ModuleId, _ModuleTypeSymbols] = {}
+    for module in graph.ordered_modules:
+        records: dict[str, ast.RecordDeclaration] = {}
+        enums: dict[str, ast.EnumDeclaration] = {}
+        for record in program_by_module[module].records:
+            if record.name in records or record.name in enums:
+                raise SemanticError(
+                    f"duplicate type '{record.name}' in module '{module}'",
+                    record.location,
+                )
+            records[record.name] = record
+        for enum in program_by_module[module].enums:
+            if enum.name in records or enum.name in enums:
+                raise SemanticError(
+                    f"duplicate type '{enum.name}' in module '{module}'",
+                    enum.location,
+                )
+            enums[enum.name] = enum
+        result[module] = _ModuleTypeSymbols(records, enums)
+    return result
+
+
 def _internal_function_names(
     graph: ModuleGraph,
     module_functions: dict[ModuleId, dict[str, ast.FunctionDeclaration]],
@@ -235,20 +279,24 @@ def _resolve_namespaces(
     graph: ModuleGraph,
     program_by_module: dict[ModuleId, ast.Program],
     module_functions: dict[ModuleId, dict[str, ast.FunctionDeclaration]],
+    module_types: dict[ModuleId, _ModuleTypeSymbols],
     internal_names: dict[tuple[ModuleId, str], str],
-) -> dict[ModuleId, dict[str, str]]:
+    internal_type_names: dict[ModuleId, dict[str, str]],
+) -> _ResolvedNamespaces:
     imports_by_module: dict[ModuleId, list[ImportEdge]] = {
         module: [] for module in graph.ordered_modules
     }
     for edge in graph.imports:
         imports_by_module[edge.importing_module].append(edge)
 
-    namespaces: dict[ModuleId, dict[str, str]] = {}
+    function_namespaces: dict[ModuleId, dict[str, str]] = {}
+    type_namespaces: dict[ModuleId, dict[str, str]] = {}
     for module in graph.ordered_modules:
-        namespace = {
+        function_namespace = {
             name: internal_names[(module, name)]
             for name in module_functions[module]
         }
+        type_namespace = dict(internal_type_names[module])
         for edge in imports_by_module[module]:
             if edge.local_name in module_functions[module]:
                 raise SemanticError(
@@ -260,6 +308,60 @@ def _resolve_namespaces(
                     diagnostic_code=DiagnosticCode.IMPORT_CONFLICT,
                 )
             target = module_functions[edge.imported_module].get(edge.symbol)
+            type_target = module_types[edge.imported_module].get(edge.symbol)
+            if target is not None and target.exported and type_target is not None and type_target.exported:
+                raise SemanticError(
+                    (
+                        f"imported symbol '{edge.symbol}' in module "
+                        f"'{edge.imported_module}' is ambiguous between "
+                        "function and type"
+                    ),
+                    edge.location,
+                    diagnostic_code=DiagnosticCode.IMPORT_CONFLICT,
+                )
+            if target is not None and (target.exported or type_target is None):
+                if not target.exported:
+                    raise SemanticError(
+                        (
+                            f"function '{edge.symbol}' in module "
+                            f"'{edge.imported_module}' is private"
+                        ),
+                        edge.location,
+                        diagnostic_code=DiagnosticCode.IMPORT_PRIVATE_SYMBOL,
+                    )
+                function_namespace[edge.local_name] = internal_names[
+                    (edge.imported_module, edge.symbol)
+                ]
+                continue
+            if type_target is not None:
+                if edge.alias is not None:
+                    raise SemanticError(
+                        "type import aliases are not supported yet",
+                        edge.location,
+                        diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+                    )
+                if edge.local_name in type_namespace:
+                    raise SemanticError(
+                        (
+                            f"import local name '{edge.local_name}' conflicts with "
+                            f"type in module '{module}'"
+                        ),
+                        edge.location,
+                        diagnostic_code=DiagnosticCode.IMPORT_CONFLICT,
+                    )
+                if not type_target.exported:
+                    raise SemanticError(
+                        (
+                            f"type '{edge.symbol}' in module "
+                            f"'{edge.imported_module}' is private"
+                        ),
+                        edge.location,
+                        diagnostic_code=DiagnosticCode.IMPORT_PRIVATE_SYMBOL,
+                    )
+                type_namespace[edge.local_name] = internal_type_names[
+                    edge.imported_module
+                ][edge.symbol]
+                continue
             if target is None:
                 raise SemanticError(
                     (
@@ -269,18 +371,6 @@ def _resolve_namespaces(
                     edge.location,
                     diagnostic_code=DiagnosticCode.IMPORT_UNKNOWN_SYMBOL,
                 )
-            if not target.exported:
-                raise SemanticError(
-                    (
-                        f"function '{edge.symbol}' in module "
-                        f"'{edge.imported_module}' is private"
-                    ),
-                    edge.location,
-                    diagnostic_code=DiagnosticCode.IMPORT_PRIVATE_SYMBOL,
-                )
-            namespace[edge.local_name] = internal_names[
-                (edge.imported_module, edge.symbol)
-            ]
         program = program_by_module[module]
         if module == graph.entry_module and "main" not in module_functions[module]:
             raise SemanticError(
@@ -288,8 +378,9 @@ def _resolve_namespaces(
                 program.location,
                 diagnostic_code=DiagnosticCode.MODULE_ENTRY_INVALID,
             )
-        namespaces[module] = namespace
-    return namespaces
+        function_namespaces[module] = function_namespace
+        type_namespaces[module] = type_namespace
+    return _ResolvedNamespaces(function_namespaces, type_namespaces)
 
 
 def _rewrite_function(
@@ -742,7 +833,14 @@ def _rewrite_qualified_module_call(
     member = member_parts[0]
     function = context.module_functions[module].get(member)
     if function is None:
-        if _module_enum(module, member, context) is not None:
+        type_member = _module_type(module, member, context)
+        if type_member is not None:
+            if not type_member.exported:
+                raise SemanticError(
+                    f"type '{member}' in module '{module}' is private",
+                    expression.location,
+                    diagnostic_code=DiagnosticCode.IMPORT_PRIVATE_SYMBOL,
+                )
             raise SemanticError(
                 f"type '{module}.{member}' is not callable",
                 expression.location,
@@ -790,7 +888,14 @@ def _rewrite_qualified_module_member(
         )
     if len(member_parts) == 1:
         member = member_parts[0]
-        if _module_enum(module, member, context) is not None:
+        type_member = _module_type(module, member, context)
+        if type_member is not None:
+            if not type_member.exported:
+                raise SemanticError(
+                    f"type '{member}' in module '{module}' is private",
+                    expression.location,
+                    diagnostic_code=DiagnosticCode.IMPORT_PRIVATE_SYMBOL,
+                )
             raise SemanticError(
                 f"type '{module}.{member}' cannot be used as a value",
                 expression.location,
@@ -815,6 +920,13 @@ def _rewrite_qualified_module_member(
     enum_name = member_parts[0]
     enum = _module_enum(module, enum_name, context)
     if enum is None:
+        type_member = _module_type(module, enum_name, context)
+        if type_member is not None and not type_member.exported:
+            raise SemanticError(
+                f"type '{enum_name}' in module '{module}' is private",
+                expression.location,
+                diagnostic_code=DiagnosticCode.IMPORT_PRIVATE_SYMBOL,
+            )
         function = context.module_functions[module].get(enum_name)
         if function is not None:
             if not function.exported:
@@ -831,6 +943,12 @@ def _rewrite_qualified_module_member(
             f"module '{module}' has no member '{enum_name}'",
             expression.location,
             diagnostic_code=DiagnosticCode.IMPORT_UNKNOWN_SYMBOL,
+        )
+    if not enum.exported:
+        raise SemanticError(
+            f"type '{enum_name}' in module '{module}' is private",
+            expression.location,
+            diagnostic_code=DiagnosticCode.IMPORT_PRIVATE_SYMBOL,
         )
     variant_name = member_parts[1]
     if not any(variant.name == variant_name for variant in enum.variants):
@@ -860,4 +978,18 @@ def _module_enum(
     for enum in context.program_by_module[module].enums:
         if enum.name == name:
             return enum
+    return None
+
+
+def _module_type(
+    module: ModuleId,
+    name: str,
+    context: _RewriteContext,
+) -> ast.RecordDeclaration | ast.EnumDeclaration | None:
+    for record in context.program_by_module[module].records:
+        if record.name == name:
+            return record
+    enum = _module_enum(module, name, context)
+    if enum is not None:
+        return enum
     return None

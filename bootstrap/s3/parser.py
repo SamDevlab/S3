@@ -31,12 +31,15 @@ class Parser:
             self._skip_newlines()
             if self._check(TokenKind.EOF):
                 break
+            exported = False
+            if self.mode is SyntaxMode.V0_6 and self._match(TokenKind.EXPORT):
+                exported = True
             if self.mode is SyntaxMode.V0_6 and self._check(TokenKind.RECORD):
-                records.append(self._parse_record_declaration())
+                records.append(self._parse_record_declaration(exported=exported))
             elif self.mode is SyntaxMode.V0_6 and self._check(TokenKind.ENUM):
-                enums.append(self._parse_enum_declaration())
+                enums.append(self._parse_enum_declaration(exported=exported))
             else:
-                functions.append(self._parse_function())
+                functions.append(self._parse_function(exported=exported))
         if not functions:
             raise ParseError("expected at least one function", self._peek().location)
         return ast.Program(
@@ -86,10 +89,7 @@ class Parser:
             )
         return ".".join(parts)
 
-    def _parse_function(self) -> ast.FunctionDeclaration:
-        exported = False
-        if self.mode is SyntaxMode.V0_6 and self._match(TokenKind.EXPORT):
-            exported = True
+    def _parse_function(self, *, exported: bool = False) -> ast.FunctionDeclaration:
         start = self._consume(TokenKind.FN, "expected 'fn'")
         name = self._consume(TokenKind.IDENTIFIER, "expected function name")
         self._consume(TokenKind.LEFT_PAREN, "expected '(' after function name")
@@ -116,7 +116,11 @@ class Parser:
         )
         return ast.FunctionDeclaration(signature, body, start.location, exported)
 
-    def _parse_record_declaration(self) -> ast.RecordDeclaration:
+    def _parse_record_declaration(
+        self,
+        *,
+        exported: bool = False,
+    ) -> ast.RecordDeclaration:
         start = self._consume(TokenKind.RECORD, "expected 'record'")
         name = self._consume(TokenKind.IDENTIFIER, "expected record name")
         self._consume(TokenKind.COLON, "expected ':' after record name")
@@ -135,9 +139,13 @@ class Parser:
         if not fields:
             raise ParseError("expected at least one record field", name.location)
         self._consume(TokenKind.DEDENT, "expected dedent after record declaration")
-        return ast.RecordDeclaration(name.text, tuple(fields), start.location)
+        return ast.RecordDeclaration(name.text, tuple(fields), start.location, exported)
 
-    def _parse_enum_declaration(self) -> ast.EnumDeclaration:
+    def _parse_enum_declaration(
+        self,
+        *,
+        exported: bool = False,
+    ) -> ast.EnumDeclaration:
         start = self._consume(TokenKind.ENUM, "expected 'enum'")
         name = self._consume(TokenKind.IDENTIFIER, "expected enum name")
         self._consume(TokenKind.COLON, "expected ':' after enum name")
@@ -154,7 +162,7 @@ class Parser:
         if not variants:
             raise ParseError("expected at least one enum variant", name.location)
         self._consume(TokenKind.DEDENT, "expected dedent after enum declaration")
-        return ast.EnumDeclaration(name.text, tuple(variants), start.location)
+        return ast.EnumDeclaration(name.text, tuple(variants), start.location, exported)
 
     def _parse_parameters(self) -> list[ast.Parameter]:
         parameters: list[ast.Parameter] = []
@@ -184,7 +192,15 @@ class Parser:
             result = ast.TypeName.STRING
         elif self._check(TokenKind.IDENTIFIER):
             nominal = self._advance()
-            result = ast.NominalType(nominal.text, nominal.location)
+            parts = [nominal.text]
+            while self.mode is SyntaxMode.V0_6 and self._match(TokenKind.DOT):
+                parts.append(
+                    self._consume(
+                        TokenKind.IDENTIFIER,
+                        "expected nominal type name after '.'",
+                    ).text
+                )
+            result = ast.NominalType(".".join(parts), nominal.location)
         else:
             raise ParseError(
                 "expected type 'trit', 'tryte', 'string', or nominal type",

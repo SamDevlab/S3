@@ -361,6 +361,7 @@ class RecordDeclaration:
     name: str
     fields: tuple[RecordField, ...]
     location: SourceLocation
+    exported: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -374,6 +375,7 @@ class EnumDeclaration:
     name: str
     variants: tuple[EnumVariant, ...]
     location: SourceLocation
+    exported: bool = False
 
 
 @dataclass(frozen=True, slots=True)

@@ -131,7 +131,7 @@ def test_multimodule_postfix_and_qualified_composition_o0_o1_equivalent() -> Non
         ),
         "signlib.s3": (
             "module signlib\n"
-            "enum Sign:\n"
+            "export enum Sign:\n"
             "    Negative\n"
             "    Zero\n"
             "    Positive\n"
@@ -233,7 +233,7 @@ def test_multimodule_qualified_composition_is_source_order_deterministic() -> No
             "fn main() -> tryte:\n"
             "    return math.Sign\n",
             "module math\n"
-            "enum Sign:\n"
+            "export enum Sign:\n"
             "    Positive\n"
             "export fn visible() -> tryte:\n"
             "    return 1\n",

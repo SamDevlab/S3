@@ -71,7 +71,7 @@ def test_qualified_enum_variants_lower_to_existing_discriminants() -> None:
         ),
         "colors.s3": (
             "module colors\n"
-            "enum Sign:\n"
+            "export enum Sign:\n"
             "    Negative\n"
             "    Zero\n"
             "    Positive\n"

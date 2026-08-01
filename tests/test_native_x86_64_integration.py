@@ -948,7 +948,7 @@ def test_o0_o1_native_imported_module_composite_types(
                 ),
                 "signlib.s3": (
                     "module signlib\n"
-                    "enum Sign:\n"
+                    "export enum Sign:\n"
                     "    Negative\n"
                     "    Zero\n"
                     "    Positive\n"
