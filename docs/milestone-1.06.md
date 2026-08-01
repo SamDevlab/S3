@@ -1,6 +1,6 @@
 # Milestone 1.06 - Second-Stage Self-Hosting Components
 
-Status: Selected - implementation pending in Draft PR #126
+Status: Complete - local implementation delivered in Draft PR #126
 
 Milestone 1.06 continues the partial self-hosting path after ADR-0021 and
 Milestone 1.05. Python remains the reference compiler and default path. S3
@@ -39,7 +39,7 @@ Status: existing first-stage differential component.
 
 ### Diagnostic Classifier
 
-Status: selected for 1.06 implementation.
+Status: implemented as a differential reference.
 
 - S3 source: `selfhost/diagnostics/diagnostic_classifier.s3`.
 - Python reference: focused tests derived from `bootstrap.s3.diagnostics`
@@ -48,13 +48,15 @@ Status: selected for 1.06 implementation.
 - Output: scalar known/unknown, severity, and report-channel codes.
 - Error model: invalid ids return scalar sentinel values.
 - Return cells: one scalar.
-- Milestone 1.05 usage: uses a local payload enum to classify known versus
-  unknown probes, then matches the payload to produce scalar results.
+- Milestone 1.05 usage: the differential harness wraps a scalar classifier
+  result in a local payload enum and matches the payload to produce a scalar
+  result. The component itself remains scalar so it can stay importable and
+  default-free.
 - Risk: low; no formatting, message text, source spans, or JSON schema changes.
 
 ### Discriminant Layout Validator
 
-Status: selected for 1.06 implementation.
+Status: implemented as a differential reference.
 
 - S3 source: `selfhost/layout/discriminant_validator.s3`.
 - Python reference: focused tests over the public `tryte` discriminant range and
@@ -82,3 +84,27 @@ Status: selected for 1.06 implementation.
 No component becomes the default implementation in this milestone. Passing
 differential tests only promotes a component to a reference candidate for later
 campaigns.
+
+## Validation
+
+The second-stage component matrix compares:
+
+- Python references for opcode inventory, diagnostic categories/phases, and
+  scalar enum layout facts;
+- S3 hosted emulator O0;
+- S3 hosted emulator O1;
+- native ELF O0/O1 when the host provides the Linux x86-64 toolchain.
+
+The Windows host skips native ELF checks as expected. Hosted O0/O1 checks remain
+required.
+
+## Readiness
+
+| Component | Maturity | Default? | Notes |
+| --- | --- | --- | --- |
+| Assembly opcode classifier | differential reference | no | Existing first-stage component retained. |
+| Diagnostic classifier | differential reference | no | Scalar category/phase classifier; payload enum exercised by harness. |
+| Discriminant layout validator | differential reference | no | Scalar checks for tag cell, variant count, payload width, total width, and inactive slots. |
+
+All three components remain candidates for later adoption only after a separate
+campaign explicitly changes the default compiler path.

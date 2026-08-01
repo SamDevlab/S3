@@ -162,9 +162,15 @@ Milestone 1.06 selects three second-stage self-hosting components:
 - a diagnostic classifier over scalar category/phase ids;
 - a discriminant layout validator over scalar enum layout facts.
 
-The diagnostic classifier is the required Milestone 1.05 exercise: it may use a
-payload enum internally, but it still returns only scalar values. None of these
+The diagnostic classifier is paired with the required Milestone 1.05 exercise:
+the differential harness wraps its scalar result in a local payload enum and
+matches the payload while still returning only a scalar value. None of these
 components replaces Python or becomes a default compiler path in this milestone.
+
+At the close of Milestone 1.06, all three selected components are differential
+references. The Assembly opcode classifier remains the existing first-stage
+component; the diagnostic classifier and discriminant layout validator are new
+second-stage components.
 
 Recent tools make this pipeline more observable:
 

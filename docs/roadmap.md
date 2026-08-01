@@ -431,7 +431,7 @@ Limites preservados:
 
 ### Later language-composition milestones
 
-Status: 1.05 complete locally in Draft PR #126; 1.06 next in the same campaign
+Status: 1.05 and 1.06 complete locally in Draft PR #126
 
 - 1.05 - enums com payload e erros estruturados: [ADR-0021](decisions/ADR-0021-enum-payload-layout-gate.md)
   foi aceita e implementada localmente com layout fixo tag-first multi-cell,
@@ -442,7 +442,8 @@ Status: 1.05 complete locally in Draft PR #126; 1.06 next in the same campaign
 - 1.06 - componentes adicionais de self-hosting: seleciona o classificador de
   opcodes existente, um classificador de diagnostics e um validador de
   discriminants/layout escalar como componentes pequenos, puros e diferenciais,
-  mantendo Python como referencia e default.
+  mantendo Python como referencia e default; os componentes estao classificados
+  como differential references, nao como implementacoes adotadas.
 - A campanha 1.05-1.06 nao implementa retorno agregado, heap, mudanca de ABI,
   bump de IR, bump de S3 Assembly, generics, exceptions ou substituicao do
   bootstrap Python.
