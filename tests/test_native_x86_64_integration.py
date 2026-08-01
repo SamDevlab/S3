@@ -16,7 +16,13 @@ from bootstrap.s3.backends.x86_64 import (
     generate_native_assembly,
 )
 from bootstrap.s3.cli import main as cli_main
-from bootstrap.s3.diagnostics import SemanticError, diagnostic_from_exception
+from bootstrap.s3.diagnostics import (
+    DiagnosticCategory,
+    DiagnosticCode,
+    DiagnosticPhase,
+    SemanticError,
+    diagnostic_from_exception,
+)
 from bootstrap.s3.emulator import Emulator, EmulatorError
 from bootstrap.s3.lexer import SyntaxMode
 from bootstrap.s3.pipeline import compile_source, compile_sources
@@ -110,6 +116,67 @@ def _assert_o0_o1_native_sources_equivalence(
         assert completed.returncode == 0
         assert completed.stderr == ""
         assert completed.stdout == f"program returned: {expected}\n"
+
+
+def _assert_o0_o1_emulator_equivalence(source: str, expected: int) -> None:
+    for level in ("O0", "O1"):
+        program = compile_source(source, level, mode=SyntaxMode.V0_6).assembly
+        assert Emulator().execute(program) == expected
+
+
+def _assert_o0_o1_emulator_sources_equivalence(
+    sources: dict[str, str] | tuple[tuple[str, str], ...],
+    expected: int,
+    *,
+    entry_module: str = "main",
+) -> None:
+    for level in ("O0", "O1"):
+        program = compile_sources(
+            sources,
+            level,
+            entry_module=entry_module,
+            mode=SyntaxMode.V0_6,
+        ).assembly
+        assert Emulator().execute(program) == expected
+
+
+def _assert_o0_o1_semantic_error(
+    source: str,
+    message: str,
+    code: DiagnosticCode,
+) -> None:
+    for level in ("O0", "O1"):
+        with pytest.raises(SemanticError) as captured:
+            compile_source(source, level, mode=SyntaxMode.V0_6)
+
+        diagnostic = diagnostic_from_exception(captured.value)
+        assert diagnostic.phase is DiagnosticPhase.SEMANTIC
+        assert diagnostic.category is DiagnosticCategory.SEMANTIC
+        assert diagnostic.code is code
+        assert message in diagnostic.message
+
+
+def _assert_o0_o1_semantic_sources_error(
+    sources: dict[str, str] | tuple[tuple[str, str], ...],
+    message: str,
+    code: DiagnosticCode,
+    *,
+    entry_module: str = "main",
+) -> None:
+    for level in ("O0", "O1"):
+        with pytest.raises(SemanticError) as captured:
+            compile_sources(
+                sources,
+                level,
+                entry_module=entry_module,
+                mode=SyntaxMode.V0_6,
+            )
+
+        diagnostic = diagnostic_from_exception(captured.value)
+        assert diagnostic.phase is DiagnosticPhase.SEMANTIC
+        assert diagnostic.category is DiagnosticCategory.SEMANTIC
+        assert diagnostic.code is code
+        assert message in diagnostic.message
 
 
 def _assert_o0_o1_native_error_category(
@@ -1145,6 +1212,522 @@ def test_imported_multifield_record_return_stays_before_native_lowering() -> Non
             },
             mode=SyntaxMode.V0_6,
         )
+
+
+LOCAL_NESTED_NATIVE_SOURCE = """\
+enum Sign:
+    Negative
+    Positive
+record Leaf:
+    third: trit
+    fourth: tryte
+record Middle:
+    second: Leaf
+    first: tryte
+record Wrapper:
+    middle: Middle
+record Outer:
+    suffix: tryte
+    inner: Wrapper
+    prefix: trit
+    sign: Sign
+fn score(value: Outer) -> tryte:
+    local: Outer = value
+    copy: Outer = local
+    mut total: tryte = 0
+    while copy.prefix:
+        match copy.inner.middle.second.third:
+            -1:
+                match copy.sign:
+                    Sign.Negative:
+                        return 0
+                    Sign.Positive:
+                        total = copy.inner.middle.second.fourth
+                        total = total + copy.inner.middle.first
+                        total = total + copy.suffix
+                        return total
+            0:
+                return 1
+            else:
+                return 2
+    return 0
+fn main() -> tryte:
+    item: Outer = Outer(sign=Sign.Positive, prefix=-1, inner=Wrapper(middle=Middle(first=3, second=Leaf(fourth=7, third=-1))), suffix=2)
+    return score(item)
+"""
+
+
+SINGLE_LEAF_NESTED_RETURN_SOURCE = """\
+record Leaf:
+    value: tryte
+record Box:
+    leaf: Leaf
+fn make() -> Box:
+    return Box(leaf=Leaf(value=5))
+fn take(box: Box) -> tryte:
+    return box.leaf.value
+fn main() -> tryte:
+    return take(make())
+"""
+
+
+NESTED_RECORD_NATIVE_SOURCE_CASES = (
+    ("local-nested-records", LOCAL_NESTED_NATIVE_SOURCE, 12),
+    ("single-leaf-nested-return", SINGLE_LEAF_NESTED_RETURN_SOURCE, 5),
+)
+
+
+NESTED_RECORD_NATIVE_MODULE_SOURCES = (
+    (
+        "main.s3",
+        "module main\n"
+        "from geometry import Leaf\n"
+        "from model import Inner\n"
+        "from model import Outer\n"
+        "from consumer import score\n"
+        "fn main() -> tryte:\n"
+        "    value: Outer = model.Outer(tail=4, inner=model.Inner(leaf=geometry.Leaf(value=6)), flag=-1)\n"
+        "    return consumer.score(value)\n",
+    ),
+    (
+        "model.s3",
+        "module model\n"
+        "from geometry import Leaf\n"
+        "export record Inner:\n"
+        "    leaf: Leaf\n"
+        "export record Outer:\n"
+        "    tail: tryte\n"
+        "    inner: Inner\n"
+        "    flag: trit\n"
+        "export fn marker() -> tryte:\n"
+        "    return 0\n",
+    ),
+    (
+        "geometry.s3",
+        "module geometry\n"
+        "export record Leaf:\n"
+        "    value: tryte\n"
+        "export fn marker() -> tryte:\n"
+        "    return 0\n",
+    ),
+    (
+        "consumer.s3",
+        "module consumer\n"
+        "from model import Outer\n"
+        "export fn score(value: Outer) -> tryte:\n"
+        "    while value.flag:\n"
+        "        return value.inner.leaf.value + value.tail\n"
+        "    return 0\n",
+    ),
+)
+
+
+NESTED_RECORD_NATIVE_MODULE_ORDER_CASES = (
+    ("main-model-geometry-consumer", NESTED_RECORD_NATIVE_MODULE_SOURCES),
+    (
+        "consumer-main-model-geometry",
+        (
+            NESTED_RECORD_NATIVE_MODULE_SOURCES[3],
+            NESTED_RECORD_NATIVE_MODULE_SOURCES[0],
+            NESTED_RECORD_NATIVE_MODULE_SOURCES[1],
+            NESTED_RECORD_NATIVE_MODULE_SOURCES[2],
+        ),
+    ),
+    (
+        "model-geometry-consumer-main",
+        (
+            NESTED_RECORD_NATIVE_MODULE_SOURCES[1],
+            NESTED_RECORD_NATIVE_MODULE_SOURCES[2],
+            NESTED_RECORD_NATIVE_MODULE_SOURCES[3],
+            NESTED_RECORD_NATIVE_MODULE_SOURCES[0],
+        ),
+    ),
+)
+
+
+@pytest.mark.parametrize(
+    ("name", "source", "expected"),
+    NESTED_RECORD_NATIVE_SOURCE_CASES,
+)
+def test_nested_record_native_sources_match_emulator_o0_o1(
+    name: str,
+    source: str,
+    expected: int,
+) -> None:
+    del name
+    _assert_o0_o1_emulator_equivalence(source, expected)
+
+
+@pytest.mark.parametrize(
+    ("name", "source", "expected"),
+    NESTED_RECORD_NATIVE_SOURCE_CASES,
+)
+def test_o0_o1_native_nested_record_sources(
+    name: str,
+    source: str,
+    expected: int,
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    _assert_o0_o1_native_equivalence(
+        source,
+        expected,
+        native_toolchain,
+        tmp_path / f"nested-record-{name}",
+    )
+
+
+@pytest.mark.parametrize(
+    ("name", "sources"),
+    NESTED_RECORD_NATIVE_MODULE_ORDER_CASES,
+)
+def test_nested_record_native_modules_match_emulator_o0_o1(
+    name: str,
+    sources: tuple[tuple[str, str], ...],
+) -> None:
+    del name
+    _assert_o0_o1_emulator_sources_equivalence(sources, 10)
+
+
+@pytest.mark.parametrize(
+    ("name", "sources"),
+    NESTED_RECORD_NATIVE_MODULE_ORDER_CASES,
+)
+def test_o0_o1_native_nested_record_modules(
+    name: str,
+    sources: tuple[tuple[str, str], ...],
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    _assert_o0_o1_native_sources_equivalence(
+        sources,
+        10,
+        native_toolchain,
+        tmp_path / f"nested-record-modules-{name}",
+    )
+
+
+@pytest.mark.parametrize(
+    ("name", "source", "message", "code"),
+    (
+        (
+            "local-multileaf-return",
+            "record Leaf:\n"
+            "    left: tryte\n"
+            "    right: tryte\n"
+            "record Box:\n"
+            "    leaf: Leaf\n"
+            "fn make() -> Box:\n"
+            "    return Box(leaf=Leaf(left=1, right=2))\n"
+            "fn main() -> tryte:\n"
+            "    return 0\n",
+            "multi-field record returns require a future aggregate ABI",
+            DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+        ),
+        (
+            "branch-multileaf-return",
+            "record Pair:\n"
+            "    left: tryte\n"
+            "    right: tryte\n"
+            "fn choose(flag: trit) -> Pair:\n"
+            "    while flag:\n"
+            "        return Pair(left=1, right=2)\n"
+            "    return Pair(left=3, right=4)\n"
+            "fn main() -> tryte:\n"
+            "    return 0\n",
+            "multi-field record returns require a future aggregate ABI",
+            DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+        ),
+        (
+            "indirect-multileaf-return",
+            "record Pair:\n"
+            "    left: tryte\n"
+            "    right: tryte\n"
+            "record Holder:\n"
+            "    pair: Pair\n"
+            "fn make_holder() -> Holder:\n"
+            "    return Holder(pair=Pair(left=1, right=2))\n"
+            "fn main() -> tryte:\n"
+            "    return 0\n",
+            "multi-field record returns require a future aggregate ABI",
+            DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+        ),
+        (
+            "self-cycle",
+            "record Node:\n"
+            "    next: Node\n"
+            "fn main() -> tryte:\n"
+            "    return 0\n",
+            "recursive record layout cycle: Node -> Node",
+            DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+        ),
+        (
+            "two-node-cycle",
+            "record A:\n"
+            "    b: B\n"
+            "record B:\n"
+            "    a: A\n"
+            "fn main() -> tryte:\n"
+            "    return 0\n",
+            "recursive record layout cycle: A -> B -> A",
+            DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+        ),
+        (
+            "three-node-cycle",
+            "record A:\n"
+            "    b: B\n"
+            "record B:\n"
+            "    c: C\n"
+            "record C:\n"
+            "    a: A\n"
+            "fn main() -> tryte:\n"
+            "    return 0\n",
+            "recursive record layout cycle: A -> B -> C -> A",
+            DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+        ),
+        (
+            "missing-nested-type",
+            "record Outer:\n"
+            "    inner: Missing\n"
+            "fn main() -> tryte:\n"
+            "    return 0\n",
+            "unknown type 'Missing'",
+            DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+        ),
+        (
+            "same-shape-mismatch",
+            "record Left:\n"
+            "    value: tryte\n"
+            "record Right:\n"
+            "    value: tryte\n"
+            "record Outer:\n"
+            "    left: Left\n"
+            "fn main() -> tryte:\n"
+            "    item: Outer = Outer(left=Right(value=1))\n"
+            "    return 0\n",
+            "record literal 'Right' has type Right; expected Left",
+            DiagnosticCode.SEMANTIC_TYPE_MISMATCH,
+        ),
+        (
+            "missing-field",
+            "record Inner:\n"
+            "    value: tryte\n"
+            "record Outer:\n"
+            "    inner: Inner\n"
+            "    flag: trit\n"
+            "fn main() -> tryte:\n"
+            "    item: Outer = Outer(flag=-1)\n"
+            "    return 0\n",
+            "record 'Outer' literal is missing field(s): inner",
+            DiagnosticCode.RECORD_FIELD_MISSING,
+        ),
+        (
+            "extra-field",
+            "record Inner:\n"
+            "    value: tryte\n"
+            "record Outer:\n"
+            "    inner: Inner\n"
+            "fn main() -> tryte:\n"
+            "    item: Outer = Outer(inner=Inner(value=1), extra=2)\n"
+            "    return 0\n",
+            "record 'Outer' has no field 'extra'",
+            DiagnosticCode.RECORD_FIELD_UNKNOWN,
+        ),
+        (
+            "field-type-mismatch",
+            "record Inner:\n"
+            "    value: tryte\n"
+            "record Outer:\n"
+            "    inner: Inner\n"
+            "fn main() -> tryte:\n"
+            "    item: Outer = Outer(inner=1)\n"
+            "    return 0\n",
+            "field 'inner' has type tryte; expected Inner",
+            DiagnosticCode.SEMANTIC_TYPE_MISMATCH,
+        ),
+        (
+            "invalid-member",
+            "record Inner:\n"
+            "    value: tryte\n"
+            "record Outer:\n"
+            "    inner: Inner\n"
+            "fn main() -> tryte:\n"
+            "    item: Outer = Outer(inner=Inner(value=1))\n"
+            "    return item.inner.missing\n",
+            "record 'Inner' has no field 'missing'",
+            DiagnosticCode.RECORD_FIELD_UNKNOWN,
+        ),
+        (
+            "member-after-scalar",
+            "record Inner:\n"
+            "    value: tryte\n"
+            "record Outer:\n"
+            "    inner: Inner\n"
+            "fn main() -> tryte:\n"
+            "    item: Outer = Outer(inner=Inner(value=1))\n"
+            "    return item.inner.value.missing\n",
+            "field access requires a record value",
+            DiagnosticCode.RECORD_FIELD_UNKNOWN,
+        ),
+        (
+            "array-of-records",
+            "record Inner:\n"
+            "    value: tryte\n"
+            "record Outer:\n"
+            "    inner: Inner\n"
+            "fn main() -> tryte:\n"
+            "    values: Inner[1] = [Inner(value=1)]\n"
+            "    return 0\n",
+            "arrays of nominal types are not supported",
+            DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+        ),
+        (
+            "string-field",
+            "record Outer:\n"
+            "    text: string\n"
+            "fn main() -> tryte:\n"
+            "    return 0\n",
+            "record fields cannot be string in milestone 1.00",
+            DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+        ),
+    ),
+)
+def test_nested_record_native_semantic_rejections_stay_before_backend(
+    name: str,
+    source: str,
+    message: str,
+    code: DiagnosticCode,
+) -> None:
+    del name
+    _assert_o0_o1_semantic_error(source, message, code)
+
+
+@pytest.mark.parametrize(
+    ("name", "sources", "message", "code"),
+    (
+        (
+            "imported-multileaf-return",
+            {
+                "main.s3": (
+                    "module main\n"
+                    "from geometry import Pair\n"
+                    "from geometry import make\n"
+                    "fn main() -> tryte:\n"
+                    "    pair: Pair = make()\n"
+                    "    return pair.left\n"
+                ),
+                "geometry.s3": (
+                    "module geometry\n"
+                    "export record Pair:\n"
+                    "    left: tryte\n"
+                    "    right: tryte\n"
+                    "export fn make() -> Pair:\n"
+                    "    return Pair(left=1, right=2)\n"
+                ),
+            },
+            "multi-field record returns require a future aggregate ABI",
+            DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+        ),
+        (
+            "private-nested-type",
+            {
+                "main.s3": (
+                    "module main\n"
+                    "from model import Inner\n"
+                    "record Outer:\n"
+                    "    inner: Inner\n"
+                    "fn main() -> tryte:\n"
+                    "    return 0\n"
+                ),
+                "model.s3": (
+                    "module model\n"
+                    "record Inner:\n"
+                    "    value: tryte\n"
+                    "export fn marker() -> tryte:\n"
+                    "    return 0\n"
+                ),
+            },
+            "type 'Inner' in module 'model' is private",
+            DiagnosticCode.IMPORT_PRIVATE_SYMBOL,
+        ),
+        (
+            "missing-module",
+            {
+                "main.s3": (
+                    "module main\n"
+                    "from geometry import Leaf\n"
+                    "record Outer:\n"
+                    "    leaf: Leaf\n"
+                    "fn main() -> tryte:\n"
+                    "    return 0\n"
+                ),
+            },
+            "module 'geometry' was not found",
+            DiagnosticCode.MODULE_NOT_FOUND,
+        ),
+        (
+            "cross-module-cycle",
+            {
+                "main.s3": (
+                    "module main\n"
+                    "from graph import B\n"
+                    "export record A:\n"
+                    "    b: B\n"
+                    "fn main() -> tryte:\n"
+                    "    return 0\n"
+                ),
+                "graph.s3": (
+                    "module graph\n"
+                    "from main import A\n"
+                    "export record B:\n"
+                    "    a: A\n"
+                    "export fn marker() -> tryte:\n"
+                    "    return 0\n"
+                ),
+            },
+            "module import cycle: graph -> main -> graph",
+            DiagnosticCode.MODULE_CYCLE,
+        ),
+        (
+            "imported-same-name-same-shape-mismatch",
+            {
+                "main.s3": (
+                    "module main\n"
+                    "from left import Point\n"
+                    "from left import make\n"
+                    "from right import consume\n"
+                    "fn main() -> tryte:\n"
+                    "    point: Point = make()\n"
+                    "    return consume(point)\n"
+                ),
+                "left.s3": (
+                    "module left\n"
+                    "export record Point:\n"
+                    "    value: tryte\n"
+                    "export fn make() -> Point:\n"
+                    "    return Point(value=1)\n"
+                ),
+                "right.s3": (
+                    "module right\n"
+                    "export record Point:\n"
+                    "    value: tryte\n"
+                    "export fn consume(point: Point) -> tryte:\n"
+                    "    return point.value\n"
+                ),
+            },
+            "variable 'point' has type __s3mod_left__type_Point; expected __s3mod_right__type_Point",
+            DiagnosticCode.SEMANTIC_TYPE_MISMATCH,
+        ),
+    ),
+)
+def test_nested_record_native_module_semantic_rejections_stay_before_backend(
+    name: str,
+    sources: dict[str, str],
+    message: str,
+    code: DiagnosticCode,
+) -> None:
+    del name
+    _assert_o0_o1_semantic_sources_error(sources, message, code)
 
 
 @pytest.mark.parametrize(
