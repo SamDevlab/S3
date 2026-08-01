@@ -25,12 +25,21 @@ Rules:
 - record names share the module type namespace;
 - field order is declaration order and is part of layout;
 - field names must be unique;
-- field types may be scalar types, closed enum types, or other records that can
-  be scalarized without cycles;
-- arrays and `string` fields are not part of this milestone;
-- recursive records are rejected;
+- field types may be `trit`, `tryte`, or closed enum types;
+- arrays, `string` fields, and record fields are not part of this milestone;
 - record equality is not part of this milestone;
 - field mutation syntax is not part of this milestone.
+
+## Current composition limits
+
+The current record model supports only the field types listed in this
+specification. A record cannot directly or indirectly contain another record.
+Nested aggregate layout, recursive record graphs, aggregate ABI rules, deep
+equality, and deep mutation are reserved for a future language milestone.
+
+This means record fields cannot name local record types, imported-module record
+types, or the record type currently being declared. Arrays of records and arrays
+inside records are also outside the current composition contract.
 
 Construction uses named fields:
 
@@ -47,13 +56,14 @@ return p.left
 
 ## Record ABI
 
-Records are scalarized in declared field order. A record parameter lowers to its
-flattened scalar fields in the internal function ABI. This is an internal
-compiler convention and does not change the public S3 Assembly format.
+Records are scalarized in declared field order across the supported field types.
+A record parameter lowers to its flattened field values in the internal function
+ABI. This is an internal compiler convention and does not change the public S3
+Assembly format.
 
 The current IR and Assembly support only one scalar return register and expose
 no pointers or aggregate return convention. Therefore, this milestone supports
-record return only when the record scalarizes to exactly one scalar field.
+record return only when the record contains exactly one supported field.
 Returning a multi-field record is rejected until a future aggregate-return ABI is
 specified.
 
@@ -108,7 +118,7 @@ enum type are semantic errors.
 ## Lowering
 
 Enums lower to existing `tryte` registers holding the documented discriminant.
-Record field expressions lower to their scalarized field values. Record
+Record field expressions lower to their supported field values. Record
 parameters are expanded in field order before IR generation.
 
 No new S3 Assembly opcode is introduced by this milestone. No public format
@@ -118,4 +128,5 @@ version is bumped.
 
 Record and enum type names are module-local. Importing types is not part of this
 milestone. Cross-module use of composite values is limited to functions already
-visible through the module/import system and to scalarized ABI positions.
+visible through the module/import system and to supported scalarized ABI
+positions. Record fields cannot use record types from local or imported modules.
