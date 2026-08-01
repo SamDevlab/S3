@@ -828,17 +828,73 @@ def _rewrite_field_access_target(
 def _function_local_names(function: ast.FunctionDeclaration) -> frozenset[str]:
     names = {parameter.name for parameter in function.parameters}
 
+    def visit_match_label(label: ast.MatchCaseLabel) -> None:
+        if isinstance(label, ast.MatchPayloadLabel):
+            names.update(label.bindings)
+
+    def visit_expression(expression: ast.Expression) -> None:
+        if isinstance(expression, ast.CallExpression):
+            visit_expression(expression.callee)
+            for argument in expression.arguments:
+                visit_expression(argument.expression)
+        elif isinstance(expression, ast.RecordExpression):
+            for field in expression.fields:
+                visit_expression(field.expression)
+        elif isinstance(expression, ast.FieldAccessExpression):
+            visit_expression(expression.target)
+        elif isinstance(expression, ast.IndexExpression):
+            visit_expression(expression.target)
+            visit_expression(expression.index)
+        elif isinstance(expression, ast.SliceExpression):
+            visit_expression(expression.target)
+            visit_expression(expression.start)
+            visit_expression(expression.end)
+        elif isinstance(expression, ast.UnaryExpression):
+            visit_expression(expression.operand)
+        elif isinstance(expression, ast.BinaryExpression):
+            visit_expression(expression.left)
+            visit_expression(expression.right)
+        elif isinstance(expression, ast.MatchExpression):
+            visit_expression(expression.selector)
+            for case in expression.cases:
+                visit_match_label(case.label)
+                visit_expression(case.expression)
+        elif isinstance(expression, ast.LenExpression):
+            visit_expression(expression.argument)
+
+    def visit_initializer(initializer: ast.Initializer) -> None:
+        if isinstance(initializer, ast.ArrayLiteral):
+            for expression in initializer.elements:
+                visit_expression(expression)
+            return
+        visit_expression(initializer)
+
     def visit_block(block: ast.Block) -> None:
         for statement in block.statements:
             if isinstance(statement, ast.VariableDeclaration):
                 names.add(statement.name)
+                visit_initializer(statement.initializer)
+            elif isinstance(statement, ast.AssignmentStatement):
+                visit_initializer(statement.value)
+            elif isinstance(statement, ast.CompoundAssignmentStatement):
+                visit_initializer(statement.value)
+            elif isinstance(statement, ast.DiscardStatement):
+                visit_expression(statement.expression)
+            elif isinstance(statement, ast.ReturnStatement):
+                visit_expression(statement.expression)
             elif isinstance(statement, ast.SwitchStatement):
+                visit_expression(statement.expression)
                 for case in statement.cases:
+                    visit_match_label(case.label)
                     visit_block(case.body)
             elif isinstance(statement, ast.WhileStatement):
+                visit_expression(statement.condition)
                 visit_block(statement.body)
             elif isinstance(statement, ast.ForStatement):
                 names.add(statement.variable_name)
+                visit_expression(statement.start_expression)
+                visit_expression(statement.end_expression)
+                visit_expression(statement.step_expression)
                 visit_block(statement.body)
 
     visit_block(function.body)
