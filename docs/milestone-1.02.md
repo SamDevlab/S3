@@ -1,7 +1,7 @@
 # Milestone 1.02 - Composition and Qualified Names
 
 Status:
-In progress
+Complete
 
 Milestone 1.02 stabilizes the language-composition contracts needed after
 Milestones 0.97-1.01. It does not change the public IR, S3 Assembly, diagnostic
@@ -138,7 +138,7 @@ Delivered:
 ## 1.02-C - Cross-module nominal types
 
 Status:
-In progress
+Complete
 
 Goal:
 
@@ -166,9 +166,9 @@ as fields until the nested-record milestone.
 ### C2 - Module graph and type symbols
 
 Status:
-Not started
+Complete
 
-Scope:
+Delivered:
 
 - exported type symbols in the module graph;
 - separate function and type namespaces;
@@ -178,35 +178,62 @@ Scope:
 ### C3 - Imported nominal values
 
 Status:
-Not started
+Complete
 
-Scope:
+Delivered:
 
 - imported enum values and match;
-- imported record variables, parameters, returns, construction, and field
-  access;
+- imported record variables, parameters, single-field returns, construction,
+  copies, and field access;
+- module-qualified type annotations and record constructors;
+- same-name nominal incompatibility across modules;
 - preservation of imported record-as-field rejection.
 
 ### C4 - Layout
 
 Status:
-Not started
+Complete for the current scalar ABI
 
-Scope:
+Delivered:
 
 - layout owned by the defining module;
-- same-name records in different modules remain distinct;
-- O0/O1 layout determinism.
+- record field order preserved from the defining declaration;
+- same-name and same-shape records in different modules remain distinct;
+- enum discriminants preserved from defining variant order;
+- deterministic layout across repeated compilation and source-unit order;
+- explicit rejection of imported multi-field record returns before lowering.
 
-### C5 - Tests and docs
+### C5 - Differential and native coverage
 
 Status:
-Not started
+Complete for the current scalar ABI
 
-Scope:
+Delivered:
 
 - native imported nominal type coverage;
-- final documentation of cross-module nominal contracts.
+- shared O0/O1 corpus for imported nominal records and enums;
+- emulator coverage for the same corpus;
+- Linux x86-64 ELF coverage through the `native-x86-64` CI job;
+- coverage for imported single-field record returns, qualified constructors,
+  enum values, multi-field record parameters, inverted source order, and
+  aggregate-return rejection.
+
+### C6 - Documentation and consolidation
+
+Status:
+Complete
+
+Delivered:
+
+- this milestone plan now reflects C1-C6 as complete;
+- [docs/roadmap.md](roadmap.md), [README.md](../README.md), and
+  [docs/self-hosting.md](self-hosting.md) now describe the completed 1.02
+  language-composition contracts;
+- [spec/modules.md](../spec/modules.md),
+  [spec/composite-types.md](../spec/composite-types.md), and
+  [spec/language.md](../spec/language.md) explicitly state the cross-module
+  nominal type, scalarization, and aggregate-return limits;
+- no new ADR was required beyond ADR-0018 and ADR-0019.
 
 ## Later planned milestones
 
@@ -229,6 +256,10 @@ Planned
 - heap;
 - package manager;
 - complete self-hosting.
+- type import aliases;
+- wildcard imports;
+- general reexports;
+- aggregate-return ABI changes.
 
 ## Completion criteria
 
@@ -244,12 +275,12 @@ Planned
 
 - branch: `campaign-1.02b-1.06-language-composition`;
 - Draft PR: #125;
-- latest 1.02-B functional/test commit:
-  `b1b2ce94677bf5189f98d8a2befccf3f093771b3`;
-- last completed unit: 1.02-C1;
-- next unit: 1.02-C2 - Module graph and type symbols;
+- latest 1.02-C functional/test commit:
+  `2e6d0f46293785427f4af500cc85b31c41e0afac`;
+- last completed unit: 1.02-C6;
+- next unit: 1.03-A - Acyclic nested record architecture audit;
 - first action next session: confirm branch, HEAD, working tree, PR, and CI
-  before changing nominal type visibility;
+  before changing nested-record semantics;
 - likely files to audit: `module_compilation.py`, `semantic.py`,
   `lowering.py`, module tests, composite tests, and native integration tests;
-- public format changes by 1.02-B: none.
+- public format changes by 1.02: none.

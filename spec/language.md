@@ -89,6 +89,12 @@ Records e enums fechados sao tipos nominais especificados em
 ordem declarada e sao scalarizados internamente. Enums nao possuem payload nesta
 milestone e usam discriminants `tryte` deterministicos.
 
+Modulos podem exportar tipos nominais com `export record` e `export enum`.
+Imports explicitos podem trazer tipos exportados para o namespace de tipos do
+modulo consumidor, e tipos pontuados como `geometry.Point` preservam a
+identidade nominal do modulo definidor. Essa identidade e `ModuleId + TypeName`;
+tipos same-name ou same-shape de modulos diferentes continuam incompatíveis.
+
 Records multi-campo nao podem ser retornados ate que exista uma ABI agregada
 propria. Enums podem ser passados e retornados como valores nominais baixados
 para discriminants. `match` sobre enum exige cobertura exaustiva ou `else`.

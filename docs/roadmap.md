@@ -295,7 +295,7 @@ selecao em [docs/self-hosting-first-component.md](self-hosting-first-component.m
 
 ## Marco 1.02 - Language Composition
 
-Status: In progress
+Status: Complete
 
 O Marco 1.02 estabiliza contratos de composicao de linguagem identificados apos
 a integracao da campanha 0.97-1.01. Ele nao altera ABI, IR, Assembly, goldens,
@@ -335,13 +335,13 @@ Concluido:
 - B6: integracao diferencial hospedada O0/O1, multi-modulo e determinismo;
 - B7: cobertura nativa x86-64 O0/O1 para qualified postfix execution.
 
-Proximo:
+Continuidade:
 
-- 1.02-C2: transportar type symbols exportados no grafo de modulos.
+- 1.02-C concluiu os contratos de tipos nominais entre modulos descritos abaixo.
 
 ### 1.02-C - Cross-module nominal types
 
-Status: In progress
+Status: Complete
 
 Concluido:
 
@@ -350,14 +350,23 @@ Concluido:
 - contrato de `export record` e `export enum`;
 - separacao normativa entre namespaces de funcoes, tipos, modules, variants,
   fields e valores;
+- C2: exported nominal type symbols no grafo de modulos, com diagnosticos de
+  tipos privados, ausentes e conflitantes;
+- C3: imported nominal values para records e enums em variaveis, parametros,
+  retornos single-field, construcao, copia, field access, variants qualificadas
+  e match;
+- C4: contrato de layout nominal cross-module, com field order do modulo de
+  origem, discriminants por ordem declarada, incompatibilidade same-name e
+  same-shape, e determinismo de source order;
+- C5: cobertura diferencial O0/O1 e nativa Linux x86-64 para valores nominais
+  importados;
+- C6: consolidacao documental da Milestone 1.02;
 - type import aliases, wildcard imports e reexports gerais mantidos fora do
   escopo;
 - imported record como field continua rejeitado ate a milestone de nested
-  records.
-
-Proximo:
-
-- C2: module graph e symbols para tipos nominais exportados.
+  records;
+- retorno de record multi-field e retorno agregado geral continuam rejeitados
+  ate existir uma ABI agregada aprovada.
 
 ### Later language-composition milestones
 

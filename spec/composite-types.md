@@ -1,6 +1,7 @@
 # S3 records and enums
 
-Status: normative for Milestone 1.00.
+Status: normative for Milestone 1.00 records/enums and Milestone 1.02-C
+cross-module nominal values.
 
 ## Scope
 
@@ -151,4 +152,7 @@ Milestone 1.02-C extends that ownership model across module boundaries:
 - imported record values may be declared, passed, returned, constructed, and
   projected through their fields when their field types are otherwise supported;
 - imported records remain invalid as fields while nested records are outside the
-  language contract.
+  language contract;
+- imported multi-field record values may be passed and projected in supported
+  scalarized positions, but returning them remains rejected until an
+  aggregate-return ABI is specified.

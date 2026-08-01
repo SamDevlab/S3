@@ -116,9 +116,14 @@ opcode-classifier component validated as a differential reference. They do not
 make the compiler self-hosted, do not replace the Python implementation, and do
 not promote any S3 component to the default compiler path.
 
-Milestone 1.02-B has begun only at the specification and ADR level for postfix
-composition and qualified names. The unified parser, semantic resolution,
-lowering, and runtime behavior for that contract are not implemented.
+Milestone 1.02 is complete as a language-composition foundation. It adds
+postfix composition, qualified module calls, qualified enum variants, record
+member access, exported nominal record and enum symbols, imported nominal
+values, deterministic cross-module nominal layout, and focused native coverage.
+It does not make S3 self-hosted and does not replace any Python compiler path.
+The scalar return convention remains unchanged; aggregate returns, multi-field
+record returns, nested records, imported records as fields, heap allocation, and
+complete self-hosting remain future work.
 
 Recent tools make this pipeline more observable:
 

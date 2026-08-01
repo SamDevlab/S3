@@ -1,6 +1,7 @@
 # S3 modules and imports
 
-Status: normative for Milestone 0.99.
+Status: normative for Milestone 0.99 modules and Milestone 1.02-C exported
+nominal types.
 
 ## Goals
 
@@ -128,6 +129,11 @@ module-qualified type such as `geometry.Point` denotes the type declared as
 `Point` by module `geometry`, not a copied type in the consumer module. Same-name
 types from different modules remain incompatible unless their defining module id
 also matches.
+
+Imported nominal values keep that defining identity when they flow through
+variables, parameters, supported single-field returns, construction, field
+access, enum variants, and match. Multi-field record returns remain outside the
+current scalar-return ABI and are rejected before lowering.
 
 ## Graph order
 
