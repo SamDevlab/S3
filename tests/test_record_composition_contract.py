@@ -10,7 +10,10 @@ from bootstrap.s3.diagnostics import (
     diagnostic_from_exception,
 )
 from bootstrap.s3.emulator import execute_assembly
+from bootstrap.s3.lexer import SyntaxMode, tokenize
+from bootstrap.s3.parser import parse_tokens
 from bootstrap.s3.pipeline import compile_source, compile_sources, run_source
+from bootstrap.s3.semantic import analyze
 
 
 def _assert_semantic_rejection(source: str, message: str) -> None:
@@ -36,6 +39,15 @@ def _assert_sources_semantic_rejection(
     assert diagnostic.category is DiagnosticCategory.SEMANTIC
     assert diagnostic.code is DiagnosticCode.SEMANTIC_INVALID_PROGRAM
     assert diagnostic.message == message
+
+
+def _semantic_model(source: str):
+    return analyze(
+        parse_tokens(
+            tokenize(source, mode=SyntaxMode.V0_6),
+            mode=SyntaxMode.V0_6,
+        )
+    )
 
 
 def test_record_composition_accepts_current_scalar_and_enum_fields() -> None:
@@ -115,41 +127,6 @@ def test_module_record_composition_stays_module_local_without_nesting() -> None:
     ("source", "message"),
     (
         (
-            "record Inner:\n"
-            "    value: tryte\n"
-            "record Outer:\n"
-            "    inner: Inner\n"
-            "fn main() -> tryte:\n"
-            "    return 0\n",
-            "nested record fields are not supported yet",
-        ),
-        (
-            "record Node:\n"
-            "    next: Node\n"
-            "fn main() -> tryte:\n"
-            "    return 0\n",
-            "nested record fields are not supported yet",
-        ),
-        (
-            "record A:\n"
-            "    b: B\n"
-            "record B:\n"
-            "    a: A\n"
-            "fn main() -> tryte:\n"
-            "    return 0\n",
-            "nested record fields are not supported yet",
-        ),
-        (
-            "record Inner:\n"
-            "    value: tryte\n"
-            "record Outer:\n"
-            "    inner: Inner\n"
-            "fn main() -> tryte:\n"
-            "    item: Outer = Outer(inner=Inner(value=1))\n"
-            "    return 0\n",
-            "nested record fields are not supported yet",
-        ),
-        (
             "record Box:\n"
             "    values: tryte[2]\n"
             "fn main() -> tryte:\n"
@@ -180,11 +157,35 @@ def test_record_composition_rejects_unsupported_aggregate_shapes(
     _assert_semantic_rejection(source, message)
 
 
-def test_imported_record_cannot_be_used_as_a_record_field_type() -> None:
-    _assert_sources_semantic_rejection(
+def test_acyclic_nested_record_fields_are_accepted_semantically() -> None:
+    model = _semantic_model(
+        "enum Sign:\n"
+        "    Negative\n"
+        "    Positive\n"
+        "record Inner:\n"
+        "    value: tryte\n"
+        "    sign: Sign\n"
+        "record Outer:\n"
+        "    flag: trit\n"
+        "    inner: Inner\n"
+        "fn main() -> tryte:\n"
+        "    return 0\n"
+    )
+
+    assert model.record_leaf_count("Outer") == 3
+    assert [leaf.path for leaf in model.record_leaves("Outer")] == [
+        ("flag",),
+        ("inner", "value"),
+        ("inner", "sign"),
+    ]
+
+
+def test_imported_record_can_be_used_as_a_record_field_type() -> None:
+    compilation = compile_sources(
         {
             "main.s3": (
                 "module main\n"
+                "from logic import Inner\n"
                 "from logic import value\n"
                 "record Outer:\n"
                 "    inner: Inner\n"
@@ -193,11 +194,12 @@ def test_imported_record_cannot_be_used_as_a_record_field_type() -> None:
             ),
             "logic.s3": (
                 "module logic\n"
-                "record Inner:\n"
+                "export record Inner:\n"
                 "    value: tryte\n"
                 "export fn value() -> tryte:\n"
                 "    return 1\n"
             ),
         },
-        "nested record fields are not supported yet",
     )
+
+    assert compilation.semantic_model.record_leaf_count("Outer") == 1

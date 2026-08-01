@@ -212,29 +212,30 @@ def test_same_name_imported_records_from_different_modules_are_not_interchangeab
     assert error.value.diagnostic_code is DiagnosticCode.SEMANTIC_TYPE_MISMATCH
 
 
-def test_imported_record_field_remains_rejected_until_nested_records() -> None:
-    with pytest.raises(SemanticError) as error:
-        compile_sources(
-            {
-                "main.s3": (
-                    "module main\n"
-                    "from geometry import Point\n"
-                    "record Box:\n"
-                    "    point: Point\n"
-                    "fn main() -> tryte:\n"
-                    "    return 0\n"
-                ),
-                "geometry.s3": (
-                    "module geometry\n"
-                    "export record Point:\n"
-                    "    x: tryte\n"
-                    "export fn marker() -> tryte:\n"
-                    "    return 0\n"
-                ),
-            },
-        )
+def test_imported_record_field_preserves_imported_identity() -> None:
+    compilation = compile_sources(
+        {
+            "main.s3": (
+                "module main\n"
+                "from geometry import Point\n"
+                "record Box:\n"
+                "    point: Point\n"
+                "fn main() -> tryte:\n"
+                "    return 0\n"
+            ),
+            "geometry.s3": (
+                "module geometry\n"
+                "export record Point:\n"
+                "    x: tryte\n"
+                "export fn marker() -> tryte:\n"
+                "    return 0\n"
+            ),
+        },
+    )
 
-    assert "nested record fields are not supported yet" in str(error.value)
+    field_type = compilation.semantic_model.record("Box").field("point").type_name
+    assert field_type.name == "__s3mod_geometry__type_Point"
+    assert compilation.semantic_model.record_leaf_count("Box") == 1
 
 
 def test_private_qualified_record_constructor_is_rejected() -> None:

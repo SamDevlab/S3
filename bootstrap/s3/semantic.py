@@ -60,6 +60,13 @@ class RecordType:
 
 
 @dataclass(frozen=True, slots=True)
+class RecordLeaf:
+    path: tuple[str, ...]
+    type_name: ast.TypeName
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
 class EnumType:
     name: str
     variants: tuple[ast.EnumVariant, ...]
@@ -175,6 +182,42 @@ class SemanticModel:
     def is_record_type(self, type_name: ast.DeclaredType) -> bool:
         return isinstance(type_name, ast.NominalType) and type_name.name in self.records
 
+    def record_leaves(self, name: str) -> tuple[RecordLeaf, ...]:
+        self.record(name)
+        return _record_leaves(self.records, self.enums, name)
+
+    def record_leaf_count(self, name: str) -> int:
+        return len(self.record_leaves(name))
+
+
+def _record_leaves(
+    records: dict[str, RecordType],
+    enums: dict[str, EnumType],
+    name: str,
+    prefix: tuple[str, ...] = (),
+) -> tuple[RecordLeaf, ...]:
+    leaves: list[RecordLeaf] = []
+    record = records[name]
+    for field in record.fields:
+        path = (*prefix, field.name)
+        if isinstance(field.type_name, ast.TypeName):
+            leaves.append(RecordLeaf(path, field.type_name, field.location))
+        elif isinstance(field.type_name, ast.NominalType):
+            if field.type_name.name in enums:
+                leaves.append(RecordLeaf(path, ast.TypeName.TRYTE, field.location))
+            elif field.type_name.name in records:
+                leaves.extend(
+                    _record_leaves(records, enums, field.type_name.name, path)
+                )
+            else:
+                raise SemanticError(
+                    f"unknown type '{field.type_name.name}'",
+                    field.location,
+                )
+        else:
+            raise SemanticError("unsupported record field type", field.location)
+    return tuple(leaves)
+
 
 class SemanticAnalyzer:
     def __init__(self) -> None:
@@ -272,6 +315,14 @@ class SemanticAnalyzer:
                         diagnostic_code=DiagnosticCode.RECORD_FIELD_DUPLICATE,
                     )
                 field_names.add(field.name)
+            self.records[record.name] = RecordType(
+                record.name,
+                record.fields,
+                record.location,
+            )
+
+        for record in program.records:
+            for field in record.fields:
                 if isinstance(field.type_name, ast.ArrayType):
                     raise SemanticError(
                         "record fields cannot be arrays in milestone 1.00",
@@ -285,15 +336,47 @@ class SemanticAnalyzer:
                 if isinstance(field.type_name, ast.NominalType):
                     if field.type_name.name in self.enums:
                         continue
+                    if field.type_name.name in self.records:
+                        continue
                     raise SemanticError(
-                        "nested record fields are not supported yet",
+                        f"unknown type '{field.type_name.name}'",
                         field.location,
                     )
-            self.records[record.name] = RecordType(
-                record.name,
-                record.fields,
-                record.location,
-            )
+        self._validate_record_layouts()
+
+    def _validate_record_layouts(self) -> None:
+        visiting: set[str] = set()
+        visited: set[str] = set()
+        stack: list[str] = []
+
+        def visit(name: str) -> None:
+            if name in visiting:
+                start = stack.index(name)
+                cycle = tuple(stack[start:] + [name])
+                raise SemanticError(
+                    "recursive record layout cycle: " + " -> ".join(cycle),
+                    self.records[name].location,
+                )
+            if name in visited:
+                return
+            visiting.add(name)
+            stack.append(name)
+            record = self.records[name]
+            for field in record.fields:
+                if (
+                    isinstance(field.type_name, ast.NominalType)
+                    and field.type_name.name in self.records
+                ):
+                    visit(field.type_name.name)
+            stack.pop()
+            visiting.remove(name)
+            visited.add(name)
+
+        for name in self.records:
+            visit(name)
+
+    def _record_leaf_count(self, name: str) -> int:
+        return len(_record_leaves(self.records, self.enums, name))
 
     def _collect_signatures(self, program: ast.Program) -> None:
         for function in program.functions:
@@ -339,8 +422,7 @@ class SemanticAnalyzer:
                 )
             if isinstance(function.return_type, ast.NominalType):
                 if function.return_type.name in self.records:
-                    record = self.records[function.return_type.name]
-                    if len(record.fields) != 1:
+                    if self._record_leaf_count(function.return_type.name) != 1:
                         raise SemanticError(
                             "multi-field record returns require a future aggregate ABI",
                             function.signature.location,

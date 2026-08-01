@@ -272,15 +272,6 @@ def test_multimodule_postfix_composition_rejects_invalid_public_shapes(
 def test_unsupported_aggregate_shapes_remain_rejected_in_differential_path() -> None:
     for source, message in (
         (
-            "record Inner:\n"
-            "    value: tryte\n"
-            "record Outer:\n"
-            "    inner: Inner\n"
-            "fn main() -> tryte:\n"
-            "    return 0\n",
-            "nested record fields are not supported yet",
-        ),
-        (
             "record Box:\n"
             "    value: tryte\n"
             "fn main() -> tryte:\n"
@@ -295,11 +286,25 @@ def test_unsupported_aggregate_shapes_remain_rejected_in_differential_path() -> 
         assert diagnostic_from_exception(captured.value).message == message
 
 
-def test_imported_record_field_remains_rejected_in_multimodule_path() -> None:
-    _assert_sources_semantic_rejection(
+def test_nested_record_declaration_is_accepted_in_differential_path() -> None:
+    compilation = compile_source(
+        "record Inner:\n"
+        "    value: tryte\n"
+        "record Outer:\n"
+        "    inner: Inner\n"
+        "fn main() -> tryte:\n"
+        "    return 0\n"
+    )
+
+    assert compilation.semantic_model.record_leaf_count("Outer") == 1
+
+
+def test_imported_record_field_is_accepted_in_multimodule_path() -> None:
+    compilation = compile_sources(
         {
             "main.s3": (
                 "module main\n"
+                "from logic import Inner\n"
                 "from logic import value\n"
                 "record Outer:\n"
                 "    inner: Inner\n"
@@ -308,12 +313,12 @@ def test_imported_record_field_remains_rejected_in_multimodule_path() -> None:
             ),
             "logic.s3": (
                 "module logic\n"
-                "record Inner:\n"
+                "export record Inner:\n"
                 "    value: tryte\n"
                 "export fn value() -> tryte:\n"
                 "    return 1\n"
             ),
         },
-        "nested record fields are not supported yet",
-        DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
     )
+
+    assert compilation.semantic_model.record_leaf_count("Outer") == 1
