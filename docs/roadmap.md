@@ -292,6 +292,21 @@ como caminho padrao; Python permanece a referencia.
 Contrato documentado em [docs/milestone-1.01.md](milestone-1.01.md) e na
 selecao em [docs/self-hosting-first-component.md](self-hosting-first-component.md).
 
+## Marco 1.02 - Architectural Contract Stabilization
+
+O Marco 1.02 estabiliza contratos arquiteturais identificados apos a integracao
+da campanha 0.97-1.01, sem adicionar funcionalidade de linguagem ou alterar ABI,
+IR, Assembly, goldens, baselines ou versao publica.
+
+A unidade 1.02-A alinha o contrato de composicao de records com o comportamento
+entregue no Marco 1.00: campos de record permanecem limitados a `trit`, `tryte`
+e enums fechados; records aninhados, ciclos indiretos, arrays em records e
+arrays de records continuam fora do escopo atual.
+
+A unidade 1.02-B fica reservada para definir, por ADR e matriz de testes, o
+contrato de composicao postfix e nomes qualificados antes de qualquer mudanca no
+parser.
+
 ## Autohospedagem
 
 Assembler e frontend em S3 dependem de strings além de concatenação estática

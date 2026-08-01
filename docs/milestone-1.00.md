@@ -32,9 +32,10 @@ baselines, and public version.
 
 ## Layout
 
-Records are scalarized in declaration order. Fields may be scalar values or
-closed enum values. Arrays, `string`, and nested records remain outside this
-milestone.
+Records are scalarized in declaration order. Fields may be `trit`, `tryte`, or
+closed enum values. Arrays, `string`, direct nested records, and indirect record
+cycles remain outside this milestone. No nested aggregate layout or ABI was
+defined.
 
 Enums lower to existing `tryte` registers. The first variant has discriminant
 `0`, the second `1`, and so on. The implementation rejects enum declarations
@@ -70,3 +71,6 @@ Focused validation covers:
 - O0/O1 hosted execution for records and enums;
 - multi-file compilation with module-local composite type names;
 - native x86-64 collection for composite type programs.
+
+Milestone 1.02-A later aligned the public composition contract with this
+delivered behavior without adding nested records or changing ABI.
