@@ -9,8 +9,8 @@ from bootstrap.s3.pipeline import compile_source
 @pytest.mark.xfail(
     strict=True,
     reason=(
-        "Milestone 1.05 enum payloads require a public syntax and layout "
-        "decision before implementation."
+        "Milestone 1.05 enum payload syntax and lowering are implemented after "
+        "the ADR-0021 fixed tagged layout decision."
     ),
 )
 def test_enum_payload_result_flow_requires_architectural_decision() -> None:
