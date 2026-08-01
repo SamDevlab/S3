@@ -431,7 +431,7 @@ Limites preservados:
 
 ### Later language-composition milestones
 
-Status: Blocked after 1.05 audit
+Status: 1.05 blocked, 1.06 deferred
 
 - 1.05 - enums com payload e erros estruturados: bloqueado por
   [ADR-0021](decisions/ADR-0021-enum-payload-layout-gate.md), pois a
@@ -439,8 +439,12 @@ Status: Blocked after 1.05 audit
   bindings de match e retorno escalar antes da implementacao;
 - 1.06 - componentes adicionais de self-hosting: aguardando a decisao da 1.05
   quando os candidatos dependerem de structured results.
+- A proxima campanha deve comecar pela resolucao da ADR-0021. Esta PR nao
+  implementa enum payload runtime, structured results, novo componente
+  self-hosted, retorno agregado, heap, mudanca de ABI, bump de IR ou bump de
+  S3 Assembly.
 
-### Out of scope after 1.03
+### Out of scope after 1.04
 
 Status: Out of scope
 

@@ -34,6 +34,10 @@ architecture decision. The branch includes a minimal xfail test,
 `tests/test_enum_payload_architecture_gate.py`, showing the intended `Result`
 flow that cannot be accepted until syntax and layout are decided.
 
+This is a representation decision gate, not an implementation failure. The
+current branch intentionally stops before choosing a public tag-plus-payload
+encoding silently.
+
 ## Required Decisions
 
 An accepted follow-up must define:
@@ -50,6 +54,8 @@ An accepted follow-up must define:
 - exhaustiveness and duplicate-arm rules with bindings;
 - public compatibility impact for grammar, AST, IR JSON, Assembly, native ABI,
   goldens, baselines, and tools.
+- whether the next campaign changes a versioned public format or keeps payloads
+  entirely inside existing scalarized positions.
 
 ## Preserved Invariants
 

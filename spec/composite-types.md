@@ -1,7 +1,8 @@
 # S3 records and enums
 
 Status: normative for Milestone 1.00 records/enums, Milestone 1.02-C
-cross-module nominal values, and Milestone 1.03 acyclic nested records.
+cross-module nominal values, Milestone 1.03 acyclic nested records, and
+Milestone 1.04 fixed-capacity static text leaves.
 
 ## Scope
 
@@ -104,6 +105,11 @@ Rules:
 - discriminants are deterministic `tryte` values starting at `0`;
 - enum payloads are not part of this milestone;
 - enums from different types are incompatible even if they have equal variants.
+
+Payload-carrying enum variants and structured result enums are blocked on the
+ADR-0021 tag-plus-payload architecture decision. The current implementation
+must not encode payloads by truncating to the tag, truncating to the first
+payload leaf, or inventing a hidden aggregate return path.
 
 Construction uses qualified variant syntax:
 

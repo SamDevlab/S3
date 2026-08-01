@@ -2,7 +2,7 @@
 
 Status: normative for Milestone 0.99 modules, Milestone 1.02-C exported
 nominal types, and Milestone 1.03 imported records used as acyclic nested
-fields.
+fields, with Milestone 1.04 static text leaves in imported records.
 
 ## Goals
 

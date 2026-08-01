@@ -101,7 +101,9 @@ continuam rejeitadas.
 Records e enums fechados sao tipos nominais especificados em
 [composite-types.md](composite-types.md). Records possuem campos nomeados em
 ordem declarada e sao scalarizados internamente. Enums nao possuem payload nesta
-milestone e usam discriminants `tryte` deterministicos.
+milestone e usam discriminants `tryte` deterministicos. Enum payloads e
+structured results dependem da decisao arquitetural ADR-0021 antes de qualquer
+implementacao.
 
 Modulos podem exportar tipos nominais com `export record` e `export enum`.
 Imports explicitos podem trazer tipos exportados para o namespace de tipos do

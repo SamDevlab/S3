@@ -34,7 +34,7 @@ A implementação atual oferece:
   `export fn`, qualified calls e type imports explícitos;
 - records e enums nominais mínimos, com `export record`, `export enum`,
   tipos pontuados, constructors qualificados e campos de record limitados a
-  `trit`, `tryte`, enums fechados e records acíclicos;
+  `trit`, `tryte`, `string`, enums fechados e records acíclicos;
 - assembly com `.memory`, `TLOAD` e `TSTORE`;
 - leitura não inicializada sempre diagnosticada;
 - backend nativo experimental Linux x86-64 para todos os opcodes atuais;
@@ -88,6 +88,13 @@ baselines unless an explicit milestone says so.
   emulator handles, and native `.rodata` path while allowing `string` leaves in
   records and nested records. Text operations remain compile-time-only unless
   their operands are known static text.
+- Milestone 1.05 is an architectural gate, not a failed implementation.
+  Payload enums and structured results require a public tag-plus-payload layout
+  decision before implementation. `docs/decisions/ADR-0021-enum-payload-layout-gate.md`
+  records the required decision.
+- Milestone 1.06 is deferred until the 1.05 decision is resolved. No new
+  self-hosted compiler component is adopted by this campaign; Python remains
+  the reference compiler and default path.
 
 The current scalar return convention remains unchanged: `RETURN`, `TRET`, and
 the native x86-64 result path carry one scalar value. Single-field record returns
@@ -478,10 +485,11 @@ O target nativo é somente Linux x86-64. Não há interoperabilidade C, JIT, TCO
 ou otimização interprocedural. ARM64 possui apenas um
 [estudo de viabilidade](docs/arm64-feasibility.md).
 
-O Marco 0.7 está concluído e a versão 0.7.0 está publicada. A Milestone 1.02
-esta concluida como campanha interna sem bump de versao publica. O proximo
-marco planejado e 1.03, para nested records aciclicos, sem retorno agregado ou
-mudanca silenciosa de ABI. Os demais recursos classificados como Pos-MVP
-continuam nao implementados. Consulte o
-[roadmap](docs/roadmap.md), o [plano da Milestone 1.02](docs/milestone-1.02.md)
-e as [notas de lançamento](docs/releases/0.7.0.md).
+O Marco 0.7 está concluído e a versão 0.7.0 está publicada. As Milestones
+1.02, 1.03 e 1.04 estao concluidas como campanha interna sem bump de versao
+publica. A proxima campanha planejada deve comecar pela resolucao da ADR-0021,
+definindo a representacao publica de enum tag + payload antes de implementar
+enum payloads, structured results ou componentes adicionais de self-hosting.
+Os demais recursos classificados como Pos-MVP continuam nao implementados.
+Consulte o [roadmap](docs/roadmap.md), os planos de milestone em `docs/` e as
+[notas de lançamento](docs/releases/0.7.0.md).

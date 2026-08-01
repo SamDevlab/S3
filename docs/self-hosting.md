@@ -150,6 +150,10 @@ self-hosting candidates should continue to use scalar status codes, no-payload
 enums, and records separately rather than pretending a structured result ABI
 exists.
 
+The next self-hosting-related campaign should therefore start by resolving
+ADR-0021, not by adding another component. No component from Milestone 1.06 is
+implemented or adopted by the current 1.02-1.04 delivery campaign.
+
 Recent tools make this pipeline more observable:
 
 - `s3 targets` lists internal target and backend names.
