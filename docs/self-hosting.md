@@ -142,6 +142,14 @@ diagnostic text through nominal data. It still does not provide a general
 runtime string builder, parser input stream, file I/O, formatting, or dynamic
 serialization.
 
+Milestone 1.05 is blocked by an architecture decision. Payload enums and
+structured result values require public syntax, match binding rules, and a
+canonical tag+payload layout before S3 components can use `Result.Ok(value)` or
+`Result.Err(error)` style flows. Until that decision is accepted, second-stage
+self-hosting candidates should continue to use scalar status codes, no-payload
+enums, and records separately rather than pretending a structured result ABI
+exists.
+
 Recent tools make this pipeline more observable:
 
 - `s3 targets` lists internal target and backend names.

@@ -431,10 +431,14 @@ Limites preservados:
 
 ### Later language-composition milestones
 
-Status: Planned
+Status: Blocked after 1.05 audit
 
-- 1.05 - enums com payload e erros estruturados;
-- 1.06 - componentes adicionais de self-hosting.
+- 1.05 - enums com payload e erros estruturados: bloqueado por
+  [ADR-0021](decisions/ADR-0021-enum-payload-layout-gate.md), pois a
+  representacao tag+payload exige decisao publica de sintaxe, layout,
+  bindings de match e retorno escalar antes da implementacao;
+- 1.06 - componentes adicionais de self-hosting: aguardando a decisao da 1.05
+  quando os candidatos dependerem de structured results.
 
 ### Out of scope after 1.03
 
