@@ -97,13 +97,18 @@ para discriminants. `match` sobre enum exige cobertura exaustiva ou `else`.
 
 Da maior para a menor precedência:
 
-1. Chamada, indexação, parênteses
+1. Chamada, indexação, acesso a membro `.`, parênteses
 2. Inversão unária `~` e negação `-`
 3. Adição `+` e subtração `-`
 4. Mínimo tritwise `&`
 5. Máximo tritwise `|`
 6. Comparação ternária `<=>`
 7. Operadores relacionais `==`, `!=`, `<`, `<=`, `>`, `>=`
+
+Expressoes postfix encadeiam da esquerda para a direita a partir de uma expressao
+primaria. O parser trata `.` como acesso uniforme a membro; a analise semantica
+decide se o membro representa simbolo de modulo, variante de enum ou campo de
+record. O contrato normativo esta em [postfix-expressions.md](postfix-expressions.md).
 
 Operadores relacionais comparam dois operandos do mesmo tipo escalar (`tryte` com `tryte`, ou `trit` com `trit`) e retornam `trit` (`-1` para verdadeiro, `0` para falso). `<=>` retorna `trit`. Subtração é reduzida exclusivamente a `INVERT` seguido de `ADD`; não existe opcode de subtração nativo.
 

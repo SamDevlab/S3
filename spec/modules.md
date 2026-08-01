@@ -85,14 +85,18 @@ in the selected entry module. The entry `main` does not need to be exported.
 Each module has its own function namespace. Local functions and import aliases
 share the namespace.
 
-Resolution order for a call expression in module `M`:
+Resolution order for an unqualified call expression in module `M`:
 
 1. a function declared in `M`;
 2. an explicit import alias in `M`.
 
 Ambiguous or missing names are semantic errors. Cross-module calls are lowered
-to deterministic internal function names by the compiler; source programs do not
-call qualified names in this milestone.
+to deterministic internal function names by the compiler.
+
+Milestone 0.99 did not define qualified source calls. The later postfix
+expression contract defines `module.function(...)` as member access followed by
+a call suffix, resolved before lowering and never by late backend lookup. See
+[postfix-expressions.md](postfix-expressions.md).
 
 ## Graph order
 
