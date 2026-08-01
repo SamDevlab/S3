@@ -144,8 +144,9 @@ Não integram o Marco 0.7 e não estão implementados:
 3. otimizações entre blocos provadas sem `PHI`;
 4. backend ou execução ARM64 experimental.
 
-Arrays em assinaturas, heap, ponteiros públicos, strings dinâmicas, módulos e
-I/O continuam fora do MVP até receberem contratos próprios. O Marco 0.53 cobre
+Arrays em assinaturas, heap, ponteiros públicos, strings dinâmicas e I/O
+continuam fora do MVP até receberem contratos próprios. Módulos e imports
+determinísticos foram entregues no Marco 0.99. O Marco 0.53 cobre
 valores `string` estáticos tipados, e o Marco 0.54 adiciona concatenação
 estática literal-only em tempo de compilação. O Marco 0.55 estende `len(...)`
 para calcular comprimento de texto estático em tempo de compilação. O Marco
@@ -292,20 +293,164 @@ como caminho padrao; Python permanece a referencia.
 Contrato documentado em [docs/milestone-1.01.md](milestone-1.01.md) e na
 selecao em [docs/self-hosting-first-component.md](self-hosting-first-component.md).
 
-## Marco 1.02 - Architectural Contract Stabilization
+## Marco 1.02 - Language Composition
 
-O Marco 1.02 estabiliza contratos arquiteturais identificados apos a integracao
-da campanha 0.97-1.01, sem adicionar funcionalidade de linguagem ou alterar ABI,
-IR, Assembly, goldens, baselines ou versao publica.
+Status: Complete
 
-A unidade 1.02-A alinha o contrato de composicao de records com o comportamento
-entregue no Marco 1.00: campos de record permanecem limitados a `trit`, `tryte`
-e enums fechados; records aninhados, ciclos indiretos, arrays em records e
-arrays de records continuam fora do escopo atual.
+O Marco 1.02 estabiliza contratos de composicao de linguagem identificados apos
+a integracao da campanha 0.97-1.01. Ele nao altera ABI, IR, Assembly, goldens,
+baselines ou versao publica por si so.
 
-A unidade 1.02-B fica reservada para definir, por ADR e matriz de testes, o
-contrato de composicao postfix e nomes qualificados antes de qualquer mudanca no
-parser.
+### 1.02-A - Record contract alignment
+
+Status: Complete
+
+Resultado:
+
+- fields suportados: `trit`, `tryte` e enum fechado;
+- ainda rejeitados: nested records, records recursivos, arrays, string e
+  imported records como fields;
+- contrato alinhado em [spec/composite-types.md](../spec/composite-types.md) e
+  no plano da [Milestone 1.02](milestone-1.02.md).
+
+### 1.02-B - Postfix composition and qualified names
+
+Status: Complete
+
+Concluido:
+
+- B1: especificacao em [spec/postfix-expressions.md](../spec/postfix-expressions.md);
+- [ADR-0018](decisions/ADR-0018-postfix-qualified-resolution.md);
+- gramatica normativa em [spec/grammar.ebnf](../spec/grammar.ebnf);
+- contrato para diferenciar modulos, enums e record members durante a analise
+  semantica;
+- B2: parser postfix unificado e AST com call, index, slice e member
+  encadeados;
+- B3: resolucao semantica de qualified calls, qualified enum variants e labels
+  qualificados de match;
+- B4: contrato de record member access, diagnostics explicitos e limites de
+  composicao preservados;
+- B5: lowering/verifier cobrindo callee concreto, discriminants e scalarizacao
+  sem opcode publico novo;
+- B6: integracao diferencial hospedada O0/O1, multi-modulo e determinismo;
+- B7: cobertura nativa x86-64 O0/O1 para qualified postfix execution.
+
+Continuidade:
+
+- 1.02-C concluiu os contratos de tipos nominais entre modulos descritos abaixo.
+
+### 1.02-C - Cross-module nominal types
+
+Status: Complete
+
+Concluido:
+
+- C1: identidade nominal especificada como `ModuleId + TypeName`;
+- [ADR-0019](decisions/ADR-0019-cross-module-nominal-type-identity.md);
+- contrato de `export record` e `export enum`;
+- separacao normativa entre namespaces de funcoes, tipos, modules, variants,
+  fields e valores;
+- C2: exported nominal type symbols no grafo de modulos, com diagnosticos de
+  tipos privados, ausentes e conflitantes;
+- C3: imported nominal values para records e enums em variaveis, parametros,
+  retornos single-field, construcao, copia, field access, variants qualificadas
+  e match;
+- C4: contrato de layout nominal cross-module, com field order do modulo de
+  origem, discriminants por ordem declarada, incompatibilidade same-name e
+  same-shape, e determinismo de source order;
+- C5: cobertura diferencial O0/O1 e nativa Linux x86-64 para valores nominais
+  importados;
+- C6: consolidacao documental da Milestone 1.02;
+- type import aliases, wildcard imports e reexports gerais mantidos fora do
+  escopo;
+- imported record como field continua rejeitado ate a milestone de nested
+  records;
+- retorno de record multi-field e retorno agregado geral continuam rejeitados
+  ate existir uma ABI agregada aprovada.
+
+## Marco 1.03 - Acyclic Nested Records
+
+Status: Complete
+
+O Marco 1.03 especifica e implementa nested records aciclicos e layout composto
+deterministico sem alterar ABI, IR publico, Assembly publico, goldens,
+baselines ou versao publica.
+
+Concluido:
+
+- auditoria arquitetural inicial;
+- gate inicial confirmando que locals, constructors, copias, parametros e
+  member access podem ser representados por scalarizacao de folhas no IR atual;
+- [ADR-0020](decisions/ADR-0020-acyclic-nested-record-layout.md);
+- contrato normativo em [spec/composite-types.md](../spec/composite-types.md);
+- `SemanticModel.record_leaves()` como fonte canonica de paths, tipos, ordem
+  depth-first/declarada, scalarizacao, copias, parametros, member access e
+  classificacao de retorno;
+- nested records locais de dois, tres e quatro niveis;
+- records importados como fields;
+- constructors qualificados e constructors nested qualificados;
+- initializers fora da ordem declarada preservando layout declarado;
+- determinismo multi-module e independencia de source order;
+- cobertura hospedada O0/O1 e cobertura nativa Linux x86-64 para nested record
+  execution.
+
+Limites preservados:
+
+- layouts recursivos continuam rejeitados;
+- retorno de record multi-leaf continua rejeitado antes do lowering;
+- nao ha hidden return pointer, retorno multi-register, offsets publicos ou
+  alignment nominal.
+
+## Marco 1.04 - Fixed-Capacity Static Text Foundation
+
+Status: Complete
+
+O Marco 1.04 consolida `string` como texto estatico de capacidade fixa:
+conteudo conhecido em tempo de compilacao, capacidade igual ao byte length
+UTF-8 decodificado, handle escalar interno, sem heap, sem buffer mutavel, sem
+ponteiro publico e sem mudanca de ABI.
+
+Concluido:
+
+- auditoria da infraestrutura existente de static text;
+- especificacao em [docs/milestone-1.04.md](milestone-1.04.md);
+- preservacao de `IRType.STRING`, `IRStaticString`, `CONST_STR`, `.data`,
+  `TCONST_STR`, emulador e `.rodata` nativo;
+- operacoes compile-time existentes: `len`, index, slice, igualdade,
+  `contains`, `starts_with`, `ends_with`, `find`, `upper`, `lower`, `trim`,
+  `repeat` e `replace`;
+- `string` como folha escalar em records, nested records e imported records;
+- cobertura hospedada O0/O1 e harness nativo para record fields textuais.
+
+Limites preservados:
+
+- operacoes runtime sobre texto nao estatico continuam rejeitadas;
+- `main -> string` continua rejeitado;
+- arrays de string e arrays de records continuam fora;
+- retorno agregado e retorno multi-leaf continuam rejeitados.
+
+### Later language-composition milestones
+
+Status: 1.05 blocked, 1.06 deferred
+
+- 1.05 - enums com payload e erros estruturados: bloqueado por
+  [ADR-0021](decisions/ADR-0021-enum-payload-layout-gate.md), pois a
+  representacao tag+payload exige decisao publica de sintaxe, layout,
+  bindings de match e retorno escalar antes da implementacao;
+- 1.06 - componentes adicionais de self-hosting: aguardando a decisao da 1.05
+  quando os candidatos dependerem de structured results.
+- A proxima campanha deve comecar pela resolucao da ADR-0021. Esta PR nao
+  implementa enum payload runtime, structured results, novo componente
+  self-hosted, retorno agregado, heap, mudanca de ABI, bump de IR ou bump de
+  S3 Assembly.
+
+### Out of scope after 1.04
+
+Status: Out of scope
+
+Arrays como record fields, recursive layouts, methods, generics, heap, dynamic
+text, package manager, aggregate returns e self-hosting completo continuam fora
+deste checkpoint documental.
 
 ## Autohospedagem
 

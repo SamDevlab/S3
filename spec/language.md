@@ -82,12 +82,34 @@ for i: tryte in range(0, len(values)):
 
 Strings estáticas são suportadas apenas como literais definidos na compilação. O tempo de execução não fornece manipulação nativa de strings arbitrárias. Literais de string estão presentes na sintaxe para suporte a chamadas nativas de diagnóstico (renderização).
 
+Uma `string` e um valor de texto estatico de capacidade fixa. A capacidade e o
+byte length UTF-8 do texto decodificado conhecido em tempo de compilacao; o
+terminador NUL usado pelo backend nativo em `.rodata` nao faz parte do valor da
+linguagem. O valor em runtime e um handle escalar imutavel para armazenamento
+estatico. S3 nao expoe ponteiros, aritmetica de handles, heap, desalocacao,
+garbage collection ou buffers mutaveis de texto.
+
+Operacoes de texto como `len(text)`, index, slice, igualdade, `contains`,
+`starts_with`, `ends_with`, `find`, `upper`, `lower`, `trim`, `repeat` e
+`replace` sao avaliadas somente quando seus operandos sao expressoes de texto
+estatico conhecidas pela analise semantica. Operacoes equivalentes sobre texto
+dependente de parametros, bindings mutaveis ou chamadas nao constantes
+continuam rejeitadas.
+
 ## Records e enums
 
 Records e enums fechados sao tipos nominais especificados em
 [composite-types.md](composite-types.md). Records possuem campos nomeados em
 ordem declarada e sao scalarizados internamente. Enums nao possuem payload nesta
-milestone e usam discriminants `tryte` deterministicos.
+milestone e usam discriminants `tryte` deterministicos. Enum payloads e
+structured results dependem da decisao arquitetural ADR-0021 antes de qualquer
+implementacao.
+
+Modulos podem exportar tipos nominais com `export record` e `export enum`.
+Imports explicitos podem trazer tipos exportados para o namespace de tipos do
+modulo consumidor, e tipos pontuados como `geometry.Point` preservam a
+identidade nominal do modulo definidor. Essa identidade e `ModuleId + TypeName`;
+tipos same-name ou same-shape de modulos diferentes continuam incompatíveis.
 
 Records multi-campo nao podem ser retornados ate que exista uma ABI agregada
 propria. Enums podem ser passados e retornados como valores nominais baixados
@@ -97,13 +119,18 @@ para discriminants. `match` sobre enum exige cobertura exaustiva ou `else`.
 
 Da maior para a menor precedência:
 
-1. Chamada, indexação, parênteses
+1. Chamada, indexação, acesso a membro `.`, parênteses
 2. Inversão unária `~` e negação `-`
 3. Adição `+` e subtração `-`
 4. Mínimo tritwise `&`
 5. Máximo tritwise `|`
 6. Comparação ternária `<=>`
 7. Operadores relacionais `==`, `!=`, `<`, `<=`, `>`, `>=`
+
+Expressoes postfix encadeiam da esquerda para a direita a partir de uma expressao
+primaria. O parser trata `.` como acesso uniforme a membro; a analise semantica
+decide se o membro representa simbolo de modulo, variante de enum ou campo de
+record. O contrato normativo esta em [postfix-expressions.md](postfix-expressions.md).
 
 Operadores relacionais comparam dois operandos do mesmo tipo escalar (`tryte` com `tryte`, ou `trit` com `trit`) e retornam `trit` (`-1` para verdadeiro, `0` para falso). `<=>` retorna `trit`. Subtração é reduzida exclusivamente a `INVERT` seguido de `ADD`; não existe opcode de subtração nativo.
 
@@ -142,3 +169,9 @@ fn main() -> tryte:
 ## Retorno
 
 Funções não retornam implicitamente. Todas as rotas de código devem convergir para um `return` compatível. Um `while` não garante execução de seu corpo (mesmo com `-1` constante na sintaxe atual, por segurança conservadora), então o código subsequente deve tratar a continuação do fluxo. Instruções `break` e `continue` terminam o bloco local mas não satisfazem o retorno da função. Código inalcançável (após `return`, `break`, `continue` ou `match` terminante) é rejeitado na compilação.
+
+O contrato de retorno publico permanece escalar. `RETURN`, `TRET` e o caminho
+nativo x86-64 retornam um unico valor. Records, incluindo nested records,
+podem ser retornados somente quando o layout canonico contem exatamente uma
+folha escalar. Records com multiplas folhas sao rejeitados antes do backend ate
+que uma ABI explicita de retorno agregado exista.

@@ -21,14 +21,14 @@ parameter-list       = parameter, { ",", parameter } ;
 parameter            = identifier, ":", type ;
 
 scalar-type          = "trit" | "tryte" ;
-nominal-type         = identifier ;
+nominal-type         = identifier, { ".", identifier } ;
 type                 = ( scalar-type | nominal-type ), { "[", integer, "]" } ;
 
-record-declaration   = "record", identifier, ":", NEWLINE, INDENT,
+record-declaration   = [ "export" ], "record", identifier, ":", NEWLINE, INDENT,
                        record-field, { record-field }, DEDENT ;
 record-field         = identifier, ":", type, NEWLINE ;
 
-enum-declaration     = "enum", identifier, ":", NEWLINE, INDENT,
+enum-declaration     = [ "export" ], "enum", identifier, ":", NEWLINE, INDENT,
                        enum-variant, { enum-variant }, DEDENT ;
 enum-variant         = identifier, NEWLINE ;
 
@@ -68,10 +68,12 @@ comparison           = maximum, { "<=>", maximum } ;
 maximum              = minimum, { "|", minimum } ;
 minimum              = additive, { "&", additive } ;
 additive             = unary, { ("+" | "-"), unary } ;
-unary                = ("~" | "-"), unary | primary ;
+unary                = ("~" | "-"), unary | postfix-expression ;
+postfix-expression   = primary, { postfix-suffix } ;
 primary              = integer
-                     | qualified-name
-                     | identifier-expression
+                     | string-literal
+                     | record-expression
+                     | identifier
                      | match-expression
                      | len-expression
                      | "(", expression, ")" ;
@@ -81,18 +83,20 @@ len-expression       = "len", "(", expression, ")" ;
 match-expression     = "match", expression, ":", NEWLINE, INDENT, match-expression-case, { match-expression-case }, DEDENT ;
 match-expression-case = signed-integer, ":", expression, NEWLINE ;
 
-identifier-expression = identifier, [ call-suffix ], [ postfix-suffix ] ;
-qualified-name       = identifier, ".", identifier ;
-postfix-suffix       = index-suffix | field-suffix ;
+record-expression    = identifier, "(", record-field-value, { ",", record-field-value }, ")" ;
+record-field-value   = identifier, ":", expression ;
+postfix-suffix       = call-suffix | index-suffix | member-suffix ;
 call-suffix          = "(", [ argument-list ], ")" ;
 index-suffix         = "[", expression, "]" ;
-field-suffix         = ".", identifier ;
+member-suffix        = ".", identifier ;
 argument-list        = expression, { ",", expression } ;
 
 identifier           = identifier-start, { identifier-continue } ;
 identifier-start     = letter | "_" ;
 identifier-continue  = letter | digit | "_" ;
 integer              = digit, { digit } ;
+string-literal       = '"', { string-character }, '"' ;
+string-character     = ? valid string literal character except unescaped newline ? ;
 digit                = "0" | "1" | "2" | "3" | "4"
                      | "5" | "6" | "7" | "8" | "9" ;
 letter               = "A" | "B" | "C" | "D" | "E" | "F" | "G" | "H" | "I"

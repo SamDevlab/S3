@@ -110,6 +110,50 @@ dynamic cursor bounds, and uninitialized memory rejection, serving as the physic
 renderer remains unimplemented and `compare --check` remains blocked.
 S3 0.41 is closed after establishing a generic structural fixture renderer authored in S3 (a bootstrap renderer component). There are now entry points for `render_first`, `render_simple_call`, and `render_sign`. These generic paths are successfully compared against both the preserved legacy renderers and the golden artifacts. `compare_assembly_renderer.py` is fully functional and proves these generic paths. This serves as a partial self-hosting proof, though the Python compiler remains the reference implementation and a full S3 compiler does not yet exist.
 
+Milestones 0.99 through 1.01 add important foundations for this plan:
+deterministic modules/imports, minimal records/enums, and a first S3
+opcode-classifier component validated as a differential reference. They do not
+make the compiler self-hosted, do not replace the Python implementation, and do
+not promote any S3 component to the default compiler path.
+
+Milestone 1.02 is complete as a language-composition foundation. It adds
+postfix composition, qualified module calls, qualified enum variants, record
+member access, exported nominal record and enum symbols, imported nominal
+values, deterministic cross-module nominal layout, and focused native coverage.
+It does not make S3 self-hosted and does not replace any Python compiler path.
+The scalar return convention remains unchanged; aggregate returns, multi-field
+record returns, heap allocation, and complete self-hosting remain future work.
+
+Milestone 1.03 is complete as the acyclic nested record foundation. It allows
+local and imported records to appear as fields when the full nominal layout
+graph is acyclic, and it scalarizes those values through
+`SemanticModel.record_leaves()` in depth-first declaration order. This gives
+future self-hosted components a safer way to model small nested compiler data
+without changing the public IR, S3 Assembly, native ABI, goldens, baselines, or
+package version. Multi-leaf returns are still rejected, so self-hosted
+components must keep public results scalar or explicitly project a scalar field.
+
+Milestone 1.04 is complete as a fixed-capacity static text foundation. The
+existing `string` model remains a compile-time-known static text value lowered
+to a scalar handle, with no heap and no dynamic text construction. It now
+participates in record and nested-record layouts as a scalar leaf, which helps
+small self-hosted components carry names, fragments, categories, and fixed
+diagnostic text through nominal data. It still does not provide a general
+runtime string builder, parser input stream, file I/O, formatting, or dynamic
+serialization.
+
+Milestone 1.05 is blocked by an architecture decision. Payload enums and
+structured result values require public syntax, match binding rules, and a
+canonical tag+payload layout before S3 components can use `Result.Ok(value)` or
+`Result.Err(error)` style flows. Until that decision is accepted, second-stage
+self-hosting candidates should continue to use scalar status codes, no-payload
+enums, and records separately rather than pretending a structured result ABI
+exists.
+
+The next self-hosting-related campaign should therefore start by resolving
+ADR-0021, not by adding another component. No component from Milestone 1.06 is
+implemented or adopted by the current 1.02-1.04 delivery campaign.
+
 Recent tools make this pipeline more observable:
 
 - `s3 targets` lists internal target and backend names.

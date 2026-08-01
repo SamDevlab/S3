@@ -60,6 +60,13 @@ class RecordType:
 
 
 @dataclass(frozen=True, slots=True)
+class RecordLeaf:
+    path: tuple[str, ...]
+    type_name: ast.TypeName
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
 class EnumType:
     name: str
     variants: tuple[ast.EnumVariant, ...]
@@ -175,6 +182,42 @@ class SemanticModel:
     def is_record_type(self, type_name: ast.DeclaredType) -> bool:
         return isinstance(type_name, ast.NominalType) and type_name.name in self.records
 
+    def record_leaves(self, name: str) -> tuple[RecordLeaf, ...]:
+        self.record(name)
+        return _record_leaves(self.records, self.enums, name)
+
+    def record_leaf_count(self, name: str) -> int:
+        return len(self.record_leaves(name))
+
+
+def _record_leaves(
+    records: dict[str, RecordType],
+    enums: dict[str, EnumType],
+    name: str,
+    prefix: tuple[str, ...] = (),
+) -> tuple[RecordLeaf, ...]:
+    leaves: list[RecordLeaf] = []
+    record = records[name]
+    for field in record.fields:
+        path = (*prefix, field.name)
+        if isinstance(field.type_name, ast.TypeName):
+            leaves.append(RecordLeaf(path, field.type_name, field.location))
+        elif isinstance(field.type_name, ast.NominalType):
+            if field.type_name.name in enums:
+                leaves.append(RecordLeaf(path, ast.TypeName.TRYTE, field.location))
+            elif field.type_name.name in records:
+                leaves.extend(
+                    _record_leaves(records, enums, field.type_name.name, path)
+                )
+            else:
+                raise SemanticError(
+                    f"unknown type '{field.type_name.name}'",
+                    field.location,
+                )
+        else:
+            raise SemanticError("unsupported record field type", field.location)
+    return tuple(leaves)
+
 
 class SemanticAnalyzer:
     def __init__(self) -> None:
@@ -272,28 +315,63 @@ class SemanticAnalyzer:
                         diagnostic_code=DiagnosticCode.RECORD_FIELD_DUPLICATE,
                     )
                 field_names.add(field.name)
-                if isinstance(field.type_name, ast.ArrayType):
-                    raise SemanticError(
-                        "record fields cannot be arrays in milestone 1.00",
-                        field.location,
-                    )
-                if field.type_name is ast.TypeName.STRING:
-                    raise SemanticError(
-                        "record fields cannot be string in milestone 1.00",
-                        field.location,
-                    )
-                if isinstance(field.type_name, ast.NominalType):
-                    if field.type_name.name in self.enums:
-                        continue
-                    raise SemanticError(
-                        "nested record fields are not supported yet",
-                        field.location,
-                    )
             self.records[record.name] = RecordType(
                 record.name,
                 record.fields,
                 record.location,
             )
+
+        for record in program.records:
+            for field in record.fields:
+                if isinstance(field.type_name, ast.ArrayType):
+                    raise SemanticError(
+                        "record fields cannot be arrays in milestone 1.00",
+                        field.location,
+                    )
+                if isinstance(field.type_name, ast.NominalType):
+                    if field.type_name.name in self.enums:
+                        continue
+                    if field.type_name.name in self.records:
+                        continue
+                    raise SemanticError(
+                        f"unknown type '{field.type_name.name}'",
+                        field.location,
+                    )
+        self._validate_record_layouts()
+
+    def _validate_record_layouts(self) -> None:
+        visiting: set[str] = set()
+        visited: set[str] = set()
+        stack: list[str] = []
+
+        def visit(name: str) -> None:
+            if name in visiting:
+                start = stack.index(name)
+                cycle = tuple(stack[start:] + [name])
+                raise SemanticError(
+                    "recursive record layout cycle: " + " -> ".join(cycle),
+                    self.records[name].location,
+                )
+            if name in visited:
+                return
+            visiting.add(name)
+            stack.append(name)
+            record = self.records[name]
+            for field in record.fields:
+                if (
+                    isinstance(field.type_name, ast.NominalType)
+                    and field.type_name.name in self.records
+                ):
+                    visit(field.type_name.name)
+            stack.pop()
+            visiting.remove(name)
+            visited.add(name)
+
+        for name in self.records:
+            visit(name)
+
+    def _record_leaf_count(self, name: str) -> int:
+        return len(_record_leaves(self.records, self.enums, name))
 
     def _collect_signatures(self, program: ast.Program) -> None:
         for function in program.functions:
@@ -339,8 +417,7 @@ class SemanticAnalyzer:
                 )
             if isinstance(function.return_type, ast.NominalType):
                 if function.return_type.name in self.records:
-                    record = self.records[function.return_type.name]
-                    if len(record.fields) != 1:
+                    if self._record_leaf_count(function.return_type.name) != 1:
                         raise SemanticError(
                             "multi-field record returns require a future aggregate ABI",
                             function.signature.location,
@@ -1091,11 +1168,14 @@ class SemanticAnalyzer:
         elif isinstance(expression, ast.CallExpression):
             result = self._analyze_call(expression)
             if expected is not None:
+                call_context = "call expression"
+                if expression.simple_function_name is not None:
+                    call_context = f"call to '{expression.function_name}'"
                 self._require_type(
                     result,
                     expected,
                     expression.location,
-                    f"call to '{expression.function_name}'",
+                    call_context,
                 )
         elif isinstance(expression, ast.RecordExpression):
             result = self._analyze_record_expression(expression)
@@ -1191,6 +1271,26 @@ class SemanticAnalyzer:
             self.constant_values[id(expression)] = enum.discriminant(variant.name)
             return ast.NominalType(enum.name, expression.location)
 
+        if isinstance(expression.target, ast.Identifier):
+            binding = self._lookup_binding(expression.target.name)
+            if binding is None:
+                if expression.target.name in self.records:
+                    raise SemanticError(
+                        f"type '{expression.target.name}' cannot be used as a value",
+                        expression.location,
+                    )
+                if expression.target.name in self.functions:
+                    raise SemanticError(
+                        f"function '{expression.target.name}' cannot be used as a value",
+                        expression.location,
+                    )
+            elif isinstance(binding.type_name, ast.ArrayType):
+                raise SemanticError(
+                    "field access requires a record value",
+                    expression.location,
+                    diagnostic_code=DiagnosticCode.RECORD_FIELD_UNKNOWN,
+                )
+
         target_type = self._analyze_expression(expression.target)
         if not isinstance(target_type, ast.NominalType):
             raise SemanticError(
@@ -1200,6 +1300,12 @@ class SemanticAnalyzer:
             )
         record = self.records.get(target_type.name)
         if record is None:
+            if target_type.name in self.enums:
+                raise SemanticError(
+                    "field access requires a record value",
+                    expression.location,
+                    diagnostic_code=DiagnosticCode.RECORD_FIELD_UNKNOWN,
+                )
             raise SemanticError(
                 f"unknown record type '{target_type.name}'",
                 expression.location,
@@ -1350,6 +1456,11 @@ class SemanticAnalyzer:
         return type_name.element_type
 
     def _analyze_call(self, expression: ast.CallExpression) -> ast.DeclaredType:
+        if expression.simple_function_name is None:
+            raise SemanticError(
+                "call target must be an unqualified function name",
+                expression.location,
+            )
         if self._lookup_binding(expression.function_name) is not None:
             raise SemanticError(
                 f"variable '{expression.function_name}' cannot be called",
@@ -1807,11 +1918,14 @@ class SemanticAnalyzer:
                 return ast.TypeName.STRING
             return target_type
         if isinstance(expression, ast.CallExpression):
-            if expression.function_name in STATIC_TEXT_QUERY_BUILTINS:
-                return STATIC_TEXT_QUERY_BUILTINS[expression.function_name]
-            if expression.function_name in STATIC_TEXT_TRANSFORM_BUILTINS:
+            function_name = expression.simple_function_name
+            if function_name is None:
+                return None
+            if function_name in STATIC_TEXT_QUERY_BUILTINS:
+                return STATIC_TEXT_QUERY_BUILTINS[function_name]
+            if function_name in STATIC_TEXT_TRANSFORM_BUILTINS:
                 return ast.TypeName.STRING
-            signature = self.functions.get(expression.function_name)
+            signature = self.functions.get(function_name)
             return None if signature is None else signature.return_type
         if isinstance(expression, ast.RecordExpression):
             if expression.type_name in self.records:
@@ -2175,6 +2289,8 @@ class SemanticAnalyzer:
                 binding = self._lookup_binding(expression.argument.name)
                 return binding is not None and isinstance(binding.type_name, ast.ArrayType)
         if isinstance(expression, ast.CallExpression):
+            if expression.simple_function_name is None:
+                return False
             return (
                 expression.function_name == "find"
                 and len(expression.arguments) == 2
@@ -2416,7 +2532,10 @@ class SemanticAnalyzer:
             self.static_text_values[id(expression)] = text
             return text
         if isinstance(expression, ast.CallExpression):
-            if expression.function_name in STATIC_TEXT_TRANSFORM_BUILTINS:
+            if (
+                expression.simple_function_name is not None
+                and expression.function_name in STATIC_TEXT_TRANSFORM_BUILTINS
+            ):
                 self._analyze_static_text_transform_call(expression)
                 text = self.static_text_values.get(id(expression))
                 if text is not None:
@@ -2445,6 +2564,8 @@ class SemanticAnalyzer:
                 and self._is_constant_tryte_expression(expression.end)
             )
         if isinstance(expression, ast.CallExpression):
+            if expression.simple_function_name is None:
+                return False
             return self._is_constant_static_text_transform_call(expression)
         return (
             isinstance(expression, ast.BinaryExpression)

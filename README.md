@@ -30,6 +30,11 @@ A implementação atual oferece:
 - bounds estático para índices constantes e dinâmico para calculados;
 - objetos de memória locais ao frame, sem ponteiros ou aliasing;
 - IR SSA com CFG, dominância, `LOAD` e `STORE`;
+- módulos multi-file determinísticos com `module`, imports explícitos,
+  `export fn`, qualified calls e type imports explícitos;
+- records e enums nominais mínimos, com `export record`, `export enum`,
+  tipos pontuados, constructors qualificados e campos de record limitados a
+  `trit`, `tryte`, `string`, enums fechados e records acíclicos;
 - assembly com `.memory`, `TLOAD` e `TSTORE`;
 - leitura não inicializada sempre diagnosticada;
 - backend nativo experimental Linux x86-64 para todos os opcodes atuais;
@@ -48,6 +53,56 @@ A implementação atual oferece:
 - CI bootstrap em Python 3.11–3.13 e job nativo obrigatório em Ubuntu.
 
 Não existem `PHI`, `SUBTRACT`, `TSUB`, heap ou memória global.
+
+## Current development status
+
+Current 1.x internal milestones do not change the published package version or
+the public IR, S3 Assembly, diagnostic schema, ABI, CLI, golden artifacts, or
+baselines unless an explicit milestone says so.
+
+- Milestones 0.60-0.95 built the optimization foundation: CFG and SSA
+  infrastructure, O1 pass orchestration, constant propagation and folding,
+  static-text semantic evaluation, de-SSA lowering, verification boundaries, and
+  differential coverage.
+- Milestone 0.96 stabilized GVN, DSE, Memory SSA, de-SSA, optimizer telemetry,
+  and the correctness contracts around those passes.
+- Milestones 0.97-1.01 delivered the differential correctness matrix, optimizer
+  architecture split, deterministic modules/imports, minimal nominal records and
+  enums, and the first S3 self-hosting component as a differential reference.
+- Milestone 1.02 completed language-composition contracts without changing
+  public IR, S3 Assembly, diagnostics schema, ABI, CLI, goldens, baselines, or
+  package version. It delivered record composition alignment, unified postfix
+  parsing, qualified calls, qualified enum variants, record member access,
+  qualified postfix lowering checks, exported nominal type symbols, imported
+  nominal record and enum values, deterministic cross-module nominal layout,
+  O0/O1 coverage, and Linux x86-64 native coverage.
+- Milestone 1.03 completed acyclic nested records without changing public IR,
+  S3 Assembly, diagnostics schema, ABI, CLI, goldens, baselines, or package
+  version. Nested records are flattened internally through the canonical
+  `SemanticModel.record_leaves()` order: depth-first, declaration-order scalar
+  leaves. The feature covers local and imported record fields, qualified nested
+  constructors, copies, parameters, member chains, multi-module determinism,
+  O0/O1 execution, and native x86-64 coverage.
+- Milestone 1.04 completed fixed-capacity static text values as scalar handles.
+  It preserved the existing static string table, `CONST_STR`/`TCONST_STR`,
+  emulator handles, and native `.rodata` path while allowing `string` leaves in
+  records and nested records. Text operations remain compile-time-only unless
+  their operands are known static text.
+- Milestone 1.05 is an architectural gate, not a failed implementation.
+  Payload enums and structured results require a public tag-plus-payload layout
+  decision before implementation. `docs/decisions/ADR-0021-enum-payload-layout-gate.md`
+  records the required decision.
+- Milestone 1.06 is deferred until the 1.05 decision is resolved. No new
+  self-hosted compiler component is adopted by this campaign; Python remains
+  the reference compiler and default path.
+
+The current scalar return convention remains unchanged: `RETURN`, `TRET`, and
+the native x86-64 result path carry one scalar value. Single-field record returns
+reuse that existing scalar convention. Multi-field record returns and aggregate
+returns remain rejected before lowering until a future aggregate-return ABI is
+specified. Multi-leaf nested record returns follow that same rejection rule.
+Arrays as record fields, recursive types, general heap allocation, dynamic text,
+and complete self-hosting are still not implemented.
 
 ## Contrato do Marco 0.7
 
@@ -421,18 +476,20 @@ selfhost/        fronteira da futura implementação em S3
 ## Limitações e próximo marco
 
 Não há ponteiros, heap, globals, arrays dinâmicos ou multidimensionais, arrays
-em assinaturas, strings dinâmicas ou dependentes de runtime, estruturas,
-módulos, I/O, package manager, LSP, depurador, generics, macros, concorrência,
-linker próprio, ABI C pública, self-hosting ou backend para Windows, macOS ou
-ARM64.
+em assinaturas, strings dinâmicas ou dependentes de runtime, classes, métodos,
+generics, macros, I/O de linguagem, package manager, LSP, depurador,
+concorrência, linker próprio, ABI C pública, self-hosting completo ou backend
+para Windows, macOS ou ARM64.
 
 O target nativo é somente Linux x86-64. Não há interoperabilidade C, JIT, TCO
 ou otimização interprocedural. ARM64 possui apenas um
 [estudo de viabilidade](docs/arm64-feasibility.md).
 
-O Marco 0.7 está concluído e a versão 0.7.0 está publicada. O desenvolvimento
-encontra-se estruturando normativamente a medição de desempenho do
-[Marco 0.8](docs/milestone-0.8.md) (trabalho em andamento).
-Os demais recursos classificados como Pós-MVP continuam não implementados. Consulte
-o [roadmap](docs/roadmap.md) e as
+O Marco 0.7 está concluído e a versão 0.7.0 está publicada. As Milestones
+1.02, 1.03 e 1.04 estao concluidas como campanha interna sem bump de versao
+publica. A proxima campanha planejada deve comecar pela resolucao da ADR-0021,
+definindo a representacao publica de enum tag + payload antes de implementar
+enum payloads, structured results ou componentes adicionais de self-hosting.
+Os demais recursos classificados como Pos-MVP continuam nao implementados.
+Consulte o [roadmap](docs/roadmap.md), os planos de milestone em `docs/` e as
 [notas de lançamento](docs/releases/0.7.0.md).
