@@ -172,7 +172,7 @@ def _build_synthetic_program(
             for record in program.records
         )
         enums.extend(
-            _rewrite_enum(enum, type_namespace)
+            _rewrite_enum(enum, context)
             for enum in program.enums
         )
         for function in program.functions:
@@ -431,9 +431,25 @@ def _rewrite_record(
 
 def _rewrite_enum(
     enum: ast.EnumDeclaration,
-    type_namespace: dict[str, str],
+    context: _RewriteContext,
 ) -> ast.EnumDeclaration:
-    return replace(enum, name=type_namespace.get(enum.name, enum.name))
+    return replace(
+        enum,
+        name=context.type_namespace.get(enum.name, enum.name),
+        variants=tuple(
+            replace(
+                variant,
+                payload_fields=tuple(
+                    replace(
+                        field,
+                        type_name=_rewrite_type(field.type_name, context),
+                    )
+                    for field in variant.payload_fields
+                ),
+            )
+            for variant in enum.variants
+        ),
+    )
 
 
 def _rewrite_type(
@@ -495,6 +511,21 @@ def _rewrite_nominal_type_name(
             diagnostic_code=DiagnosticCode.IMPORT_PRIVATE_SYMBOL,
         )
     return context.internal_type_names[module][member]
+
+
+def _rewrite_constructor_type_name(
+    name: str,
+    location,
+    context: _RewriteContext,
+) -> str:
+    try:
+        return _rewrite_nominal_type_name(name, location, context)
+    except SemanticError:
+        if "." not in name:
+            raise
+    enum_name, variant_name = name.rsplit(".", 1)
+    rewritten_enum = _rewrite_nominal_type_name(enum_name, location, context)
+    return f"{rewritten_enum}.{variant_name}"
 
 
 def _rewrite_block(
@@ -673,7 +704,7 @@ def _rewrite_expression(
     if isinstance(expression, ast.RecordExpression):
         return replace(
             expression,
-            type_name=_rewrite_nominal_type_name(
+            type_name=_rewrite_constructor_type_name(
                 expression.type_name,
                 expression.location,
                 context,
@@ -774,6 +805,10 @@ def _rewrite_match_label(
     label: ast.MatchCaseLabel,
     context: _RewriteContext,
 ) -> ast.MatchCaseLabel:
+    if isinstance(label, ast.MatchPayloadLabel):
+        rewritten = _rewrite_expression(label.variant, context)
+        assert isinstance(rewritten, ast.FieldAccessExpression)
+        return replace(label, variant=rewritten)
     if isinstance(label, ast.FieldAccessExpression):
         rewritten = _rewrite_expression(label, context)
         assert isinstance(rewritten, ast.FieldAccessExpression)

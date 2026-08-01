@@ -136,6 +136,13 @@ class FieldAccessExpression:
 
 
 @dataclass(frozen=True, slots=True)
+class MatchPayloadLabel:
+    variant: FieldAccessExpression
+    bindings: tuple[str, ...]
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
 class UnaryExpression:
     operator: UnaryOperator
     operand: Expression
@@ -150,7 +157,7 @@ class BinaryExpression:
     location: SourceLocation
 
 
-MatchCaseLabel: TypeAlias = int | FieldAccessExpression | None
+MatchCaseLabel: TypeAlias = int | FieldAccessExpression | MatchPayloadLabel | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -368,6 +375,7 @@ class RecordDeclaration:
 class EnumVariant:
     name: str
     location: SourceLocation
+    payload_fields: tuple[RecordField, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

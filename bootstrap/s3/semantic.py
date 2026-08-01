@@ -67,6 +67,53 @@ class RecordLeaf:
 
 
 @dataclass(frozen=True, slots=True)
+class EnumPayloadLeaf:
+    variant_name: str
+    path: tuple[str, ...]
+    type_name: ast.TypeName
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
+class EnumVariantLayout:
+    name: str
+    discriminant: int
+    payload_fields: tuple[ast.RecordField, ...]
+    payload_leaves: tuple[EnumPayloadLeaf, ...]
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
+class EnumLayout:
+    name: str
+    variants: tuple[EnumVariantLayout, ...]
+    cell_count: int
+    tag_type: ast.TypeName
+    inactive_slot_policy: str
+    location: SourceLocation
+
+    @property
+    def payload_cell_count(self) -> int:
+        return self.cell_count - 1
+
+    def variant(self, name: str) -> EnumVariantLayout | None:
+        for variant in self.variants:
+            if variant.name == name:
+                return variant
+        return None
+
+    def payload_leaves(self, variant_name: str) -> tuple[EnumPayloadLeaf, ...]:
+        variant = self.variant(variant_name)
+        if variant is None:
+            raise SemanticError(
+                f"enum '{self.name}' has no variant '{variant_name}'",
+                self.location,
+                diagnostic_code=DiagnosticCode.ENUM_VARIANT_UNKNOWN,
+            )
+        return variant.payload_leaves
+
+
+@dataclass(frozen=True, slots=True)
 class EnumType:
     name: str
     variants: tuple[ast.EnumVariant, ...]
@@ -189,6 +236,20 @@ class SemanticModel:
     def record_leaf_count(self, name: str) -> int:
         return len(self.record_leaves(name))
 
+    def enum_layout(self, name: str) -> EnumLayout:
+        self.enum(name)
+        return _enum_layout(self.records, self.enums, name)
+
+    def enum_payload_leaves(
+        self,
+        name: str,
+        variant_name: str,
+    ) -> tuple[EnumPayloadLeaf, ...]:
+        return self.enum_layout(name).payload_leaves(variant_name)
+
+    def enum_cell_count(self, name: str) -> int:
+        return self.enum_layout(name).cell_count
+
 
 def _record_leaves(
     records: dict[str, RecordType],
@@ -204,7 +265,18 @@ def _record_leaves(
             leaves.append(RecordLeaf(path, field.type_name, field.location))
         elif isinstance(field.type_name, ast.NominalType):
             if field.type_name.name in enums:
-                leaves.append(RecordLeaf(path, ast.TypeName.TRYTE, field.location))
+                layout = _enum_layout(records, enums, field.type_name.name)
+                if layout.cell_count == 1:
+                    leaves.append(RecordLeaf(path, ast.TypeName.TRYTE, field.location))
+                else:
+                    for index in range(layout.cell_count):
+                        leaves.append(
+                            RecordLeaf(
+                                (*path, f"cell{index}"),
+                                ast.TypeName.TRYTE,
+                                field.location,
+                            )
+                        )
             elif field.type_name.name in records:
                 leaves.extend(
                     _record_leaves(records, enums, field.type_name.name, path)
@@ -217,6 +289,101 @@ def _record_leaves(
         else:
             raise SemanticError("unsupported record field type", field.location)
     return tuple(leaves)
+
+
+def _nominal_layout_dependencies(
+    records: dict[str, RecordType],
+    type_name: ast.NominalType,
+) -> tuple[str, ...]:
+    record = records.get(type_name.name)
+    if record is None:
+        return (type_name.name,)
+    dependencies: list[str] = []
+    for field in record.fields:
+        if isinstance(field.type_name, ast.NominalType):
+            dependencies.extend(_nominal_layout_dependencies(records, field.type_name))
+    return tuple(dependencies)
+
+
+def _enum_payload_leaves(
+    records: dict[str, RecordType],
+    enums: dict[str, EnumType],
+    variant_name: str,
+    fields: tuple[ast.RecordField, ...],
+    prefix: tuple[str, ...] = (),
+) -> tuple[EnumPayloadLeaf, ...]:
+    leaves: list[EnumPayloadLeaf] = []
+    for field in fields:
+        path = (*prefix, field.name)
+        if isinstance(field.type_name, ast.TypeName):
+            leaves.append(
+                EnumPayloadLeaf(variant_name, path, field.type_name, field.location)
+            )
+        elif isinstance(field.type_name, ast.NominalType):
+            if field.type_name.name in enums:
+                layout = _enum_layout(records, enums, field.type_name.name)
+                for index in range(layout.cell_count):
+                    leaves.append(
+                        EnumPayloadLeaf(
+                            variant_name,
+                            (*path, f"cell{index}"),
+                            ast.TypeName.TRYTE,
+                            field.location,
+                        )
+                    )
+            elif field.type_name.name in records:
+                for leaf in _record_leaves(records, enums, field.type_name.name, path):
+                    leaves.append(
+                        EnumPayloadLeaf(
+                            variant_name,
+                            leaf.path,
+                            leaf.type_name,
+                            leaf.location,
+                        )
+                    )
+            else:
+                raise SemanticError(
+                    f"unknown type '{field.type_name.name}'",
+                    field.location,
+                )
+        else:
+            raise SemanticError("unsupported enum payload field type", field.location)
+    return tuple(leaves)
+
+
+def _enum_layout(
+    records: dict[str, RecordType],
+    enums: dict[str, EnumType],
+    name: str,
+) -> EnumLayout:
+    enum = enums[name]
+    variants: list[EnumVariantLayout] = []
+    max_payload = 0
+    for discriminant, variant in enumerate(enum.variants):
+        leaves = _enum_payload_leaves(
+            records,
+            enums,
+            variant.name,
+            variant.payload_fields,
+        )
+        max_payload = max(max_payload, len(leaves))
+        variants.append(
+            EnumVariantLayout(
+                variant.name,
+                discriminant,
+                variant.payload_fields,
+                leaves,
+                variant.location,
+            )
+        )
+    return EnumLayout(
+        name,
+        tuple(variants),
+        1 + max_payload,
+        ast.TypeName.TRYTE,
+        "zero-equivalent scalar cells",
+        enum.location,
+    )
 
 
 class SemanticAnalyzer:
@@ -292,6 +459,18 @@ class SemanticAnalyzer:
                         diagnostic_code=DiagnosticCode.ENUM_VARIANT_DUPLICATE,
                     )
                 variant_names.add(variant.name)
+                payload_names: set[str] = set()
+                for field in variant.payload_fields:
+                    if field.name in payload_names:
+                        raise SemanticError(
+                            (
+                                f"duplicate payload field '{field.name}' in "
+                                f"enum variant '{enum.name}.{variant.name}'"
+                            ),
+                            field.location,
+                            diagnostic_code=DiagnosticCode.RECORD_FIELD_DUPLICATE,
+                        )
+                    payload_names.add(field.name)
             self.enums[enum.name] = EnumType(
                 enum.name,
                 enum.variants,
@@ -338,6 +517,63 @@ class SemanticAnalyzer:
                         field.location,
                     )
         self._validate_record_layouts()
+        self._validate_enum_layouts()
+
+    def _validate_enum_layouts(self) -> None:
+        for enum in self.enums.values():
+            for variant in enum.variants:
+                for field in variant.payload_fields:
+                    if isinstance(field.type_name, ast.ArrayType):
+                        raise SemanticError(
+                            "enum payload fields cannot be arrays",
+                            field.location,
+                        )
+                    if isinstance(field.type_name, ast.NominalType):
+                        if (
+                            field.type_name.name in self.records
+                            or field.type_name.name in self.enums
+                        ):
+                            continue
+                        raise SemanticError(
+                            f"unknown type '{field.type_name.name}'",
+                            field.location,
+                        )
+
+        visiting: set[str] = set()
+        visited: set[str] = set()
+        stack: list[str] = []
+
+        def visit(name: str) -> None:
+            if name in visiting:
+                start = stack.index(name)
+                cycle = tuple(stack[start:] + [name])
+                raise SemanticError(
+                    "recursive enum payload layout cycle: " + " -> ".join(cycle),
+                    self.enums[name].location,
+                )
+            if name in visited:
+                return
+            visiting.add(name)
+            stack.append(name)
+            enum = self.enums[name]
+            for variant in enum.variants:
+                for field in variant.payload_fields:
+                    if isinstance(field.type_name, ast.NominalType):
+                        for dependency in _nominal_layout_dependencies(
+                            self.records,
+                            field.type_name,
+                        ):
+                            if dependency in self.enums:
+                                visit(dependency)
+            stack.pop()
+            visiting.remove(name)
+            visited.add(name)
+
+        for name in self.enums:
+            visit(name)
+
+        for name in self.enums:
+            _enum_layout(self.records, self.enums, name)
 
     def _validate_record_layouts(self) -> None:
         visiting: set[str] = set()
@@ -372,6 +608,9 @@ class SemanticAnalyzer:
 
     def _record_leaf_count(self, name: str) -> int:
         return len(_record_leaves(self.records, self.enums, name))
+
+    def _enum_cell_count(self, name: str) -> int:
+        return _enum_layout(self.records, self.enums, name).cell_count
 
     def _collect_signatures(self, program: ast.Program) -> None:
         for function in program.functions:
@@ -421,8 +660,16 @@ class SemanticAnalyzer:
                         raise SemanticError(
                             "multi-field record returns require a future aggregate ABI",
                             function.signature.location,
+                            diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
                         )
-                elif function.return_type.name not in self.enums:
+                elif function.return_type.name in self.enums:
+                    if self._enum_cell_count(function.return_type.name) != 1:
+                        raise SemanticError(
+                            "multi-cell enum returns require a future aggregate ABI",
+                            function.signature.location,
+                            diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
+                        )
+                else:
                     raise SemanticError(
                         f"unknown type '{function.return_type.name}'",
                         function.signature.location,
@@ -749,7 +996,10 @@ class SemanticAnalyzer:
             )
 
         case_flows = [
-            self._analyze_block(cases_by_label[enum.discriminant(variant.name)].body, create_scope=True)
+            self._analyze_enum_match_case_block(
+                cases_by_label[enum.discriminant(variant.name)],
+                variant,
+            )
             for variant in enum.variants
         ]
         return BlockFlow(
@@ -770,17 +1020,108 @@ class SemanticAnalyzer:
                 location,
                 diagnostic_code=DiagnosticCode.SEMANTIC_TYPE_MISMATCH,
             )
-        assert isinstance(label, ast.FieldAccessExpression)
-        label_type = self._analyze_expression(label, selector_type)
+        variant_label = label.variant if isinstance(label, ast.MatchPayloadLabel) else label
+        assert isinstance(variant_label, ast.FieldAccessExpression)
+        label_type = self._analyze_expression(variant_label, selector_type)
         self._require_type(
             label_type,
             selector_type,
-            label.location,
+            variant_label.location,
             f"{context} label",
         )
-        discriminant = self.constant_values.get(id(label))
+        discriminant = self.constant_values.get(id(variant_label))
         assert discriminant is not None
+        enum = self.enums[selector_type.name]
+        variant = enum.variants[discriminant]
+        self._validate_match_payload_label(label, enum, variant, context)
         return discriminant
+
+    def _validate_match_payload_label(
+        self,
+        label: ast.MatchCaseLabel,
+        enum: EnumType,
+        variant: ast.EnumVariant,
+        context: str,
+    ) -> None:
+        expected = tuple(field.name for field in variant.payload_fields)
+        if not expected:
+            if isinstance(label, ast.MatchPayloadLabel):
+                raise SemanticError(
+                    f"{context} variant '{enum.name}.{variant.name}' has no payload bindings",
+                    label.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_TYPE_MISMATCH,
+                )
+            return
+        if not isinstance(label, ast.MatchPayloadLabel):
+            raise SemanticError(
+                (
+                    f"{context} variant '{enum.name}.{variant.name}' requires "
+                    "payload binding(s): " + ", ".join(expected)
+                ),
+                variant.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_TYPE_MISMATCH,
+            )
+        seen: set[str] = set()
+        for binding in label.bindings:
+            if binding in seen:
+                raise SemanticError(
+                    f"duplicate payload binding '{binding}'",
+                    label.location,
+                    diagnostic_code=DiagnosticCode.RECORD_FIELD_DUPLICATE,
+                )
+            seen.add(binding)
+        if label.bindings != expected:
+            raise SemanticError(
+                (
+                    f"{context} payload bindings for {enum.name}.{variant.name} "
+                    "must be: " + ", ".join(expected)
+                ),
+                label.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_TYPE_MISMATCH,
+            )
+
+    def _analyze_enum_match_case_block(
+        self,
+        case: ast.TernaryCase,
+        variant: ast.EnumVariant,
+    ) -> BlockFlow:
+        self.scopes.append({})
+        try:
+            self._bind_match_payload(case.label, variant)
+            return self._analyze_block(case.body, create_scope=False)
+        finally:
+            self.scopes.pop()
+
+    def _analyze_enum_match_case_expression(
+        self,
+        case: ast.MatchExpressionCase,
+        variant: ast.EnumVariant,
+        expected: ast.DeclaredType | None,
+    ) -> ast.DeclaredType:
+        self.scopes.append({})
+        try:
+            self._bind_match_payload(case.label, variant)
+            return self._analyze_expression(case.expression, expected)
+        finally:
+            self.scopes.pop()
+
+    def _bind_match_payload(
+        self,
+        label: ast.MatchCaseLabel,
+        variant: ast.EnumVariant,
+    ) -> None:
+        if not isinstance(label, ast.MatchPayloadLabel):
+            return
+        fields_by_name = {field.name: field for field in variant.payload_fields}
+        current_scope = self.scopes[-1]
+        for binding in label.bindings:
+            field = fields_by_name[binding]
+            current_scope[binding] = Binding(
+                field.type_name,
+                mutable=False,
+                parameter=False,
+                location=label.location,
+            )
 
     def _analyze_declaration(self, declaration: ast.VariableDeclaration) -> None:
         current_scope = self.scopes[-1]
@@ -1178,13 +1519,13 @@ class SemanticAnalyzer:
                     call_context,
                 )
         elif isinstance(expression, ast.RecordExpression):
-            result = self._analyze_record_expression(expression)
+            result = self._analyze_record_or_enum_expression(expression)
             if expected is not None:
                 self._require_type(
                     result,
                     expected,
                     expression.location,
-                    f"record literal '{expression.type_name}'",
+                    f"nominal literal '{expression.type_name}'",
                 )
         elif isinstance(expression, ast.FieldAccessExpression):
             result = self._analyze_field_access(expression)
@@ -1215,10 +1556,56 @@ class SemanticAnalyzer:
         self.expression_types[id(expression)] = result
         return result
 
-    def _analyze_record_expression(
+    def _analyze_record_or_enum_expression(
         self,
         expression: ast.RecordExpression,
     ) -> ast.NominalType:
+        enum_access = self._enum_constructor(expression)
+        if enum_access is not None:
+            enum, variant = enum_access
+            fields_by_name = {field.name: field for field in variant.payload_fields}
+            seen: set[str] = set()
+            for value in expression.fields:
+                if value.name in seen:
+                    raise SemanticError(
+                        f"duplicate payload field '{value.name}' in enum literal",
+                        value.location,
+                        diagnostic_code=DiagnosticCode.RECORD_FIELD_DUPLICATE,
+                    )
+                seen.add(value.name)
+                field = fields_by_name.get(value.name)
+                if field is None:
+                    raise SemanticError(
+                        (
+                            f"enum variant '{enum.name}.{variant.name}' has no "
+                            f"payload field '{value.name}'"
+                        ),
+                        value.location,
+                        diagnostic_code=DiagnosticCode.RECORD_FIELD_UNKNOWN,
+                    )
+                actual = self._analyze_expression(value.expression, field.type_name)
+                self._require_type(
+                    actual,
+                    field.type_name,
+                    value.location,
+                    f"payload field '{value.name}'",
+                )
+            missing = [
+                field.name
+                for field in variant.payload_fields
+                if field.name not in seen
+            ]
+            if missing:
+                raise SemanticError(
+                    (
+                        f"enum variant '{enum.name}.{variant.name}' literal is "
+                        "missing payload field(s): " + ", ".join(missing)
+                    ),
+                    expression.location,
+                    diagnostic_code=DiagnosticCode.RECORD_FIELD_MISSING,
+                )
+            return ast.NominalType(enum.name, expression.location)
+
         record = self.records.get(expression.type_name)
         if record is None:
             raise SemanticError(
@@ -1260,6 +1647,25 @@ class SemanticAnalyzer:
                 diagnostic_code=DiagnosticCode.RECORD_FIELD_MISSING,
             )
         return ast.NominalType(record.name, expression.location)
+
+    def _enum_constructor(
+        self,
+        expression: ast.RecordExpression,
+    ) -> tuple[EnumType, ast.EnumVariant] | None:
+        if "." not in expression.type_name:
+            return None
+        enum_name, variant_name = expression.type_name.rsplit(".", 1)
+        enum = self.enums.get(enum_name)
+        if enum is None:
+            return None
+        variant = enum.variant(variant_name)
+        if variant is None:
+            raise SemanticError(
+                f"enum '{enum.name}' has no variant '{variant_name}'",
+                expression.location,
+                diagnostic_code=DiagnosticCode.ENUM_VARIANT_UNKNOWN,
+            )
+        return enum, variant
 
     def _analyze_field_access(
         self,
@@ -1930,6 +2336,11 @@ class SemanticAnalyzer:
         if isinstance(expression, ast.RecordExpression):
             if expression.type_name in self.records:
                 return ast.NominalType(expression.type_name, expression.location)
+            if "." in expression.type_name:
+                enum_name, variant_name = expression.type_name.rsplit(".", 1)
+                enum = self.enums.get(enum_name)
+                if enum is not None and enum.variant(variant_name) is not None:
+                    return ast.NominalType(enum.name, expression.location)
             return None
         if isinstance(expression, ast.FieldAccessExpression):
             enum_access = self._enum_variant_access(expression)
@@ -2162,7 +2573,11 @@ class SemanticAnalyzer:
             label = enum.discriminant(variant.name)
             case = cases_by_label[label]
             arm_expected = expected or (arm_types[0] if arm_types else None)
-            arm_type = self._analyze_expression(case.expression, arm_expected)
+            arm_type = self._analyze_enum_match_case_expression(
+                case,
+                variant,
+                arm_expected,
+            )
             if arm_types:
                 self._require_type(
                     arm_type,
