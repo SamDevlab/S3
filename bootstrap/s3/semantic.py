@@ -1091,11 +1091,14 @@ class SemanticAnalyzer:
         elif isinstance(expression, ast.CallExpression):
             result = self._analyze_call(expression)
             if expected is not None:
+                call_context = "call expression"
+                if expression.simple_function_name is not None:
+                    call_context = f"call to '{expression.function_name}'"
                 self._require_type(
                     result,
                     expected,
                     expression.location,
-                    f"call expression",
+                    call_context,
                 )
         elif isinstance(expression, ast.RecordExpression):
             result = self._analyze_record_expression(expression)
