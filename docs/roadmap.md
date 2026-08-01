@@ -368,12 +368,33 @@ Concluido:
 - retorno de record multi-field e retorno agregado geral continuam rejeitados
   ate existir uma ABI agregada aprovada.
 
+## Marco 1.03 - Acyclic Nested Records
+
+Status: In progress
+
+O Marco 1.03 especifica nested records aciclicos e layout composto
+deterministico sem alterar ABI, IR publico, Assembly publico, goldens,
+baselines ou versao publica.
+
+Concluido:
+
+- auditoria arquitetural inicial;
+- gate inicial confirmando que locals, constructors, copias, parametros e
+  member access podem ser representados por scalarizacao de folhas no IR atual;
+- [ADR-0020](decisions/ADR-0020-acyclic-nested-record-layout.md);
+- contrato normativo em [spec/composite-types.md](../spec/composite-types.md).
+
+Limites preservados:
+
+- layouts recursivos continuam rejeitados;
+- retorno de record multi-leaf continua rejeitado antes do lowering;
+- nao ha hidden return pointer, retorno multi-register, offsets publicos ou
+  alignment nominal.
+
 ### Later language-composition milestones
 
 Status: Planned
 
-- 1.02-C - cross-module nominal types;
-- 1.03 - nested records aciclicos;
 - 1.04 - texto de capacidade fixa;
 - 1.05 - enums com payload e erros estruturados;
 - 1.06 - componentes adicionais de self-hosting.

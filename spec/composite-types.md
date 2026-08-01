@@ -1,7 +1,7 @@
 # S3 records and enums
 
-Status: normative for Milestone 1.00 records/enums and Milestone 1.02-C
-cross-module nominal values.
+Status: normative for Milestone 1.00 records/enums, Milestone 1.02-C
+cross-module nominal values, and Milestone 1.03 acyclic nested records.
 
 ## Scope
 
@@ -26,21 +26,32 @@ Rules:
 - record names share the module type namespace;
 - field order is declaration order and is part of layout;
 - field names must be unique;
-- field types may be `trit`, `tryte`, or closed enum types;
-- arrays, `string` fields, and record fields are not part of this milestone;
+- field types may be `trit`, `tryte`, closed enum types, or acyclic record
+  types;
+- arrays and `string` fields are not part of this milestone;
 - record equality is not part of this milestone;
 - field mutation syntax is not part of this milestone.
 
-## Current composition limits
+## Nested Record Layout
 
-The current record model supports only the field types listed in this
-specification. A record cannot directly or indirectly contain another record.
-Nested aggregate layout, recursive record graphs, aggregate ABI rules, deep
-equality, and deep mutation are reserved for a future language milestone.
+Beginning with Milestone 1.03, a record may directly or indirectly contain
+another record when the nominal layout graph is acyclic and every reachable leaf
+has a known scalar representation.
 
-This means record fields cannot name local record types, imported-module record
-types, or the record type currently being declared. Arrays of records and arrays
-inside records are also outside the current composition contract.
+Nested layout is logical scalar leaf order, not public offsets or alignment.
+Flattening is depth-first and follows declaration order at every record level.
+The compiler must not sort nested fields alphabetically or by source-unit order.
+
+Leaf rules:
+
+- `trit` contributes one scalar leaf;
+- `tryte` contributes one scalar leaf;
+- a closed enum contributes one `tryte` scalar leaf;
+- a nested record contributes its leaves recursively in declared order.
+
+Recursive record graphs remain invalid. This includes direct self-reference,
+indirect cycles, and cycles through imported record types. Arrays of records and
+arrays inside records remain outside the current composition contract.
 
 Construction uses named fields:
 
@@ -57,16 +68,16 @@ return p.left
 
 ## Record ABI
 
-Records are scalarized in declared field order across the supported field types.
-A record parameter lowers to its flattened field values in the internal function
-ABI. This is an internal compiler convention and does not change the public S3
-Assembly format.
+Records are scalarized in declared depth-first leaf order across the supported
+field types. A record parameter lowers to its flattened scalar leaves in the
+internal function ABI. This is an internal compiler convention and does not
+change the public S3 Assembly format.
 
 The current IR and Assembly support only one scalar return register and expose
 no pointers or aggregate return convention. Therefore, this milestone supports
-record return only when the record contains exactly one supported field.
-Returning a multi-field record is rejected until a future aggregate-return ABI is
-specified.
+record return only when the record contains exactly one scalar leaf. Returning a
+record with multiple scalar leaves is rejected until a future aggregate-return
+ABI is specified.
 
 ## Enums
 
@@ -151,8 +162,7 @@ Milestone 1.02-C extends that ownership model across module boundaries:
 - imported enum values may be matched using the defining enum's variants;
 - imported record values may be declared, passed, returned, constructed, and
   projected through their fields when their field types are otherwise supported;
-- imported records remain invalid as fields while nested records are outside the
-  language contract;
-- imported multi-field record values may be passed and projected in supported
+- imported records may be used as fields when their layout graph is acyclic;
+- imported multi-leaf record values may be passed and projected in supported
   scalarized positions, but returning them remains rejected until an
   aggregate-return ABI is specified.
