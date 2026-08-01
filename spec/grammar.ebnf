@@ -21,14 +21,14 @@ parameter-list       = parameter, { ",", parameter } ;
 parameter            = identifier, ":", type ;
 
 scalar-type          = "trit" | "tryte" ;
-nominal-type         = identifier ;
+nominal-type         = identifier, { ".", identifier } ;
 type                 = ( scalar-type | nominal-type ), { "[", integer, "]" } ;
 
-record-declaration   = "record", identifier, ":", NEWLINE, INDENT,
+record-declaration   = [ "export" ], "record", identifier, ":", NEWLINE, INDENT,
                        record-field, { record-field }, DEDENT ;
 record-field         = identifier, ":", type, NEWLINE ;
 
-enum-declaration     = "enum", identifier, ":", NEWLINE, INDENT,
+enum-declaration     = [ "export" ], "enum", identifier, ":", NEWLINE, INDENT,
                        enum-variant, { enum-variant }, DEDENT ;
 enum-variant         = identifier, NEWLINE ;
 

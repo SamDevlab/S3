@@ -149,7 +149,10 @@ math.abs_tryte(value)
 The lowering pipeline receives the resolved function identity. It must not rely
 on backend parsing of strings such as `math.abs_tryte`.
 
-Record construction is not a call, even though it uses parentheses.
+Record construction is not a call, even though it uses parentheses. Milestone
+1.02-C allows qualified record construction for exported record types, for
+example `geometry.Point(x: 1, y: 2)`. Semantic analysis resolves the qualified
+type identity before record construction lowering.
 
 ## Indexing
 
@@ -176,9 +179,10 @@ lowers to the compiler's deterministic internal function name. Qualified enum
 variants such as `module.Enum.Variant` resolve when the module is visible
 through an explicit import and the enum is declared in that module.
 Cross-module nominal type imports and using imported record types directly in
-consumer declarations are completed by Milestone 1.02-C; until then,
-unavailable type members must be rejected semantically rather than guessed by
-lowering.
+consumer declarations are completed by Milestone 1.02-C. A module-qualified type
+such as `geometry.Point` denotes the nominal type whose identity is
+`ModuleId("geometry") + TypeName("Point")`. Unavailable or private type members
+must be rejected semantically rather than guessed by lowering.
 
 ## Enums
 

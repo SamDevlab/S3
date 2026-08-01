@@ -126,13 +126,29 @@ version is bumped.
 
 ## Modules
 
-Record and enum type names are module-local. Importing types is not part of this
-milestone. Cross-module use of composite values is limited to functions already
-visible through the module/import system and to supported scalarized ABI
-positions. Record fields cannot use record types from local or imported modules.
+Record and enum type names are module-local in their declaration. Milestone
+1.02-C allows explicitly exported record and enum types to be imported by other
+modules without changing their nominal identity. The identity of a nominal type
+is its defining `ModuleId + TypeName`.
+
+Cross-module use of composite values is limited to functions and types visible
+through the module/import system and to supported scalarized ABI positions.
+Record fields cannot use record types from local or imported modules until the
+nested-record milestone changes that composition limit.
 
 Milestone 1.02-B adds qualified source syntax for module functions and enum
 variants. It does not change the module-local ownership of record and enum
 types. A visible qualified function may return a supported single-field record,
 and the caller may immediately read that field through the existing scalarized
 return convention.
+
+Milestone 1.02-C extends that ownership model across module boundaries:
+
+- `export record` and `export enum` make a nominal type importable;
+- private records and enums remain unavailable to other modules;
+- same-name types declared in different modules are incompatible;
+- imported enum values may be matched using the defining enum's variants;
+- imported record values may be declared, passed, returned, constructed, and
+  projected through their fields when their field types are otherwise supported;
+- imported records remain invalid as fields while nested records are outside the
+  language contract.

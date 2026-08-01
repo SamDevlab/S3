@@ -135,12 +135,84 @@ Delivered:
   record fields, branch/loop composition, and qualified single-field record
   return member access.
 
+## 1.02-C - Cross-module nominal types
+
+Status:
+In progress
+
+Goal:
+
+Allow exported nominal record and enum types to be used across module
+boundaries while preserving deterministic identity and layout.
+
+### C1 - Specification and ADR
+
+Status:
+Complete
+
+Artifacts:
+
+- [ADR-0019](decisions/ADR-0019-cross-module-nominal-type-identity.md);
+- [spec/modules.md](../spec/modules.md);
+- [spec/composite-types.md](../spec/composite-types.md);
+- [spec/postfix-expressions.md](../spec/postfix-expressions.md);
+- [spec/grammar.ebnf](../spec/grammar.ebnf).
+
+C1 defines nominal identity as `ModuleId + TypeName`, chooses explicit
+`export record` and `export enum` visibility, keeps type import aliases and
+general reexports out of scope, and states that imported records remain invalid
+as fields until the nested-record milestone.
+
+### C2 - Module graph and type symbols
+
+Status:
+Not started
+
+Scope:
+
+- exported type symbols in the module graph;
+- separate function and type namespaces;
+- private and missing type diagnostics;
+- deterministic type symbol ordering.
+
+### C3 - Imported nominal values
+
+Status:
+Not started
+
+Scope:
+
+- imported enum values and match;
+- imported record variables, parameters, returns, construction, and field
+  access;
+- preservation of imported record-as-field rejection.
+
+### C4 - Layout
+
+Status:
+Not started
+
+Scope:
+
+- layout owned by the defining module;
+- same-name records in different modules remain distinct;
+- O0/O1 layout determinism.
+
+### C5 - Tests and docs
+
+Status:
+Not started
+
+Scope:
+
+- native imported nominal type coverage;
+- final documentation of cross-module nominal contracts.
+
 ## Later planned milestones
 
 Status:
 Planned
 
-- 1.02-C - cross-module nominal types;
 - 1.03 - acyclic nested records;
 - 1.04 - fixed-capacity text;
 - 1.05 - payload enums and structured errors;
@@ -174,8 +246,8 @@ Planned
 - Draft PR: #125;
 - latest 1.02-B functional/test commit:
   `b1b2ce94677bf5189f98d8a2befccf3f093771b3`;
-- last completed unit: 1.02-B7;
-- next unit: 1.02-C - Cross-module nominal types;
+- last completed unit: 1.02-C1;
+- next unit: 1.02-C2 - Module graph and type symbols;
 - first action next session: confirm branch, HEAD, working tree, PR, and CI
   before changing nominal type visibility;
 - likely files to audit: `module_compilation.py`, `semantic.py`,

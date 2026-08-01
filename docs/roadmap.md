@@ -337,7 +337,27 @@ Concluido:
 
 Proximo:
 
-- 1.02-C: identidade nominal entre modulos.
+- 1.02-C2: transportar type symbols exportados no grafo de modulos.
+
+### 1.02-C - Cross-module nominal types
+
+Status: In progress
+
+Concluido:
+
+- C1: identidade nominal especificada como `ModuleId + TypeName`;
+- [ADR-0019](decisions/ADR-0019-cross-module-nominal-type-identity.md);
+- contrato de `export record` e `export enum`;
+- separacao normativa entre namespaces de funcoes, tipos, modules, variants,
+  fields e valores;
+- type import aliases, wildcard imports e reexports gerais mantidos fora do
+  escopo;
+- imported record como field continua rejeitado ate a milestone de nested
+  records.
+
+Proximo:
+
+- C2: module graph e symbols para tipos nominais exportados.
 
 ### Later language-composition milestones
 

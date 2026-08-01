@@ -44,8 +44,10 @@ from math import abs_tryte
 from util.sign import sign as classify
 ```
 
-An import names one exported function from another module. The imported symbol
-is visible in the importing module under its original name or explicit alias.
+An import names one exported function from another module. Beginning with
+Milestone 1.02-C, the same import form may also name one exported nominal type
+from another module. The imported symbol is visible in the corresponding
+function or type namespace of the importing module.
 
 Rules:
 
@@ -55,8 +57,11 @@ Rules:
   error;
 - imports are resolved by module id, not by filesystem iteration order;
 - a module must not import itself directly or transitively;
-- imported symbols are immutable bindings in the module-level function
-  namespace.
+- imported function symbols are immutable bindings in the module-level function
+  namespace;
+- imported type symbols are immutable bindings in the module-level type
+  namespace;
+- type import aliases are not part of Milestone 1.02-C.
 
 ## Visibility
 
@@ -77,6 +82,22 @@ export fn abs_tryte(value: tryte) -> tryte:
 The entry module may call its own private functions. Other modules may call only
 exported functions through explicit imports.
 
+Records and enums follow the same explicit visibility model in Milestone
+1.02-C. A private record or enum is visible only within its defining module.
+`export record` and `export enum` declare nominal types that may be imported by
+other modules:
+
+```s3
+export record Point:
+    x: tryte
+    y: tryte
+
+export enum Sign:
+    Negative
+    Zero
+    Positive
+```
+
 The entry point remains a function named `main` with no parameters. It must live
 in the selected entry module. The entry `main` does not need to be exported.
 
@@ -84,6 +105,10 @@ in the selected entry module. The entry `main` does not need to be exported.
 
 Each module has its own function namespace. Local functions and import aliases
 share the namespace.
+
+Each module also has its own type namespace. Local records, local enums, and
+explicit imported types share that namespace. Nominal identity is not the local
+spelling alone; it is the defining `ModuleId + TypeName`.
 
 Resolution order for an unqualified call expression in module `M`:
 
@@ -97,6 +122,12 @@ Milestone 0.99 did not define qualified source calls. Milestone 1.02-B defines
 and implements `module.function(...)` as member access followed by a call
 suffix, resolved before lowering and never by late backend lookup. See
 [postfix-expressions.md](postfix-expressions.md).
+
+Milestone 1.02-C extends module resolution to exported nominal types. A
+module-qualified type such as `geometry.Point` denotes the type declared as
+`Point` by module `geometry`, not a copied type in the consumer module. Same-name
+types from different modules remain incompatible unless their defining module id
+also matches.
 
 ## Graph order
 
@@ -130,6 +161,10 @@ prefer the following codes when structured diagnostics are requested:
 
 Messages may include normalized module ids and logical paths. They must not
 include absolute host paths in deterministic artifacts.
+
+Milestone 1.02-C type diagnostics should reuse the same module/import phase and
+codes where possible for missing or private exported types, and semantic
+diagnostics for nominal type mismatches.
 
 ## Compatibility
 
