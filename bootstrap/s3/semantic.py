@@ -1203,6 +1203,12 @@ class SemanticAnalyzer:
             )
         record = self.records.get(target_type.name)
         if record is None:
+            if target_type.name in self.enums:
+                raise SemanticError(
+                    "field access requires a record value",
+                    expression.location,
+                    diagnostic_code=DiagnosticCode.RECORD_FIELD_UNKNOWN,
+                )
             raise SemanticError(
                 f"unknown record type '{target_type.name}'",
                 expression.location,
@@ -1815,11 +1821,14 @@ class SemanticAnalyzer:
                 return ast.TypeName.STRING
             return target_type
         if isinstance(expression, ast.CallExpression):
-            if expression.function_name in STATIC_TEXT_QUERY_BUILTINS:
-                return STATIC_TEXT_QUERY_BUILTINS[expression.function_name]
-            if expression.function_name in STATIC_TEXT_TRANSFORM_BUILTINS:
+            function_name = expression.simple_function_name
+            if function_name is None:
+                return None
+            if function_name in STATIC_TEXT_QUERY_BUILTINS:
+                return STATIC_TEXT_QUERY_BUILTINS[function_name]
+            if function_name in STATIC_TEXT_TRANSFORM_BUILTINS:
                 return ast.TypeName.STRING
-            signature = self.functions.get(expression.function_name)
+            signature = self.functions.get(function_name)
             return None if signature is None else signature.return_type
         if isinstance(expression, ast.RecordExpression):
             if expression.type_name in self.records:
@@ -2183,6 +2192,8 @@ class SemanticAnalyzer:
                 binding = self._lookup_binding(expression.argument.name)
                 return binding is not None and isinstance(binding.type_name, ast.ArrayType)
         if isinstance(expression, ast.CallExpression):
+            if expression.simple_function_name is None:
+                return False
             return (
                 expression.function_name == "find"
                 and len(expression.arguments) == 2
@@ -2424,7 +2435,10 @@ class SemanticAnalyzer:
             self.static_text_values[id(expression)] = text
             return text
         if isinstance(expression, ast.CallExpression):
-            if expression.function_name in STATIC_TEXT_TRANSFORM_BUILTINS:
+            if (
+                expression.simple_function_name is not None
+                and expression.function_name in STATIC_TEXT_TRANSFORM_BUILTINS
+            ):
                 self._analyze_static_text_transform_call(expression)
                 text = self.static_text_values.get(id(expression))
                 if text is not None:
@@ -2453,6 +2467,8 @@ class SemanticAnalyzer:
                 and self._is_constant_tryte_expression(expression.end)
             )
         if isinstance(expression, ast.CallExpression):
+            if expression.simple_function_name is None:
+                return False
             return self._is_constant_static_text_transform_call(expression)
         return (
             isinstance(expression, ast.BinaryExpression)

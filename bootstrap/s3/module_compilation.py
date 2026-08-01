@@ -30,6 +30,20 @@ class ModuleCompilationPlan:
     graph: ModuleGraph
 
 
+@dataclass(frozen=True, slots=True)
+class _RewriteContext:
+    module: ModuleId
+    graph: ModuleGraph
+    program_by_module: dict[ModuleId, ast.Program]
+    module_functions: dict[ModuleId, dict[str, ast.FunctionDeclaration]]
+    function_namespace: dict[str, str]
+    type_namespace: dict[str, str]
+    internal_names: dict[tuple[ModuleId, str], str]
+    internal_type_names: dict[ModuleId, dict[str, str]]
+    imported_modules: frozenset[ModuleId]
+    local_names: frozenset[str]
+
+
 def prepare_module_compilation(
     sources: SourceCollection,
     *,
@@ -132,8 +146,22 @@ def _build_synthetic_program(
                 _rewrite_function(
                     function,
                     internal_names[(module, function.name)],
-                    namespace,
-                    type_namespace,
+                    _RewriteContext(
+                        module,
+                        graph,
+                        program_by_module,
+                        module_functions,
+                        namespace,
+                        type_namespace,
+                        internal_names,
+                        internal_type_names,
+                        frozenset(
+                            edge.imported_module
+                            for edge in graph.imports
+                            if edge.importing_module == module
+                        ),
+                        _function_local_names(function),
+                    ),
                 )
             )
     location = functions[0].location if functions else next(iter(program_by_module.values())).location
@@ -267,8 +295,7 @@ def _resolve_namespaces(
 def _rewrite_function(
     function: ast.FunctionDeclaration,
     internal_name: str,
-    namespace: dict[str, str],
-    type_namespace: dict[str, str],
+    context: _RewriteContext,
 ) -> ast.FunctionDeclaration:
     signature = replace(
         function.signature,
@@ -276,15 +303,15 @@ def _rewrite_function(
         parameters=tuple(
             replace(
                 parameter,
-                type_name=_rewrite_type(parameter.type_name, type_namespace),
+                type_name=_rewrite_type(parameter.type_name, context.type_namespace),
             )
             for parameter in function.parameters
         ),
-        return_type=_rewrite_type(function.return_type, type_namespace),
+        return_type=_rewrite_type(function.return_type, context.type_namespace),
     )
     return ast.FunctionDeclaration(
         signature,
-        _rewrite_block(function.body, namespace, type_namespace),
+        _rewrite_block(function.body, context),
         function.location,
         function.exported,
     )
@@ -333,13 +360,12 @@ def _rewrite_type(
 
 def _rewrite_block(
     block: ast.Block,
-    namespace: dict[str, str],
-    type_namespace: dict[str, str],
+    context: _RewriteContext,
 ) -> ast.Block:
     return replace(
         block,
         statements=tuple(
-            _rewrite_statement(statement, namespace, type_namespace)
+            _rewrite_statement(statement, context)
             for statement in block.statements
         ),
     )
@@ -347,37 +373,33 @@ def _rewrite_block(
 
 def _rewrite_statement(
     statement: ast.Statement,
-    namespace: dict[str, str],
-    type_namespace: dict[str, str],
+    context: _RewriteContext,
 ) -> ast.Statement:
     if isinstance(statement, ast.VariableDeclaration):
         return replace(
             statement,
-            type_name=_rewrite_type(statement.type_name, type_namespace),
+            type_name=_rewrite_type(statement.type_name, context.type_namespace),
             initializer=_rewrite_initializer(
                 statement.initializer,
-                namespace,
-                type_namespace,
+                context,
             ),
         )
     if isinstance(statement, ast.AssignmentStatement):
         return replace(
             statement,
-            target=_rewrite_target(statement.target, namespace, type_namespace),
+            target=_rewrite_target(statement.target, context),
             value=_rewrite_initializer(
                 statement.value,
-                namespace,
-                type_namespace,
+                context,
             ),
         )
     if isinstance(statement, ast.CompoundAssignmentStatement):
         return replace(
             statement,
-            target=_rewrite_target(statement.target, namespace, type_namespace),
+            target=_rewrite_target(statement.target, context),
             value=_rewrite_initializer(
                 statement.value,
-                namespace,
-                type_namespace,
+                context,
             ),
         )
     if isinstance(statement, ast.DiscardStatement):
@@ -385,8 +407,7 @@ def _rewrite_statement(
             statement,
             expression=_rewrite_expression(
                 statement.expression,
-                namespace,
-                type_namespace,
+                context,
             ),
         )
     if isinstance(statement, ast.ReturnStatement):
@@ -394,8 +415,7 @@ def _rewrite_statement(
             statement,
             expression=_rewrite_expression(
                 statement.expression,
-                namespace,
-                type_namespace,
+                context,
             ),
         )
     if isinstance(statement, ast.SwitchStatement):
@@ -403,18 +423,16 @@ def _rewrite_statement(
             statement,
             expression=_rewrite_expression(
                 statement.expression,
-                namespace,
-                type_namespace,
+                context,
             ),
             cases=tuple(
                 replace(
                     case,
                     label=_rewrite_match_label(
                         case.label,
-                        namespace,
-                        type_namespace,
+                        context,
                     ),
-                    body=_rewrite_block(case.body, namespace, type_namespace),
+                    body=_rewrite_block(case.body, context),
                 )
                 for case in statement.cases
             ),
@@ -424,77 +442,81 @@ def _rewrite_statement(
             statement,
             condition=_rewrite_expression(
                 statement.condition,
-                namespace,
-                type_namespace,
+                context,
             ),
-            body=_rewrite_block(statement.body, namespace, type_namespace),
+            body=_rewrite_block(statement.body, context),
         )
     if isinstance(statement, ast.ForStatement):
         return replace(
             statement,
             start_expression=_rewrite_expression(
                 statement.start_expression,
-                namespace,
-                type_namespace,
+                context,
             ),
             end_expression=_rewrite_expression(
                 statement.end_expression,
-                namespace,
-                type_namespace,
+                context,
             ),
             step_expression=_rewrite_expression(
                 statement.step_expression,
-                namespace,
-                type_namespace,
+                context,
             ),
-            body=_rewrite_block(statement.body, namespace, type_namespace),
+            body=_rewrite_block(statement.body, context),
         )
     return statement
 
 
 def _rewrite_target(
     target: ast.AssignmentTarget,
-    namespace: dict[str, str],
-    type_namespace: dict[str, str],
+    context: _RewriteContext,
 ) -> ast.AssignmentTarget:
     if isinstance(target, ast.IndexTarget):
         return replace(
             target,
-            index=_rewrite_expression(target.index, namespace, type_namespace),
+            index=_rewrite_expression(target.index, context),
         )
     return target
 
 
 def _rewrite_initializer(
     initializer: ast.Initializer,
-    namespace: dict[str, str],
-    type_namespace: dict[str, str],
+    context: _RewriteContext,
 ) -> ast.Initializer:
     if isinstance(initializer, ast.ArrayLiteral):
         return replace(
             initializer,
             elements=tuple(
-                _rewrite_expression(element, namespace, type_namespace)
+                _rewrite_expression(element, context)
                 for element in initializer.elements
             ),
         )
-    return _rewrite_expression(initializer, namespace, type_namespace)
+    return _rewrite_expression(initializer, context)
 
 
 def _rewrite_expression(
     expression: ast.Expression,
-    namespace: dict[str, str],
-    type_namespace: dict[str, str],
+    context: _RewriteContext,
 ) -> ast.Expression:
     if isinstance(expression, ast.CallExpression):
+        if isinstance(expression.callee, ast.Identifier) and _is_visible_module(
+            expression.callee.name,
+            context,
+        ):
+            raise SemanticError(
+                f"module '{expression.callee.name}' cannot be called",
+                expression.location,
+            )
+        qualified_call = _rewrite_qualified_module_call(expression, context)
+        if qualified_call is not None:
+            return qualified_call
         callee = expression.callee
         if isinstance(callee, ast.Identifier):
             callee = replace(
                 callee,
-                name=namespace.get(callee.name, callee.name),
+                name=context.function_namespace.get(callee.name, callee.name),
             )
         else:
-            callee = _rewrite_expression(callee, namespace, type_namespace)
+            callee = _rewrite_expression(callee, context)
         return replace(
             expression,
             callee=callee,
@@ -503,8 +525,7 @@ def _rewrite_expression(
                     argument,
                     expression=_rewrite_expression(
                         argument.expression,
-                        namespace,
-                        type_namespace,
+                        context,
                     ),
                 )
                 for argument in expression.arguments
@@ -513,76 +534,75 @@ def _rewrite_expression(
     if isinstance(expression, ast.RecordExpression):
         return replace(
             expression,
-            type_name=type_namespace.get(expression.type_name, expression.type_name),
+            type_name=context.type_namespace.get(expression.type_name, expression.type_name),
             fields=tuple(
                 replace(
                     field,
                     expression=_rewrite_expression(
                         field.expression,
-                        namespace,
-                        type_namespace,
+                        context,
                     ),
                 )
                 for field in expression.fields
             ),
         )
     if isinstance(expression, ast.FieldAccessExpression):
-        return replace(
-            expression,
-            target=_rewrite_field_access_target(
-                expression.target,
-                namespace,
-                type_namespace,
-            ),
-        )
+        qualified = _rewrite_qualified_module_member(expression, context)
+        if qualified is not None:
+            return qualified
+        return replace(expression, target=_rewrite_field_access_target(expression.target, context))
     if isinstance(expression, ast.IndexExpression):
+        if isinstance(expression.target, ast.Identifier) and _is_visible_module(
+            expression.target.name,
+            context,
+        ):
+            raise SemanticError(
+                f"module '{expression.target.name}' cannot be indexed",
+                expression.location,
+            )
         return replace(
             expression,
-            target=_rewrite_expression(expression.target, namespace, type_namespace),
-            index=_rewrite_expression(expression.index, namespace, type_namespace),
+            target=_rewrite_expression(expression.target, context),
+            index=_rewrite_expression(expression.index, context),
         )
     if isinstance(expression, ast.SliceExpression):
         return replace(
             expression,
-            target=_rewrite_expression(expression.target, namespace, type_namespace),
-            start=_rewrite_expression(expression.start, namespace, type_namespace),
-            end=_rewrite_expression(expression.end, namespace, type_namespace),
+            target=_rewrite_expression(expression.target, context),
+            start=_rewrite_expression(expression.start, context),
+            end=_rewrite_expression(expression.end, context),
         )
     if isinstance(expression, ast.UnaryExpression):
         return replace(
             expression,
             operand=_rewrite_expression(
                 expression.operand,
-                namespace,
-                type_namespace,
+                context,
             ),
         )
     if isinstance(expression, ast.BinaryExpression):
         return replace(
             expression,
-            left=_rewrite_expression(expression.left, namespace, type_namespace),
-            right=_rewrite_expression(expression.right, namespace, type_namespace),
+            left=_rewrite_expression(expression.left, context),
+            right=_rewrite_expression(expression.right, context),
         )
     if isinstance(expression, ast.MatchExpression):
         return replace(
             expression,
             selector=_rewrite_expression(
                 expression.selector,
-                namespace,
-                type_namespace,
+                context,
             ),
             cases=tuple(
                 replace(
                     case,
                     label=_rewrite_match_label(
                         case.label,
-                        namespace,
-                        type_namespace,
+                        context,
                     ),
                     expression=_rewrite_expression(
                         case.expression,
-                        namespace,
-                        type_namespace,
+                        context,
                     ),
                 )
                 for case in expression.cases
@@ -593,20 +613,26 @@ def _rewrite_expression(
             expression,
             argument=_rewrite_expression(
                 expression.argument,
-                namespace,
-                type_namespace,
+                context,
             ),
+        )
+    if isinstance(expression, ast.Identifier) and _is_visible_module(
+        expression.name,
+        context,
+    ):
+        raise SemanticError(
+            f"module '{expression.name}' cannot be used as a value",
+            expression.location,
         )
     return expression
 
 
 def _rewrite_match_label(
     label: ast.MatchCaseLabel,
-    namespace: dict[str, str],
-    type_namespace: dict[str, str],
+    context: _RewriteContext,
 ) -> ast.MatchCaseLabel:
     if isinstance(label, ast.FieldAccessExpression):
-        rewritten = _rewrite_expression(label, namespace, type_namespace)
+        rewritten = _rewrite_expression(label, context)
         assert isinstance(rewritten, ast.FieldAccessExpression)
         return rewritten
     return label
@@ -614,9 +640,212 @@ def _rewrite_match_label(
 
 def _rewrite_field_access_target(
     target: ast.Expression,
-    namespace: dict[str, str],
-    type_namespace: dict[str, str],
+    context: _RewriteContext,
 ) -> ast.Expression:
-    if isinstance(target, ast.Identifier) and target.name in type_namespace:
-        return replace(target, name=type_namespace[target.name])
-    return _rewrite_expression(target, namespace, type_namespace)
+    if isinstance(target, ast.Identifier) and target.name in context.type_namespace:
+        return replace(target, name=context.type_namespace[target.name])
+    return _rewrite_expression(target, context)
+
+
+def _function_local_names(function: ast.FunctionDeclaration) -> frozenset[str]:
+    names = {parameter.name for parameter in function.parameters}
+
+    def visit_block(block: ast.Block) -> None:
+        for statement in block.statements:
+            if isinstance(statement, ast.VariableDeclaration):
+                names.add(statement.name)
+            elif isinstance(statement, ast.SwitchStatement):
+                for case in statement.cases:
+                    visit_block(case.body)
+            elif isinstance(statement, ast.WhileStatement):
+                visit_block(statement.body)
+            elif isinstance(statement, ast.ForStatement):
+                names.add(statement.variable_name)
+                visit_block(statement.body)
+
+    visit_block(function.body)
+    return frozenset(names)
+
+
+def _is_visible_module(name: str, context: _RewriteContext) -> bool:
+    return (
+        name not in context.local_names
+        and any(str(module) == name for module in context.imported_modules)
+    )
+
+
+def _qualified_parts(expression: ast.Expression) -> tuple[str, ...] | None:
+    if isinstance(expression, ast.Identifier):
+        return (expression.name,)
+    if isinstance(expression, ast.FieldAccessExpression):
+        target = _qualified_parts(expression.target)
+        if target is None:
+            return None
+        return (*target, expression.field_name)
+    return None
+
+
+def _module_for_parts(
+    parts: tuple[str, ...],
+    context: _RewriteContext,
+) -> tuple[ModuleId, int] | None:
+    if (
+        not parts
+        or parts[0] in context.local_names
+        or parts[0] in context.type_namespace
+        or parts[0] in context.function_namespace
+    ):
+        return None
+    matches = [
+        (module, len(module.parts))
+        for module in context.graph.ordered_modules
+        if len(module.parts) <= len(parts) and module.parts == parts[: len(module.parts)]
+    ]
+    if not matches:
+        if len(parts) > 1:
+            raise SemanticError(
+                f"module '{parts[0]}' was not found",
+                diagnostic_code=DiagnosticCode.MODULE_NOT_FOUND,
+            )
+        return None
+    module, length = max(matches, key=lambda item: item[1])
+    if module not in context.imported_modules:
+        raise SemanticError(
+            f"module '{module}' is not imported",
+            diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+        )
+    return module, length
+
+
+def _rewrite_qualified_module_call(
+    expression: ast.CallExpression,
+    context: _RewriteContext,
+) -> ast.CallExpression | None:
+    parts = _qualified_parts(expression.callee)
+    if parts is None or len(parts) < 2:
+        return None
+    module_match = _module_for_parts(parts, context)
+    if module_match is None:
+        return None
+    module, module_length = module_match
+    member_parts = parts[module_length:]
+    if not member_parts:
+        raise SemanticError(
+            f"module '{module}' cannot be called",
+            expression.location,
+        )
+    if len(member_parts) != 1:
+        raise SemanticError(
+            f"symbol '{'.'.join(parts)}' is not callable",
+            expression.location,
+        )
+    member = member_parts[0]
+    function = context.module_functions[module].get(member)
+    if function is None:
+        if _module_enum(module, member, context) is not None:
+            raise SemanticError(
+                f"type '{module}.{member}' is not callable",
+                expression.location,
+            )
+        raise SemanticError(
+            f"module '{module}' has no member '{member}'",
+            expression.location,
+            diagnostic_code=DiagnosticCode.IMPORT_UNKNOWN_SYMBOL,
+        )
+    if not function.exported:
+        raise SemanticError(
+            f"function '{member}' in module '{module}' is private",
+            expression.location,
+            diagnostic_code=DiagnosticCode.IMPORT_PRIVATE_SYMBOL,
+        )
+    return replace(
+        expression,
+        callee=ast.Identifier(
+            context.internal_names[(module, member)],
+            expression.callee.location,
+        ),
+        arguments=tuple(
+            replace(argument, expression=_rewrite_expression(argument.expression, context))
+            for argument in expression.arguments
+        ),
+    )
+
+
+def _rewrite_qualified_module_member(
+    expression: ast.FieldAccessExpression,
+    context: _RewriteContext,
+) -> ast.Expression | None:
+    parts = _qualified_parts(expression)
+    if parts is None or len(parts) < 2:
+        return None
+    module_match = _module_for_parts(parts, context)
+    if module_match is None:
+        return None
+    module, module_length = module_match
+    member_parts = parts[module_length:]
+    if not member_parts:
+        raise SemanticError(
+            f"module '{module}' cannot be used as a value",
+            expression.location,
+        )
+    if len(member_parts) == 1:
+        member = member_parts[0]
+        if _module_enum(module, member, context) is not None:
+            raise SemanticError(
+                f"type '{module}.{member}' cannot be used as a value",
+                expression.location,
+            )
+        function = context.module_functions[module].get(member)
+        if function is not None:
+            if not function.exported:
+                raise SemanticError(
+                    f"function '{member}' in module '{module}' is private",
+                    expression.location,
+                    diagnostic_code=DiagnosticCode.IMPORT_PRIVATE_SYMBOL,
+                )
+            raise SemanticError(
+                f"function '{module}.{member}' cannot be used as a value",
+                expression.location,
+            )
+        raise SemanticError(
+            f"module '{module}' has no member '{member}'",
+            expression.location,
+            diagnostic_code=DiagnosticCode.IMPORT_UNKNOWN_SYMBOL,
+        )
+    enum_name = member_parts[0]
+    enum = _module_enum(module, enum_name, context)
+    if enum is None:
+        raise SemanticError(
+            f"module '{module}' has no member '{enum_name}'",
+            expression.location,
+            diagnostic_code=DiagnosticCode.IMPORT_UNKNOWN_SYMBOL,
+        )
+    variant_name = member_parts[1]
+    if not any(variant.name == variant_name for variant in enum.variants):
+        raise SemanticError(
+            f"enum '{module}.{enum_name}' has no variant '{variant_name}'",
+            expression.location,
+            diagnostic_code=DiagnosticCode.ENUM_VARIANT_UNKNOWN,
+        )
+    rewritten: ast.Expression = ast.FieldAccessExpression(
+        ast.Identifier(
+            context.internal_type_names[module][enum_name],
+            expression.location,
+        ),
+        variant_name,
+        expression.location,
+    )
+    for member in member_parts[2:]:
+        rewritten = ast.FieldAccessExpression(rewritten, member, expression.location)
+    return rewritten
+
+
+def _module_enum(
+    module: ModuleId,
+    name: str,
+    context: _RewriteContext,
+) -> ast.EnumDeclaration | None:
+    for enum in context.program_by_module[module].enums:
+        if enum.name == name:
+            return enum
+    return None

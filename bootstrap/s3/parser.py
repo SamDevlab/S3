@@ -443,16 +443,27 @@ class Parser:
             enum_name = self._advance()
             if not self._match(TokenKind.DOT):
                 raise ParseError("expected integer case label or 'else'", enum_name.location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_INVALID_MATCH_ARM)
-            variant = self._consume(
+            member = self._consume(
                 TokenKind.IDENTIFIER,
                 "expected enum variant in case label",
             )
-            return (
-                ast.FieldAccessExpression(
-                    ast.Identifier(enum_name.text, enum_name.location),
-                    variant.text,
+            label: ast.FieldAccessExpression = ast.FieldAccessExpression(
+                ast.Identifier(enum_name.text, enum_name.location),
+                member.text,
+                enum_name.location,
+            )
+            while self._match(TokenKind.DOT):
+                member = self._consume(
+                    TokenKind.IDENTIFIER,
+                    "expected enum variant in case label",
+                )
+                label = ast.FieldAccessExpression(
+                    label,
+                    member.text,
                     enum_name.location,
-                ),
+                )
+            return (
+                label,
                 enum_name.location,
             )
         raise ParseError("expected integer case label, enum variant, or 'else'", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_INVALID_MATCH_ARM)
