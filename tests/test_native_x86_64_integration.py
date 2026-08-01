@@ -908,6 +908,131 @@ def test_o0_o1_native_imported_module_composite_types(
 
 
 @pytest.mark.parametrize(
+    ("name", "sources", "expected"),
+    (
+        (
+            "qualified-call-and-arguments",
+            {
+                "main.s3": (
+                    "module main\n"
+                    "from math import inc\n"
+                    "from math import one\n"
+                    "fn main() -> tryte:\n"
+                    "    return math.inc(math.one())\n"
+                ),
+                "math.s3": (
+                    "module math\n"
+                    "export fn one() -> tryte:\n"
+                    "    return 1\n"
+                    "export fn inc(value: tryte) -> tryte:\n"
+                    "    return value + 1\n"
+                ),
+            },
+            2,
+        ),
+        (
+            "qualified-enum-match",
+            {
+                "main.s3": (
+                    "module main\n"
+                    "from signlib import classify\n"
+                    "from signlib import positive\n"
+                    "fn main() -> tryte:\n"
+                    "    match signlib.positive():\n"
+                    "        signlib.Sign.Negative:\n"
+                    "            return -1\n"
+                    "        signlib.Sign.Zero:\n"
+                    "            return 0\n"
+                    "        signlib.Sign.Positive:\n"
+                    "            return signlib.classify(signlib.Sign.Positive)\n"
+                ),
+                "signlib.s3": (
+                    "module signlib\n"
+                    "enum Sign:\n"
+                    "    Negative\n"
+                    "    Zero\n"
+                    "    Positive\n"
+                    "export fn positive() -> Sign:\n"
+                    "    return Sign.Positive\n"
+                    "export fn classify(value: Sign) -> tryte:\n"
+                    "    match value:\n"
+                    "        Sign.Negative:\n"
+                    "            return -5\n"
+                    "        Sign.Zero:\n"
+                    "            return 0\n"
+                    "        Sign.Positive:\n"
+                    "            return 5\n"
+                ),
+            },
+            5,
+        ),
+        (
+            "record-fields-branch-and-loop",
+            {
+                "main.s3": (
+                    "module main\n"
+                    "enum Sign:\n"
+                    "    Negative\n"
+                    "    Zero\n"
+                    "    Positive\n"
+                    "record Tagged:\n"
+                    "    flag: trit\n"
+                    "    sign: Sign\n"
+                    "    value: tryte\n"
+                    "fn score(item: Tagged) -> tryte:\n"
+                    "    while item.flag:\n"
+                    "        return -9\n"
+                    "    match item.sign:\n"
+                    "        Sign.Negative:\n"
+                    "            return -1\n"
+                    "        Sign.Zero:\n"
+                    "            return 0\n"
+                    "        Sign.Positive:\n"
+                    "            return item.value\n"
+                    "fn main() -> tryte:\n"
+                    "    item: Tagged = Tagged(flag=0, sign=Sign.Positive, value=11)\n"
+                    "    return score(item)\n"
+                ),
+            },
+            11,
+        ),
+        (
+            "qualified-record-return-member",
+            {
+                "main.s3": (
+                    "module main\n"
+                    "from maker import make\n"
+                    "fn main() -> tryte:\n"
+                    "    return maker.make().value\n"
+                ),
+                "maker.s3": (
+                    "module maker\n"
+                    "record Box:\n"
+                    "    value: tryte\n"
+                    "export fn make() -> Box:\n"
+                    "    return Box(value=7)\n"
+                ),
+            },
+            7,
+        ),
+    ),
+)
+def test_o0_o1_native_qualified_postfix_composition(
+    name: str,
+    sources: dict[str, str],
+    expected: int,
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    _assert_o0_o1_native_sources_equivalence(
+        sources,
+        expected,
+        native_toolchain,
+        tmp_path / f"qualified-postfix-{name}",
+    )
+
+
+@pytest.mark.parametrize(
     (
         "name",
         "source",
