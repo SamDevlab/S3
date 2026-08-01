@@ -1,10 +1,11 @@
 # Milestone 1.05 - Fixed-Layout Enum Payloads and Structured Errors
 
-Status: Blocked - architectural decision required
+Status: In progress - architecture accepted
 
 Milestone 1.05 was audited after the completion of acyclic nested records and
-fixed-capacity static text values. The audit found that payload enums cannot be
-implemented safely in this branch without a public syntax and layout decision.
+fixed-capacity static text values. The audit found that payload enums required
+a public syntax and layout decision before implementation. ADR-0021 is now
+accepted and selects a fixed tagged multi-cell layout.
 
 ## Architecture Audit
 
@@ -27,35 +28,51 @@ payloads include scalar leaves, acyclic records, nested records, and fixed text
 handles. Multi-leaf payloads cannot be returned under the current scalar return
 convention, and truncating to the tag or first payload leaf would be incorrect.
 
-## Gate
+## Architecture Decision
 
-[ADR-0021](decisions/ADR-0021-enum-payload-layout-gate.md) records the required
-architecture decision. The branch includes a minimal xfail test,
-`tests/test_enum_payload_architecture_gate.py`, showing the intended `Result`
-flow that cannot be accepted until syntax and layout are decided.
+[ADR-0021](decisions/ADR-0021-enum-payload-layout-gate.md) records the accepted
+architecture decision. The selected representation is:
 
-This is a representation decision gate, not an implementation failure. The
-current branch intentionally stops before choosing a public tag-plus-payload
-encoding silently.
+- fixed width per enum type;
+- tag in cell 0 as a `tryte` discriminant;
+- payload cells after the tag;
+- payload leaves in declaration order;
+- record payloads scalarized by `SemanticModel.record_leaves()`;
+- inactive slots initialized deterministically;
+- no public IR, Assembly, or scalar ABI change.
 
-## Required Decisions
+The branch keeps `tests/test_enum_payload_architecture_gate.py` as an xfail
+until parser, semantic analysis, lowering, and match bindings implement the
+accepted contract.
 
-An accepted follow-up must define:
+## Specification
 
-- payload variant declaration syntax;
-- payload construction syntax;
-- match binding syntax;
-- canonical tag and payload leaf order;
-- relationship to `SemanticModel.record_leaves()` or a new single canonical
-  composite layout API;
-- parameter/local/record/module behavior;
-- return eligibility under the scalar return convention;
-- diagnostics for missing, extra, and wrong payloads;
-- exhaustiveness and duplicate-arm rules with bindings;
-- public compatibility impact for grammar, AST, IR JSON, Assembly, native ABI,
-  goldens, baselines, and tools.
-- whether the next campaign changes a versioned public format or keeps payloads
-  entirely inside existing scalarized positions.
+Payload variants use named payload fields:
+
+```s3
+enum Result:
+    Ok(value: tryte)
+    Error(code: tryte, label: string)
+```
+
+Construction uses qualified variants with named payload arguments:
+
+```s3
+value: Result = Result.Ok(value=3)
+error: Result = Result.Error(code=-1, label="parse")
+```
+
+Match bindings use the variant label plus binding names:
+
+```s3
+match value:
+    Result.Ok(value):
+        return value
+    Result.Error(code, label):
+        return code
+```
+
+Bindings are arm-local and typed from the variant declaration.
 
 ## Preserved Invariants
 
@@ -70,7 +87,8 @@ An accepted follow-up must define:
 
 ## Structured Errors
 
-Structured result conventions built on payload enums are blocked by the same
-decision. S3 can continue to use existing no-payload enums and records
-separately, but a nominal `Result.Ok(value)` / `Result.Err(error)` model needs
-the payload enum layout before it can be implemented or validated natively.
+Structured result conventions will be explicit nominal enums over this payload
+model. They do not add generics, exceptions, unwinding, `?`, or implicit
+propagation. Multi-cell structured results may exist in locals, parameters,
+branches, loops, and match arms, but cannot be returned by the current scalar
+ABI.

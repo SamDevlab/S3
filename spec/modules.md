@@ -2,7 +2,8 @@
 
 Status: normative for Milestone 0.99 modules, Milestone 1.02-C exported
 nominal types, and Milestone 1.03 imported records used as acyclic nested
-fields, with Milestone 1.04 static text leaves in imported records.
+fields, with Milestone 1.04 static text leaves in imported records and
+Milestone 1.05 payload enum layouts.
 
 ## Goals
 
@@ -149,6 +150,14 @@ inside local or imported records. Its module behavior is the same as other
 scalar leaves: the defining record owns the declared field order, and consumers
 receive the scalarized handle through explicit imports and calls. This does not
 add dynamic text, heap allocation, or an aggregate-return convention.
+
+Beginning with Milestone 1.05, imported payload enum values preserve the
+defining enum's fixed tag-plus-payload layout. Qualified construction and
+qualified match labels use the defining module's discriminants, payload field
+order, cell width, and inactive slot policy. Payload field types must be visible
+where they are named in source, and nominal identity remains `ModuleId +
+TypeName`; same-name or same-shape payload enums from different modules remain
+incompatible.
 
 ## Graph order
 
