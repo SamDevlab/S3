@@ -34,7 +34,7 @@ delivered by Milestone 1.00. See PR #124 and the contract in
 ## 1.02-B - Postfix composition and qualified names
 
 Status:
-In progress
+Complete
 
 ### B1 - Specification and ADR
 
@@ -57,71 +57,83 @@ native, or runtime behavior.
 ### 1.02-B2 - Unified postfix parser and AST
 
 Status:
-Not started
+Complete
 
-Scope:
+Delivered:
 
 - unified postfix loop;
-- calls;
-- indexing;
-- member suffix;
+- expression callees in `CallExpression`;
+- left-associative call, indexing, slice, and member suffix composition;
 - source spans;
 - syntactic tests;
-- no semantic resolution.
+- compatibility helpers for simple unqualified calls.
 
 ### 1.02-B3 - Qualified name resolution
 
 Status:
-Not started
+Complete
 
-Scope:
+Delivered:
 
-- semantic resolution for module symbols;
-- enum variant resolution;
-- invalid member-base diagnostics;
-- no lowering.
+- deterministic resolution for `module.function(...)`;
+- deterministic resolution for `module.Enum.Variant`;
+- qualified enum variants in match labels;
+- explicit rejection for modules, types, functions, and unsupported callees used
+  as runtime values;
+- no first-class functions or indirect calls.
 
 ### 1.02-B4 - Record member access
 
 Status:
-Not started
+Complete
 
-Scope:
+Delivered:
 
-- record member access behavior;
-- record member diagnostics over resolved record categories;
+- record member access for literals, bindings, parameters, enum-valued fields,
+  loops, match, and single-field record returns;
+- `module.make().field` coverage when the qualified call returns a supported
+  single-field record;
+- record member diagnostics over resolved record categories, scalar values,
+  arrays, enum values, function symbols, type symbols, and missing fields;
 - preservation of the 1.02-A composition limits.
 
 ### 1.02-B5 - Lowering and verification
 
 Status:
-Not started
+Complete
 
-Scope:
+Delivered:
 
-- lowering from resolved postfix identities;
-- no backend name guessing;
-- IR verification coverage.
+- qualified calls lower to concrete internal IR callees;
+- qualified enum variants lower through existing enum discriminants;
+- record member reads lower through existing scalarization;
+- verifier coverage rejects unresolved textual callees and unknown member-like
+  opcodes;
+- no public IR or Assembly opcode was added.
 
 ### 1.02-B6 - O0/O1 and multi-module integration
 
 Status:
-Not started
+Complete
 
-Scope:
+Delivered:
 
 - hosted O0/O1 equivalence;
-- multi-module integration;
-- optimizer-boundary checks.
+- multi-module integration for qualified calls, qualified enum variants, record
+  members, match, loops, record return member access, and rejection paths;
+- optimizer-boundary checks;
+- deterministic source unit ordering.
 
 ### 1.02-B7 - Native coverage
 
 Status:
-Not started
+Complete
 
-Scope:
+Delivered:
 
-- native x86-64 coverage where runtime behavior is affected.
+- native x86-64 O0/O1 coverage for qualified calls, qualified enum match,
+  record fields, branch/loop composition, and qualified single-field record
+  return member access.
 
 ## Later planned milestones
 
@@ -160,11 +172,12 @@ Planned
 
 - branch: `campaign-1.02b-1.06-language-composition`;
 - Draft PR: #125;
-- previous functional/documental commit:
-  `65acfd98ba4507d3e45f5388f57a08846a7b510d`;
-- last completed unit: 1.02-B1;
-- next unit: 1.02-B2 - Unified Postfix Parser and AST;
+- latest 1.02-B functional/test commit:
+  `b1b2ce94677bf5189f98d8a2befccf3f093771b3`;
+- last completed unit: 1.02-B7;
+- next unit: 1.02-C - Cross-module nominal types;
 - first action next session: confirm branch, HEAD, working tree, PR, and CI
-  before changing the parser;
-- likely files to audit: `lexer.py`, `parser.py`, `ast.py`, and parser tests;
-- runtime code changed by this checkpoint: none.
+  before changing nominal type visibility;
+- likely files to audit: `module_compilation.py`, `semantic.py`,
+  `lowering.py`, module tests, composite tests, and native integration tests;
+- public format changes by 1.02-B: none.

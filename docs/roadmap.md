@@ -315,7 +315,7 @@ Resultado:
 
 ### 1.02-B - Postfix composition and qualified names
 
-Status: In progress
+Status: Complete
 
 Concluido:
 
@@ -323,19 +323,21 @@ Concluido:
 - [ADR-0018](decisions/ADR-0018-postfix-qualified-resolution.md);
 - gramatica normativa em [spec/grammar.ebnf](../spec/grammar.ebnf);
 - contrato para diferenciar modulos, enums e record members durante a analise
-  semantica.
+  semantica;
+- B2: parser postfix unificado e AST com call, index, slice e member
+  encadeados;
+- B3: resolucao semantica de qualified calls, qualified enum variants e labels
+  qualificados de match;
+- B4: contrato de record member access, diagnostics explicitos e limites de
+  composicao preservados;
+- B5: lowering/verifier cobrindo callee concreto, discriminants e scalarizacao
+  sem opcode publico novo;
+- B6: integracao diferencial hospedada O0/O1, multi-modulo e determinismo;
+- B7: cobertura nativa x86-64 O0/O1 para qualified postfix execution.
 
 Proximo:
 
-- B2: parser postfix unificado e AST.
-
-Ainda nao iniciado:
-
-- B3: resolucao semantica;
-- B4: member access;
-- B5: lowering;
-- B6: integracao O0/O1;
-- B7: cobertura nativa.
+- 1.02-C: identidade nominal entre modulos.
 
 ### Later language-composition milestones
 

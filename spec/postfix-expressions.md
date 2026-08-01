@@ -1,6 +1,6 @@
 # S3 postfix expressions and qualified resolution
 
-Status: normative design for Milestone 1.02-B.
+Status: normative and implemented for Milestone 1.02-B.
 
 This document defines the source-language contract for composable postfix
 expressions. It does not change any public IR, S3 Assembly, ABI, diagnostic
@@ -172,9 +172,13 @@ and explicit language rules. Filesystem iteration order, backend names, and
 host paths must not affect qualified resolution.
 
 For this milestone, `module.function(args)` resolves to an exported function and
-lowers to the compiler's deterministic internal function name. Cross-module
-nominal type access is completed by Milestone 1.02-C; until then, unavailable
-type members must be rejected semantically rather than guessed by lowering.
+lowers to the compiler's deterministic internal function name. Qualified enum
+variants such as `module.Enum.Variant` resolve when the module is visible
+through an explicit import and the enum is declared in that module.
+Cross-module nominal type imports and using imported record types directly in
+consumer declarations are completed by Milestone 1.02-C; until then,
+unavailable type members must be rejected semantically rather than guessed by
+lowering.
 
 ## Enums
 
@@ -202,6 +206,11 @@ record equality.
 
 Nested field chains become valid only when the record composition milestone
 that owns the corresponding type shape is implemented.
+
+The implemented 1.02-B contract supports record field reads from record
+literals, local bindings, parameters, enum-valued fields, and single-field
+record returns, including after qualified calls such as `module.make().field`.
+Field assignment remains unsupported.
 
 ## Syntax errors
 

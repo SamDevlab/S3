@@ -130,3 +130,9 @@ Record and enum type names are module-local. Importing types is not part of this
 milestone. Cross-module use of composite values is limited to functions already
 visible through the module/import system and to supported scalarized ABI
 positions. Record fields cannot use record types from local or imported modules.
+
+Milestone 1.02-B adds qualified source syntax for module functions and enum
+variants. It does not change the module-local ownership of record and enum
+types. A visible qualified function may return a supported single-field record,
+and the caller may immediately read that field through the existing scalarized
+return convention.

@@ -93,9 +93,9 @@ Resolution order for an unqualified call expression in module `M`:
 Ambiguous or missing names are semantic errors. Cross-module calls are lowered
 to deterministic internal function names by the compiler.
 
-Milestone 0.99 did not define qualified source calls. The later postfix
-expression contract defines `module.function(...)` as member access followed by
-a call suffix, resolved before lowering and never by late backend lookup. See
+Milestone 0.99 did not define qualified source calls. Milestone 1.02-B defines
+and implements `module.function(...)` as member access followed by a call
+suffix, resolved before lowering and never by late backend lookup. See
 [postfix-expressions.md](postfix-expressions.md).
 
 ## Graph order
