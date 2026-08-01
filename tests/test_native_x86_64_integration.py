@@ -16,7 +16,7 @@ from bootstrap.s3.backends.x86_64 import (
     generate_native_assembly,
 )
 from bootstrap.s3.cli import main as cli_main
-from bootstrap.s3.diagnostics import diagnostic_from_exception
+from bootstrap.s3.diagnostics import SemanticError, diagnostic_from_exception
 from bootstrap.s3.emulator import Emulator, EmulatorError
 from bootstrap.s3.lexer import SyntaxMode
 from bootstrap.s3.pipeline import compile_source, compile_sources
@@ -905,6 +905,246 @@ def test_o0_o1_native_imported_module_composite_types(
         native_toolchain,
         tmp_path / "composite-module",
     )
+
+
+IMPORTED_NOMINAL_NATIVE_CASES = (
+        (
+            "single-field-record-return",
+            {
+                "main.s3": (
+                    "module main\n"
+                    "from geometry import Point\n"
+                    "from geometry import make\n"
+                    "from consumer import x_of\n"
+                    "fn main() -> tryte:\n"
+                    "    point: Point = make()\n"
+                    "    return x_of(point)\n"
+                ),
+                "geometry.s3": (
+                    "module geometry\n"
+                    "export record Point:\n"
+                    "    x: tryte\n"
+                    "export fn make() -> Point:\n"
+                    "    return Point(x=7)\n"
+                ),
+                "consumer.s3": (
+                    "module consumer\n"
+                    "from geometry import Point\n"
+                    "export fn x_of(point: Point) -> tryte:\n"
+                    "    return point.x\n"
+                ),
+            },
+            7,
+        ),
+        (
+            "qualified-record-constructor",
+            {
+                "main.s3": (
+                    "module main\n"
+                    "from geometry import marker\n"
+                    "fn main() -> tryte:\n"
+                    "    point: geometry.Point = geometry.Point(x=5)\n"
+                    "    return point.x\n"
+                ),
+                "geometry.s3": (
+                    "module geometry\n"
+                    "export record Point:\n"
+                    "    x: tryte\n"
+                    "export fn marker() -> tryte:\n"
+                    "    return 0\n"
+                ),
+            },
+            5,
+        ),
+        (
+            "enum-value-flow",
+            {
+                "main.s3": (
+                    "module main\n"
+                    "from signs import Sign\n"
+                    "from signs import positive\n"
+                    "from consumer import score\n"
+                    "fn main() -> tryte:\n"
+                    "    value: Sign = positive()\n"
+                    "    return score(value)\n"
+                ),
+                "signs.s3": (
+                    "module signs\n"
+                    "export enum Sign:\n"
+                    "    Negative\n"
+                    "    Zero\n"
+                    "    Positive\n"
+                    "export fn positive() -> Sign:\n"
+                    "    return Sign.Positive\n"
+                ),
+                "consumer.s3": (
+                    "module consumer\n"
+                    "from signs import Sign\n"
+                    "export fn score(value: Sign) -> tryte:\n"
+                    "    match value:\n"
+                    "        Sign.Negative:\n"
+                    "            return -1\n"
+                    "        Sign.Zero:\n"
+                    "            return 0\n"
+                    "        Sign.Positive:\n"
+                    "            return 1\n"
+                ),
+            },
+            1,
+        ),
+        (
+            "imported-record-fields",
+            {
+                "main.s3": (
+                    "module main\n"
+                    "from model import Flag\n"
+                    "from model import Sign\n"
+                    "from consumer import score\n"
+                    "fn main() -> tryte:\n"
+                    "    flag: Flag = Flag(active=-1, amount=8, sign=Sign.Positive)\n"
+                    "    return score(flag)\n"
+                ),
+                "model.s3": (
+                    "module model\n"
+                    "export enum Sign:\n"
+                    "    Negative\n"
+                    "    Positive\n"
+                    "export record Flag:\n"
+                    "    active: trit\n"
+                    "    amount: tryte\n"
+                    "    sign: Sign\n"
+                    "export fn marker() -> tryte:\n"
+                    "    return 0\n"
+                ),
+                "consumer.s3": (
+                    "module consumer\n"
+                    "from model import Flag\n"
+                    "from model import Sign\n"
+                    "export fn score(flag: Flag) -> tryte:\n"
+                    "    match flag.sign:\n"
+                    "        Sign.Negative:\n"
+                    "            return 0\n"
+                    "        Sign.Positive:\n"
+                    "            return flag.amount\n"
+                ),
+            },
+            8,
+        ),
+        (
+            "multifield-record-source-order",
+            (
+                (
+                    "sink.s3",
+                    "module sink\n"
+                    "from model import Packet\n"
+                    "from model import Sign\n"
+                    "export fn score(packet: Packet) -> tryte:\n"
+                    "    match packet.sign:\n"
+                    "        Sign.Negative:\n"
+                    "            return 0\n"
+                    "        Sign.Positive:\n"
+                    "            return packet.zeta\n",
+                ),
+                (
+                    "hop.s3",
+                    "module hop\n"
+                    "from model import Packet\n"
+                    "from sink import score\n"
+                    "export fn relay(packet: Packet) -> tryte:\n"
+                    "    return score(packet)\n",
+                ),
+                (
+                    "model.s3",
+                    "module model\n"
+                    "export enum Sign:\n"
+                    "    Negative\n"
+                    "    Positive\n"
+                    "export record Packet:\n"
+                    "    zeta: tryte\n"
+                    "    flag: trit\n"
+                    "    sign: Sign\n"
+                    "export fn marker() -> tryte:\n"
+                    "    return 0\n",
+                ),
+                (
+                    "main.s3",
+                    "module main\n"
+                    "from model import Packet\n"
+                    "from model import Sign\n"
+                    "from hop import relay\n"
+                    "fn main() -> tryte:\n"
+                    "    packet: Packet = Packet(zeta=11, flag=-1, sign=Sign.Positive)\n"
+                    "    return relay(packet)\n",
+                ),
+            ),
+            11,
+        ),
+)
+
+
+@pytest.mark.parametrize(
+    ("name", "sources", "expected"),
+    IMPORTED_NOMINAL_NATIVE_CASES,
+)
+def test_imported_nominal_native_corpus_matches_emulator_o0_o1(
+    name: str,
+    sources: dict[str, str] | tuple[tuple[str, str], ...],
+    expected: int,
+    tmp_path: Path,
+) -> None:
+    del name, tmp_path
+    for level in ("O0", "O1"):
+        program = compile_sources(
+            sources,
+            level,
+            entry_module="main",
+            mode=SyntaxMode.V0_6,
+        ).assembly
+        assert Emulator().execute(program) == expected
+
+
+@pytest.mark.parametrize(
+    ("name", "sources", "expected"),
+    IMPORTED_NOMINAL_NATIVE_CASES,
+)
+def test_o0_o1_native_imported_nominal_types(
+    name: str,
+    sources: dict[str, str] | tuple[tuple[str, str], ...],
+    expected: int,
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    _assert_o0_o1_native_sources_equivalence(
+        sources,
+        expected,
+        native_toolchain,
+        tmp_path / f"imported-nominal-{name}",
+    )
+
+
+def test_imported_multifield_record_return_stays_before_native_lowering() -> None:
+    with pytest.raises(SemanticError, match="future aggregate ABI"):
+        compile_sources(
+            {
+                "main.s3": (
+                    "module main\n"
+                    "from geometry import Pair\n"
+                    "from geometry import make\n"
+                    "fn main() -> tryte:\n"
+                    "    pair: Pair = make()\n"
+                    "    return pair.left\n"
+                ),
+                "geometry.s3": (
+                    "module geometry\n"
+                    "export record Pair:\n"
+                    "    left: tryte\n"
+                    "    right: tryte\n"
+                    "export fn make() -> Pair:\n"
+                    "    return Pair(left=1, right=2)\n"
+                ),
+            },
+            mode=SyntaxMode.V0_6,
+        )
 
 
 @pytest.mark.parametrize(
