@@ -79,24 +79,22 @@ class FunctionLowerer:
             ):
                 record = self.semantic_model.record(parameter.type_name.name)
                 fields: dict[str, _LoweredBinding] = {}
-                for field in record.fields:
-                    storage_type = self._storage_type(
-                        field.type_name,
-                        field.location,
-                    )
-                    register = self._allocate(storage_type, field.location)
+                for leaf in self.semantic_model.record_leaves(record.name):
+                    storage_type = leaf.type_name
+                    register = self._allocate(storage_type, leaf.location)
                     self.parameters.append(
                         IRParameter(
-                            f"{parameter.name}__{field.name}",
+                            parameter.name + "__" + "__".join(leaf.path),
                             register,
                             TYPE_MAP[storage_type],
-                            field.location,
+                            leaf.location,
                         )
                     )
-                    fields[field.name] = _LoweredBinding(
-                        field.type_name,
-                        mutable=False,
-                        register=register,
+                    self._set_leaf_binding(
+                        fields,
+                        record,
+                        leaf.path,
+                        register,
                     )
                 self.variable_scopes[0][parameter.name] = _LoweredBinding(
                     parameter.type_name,
@@ -290,14 +288,101 @@ class FunctionLowerer:
             isinstance(type_name, ast.NominalType)
             and self.semantic_model.is_record_type(type_name)
         ):
-            record = self.semantic_model.record(type_name.name)
-            if len(record.fields) == 1:
-                return self._storage_type(record.fields[0].type_name, location)
+            leaves = self.semantic_model.record_leaves(type_name.name)
+            if len(leaves) == 1:
+                return leaves[0].type_name
             raise LoweringError(
                 "multi-field record value cannot be lowered as a scalar value",
                 location,
             )
         raise LoweringError("unsupported storage type", location)
+
+    def _set_leaf_binding(
+        self,
+        fields: dict[str, _LoweredBinding],
+        record,
+        path: tuple[str, ...],
+        register: int,
+    ) -> None:
+        field = record.field(path[0])
+        assert field is not None
+        if len(path) == 1:
+            fields[field.name] = _LoweredBinding(
+                field.type_name,
+                mutable=False,
+                register=register,
+            )
+            return
+        assert isinstance(field.type_name, ast.NominalType)
+        nested = self.semantic_model.record(field.type_name.name)
+        binding = fields.get(field.name)
+        if binding is None:
+            nested_fields: dict[str, _LoweredBinding] = {}
+            binding = _LoweredBinding(
+                field.type_name,
+                mutable=False,
+                fields=nested_fields,
+            )
+            fields[field.name] = binding
+        assert binding.fields is not None
+        self._set_leaf_binding(binding.fields, nested, path[1:], register)
+
+    def _fields_from_single_leaf_register(
+        self,
+        record,
+        register: int,
+    ) -> dict[str, _LoweredBinding]:
+        leaves = self.semantic_model.record_leaves(record.name)
+        if len(leaves) != 1:
+            raise LoweringError(
+                "multi-field record value cannot be lowered from one scalar",
+                record.location,
+            )
+        fields: dict[str, _LoweredBinding] = {}
+        self._set_leaf_binding(fields, record, leaves[0].path, register)
+        return fields
+
+    def _field_binding_at_path(
+        self,
+        fields: dict[str, _LoweredBinding],
+        path: tuple[str, ...],
+        location: SourceLocation,
+    ) -> _LoweredBinding:
+        binding = fields.get(path[0])
+        if binding is None:
+            raise LoweringError(
+                f"record field '{path[0]}' is unavailable",
+                location,
+            )
+        if len(path) == 1:
+            return binding
+        if binding.fields is None:
+            raise LoweringError(
+                f"record field '{path[0]}' is not a nested record",
+                location,
+            )
+        return self._field_binding_at_path(binding.fields, path[1:], location)
+
+    def _flatten_record_registers(
+        self,
+        record_name: str,
+        fields: dict[str, _LoweredBinding],
+        location: SourceLocation,
+    ) -> tuple[int, ...]:
+        registers: list[int] = []
+        for leaf in self.semantic_model.record_leaves(record_name):
+            binding = self._field_binding_at_path(fields, leaf.path, location)
+            if binding.register is None:
+                raise LoweringError(
+                    (
+                        "record argument field '"
+                        + ".".join(leaf.path)
+                        + "' is unavailable"
+                    ),
+                    location,
+                )
+            registers.append(binding.register)
+        return tuple(registers)
 
     def _lookup_variable(
         self,
@@ -321,6 +406,18 @@ class FunctionLowerer:
         record,
         location: SourceLocation,
     ) -> dict[str, _LoweredBinding]:
+        return self._lower_record_binding_from_expression(
+            expression,
+            record,
+            location,
+        ).fields or {}
+
+    def _lower_record_binding_from_expression(
+        self,
+        expression: ast.Initializer,
+        record,
+        location: SourceLocation,
+    ) -> _LoweredBinding:
         if isinstance(expression, ast.ArrayLiteral):
             raise LoweringError(
                 "record value cannot be initialized from an array literal",
@@ -328,30 +425,64 @@ class FunctionLowerer:
             )
         if isinstance(expression, ast.RecordExpression):
             values = {field.name: field.expression for field in expression.fields}
-            return {
-                field.name: _LoweredBinding(
+            fields: dict[str, _LoweredBinding] = {}
+            for field in record.fields:
+                value = values[field.name]
+                if (
+                    isinstance(field.type_name, ast.NominalType)
+                    and self.semantic_model.is_record_type(field.type_name)
+                ):
+                    nested = self.semantic_model.record(field.type_name.name)
+                    fields[field.name] = self._lower_record_binding_from_expression(
+                        value,
+                        nested,
+                        value.location,
+                    )
+                    continue
+                fields[field.name] = _LoweredBinding(
                     field.type_name,
                     mutable=False,
-                    register=self._lower_expression(values[field.name]),
+                    register=self._lower_expression(value),
                 )
-                for field in record.fields
-            }
+            return _LoweredBinding(
+                ast.NominalType(record.name, location),
+                mutable=False,
+                fields=fields,
+            )
         if isinstance(expression, ast.Identifier):
             binding = self._lookup_variable(expression.name, expression.location)
             if binding.fields is not None:
-                return {
-                    field.name: binding.fields[field.name]
-                    for field in record.fields
-                }
-        if len(record.fields) == 1:
-            field = record.fields[0]
-            return {
-                field.name: _LoweredBinding(
-                    field.type_name,
+                return _LoweredBinding(
+                    ast.NominalType(record.name, location),
                     mutable=False,
-                    register=self._lower_expression(expression),
+                    fields={
+                        field.name: binding.fields[field.name]
+                        for field in record.fields
+                    },
                 )
-            }
+        if isinstance(expression, ast.FieldAccessExpression):
+            target_type = self.semantic_model.declared_type_of(expression.target)
+            if (
+                isinstance(target_type, ast.NominalType)
+                and self.semantic_model.is_record_type(target_type)
+            ):
+                target_record = self.semantic_model.record(target_type.name)
+                target = self._lower_record_binding_from_expression(
+                    expression.target,
+                    target_record,
+                    expression.target.location,
+                )
+                assert target.fields is not None
+                field = target.fields.get(expression.field_name)
+                if field is not None and field.fields is not None:
+                    return field
+        if self.semantic_model.record_leaf_count(record.name) == 1:
+            register = self._lower_expression(expression)
+            return _LoweredBinding(
+                ast.NominalType(record.name, location),
+                mutable=False,
+                fields=self._fields_from_single_leaf_register(record, register),
+            )
         raise LoweringError(
             "multi-field record value requires an explicit record literal or binding",
             location,
@@ -363,7 +494,7 @@ class FunctionLowerer:
             and self.semantic_model.is_record_type(self.function.return_type)
         ):
             record = self.semantic_model.record(self.function.return_type.name)
-            if len(record.fields) != 1:
+            if self.semantic_model.record_leaf_count(record.name) != 1:
                 raise LoweringError(
                     "multi-field record returns require a future aggregate ABI",
                     expression.location,
@@ -373,13 +504,17 @@ class FunctionLowerer:
                 record,
                 expression.location,
             )
-            register = fields[record.fields[0].name].register
-            if register is None:
+            registers = self._flatten_record_registers(
+                record.name,
+                fields,
+                expression.location,
+            )
+            if len(registers) != 1:
                 raise LoweringError(
                     "single-field record return is missing its scalar field",
                     expression.location,
                 )
-            return register
+            return registers[0]
         return self._lower_expression(expression)
 
     def _lower_declaration(self, declaration: ast.VariableDeclaration) -> None:
@@ -1307,18 +1442,38 @@ class FunctionLowerer:
                     expression.location,
                 )
             return field.register
-        if isinstance(expression.target, ast.RecordExpression):
-            for field in expression.target.fields:
-                if field.name == expression.field_name:
-                    return self._lower_expression(field.expression)
         target_type = self.semantic_model.declared_type_of(expression.target)
         if (
             isinstance(target_type, ast.NominalType)
             and self.semantic_model.is_record_type(target_type)
         ):
             record = self.semantic_model.record(target_type.name)
-            if len(record.fields) == 1 and record.fields[0].name == expression.field_name:
-                return self._lower_expression(expression.target)
+            target = self._lower_record_binding_from_expression(
+                expression.target,
+                record,
+                expression.target.location,
+            )
+            assert target.fields is not None
+            field = target.fields.get(expression.field_name)
+            if field is None:
+                raise LoweringError(
+                    f"record field '{expression.field_name}' is unavailable",
+                    expression.location,
+                )
+            if field.register is not None:
+                return field.register
+            if (
+                isinstance(field.type_name, ast.NominalType)
+                and self.semantic_model.is_record_type(field.type_name)
+                and field.fields is not None
+                and self.semantic_model.record_leaf_count(field.type_name.name) == 1
+            ):
+                registers = self._flatten_record_registers(
+                    field.type_name.name,
+                    field.fields,
+                    expression.location,
+                )
+                return registers[0]
         raise LoweringError(
             "field access requires a lowered record binding",
             expression.location,
@@ -1342,14 +1497,13 @@ class FunctionLowerer:
                     record,
                     argument.location,
                 )
-                for field in record.fields:
-                    register = fields[field.name].register
-                    if register is None:
-                        raise LoweringError(
-                            f"record argument field '{field.name}' is unavailable",
-                            argument.location,
-                        )
-                    registers.append(register)
+                registers.extend(
+                    self._flatten_record_registers(
+                        record.name,
+                        fields,
+                        argument.location,
+                    )
+                )
                 continue
             registers.append(self._lower_expression(argument.expression))
         return tuple(registers)
