@@ -1555,7 +1555,7 @@ def test_o0_o1_native_nested_record_static_text_modules(
             "fn main() -> tryte:\n"
             "    return 0\n",
             "multi-field record returns require a future aggregate ABI",
-            DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+            DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
         ),
         (
             "branch-multileaf-return",
@@ -1569,7 +1569,7 @@ def test_o0_o1_native_nested_record_static_text_modules(
             "fn main() -> tryte:\n"
             "    return 0\n",
             "multi-field record returns require a future aggregate ABI",
-            DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+            DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
         ),
         (
             "indirect-multileaf-return",
@@ -1583,7 +1583,7 @@ def test_o0_o1_native_nested_record_static_text_modules(
             "fn main() -> tryte:\n"
             "    return 0\n",
             "multi-field record returns require a future aggregate ABI",
-            DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+            DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
         ),
         (
             "self-cycle",
@@ -1638,7 +1638,7 @@ def test_o0_o1_native_nested_record_static_text_modules(
             "fn main() -> tryte:\n"
             "    item: Outer = Outer(left=Right(value=1))\n"
             "    return 0\n",
-            "record literal 'Right' has type Right; expected Left",
+            "nominal literal 'Right' has type Right; expected Left",
             DiagnosticCode.SEMANTIC_TYPE_MISMATCH,
         ),
         (
@@ -1750,7 +1750,7 @@ def test_nested_record_native_semantic_rejections_stay_before_backend(
                 ),
             },
             "multi-field record returns require a future aggregate ABI",
-            DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+            DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
         ),
         (
             "private-nested-type",

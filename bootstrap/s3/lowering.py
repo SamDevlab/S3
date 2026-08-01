@@ -2209,11 +2209,7 @@ class FunctionLowerer:
             target_case = explicit_cases.get(cond_val, fallback_case)
             if target_case is not None:
                 return self._lower_expression(target_case.expression)
-        selector_registers = self._lower_enum_selector_registers(
-            expression.selector,
-            expression.location,
-        )
-        selector_reg = selector_registers[0]
+        selector_reg = self._lower_expression(expression.selector)
         result_type = self._storage_type(
             self.semantic_model.expression_types[id(expression)],
             expression.location,

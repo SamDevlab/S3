@@ -178,7 +178,7 @@ def test_nested_multi_leaf_record_returns_are_rejected_before_lowering(source: s
     assert "multi-field record returns require a future aggregate ABI" in str(
         captured.value
     )
-    assert captured.value.diagnostic_code is DiagnosticCode.SEMANTIC_INVALID_PROGRAM
+    assert captured.value.diagnostic_code is DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE
 
 
 def test_nested_record_constructor_rejects_same_shape_nominal_mismatch() -> None:
@@ -195,4 +195,4 @@ def test_nested_record_constructor_rejects_same_shape_nominal_mismatch() -> None
             "    return 0\n"
         )
 
-    assert "record literal 'Right' has type Right; expected Left" in str(captured.value)
+    assert "nominal literal 'Right' has type Right; expected Left" in str(captured.value)
