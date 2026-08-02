@@ -520,7 +520,7 @@ def _emit_function(
     function: AssemblyFunction,
     emit_instruction: InstructionEmitter,
 ) -> None:
-    renderer.emit_function(function.name, function.return_type.value)
+    renderer.emit_function(function.name, _type_group(function.result_types))
     for parameter in function.parameters:
         renderer.emit_param(parameter.register, parameter.type.value)
     for register, type_name in function.register_types:
@@ -660,9 +660,9 @@ def _emit_supported_instruction(
         return
 
     if opcode is AssemblyOpcode.TCALL:
-        registers = _tcall_registers(instruction, "supported adapter")
-        target = registers[0]
-        arguments = registers[1:]
+        _validate_tcall_width(instruction, "supported adapter")
+        targets = instruction.result_registers
+        arguments = instruction.argument_registers
         if instruction.callee is None:
             raise AssemblyProgramTextAdapterError(
                 "supported adapter expects TCALL callee"
@@ -675,7 +675,7 @@ def _emit_supported_instruction(
         )
         renderer.emit_instruction(
             opcode.value,
-            _register(target),
+            _register_group(targets),
             instruction.callee,
             *(_register(argument) for argument in arguments),
             source=source,
@@ -727,9 +727,12 @@ def _emit_supported_instruction(
         return
 
     if opcode is AssemblyOpcode.TRET:
-        register = _single_register(instruction, "TRET", "supported adapter")
         _require_no_extra_operands(instruction, "TRET", "supported adapter")
-        renderer.emit_instruction(opcode.value, _register(register), source=source)
+        renderer.emit_instruction(
+            opcode.value,
+            _register_group(instruction.registers),
+            source=source,
+        )
         return
 
     raise AssemblyProgramTextAdapterError(
@@ -807,15 +810,14 @@ def _single_label(
     return instruction.labels[0]
 
 
-def _tcall_registers(
+def _validate_tcall_width(
     instruction: AssemblyInstruction,
     adapter_name: str,
-) -> tuple[int, ...]:
-    if len(instruction.registers) < 1:
+) -> None:
+    if instruction.result_width > len(instruction.registers):
         raise AssemblyProgramTextAdapterError(
-            f"{adapter_name} expects TCALL to have a destination register"
+            f"{adapter_name} expects TCALL result width to fit registers"
         )
-    return instruction.registers
 
 
 def _instruction_memory(
@@ -855,6 +857,18 @@ def _require_no_extra_operands(
 
 def _register(register: int) -> str:
     return f"r{register}"
+
+
+def _register_group(registers: tuple[int, ...]) -> str:
+    if len(registers) == 1:
+        return _register(registers[0])
+    return "[" + ", ".join(_register(register) for register in registers) + "]"
+
+
+def _type_group(types: tuple[AssemblyType, ...]) -> str:
+    if len(types) == 1:
+        return types[0].value
+    return "[" + ", ".join(type_name.value for type_name in types) + "]"
 
 
 def _memory(memory: int) -> str:

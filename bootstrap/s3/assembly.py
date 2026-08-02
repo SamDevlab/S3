@@ -16,7 +16,8 @@ from .diagnostics import (
 from .static_text import StaticTextDecodeError, decode_static_text
 
 
-ASSEMBLY_FORMAT_VERSION = "0.5.0"
+ASSEMBLY_FORMAT_VERSION = "0.6.0"
+ASSEMBLY_LEGACY_FORMAT_VERSION = "0.5.0"
 
 
 class AssemblyError(Exception):
@@ -131,6 +132,23 @@ class AssemblyInstruction:
     memory: int | None = None
     source: SourceLocation | None = None
     line: int | None = field(default=None, compare=False)
+    result_width: int = 1
+
+    def __post_init__(self) -> None:
+        if self.result_width < 0:
+            raise ValueError("AssemblyInstruction result_width must be non-negative")
+
+    @property
+    def result_registers(self) -> tuple[int, ...]:
+        if self.opcode is AssemblyOpcode.TCALL:
+            return self.registers[: self.result_width]
+        return self.registers
+
+    @property
+    def argument_registers(self) -> tuple[int, ...]:
+        if self.opcode is AssemblyOpcode.TCALL:
+            return self.registers[self.result_width :]
+        return ()
 
     @property
     def is_terminator(self) -> bool:
@@ -145,8 +163,8 @@ class AssemblyInstruction:
             operands = f"r{self.registers[0]}, {self.static_string}"
         elif self.opcode is AssemblyOpcode.TCALL:
             assert self.callee is not None
-            parts = [f"r{self.registers[0]}", self.callee]
-            parts.extend(f"r{register}" for register in self.registers[1:])
+            parts = [_render_register_group(self.result_registers), self.callee]
+            parts.extend(f"r{register}" for register in self.argument_registers)
             operands = ", ".join(parts)
         elif self.opcode is AssemblyOpcode.TJMP:
             operands = self.labels[0]
@@ -166,6 +184,8 @@ class AssemblyInstruction:
                 f"m{self.memory}, r{self.registers[0]}, "
                 f"r{self.registers[1]}"
             )
+        elif self.opcode is AssemblyOpcode.TRET:
+            operands = _render_register_group(self.registers)
         else:
             operands = ", ".join(f"r{register}" for register in self.registers)
         rendered = f"    {self.opcode.value:<6} {operands}"
@@ -196,6 +216,15 @@ class AssemblyFunction:
     register_types: tuple[tuple[int, AssemblyType], ...]
     blocks: tuple[AssemblyBlock, ...]
     memory_objects: tuple[AssemblyMemoryObject, ...] = ()
+    result_types: tuple[AssemblyType, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not self.result_types:
+            object.__setattr__(self, "result_types", (self.return_type,))
+
+    @property
+    def result_width(self) -> int:
+        return len(self.result_types)
 
     @property
     def instructions(self) -> tuple[AssemblyInstruction, ...]:
@@ -220,7 +249,7 @@ class AssemblyFunction:
         return self.all_register_types.get(register)
 
     def render(self) -> str:
-        lines = [f".function {self.name} -> {self.return_type.value}"]
+        lines = [f".function {self.name} -> {_render_type_group(self.result_types)}"]
         lines.extend(parameter.render() for parameter in self.parameters)
         lines.extend(
             f"    .register r{register}, {type_name.value}"
@@ -247,9 +276,7 @@ class AssemblyProgram:
 _IDENTIFIER = r"[A-Za-z_][A-Za-z0-9_]*"
 _TYPE = r"trit|tryte|string"
 _STATIC_STRING_ID = r"s[0-9]+"
-_FUNCTION_PATTERN = re.compile(
-    rf"^\.function\s+({_IDENTIFIER})\s*->\s*({_TYPE})$"
-)
+_FUNCTION_PATTERN = re.compile(rf"^\.function\s+({_IDENTIFIER})\s*->\s*(.+)$")
 _DECLARATION_PATTERN = re.compile(
     rf"^\.(param|register)\s+(r[0-9]+)\s*,\s*({_TYPE})$"
 )
@@ -281,6 +308,80 @@ def _parse_register(text: str, line: int) -> int:
     if match is None:
         raise AssemblyParseError(f"invalid register '{text.strip()}'", line)
     return int(match.group(1))
+
+
+def _render_register_group(registers: tuple[int, ...]) -> str:
+    if len(registers) == 1:
+        return f"r{registers[0]}"
+    return "[" + ", ".join(f"r{register}" for register in registers) + "]"
+
+
+def _render_type_group(types: tuple[AssemblyType, ...]) -> str:
+    if len(types) == 1:
+        return types[0].value
+    return "[" + ", ".join(type_name.value for type_name in types) + "]"
+
+
+def _split_operands(text: str | None, line: int) -> list[str]:
+    if text is None:
+        return []
+    operands: list[str] = []
+    current: list[str] = []
+    depth = 0
+    for char in text:
+        if char == "[":
+            depth += 1
+        elif char == "]":
+            depth -= 1
+            if depth < 0:
+                raise AssemblyParseError("malformed operand list", line)
+        if char == "," and depth == 0:
+            operands.append("".join(current).strip())
+            current = []
+        else:
+            current.append(char)
+    if depth != 0:
+        raise AssemblyParseError("malformed operand list", line)
+    operands.append("".join(current).strip())
+    return operands
+
+
+def _parse_register_group(
+    text: str,
+    line: int,
+    *,
+    allow_empty: bool = False,
+) -> tuple[int, ...]:
+    text = text.strip()
+    if text.startswith("["):
+        if not text.endswith("]"):
+            raise AssemblyParseError("malformed register list", line)
+        inner = text[1:-1].strip()
+        if not inner:
+            if allow_empty:
+                return ()
+            raise AssemblyParseError("register list must not be empty", line)
+        return tuple(
+            _parse_register(part, line) for part in _split_operands(inner, line)
+        )
+    return (_parse_register(text, line),)
+
+
+def _parse_type_group(text: str, line: int) -> tuple[AssemblyType, ...]:
+    text = text.strip()
+    try:
+        if text.startswith("["):
+            if not text.endswith("]"):
+                raise AssemblyParseError("malformed result type list", line)
+            inner = text[1:-1].strip()
+            if not inner:
+                raise AssemblyParseError("result type list must not be empty", line)
+            return tuple(
+                AssemblyType(part.strip()) for part in _split_operands(inner, line)
+            )
+        return (AssemblyType(text),)
+    except ValueError as error:
+        raise AssemblyParseError("unknown result type in function signature", line) from error
 
 
 def _parse_memory(text: str, line: int) -> int:
@@ -341,6 +442,8 @@ def _parse_instruction(
     text: str,
     line: int,
     source: SourceLocation | None,
+    *,
+    version: str,
 ) -> AssemblyInstruction:
     match = _INSTRUCTION_PATTERN.fullmatch(text)
     if match is None:
@@ -350,11 +453,7 @@ def _parse_instruction(
         opcode = AssemblyOpcode(opcode_text.upper())
     except ValueError as error:
         raise AssemblyParseError(f"unknown opcode '{opcode_text}'", line) from error
-    operands = (
-        []
-        if operands_text is None
-        else [operand.strip() for operand in operands_text.split(",")]
-    )
+    operands = _split_operands(operands_text, line)
     if any(not operand for operand in operands):
         raise AssemblyParseError(f"{opcode.value} has an empty operand", line)
 
@@ -369,11 +468,16 @@ def _parse_instruction(
         AssemblyOpcode.TCMP: 3,
         AssemblyOpcode.TLOAD: 3,
         AssemblyOpcode.TSTORE: 3,
-        AssemblyOpcode.TRET: 1,
         AssemblyOpcode.TJMP: 1,
         AssemblyOpcode.TBR3: 4,
     }
-    if opcode is not AssemblyOpcode.TCALL:
+    if opcode is AssemblyOpcode.TRET:
+        if len(operands) != 1:
+            raise AssemblyParseError(
+                f"{opcode.value} expects 1 operand group, got {len(operands)}",
+                line,
+            )
+    elif opcode is not AssemblyOpcode.TCALL:
         expected = fixed_counts[opcode]
         if len(operands) != expected:
             raise AssemblyParseError(
@@ -413,17 +517,25 @@ def _parse_instruction(
             line=line,
         )
     if opcode is AssemblyOpcode.TCALL:
-        destination = _parse_register(operands[0], line)
+        destinations = _parse_register_group(operands[0], line, allow_empty=True)
+        if version == ASSEMBLY_LEGACY_FORMAT_VERSION and (
+            len(destinations) != 1 or operands[0].strip().startswith("[")
+        ):
+            raise AssemblyParseError(
+                "0.5.0 TCALL cannot use result destination lists",
+                line,
+            )
         callee = _parse_label(operands[1], line)
         arguments = tuple(
             _parse_register(operand, line) for operand in operands[2:]
         )
         return AssemblyInstruction(
             opcode,
-            (destination, *arguments),
+            (*destinations, *arguments),
             callee=callee,
             source=source,
             line=line,
+            result_width=len(destinations),
         )
     if opcode is AssemblyOpcode.TLOAD:
         return AssemblyInstruction(
@@ -464,6 +576,21 @@ def _parse_instruction(
             source=source,
             line=line,
         )
+    if opcode is AssemblyOpcode.TRET:
+        registers = _parse_register_group(operands[0], line)
+        if version == ASSEMBLY_LEGACY_FORMAT_VERSION and (
+            len(registers) != 1 or operands[0].strip().startswith("[")
+        ):
+            raise AssemblyParseError(
+                "0.5.0 TRET cannot use result operand lists",
+                line,
+            )
+        return AssemblyInstruction(
+            opcode,
+            registers,
+            source=source,
+            line=line,
+        )
     registers = tuple(_parse_register(operand, line) for operand in operands)
     return AssemblyInstruction(
         opcode,
@@ -480,6 +607,7 @@ def parse_assembly(source: str) -> AssemblyProgram:
     function_names: set[str] = set()
     current_name: str | None = None
     current_return_type: AssemblyType | None = None
+    current_result_types: tuple[AssemblyType, ...] = ()
     parameters: list[AssemblyParameter] = []
     registers: dict[int, AssemblyType] = {}
     memory_objects: dict[int, AssemblyMemoryObject] = {}
@@ -491,6 +619,7 @@ def parse_assembly(source: str) -> AssemblyProgram:
     artifact_started = False
     data_started = False
     in_data_section = False
+    version = ASSEMBLY_FORMAT_VERSION
 
     def flush_block() -> None:
         nonlocal current_label, instructions
@@ -532,7 +661,7 @@ def parse_assembly(source: str) -> AssemblyProgram:
                     ),
                 )
             version = version_match.group(1)
-            if version != ASSEMBLY_FORMAT_VERSION:
+            if version not in {ASSEMBLY_FORMAT_VERSION, ASSEMBLY_LEGACY_FORMAT_VERSION}:
                 current_major = ASSEMBLY_FORMAT_VERSION.split(".", 1)[0]
                 supplied_major = version.split(".", 1)[0]
                 if supplied_major != current_major:
@@ -589,7 +718,19 @@ def parse_assembly(source: str) -> AssemblyProgram:
                     line_number,
                 )
             function_names.add(current_name)
-            current_return_type = AssemblyType(type_text)
+            current_result_types = _parse_type_group(type_text, line_number)
+            if (
+                version == ASSEMBLY_LEGACY_FORMAT_VERSION
+                and (
+                    len(current_result_types) != 1
+                    or type_text.strip().startswith("[")
+                )
+            ):
+                raise AssemblyParseError(
+                    "0.5.0 functions cannot use multi-result type lists",
+                    line_number,
+                )
+            current_return_type = current_result_types[0]
             parameters = []
             registers = {}
             memory_objects = {}
@@ -614,10 +755,12 @@ def parse_assembly(source: str) -> AssemblyProgram:
                         memory_objects[index]
                         for index in sorted(memory_objects)
                     ),
+                    current_result_types,
                 )
             )
             current_name = None
             current_return_type = None
+            current_result_types = ()
             continue
 
         declaration = _DECLARATION_PATTERN.fullmatch(text)
@@ -692,7 +835,12 @@ def parse_assembly(source: str) -> AssemblyProgram:
                 raise AssemblyParseError("duplicate implicit entry label", line_number)
             block_labels.add(current_label)
         instructions.append(
-            _parse_instruction(text, line_number, source_location)
+            _parse_instruction(
+                text,
+                line_number,
+                source_location,
+                version=version,
+            )
         )
 
     if current_name is not None:

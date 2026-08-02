@@ -471,8 +471,8 @@ def test_render_sign_program_delegates_to_supported_program(
 def test_render_supported_program_preserves_program_without_functions() -> None:
     document = render_supported_program(AssemblyProgram(()))
 
-    assert document.text == ".s3asm 0.5.0\n\n\n"
-    assert document.utf8_bytes == b".s3asm 0.5.0\n\n\n"
+    assert document.text == ".s3asm 0.6.0\n\n\n"
+    assert document.utf8_bytes == b".s3asm 0.6.0\n\n\n"
     assert document.text.endswith("\n")
 
 
@@ -512,7 +512,7 @@ def test_render_supported_program_renders_memory_objects() -> None:
 
     assert (
         document.text
-        == ".s3asm 0.5.0\n"
+        == ".s3asm 0.6.0\n"
         "\n"
         ".function main -> tryte\n"
         "    .register r0, tryte\n"
@@ -540,7 +540,7 @@ def test_render_supported_program_preserves_empty_blocks() -> None:
 
     assert (
         document.text
-        == ".s3asm 0.5.0\n"
+        == ".s3asm 0.6.0\n"
         "\n"
         ".function main -> tryte\n"
         ".label entry\n"
@@ -580,7 +580,7 @@ def test_render_supported_program_rejects_unsupported_opcode() -> None:
 
 def test_render_supported_program_covers_current_instruction_forms_without_source() -> None:
     source = (
-        ".s3asm 0.5.0\n"
+        ".s3asm 0.6.0\n"
         "\n"
         ".function helper -> tryte\n"
         "    .register r0, tryte\n"

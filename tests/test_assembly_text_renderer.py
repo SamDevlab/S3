@@ -59,7 +59,7 @@ def test_renderer_core_returns_static_text_document_with_lf() -> None:
 
     assert isinstance(document, StaticTextDocument)
     assert document.text == (
-        ".s3asm 0.5.0\n"
+        ".s3asm 0.6.0\n"
         "\n"
         ".function main -> tryte\n"
         "    .register r0, tryte\n"
@@ -86,7 +86,7 @@ def test_renderer_core_emits_memory_declaration() -> None:
     )
 
     assert document.text == (
-        ".s3asm 0.5.0\n"
+        ".s3asm 0.6.0\n"
         "\n"
         ".function main -> tryte\n"
         "    .memory m0, tryte, 2, mutable\n"

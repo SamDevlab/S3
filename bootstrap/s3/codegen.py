@@ -79,12 +79,12 @@ def _generate_instruction(instruction: IRInstruction) -> AssemblyInstruction:
             source=instruction.location,
         )
     if opcode is AssemblyOpcode.TCALL:
-        assert instruction.result is not None
         return AssemblyInstruction(
             opcode,
-            (instruction.result, *instruction.operands),
+            (*instruction.results, *instruction.operands),
             callee=instruction.callee,
             source=instruction.location,
+            result_width=len(instruction.results),
         )
     if opcode in {AssemblyOpcode.TJMP, AssemblyOpcode.TBR3}:
         return AssemblyInstruction(
@@ -110,8 +110,8 @@ def _generate_instruction(instruction: IRInstruction) -> AssemblyInstruction:
         )
     registers = (
         instruction.operands
-        if instruction.result is None
-        else (instruction.result, *instruction.operands)
+        if not instruction.results
+        else (*instruction.results, *instruction.operands)
     )
     return AssemblyInstruction(
         opcode,
@@ -163,6 +163,7 @@ def generate_assembly(ir_program: IRProgram) -> AssemblyProgram:
                     )
                     for memory in function.memory_objects
                 ),
+                tuple(TYPE_MAP[type_name] for type_name in function.result_types),
             )
         )
     return AssemblyProgram(

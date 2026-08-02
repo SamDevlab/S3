@@ -354,6 +354,10 @@ class X8664Emitter:
         if opcode is AssemblyOpcode.TCALL:
             return instrumentation + self._emit_call(function, layout, instruction)
         if opcode is AssemblyOpcode.TRET:
+            if len(registers) != 1:
+                raise NativeBackendError(
+                    "multi-cell native returns require hidden sret lowering"
+                )
             return instrumentation + [
                 *self._read_register(layout, registers[0], "rax"),
                 "    dec qword ptr [rip + __s3_frame_count]",
@@ -413,7 +417,12 @@ class X8664Emitter:
         instruction: AssemblyInstruction,
     ) -> list[str]:
         del function
-        destination, *arguments = instruction.registers
+        if len(instruction.result_registers) != 1:
+            raise NativeBackendError(
+                "multi-cell native call results require hidden sret lowering"
+            )
+        destination = instruction.result_registers[0]
+        arguments = instruction.argument_registers
         stack_arguments = arguments[len(_ARGUMENT_REGISTERS) :]
         padding = 1 if len(stack_arguments) % 2 else 0
         lines: list[str] = []
