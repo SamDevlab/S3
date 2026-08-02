@@ -174,8 +174,8 @@ def test_record_rejects_duplicate_missing_and_unknown_fields() -> None:
     assert _semantic_code(unknown) is DiagnosticCode.RECORD_FIELD_UNKNOWN
 
 
-def test_record_return_is_blocked_until_aggregate_abi_exists() -> None:
-    with pytest.raises(SemanticError, match="aggregate ABI"):
+def test_record_return_is_supported_by_aggregate_abi() -> None:
+    assert (
         compile_source(
             "record Pair:\n"
             "    left: tryte\n"
@@ -185,3 +185,5 @@ def test_record_return_is_blocked_until_aggregate_abi_exists() -> None:
             "fn main() -> tryte:\n"
             "    return 0\n"
         )
+        is not None
+    )

@@ -172,7 +172,7 @@ def test_enum_return_policy_uses_total_enum_width() -> None:
         "    return 0\n"
     )
 
-    error = _semantic_error(
+    _semantic_model(
         "enum Result:\n"
         "    Empty\n"
         "    Ok(value: tryte)\n"
@@ -181,8 +181,6 @@ def test_enum_return_policy_uses_total_enum_width() -> None:
         "fn main() -> tryte:\n"
         "    return 0\n"
     )
-    assert error.diagnostic_code is DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE
-    assert "multi-cell enum returns require a future aggregate ABI" in str(error)
 
 
 def test_imported_enum_payload_construction_and_match_are_semantic_values() -> None:
