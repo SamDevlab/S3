@@ -476,6 +476,18 @@ aggregate-results campaign
   cobre o subconjunto lexical real de Assembly 0.6/legado 0.5 necessario para o
   parser da 1.15. O tokenizer nao substitui `parse_assembly`, nao se torna
   default, nao le arquivos e nao altera IR 0.6.0 ou Assembly 0.6.0.
+- 1.15 - parser kernel incremental de S3 Assembly:
+  [ADR-0025](decisions/ADR-0025-bounded-assembly-parser-frontend.md) e
+  [plano da milestone](milestone-1.15.md) adicionam uma referencia experimental
+  que consome o tokenizer bounded, emite eventos/erros estruturados para versao,
+  cabecalho de funcao, declaracoes, labels, `TCALL`, `TRET` e `.end`, e mantem a
+  validacao semantica de programa inteiro no parser/verifier Python.
+- 1.16 - frontend candidate bounded de S3 Assembly:
+  [plano da milestone](milestone-1.16.md) compoe texto, tokenizer e parser em um
+  resumo estrutural ou erro de parser. O candidate nao substitui parser, CLI,
+  renderer, emulator, backend nativo, goldens, baselines, formatos publicos ou
+  versao do pacote. Validacao consolidada permanece deferida ate o fechamento da
+  campanha.
 
 ### Out of scope after 1.04
 

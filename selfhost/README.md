@@ -22,3 +22,10 @@ references for a later tokenizer/parser. They use fixed arrays, aggregate
 results, explicit matches, ASCII code units, and scalar cursor/span indices.
 They do not replace Python or provide filesystem, heap, pointer, dynamic text,
 or Unicode behavior.
+
+Assembly components under `selfhost/assembly/` now include an opcode classifier,
+bounded tokenizer, bounded parser kernel, and frontend candidate. These
+components are experimental comparison targets only. They consume bounded ASCII
+text and explicit cursors, return fixed-layout events, summaries, or structured
+errors, and do not replace the Python Assembly parser, verifier, renderer, CLI,
+emulator, native backend, or golden contracts.

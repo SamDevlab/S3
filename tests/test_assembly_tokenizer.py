@@ -65,6 +65,7 @@ TOKEN_CASES = (
     ExpectedToken("TCALL", 0, AssemblyTokenKind.IDENTIFIER, 0, 5, 5),
     ExpectedToken("TRET", 0, AssemblyTokenKind.IDENTIFIER, 0, 4, 4),
     ExpectedToken("TCONST", 0, AssemblyTokenKind.IDENTIFIER, 0, 6, 6),
+    ExpectedToken("->", 0, AssemblyTokenKind.ARROW, 0, 2, 2),
     ExpectedToken("0", 0, AssemblyTokenKind.INTEGER, 0, 1, 1, 0),
     ExpectedToken("364", 0, AssemblyTokenKind.INTEGER, 0, 3, 3, 364),
     ExpectedToken("-364", 0, AssemblyTokenKind.INTEGER, 0, 4, 4, -364),

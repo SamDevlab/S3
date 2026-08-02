@@ -813,7 +813,19 @@ export fn next_assembly_token(text: BoundedText, start_cursor: TextCursor) -> As
             discard 0
     match unit == 45:
         -1:
-            return scan_digits_or_version(text, position, position + 1, -1)
+            match position + 1 <=> text.length:
+                -1:
+                    match text_units[position + 1] == 62:
+                        -1:
+                            return token(17, position, position + 2, 0)
+                        0:
+                            return scan_digits_or_version(text, position, position + 1, -1)
+                        1:
+                            return scan_digits_or_version(text, position, position + 1, -1)
+                0:
+                    return scan_digits_or_version(text, position, position + 1, -1)
+                1:
+                    return scan_digits_or_version(text, position, position + 1, -1)
         0:
             discard 0
         1:

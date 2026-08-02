@@ -184,6 +184,25 @@ error propagation without replacing Python or becoming default compiler paths.
 The parser, lexer, optimizer, backend, linker, full CLI, filesystem tools, heap,
 exceptions, and complete self-hosting remain outside this stage.
 
+Milestones 1.12 through 1.16 add the bounded input and Assembly frontend
+foundation for a later self-hosted parser:
+
+- Milestone 1.12 makes fixed `trit[N]` and `tryte[N]` arrays copyable across
+  value boundaries.
+- Milestone 1.13 introduces bounded ASCII text, scalar cursors, and half-open
+  spans as explicit data.
+- Milestone 1.14 adds an incremental bounded Assembly tokenizer.
+- Milestone 1.15 adds an incremental bounded Assembly parser kernel.
+- Milestone 1.16 composes tokenizer and parser into a bounded Assembly frontend
+  candidate summary.
+
+These components remain experimental differential references. They do not make
+S3 self-hosted and do not replace Python compiler, parser, verifier, renderer,
+emulator, native backend, CLI, goldens, baselines, public formats, or package
+version. Earlier validation observed after Milestone 1.14 is classified as
+early intermediate validation; final campaign validation remains deferred until
+the implementation gate closes.
+
 Recent tools make this pipeline more observable:
 
 - `s3 targets` lists internal target and backend names.

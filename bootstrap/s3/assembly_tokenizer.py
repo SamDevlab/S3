@@ -25,6 +25,7 @@ class AssemblyTokenKind(IntEnum):
     RIGHT_PARENTHESIS = 14
     NEWLINE = 15
     COMMENT = 16
+    ARROW = 17
 
 
 class AssemblyTokenErrorCode(IntEnum):
@@ -106,7 +107,11 @@ def next_assembly_token(text: BoundedText, cursor: TextCursor) -> AssemblyTokenR
         return _scan_comment(text, position)
     if unit == 46:
         return _scan_directive_or_version(text, position)
-    if unit == 45 or _is_digit(unit):
+    if unit == 45:
+        if position + 1 < text.length and text.units[position + 1] == 62:
+            return _token(AssemblyTokenKind.ARROW, position, position + 2)
+        return _scan_number(text, position)
+    if _is_digit(unit):
         return _scan_number(text, position)
     if unit == 58:
         return _token(AssemblyTokenKind.COLON, position, position + 1)
@@ -334,4 +339,4 @@ def _is_identifier_continue(unit: int) -> bool:
 
 
 def _is_delimiter(unit: int) -> bool:
-    return unit in (9, 10, 13, 32, 40, 41, 44, 58, 59, 61, 91, 93)
+    return unit in (9, 10, 13, 32, 40, 41, 44, 45, 58, 59, 61, 91, 93)

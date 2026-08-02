@@ -1,0 +1,40 @@
+module selfhost.assembly.parser_types
+
+from bounded_text_types import SourceSpan
+from bounded_text_types import TextCursor
+from selfhost.assembly.tokenizer_types import AssemblyTokenError
+
+export record AssemblyParserState:
+    phase: tryte
+    cursor: TextCursor
+    version: tryte
+    function_count: tryte
+    declaration_count: tryte
+    block_count: tryte
+    call_count: tryte
+    return_count: tryte
+    current_result_width: tryte
+    max_result_width: tryte
+
+export record AssemblyParserEvent:
+    kind: tryte
+    span: SourceSpan
+    next_cursor: TextCursor
+    version: tryte
+    result_width: tryte
+    operand_width: tryte
+    discard_results: tryte
+
+export record AssemblyParserError:
+    code: tryte
+    span: SourceSpan
+    detail: tryte
+    token_error: AssemblyTokenError
+
+export enum AssemblyParserResult:
+    Event(event: AssemblyParserEvent, state: AssemblyParserState)
+    End(state: AssemblyParserState)
+    Error(error: AssemblyParserError, state: AssemblyParserState)
+
+export fn assembly_parser_types_anchor() -> tryte:
+    return 0

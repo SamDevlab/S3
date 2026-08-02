@@ -29,7 +29,8 @@ The tokenizer recognizes the textual Assembly forms already used by Assembly
 - `rN` as register names;
 - `mN` and `sN` as value names;
 - signed decimal integers in the current single-tryte scalar range;
-- `:`, `,`, `=`, brackets, parentheses, LF, CRLF, and `;` comments.
+- `->`, `:`, `,`, `=`, brackets, parentheses, LF, CRLF, and `;`
+  comments.
 
 Opcode names such as `TCALL` and `TRET` remain lexical identifiers. The parser
 milestone classifies opcode semantics.
