@@ -469,6 +469,13 @@ aggregate-results campaign
   ASCII de capacidade 364, comprimento logico, padding zero, cursor/span sem
   referencia e erros estruturados. Referencias Python/S3 e cobertura
   diferencial foram escritas; validacao consolidada permanece deferida.
+- 1.14 - tokenizer incremental de S3 Assembly:
+  [plano da milestone](milestone-1.14.md) adiciona uma referencia diferencial
+  experimental que consome `BoundedText` e `TextCursor`, retorna um token,
+  end-of-input ou erro estruturado por chamada, preserva spans/cursores exatos e
+  cobre o subconjunto lexical real de Assembly 0.6/legado 0.5 necessario para o
+  parser da 1.15. O tokenizer nao substitui `parse_assembly`, nao se torna
+  default, nao le arquivos e nao altera IR 0.6.0 ou Assembly 0.6.0.
 
 ### Out of scope after 1.04
 

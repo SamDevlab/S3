@@ -386,3 +386,20 @@ reference under `selfhost/text/`. The representation is a logical length plus
 indices; errors are nominal values propagated explicitly. The independent
 Python reference remains default, and no component reads files or exposes
 pointers, heap storage, dynamic strings, or Unicode claims.
+
+## Milestone 1.14 incremental Assembly tokenizer
+
+An incremental S3 Assembly tokenizer kernel is implemented as an experimental
+differential reference under `selfhost/assembly/`. It consumes the Milestone
+1.13 `BoundedText` plus an explicit `TextCursor`, produces one token, end, or
+structured error per call, and preserves exact `SourceSpan` and next-cursor
+coordinates. The Python reference in `bootstrap/s3/assembly_tokenizer.py`
+remains a comparison point only.
+
+The tokenizer recognizes the existing Assembly textual surface needed by the
+future Assembly parser: `.s3asm`, current directives, version numbers,
+identifiers/opcodes/types, register names, value names, signed decimal scalar
+integers, punctuation, LF/CRLF, and `;` comments. It does not classify opcode
+semantics, parse full Assembly, tokenize source-language S3, read files, expose
+source pointers, allocate heap storage, maintain hidden parser state, or replace
+the Python `parse_assembly` path.

@@ -116,3 +116,17 @@ group. Local indexed arrays continue to use `.memory`, `TLOAD`, and `TSTORE`.
 
 The 0.6 function, `TCALL`, and `TRET` group syntax is sufficient. Legacy 0.5
 reading remains width-one only; no new 0.5 encoding is introduced.
+
+## Experimental tokenizer boundary
+
+The Milestone 1.14 tokenizer is an incremental bounded-text component for the
+future self-hosted Assembly parser. It is additive and experimental: the Python
+Assembly parser in `bootstrap.s3.assembly` remains the normative reader.
+
+The tokenizer recognizes only the existing textual surface described above:
+directives, version numbers, identifiers, register names, memory/static value
+names, scalar decimal integers, group punctuation, LF/CRLF, and `;` comments.
+Opcode names such as `TCALL` and `TRET` are lexical identifiers at this stage;
+parser validation classifies them later. The tokenizer adds no new directives,
+opcodes, value syntax, version, heap allocation, source pointers, filesystem
+behavior, or default compiler path.

@@ -1,0 +1,887 @@
+module selfhost.assembly.assembly_tokenizer
+
+from bounded_text_types import BoundedText
+from bounded_text_types import SourceSpan
+from bounded_text_types import TextCursor
+from selfhost.assembly.tokenizer_types import AssemblyToken
+from selfhost.assembly.tokenizer_types import AssemblyTokenError
+from selfhost.assembly.tokenizer_types import AssemblyTokenResult
+
+fn span(start: tryte, end: tryte) -> SourceSpan:
+    return SourceSpan(start=start, end=end)
+
+fn cursor(position: tryte) -> TextCursor:
+    return TextCursor(position=position)
+
+fn token(kind: tryte, start: tryte, end: tryte, scalar_value: tryte) -> AssemblyTokenResult:
+    return AssemblyTokenResult.Token(resultToken=AssemblyToken(kind=kind, span=span(start, end), next_cursor=cursor(end), scalar_value=scalar_value))
+
+fn error(code: tryte, start: tryte, end: tryte, detail: tryte) -> AssemblyTokenResult:
+    return AssemblyTokenResult.Error(resultError=AssemblyTokenError(code=code, span=span(start, end), detail=detail))
+
+fn eq1(left: tryte, right: tryte) -> tryte:
+    match left == right:
+        -1:
+            return 1
+        0:
+            return 0
+        1:
+            return 0
+
+fn is_digit(unit: tryte) -> trit:
+    match unit <=> 48:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match unit <=> 57:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn is_lower_alpha(unit: tryte) -> trit:
+    match unit <=> 97:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match unit <=> 122:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn is_upper_alpha(unit: tryte) -> trit:
+    match unit <=> 65:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match unit <=> 90:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn is_identifier_start(unit: tryte) -> trit:
+    match is_lower_alpha(unit):
+        -1:
+            return -1
+        0:
+            match is_upper_alpha(unit):
+                -1:
+                    return -1
+                0:
+                    match unit == 95:
+                        -1:
+                            return -1
+                        0:
+                            return 0
+                        1:
+                            return 0
+                1:
+                    match unit == 95:
+                        -1:
+                            return -1
+                        0:
+                            return 0
+                        1:
+                            return 0
+        1:
+            match is_upper_alpha(unit):
+                -1:
+                    return -1
+                0:
+                    match unit == 95:
+                        -1:
+                            return -1
+                        0:
+                            return 0
+                        1:
+                            return 0
+                1:
+                    match unit == 95:
+                        -1:
+                            return -1
+                        0:
+                            return 0
+                        1:
+                            return 0
+
+fn is_identifier_continue(unit: tryte) -> trit:
+    match is_identifier_start(unit):
+        -1:
+            return -1
+        0:
+            return is_digit(unit)
+        1:
+            return is_digit(unit)
+
+fn is_delimiter(unit: tryte) -> trit:
+    match unit == 9:
+        -1:
+            return -1
+        0:
+            match unit == 10:
+                -1:
+                    return -1
+                0:
+                    match unit == 13:
+                        -1:
+                            return -1
+                        0:
+                            match unit == 32:
+                                -1:
+                                    return -1
+                                0:
+                                    match unit == 40:
+                                        -1:
+                                            return -1
+                                        0:
+                                            match unit == 41:
+                                                -1:
+                                                    return -1
+                                                0:
+                                                    match unit == 44:
+                                                        -1:
+                                                            return -1
+                                                        0:
+                                                            match unit == 58:
+                                                                -1:
+                                                                    return -1
+                                                                0:
+                                                                    match unit == 59:
+                                                                        -1:
+                                                                            return -1
+                                                                        0:
+                                                                            match unit == 61:
+                                                                                -1:
+                                                                                    return -1
+                                                                                0:
+                                                                                    match unit == 91:
+                                                                                        -1:
+                                                                                            return -1
+                                                                                        0:
+                                                                                            match unit == 93:
+                                                                                                -1:
+                                                                                                    return -1
+                                                                                                0:
+                                                                                                    return 0
+                                                                                                1:
+                                                                                                    return 0
+                                                                                        1:
+                                                                                            match unit == 93:
+                                                                                                -1:
+                                                                                                    return -1
+                                                                                                0:
+                                                                                                    return 0
+                                                                                                1:
+                                                                                                    return 0
+                                                                                1:
+                                                                                    match unit == 91:
+                                                                                        -1:
+                                                                                            return -1
+                                                                                        0:
+                                                                                            match unit == 93:
+                                                                                                -1:
+                                                                                                    return -1
+                                                                                                0:
+                                                                                                    return 0
+                                                                                                1:
+                                                                                                    return 0
+                                                                                        1:
+                                                                                            match unit == 93:
+                                                                                                -1:
+                                                                                                    return -1
+                                                                                                0:
+                                                                                                    return 0
+                                                                                                1:
+                                                                                                    return 0
+                                                                        1:
+                                                                            match unit == 61:
+                                                                                -1:
+                                                                                    return -1
+                                                                                0:
+                                                                                    match unit == 91:
+                                                                                        -1:
+                                                                                            return -1
+                                                                                        0:
+                                                                                            match unit == 93:
+                                                                                                -1:
+                                                                                                    return -1
+                                                                                                0:
+                                                                                                    return 0
+                                                                                                1:
+                                                                                                    return 0
+                                                                                        1:
+                                                                                            match unit == 93:
+                                                                                                -1:
+                                                                                                    return -1
+                                                                                                0:
+                                                                                                    return 0
+                                                                                                1:
+                                                                                                    return 0
+                                                                                1:
+                                                                                    match unit == 91:
+                                                                                        -1:
+                                                                                            return -1
+                                                                                        0:
+                                                                                            match unit == 93:
+                                                                                                -1:
+                                                                                                    return -1
+                                                                                                0:
+                                                                                                    return 0
+                                                                                                1:
+                                                                                                    return 0
+                                                                                        1:
+                                                                                            match unit == 93:
+                                                                                                -1:
+                                                                                                    return -1
+                                                                                                0:
+                                                                                                    return 0
+                                                                                                1:
+                                                                                                    return 0
+                                                                1:
+                                                                    return -1
+                                                        1:
+                                                            return -1
+                                                1:
+                                                    return -1
+                                        1:
+                                            return -1
+                                1:
+                                    return -1
+                        1:
+                            match unit == 32:
+                                -1:
+                                    return -1
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                1:
+                    return 0
+        1:
+            return 0
+
+fn skip_horizontal_whitespace(text: BoundedText, start: tryte) -> tryte:
+    text_units: tryte[364] = text.units
+    mut index: tryte = start
+    while index < text.length:
+        match text_units[index] == 9:
+            -1:
+                index = index + 1
+            0:
+                match text_units[index] == 32:
+                    -1:
+                        index = index + 1
+                    0:
+                        return index
+                    1:
+                        return index
+            1:
+                match text_units[index] == 32:
+                    -1:
+                        index = index + 1
+                    0:
+                        return index
+                    1:
+                        return index
+    return index
+
+fn scan_comment(text: BoundedText, start: tryte) -> AssemblyTokenResult:
+    text_units: tryte[364] = text.units
+    mut index: tryte = start
+    while index < text.length:
+        match text_units[index] == 10:
+            -1:
+                return token(16, start, index, 0)
+            0:
+                match text_units[index] == 13:
+                    -1:
+                        return token(16, start, index, 0)
+                    0:
+                        index = index + 1
+                    1:
+                        index = index + 1
+            1:
+                index = index + 1
+    return token(16, start, index, 0)
+
+fn scan_plain_identifier(text: BoundedText, start: tryte) -> AssemblyTokenResult:
+    text_units: tryte[364] = text.units
+    mut index: tryte = start + 1
+    while index < text.length:
+        match is_identifier_continue(text_units[index]):
+            -1:
+                index = index + 1
+            0:
+                return token(4, start, index, 0)
+            1:
+                return token(4, start, index, 0)
+    return token(4, start, index, 0)
+
+fn digit_overflows(value: tryte, digit: tryte) -> trit:
+    match value <=> 36:
+        -1:
+            return 0
+        0:
+            match digit <=> 4:
+                -1:
+                    return 0
+                0:
+                    return 0
+                1:
+                    return -1
+        1:
+            return -1
+
+fn append_decimal(value: tryte, digit: tryte) -> tryte:
+    mut result: tryte = value
+    result += value
+    result += value
+    result += value
+    result += value
+    result += value
+    result += value
+    result += value
+    result += value
+    result += value
+    result += digit
+    return result
+
+fn scan_prefixed_name(text: BoundedText, start: tryte, kind: tryte, invalid_code: tryte) -> AssemblyTokenResult:
+    text_units: tryte[364] = text.units
+    mut index: tryte = start + 1
+    mut value: tryte = 0
+    mut unit: tryte = 0
+    mut digit: tryte = 0
+    match index <=> text.length:
+        0:
+            return token(4, start, index, 0)
+        -1:
+            match is_digit(text_units[index]):
+                -1:
+                    while index < text.length:
+                        unit = text_units[index]
+                        match is_digit(unit):
+                            -1:
+                                digit = unit - 48
+                                match digit_overflows(value, digit):
+                                    -1:
+                                        return error(invalid_code, start, index + 1, 364)
+                                    0:
+                                        value = append_decimal(value, digit)
+                                        index = index + 1
+                                    1:
+                                        value = append_decimal(value, digit)
+                                        index = index + 1
+                            0:
+                                match is_identifier_continue(unit):
+                                    -1:
+                                        return scan_plain_identifier(text, start)
+                                    0:
+                                        return token(kind, start, index, value)
+                                    1:
+                                        return token(kind, start, index, value)
+                            1:
+                                match is_identifier_continue(unit):
+                                    -1:
+                                        return scan_plain_identifier(text, start)
+                                    0:
+                                        return token(kind, start, index, value)
+                                    1:
+                                        return token(kind, start, index, value)
+                    return token(kind, start, index, value)
+                0:
+                    return scan_plain_identifier(text, start)
+                1:
+                    return scan_plain_identifier(text, start)
+        1:
+            return token(4, start, index, 0)
+
+fn scan_name(text: BoundedText, start: tryte) -> AssemblyTokenResult:
+    text_units: tryte[364] = text.units
+    match text_units[start] == 114:
+        -1:
+            return scan_prefixed_name(text, start, 6, 7)
+        0:
+            match text_units[start] == 109:
+                -1:
+                    return scan_prefixed_name(text, start, 5, 6)
+                0:
+                    match text_units[start] == 115:
+                        -1:
+                            return scan_prefixed_name(text, start, 5, 6)
+                        0:
+                            return scan_plain_identifier(text, start)
+                        1:
+                            return scan_plain_identifier(text, start)
+                1:
+                    return scan_plain_identifier(text, start)
+        1:
+            return scan_plain_identifier(text, start)
+
+fn directive_score3(text: BoundedText, start: tryte, a: tryte, b: tryte, c: tryte) -> tryte:
+    text_units: tryte[364] = text.units
+    return eq1(text_units[start + 1], a) + eq1(text_units[start + 2], b) + eq1(text_units[start + 3], c)
+
+fn directive_score4(text: BoundedText, start: tryte, a: tryte, b: tryte, c: tryte, d: tryte) -> tryte:
+    text_units: tryte[364] = text.units
+    return directive_score3(text, start, a, b, c) + eq1(text_units[start + 4], d)
+
+fn directive_score5(text: BoundedText, start: tryte, a: tryte, b: tryte, c: tryte, d: tryte, e: tryte) -> tryte:
+    text_units: tryte[364] = text.units
+    return directive_score4(text, start, a, b, c, d) + eq1(text_units[start + 5], e)
+
+fn directive_score6(text: BoundedText, start: tryte, a: tryte, b: tryte, c: tryte, d: tryte, e: tryte, f: tryte) -> tryte:
+    text_units: tryte[364] = text.units
+    return directive_score5(text, start, a, b, c, d, e) + eq1(text_units[start + 6], f)
+
+fn directive_score8(text: BoundedText, start: tryte, a: tryte, b: tryte, c: tryte, d: tryte, e: tryte, f: tryte, g: tryte, h: tryte) -> tryte:
+    text_units: tryte[364] = text.units
+    return directive_score6(text, start, a, b, c, d, e, f) + eq1(text_units[start + 7], g) + eq1(text_units[start + 8], h)
+
+fn classify_directive(text: BoundedText, start: tryte, index: tryte) -> AssemblyTokenResult:
+    length: tryte = index - start
+    match length <=> 4:
+        -1:
+            return error(9, start, index, 46)
+        0:
+            match directive_score3(text, start, 101, 110, 100) <=> 3:
+                0:
+                    return token(2, start, index, 7)
+                -1:
+                    return error(4, start, index, 46)
+                1:
+                    return error(4, start, index, 46)
+        1:
+            match length <=> 5:
+                0:
+                    match directive_score4(text, start, 100, 97, 116, 97) <=> 4:
+                        0:
+                            return token(2, start, index, 6)
+                        -1:
+                            return error(4, start, index, 46)
+                        1:
+                            return error(4, start, index, 46)
+                -1:
+                    return error(9, start, index, 46)
+                1:
+                    match length <=> 6:
+                        0:
+                            match directive_score5(text, start, 115, 51, 97, 115, 109) <=> 5:
+                                0:
+                                    return token(1, start, index, 0)
+                                -1:
+                                    match directive_score5(text, start, 112, 97, 114, 97, 109) <=> 5:
+                                        0:
+                                            return token(2, start, index, 2)
+                                        -1:
+                                            match directive_score5(text, start, 108, 97, 98, 101, 108) <=> 5:
+                                                0:
+                                                    return token(2, start, index, 5)
+                                                -1:
+                                                    return error(4, start, index, 46)
+                                                1:
+                                                    return error(4, start, index, 46)
+                                        1:
+                                            return error(4, start, index, 46)
+                                1:
+                                    return error(4, start, index, 46)
+                        -1:
+                            return error(4, start, index, 46)
+                        1:
+                            match length <=> 7:
+                                0:
+                                    match directive_score6(text, start, 109, 101, 109, 111, 114, 121) <=> 6:
+                                        0:
+                                            return token(2, start, index, 4)
+                                        -1:
+                                            return error(4, start, index, 46)
+                                        1:
+                                            return error(4, start, index, 46)
+                                -1:
+                                    return error(4, start, index, 46)
+                                1:
+                                    match length <=> 9:
+                                        0:
+                                            match directive_score8(text, start, 102, 117, 110, 99, 116, 105, 111, 110) <=> 8:
+                                                0:
+                                                    return token(2, start, index, 1)
+                                                -1:
+                                                    match directive_score8(text, start, 114, 101, 103, 105, 115, 116, 101, 114) <=> 8:
+                                                        0:
+                                                            return token(2, start, index, 3)
+                                                        -1:
+                                                            return error(4, start, index, 46)
+                                                        1:
+                                                            return error(4, start, index, 46)
+                                                1:
+                                                    return error(4, start, index, 46)
+                                        -1:
+                                            return error(4, start, index, 46)
+                                        1:
+                                            return error(4, start, index, 46)
+
+fn scan_directive(text: BoundedText, start: tryte) -> AssemblyTokenResult:
+    text_units: tryte[364] = text.units
+    mut index: tryte = start + 1
+    while index < text.length:
+        match is_identifier_continue(text_units[index]):
+            -1:
+                index = index + 1
+            0:
+                return classify_directive(text, start, index)
+            1:
+                return classify_directive(text, start, index)
+    return classify_directive(text, start, index)
+
+fn consume_until_delimiter(text: BoundedText, start: tryte) -> tryte:
+    text_units: tryte[364] = text.units
+    mut index: tryte = start
+    while index < text.length:
+        match is_delimiter(text_units[index]):
+            -1:
+                return index
+            0:
+                index = index + 1
+            1:
+                index = index + 1
+    return index
+
+fn scan_version_number(text: BoundedText, start: tryte) -> AssemblyTokenResult:
+    text_units: tryte[364] = text.units
+    mut index: tryte = start
+    mut part: tryte = 0
+    mut result: tryte = 0
+    mut dots: tryte = 0
+    mut digit: tryte = 0
+    while index < text.length:
+        match text_units[index] == 46:
+            -1:
+                dots = dots + 1
+                result = append_decimal(result, part)
+                part = 0
+                index = index + 1
+            0:
+                match is_digit(text_units[index]):
+                    -1:
+                        digit = text_units[index] - 48
+                        part = append_decimal(part, digit)
+                        match part <=> 9:
+                            1:
+                                return error(10, start, index + 1, part)
+                            -1:
+                                index = index + 1
+                            0:
+                                index = index + 1
+                    0:
+                        match is_delimiter(text_units[index]):
+                            -1:
+                                match dots <=> 2:
+                                    0:
+                                        result = append_decimal(result, part)
+                                        return token(3, start, index, result)
+                                    -1:
+                                        return error(9, start, index, dots)
+                                    1:
+                                        return error(9, start, index, dots)
+                            0:
+                                return error(9, start, index + 1, text_units[index])
+                            1:
+                                return error(9, start, index + 1, text_units[index])
+                    1:
+                        match is_delimiter(text_units[index]):
+                            -1:
+                                match dots <=> 2:
+                                    0:
+                                        result = append_decimal(result, part)
+                                        return token(3, start, index, result)
+                                    -1:
+                                        return error(9, start, index, dots)
+                                    1:
+                                        return error(9, start, index, dots)
+                            0:
+                                return error(9, start, index + 1, text_units[index])
+                            1:
+                                return error(9, start, index + 1, text_units[index])
+            1:
+                match is_digit(text_units[index]):
+                    -1:
+                        digit = text_units[index] - 48
+                        part = append_decimal(part, digit)
+                        match part <=> 9:
+                            1:
+                                return error(10, start, index + 1, part)
+                            -1:
+                                index = index + 1
+                            0:
+                                index = index + 1
+                    0:
+                        return error(9, start, index + 1, text_units[index])
+                    1:
+                        return error(9, start, index + 1, text_units[index])
+    match dots <=> 2:
+        0:
+            result = append_decimal(result, part)
+            return token(3, start, index, result)
+        -1:
+            return error(9, start, index, dots)
+        1:
+            return error(9, start, index, dots)
+
+fn scan_digits_or_version(text: BoundedText, start: tryte, digit_start: tryte, sign: tryte) -> AssemblyTokenResult:
+    text_units: tryte[364] = text.units
+    mut index: tryte = digit_start
+    mut value: tryte = 0
+    mut unit: tryte = 0
+    mut digit: tryte = 0
+    match index <=> text.length:
+        0:
+            return error(2, start, index, 45)
+        -1:
+            match is_digit(text_units[index]):
+                -1:
+                    discard 0
+                0:
+                    return error(2, start, index, 45)
+                1:
+                    return error(2, start, index, 45)
+        1:
+            return error(2, start, index, 45)
+    while index < text.length:
+        unit = text_units[index]
+        match is_digit(unit):
+            -1:
+                digit = unit - 48
+                match digit_overflows(value, digit):
+                    -1:
+                        return error(3, start, index + 1, 364)
+                    0:
+                        value = append_decimal(value, digit)
+                        index = index + 1
+                    1:
+                        value = append_decimal(value, digit)
+                        index = index + 1
+            0:
+                match unit == 46:
+                    -1:
+                        return scan_version_number(text, start)
+                    0:
+                        match is_delimiter(unit):
+                            -1:
+                                match sign == -1:
+                                    -1:
+                                        return token(7, start, index, 0 - value)
+                                    0:
+                                        return token(7, start, index, value)
+                                    1:
+                                        return token(7, start, index, value)
+                            0:
+                                return error(2, start, consume_until_delimiter(text, index), unit)
+                            1:
+                                return error(2, start, consume_until_delimiter(text, index), unit)
+                    1:
+                        match is_delimiter(unit):
+                            -1:
+                                match sign == -1:
+                                    -1:
+                                        return token(7, start, index, 0 - value)
+                                    0:
+                                        return token(7, start, index, value)
+                                    1:
+                                        return token(7, start, index, value)
+                            0:
+                                return error(2, start, consume_until_delimiter(text, index), unit)
+                            1:
+                                return error(2, start, consume_until_delimiter(text, index), unit)
+            1:
+                match unit == 46:
+                    -1:
+                        return scan_version_number(text, start)
+                    0:
+                        match is_delimiter(unit):
+                            -1:
+                                match sign == -1:
+                                    -1:
+                                        return token(7, start, index, 0 - value)
+                                    0:
+                                        return token(7, start, index, value)
+                                    1:
+                                        return token(7, start, index, value)
+                            0:
+                                return error(2, start, consume_until_delimiter(text, index), unit)
+                            1:
+                                return error(2, start, consume_until_delimiter(text, index), unit)
+                    1:
+                        match is_delimiter(unit):
+                            -1:
+                                match sign == -1:
+                                    -1:
+                                        return token(7, start, index, 0 - value)
+                                    0:
+                                        return token(7, start, index, value)
+                                    1:
+                                        return token(7, start, index, value)
+                            0:
+                                return error(2, start, consume_until_delimiter(text, index), unit)
+                            1:
+                                return error(2, start, consume_until_delimiter(text, index), unit)
+    match sign == -1:
+        -1:
+            return token(7, start, index, 0 - value)
+        0:
+            return token(7, start, index, value)
+        1:
+            return token(7, start, index, value)
+
+export fn next_assembly_token(text: BoundedText, start_cursor: TextCursor) -> AssemblyTokenResult:
+    text_units: tryte[364] = text.units
+    match start_cursor.position <=> 0:
+        -1:
+            return error(8, 0, 0, start_cursor.position)
+        0:
+            discard 0
+        1:
+            discard 0
+    match start_cursor.position <=> text.length:
+        1:
+            return error(8, text.length, text.length, start_cursor.position)
+        -1:
+            discard 0
+        0:
+            discard 0
+    position: tryte = skip_horizontal_whitespace(text, start_cursor.position)
+    match position <=> text.length:
+        0:
+            return AssemblyTokenResult.End(cursor=cursor(position))
+        -1:
+            discard 0
+        1:
+            return error(8, text.length, text.length, position)
+    unit: tryte = text_units[position]
+    match unit == 10:
+        -1:
+            return token(15, position, position + 1, 0)
+        0:
+            discard 0
+        1:
+            discard 0
+    match unit == 13:
+        -1:
+            match position + 1 <=> text.length:
+                -1:
+                    match text_units[position + 1] == 10:
+                        -1:
+                            return token(15, position, position + 2, 0)
+                        0:
+                            return error(9, position, position + 1, unit)
+                        1:
+                            return error(9, position, position + 1, unit)
+                0:
+                    return error(9, position, position + 1, unit)
+                1:
+                    return error(9, position, position + 1, unit)
+        0:
+            discard 0
+        1:
+            discard 0
+    match unit == 59:
+        -1:
+            return scan_comment(text, position)
+        0:
+            discard 0
+        1:
+            discard 0
+    match unit == 46:
+        -1:
+            return scan_directive(text, position)
+        0:
+            discard 0
+        1:
+            discard 0
+    match unit == 45:
+        -1:
+            return scan_digits_or_version(text, position, position + 1, -1)
+        0:
+            discard 0
+        1:
+            discard 0
+    match is_digit(unit):
+        -1:
+            return scan_digits_or_version(text, position, position, 1)
+        0:
+            match unit == 58:
+                -1:
+                    return token(8, position, position + 1, 0)
+                0:
+                    match unit == 44:
+                        -1:
+                            return token(9, position, position + 1, 0)
+                        0:
+                            match unit == 61:
+                                -1:
+                                    return token(10, position, position + 1, 0)
+                                0:
+                                    match unit == 91:
+                                        -1:
+                                            return token(11, position, position + 1, 0)
+                                        0:
+                                            match unit == 93:
+                                                -1:
+                                                    return token(12, position, position + 1, 0)
+                                                0:
+                                                    match unit == 40:
+                                                        -1:
+                                                            return token(13, position, position + 1, 0)
+                                                        0:
+                                                            match unit == 41:
+                                                                -1:
+                                                                    return token(14, position, position + 1, 0)
+                                                                0:
+                                                                    match unit == 34:
+                                                                        -1:
+                                                                            return error(10, position, position + 1, unit)
+                                                                        0:
+                                                                            match is_identifier_start(unit):
+                                                                                -1:
+                                                                                    return scan_name(text, position)
+                                                                                0:
+                                                                                    return error(1, position, position + 1, unit)
+                                                                                1:
+                                                                                    return error(1, position, position + 1, unit)
+                                                                        1:
+                                                                            match is_identifier_start(unit):
+                                                                                -1:
+                                                                                    return scan_name(text, position)
+                                                                                0:
+                                                                                    return error(1, position, position + 1, unit)
+                                                                                1:
+                                                                                    return error(1, position, position + 1, unit)
+                                                                1:
+                                                                    return token(14, position, position + 1, 0)
+                                                        1:
+                                                            return token(13, position, position + 1, 0)
+                                                1:
+                                                    return token(12, position, position + 1, 0)
+                                        1:
+                                            return token(11, position, position + 1, 0)
+                                1:
+                                    return token(10, position, position + 1, 0)
+                        1:
+                            return token(9, position, position + 1, 0)
+                1:
+                    return token(8, position, position + 1, 0)
+        1:
+            return error(1, position, position + 1, unit)
