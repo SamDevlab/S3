@@ -98,9 +98,10 @@ def test_normative_ebnf_defines_composable_postfix() -> None:
     assert "unary                = (\"~\" | \"-\"), unary | postfix-expression" in grammar
     assert "postfix-expression   = primary, { postfix-suffix }" in grammar
     assert "postfix-suffix       = call-suffix | index-suffix | member-suffix" in grammar
-    assert 'call-suffix          = "(", [ argument-list ], ")"' in grammar
+    assert 'call-suffix          = "(", [ argument-list | named-argument-list ], ")"' in grammar
     assert 'index-suffix         = "[", expression, "]"' in grammar
     assert 'member-suffix        = ".", identifier' in grammar
+    assert "named-argument-list  = named-argument, { \",\", named-argument }" in grammar
+    assert "qualified-name       = identifier, { \".\", identifier }" in grammar
     assert "identifier-expression" not in grammar
-    assert "qualified-name" not in grammar
     assert "primary              = integer | identifier | call" not in grammar
