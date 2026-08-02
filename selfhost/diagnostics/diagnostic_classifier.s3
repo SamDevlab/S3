@@ -1,0 +1,124 @@
+module selfhost.diagnostics.diagnostic_classifier
+
+export fn diagnostic_category_count() -> tryte:
+    return 16
+
+export fn diagnostic_phase_count() -> tryte:
+    return 15
+
+export fn diagnostic_category_is_known(id: tryte) -> trit:
+    match id <=> 0:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match id <=> 15:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+export fn diagnostic_phase_is_known(id: tryte) -> trit:
+    match id <=> 0:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match id <=> 14:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn diagnostic_category_family(category_id: tryte) -> tryte:
+    match category_id <=> 1:
+        -1:
+            return 0
+        0:
+            return 0
+        1:
+            match category_id <=> 5:
+                -1:
+                    return 1
+                0:
+                    return 1
+                1:
+                    match category_id <=> 11:
+                        -1:
+                            return 2
+                        0:
+                            return 2
+                        1:
+                            return 3
+
+fn diagnostic_phase_channel(phase_id: tryte) -> tryte:
+    match phase_id <=> 3:
+        -1:
+            return 0
+        0:
+            return 0
+        1:
+            match phase_id <=> 7:
+                -1:
+                    return 1
+                0:
+                    return 1
+                1:
+                    match phase_id <=> 10:
+                        -1:
+                            return 2
+                        0:
+                            return 2
+                        1:
+                            return 3
+
+export fn diagnostic_probe_is_known(category_id: tryte, phase_id: tryte) -> trit:
+    match diagnostic_category_is_known(category_id) <=> -1:
+        -1:
+            return 0
+        0:
+            match diagnostic_phase_is_known(phase_id) <=> -1:
+                -1:
+                    return 0
+                0:
+                    return -1
+                1:
+                    return 0
+        1:
+            return 0
+
+export fn diagnostic_family_code_at(category_id: tryte) -> tryte:
+    match diagnostic_category_is_known(category_id) <=> -1:
+        -1:
+            return -1
+        0:
+            return diagnostic_category_family(category_id)
+        1:
+            return -1
+
+export fn diagnostic_channel_code_at(category_id: tryte, phase_id: tryte) -> tryte:
+    match diagnostic_category_is_known(category_id) <=> -1:
+        -1:
+            return -1
+        0:
+            match diagnostic_phase_is_known(phase_id) <=> -1:
+                -1:
+                    return -1
+                0:
+                    return diagnostic_phase_channel(phase_id)
+                1:
+                    return -1
+        1:
+            return -1
+
+export fn diagnostic_classifier_smoke() -> tryte:
+    return diagnostic_category_count() + diagnostic_phase_count()
+
+fn main() -> tryte:
+    return diagnostic_classifier_smoke()

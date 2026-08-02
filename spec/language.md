@@ -100,10 +100,10 @@ continuam rejeitadas.
 
 Records e enums fechados sao tipos nominais especificados em
 [composite-types.md](composite-types.md). Records possuem campos nomeados em
-ordem declarada e sao scalarizados internamente. Enums nao possuem payload nesta
-milestone e usam discriminants `tryte` deterministicos. Enum payloads e
-structured results dependem da decisao arquitetural ADR-0021 antes de qualquer
-implementacao.
+ordem declarada e sao scalarizados internamente. Enums usam discriminants
+`tryte` deterministicos e podem declarar payloads de layout fixo conforme
+ADR-0021. O layout de enum payload e tag primeiro, payload depois, largura fixa
+por tipo, e slots inativos inicializados deterministicamente.
 
 Modulos podem exportar tipos nominais com `export record` e `export enum`.
 Imports explicitos podem trazer tipos exportados para o namespace de tipos do
@@ -112,8 +112,14 @@ identidade nominal do modulo definidor. Essa identidade e `ModuleId + TypeName`;
 tipos same-name ou same-shape de modulos diferentes continuam incompatíveis.
 
 Records multi-campo nao podem ser retornados ate que exista uma ABI agregada
-propria. Enums podem ser passados e retornados como valores nominais baixados
-para discriminants. `match` sobre enum exige cobertura exaustiva ou `else`.
+propria. Enums sem payload continuam retornaveis como discriminants escalares.
+Enums com largura total maior que uma celula podem ser usados em locals,
+parametros, copias, chamadas, branches, loops e match, mas nao podem ser
+retornados pela ABI atual. Cada posicao de payload possui um tipo escalar
+canonico; variants que exigiriam tipos incompatíveis no mesmo slot sao
+rejeitadas semanticamente. `match` sobre enum exige cobertura exaustiva ou
+`else`; arms explicitos de variants com payload podem introduzir bindings
+locais tipados.
 
 ## Expressões e operadores
 
@@ -173,5 +179,7 @@ Funções não retornam implicitamente. Todas as rotas de código devem convergi
 O contrato de retorno publico permanece escalar. `RETURN`, `TRET` e o caminho
 nativo x86-64 retornam um unico valor. Records, incluindo nested records,
 podem ser retornados somente quando o layout canonico contem exatamente uma
-folha escalar. Records com multiplas folhas sao rejeitados antes do backend ate
-que uma ABI explicita de retorno agregado exista.
+folha escalar. Enums podem ser retornados somente quando o layout total do tipo
+contem exatamente uma celula. Records ou enums com multiplas celulas sao
+rejeitados antes do backend ate que uma ABI explicita de retorno agregado
+exista.

@@ -157,8 +157,33 @@ class Parser:
                 TokenKind.IDENTIFIER,
                 "expected enum variant name",
             )
+            payload_fields: list[ast.RecordField] = []
+            if self._match(TokenKind.LEFT_PAREN):
+                if self._check(TokenKind.RIGHT_PAREN):
+                    raise ParseError("expected enum payload field", self._peek().location)
+                while True:
+                    field_name = self._consume(
+                        TokenKind.IDENTIFIER,
+                        "expected enum payload field name",
+                    )
+                    self._consume(
+                        TokenKind.COLON,
+                        "expected ':' after enum payload field name",
+                    )
+                    field_type = self._parse_type()
+                    payload_fields.append(
+                        ast.RecordField(field_name.text, field_type, field_name.location)
+                    )
+                    if not self._match(TokenKind.COMMA):
+                        break
+                    if self._check(TokenKind.RIGHT_PAREN):
+                        raise ParseError(
+                            "expected enum payload field after ','",
+                            self._peek().location,
+                        )
+                self._consume(TokenKind.RIGHT_PAREN, "expected ')' after enum payload fields")
             self._consume_statement_newline("expected newline after enum variant")
-            variants.append(ast.EnumVariant(variant.text, variant.location))
+            variants.append(ast.EnumVariant(variant.text, variant.location, tuple(payload_fields)))
         if not variants:
             raise ParseError("expected at least one enum variant", name.location)
         self._consume(TokenKind.DEDENT, "expected dedent after enum declaration")
@@ -476,6 +501,35 @@ class Parser:
                 label = ast.FieldAccessExpression(
                     label,
                     member.text,
+                    enum_name.location,
+                )
+            if self._match(TokenKind.LEFT_PAREN):
+                bindings: list[str] = []
+                if self._check(TokenKind.RIGHT_PAREN):
+                    raise ParseError(
+                        "expected payload binding name",
+                        self._peek().location,
+                        diagnostic_category=None,
+                        diagnostic_code=DiagnosticCode.PARSE_INVALID_MATCH_ARM,
+                    )
+                while True:
+                    binding = self._consume(
+                        TokenKind.IDENTIFIER,
+                        "expected payload binding name",
+                    )
+                    bindings.append(binding.text)
+                    if not self._match(TokenKind.COMMA):
+                        break
+                    if self._check(TokenKind.RIGHT_PAREN):
+                        raise ParseError(
+                            "expected payload binding name after ','",
+                            self._peek().location,
+                            diagnostic_category=None,
+                            diagnostic_code=DiagnosticCode.PARSE_INVALID_MATCH_ARM,
+                        )
+                self._consume(TokenKind.RIGHT_PAREN, "expected ')' after payload bindings")
+                return (
+                    ast.MatchPayloadLabel(label, tuple(bindings), enum_name.location),
                     enum_name.location,
                 )
             return (

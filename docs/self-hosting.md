@@ -142,17 +142,35 @@ diagnostic text through nominal data. It still does not provide a general
 runtime string builder, parser input stream, file I/O, formatting, or dynamic
 serialization.
 
-Milestone 1.05 is blocked by an architecture decision. Payload enums and
-structured result values require public syntax, match binding rules, and a
-canonical tag+payload layout before S3 components can use `Result.Ok(value)` or
-`Result.Err(error)` style flows. Until that decision is accepted, second-stage
-self-hosting candidates should continue to use scalar status codes, no-payload
-enums, and records separately rather than pretending a structured result ABI
-exists.
+Milestone 1.05 resolves ADR-0021 with a fixed tag-plus-payload enum layout.
+Payload enum values now have public syntax, canonical semantic layout, match
+payload bindings, deterministic inactive slots, and O0/O1 lowering through the
+existing scalar IR cells. Structured result values can be modeled as explicit
+nominal enums such as `Result.Ok(value)` and `Result.Err(error)` in locals,
+parameters, branches, loops, and match arms.
 
-The next self-hosting-related campaign should therefore start by resolving
-ADR-0021, not by adding another component. No component from Milestone 1.06 is
-implemented or adopted by the current 1.02-1.04 delivery campaign.
+The current scalar return ABI is still unchanged. Multi-cell payload enum and
+structured result values are not returnable, and there is no generic `Result`,
+exception mechanism, `?` operator, unwinding, heap allocation, or implicit
+propagation. Milestone 1.06 therefore keeps Python as the reference compiler and
+may add only opt-in, pure, differential S3 components whose inputs and outputs
+fit the existing scalar conventions.
+
+Milestone 1.06 selects three second-stage self-hosting components:
+
+- the existing Assembly opcode classifier;
+- a diagnostic classifier over scalar category/phase ids;
+- a discriminant layout validator over scalar enum layout facts.
+
+The diagnostic classifier is paired with the required Milestone 1.05 exercise:
+the differential harness wraps its scalar result in a local payload enum and
+matches the payload while still returning only a scalar value. None of these
+components replaces Python or becomes a default compiler path in this milestone.
+
+At the close of Milestone 1.06, all three selected components are differential
+references. The Assembly opcode classifier remains the existing first-stage
+component; the diagnostic classifier and discriminant layout validator are new
+second-stage components.
 
 Recent tools make this pipeline more observable:
 

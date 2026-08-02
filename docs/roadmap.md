@@ -431,18 +431,22 @@ Limites preservados:
 
 ### Later language-composition milestones
 
-Status: 1.05 blocked, 1.06 deferred
+Status: 1.05 and 1.06 complete locally in Draft PR #126
 
-- 1.05 - enums com payload e erros estruturados: bloqueado por
-  [ADR-0021](decisions/ADR-0021-enum-payload-layout-gate.md), pois a
-  representacao tag+payload exige decisao publica de sintaxe, layout,
-  bindings de match e retorno escalar antes da implementacao;
-- 1.06 - componentes adicionais de self-hosting: aguardando a decisao da 1.05
-  quando os candidatos dependerem de structured results.
-- A proxima campanha deve comecar pela resolucao da ADR-0021. Esta PR nao
-  implementa enum payload runtime, structured results, novo componente
-  self-hosted, retorno agregado, heap, mudanca de ABI, bump de IR ou bump de
-  S3 Assembly.
+- 1.05 - enums com payload e erros estruturados: [ADR-0021](decisions/ADR-0021-enum-payload-layout-gate.md)
+  foi aceita e implementada localmente com layout fixo tag-first multi-cell,
+  largura por tipo, payload scalarizado, slot types canonicos, slots inativos
+  deterministicos, construcao qualificada, imports, parametros, copias,
+  branches, loops, match bindings, O0/O1, harness nativo e ABI de retorno
+  escalar preservada;
+- 1.06 - componentes adicionais de self-hosting: seleciona o classificador de
+  opcodes existente, um classificador de diagnostics e um validador de
+  discriminants/layout escalar como componentes pequenos, puros e diferenciais,
+  mantendo Python como referencia e default; os componentes estao classificados
+  como differential references, nao como implementacoes adotadas.
+- A campanha 1.05-1.06 nao implementa retorno agregado, heap, mudanca de ABI,
+  bump de IR, bump de S3 Assembly, generics, exceptions ou substituicao do
+  bootstrap Python.
 
 ### Out of scope after 1.04
 

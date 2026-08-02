@@ -1,16 +1,17 @@
 # S3 records and enums
 
 Status: normative for Milestone 1.00 records/enums, Milestone 1.02-C
-cross-module nominal values, Milestone 1.03 acyclic nested records, and
-Milestone 1.04 fixed-capacity static text leaves.
+cross-module nominal values, Milestone 1.03 acyclic nested records, Milestone
+1.04 fixed-capacity static text leaves, and Milestone 1.05 fixed-layout enum
+payloads.
 
 ## Scope
 
 S3 adds nominal records and closed enums as compile-time known types.
 
 This milestone does not add classes, methods, inheritance, traits, interfaces,
-generics, reflection, heap allocation, pointers, open enums, enum payloads, or
-dynamic type extension.
+generics, reflection, heap allocation, pointers, open enums, dynamic type
+extension, aggregate returns, exceptions, or implicit error propagation.
 
 ## Records
 
@@ -88,13 +89,18 @@ ABI is specified.
 
 ## Enums
 
-Enums are closed nominal sets of variants without payload:
+Enums are closed nominal sets of variants. Variants may have no payload or a
+fixed set of named payload fields:
 
 ```s3
 enum Sign:
     Negative
     Zero
     Positive
+
+enum Result:
+    Ok(value: tryte)
+    Error(code: tryte, label: string)
 ```
 
 Rules:
@@ -103,22 +109,42 @@ Rules:
 - variant names must be unique within the enum;
 - variants are ordered by declaration order;
 - discriminants are deterministic `tryte` values starting at `0`;
-- enum payloads are not part of this milestone;
+- payload field names must be unique within each variant;
+- payload field order is declaration order and is part of layout;
+- payload field types may be `trit`, `tryte`, `string`, closed enum types, or
+  acyclic record types;
 - enums from different types are incompatible even if they have equal variants.
 
-Payload-carrying enum variants and structured result enums are blocked on the
-ADR-0021 tag-plus-payload architecture decision. The current implementation
-must not encode payloads by truncating to the tag, truncating to the first
-payload leaf, or inventing a hidden aggregate return path.
+Payload enum layout is fixed by enum type:
 
-Construction uses qualified variant syntax:
+- cell 0 is the `tryte` tag discriminant;
+- payload cells begin at cell 1;
+- the enum width is `1 + max(payload_leaf_count)` across variants;
+- each payload cell position has one canonical scalar slot type;
+- variants whose payload leaves conflict with the canonical slot type at the
+  same position are semantic errors;
+- no-payload variants in a payload enum still occupy the full enum width;
+- inactive payload slots are initialized deterministically according to their
+  canonical scalar slot type;
+- payload record leaves use `SemanticModel.record_leaves()` order;
+- payload enum leaves are allowed only when acyclic and statically sized.
+
+The current implementation must not encode payloads by truncating to the tag,
+truncating to the first payload leaf, packing without proof of capacity, or
+inventing a hidden aggregate return path.
+
+Construction uses qualified variant syntax. Payload variants require named
+payload arguments:
 
 ```s3
 value: Sign = Sign.Negative
+result: Result = Result.Ok(value=3)
+error: Result = Result.Error(code=-1, label="parse")
 ```
 
-Enums compare with `==` and `!=` only when both operands have the same enum
-type. The result is `trit`.
+No-payload enum equality compares discriminants as before. Equality for
+payload-carrying enum types is not part of the initial payload milestone unless
+all payload cells are explicitly included by a later contract.
 
 ## Enum Match
 
@@ -135,15 +161,33 @@ match value:
         return 1
 ```
 
+Payload bindings are allowed only on explicit enum variant arms:
+
+```s3
+match result:
+    Result.Ok(value):
+        return value
+    Result.Error(code, label):
+        return code
+```
+
+Bindings are scoped to the selected arm and typed from the variant payload
+field declaration. Fallback arms cannot bind payload fields. Inactive slots are
+not directly observable through the source language.
+
 Duplicate enum arms are semantic errors. A fallback followed by explicit arms is
 already invalid under the existing match shape. Arms for variants of a different
 enum type are semantic errors.
 
 ## Lowering
 
-Enums lower to existing `tryte` registers holding the documented discriminant.
-Record field expressions lower to their supported field values. Record
-parameters are expanded in field order before IR generation.
+No-payload enums lower to existing `tryte` registers holding the documented
+discriminant. Payload-carrying enums lower to existing scalar registers in the
+fixed tag-plus-payload cell order. Record field expressions lower to their
+supported field values. Record and payload enum parameters are expanded in
+canonical cell order before IR generation. Lowering consumes
+`SemanticModel.enum_layout()` and its canonical slot types rather than
+recalculating enum payload layout.
 
 No new S3 Assembly opcode is introduced by this milestone. No public format
 version is bumped.

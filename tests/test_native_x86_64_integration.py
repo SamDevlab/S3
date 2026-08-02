@@ -403,6 +403,53 @@ fn main() -> trit {{ return sign({argument}); }}
     )
 
 
+def test_native_enum_payload_scalar_and_match_binding_o0_o1(
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    _assert_o0_o1_native_equivalence(
+        "enum Result:\n"
+        "    Empty\n"
+        "    Ok(value: tryte)\n"
+        "fn inspect(result: Result) -> tryte:\n"
+        "    match result:\n"
+        "        Result.Empty:\n"
+        "            return 0\n"
+        "        Result.Ok(value):\n"
+        "            return value\n"
+        "fn main() -> tryte:\n"
+        "    return inspect(Result.Ok(value=7))\n",
+        7,
+        native_toolchain,
+        tmp_path / "enum-payload-scalar",
+    )
+
+
+def test_native_structured_result_error_record_o0_o1(
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    _assert_o0_o1_native_equivalence(
+        "record Error:\n"
+        "    code: tryte\n"
+        "enum Result:\n"
+        "    Ok(value: tryte)\n"
+        "    Err(error: Error)\n"
+        "fn handle(result: Result) -> tryte:\n"
+        "    match result:\n"
+        "        Result.Ok(value):\n"
+        "            return value\n"
+        "        Result.Err(error):\n"
+        "            return error.code\n"
+        "fn main() -> tryte:\n"
+        "    result: Result = Result.Err(error=Error(code=5))\n"
+        "    return handle(result)\n",
+        5,
+        native_toolchain,
+        tmp_path / "structured-result-error",
+    )
+
+
 @pytest.mark.parametrize(
     ("left", "right"),
     (
@@ -1508,7 +1555,7 @@ def test_o0_o1_native_nested_record_static_text_modules(
             "fn main() -> tryte:\n"
             "    return 0\n",
             "multi-field record returns require a future aggregate ABI",
-            DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+            DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
         ),
         (
             "branch-multileaf-return",
@@ -1522,7 +1569,7 @@ def test_o0_o1_native_nested_record_static_text_modules(
             "fn main() -> tryte:\n"
             "    return 0\n",
             "multi-field record returns require a future aggregate ABI",
-            DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+            DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
         ),
         (
             "indirect-multileaf-return",
@@ -1536,7 +1583,7 @@ def test_o0_o1_native_nested_record_static_text_modules(
             "fn main() -> tryte:\n"
             "    return 0\n",
             "multi-field record returns require a future aggregate ABI",
-            DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+            DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
         ),
         (
             "self-cycle",
@@ -1591,7 +1638,7 @@ def test_o0_o1_native_nested_record_static_text_modules(
             "fn main() -> tryte:\n"
             "    item: Outer = Outer(left=Right(value=1))\n"
             "    return 0\n",
-            "record literal 'Right' has type Right; expected Left",
+            "nominal literal 'Right' has type Right; expected Left",
             DiagnosticCode.SEMANTIC_TYPE_MISMATCH,
         ),
         (
@@ -1703,7 +1750,7 @@ def test_nested_record_native_semantic_rejections_stay_before_backend(
                 ),
             },
             "multi-field record returns require a future aggregate ABI",
-            DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+            DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
         ),
         (
             "private-nested-type",

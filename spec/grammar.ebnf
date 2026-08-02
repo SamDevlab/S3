@@ -30,7 +30,9 @@ record-field         = identifier, ":", type, NEWLINE ;
 
 enum-declaration     = [ "export" ], "enum", identifier, ":", NEWLINE, INDENT,
                        enum-variant, { enum-variant }, DEDENT ;
-enum-variant         = identifier, NEWLINE ;
+enum-variant         = identifier, [ "(", enum-payload-field-list, ")" ], NEWLINE ;
+enum-payload-field-list = enum-payload-field, { ",", enum-payload-field } ;
+enum-payload-field   = identifier, ":", type ;
 
 block                = ":", NEWLINE, INDENT, statement, { statement }, DEDENT ;
 
@@ -53,8 +55,10 @@ return-statement     = "return", expression, NEWLINE ;
 break-statement      = "break", NEWLINE ;
 continue-statement   = "continue", NEWLINE ;
 
-match-statement      = "match", expression, ":", NEWLINE, INDENT, { ternary-case }, DEDENT ;
-ternary-case         = signed-integer, block ;
+match-statement      = "match", expression, ":", NEWLINE, INDENT, { match-case }, DEDENT ;
+match-case           = match-label, [ "(", match-binding-list, ")" ], block ;
+match-label          = signed-integer | qualified-name | "else" ;
+match-binding-list   = identifier, { ",", identifier } ;
 
 while-statement      = "while", expression, block ;
 for-statement        = "for", identifier, ":", type-name, "in", "range", "(", expression, ",", expression, ")", block ;
@@ -81,15 +85,17 @@ primary              = integer
 len-expression       = "len", "(", expression, ")" ;
 
 match-expression     = "match", expression, ":", NEWLINE, INDENT, match-expression-case, { match-expression-case }, DEDENT ;
-match-expression-case = signed-integer, ":", expression, NEWLINE ;
+match-expression-case = match-label, [ "(", match-binding-list, ")" ], ":", expression, NEWLINE ;
 
-record-expression    = identifier, "(", record-field-value, { ",", record-field-value }, ")" ;
-record-field-value   = identifier, ":", expression ;
+record-expression    = qualified-name, "(", [ named-argument-list ], ")" ;
 postfix-suffix       = call-suffix | index-suffix | member-suffix ;
-call-suffix          = "(", [ argument-list ], ")" ;
+call-suffix          = "(", [ argument-list | named-argument-list ], ")" ;
 index-suffix         = "[", expression, "]" ;
 member-suffix        = ".", identifier ;
 argument-list        = expression, { ",", expression } ;
+named-argument-list  = named-argument, { ",", named-argument } ;
+named-argument       = identifier, "=", expression ;
+qualified-name       = identifier, { ".", identifier } ;
 
 identifier           = identifier-start, { identifier-continue } ;
 identifier-start     = letter | "_" ;

@@ -316,7 +316,7 @@ def test_imported_static_text_record_fields_compose_across_modules() -> None:
             "fn main() -> tryte:\n"
             "    return 0\n",
             "multi-field record returns require a future aggregate ABI",
-            DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+            DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
         ),
         (
             "record Inner:\n"
@@ -362,7 +362,7 @@ def test_imported_static_text_record_fields_compose_across_modules() -> None:
             "fn main() -> tryte:\n"
             "    item: Outer = Outer(left=Right(value=1))\n"
             "    return 0\n",
-            "record literal 'Right' has type Right; expected Left",
+            "nominal literal 'Right' has type Right; expected Left",
             DiagnosticCode.SEMANTIC_TYPE_MISMATCH,
         ),
         (
