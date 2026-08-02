@@ -518,6 +518,12 @@ def _rewrite_constructor_type_name(
     location,
     context: _RewriteContext,
 ) -> str:
+    try:
+        rewritten = _rewrite_nominal_type_name(name, location, context)
+        if rewritten != name:
+            return rewritten
+    except SemanticError:
+        pass
     if "." in name:
         enum_name, variant_name = name.rsplit(".", 1)
         try:
