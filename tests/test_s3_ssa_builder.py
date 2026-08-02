@@ -44,7 +44,7 @@ def test_ssa_builder_renames_all_aggregate_call_results() -> None:
     source = (
         "record Pair:\n"
         "    left: tryte\n"
-        "    right: trit\n"
+        "    right: tryte\n"
         "fn make() -> Pair:\n"
         "    return Pair(left=6, right=-1)\n"
         "fn main() -> tryte:\n"

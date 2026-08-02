@@ -46,7 +46,7 @@ def test_adce_preserves_discarded_aggregate_call_as_single_instruction() -> None
         "fn make() -> Pair:\n"
         "    return Pair(left=6, right=-1)\n"
         "fn main() -> tryte:\n"
-        "    make()\n"
+        "    discard make()\n"
         "    return 5\n"
     )
     compilation = compile_source(source, mode=SyntaxMode.V0_6)
@@ -61,4 +61,4 @@ def test_adce_preserves_discarded_aggregate_call_as_single_instruction() -> None
     ]
 
     assert len(calls) == 1
-    assert calls[0].results == ()
+    assert len(calls[0].results) == 2

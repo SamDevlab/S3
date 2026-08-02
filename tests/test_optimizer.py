@@ -222,7 +222,7 @@ def test_o1_preserves_aggregate_call_result_group() -> None:
     source = (
         "record Pair:\n"
         "    left: tryte\n"
-        "    right: trit\n"
+        "    right: tryte\n"
         "fn make() -> Pair:\n"
         "    return Pair(left=6, right=-1)\n"
         "fn main() -> tryte:\n"
