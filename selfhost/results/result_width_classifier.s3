@@ -2,7 +2,7 @@ module selfhost.results.result_width_classifier
 
 export record WidthInfo:
     width: tryte
-    is_aggregate: trit
+    is_aggregate: tryte
 
 export record Error:
     code: tryte

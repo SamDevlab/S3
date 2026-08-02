@@ -4,7 +4,7 @@ export record HeaderInfo:
     major: tryte
     minor: tryte
     patch: tryte
-    is_legacy: trit
+    is_legacy: tryte
 
 export record HeaderError:
     code: tryte

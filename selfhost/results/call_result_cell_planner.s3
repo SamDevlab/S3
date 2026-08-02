@@ -8,7 +8,7 @@ export record CellPlan:
     width: tryte
     first_cell: tryte
     last_cell: tryte
-    is_aggregate: trit
+    is_aggregate: tryte
 
 export enum PlanResult:
     Ok(plan: CellPlan)
