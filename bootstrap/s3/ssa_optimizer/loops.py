@@ -120,6 +120,7 @@ def run_ssa_licm(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
             values=ssa_fn.values,
             memory_objects=ssa_fn.memory_objects,
             return_type=ssa_fn.return_type,
+            result_types=ssa_fn.result_types,
         )
 
     return ssa_fn, hoisted_count
@@ -178,4 +179,5 @@ def run_ssa_strength_reduction(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
         values=ssa_fn.values,
         memory_objects=ssa_fn.memory_objects,
         return_type=ssa_fn.return_type,
+        result_types=ssa_fn.result_types,
     ), reductions_count

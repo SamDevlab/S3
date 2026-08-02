@@ -519,13 +519,19 @@ def _rewrite_constructor_type_name(
     context: _RewriteContext,
 ) -> str:
     try:
-        return _rewrite_nominal_type_name(name, location, context)
+        rewritten = _rewrite_nominal_type_name(name, location, context)
+        if rewritten != name:
+            return rewritten
     except SemanticError:
-        if "." not in name:
-            raise
-    enum_name, variant_name = name.rsplit(".", 1)
-    rewritten_enum = _rewrite_nominal_type_name(enum_name, location, context)
-    return f"{rewritten_enum}.{variant_name}"
+        pass
+    if "." in name:
+        enum_name, variant_name = name.rsplit(".", 1)
+        try:
+            rewritten_enum = _rewrite_nominal_type_name(enum_name, location, context)
+            return f"{rewritten_enum}.{variant_name}"
+        except SemanticError:
+            pass
+    return _rewrite_nominal_type_name(name, location, context)
 
 
 def _rewrite_block(

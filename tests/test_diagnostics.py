@@ -341,7 +341,7 @@ def test_frame_and_instruction_limits_have_separate_codes() -> None:
 
 def test_assembly_version_is_a_versioned_artifact_diagnostic() -> None:
     with pytest.raises(AssemblyParseError) as captured:
-        parse_assembly(".s3asm 0.6.0\n")
+        parse_assembly(".s3asm 9.9.9\n")
     payload = diagnostic_from_exception(captured.value).to_dict()
     assert payload["category"] == "version"
     assert payload["code"] == "S3E_ARTIFACT_UNSUPPORTED_VERSION"

@@ -203,30 +203,28 @@ def test_same_shape_imported_records_from_different_modules_keep_distinct_identi
     assert "__s3mod_right__type_Point" in str(error.value)
 
 
-def test_imported_multifield_record_return_remains_blocked_by_aggregate_abi() -> None:
-    with pytest.raises(SemanticError) as error:
-        compile_sources(
-            {
-                "main.s3": (
-                    "module main\n"
-                    "from geometry import Pair\n"
-                    "from geometry import make\n"
-                    "fn main() -> tryte:\n"
-                    "    pair: Pair = make()\n"
-                    "    return pair.left\n"
-                ),
-                "geometry.s3": (
-                    "module geometry\n"
-                    "export record Pair:\n"
-                    "    left: tryte\n"
-                    "    right: tryte\n"
-                    "export fn make() -> Pair:\n"
-                    "    return Pair(left=1, right=2)\n"
-                ),
-            },
-        )
-
-    assert "multi-field record returns require a future aggregate ABI" in str(error.value)
+def test_imported_multifield_record_return_is_supported_by_aggregate_abi() -> None:
+    compilation = compile_sources(
+        {
+            "main.s3": (
+                "module main\n"
+                "from geometry import Pair\n"
+                "from geometry import make\n"
+                "fn main() -> tryte:\n"
+                "    pair: Pair = make()\n"
+                "    return pair.left\n"
+            ),
+            "geometry.s3": (
+                "module geometry\n"
+                "export record Pair:\n"
+                "    left: tryte\n"
+                "    right: tryte\n"
+                "export fn make() -> Pair:\n"
+                "    return Pair(left=1, right=2)\n"
+            ),
+        },
+    )
+    assert compilation is not None
 
 
 def test_nominal_type_text_does_not_escape_to_runtime_ir_or_assembly() -> None:

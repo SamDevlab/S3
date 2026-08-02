@@ -9,6 +9,9 @@
                 "immediate": 6,
                 "opcode": "const",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 12,
                   "line": 5,
@@ -50,6 +53,9 @@
             "type": "tryte"
           }
         ],
+        "result_types": [
+          "tryte"
+        ],
         "return_type": "tryte",
         "source": {
           "column": 1,
@@ -65,6 +71,9 @@
                 "immediate": 7,
                 "opcode": "const",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 12,
                   "line": 8,
@@ -106,6 +115,9 @@
             "type": "tryte"
           }
         ],
+        "result_types": [
+          "tryte"
+        ],
         "return_type": "tryte",
         "source": {
           "column": 1,
@@ -121,6 +133,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 12,
                   "line": 11,
@@ -162,6 +177,9 @@
             "type": "tryte"
           }
         ],
+        "result_types": [
+          "tryte"
+        ],
         "return_type": "tryte",
         "source": {
           "column": 1,
@@ -177,6 +195,9 @@
                 "immediate": 5,
                 "opcode": "const",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 12,
                   "line": 14,
@@ -218,6 +239,9 @@
             "type": "tryte"
           }
         ],
+        "result_types": [
+          "tryte"
+        ],
         "return_type": "tryte",
         "source": {
           "column": 1,
@@ -233,6 +257,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 12,
                   "line": 17,
@@ -274,6 +301,9 @@
             "type": "tryte"
           }
         ],
+        "result_types": [
+          "tryte"
+        ],
         "return_type": "tryte",
         "source": {
           "column": 1,
@@ -289,6 +319,9 @@
                 "immediate": 6,
                 "opcode": "const",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 12,
                   "line": 20,
@@ -330,6 +363,9 @@
             "type": "tryte"
           }
         ],
+        "result_types": [
+          "tryte"
+        ],
         "return_type": "tryte",
         "source": {
           "column": 1,
@@ -345,6 +381,9 @@
                 "callee": "renderer_first_directive_id",
                 "opcode": "call",
                 "result": "r1",
+                "results": [
+                  "r1"
+                ],
                 "source": {
                   "column": 18,
                   "line": 23,
@@ -358,6 +397,9 @@
                   "r1"
                 ],
                 "result": "r2",
+                "results": [
+                  "r2"
+                ],
                 "source": {
                   "column": 14,
                   "line": 23,
@@ -394,6 +436,9 @@
                 "immediate": -1,
                 "opcode": "const",
                 "result": "r3",
+                "results": [
+                  "r3"
+                ],
                 "source": {
                   "column": 20,
                   "line": 25,
@@ -425,6 +470,9 @@
                 "immediate": 1,
                 "opcode": "const",
                 "result": "r4",
+                "results": [
+                  "r4"
+                ],
                 "source": {
                   "column": 20,
                   "line": 28,
@@ -456,6 +504,9 @@
                 "callee": "renderer_last_directive_id",
                 "opcode": "call",
                 "result": "r5",
+                "results": [
+                  "r5"
+                ],
                 "source": {
                   "column": 26,
                   "line": 31,
@@ -469,6 +520,9 @@
                   "r5"
                 ],
                 "result": "r6",
+                "results": [
+                  "r6"
+                ],
                 "source": {
                   "column": 22,
                   "line": 31,
@@ -505,6 +559,9 @@
                 "immediate": 1,
                 "opcode": "const",
                 "result": "r7",
+                "results": [
+                  "r7"
+                ],
                 "source": {
                   "column": 28,
                   "line": 33,
@@ -536,6 +593,9 @@
                 "immediate": 1,
                 "opcode": "const",
                 "result": "r8",
+                "results": [
+                  "r8"
+                ],
                 "source": {
                   "column": 28,
                   "line": 36,
@@ -567,6 +627,9 @@
                 "immediate": -1,
                 "opcode": "const",
                 "result": "r9",
+                "results": [
+                  "r9"
+                ],
                 "source": {
                   "column": 28,
                   "line": 39,
@@ -709,6 +772,9 @@
             "type": "trit"
           }
         ],
+        "result_types": [
+          "trit"
+        ],
         "return_type": "trit",
         "source": {
           "column": 1,
@@ -724,6 +790,9 @@
                 "callee": "renderer_first_opcode_id",
                 "opcode": "call",
                 "result": "r1",
+                "results": [
+                  "r1"
+                ],
                 "source": {
                   "column": 18,
                   "line": 42,
@@ -737,6 +806,9 @@
                   "r1"
                 ],
                 "result": "r2",
+                "results": [
+                  "r2"
+                ],
                 "source": {
                   "column": 14,
                   "line": 42,
@@ -773,6 +845,9 @@
                 "immediate": -1,
                 "opcode": "const",
                 "result": "r3",
+                "results": [
+                  "r3"
+                ],
                 "source": {
                   "column": 20,
                   "line": 44,
@@ -804,6 +879,9 @@
                 "immediate": 1,
                 "opcode": "const",
                 "result": "r4",
+                "results": [
+                  "r4"
+                ],
                 "source": {
                   "column": 20,
                   "line": 47,
@@ -835,6 +913,9 @@
                 "callee": "renderer_last_opcode_id",
                 "opcode": "call",
                 "result": "r5",
+                "results": [
+                  "r5"
+                ],
                 "source": {
                   "column": 26,
                   "line": 50,
@@ -848,6 +929,9 @@
                   "r5"
                 ],
                 "result": "r6",
+                "results": [
+                  "r6"
+                ],
                 "source": {
                   "column": 22,
                   "line": 50,
@@ -884,6 +968,9 @@
                 "immediate": 1,
                 "opcode": "const",
                 "result": "r7",
+                "results": [
+                  "r7"
+                ],
                 "source": {
                   "column": 28,
                   "line": 52,
@@ -915,6 +1002,9 @@
                 "immediate": 1,
                 "opcode": "const",
                 "result": "r8",
+                "results": [
+                  "r8"
+                ],
                 "source": {
                   "column": 28,
                   "line": 55,
@@ -946,6 +1036,9 @@
                 "immediate": -1,
                 "opcode": "const",
                 "result": "r9",
+                "results": [
+                  "r9"
+                ],
                 "source": {
                   "column": 28,
                   "line": 58,
@@ -1088,6 +1181,9 @@
             "type": "trit"
           }
         ],
+        "result_types": [
+          "trit"
+        ],
         "return_type": "trit",
         "source": {
           "column": 1,
@@ -1103,6 +1199,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 12,
                   "line": 61,
@@ -1144,6 +1243,9 @@
             "type": "tryte"
           }
         ],
+        "result_types": [
+          "tryte"
+        ],
         "return_type": "tryte",
         "source": {
           "column": 1,
@@ -1159,6 +1261,9 @@
                 "immediate": 1,
                 "opcode": "const",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 12,
                   "line": 64,
@@ -1200,6 +1305,9 @@
             "type": "tryte"
           }
         ],
+        "result_types": [
+          "tryte"
+        ],
         "return_type": "tryte",
         "source": {
           "column": 1,
@@ -1215,6 +1323,9 @@
                 "immediate": 2,
                 "opcode": "const",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 12,
                   "line": 67,
@@ -1256,6 +1367,9 @@
             "type": "tryte"
           }
         ],
+        "result_types": [
+          "tryte"
+        ],
         "return_type": "tryte",
         "source": {
           "column": 1,
@@ -1271,6 +1385,9 @@
                 "immediate": 3,
                 "opcode": "const",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 12,
                   "line": 70,
@@ -1312,6 +1429,9 @@
             "type": "tryte"
           }
         ],
+        "result_types": [
+          "tryte"
+        ],
         "return_type": "tryte",
         "source": {
           "column": 1,
@@ -1327,6 +1447,9 @@
                 "immediate": 4,
                 "opcode": "const",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 12,
                   "line": 73,
@@ -1368,6 +1491,9 @@
             "type": "tryte"
           }
         ],
+        "result_types": [
+          "tryte"
+        ],
         "return_type": "tryte",
         "source": {
           "column": 1,
@@ -1383,6 +1509,9 @@
                 "immediate": 5,
                 "opcode": "const",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 12,
                   "line": 76,
@@ -1424,6 +1553,9 @@
             "type": "tryte"
           }
         ],
+        "result_types": [
+          "tryte"
+        ],
         "return_type": "tryte",
         "source": {
           "column": 1,
@@ -1439,6 +1571,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 12,
                   "line": 79,
@@ -1480,6 +1615,9 @@
             "type": "tryte"
           }
         ],
+        "result_types": [
+          "tryte"
+        ],
         "return_type": "tryte",
         "source": {
           "column": 1,
@@ -1495,6 +1633,9 @@
                 "immediate": 1,
                 "opcode": "const",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 12,
                   "line": 82,
@@ -1536,6 +1677,9 @@
             "type": "tryte"
           }
         ],
+        "result_types": [
+          "tryte"
+        ],
         "return_type": "tryte",
         "source": {
           "column": 1,
@@ -1551,6 +1695,9 @@
                 "immediate": 2,
                 "opcode": "const",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 12,
                   "line": 85,
@@ -1592,6 +1739,9 @@
             "type": "tryte"
           }
         ],
+        "result_types": [
+          "tryte"
+        ],
         "return_type": "tryte",
         "source": {
           "column": 1,
@@ -1607,6 +1757,9 @@
                 "immediate": 3,
                 "opcode": "const",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 12,
                   "line": 88,
@@ -1648,6 +1801,9 @@
             "type": "tryte"
           }
         ],
+        "result_types": [
+          "tryte"
+        ],
         "return_type": "tryte",
         "source": {
           "column": 1,
@@ -1663,6 +1819,9 @@
                 "immediate": 4,
                 "opcode": "const",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 12,
                   "line": 91,
@@ -1704,6 +1863,9 @@
             "type": "tryte"
           }
         ],
+        "result_types": [
+          "tryte"
+        ],
         "return_type": "tryte",
         "source": {
           "column": 1,
@@ -1719,6 +1881,9 @@
                 "immediate": 5,
                 "opcode": "const",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 12,
                   "line": 95,
@@ -1760,6 +1925,9 @@
             "type": "tryte"
           }
         ],
+        "result_types": [
+          "tryte"
+        ],
         "return_type": "tryte",
         "source": {
           "column": 1,
@@ -1775,6 +1943,9 @@
                 "immediate": 6,
                 "opcode": "const",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 12,
                   "line": 98,
@@ -1816,6 +1987,9 @@
             "type": "tryte"
           }
         ],
+        "result_types": [
+          "tryte"
+        ],
         "return_type": "tryte",
         "source": {
           "column": 1,
@@ -1831,6 +2005,9 @@
                 "immediate": -1,
                 "opcode": "const",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 24,
                   "line": 101,
@@ -1841,6 +2018,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r1",
+                "results": [
+                  "r1"
+                ],
                 "source": {
                   "column": 5,
                   "line": 101,
@@ -1865,6 +2045,9 @@
                 "callee": "renderer_supported_directive_count",
                 "opcode": "call",
                 "result": "r2",
+                "results": [
+                  "r2"
+                ],
                 "source": {
                   "column": 11,
                   "line": 103,
@@ -1875,6 +2058,9 @@
                 "immediate": 6,
                 "opcode": "const",
                 "result": "r3",
+                "results": [
+                  "r3"
+                ],
                 "source": {
                   "column": 52,
                   "line": 103,
@@ -1888,6 +2074,9 @@
                   "r3"
                 ],
                 "result": "r4",
+                "results": [
+                  "r4"
+                ],
                 "source": {
                   "column": 48,
                   "line": 103,
@@ -1924,6 +2113,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r5",
+                "results": [
+                  "r5"
+                ],
                 "source": {
                   "column": 22,
                   "line": 105,
@@ -1934,6 +2126,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r6",
+                "results": [
+                  "r6"
+                ],
                 "source": {
                   "column": 13,
                   "line": 105,
@@ -1978,6 +2173,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r7",
+                "results": [
+                  "r7"
+                ],
                 "source": {
                   "column": 22,
                   "line": 108,
@@ -1991,6 +2189,9 @@
                   "r7"
                 ],
                 "result": "r8",
+                "results": [
+                  "r8"
+                ],
                 "source": {
                   "column": 22,
                   "line": 108,
@@ -2001,6 +2202,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r9",
+                "results": [
+                  "r9"
+                ],
                 "source": {
                   "column": 13,
                   "line": 108,
@@ -2045,6 +2249,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r10",
+                "results": [
+                  "r10"
+                ],
                 "source": {
                   "column": 22,
                   "line": 111,
@@ -2055,6 +2262,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r11",
+                "results": [
+                  "r11"
+                ],
                 "source": {
                   "column": 13,
                   "line": 111,
@@ -2099,6 +2309,9 @@
                 "callee": "renderer_supported_opcode_count",
                 "opcode": "call",
                 "result": "r12",
+                "results": [
+                  "r12"
+                ],
                 "source": {
                   "column": 11,
                   "line": 113,
@@ -2109,6 +2322,9 @@
                 "immediate": 7,
                 "opcode": "const",
                 "result": "r13",
+                "results": [
+                  "r13"
+                ],
                 "source": {
                   "column": 49,
                   "line": 113,
@@ -2122,6 +2338,9 @@
                   "r13"
                 ],
                 "result": "r14",
+                "results": [
+                  "r14"
+                ],
                 "source": {
                   "column": 45,
                   "line": 113,
@@ -2158,6 +2377,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r15",
+                "results": [
+                  "r15"
+                ],
                 "source": {
                   "column": 22,
                   "line": 115,
@@ -2168,6 +2390,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r16",
+                "results": [
+                  "r16"
+                ],
                 "source": {
                   "column": 13,
                   "line": 115,
@@ -2212,6 +2437,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r17",
+                "results": [
+                  "r17"
+                ],
                 "source": {
                   "column": 22,
                   "line": 118,
@@ -2225,6 +2453,9 @@
                   "r17"
                 ],
                 "result": "r18",
+                "results": [
+                  "r18"
+                ],
                 "source": {
                   "column": 22,
                   "line": 118,
@@ -2235,6 +2466,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r19",
+                "results": [
+                  "r19"
+                ],
                 "source": {
                   "column": 13,
                   "line": 118,
@@ -2279,6 +2513,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r20",
+                "results": [
+                  "r20"
+                ],
                 "source": {
                   "column": 22,
                   "line": 121,
@@ -2289,6 +2526,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r21",
+                "results": [
+                  "r21"
+                ],
                 "source": {
                   "column": 13,
                   "line": 121,
@@ -2333,6 +2573,9 @@
                 "callee": "renderer_first_directive_id",
                 "opcode": "call",
                 "result": "r22",
+                "results": [
+                  "r22"
+                ],
                 "source": {
                   "column": 11,
                   "line": 123,
@@ -2343,6 +2586,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r23",
+                "results": [
+                  "r23"
+                ],
                 "source": {
                   "column": 45,
                   "line": 123,
@@ -2356,6 +2602,9 @@
                   "r23"
                 ],
                 "result": "r24",
+                "results": [
+                  "r24"
+                ],
                 "source": {
                   "column": 41,
                   "line": 123,
@@ -2392,6 +2641,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r25",
+                "results": [
+                  "r25"
+                ],
                 "source": {
                   "column": 22,
                   "line": 125,
@@ -2402,6 +2654,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r26",
+                "results": [
+                  "r26"
+                ],
                 "source": {
                   "column": 13,
                   "line": 125,
@@ -2446,6 +2701,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r27",
+                "results": [
+                  "r27"
+                ],
                 "source": {
                   "column": 22,
                   "line": 128,
@@ -2459,6 +2717,9 @@
                   "r27"
                 ],
                 "result": "r28",
+                "results": [
+                  "r28"
+                ],
                 "source": {
                   "column": 22,
                   "line": 128,
@@ -2469,6 +2730,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r29",
+                "results": [
+                  "r29"
+                ],
                 "source": {
                   "column": 13,
                   "line": 128,
@@ -2513,6 +2777,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r30",
+                "results": [
+                  "r30"
+                ],
                 "source": {
                   "column": 22,
                   "line": 131,
@@ -2523,6 +2790,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r31",
+                "results": [
+                  "r31"
+                ],
                 "source": {
                   "column": 13,
                   "line": 131,
@@ -2567,6 +2837,9 @@
                 "callee": "renderer_last_directive_id",
                 "opcode": "call",
                 "result": "r32",
+                "results": [
+                  "r32"
+                ],
                 "source": {
                   "column": 11,
                   "line": 133,
@@ -2577,6 +2850,9 @@
                 "immediate": 5,
                 "opcode": "const",
                 "result": "r33",
+                "results": [
+                  "r33"
+                ],
                 "source": {
                   "column": 44,
                   "line": 133,
@@ -2590,6 +2866,9 @@
                   "r33"
                 ],
                 "result": "r34",
+                "results": [
+                  "r34"
+                ],
                 "source": {
                   "column": 40,
                   "line": 133,
@@ -2626,6 +2905,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r35",
+                "results": [
+                  "r35"
+                ],
                 "source": {
                   "column": 22,
                   "line": 135,
@@ -2636,6 +2918,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r36",
+                "results": [
+                  "r36"
+                ],
                 "source": {
                   "column": 13,
                   "line": 135,
@@ -2680,6 +2965,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r37",
+                "results": [
+                  "r37"
+                ],
                 "source": {
                   "column": 22,
                   "line": 138,
@@ -2693,6 +2981,9 @@
                   "r37"
                 ],
                 "result": "r38",
+                "results": [
+                  "r38"
+                ],
                 "source": {
                   "column": 22,
                   "line": 138,
@@ -2703,6 +2994,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r39",
+                "results": [
+                  "r39"
+                ],
                 "source": {
                   "column": 13,
                   "line": 138,
@@ -2747,6 +3041,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r40",
+                "results": [
+                  "r40"
+                ],
                 "source": {
                   "column": 22,
                   "line": 141,
@@ -2757,6 +3054,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r41",
+                "results": [
+                  "r41"
+                ],
                 "source": {
                   "column": 13,
                   "line": 141,
@@ -2801,6 +3101,9 @@
                 "callee": "renderer_first_opcode_id",
                 "opcode": "call",
                 "result": "r42",
+                "results": [
+                  "r42"
+                ],
                 "source": {
                   "column": 11,
                   "line": 143,
@@ -2811,6 +3114,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r43",
+                "results": [
+                  "r43"
+                ],
                 "source": {
                   "column": 42,
                   "line": 143,
@@ -2824,6 +3130,9 @@
                   "r43"
                 ],
                 "result": "r44",
+                "results": [
+                  "r44"
+                ],
                 "source": {
                   "column": 38,
                   "line": 143,
@@ -2860,6 +3169,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r45",
+                "results": [
+                  "r45"
+                ],
                 "source": {
                   "column": 22,
                   "line": 145,
@@ -2870,6 +3182,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r46",
+                "results": [
+                  "r46"
+                ],
                 "source": {
                   "column": 13,
                   "line": 145,
@@ -2914,6 +3229,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r47",
+                "results": [
+                  "r47"
+                ],
                 "source": {
                   "column": 22,
                   "line": 148,
@@ -2927,6 +3245,9 @@
                   "r47"
                 ],
                 "result": "r48",
+                "results": [
+                  "r48"
+                ],
                 "source": {
                   "column": 22,
                   "line": 148,
@@ -2937,6 +3258,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r49",
+                "results": [
+                  "r49"
+                ],
                 "source": {
                   "column": 13,
                   "line": 148,
@@ -2981,6 +3305,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r50",
+                "results": [
+                  "r50"
+                ],
                 "source": {
                   "column": 22,
                   "line": 151,
@@ -2991,6 +3318,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r51",
+                "results": [
+                  "r51"
+                ],
                 "source": {
                   "column": 13,
                   "line": 151,
@@ -3035,6 +3365,9 @@
                 "callee": "renderer_last_opcode_id",
                 "opcode": "call",
                 "result": "r52",
+                "results": [
+                  "r52"
+                ],
                 "source": {
                   "column": 11,
                   "line": 153,
@@ -3045,6 +3378,9 @@
                 "immediate": 6,
                 "opcode": "const",
                 "result": "r53",
+                "results": [
+                  "r53"
+                ],
                 "source": {
                   "column": 41,
                   "line": 153,
@@ -3058,6 +3394,9 @@
                   "r53"
                 ],
                 "result": "r54",
+                "results": [
+                  "r54"
+                ],
                 "source": {
                   "column": 37,
                   "line": 153,
@@ -3094,6 +3433,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r55",
+                "results": [
+                  "r55"
+                ],
                 "source": {
                   "column": 22,
                   "line": 155,
@@ -3104,6 +3446,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r56",
+                "results": [
+                  "r56"
+                ],
                 "source": {
                   "column": 13,
                   "line": 155,
@@ -3148,6 +3493,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r57",
+                "results": [
+                  "r57"
+                ],
                 "source": {
                   "column": 22,
                   "line": 158,
@@ -3161,6 +3509,9 @@
                   "r57"
                 ],
                 "result": "r58",
+                "results": [
+                  "r58"
+                ],
                 "source": {
                   "column": 22,
                   "line": 158,
@@ -3171,6 +3522,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r59",
+                "results": [
+                  "r59"
+                ],
                 "source": {
                   "column": 13,
                   "line": 158,
@@ -3215,6 +3569,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r60",
+                "results": [
+                  "r60"
+                ],
                 "source": {
                   "column": 22,
                   "line": 161,
@@ -3225,6 +3582,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r61",
+                "results": [
+                  "r61"
+                ],
                 "source": {
                   "column": 13,
                   "line": 161,
@@ -3269,6 +3629,9 @@
                 "callee": "renderer_directive_end_id",
                 "opcode": "call",
                 "result": "r62",
+                "results": [
+                  "r62"
+                ],
                 "source": {
                   "column": 11,
                   "line": 163,
@@ -3279,6 +3642,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r63",
+                "results": [
+                  "r63"
+                ],
                 "source": {
                   "column": 43,
                   "line": 163,
@@ -3292,6 +3658,9 @@
                   "r63"
                 ],
                 "result": "r64",
+                "results": [
+                  "r64"
+                ],
                 "source": {
                   "column": 39,
                   "line": 163,
@@ -3328,6 +3697,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r65",
+                "results": [
+                  "r65"
+                ],
                 "source": {
                   "column": 22,
                   "line": 165,
@@ -3338,6 +3710,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r66",
+                "results": [
+                  "r66"
+                ],
                 "source": {
                   "column": 13,
                   "line": 165,
@@ -3382,6 +3757,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r67",
+                "results": [
+                  "r67"
+                ],
                 "source": {
                   "column": 22,
                   "line": 168,
@@ -3395,6 +3773,9 @@
                   "r67"
                 ],
                 "result": "r68",
+                "results": [
+                  "r68"
+                ],
                 "source": {
                   "column": 22,
                   "line": 168,
@@ -3405,6 +3786,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r69",
+                "results": [
+                  "r69"
+                ],
                 "source": {
                   "column": 13,
                   "line": 168,
@@ -3449,6 +3833,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r70",
+                "results": [
+                  "r70"
+                ],
                 "source": {
                   "column": 22,
                   "line": 171,
@@ -3459,6 +3846,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r71",
+                "results": [
+                  "r71"
+                ],
                 "source": {
                   "column": 13,
                   "line": 171,
@@ -3503,6 +3893,9 @@
                 "callee": "renderer_directive_s3asm_id",
                 "opcode": "call",
                 "result": "r72",
+                "results": [
+                  "r72"
+                ],
                 "source": {
                   "column": 11,
                   "line": 173,
@@ -3513,6 +3906,9 @@
                 "immediate": 5,
                 "opcode": "const",
                 "result": "r73",
+                "results": [
+                  "r73"
+                ],
                 "source": {
                   "column": 45,
                   "line": 173,
@@ -3526,6 +3922,9 @@
                   "r73"
                 ],
                 "result": "r74",
+                "results": [
+                  "r74"
+                ],
                 "source": {
                   "column": 41,
                   "line": 173,
@@ -3562,6 +3961,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r75",
+                "results": [
+                  "r75"
+                ],
                 "source": {
                   "column": 22,
                   "line": 175,
@@ -3572,6 +3974,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r76",
+                "results": [
+                  "r76"
+                ],
                 "source": {
                   "column": 13,
                   "line": 175,
@@ -3616,6 +4021,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r77",
+                "results": [
+                  "r77"
+                ],
                 "source": {
                   "column": 22,
                   "line": 178,
@@ -3629,6 +4037,9 @@
                   "r77"
                 ],
                 "result": "r78",
+                "results": [
+                  "r78"
+                ],
                 "source": {
                   "column": 22,
                   "line": 178,
@@ -3639,6 +4050,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r79",
+                "results": [
+                  "r79"
+                ],
                 "source": {
                   "column": 13,
                   "line": 178,
@@ -3683,6 +4097,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r80",
+                "results": [
+                  "r80"
+                ],
                 "source": {
                   "column": 22,
                   "line": 181,
@@ -3693,6 +4110,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r81",
+                "results": [
+                  "r81"
+                ],
                 "source": {
                   "column": 13,
                   "line": 181,
@@ -3737,6 +4157,9 @@
                 "callee": "renderer_opcode_tadd_id",
                 "opcode": "call",
                 "result": "r82",
+                "results": [
+                  "r82"
+                ],
                 "source": {
                   "column": 11,
                   "line": 183,
@@ -3747,6 +4170,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r83",
+                "results": [
+                  "r83"
+                ],
                 "source": {
                   "column": 41,
                   "line": 183,
@@ -3760,6 +4186,9 @@
                   "r83"
                 ],
                 "result": "r84",
+                "results": [
+                  "r84"
+                ],
                 "source": {
                   "column": 37,
                   "line": 183,
@@ -3796,6 +4225,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r85",
+                "results": [
+                  "r85"
+                ],
                 "source": {
                   "column": 22,
                   "line": 185,
@@ -3806,6 +4238,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r86",
+                "results": [
+                  "r86"
+                ],
                 "source": {
                   "column": 13,
                   "line": 185,
@@ -3850,6 +4285,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r87",
+                "results": [
+                  "r87"
+                ],
                 "source": {
                   "column": 22,
                   "line": 188,
@@ -3863,6 +4301,9 @@
                   "r87"
                 ],
                 "result": "r88",
+                "results": [
+                  "r88"
+                ],
                 "source": {
                   "column": 22,
                   "line": 188,
@@ -3873,6 +4314,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r89",
+                "results": [
+                  "r89"
+                ],
                 "source": {
                   "column": 13,
                   "line": 188,
@@ -3917,6 +4361,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r90",
+                "results": [
+                  "r90"
+                ],
                 "source": {
                   "column": 22,
                   "line": 191,
@@ -3927,6 +4374,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r91",
+                "results": [
+                  "r91"
+                ],
                 "source": {
                   "column": 13,
                   "line": 191,
@@ -3971,6 +4421,9 @@
                 "callee": "renderer_opcode_tret_id",
                 "opcode": "call",
                 "result": "r92",
+                "results": [
+                  "r92"
+                ],
                 "source": {
                   "column": 11,
                   "line": 193,
@@ -3981,6 +4434,9 @@
                 "immediate": 6,
                 "opcode": "const",
                 "result": "r93",
+                "results": [
+                  "r93"
+                ],
                 "source": {
                   "column": 41,
                   "line": 193,
@@ -3994,6 +4450,9 @@
                   "r93"
                 ],
                 "result": "r94",
+                "results": [
+                  "r94"
+                ],
                 "source": {
                   "column": 37,
                   "line": 193,
@@ -4030,6 +4489,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r95",
+                "results": [
+                  "r95"
+                ],
                 "source": {
                   "column": 22,
                   "line": 195,
@@ -4040,6 +4502,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r96",
+                "results": [
+                  "r96"
+                ],
                 "source": {
                   "column": 13,
                   "line": 195,
@@ -4084,6 +4549,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r97",
+                "results": [
+                  "r97"
+                ],
                 "source": {
                   "column": 22,
                   "line": 198,
@@ -4097,6 +4565,9 @@
                   "r97"
                 ],
                 "result": "r98",
+                "results": [
+                  "r98"
+                ],
                 "source": {
                   "column": 22,
                   "line": 198,
@@ -4107,6 +4578,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r99",
+                "results": [
+                  "r99"
+                ],
                 "source": {
                   "column": 13,
                   "line": 198,
@@ -4151,6 +4625,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r100",
+                "results": [
+                  "r100"
+                ],
                 "source": {
                   "column": 22,
                   "line": 201,
@@ -4161,6 +4638,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r101",
+                "results": [
+                  "r101"
+                ],
                 "source": {
                   "column": 13,
                   "line": 201,
@@ -4205,6 +4685,9 @@
                 "callee": "renderer_first_directive_id",
                 "opcode": "call",
                 "result": "r102",
+                "results": [
+                  "r102"
+                ],
                 "source": {
                   "column": 42,
                   "line": 203,
@@ -4218,6 +4701,9 @@
                   "r102"
                 ],
                 "result": "r103",
+                "results": [
+                  "r103"
+                ],
                 "source": {
                   "column": 11,
                   "line": 203,
@@ -4228,6 +4714,9 @@
                 "immediate": 1,
                 "opcode": "const",
                 "result": "r104",
+                "results": [
+                  "r104"
+                ],
                 "source": {
                   "column": 77,
                   "line": 203,
@@ -4241,6 +4730,9 @@
                   "r104"
                 ],
                 "result": "r105",
+                "results": [
+                  "r105"
+                ],
                 "source": {
                   "column": 73,
                   "line": 203,
@@ -4277,6 +4769,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r106",
+                "results": [
+                  "r106"
+                ],
                 "source": {
                   "column": 22,
                   "line": 205,
@@ -4287,6 +4782,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r107",
+                "results": [
+                  "r107"
+                ],
                 "source": {
                   "column": 13,
                   "line": 205,
@@ -4331,6 +4829,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r108",
+                "results": [
+                  "r108"
+                ],
                 "source": {
                   "column": 22,
                   "line": 208,
@@ -4344,6 +4845,9 @@
                   "r108"
                 ],
                 "result": "r109",
+                "results": [
+                  "r109"
+                ],
                 "source": {
                   "column": 22,
                   "line": 208,
@@ -4354,6 +4858,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r110",
+                "results": [
+                  "r110"
+                ],
                 "source": {
                   "column": 13,
                   "line": 208,
@@ -4398,6 +4905,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r111",
+                "results": [
+                  "r111"
+                ],
                 "source": {
                   "column": 22,
                   "line": 211,
@@ -4408,6 +4918,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r112",
+                "results": [
+                  "r112"
+                ],
                 "source": {
                   "column": 13,
                   "line": 211,
@@ -4452,6 +4965,9 @@
                 "immediate": -1,
                 "opcode": "const",
                 "result": "r113",
+                "results": [
+                  "r113"
+                ],
                 "source": {
                   "column": 42,
                   "line": 213,
@@ -4465,6 +4981,9 @@
                   "r113"
                 ],
                 "result": "r114",
+                "results": [
+                  "r114"
+                ],
                 "source": {
                   "column": 11,
                   "line": 213,
@@ -4475,6 +4994,9 @@
                 "immediate": -1,
                 "opcode": "const",
                 "result": "r115",
+                "results": [
+                  "r115"
+                ],
                 "source": {
                   "column": 50,
                   "line": 213,
@@ -4488,6 +5010,9 @@
                   "r115"
                 ],
                 "result": "r116",
+                "results": [
+                  "r116"
+                ],
                 "source": {
                   "column": 46,
                   "line": 213,
@@ -4524,6 +5049,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r117",
+                "results": [
+                  "r117"
+                ],
                 "source": {
                   "column": 22,
                   "line": 215,
@@ -4534,6 +5062,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r118",
+                "results": [
+                  "r118"
+                ],
                 "source": {
                   "column": 13,
                   "line": 215,
@@ -4578,6 +5109,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r119",
+                "results": [
+                  "r119"
+                ],
                 "source": {
                   "column": 22,
                   "line": 218,
@@ -4591,6 +5125,9 @@
                   "r119"
                 ],
                 "result": "r120",
+                "results": [
+                  "r120"
+                ],
                 "source": {
                   "column": 22,
                   "line": 218,
@@ -4601,6 +5138,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r121",
+                "results": [
+                  "r121"
+                ],
                 "source": {
                   "column": 13,
                   "line": 218,
@@ -4645,6 +5185,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r122",
+                "results": [
+                  "r122"
+                ],
                 "source": {
                   "column": 22,
                   "line": 221,
@@ -4655,6 +5198,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r123",
+                "results": [
+                  "r123"
+                ],
                 "source": {
                   "column": 13,
                   "line": 221,
@@ -4699,6 +5245,9 @@
                 "callee": "renderer_last_opcode_id",
                 "opcode": "call",
                 "result": "r124",
+                "results": [
+                  "r124"
+                ],
                 "source": {
                   "column": 39,
                   "line": 223,
@@ -4712,6 +5261,9 @@
                   "r124"
                 ],
                 "result": "r125",
+                "results": [
+                  "r125"
+                ],
                 "source": {
                   "column": 11,
                   "line": 223,
@@ -4722,6 +5274,9 @@
                 "immediate": 1,
                 "opcode": "const",
                 "result": "r126",
+                "results": [
+                  "r126"
+                ],
                 "source": {
                   "column": 70,
                   "line": 223,
@@ -4735,6 +5290,9 @@
                   "r126"
                 ],
                 "result": "r127",
+                "results": [
+                  "r127"
+                ],
                 "source": {
                   "column": 66,
                   "line": 223,
@@ -4771,6 +5329,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r128",
+                "results": [
+                  "r128"
+                ],
                 "source": {
                   "column": 22,
                   "line": 225,
@@ -4781,6 +5342,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r129",
+                "results": [
+                  "r129"
+                ],
                 "source": {
                   "column": 13,
                   "line": 225,
@@ -4825,6 +5389,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r130",
+                "results": [
+                  "r130"
+                ],
                 "source": {
                   "column": 22,
                   "line": 228,
@@ -4838,6 +5405,9 @@
                   "r130"
                 ],
                 "result": "r131",
+                "results": [
+                  "r131"
+                ],
                 "source": {
                   "column": 22,
                   "line": 228,
@@ -4848,6 +5418,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r132",
+                "results": [
+                  "r132"
+                ],
                 "source": {
                   "column": 13,
                   "line": 228,
@@ -4892,6 +5465,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r133",
+                "results": [
+                  "r133"
+                ],
                 "source": {
                   "column": 22,
                   "line": 231,
@@ -4902,6 +5478,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r134",
+                "results": [
+                  "r134"
+                ],
                 "source": {
                   "column": 13,
                   "line": 231,
@@ -4946,6 +5525,9 @@
                 "immediate": 7,
                 "opcode": "const",
                 "result": "r135",
+                "results": [
+                  "r135"
+                ],
                 "source": {
                   "column": 39,
                   "line": 233,
@@ -4959,6 +5541,9 @@
                   "r135"
                 ],
                 "result": "r136",
+                "results": [
+                  "r136"
+                ],
                 "source": {
                   "column": 11,
                   "line": 233,
@@ -4969,6 +5554,9 @@
                 "immediate": -1,
                 "opcode": "const",
                 "result": "r137",
+                "results": [
+                  "r137"
+                ],
                 "source": {
                   "column": 46,
                   "line": 233,
@@ -4982,6 +5570,9 @@
                   "r137"
                 ],
                 "result": "r138",
+                "results": [
+                  "r138"
+                ],
                 "source": {
                   "column": 42,
                   "line": 233,
@@ -5018,6 +5609,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r139",
+                "results": [
+                  "r139"
+                ],
                 "source": {
                   "column": 22,
                   "line": 235,
@@ -5028,6 +5622,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r140",
+                "results": [
+                  "r140"
+                ],
                 "source": {
                   "column": 13,
                   "line": 235,
@@ -5072,6 +5669,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r141",
+                "results": [
+                  "r141"
+                ],
                 "source": {
                   "column": 22,
                   "line": 238,
@@ -5085,6 +5685,9 @@
                   "r141"
                 ],
                 "result": "r142",
+                "results": [
+                  "r142"
+                ],
                 "source": {
                   "column": 22,
                   "line": 238,
@@ -5095,6 +5698,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r143",
+                "results": [
+                  "r143"
+                ],
                 "source": {
                   "column": 13,
                   "line": 238,
@@ -5139,6 +5745,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r144",
+                "results": [
+                  "r144"
+                ],
                 "source": {
                   "column": 22,
                   "line": 241,
@@ -5149,6 +5758,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r145",
+                "results": [
+                  "r145"
+                ],
                 "source": {
                   "column": 13,
                   "line": 241,
@@ -5193,6 +5805,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r146",
+                "results": [
+                  "r146"
+                ],
                 "source": {
                   "column": 12,
                   "line": 243,
@@ -5206,6 +5821,9 @@
                   "r146"
                 ],
                 "result": "r147",
+                "results": [
+                  "r147"
+                ],
                 "source": {
                   "column": 12,
                   "line": 243,
@@ -6730,6 +7348,9 @@
             "type": "trit"
           }
         ],
+        "result_types": [
+          "trit"
+        ],
         "return_type": "trit",
         "source": {
           "column": 1,
@@ -6745,6 +7366,9 @@
                 "callee": "renderer_candidate_capability_smoke",
                 "opcode": "call",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 12,
                   "line": 246,
@@ -6786,6 +7410,9 @@
             "type": "trit"
           }
         ],
+        "result_types": [
+          "trit"
+        ],
         "return_type": "trit",
         "source": {
           "column": 1,
@@ -6801,6 +7428,9 @@
                 "immediate": -1,
                 "opcode": "const",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 12,
                   "line": 249,
@@ -6841,6 +7471,9 @@
             },
             "type": "trit"
           }
+        ],
+        "result_types": [
+          "trit"
         ],
         "return_type": "trit",
         "source": {

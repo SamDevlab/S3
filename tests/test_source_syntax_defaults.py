@@ -316,12 +316,12 @@ def test_verify_ir_is_independent_of_source_syntax(
     assert output.err == ""
 
 
-def test_artifact_versions_remain_v0_5() -> None:
+def test_artifact_versions_use_current_ir_and_assembly_versions() -> None:
     compilation = compile_source(SOURCE_V0_6)
-    assert IR_FORMAT_VERSION == "0.5.0"
-    assert ASSEMBLY_FORMAT_VERSION == "0.5.0"
-    assert json.loads(serialize_ir(compilation.ir))["version"] == "0.5.0"
-    assert compilation.assembly.version == "0.5.0"
+    assert IR_FORMAT_VERSION == "0.6.0"
+    assert ASSEMBLY_FORMAT_VERSION == "0.6.0"
+    assert json.loads(serialize_ir(compilation.ir))["version"] == "0.6.0"
+    assert compilation.assembly.version == "0.6.0"
 
 
 @pytest.mark.parametrize(

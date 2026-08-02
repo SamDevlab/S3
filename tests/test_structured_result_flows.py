@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-import pytest
-
 from bootstrap.s3.backends._hosted_execution import _execute_hosted_assembly
-from bootstrap.s3.diagnostics import SemanticError
 from bootstrap.s3.optimizer import OptimizationLevel
 from bootstrap.s3.pipeline import compile_sources, run_source
 
@@ -92,19 +89,29 @@ def test_imported_structured_result_type_executes() -> None:
         assert _execute_hosted_assembly(compilation.assembly, "main") == 4
 
 
-def test_structured_result_return_remains_rejected_semantically() -> None:
+def test_structured_result_return_can_be_matched_by_caller() -> None:
     source = (
         "record Error:\n"
         "    code: tryte\n"
         "enum Result:\n"
         "    Ok(value: tryte)\n"
         "    Err(error: Error)\n"
-        "fn make() -> Result:\n"
-        "    return Result.Ok(value=1)\n"
+        "fn make(flag: trit) -> Result:\n"
+        "    match flag:\n"
+        "        -1:\n"
+        "            return Result.Err(error=Error(code=9))\n"
+        "        0:\n"
+        "            return Result.Ok(value=12)\n"
+        "        1:\n"
+        "            return Result.Ok(value=15)\n"
+        "fn unwrap(result: Result) -> tryte:\n"
+        "    match result:\n"
+        "        Result.Ok(value):\n"
+        "            return value\n"
+        "        Result.Err(error):\n"
+        "            return 0 - error.code\n"
         "fn main() -> tryte:\n"
-        "    return 0\n"
+        "    return unwrap(make(0)) + unwrap(make(-1))\n"
     )
 
-    with pytest.raises(SemanticError) as error:
-        run_source(source)
-    assert "multi-cell enum returns require a future aggregate ABI" in str(error.value)
+    assert _run_o0_o1(source) == (3, 3)

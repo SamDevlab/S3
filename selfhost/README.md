@@ -11,4 +11,8 @@ reference compiler and default path.
 
 Components in this directory are small, pure differential references. They do
 not replace the Python compiler, do not access the filesystem, do not depend on
-heap allocation, and do not use aggregate returns.
+heap allocation, and do not become default compiler paths.
+
+The first and second stage components keep scalar public returns. Third-stage
+components under `selfhost/results/` intentionally exercise aggregate returns
+and explicit structured result APIs while preserving Python as the reference.

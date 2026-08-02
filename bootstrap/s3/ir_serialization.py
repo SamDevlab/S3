@@ -30,7 +30,8 @@ from .verifier import verify_ir
 
 
 IR_FORMAT = "s3-ir"
-IR_FORMAT_VERSION = "0.5.0"
+IR_FORMAT_VERSION = "0.6.0"
+IR_LEGACY_FORMAT_VERSION = "0.5.0"
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _STATIC_STRING_ID = re.compile(r"^s[0-9]+$")
 
@@ -54,7 +55,8 @@ def _instruction_to_data(instruction: IRInstruction) -> dict[str, Any]:
         "memory": instruction.memory,
         "opcode": instruction.opcode.value,
         "operands": list(instruction.operands),
-        "result": instruction.result,
+        "result": instruction.result if len(instruction.results) <= 1 else None,
+        "results": list(instruction.results),
         "source": _source_to_data(instruction.location),
         "targets": list(instruction.targets),
     }
@@ -117,6 +119,9 @@ def _module_to_data(module: IRModule) -> dict[str, Any]:
                     for register in function.registers
                 ],
                 "return_type": function.return_type.value,
+                "result_types": [
+                    type_name.value for type_name in function.result_types
+                ],
                 "source": _source_to_data(function.location),
             }
             for function in module.functions
@@ -266,24 +271,34 @@ def _ir_type(value: Any, path: str) -> IRType:
         raise IRSerializationError(f"{path} has unknown type {text!r}") from error
 
 
-def _instruction(value: Any, path: str) -> IRInstruction:
-    data = _object(value, path)
-    _keys(
-        data,
-        {
-            "callee",
-            "immediate",
-            "initialization",
-            "memory",
-            "opcode",
-            "operands",
-            "result",
-            "source",
-            "targets",
-        },
-        {"static_string"},
-        path,
+def _register_list(value: Any, path: str) -> tuple[int, ...]:
+    return tuple(
+        _integer(register, f"{path}[{index}]")
+        for index, register in enumerate(_array(value, path))
     )
+
+
+def _instruction(value: Any, path: str, *, version: str) -> IRInstruction:
+    data = _object(value, path)
+    base_required = {
+        "callee",
+        "immediate",
+        "initialization",
+        "memory",
+        "opcode",
+        "operands",
+        "result",
+        "source",
+        "targets",
+    }
+    if version == IR_LEGACY_FORMAT_VERSION:
+        _keys(data, base_required, {"static_string"}, path)
+        if "results" in data:
+            raise IRSerializationError(
+                f"{path} contains 0.6.0 result fields under 0.5.0"
+            )
+    else:
+        _keys(data, base_required | {"results"}, {"static_string"}, path)
     opcode_text = _string(data["opcode"], f"{path}.opcode")
     try:
         opcode = IROpcode(opcode_text)
@@ -308,9 +323,18 @@ def _instruction(value: Any, path: str) -> IRInstruction:
         if data["callee"] is None
         else _identifier(data["callee"], f"{path}.callee")
     )
+    result = _optional_integer(data["result"], f"{path}.result")
+    if version == IR_LEGACY_FORMAT_VERSION:
+        results = () if result is None else (result,)
+    else:
+        results = _register_list(data["results"], f"{path}.results")
+        if result is not None and results != (result,):
+            raise IRSerializationError(
+                f"{path}.result must agree with {path}.results for width 1"
+            )
     return IRInstruction(
         opcode,
-        result=_optional_integer(data["result"], f"{path}.result"),
+        result=result if len(results) <= 1 else None,
         operands=operands,
         immediate=_optional_integer(data["immediate"], f"{path}.immediate"),
         static_string=(
@@ -326,6 +350,7 @@ def _instruction(value: Any, path: str) -> IRInstruction:
             f"{path}.initialization",
         ),
         location=_location(data["source"], f"{path}.source"),
+        results=results,
     )
 
 
@@ -352,21 +377,25 @@ def _static_string(value: Any, path: str) -> IRStaticString:
     return entry
 
 
-def _function(value: Any, path: str) -> IRFunction:
+def _function(value: Any, path: str, *, version: str) -> IRFunction:
     data = _object(value, path)
-    _exact_keys(
-        data,
-        {
-            "blocks",
-            "memory_objects",
-            "name",
-            "parameters",
-            "registers",
-            "return_type",
-            "source",
-        },
-        path,
-    )
+    required = {
+        "blocks",
+        "memory_objects",
+        "name",
+        "parameters",
+        "registers",
+        "return_type",
+        "source",
+    }
+    if version == IR_LEGACY_FORMAT_VERSION:
+        if "result_types" in data:
+            raise IRSerializationError(
+                f"{path} contains 0.6.0 result fields under 0.5.0"
+            )
+        _exact_keys(data, required, path)
+    else:
+        _exact_keys(data, required | {"result_types"}, path)
     parameters: list[IRParameter] = []
     for index, raw in enumerate(
         _array(data["parameters"], f"{path}.parameters")
@@ -431,6 +460,7 @@ def _function(value: Any, path: str) -> IRFunction:
                     _instruction(
                         instruction,
                         f"{item_path}.instructions[{instruction_index}]",
+                        version=version,
                     )
                     for instruction_index, instruction in enumerate(
                         _array(
@@ -443,14 +473,27 @@ def _function(value: Any, path: str) -> IRFunction:
             )
         )
 
+    return_type = _ir_type(data["return_type"], f"{path}.return_type")
+    if version == IR_LEGACY_FORMAT_VERSION:
+        result_types = (return_type,)
+    else:
+        result_types = tuple(
+            _ir_type(item, f"{path}.result_types[{index}]")
+            for index, item in enumerate(
+                _array(data["result_types"], f"{path}.result_types")
+            )
+        )
+        if not result_types:
+            raise IRSerializationError(f"{path}.result_types must not be empty")
     return IRFunction(
         _identifier(data["name"], f"{path}.name"),
         tuple(parameters),
-        _ir_type(data["return_type"], f"{path}.return_type"),
+        return_type,
         tuple(registers),
         tuple(blocks),
         _location(data["source"], f"{path}.source"),
         tuple(memories),
+        result_types,
     )
 
 
@@ -478,7 +521,7 @@ def deserialize_ir(source: str) -> IRModule:
             diagnostic_code=DiagnosticCode.ARTIFACT_UNSUPPORTED_FORMAT,
         )
     version = _string(envelope["version"], "artifact.version")
-    if version != IR_FORMAT_VERSION:
+    if version not in {IR_FORMAT_VERSION, IR_LEGACY_FORMAT_VERSION}:
         raise IRSerializationError(
             f"unsupported S3 IR version {version}; "
             f"expected {IR_FORMAT_VERSION}",
@@ -498,7 +541,11 @@ def deserialize_ir(source: str) -> IRModule:
     )
     module = IRModule(
         tuple(
-            _function(function, f"artifact.module.functions[{index}]")
+            _function(
+                function,
+                f"artifact.module.functions[{index}]",
+                version=version,
+            )
             for index, function in enumerate(
                 _array(
                     module_data["functions"],

@@ -57,8 +57,8 @@ goldens:
 
 | Directive | Observed form | Notes |
 | --- | --- | --- |
-| `.s3asm` | `.s3asm 0.5.0` | Must be the first non-empty line and preserve the current version text. |
-| `.function` | `.function <name> -> <return_type>` | Function order is preserved from input. |
+| `.s3asm` | `.s3asm 0.6.0` | Must be the first non-empty line and preserve the current version text. |
+| `.function` | `.function <name> -> <return_type-group>` | Function order is preserved from input. |
 | `.param` | `    .param rN, <type>` | Present in `simple_call` and `sign`; parameter order is preserved. |
 | `.register` | `    .register rN, <type>` | Register order is preserved from input. |
 | `.label` | `.label <name>` | Block order is preserved from input. |
@@ -79,9 +79,9 @@ current Assembly goldens:
 | `TINV` | destination register and source register | `    TINV   r4, r3 ; source=4:14:68` |
 | `TADD` | destination register and two source registers | `    TADD   r5, r1, r4 ; source=4:14:68` |
 | `TCMP` | destination register and two source registers | `    TCMP   r2, r0, r1 ; source=2:17:47` |
-| `TCALL` | destination register, callee name, zero or more argument registers | `    TCALL  r2, add, r0, r1 ; source=5:12:86` |
+| `TCALL` | destination register group, callee name, zero or more argument registers | `    TCALL  r2, add, r0, r1 ; source=5:12:86` |
 | `TBR3` | condition register and three labels | `    TBR3   r2, switch_negative_0, switch_neutral_1, switch_positive_2 ; source=2:5:35` |
-| `TRET` | source register | `    TRET   r5 ; source=4:5:59` |
+| `TRET` | source register group | `    TRET   r5 ; source=4:5:59` |
 
 No zero-operand instruction is observed in the initial fixtures.
 
@@ -109,7 +109,7 @@ subset:
 - operands use `, ` as the separator;
 - source comments use ` ; source=<line>:<column>:<offset>`;
 - functions are separated by one blank line;
-- `.s3asm 0.5.0` is followed by one blank line before the first function;
+- `.s3asm 0.6.0` is followed by one blank line before the first function;
 - final newline is mandatory;
 - output contains no absolute path;
 - output contains no host information;
@@ -134,6 +134,7 @@ AssemblyProgram
 AssemblyFunction
   name
   return_type
+  result_types
   parameters[]
   registers[]
   blocks[]

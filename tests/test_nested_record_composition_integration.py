@@ -311,11 +311,9 @@ def test_imported_static_text_record_fields_compose_across_modules() -> None:
             "    right: tryte\n"
             "record Box:\n"
             "    leaf: Leaf\n"
-            "fn make() -> Box:\n"
-            "    return Box(leaf=Leaf(left=1, right=2))\n"
-            "fn main() -> tryte:\n"
-            "    return 0\n",
-            "multi-field record returns require a future aggregate ABI",
+            "fn main() -> Box:\n"
+            "    return Box(leaf=Leaf(left=1, right=2))\n",
+            "entry function 'main' must return one scalar cell",
             DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
         ),
         (

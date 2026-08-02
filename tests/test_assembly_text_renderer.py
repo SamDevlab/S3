@@ -59,7 +59,7 @@ def test_renderer_core_returns_static_text_document_with_lf() -> None:
 
     assert isinstance(document, StaticTextDocument)
     assert document.text == (
-        ".s3asm 0.5.0\n"
+        ".s3asm 0.6.0\n"
         "\n"
         ".function main -> tryte\n"
         "    .register r0, tryte\n"
@@ -86,7 +86,7 @@ def test_renderer_core_emits_memory_declaration() -> None:
     )
 
     assert document.text == (
-        ".s3asm 0.5.0\n"
+        ".s3asm 0.6.0\n"
         "\n"
         ".function main -> tryte\n"
         "    .memory m0, tryte, 2, mutable\n"
@@ -186,7 +186,7 @@ def test_renderer_core_builds_first_fixture_against_inspect_golden() -> None:
     assert document.line_count == 16
     assert (
         document.sha256
-        == "a144d584ed40287d10cff5ecc50a170823aac7ddd0a7fed455837b936131a90f"
+        == "31a70bf2e3b61ba920b0ca680702d287f7db9a4caa6ed2241cbfdba998a69316"
     )
     assert document.sha256 == hashlib.sha256(expected).hexdigest()
     assert b"\r\n" not in document.utf8_bytes
@@ -202,7 +202,7 @@ def test_renderer_core_builds_simple_call_fixture_against_inspect_golden() -> No
     assert document.line_count == 21
     assert (
         document.sha256
-        == "d6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f"
+        == "a5cd6a06c66b44f328ce3d0c1368b4acf35a980f5d2040b051f903126f02552b"
     )
     assert document.sha256 == hashlib.sha256(expected).hexdigest()
     assert document.text.endswith("\n")
@@ -220,7 +220,7 @@ def test_renderer_core_builds_sign_fixture_against_inspect_golden() -> None:
     assert document.line_count == 32
     assert (
         document.sha256
-        == "2002bbcdf4f893efafb34d3e194dd6b5602eb2d023a2d0d064a5d2642d48f880"
+        == "3a6d74bfafbd620372c23e5055376bd8d1269ec0cc3f60c7a412a3dde4e6e44b"
     )
     assert document.sha256 == hashlib.sha256(expected).hexdigest()
     assert document.text.endswith("\n")
@@ -264,17 +264,17 @@ def test_renderer_core_builds_sign_fixture_against_candidate_actual_output() -> 
 def test_candidate_actual_outputs_remain_unchanged() -> None:
     expected = {
         FIRST_ACTUAL_OUTPUT: (
-            "a144d584ed40287d10cff5ecc50a170823aac7ddd0a7fed455837b936131a90f",
+            "31a70bf2e3b61ba920b0ca680702d287f7db9a4caa6ed2241cbfdba998a69316",
             377,
             16,
         ),
         SIMPLE_CALL_ACTUAL_OUTPUT: (
-            "d6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f",
+            "a5cd6a06c66b44f328ce3d0c1368b4acf35a980f5d2040b051f903126f02552b",
             448,
             21,
         ),
         SIGN_ACTUAL_OUTPUT: (
-            "2002bbcdf4f893efafb34d3e194dd6b5602eb2d023a2d0d064a5d2642d48f880",
+            "3a6d74bfafbd620372c23e5055376bd8d1269ec0cc3f60c7a412a3dde4e6e44b",
             829,
             32,
         ),

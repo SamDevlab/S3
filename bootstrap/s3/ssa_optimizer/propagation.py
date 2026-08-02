@@ -148,6 +148,7 @@ def run_ssa_constant_propagation(ssa_fn: SSAFunction) -> SSAFunction:
         values=ssa_fn.values,
         memory_objects=ssa_fn.memory_objects,
         return_type=ssa_fn.return_type,
+        result_types=ssa_fn.result_types,
     )
 
 
@@ -214,16 +215,7 @@ def run_ssa_copy_propagation(ssa_fn: SSAFunction) -> SSAFunction:
                 continue
             updated_operands = tuple(get_canonical(op) for op in inst.operands)
             new_instructions.append(
-                SSAInstruction(
-                    opcode=inst.opcode,
-                    result=inst.result,
-                    operands=updated_operands,
-                    immediate=inst.immediate,
-                    targets=inst.targets,
-                    memory=inst.memory,
-                    initialization=inst.initialization,
-                    location=inst.location,
-                )
+                replace(inst, operands=updated_operands)
             )
 
         new_blocks.append(
@@ -241,4 +233,5 @@ def run_ssa_copy_propagation(ssa_fn: SSAFunction) -> SSAFunction:
         values=ssa_fn.values,
         memory_objects=ssa_fn.memory_objects,
         return_type=ssa_fn.return_type,
+        result_types=ssa_fn.result_types,
     )

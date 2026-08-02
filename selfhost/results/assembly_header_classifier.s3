@@ -1,0 +1,51 @@
+module selfhost.results.assembly_header_classifier
+
+export record HeaderInfo:
+    major: tryte
+    minor: tryte
+    patch: tryte
+    is_legacy: tryte
+
+export record HeaderError:
+    code: tryte
+
+export enum HeaderResult:
+    Ok(info: HeaderInfo)
+    Err(error: HeaderError)
+
+export fn classify_assembly_header(major: tryte, minor: tryte, patch: tryte) -> HeaderResult:
+    match major <=> 0:
+        -1:
+            return HeaderResult.Err(error=HeaderError(code=1))
+        0:
+            match patch <=> 0:
+                -1:
+                    return HeaderResult.Err(error=HeaderError(code=2))
+                0:
+                    match minor <=> 5:
+                        -1:
+                            return HeaderResult.Err(error=HeaderError(code=3))
+                        0:
+                            return HeaderResult.Ok(info=HeaderInfo(major=major, minor=minor, patch=patch, is_legacy=-1))
+                        1:
+                            match minor <=> 6:
+                                -1:
+                                    return HeaderResult.Err(error=HeaderError(code=3))
+                                0:
+                                    return HeaderResult.Ok(info=HeaderInfo(major=major, minor=minor, patch=patch, is_legacy=0))
+                                1:
+                                    return HeaderResult.Err(error=HeaderError(code=3))
+                1:
+                    return HeaderResult.Err(error=HeaderError(code=2))
+        1:
+            return HeaderResult.Err(error=HeaderError(code=1))
+
+export fn assembly_header_classifier_smoke() -> tryte:
+    match classify_assembly_header(0, 6, 0):
+        HeaderResult.Ok(info):
+            return info.minor
+        HeaderResult.Err(error):
+            return 0 - error.code
+
+fn main() -> tryte:
+    return assembly_header_classifier_smoke()

@@ -5,11 +5,11 @@
 S3 é uma linguagem experimental de sistemas baseada em ternário balanceado.
 Este repositório contém a versão publicável
 `s3-bootstrap` 0.7.0, com sintaxe fonte V0.6 por padrão e formatos IR JSON e
-S3 Assembly 0.5.0:
+S3 Assembly 0.6.0:
 
 ```text
 fonte → frontend → IR verificada → análise de inicialização → O0/O1
-      → S3 Assembly 0.5 versionada e validada
+      → S3 Assembly 0.6 versionada e validada
       ├→ emulador
       └→ GNU assembly x86-64 → ELF Linux
 ```
@@ -45,7 +45,7 @@ A implementação atual oferece:
 - faixa nativa u64 isolada por processo;
 - limite nativo configurável de 1024 frames por padrão;
 - diagnósticos nativos com função, bloco, opcode, origem e valor;
-- S3 Assembly `.s3asm 0.5.0` com leitura de legado;
+- S3 Assembly `.s3asm 0.6.0` com leitura de legado 0.5 width-1;
 - S3 IR JSON canônica, versionada e verificável;
 - análise conservadora de inicialização por CFG;
 - níveis O0 (padrão) e O1 local, verificados antes/depois;
@@ -96,16 +96,16 @@ baselines unless an explicit milestone says so.
   CLI, goldens, baselines, or package version. Structured results are explicit
   nominal enum conventions; there are no generics, exceptions, `?`, unwinding,
   or implicit propagation.
-- Milestone 1.06 is the next self-hosting step. Python remains the reference
-  compiler and default path; any second-stage S3 component remains opt-in and
-  differential until explicitly adopted.
+- Milestone 1.06 completed the second self-hosting step. Python remains the
+  reference compiler and default path; second-stage S3 components remain opt-in
+  and differential until explicitly adopted.
+- The current aggregate-results campaign implements IR/Assembly result groups
+  and keeps source functions as returning one logical value. Width-1 returns use
+  the scalar path; fixed-layout record/enum returns lower to ordered result
+  cells; native width > 1 returns use an internal hidden sret convention. The
+  source language still exposes no pointers, heap, tuple returns, exceptions,
+  `?`, generic result type, or implicit propagation.
 
-The current scalar return convention remains unchanged: `RETURN`, `TRET`, and
-the native x86-64 result path carry one scalar value. Single-field record returns
-reuse that existing scalar convention. Multi-field record returns, multi-cell
-payload enum returns, and aggregate returns remain rejected before lowering
-until a future aggregate-return ABI is specified. Multi-leaf nested record
-returns follow that same rejection rule.
 Arrays as record fields, recursive types, general heap allocation, dynamic text,
 and complete self-hosting are still not implemented.
 
@@ -159,8 +159,10 @@ V0.5 permanece temporariamente disponível com `--source-syntax 0.5` como
 compatibilidade legada/deprecated. Não há autodetecção, fallback ou migração automática;
 consulte o [guia de migração 0.6](docs/migration-source-0.5-to-0.6.md).
 
-A versão da fonte é independente dos artefatos: IR JSON e S3 Assembly
-continuam em 0.5.0. O Marco 0.7 está concluído.
+A versão da fonte é independente dos artefatos: escritores atuais emitem IR JSON
+e S3 Assembly 0.6.0; leitores continuam aceitando artefatos legados 0.5.0 de
+largura 1. O Marco 0.7 está concluído e as milestones 1.x internas preservam a
+versão publicável do pacote até decisão explícita.
 
 ```bash
 s3 targets
@@ -199,8 +201,9 @@ padrão; `--emit summary` torna esse modo explícito. `--emit ir` emite o IR JSO
 do compilador atual, e `--emit assembly` emite o S3 Assembly atual para
 inspection e comparação.
 
-`ir-json` emite o envelope `s3-ir` 0.5.0 com newline; `verify-ir` reconstrói e
-verifica o artefato. `asm` sempre começa por `.s3asm 0.5.0`. `-O0` é padrão;
+`ir-json` emite o envelope `s3-ir` 0.6.0 com newline; `verify-ir` reconstrói e
+verifica artefatos 0.6.0 e o legado 0.5.0 width-1. `asm` sempre começa por
+`.s3asm 0.6.0`. `-O0` é padrão;
 `-O1` faz somente folding, DCE e threading conservadores. `native-asm` é
 determinístico e funciona em qualquer host.
 

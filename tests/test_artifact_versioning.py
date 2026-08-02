@@ -49,7 +49,7 @@ def test_generated_assembly_is_versioned_and_round_trips() -> None:
 def test_legacy_assembly_is_normalized_to_current_version() -> None:
     program = parse_assembly(_legacy_assembly())
     assert program.version == ASSEMBLY_FORMAT_VERSION
-    assert program.render().startswith(".s3asm 0.5.0\n")
+    assert program.render().startswith(".s3asm 0.6.0\n")
     instruction = program.functions[0].blocks[0].instructions[0]
     assert instruction.source is not None
     assert instruction.source.to_dict() == {
@@ -64,7 +64,7 @@ def test_legacy_assembly_is_normalized_to_current_version() -> None:
     ("header", "message"),
     (
         (".s3asm 1.0.0", "incompatible S3 Assembly major version"),
-        (".s3asm 0.6.0", "unknown S3 Assembly version"),
+        (".s3asm 0.7.0", "unknown S3 Assembly version"),
         (".s3asm next", "invalid .s3asm version"),
         (".s3asm 0.5", "invalid .s3asm version"),
     ),
@@ -88,7 +88,7 @@ def test_existing_normative_assembly_remains_executable() -> None:
     )
     assert normative.startswith(".s3asm 0.5.0\n")
     assert execute_assembly(normative) == 10
-    assert parse_assembly(normative).render() == normative
+    assert parse_assembly(normative).render().startswith(".s3asm 0.6.0\n")
 
 
 @pytest.mark.parametrize(
@@ -131,7 +131,7 @@ def test_ir_json_rejects_unknown_version_and_opcode() -> None:
     artifact = json.loads(
         serialize_ir(compile_source("fn main() -> tryte:\n    return 6\n").ir)
     )
-    artifact["version"] = "0.6.0"
+    artifact["version"] = "0.7.0"
     with pytest.raises(IRSerializationError, match="unsupported S3 IR version"):
         deserialize_ir(json.dumps(artifact))
 

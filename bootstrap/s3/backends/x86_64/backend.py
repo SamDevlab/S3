@@ -41,6 +41,10 @@ class X8664Backend:
             raise NativeBackendError(
                 "native entry function 'main' cannot return string"
             )
+        if main.result_width != 1:
+            raise NativeBackendError(
+                "native entry function 'main' must return one result cell"
+            )
         return X8664Emitter(
             program,
             max_frames=self.max_frames,

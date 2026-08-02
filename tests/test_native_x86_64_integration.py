@@ -1236,31 +1236,6 @@ def test_o0_o1_native_imported_nominal_types(
     )
 
 
-def test_imported_multifield_record_return_stays_before_native_lowering() -> None:
-    with pytest.raises(SemanticError, match="future aggregate ABI"):
-        compile_sources(
-            {
-                "main.s3": (
-                    "module main\n"
-                    "from geometry import Pair\n"
-                    "from geometry import make\n"
-                    "fn main() -> tryte:\n"
-                    "    pair: Pair = make()\n"
-                    "    return pair.left\n"
-                ),
-                "geometry.s3": (
-                    "module geometry\n"
-                    "export record Pair:\n"
-                    "    left: tryte\n"
-                    "    right: tryte\n"
-                    "export fn make() -> Pair:\n"
-                    "    return Pair(left=1, right=2)\n"
-                ),
-            },
-            mode=SyntaxMode.V0_6,
-        )
-
-
 LOCAL_NESTED_NATIVE_SOURCE = """\
 enum Sign:
     Negative
@@ -1446,6 +1421,101 @@ NESTED_RECORD_TEXT_NATIVE_MODULE_CASES = (
 )
 
 
+AGGREGATE_RESULT_NATIVE_SOURCE_CASES = (
+    (
+        "local-multileaf-return",
+        """\
+record Leaf:
+    left: tryte
+    right: tryte
+record Box:
+    leaf: Leaf
+fn make() -> Box:
+    return Box(leaf=Leaf(left=1, right=2))
+fn main() -> tryte:
+    box: Box = make()
+    return box.leaf.left + box.leaf.right
+""",
+        3,
+    ),
+    (
+        "branch-multileaf-return",
+        """\
+record Pair:
+    left: tryte
+    right: tryte
+fn choose(flag: trit) -> Pair:
+    while flag:
+        return Pair(left=1, right=2)
+    return Pair(left=3, right=4)
+fn main() -> tryte:
+    pair: Pair = choose(0)
+    return pair.left + pair.right
+""",
+        7,
+    ),
+    (
+        "indirect-multileaf-return",
+        """\
+record Pair:
+    left: tryte
+    right: tryte
+record Holder:
+    pair: Pair
+fn make_holder() -> Holder:
+    return Holder(pair=Pair(left=1, right=2))
+fn main() -> tryte:
+    holder: Holder = make_holder()
+    return holder.pair.left + holder.pair.right
+""",
+        3,
+    ),
+    (
+        "recursive-multileaf-return",
+        """\
+record Pair:
+    left: tryte
+    right: tryte
+fn climb(count: tryte) -> Pair:
+    match count <=> 0:
+        -1:
+            return Pair(left=0, right=0)
+        0:
+            return Pair(left=1, right=1)
+        1:
+            previous: Pair = climb(count - 1)
+            return Pair(left=previous.left + 1, right=previous.right + 2)
+fn main() -> tryte:
+    pair: Pair = climb(3)
+    return pair.left + pair.right
+""",
+        11,
+    ),
+)
+
+
+IMPORTED_AGGREGATE_RESULT_NATIVE_SOURCES = (
+    (
+        "main.s3",
+        "module main\n"
+        "from geometry import Pair\n"
+        "from geometry import make\n"
+        "fn main() -> tryte:\n"
+        "    pair: Pair = make()\n"
+        "    return pair.left + pair.right\n",
+    ),
+    (
+        "geometry.s3",
+        "module geometry\n"
+        "export record Pair:\n"
+        "    left: tryte\n"
+        "    right: tryte\n"
+        "export fn make() -> Pair:\n"
+        "    return Pair(left=1, right=2)\n",
+    ),
+)
+
+
 @pytest.mark.parametrize(
     ("name", "source", "expected"),
     NESTED_RECORD_NATIVE_SOURCE_CASES,
@@ -1541,50 +1611,59 @@ def test_o0_o1_native_nested_record_static_text_modules(
 
 
 @pytest.mark.parametrize(
+    ("name", "source", "expected"),
+    AGGREGATE_RESULT_NATIVE_SOURCE_CASES,
+)
+def test_aggregate_result_native_sources_match_emulator_o0_o1(
+    name: str,
+    source: str,
+    expected: int,
+) -> None:
+    del name
+    _assert_o0_o1_emulator_equivalence(source, expected)
+
+
+@pytest.mark.parametrize(
+    ("name", "source", "expected"),
+    AGGREGATE_RESULT_NATIVE_SOURCE_CASES,
+)
+def test_o0_o1_native_aggregate_result_sources(
+    name: str,
+    source: str,
+    expected: int,
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    _assert_o0_o1_native_equivalence(
+        source,
+        expected,
+        native_toolchain,
+        tmp_path / f"aggregate-result-{name}",
+    )
+
+
+def test_imported_aggregate_result_native_sources_match_emulator_o0_o1() -> None:
+    _assert_o0_o1_emulator_sources_equivalence(
+        IMPORTED_AGGREGATE_RESULT_NATIVE_SOURCES,
+        3,
+    )
+
+
+def test_o0_o1_native_imported_aggregate_result_sources(
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    _assert_o0_o1_native_sources_equivalence(
+        IMPORTED_AGGREGATE_RESULT_NATIVE_SOURCES,
+        3,
+        native_toolchain,
+        tmp_path / "imported-aggregate-result",
+    )
+
+
+@pytest.mark.parametrize(
     ("name", "source", "message", "code"),
     (
-        (
-            "local-multileaf-return",
-            "record Leaf:\n"
-            "    left: tryte\n"
-            "    right: tryte\n"
-            "record Box:\n"
-            "    leaf: Leaf\n"
-            "fn make() -> Box:\n"
-            "    return Box(leaf=Leaf(left=1, right=2))\n"
-            "fn main() -> tryte:\n"
-            "    return 0\n",
-            "multi-field record returns require a future aggregate ABI",
-            DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
-        ),
-        (
-            "branch-multileaf-return",
-            "record Pair:\n"
-            "    left: tryte\n"
-            "    right: tryte\n"
-            "fn choose(flag: trit) -> Pair:\n"
-            "    while flag:\n"
-            "        return Pair(left=1, right=2)\n"
-            "    return Pair(left=3, right=4)\n"
-            "fn main() -> tryte:\n"
-            "    return 0\n",
-            "multi-field record returns require a future aggregate ABI",
-            DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
-        ),
-        (
-            "indirect-multileaf-return",
-            "record Pair:\n"
-            "    left: tryte\n"
-            "    right: tryte\n"
-            "record Holder:\n"
-            "    pair: Pair\n"
-            "fn make_holder() -> Holder:\n"
-            "    return Holder(pair=Pair(left=1, right=2))\n"
-            "fn main() -> tryte:\n"
-            "    return 0\n",
-            "multi-field record returns require a future aggregate ABI",
-            DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
-        ),
         (
             "self-cycle",
             "record Node:\n"
@@ -1729,29 +1808,6 @@ def test_nested_record_native_semantic_rejections_stay_before_backend(
 @pytest.mark.parametrize(
     ("name", "sources", "message", "code"),
     (
-        (
-            "imported-multileaf-return",
-            {
-                "main.s3": (
-                    "module main\n"
-                    "from geometry import Pair\n"
-                    "from geometry import make\n"
-                    "fn main() -> tryte:\n"
-                    "    pair: Pair = make()\n"
-                    "    return pair.left\n"
-                ),
-                "geometry.s3": (
-                    "module geometry\n"
-                    "export record Pair:\n"
-                    "    left: tryte\n"
-                    "    right: tryte\n"
-                    "export fn make() -> Pair:\n"
-                    "    return Pair(left=1, right=2)\n"
-                ),
-            },
-            "multi-field record returns require a future aggregate ABI",
-            DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
-        ),
         (
             "private-nested-type",
             {

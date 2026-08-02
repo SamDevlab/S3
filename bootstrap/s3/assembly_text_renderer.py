@@ -11,7 +11,7 @@ from bootstrap.s3.static_text import (
 )
 
 
-DEFAULT_ASSEMBLY_TEXT_VERSION = "0.5.0"
+DEFAULT_ASSEMBLY_TEXT_VERSION = "0.6.0"
 AssemblyTextOperand = int | str
 
 

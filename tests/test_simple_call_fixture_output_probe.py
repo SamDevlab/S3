@@ -38,7 +38,7 @@ def test_simple_call_fixture_output_probe_matches_inspect_golden() -> None:
     assert document.sha256 == hashlib.sha256(expected).hexdigest()
     assert (
         document.sha256
-        == "d6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f"
+        == "a5cd6a06c66b44f328ce3d0c1368b4acf35a980f5d2040b051f903126f02552b"
     )
     assert document.text.endswith("\n")
     assert "\r\n" not in document.text
@@ -56,7 +56,7 @@ def test_simple_call_actual_output_matches_probe_bytes() -> None:
     assert document.line_count == 21
     assert (
         document.sha256
-        == "d6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f"
+        == "a5cd6a06c66b44f328ce3d0c1368b4acf35a980f5d2040b051f903126f02552b"
     )
     assert b"\r\n" not in actual
     assert actual.endswith(b"\n")

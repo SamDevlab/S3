@@ -12,6 +12,9 @@
                   "r1"
                 ],
                 "result": "r2",
+                "results": [
+                  "r2"
+                ],
                 "source": {
                   "column": 14,
                   "line": 2,
@@ -94,6 +97,9 @@
             "type": "tryte"
           }
         ],
+        "result_types": [
+          "tryte"
+        ],
         "return_type": "tryte",
         "source": {
           "column": 1,
@@ -109,6 +115,9 @@
                 "immediate": 10,
                 "opcode": "const",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 16,
                   "line": 5,
@@ -119,6 +128,9 @@
                 "immediate": 5,
                 "opcode": "const",
                 "result": "r1",
+                "results": [
+                  "r1"
+                ],
                 "source": {
                   "column": 20,
                   "line": 5,
@@ -133,6 +145,9 @@
                   "r1"
                 ],
                 "result": "r2",
+                "results": [
+                  "r2"
+                ],
                 "source": {
                   "column": 12,
                   "line": 5,
@@ -193,6 +208,9 @@
             },
             "type": "tryte"
           }
+        ],
+        "result_types": [
+          "tryte"
         ],
         "return_type": "tryte",
         "source": {

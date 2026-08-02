@@ -90,6 +90,7 @@ class X8664Emitter:
         self.current_function: AssemblyFunction | None = None
         self.current_block: str | None = None
         self.current_instruction: AssemblyInstruction | None = None
+        self.functions = {function.name: function for function in program.functions}
 
     def emit(self) -> str:
         lines = [
@@ -157,15 +158,24 @@ class X8664Emitter:
         layout: FrameLayout,
     ) -> list[str]:
         lines: list[str] = []
+        if function.result_width > 1:
+            if layout.hidden_sret_pointer is None:
+                raise NativeBackendError("missing hidden sret pointer slot")
+            lines.append(
+                f"    mov qword ptr {_address(layout.hidden_sret_pointer)}, rdi"
+            )
         for position, parameter in enumerate(function.parameters):
             slot = layout.register(parameter.register)
-            if position < len(_ARGUMENT_REGISTERS):
-                source = _ARGUMENT_REGISTERS[position]
+            native_position = position + (1 if function.result_width > 1 else 0)
+            if native_position < len(_ARGUMENT_REGISTERS):
+                source = _ARGUMENT_REGISTERS[native_position]
                 lines.append(
                     f"    mov qword ptr {_address(slot.value)}, {source}"
                 )
             else:
-                caller_offset = 16 + (position - len(_ARGUMENT_REGISTERS)) * 8
+                caller_offset = (
+                    16 + (native_position - len(_ARGUMENT_REGISTERS)) * 8
+                )
                 lines.extend(
                     (
                         f"    mov rax, qword ptr [rbp + {caller_offset}]",
@@ -354,6 +364,12 @@ class X8664Emitter:
         if opcode is AssemblyOpcode.TCALL:
             return instrumentation + self._emit_call(function, layout, instruction)
         if opcode is AssemblyOpcode.TRET:
+            if function.result_width > 1:
+                return instrumentation + self._emit_multi_return(
+                    function,
+                    layout,
+                    instruction,
+                )
             return instrumentation + [
                 *self._read_register(layout, registers[0], "rax"),
                 "    dec qword ptr [rip + __s3_frame_count]",
@@ -412,8 +428,28 @@ class X8664Emitter:
         layout: FrameLayout,
         instruction: AssemblyInstruction,
     ) -> list[str]:
-        del function
-        destination, *arguments = instruction.registers
+        assert instruction.callee is not None
+        callee = self.functions[instruction.callee]
+        destinations = instruction.result_registers
+        arguments = instruction.argument_registers
+        if callee.result_width == 1:
+            if len(destinations) != 1:
+                raise NativeBackendError(
+                    "scalar native call result requires one destination"
+                )
+            destination = destinations[0]
+            return self._emit_scalar_call(layout, instruction, arguments, destination)
+        if destinations and len(destinations) != callee.result_width:
+            raise NativeBackendError("multi-cell native call result width mismatch")
+        return self._emit_sret_call(layout, instruction, arguments, destinations, callee)
+
+    def _emit_scalar_call(
+        self,
+        layout: FrameLayout,
+        instruction: AssemblyInstruction,
+        arguments: tuple[int, ...],
+        destination: int,
+    ) -> list[str]:
         stack_arguments = arguments[len(_ARGUMENT_REGISTERS) :]
         padding = 1 if len(stack_arguments) % 2 else 0
         lines: list[str] = []
@@ -434,6 +470,71 @@ class X8664Emitter:
         if cleanup:
             lines.append(f"    add rsp, {cleanup}")
         lines.extend(self._write_register(layout, destination, "rax"))
+        return lines
+
+    def _emit_sret_call(
+        self,
+        layout: FrameLayout,
+        instruction: AssemblyInstruction,
+        arguments: tuple[int, ...],
+        destinations: tuple[int, ...],
+        callee: AssemblyFunction,
+    ) -> list[str]:
+        sret_size = callee.result_width * 8
+        stack_argument_capacity = max(len(_ARGUMENT_REGISTERS) - 1, 0)
+        stack_arguments = arguments[stack_argument_capacity:]
+        pushed_words = len(stack_arguments)
+        padding = 1 if (pushed_words + 1) % 2 else 0
+        lines: list[str] = []
+        if padding:
+            lines.append("    sub rsp, 8")
+        lines.append(f"    sub rsp, {sret_size}")
+        lines.append("    mov rdi, rsp")
+        for register in reversed(stack_arguments):
+            lines.extend(self._read_register(layout, register, "rax"))
+            lines.append("    push rax")
+        for register, target in zip(
+            arguments[:stack_argument_capacity],
+            _ARGUMENT_REGISTERS[1:],
+            strict=False,
+        ):
+            lines.extend(self._read_register(layout, register, target))
+        assert instruction.callee is not None
+        lines.append(f"    call {mangle_function(instruction.callee)}")
+        if destinations:
+            for index, destination in enumerate(destinations):
+                lines.append(
+                    f"    mov rax, qword ptr [rsp + {pushed_words * 8 + index * 8}]"
+                )
+                lines.extend(self._write_register(layout, destination, "rax"))
+        cleanup = sret_size + (pushed_words + padding) * 8
+        if cleanup:
+            lines.append(f"    add rsp, {cleanup}")
+        return lines
+
+    def _emit_multi_return(
+        self,
+        function: AssemblyFunction,
+        layout: FrameLayout,
+        instruction: AssemblyInstruction,
+    ) -> list[str]:
+        if len(instruction.registers) != function.result_width:
+            raise NativeBackendError("multi-cell native return width mismatch")
+        if layout.hidden_sret_pointer is None:
+            raise NativeBackendError("missing hidden sret pointer slot")
+        lines = [
+            f"    mov r11, qword ptr {_address(layout.hidden_sret_pointer)}"
+        ]
+        for index, register in enumerate(instruction.registers):
+            lines.extend(self._read_register(layout, register, "rax"))
+            lines.append(f"    mov qword ptr [r11 + {index * 8}], rax")
+        lines.extend(
+            (
+                "    dec qword ptr [rip + __s3_frame_count]",
+                "    leave",
+                "    ret",
+            )
+        )
         return lines
 
     def _memory_bounds(self, memory: MemorySlot, index: str) -> list[str]:

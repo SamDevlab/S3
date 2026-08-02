@@ -83,7 +83,7 @@ class Frame:
     memory: dict[int, list[AssemblyValue | None]] = field(default_factory=dict)
     block_label: str = "entry"
     instruction_index: int = 0
-    return_destination: int | None = None
+    return_destinations: tuple[int, ...] = ()
     return_block: str | None = None
     return_instruction_index: int | None = None
     call_instruction: AssemblyInstruction | None = None
@@ -326,7 +326,7 @@ class Emulator:
                     callee = functions[instruction.callee]
                     argument_values = [
                         self._read(frame, register, instruction)
-                        for register in instruction.registers[1:]
+                        for register in instruction.argument_registers
                     ]
                     return_block = frame.block_label
                     frame.instruction_index += 1
@@ -343,7 +343,7 @@ class Emulator:
                         self._create_frame(
                             callee,
                             registers=callee_registers,
-                            return_destination=instruction.registers[0],
+                            return_destinations=instruction.result_registers,
                             return_block=return_block,
                             return_instruction_index=return_index,
                             call_instruction=instruction,
@@ -354,18 +354,16 @@ class Emulator:
                         if len(stack) > self.metrics.maximum_frame_depth_observed:
                             self.metrics.maximum_frame_depth_observed = len(stack)
                 elif opcode is AssemblyOpcode.TRET:
-                    result = self._read(
-                        frame,
-                        instruction.registers[0],
-                        instruction,
+                    result = tuple(
+                        self._read(frame, register, instruction)
+                        for register in instruction.registers
                     )
                     completed = stack.pop()
                     if not stack:
                         if capture_memory is not None:
                             capture_memory.append(completed.memory)
-                        return result
+                        return result[0]
                     caller = stack[-1]
-                    assert completed.return_destination is not None
                     assert completed.call_instruction is not None
                     if (
                         caller.block_label != completed.return_block
@@ -380,12 +378,28 @@ class Emulator:
                             DiagnosticCategory.INTERNAL,
                             DiagnosticCode.RUNTIME_INVALID_STATE,
                         )
-                    self._write(
-                        caller,
-                        completed.return_destination,
-                        result,
-                        completed.call_instruction,
-                    )
+                    if completed.return_destinations and (
+                        len(completed.return_destinations) != len(result)
+                    ):
+                        raise self._runtime_error(
+                            caller,
+                            completed.call_instruction,
+                            "call result width mismatch",
+                            DiagnosticCategory.INTERNAL,
+                            DiagnosticCode.RUNTIME_INVALID_STATE,
+                        )
+                    if completed.return_destinations:
+                        for destination, value in zip(
+                            completed.return_destinations,
+                            result,
+                            strict=True,
+                        ):
+                            self._write(
+                                caller,
+                                destination,
+                                value,
+                                completed.call_instruction,
+                            )
                 else:
                     raise self._runtime_error(
                         frame,
@@ -760,8 +774,10 @@ class Emulator:
                     )
                 )
         elif opcode is AssemblyOpcode.TCALL:
-            destination, *arguments = instruction.registers
-            register_type(destination)
+            destinations = instruction.result_registers
+            arguments = instruction.argument_registers
+            for destination in destinations:
+                register_type(destination)
             for argument in arguments:
                 register_type(argument)
             if instruction.callee not in functions:
@@ -798,26 +814,28 @@ class Emulator:
                         f"TCALL to '{callee.name}' has incompatible argument types",
                     )
                 )
-            if register_type(destination) is not callee.return_type:
+            destination_types = tuple(
+                register_type(destination) for destination in destinations
+            )
+            if destinations and destination_types != callee.result_types:
                 raise EmulatorError(
                     self._static_context(
                         function,
                         block,
                         instruction,
-                        f"TCALL destination type does not match return type of "
+                        f"TCALL destination types do not match return types of "
                         f"'{callee.name}'",
                     )
                 )
         elif opcode is AssemblyOpcode.TRET:
-            register = instruction.registers[0]
-            if register_type(register) is not function.return_type:
+            result_types = tuple(register_type(register) for register in instruction.registers)
+            if result_types != function.result_types:
                 raise EmulatorError(
                     self._static_context(
                         function,
                         block,
                         instruction,
-                        f"TRET type does not match function return type "
-                        f"{function.return_type.value}",
+                        "TRET types do not match function return types",
                     )
                 )
         elif opcode is AssemblyOpcode.TJMP:
@@ -872,7 +890,7 @@ class Emulator:
         function: AssemblyFunction,
         *,
         registers: dict[int, int] | None = None,
-        return_destination: int | None = None,
+        return_destinations: tuple[int, ...] = (),
         return_block: str | None = None,
         return_instruction_index: int | None = None,
         call_instruction: AssemblyInstruction | None = None,
@@ -885,7 +903,7 @@ class Emulator:
                 memory.index: [None] * memory.length
                 for memory in function.memory_objects
             },
-            return_destination=return_destination,
+            return_destinations=return_destinations,
             return_block=return_block,
             return_instruction_index=return_instruction_index,
             call_instruction=call_instruction,

@@ -145,39 +145,34 @@ def test_member_access_after_nested_single_leaf_record_call_reuses_scalar_result
     assert execute_assembly(compilation.assembly) == 8
 
 
-@pytest.mark.parametrize(
-    "source",
-    (
-        (
-            "record Inner:\n"
-            "    left: tryte\n"
-            "    right: tryte\n"
-            "record Box:\n"
-            "    inner: Inner\n"
-            "fn make() -> Box:\n"
-            "    return Box(inner=Inner(left=1, right=2))\n"
-            "fn main() -> tryte:\n"
-            "    return 0\n"
-        ),
-        (
-            "record Inner:\n"
-            "    left: tryte\n"
-            "    right: tryte\n"
-            "record Box:\n"
-            "    flag: trit\n"
-            "    inner: Inner\n"
-            "fn main() -> Box:\n"
-            "    return Box(flag=-1, inner=Inner(left=1, right=2))\n"
-        ),
-    ),
-)
-def test_nested_multi_leaf_record_returns_are_rejected_before_lowering(source: str) -> None:
+def test_nested_multi_leaf_record_returns_are_supported() -> None:
+    source = (
+        "record Inner:\n"
+        "    left: tryte\n"
+        "    right: tryte\n"
+        "record Box:\n"
+        "    inner: Inner\n"
+        "fn make() -> Box:\n"
+        "    return Box(inner=Inner(left=1, right=2))\n"
+        "fn main() -> tryte:\n"
+        "    return 0\n"
+    )
+    assert compile_source(source) is not None
+
+def test_entry_main_rejects_nested_record_return() -> None:
+    source = (
+        "record Inner:\n"
+        "    left: tryte\n"
+        "    right: tryte\n"
+        "record Box:\n"
+        "    flag: trit\n"
+        "    inner: Inner\n"
+        "fn main() -> Box:\n"
+        "    return Box(flag=-1, inner=Inner(left=1, right=2))\n"
+    )
     with pytest.raises(SemanticError) as captured:
         compile_source(source)
-
-    assert "multi-field record returns require a future aggregate ABI" in str(
-        captured.value
-    )
+    assert "entry function 'main' must return one scalar cell" in str(captured.value)
     assert captured.value.diagnostic_code is DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE
 
 

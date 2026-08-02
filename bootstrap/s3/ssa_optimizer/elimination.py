@@ -75,6 +75,7 @@ def run_ssa_dead_code_elimination(ssa_fn: SSAFunction) -> SSAFunction:
         values=ssa_fn.values,
         memory_objects=ssa_fn.memory_objects,
         return_type=ssa_fn.return_type,
+        result_types=ssa_fn.result_types,
     )
 
 
@@ -155,6 +156,7 @@ def run_ssa_adce(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
         values=ssa_fn.values,
         memory_objects=ssa_fn.memory_objects,
         return_type=ssa_fn.return_type,
+        result_types=ssa_fn.result_types,
     ), removed_count
 
 
@@ -231,4 +233,5 @@ def run_ssa_dse(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
         values=ssa_fn.values,
         memory_objects=ssa_fn.memory_objects,
         return_type=ssa_fn.return_type,
+        result_types=ssa_fn.result_types,
     ), len(dead_stores)

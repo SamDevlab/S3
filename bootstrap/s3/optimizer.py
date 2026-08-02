@@ -236,10 +236,10 @@ def _eliminate_dead_pure_instructions(function: IRFunction) -> IRFunction:
     defined = {
         parameter.register for parameter in function.parameters
     } | {
-        instruction.result
+        result
         for block in blocks
         for instruction in block.instructions
-        if instruction.result is not None
+        for result in instruction.results
     }
     return replace(
         function,

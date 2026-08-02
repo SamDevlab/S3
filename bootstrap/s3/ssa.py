@@ -52,6 +52,7 @@ class SSAInstruction:
 
     opcode: IROpcode
     result: SSAValue | None = None
+    results: tuple[SSAValue, ...] = ()
     operands: tuple[SSAValue, ...] = ()
     immediate: int | str | None = None
     targets: tuple[str, ...] = ()
@@ -60,6 +61,14 @@ class SSAInstruction:
     location: SourceLocation | None = None
 
     __hash__ = object.__hash__
+
+    def __post_init__(self) -> None:
+        if self.results and self.result is not None and self.results != (self.result,):
+            raise ValueError("SSAInstruction cannot set both result and results")
+        if not self.results and self.result is not None:
+            self.results = (self.result,)
+        if len(self.results) == 1 and self.result is None:
+            self.result = self.results[0]
 
 
 @dataclass(slots=True)
@@ -88,6 +97,11 @@ class SSAFunction:
     values: tuple[SSAValue, ...]
     memory_objects: tuple[IRMemoryObject, ...] = ()
     return_type: IRType = IRType.TRYTE
+    result_types: tuple[IRType, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not self.result_types:
+            self.result_types = (self.return_type,)
 
 
     def to_ir(self) -> IRFunction:
@@ -117,8 +131,8 @@ class SSABuilder:
         def_blocks: dict[int, set[str]] = {}
         for block in function.blocks:
             for inst in block.instructions:
-                if inst.result is not None:
-                    def_blocks.setdefault(inst.result, set()).add(block.name)
+                for result in inst.results:
+                    def_blocks.setdefault(result, set()).add(block.name)
 
         # 2. Phi placement using Dominance Frontier
         phis_by_block: dict[str, list[SSAPhiNode]] = {b.name: [] for b in function.blocks}
@@ -203,14 +217,15 @@ class SSABuilder:
             # Rename instruction operands and results
             for inst in orig_block.instructions:
                 op_vals = tuple(get_current(op) for op in inst.operands)
-                res_val = None
-                if inst.result is not None:
-                    res_val = new_version(inst.result, block_name)
-                    pushed_regs.append(inst.result)
+                res_vals = tuple(
+                    new_version(result, block_name) for result in inst.results
+                )
+                pushed_regs.extend(inst.results)
 
                 ssa_inst = SSAInstruction(
                     opcode=inst.opcode,
-                    result=res_val,
+                    result=res_vals[0] if len(res_vals) == 1 else None,
+                    results=res_vals,
                     operands=op_vals,
                     immediate=inst.immediate if inst.immediate is not None else (inst.static_string or inst.callee),
                     targets=inst.targets,
@@ -247,6 +262,7 @@ class SSABuilder:
             values=tuple(all_ssa_values),
             memory_objects=function.memory_objects,
             return_type=function.return_type,
+            result_types=function.result_types,
         )
 
 
@@ -269,10 +285,10 @@ def validate_ssa(function: SSAFunction, cfg: ControlFlowGraph, dom_tree: Dominat
             defined_values[phi.target.name] = block.name
 
         for inst in block.instructions:
-            if inst.result is not None:
-                if inst.result.name in defined_values:
-                    raise SSAValidationError(f"duplicate definition of SSA value {inst.result.name}")
-                defined_values[inst.result.name] = block.name
+            for result in inst.results:
+                if result.name in defined_values:
+                    raise SSAValidationError(f"duplicate definition of SSA value {result.name}")
+                defined_values[result.name] = block.name
 
     # Pass 2: Validate Phi and Instruction Operands & Dominance
     for block in function.blocks:

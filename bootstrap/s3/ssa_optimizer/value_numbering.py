@@ -110,16 +110,7 @@ def run_ssa_cse(ssa_fn: SSAFunction) -> SSAFunction:
             else:
                 updated_ops = tuple(get_rep(op) for op in inst.operands)
                 new_instructions.append(
-                    SSAInstruction(
-                        opcode=inst.opcode,
-                        result=inst.result,
-                        operands=updated_ops,
-                        immediate=inst.immediate,
-                        targets=inst.targets,
-                        memory=inst.memory,
-                        initialization=inst.initialization,
-                        location=inst.location,
-                    )
+                    replace(inst, operands=updated_ops)
                 )
 
         new_blocks.append(
@@ -231,16 +222,7 @@ def run_ssa_gvn(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
                 continue
             updated_ops = tuple(get_rep(op) for op in inst.operands)
             new_instructions.append(
-                SSAInstruction(
-                    opcode=inst.opcode,
-                    result=inst.result,
-                    operands=updated_ops,
-                    immediate=inst.immediate,
-                    targets=inst.targets,
-                    memory=inst.memory,
-                    initialization=inst.initialization,
-                    location=inst.location,
-                )
+                replace(inst, operands=updated_ops)
             )
 
         new_blocks.append(

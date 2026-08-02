@@ -172,6 +172,18 @@ references. The Assembly opcode classifier remains the existing first-stage
 component; the diagnostic classifier and discriminant layout validator are new
 second-stage components.
 
+Milestone 1.11 selects a third stage after aggregate result support:
+
+- result-width classifier;
+- assembly header classifier;
+- call-result cell planner.
+
+These components are small, pure, deterministic, and comparison-friendly. They
+exercise structured results, aggregate return cells, nested calls, and explicit
+error propagation without replacing Python or becoming default compiler paths.
+The parser, lexer, optimizer, backend, linker, full CLI, filesystem tools, heap,
+exceptions, and complete self-hosting remain outside this stage.
+
 Recent tools make this pipeline more observable:
 
 - `s3 targets` lists internal target and backend names.
