@@ -1,4 +1,4 @@
-# Backend nativo Linux x86-64 0.5
+# Backend nativo Linux x86-64
 
 Status: normativo para o backend experimental.
 
@@ -35,15 +35,19 @@ um trit por `trit`, seis por `tryte`, com limite padrão de 6561 por frame.
 
 ## ABI e frames
 
-Funções `nome` possuem símbolo `s3_nome`. System V AMD64 transporta os seis
-primeiros argumentos em `RDI`, `RSI`, `RDX`, `RCX`, `R8` e `R9`; excedentes
-seguem na pilha. O retorno usa `RAX`. O chamador mantém alinhamento de 16 bytes.
+Funções `nome` possuem símbolo `s3_nome`. System V AMD64 transporta argumentos
+de usuário em `RDI`, `RSI`, `RDX`, `RCX`, `R8` e `R9`; excedentes seguem na
+pilha. Funções width-1 retornam em `RAX`. Funções width > 1 recebem uma área de
+retorno pertencente ao chamador por um argumento oculto interno ao backend; os
+argumentos de usuário são deslocados depois desse endereço. O chamador mantém
+alinhamento de 16 bytes.
 
 O frame, calculado deterministicamente, contém slots de valores, flags de
 inicialização de registradores, dados de objetos e um byte de inicialização
 por elemento. Regiões seguem ordem numérica, respeitam alinhamento próprio e
-não se sobrepõem. O tamanho final é múltiplo de 16. Cada chamada cria um frame
-novo.
+não se sobrepõem. Áreas sret são alocadas por call site, dentro do frame do
+chamador, e não são compartilhadas entre chamadas vivas. O tamanho final é
+múltiplo de 16. Cada chamada cria um frame novo.
 
 Antes do prólogo, a função incrementa o contador privado
 `__s3_frame_count`, compara com `max_frames` (1024 por padrão) e falha de modo
@@ -62,8 +66,8 @@ controle salta explicitamente para `entry`.
 | `TCMP` | comparação assinada, resultado exato -1/0/1 |
 | `TJMP` | salto para label local |
 | `TBR3` | validação e dispatch de -1/0/1 |
-| `TCALL` | chamada System V, inclusive argumentos na pilha |
-| `TRET` | valor em `RAX`, epílogo e retorno |
+| `TCALL` | chamada System V, inclusive argumentos na pilha e sret oculto para width > 1 |
+| `TRET` | valor em `RAX` para width-1 ou cópia integral para sret, epílogo e retorno |
 | `TLOAD` | bounds, inicialização e load com extensão de sinal |
 | `TSTORE` | bounds, imutabilidade, store estreito e marca de inicialização |
 
@@ -78,7 +82,8 @@ Linux `write` e encerra por `exit`. Erros de overflow, bounds, registro ou
 memória não inicializados, store imutável e estado ternário inválido produzem
 mensagem em stderr e status 1. Não há libc.
 
-`N` é o valor decimal assinado retornado por `main`; saídas completas incluem
+`main` permanece scalar-only e não recebe sret oculto. `N` é o valor decimal
+assinado retornado por `main`; saídas completas incluem
 `program returned: 6\n`, `program returned: -1\n` e
 `program returned: 0\n`.
 
@@ -130,5 +135,5 @@ SHA-256 idênticos. Toolchains diferentes exigem equivalência semântica.
 
 Somente Linux x86-64 ELF é suportado. Não há Windows, macOS, ARM64, linker ou
 assembler próprio, geração direta de ELF, ABI C pública, heap, globals,
-ponteiros, I/O na linguagem, depurador, JIT, otimização avançada ou
-autohospedagem.
+ponteiros visíveis na linguagem, I/O na linguagem, depurador, JIT, otimização
+avançada ou autohospedagem adotada como default.

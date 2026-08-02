@@ -7,7 +7,7 @@ fonte → lexer → AST → semântica
       → lowering SSA + objetos de memória
       → IR com CFG/dominância verificada
       → análise de inicialização → otimização O0/O1 → nova verificação
-      → S3 Assembly 0.5 tipada, versionada e validada
+      → S3 Assembly 0.6 tipada, versionada e validada
         ├→ emulador com frames e memória local
         └→ backend x86-64 → GNU assembly → ELF Linux
 ```
@@ -83,9 +83,10 @@ nem autorizam transformacoes que a estrutura retornada nao realizou.
 
 ## Artefatos
 
-S3 Assembly usa `.s3asm 0.5.0`; texto legado é normalizado. IR persistente usa
-JSON `s3-ir` 0.5.0 canônica, estrita e terminada por newline. Desserialização
-reconstrói modelos explícitos e chama `verify_ir`.
+S3 Assembly usa `.s3asm 0.6.0`; texto legado 0.5 width-1 é normalizado. IR
+persistente usa JSON `s3-ir` 0.6.0 canônica, estrita e terminada por newline.
+Desserialização reconstrói modelos explícitos, normaliza artefatos 0.5 width-1
+para `result_types`/`results` explícitos e chama `verify_ir`.
 
 ## Assembly e memória por frame
 

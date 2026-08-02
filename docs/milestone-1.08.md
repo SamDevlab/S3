@@ -1,6 +1,6 @@
 # Milestone 1.08 - Multi-Cell Result Architecture and Formats
 
-Status: In progress - architecture decision accepted in Draft PR #127
+Status: Implementation complete locally in Draft PR #127; user validation pending
 
 Milestone 1.08 defines the compiler format and execution architecture for
 functions that return one fixed-layout source value with multiple scalar cells.
@@ -28,23 +28,27 @@ The selected architecture is:
 
 ## Format Impact
 
-IR JSON and S3 Assembly require a coherent version bump to `0.6.0` once the
-implementation lands. Version `0.5.0` remains a legacy width-1 format and must
-continue to be accepted when valid.
+IR JSON and S3 Assembly writers emit `0.6.0`. Version `0.5.0` remains a legacy
+width-1 format and continues to be accepted when valid.
 
 No source syntax version bump is required because no source grammar is added.
 
 ## Implementation Work
 
-Remaining 1.08 implementation units:
+Implemented 1.08 units:
 
-- add IR result cell groups;
-- add Assembly result cell lists;
-- update serializers, parsers, renderers, and legacy readers;
-- update verifier checks;
-- preserve groups through optimizer and SSA;
-- execute multi-cell returns in the emulator;
-- implement hidden sret in the x86-64 backend.
+- IR result cell groups;
+- Assembly result cell lists;
+- serializers, parsers, renderers, and legacy readers;
+- verifier checks for result width and type agreement;
+- optimizer and SSA preservation of result groups;
+- emulator execution of multi-cell returns and full-group discard;
+- hidden sret in the x86-64 backend for width greater than 1;
+- scalar-only native entry point.
+
+Coverage has been added across formats, verifier, SSA, optimizer, emulator,
+aggregate language returns, and native ABI surfaces. Tests authored after the
+no-agent-testing policy change are pending user validation.
 
 ## Non-Goals
 

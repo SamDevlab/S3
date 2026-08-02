@@ -79,7 +79,7 @@ it can be considered experimental.
 
 Initial scope for the Assembly renderer subset:
 
-- render the header `.s3asm 0.5.0`;
+- render the header `.s3asm 0.6.0`;
 - render `.function <name> -> <type>`;
 - render `.register rN, <type>`;
 - render `.label <name>`;

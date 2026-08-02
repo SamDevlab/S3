@@ -454,10 +454,10 @@ aggregate-results campaign
   ordenadas de result cells em IR/Assembly, versionamento 0.6.0 para novos
   writers e sret interno apenas no backend nativo quando a largura for maior
   que 1.
-- O checkpoint arquitetural da 1.08 decide o bump futuro de IR/S3 Assembly para
-  0.6.0, mas ainda nao implementa os writers 0.6.0. Heap, ponteiros visiveis na
-  linguagem, generics, exceptions e substituicao do bootstrap Python continuam
-  fora do escopo.
+- A implementação da 1.08 move os writers atuais de IR/S3 Assembly para 0.6.0,
+  preserva leitores 0.5 width-1, materializa grupos completos em CALL/RETURN,
+  preserva SSA/O1 por construção e mantém heap, ponteiros visiveis na linguagem,
+  generics, exceptions e substituicao do bootstrap Python fora do escopo.
 
 ### Out of scope after 1.04
 

@@ -1,23 +1,19 @@
-# S3 Assembly textual 0.5
+# S3 Assembly textual 0.6
 
 Status: normativo para o bootstrap.
 
 ## Declarações
 
 ```asm
-.s3asm 0.5.0
+.s3asm 0.6.0
 
-.function main -> tryte
+.function pair -> [tryte, trit]
     .register r0, tryte
-    .register r1, tryte
-    .register r2, tryte
-    .memory m0, tryte, 1, mutable
+    .register r1, trit
 .label entry
-    TCONST r0, 0
-    TCONST r1, 10
-    TSTORE m0, r0, r1
-    TLOAD  r2, m0, r0
-    TRET   r2
+    TCONST r0, 6
+    TCONST r1, -1
+    TRET   [r0, r1]
 .end
 ```
 
@@ -31,9 +27,10 @@ O quarto campo é emitido pelo renderer; se omitido em assembly manual, o parser
 assume `mutable`. Declarações antecedem labels/instruções. Objetos e
 registradores são locais ao frame. Comprimentos válidos estão entre 1 e 365.
 
-O renderer sempre emite `.s3asm 0.5.0` antes das funções. O parser aceita
-exatamente essa versão e normaliza assembly 0.1–0.4 sem cabeçalho; versão
-malformada, desconhecida ou major incompatível é erro.
+O renderer sempre emite `.s3asm 0.6.0` antes das funções. O parser aceita
+também o legado `.s3asm 0.5.0` para funções width-1 e normaliza assembly 0.1–0.4
+sem cabeçalho para essa forma escalar. Versão malformada, desconhecida ou major
+incompatível é erro.
 
 ## Instruções
 
@@ -41,6 +38,19 @@ Mantidas:
 
 ```text
 TCONST TMOV TINV TADD TMIN TMAX TCMP TCALL TRET TJMP TBR3
+```
+
+Funções declaram um grupo ordenado de tipos de resultado: `.function f ->
+tryte` é a forma escalar; `.function f -> [tryte, trit]` é a forma agregada.
+`TCALL` materializa o grupo completo em um grupo de destinos, ou descarta o
+grupo completo com `[]`. `TRET` retorna todos os operandos em ordem. É inválido
+consumir parcialmente, descartar parcialmente, duplicar uma chamada por célula
+ou truncar o grupo para a primeira célula.
+
+```asm
+TCALL [r2, r3], pair
+TCALL [], pair
+TRET  [r2, r3]
 ```
 
 Memória:
@@ -80,15 +90,19 @@ retorna `10`.
 ## Compatibilidade
 
 Assembly 0.1 sem labels recebe bloco implícito `entry`; assembly 0.2 sem memória
-continua válida. Todos os registradores, objetos, labels e assinaturas são
-validados antes da execução.
+continua válida. Assembly 0.5 permanece válido apenas como formato escalar
+width-1. Sintaxe de grupos de resultado sob header 0.5 é rejeitada. Todos os
+registradores, objetos, labels e assinaturas são validados antes da execução.
 
 ## Backend nativo
 
 O S3 Assembly validado é o contrato de entrada do backend Linux x86-64. Todos
 os opcodes listados acima possuem emissão nativa; o backend não reinterpreta
-AST nem repete semântica de fonte. Antes de emitir, valida programa completo,
-`main` sem parâmetros, tipos, chamadas, CFG, objetos e cota lógica.
+AST nem repete semântica de fonte. Width-1 retorna em `RAX`; width > 1 usa uma
+área de retorno do chamador passada por argumento oculto interno ao backend.
+Esse ponteiro não aparece na linguagem fonte nem no Assembly. Antes de emitir,
+o backend valida programa completo, `main` sem parâmetros e retorno escalar,
+tipos, chamadas, CFG, objetos e cota lógica.
 
 A representação física, ABI, checks e runtime estão em
 [`native-x86_64.md`](native-x86_64.md). Esse target não adiciona diretivas nem

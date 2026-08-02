@@ -40,7 +40,7 @@ assembly_program_data_contract_version: 1.0.0
 
 The version must change when fields, operand variants, ordering rules, or
 invariants change. It is independent from the current Assembly text format
-version, which is still `0.5.0` in the subset manifest.
+version, which is `0.6.0` in the subset manifest.
 
 ## Top-level model
 
@@ -54,6 +54,7 @@ AssemblyProgram
 AssemblyFunction
   name
   return_type
+  result_types[]
   params[]
   registers[]
   labels[]
@@ -109,10 +110,11 @@ with byte-for-byte Assembly text comparison against committed goldens.
 
 | Entity | Field | Required | Type concept | Notes |
 | --- | --- | --- | --- | --- |
-| `AssemblyProgram` | `assembly_format_version` | yes | string | Emits `.s3asm 0.5.0` for the current subset. |
+| `AssemblyProgram` | `assembly_format_version` | yes | string | Emits `.s3asm 0.6.0` for the current subset. |
 | `AssemblyProgram` | `functions` | yes | ordered array of `AssemblyFunction` | Function order is output order. |
 | `AssemblyFunction` | `name` | yes | string | Emits `.function <name> -> <return_type>`. |
-| `AssemblyFunction` | `return_type` | yes | Assembly type tag | Current subset uses `trit` and `tryte`. |
+| `AssemblyFunction` | `return_type` | yes | Assembly type tag | Width-1 compatibility alias for the first result cell. |
+| `AssemblyFunction` | `result_types` | yes | ordered array of Assembly type tags | Emits scalar or bracketed result type groups. |
 | `AssemblyFunction` | `params` | yes | ordered array of `AssemblyRegister` | Emits `.param` lines before `.register` lines. |
 | `AssemblyFunction` | `registers` | yes | ordered array of `AssemblyRegister` | Emits `.register` lines. |
 | `AssemblyFunction` | `labels` | yes | ordered array of `AssemblyLabel` | Emits `.label` lines. |
