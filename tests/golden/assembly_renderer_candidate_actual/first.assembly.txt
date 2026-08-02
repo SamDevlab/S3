@@ -1,4 +1,4 @@
-.s3asm 0.5.0
+.s3asm 0.6.0
 
 .function main -> tryte
     .register r0, tryte

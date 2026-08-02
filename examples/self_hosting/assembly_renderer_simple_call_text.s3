@@ -1012,7 +1012,7 @@ fn main() -> tryte:
     mut cursor_low: tryte = 0
     mut cursor_high: tryte = 0
 
-    # Line 1: .s3asm 0.5.0
+    # Line 1: .s3asm 0.6.0
     buffer_low[cursor_low] = fragment_byte(1, 0)
     cursor_low = cursor_low + 1
     buffer_low[cursor_low] = fragment_byte(1, 1)
@@ -1031,7 +1031,7 @@ fn main() -> tryte:
     cursor_low = cursor_low + 1
     buffer_low[cursor_low] = 46
     cursor_low = cursor_low + 1
-    buffer_low[cursor_low] = decimal_ones_byte(5)
+    buffer_low[cursor_low] = decimal_ones_byte(6)
     cursor_low = cursor_low + 1
     buffer_low[cursor_low] = 46
     cursor_low = cursor_low + 1

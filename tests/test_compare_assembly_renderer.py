@@ -251,7 +251,7 @@ def test_compare_assembly_renderer_candidate_actual_outputs_reports_contract() -
     assert "status=available" in completed.stdout
     assert "comparison=passed" in completed.stdout
     assert (
-        "sha256=a144d584ed40287d10cff5ecc50a170823aac7ddd0a7fed455837b936131a90f"
+        "sha256=31a70bf2e3b61ba920b0ca680702d287f7db9a4caa6ed2241cbfdba998a69316"
         in completed.stdout
     )
     assert "bytes=377" in completed.stdout
@@ -263,7 +263,7 @@ def test_compare_assembly_renderer_candidate_actual_outputs_reports_contract() -
     assert (
         "simple_call planned=tests/golden/assembly_renderer_candidate_actual/simple_call.assembly.txt "
         "exists=true status=available comparison=passed "
-        "sha256=d6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f "
+        "sha256=a5cd6a06c66b44f328ce3d0c1368b4acf35a980f5d2040b051f903126f02552b "
         "bytes=448 lines=21"
         in completed.stdout
     )
@@ -274,7 +274,7 @@ def test_compare_assembly_renderer_candidate_actual_outputs_reports_contract() -
     assert (
         "sign planned=tests/golden/assembly_renderer_candidate_actual/sign.assembly.txt "
         "exists=true status=available comparison=passed "
-        "sha256=2002bbcdf4f893efafb34d3e194dd6b5602eb2d023a2d0d064a5d2642d48f880 "
+        "sha256=3a6d74bfafbd620372c23e5055376bd8d1269ec0cc3f60c7a412a3dde4e6e44b "
         "bytes=829 lines=32"
         in completed.stdout
     )
@@ -306,7 +306,7 @@ def test_compare_assembly_renderer_candidate_compare_available_reports_first_pas
         in completed.stdout
     )
     assert (
-        "sha256=a144d584ed40287d10cff5ecc50a170823aac7ddd0a7fed455837b936131a90f"
+        "sha256=31a70bf2e3b61ba920b0ca680702d287f7db9a4caa6ed2241cbfdba998a69316"
         in completed.stdout
     )
     assert "bytes=377" in completed.stdout

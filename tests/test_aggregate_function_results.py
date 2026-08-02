@@ -43,7 +43,14 @@ def test_nested_record_return_preserves_depth_first_cell_order() -> None:
         "    return Outer(prefix=3, inner=Inner(x=5, y=-1))\n"
         "fn main() -> tryte:\n"
         "    item: Outer = make()\n"
-        "    return item.prefix + item.inner.x + item.inner.y\n"
+        "    mut total: tryte = item.prefix + item.inner.x\n"
+        "    match item.inner.y <=> 0:\n"
+        "        -1:\n"
+        "            return total - 1\n"
+        "        0:\n"
+        "            return total\n"
+        "        1:\n"
+        "            return total + 1\n"
     )
 
     assert run_source(source, optimization="O0") == 7

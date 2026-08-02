@@ -181,7 +181,7 @@ FIXTURE_METADATA: dict[str, FixtureMetadata] = {
     "first": FixtureMetadata(
         s3_path="examples/self_hosting/assembly_renderer_generic_text.s3",
         golden_path="tests/golden/inspect/first.assembly.txt",
-        expected_sha256="a144d584ed40287d10cff5ecc50a170823aac7ddd0a7fed455837b936131a90f",
+        expected_sha256="31a70bf2e3b61ba920b0ca680702d287f7db9a4caa6ed2241cbfdba998a69316",
         expected_bytes=377,
         expected_lines=16,
         buffer_count=2,
@@ -196,7 +196,7 @@ FIXTURE_METADATA: dict[str, FixtureMetadata] = {
     "first_generic": FixtureMetadata(
         s3_path="examples/self_hosting/assembly_renderer_generic_text.s3",
         golden_path="tests/golden/inspect/first.assembly.txt",
-        expected_sha256="a144d584ed40287d10cff5ecc50a170823aac7ddd0a7fed455837b936131a90f",
+        expected_sha256="31a70bf2e3b61ba920b0ca680702d287f7db9a4caa6ed2241cbfdba998a69316",
         expected_bytes=377,
         expected_lines=16,
         buffer_count=2,
@@ -211,7 +211,7 @@ FIXTURE_METADATA: dict[str, FixtureMetadata] = {
     "simple_call_generic": FixtureMetadata(
         s3_path="examples/self_hosting/assembly_renderer_generic_text.s3",
         golden_path="tests/golden/inspect/simple_call.assembly.txt",
-        expected_sha256="d6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f",
+        expected_sha256="a5cd6a06c66b44f328ce3d0c1368b4acf35a980f5d2040b051f903126f02552b",
         expected_bytes=448,
         expected_lines=21,
         buffer_count=2,
@@ -226,7 +226,7 @@ FIXTURE_METADATA: dict[str, FixtureMetadata] = {
     "simple_call": FixtureMetadata(
         s3_path="examples/self_hosting/assembly_renderer_simple_call_text.s3",
         golden_path="tests/golden/inspect/simple_call.assembly.txt",
-        expected_sha256="d6de00c8c50618bcc8f3a458267eb8590956a9451980084b1add2f59d3267c0f",
+        expected_sha256="a5cd6a06c66b44f328ce3d0c1368b4acf35a980f5d2040b051f903126f02552b",
         expected_bytes=448,
         expected_lines=21,
         buffer_count=2,
@@ -240,7 +240,7 @@ FIXTURE_METADATA: dict[str, FixtureMetadata] = {
     "sign": FixtureMetadata(
         s3_path="examples/self_hosting/assembly_renderer_generic_text.s3",
         golden_path="tests/golden/inspect/sign.assembly.txt",
-        expected_sha256="2002bbcdf4f893efafb34d3e194dd6b5602eb2d023a2d0d064a5d2642d48f880",
+        expected_sha256="3a6d74bfafbd620372c23e5055376bd8d1269ec0cc3f60c7a412a3dde4e6e44b",
         expected_bytes=829,
         expected_lines=32,
         buffer_count=4,
@@ -255,7 +255,7 @@ FIXTURE_METADATA: dict[str, FixtureMetadata] = {
     "sign_generic": FixtureMetadata(
         s3_path="examples/self_hosting/assembly_renderer_generic_text.s3",
         golden_path="tests/golden/inspect/sign.assembly.txt",
-        expected_sha256="2002bbcdf4f893efafb34d3e194dd6b5602eb2d023a2d0d064a5d2642d48f880",
+        expected_sha256="3a6d74bfafbd620372c23e5055376bd8d1269ec0cc3f60c7a412a3dde4e6e44b",
         expected_bytes=829,
         expected_lines=32,
         buffer_count=4,

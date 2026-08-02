@@ -9,6 +9,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r1",
+                "results": [
+                  "r1"
+                ],
                 "source": {
                   "column": 21,
                   "line": 2,
@@ -22,6 +25,9 @@
                   "r1"
                 ],
                 "result": "r2",
+                "results": [
+                  "r2"
+                ],
                 "source": {
                   "column": 17,
                   "line": 2,
@@ -58,6 +64,9 @@
                 "immediate": -1,
                 "opcode": "const",
                 "result": "r3",
+                "results": [
+                  "r3"
+                ],
                 "source": {
                   "column": 20,
                   "line": 4,
@@ -89,6 +98,9 @@
                 "immediate": 0,
                 "opcode": "const",
                 "result": "r4",
+                "results": [
+                  "r4"
+                ],
                 "source": {
                   "column": 20,
                   "line": 7,
@@ -120,6 +132,9 @@
                 "immediate": 1,
                 "opcode": "const",
                 "result": "r5",
+                "results": [
+                  "r5"
+                ],
                 "source": {
                   "column": 20,
                   "line": 10,
@@ -222,6 +237,9 @@
             "type": "trit"
           }
         ],
+        "result_types": [
+          "trit"
+        ],
         "return_type": "trit",
         "source": {
           "column": 1,
@@ -237,6 +255,9 @@
                 "immediate": -20,
                 "opcode": "const",
                 "result": "r0",
+                "results": [
+                  "r0"
+                ],
                 "source": {
                   "column": 17,
                   "line": 13,
@@ -250,6 +271,9 @@
                   "r0"
                 ],
                 "result": "r1",
+                "results": [
+                  "r1"
+                ],
                 "source": {
                   "column": 12,
                   "line": 13,
@@ -300,6 +324,9 @@
             },
             "type": "trit"
           }
+        ],
+        "result_types": [
+          "trit"
         ],
         "return_type": "trit",
         "source": {
