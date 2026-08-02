@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 
 from . import ast
 from .diagnostics import DiagnosticCode, SemanticError, SourceLocation
@@ -112,6 +113,39 @@ class EnumLayout:
                 diagnostic_code=DiagnosticCode.ENUM_VARIANT_UNKNOWN,
             )
         return variant.payload_leaves
+
+
+class ValueLayoutKind(Enum):
+    SCALAR = "scalar"
+    FIXED_STATIC_TEXT = "fixed_static_text"
+    RECORD = "record"
+    ENUM = "enum"
+
+
+class ReturnClass(Enum):
+    SCALAR_RETURN_COMPATIBLE = "scalar_return_compatible"
+    AGGREGATE_FIXED_LAYOUT = "aggregate_fixed_layout"
+    NOT_RETURNABLE = "not_returnable"
+
+
+@dataclass(frozen=True, slots=True)
+class ValueCell:
+    path: tuple[str, ...]
+    type_name: ast.TypeName
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
+class FixedValueLayout:
+    type_name: ast.DeclaredType
+    kind: ValueLayoutKind
+    cells: tuple[ValueCell, ...]
+    location: SourceLocation
+    dependencies: tuple[str, ...] = ()
+
+    @property
+    def cell_count(self) -> int:
+        return len(self.cells)
 
 
 @dataclass(frozen=True, slots=True)
@@ -230,15 +264,24 @@ class SemanticModel:
     def is_record_type(self, type_name: ast.DeclaredType) -> bool:
         return isinstance(type_name, ast.NominalType) and type_name.name in self.records
 
+    def fixed_value_layout(self, type_name: ast.DeclaredType) -> FixedValueLayout:
+        return _fixed_value_layout(self.records, self.enums, type_name)
+
+    def return_classification(self, type_name: ast.DeclaredType) -> ReturnClass:
+        return _return_classification(self.records, self.enums, type_name)
+
     def record_leaves(self, name: str) -> tuple[RecordLeaf, ...]:
-        self.record(name)
-        return _record_leaves(self.records, self.enums, name)
+        layout = self.fixed_value_layout(ast.NominalType(name, self.record(name).location))
+        assert layout.kind is ValueLayoutKind.RECORD
+        return tuple(
+            RecordLeaf(cell.path, cell.type_name, cell.location) for cell in layout.cells
+        )
 
     def record_leaf_count(self, name: str) -> int:
         return len(self.record_leaves(name))
 
     def enum_layout(self, name: str) -> EnumLayout:
-        self.enum(name)
+        self.fixed_value_layout(ast.NominalType(name, self.enum(name).location))
         return _enum_layout(self.records, self.enums, name)
 
     def enum_payload_leaves(
@@ -290,6 +333,69 @@ def _record_leaves(
         else:
             raise SemanticError("unsupported record field type", field.location)
     return tuple(leaves)
+
+
+def _fixed_value_layout(
+    records: dict[str, RecordType],
+    enums: dict[str, EnumType],
+    type_name: ast.DeclaredType,
+) -> FixedValueLayout:
+    if isinstance(type_name, ast.ArrayType):
+        raise SemanticError("arrays do not have a fixed value layout", type_name.location)
+    if isinstance(type_name, ast.TypeName):
+        location = SourceLocation(0, 1, 1)
+        kind = (
+            ValueLayoutKind.FIXED_STATIC_TEXT
+            if type_name is ast.TypeName.STRING
+            else ValueLayoutKind.SCALAR
+        )
+        return FixedValueLayout(
+            type_name,
+            kind,
+            (ValueCell((), type_name, location),),
+            location,
+        )
+    if type_name.name in records:
+        record = records[type_name.name]
+        leaves = _record_leaves(records, enums, type_name.name)
+        return FixedValueLayout(
+            type_name,
+            ValueLayoutKind.RECORD,
+            tuple(ValueCell(leaf.path, leaf.type_name, leaf.location) for leaf in leaves),
+            record.location,
+            _nominal_layout_dependencies(records, type_name),
+        )
+    if type_name.name in enums:
+        enum = enums[type_name.name]
+        layout = _enum_layout(records, enums, type_name.name)
+        cells = [
+            ValueCell(("tag",), layout.tag_type, enum.location),
+            *(
+                ValueCell(("payload", f"cell{index}"), slot_type, enum.location)
+                for index, slot_type in enumerate(layout.slot_types[1:])
+            ),
+        ]
+        return FixedValueLayout(
+            type_name,
+            ValueLayoutKind.ENUM,
+            tuple(cells),
+            enum.location,
+            (type_name.name,),
+        )
+    raise SemanticError(f"unknown type '{type_name.name}'", type_name.location)
+
+
+def _return_classification(
+    records: dict[str, RecordType],
+    enums: dict[str, EnumType],
+    type_name: ast.DeclaredType,
+) -> ReturnClass:
+    if isinstance(type_name, ast.ArrayType):
+        return ReturnClass.NOT_RETURNABLE
+    layout = _fixed_value_layout(records, enums, type_name)
+    if layout.cell_count == 1:
+        return ReturnClass.SCALAR_RETURN_COMPATIBLE
+    return ReturnClass.AGGREGATE_FIXED_LAYOUT
 
 
 def _nominal_layout_dependencies(
@@ -622,10 +728,23 @@ class SemanticAnalyzer:
             visit(name)
 
     def _record_leaf_count(self, name: str) -> int:
-        return len(_record_leaves(self.records, self.enums, name))
+        layout = _fixed_value_layout(
+            self.records,
+            self.enums,
+            ast.NominalType(name, self.records[name].location),
+        )
+        return layout.cell_count
 
     def _enum_cell_count(self, name: str) -> int:
-        return _enum_layout(self.records, self.enums, name).cell_count
+        layout = _fixed_value_layout(
+            self.records,
+            self.enums,
+            ast.NominalType(name, self.enums[name].location),
+        )
+        return layout.cell_count
+
+    def _return_classification(self, type_name: ast.DeclaredType) -> ReturnClass:
+        return _return_classification(self.records, self.enums, type_name)
 
     def _collect_signatures(self, program: ast.Program) -> None:
         for function in program.functions:
@@ -671,14 +790,20 @@ class SemanticAnalyzer:
                 )
             if isinstance(function.return_type, ast.NominalType):
                 if function.return_type.name in self.records:
-                    if self._record_leaf_count(function.return_type.name) != 1:
+                    if (
+                        self._return_classification(function.return_type)
+                        is ReturnClass.AGGREGATE_FIXED_LAYOUT
+                    ):
                         raise SemanticError(
                             "multi-field record returns require a future aggregate ABI",
                             function.signature.location,
                             diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
                         )
                 elif function.return_type.name in self.enums:
-                    if self._enum_cell_count(function.return_type.name) != 1:
+                    if (
+                        self._return_classification(function.return_type)
+                        is ReturnClass.AGGREGATE_FIXED_LAYOUT
+                    ):
                         raise SemanticError(
                             "multi-cell enum returns require a future aggregate ABI",
                             function.signature.location,

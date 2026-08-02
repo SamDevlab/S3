@@ -1,6 +1,6 @@
 # Milestone 1.07 - Unified Fixed Value Layouts
 
-Status: In progress - architecture checkpoint for the aggregate-results campaign
+Status: Complete - local implementation delivered in Draft PR #127
 
 Milestone 1.07 defines one semantic contract for every fixed-size value that can
 be scalarized by the current compiler. The goal is to make records, payload
@@ -84,13 +84,13 @@ The initial classes are:
 - aggregate-fixed-layout: fixed layouts that have multiple cells and require a
   future aggregate return convention;
 - not-returnable: types that are fixed internally but not allowed as direct
-  function returns by current language rules, including static text values and
-  unsupported array forms.
+  function returns by current language rules, including unsupported array forms.
 
 This preserves the current behavior:
 
 - arrays cannot be returned;
 - `main -> string` remains rejected;
+- helper functions may still return static text handles as they do today;
 - multi-leaf records remain rejected;
 - multi-cell payload enums remain rejected;
 - no hidden return pointer, multi-register return, stack return area, packing
@@ -128,11 +128,11 @@ wrappers only when the operation is inherently record-specific or enum-specific.
 
 ## 1.07 Deliverables
 
-- Add the canonical fixed value layout data model to semantic analysis.
-- Route existing record and enum layout queries through that model.
-- Route semantic return validation through the return classification.
-- Keep behavior-compatible lowering by consuming the same semantic facts.
-- Add focused tests proving wrapper compatibility and return classification.
+- Canonical fixed value layout data model added to semantic analysis.
+- Existing record and enum layout queries routed through that model.
+- Semantic return validation routed through return classification.
+- Behavior-compatible lowering preserved through existing semantic wrappers.
+- Focused tests prove wrapper compatibility and return classification.
 
 ## Non-Goals
 
