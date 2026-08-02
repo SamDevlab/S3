@@ -1613,7 +1613,10 @@ class SemanticAnalyzer:
                     "string literal",
                 )
         elif isinstance(expression, ast.Identifier):
-            result = self._identifier_type(expression)
+            result = self._identifier_type(
+                expression,
+                allow_array=isinstance(expected, ast.ArrayType),
+            )
             binding = self._lookup_binding(expression.name)
             if binding is not None and binding.static_text is not None:
                 self.static_text_values[id(expression)] = binding.static_text
@@ -1629,6 +1632,7 @@ class SemanticAnalyzer:
         elif isinstance(expression, ast.IndexExpression):
             array_binding = self._index_expression_array_binding(expression)
             if array_binding is not None:
+                self.expression_types[id(expression.target)] = array_binding.type_name
                 result = self._analyze_index(
                     expression.array_name,
                     expression.index,
@@ -2793,10 +2797,15 @@ class SemanticAnalyzer:
     def _is_enum_type(self, type_name: ast.DeclaredType) -> bool:
         return isinstance(type_name, ast.NominalType) and type_name.name in self.enums
 
-    def _identifier_type(self, expression: ast.Identifier) -> ast.DeclaredType:
+    def _identifier_type(
+        self,
+        expression: ast.Identifier,
+        *,
+        allow_array: bool = False,
+    ) -> ast.DeclaredType:
         binding = self._lookup_binding(expression.name)
         if binding is not None:
-            if isinstance(binding.type_name, ast.ArrayType):
+            if isinstance(binding.type_name, ast.ArrayType) and not allow_array:
                 raise SemanticError(
                     f"array '{expression.name}' cannot be used as a scalar value",
                     expression.location,
