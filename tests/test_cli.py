@@ -158,7 +158,7 @@ def test_artifact_json_and_version_errors_have_distinct_codes(
 
     future = tmp_path / "future.json"
     future.write_text(
-        '{"format":"s3-ir","version":"0.6.0","module":{"functions":[]}}',
+        '{"format":"s3-ir","version":"0.7.0","module":{"functions":[]}}',
         encoding="utf-8",
     )
     assert cli.main(

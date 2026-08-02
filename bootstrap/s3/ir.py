@@ -142,6 +142,13 @@ class IRInstruction:
     memory: int | None = None
     initialization: bool = False
     location: SourceLocation | None = None
+    results: tuple[int, ...] = ()
+
+    def __post_init__(self) -> None:
+        if self.results and self.result is not None and self.results != (self.result,):
+            raise ValueError("IRInstruction cannot set both result and results")
+        if not self.results and self.result is not None:
+            object.__setattr__(self, "results", (self.result,))
 
     @property
     def is_terminator(self) -> bool:
@@ -156,6 +163,8 @@ class IRInstruction:
         result: dict[str, object] = {"opcode": opcode}
         if self.result is not None:
             result["result"] = f"r{self.result}"
+        if self.results:
+            result["results"] = [f"r{register}" for register in self.results]
         if self.operands:
             result["operands"] = [f"r{operand}" for operand in self.operands]
         if self.immediate is not None:
@@ -202,6 +211,15 @@ class IRFunction:
     blocks: tuple[IRBasicBlock, ...]
     location: SourceLocation | None = None
     memory_objects: tuple[IRMemoryObject, ...] = ()
+    result_types: tuple[IRType, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not self.result_types:
+            object.__setattr__(self, "result_types", (self.return_type,))
+
+    @property
+    def result_width(self) -> int:
+        return len(self.result_types)
 
     @property
     def instructions(self) -> tuple[IRInstruction, ...]:
@@ -220,6 +238,7 @@ class IRFunction:
                 parameter.to_dict() for parameter in self.parameters
             ],
             "return_type": self.return_type.value,
+            "result_types": [type_name.value for type_name in self.result_types],
             "registers": [register.to_dict() for register in self.registers],
             "memory_objects": [
                 memory.to_dict() for memory in self.memory_objects

@@ -131,7 +131,7 @@ def test_ir_json_rejects_unknown_version_and_opcode() -> None:
     artifact = json.loads(
         serialize_ir(compile_source("fn main() -> tryte:\n    return 6\n").ir)
     )
-    artifact["version"] = "0.6.0"
+    artifact["version"] = "0.7.0"
     with pytest.raises(IRSerializationError, match="unsupported S3 IR version"):
         deserialize_ir(json.dumps(artifact))
 

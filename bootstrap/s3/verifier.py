@@ -86,6 +86,7 @@ class IRVerifier:
         blocks = self._collect_blocks(function)
         self.current_block = None
         register_types = self._collect_registers(function)
+        self._verify_result_types(function)
         memory_objects = self._collect_memory(function)
         definitions = self._collect_definitions(function, register_types)
 
@@ -164,6 +165,19 @@ class IRVerifier:
             register_types[register.index] = register.type
         return register_types
 
+    def _verify_result_types(self, function: IRFunction) -> None:
+        if not function.result_types:
+            self._error(
+                f"function '{function.name}' has no result types",
+                function.location,
+            )
+        for index, result_type in enumerate(function.result_types):
+            if not isinstance(result_type, IRType):
+                self._error(
+                    f"function '{function.name}' result cell {index} has invalid type",
+                    function.location,
+                )
+
     def _collect_memory(
         self,
         function: IRFunction,
@@ -230,20 +244,20 @@ class IRVerifier:
                     if isinstance(instruction.opcode, IROpcode)
                     else str(instruction.opcode)
                 )
-                if instruction.result is None:
+                if not instruction.results:
                     continue
-                if instruction.result not in register_types:
-                    self._error(
-                        f"instruction defines nonexistent value "
-                        f"r{instruction.result}",
-                        instruction.location,
-                    )
-                if instruction.result in definitions:
-                    self._error(
-                        f"redefinition of r{instruction.result}",
-                        instruction.location,
-                    )
-                definitions[instruction.result] = (block.name, position)
+                for result in instruction.results:
+                    if result not in register_types:
+                        self._error(
+                            f"instruction defines nonexistent value r{result}",
+                            instruction.location,
+                        )
+                    if result in definitions:
+                        self._error(
+                            f"redefinition of r{result}",
+                            instruction.location,
+                        )
+                    definitions[result] = (block.name, position)
         self.current_block = None
         self.current_opcode = None
         return definitions
@@ -305,17 +319,17 @@ class IRVerifier:
         opcode = instruction.opcode
 
         def require_no_result() -> None:
-            if instruction.result is not None:
+            if instruction.results:
                 self._error(
                     f"{opcode.value} cannot define a result",
                     instruction.location,
                 )
 
         def require_result() -> tuple[int, IRType]:
-            if instruction.result is None:
+            if len(instruction.results) != 1:
                 self._error(f"{opcode.value} requires a result", instruction.location)
-            assert instruction.result is not None
-            return instruction.result, register_types[instruction.result]
+            result = instruction.results[0]
+            return result, register_types[result]
 
         def require_operands(count: int) -> tuple[IRType, ...]:
             if len(instruction.operands) != count:
@@ -420,7 +434,6 @@ class IRVerifier:
             return
 
         if opcode is IROpcode.CALL:
-            _, result_type = require_result()
             operand_types = require_operands(len(instruction.operands))
             if instruction.callee is None:
                 self._error("call requires a function name", instruction.location)
@@ -443,12 +456,23 @@ class IRVerifier:
                     f"call to '{callee.name}' has incompatible argument types",
                     instruction.location,
                 )
-            if result_type is not callee.return_type:
-                self._error(
-                    f"call result has type {result_type.value}; "
-                    f"'{callee.name}' returns {callee.return_type.value}",
-                    instruction.location,
-                )
+            if instruction.results:
+                if len(instruction.results) != len(callee.result_types):
+                    self._error(
+                        f"call result count {len(instruction.results)} does not "
+                        f"match '{callee.name}' result width "
+                        f"{len(callee.result_types)}",
+                        instruction.location,
+                    )
+                result_types = tuple(register_types[result] for result in instruction.results)
+                if result_types != callee.result_types:
+                    rendered = ", ".join(type_name.value for type_name in result_types)
+                    expected = ", ".join(type_name.value for type_name in callee.result_types)
+                    self._error(
+                        f"call results have types [{rendered}]; "
+                        f"'{callee.name}' returns [{expected}]",
+                        instruction.location,
+                    )
             return
 
         if opcode is IROpcode.LOAD:
@@ -486,13 +510,28 @@ class IRVerifier:
 
         if opcode is IROpcode.RETURN:
             require_no_result()
-            operand_types = require_operands(1)
-            if operand_types[0] is not function.return_type:
+            if function.return_type is not function.result_types[0]:
                 self._error(
-                    f"return has type {operand_types[0].value}; function "
-                    f"returns {function.return_type.value}",
+                    f"function '{function.name}' return_type does not match "
+                    "first result type",
                     instruction.location,
                 )
+            operand_types = require_operands(len(instruction.operands))
+            if len(operand_types) != len(function.result_types):
+                self._error(
+                    f"return result count {len(operand_types)} does not match "
+                    f"function result width {len(function.result_types)}",
+                    instruction.location,
+                )
+            for index, (actual, expected) in enumerate(
+                zip(operand_types, function.result_types, strict=True)
+            ):
+                if actual is not expected:
+                    self._error(
+                        f"return cell {index} has type {actual.value}; "
+                        f"function result cell is {expected.value}",
+                        instruction.location,
+                    )
             return
 
         if opcode is IROpcode.JUMP:
