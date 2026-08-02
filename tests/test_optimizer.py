@@ -202,7 +202,7 @@ def test_cli_accepts_o1_for_asm_run_and_native_asm(
     assert cli_main(["asm", str(source), "-O1"]) == 0
     assembly_output = capsys.readouterr()
     assert assembly_output.err == ""
-    assert assembly_output.out.startswith(".s3asm 0.5.0\n")
+    assert assembly_output.out.startswith(".s3asm 0.6.0\n")
     assert "TADD" not in assembly_output.out
 
     assert cli_main(["run", str(source), "-O1"]) == 0
@@ -216,3 +216,27 @@ def test_cli_accepts_o1_for_asm_run_and_native_asm(
     native_text = native.read_text(encoding="utf-8")
     assert "s3_main:" in native_text
     assert "tryte result" not in native_text
+
+
+def test_o1_preserves_aggregate_call_result_group() -> None:
+    source = (
+        "record Pair:\n"
+        "    left: tryte\n"
+        "    right: trit\n"
+        "fn make() -> Pair:\n"
+        "    return Pair(left=6, right=-1)\n"
+        "fn main() -> tryte:\n"
+        "    pair: Pair = make()\n"
+        "    return pair.left + pair.right\n"
+    )
+    o1 = compile_source(source, "O1", mode=SyntaxMode.V0_6)
+    main = next(function for function in o1.ir.functions if function.name == "main")
+    aggregate_calls = [
+        instruction
+        for instruction in main.instructions
+        if instruction.opcode is IROpcode.CALL and instruction.callee == "make"
+    ]
+
+    assert len(aggregate_calls) == 1
+    assert len(aggregate_calls[0].results) == 2
+    verify_ir(o1.ir)

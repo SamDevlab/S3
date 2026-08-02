@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from bootstrap.s3.lexer import SyntaxMode
+from bootstrap.s3.ir import IROpcode
 from bootstrap.s3.pipeline import compile_source, run_source
 from bootstrap.s3.ssa import SSABuilder
 from bootstrap.s3.ssa_opt import run_ssa_adce
@@ -35,3 +36,29 @@ def test_adce_preserves_side_effects() -> None:
     )
     res = run_source(source, optimization="O1", mode=SyntaxMode.V0_6)
     assert res == 5
+
+
+def test_adce_preserves_discarded_aggregate_call_as_single_instruction() -> None:
+    source = (
+        "record Pair:\n"
+        "    left: tryte\n"
+        "    right: trit\n"
+        "fn make() -> Pair:\n"
+        "    return Pair(left=6, right=-1)\n"
+        "fn main() -> tryte:\n"
+        "    make()\n"
+        "    return 5\n"
+    )
+    compilation = compile_source(source, mode=SyntaxMode.V0_6)
+    fn = next(function for function in compilation.ir.functions if function.name == "main")
+    ssa_fn = SSABuilder.build_function(fn)
+    opt_ssa, _removed = run_ssa_adce(ssa_fn)
+    calls = [
+        instruction
+        for block in opt_ssa.blocks
+        for instruction in block.instructions
+        if instruction.opcode is IROpcode.CALL and instruction.immediate == "make"
+    ]
+
+    assert len(calls) == 1
+    assert calls[0].results == ()
