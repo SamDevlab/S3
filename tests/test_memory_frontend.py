@@ -256,43 +256,15 @@ fn main() -> tryte {
         )
 
 
-def test_arrays_cannot_be_returned_passed_or_used_by_operators() -> None:
-    with pytest.raises(SemanticError, match="arrays cannot be returned"):
-        analyze_source(
-            "fn main() -> tryte { tryte[1] values = [1]; return values; }"
-        )
-    with pytest.raises(SemanticError, match="arrays cannot be passed"):
-        analyze_source(
-            """\
-fn accept(value: tryte) -> tryte { return value; }
-fn main() -> tryte { tryte[1] values = [1]; return accept(values); }
-"""
-        )
+def test_arrays_cannot_be_used_by_scalar_operators() -> None:
     with pytest.raises(SemanticError, match="cannot be used as a scalar"):
         analyze_source(
             "fn main() -> tryte { tryte[1] values = [1]; return values + 1; }"
         )
 
 
-def test_array_signatures_nested_arrays_and_whole_assignment_are_rejected() -> None:
-    with pytest.raises(SemanticError, match="function parameters"):
-        analyze_source(
-            """\
-fn bad(values: tryte[1]) -> tryte { return 0; }
-fn main() -> tryte { return 0; }
-"""
-        )
+def test_nested_arrays_remain_rejected() -> None:
     with pytest.raises(SemanticError, match="nested arrays"):
         analyze_source(
             "fn main() -> tryte { tryte[2][2] values = []; return 0; }"
-        )
-    with pytest.raises(SemanticError, match="whole-array assignment"):
-        analyze_source(
-            """\
-fn main() -> tryte {
-    mut tryte[1] values = [1];
-    values = [2];
-    return values[0];
-}
-"""
         )

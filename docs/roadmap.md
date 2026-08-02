@@ -144,8 +144,9 @@ Não integram o Marco 0.7 e não estão implementados:
 3. otimizações entre blocos provadas sem `PHI`;
 4. backend ou execução ARM64 experimental.
 
-Arrays em assinaturas, heap, ponteiros públicos, strings dinâmicas e I/O
-continuam fora do MVP até receberem contratos próprios. Módulos e imports
+Heap, ponteiros públicos, strings dinâmicas e I/O continuam fora do MVP até
+receberem contratos próprios. Arrays fixos em assinaturas recebem contrato na
+Milestone 1.12. Módulos e imports
 determinísticos foram entregues no Marco 0.99. O Marco 0.53 cobre
 valores `string` estáticos tipados, e o Marco 0.54 adiciona concatenação
 estática literal-only em tempo de compilação. O Marco 0.55 estende `len(...)`
@@ -458,6 +459,11 @@ aggregate-results campaign
   preserva leitores 0.5 width-1, materializa grupos completos em CALL/RETURN,
   preserva SSA/O1 por construção e mantém heap, ponteiros visiveis na linguagem,
   generics, exceptions e substituicao do bootstrap Python fora do escopo.
+- 1.12 - arrays fixos como valores: [ADR-0023](decisions/ADR-0023-fixed-array-value-boundaries.md)
+  define layouts `trit`/`tryte` de 1 a 365 células, passagem e retorno
+  copy-by-value, fields de records/payloads e reutilização dos grupos 0.6 e do
+  hidden sret nativo. Implementação escrita; validação consolidada deferida até
+  o fechamento da campanha 1.12-1.16.
 
 ### Out of scope after 1.04
 

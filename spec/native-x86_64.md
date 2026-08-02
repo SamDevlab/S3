@@ -87,6 +87,12 @@ assinado retornado por `main`; saídas completas incluem
 `program returned: 6\n`, `program returned: -1\n` e
 `program returned: 0\n`.
 
+Arrays fixos em parâmetros são expandidos em células escalares na ordem de
+índice e usam a sequência existente de argumentos System V, incluindo spill
+para a pilha. O callee copia as células para memória própria quando precisa de
+indexação. Resultados array width-1 usam `rax`; resultados maiores reutilizam o
+sret oculto existente. Nenhum endereço é visível na linguagem fonte.
+
 Falhas usam IDs de site determinísticos e informam categoria, função, bloco,
 opcode, origem S3 ou `source unknown`, linha assembly quando disponível e
 valor dinâmico relevante. Veja `native-diagnostics.md`.

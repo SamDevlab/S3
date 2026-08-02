@@ -124,6 +124,28 @@ def _assert_o0_o1_emulator_equivalence(source: str, expected: int) -> None:
         assert Emulator().execute(program) == expected
 
 
+def test_o0_o1_native_fixed_array_boundaries(
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    source = (
+        "fn rotate(values: tryte[8]) -> tryte[8]:\n"
+        "    output: tryte[8] = values\n"
+        "    return output\n"
+        "fn main() -> tryte:\n"
+        "    values: tryte[8] = [1, 2, 3, 4, 5, 6, 7, 8]\n"
+        "    result: tryte[8] = rotate(values)\n"
+        "    return result[0] + result[7]\n"
+    )
+
+    _assert_o0_o1_native_equivalence(
+        source,
+        9,
+        native_toolchain,
+        tmp_path / "fixed-array-boundaries",
+    )
+
+
 def _assert_o0_o1_emulator_sources_equivalence(
     sources: dict[str, str] | tuple[tuple[str, str], ...],
     expected: int,

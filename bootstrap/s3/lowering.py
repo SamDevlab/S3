@@ -70,9 +70,44 @@ class FunctionLowerer:
         self.variable_scopes: list[dict[str, _LoweredBinding]] = [{}]
         self.block_counter = 0
         self.loop_stack: list[LoopContext] = []
+        self.parameter_array_initializers: list[
+            tuple[int, tuple[int, ...], SourceLocation]
+        ] = []
 
     def lower(self) -> IRFunction:
         for parameter in self.function.parameters:
+            if isinstance(parameter.type_name, ast.ArrayType):
+                assert isinstance(parameter.type_name.element_type, ast.TypeName)
+                registers: list[int] = []
+                for index in range(parameter.type_name.length):
+                    register = self._allocate(
+                        parameter.type_name.element_type,
+                        parameter.location,
+                    )
+                    registers.append(register)
+                    self.parameters.append(
+                        IRParameter(
+                            parameter.name + "__" + self._array_cell_name(index),
+                            register,
+                            TYPE_MAP[parameter.type_name.element_type],
+                            parameter.location,
+                        )
+                    )
+                memory = self._allocate_memory(
+                    parameter.type_name.element_type,
+                    parameter.type_name.length,
+                    False,
+                    parameter.location,
+                )
+                self.parameter_array_initializers.append(
+                    (memory, tuple(registers), parameter.location)
+                )
+                self.variable_scopes[0][parameter.name] = _LoweredBinding(
+                    parameter.type_name,
+                    mutable=False,
+                    memory=memory,
+                )
+                continue
             if (
                 isinstance(parameter.type_name, ast.NominalType)
                 and self.semantic_model.is_enum_type(parameter.type_name)
@@ -144,6 +179,13 @@ class FunctionLowerer:
                 register=register,
             )
         self.current = self._create_block("entry", self.function.body.location)
+        for memory, registers, location in self.parameter_array_initializers:
+            self._store_array_registers(
+                memory,
+                registers,
+                location,
+                initialization=True,
+            )
         self._lower_block(self.function.body, create_scope=False)
         if self.current is not None:
             raise LoweringError(
@@ -342,6 +384,10 @@ class FunctionLowerer:
         return f"cell{index}"
 
     @staticmethod
+    def _array_cell_name(index: int) -> str:
+        return f"index{index}"
+
+    @staticmethod
     def _enum_cell_index(name: str, location: SourceLocation) -> int:
         if not name.startswith("cell"):
             raise LoweringError(f"enum cell '{name}' is unavailable", location)
@@ -400,6 +446,23 @@ class FunctionLowerer:
         if len(path) == 1:
             fields[field.name] = _LoweredBinding(
                 field.type_name,
+                mutable=False,
+                register=register,
+            )
+            return
+        if isinstance(field.type_name, ast.ArrayType):
+            assert isinstance(field.type_name.element_type, ast.TypeName)
+            binding = fields.get(field.name)
+            if binding is None:
+                binding = _LoweredBinding(
+                    field.type_name,
+                    mutable=False,
+                    fields={},
+                )
+                fields[field.name] = binding
+            assert binding.fields is not None
+            binding.fields[path[1]] = _LoweredBinding(
+                field.type_name.element_type,
                 mutable=False,
                 register=register,
             )
@@ -481,6 +544,120 @@ class FunctionLowerer:
     ) -> tuple[int, ...]:
         layout = self.semantic_model.fixed_value_layout(type_name)
         return tuple(self._allocate(cell.type_name, location) for cell in layout.cells)
+
+    def _array_binding_from_registers(
+        self,
+        type_name: ast.ArrayType,
+        registers: tuple[int, ...],
+        location: SourceLocation,
+    ) -> _LoweredBinding:
+        if len(registers) != type_name.length:
+            raise LoweringError(
+                f"array expected {type_name.length} cells; got {len(registers)}",
+                location,
+            )
+        assert isinstance(type_name.element_type, ast.TypeName)
+        return _LoweredBinding(
+            type_name,
+            mutable=False,
+            fields={
+                self._array_cell_name(index): _LoweredBinding(
+                    type_name.element_type,
+                    mutable=False,
+                    register=register,
+                )
+                for index, register in enumerate(registers)
+            },
+        )
+
+    def _flatten_array_registers(
+        self,
+        binding: _LoweredBinding,
+        type_name: ast.ArrayType,
+        location: SourceLocation,
+    ) -> tuple[int, ...]:
+        assert isinstance(type_name.element_type, ast.TypeName)
+        if binding.memory is not None:
+            registers: list[int] = []
+            for index in range(type_name.length):
+                index_register = self._emit_constant(
+                    index,
+                    ast.TypeName.TRYTE,
+                    location,
+                )
+                result = self._allocate(type_name.element_type, location)
+                self._emit(
+                    IRInstruction(
+                        IROpcode.LOAD,
+                        result=result,
+                        operands=(index_register,),
+                        memory=binding.memory,
+                        location=location,
+                    )
+                )
+                registers.append(result)
+            return tuple(registers)
+        if binding.fields is not None:
+            registers = []
+            for index in range(type_name.length):
+                cell = binding.fields.get(self._array_cell_name(index))
+                if cell is None or cell.register is None:
+                    raise LoweringError(f"array cell {index} is unavailable", location)
+                registers.append(cell.register)
+            return tuple(registers)
+        raise LoweringError("array cells are unavailable", location)
+
+    def _lower_array_registers(
+        self,
+        expression: ast.Expression,
+        type_name: ast.ArrayType,
+    ) -> tuple[int, ...]:
+        if isinstance(expression, ast.Identifier):
+            binding = self._lookup_variable(expression.name, expression.location)
+            return self._flatten_array_registers(binding, type_name, expression.location)
+        if isinstance(expression, ast.CallExpression):
+            return self._lower_call_result_registers(expression, type_name)
+        if isinstance(expression, ast.FieldAccessExpression):
+            target_type = self.semantic_model.declared_type_of(expression.target)
+            if (
+                isinstance(target_type, ast.NominalType)
+                and self.semantic_model.is_record_type(target_type)
+            ):
+                record = self.semantic_model.record(target_type.name)
+                target = self._lower_record_binding_from_expression(
+                    expression.target,
+                    record,
+                    expression.target.location,
+                )
+                assert target.fields is not None
+                field = target.fields.get(expression.field_name)
+                if field is not None:
+                    return self._flatten_array_registers(
+                        field,
+                        type_name,
+                        expression.location,
+                    )
+        raise LoweringError("array value requires a binding, field, or call", expression.location)
+
+    def _store_array_registers(
+        self,
+        memory: int,
+        registers: tuple[int, ...],
+        location: SourceLocation,
+        *,
+        initialization: bool,
+    ) -> None:
+        for index, register in enumerate(registers):
+            index_register = self._emit_constant(index, ast.TypeName.TRYTE, location)
+            self._emit(
+                IRInstruction(
+                    IROpcode.STORE,
+                    operands=(index_register, register),
+                    memory=memory,
+                    initialization=initialization,
+                    location=location,
+                )
+            )
 
     def _lower_call_result_registers(
         self,
@@ -586,6 +763,13 @@ class FunctionLowerer:
             fields: dict[str, _LoweredBinding] = {}
             for field in record.fields:
                 value = values[field.name]
+                if isinstance(field.type_name, ast.ArrayType):
+                    fields[field.name] = self._array_binding_from_registers(
+                        field.type_name,
+                        self._lower_array_registers(value, field.type_name),
+                        value.location,
+                    )
+                    continue
                 if (
                     isinstance(field.type_name, ast.NominalType)
                     and self.semantic_model.is_record_type(field.type_name)
@@ -777,6 +961,8 @@ class FunctionLowerer:
     ) -> tuple[int, ...]:
         if isinstance(type_name, ast.TypeName):
             return (self._lower_expression(expression),)
+        if isinstance(type_name, ast.ArrayType):
+            return self._lower_array_registers(expression, type_name)
         if (
             isinstance(type_name, ast.NominalType)
             and self.semantic_model.is_record_type(type_name)
@@ -879,6 +1065,8 @@ class FunctionLowerer:
         return enum, variant
 
     def _lower_return_expression(self, expression: ast.Expression) -> tuple[int, ...]:
+        if isinstance(self.function.return_type, ast.ArrayType):
+            return self._lower_array_registers(expression, self.function.return_type)
         if (
             isinstance(self.function.return_type, ast.NominalType)
             and self.semantic_model.is_record_type(self.function.return_type)
@@ -916,29 +1104,28 @@ class FunctionLowerer:
     def _lower_declaration(self, declaration: ast.VariableDeclaration) -> None:
         if isinstance(declaration.type_name, ast.ArrayType):
             assert isinstance(declaration.type_name.element_type, ast.TypeName)
-            assert isinstance(declaration.initializer, ast.ArrayLiteral)
             memory = self._allocate_memory(
                 declaration.type_name.element_type,
                 declaration.type_name.length,
                 declaration.mutable,
                 declaration.location,
             )
-            for index, element in enumerate(declaration.initializer.elements):
-                index_register = self._emit_constant(
-                    index,
-                    ast.TypeName.TRYTE,
-                    element.location,
+            if isinstance(declaration.initializer, ast.ArrayLiteral):
+                registers = tuple(
+                    self._lower_expression(element)
+                    for element in declaration.initializer.elements
                 )
-                value = self._lower_expression(element)
-                self._emit(
-                    IRInstruction(
-                        IROpcode.STORE,
-                        operands=(index_register, value),
-                        memory=memory,
-                        initialization=True,
-                        location=element.location,
-                    )
+            else:
+                registers = self._lower_array_registers(
+                    declaration.initializer,
+                    declaration.type_name,
                 )
+            self._store_array_registers(
+                memory,
+                registers,
+                declaration.location,
+                initialization=True,
+            )
             self.variable_scopes[-1][declaration.name] = _LoweredBinding(
                 declaration.type_name,
                 declaration.mutable,
@@ -1043,6 +1230,24 @@ class FunctionLowerer:
                 statement.target.location,
             )
             assert binding.memory is not None
+            if isinstance(binding.type_name, ast.ArrayType):
+                if isinstance(statement.value, ast.ArrayLiteral):
+                    registers = tuple(
+                        self._lower_expression(element)
+                        for element in statement.value.elements
+                    )
+                else:
+                    registers = self._lower_array_registers(
+                        statement.value,
+                        binding.type_name,
+                    )
+                self._store_array_registers(
+                    binding.memory,
+                    registers,
+                    statement.location,
+                    initialization=False,
+                )
+                return
             if isinstance(statement.value, ast.ArrayLiteral):
                 raise LoweringError(
                     "scalar assignment received an array literal",
@@ -1447,7 +1652,9 @@ class FunctionLowerer:
         location: SourceLocation,
     ) -> tuple[int, ...]:
         width = 1
-        if (
+        if isinstance(type_name, ast.ArrayType):
+            width = type_name.length
+        elif (
             isinstance(type_name, ast.NominalType)
             and self.semantic_model.is_record_type(type_name)
         ):
@@ -1470,6 +1677,12 @@ class FunctionLowerer:
                 type_name,
                 mutable=False,
                 register=registers[0],
+            )
+        if isinstance(type_name, ast.ArrayType):
+            return self._array_binding_from_registers(
+                type_name,
+                registers,
+                location,
             )
         if (
             isinstance(type_name, ast.NominalType)
@@ -1835,16 +2048,54 @@ class FunctionLowerer:
                     )
                 )
                 return result
-            binding = self._lookup_variable(
-                expression.array_name,
-                expression.location,
-            )
-            assert binding.memory is not None
-            assert isinstance(binding.type_name, ast.ArrayType)
-            assert isinstance(binding.type_name.element_type, ast.TypeName)
+            array_type = self.semantic_model.declared_type_of(expression.target)
+            assert isinstance(array_type, ast.ArrayType)
+            assert isinstance(array_type.element_type, ast.TypeName)
+            memory: int
+            if isinstance(expression.target, ast.Identifier):
+                binding = self._lookup_variable(
+                    expression.target.name,
+                    expression.location,
+                )
+                if binding.memory is not None:
+                    memory = binding.memory
+                else:
+                    memory = self._allocate_memory(
+                        array_type.element_type,
+                        array_type.length,
+                        False,
+                        expression.location,
+                    )
+                    self._store_array_registers(
+                        memory,
+                        self._flatten_array_registers(
+                            binding,
+                            array_type,
+                            expression.location,
+                        ),
+                        expression.location,
+                        initialization=True,
+                    )
+            else:
+                registers = self._lower_array_registers(
+                    expression.target,
+                    array_type,
+                )
+                memory = self._allocate_memory(
+                    array_type.element_type,
+                    array_type.length,
+                    False,
+                    expression.location,
+                )
+                self._store_array_registers(
+                    memory,
+                    registers,
+                    expression.location,
+                    initialization=True,
+                )
             index = self._lower_expression(expression.index)
             result = self._allocate(
-                binding.type_name.element_type,
+                array_type.element_type,
                 expression.location,
             )
             self._emit(
@@ -1852,7 +2103,7 @@ class FunctionLowerer:
                     IROpcode.LOAD,
                     result=result,
                     operands=(index,),
-                    memory=binding.memory,
+                    memory=memory,
                     location=expression.location,
                 )
             )
@@ -2027,6 +2278,11 @@ class FunctionLowerer:
             signature.parameter_types,
             strict=True,
         ):
+            if isinstance(parameter_type, ast.ArrayType):
+                registers.extend(
+                    self._lower_array_registers(argument.expression, parameter_type)
+                )
+                continue
             if (
                 isinstance(parameter_type, ast.NominalType)
                 and self.semantic_model.is_record_type(parameter_type)

@@ -3,7 +3,8 @@
 Status: normative for Milestone 1.00 records/enums, Milestone 1.02-C
 cross-module nominal values, Milestone 1.03 acyclic nested records, Milestone
 1.04 fixed-capacity static text leaves, Milestone 1.05 fixed-layout enum
-payloads, and Milestone 1.07 unified fixed value layouts.
+payloads, Milestone 1.07 unified fixed value layouts, and Milestone 1.12 fixed
+array fields.
 
 ## Scope
 
@@ -28,9 +29,8 @@ Rules:
 - record names share the module type namespace;
 - field order is declaration order and is part of layout;
 - field names must be unique;
-- field types may be `trit`, `tryte`, `string`, closed enum types, or acyclic
-  record types;
-- array fields are not part of this milestone;
+- field types may be `trit`, `tryte`, `string`, fixed `trit`/`tryte` arrays,
+  closed enum types, or acyclic record types;
 - record equality is not part of this milestone;
 - field mutation syntax is not part of this milestone.
 
@@ -55,12 +55,13 @@ Leaf rules:
 - `trit` contributes one scalar leaf;
 - `tryte` contributes one scalar leaf;
 - `string` contributes one scalar handle leaf;
+- a fixed array contributes one leaf per element in increasing index order;
 - a closed enum contributes one `tryte` scalar leaf;
 - a nested record contributes its leaves recursively in declared order.
 
 Recursive record graphs remain invalid. This includes direct self-reference,
-indirect cycles, and cycles through imported record types. Arrays of records and
-arrays inside records remain outside the current composition contract.
+indirect cycles, and cycles through imported record types. Arrays of records,
+enums, strings, and arrays remain outside the current composition contract.
 
 Construction uses named fields:
 

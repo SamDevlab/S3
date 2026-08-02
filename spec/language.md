@@ -66,8 +66,12 @@ return values[0]
 - Uma única dimensão. Arrays aninhados são erro.
 - Literal obrigatório com exatamente o comprimento declarado.
 - Apenas arrays mutáveis aceitam atribuição indexada.
-- Não há atribuição/cópia de array inteiro.
-- Arrays não podem ser passados como argumentos nem retornados de funções.
+- Atribuição de array inteiro exige alvo mutável e tipos de elemento/comprimento
+  exatamente iguais; a operação copia todas as células e não cria aliasing.
+- Arrays podem ser parâmetros e retornos de funções. A passagem é copy-by-value
+  e segue a ordem crescente dos índices no layout fixo canônico.
+- Records e payloads de enum podem conter arrays `trit`/`tryte` fixos.
+- `main` continua scalar-only e não pode retornar array, mesmo de comprimento 1.
 - O índice tem tipo `tryte`. Índice fora da faixa é erro (semântico se constante, em execução se calculado).
 - A operação `len(array)` retorna a quantidade de elementos do array como um `tryte` avaliado estaticamente em tempo de compilação.
 

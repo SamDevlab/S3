@@ -107,3 +107,12 @@ tipos, chamadas, CFG, objetos e cota lógica.
 A representação física, ABI, checks e runtime estão em
 [`native-x86_64.md`](native-x86_64.md). Esse target não adiciona diretivas nem
 opcodes ao formato e continua rejeitando `TSUB`.
+
+## Fixed array source values
+
+S3 Assembly has no source-level array value token. A fixed array crossing a
+function boundary is emitted as its complete ordered scalar parameter or result
+group. Local indexed arrays continue to use `.memory`, `TLOAD`, and `TSTORE`.
+
+The 0.6 function, `TCALL`, and `TRET` group syntax is sufficient. Legacy 0.5
+reading remains width-one only; no new 0.5 encoding is introduced.

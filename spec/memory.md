@@ -53,6 +53,11 @@ Objetos são alocados ao criar um frame e descartados com ele. Chamadas,
 inclusive recursivas, nunca compartilham objetos. Não há heap, memória global,
 aliasing, ponteiros, referências ou aritmética de endereço.
 
+Arrays que cruzam uma função ou uma fronteira nominal são valores fixos
+copy-by-value. Seus elementos são scalarizados em ordem crescente por
+`SemanticModel.fixed_value_layout(...)`. Um callee pode reconstruir memória
+local própria para indexação, mas nunca recebe o endereço do objeto do caller.
+
 ## Mapeamento nativo x86-64
 
 O modelo lógico não define universalmente tamanho em bits, ordem de bytes,

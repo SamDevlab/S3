@@ -370,3 +370,10 @@ The initial bootstrap flow is:
 Python will remain the bootstrap compiler for a long time. S3 should replace
 Python one component at a time, with partial self-hosting before any attempt at
 complete self-hosting.
+
+## Milestone 1.12 foundation
+
+Fixed `trit` and `tryte` arrays can cross function and nominal-value boundaries
+as complete copy-by-value groups under ADR-0023. This provides bounded ordered
+storage for later text/token/parser candidates without heap allocation,
+source-level pointers, or default activation of a self-hosted component.
