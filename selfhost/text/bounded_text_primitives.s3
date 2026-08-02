@@ -66,25 +66,32 @@ fn code_unit_is_supported(code_unit: tryte) -> trit:
                                 1:
                                     return code_unit <= 126
 
+fn validate_padding(units: tryte[364], start: tryte) -> TextCompareResult:
+    mut index: tryte = start
+    mut value: tryte = 0
+    while index < 364:
+        value = units[index]
+        match value == 0:
+            -1:
+                index = index + 1
+            0:
+                return TextCompareResult.Error(error=text_error(3, unit_span(index), value))
+            1:
+                return TextCompareResult.Error(error=text_error(3, unit_span(index), value))
+    return TextCompareResult.Compared(equal=-1)
+
 export fn validate_text(text: BoundedText) -> TextCompareResult:
+    text_units: tryte[364] = text.units
+    mut value: tryte = 0
     match text.length <=> 0:
         -1:
             return TextCompareResult.Error(error=text_error(1, point_span(0), text.length))
         0:
-            mut index: tryte = 0
-            while index < 364:
-                match text.units[index] == 0:
-                    -1:
-                        index = index + 1
-                    0:
-                        return TextCompareResult.Error(error=text_error(3, unit_span(index), text.units[index]))
-                    1:
-                        return TextCompareResult.Error(error=text_error(3, unit_span(index), text.units[index]))
-            return TextCompareResult.Compared(equal=-1)
+            return validate_padding(text_units, 0)
         1:
             mut index: tryte = 0
             while index < text.length:
-                value: tryte = text.units[index]
+                value = text_units[index]
                 match code_unit_is_supported(value):
                     -1:
                         index = index + 1
@@ -92,22 +99,20 @@ export fn validate_text(text: BoundedText) -> TextCompareResult:
                         return TextCompareResult.Error(error=text_error(2, unit_span(index), value))
                     1:
                         return TextCompareResult.Error(error=text_error(2, unit_span(index), value))
-            while index < 364:
-                match text.units[index] == 0:
-                    -1:
-                        index = index + 1
-                    0:
-                        return TextCompareResult.Error(error=text_error(3, unit_span(index), text.units[index]))
-                    1:
-                        return TextCompareResult.Error(error=text_error(3, unit_span(index), text.units[index]))
-            return TextCompareResult.Compared(equal=-1)
+            return validate_padding(text_units, text.length)
 
 export fn cursor_is_end(text: BoundedText, cursor: TextCursor) -> TextCompareResult:
     match cursor.position <=> 0:
         -1:
             return TextCompareResult.Error(error=invalid_cursor(cursor))
         0:
-            return TextCompareResult.Compared(equal=cursor.position == text.length)
+            match cursor.position == text.length:
+                -1:
+                    return TextCompareResult.Compared(equal=-1)
+                0:
+                    return TextCompareResult.Compared(equal=0)
+                1:
+                    return TextCompareResult.Compared(equal=1)
         1:
             match cursor.position <=> text.length:
                 -1:
@@ -118,6 +123,8 @@ export fn cursor_is_end(text: BoundedText, cursor: TextCursor) -> TextCompareRes
                     return TextCompareResult.Error(error=invalid_cursor(cursor))
 
 export fn read_current(text: BoundedText, cursor: TextCursor) -> TextReadResult:
+    text_units: tryte[364] = text.units
+    mut value: tryte = 0
     match cursor.position <=> 0:
         -1:
             return TextReadResult.Error(error=invalid_cursor(cursor))
@@ -128,7 +135,7 @@ export fn read_current(text: BoundedText, cursor: TextCursor) -> TextReadResult:
                 0:
                     return TextReadResult.End(cursor=cursor)
                 1:
-                    value: tryte = text.units[cursor.position]
+                    value = text_units[cursor.position]
                     match code_unit_is_supported(value):
                         -1:
                             return TextReadResult.Unit(code_unit=value, cursor=cursor)
@@ -139,7 +146,7 @@ export fn read_current(text: BoundedText, cursor: TextCursor) -> TextReadResult:
         1:
             match cursor.position <=> text.length:
                 -1:
-                    value: tryte = text.units[cursor.position]
+                    value = text_units[cursor.position]
                     match code_unit_is_supported(value):
                         -1:
                             return TextReadResult.Unit(code_unit=value, cursor=cursor)
@@ -223,13 +230,21 @@ export fn compare_code_unit(text: BoundedText, cursor: TextCursor, expected: try
     result: TextReadResult = read_current(text, cursor)
     match result:
         TextReadResult.Unit(code_unit, cursor):
-            return TextCompareResult.Compared(equal=code_unit == expected)
+            match code_unit == expected:
+                -1:
+                    return TextCompareResult.Compared(equal=-1)
+                0:
+                    return TextCompareResult.Compared(equal=0)
+                1:
+                    return TextCompareResult.Compared(equal=1)
         TextReadResult.End(cursor):
             return TextCompareResult.Error(error=text_error(5, point_span(cursor.position), expected))
         TextReadResult.Error(error):
             return TextCompareResult.Error(error=error)
 
 export fn starts_with(text: BoundedText, cursor: TextCursor, prefix: BoundedText) -> TextCompareResult:
+    text_units: tryte[364] = text.units
+    prefix_units: tryte[364] = prefix.units
     match cursor.position <=> 0:
         -1:
             return TextCompareResult.Error(error=invalid_cursor(cursor))
@@ -239,7 +254,7 @@ export fn starts_with(text: BoundedText, cursor: TextCursor, prefix: BoundedText
                 -1:
                     mut index: tryte = 0
                     while index < prefix.length:
-                        match text.units[index] == prefix.units[index]:
+                        match text_units[index] == prefix_units[index]:
                             -1:
                                 index = index + 1
                             0:
@@ -250,7 +265,7 @@ export fn starts_with(text: BoundedText, cursor: TextCursor, prefix: BoundedText
                 0:
                     mut index: tryte = 0
                     while index < prefix.length:
-                        match text.units[index] == prefix.units[index]:
+                        match text_units[index] == prefix_units[index]:
                             -1:
                                 index = index + 1
                             0:
@@ -265,15 +280,22 @@ export fn starts_with(text: BoundedText, cursor: TextCursor, prefix: BoundedText
                 1:
                     return TextCompareResult.Error(error=invalid_cursor(cursor))
                 0:
-                    return TextCompareResult.Compared(equal=prefix.length == 0)
+                    match prefix.length == 0:
+                        -1:
+                            return TextCompareResult.Compared(equal=-1)
+                        0:
+                            return TextCompareResult.Compared(equal=0)
+                        1:
+                            return TextCompareResult.Compared(equal=1)
                 -1:
                     remaining: tryte = text.length - cursor.position
                     match prefix.length <= remaining:
                         -1:
                             mut index: tryte = 0
+                            mut input_index: tryte = 0
                             while index < prefix.length:
-                                input_index: tryte = cursor.position + index
-                                match text.units[input_index] == prefix.units[index]:
+                                input_index = cursor.position + index
+                                match text_units[input_index] == prefix_units[index]:
                                     -1:
                                         index = index + 1
                                     0:

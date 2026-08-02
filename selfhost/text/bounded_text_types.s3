@@ -26,9 +26,12 @@ export enum TextAdvanceResult:
     Error(error: TextError)
 
 export enum TextCompareResult:
-    Compared(equal: trit)
+    Compared(equal: tryte)
     Error(error: TextError)
 
 export enum DecimalDigitResult:
     Digit(value: tryte)
     NotDigit
+
+export fn bounded_text_types_anchor() -> tryte:
+    return 0
