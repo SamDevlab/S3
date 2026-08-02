@@ -146,6 +146,47 @@ def test_o0_o1_native_fixed_array_boundaries(
     )
 
 
+def test_o0_o1_native_bounded_text_primitives(
+    native_toolchain: NativeToolchain,
+    tmp_path: Path,
+) -> None:
+    root = Path(__file__).resolve().parents[1]
+    units = [65, 90, *(0 for _ in range(362))]
+    sources = {
+        "main.s3": (
+            "module main\n"
+            "from bounded_text_types import BoundedText\n"
+            "from bounded_text_types import TextCursor\n"
+            "from bounded_text_types import TextReadResult\n"
+            "from bounded_text_primitives import read_current\n"
+            "fn main() -> tryte:\n"
+            f"    units: tryte[364] = [{', '.join(str(unit) for unit in units)}]\n"
+            "    text: BoundedText = BoundedText(length=2, units=units)\n"
+            "    result: TextReadResult = read_current(text, TextCursor(position=1))\n"
+            "    match result:\n"
+            "        TextReadResult.Unit(code_unit, cursor):\n"
+            "            return code_unit\n"
+            "        TextReadResult.End(cursor):\n"
+            "            return -1\n"
+            "        TextReadResult.Error(error):\n"
+            "            return 0 - error.code\n"
+        ),
+        "bounded_text_types.s3": (
+            root / "selfhost/text/bounded_text_types.s3"
+        ).read_text(encoding="utf-8"),
+        "bounded_text_primitives.s3": (
+            root / "selfhost/text/bounded_text_primitives.s3"
+        ).read_text(encoding="utf-8"),
+    }
+
+    _assert_o0_o1_native_sources_equivalence(
+        sources,
+        90,
+        native_toolchain,
+        tmp_path / "bounded-text-primitives",
+    )
+
+
 def _assert_o0_o1_emulator_sources_equivalence(
     sources: dict[str, str] | tuple[tuple[str, str], ...],
     expected: int,

@@ -100,6 +100,13 @@ estatico conhecidas pela analise semantica. Operacoes equivalentes sobre texto
 dependente de parametros, bindings mutaveis ou chamadas nao constantes
 continuam rejeitadas.
 
+Para componentes self-hosted delimitados, `BoundedText` e um record de
+biblioteca separado: comprimento logico `0..364` e `tryte[364]` com code units
+ASCII e padding zero. `TextCursor` e `SourceSpan` carregam somente indices e
+sempre recebem o texto explicitamente. Esse contrato nao altera `string`, nao
+faz conversao implicita e nao introduz ponteiros ou texto dinamico; veja
+ADR-0024.
+
 ## Records e enums
 
 Records e enums fechados sao tipos nominais especificados em

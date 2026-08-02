@@ -167,6 +167,12 @@ All operations are deterministic, side-effect free, filesystem free, bounded
 by capacity, and independent of mutable global state. They receive complete
 values and return complete values.
 
+`validate_text` is the representation boundary: a consumer validates each
+incoming `BoundedText` once before scanning it. Cursor, peek, and comparison
+operations then enforce their own positional bounds against that validated
+value; they do not rescan all 364 cells on every call. The tokenizer and later
+composed frontend own this one-time validation step.
+
 `starts_with` receives explicit text, cursor, prefix text, and prefix span or
 equivalent bounded values. Numeric scanning recognizes ASCII decimal digits
 only. Identifier classification recognizes ASCII letters and underscore for

@@ -377,3 +377,12 @@ Fixed `trit` and `tryte` arrays can cross function and nominal-value boundaries
 as complete copy-by-value groups under ADR-0023. This provides bounded ordered
 storage for later text/token/parser candidates without heap allocation,
 source-level pointers, or default activation of a self-hosted component.
+
+## Milestone 1.13 bounded text foundation
+
+Bounded text primitives are implemented as an experimental differential
+reference under `selfhost/text/`. The representation is a logical length plus
+364 fixed ASCII code units. Cursors and half-open spans contain only scalar
+indices; errors are nominal values propagated explicitly. The independent
+Python reference remains default, and no component reads files or exposes
+pointers, heap storage, dynamic strings, or Unicode claims.

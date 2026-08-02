@@ -16,3 +16,9 @@ heap allocation, and do not become default compiler paths.
 The first and second stage components keep scalar public returns. Third-stage
 components under `selfhost/results/` intentionally exercise aggregate returns
 and explicit structured result APIs while preserving Python as the reference.
+
+Bounded text components under `selfhost/text/` are experimental differential
+references for a later tokenizer/parser. They use fixed arrays, aggregate
+results, explicit matches, ASCII code units, and scalar cursor/span indices.
+They do not replace Python or provide filesystem, heap, pointer, dynamic text,
+or Unicode behavior.

@@ -464,6 +464,11 @@ aggregate-results campaign
   copy-by-value, fields de records/payloads e reutilização dos grupos 0.6 e do
   hidden sret nativo. Implementação escrita; validação consolidada deferida até
   o fechamento da campanha 1.12-1.16.
+- 1.13 - bounded text, cursors e spans:
+  [ADR-0024](decisions/ADR-0024-bounded-text-cursors-and-spans.md) define texto
+  ASCII de capacidade 364, comprimento logico, padding zero, cursor/span sem
+  referencia e erros estruturados. Referencias Python/S3 e cobertura
+  diferencial foram escritas; validacao consolidada permanece deferida.
 
 ### Out of scope after 1.04
 
