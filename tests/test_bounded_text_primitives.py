@@ -106,7 +106,7 @@ def _execute(source: str, optimization: str) -> int:
         },
         optimization,
     )
-    return Emulator().execute(compilation.assembly)
+    return Emulator(max_memory_trits=32_768).execute(compilation.assembly)
 
 
 def test_python_reference_empty_single_and_full_capacity() -> None:
@@ -216,7 +216,7 @@ def test_s3_prefix_span_digit_and_identifier_operations(optimization: str) -> No
     source = _program(
         "    match starts_with(text, TextCursor(position=0), prefix):\n"
         "        TextCompareResult.Compared(equal):\n"
-        "            match equal:\n"
+        "            match equal <=> 0:\n"
         "                -1:\n"
         "                    span: SourceSpan = SourceSpan(start=1, end=4)\n"
         "                    digit: DecimalDigitResult = classify_decimal_digit(57)\n"
