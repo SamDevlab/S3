@@ -1,0 +1,55 @@
+module selfhost.results.result_width_classifier
+
+export record WidthInfo:
+    width: tryte
+    is_aggregate: trit
+
+export record Error:
+    code: tryte
+
+export enum WidthResult:
+    Ok(info: WidthInfo)
+    Err(error: Error)
+
+export fn max_result_width() -> tryte:
+    return 25
+
+export fn result_width_is_valid(width: tryte) -> trit:
+    match width <=> 1:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match width <=> max_result_width():
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+export fn classify_result_width(width: tryte) -> WidthResult:
+    match result_width_is_valid(width) <=> -1:
+        -1:
+            return WidthResult.Err(error=Error(code=1))
+        0:
+            match width <=> 1:
+                -1:
+                    return WidthResult.Ok(info=WidthInfo(width=width, is_aggregate=0))
+                0:
+                    return WidthResult.Ok(info=WidthInfo(width=width, is_aggregate=0))
+                1:
+                    return WidthResult.Ok(info=WidthInfo(width=width, is_aggregate=-1))
+        1:
+            return WidthResult.Err(error=Error(code=1))
+
+export fn result_width_classifier_smoke() -> tryte:
+    match classify_result_width(3):
+        WidthResult.Ok(info):
+            return info.width
+        WidthResult.Err(error):
+            return 0 - error.code
+
+fn main() -> tryte:
+    return result_width_classifier_smoke()

@@ -1,0 +1,33 @@
+module selfhost.results.call_result_cell_planner
+
+from selfhost.results.result_width_classifier import Error
+from selfhost.results.result_width_classifier import WidthResult
+from selfhost.results.result_width_classifier import classify_result_width
+
+export record CellPlan:
+    width: tryte
+    first_cell: tryte
+    last_cell: tryte
+    is_aggregate: trit
+
+export enum PlanResult:
+    Ok(plan: CellPlan)
+    Err(error: Error)
+
+export fn plan_call_result_cells(width: tryte) -> PlanResult:
+    classification: WidthResult = classify_result_width(width)
+    match classification:
+        WidthResult.Ok(info):
+            return PlanResult.Ok(plan=CellPlan(width=info.width, first_cell=0, last_cell=info.width - 1, is_aggregate=info.is_aggregate))
+        WidthResult.Err(error):
+            return PlanResult.Err(error=error)
+
+export fn call_result_cell_planner_smoke() -> tryte:
+    match plan_call_result_cells(4):
+        PlanResult.Ok(plan):
+            return plan.last_cell
+        PlanResult.Err(error):
+            return 0 - error.code
+
+fn main() -> tryte:
+    return call_result_cell_planner_smoke()
