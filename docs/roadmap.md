@@ -449,9 +449,15 @@ aggregate-results campaign
   especifica um contrato semantico unico para valores fixos scalarizaveis
   (escalares, texto estatico, records e enums), mantendo os wrappers
   `record_leaves()` e `enum_layout()` como consultas derivadas.
-- A campanha 1.05-1.07 nao implementa retorno agregado, heap, mudanca de ABI,
-  bump de IR, bump de S3 Assembly, generics, exceptions ou substituicao do
-  bootstrap Python.
+- 1.08 - arquitetura de resultados multicelula:
+  [ADR-0022](decisions/ADR-0022-aggregate-function-results.md) aceita listas
+  ordenadas de result cells em IR/Assembly, versionamento 0.6.0 para novos
+  writers e sret interno apenas no backend nativo quando a largura for maior
+  que 1.
+- O checkpoint arquitetural da 1.08 decide o bump futuro de IR/S3 Assembly para
+  0.6.0, mas ainda nao implementa os writers 0.6.0. Heap, ponteiros visiveis na
+  linguagem, generics, exceptions e substituicao do bootstrap Python continuam
+  fora do escopo.
 
 ### Out of scope after 1.04
 
