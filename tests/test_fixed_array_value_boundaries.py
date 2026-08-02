@@ -104,7 +104,7 @@ def test_recursive_array_result_and_ignored_result_execute_once() -> None:
         "            return descend(depth - 1, values)\n"
         "fn main() -> tryte:\n"
         "    values: tryte[2] = [3, 8]\n"
-        "    descend(2, values)\n"
+        "    discard descend(2, values)\n"
         "    result: tryte[2] = descend(2, values)\n"
         "    return result[1]\n"
     )
