@@ -80,6 +80,7 @@ class FrameLayout:
     frame_size: int
     logical_memory_trits: int
     scratch_size: int = 0
+    hidden_sret_pointer: StackRegion | None = None
 
     def register(self, index: int) -> RegisterSlot:
         for slot in self.registers:
@@ -104,6 +105,7 @@ class FrameLayout:
             *(slot.initialized for slot in self.registers),
             *(slot.data for slot in self.memories),
             *(slot.initialized for slot in self.memories),
+            *((self.hidden_sret_pointer,) if self.hidden_sret_pointer else ()),
         )
 
 
@@ -160,6 +162,11 @@ def layout_frame(function: AssemblyFunction) -> FrameLayout:
         memory.index: allocator.allocate(memory.length, 1)
         for memory in memories
     }
+    hidden_sret_pointer = (
+        allocator.allocate(REGISTER_SLOT_SIZE, REGISTER_SLOT_ALIGNMENT)
+        if function.result_width > 1
+        else None
+    )
 
     frame_size = align_up(allocator.consumed, STACK_ALIGNMENT)
     return FrameLayout(
@@ -186,5 +193,6 @@ def layout_frame(function: AssemblyFunction) -> FrameLayout:
         ),
         frame_size,
         sum(_logical_cost(memory) for memory in memories),
+        hidden_sret_pointer=hidden_sret_pointer,
     )
 

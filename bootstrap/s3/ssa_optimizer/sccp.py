@@ -177,4 +177,5 @@ def run_ssa_sccp(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int, int]:
         values=ssa_fn.values,
         memory_objects=ssa_fn.memory_objects,
         return_type=ssa_fn.return_type,
+        result_types=ssa_fn.result_types,
     ), expressions_folded, branches_removed

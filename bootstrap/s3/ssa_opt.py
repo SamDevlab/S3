@@ -38,6 +38,7 @@ def _ssa_structure(ssa_fn: SSAFunction) -> tuple[object, ...]:
         ssa_fn.blocks,
         ssa_fn.memory_objects,
         ssa_fn.return_type,
+        ssa_fn.result_types,
     )
 
 

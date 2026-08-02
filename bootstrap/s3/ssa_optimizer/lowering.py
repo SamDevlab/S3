@@ -109,7 +109,8 @@ def to_ir(ssa_fn: SSAFunction) -> IRFunction:
         return candidate
 
     def convert_instruction(ssa_inst: SSAInstruction) -> IRInstruction:
-        res_reg = get_reg_index(ssa_inst.result) if ssa_inst.result else None
+        res_regs = tuple(get_reg_index(result) for result in ssa_inst.results)
+        res_reg = res_regs[0] if len(res_regs) == 1 else None
         op_regs = tuple(get_reg_index(op) for op in ssa_inst.operands)
 
         imm_val: int | None = None
@@ -126,6 +127,7 @@ def to_ir(ssa_fn: SSAFunction) -> IRFunction:
         return IRInstruction(
             opcode=ssa_inst.opcode,
             result=res_reg,
+            results=res_regs,
             operands=op_regs,
             immediate=imm_val,
             static_string=static_str,
@@ -203,6 +205,7 @@ def to_ir(ssa_fn: SSAFunction) -> IRFunction:
                 IRInstruction(
                     opcode=terminator.opcode,
                     result=terminator.result,
+                    results=terminator.results,
                     operands=terminator.operands,
                     immediate=terminator.immediate,
                     static_string=terminator.static_string,
@@ -232,6 +235,7 @@ def to_ir(ssa_fn: SSAFunction) -> IRFunction:
         registers=tuple(ir_registers),
         blocks=tuple(ir_blocks),
         memory_objects=ssa_fn.memory_objects + tuple(additional_memory),
+        result_types=ssa_fn.result_types,
     )
 
 
@@ -252,5 +256,6 @@ def _cfg_from_ssa(ssa_fn: SSAFunction) -> ControlFlowGraph:
             registers=(),
             blocks=tuple(blocks),
             memory_objects=ssa_fn.memory_objects,
+            result_types=ssa_fn.result_types,
         )
     )

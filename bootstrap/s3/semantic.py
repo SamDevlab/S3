@@ -539,6 +539,12 @@ class SemanticAnalyzer:
                 main.location,
                 diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
             )
+        if self._return_classification(main.return_type) is ReturnClass.AGGREGATE_FIXED_LAYOUT:
+            raise SemanticError(
+                "entry function 'main' must return one scalar cell",
+                main.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
+            )
         for function in program.functions:
             try:
                 self._analyze_function(function)
@@ -790,25 +796,9 @@ class SemanticAnalyzer:
                 )
             if isinstance(function.return_type, ast.NominalType):
                 if function.return_type.name in self.records:
-                    if (
-                        self._return_classification(function.return_type)
-                        is ReturnClass.AGGREGATE_FIXED_LAYOUT
-                    ):
-                        raise SemanticError(
-                            "multi-field record returns require a future aggregate ABI",
-                            function.signature.location,
-                            diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
-                        )
+                    self._return_classification(function.return_type)
                 elif function.return_type.name in self.enums:
-                    if (
-                        self._return_classification(function.return_type)
-                        is ReturnClass.AGGREGATE_FIXED_LAYOUT
-                    ):
-                        raise SemanticError(
-                            "multi-cell enum returns require a future aggregate ABI",
-                            function.signature.location,
-                            diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
-                        )
+                    self._return_classification(function.return_type)
                 else:
                     raise SemanticError(
                         f"unknown type '{function.return_type.name}'",

@@ -150,14 +150,14 @@ class FunctionLowerer:
                 f"function '{self.function.name}' ended without a terminator",
                 self.function.location,
             )
-        return_type = self._storage_type(
+        result_types = self._result_types(
             self.function.return_type,
             self.function.signature.location,
         )
         return IRFunction(
             name=self.function.name,
             parameters=tuple(self.parameters),
-            return_type=TYPE_MAP[return_type],
+            return_type=result_types[0],
             registers=tuple(self.registers),
             blocks=tuple(
                 IRBasicBlock(
@@ -169,6 +169,7 @@ class FunctionLowerer:
             ),
             location=self.function.location,
             memory_objects=tuple(self.memory_objects),
+            result_types=result_types,
         )
 
     def _create_block(
@@ -215,11 +216,11 @@ class FunctionLowerer:
             self._lower_assignment(statement)
             return
         if isinstance(statement, ast.ReturnStatement):
-            value = self._lower_return_expression(statement.expression)
+            values = self._lower_return_expression(statement.expression)
             self._emit(
                 IRInstruction(
                     IROpcode.RETURN,
-                    operands=(value,),
+                    operands=values,
                     location=statement.location,
                 )
             )
@@ -321,6 +322,16 @@ class FunctionLowerer:
                 location,
             )
         raise LoweringError("unsupported storage type", location)
+
+    def _result_types(
+        self,
+        type_name: ast.DeclaredType,
+        location: SourceLocation | None,
+    ) -> tuple[IRType, ...]:
+        layout = self.semantic_model.fixed_value_layout(type_name)
+        if not layout.cells:
+            raise LoweringError("function result layout has no cells", location)
+        return tuple(TYPE_MAP[cell.type_name] for cell in layout.cells)
 
     @staticmethod
     def _enum_cell_name(index: int) -> str:
@@ -459,6 +470,53 @@ class FunctionLowerer:
             )
         return self._field_binding_at_path(binding.fields, path[1:], location)
 
+    def _allocate_result_cells(
+        self,
+        type_name: ast.DeclaredType,
+        location: SourceLocation,
+    ) -> tuple[int, ...]:
+        layout = self.semantic_model.fixed_value_layout(type_name)
+        return tuple(self._allocate(cell.type_name, location) for cell in layout.cells)
+
+    def _lower_call_result_registers(
+        self,
+        expression: ast.CallExpression,
+        type_name: ast.DeclaredType,
+    ) -> tuple[int, ...]:
+        arguments = self._lower_call_arguments(expression)
+        results = self._allocate_result_cells(type_name, expression.location)
+        self._emit(
+            IRInstruction(
+                IROpcode.CALL,
+                results=results,
+                operands=arguments,
+                callee=expression.function_name,
+                location=expression.location,
+            )
+        )
+        return results
+
+    def _record_binding_from_registers(
+        self,
+        record,
+        registers: tuple[int, ...],
+        location: SourceLocation,
+    ) -> _LoweredBinding:
+        leaves = self.semantic_model.record_leaves(record.name)
+        if len(registers) != len(leaves):
+            raise LoweringError(
+                f"record '{record.name}' expected {len(leaves)} cells; got {len(registers)}",
+                location,
+            )
+        fields: dict[str, _LoweredBinding] = {}
+        for leaf, register in zip(leaves, registers, strict=True):
+            self._set_leaf_binding(fields, record, leaf.path, register)
+        return _LoweredBinding(
+            ast.NominalType(record.name, location),
+            mutable=False,
+            fields=fields,
+        )
+
     def _flatten_record_registers(
         self,
         record_name: str,
@@ -583,6 +641,15 @@ class FunctionLowerer:
                 field = target.fields.get(expression.field_name)
                 if field is not None and field.fields is not None:
                     return field
+        if isinstance(expression, ast.CallExpression):
+            return self._record_binding_from_registers(
+                record,
+                self._lower_call_result_registers(
+                    expression,
+                    ast.NominalType(record.name, location),
+                ),
+                location,
+            )
         if self.semantic_model.record_leaf_count(record.name) == 1:
             register = self._lower_expression(expression)
             return _LoweredBinding(
@@ -681,6 +748,15 @@ class FunctionLowerer:
                         for index in range(layout.cell_count)
                     },
                 )
+        if isinstance(expression, ast.CallExpression):
+            return self._enum_binding_from_registers(
+                enum_name,
+                self._lower_call_result_registers(
+                    expression,
+                    ast.NominalType(enum_name, location),
+                ),
+                location,
+            )
         if layout.cell_count == 1:
             register = self._lower_expression(expression)
             return self._enum_binding_from_registers(enum_name, (register,), location)
@@ -798,17 +874,12 @@ class FunctionLowerer:
             )
         return enum, variant
 
-    def _lower_return_expression(self, expression: ast.Expression) -> int:
+    def _lower_return_expression(self, expression: ast.Expression) -> tuple[int, ...]:
         if (
             isinstance(self.function.return_type, ast.NominalType)
             and self.semantic_model.is_record_type(self.function.return_type)
         ):
             record = self.semantic_model.record(self.function.return_type.name)
-            if self.semantic_model.record_leaf_count(record.name) != 1:
-                raise LoweringError(
-                    "multi-field record returns require a future aggregate ABI",
-                    expression.location,
-                )
             fields = self._lower_record_fields_from_expression(
                 expression,
                 record,
@@ -819,13 +890,24 @@ class FunctionLowerer:
                 fields,
                 expression.location,
             )
-            if len(registers) != 1:
-                raise LoweringError(
-                    "single-field record return is missing its scalar field",
-                    expression.location,
-                )
-            return registers[0]
-        return self._lower_expression(expression)
+            if not registers:
+                raise LoweringError("record return is missing cells", expression.location)
+            return registers
+        if (
+            isinstance(self.function.return_type, ast.NominalType)
+            and self.semantic_model.is_enum_type(self.function.return_type)
+        ):
+            binding = self._lower_enum_binding_from_expression(
+                expression,
+                self.function.return_type.name,
+                expression.location,
+            )
+            return self._flatten_enum_registers(
+                self.function.return_type.name,
+                binding,
+                expression.location,
+            )
+        return (self._lower_expression(expression),)
 
     def _lower_declaration(self, declaration: ast.VariableDeclaration) -> None:
         if isinstance(declaration.type_name, ast.ArrayType):
