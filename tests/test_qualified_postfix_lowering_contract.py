@@ -153,7 +153,7 @@ def test_member_access_after_qualified_single_field_record_call_reuses_call_resu
     assert returns == [
         IRInstruction(
             opcode=IROpcode.RETURN,
-            operands=(calls[0].result,),
+            operands=(calls[0].results[0],),
             location=returns[0].location,
         )
     ]
