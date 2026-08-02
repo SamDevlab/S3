@@ -431,7 +431,8 @@ Limites preservados:
 
 ### Later language-composition milestones
 
-Status: 1.05 and 1.06 complete locally in Draft PR #126
+Status: 1.05 and 1.06 complete locally in Draft PR #126; 1.07 started in the
+aggregate-results campaign
 
 - 1.05 - enums com payload e erros estruturados: [ADR-0021](decisions/ADR-0021-enum-payload-layout-gate.md)
   foi aceita e implementada localmente com layout fixo tag-first multi-cell,
@@ -444,7 +445,11 @@ Status: 1.05 and 1.06 complete locally in Draft PR #126
   discriminants/layout escalar como componentes pequenos, puros e diferenciais,
   mantendo Python como referencia e default; os componentes estao classificados
   como differential references, nao como implementacoes adotadas.
-- A campanha 1.05-1.06 nao implementa retorno agregado, heap, mudanca de ABI,
+- 1.07 - layouts fixos unificados: [plano da milestone](milestone-1.07.md)
+  especifica um contrato semantico unico para valores fixos scalarizaveis
+  (escalares, texto estatico, records e enums), mantendo os wrappers
+  `record_leaves()` e `enum_layout()` como consultas derivadas.
+- A campanha 1.05-1.07 nao implementa retorno agregado, heap, mudanca de ABI,
   bump de IR, bump de S3 Assembly, generics, exceptions ou substituicao do
   bootstrap Python.
 

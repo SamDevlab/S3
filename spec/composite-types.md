@@ -2,8 +2,8 @@
 
 Status: normative for Milestone 1.00 records/enums, Milestone 1.02-C
 cross-module nominal values, Milestone 1.03 acyclic nested records, Milestone
-1.04 fixed-capacity static text leaves, and Milestone 1.05 fixed-layout enum
-payloads.
+1.04 fixed-capacity static text leaves, Milestone 1.05 fixed-layout enum
+payloads, and Milestone 1.07 unified fixed value layouts.
 
 ## Scope
 
@@ -43,11 +43,12 @@ has a known scalar representation.
 Nested layout is logical scalar leaf order, not public offsets or alignment.
 Flattening is depth-first and follows declaration order at every record level.
 The compiler must not sort nested fields alphabetically or by source-unit order.
-`SemanticModel.record_leaves()` is the canonical implementation contract for
-leaf paths, leaf types, flattening order, parameter scalarization, copies,
-member access, and return classification. `record_leaf_count()` is a derived
-query over that same layout. Lowering, tests, and native coverage must not
-maintain a parallel layout algorithm.
+The canonical implementation contract is the semantic fixed value layout for
+the record type. `SemanticModel.record_leaves()` is a compatibility query
+derived from that layout for leaf paths, leaf types, flattening order,
+parameter scalarization, copies, member access, and return classification.
+`record_leaf_count()` is a derived query over that same layout. Lowering, tests,
+and native coverage must not maintain a parallel layout algorithm.
 
 Leaf rules:
 
@@ -185,12 +186,26 @@ No-payload enums lower to existing `tryte` registers holding the documented
 discriminant. Payload-carrying enums lower to existing scalar registers in the
 fixed tag-plus-payload cell order. Record field expressions lower to their
 supported field values. Record and payload enum parameters are expanded in
-canonical cell order before IR generation. Lowering consumes
-`SemanticModel.enum_layout()` and its canonical slot types rather than
-recalculating enum payload layout.
+canonical cell order before IR generation. Lowering consumes the semantic fixed
+value layout and the compatibility `SemanticModel.enum_layout()` query derived
+from it rather than recalculating enum payload layout.
 
 No new S3 Assembly opcode is introduced by this milestone. No public format
 version is bumped.
+
+## Unified Fixed Value Layout
+
+Beginning with Milestone 1.07, records, enums, scalar values, and fixed static
+text handles share one semantic fixed value layout contract. The layout is
+logical and target-independent: it records ordered scalar cells, stable source
+paths, scalar cell types, nominal dependencies, and return classification. It
+does not define physical offsets, native register assignment, stack storage,
+alignment, padding, or public Assembly encoding.
+
+Existing record and enum layout APIs remain compatibility wrappers over the
+canonical layout. New compiler code that needs a type-wide layout or return
+answer should query the canonical fixed value layout instead of reimplementing
+record-specific or enum-specific traversal.
 
 ## Modules
 
