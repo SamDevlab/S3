@@ -221,7 +221,7 @@ def test_wrong_return_type_is_rejected() -> None:
             ),
         ),
     )
-    with pytest.raises(IRVerificationError, match="return has type trit"):
+    with pytest.raises(IRVerificationError, match="return cell 0 has type trit"):
         verify_ir(IRModule((bad,)))
 
 
