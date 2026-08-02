@@ -257,7 +257,11 @@ class FunctionLowerer:
             self._lower_compound_assignment(statement)
             return
         if isinstance(statement, ast.DiscardStatement):
-            self._lower_expression(statement.expression)
+            if isinstance(statement.expression, ast.CallExpression):
+                declared_type = self.semantic_model.declared_type_of(statement.expression)
+                self._lower_call_result_registers(statement.expression, declared_type)
+            else:
+                self._lower_expression(statement.expression)
             return
         if isinstance(statement, ast.SwitchStatement):
             self._lower_switch(statement)
