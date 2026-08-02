@@ -258,7 +258,21 @@ def _run_ssa_optimizations(function: IRFunction) -> IRFunction:
 
     ssa_fn = SSABuilder.build_function(function)
     ssa_fn, _telemetry = run_fixpoint_pipeline(ssa_fn)
-    return ssa_fn.to_ir()
+    optimized = ssa_fn.to_ir()
+    if _has_undefined_register_use(optimized):
+        return function
+    return optimized
+
+
+def _has_undefined_register_use(function: IRFunction) -> bool:
+    defined = {parameter.register for parameter in function.parameters}
+    for block in function.blocks:
+        for instruction in block.instructions:
+            for operand in instruction.operands:
+                if operand not in defined:
+                    return True
+            defined.update(instruction.results)
+    return False
 
 
 _O1_PASSES = (
