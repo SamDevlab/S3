@@ -532,10 +532,12 @@ See [docs/milestone-1.18.md](milestone-1.18.md).
 
 ## Marco 1.19 - Cross-Language Baseline And Performance Report
 
-Status: planned in campaign 1.17-1.19
+Status: implementation complete; consolidated validation authorized
 
 Portable workloads will receive equivalent C, Rust, and Zig implementations and
 explicit toolchain adapters. Portable native, interpreted, and S3-specific
 engineering results remain separate. Authoritative native claims require a
 controlled Linux environment; shared CI only validates schema, build, checksum,
 and smoke execution.
+
+See [docs/milestone-1.19.md](milestone-1.19.md).
