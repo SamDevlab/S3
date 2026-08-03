@@ -1,0 +1,37 @@
+module bounded_text_types
+
+export record BoundedText:
+    length: tryte
+    units: tryte[364]
+
+export record TextCursor:
+    position: tryte
+
+export record SourceSpan:
+    start: tryte
+    end: tryte
+
+export record TextError:
+    code: tryte
+    span: SourceSpan
+    detail: tryte
+
+export enum TextReadResult:
+    Unit(code_unit: tryte, cursor: TextCursor)
+    End(cursor: TextCursor)
+    Error(error: TextError)
+
+export enum TextAdvanceResult:
+    Advanced(cursor: TextCursor)
+    Error(error: TextError)
+
+export enum TextCompareResult:
+    Compared(equal: tryte)
+    Error(error: TextError)
+
+export enum DecimalDigitResult:
+    Digit(value: tryte)
+    NotDigit
+
+export fn bounded_text_types_anchor() -> tryte:
+    return 0

@@ -107,3 +107,26 @@ tipos, chamadas, CFG, objetos e cota lógica.
 A representação física, ABI, checks e runtime estão em
 [`native-x86_64.md`](native-x86_64.md). Esse target não adiciona diretivas nem
 opcodes ao formato e continua rejeitando `TSUB`.
+
+## Fixed array source values
+
+S3 Assembly has no source-level array value token. A fixed array crossing a
+function boundary is emitted as its complete ordered scalar parameter or result
+group. Local indexed arrays continue to use `.memory`, `TLOAD`, and `TSTORE`.
+
+The 0.6 function, `TCALL`, and `TRET` group syntax is sufficient. Legacy 0.5
+reading remains width-one only; no new 0.5 encoding is introduced.
+
+## Experimental tokenizer boundary
+
+The Milestone 1.14 tokenizer is an incremental bounded-text component for the
+future self-hosted Assembly parser. It is additive and experimental: the Python
+Assembly parser in `bootstrap.s3.assembly` remains the normative reader.
+
+The tokenizer recognizes only the existing textual surface described above:
+directives, version numbers, identifiers, register names, memory/static value
+names, scalar decimal integers, group punctuation, LF/CRLF, and `;` comments.
+Opcode names such as `TCALL` and `TRET` are lexical identifiers at this stage;
+parser validation classifies them later. The tokenizer adds no new directives,
+opcodes, value syntax, version, heap allocation, source pointers, filesystem
+behavior, or default compiler path.

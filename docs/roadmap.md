@@ -144,8 +144,9 @@ Não integram o Marco 0.7 e não estão implementados:
 3. otimizações entre blocos provadas sem `PHI`;
 4. backend ou execução ARM64 experimental.
 
-Arrays em assinaturas, heap, ponteiros públicos, strings dinâmicas e I/O
-continuam fora do MVP até receberem contratos próprios. Módulos e imports
+Heap, ponteiros públicos, strings dinâmicas e I/O continuam fora do MVP até
+receberem contratos próprios. Arrays fixos em assinaturas recebem contrato na
+Milestone 1.12. Módulos e imports
 determinísticos foram entregues no Marco 0.99. O Marco 0.53 cobre
 valores `string` estáticos tipados, e o Marco 0.54 adiciona concatenação
 estática literal-only em tempo de compilação. O Marco 0.55 estende `len(...)`
@@ -458,6 +459,35 @@ aggregate-results campaign
   preserva leitores 0.5 width-1, materializa grupos completos em CALL/RETURN,
   preserva SSA/O1 por construção e mantém heap, ponteiros visiveis na linguagem,
   generics, exceptions e substituicao do bootstrap Python fora do escopo.
+- 1.12 - arrays fixos como valores: [ADR-0023](decisions/ADR-0023-fixed-array-value-boundaries.md)
+  define layouts `trit`/`tryte` de 1 a 365 células, passagem e retorno
+  copy-by-value, fields de records/payloads e reutilização dos grupos 0.6 e do
+  hidden sret nativo. Implementação escrita; validação consolidada deferida até
+  o fechamento da campanha 1.12-1.16.
+- 1.13 - bounded text, cursors e spans:
+  [ADR-0024](decisions/ADR-0024-bounded-text-cursors-and-spans.md) define texto
+  ASCII de capacidade 364, comprimento logico, padding zero, cursor/span sem
+  referencia e erros estruturados. Referencias Python/S3 e cobertura
+  diferencial foram escritas; validacao consolidada permanece deferida.
+- 1.14 - tokenizer incremental de S3 Assembly:
+  [plano da milestone](milestone-1.14.md) adiciona uma referencia diferencial
+  experimental que consome `BoundedText` e `TextCursor`, retorna um token,
+  end-of-input ou erro estruturado por chamada, preserva spans/cursores exatos e
+  cobre o subconjunto lexical real de Assembly 0.6/legado 0.5 necessario para o
+  parser da 1.15. O tokenizer nao substitui `parse_assembly`, nao se torna
+  default, nao le arquivos e nao altera IR 0.6.0 ou Assembly 0.6.0.
+- 1.15 - parser kernel incremental de S3 Assembly:
+  [ADR-0025](decisions/ADR-0025-bounded-assembly-parser-frontend.md) e
+  [plano da milestone](milestone-1.15.md) adicionam uma referencia experimental
+  que consome o tokenizer bounded, emite eventos/erros estruturados para versao,
+  cabecalho de funcao, declaracoes, labels, `TCALL`, `TRET` e `.end`, e mantem a
+  validacao semantica de programa inteiro no parser/verifier Python.
+- 1.16 - frontend candidate bounded de S3 Assembly:
+  [plano da milestone](milestone-1.16.md) compoe texto, tokenizer e parser em um
+  resumo estrutural ou erro de parser. O candidate nao substitui parser, CLI,
+  renderer, emulator, backend nativo, goldens, baselines, formatos publicos ou
+  versao do pacote. Validacao consolidada permanece deferida ate o fechamento da
+  campanha.
 
 ### Out of scope after 1.04
 

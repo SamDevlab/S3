@@ -35,8 +35,8 @@ arrays indexed by tryte-compatible expressions.
 | Lexer | `bootstrap/s3/lexer.py` | `LEFT_BRACKET`, `RIGHT_BRACKET`, and `COMMA` tokens | Brackets also participate in indentation/newline suppression while inside delimiters. |
 | Parser | `bootstrap/s3/parser.py` | Parses array types, array literals, indexing, and indexed assignment | Array literals are accepted as initializers, not general scalar expressions. |
 | AST | `bootstrap/s3/ast.py` | `ArrayType`, `ArrayLiteral`, `IndexExpression`, and `IndexTarget` | `ArrayLiteral` is part of `Initializer`, while array element reads are expressions. |
-| Semantic analysis | `bootstrap/s3/semantic.py` | Validates lengths, element types, mutability, index type, and constant bounds | Rejects nested arrays, arrays in signatures, whole-array assignment, and scalar use of arrays. |
-| Lowering | `bootstrap/s3/lowering.py` | Lowers arrays to IR memory objects with `LOAD` and `STORE` | Array declarations allocate memory and initialize each element. |
+| Semantic analysis | `bootstrap/s3/semantic.py` | Validates lengths, element types, mutability, index type, constant bounds, signatures, and exact whole-value copies | Rejects nested/dynamic arrays and scalar operators over arrays. |
+| Lowering | `bootstrap/s3/lowering.py` | Lowers local arrays to memory and boundary arrays to canonical scalar groups | Array parameters are copied into callee-owned memory for indexed access. |
 | IR | `bootstrap/s3/ir.py` | Represents lowered arrays as memory objects and memory instructions | Arrays are not first-class IR values. |
 | Assembly | `bootstrap/s3/codegen.py`, `bootstrap/s3/assembly.py` | Emits memory declarations and `TLOAD`/`TSTORE` | Assembly sees memory, not source-level arrays. |
 | Runtime/emulator | `bootstrap/s3/emulator.py` | Executes memory load/store with bounds, initialization, mutability, and memory-budget checks | Dynamic out-of-bounds access is a runtime diagnostic. |
@@ -87,14 +87,13 @@ arrays indexed by tryte-compatible expressions.
 - Empty literals parse, but a valid array declaration cannot currently use a
   zero-length array because nonpositive lengths are rejected.
 - Nested arrays are rejected.
-- Arrays cannot be function parameters.
-- Functions cannot return arrays.
-- Whole-array assignment is rejected.
-- Arrays cannot be passed as arguments.
+- Arrays can be function parameters and results under ADR-0023.
+- Whole-array assignment copies complete exact-type values into mutable targets.
+- Arrays can be passed by value without source aliasing.
 - Arrays cannot be used as scalar values or operator operands.
 - Structural array comparison is not supported.
-- Source-level arrays lower to memory, so they are not first-class IR values.
-- Deterministic serialization of source-level array values is not defined.
+- Source-level boundary arrays lower to deterministic ordered scalar groups;
+  local indexed storage remains memory-backed.
 - Arrays of future records or strings cannot be assessed until those features
   exist.
 

@@ -53,6 +53,16 @@ Objetos são alocados ao criar um frame e descartados com ele. Chamadas,
 inclusive recursivas, nunca compartilham objetos. Não há heap, memória global,
 aliasing, ponteiros, referências ou aritmética de endereço.
 
+Arrays que cruzam uma função ou uma fronteira nominal são valores fixos
+copy-by-value. Seus elementos são scalarizados em ordem crescente por
+`SemanticModel.fixed_value_layout(...)`. Um callee pode reconstruir memória
+local própria para indexação, mas nunca recebe o endereço do objeto do caller.
+
+O `BoundedText` self-hosted da Milestone 1.13 reutiliza esse contrato com
+`tryte[364]`, comprimento lógico separado e padding zero determinístico.
+Cursores e spans são records escalares sem identidade de memória. Nenhuma
+operação recebe ou produz endereço, slice por referência ou alias.
+
 ## Mapeamento nativo x86-64
 
 O modelo lógico não define universalmente tamanho em bits, ordem de bytes,

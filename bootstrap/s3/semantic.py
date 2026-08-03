@@ -118,6 +118,7 @@ class EnumLayout:
 class ValueLayoutKind(Enum):
     SCALAR = "scalar"
     FIXED_STATIC_TEXT = "fixed_static_text"
+    FIXED_ARRAY = "fixed_array"
     RECORD = "record"
     ENUM = "enum"
 
@@ -307,6 +308,16 @@ def _record_leaves(
         path = (*prefix, field.name)
         if isinstance(field.type_name, ast.TypeName):
             leaves.append(RecordLeaf(path, field.type_name, field.location))
+        elif isinstance(field.type_name, ast.ArrayType):
+            assert isinstance(field.type_name.element_type, ast.TypeName)
+            leaves.extend(
+                RecordLeaf(
+                    (*path, f"index{index}"),
+                    field.type_name.element_type,
+                    field.location,
+                )
+                for index in range(field.type_name.length)
+            )
         elif isinstance(field.type_name, ast.NominalType):
             if field.type_name.name in enums:
                 layout = _enum_layout(records, enums, field.type_name.name)
@@ -341,7 +352,31 @@ def _fixed_value_layout(
     type_name: ast.DeclaredType,
 ) -> FixedValueLayout:
     if isinstance(type_name, ast.ArrayType):
-        raise SemanticError("arrays do not have a fixed value layout", type_name.location)
+        if not isinstance(type_name.element_type, ast.TypeName) or (
+            type_name.element_type not in (ast.TypeName.TRIT, ast.TypeName.TRYTE)
+        ):
+            raise SemanticError(
+                "fixed array value layout requires trit or tryte elements",
+                type_name.location,
+            )
+        if not 1 <= type_name.length <= TRYTE_MAX + 1:
+            raise SemanticError(
+                f"fixed array length must be in [1, {TRYTE_MAX + 1}]",
+                type_name.location,
+            )
+        return FixedValueLayout(
+            type_name,
+            ValueLayoutKind.FIXED_ARRAY,
+            tuple(
+                ValueCell(
+                    (f"index{index}",),
+                    type_name.element_type,
+                    type_name.location,
+                )
+                for index in range(type_name.length)
+            ),
+            type_name.location,
+        )
     if isinstance(type_name, ast.TypeName):
         location = SourceLocation(0, 1, 1)
         kind = (
@@ -390,8 +425,6 @@ def _return_classification(
     enums: dict[str, EnumType],
     type_name: ast.DeclaredType,
 ) -> ReturnClass:
-    if isinstance(type_name, ast.ArrayType):
-        return ReturnClass.NOT_RETURNABLE
     layout = _fixed_value_layout(records, enums, type_name)
     if layout.cell_count == 1:
         return ReturnClass.SCALAR_RETURN_COMPATIBLE
@@ -425,6 +458,17 @@ def _enum_payload_leaves(
         if isinstance(field.type_name, ast.TypeName):
             leaves.append(
                 EnumPayloadLeaf(variant_name, path, field.type_name, field.location)
+            )
+        elif isinstance(field.type_name, ast.ArrayType):
+            assert isinstance(field.type_name.element_type, ast.TypeName)
+            leaves.extend(
+                EnumPayloadLeaf(
+                    variant_name,
+                    (*path, f"index{index}"),
+                    field.type_name.element_type,
+                    field.location,
+                )
+                for index in range(field.type_name.length)
             )
         elif isinstance(field.type_name, ast.NominalType):
             if field.type_name.name in enums:
@@ -539,6 +583,12 @@ class SemanticAnalyzer:
                 main.location,
                 diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
             )
+        if isinstance(main.return_type, ast.ArrayType):
+            raise SemanticError(
+                "entry function 'main' must return one scalar cell",
+                main.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
+            )
         if self._return_classification(main.return_type) is ReturnClass.AGGREGATE_FIXED_LAYOUT:
             raise SemanticError(
                 "entry function 'main' must return one scalar cell",
@@ -630,10 +680,8 @@ class SemanticAnalyzer:
         for record in program.records:
             for field in record.fields:
                 if isinstance(field.type_name, ast.ArrayType):
-                    raise SemanticError(
-                        "record fields cannot be arrays in milestone 1.00",
-                        field.location,
-                    )
+                    self._validate_array_type(field.type_name)
+                    continue
                 if isinstance(field.type_name, ast.NominalType):
                     if field.type_name.name in self.enums:
                         continue
@@ -651,10 +699,8 @@ class SemanticAnalyzer:
             for variant in enum.variants:
                 for field in variant.payload_fields:
                     if isinstance(field.type_name, ast.ArrayType):
-                        raise SemanticError(
-                            "enum payload fields cannot be arrays",
-                            field.location,
-                        )
+                        self._validate_array_type(field.type_name)
+                        continue
                     if isinstance(field.type_name, ast.NominalType):
                         if (
                             field.type_name.name in self.records
@@ -775,10 +821,7 @@ class SemanticAnalyzer:
                     )
                 parameter_names.add(parameter.name)
                 if isinstance(parameter.type_name, ast.ArrayType):
-                    raise SemanticError(
-                        "arrays cannot be function parameters",
-                        parameter.location,
-                    )
+                    self._validate_array_type(parameter.type_name)
                 if isinstance(parameter.type_name, ast.NominalType):
                     if (
                         parameter.type_name.name not in self.records
@@ -790,10 +833,8 @@ class SemanticAnalyzer:
                         )
                 parameter_types.append(parameter.type_name)
             if isinstance(function.return_type, ast.ArrayType):
-                raise SemanticError(
-                    "functions cannot return arrays",
-                    function.signature.location,
-                )
+                self._validate_array_type(function.return_type)
+                self._return_classification(function.return_type)
             if isinstance(function.return_type, ast.NominalType):
                 if function.return_type.name in self.records:
                     self._return_classification(function.return_type)
@@ -864,19 +905,6 @@ class SemanticAnalyzer:
             self._analyze_assignment(statement)
             return BlockFlow(terminates=False, definitely_returns=False)
         if isinstance(statement, ast.ReturnStatement):
-            if (
-                isinstance(statement.expression, ast.Identifier)
-                and isinstance(
-                    self._lookup_binding(statement.expression.name).type_name
-                    if self._lookup_binding(statement.expression.name)
-                    else None,
-                    ast.ArrayType,
-                )
-            ):
-                raise SemanticError(
-                    "arrays cannot be returned",
-                    statement.expression.location,
-                )
             actual = self._analyze_expression(statement.expression, self.return_type)
             self._require_type(
                 actual,
@@ -1272,15 +1300,22 @@ class SemanticAnalyzer:
         self._validate_declared_type(declaration.type_name)
         if isinstance(declaration.type_name, ast.ArrayType):
             self._validate_array_type(declaration.type_name)
-            if not isinstance(declaration.initializer, ast.ArrayLiteral):
-                raise SemanticError(
-                    f"array '{declaration.name}' requires an array literal initializer",
-                    declaration.initializer.location,
+            if isinstance(declaration.initializer, ast.ArrayLiteral):
+                self._analyze_array_literal(
+                    declaration.initializer,
+                    declaration.type_name,
                 )
-            self._analyze_array_literal(
-                declaration.initializer,
-                declaration.type_name,
-            )
+            else:
+                initializer_type = self._analyze_expression(
+                    declaration.initializer,
+                    declaration.type_name,
+                )
+                self._require_type(
+                    initializer_type,
+                    declaration.type_name,
+                    declaration.initializer.location,
+                    f"initializer for '{declaration.name}'",
+                )
         else:
             if isinstance(declaration.initializer, ast.ArrayLiteral):
                 raise SemanticError(
@@ -1387,10 +1422,21 @@ class SemanticAnalyzer:
                 statement.target.location,
             )
             if isinstance(binding.type_name, ast.ArrayType):
-                raise SemanticError(
-                    "whole-array assignment is not supported",
-                    statement.target.location,
-                )
+                self._require_mutable(binding, statement.target.location)
+                if isinstance(statement.value, ast.ArrayLiteral):
+                    self._analyze_array_literal(statement.value, binding.type_name)
+                else:
+                    actual = self._analyze_expression(
+                        statement.value,
+                        binding.type_name,
+                    )
+                    self._require_type(
+                        actual,
+                        binding.type_name,
+                        statement.value.location,
+                        "assigned array value",
+                    )
+                return
             self._require_mutable(binding, statement.target.location)
             if isinstance(statement.value, ast.ArrayLiteral):
                 raise SemanticError(
@@ -1567,7 +1613,10 @@ class SemanticAnalyzer:
                     "string literal",
                 )
         elif isinstance(expression, ast.Identifier):
-            result = self._identifier_type(expression)
+            result = self._identifier_type(
+                expression,
+                allow_array=isinstance(expected, ast.ArrayType),
+            )
             binding = self._lookup_binding(expression.name)
             if binding is not None and binding.static_text is not None:
                 self.static_text_values[id(expression)] = binding.static_text
@@ -1583,6 +1632,7 @@ class SemanticAnalyzer:
         elif isinstance(expression, ast.IndexExpression):
             array_binding = self._index_expression_array_binding(expression)
             if array_binding is not None:
+                self.expression_types[id(expression.target)] = array_binding.type_name
                 result = self._analyze_index(
                     expression.array_name,
                     expression.index,
@@ -1604,10 +1654,19 @@ class SemanticAnalyzer:
                     )
                 else:
                     result = self._analyze_expression(expression.target)
-                    raise SemanticError(
-                        f"indexed target has type {result.value}; expected array or compile-time static text",
-                        expression.target.location,
-                    )
+                    if isinstance(result, ast.ArrayType):
+                        result = self._analyze_index(
+                            "array value",
+                            expression.index,
+                            result,
+                        )
+                    else:
+                        raise SemanticError(
+                            "indexed target has type "
+                            f"{_type_display(result)}; expected array or "
+                            "compile-time static text",
+                            expression.target.location,
+                        )
             if expected is not None:
                 self._require_type(
                     result,
@@ -2024,15 +2083,6 @@ class SemanticAnalyzer:
             zip(expression.arguments, signature.parameter_types, strict=True),
             start=1,
         ):
-            if (
-                isinstance(argument.expression, ast.Identifier)
-                and (
-                    binding := self._lookup_binding(argument.expression.name)
-                )
-                is not None
-                and isinstance(binding.type_name, ast.ArrayType)
-            ):
-                raise SemanticError("arrays cannot be passed as arguments", argument.location)
             actual = self._analyze_expression(argument.expression, parameter_type)
             self._require_type(
                 actual,
@@ -2747,10 +2797,15 @@ class SemanticAnalyzer:
     def _is_enum_type(self, type_name: ast.DeclaredType) -> bool:
         return isinstance(type_name, ast.NominalType) and type_name.name in self.enums
 
-    def _identifier_type(self, expression: ast.Identifier) -> ast.DeclaredType:
+    def _identifier_type(
+        self,
+        expression: ast.Identifier,
+        *,
+        allow_array: bool = False,
+    ) -> ast.DeclaredType:
         binding = self._lookup_binding(expression.name)
         if binding is not None:
-            if isinstance(binding.type_name, ast.ArrayType):
+            if isinstance(binding.type_name, ast.ArrayType) and not allow_array:
                 raise SemanticError(
                     f"array '{expression.name}' cannot be used as a scalar value",
                     expression.location,

@@ -1,0 +1,393 @@
+module bounded_text_primitives
+
+from bounded_text_types import BoundedText
+from bounded_text_types import DecimalDigitResult
+from bounded_text_types import SourceSpan
+from bounded_text_types import TextAdvanceResult
+from bounded_text_types import TextCompareResult
+from bounded_text_types import TextCursor
+from bounded_text_types import TextError
+from bounded_text_types import TextReadResult
+
+export fn text_length(text: BoundedText) -> tryte:
+    return text.length
+
+export fn text_is_empty(text: BoundedText) -> trit:
+    return text.length == 0
+
+export fn cursor_start() -> TextCursor:
+    return TextCursor(position=0)
+
+export fn cursor_position(cursor: TextCursor) -> tryte:
+    return cursor.position
+
+fn point_span(position: tryte) -> SourceSpan:
+    return SourceSpan(start=position, end=position)
+
+fn unit_span(position: tryte) -> SourceSpan:
+    return SourceSpan(start=position, end=position + 1)
+
+fn text_error(code: tryte, span: SourceSpan, detail: tryte) -> TextError:
+    return TextError(code=code, span=span, detail=detail)
+
+fn invalid_cursor(cursor: TextCursor) -> TextError:
+    match cursor.position <=> 0:
+        -1:
+            return text_error(4, point_span(0), cursor.position)
+        0:
+            return text_error(4, point_span(0), cursor.position)
+        1:
+            return text_error(4, point_span(cursor.position), cursor.position)
+
+fn code_unit_is_supported(code_unit: tryte) -> trit:
+    match code_unit <=> 9:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match code_unit <=> 10:
+                -1:
+                    return 0
+                0:
+                    return -1
+                1:
+                    match code_unit <=> 13:
+                        -1:
+                            return 0
+                        0:
+                            return -1
+                        1:
+                            match code_unit <=> 32:
+                                -1:
+                                    return 0
+                                0:
+                                    return -1
+                                1:
+                                    return code_unit <= 126
+
+fn validate_padding(units: tryte[364], start: tryte) -> TextCompareResult:
+    mut index: tryte = start
+    mut value: tryte = 0
+    while index < 364:
+        value = units[index]
+        match value == 0:
+            -1:
+                index = index + 1
+            0:
+                return TextCompareResult.Error(error=text_error(3, unit_span(index), value))
+            1:
+                return TextCompareResult.Error(error=text_error(3, unit_span(index), value))
+    return TextCompareResult.Compared(equal=-1)
+
+export fn validate_text(text: BoundedText) -> TextCompareResult:
+    text_units: tryte[364] = text.units
+    mut value: tryte = 0
+    match text.length <=> 0:
+        -1:
+            return TextCompareResult.Error(error=text_error(1, point_span(0), text.length))
+        0:
+            return validate_padding(text_units, 0)
+        1:
+            mut index: tryte = 0
+            while index < text.length:
+                value = text_units[index]
+                match code_unit_is_supported(value):
+                    -1:
+                        index = index + 1
+                    0:
+                        return TextCompareResult.Error(error=text_error(2, unit_span(index), value))
+                    1:
+                        return TextCompareResult.Error(error=text_error(2, unit_span(index), value))
+            return validate_padding(text_units, text.length)
+
+export fn cursor_is_end(text: BoundedText, cursor: TextCursor) -> TextCompareResult:
+    match cursor.position <=> 0:
+        -1:
+            return TextCompareResult.Error(error=invalid_cursor(cursor))
+        0:
+            match cursor.position == text.length:
+                -1:
+                    return TextCompareResult.Compared(equal=-1)
+                0:
+                    return TextCompareResult.Compared(equal=0)
+                1:
+                    return TextCompareResult.Compared(equal=1)
+        1:
+            match cursor.position <=> text.length:
+                -1:
+                    return TextCompareResult.Compared(equal=0)
+                0:
+                    return TextCompareResult.Compared(equal=-1)
+                1:
+                    return TextCompareResult.Error(error=invalid_cursor(cursor))
+
+export fn read_current(text: BoundedText, cursor: TextCursor) -> TextReadResult:
+    text_units: tryte[364] = text.units
+    mut value: tryte = 0
+    match cursor.position <=> 0:
+        -1:
+            return TextReadResult.Error(error=invalid_cursor(cursor))
+        0:
+            match text.length <=> 0:
+                -1:
+                    return TextReadResult.Error(error=text_error(1, point_span(0), text.length))
+                0:
+                    return TextReadResult.End(cursor=cursor)
+                1:
+                    value = text_units[cursor.position]
+                    match code_unit_is_supported(value):
+                        -1:
+                            return TextReadResult.Unit(code_unit=value, cursor=cursor)
+                        0:
+                            return TextReadResult.Error(error=text_error(2, unit_span(cursor.position), value))
+                        1:
+                            return TextReadResult.Error(error=text_error(2, unit_span(cursor.position), value))
+        1:
+            match cursor.position <=> text.length:
+                -1:
+                    value = text_units[cursor.position]
+                    match code_unit_is_supported(value):
+                        -1:
+                            return TextReadResult.Unit(code_unit=value, cursor=cursor)
+                        0:
+                            return TextReadResult.Error(error=text_error(2, unit_span(cursor.position), value))
+                        1:
+                            return TextReadResult.Error(error=text_error(2, unit_span(cursor.position), value))
+                0:
+                    return TextReadResult.End(cursor=cursor)
+                1:
+                    return TextReadResult.Error(error=invalid_cursor(cursor))
+
+export fn advance(text: BoundedText, cursor: TextCursor) -> TextAdvanceResult:
+    match cursor.position <=> 0:
+        -1:
+            return TextAdvanceResult.Error(error=invalid_cursor(cursor))
+        0:
+            match text.length <=> 0:
+                -1:
+                    return TextAdvanceResult.Error(error=text_error(1, point_span(0), text.length))
+                0:
+                    return TextAdvanceResult.Error(error=text_error(5, point_span(0), 0))
+                1:
+                    return TextAdvanceResult.Advanced(cursor=TextCursor(position=1))
+        1:
+            match cursor.position <=> text.length:
+                -1:
+                    return TextAdvanceResult.Advanced(cursor=TextCursor(position=cursor.position + 1))
+                0:
+                    return TextAdvanceResult.Error(error=text_error(5, point_span(cursor.position), 0))
+                1:
+                    return TextAdvanceResult.Error(error=invalid_cursor(cursor))
+
+export fn peek(text: BoundedText, cursor: TextCursor, offset: tryte) -> TextReadResult:
+    match cursor.position <=> 0:
+        -1:
+            return TextReadResult.Error(error=invalid_cursor(cursor))
+        0:
+            match offset <=> 0:
+                -1:
+                    return TextReadResult.Error(error=text_error(7, point_span(cursor.position), offset))
+                0:
+                    return read_current(text, cursor)
+                1:
+                    match offset <=> text.length:
+                        -1:
+                            return read_current(text, TextCursor(position=offset))
+                        0:
+                            return read_current(text, TextCursor(position=offset))
+                        1:
+                            return TextReadResult.Error(error=text_error(7, point_span(0), offset))
+        1:
+            match cursor.position <=> text.length:
+                1:
+                    return TextReadResult.Error(error=invalid_cursor(cursor))
+                0:
+                    match offset <=> 0:
+                        -1:
+                            return TextReadResult.Error(error=text_error(7, point_span(cursor.position), offset))
+                        0:
+                            return read_current(text, cursor)
+                        1:
+                            return TextReadResult.Error(error=text_error(7, point_span(cursor.position), offset))
+                -1:
+                    match offset <=> 0:
+                        -1:
+                            return TextReadResult.Error(error=text_error(7, point_span(cursor.position), offset))
+                        0:
+                            return read_current(text, cursor)
+                        1:
+                            remaining: tryte = text.length - cursor.position
+                            match offset <=> remaining:
+                                -1:
+                                    return read_current(text, TextCursor(position=cursor.position + offset))
+                                0:
+                                    return read_current(text, TextCursor(position=cursor.position + offset))
+                                1:
+                                    return TextReadResult.Error(error=text_error(7, point_span(cursor.position), offset))
+
+export fn compare_code_unit(text: BoundedText, cursor: TextCursor, expected: tryte) -> TextCompareResult:
+    result: TextReadResult = read_current(text, cursor)
+    match result:
+        TextReadResult.Unit(code_unit, cursor):
+            match code_unit == expected:
+                -1:
+                    return TextCompareResult.Compared(equal=-1)
+                0:
+                    return TextCompareResult.Compared(equal=0)
+                1:
+                    return TextCompareResult.Compared(equal=1)
+        TextReadResult.End(cursor):
+            return TextCompareResult.Error(error=text_error(5, point_span(cursor.position), expected))
+        TextReadResult.Error(error):
+            return TextCompareResult.Error(error=error)
+
+export fn starts_with(text: BoundedText, cursor: TextCursor, prefix: BoundedText) -> TextCompareResult:
+    text_units: tryte[364] = text.units
+    prefix_units: tryte[364] = prefix.units
+    match cursor.position <=> 0:
+        -1:
+            return TextCompareResult.Error(error=invalid_cursor(cursor))
+        0:
+            remaining: tryte = text.length
+            match prefix.length <=> remaining:
+                -1:
+                    mut index: tryte = 0
+                    while index < prefix.length:
+                        match text_units[index] == prefix_units[index]:
+                            -1:
+                                index = index + 1
+                            0:
+                                return TextCompareResult.Compared(equal=0)
+                            1:
+                                return TextCompareResult.Compared(equal=0)
+                    return TextCompareResult.Compared(equal=-1)
+                0:
+                    mut index: tryte = 0
+                    while index < prefix.length:
+                        match text_units[index] == prefix_units[index]:
+                            -1:
+                                index = index + 1
+                            0:
+                                return TextCompareResult.Compared(equal=0)
+                            1:
+                                return TextCompareResult.Compared(equal=0)
+                    return TextCompareResult.Compared(equal=-1)
+                1:
+                    return TextCompareResult.Compared(equal=0)
+        1:
+            match cursor.position <=> text.length:
+                1:
+                    return TextCompareResult.Error(error=invalid_cursor(cursor))
+                0:
+                    match prefix.length == 0:
+                        -1:
+                            return TextCompareResult.Compared(equal=-1)
+                        0:
+                            return TextCompareResult.Compared(equal=0)
+                        1:
+                            return TextCompareResult.Compared(equal=1)
+                -1:
+                    remaining: tryte = text.length - cursor.position
+                    match prefix.length <= remaining:
+                        -1:
+                            mut index: tryte = 0
+                            mut input_index: tryte = 0
+                            while index < prefix.length:
+                                input_index = cursor.position + index
+                                match text_units[input_index] == prefix_units[index]:
+                                    -1:
+                                        index = index + 1
+                                    0:
+                                        return TextCompareResult.Compared(equal=0)
+                                    1:
+                                        return TextCompareResult.Compared(equal=0)
+                            return TextCompareResult.Compared(equal=-1)
+                        0:
+                            return TextCompareResult.Compared(equal=0)
+                        1:
+                            return TextCompareResult.Compared(equal=0)
+
+export fn span_length(span: SourceSpan) -> tryte:
+    return span.end - span.start
+
+export fn span_is_empty(span: SourceSpan) -> trit:
+    return span.start == span.end
+
+export fn span_is_valid(text: BoundedText, span: SourceSpan) -> trit:
+    match span.start <=> 0:
+        -1:
+            return 0
+        0:
+            match span.end <=> span.start:
+                -1:
+                    return 0
+                0:
+                    return span.end <= text.length
+                1:
+                    return span.end <= text.length
+        1:
+            match span.end <=> span.start:
+                -1:
+                    return 0
+                0:
+                    return span.end <= text.length
+                1:
+                    return span.end <= text.length
+
+export fn classify_decimal_digit(code_unit: tryte) -> DecimalDigitResult:
+    match code_unit <=> 48:
+        -1:
+            return DecimalDigitResult.NotDigit
+        0:
+            return DecimalDigitResult.Digit(value=0)
+        1:
+            match code_unit <= 57:
+                -1:
+                    return DecimalDigitResult.Digit(value=code_unit - 48)
+                0:
+                    return DecimalDigitResult.NotDigit
+                1:
+                    return DecimalDigitResult.NotDigit
+
+export fn classify_identifier_start(code_unit: tryte) -> trit:
+    match code_unit == 95:
+        -1:
+            return -1
+        0:
+            match code_unit <=> 65:
+                -1:
+                    return 0
+                0:
+                    return -1
+                1:
+                    match code_unit <= 90:
+                        -1:
+                            return -1
+                        0:
+                            match code_unit <=> 97:
+                                -1:
+                                    return 0
+                                0:
+                                    return -1
+                                1:
+                                    return code_unit <= 122
+                        1:
+                            return 0
+        1:
+            return 0
+
+export fn classify_identifier_continue(code_unit: tryte) -> trit:
+    match classify_identifier_start(code_unit):
+        -1:
+            return -1
+        0:
+            match code_unit <=> 48:
+                -1:
+                    return 0
+                0:
+                    return -1
+                1:
+                    return code_unit <= 57
+        1:
+            return 0

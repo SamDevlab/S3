@@ -21,15 +21,18 @@ A AST distingue tipo escalar/array, literal de array, indexação, mutabilidade 
 alvos de atribuição. A tabela semântica associa a cada binding tipo,
 mutabilidade, origem e condição de parâmetro.
 
-Arrays não entram nas assinaturas nem no sistema de valores escalares. Bounds
-de expressões constantes simples (`literal`, negação, soma/subtração) são
-checados estaticamente; demais índices chegam ao emulador.
+Arrays fixos `trit`/`tryte` entram em assinaturas como grupos de células
+derivados de `SemanticModel.fixed_value_layout(...)`. A passagem é copy-by-value
+e não expõe endereços. Bounds de expressões constantes simples (`literal`,
+negação, soma/subtração) são checados estaticamente; demais índices chegam ao
+emulador.
 
 ## Lowering híbrido
 
 - escalar imutável: registrador SSA;
 - escalar `mut`: objeto de memória de comprimento 1;
-- qualquer array: objeto de memória do comprimento declarado;
+- array local: objeto de memória do comprimento declarado;
+- array em boundary: grupo escalar completo em ordem crescente de índice;
 - leitura: `LOAD`;
 - inicialização/atribuição: `STORE`;
 - índices e valores: registradores SSA.

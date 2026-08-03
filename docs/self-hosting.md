@@ -184,6 +184,25 @@ error propagation without replacing Python or becoming default compiler paths.
 The parser, lexer, optimizer, backend, linker, full CLI, filesystem tools, heap,
 exceptions, and complete self-hosting remain outside this stage.
 
+Milestones 1.12 through 1.16 add the bounded input and Assembly frontend
+foundation for a later self-hosted parser:
+
+- Milestone 1.12 makes fixed `trit[N]` and `tryte[N]` arrays copyable across
+  value boundaries.
+- Milestone 1.13 introduces bounded ASCII text, scalar cursors, and half-open
+  spans as explicit data.
+- Milestone 1.14 adds an incremental bounded Assembly tokenizer.
+- Milestone 1.15 adds an incremental bounded Assembly parser kernel.
+- Milestone 1.16 composes tokenizer and parser into a bounded Assembly frontend
+  candidate summary.
+
+These components remain experimental differential references. They do not make
+S3 self-hosted and do not replace Python compiler, parser, verifier, renderer,
+emulator, native backend, CLI, goldens, baselines, public formats, or package
+version. Earlier validation observed after Milestone 1.14 is classified as
+early intermediate validation; final campaign validation remains deferred until
+the implementation gate closes.
+
 Recent tools make this pipeline more observable:
 
 - `s3 targets` lists internal target and backend names.
@@ -370,3 +389,36 @@ The initial bootstrap flow is:
 Python will remain the bootstrap compiler for a long time. S3 should replace
 Python one component at a time, with partial self-hosting before any attempt at
 complete self-hosting.
+
+## Milestone 1.12 foundation
+
+Fixed `trit` and `tryte` arrays can cross function and nominal-value boundaries
+as complete copy-by-value groups under ADR-0023. This provides bounded ordered
+storage for later text/token/parser candidates without heap allocation,
+source-level pointers, or default activation of a self-hosted component.
+
+## Milestone 1.13 bounded text foundation
+
+Bounded text primitives are implemented as an experimental differential
+reference under `selfhost/text/`. The representation is a logical length plus
+364 fixed ASCII code units. Cursors and half-open spans contain only scalar
+indices; errors are nominal values propagated explicitly. The independent
+Python reference remains default, and no component reads files or exposes
+pointers, heap storage, dynamic strings, or Unicode claims.
+
+## Milestone 1.14 incremental Assembly tokenizer
+
+An incremental S3 Assembly tokenizer kernel is implemented as an experimental
+differential reference under `selfhost/assembly/`. It consumes the Milestone
+1.13 `BoundedText` plus an explicit `TextCursor`, produces one token, end, or
+structured error per call, and preserves exact `SourceSpan` and next-cursor
+coordinates. The Python reference in `bootstrap/s3/assembly_tokenizer.py`
+remains a comparison point only.
+
+The tokenizer recognizes the existing Assembly textual surface needed by the
+future Assembly parser: `.s3asm`, current directives, version numbers,
+identifiers/opcodes/types, register names, value names, signed decimal scalar
+integers, punctuation, LF/CRLF, and `;` comments. It does not classify opcode
+semantics, parse full Assembly, tokenize source-language S3, read files, expose
+source pointers, allocate heap storage, maintain hidden parser state, or replace
+the Python `parse_assembly` path.

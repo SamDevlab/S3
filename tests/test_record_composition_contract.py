@@ -128,13 +128,6 @@ def test_module_record_composition_stays_module_local_without_nesting() -> None:
     (
         (
             "record Box:\n"
-            "    values: tryte[2]\n"
-            "fn main() -> tryte:\n"
-            "    return 0\n",
-            "record fields cannot be arrays in milestone 1.00",
-        ),
-        (
-            "record Box:\n"
             "    value: tryte\n"
             "fn main() -> tryte:\n"
             "    boxes: Box[1] = [Box(value=1)]\n"

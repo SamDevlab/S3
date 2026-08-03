@@ -66,8 +66,12 @@ return values[0]
 - Uma única dimensão. Arrays aninhados são erro.
 - Literal obrigatório com exatamente o comprimento declarado.
 - Apenas arrays mutáveis aceitam atribuição indexada.
-- Não há atribuição/cópia de array inteiro.
-- Arrays não podem ser passados como argumentos nem retornados de funções.
+- Atribuição de array inteiro exige alvo mutável e tipos de elemento/comprimento
+  exatamente iguais; a operação copia todas as células e não cria aliasing.
+- Arrays podem ser parâmetros e retornos de funções. A passagem é copy-by-value
+  e segue a ordem crescente dos índices no layout fixo canônico.
+- Records e payloads de enum podem conter arrays `trit`/`tryte` fixos.
+- `main` continua scalar-only e não pode retornar array, mesmo de comprimento 1.
 - O índice tem tipo `tryte`. Índice fora da faixa é erro (semântico se constante, em execução se calculado).
 - A operação `len(array)` retorna a quantidade de elementos do array como um `tryte` avaliado estaticamente em tempo de compilação.
 
@@ -95,6 +99,13 @@ Operacoes de texto como `len(text)`, index, slice, igualdade, `contains`,
 estatico conhecidas pela analise semantica. Operacoes equivalentes sobre texto
 dependente de parametros, bindings mutaveis ou chamadas nao constantes
 continuam rejeitadas.
+
+Para componentes self-hosted delimitados, `BoundedText` e um record de
+biblioteca separado: comprimento logico `0..364` e `tryte[364]` com code units
+ASCII e padding zero. `TextCursor` e `SourceSpan` carregam somente indices e
+sempre recebem o texto explicitamente. Esse contrato nao altera `string`, nao
+faz conversao implicita e nao introduz ponteiros ou texto dinamico; veja
+ADR-0024.
 
 ## Records e enums
 

@@ -129,7 +129,8 @@ Strings and arrays remain separate prerequisites:
   newlines, and final Assembly text.
 - Existing arrays can represent ordered collections such as functions,
   registers, labels, blocks, instructions, and operands.
-- Existing arrays cannot be function parameters, return values, nested arrays,
+- Existing arrays can be function parameters and return values after Milestone
+  1.12, but still cannot be nested arrays,
   or first-class IR values.
 - Records or structs are needed for program, function, block, instruction, and
   source-span shape.

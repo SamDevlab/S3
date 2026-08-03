@@ -120,3 +120,15 @@ violação SSA/dominância, chamada/retorno inválido, ponteiros e subtração.
 Bounds calculados e inicialização não comprovável permanecem dinâmicos. O
 frontend inicializa declarações; emulador e nativo jamais devolvem célula não
 inicializada.
+
+## Fixed array source values
+
+Fixed `trit[N]` and `tryte[N]` source values do not add an IR array value type.
+At function and nominal-value boundaries, the compiler expands them to the
+ordered scalar cells from `SemanticModel.fixed_value_layout(...)`. Local
+indexed storage continues to use typed memory objects and `LOAD`/`STORE`.
+
+IR 0.6 already represents the required parameter cells, call arguments, call
+result groups, and return operands. Partial array groups are invalid by the
+existing declaration, call, and return width/type checks. No format bump is
+required for Milestone 1.12.

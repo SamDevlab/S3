@@ -1,0 +1,20 @@
+module selfhost.assembly.frontend_types
+
+from selfhost.assembly.parser_types import AssemblyParserError
+
+export record AssemblyFrontendSummary:
+    version: tryte
+    function_count: tryte
+    declaration_count: tryte
+    block_count: tryte
+    call_count: tryte
+    return_count: tryte
+    max_result_width: tryte
+    ended: tryte
+
+export enum AssemblyFrontendResult:
+    Summary(summary: AssemblyFrontendSummary)
+    Error(error: AssemblyParserError)
+
+export fn assembly_frontend_types_anchor() -> tryte:
+    return 0

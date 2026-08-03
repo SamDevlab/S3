@@ -224,8 +224,8 @@
           "function_count": 1,
           "block_count": 1,
           "opcode_count": 31,
-          "textual_size_bytes": 1839,
-          "sha256": "25223d90aaad7105dd8404ac253abf6d96e7478b06364587306661ddcb174397"
+          "textual_size_bytes": 1833,
+          "sha256": "986d4b14d55eaeed7a4afd8ab29e99fed59722463b349001d7c729c5ce5290c7"
         },
         "execution": {
           "executed_s3_opcodes": 31,
@@ -244,8 +244,8 @@
           "function_count": 1,
           "block_count": 1,
           "opcode_count": 25,
-          "textual_size_bytes": 1517,
-          "sha256": "3e44141371e6ab8af23d4a42da442c2cd56e9b2b0d94802b64efe43f9a9cecc4"
+          "textual_size_bytes": 1515,
+          "sha256": "5340549ff99c26895ce03a926b5ccef61a2f069b8df820aca3393cd8355bafb5"
         },
         "execution": {
           "executed_s3_opcodes": 25,

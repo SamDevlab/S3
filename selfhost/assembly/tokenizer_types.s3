@@ -1,0 +1,23 @@
+module selfhost.assembly.tokenizer_types
+
+from bounded_text_types import SourceSpan
+from bounded_text_types import TextCursor
+
+export record AssemblyToken:
+    kind: tryte
+    span: SourceSpan
+    next_cursor: TextCursor
+    scalar_value: tryte
+
+export record AssemblyTokenError:
+    code: tryte
+    span: SourceSpan
+    detail: tryte
+
+export enum AssemblyTokenResult:
+    Token(resultToken: AssemblyToken)
+    End(cursor: TextCursor)
+    Error(resultError: AssemblyTokenError)
+
+export fn assembly_tokenizer_types_anchor() -> tryte:
+    return 0

@@ -106,8 +106,14 @@ baselines unless an explicit milestone says so.
   source language still exposes no pointers, heap, tuple returns, exceptions,
   `?`, generic result type, or implicit propagation.
 
-Arrays as record fields, recursive types, general heap allocation, dynamic text,
-and complete self-hosting are still not implemented.
+The current 1.12-1.16 campaign adds fixed `trit`/`tryte` arrays across value
+boundaries and an experimental bounded Assembly frontend foundation with
+bounded ASCII text, scalar cursors, half-open spans, an incremental tokenizer,
+an incremental parser kernel, and a summary-producing frontend candidate.
+Python remains the reference compiler and default path. Recursive types,
+general heap allocation, dynamic text, pointers, Unicode text processing,
+filesystem access, default parser replacement, and complete self-hosting are
+still not implemented.
 
 ## Contrato do Marco 0.7
 
