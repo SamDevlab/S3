@@ -256,7 +256,7 @@ def _parse_declaration(
     state: AssemblyParserState,
     token: AssemblyToken,
 ) -> AssemblyParserResult:
-    end_cursor = _line_end(text, token.next_cursor)
+    end_cursor = _consume_to_line_end(text, token.next_cursor)
     if end_cursor is None:
         return _failure_token(state, token, AssemblyParserErrorCode.EXPECTED_NEWLINE)
     next_state = AssemblyParserState(
@@ -555,6 +555,21 @@ def _line_end(text: BoundedText, cursor: TextCursor) -> TextCursor | None:
     if result.token.kind is AssemblyTokenKind.NEWLINE:
         return result.token.next_cursor
     return None
+
+
+def _consume_to_line_end(text: BoundedText, cursor: TextCursor) -> TextCursor | None:
+    current = cursor
+    while True:
+        result = next_assembly_token(text, current)
+        if result.variant == "end":
+            return result.cursor
+        if result.variant != "token" or result.token is None:
+            return None
+        if result.token.kind is AssemblyTokenKind.COMMENT:
+            return _line_end(text, result.token.next_cursor)
+        if result.token.kind is AssemblyTokenKind.NEWLINE:
+            return result.token.next_cursor
+        current = result.token.next_cursor
 
 
 def _failure(

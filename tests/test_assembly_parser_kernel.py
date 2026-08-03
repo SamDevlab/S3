@@ -12,7 +12,7 @@ from bootstrap.s3.assembly_tokenizer import AssemblyTokenKind, next_assembly_tok
 from bootstrap.s3.bounded_text import BoundedText, TextCursor, encode_ascii
 
 
-COVERAGE_STATUS = "CREATED — NOT EXECUTED UNTIL MILESTONE 1.16 IMPLEMENTATION COMPLETION"
+FINAL_VALIDATION_STATUS = "EXECUTED DURING CONSOLIDATED CAMPAIGN VALIDATION"
 
 ROOT = Path(__file__).resolve().parents[1]
 BOUNDED_TYPES_SOURCE = (
@@ -51,9 +51,9 @@ def _encoded(value: str) -> BoundedText:
     return result.text
 
 
-def test_tests_are_created_but_not_part_of_final_campaign_validation() -> None:
-    assert COVERAGE_STATUS == (
-        "CREATED — NOT EXECUTED UNTIL MILESTONE 1.16 IMPLEMENTATION COMPLETION"
+def test_tests_are_part_of_consolidated_campaign_validation() -> None:
+    assert FINAL_VALIDATION_STATUS == (
+        "EXECUTED DURING CONSOLIDATED CAMPAIGN VALIDATION"
     )
 
 

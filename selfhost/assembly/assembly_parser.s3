@@ -79,6 +79,32 @@ fn line_end(text: BoundedText, start_cursor: TextCursor) -> TextCursor:
         AssemblyTokenResult.Error(resultError):
             return cursor(0 - 1)
 
+fn consume_to_line_end(text: BoundedText, start_cursor: TextCursor) -> TextCursor:
+    mut current: TextCursor = start_cursor
+    mut keep_scanning: tryte = 1
+    while keep_scanning == 1:
+        result: AssemblyTokenResult = next_assembly_token(text, current)
+        match result:
+            AssemblyTokenResult.Token(resultToken):
+                match resultToken.kind <=> 16:
+                    0:
+                        return line_end(text, resultToken.next_cursor)
+                    -1:
+                        match resultToken.kind <=> 15:
+                            0:
+                                return resultToken.next_cursor
+                            -1:
+                                current = resultToken.next_cursor
+                            1:
+                                current = resultToken.next_cursor
+                    1:
+                        current = resultToken.next_cursor
+            AssemblyTokenResult.End(end_cursor):
+                return end_cursor
+            AssemblyTokenResult.Error(resultError):
+                return cursor(0 - 1)
+    return current
+
 fn skip_trivia(text: BoundedText, start_cursor: TextCursor) -> TextCursor:
     mut current: TextCursor = start_cursor
     mut keep_scanning: tryte = 1
@@ -282,8 +308,9 @@ export fn next_assembly_parser_event(text: BoundedText, input_state: AssemblyPar
                                             done_event: AssemblyParserEvent = AssemblyParserEvent(kind=7, span=firstToken.span, next_cursor=end_cursor, version=input_state.version, result_width=0, operand_width=0, discard_results=0)
                                             return AssemblyParserResult.Event(event=done_event, state=done_state)
                                         -1:
-                                            decl_state: AssemblyParserState = AssemblyParserState(phase=3, cursor=end_cursor, version=input_state.version, function_count=input_state.function_count, declaration_count=input_state.declaration_count + 1, block_count=input_state.block_count, call_count=input_state.call_count, return_count=input_state.return_count, current_result_width=input_state.current_result_width, max_result_width=input_state.max_result_width)
-                                            decl_event: AssemblyParserEvent = AssemblyParserEvent(kind=3, span=span(firstToken.span.start, end_cursor.position), next_cursor=end_cursor, version=input_state.version, result_width=0, operand_width=0, discard_results=0)
+                                            decl_end_cursor: TextCursor = consume_to_line_end(text, firstToken.next_cursor)
+                                            decl_state: AssemblyParserState = AssemblyParserState(phase=3, cursor=decl_end_cursor, version=input_state.version, function_count=input_state.function_count, declaration_count=input_state.declaration_count + 1, block_count=input_state.block_count, call_count=input_state.call_count, return_count=input_state.return_count, current_result_width=input_state.current_result_width, max_result_width=input_state.max_result_width)
+                                            decl_event: AssemblyParserEvent = AssemblyParserEvent(kind=3, span=span(firstToken.span.start, decl_end_cursor.position), next_cursor=decl_end_cursor, version=input_state.version, result_width=0, operand_width=0, discard_results=0)
                                             return AssemblyParserResult.Event(event=decl_event, state=decl_state)
                                         1:
                                             return AssemblyParserResult.Error(error=parser_error_from_token(15, firstToken), state=input_state)

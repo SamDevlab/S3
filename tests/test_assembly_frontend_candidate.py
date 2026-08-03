@@ -7,7 +7,7 @@ from bootstrap.s3.assembly_parser_kernel import AssemblyParserErrorCode
 from bootstrap.s3.bounded_text import BoundedText, encode_ascii
 
 
-COVERAGE_STATUS = "CREATED — NOT EXECUTED UNTIL MILESTONE 1.16 IMPLEMENTATION COMPLETION"
+FINAL_VALIDATION_STATUS = "EXECUTED DURING CONSOLIDATED CAMPAIGN VALIDATION"
 
 ROOT = Path(__file__).resolve().parents[1]
 FRONTEND_TYPES_SOURCE = (
@@ -37,9 +37,9 @@ def _encoded(value: str) -> BoundedText:
     return result.text
 
 
-def test_tests_are_created_but_not_part_of_final_campaign_validation() -> None:
-    assert COVERAGE_STATUS == (
-        "CREATED — NOT EXECUTED UNTIL MILESTONE 1.16 IMPLEMENTATION COMPLETION"
+def test_tests_are_part_of_consolidated_campaign_validation() -> None:
+    assert FINAL_VALIDATION_STATUS == (
+        "EXECUTED DURING CONSOLIDATED CAMPAIGN VALIDATION"
     )
 
 

@@ -71,7 +71,7 @@ spans, prefix success/failure, decimal digits, identifiers, punctuation,
 deterministic repetition, imported helpers, source-unit permutations, Python,
 emulator O0/O1, and native O0/O1.
 
-CREATED - NOT EXECUTED UNTIL CAMPAIGN IMPLEMENTATION COMPLETION
+EXECUTED DURING CONSOLIDATED CAMPAIGN VALIDATION
 
 ## Explicit Limits
 
@@ -82,4 +82,4 @@ included.
 
 MILESTONE 1.13 - IMPLEMENTATION COMPLETE
 
-CONSOLIDATED VALIDATION DEFERRED
+CONSOLIDATED VALIDATION EXECUTED

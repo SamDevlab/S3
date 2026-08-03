@@ -57,15 +57,16 @@ Coverage is authored for successful summary creation, structured parser-error
 propagation, source availability for S3 differential coverage, and explicit
 created-not-executed labeling.
 
-CREATED - NOT EXECUTED UNTIL MILESTONE 1.16 IMPLEMENTATION COMPLETION
+EXECUTED DURING CONSOLIDATED CAMPAIGN VALIDATION
 
 ## Deferred Validation
 
-No test, compiler execution, emulator, native harness, benchmark, golden tool,
-renderer comparison, workflow query, or CI monitor was run while implementing
-this milestone. Earlier green CI after Milestone 1.14 is recorded only as early
-intermediate validation, not final campaign validation.
+Final local validation executed the frontend candidate tests, the 1.14-1.16
+focused group, the local unit selector, the full pytest suite, compileall,
+golden inspect, renderer comparison, and diff checks. Earlier green CI after
+Milestone 1.14 remains recorded only as early intermediate validation, not final
+campaign validation.
 
 MILESTONE 1.16 - IMPLEMENTATION COMPLETE
 
-CONSOLIDATED VALIDATION DEFERRED
+CONSOLIDATED VALIDATION EXECUTED

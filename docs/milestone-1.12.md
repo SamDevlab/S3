@@ -63,15 +63,16 @@ payloads, recursion, nested calls, ignored results, O0/O1, emulator, native
 width 8, bounds inherited from the existing array corpus, and aggregate
 `main` rejection.
 
-CREATED - NOT EXECUTED UNTIL CAMPAIGN IMPLEMENTATION COMPLETION
+EXECUTED DURING CONSOLIDATED CAMPAIGN VALIDATION
 
 ## Deferred Validation
 
-No test, compiler execution, emulator, native harness, benchmark, golden tool,
-renderer comparison, or CI query was run while implementing this milestone.
-Those checks remain deferred until Milestone 1.16 closes the campaign-wide
-implementation gate.
+Final local validation executed the focused 1.12 coverage, the local unit
+selector, the full pytest suite, compileall, golden inspect, renderer
+comparison, and diff checks after Milestone 1.16 implementation completed.
+Native ELF execution remains represented by the Linux CI job; the Windows local
+environment skipped ELF execution through the existing native toolchain fixture.
 
 MILESTONE 1.12 - IMPLEMENTATION COMPLETE
 
-CONSOLIDATED VALIDATION DEFERRED
+CONSOLIDATED VALIDATION EXECUTED

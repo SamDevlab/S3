@@ -64,15 +64,15 @@ Coverage is authored for the arrow token, version event, function header event,
 declaration event, label event, `TCALL`, `TRET`, `.end`, unsupported version,
 missing arrow, parser source availability, and S3 parser source availability.
 
-CREATED - NOT EXECUTED UNTIL MILESTONE 1.16 IMPLEMENTATION COMPLETION
+EXECUTED DURING CONSOLIDATED CAMPAIGN VALIDATION
 
 ## Deferred Validation
 
-No test, compiler execution, emulator, native harness, benchmark, golden tool,
-renderer comparison, workflow query, or CI monitor was run while implementing
-this milestone. `git diff --check` remains the only allowed static local gate
-until the implementation side of Milestone 1.16 is complete.
+Final local validation executed the parser kernel tests, the 1.14-1.16 focused
+group, the local unit selector, the full pytest suite, compileall, golden
+inspect, renderer comparison, and diff checks after Milestone 1.16 implementation
+completed. Native ELF execution remains represented by the Linux CI job.
 
 MILESTONE 1.15 - IMPLEMENTATION COMPLETE
 
-CONSOLIDATED VALIDATION DEFERRED
+CONSOLIDATED VALIDATION EXECUTED
