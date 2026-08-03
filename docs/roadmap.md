@@ -505,3 +505,35 @@ bindings imutáveis, indexação estática de texto, slicing e consultas estáti
 de texto, propagação de constantes escalares imutáveis, folding de expressões
 constantes, transformações de texto estático, módulos e uma biblioteca padrão
 mínima. Python será removido gradualmente somente após bootstrap reprodutível.
+
+## Marco 1.17 - Reproducible Benchmark Infrastructure
+
+Status: implementation authored; execution deferred until the 1.19 structural gate
+
+ADR-0026 defines the `s3bench 1.0.0` protocol. The implementation provides a
+versioned result schema, stable manifest contract, correctness-first phase
+ordering, bounded deterministic calibration, raw samples, median/mean/min/max,
+sample standard deviation, CV, nearest-rank p95, privacy-safe environment
+metadata, deterministic JSON/Markdown export, baseline comparison, and safe
+argument-list command execution. Shared CI smoke is functional evidence only.
+
+See [docs/milestone-1.17.md](milestone-1.17.md).
+
+## Marco 1.18 - S3 Runtime And Compiler Benchmark Corpus
+
+Status: planned in campaign 1.17-1.19
+
+The corpus will version scalar, call, fixed-array, aggregate ABI, bounded-text,
+tokenizer, parser, frontend-candidate, compiler-pipeline, and artifact-size
+workloads. Every workload defines an input, checksum, timed region, supported
+modes, and explicit unsupported configurations.
+
+## Marco 1.19 - Cross-Language Baseline And Performance Report
+
+Status: planned in campaign 1.17-1.19
+
+Portable workloads will receive equivalent C, Rust, and Zig implementations and
+explicit toolchain adapters. Portable native, interpreted, and S3-specific
+engineering results remain separate. Authoritative native claims require a
+controlled Linux environment; shared CI only validates schema, build, checksum,
+and smoke execution.

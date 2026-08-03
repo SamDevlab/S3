@@ -53,3 +53,37 @@ python tools/benchmark.py --mode hosted-pipeline --optimization both --workload 
 Quando invocado com `--optimization both`, o runner executa ambas as configurações (O0 e O1) e emite uma comparação neutra com razões informativas de proporção temporal e volumétrica (crescimento ou decréscimo estrutural).
 
 Para adicionar um novo workload: crie um arquivo `.s3` em `benchmarks/` e registre-o com o respectivo id e constraints no array dentro de `benchmarks/manifest.json`.
+
+## s3bench 1.0
+
+Milestones 1.17-1.19 add a new protocol beside the historical 0.8 runner. The
+old `tools/benchmark.py`, `manifest.json`, and `baseline-0.8-e2.json` remain
+unchanged historical and deterministic infrastructure.
+
+The new entry point is:
+
+```bash
+python tools/s3bench.py --list
+python tools/s3bench.py --dry-run
+python tools/s3bench.py --verify-only --output-json benchmarks/results/verify.json
+python tools/s3bench.py --smoke --output-json benchmarks/results/smoke.json
+```
+
+The versioned manifest is `manifests/s3bench-1.0.0.json`; the result schema is
+`schema/s3bench-1.0.0.schema.json`. Local machine-specific files under
+`benchmarks/results/` and build artifacts under `benchmarks/build/` are ignored.
+
+The harness always discovers and builds before verification. Verification must
+produce exactly one `checksum=<value>` line (or the equivalent internal S3
+result) matching the manifest. Only then may warmup, bounded calibration, and
+measurement proceed. `time.perf_counter_ns()` supplies durations. Raw measured
+samples are preserved; warmup and calibration observations are excluded.
+
+JSON contains separate compile, link, startup, kernel, process/end-to-end,
+artifact-size, and optional peak-memory fields. An unsupported phase is `null`,
+never zero. Results omit usernames, private hostnames, personal paths,
+environment dumps, network identifiers, credentials, and tokens.
+
+Shared CI smoke checks functionality and determinism without a performance
+threshold. Reviewed native baselines require one controlled Linux environment.
+Smoke output is never authoritative performance data.

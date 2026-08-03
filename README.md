@@ -115,6 +115,14 @@ general heap allocation, dynamic text, pointers, Unicode text processing,
 filesystem access, default parser replacement, and complete self-hosting are
 still not implemented.
 
+The 1.17-1.19 campaign builds a separate, versioned benchmark layer. The
+`s3bench 1.0.0` protocol verifies checksums before measurement, preserves raw
+samples, separates build/runtime/end-to-end phases, and keeps emulator, native,
+and external toolchains in explicit comparison classes. During implementation,
+coverage is authored but benchmark execution remains deferred until all three
+milestones reach their structural gate. Python remains the default compiler and
+the bounded S3 frontend remains a candidate.
+
 ## Contrato do Marco 0.7
 
 A versão 0.7.0 inclui fonte V0.6 por padrão e V0.5 por seleção
