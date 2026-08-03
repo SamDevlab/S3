@@ -754,6 +754,23 @@ def write_json(path: Path, results: Sequence[Mapping[str, object]]) -> None:
     )
 
 
+def duration_per_loop_ns(
+    result: Mapping[str, object],
+    *,
+    duration_key: str = "median_ns",
+) -> float | None:
+    duration = result.get(duration_key)
+    loops = result.get("loops_per_sample")
+    if (
+        not isinstance(duration, (int, float))
+        or not isinstance(loops, int)
+        or isinstance(loops, bool)
+        or loops <= 0
+    ):
+        return None
+    return float(duration) / loops
+
+
 def compare_results(
     results: Sequence[Mapping[str, object]],
     *,
@@ -769,18 +786,21 @@ def compare_results(
             (item for item in group if item.get("implementation") == reference_implementation),
             None,
         )
-        reference_median = reference.get("median_ns") if reference else None
+        reference_per_loop = duration_per_loop_ns(reference) if reference else None
         for item in sorted(group, key=lambda entry: str(entry.get("implementation"))):
             median = item.get("median_ns")
+            median_per_loop = duration_per_loop_ns(item)
             comparable = item.get("comparability_classification") == "COMPARABLE"
             ratio = None
-            if comparable and isinstance(median, (int, float)) and isinstance(reference_median, (int, float)) and reference_median > 0:
-                ratio = median / reference_median
+            if comparable and median_per_loop is not None and reference_per_loop is not None and reference_per_loop > 0:
+                ratio = median_per_loop / reference_per_loop
             comparisons.append(
                 {
                     "benchmark_id": benchmark_id,
                     "implementation": item.get("implementation"),
                     "median_ns": median,
+                    "median_ns_per_loop": median_per_loop,
+                    "loops_per_sample": item.get("loops_per_sample"),
                     "reference_implementation": reference_implementation,
                     "normalized_ratio": ratio,
                     "comparability_classification": item.get("comparability_classification"),
@@ -799,8 +819,8 @@ def render_markdown(
         "",
         "Median is the primary statistic. Missing values are rendered as `unavailable`.",
         "",
-        "| Benchmark | Implementation | Mode | Optimization | Median (ns) | CV | Classification |",
-        "| --- | --- | --- | --- | ---: | ---: | --- |",
+        "| Benchmark | Implementation | Mode | Optimization | Median/sample (ns) | Loops | Median/loop (ns) | CV | Classification |",
+        "| --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- |",
     ]
     for result in sorted(
         results,
@@ -812,11 +832,13 @@ def render_markdown(
         ),
     ):
         median = _render_value(result.get("median_ns"))
+        median_per_loop = _render_value(duration_per_loop_ns(result))
         cv = _render_value(result.get("coefficient_of_variation"))
         lines.append(
             f"| {result.get('benchmark_id')} | {result.get('implementation')} | "
             f"{result.get('execution_mode')} | {result.get('optimization_mode')} | "
-            f"{median} | {cv} | {result.get('comparability_classification')} |"
+            f"{median} | {_render_value(result.get('loops_per_sample'))} | "
+            f"{median_per_loop} | {cv} | {result.get('comparability_classification')} |"
         )
     lines.extend(("", "Raw samples remain in the companion JSON result file.", ""))
     return "\n".join(lines)

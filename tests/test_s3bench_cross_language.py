@@ -89,14 +89,16 @@ def test_tables_separate_native_interpreted_and_s3_specific():
 
 def test_normalization_uses_c_o2_and_never_converts_missing_to_zero():
     rows = [
-        _result("portable.v1", "c", "native", "O2", "portable", median=100),
-        _result("portable.v1", "s3", "native", "O1", "portable", median=250),
+        _result("portable.v1", "c", "native", "O2", "portable", median=100, loops=10),
+        _result("portable.v1", "s3", "native", "O1", "portable", median=250, loops=5),
         _result("missing.v1", "s3", "native", "O1", "portable", median=None),
     ]
     normalized = normalized_rows(rows)
     indexed = {(row["benchmark_id"], row["implementation"]): row for row in normalized}
     assert indexed[("portable.v1", "c")]["normalized_ratio"] == 1.0
-    assert indexed[("portable.v1", "s3")]["normalized_ratio"] == 2.5
+    assert indexed[("portable.v1", "s3")]["normalized_ratio"] == 5.0
+    assert indexed[("portable.v1", "c")]["median_ns_per_loop"] == 10.0
+    assert indexed[("portable.v1", "s3")]["median_ns_per_loop"] == 50.0
     assert indexed[("missing.v1", "s3")]["normalized_ratio"] is None
 
 
@@ -112,7 +114,7 @@ def test_report_order_is_deterministic_and_renders_reproduction():
     assert "No claim without a compatible reviewed baseline" in first
 
 
-def _result(benchmark_id, implementation, execution_mode, optimization_mode, suite, *, median=100):
+def _result(benchmark_id, implementation, execution_mode, optimization_mode, suite, *, median=100, loops=1):
     return {
         "benchmark_id": benchmark_id,
         "workload_version": "1.0.0",
@@ -123,6 +125,7 @@ def _result(benchmark_id, implementation, execution_mode, optimization_mode, sui
         "optimization_mode": optimization_mode,
         "status": "measured",
         "median_ns": median,
+        "loops_per_sample": loops,
         "coefficient_of_variation": 0.01 if median is not None else None,
         "artifact_size_bytes": 10,
         "comparability_classification": "COMPARABLE",

@@ -40,8 +40,10 @@ not authoritative evidence of relative performance.
 9. Each measured sample records the raw duration in nanoseconds and the final
    loops-per-sample value. Raw samples are preserved in exported results.
 10. Summaries contain median, arithmetic mean, minimum, maximum, sample standard
-    deviation, coefficient of variation, and nearest-rank percentile 95. The
-    median is the primary reported statistic.
+    deviation, coefficient of variation, and nearest-rank percentile 95 for raw
+    sample durations. The raw median remains visible, but comparisons and ratios
+    use the derived median duration per loop because calibration may select
+    different loop counts for different implementations or optimization modes.
 11. Outliers are retained by default. High variability produces a warning and
     does not delete or rewrite samples.
 12. Compile, link, process startup, kernel runtime, full process runtime,

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 
+from .core import duration_per_loop_ns
+
 UNOPTIMIZED_MODES = {"O0", "opt-level=0", "Debug"}
 OPTIMIZED_MODES = {"O1", "O2", "opt-level=2", "ReleaseFast"}
 
@@ -61,24 +63,27 @@ def normalized_rows(
             ),
             None,
         )
-        reference_median = reference.get("median_ns") if reference else None
+        reference_per_loop = duration_per_loop_ns(reference) if reference else None
         for item in _ordered(group):
             median = item.get("median_ns")
+            median_per_loop = duration_per_loop_ns(item)
             ratio = None
             if (
                 item.get("status") == "measured"
                 and item.get("comparability_classification") == "COMPARABLE"
-                and isinstance(median, (int, float))
-                and isinstance(reference_median, (int, float))
-                and reference_median > 0
+                and median_per_loop is not None
+                and reference_per_loop is not None
+                and reference_per_loop > 0
             ):
-                ratio = median / reference_median
+                ratio = median_per_loop / reference_per_loop
             rows.append(
                 {
                     "benchmark_id": benchmark_id,
                     "implementation": item.get("implementation"),
                     "optimization_mode": item.get("optimization_mode"),
                     "median_ns": median,
+                    "median_ns_per_loop": median_per_loop,
+                    "loops_per_sample": item.get("loops_per_sample"),
                     "normalized_ratio": ratio,
                     "comparability_classification": item.get("comparability_classification"),
                 }
@@ -257,16 +262,17 @@ def _ordered(results):
 def _table(results) -> str:
     rows = _ordered(results)
     lines = [
-        "| Benchmark | Implementation | Mode | Optimization | Median ns | CV | Status | Comparability |",
-        "| --- | --- | --- | --- | ---: | ---: | --- | --- |",
+        "| Benchmark | Implementation | Mode | Optimization | Median ns/sample | Loops | Median ns/loop | CV | Status | Comparability |",
+        "| --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- |",
     ]
     if not rows:
-        lines.append("| unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | NOT_COMPARABLE |")
+        lines.append("| unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | NOT_COMPARABLE |")
     for item in rows:
         lines.append(
             f"| {item.get('benchmark_id')} | {item.get('implementation')} | "
             f"{item.get('execution_mode')} | {item.get('optimization_mode')} | "
-            f"{_value(item.get('median_ns'))} | {_value(item.get('coefficient_of_variation'))} | "
+            f"{_value(item.get('median_ns'))} | {_value(item.get('loops_per_sample'))} | "
+            f"{_value(duration_per_loop_ns(item))} | {_value(item.get('coefficient_of_variation'))} | "
             f"{item.get('status')} | {item.get('comparability_classification')} |"
         )
     return "\n".join(lines)
@@ -303,12 +309,12 @@ def _recommendations(results: Sequence[Mapping[str, object]]) -> str:
         item for item in results
         if item.get("status") == "measured"
         and item.get("comparability_classification") == "COMPARABLE"
-        and isinstance(item.get("median_ns"), (int, float))
+        and duration_per_loop_ns(item) is not None
     ]
     if not comparable:
         return "Pending validated comparable measurements."
-    slowest = max(comparable, key=lambda item: float(item["median_ns"]))
-    return f"Review `{slowest.get('benchmark_id')}` first; it has the largest comparable measured median in this result set."
+    slowest = max(comparable, key=lambda item: duration_per_loop_ns(item) or 0.0)
+    return f"Review `{slowest.get('benchmark_id')}` first; it has the largest comparable median cost per loop in this result set."
 
 
 def _first_value(results: Sequence[Mapping[str, object]], key: str) -> object:

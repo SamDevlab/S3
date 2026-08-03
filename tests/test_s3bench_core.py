@@ -18,6 +18,7 @@ from benchmarks.s3bench import (
     collect_environment_metadata,
     compare_results,
     compute_statistics,
+    duration_per_loop_ns,
     extract_checksum,
     load_manifest,
     render_markdown,
@@ -123,6 +124,7 @@ def test_harness_excludes_verification_warmups_and_calibration_from_samples(tmp_
     )
     assert adapter.loops == [1, 1, 1, 1, 2, 2, 2, 2]
     assert result["raw_durations_ns"] == [200, 200, 200]
+    assert duration_per_loop_ns(result) == 100.0
     assert result["sample_count"] == 3
     assert result["correctness_status"] == "verified"
 
@@ -182,6 +184,7 @@ def test_comparison_and_markdown_keep_missing_values_explicit():
         "execution_mode": "native",
         "optimization_mode": "O2",
         "median_ns": None,
+        "loops_per_sample": None,
         "coefficient_of_variation": None,
         "comparability_classification": "NOT_COMPARABLE",
     }

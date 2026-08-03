@@ -23,9 +23,10 @@ rows instead of functional failures or fabricated data.
 ## Comparison And Reporting
 
 Native unoptimized, native optimized, and interpreted tables are separate. C O2
-is the explicit optimized normalization reference when comparable. Absolute
-medians remain visible, missing values remain unavailable, and failed or invalid
-workloads never receive a ratio or ranking.
+is the explicit optimized normalization reference when comparable. Raw sample
+medians and loop counts remain visible, while ratios use median duration per
+loop so independently calibrated cases stay comparable. Missing values remain
+unavailable, and failed or invalid workloads never receive a ratio or ranking.
 
 The deterministic report includes required methodology, limitations, raw-data
 location, artifact sizes, variability, historical caveats, and reproduction
