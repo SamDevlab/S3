@@ -24,10 +24,15 @@ def comparison_tables(
         "optimized": _ordered(
             item for item in portable_native if item.get("optimization_mode") in OPTIMIZED_MODES
         ),
+        "emulated": _ordered(
+            item
+            for item in measured
+            if item.get("suite") == "portable" and item.get("execution_mode") == "emulator"
+        ),
         "interpreted": _ordered(
             item
             for item in measured
-            if item.get("suite") == "portable" and item.get("execution_mode") in {"emulator", "interpreted"}
+            if item.get("suite") == "portable" and item.get("execution_mode") == "interpreted"
         ),
         "s3_specific": _ordered(item for item in measured if item.get("suite") == "s3-specific"),
         "unavailable": _ordered(item for item in results if item.get("status") in {"unavailable", "failed"}),
@@ -158,6 +163,14 @@ def render_performance_report(
         "## S3-specific suite",
         "",
         _table(tables["s3_specific"]),
+        "",
+        "## S3 emulator",
+        "",
+        _table(tables["emulated"]),
+        "",
+        "## Interpreted reference",
+        "",
+        _table(tables["interpreted"]),
         "",
         "## Compiler pipeline",
         "",

@@ -75,12 +75,14 @@ def test_tables_separate_native_interpreted_and_s3_specific():
     rows = [
         _result("portable.v1", "s3", "native", "O0", "portable"),
         _result("portable.v1", "c", "native", "O2", "portable"),
+        _result("portable.v1", "s3", "emulator", "O1", "portable"),
         _result("portable.v1", "python-reference", "interpreted", "reference", "portable"),
         _result("internal.v1", "s3", "emulator", "O1", "s3-specific"),
     ]
     tables = comparison_tables(rows)
     assert [row["implementation"] for row in tables["unoptimized"]] == ["s3"]
     assert [row["implementation"] for row in tables["optimized"]] == ["c"]
+    assert [row["implementation"] for row in tables["emulated"]] == ["s3"]
     assert [row["implementation"] for row in tables["interpreted"]] == ["python-reference"]
     assert [row["benchmark_id"] for row in tables["s3_specific"]] == ["internal.v1"]
 
