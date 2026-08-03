@@ -521,12 +521,14 @@ See [docs/milestone-1.17.md](milestone-1.17.md).
 
 ## Marco 1.18 - S3 Runtime And Compiler Benchmark Corpus
 
-Status: planned in campaign 1.17-1.19
+Status: implementation authored; execution deferred until the 1.19 structural gate
 
 The corpus will version scalar, call, fixed-array, aggregate ABI, bounded-text,
 tokenizer, parser, frontend-candidate, compiler-pipeline, and artifact-size
 workloads. Every workload defines an input, checksum, timed region, supported
 modes, and explicit unsupported configurations.
+
+See [docs/milestone-1.18.md](milestone-1.18.md).
 
 ## Marco 1.19 - Cross-Language Baseline And Performance Report
 
