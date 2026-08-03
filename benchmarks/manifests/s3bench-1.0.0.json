@@ -1,0 +1,34 @@
+{
+  "manifest_version": "1.0.0",
+  "campaign": "1.17-1.19",
+  "workloads": [
+    {
+      "benchmark_id": "runtime.scalar.minimal.v1",
+      "workload_version": "1.0.0",
+      "category": "runtime-scalar",
+      "suite": "portable",
+      "objective": "Validate the s3bench lifecycle with the smallest stable S3 program.",
+      "input": {"id": "constant-zero", "size": 1, "scale": "smoke"},
+      "expected_checksum": "0",
+      "timed_region": "Precompiled main function execution; compilation is excluded.",
+      "implementations": [
+        {
+          "id": "s3",
+          "adapter": "s3-emulator",
+          "execution_mode": "emulator",
+          "optimization_modes": ["O0", "O1"],
+          "source": "workloads/minimal.s3",
+          "timeout_seconds": 30
+        },
+        {
+          "id": "s3",
+          "adapter": "s3-native",
+          "execution_mode": "native",
+          "optimization_modes": ["O0", "O1"],
+          "source": "workloads/minimal.s3",
+          "timeout_seconds": 30
+        }
+      ]
+    }
+  ]
+}
