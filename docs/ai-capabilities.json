@@ -1,0 +1,104 @@
+{
+  "manifest_version": "1.0.0",
+  "language_version": "0.6",
+  "ir_version": "0.6.0",
+  "assembly_version": "0.6.0",
+  "diagnostic_schema_version": "1.0.0",
+  "default_implementation": {
+    "compiler": "bootstrap-python",
+    "parser": "python-reference",
+    "optimizer": "python-reference",
+    "emulator": "python-reference"
+  },
+  "candidate_components": [
+    {
+      "name": "bounded-assembly-frontend",
+      "maturity": "experimental-candidate",
+      "default": false
+    },
+    {
+      "name": "s3-opcode-classifier",
+      "maturity": "differential-reference",
+      "default": false
+    },
+    {
+      "name": "s3-diagnostic-classifier",
+      "maturity": "differential-reference",
+      "default": false
+    },
+    {
+      "name": "s3-layout-validator",
+      "maturity": "differential-reference",
+      "default": false
+    }
+  ],
+  "supported_features": {
+    "scalar_types": [
+      "trit",
+      "tryte"
+    ],
+    "records": {
+      "nominal": true,
+      "nested_acyclic": true,
+      "depth_first_scalar_leaf_layout": true,
+      "cross_module_import": true,
+      "cyclic_layouts": false
+    },
+    "enums": {
+      "nominal": true,
+      "payloads": true,
+      "tag_first_fixed_cells": true,
+      "cross_module_import": true,
+      "exhaustive_match": true
+    },
+    "fixed_arrays": {
+      "element_types": [
+        "trit",
+        "tryte"
+      ],
+      "max_capacity": 365,
+      "copy_by_value": true
+    },
+    "bounded_text": {
+      "encoding": "ascii",
+      "max_capacity_bytes": 364,
+      "logical_length": true,
+      "compile_time_eval": true
+    },
+    "functions": {
+      "recursion": true,
+      "tail_calls": true,
+      "multi_file_modules": true,
+      "export_fn": true
+    },
+    "aggregate_parameters": true,
+    "aggregate_results": true,
+    "optimizer_levels": [
+      "O0",
+      "O1"
+    ],
+    "emulator": {
+      "hosted": true,
+      "instruction_limit_default": 100000,
+      "frame_limit_default": 1024
+    },
+    "native_targets": [
+      {
+        "target": "x86_64-unknown-linux-gnu",
+        "assembly_format": "gnu-as",
+        "execution_boundary": "linux-ci-only"
+      }
+    ]
+  },
+  "unsupported_features": {
+    "heap_allocation": false,
+    "raw_pointers": false,
+    "aliasing": false,
+    "dynamic_arrays": false,
+    "dynamic_strings": false,
+    "generics": false,
+    "exceptions": false,
+    "concurrency": false,
+    "windows_native_execution": false
+  }
+}
