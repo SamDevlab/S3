@@ -308,6 +308,7 @@ def _recommendations(results: Sequence[Mapping[str, object]]) -> str:
     comparable = [
         item for item in results
         if item.get("status") == "measured"
+        and item.get("implementation") == "s3"
         and item.get("comparability_classification") == "COMPARABLE"
         and duration_per_loop_ns(item) is not None
     ]

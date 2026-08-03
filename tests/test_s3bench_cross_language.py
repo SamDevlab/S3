@@ -114,6 +114,23 @@ def test_report_order_is_deterministic_and_renders_reproduction():
     assert "No claim without a compatible reviewed baseline" in first
 
 
+def test_report_recommendation_uses_s3_results_not_interpreted_reference():
+    rows = [
+        _result(
+            "python.slow.v1",
+            "python-reference",
+            "interpreted",
+            "reference",
+            "portable",
+            median=1_000_000,
+        ),
+        _result("s3.priority.v1", "s3", "emulator", "O0", "portable", median=500),
+    ]
+    report = render_performance_report(rows, raw_result_path="raw.json")
+    recommendation = report.split("## Recommended optimization priorities", 1)[1]
+    assert "Review `s3.priority.v1` first" in recommendation
+
+
 def _result(benchmark_id, implementation, execution_mode, optimization_mode, suite, *, median=100, loops=1):
     return {
         "benchmark_id": benchmark_id,

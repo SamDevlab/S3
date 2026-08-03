@@ -30,7 +30,9 @@ unavailable, and failed or invalid workloads never receive a ratio or ranking.
 
 The deterministic report includes required methodology, limitations, raw-data
 location, artifact sizes, variability, historical caveats, and reproduction
-commands. Recommendations remain pending until validated data exists.
+commands. Optimization recommendations are derived from S3 rows only; external
+and interpreted references remain contextual. Recommendations remain pending
+until validated data exists.
 
 ## CI And Authority
 
