@@ -1,0 +1,10 @@
+fn copy(values: tryte[5]) -> tryte[5]:
+    return values
+
+fn sum(values: tryte[5]) -> tryte:
+    return values[0] + values[1] + values[2] + values[3] + values[4]
+
+fn main() -> tryte:
+    source: tryte[5] = [1, 2, 3, 4, 5]
+    copied: tryte[5] = copy(source)
+    return sum(copied)

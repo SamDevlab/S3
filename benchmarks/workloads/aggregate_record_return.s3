@@ -1,0 +1,9 @@
+record Pair:
+    left: tryte
+    right: tryte
+
+fn make() -> Pair:
+    return Pair(left=4, right=6)
+
+fn main() -> tryte:
+    return make().left + make().right

@@ -1,0 +1,21 @@
+record Inner:
+    x: tryte
+    y: trit
+
+record Outer:
+    prefix: tryte
+    inner: Inner
+
+fn make() -> Outer:
+    return Outer(prefix=3, inner=Inner(x=5, y=-1))
+
+fn main() -> tryte:
+    item: Outer = make()
+    mut total: tryte = item.prefix + item.inner.x
+    match item.inner.y <=> 0:
+        -1:
+            return total - 1
+        0:
+            return total
+        1:
+            return total + 1

@@ -16,6 +16,7 @@ from bootstrap.s3.backends._hosted_execution import _execute_hosted_assembly
 from bootstrap.s3.backends.x86_64.backend import generate_native_assembly
 from bootstrap.s3.backends.x86_64.toolchain import NativeToolchain
 from bootstrap.s3.pipeline import compile_source
+from bootstrap.s3.ir_serialization import serialize_ir
 
 from .core import (
     Adapter,
@@ -86,9 +87,22 @@ class S3EmulatorAdapter:
         compilation = compile_source(source, case.optimization_mode)
         duration = time.perf_counter_ns() - started
         assembly_size = len(compilation.assembly_text.encode("utf-8"))
+        ir_size = len(serialize_ir(compilation.ir).encode("utf-8"))
+        instruction_count = sum(
+            len(block.instructions)
+            for function in compilation.ir.functions
+            for block in function.blocks
+        )
         return BuildArtifact(
             compile_duration_ns=duration,
             artifact_size_bytes=assembly_size,
+            artifact_metrics={
+                "source_bytes": len(source.encode("utf-8")),
+                "ir_bytes": ir_size,
+                "assembly_bytes": assembly_size,
+                "function_count": len(compilation.ir.functions),
+                "instruction_count": instruction_count,
+            },
             compiler_name="s3-bootstrap-python",
             compiler_version=None,
             compiler_flags=(case.optimization_mode,),
@@ -142,6 +156,11 @@ class S3NativeAdapter:
             compile_duration_ns=compile_duration,
             link_duration_ns=link_duration,
             artifact_size_bytes=executable.stat().st_size,
+            artifact_metrics={
+                "source_bytes": len(source.encode("utf-8")),
+                "assembly_bytes": len(native_assembly.encode("utf-8")),
+                "elf_bytes": executable.stat().st_size,
+            },
             compiler_name=Path(toolchain.compiler).name,
             compiler_version=_tool_version((toolchain.compiler, "--version")),
             compiler_flags=(case.optimization_mode,),
@@ -187,6 +206,7 @@ class PythonReferenceAdapter:
         return BuildArtifact(
             path=case.source,
             artifact_size_bytes=case.source.stat().st_size,
+            artifact_metrics={"source_bytes": case.source.stat().st_size},
             compiler_name="CPython",
             compiler_version=platform.python_version(),
             notes=("interpreted reference; compile and link phases are unavailable",),
@@ -265,6 +285,10 @@ class ExternalCompilerAdapter:
             compile_duration_ns=compile_duration,
             link_duration_ns=link_duration,
             artifact_size_bytes=executable.stat().st_size,
+            artifact_metrics={
+                "source_bytes": case.source.stat().st_size,
+                "executable_bytes": executable.stat().st_size,
+            },
             compiler_name=self._toolchain.name,
             compiler_version=self._toolchain.version,
             compiler_flags=tuple(flags),

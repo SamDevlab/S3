@@ -30,7 +30,7 @@
         "coefficient_of_variation", "percentile_95_ns",
         "compile_duration_ns", "link_duration_ns", "startup_duration_ns",
         "kernel_duration_ns", "end_to_end_duration_ns", "artifact_size_bytes",
-        "peak_memory_bytes", "repository_sha", "repository_dirty",
+        "peak_memory_bytes", "artifact_metrics", "repository_sha", "repository_dirty",
         "operating_system", "architecture", "cpu_model", "logical_cpu_count",
         "physical_cpu_count", "total_memory_bytes", "python_version",
         "compiler_name", "compiler_version", "compiler_flags", "linker",
@@ -73,6 +73,10 @@
         "end_to_end_duration_ns": {"$ref": "#/$defs/nullableInteger"},
         "artifact_size_bytes": {"$ref": "#/$defs/nullableInteger"},
         "peak_memory_bytes": {"$ref": "#/$defs/nullableInteger"},
+        "artifact_metrics": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 0}
+        },
         "repository_sha": {"type": "string", "minLength": 1},
         "repository_dirty": {"type": "boolean"},
         "operating_system": {"type": "string", "minLength": 1},

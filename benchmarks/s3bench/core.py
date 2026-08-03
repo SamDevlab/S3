@@ -80,6 +80,7 @@ class BuildArtifact:
     compile_duration_ns: int | None = None
     link_duration_ns: int | None = None
     artifact_size_bytes: int | None = None
+    artifact_metrics: Mapping[str, int] = field(default_factory=dict)
     compiler_name: str | None = None
     compiler_version: str | None = None
     compiler_flags: tuple[str, ...] = ()
@@ -626,6 +627,7 @@ class BenchmarkHarness:
             "kernel_duration_ns": None,
             "end_to_end_duration_ns": None,
             "artifact_size_bytes": artifact.artifact_size_bytes,
+            "artifact_metrics": dict(sorted(artifact.artifact_metrics.items())),
             "peak_memory_bytes": None,
             **metadata,
             "compiler_name": artifact.compiler_name,
@@ -645,7 +647,7 @@ def validate_result_document(document: Mapping[str, object]) -> None:
         "correctness_status", "warmup_count", "sample_count",
         "raw_durations_ns", "repository_sha", "repository_dirty",
         "operating_system", "architecture", "python_version", "runner_type",
-        "timestamp_utc", "notes", "comparability_classification",
+        "timestamp_utc", "notes", "artifact_metrics", "comparability_classification",
     }
     missing = sorted(required.difference(document))
     if missing:
@@ -712,6 +714,7 @@ def unavailable_result(
         "end_to_end_duration_ns": None,
         "artifact_size_bytes": None,
         "peak_memory_bytes": None,
+        "artifact_metrics": {},
         **metadata,
         "compiler_name": None,
         "compiler_version": None,
