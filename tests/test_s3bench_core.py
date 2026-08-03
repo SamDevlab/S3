@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from dataclasses import replace
 from pathlib import Path
 
@@ -93,7 +94,7 @@ def test_calibration_rejects_unbounded_or_invalid_measurements():
 
 def test_safe_command_invocation_captures_status_and_timeout(tmp_path):
     success = run_command(
-        ["python", "-c", "print('checksum=4')"],
+        [sys.executable, "-c", "print('checksum=4')"],
         cwd=tmp_path,
         timeout_seconds=10,
     )
@@ -120,7 +121,7 @@ def test_harness_excludes_verification_warmups_and_calibration_from_samples(tmp_
         samples=3,
         target_sample_ns=200,
     )
-    assert adapter.loops == [1, 1, 1, 1, 2, 2, 2]
+    assert adapter.loops == [1, 1, 1, 1, 2, 2, 2, 2]
     assert result["raw_durations_ns"] == [200, 200, 200]
     assert result["sample_count"] == 3
     assert result["correctness_status"] == "verified"

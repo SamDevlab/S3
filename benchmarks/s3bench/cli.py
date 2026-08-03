@@ -20,10 +20,10 @@ from .core import (
     Case,
     compare_results,
     load_manifest,
-    render_markdown,
     unavailable_result,
     write_json,
 )
+from .report import render_performance_report
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MANIFEST = REPOSITORY_ROOT / "benchmarks" / "manifests" / "s3bench-1.0.0.json"
@@ -159,7 +159,12 @@ def _run_with_build_dir(
     if args.output_markdown:
         args.output_markdown.parent.mkdir(parents=True, exist_ok=True)
         args.output_markdown.write_text(
-            render_markdown(results), encoding="utf-8", newline="\n"
+            render_performance_report(
+                results,
+                raw_result_path=args.output_json.name if args.output_json else "unavailable",
+            ),
+            encoding="utf-8",
+            newline="\n",
         )
     comparisons = compare_results(
         results,
@@ -248,13 +253,17 @@ def _classify_current_results(
         if result.get("status") != "measured":
             result["comparability_classification"] = "NOT_COMPARABLE"
             continue
+        if result.get("suite") == "portable" and result.get("benchmark_id") == "runtime.text.scan.v1" and result.get("implementation") == "s3":
+            result["comparability_classification"] = "NOT_COMPARABLE"
+            result["notes"].append("S3 static text is compile-time folded and has a different runtime timed region")
+            continue
         key = (
             result.get("benchmark_id"), result.get("workload_version"), result.get("input_id"),
             result.get("implementation"), result.get("execution_mode"), result.get("optimization_mode"),
         )
-        result["comparability_classification"] = (
-            "COMPARABLE" if key in baseline_keys else "PARTIALLY_COMPARABLE"
-        )
+        result["comparability_classification"] = "COMPARABLE" if (
+            result.get("suite") == "portable" or key in baseline_keys
+        ) else "PARTIALLY_COMPARABLE"
 
 
 def _case_directory(case: Case) -> str:
