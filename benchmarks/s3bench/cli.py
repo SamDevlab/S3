@@ -19,6 +19,7 @@ from .core import (
     DEFAULT_WARMUPS,
     Case,
     compare_results,
+    failed_result,
     load_manifest,
     unavailable_result,
     write_json,
@@ -141,15 +142,15 @@ def _run_with_build_dir(
         except BenchmarkError as error:
             failed = True
             results.append(
-                unavailable_result(
+                failed_result(
                     case,
                     repository_root=REPOSITORY_ROOT,
                     reason=f"functional failure: {error}",
+                    artifact=getattr(error, "artifact", None),
+                    observed_checksum=getattr(error, "observed_checksum", None),
                     runner_type=args.runner_type,
                 )
             )
-            results[-1]["status"] = "failed"
-            results[-1]["correctness_status"] = "failed"
             if args.fail_fast:
                 break
 

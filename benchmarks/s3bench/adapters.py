@@ -26,6 +26,7 @@ from .core import (
     Case,
     ExecutionObservation,
     extract_checksum,
+    extract_native_checksum,
     run_command,
 )
 
@@ -177,25 +178,23 @@ class S3NativeAdapter:
         if artifact.path is None:
             raise BenchmarkError("S3 native artifact has no executable")
         started = time.perf_counter_ns()
-        last_exit = 0
+        checksum = None
         for _ in range(loops):
             result = run_command(
                 [os.fspath(artifact.path)],
                 cwd=artifact.path.parent,
                 timeout_seconds=timeout_seconds,
             )
-            if result.timed_out or result.exit_code is None:
+            if result.timed_out or result.output_truncated:
                 return _observation_from_command(result, checksum=None)
-            last_exit = result.exit_code
+            if result.exit_code != 0:
+                details = result.stderr.strip() or result.stdout.strip()
+                raise BenchmarkError(
+                    f"{case.benchmark_id}: native execution failed with status {result.exit_code}: {details}"
+                )
+            checksum = extract_native_checksum(result.stdout)
         duration = time.perf_counter_ns() - started
-        return ExecutionObservation(
-            checksum=str(last_exit),
-            duration_ns=duration,
-            exit_code=0,
-            startup_duration_ns=None,
-            kernel_duration_ns=None,
-            end_to_end_duration_ns=duration,
-        )
+        return _observation_from_command(result, checksum=checksum)
 
 
 class PythonReferenceAdapter:

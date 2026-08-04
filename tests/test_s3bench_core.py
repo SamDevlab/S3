@@ -193,3 +193,63 @@ def test_comparison_and_markdown_keep_missing_values_explicit():
     markdown = render_markdown([result])
     assert "unavailable" in markdown
     assert "| 0 |" not in markdown
+
+
+def test_s3_native_adapter_checksum_extraction(monkeypatch, tmp_path):
+    from benchmarks.s3bench.adapters import S3NativeAdapter
+    from benchmarks.s3bench.core import CommandResult
+
+    adapter = S3NativeAdapter()
+    case = _case()
+    artifact = BuildArtifact(path=tmp_path / "fake_elf")
+
+    # 1. Output: 'program returned: 42\n' with exit code 0
+    monkeypatch.setattr(
+        "benchmarks.s3bench.adapters.run_command",
+        lambda args, cwd, timeout_seconds: CommandResult(
+            tuple(args), "program returned: 42\n", "", 0, False, False, 1000
+        ),
+    )
+    obs = adapter.execute(case, artifact, 1, 30.0)
+    assert obs.checksum == "42"
+    assert obs.exit_code == 0
+
+    # 2. Negative value & trailing whitespace/newlines
+    monkeypatch.setattr(
+        "benchmarks.s3bench.adapters.run_command",
+        lambda args, cwd, timeout_seconds: CommandResult(
+            tuple(args), "program returned: -1  \n\n", "", 0, False, False, 1000
+        ),
+    )
+    obs_neg = adapter.execute(case, artifact, 1, 30.0)
+    assert obs_neg.checksum == "-1"
+
+    # 3. Empty stdout must NOT become checksum "0"
+    monkeypatch.setattr(
+        "benchmarks.s3bench.adapters.run_command",
+        lambda args, cwd, timeout_seconds: CommandResult(
+            tuple(args), "", "", 0, False, False, 1000
+        ),
+    )
+    with pytest.raises(BenchmarkError):
+        adapter.execute(case, artifact, 1, 30.0)
+
+    # 4. Malformed stdout must raise explicit BenchmarkError
+    monkeypatch.setattr(
+        "benchmarks.s3bench.adapters.run_command",
+        lambda args, cwd, timeout_seconds: CommandResult(
+            tuple(args), "invalid output\n", "", 0, False, False, 1000
+        ),
+    )
+    with pytest.raises(BenchmarkError):
+        adapter.execute(case, artifact, 1, 30.0)
+
+    # 5. Non-zero exit code is execution failure, not checksum
+    monkeypatch.setattr(
+        "benchmarks.s3bench.adapters.run_command",
+        lambda args, cwd, timeout_seconds: CommandResult(
+            tuple(args), "program returned: 42\n", "runtime error: bounds\n", 1, False, False, 1000
+        ),
+    )
+    with pytest.raises(BenchmarkError):
+        adapter.execute(case, artifact, 1, 30.0)

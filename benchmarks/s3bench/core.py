@@ -36,6 +36,18 @@ COMPARABILITY = {
 class BenchmarkError(RuntimeError):
     """A benchmark phase could not produce a valid observation."""
 
+    def __init__(
+        self,
+        message: str,
+        *,
+        observed_checksum: str | None = None,
+        artifact: BuildArtifact | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.observed_checksum = observed_checksum
+        self.artifact = artifact
+
+
 
 class AdapterUnavailable(BenchmarkError):
     """A requested implementation cannot run in the detected environment."""
@@ -278,6 +290,23 @@ def extract_checksum(stdout: str) -> str:
     return matches[0]
 
 
+def extract_native_checksum(stdout: str) -> str:
+    matches = [
+        line.removeprefix("program returned:").strip()
+        for line in stdout.splitlines()
+        if line.startswith("program returned:")
+    ]
+    if len(matches) != 1 or not matches[0]:
+        raise BenchmarkError("output must contain exactly one 'program returned: <integer>' line")
+    val_str = matches[0]
+    try:
+        int(val_str)
+    except ValueError as error:
+        raise BenchmarkError(f"invalid native checksum value: {val_str}") from error
+    return val_str
+
+
+
 def load_manifest(path: Path) -> tuple[dict[str, object], tuple[Case, ...]]:
     try:
         document = json.loads(path.read_text(encoding="utf-8"))
@@ -490,7 +519,7 @@ class BenchmarkHarness:
             return self._base_result(case, artifact, phase_status, "built", warmups, samples)
 
         verification = adapter.execute(case, artifact, 1, case.timeout_seconds)
-        self._require_valid_observation(case, verification)
+        self._require_valid_observation(case, verification, artifact)
         phase_status["verify"] = "complete"
         if verify_only:
             result = self._base_result(case, artifact, phase_status, "verified", warmups, samples)
@@ -500,7 +529,7 @@ class BenchmarkHarness:
 
         for _ in range(warmups):
             observation = adapter.execute(case, artifact, 1, case.timeout_seconds)
-            self._require_valid_observation(case, observation)
+            self._require_valid_observation(case, observation, artifact)
         phase_status["warmup"] = "complete"
 
         if loops is None:
@@ -520,7 +549,7 @@ class BenchmarkHarness:
         last_observation = verification
         for _ in range(samples):
             last_observation = adapter.execute(case, artifact, loops, case.timeout_seconds)
-            self._require_valid_observation(case, last_observation)
+            self._require_valid_observation(case, last_observation, artifact)
             raw_durations.append(last_observation.duration_ns)
         phase_status["measure"] = "complete"
         summary = compute_statistics(raw_durations)
@@ -559,24 +588,32 @@ class BenchmarkHarness:
         loops: int,
     ) -> int:
         observation = adapter.execute(case, artifact, loops, case.timeout_seconds)
-        self._require_valid_observation(case, observation)
+        self._require_valid_observation(case, observation, artifact)
         return observation.duration_ns
 
     @staticmethod
-    def _require_valid_observation(case: Case, observation: ExecutionObservation) -> None:
+    def _require_valid_observation(
+        case: Case,
+        observation: ExecutionObservation,
+        artifact: BuildArtifact | None = None,
+    ) -> None:
         if observation.timed_out:
-            raise BenchmarkError(f"{case.benchmark_id}: execution timed out")
+            raise BenchmarkError(f"{case.benchmark_id}: execution timed out", artifact=artifact)
         if observation.output_truncated:
-            raise BenchmarkError(f"{case.benchmark_id}: output was truncated")
+            raise BenchmarkError(f"{case.benchmark_id}: output was truncated", artifact=artifact)
         if observation.exit_code != 0:
             raise BenchmarkError(
-                f"{case.benchmark_id}: execution failed with status {observation.exit_code}"
+                f"{case.benchmark_id}: execution failed with status {observation.exit_code}",
+                artifact=artifact,
             )
         if observation.checksum != case.expected_checksum:
             raise BenchmarkError(
                 f"{case.benchmark_id}: checksum mismatch; expected "
-                f"{case.expected_checksum}, observed {observation.checksum}"
+                f"{case.expected_checksum}, observed {observation.checksum}",
+                observed_checksum=observation.checksum,
+                artifact=artifact,
             )
+
 
     def _base_result(
         self,
@@ -723,6 +760,38 @@ def unavailable_result(
         "notes": [reason],
         "comparability_classification": "NOT_COMPARABLE",
     }
+
+
+def failed_result(
+    case: Case,
+    *,
+    repository_root: Path,
+    reason: str,
+    artifact: BuildArtifact | None = None,
+    observed_checksum: str | None = None,
+    runner_type: str = "local",
+) -> dict[str, object]:
+    result = unavailable_result(
+        case,
+        repository_root=repository_root,
+        reason=reason,
+        runner_type=runner_type,
+    )
+    result["status"] = "failed"
+    result["correctness_status"] = "failed"
+    result["observed_checksum"] = observed_checksum
+    if artifact is not None:
+        result["phase_status"] = {"discover": "complete", "build": "complete", "verify": "failed"}
+        result["compile_duration_ns"] = artifact.compile_duration_ns
+        result["link_duration_ns"] = artifact.link_duration_ns
+        result["artifact_size_bytes"] = artifact.artifact_size_bytes
+        result["artifact_metrics"] = dict(sorted(artifact.artifact_metrics.items()))
+        result["compiler_name"] = artifact.compiler_name
+        result["compiler_version"] = artifact.compiler_version
+        result["compiler_flags"] = list(artifact.compiler_flags)
+        result["linker"] = artifact.linker
+        result["notes"] = list(artifact.notes) + [reason]
+    return result
 
 
 def _contains_personal_path(value: str) -> bool:
