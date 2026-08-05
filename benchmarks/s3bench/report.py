@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 
-from .core import duration_per_loop_ns
+# _canonical_reference lives in core.py as the single source of truth;
+# normalized_rows imports it so the two code paths can never diverge
+# on the reference choice.
+from .core import _canonical_reference, duration_per_loop_ns
 
 UNOPTIMIZED_MODES = {"O0", "opt-level=0", "Debug"}
 OPTIMIZED_MODES = {"O1", "O2", "opt-level=2", "ReleaseFast"}
@@ -48,42 +51,64 @@ def normalized_rows(
     reference_optimization: str = "O2",
 ) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
-    by_benchmark: dict[str, list[Mapping[str, object]]] = {}
+    # Scope-aware grouping: NEVER normalize across measurement_scope.
+    # A kernel reference (C O2, loops>>1) cannot serve a process result
+    # (S3 native, loops=1, includes fork/exec/ELF load) and vice versa.
+    by_scope: dict[tuple[str, str, str, str], list[Mapping[str, object]]] = {}
     for result in results:
-        by_benchmark.setdefault(str(result.get("benchmark_id")), []).append(result)
-    for benchmark_id in sorted(by_benchmark):
-        group = by_benchmark[benchmark_id]
-        reference = next(
-            (
-                item for item in group
-                if item.get("implementation") == reference_implementation
-                and item.get("optimization_mode") == reference_optimization
-                and item.get("status") == "measured"
-                and item.get("comparability_classification") == "COMPARABLE"
-            ),
-            None,
+        key = (
+            str(result.get("benchmark_id", "")),
+            str(result.get("input_id", "")),
+            str(result.get("measurement_scope", "")),
+            str(result.get("phase", "")),
         )
-        reference_per_loop = duration_per_loop_ns(reference) if reference else None
+        by_scope.setdefault(key, []).append(result)
+    for scope_key in sorted(by_scope):
+        group = by_scope[scope_key]
+        # ONE canonical reference per group — deterministic, non-circular.
+        canonical = _canonical_reference(
+            group,
+            reference_implementation=reference_implementation,
+            reference_optimization=reference_optimization,
+        )
+        canonical_per_loop = duration_per_loop_ns(canonical) if canonical else None
+        canonical_mode = canonical.get("execution_mode") if canonical else None
+        canonical_opt = canonical.get("optimization_mode") if canonical else None
+        canonical_scope = canonical.get("measurement_scope") if canonical else None
+        canonical_impl = canonical.get("implementation") if canonical else None
         for item in _ordered(group):
             median = item.get("median_ns")
             median_per_loop = duration_per_loop_ns(item)
             ratio = None
+            reference_impl: str | None = None
             if (
-                item.get("status") == "measured"
+                canonical is not None
+                and canonical_scope == item.get("measurement_scope")
+                and item.get("status") == "measured"
                 and item.get("comparability_classification") == "COMPARABLE"
                 and median_per_loop is not None
-                and reference_per_loop is not None
-                and reference_per_loop > 0
+                and canonical_per_loop is not None
+                and canonical_per_loop > 0
             ):
-                ratio = median_per_loop / reference_per_loop
+                ratio = median_per_loop / canonical_per_loop
+                reference_impl = str(canonical_impl)
             rows.append(
                 {
-                    "benchmark_id": benchmark_id,
+                    "benchmark_id": scope_key[0],
+                    "input_id": scope_key[1],
+                    "measurement_scope": item.get("measurement_scope"),
+                    "phase": scope_key[3],
                     "implementation": item.get("implementation"),
+                    "execution_mode": item.get("execution_mode"),
                     "optimization_mode": item.get("optimization_mode"),
+                    "process_launches_per_sample": item.get("process_launches_per_sample"),
                     "median_ns": median,
                     "median_ns_per_loop": median_per_loop,
                     "loops_per_sample": item.get("loops_per_sample"),
+                    "reference_implementation": reference_impl,
+                    "reference_execution_mode": canonical_mode,
+                    "reference_optimization_mode": canonical_opt,
+                    "reference_measurement_scope": canonical_scope,
                     "normalized_ratio": ratio,
                     "comparability_classification": item.get("comparability_classification"),
                 }
@@ -102,6 +127,12 @@ def render_performance_report(
     architecture = _first_value(results, "architecture")
     runner_type = _first_value(results, "runner_type")
     recommendations = _recommendations(results)
+    # Methodology: split results by measurement_scope so that kernel
+    # timing (internal loop, loops>>1) is never presented alongside
+    # process/startup timing (one fork/exec per sample, loops=1) in a
+    # single comparable table. The two are different physical quantities.
+    kernel_results = [r for r in results if r.get("measurement_scope") == "kernel"]
+    process_results = [r for r in results if r.get("measurement_scope") == "process"]
     lines = [
         "# S3 Performance Report 1.19",
         "",
@@ -137,6 +168,10 @@ def render_performance_report(
         "",
         "Build, correctness, warmup, calibration, final samples, summary, export, and comparison are separate phases.",
         "",
+        "## Measurement scope",
+        "",
+        "Results are partitioned by measurement_scope. KERNEL MEASUREMENTS run an internal loop with loops_per_sample > 1; median_ns_per_loop is a kernel-region cost. PROCESS/STARTUP MEASUREMENTS launch one process per sample with loops_per_sample = 1; median_ns_per_loop is the duration per process/sample and is NOT a kernel cost.",
+        "",
         "## Warmups",
         "",
         str(_first_value(results, "warmup_count")),
@@ -161,7 +196,19 @@ def render_performance_report(
         "",
         "Compile, link, full process, startup, kernel, end-to-end, size, and memory remain distinct fields.",
         "",
-        "## Portable suite",
+        "## KERNEL MEASUREMENTS",
+        "",
+        "_Kernel-scoped adapters run an internal loop with loops_per_sample > 1. median_ns_per_loop is comparable across kernel implementations only._",
+        "",
+        _kernel_table(kernel_results, _registry(tables, kernel_results)),
+        "",
+        "## PROCESS/STARTUP MEASUREMENTS",
+        "",
+        "_Process-scoped adapters launch one process per sample with loops_per_sample = 1; median_ns_per_loop is the duration per process/sample, NOT a kernel cost. S3 native O0 and O1 may be compared within this scope only._",
+        "",
+        _process_table(process_results, _registry(tables, process_results)),
+        "",
+        "## Portable suite (legacy view)",
         "",
         _table(tables["optimized"] + tables["unoptimized"]),
         "",
@@ -227,7 +274,7 @@ def render_performance_report(
         "",
         "## Known limitations",
         "",
-        "Shared CI is non-authoritative; missing toolchains and incompatible timed regions remain explicit.",
+        "Shared CI is non-authoritative; missing toolchains and incompatible timed regions remain explicit. Process/startup timing is never normalized against kernel timing.",
         "",
         "## Reproduction commands",
         "",
@@ -244,6 +291,53 @@ def render_performance_report(
         recommendations,
         "",
     ]
+    return "\n".join(lines)
+
+
+def _registry(tables, results):
+    """Constrain the legacy comparison_tables buckets to a scope subset."""
+    wanted = {id(r) for r in results}
+    return {key: [r for r in bucket if id(r) in wanted] for key, bucket in tables.items()}
+
+
+def _kernel_table(results, registry) -> str:
+    rows = _ordered(results)
+    lines = [
+        "| Benchmark | Implementation | Mode | Optimization | Median ns/sample | Loops | Median ns/loop | CV | Status | Comparability |",
+        "| --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- |",
+    ]
+    if not rows:
+        lines.append("| unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | NOT_COMPARABLE |")
+    for item in rows:
+        lines.append(
+            f"| {item.get('benchmark_id')} | {item.get('implementation')} | "
+            f"{item.get('execution_mode')} | {item.get('optimization_mode')} | "
+            f"{_value(item.get('median_ns'))} | {_value(item.get('loops_per_sample'))} | "
+            f"{_value(duration_per_loop_ns(item))} | {_value(item.get('coefficient_of_variation'))} | "
+            f"{item.get('status')} | {item.get('comparability_classification')} |"
+        )
+    return "\n".join(lines)
+
+
+def _process_table(results, registry) -> str:
+    # Process/startup scope: loops_per_sample is always 1. The
+    # "Median ns/loop" column is physically a per-process/per-sample
+    # duration; we relabel it to avoid implying a kernel cost.
+    rows = _ordered(results)
+    lines = [
+        "| Benchmark | Implementation | Mode | Optimization | Median ns/process | Loops/process | Median ns/process | CV | Status | Comparability |",
+        "| --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- |",
+    ]
+    if not rows:
+        lines.append("| unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | unavailable | NOT_COMPARABLE |")
+    for item in rows:
+        lines.append(
+            f"| {item.get('benchmark_id')} | {item.get('implementation')} | "
+            f"{item.get('execution_mode')} | {item.get('optimization_mode')} | "
+            f"{_value(item.get('median_ns'))} | {_value(item.get('loops_per_sample'))} | "
+            f"{_value(duration_per_loop_ns(item))} | {_value(item.get('coefficient_of_variation'))} | "
+            f"{item.get('status')} | {item.get('comparability_classification')} |"
+        )
     return "\n".join(lines)
 
 

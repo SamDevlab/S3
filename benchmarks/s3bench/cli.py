@@ -155,8 +155,16 @@ def _run_with_build_dir(
                 break
 
     _classify_current_results(results, comparison_document)
+    # Comparisons must be computed BEFORE writing the JSON, and the JSON
+    # file must contain the SAME final document printed to stdout (both
+    # "results" and "comparisons"). An earlier revision wrote results-only
+    # JSON then computed comparisons only for stdout, divergence=0 on disk.
+    comparisons = compare_results(
+        results,
+        reference_implementation=args.reference_implementation,
+    )
     if args.output_json:
-        write_json(args.output_json, results)
+        write_json(args.output_json, results, comparisons=comparisons)
     if args.output_markdown:
         args.output_markdown.parent.mkdir(parents=True, exist_ok=True)
         args.output_markdown.write_text(
@@ -167,11 +175,12 @@ def _run_with_build_dir(
             encoding="utf-8",
             newline="\n",
         )
-    comparisons = compare_results(
-        results,
-        reference_implementation=args.reference_implementation,
-    )
-    print(json.dumps({"results": results, "comparisons": comparisons}, indent=2, sort_keys=True, allow_nan=False))
+    # The stdout payload MUST equal the on-disk JSON document. Build it
+    # from the SAME function write_json uses so ordering and validation
+    # cannot diverge between disk and stdout.
+    from .core import build_result_document
+    final_document = build_result_document(results, comparisons)
+    print(json.dumps(final_document, indent=2, sort_keys=True, allow_nan=False))
     return 1 if failed else 0
 
 
@@ -250,6 +259,25 @@ def _classify_current_results(
         )
         for item in baseline
     }
+
+    # Methodology rule: results may only be classified COMPARABLE when a
+    # compatible reference with the SAME measurement_scope exists within
+    # the same (benchmark_id, input_id, phase). A process/startup result
+    # (S3 native, loops=1, includes fork/exec/ELF load) must never be
+    # marked comparable against a kernel result (internal loop, loops>>1)
+    # and vice versa.
+    scope_counts: dict[tuple[str, str, str, str], int] = {}
+    for result in results:
+        if result.get("status") != "measured":
+            continue
+        key = (
+            str(result.get("benchmark_id", "")),
+            str(result.get("input_id", "")),
+            str(result.get("measurement_scope", "")),
+            str(result.get("phase", "")),
+        )
+        scope_counts[key] = scope_counts.get(key, 0) + 1
+
     for result in results:
         if result.get("status") != "measured":
             result["comparability_classification"] = "NOT_COMPARABLE"
@@ -262,9 +290,25 @@ def _classify_current_results(
             result.get("benchmark_id"), result.get("workload_version"), result.get("input_id"),
             result.get("implementation"), result.get("execution_mode"), result.get("optimization_mode"),
         )
-        result["comparability_classification"] = "COMPARABLE" if (
-            result.get("suite") == "portable" or key in baseline_keys
-        ) else "PARTIALLY_COMPARABLE"
+        portable = result.get("suite") == "portable" or key in baseline_keys
+        scope_key = (
+            str(result.get("benchmark_id", "")),
+            str(result.get("input_id", "")),
+            str(result.get("measurement_scope", "")),
+            str(result.get("phase", "")),
+        )
+        has_same_scope_peer = scope_counts.get(scope_key, 0) >= 2
+        if not portable:
+            base = "PARTIALLY_COMPARABLE"
+        elif not has_same_scope_peer:
+            base = "NOT_COMPARABLE"
+            result.setdefault("notes", []).append(
+                "no compatible reference with the same measurement_scope; "
+                "process/startup timing cannot be normalized against kernel timing"
+            )
+        else:
+            base = "COMPARABLE"
+        result["comparability_classification"] = base
 
 
 def _case_directory(case: Case) -> str:

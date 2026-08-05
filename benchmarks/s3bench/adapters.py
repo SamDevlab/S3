@@ -2,6 +2,19 @@
 
 from __future__ import annotations
 
+# Measurement scope constants used by the harness to decide calibration
+# strategy and to populate result metadata.
+#
+# KERNEL  – the adapter runs the workload loop in-process or delegates it
+#           to the subprocess executable; the harness receives a single
+#           timing that already covers ``loops`` repetitions.
+# PROCESS – the adapter launches exactly one process per sample; the
+#           harness must force ``loops_per_sample = 1`` and must *never*
+#           multiply subprocess launches to fill a calibration target.
+MEASUREMENT_SCOPE_KERNEL = "kernel"
+MEASUREMENT_SCOPE_PROCESS = "process"
+
+
 import os
 import platform
 import shutil
@@ -80,6 +93,11 @@ def _tool_version(arguments: Sequence[str | None]) -> str | None:
 
 
 class S3EmulatorAdapter:
+    """In-process emulation – loops run inside Python, no subprocess."""
+
+    measurement_scope = MEASUREMENT_SCOPE_KERNEL
+    process_launches_per_sample = 0
+
     def build(self, case: Case, build_dir: Path) -> BuildArtifact:
         if case.source is None:
             raise BenchmarkError("S3 emulator case has no source")
@@ -136,6 +154,21 @@ class S3EmulatorAdapter:
 
 
 class S3NativeAdapter:
+    """Process-per-sample adapter for S3 native ELFs.
+
+    The generated ELF does not accept loop arguments — it executes
+    ``main`` once and exits.  This adapter therefore operates in
+    **Mode B** (process-per-sample): exactly one process is launched
+    per sample, ``loops_per_sample`` is always forced to 1 by the
+    harness, and calibration never multiplies subprocess launches.
+
+    The ``loops`` parameter is accepted for protocol compatibility
+    but is **ignored** — only a single invocation is performed.
+    """
+
+    measurement_scope = MEASUREMENT_SCOPE_PROCESS
+    process_launches_per_sample = 1
+
     def build(self, case: Case, build_dir: Path) -> BuildArtifact:
         if platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"}:
             raise AdapterUnavailable("S3 native execution requires Linux x86-64")
@@ -175,29 +208,38 @@ class S3NativeAdapter:
         loops: int,
         timeout_seconds: float,
     ) -> ExecutionObservation:
+        """Execute a single process invocation.
+
+        The ``loops`` parameter is ignored — the S3 native ELF has no
+        internal loop support.  The harness guarantees ``loops == 1``
+        for process-scoped adapters; this method enforces the invariant
+        defensively.
+        """
+        del loops  # Mode B: always one process per sample
         if artifact.path is None:
             raise BenchmarkError("S3 native artifact has no executable")
-        started = time.perf_counter_ns()
-        checksum = None
-        for _ in range(loops):
-            result = run_command(
-                [os.fspath(artifact.path)],
-                cwd=artifact.path.parent,
-                timeout_seconds=timeout_seconds,
+        result = run_command(
+            [os.fspath(artifact.path)],
+            cwd=artifact.path.parent,
+            timeout_seconds=timeout_seconds,
+        )
+        if result.timed_out or result.output_truncated:
+            return _observation_from_command(result, checksum=None)
+        if result.exit_code != 0:
+            details = result.stderr.strip() or result.stdout.strip()
+            raise BenchmarkError(
+                f"{case.benchmark_id}: native execution failed with status {result.exit_code}: {details}"
             )
-            if result.timed_out or result.output_truncated:
-                return _observation_from_command(result, checksum=None)
-            if result.exit_code != 0:
-                details = result.stderr.strip() or result.stdout.strip()
-                raise BenchmarkError(
-                    f"{case.benchmark_id}: native execution failed with status {result.exit_code}: {details}"
-                )
-            checksum = extract_native_checksum(result.stdout)
-        duration = time.perf_counter_ns() - started
+        checksum = extract_native_checksum(result.stdout)
         return _observation_from_command(result, checksum=checksum)
 
 
 class PythonReferenceAdapter:
+    """Subprocess adapter – loops are passed to the Python script."""
+
+    measurement_scope = MEASUREMENT_SCOPE_KERNEL
+    process_launches_per_sample = 1
+
     def build(self, case: Case, build_dir: Path) -> BuildArtifact:
         del build_dir
         if case.source is None:
@@ -227,6 +269,11 @@ class PythonReferenceAdapter:
 
 
 class ExternalCompilerAdapter:
+    """Subprocess adapter for C, Rust, Zig – loops are passed to the executable."""
+
+    measurement_scope = MEASUREMENT_SCOPE_KERNEL
+    process_launches_per_sample = 1
+
     def __init__(self, language: str, toolchain: Toolchain) -> None:
         self._language = language
         self._toolchain = toolchain

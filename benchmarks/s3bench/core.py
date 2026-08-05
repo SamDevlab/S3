@@ -508,6 +508,11 @@ class BenchmarkHarness:
         if adapter is None:
             raise BenchmarkError(f"adapter is unavailable: {case.adapter}")
 
+        # --- Detect adapter measurement scope ---
+        adapter_scope = getattr(adapter, "measurement_scope", "kernel")
+        adapter_launches = getattr(adapter, "process_launches_per_sample", None)
+        is_process_scoped = adapter_scope == "process"
+
         phase_status = {name: "pending" for name in (
             "discover", "build", "verify", "warmup", "calibrate", "measure",
             "summarize", "export", "compare", "render_report",
@@ -516,13 +521,17 @@ class BenchmarkHarness:
         artifact = adapter.build(case, build_dir)
         phase_status["build"] = "complete"
         if build_only:
-            return self._base_result(case, artifact, phase_status, "built", warmups, samples)
+            return self._base_result(case, artifact, phase_status, "built", warmups, samples,
+                                     measurement_scope=adapter_scope,
+                                     process_launches_per_sample=adapter_launches)
 
         verification = adapter.execute(case, artifact, 1, case.timeout_seconds)
         self._require_valid_observation(case, verification, artifact)
         phase_status["verify"] = "complete"
         if verify_only:
-            result = self._base_result(case, artifact, phase_status, "verified", warmups, samples)
+            result = self._base_result(case, artifact, phase_status, "verified", warmups, samples,
+                                       measurement_scope=adapter_scope,
+                                       process_launches_per_sample=adapter_launches)
             result["observed_checksum"] = verification.checksum
             result["correctness_status"] = "verified"
             return result
@@ -532,7 +541,11 @@ class BenchmarkHarness:
             self._require_valid_observation(case, observation, artifact)
         phase_status["warmup"] = "complete"
 
-        if loops is None:
+        if is_process_scoped:
+            # Mode B: process-per-sample — never calibrate, force loops=1.
+            loops = 1
+            calibration = Calibration(1, 0, 0)
+        elif loops is None:
             calibration = calibrate(
                 lambda count: self._measured_duration(case, adapter, artifact, count),
                 target_sample_ns=target_sample_ns,
@@ -555,7 +568,9 @@ class BenchmarkHarness:
         summary = compute_statistics(raw_durations)
         phase_status["summarize"] = "complete"
 
-        result = self._base_result(case, artifact, phase_status, "measured", warmups, samples)
+        result = self._base_result(case, artifact, phase_status, "measured", warmups, samples,
+                                   measurement_scope=adapter_scope,
+                                   process_launches_per_sample=adapter_launches)
         result.update(
             {
                 "observed_checksum": last_observation.checksum,
@@ -623,6 +638,9 @@ class BenchmarkHarness:
         status: str,
         warmups: int,
         samples: int,
+        *,
+        measurement_scope: str = "kernel",
+        process_launches_per_sample: int | None = None,
     ) -> dict[str, object]:
         metadata = collect_environment_metadata(
             repository_root=self._repository_root,
@@ -666,6 +684,8 @@ class BenchmarkHarness:
             "artifact_size_bytes": artifact.artifact_size_bytes,
             "artifact_metrics": dict(sorted(artifact.artifact_metrics.items())),
             "peak_memory_bytes": None,
+            "measurement_scope": measurement_scope,
+            "process_launches_per_sample": process_launches_per_sample,
             **metadata,
             "compiler_name": artifact.compiler_name,
             "compiler_version": artifact.compiler_version,
@@ -685,6 +705,7 @@ def validate_result_document(document: Mapping[str, object]) -> None:
         "raw_durations_ns", "repository_sha", "repository_dirty",
         "operating_system", "architecture", "python_version", "runner_type",
         "timestamp_utc", "notes", "artifact_metrics", "comparability_classification",
+        "measurement_scope", "process_launches_per_sample",
     }
     missing = sorted(required.difference(document))
     if missing:
@@ -693,6 +714,9 @@ def validate_result_document(document: Mapping[str, object]) -> None:
         raise ValueError("unsupported result schema version")
     if document.get("comparability_classification") not in COMPARABILITY:
         raise ValueError("invalid comparability classification")
+    scope = document.get("measurement_scope")
+    if scope not in {"kernel", "process", None}:
+        raise ValueError(f"invalid measurement_scope: {scope}")
     raw = document.get("raw_durations_ns")
     if not isinstance(raw, list) or any(not isinstance(value, int) or value < 0 for value in raw):
         raise ValueError("raw durations must be non-negative integer nanoseconds")
@@ -751,6 +775,8 @@ def unavailable_result(
         "end_to_end_duration_ns": None,
         "artifact_size_bytes": None,
         "peak_memory_bytes": None,
+        "measurement_scope": None,
+        "process_launches_per_sample": None,
         "artifact_metrics": {},
         **metadata,
         "compiler_name": None,
@@ -799,7 +825,23 @@ def _contains_personal_path(value: str) -> bool:
     return "/users/" in lowered or "/home/" in lowered
 
 
-def write_json(path: Path, results: Sequence[Mapping[str, object]]) -> None:
+def build_result_document(
+    results: Sequence[Mapping[str, object]],
+    comparisons: Sequence[Mapping[str, object]] | None = None,
+) -> dict[str, object]:
+    """Build the canonical final document shared by --output-json and stdout.
+
+    This is the SINGLE source of truth for the on-disk and stdout payload.
+    Both ``write_json`` and ``cli.py`` must call this function and emit
+    exactly the dict it returns, so that the file on disk and the bytes
+    printed to stdout never diverge — not even in the ordering of the
+    ``results`` array.
+
+    The ``results`` list is sorted with the same canonical key used by
+    ``write_json`` (benchmark_id, implementation, execution_mode,
+    optimization_mode). Each result is validated. ``comparisons`` is
+    preserved as-is.
+    """
     ordered = sorted(
         results,
         key=lambda result: (
@@ -811,10 +853,24 @@ def write_json(path: Path, results: Sequence[Mapping[str, object]]) -> None:
     )
     for result in ordered:
         validate_result_document(result)
-    payload = {
+    payload: dict[str, object] = {
         "schema_version": BENCHMARK_SCHEMA_VERSION,
         "results": ordered,
     }
+    if comparisons is not None:
+        payload["comparisons"] = list(comparisons)
+    return payload
+
+
+def write_json(
+    path: Path,
+    results: Sequence[Mapping[str, object]],
+    *,
+    comparisons: Sequence[Mapping[str, object]] | None = None,
+) -> None:
+    # The on-disk document is built by the SAME function the CLI uses for
+    # stdout, guaranteeing byte-level equality (modulo sort_keys).
+    payload = build_result_document(results, comparisons)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=True, allow_nan=False) + "\n",
@@ -840,39 +896,202 @@ def duration_per_loop_ns(
     return float(duration) / loops
 
 
+# Stable tie-breaker ranking for optimization_mode. Lower rank = preferred
+# as the canonical reference within a scope group. The ranking favors the
+# unoptimized build (O0 / Debug / opt-level=0 / reference) before the
+# optimized build (O2 / ReleaseFast / opt-level=2). Ranks are stable
+# regardless of input order; unknown modes sort last by name.
+_OPTIMIZATION_RANK = {
+    "O0": 0,
+    "Debug": 0,
+    "opt-level=0": 0,
+    "reference": 0,
+    "O1": 1,
+    "ReleaseSafe": 1,
+    "ReleaseSmall": 1,
+    "O2": 2,
+    "ReleaseFast": 2,
+    "opt-level=2": 2,
+    "O3": 3,
+}
+
+
+def _optimization_rank(value: object) -> int:
+    if isinstance(value, str) and value in _OPTIMIZATION_RANK:
+        return _OPTIMIZATION_RANK[value]
+    return 4
+
+
+def _scope_aware_group_key(result: Mapping[str, object]) -> tuple[str, str, str, str]:
+    """Build a comparison-group key that NEVER crosses measurement_scope.
+
+    Per the methodology rules, results may only be normalized against a
+    reference that shares the same:
+      - benchmark_id
+      - input_id
+      - measurement_scope
+      - phase
+    Process/startup timing (one fork/exec per sample, loops=1) is a
+    different physical quantity from kernel timing (internal loop,
+    loops>>1) and must never be divided by it.
+    """
+    return (
+        str(result.get("benchmark_id", "")),
+        str(result.get("input_id", "")),
+        str(result.get("measurement_scope", "")),
+        str(result.get("phase", "")),
+    )
+
+
+def _canonical_reference(
+    group: Sequence[Mapping[str, object]],
+    *,
+    reference_implementation: str,
+    reference_optimization: str | None = None,
+) -> Mapping[str, object] | None:
+    """Choose exactly ONE deterministic canonical reference per group.
+
+    Selection order (stable, input-order independent):
+      1. Prefer entries whose implementation matches
+         ``reference_implementation``.
+      2. Among those, prefer the unoptimized build (lowest
+         ``_optimization_rank``). When ``reference_optimization`` is
+         provided, entries whose optimization matches it are preferred
+         as a sub-tie-break (this makes the caller's requested opt a
+         last-resort lever, never the primary key).
+      3. Tie-break by execution_mode then optimization_mode (lexicographic)
+         for full determinism.
+      4. If the requested implementation is absent, fall back to the
+         first measured COMPARABLE item using the same ranking.
+
+    The canonical reference serves as its own baseline (ratio 1.0);
+    every other item in the group references this same row. This
+    guarantees a single, non-circular reference per group and never
+    crosses measurement_scope.
+
+    This is the single shared implementation used by both ``core.py``
+    (``compare_results``) and ``report.py`` (``normalized_rows``) so the
+    two code paths can never diverge in their reference choice.
+    """
+    candidates = [
+        entry for entry in group
+        if entry.get("status") == "measured"
+        and duration_per_loop_ns(entry) is not None
+    ]
+    if not candidates:
+        return None
+    # A canonical reference is only meaningful when there is at least one
+    # peer to compare against. A lone item in a scope group has nothing
+    # to be normalized against, so we return None and the comparison row
+    # gets normalized_ratio=null, reference_implementation=null.
+    if len(candidates) < 2:
+        return None
+
+    def sort_key(entry: Mapping[str, object]) -> tuple[int, int, int, str, str]:
+        impl_match = 0 if entry.get("implementation") == reference_implementation else 1
+        opt_rank = _optimization_rank(entry.get("optimization_mode"))
+        opt_is_requested = (
+            0 if (reference_optimization is not None
+                  and entry.get("optimization_mode") == reference_optimization)
+            else 1
+        )
+        return (
+            impl_match,
+            opt_rank,
+            opt_is_requested,
+            str(entry.get("execution_mode", "")),
+            str(entry.get("optimization_mode", "")),
+        )
+
+    canonical = sorted(candidates, key=sort_key)[0]
+    if canonical.get("implementation") != reference_implementation:
+        # Fall back: ensure the chosen row is COMPARABLE if possible.
+        comparable = [
+            entry for entry in candidates
+            if entry.get("comparability_classification") == "COMPARABLE"
+        ]
+        if comparable:
+            canonical = sorted(comparable, key=sort_key)[0]
+    return canonical
+
+
 def compare_results(
     results: Sequence[Mapping[str, object]],
     *,
     reference_implementation: str,
 ) -> list[dict[str, object]]:
-    by_workload: dict[str, list[Mapping[str, object]]] = {}
+    # Scope-aware grouping: NEVER normalize across measurement_scope.
+    by_group: dict[tuple[str, str, str, str], list[Mapping[str, object]]] = {}
     for result in results:
-        by_workload.setdefault(str(result["benchmark_id"]), []).append(result)
+        by_group.setdefault(_scope_aware_group_key(result), []).append(result)
+
     comparisons: list[dict[str, object]] = []
-    for benchmark_id in sorted(by_workload):
-        group = by_workload[benchmark_id]
-        reference = next(
-            (item for item in group if item.get("implementation") == reference_implementation),
-            None,
+    for group_key in sorted(by_group):
+        group = by_group[group_key]
+        # ONE canonical reference per group — deterministic, non-circular.
+        canonical = _canonical_reference(
+            group, reference_implementation=reference_implementation,
         )
-        reference_per_loop = duration_per_loop_ns(reference) if reference else None
-        for item in sorted(group, key=lambda entry: str(entry.get("implementation"))):
+        canonical_per_loop = duration_per_loop_ns(canonical) if canonical else None
+        canonical_mode = canonical.get("execution_mode") if canonical else None
+        canonical_opt = canonical.get("optimization_mode") if canonical else None
+        canonical_scope = canonical.get("measurement_scope") if canonical else None
+        canonical_impl = canonical.get("implementation") if canonical else None
+
+        for item in sorted(
+            group,
+            key=lambda entry: (
+                str(entry.get("implementation", "")),
+                str(entry.get("execution_mode", "")),
+                str(entry.get("optimization_mode", "")),
+            ),
+        ):
             median = item.get("median_ns")
             median_per_loop = duration_per_loop_ns(item)
-            comparable = item.get("comparability_classification") == "COMPARABLE"
-            ratio = None
-            if comparable and median_per_loop is not None and reference_per_loop is not None and reference_per_loop > 0:
-                ratio = median_per_loop / reference_per_loop
+            item_scope = item.get("measurement_scope")
+            item_class = item.get("comparability_classification")
+            reference_impl: str | None
+            ratio: float | None
+
+            # Every item in the group references the SAME canonical row.
+            # The canonical row references itself (ratio 1.0). We refuse
+            # to normalize when the item is not COMPARABLE, or when the
+            # canonical reference lacks a valid per-loop cost, or when
+            # the canonical reference has a different measurement_scope
+            # (defensive: never cross scope).
+            if (
+                canonical is not None
+                and canonical_scope == item_scope
+                and item_class == "COMPARABLE"
+                and median_per_loop is not None
+                and canonical_per_loop is not None
+                and canonical_per_loop > 0
+            ):
+                ratio = median_per_loop / canonical_per_loop
+                reference_impl = str(canonical_impl)
+            else:
+                ratio = None
+                reference_impl = None
+
             comparisons.append(
                 {
-                    "benchmark_id": benchmark_id,
+                    "benchmark_id": group_key[0],
+                    "input_id": group_key[1],
+                    "measurement_scope": item_scope,
+                    "phase": group_key[3],
                     "implementation": item.get("implementation"),
+                    "execution_mode": item.get("execution_mode"),
+                    "optimization_mode": item.get("optimization_mode"),
+                    "process_launches_per_sample": item.get("process_launches_per_sample"),
+                    "loops_per_sample": item.get("loops_per_sample"),
                     "median_ns": median,
                     "median_ns_per_loop": median_per_loop,
-                    "loops_per_sample": item.get("loops_per_sample"),
-                    "reference_implementation": reference_implementation,
+                    "reference_implementation": reference_impl,
+                    "reference_execution_mode": canonical_mode,
+                    "reference_optimization_mode": canonical_opt,
+                    "reference_measurement_scope": canonical_scope,
                     "normalized_ratio": ratio,
-                    "comparability_classification": item.get("comparability_classification"),
+                    "comparability_classification": item_class,
                 }
             )
     return comparisons
