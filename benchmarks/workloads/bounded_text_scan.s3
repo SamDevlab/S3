@@ -1,0 +1,2 @@
+fn main() -> tryte:
+    return len("identifier_0123456789")

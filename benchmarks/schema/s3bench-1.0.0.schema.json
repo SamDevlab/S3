@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://s3-lang.invalid/schema/s3bench-1.0.0.schema.json",
+  "title": "s3bench result document",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "results"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "results": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/result"}
+    }
+  },
+  "$defs": {
+    "nullableInteger": {"type": ["integer", "null"], "minimum": 0},
+    "nullableNumber": {"type": ["number", "null"], "minimum": 0},
+    "nullableString": {"type": ["string", "null"]},
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version", "campaign", "benchmark_id", "workload_version",
+        "category", "suite", "implementation", "execution_mode",
+        "optimization_mode", "phase", "status", "phase_status", "input_id",
+        "input_size", "expected_checksum", "observed_checksum",
+        "correctness_status", "warmup_count", "sample_count",
+        "loops_per_sample", "raw_durations_ns", "median_ns", "mean_ns",
+        "minimum_ns", "maximum_ns", "standard_deviation_ns",
+        "coefficient_of_variation", "percentile_95_ns",
+        "compile_duration_ns", "link_duration_ns", "startup_duration_ns",
+        "kernel_duration_ns", "end_to_end_duration_ns", "artifact_size_bytes",
+        "peak_memory_bytes", "artifact_metrics", "repository_sha", "repository_dirty",
+        "operating_system", "architecture", "cpu_model", "logical_cpu_count",
+        "physical_cpu_count", "total_memory_bytes", "python_version",
+        "compiler_name", "compiler_version", "compiler_flags", "linker",
+        "runner_type", "timestamp_utc", "notes",
+        "comparability_classification"
+      ],
+      "properties": {
+        "schema_version": {"const": "1.0.0"},
+        "campaign": {"type": "string", "minLength": 1},
+        "benchmark_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]+$"},
+        "workload_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "category": {"type": "string", "minLength": 1},
+        "suite": {"enum": ["portable", "s3-specific"]},
+        "implementation": {"type": "string", "minLength": 1},
+        "execution_mode": {"type": "string", "minLength": 1},
+        "optimization_mode": {"type": "string", "minLength": 1},
+        "phase": {"enum": ["compile", "link", "startup", "kernel", "process", "end_to_end"]},
+        "status": {"enum": ["built", "verified", "measured", "failed", "unavailable"]},
+        "phase_status": {"type": "object", "additionalProperties": {"type": "string"}},
+        "input_id": {"type": "string", "minLength": 1},
+        "input_size": {"type": "integer", "minimum": 0},
+        "expected_checksum": {"type": "string", "minLength": 1},
+        "observed_checksum": {"$ref": "#/$defs/nullableString"},
+        "correctness_status": {"enum": ["not-run", "pending", "verified", "failed"]},
+        "warmup_count": {"type": "integer", "minimum": 0},
+        "sample_count": {"type": "integer", "minimum": 1},
+        "loops_per_sample": {"$ref": "#/$defs/nullableInteger"},
+        "raw_durations_ns": {"type": "array", "items": {"type": "integer", "minimum": 0}},
+        "median_ns": {"$ref": "#/$defs/nullableNumber"},
+        "mean_ns": {"$ref": "#/$defs/nullableNumber"},
+        "minimum_ns": {"$ref": "#/$defs/nullableInteger"},
+        "maximum_ns": {"$ref": "#/$defs/nullableInteger"},
+        "standard_deviation_ns": {"$ref": "#/$defs/nullableNumber"},
+        "coefficient_of_variation": {"$ref": "#/$defs/nullableNumber"},
+        "percentile_95_ns": {"$ref": "#/$defs/nullableInteger"},
+        "compile_duration_ns": {"$ref": "#/$defs/nullableInteger"},
+        "link_duration_ns": {"$ref": "#/$defs/nullableInteger"},
+        "startup_duration_ns": {"$ref": "#/$defs/nullableInteger"},
+        "kernel_duration_ns": {"$ref": "#/$defs/nullableInteger"},
+        "end_to_end_duration_ns": {"$ref": "#/$defs/nullableInteger"},
+        "artifact_size_bytes": {"$ref": "#/$defs/nullableInteger"},
+        "peak_memory_bytes": {"$ref": "#/$defs/nullableInteger"},
+        "artifact_metrics": {
+          "type": "object",
+          "additionalProperties": {"type": "integer", "minimum": 0}
+        },
+        "repository_sha": {"type": "string", "minLength": 1},
+        "repository_dirty": {"type": "boolean"},
+        "operating_system": {"type": "string", "minLength": 1},
+        "architecture": {"type": "string", "minLength": 1},
+        "cpu_model": {"$ref": "#/$defs/nullableString"},
+        "logical_cpu_count": {"$ref": "#/$defs/nullableInteger"},
+        "physical_cpu_count": {"$ref": "#/$defs/nullableInteger"},
+        "total_memory_bytes": {"$ref": "#/$defs/nullableInteger"},
+        "python_version": {"type": "string", "minLength": 1},
+        "compiler_name": {"$ref": "#/$defs/nullableString"},
+        "compiler_version": {"$ref": "#/$defs/nullableString"},
+        "compiler_flags": {"type": "array", "items": {"type": "string"}},
+        "linker": {"$ref": "#/$defs/nullableString"},
+        "runner_type": {"enum": ["local", "shared-ci", "controlled-linux"]},
+        "timestamp_utc": {"type": "string", "format": "date-time"},
+        "notes": {"type": "array", "items": {"type": "string"}},
+        "comparability_classification": {
+          "enum": ["COMPARABLE", "PARTIALLY_COMPARABLE", "NOT_COMPARABLE"]
+        },
+        "calibration_attempts": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}

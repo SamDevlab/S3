@@ -1,0 +1,252 @@
+{
+  "manifest_version": "1.0.0",
+  "campaign": "1.17-1.19",
+  "workloads": [
+    {
+      "benchmark_id": "runtime.scalar.accumulate.v1",
+      "workload_version": "1.0.0",
+      "category": "runtime-scalar",
+      "suite": "portable",
+      "objective": "Accumulate signed scalar values with a deterministic checksum.",
+      "input": {"id": "fixed-scalars", "size": 3, "scale": "small"},
+      "expected_checksum": "42",
+      "timed_region": "Prebuilt scalar accumulation kernel; harness and output are excluded.",
+      "implementations": [
+        {"id": "s3", "adapter": "s3-emulator", "execution_mode": "emulator", "optimization_modes": ["O0", "O1"], "source": "workloads/arithmetic.s3", "timeout_seconds": 30},
+        {"id": "s3", "adapter": "s3-native", "execution_mode": "native", "optimization_modes": ["O0", "O1"], "source": "workloads/arithmetic.s3", "timeout_seconds": 30},
+        {"id": "python-reference", "adapter": "python-reference", "execution_mode": "interpreted", "optimization_modes": ["reference"], "source": "implementations/python/reference.py", "timeout_seconds": 30},
+        {"id": "c", "adapter": "c", "execution_mode": "native", "optimization_modes": ["O0", "O2"], "source": "implementations/c/portable.c", "timeout_seconds": 30, "compiler_flags": {"O0": ["-O0", "-std=c11", "-fno-strict-overflow"], "O2": ["-O2", "-std=c11", "-fno-strict-overflow"]}},
+        {"id": "rust", "adapter": "rust", "execution_mode": "native", "optimization_modes": ["opt-level=0", "opt-level=2"], "source": "implementations/rust/portable.rs", "timeout_seconds": 30, "compiler_flags": {"opt-level=0": ["-C", "opt-level=0", "-C", "overflow-checks=on", "-C", "panic=abort"], "opt-level=2": ["-C", "opt-level=2", "-C", "overflow-checks=on", "-C", "panic=abort"]}},
+        {"id": "zig", "adapter": "zig", "execution_mode": "native", "optimization_modes": ["Debug", "ReleaseFast"], "source": "implementations/zig/portable.zig", "timeout_seconds": 30, "compiler_flags": {"Debug": ["-O", "Debug"], "ReleaseFast": ["-O", "ReleaseFast"]}}
+      ]
+    },
+    {
+      "benchmark_id": "runtime.scalar.branch.v1",
+      "workload_version": "1.0.0",
+      "category": "runtime-scalar",
+      "suite": "portable",
+      "objective": "Exercise comparisons and a branch-heavy deterministic state machine.",
+      "input": {"id": "positive-pair", "size": 2, "scale": "small"},
+      "expected_checksum": "1",
+      "timed_region": "Prebuilt branch kernel; harness and checksum output are excluded.",
+      "implementations": [
+        {"id": "s3", "adapter": "s3-emulator", "execution_mode": "emulator", "optimization_modes": ["O0", "O1"], "source": "workloads/branches.s3", "timeout_seconds": 30},
+        {"id": "s3", "adapter": "s3-native", "execution_mode": "native", "optimization_modes": ["O0", "O1"], "source": "workloads/branches.s3", "timeout_seconds": 30},
+        {"id": "python-reference", "adapter": "python-reference", "execution_mode": "interpreted", "optimization_modes": ["reference"], "source": "implementations/python/reference.py", "timeout_seconds": 30},
+        {"id": "c", "adapter": "c", "execution_mode": "native", "optimization_modes": ["O0", "O2"], "source": "implementations/c/portable.c", "timeout_seconds": 30, "compiler_flags": {"O0": ["-O0", "-std=c11", "-fno-strict-overflow"], "O2": ["-O2", "-std=c11", "-fno-strict-overflow"]}},
+        {"id": "rust", "adapter": "rust", "execution_mode": "native", "optimization_modes": ["opt-level=0", "opt-level=2"], "source": "implementations/rust/portable.rs", "timeout_seconds": 30, "compiler_flags": {"opt-level=0": ["-C", "opt-level=0", "-C", "overflow-checks=on", "-C", "panic=abort"], "opt-level=2": ["-C", "opt-level=2", "-C", "overflow-checks=on", "-C", "panic=abort"]}},
+        {"id": "zig", "adapter": "zig", "execution_mode": "native", "optimization_modes": ["Debug", "ReleaseFast"], "source": "implementations/zig/portable.zig", "timeout_seconds": 30, "compiler_flags": {"Debug": ["-O", "Debug"], "ReleaseFast": ["-O", "ReleaseFast"]}}
+      ]
+    },
+    {
+      "benchmark_id": "runtime.call.chain.v1",
+      "workload_version": "1.0.0",
+      "category": "runtime-call",
+      "suite": "portable",
+      "objective": "Measure a bounded nested scalar call chain.",
+      "input": {"id": "depth-five-twice", "size": 10, "scale": "small"},
+      "expected_checksum": "10",
+      "timed_region": "Prebuilt nested calls only; build and output are excluded.",
+      "implementations": [
+        {"id": "s3", "adapter": "s3-emulator", "execution_mode": "emulator", "optimization_modes": ["O0", "O1"], "source": "workloads/calls.s3", "timeout_seconds": 30},
+        {"id": "s3", "adapter": "s3-native", "execution_mode": "native", "optimization_modes": ["O0", "O1"], "source": "workloads/calls.s3", "timeout_seconds": 30},
+        {"id": "python-reference", "adapter": "python-reference", "execution_mode": "interpreted", "optimization_modes": ["reference"], "source": "implementations/python/reference.py", "timeout_seconds": 30},
+        {"id": "c", "adapter": "c", "execution_mode": "native", "optimization_modes": ["O0", "O2"], "source": "implementations/c/portable.c", "timeout_seconds": 30, "compiler_flags": {"O0": ["-O0", "-std=c11", "-fno-strict-overflow"], "O2": ["-O2", "-std=c11", "-fno-strict-overflow"]}},
+        {"id": "rust", "adapter": "rust", "execution_mode": "native", "optimization_modes": ["opt-level=0", "opt-level=2"], "source": "implementations/rust/portable.rs", "timeout_seconds": 30, "compiler_flags": {"opt-level=0": ["-C", "opt-level=0", "-C", "overflow-checks=on", "-C", "panic=abort"], "opt-level=2": ["-C", "opt-level=2", "-C", "overflow-checks=on", "-C", "panic=abort"]}},
+        {"id": "zig", "adapter": "zig", "execution_mode": "native", "optimization_modes": ["Debug", "ReleaseFast"], "source": "implementations/zig/portable.zig", "timeout_seconds": 30, "compiler_flags": {"Debug": ["-O", "Debug"], "ReleaseFast": ["-O", "ReleaseFast"]}}
+      ]
+    },
+    {
+      "benchmark_id": "runtime.recursion.bounded.v1",
+      "workload_version": "1.0.0",
+      "category": "runtime-call",
+      "suite": "portable",
+      "objective": "Exercise bounded recursion with Fibonacci depth ten.",
+      "input": {"id": "fib-10", "size": 10, "scale": "small"},
+      "expected_checksum": "55",
+      "timed_region": "Recursive kernel from entry to scalar result; build is excluded.",
+      "implementations": [
+        {"id": "s3", "adapter": "s3-emulator", "execution_mode": "emulator", "optimization_modes": ["O0", "O1"], "source": "workloads/recursion.s3", "timeout_seconds": 30},
+        {"id": "s3", "adapter": "s3-native", "execution_mode": "native", "optimization_modes": ["O0", "O1"], "source": "workloads/recursion.s3", "timeout_seconds": 30},
+        {"id": "python-reference", "adapter": "python-reference", "execution_mode": "interpreted", "optimization_modes": ["reference"], "source": "implementations/python/reference.py", "timeout_seconds": 30},
+        {"id": "c", "adapter": "c", "execution_mode": "native", "optimization_modes": ["O0", "O2"], "source": "implementations/c/portable.c", "timeout_seconds": 30, "compiler_flags": {"O0": ["-O0", "-std=c11", "-fno-strict-overflow"], "O2": ["-O2", "-std=c11", "-fno-strict-overflow"]}},
+        {"id": "rust", "adapter": "rust", "execution_mode": "native", "optimization_modes": ["opt-level=0", "opt-level=2"], "source": "implementations/rust/portable.rs", "timeout_seconds": 30, "compiler_flags": {"opt-level=0": ["-C", "opt-level=0", "-C", "overflow-checks=on", "-C", "panic=abort"], "opt-level=2": ["-C", "opt-level=2", "-C", "overflow-checks=on", "-C", "panic=abort"]}},
+        {"id": "zig", "adapter": "zig", "execution_mode": "native", "optimization_modes": ["Debug", "ReleaseFast"], "source": "implementations/zig/portable.zig", "timeout_seconds": 30, "compiler_flags": {"Debug": ["-O", "Debug"], "ReleaseFast": ["-O", "ReleaseFast"]}}
+      ]
+    },
+    {
+      "benchmark_id": "runtime.array.sum.tryte.v1",
+      "workload_version": "1.0.0",
+      "category": "runtime-array",
+      "suite": "portable",
+      "objective": "Write and traverse a fixed tryte array.",
+      "input": {"id": "tryte-3", "size": 3, "scale": "small"},
+      "expected_checksum": "60",
+      "timed_region": "Fixed-array initialization and sum; build and output are excluded.",
+      "implementations": [
+        {"id": "s3", "adapter": "s3-emulator", "execution_mode": "emulator", "optimization_modes": ["O0", "O1"], "source": "workloads/arrays.s3", "timeout_seconds": 30},
+        {"id": "s3", "adapter": "s3-native", "execution_mode": "native", "optimization_modes": ["O0", "O1"], "source": "workloads/arrays.s3", "timeout_seconds": 30},
+        {"id": "python-reference", "adapter": "python-reference", "execution_mode": "interpreted", "optimization_modes": ["reference"], "source": "implementations/python/reference.py", "timeout_seconds": 30},
+        {"id": "c", "adapter": "c", "execution_mode": "native", "optimization_modes": ["O0", "O2"], "source": "implementations/c/portable.c", "timeout_seconds": 30, "compiler_flags": {"O0": ["-O0", "-std=c11", "-fno-strict-overflow"], "O2": ["-O2", "-std=c11", "-fno-strict-overflow"]}},
+        {"id": "rust", "adapter": "rust", "execution_mode": "native", "optimization_modes": ["opt-level=0", "opt-level=2"], "source": "implementations/rust/portable.rs", "timeout_seconds": 30, "compiler_flags": {"opt-level=0": ["-C", "opt-level=0", "-C", "overflow-checks=on", "-C", "panic=abort"], "opt-level=2": ["-C", "opt-level=2", "-C", "overflow-checks=on", "-C", "panic=abort"]}},
+        {"id": "zig", "adapter": "zig", "execution_mode": "native", "optimization_modes": ["Debug", "ReleaseFast"], "source": "implementations/zig/portable.zig", "timeout_seconds": 30, "compiler_flags": {"Debug": ["-O", "Debug"], "ReleaseFast": ["-O", "ReleaseFast"]}}
+      ]
+    },
+    {
+      "benchmark_id": "runtime.array.copy.tryte.v1",
+      "workload_version": "1.0.0",
+      "category": "runtime-array",
+      "suite": "portable",
+      "objective": "Copy a fixed array by value across call boundaries and consume every cell.",
+      "input": {"id": "tryte-5", "size": 5, "scale": "small"},
+      "expected_checksum": "15",
+      "timed_region": "Array copy, return, and sum; build and output are excluded.",
+      "implementations": [
+        {"id": "s3", "adapter": "s3-emulator", "execution_mode": "emulator", "optimization_modes": ["O0", "O1"], "source": "workloads/array_copy.s3", "timeout_seconds": 30},
+        {"id": "s3", "adapter": "s3-native", "execution_mode": "native", "optimization_modes": ["O0", "O1"], "source": "workloads/array_copy.s3", "timeout_seconds": 30},
+        {"id": "python-reference", "adapter": "python-reference", "execution_mode": "interpreted", "optimization_modes": ["reference"], "source": "implementations/python/reference.py", "timeout_seconds": 30},
+        {"id": "c", "adapter": "c", "execution_mode": "native", "optimization_modes": ["O0", "O2"], "source": "implementations/c/portable.c", "timeout_seconds": 30, "compiler_flags": {"O0": ["-O0", "-std=c11", "-fno-strict-overflow"], "O2": ["-O2", "-std=c11", "-fno-strict-overflow"]}},
+        {"id": "rust", "adapter": "rust", "execution_mode": "native", "optimization_modes": ["opt-level=0", "opt-level=2"], "source": "implementations/rust/portable.rs", "timeout_seconds": 30, "compiler_flags": {"opt-level=0": ["-C", "opt-level=0", "-C", "overflow-checks=on", "-C", "panic=abort"], "opt-level=2": ["-C", "opt-level=2", "-C", "overflow-checks=on", "-C", "panic=abort"]}},
+        {"id": "zig", "adapter": "zig", "execution_mode": "native", "optimization_modes": ["Debug", "ReleaseFast"], "source": "implementations/zig/portable.zig", "timeout_seconds": 30, "compiler_flags": {"Debug": ["-O", "Debug"], "ReleaseFast": ["-O", "ReleaseFast"]}}
+      ]
+    },
+    {
+      "benchmark_id": "runtime.text.scan.v1",
+      "workload_version": "1.0.0",
+      "category": "runtime-text",
+      "suite": "portable",
+      "objective": "Consume a fixed ASCII identifier/digit sequence and report accepted units.",
+      "input": {"id": "identifier-21", "size": 21, "scale": "small"},
+      "expected_checksum": "21",
+      "timed_region": "Bounded input scan; setup and checksum output are excluded.",
+      "implementations": [
+        {"id": "s3", "adapter": "s3-emulator", "execution_mode": "emulator", "optimization_modes": ["O0", "O1"], "source": "workloads/bounded_text_scan.s3", "timeout_seconds": 30, "notes": ["S3 currently resolves this static text length at compile time; classify native runtime comparisons separately."]},
+        {"id": "s3", "adapter": "s3-native", "execution_mode": "native", "optimization_modes": ["O0", "O1"], "source": "workloads/bounded_text_scan.s3", "timeout_seconds": 30},
+        {"id": "python-reference", "adapter": "python-reference", "execution_mode": "interpreted", "optimization_modes": ["reference"], "source": "implementations/python/reference.py", "timeout_seconds": 30},
+        {"id": "c", "adapter": "c", "execution_mode": "native", "optimization_modes": ["O0", "O2"], "source": "implementations/c/portable.c", "timeout_seconds": 30, "compiler_flags": {"O0": ["-O0", "-std=c11", "-fno-strict-overflow"], "O2": ["-O2", "-std=c11", "-fno-strict-overflow"]}},
+        {"id": "rust", "adapter": "rust", "execution_mode": "native", "optimization_modes": ["opt-level=0", "opt-level=2"], "source": "implementations/rust/portable.rs", "timeout_seconds": 30, "compiler_flags": {"opt-level=0": ["-C", "opt-level=0", "-C", "overflow-checks=on", "-C", "panic=abort"], "opt-level=2": ["-C", "opt-level=2", "-C", "overflow-checks=on", "-C", "panic=abort"]}},
+        {"id": "zig", "adapter": "zig", "execution_mode": "native", "optimization_modes": ["Debug", "ReleaseFast"], "source": "implementations/zig/portable.zig", "timeout_seconds": 30, "compiler_flags": {"Debug": ["-O", "Debug"], "ReleaseFast": ["-O", "ReleaseFast"]}}
+      ]
+    },
+    {
+      "benchmark_id": "runtime.aggregate.record.return.v1",
+      "workload_version": "1.0.0",
+      "category": "runtime-aggregate",
+      "suite": "s3-specific",
+      "objective": "Consume all cells of a width-two record result.",
+      "input": {"id": "record-width-2", "size": 2, "scale": "small"},
+      "expected_checksum": "10",
+      "timed_region": "Aggregate calls, result transfer, field access, and scalar reduction.",
+      "implementations": [
+        {"id": "s3", "adapter": "s3-emulator", "execution_mode": "emulator", "optimization_modes": ["O0", "O1"], "source": "workloads/aggregate_record_return.s3", "timeout_seconds": 30},
+        {"id": "s3", "adapter": "s3-native", "execution_mode": "native", "optimization_modes": ["O0", "O1"], "source": "workloads/aggregate_record_return.s3", "timeout_seconds": 30}
+      ]
+    },
+    {
+      "benchmark_id": "runtime.aggregate.sret.width3.v1",
+      "workload_version": "1.0.0",
+      "category": "runtime-aggregate",
+      "suite": "s3-specific",
+      "objective": "Exercise a nested width-three aggregate result and consume every cell.",
+      "input": {"id": "nested-record-width-3", "size": 3, "scale": "small"},
+      "expected_checksum": "7",
+      "timed_region": "Nested aggregate return, materialization, and reduction.",
+      "implementations": [
+        {"id": "s3", "adapter": "s3-emulator", "execution_mode": "emulator", "optimization_modes": ["O0", "O1"], "source": "workloads/aggregate_nested_return.s3", "timeout_seconds": 30},
+        {"id": "s3", "adapter": "s3-native", "execution_mode": "native", "optimization_modes": ["O0", "O1"], "source": "workloads/aggregate_nested_return.s3", "timeout_seconds": 30}
+      ]
+    },
+    {
+      "benchmark_id": "runtime.aggregate.enum.match.v1",
+      "workload_version": "1.0.0",
+      "category": "runtime-aggregate",
+      "suite": "s3-specific",
+      "objective": "Return and match structured enum results on valid and error paths.",
+      "input": {"id": "ok-and-error", "size": 2, "scale": "small"},
+      "expected_checksum": "4",
+      "timed_region": "Enum result construction, transfer, match, and payload reduction.",
+      "implementations": [
+        {"id": "s3", "adapter": "s3-emulator", "execution_mode": "emulator", "optimization_modes": ["O0", "O1"], "source": "workloads/aggregate_enum_result.s3", "timeout_seconds": 30},
+        {"id": "s3", "adapter": "s3-native", "execution_mode": "native", "optimization_modes": ["O0", "O1"], "source": "workloads/aggregate_enum_result.s3", "timeout_seconds": 30}
+      ]
+    },
+    {
+      "benchmark_id": "frontend.tokenizer.valid.v1",
+      "workload_version": "1.0.0",
+      "category": "frontend-tokenizer",
+      "suite": "s3-specific",
+      "objective": "Tokenize a stable Assembly 0.6 multi-result artifact through end of input.",
+      "input": {"id": "valid-multi-result", "size": 157, "scale": "medium"},
+      "expected_checksum": "157",
+      "timed_region": "Incremental token production; corpus loading and encoding are included only in process mode.",
+      "implementations": [
+        {"id": "python-reference", "adapter": "python-reference", "execution_mode": "interpreted", "optimization_modes": ["reference"], "source": "implementations/python/reference.py", "timeout_seconds": 30}
+      ]
+    },
+    {
+      "benchmark_id": "frontend.parser.valid.v1",
+      "workload_version": "1.0.0",
+      "category": "frontend-parser",
+      "suite": "s3-specific",
+      "objective": "Parse all events from a stable Assembly 0.6 multi-result artifact.",
+      "input": {"id": "valid-multi-result", "size": 157, "scale": "medium"},
+      "expected_checksum": "157",
+      "timed_region": "Incremental parser events through end of input.",
+      "implementations": [
+        {"id": "python-reference", "adapter": "python-reference", "execution_mode": "interpreted", "optimization_modes": ["reference"], "source": "implementations/python/reference.py", "timeout_seconds": 30}
+      ]
+    },
+    {
+      "benchmark_id": "frontend.parser.invalid.v1",
+      "workload_version": "1.0.0",
+      "category": "frontend-parser",
+      "suite": "s3-specific",
+      "objective": "Reject an unsupported Assembly version through the structured error path.",
+      "input": {"id": "invalid-version", "size": 13, "scale": "small"},
+      "expected_checksum": "4",
+      "timed_region": "Parser work through the structured unsupported-version error.",
+      "implementations": [
+        {"id": "python-reference", "adapter": "python-reference", "execution_mode": "interpreted", "optimization_modes": ["reference"], "source": "implementations/python/reference.py", "timeout_seconds": 30}
+      ]
+    },
+    {
+      "benchmark_id": "frontend.candidate.valid.v1",
+      "workload_version": "1.0.0",
+      "category": "frontend-candidate",
+      "suite": "s3-specific",
+      "objective": "Compose bounded tokenizer and parser into a complete structural summary.",
+      "input": {"id": "valid-multi-result", "size": 157, "scale": "medium"},
+      "expected_checksum": "69",
+      "timed_region": "Frontend candidate analysis through summary production.",
+      "implementations": [
+        {"id": "python-reference", "adapter": "python-reference", "execution_mode": "interpreted", "optimization_modes": ["reference"], "source": "implementations/python/reference.py", "timeout_seconds": 30}
+      ]
+    },
+    {
+      "benchmark_id": "frontend.candidate.invalid.v1",
+      "workload_version": "1.0.0",
+      "category": "frontend-candidate",
+      "suite": "s3-specific",
+      "objective": "Preserve structured frontend failure for unsupported Assembly input.",
+      "input": {"id": "invalid-version", "size": 13, "scale": "small"},
+      "expected_checksum": "4",
+      "timed_region": "Frontend candidate analysis through structured error production.",
+      "implementations": [
+        {"id": "python-reference", "adapter": "python-reference", "execution_mode": "interpreted", "optimization_modes": ["reference"], "source": "implementations/python/reference.py", "timeout_seconds": 30}
+      ]
+    },
+    {
+      "benchmark_id": "compiler.end_to_end.v1",
+      "workload_version": "1.0.0",
+      "category": "compiler-pipeline",
+      "suite": "s3-specific",
+      "objective": "Compile a stable optimizer workload through S3 Assembly generation.",
+      "input": {"id": "optimizer-stress", "size": 110, "scale": "small"},
+      "expected_checksum": "0",
+      "timed_region": "Source load, parse, semantic analysis, lowering, O1, IR, and Assembly generation.",
+      "implementations": [
+        {"id": "python-reference", "adapter": "python-reference", "execution_mode": "interpreted", "optimization_modes": ["reference"], "source": "implementations/python/reference.py", "timeout_seconds": 30}
+      ]
+    }
+  ]
+}

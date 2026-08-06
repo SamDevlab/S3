@@ -182,3 +182,27 @@ A futura infraestrutura de medição do Marco 0.8 analisará gargalos precisos p
 trás desse pipeline antes que ele sofra grandes refatoramentos de otimização.
 Não há heap, aliasing ou promoção memória-para-SSA. Reprodutibilidade binária
 vale somente na mesma toolchain. Outros targets exigem backend/ADR próprios.
+
+## Reproducible benchmark boundary
+
+The benchmark subsystem is an engineering consumer of the compiler and runtime,
+not part of the language semantics or public CLI. ADR-0026 defines the
+`s3bench 1.0.0` lifecycle and result schema. Its phase order is discover, build,
+verify, warmup, calibrate, measure, summarize, export, compare, and report.
+
+Correctness is a hard boundary: a failed build, timeout, truncated output,
+nonzero command status, absent checksum, or checksum mismatch prevents measured
+samples and ranking. Durations use `time.perf_counter_ns()`. Warmup and
+calibration observations are discarded; final raw samples are retained and
+summarized without automatic outlier removal.
+
+The subsystem records compile, link, process, kernel, startup, end-to-end,
+artifact-size, and optional memory fields separately. Unavailable values remain
+`null`. It invokes external commands as argument lists without a shell and
+excludes personal paths, hostnames, usernames, environment dumps, and secrets
+from result metadata.
+
+The 0.8 E2 deterministic baseline remains immutable historical evidence. Shared
+CI may execute short functional smoke cases but cannot establish authoritative
+performance. Native cross-language claims require one controlled Linux
+environment with identical inputs, checksums, and complete toolchain metadata.

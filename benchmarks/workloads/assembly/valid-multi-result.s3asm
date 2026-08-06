@@ -1,0 +1,9 @@
+.s3asm 0.6.0
+
+.function main -> [tryte, trit]
+    .register r0, tryte
+    .register r1, trit
+.label entry
+    TCALL  [r0, r1], pair
+    TRET   [r0, r1]
+.end

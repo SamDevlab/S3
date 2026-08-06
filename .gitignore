@@ -7,4 +7,7 @@ dist/
 .venv/
 *.log
 ci-status.json
+benchmarks/results/*
+!benchmarks/results/.gitkeep
+benchmarks/build/
 

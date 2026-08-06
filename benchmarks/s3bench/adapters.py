@@ -1,0 +1,414 @@
+"""Concrete S3, reference, and external-toolchain benchmark adapters."""
+
+from __future__ import annotations
+
+# Measurement scope constants used by the harness to decide calibration
+# strategy and to populate result metadata.
+#
+# KERNEL  – the adapter runs the workload loop in-process or delegates it
+#           to the subprocess executable; the harness receives a single
+#           timing that already covers ``loops`` repetitions.
+# PROCESS – the adapter launches exactly one process per sample; the
+#           harness must force ``loops_per_sample = 1`` and must *never*
+#           multiply subprocess launches to fill a calibration target.
+MEASUREMENT_SCOPE_KERNEL = "kernel"
+MEASUREMENT_SCOPE_PROCESS = "process"
+
+
+import os
+import platform
+import shutil
+import subprocess
+import sys
+import time
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Mapping, Sequence
+
+from bootstrap.s3.backends._hosted_execution import _execute_hosted_assembly
+from bootstrap.s3.backends.x86_64.backend import generate_native_assembly
+from bootstrap.s3.backends.x86_64.toolchain import NativeToolchain
+from bootstrap.s3.pipeline import compile_source
+from bootstrap.s3.ir_serialization import serialize_ir
+
+from .core import (
+    Adapter,
+    AdapterUnavailable,
+    BenchmarkError,
+    BuildArtifact,
+    Case,
+    ExecutionObservation,
+    extract_checksum,
+    extract_native_checksum,
+    run_command,
+)
+
+
+@dataclass(frozen=True, slots=True)
+class Toolchain:
+    name: str
+    command: str | None
+    version: str | None
+    available: bool
+    detection_command: tuple[str, ...]
+
+
+def detect_toolchains() -> dict[str, Toolchain]:
+    specifications = {
+        "clang": ("clang", ("--version",)),
+        "gcc": ("gcc", ("--version",)),
+        "rustc": ("rustc", ("--version",)),
+        "cargo": ("cargo", ("--version",)),
+        "zig": ("zig", ("version",)),
+        "linker": ("ld", ("--version",)),
+        "wsl": ("wsl", ("--status",)),
+    }
+    detected: dict[str, Toolchain] = {}
+    for name, (command_name, version_arguments) in specifications.items():
+        command = shutil.which(command_name)
+        detection = (command_name, *version_arguments)
+        version = _tool_version([command, *version_arguments]) if command else None
+        detected[name] = Toolchain(name, command, version, command is not None, detection)
+    return detected
+
+
+def _tool_version(arguments: Sequence[str | None]) -> str | None:
+    if not arguments or arguments[0] is None:
+        return None
+    try:
+        completed = subprocess.run(
+            [str(value) for value in arguments],
+            capture_output=True,
+            text=True,
+            shell=False,
+            timeout=10.0,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if completed.returncode != 0:
+        return None
+    output = completed.stdout.strip() or completed.stderr.strip()
+    return output.splitlines()[0] if output else None
+
+
+class S3EmulatorAdapter:
+    """In-process emulation – loops run inside Python, no subprocess."""
+
+    measurement_scope = MEASUREMENT_SCOPE_KERNEL
+    process_launches_per_sample = 0
+
+    def build(self, case: Case, build_dir: Path) -> BuildArtifact:
+        if case.source is None:
+            raise BenchmarkError("S3 emulator case has no source")
+        source = case.source.read_text(encoding="utf-8")
+        started = time.perf_counter_ns()
+        compilation = compile_source(source, case.optimization_mode)
+        duration = time.perf_counter_ns() - started
+        assembly_size = len(compilation.assembly_text.encode("utf-8"))
+        ir_size = len(serialize_ir(compilation.ir).encode("utf-8"))
+        instruction_count = sum(
+            len(block.instructions)
+            for function in compilation.ir.functions
+            for block in function.blocks
+        )
+        return BuildArtifact(
+            compile_duration_ns=duration,
+            artifact_size_bytes=assembly_size,
+            artifact_metrics={
+                "source_bytes": len(source.encode("utf-8")),
+                "ir_bytes": ir_size,
+                "assembly_bytes": assembly_size,
+                "function_count": len(compilation.ir.functions),
+                "instruction_count": instruction_count,
+            },
+            compiler_name="s3-bootstrap-python",
+            compiler_version=None,
+            compiler_flags=(case.optimization_mode,),
+            payload=compilation,
+            notes=("in-process compile; link phase is not applicable",),
+        )
+
+    def execute(
+        self,
+        case: Case,
+        artifact: BuildArtifact,
+        loops: int,
+        timeout_seconds: float,
+    ) -> ExecutionObservation:
+        del timeout_seconds
+        compilation = artifact.payload
+        if compilation is None or not hasattr(compilation, "assembly"):
+            raise BenchmarkError("S3 emulator artifact is invalid")
+        started = time.perf_counter_ns()
+        result = 0
+        for _ in range(loops):
+            result = _execute_hosted_assembly(compilation.assembly, "main")
+        duration = time.perf_counter_ns() - started
+        return ExecutionObservation(
+            checksum=str(result),
+            duration_ns=duration,
+            kernel_duration_ns=duration,
+            end_to_end_duration_ns=duration,
+        )
+
+
+class S3NativeAdapter:
+    """Process-per-sample adapter for S3 native ELFs.
+
+    The generated ELF does not accept loop arguments — it executes
+    ``main`` once and exits.  This adapter therefore operates in
+    **Mode B** (process-per-sample): exactly one process is launched
+    per sample, ``loops_per_sample`` is always forced to 1 by the
+    harness, and calibration never multiplies subprocess launches.
+
+    The ``loops`` parameter is accepted for protocol compatibility
+    but is **ignored** — only a single invocation is performed.
+    """
+
+    measurement_scope = MEASUREMENT_SCOPE_PROCESS
+    process_launches_per_sample = 1
+
+    def build(self, case: Case, build_dir: Path) -> BuildArtifact:
+        if platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"}:
+            raise AdapterUnavailable("S3 native execution requires Linux x86-64")
+        if case.source is None:
+            raise BenchmarkError("S3 native case has no source")
+        build_dir.mkdir(parents=True, exist_ok=True)
+        source = case.source.read_text(encoding="utf-8")
+        compile_started = time.perf_counter_ns()
+        compilation = compile_source(source, case.optimization_mode)
+        native_assembly = generate_native_assembly(compilation.assembly)
+        compile_duration = time.perf_counter_ns() - compile_started
+        toolchain = NativeToolchain.detect()
+        executable = build_dir / _artifact_name(case, "s3-native")
+        link_started = time.perf_counter_ns()
+        toolchain.build(native_assembly, executable)
+        link_duration = time.perf_counter_ns() - link_started
+        return BuildArtifact(
+            path=executable,
+            compile_duration_ns=compile_duration,
+            link_duration_ns=link_duration,
+            artifact_size_bytes=executable.stat().st_size,
+            artifact_metrics={
+                "source_bytes": len(source.encode("utf-8")),
+                "assembly_bytes": len(native_assembly.encode("utf-8")),
+                "elf_bytes": executable.stat().st_size,
+            },
+            compiler_name=Path(toolchain.compiler).name,
+            compiler_version=_tool_version((toolchain.compiler, "--version")),
+            compiler_flags=(case.optimization_mode,),
+            linker=toolchain.linker,
+        )
+
+    def execute(
+        self,
+        case: Case,
+        artifact: BuildArtifact,
+        loops: int,
+        timeout_seconds: float,
+    ) -> ExecutionObservation:
+        """Execute a single process invocation.
+
+        The ``loops`` parameter is ignored — the S3 native ELF has no
+        internal loop support.  The harness guarantees ``loops == 1``
+        for process-scoped adapters; this method enforces the invariant
+        defensively.
+        """
+        del loops  # Mode B: always one process per sample
+        if artifact.path is None:
+            raise BenchmarkError("S3 native artifact has no executable")
+        result = run_command(
+            [os.fspath(artifact.path)],
+            cwd=artifact.path.parent,
+            timeout_seconds=timeout_seconds,
+        )
+        if result.timed_out or result.output_truncated:
+            return _observation_from_command(result, checksum=None)
+        if result.exit_code != 0:
+            details = result.stderr.strip() or result.stdout.strip()
+            raise BenchmarkError(
+                f"{case.benchmark_id}: native execution failed with status {result.exit_code}: {details}"
+            )
+        checksum = extract_native_checksum(result.stdout)
+        return _observation_from_command(result, checksum=checksum)
+
+
+class PythonReferenceAdapter:
+    """Subprocess adapter – loops are passed to the Python script."""
+
+    measurement_scope = MEASUREMENT_SCOPE_KERNEL
+    process_launches_per_sample = 1
+
+    def build(self, case: Case, build_dir: Path) -> BuildArtifact:
+        del build_dir
+        if case.source is None:
+            raise BenchmarkError("Python reference case has no source")
+        return BuildArtifact(
+            path=case.source,
+            artifact_size_bytes=case.source.stat().st_size,
+            artifact_metrics={"source_bytes": case.source.stat().st_size},
+            compiler_name="CPython",
+            compiler_version=platform.python_version(),
+            notes=("interpreted reference; compile and link phases are unavailable",),
+        )
+
+    def execute(
+        self,
+        case: Case,
+        artifact: BuildArtifact,
+        loops: int,
+        timeout_seconds: float,
+    ) -> ExecutionObservation:
+        if artifact.path is None:
+            raise BenchmarkError("Python reference artifact has no source")
+        arguments = [sys.executable, os.fspath(artifact.path), case.benchmark_id, str(loops)]
+        result = run_command(arguments, cwd=artifact.path.parent, timeout_seconds=timeout_seconds)
+        checksum = None if result.timed_out or result.output_truncated else extract_checksum(result.stdout)
+        return _observation_from_command(result, checksum=checksum)
+
+
+class ExternalCompilerAdapter:
+    """Subprocess adapter for C, Rust, Zig – loops are passed to the executable."""
+
+    measurement_scope = MEASUREMENT_SCOPE_KERNEL
+    process_launches_per_sample = 1
+
+    def __init__(self, language: str, toolchain: Toolchain) -> None:
+        self._language = language
+        self._toolchain = toolchain
+
+    def build(self, case: Case, build_dir: Path) -> BuildArtifact:
+        if not self._toolchain.available or self._toolchain.command is None:
+            raise AdapterUnavailable(f"{self._language} toolchain is unavailable")
+        if case.source is None:
+            raise BenchmarkError(f"{self._language} case has no source")
+        build_dir.mkdir(parents=True, exist_ok=True)
+        executable = build_dir / _artifact_name(case, self._language)
+        if os.name == "nt":
+            executable = executable.with_suffix(".exe")
+        flags = _compiler_flags(case, self._language)
+        if self._language == "c":
+            object_path = executable.with_suffix(".o")
+            compile_result = run_command(
+                [self._toolchain.command, *flags, "-c", os.fspath(case.source), "-o", os.fspath(object_path)],
+                cwd=build_dir,
+                timeout_seconds=case.timeout_seconds,
+            )
+            _require_command_success(compile_result, "C compile")
+            link_result = run_command(
+                [self._toolchain.command, os.fspath(object_path), "-o", os.fspath(executable)],
+                cwd=build_dir,
+                timeout_seconds=case.timeout_seconds,
+            )
+            _require_command_success(link_result, "C link")
+            compile_duration = compile_result.duration_ns
+            link_duration = link_result.duration_ns
+        elif self._language == "rust":
+            compile_result = run_command(
+                [self._toolchain.command, *flags, os.fspath(case.source), "-o", os.fspath(executable)],
+                cwd=build_dir,
+                timeout_seconds=case.timeout_seconds,
+            )
+            _require_command_success(compile_result, "Rust build")
+            compile_duration = compile_result.duration_ns
+            link_duration = None
+        elif self._language == "zig":
+            compile_result = run_command(
+                [self._toolchain.command, "build-exe", os.fspath(case.source), *flags, f"-femit-bin={executable}"],
+                cwd=build_dir,
+                timeout_seconds=case.timeout_seconds,
+            )
+            _require_command_success(compile_result, "Zig build")
+            compile_duration = compile_result.duration_ns
+            link_duration = None
+        else:
+            raise BenchmarkError(f"unsupported external language: {self._language}")
+        if not executable.is_file():
+            raise BenchmarkError(f"{self._language} build produced no executable")
+        return BuildArtifact(
+            path=executable,
+            compile_duration_ns=compile_duration,
+            link_duration_ns=link_duration,
+            artifact_size_bytes=executable.stat().st_size,
+            artifact_metrics={
+                "source_bytes": case.source.stat().st_size,
+                "executable_bytes": executable.stat().st_size,
+            },
+            compiler_name=self._toolchain.name,
+            compiler_version=self._toolchain.version,
+            compiler_flags=tuple(flags),
+            linker=self._toolchain.name if self._language == "c" else None,
+            notes=("compiler driver includes link phase",) if link_duration is None else (),
+        )
+
+    def execute(
+        self,
+        case: Case,
+        artifact: BuildArtifact,
+        loops: int,
+        timeout_seconds: float,
+    ) -> ExecutionObservation:
+        if artifact.path is None:
+            raise BenchmarkError(f"{self._language} artifact has no executable")
+        result = run_command(
+            [os.fspath(artifact.path), case.benchmark_id, str(loops)],
+            cwd=artifact.path.parent,
+            timeout_seconds=timeout_seconds,
+        )
+        checksum = None if result.timed_out or result.output_truncated else extract_checksum(result.stdout)
+        return _observation_from_command(result, checksum=checksum)
+
+
+def create_adapter_registry(toolchains: Mapping[str, Toolchain] | None = None) -> dict[str, Adapter]:
+    tools = dict(toolchains or detect_toolchains())
+    c_toolchain = tools["clang"] if tools["clang"].available else tools["gcc"]
+    return {
+        "s3-emulator": S3EmulatorAdapter(),
+        "s3-native": S3NativeAdapter(),
+        "python-reference": PythonReferenceAdapter(),
+        "c": ExternalCompilerAdapter("c", c_toolchain),
+        "rust": ExternalCompilerAdapter("rust", tools["rustc"]),
+        "zig": ExternalCompilerAdapter("zig", tools["zig"]),
+    }
+
+
+def _compiler_flags(case: Case, language: str) -> list[str]:
+    configured = case.configuration.get("compiler_flags", {})
+    if not isinstance(configured, Mapping):
+        raise BenchmarkError("compiler_flags must be an optimization mapping")
+    flags = configured.get(case.optimization_mode)
+    if not isinstance(flags, list) or any(not isinstance(flag, str) for flag in flags):
+        raise BenchmarkError(
+            f"missing compiler flags for {language} {case.optimization_mode}"
+        )
+    return list(flags)
+
+
+def _require_command_success(result, phase: str) -> None:
+    if result.timed_out:
+        raise BenchmarkError(f"{phase} timed out")
+    if result.output_truncated:
+        raise BenchmarkError(f"{phase} output was truncated")
+    if result.exit_code != 0:
+        details = result.stderr.strip() or result.stdout.strip()
+        raise BenchmarkError(f"{phase} failed with status {result.exit_code}: {details}")
+
+
+def _observation_from_command(result, *, checksum: str | None) -> ExecutionObservation:
+    return ExecutionObservation(
+        checksum=checksum,
+        duration_ns=result.duration_ns,
+        stdout=result.stdout,
+        stderr=result.stderr,
+        exit_code=result.exit_code,
+        timed_out=result.timed_out,
+        output_truncated=result.output_truncated,
+        end_to_end_duration_ns=result.duration_ns,
+    )
+
+
+def _artifact_name(case: Case, prefix: str) -> str:
+    safe_id = case.benchmark_id.replace(".", "-")
+    safe_opt = case.optimization_mode.replace("=", "-")
+    return f"{prefix}-{safe_id}-{safe_opt}"

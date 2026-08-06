@@ -1,0 +1,22 @@
+enum Result:
+    Ok(value: tryte)
+    Err(code: tryte)
+
+fn parse(flag: trit) -> Result:
+    match flag:
+        -1:
+            return Result.Err(code=7)
+        0:
+            return Result.Ok(value=11)
+        1:
+            return Result.Ok(value=13)
+
+fn unwrap(result: Result) -> tryte:
+    match result:
+        Result.Ok(value):
+            return value
+        Result.Err(code):
+            return 0 - code
+
+fn main() -> tryte:
+    return unwrap(parse(0)) + unwrap(parse(-1))
