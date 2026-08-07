@@ -8,6 +8,7 @@ from typing import Sequence
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from bootstrap.s3.emulator import execute_assembly  # noqa: E402
 from bootstrap.s3.pipeline import CompilationResult, compile_source, run_source  # noqa: E402
 
 
@@ -214,9 +215,21 @@ def find_program(path: str | Path) -> S3Program | None:
     return None
 
 
-def run_hosted_check(program: S3Program, *, entry: str = "main") -> int:
+def run_hosted_check(
+    program: S3Program,
+    *,
+    entry: str = "main",
+    compilation: CompilationResult | None = None,
+) -> int:
     if program.hosted_expected_return is None:
         raise ValueError(f"{_display_path(program.path)} is not hosted opt-in")
+
+    if compilation is not None:
+        return execute_assembly(
+            compilation.assembly,
+            entry=entry,
+            max_instructions=program.max_instructions,
+        )
 
     source = program.path.read_text(encoding="utf-8")
     return run_source(source, entry=entry, max_instructions=program.max_instructions)
@@ -282,7 +295,7 @@ def check_programs() -> int:
 
         hosted_checked += 1
         try:
-            actual = run_hosted_check(program)
+            actual = run_hosted_check(program, compilation=compilation)
         except Exception as error:
             ok = False
             print("  hosted execution: failed")
