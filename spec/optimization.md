@@ -26,6 +26,11 @@ O threading pode substituir um `BRANCH3` por `JUMP` quando os três destinos,
 depois de atravessar apenas blocos de salto vazios, convergem comprovadamente
 para o mesmo bloco. Convergências parciais permanecem inalteradas.
 
+O1 também pode remover `STORE`s de objetos de memória locais quando a função
+inteira não contém nenhum `LOAD` para o mesmo objeto. A prova depende da
+ausência de ponteiros e do isolamento por frame; objetos que possuem qualquer
+`LOAD` permanecem fora dessa regra.
+
 Não pode remover/reordenar efeitos (`CALL`, `LOAD`, `STORE`, terminadores) nem
 checks de overflow, faixa, bounds, inicialização, imutabilidade, frame limit ou
 estado trit. Folding que esconderia overflow é proibido.

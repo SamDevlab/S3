@@ -88,6 +88,15 @@ SSA_PASS_CONTRACTS = (
         telemetry_fields=("stores_removed",),
     ),
     SSAPassContract(
+        "global_dse",
+        requires_ssa=True,
+        preserves_ssa=True,
+        mutates_cfg=False,
+        required_analyses=(),
+        invalidated_analyses=("memory-uses", "uses"),
+        telemetry_fields=("stores_removed",),
+    ),
+    SSAPassContract(
         "dce",
         requires_ssa=True,
         preserves_ssa=True,

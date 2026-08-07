@@ -14,6 +14,7 @@ def test_ssa_pass_contract_inventory_matches_active_fixpoint_passes() -> None:
         "gvn",
         "copy_propagation",
         "dse",
+        "global_dse",
         "dce",
         "adce",
         "licm",
