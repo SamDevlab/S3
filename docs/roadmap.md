@@ -148,6 +148,14 @@ Não integram o Marco 0.7. Estado individual:
    mesmo sucessor, mantendo convergências parciais intactas;
 4. backend ou execução ARM64 experimental.
 
+## Campanha 4-6
+
+O próximo bloco fundamentado pelo ADR-0016 começa com duas otimizações
+conservadoras: DSE global limitado a objetos de frame sem `LOAD` e Memory GVN
+limitado a cargas de memória imutável. Cada regra exige prova, testes de
+equivalência e medição temporal; não há terceira entrega selecionada enquanto
+não existir uma candidata independente com evidência suficiente.
+
 Heap, ponteiros públicos, strings dinâmicas e I/O continuam fora do MVP até
 receberem contratos próprios. Arrays fixos em assinaturas recebem contrato na
 Milestone 1.12. Módulos e imports

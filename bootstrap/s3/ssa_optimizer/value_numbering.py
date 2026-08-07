@@ -143,6 +143,18 @@ def run_ssa_gvn(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
         IROpcode.CONST_STR,
         IROpcode.MOVE,
     }
+    immutable_memory = {
+        memory.index
+        for memory in ssa_fn.memory_objects
+        if not memory.mutable
+    }
+
+    def is_immutable_load(inst: SSAInstruction) -> bool:
+        return (
+            inst.opcode is IROpcode.LOAD
+            and inst.memory is not None
+            and inst.memory in immutable_memory
+        )
 
     def value_key(value: SSAValue) -> int | str:
         if value.original_register is not None:
@@ -157,7 +169,10 @@ def run_ssa_gvn(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
         for inst in block.instructions:
             if (
                 inst.result is not None
-                and inst.opcode in eligible_opcodes
+                and (
+                    inst.opcode in eligible_opcodes
+                    or is_immutable_load(inst)
+                )
             ):
                 op_keys = tuple(
                     value_key(replacements.get(op.name, op))

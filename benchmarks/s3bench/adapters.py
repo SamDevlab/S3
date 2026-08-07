@@ -293,13 +293,13 @@ class ExternalCompilerAdapter:
             compile_result = run_command(
                 [self._toolchain.command, *flags, "-c", os.fspath(case.source), "-o", os.fspath(object_path)],
                 cwd=build_dir,
-                timeout_seconds=case.timeout_seconds,
+                timeout_seconds=case.build_timeout_seconds,
             )
             _require_command_success(compile_result, "C compile")
             link_result = run_command(
                 [self._toolchain.command, os.fspath(object_path), "-o", os.fspath(executable)],
                 cwd=build_dir,
-                timeout_seconds=case.timeout_seconds,
+                timeout_seconds=case.build_timeout_seconds,
             )
             _require_command_success(link_result, "C link")
             compile_duration = compile_result.duration_ns
@@ -308,7 +308,7 @@ class ExternalCompilerAdapter:
             compile_result = run_command(
                 [self._toolchain.command, *flags, os.fspath(case.source), "-o", os.fspath(executable)],
                 cwd=build_dir,
-                timeout_seconds=case.timeout_seconds,
+                timeout_seconds=case.build_timeout_seconds,
             )
             _require_command_success(compile_result, "Rust build")
             compile_duration = compile_result.duration_ns
@@ -317,7 +317,7 @@ class ExternalCompilerAdapter:
             compile_result = run_command(
                 [self._toolchain.command, "build-exe", os.fspath(case.source), *flags, f"-femit-bin={executable}"],
                 cwd=build_dir,
-                timeout_seconds=case.timeout_seconds,
+                timeout_seconds=case.build_timeout_seconds,
             )
             _require_command_success(compile_result, "Zig build")
             compile_duration = compile_result.duration_ns

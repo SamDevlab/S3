@@ -14,6 +14,7 @@ from .ssa_optimizer.elimination import (
     run_ssa_adce,
     run_ssa_dead_code_elimination,
     run_ssa_dse,
+    run_ssa_global_dse,
 )
 from .ssa_optimizer.loops import (
     run_ssa_licm,
@@ -126,7 +127,18 @@ def run_fixpoint_pipeline(
             ):
                 changed = True
 
-        # 4. DCE
+        # 4. Global dead stores with a whole-function no-load proof.
+        if pass_enabled("global_dse"):
+            next_fn, global_dse_cnt = run_ssa_global_dse(curr_fn)
+            if apply_pass(
+                make_pass_result(
+                    next_fn,
+                    (("stores_removed", global_dse_cnt),),
+                )
+            ):
+                changed = True
+
+        # 5. DCE
         if pass_enabled("dce"):
             next_fn = run_ssa_dead_code_elimination(curr_fn)
             if apply_pass(make_pass_result(next_fn)):

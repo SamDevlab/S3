@@ -235,3 +235,56 @@ def run_ssa_dse(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
         return_type=ssa_fn.return_type,
         result_types=ssa_fn.result_types,
     ), len(dead_stores)
+
+
+# -----------------------------------------------------------------------------
+# Milestone 4: conservative global dead-store elimination
+# -----------------------------------------------------------------------------
+
+def run_ssa_global_dse(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
+    """Remove stores to frame objects that are never loaded in the function.
+
+    S3 memory objects are frame-local and pointers are not part of the language,
+    so a store to an object with no LOAD has no observable consumer. Calls cannot
+    access a caller's frame-local objects. Objects that have any LOAD remain
+    untouched because this pass does not claim a path-sensitive memory proof.
+    """
+    loaded_memory = {
+        instruction.memory
+        for block in ssa_fn.blocks
+        for instruction in block.instructions
+        if instruction.opcode is IROpcode.LOAD
+        and instruction.memory is not None
+    }
+    dead_stores = {
+        instruction
+        for block in ssa_fn.blocks
+        for instruction in block.instructions
+        if instruction.opcode is IROpcode.STORE
+        and instruction.memory is not None
+        and instruction.memory not in loaded_memory
+    }
+    if not dead_stores:
+        return ssa_fn, 0
+
+    blocks = tuple(
+        SSABlock(
+            name=block.name,
+            phis=list(block.phis),
+            instructions=[
+                instruction
+                for instruction in block.instructions
+                if instruction not in dead_stores
+            ],
+        )
+        for block in ssa_fn.blocks
+    )
+    return SSAFunction(
+        name=ssa_fn.name,
+        parameters=ssa_fn.parameters,
+        blocks=blocks,
+        values=ssa_fn.values,
+        memory_objects=ssa_fn.memory_objects,
+        return_type=ssa_fn.return_type,
+        result_types=ssa_fn.result_types,
+    ), len(dead_stores)

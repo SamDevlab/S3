@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+import json
 import shutil
 from pathlib import Path
 
+import pytest
+
 from benchmarks.s3bench import load_manifest
-from benchmarks.s3bench.adapters import ExternalCompilerAdapter, detect_toolchains
+import benchmarks.s3bench.adapters as adapters
+from benchmarks.s3bench.adapters import ExternalCompilerAdapter, Toolchain, detect_toolchains
+from benchmarks.s3bench.core import BenchmarkError, Case, CommandResult, ManifestError
 from benchmarks.s3bench.report import comparison_tables, normalized_rows, render_performance_report
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,6 +44,171 @@ def test_external_optimization_flags_are_explicit_and_portable():
         assert flags
         assert "-march=native" not in flags
         assert "-O3" not in flags
+
+
+def test_manifest_separates_build_and_runtime_timeouts(tmp_path):
+    manifest = {
+        "manifest_version": "1.0.0",
+        "campaign": "test",
+        "workloads": [{
+            "benchmark_id": "timeout.v1",
+            "workload_version": "1.0.0",
+            "category": "runtime",
+            "suite": "portable",
+            "objective": "timeout scope",
+            "input": {"id": "one", "size": 1},
+            "expected_checksum": "1",
+            "timed_region": "program",
+            "implementations": [{
+                "id": "rust",
+                "adapter": "rust",
+                "execution_mode": "native",
+                "optimization_modes": ["opt-level=0"],
+                "source": None,
+                "timeout_seconds": 30,
+                "build_timeout_seconds": 75,
+            }],
+        }],
+    }
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    _, cases = load_manifest(path)
+
+    assert cases[0].timeout_seconds == 30
+    assert cases[0].build_timeout_seconds == 75
+
+
+def test_manifest_uses_safe_build_timeout_default(tmp_path):
+    manifest = {
+        "manifest_version": "1.0.0",
+        "campaign": "test",
+        "workloads": [{
+            "benchmark_id": "timeout.v1",
+            "workload_version": "1.0.0",
+            "category": "runtime",
+            "suite": "portable",
+            "objective": "timeout scope",
+            "input": {"id": "one", "size": 1},
+            "expected_checksum": "1",
+            "timed_region": "program",
+            "implementations": [{
+                "id": "rust",
+                "adapter": "rust",
+                "execution_mode": "native",
+                "optimization_modes": ["opt-level=0"],
+                "source": None,
+                "timeout_seconds": 30,
+            }],
+        }],
+    }
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    _, cases = load_manifest(path)
+
+    assert cases[0].timeout_seconds == 30
+    assert cases[0].build_timeout_seconds == 60
+
+
+@pytest.mark.parametrize("field", ["timeout_seconds", "build_timeout_seconds"])
+def test_manifest_rejects_non_positive_timeout(tmp_path, field):
+    manifest = {
+        "manifest_version": "1.0.0",
+        "campaign": "test",
+        "workloads": [{
+            "benchmark_id": "timeout.v1",
+            "workload_version": "1.0.0",
+            "category": "runtime",
+            "suite": "portable",
+            "objective": "timeout scope",
+            "input": {"id": "one", "size": 1},
+            "expected_checksum": "1",
+            "timed_region": "program",
+            "implementations": [{
+                "id": "rust",
+                "adapter": "rust",
+                "execution_mode": "native",
+                "optimization_modes": ["opt-level=0"],
+                "source": None,
+                "timeout_seconds": 30,
+                field: 0,
+            }],
+        }],
+    }
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    with pytest.raises(ManifestError, match="invalid .*timeout"):
+        load_manifest(path)
+
+
+def test_external_adapter_separates_build_and_runtime_timeout(tmp_path, monkeypatch):
+    calls = []
+    source = tmp_path / "portable.rs"
+    source.write_text("fn main() {}", encoding="utf-8")
+    case = Case(
+        campaign="test",
+        benchmark_id="timeout.v1",
+        workload_version="1.0.0",
+        category="runtime",
+        suite="portable",
+        implementation="rust",
+        adapter="rust",
+        execution_mode="native",
+        optimization_mode="opt-level=0",
+        input_id="one",
+        input_size=1,
+        expected_checksum="1",
+        timeout_seconds=30,
+        build_timeout_seconds=75,
+        timed_region="program",
+        source=source,
+        configuration={"compiler_flags": {"opt-level=0": []}},
+    )
+
+    def fake_run_command(arguments, *, cwd, timeout_seconds, **kwargs):
+        calls.append((tuple(arguments), timeout_seconds))
+        if "-o" in arguments:
+            output = Path(arguments[arguments.index("-o") + 1])
+            output.write_text("binary", encoding="utf-8")
+        return CommandResult(
+            tuple(arguments), "checksum=1\n", "", 0, False, False, 1
+        )
+
+    monkeypatch.setattr(adapters, "run_command", fake_run_command)
+    toolchain = Toolchain("rustc", "rustc", "test", True, ("rustc", "--version"))
+    adapter = ExternalCompilerAdapter("rust", toolchain)
+
+    artifact = adapter.build(case, tmp_path / "build")
+    observation = adapter.execute(case, artifact, 1, case.timeout_seconds)
+
+    assert calls[0][1] == 75
+    assert calls[1][1] == 30
+    assert observation.checksum == "1"
+
+
+def test_external_adapter_reports_build_timeout_without_disabling_it(tmp_path, monkeypatch):
+    source = tmp_path / "portable.rs"
+    source.write_text("fn main() {}", encoding="utf-8")
+    case = Case(
+        campaign="test", benchmark_id="timeout.v1", workload_version="1.0.0",
+        category="runtime", suite="portable", implementation="rust", adapter="rust",
+        execution_mode="native", optimization_mode="opt-level=0", input_id="one",
+        input_size=1, expected_checksum="1", timeout_seconds=30,
+        build_timeout_seconds=75, timed_region="program", source=source,
+        configuration={"compiler_flags": {"opt-level=0": []}},
+    )
+
+    def timed_out_run_command(arguments, *, cwd, timeout_seconds, **kwargs):
+        assert timeout_seconds == 75
+        return CommandResult(tuple(arguments), "", "", None, True, False, 75_000_000_000)
+
+    monkeypatch.setattr(adapters, "run_command", timed_out_run_command)
+    toolchain = Toolchain("rustc", "rustc", "test", True, ("rustc", "--version"))
+
+    with pytest.raises(BenchmarkError, match="Rust build timed out"):
+        ExternalCompilerAdapter("rust", toolchain).build(case, tmp_path / "build")
 
 
 def test_missing_toolchain_is_explicitly_unavailable(monkeypatch):

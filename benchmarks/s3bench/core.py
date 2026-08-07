@@ -24,6 +24,7 @@ DEFAULT_TARGET_SAMPLE_NS = 200_000_000
 DEFAULT_MAX_LOOPS = 1_000_000
 DEFAULT_MAX_CALIBRATION_ATTEMPTS = 20
 DEFAULT_TIMEOUT_SECONDS = 30.0
+DEFAULT_BUILD_TIMEOUT_SECONDS = 60.0
 MAX_CAPTURE_BYTES = 1_048_576
 
 COMPARABILITY = {
@@ -131,6 +132,7 @@ class Case:
     input_size: int
     expected_checksum: str
     timeout_seconds: float
+    build_timeout_seconds: float
     timed_region: str
     source: Path | None
     configuration: Mapping[str, object] = field(default_factory=dict)
@@ -362,6 +364,11 @@ def load_manifest(path: Path) -> tuple[dict[str, object], tuple[Case, ...]]:
                 timeout = implementation.get("timeout_seconds", DEFAULT_TIMEOUT_SECONDS)
                 if not isinstance(timeout, (int, float)) or timeout <= 0:
                     raise ManifestError(f"invalid timeout for {benchmark_id}")
+                build_timeout = implementation.get(
+                    "build_timeout_seconds", DEFAULT_BUILD_TIMEOUT_SECONDS
+                )
+                if not isinstance(build_timeout, (int, float)) or build_timeout <= 0:
+                    raise ManifestError(f"invalid build timeout for {benchmark_id}")
                 cases.append(
                     Case(
                         campaign=campaign,
@@ -377,6 +384,7 @@ def load_manifest(path: Path) -> tuple[dict[str, object], tuple[Case, ...]]:
                         input_size=input_size,
                         expected_checksum=expected_checksum,
                         timeout_seconds=float(timeout),
+                        build_timeout_seconds=float(build_timeout),
                         timed_region=timed_region,
                         source=source,
                         configuration=dict(implementation),

@@ -26,6 +26,15 @@ O threading pode substituir um `BRANCH3` por `JUMP` quando os três destinos,
 depois de atravessar apenas blocos de salto vazios, convergem comprovadamente
 para o mesmo bloco. Convergências parciais permanecem inalteradas.
 
+O1 também pode remover `STORE`s de objetos de memória locais quando a função
+inteira não contém nenhum `LOAD` para o mesmo objeto. A prova depende da
+ausência de ponteiros e do isolamento por frame; objetos que possuem qualquer
+`LOAD` permanecem fora dessa regra.
+
+GVN também pode reutilizar `LOAD`s repetidos quando o objeto de memória está
+explicitamente marcado como imutável. Cargas de objetos mutáveis ou não
+registrados não são consideradas expressões puras.
+
 Não pode remover/reordenar efeitos (`CALL`, `LOAD`, `STORE`, terminadores) nem
 checks de overflow, faixa, bounds, inicialização, imutabilidade, frame limit ou
 estado trit. Folding que esconderia overflow é proibido.

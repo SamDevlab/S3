@@ -685,6 +685,7 @@ def test_current_o1_pass_inventory_is_explicit() -> None:
         "gvn",
         "copy_propagation",
         "dse",
+        "global_dse",
         "dce",
         "adce",
         "licm",
