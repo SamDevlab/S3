@@ -8,7 +8,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from bootstrap.s3.backends.x86_64 import NativeBackendError, NativeToolchain
+from bootstrap.s3.backends.x86_64 import (
+    NativeBackendError,
+    NativeToolchain,
+    generate_native_assembly,
+)
 from bootstrap.s3.emulator import Emulator
 from bootstrap.s3.lexer import SyntaxMode
 from bootstrap.s3.pipeline import compile_source
@@ -101,8 +105,13 @@ def run_four_paths(
             )
 
             try:
+                native_assembly = generate_native_assembly(
+                    compilation.assembly,
+                    max_frames=max_frames,
+                    max_instructions=max_instructions,
+                )
                 executable = native.build(
-                    compilation.assembly_text,
+                    native_assembly,
                     output_root / f"{optimization.lower()}-native",
                 )
                 completed = native.run(executable, timeout=native_timeout)

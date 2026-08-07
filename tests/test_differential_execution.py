@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import subprocess
+from pathlib import Path
+
 import pytest
 
 from bootstrap.s3.backends.x86_64 import NativeBackendError
@@ -64,6 +67,42 @@ def test_backend_unavailable_is_explicit(monkeypatch: pytest.MonkeyPatch) -> Non
     )
     with pytest.raises(DifferentialBackendUnavailable, match="backend unavailable"):
         run_four_paths(GeneratedProgram(3, "fn main() -> tryte:\n    return 1\n"))
+
+
+def test_native_path_builds_generated_x86_64_assembly() -> None:
+    class RecordingToolchain:
+        def __init__(self) -> None:
+            self.assemblies: list[str] = []
+
+        def build(self, assembly: str, output: Path) -> Path:
+            self.assemblies.append(assembly)
+            return output
+
+        def run(
+            self,
+            executable: Path,
+            *,
+            timeout: float,
+        ) -> subprocess.CompletedProcess[str]:
+            return subprocess.CompletedProcess(
+                [str(executable)],
+                0,
+                "program returned: 23\n",
+                "",
+            )
+
+    toolchain = RecordingToolchain()
+    program = GeneratedProgram(11, "fn main() -> tryte:\n    return 8 + 15\n")
+
+    observations = run_four_paths(program, toolchain=toolchain)
+
+    assert len(toolchain.assemblies) == 2
+    assert all(
+        assembly.startswith(".intel_syntax noprefix\n")
+        for assembly in toolchain.assemblies
+    )
+    assert all(".s3asm" not in assembly for assembly in toolchain.assemblies)
+    assert_four_path_equivalence(program, observations)
 
 
 def test_generated_program_runs_all_four_paths() -> None:
