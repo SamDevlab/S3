@@ -67,6 +67,43 @@ def _write_fixture(tmp_path: Path, *, rows_by_run=None, runs=3, stdout=True, std
     return root.parent
 
 
+def _fail_markdown_publication_and_restores(
+    monkeypatch,
+    json_path: Path,
+    markdown_path: Path,
+    failed_restorations: set[Path],
+):
+    original_replace = os.replace
+    publication_failed = False
+    restoration_attempts = []
+
+    def replace(source, destination):
+        nonlocal publication_failed
+        source = Path(source)
+        destination = Path(destination)
+        is_restoration = (
+            publication_failed
+            and ".backup." in source.name
+            and destination in {json_path, markdown_path}
+        )
+        if is_restoration:
+            restoration_attempts.append(destination)
+            if destination in failed_restorations:
+                raise OSError(f"simulated restoration failure for {destination.name}")
+        is_markdown_publication = (
+            destination == markdown_path
+            and source != markdown_path
+            and ".backup." not in source.name
+        )
+        if is_markdown_publication and not publication_failed:
+            publication_failed = True
+            raise OSError("simulated markdown publication failure")
+        return original_replace(source, destination)
+
+    monkeypatch.setattr(repeatability.os, "replace", replace)
+    return restoration_attempts
+
+
 def test_kernel_uses_per_loop_not_raw_median(tmp_path):
     report = analyze_root(_write_fixture(tmp_path))
     o0 = next(item for item in report["measurements"] if item["optimization_mode"] == "O0")
@@ -318,7 +355,8 @@ def test_second_temporary_write_failure_leaves_no_outputs_or_temporaries(tmp_pat
     assert list(tmp_path.glob(".*")) == []
 
 
-def test_second_publication_failure_rolls_back_existing_destinations(tmp_path, monkeypatch):
+def test_second_publication_failure_rolls_back_existing_destinations(tmp_path, monkeypatch, capsys):
+    root = _write_fixture(tmp_path)
     json_path = tmp_path / "report.json"
     markdown_path = tmp_path / "report.md"
     json_path.write_text("old-json\n", encoding="utf-8")
@@ -334,11 +372,92 @@ def test_second_publication_failure_rolls_back_existing_destinations(tmp_path, m
         return original_replace(source, destination)
 
     monkeypatch.setattr(repeatability.os, "replace", fail_second_destination)
-    with pytest.raises(RepeatabilityError, match="could not publish both reports"):
-        publish_reports("new-json\n", "new-markdown\n", json_path, markdown_path)
+    assert main([
+        str(root), "--output-json", str(json_path), "--output-markdown", str(markdown_path),
+    ]) == 2
     assert json_path.read_text(encoding="utf-8") == "old-json\n"
     assert markdown_path.read_text(encoding="utf-8") == "old-markdown\n"
     assert list(tmp_path.glob(".*")) == []
+    stderr = capsys.readouterr().err
+    assert "could not publish both reports" in stderr
+    assert "rollback restoration failed" not in stderr
+    assert "original preserved at" not in stderr
+
+
+def test_cli_preserves_first_backup_when_first_restoration_fails(tmp_path, monkeypatch, capsys):
+    root = _write_fixture(tmp_path)
+    json_path = tmp_path / "report.json"
+    markdown_path = tmp_path / "report.md"
+    json_path.write_bytes(b"old-json\n")
+    markdown_path.write_bytes(b"old-markdown\n")
+    restoration_attempts = _fail_markdown_publication_and_restores(
+        monkeypatch, json_path, markdown_path, {json_path}
+    )
+
+    assert main([
+        str(root), "--output-json", str(json_path), "--output-markdown", str(markdown_path),
+    ]) == 2
+
+    backups = list(tmp_path.glob(".report.json.backup.*"))
+    assert restoration_attempts == [json_path, markdown_path]
+    assert len(backups) == 1
+    assert backups[0].read_bytes() == b"old-json\n"
+    assert not json_path.exists()
+    assert markdown_path.read_bytes() == b"old-markdown\n"
+    stderr = capsys.readouterr().err
+    assert "simulated markdown publication failure" in stderr
+    assert f"destination {repeatability._canonical_output_path(json_path)}" in stderr
+    assert f"original preserved at {repeatability._canonical_output_path(backups[0])}" in stderr
+    assert "simulated restoration failure for report.json" in stderr
+
+
+def test_only_second_failed_restoration_backup_is_reported(tmp_path, monkeypatch):
+    json_path = tmp_path / "report.json"
+    markdown_path = tmp_path / "report.md"
+    json_path.write_bytes(b"old-json\n")
+    markdown_path.write_bytes(b"old-markdown\n")
+    restoration_attempts = _fail_markdown_publication_and_restores(
+        monkeypatch, json_path, markdown_path, {markdown_path}
+    )
+
+    with pytest.raises(RepeatabilityError) as raised:
+        publish_reports("new-json\n", "new-markdown\n", json_path, markdown_path)
+
+    json_backups = list(tmp_path.glob(".report.json.backup.*"))
+    markdown_backups = list(tmp_path.glob(".report.md.backup.*"))
+    assert restoration_attempts == [json_path, markdown_path]
+    assert json_path.read_bytes() == b"old-json\n"
+    assert not markdown_path.exists()
+    assert json_backups == []
+    assert len(markdown_backups) == 1
+    assert markdown_backups[0].read_bytes() == b"old-markdown\n"
+    message = str(raised.value)
+    assert f"destination {repeatability._canonical_output_path(markdown_path)}" in message
+    assert (
+        f"original preserved at {repeatability._canonical_output_path(markdown_backups[0])}"
+        in message
+    )
+    assert ".report.json.backup." not in message
+
+
+def test_rollback_continues_after_one_restoration_failure(tmp_path, monkeypatch):
+    json_path = tmp_path / "report.json"
+    markdown_path = tmp_path / "report.md"
+    json_path.write_bytes(b"old-json\n")
+    markdown_path.write_bytes(b"old-markdown\n")
+    restoration_attempts = _fail_markdown_publication_and_restores(
+        monkeypatch, json_path, markdown_path, {json_path}
+    )
+
+    with pytest.raises(RepeatabilityError):
+        publish_reports("new-json\n", "new-markdown\n", json_path, markdown_path)
+
+    json_backups = list(tmp_path.glob(".report.json.backup.*"))
+    assert restoration_attempts == [json_path, markdown_path]
+    assert len(json_backups) == 1
+    assert json_backups[0].read_bytes() == b"old-json\n"
+    assert markdown_path.read_bytes() == b"old-markdown\n"
+    assert list(tmp_path.glob(".report.md.backup.*")) == []
 
 
 def test_first_backup_failure_cleans_placeholder_and_returns_cli_error(tmp_path, monkeypatch, capsys):
@@ -433,3 +552,4 @@ def test_success_publishes_both_reports(tmp_path):
     publish_reports("{}\n", "# report\n", json_path, markdown_path)
     assert json_path.read_text(encoding="utf-8") == "{}\n"
     assert markdown_path.read_text(encoding="utf-8") == "# report\n"
+    assert list(tmp_path.glob(".*")) == []

@@ -33,6 +33,16 @@ class RepeatabilityError(ValueError):
     """The persisted run set violates the repeatability contract."""
 
 
+@dataclass
+class _PublicationState:
+    destination: Path
+    prepared: Path | None = None
+    backup: Path | None = None
+    had_original: bool = False
+    original_in_backup: bool = False
+    published: bool = False
+
+
 def publish_reports(
     json_text: str,
     markdown_text: str,
@@ -49,48 +59,75 @@ def publish_reports(
 
     json_destination.parent.mkdir(parents=True, exist_ok=True)
     markdown_destination.parent.mkdir(parents=True, exist_ok=True)
-    temporary_paths: list[Path] = []
-    reserved_paths: list[Path] = []
-    backup_paths: dict[Path, Path] = {}
-    published: list[Path] = []
+    states = [
+        _PublicationState(json_destination),
+        _PublicationState(markdown_destination),
+    ]
     try:
-        json_temporary = _write_temporary(json_destination, json_text, ".json")
-        temporary_paths.append(json_temporary)
-        markdown_temporary = _write_temporary(markdown_destination, markdown_text, ".md")
-        temporary_paths.append(markdown_temporary)
+        states[0].prepared = _write_temporary(json_destination, json_text, ".json")
+        states[1].prepared = _write_temporary(markdown_destination, markdown_text, ".md")
 
-        for destination in (json_destination, markdown_destination):
-            if destination.exists():
-                backup = _backup_path(destination, reserved_paths)
-                os.replace(destination, backup)
-                backup_paths[destination] = backup
+        for state in states:
+            if state.destination.exists():
+                state.had_original = True
+                _reserve_backup(state)
+                if state.backup is None:
+                    raise ValueError(f"missing backup placeholder for {state.destination}")
+                os.replace(state.destination, state.backup)
+                state.original_in_backup = True
 
-        os.replace(json_temporary, json_destination)
-        published.append(json_destination)
-        temporary_paths.remove(json_temporary)
-        os.replace(markdown_temporary, markdown_destination)
-        published.append(markdown_destination)
-        temporary_paths.remove(markdown_temporary)
+        for state in states:
+            if state.prepared is None:
+                raise ValueError(f"missing prepared report for {state.destination}")
+            os.replace(state.prepared, state.destination)
+            state.prepared = None
+            state.published = True
     except (OSError, ValueError) as error:
-        for destination in reversed(published):
+        for state in reversed(states):
+            if not state.published:
+                continue
             try:
-                destination.unlink(missing_ok=True)
+                state.destination.unlink(missing_ok=True)
+                state.published = False
             except OSError:
                 pass
-        for destination, backup in backup_paths.items():
+        restoration_failures: list[tuple[Path, Path, OSError]] = []
+        for state in states:
+            if not state.original_in_backup or state.backup is None:
+                continue
             try:
-                if backup.exists():
-                    os.replace(backup, destination)
-            except OSError:
-                pass
-        residual = _cleanup_paths(temporary_paths + reserved_paths)
+                os.replace(state.backup, state.destination)
+            except OSError as restoration_error:
+                restoration_failures.append(
+                    (state.destination, state.backup, restoration_error)
+                )
+            else:
+                state.original_in_backup = False
+        safe_cleanup = [
+            path
+            for state in states
+            for path in (state.prepared, state.backup)
+            if path is not None and not (
+                path == state.backup and state.original_in_backup
+            )
+        ]
+        residual = _cleanup_paths(safe_cleanup)
         residual = _cleanup_paths(residual)
         message = f"could not publish both reports: {error}"
+        for destination, backup, restoration_error in restoration_failures:
+            message += (
+                f"; rollback restoration failed for destination {destination}: "
+                f"original preserved at {backup}: {restoration_error}"
+            )
         if residual:
             message += "; could not remove: " + ", ".join(str(path) for path in residual)
         raise RepeatabilityError(message) from error
     else:
-        residual = _cleanup_paths(list(backup_paths.values()))
+        residual = _cleanup_paths([
+            state.backup
+            for state in states
+            if state.original_in_backup and state.backup is not None
+        ])
         residual = _cleanup_paths(residual)
         return [f"could not remove backup: {path}" for path in residual]
 
@@ -125,14 +162,14 @@ def _write_temporary(destination: Path, content: str, suffix: str) -> Path:
     return temporary
 
 
-def _backup_path(destination: Path, reserved_paths: list[Path]) -> Path:
+def _reserve_backup(state: _PublicationState) -> None:
     descriptor, name = tempfile.mkstemp(
-        prefix=f".{destination.name}.backup.", suffix="", dir=destination.parent
+        prefix=f".{state.destination.name}.backup.",
+        suffix="",
+        dir=state.destination.parent,
     )
+    state.backup = Path(name)
     os.close(descriptor)
-    backup = Path(name)
-    reserved_paths.append(backup)
-    return backup
 
 
 def _cleanup_paths(paths: list[Path]) -> list[Path]:

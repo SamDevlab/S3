@@ -103,6 +103,11 @@ is only a safe storage name and is never used as the benchmark identity. If
 the marker is absent, the analyzer derives the ID from the documents and
 requires it to remain identical across all runs.
 
+Report publication is transactional until both output files are installed.
+Pre-commit failures restore previous destinations. If restoration itself
+fails, the original backup is preserved and the error identifies its path for
+manual recovery; a backup containing original data is never silently removed.
+
 Kernel measurements are analyzed in nanoseconds per loop:
 `median_ns / loops_per_sample`, verified against
 `comparison.median_ns_per_loop`. The raw `median_ns` is the total sample
