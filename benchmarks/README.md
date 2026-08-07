@@ -108,6 +108,19 @@ Pre-commit failures restore previous destinations. If restoration itself
 fails, the original backup is preserved and the error identifies its path for
 manual recovery; a backup containing original data is never silently removed.
 
+## Optimization budgets
+
+Versioned structural budgets for selected examples are checked with:
+
+```bash
+python tools/check_optimization_budgets.py
+```
+
+The manifest at `benchmarks/optimization-budgets.json` limits O1 block,
+instruction, and branch counts and can reject structural growth. These are
+deterministic compatibility budgets, not timing thresholds or performance
+claims.
+
 Kernel measurements are analyzed in nanoseconds per loop:
 `median_ns / loops_per_sample`, verified against
 `comparison.median_ns_per_loop`. The raw `median_ns` is the total sample

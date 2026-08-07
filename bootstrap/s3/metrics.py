@@ -152,6 +152,69 @@ def measure_optimization(before: IRModule, after: IRModule) -> OptimizationMetri
     )
 
 
+@dataclass(frozen=True, slots=True)
+class OptimizationBudget:
+    """Deterministic upper bounds for one optimized IR program."""
+
+    maximum_blocks: int
+    maximum_instructions: int
+    maximum_branches: int
+    require_non_growth: bool = True
+
+    def __post_init__(self) -> None:
+        values = (
+            self.maximum_blocks,
+            self.maximum_instructions,
+            self.maximum_branches,
+        )
+        if any(isinstance(value, bool) or not isinstance(value, int) for value in values):
+            raise TypeError("optimization budget limits must be integers")
+        if any(value < 0 for value in values):
+            raise ValueError("optimization budget limits must be non-negative")
+        if not isinstance(self.require_non_growth, bool):
+            raise TypeError("require_non_growth must be a boolean")
+
+
+@dataclass(frozen=True, slots=True)
+class OptimizationBudgetResult:
+    metrics: OptimizationMetrics
+    budget: OptimizationBudget
+    violations: tuple[str, ...]
+
+    @property
+    def passed(self) -> bool:
+        return not self.violations
+
+
+def evaluate_optimization_budget(
+    before: IRModule,
+    after: IRModule,
+    budget: OptimizationBudget,
+) -> OptimizationBudgetResult:
+    metrics = measure_optimization(before, after)
+    violations: list[str] = []
+    limits = (
+        ("blocks", metrics.after.block_count, budget.maximum_blocks),
+        ("instructions", metrics.after.instruction_count, budget.maximum_instructions),
+        ("branches", metrics.after.branch_count, budget.maximum_branches),
+    )
+    for name, actual, maximum in limits:
+        if actual > maximum:
+            violations.append(f"{name}: actual {actual} exceeds maximum {maximum}")
+    if budget.require_non_growth:
+        growth = (
+            ("blocks", metrics.before.block_count, metrics.after.block_count),
+            ("instructions", metrics.before.instruction_count, metrics.after.instruction_count),
+            ("branches", metrics.before.branch_count, metrics.after.branch_count),
+        )
+        for name, before_count, after_count in growth:
+            if after_count > before_count:
+                violations.append(
+                    f"{name}: optimized count grew from {before_count} to {after_count}"
+                )
+    return OptimizationBudgetResult(metrics, budget, tuple(violations))
+
+
 @dataclass(slots=True)
 class FixpointTelemetry:
     """Telemetry metrics collected during SSA optimization fixpoint loop."""

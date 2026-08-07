@@ -137,11 +137,12 @@ Nenhum outro benchmark ou otimização foi implementado ainda.
 
 ## Pós-MVP / marcos futuros
 
-Não integram o Marco 0.7 e não estão implementados:
+Não integram o Marco 0.7. Estado individual:
 
 1. cache de artefatos por conteúdo/versionamento: entregue como cache LRU
    explícito e process-local, com chave SHA-256 versionada e default sem cache;
-2. métricas e orçamento de otimização por exemplo;
+2. métricas e orçamento de otimização por exemplo: entregue por manifest
+   versionado e gate estrutural determinístico para programas selecionados;
 3. otimizações entre blocos provadas sem `PHI`;
 4. backend ou execução ARM64 experimental.
 
