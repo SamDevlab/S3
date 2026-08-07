@@ -10,7 +10,7 @@ from tools.s3_program_check import find_program
 
 MANIFEST_PATH = Path("tests/golden/assembly_renderer_candidate_manifest.json")
 SUBSET_MANIFEST_PATH = Path("tests/golden/assembly_renderer_subset_manifest.json")
-STUB_PATH = Path("examples/self_hosting/assembly_renderer_stub.s3")
+STUB_PATH = Path("examples/self_hosting/assembly_renderer_generic_text.s3")
 
 
 def test_assembly_renderer_candidate_manifest_is_valid() -> None:
@@ -35,10 +35,10 @@ def test_assembly_renderer_candidate_manifest_matches_program_inventory() -> Non
     assert program is not None
     assert (
         program_inventory["path"]
-        == "examples/self_hosting/assembly_renderer_stub.s3"
+        == "examples/self_hosting/assembly_renderer_generic_text.s3"
     )
     assert program_inventory["covered_by_s3_program_check"] is True
-    assert program_inventory["hosted_expected_return"] == -1
+    assert program_inventory["hosted_expected_return"] == 1
     assert (
         program.hosted_expected_return
         == program_inventory["hosted_expected_return"]
@@ -59,13 +59,13 @@ def test_assembly_renderer_candidate_manifest_capabilities_match_subset() -> Non
     assert capabilities["expected_opcode_count"] == len(subset["opcodes"])
 
 
-def test_assembly_renderer_candidate_manifest_smoke_matches_stub() -> None:
+def test_assembly_renderer_candidate_manifest_smoke_matches_renderer() -> None:
     data = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     source = STUB_PATH.read_text(encoding="utf-8")
     smoke = data["candidate_smoke"]
 
     assert smoke == {
-        "expected_return": -1,
+        "expected_return": 1,
         "function": "renderer_candidate_capability_smoke",
         "kind": "hosted_assertion",
     }
@@ -108,7 +108,7 @@ def test_assembly_renderer_candidate_manifest_symbol_ranges_match_subset() -> No
     assert "fn renderer_last_opcode_id() -> tryte:\n    return 6" in source
 
 
-def test_assembly_renderer_candidate_manifest_symbol_predicates_match_stub() -> None:
+def test_assembly_renderer_candidate_manifest_symbol_predicates_match_renderer() -> None:
     data = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     source = STUB_PATH.read_text(encoding="utf-8")
     predicates = data["candidate_symbol_predicates"]

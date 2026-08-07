@@ -43,7 +43,7 @@
       "source": "examples/sign.s3"
     }
   ],
-  "reason": "first, simple_call, and sign actual outputs are available; S3 renderer is not implemented",
-  "status": "partial",
+  "reason": "first, simple_call, and sign actual outputs are produced by the S3 renderer candidate",
+  "status": "passed",
   "version": "1.0.0"
 }

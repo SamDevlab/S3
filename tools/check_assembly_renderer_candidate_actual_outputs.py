@@ -13,7 +13,6 @@ MANIFEST_PATH = (
 COMPARISON_PLAN = "tests/golden/assembly_renderer_candidate_comparison_plan.json"
 ACTUAL_OUTPUT_ROOT = "tests/golden/assembly_renderer_candidate_actual"
 EXCLUDED_STUB = "assembly_renderer_stub"
-NOT_IMPLEMENTED_REASON = "S3 renderer is not implemented"
 DISALLOWED_ACTUAL_OUTPUT_FIELDS = {
     "actual_assembly",
     "actual_file",
@@ -265,9 +264,9 @@ def _validate_manifest(data: dict[str, object], text: str) -> None:
         raise ValueError("actual outputs version must be 1.0.0")
     if _string(data, "component") != "assembly_renderer_candidate_actual_outputs":
         raise ValueError("actual outputs component mismatch")
-    if _string(data, "status") not in {"blocked", "partial"}:
-        raise ValueError("actual outputs status must be blocked or partial")
-    if "S3 renderer is not implemented" not in _string(data, "reason"):
+    if _string(data, "status") != "passed":
+        raise ValueError("actual outputs status must be passed")
+    if not _string(data, "reason"):
         raise ValueError("actual outputs reason mismatch")
 
     comparison_plan = _string(data, "comparison_plan")

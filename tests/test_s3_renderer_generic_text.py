@@ -205,7 +205,8 @@ class TestGenericFirstStructure(unittest.TestCase):
 
     def test_render_first_shape_present(self):
         self.assertIn("render_first", self.fn_names)
-        self.assertIn("return render_first", self.source)
+        self.assertIn("renderer_candidate_status", self.fn_names)
+        self.assertIn("return renderer_candidate_status()", self.source)
         self.assertIn("while", self.source)
         self.assertIn("buffer_low", self.source)
         self.assertIn("buffer_high", self.source)

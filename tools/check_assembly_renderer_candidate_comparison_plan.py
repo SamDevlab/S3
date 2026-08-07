@@ -14,7 +14,6 @@ FIXTURE_EXPECTATIONS = (
     "tests/golden/assembly_renderer_candidate_fixture_expectations.json"
 )
 EXCLUDED_STUB = "assembly_renderer_stub"
-NOT_IMPLEMENTED_REASON = "S3 renderer is not implemented"
 DISALLOWED_ACTUAL_OUTPUT_FIELDS = {
     "actual_assembly",
     "actual_file",
@@ -106,10 +105,10 @@ def _validate_comparison(data: dict[str, object]) -> None:
         raise ValueError("comparison expected output source must be assembly_golden")
     if _string(comparison, "actual_output_source") != "s3_renderer_candidate":
         raise ValueError("comparison actual output source must be s3_renderer_candidate")
-    if _string(comparison, "actual_output_status") != "not_implemented":
-        raise ValueError("comparison actual output status must be not_implemented")
-    if _string(comparison, "result") != "blocked":
-        raise ValueError("comparison result must be blocked")
+    if _string(comparison, "actual_output_status") != "available":
+        raise ValueError("comparison actual output status must be available")
+    if _string(comparison, "result") != "passed":
+        raise ValueError("comparison result must be passed")
 
 
 def _validate_fixtures(
@@ -160,8 +159,8 @@ def _validate_fixtures(
         if actual_output_status == "not_implemented" and comparison_status != "blocked":
             raise ValueError(f"comparison fixture {name} comparison status mismatch")
         reason = _string(item, "reason")
-        if actual_output_status == "not_implemented" and NOT_IMPLEMENTED_REASON not in reason:
-            raise ValueError(f"comparison fixture {name} reason mismatch")
+        if actual_output_status == "not_implemented":
+            raise ValueError(f"comparison fixture {name} must be available")
         if actual_output_status == "available" and not reason:
             raise ValueError(f"comparison fixture {name} reason mismatch")
 
@@ -180,9 +179,9 @@ def _validate_manifest(data: dict[str, object], text: str) -> None:
         raise ValueError("comparison plan version must be 1.0.0")
     if _string(data, "component") != "assembly_renderer_candidate_comparison_plan":
         raise ValueError("comparison plan component mismatch")
-    if _string(data, "status") != "blocked":
-        raise ValueError("comparison plan status must be blocked")
-    if NOT_IMPLEMENTED_REASON not in _string(data, "reason"):
+    if _string(data, "status") != "passed":
+        raise ValueError("comparison plan status must be passed")
+    if not _string(data, "reason"):
         raise ValueError("comparison plan reason mismatch")
     fixture_expectations = _string(data, "fixture_expectations")
     if fixture_expectations != FIXTURE_EXPECTATIONS:

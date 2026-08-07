@@ -33,13 +33,14 @@ REQUIRED_KEYS = {
     "comparison",
     "blockers",
 }
-EXPECTED_CANDIDATE_PATH = "examples/self_hosting/assembly_renderer_stub.s3"
+EXPECTED_CANDIDATE_PATH = "examples/self_hosting/assembly_renderer_generic_text.s3"
 EXPECTED_SUBSET_MANIFEST = "tests/golden/assembly_renderer_subset_manifest.json"
 EXPECTED_DATA_CONTRACT = "tests/golden/assembly_program_data_contract.json"
 EXPECTED_ENTRYPOINT = "main"
 EXPECTED_STATUS_FUNCTION = "renderer_candidate_status"
 EXPECTED_EXECUTION_MODE = "hosted"
 EXPECTED_STUB_STATUS = -1
+EXPECTED_READY_STATUS = 1
 EXPECTED_DIRECTIVE_COUNT_FUNCTION = "renderer_supported_directive_count"
 EXPECTED_OPCODE_COUNT_FUNCTION = "renderer_supported_opcode_count"
 EXPECTED_DIRECTIVE_FIRST_FUNCTION = "renderer_first_directive_id"
@@ -417,8 +418,8 @@ def _validate_manifest(data: dict[str, object], text: str) -> None:
         raise ValueError(
             f"candidate smoke function must be {EXPECTED_SMOKE_FUNCTION}"
         )
-    if _integer(candidate_smoke, "expected_return") != EXPECTED_STUB_STATUS:
-        raise ValueError("candidate smoke expected_return must be -1")
+    if _integer(candidate_smoke, "expected_return") != EXPECTED_READY_STATUS:
+        raise ValueError("candidate smoke expected_return must be 1")
     smoke_kind = _string(candidate_smoke, "kind")
     if smoke_kind not in EXPECTED_SMOKE_KINDS:
         raise ValueError(
@@ -433,23 +434,23 @@ def _validate_manifest(data: dict[str, object], text: str) -> None:
         raise ValueError(
             f"candidate execution entrypoint must be {EXPECTED_ENTRYPOINT}"
         )
-    if _integer(candidate_execution, "expected_status") != EXPECTED_STUB_STATUS:
-        raise ValueError("candidate execution expected_status must be -1")
-    if _string(candidate_execution, "meaning") != "stub":
-        raise ValueError("candidate execution meaning must be stub")
+    if _integer(candidate_execution, "expected_status") != EXPECTED_READY_STATUS:
+        raise ValueError("candidate execution expected_status must be 1")
+    if _string(candidate_execution, "meaning") != "implemented":
+        raise ValueError("candidate execution meaning must be implemented")
 
     s3_candidate = _object(data, "s3_candidate")
     candidate_path = _string(s3_candidate, "path")
     if candidate_path != EXPECTED_CANDIDATE_PATH:
         raise ValueError(f"candidate path must be {EXPECTED_CANDIDATE_PATH}")
-    if _string(s3_candidate, "api_status") != "stub":
-        raise ValueError("candidate api_status must be stub")
-    if _string(s3_candidate, "status") != "stub":
-        raise ValueError("candidate status must be stub")
+    if _string(s3_candidate, "api_status") != "ready":
+        raise ValueError("candidate api_status must be ready")
+    if _string(s3_candidate, "status") != "ready":
+        raise ValueError("candidate status must be ready")
     if _string(s3_candidate, "expected") != "compiles":
         raise ValueError("candidate expected must be compiles")
-    if s3_candidate.get("implements_renderer") is not False:
-        raise ValueError("candidate implements_renderer must be false")
+    if s3_candidate.get("implements_renderer") is not True:
+        raise ValueError("candidate implements_renderer must be true")
     _validate_repo_file(candidate_path, "candidate path")
     _validate_stub_api(candidate_path)
     candidate_source = (REPO_ROOT / candidate_path).read_text(encoding="utf-8")
@@ -497,16 +498,16 @@ def _validate_manifest(data: dict[str, object], text: str) -> None:
         raise ValueError(f"program inventory path must be {EXPECTED_CANDIDATE_PATH}")
     if inventory_path != candidate_path:
         raise ValueError("program inventory path must match candidate path")
-    if _integer(program_inventory, "hosted_expected_return") != EXPECTED_STUB_STATUS:
-        raise ValueError("program inventory hosted_expected_return must be -1")
+    if _integer(program_inventory, "hosted_expected_return") != EXPECTED_READY_STATUS:
+        raise ValueError("program inventory hosted_expected_return must be 1")
     if not _boolean(program_inventory, "covered_by_s3_program_check"):
         raise ValueError("program inventory must be covered by s3_program_check")
 
     inventory_program = find_program(inventory_path)
     if inventory_program is None:
         raise ValueError("s3_program_check inventory missing candidate stub")
-    if inventory_program.hosted_expected_return != EXPECTED_STUB_STATUS:
-        raise ValueError("s3_program_check hosted expected return must be -1")
+    if inventory_program.hosted_expected_return != EXPECTED_READY_STATUS:
+        raise ValueError("s3_program_check hosted expected return must be 1")
 
     python_reference = _object(data, "python_reference")
     if _string(python_reference, "status") != "available":
@@ -521,8 +522,8 @@ def _validate_manifest(data: dict[str, object], text: str) -> None:
     _validate_repo_file(data_contract, "data contract")
 
     comparison = _object(data, "comparison")
-    if _string(comparison, "status") != "blocked":
-        raise ValueError("comparison status must be blocked")
+    if _string(comparison, "status") != "passed":
+        raise ValueError("comparison status must be passed")
 
 
 def main() -> int:
