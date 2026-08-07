@@ -29,6 +29,13 @@ from .core import (
     validate_result_document,
     write_json,
 )
+from .repeatability import (
+    RepeatabilityError,
+    analyze_root,
+    publish_reports,
+    render_analysis_markdown,
+    write_analysis,
+)
 
 __all__ = [
     "BENCHMARK_SCHEMA_VERSION",
@@ -58,4 +65,9 @@ __all__ = [
     "unavailable_result",
     "validate_result_document",
     "write_json",
+    "RepeatabilityError",
+    "analyze_root",
+    "publish_reports",
+    "render_analysis_markdown",
+    "write_analysis",
 ]
