@@ -69,6 +69,59 @@ python tools/s3bench.py --verify-only --output-json benchmarks/results/verify.js
 python tools/s3bench.py --smoke --output-json benchmarks/results/smoke.json
 ```
 
+## Repeatability analyzer
+
+The official repeatability analyzer consumes persisted `s3bench` runs without
+executing benchmarks. It validates the result/comparison join contract,
+checksums, stderr, stdout parity, complete run sets, and measurement scope.
+
+```bash
+python tools/s3bench_analyze.py ROOT \
+  --output-json report.json \
+  --output-markdown report.md \
+  --expected-runs 3
+```
+
+`ROOT` may contain `benchmarks/<benchmark-safe-id>/run-1/` directly, or a
+`benchmarks/` child directory. Each run contains `results.json` and may
+contain `results.stdout` and `results.stderr`:
+
+```text
+ROOT/
+  benchmarks/
+    <benchmark-safe-id>/
+      benchmark-id.txt
+      run-1/results.json
+      run-1/results.stdout
+      run-1/results.stderr
+      run-2/...
+      run-3/...
+```
+
+`benchmark-id.txt` contains the canonical `benchmark_id`. The directory name
+is only a safe storage name and is never used as the benchmark identity. If
+the marker is absent, the analyzer derives the ID from the documents and
+requires it to remain identical across all runs.
+
+Report publication is transactional until both output files are installed.
+Pre-commit failures restore previous destinations. If restoration itself
+fails, the original backup is preserved and the error identifies its path for
+manual recovery; a backup containing original data is never silently removed.
+
+Kernel measurements are analyzed in nanoseconds per loop:
+`median_ns / loops_per_sample`, verified against
+`comparison.median_ns_per_loop`. The raw `median_ns` is the total sample
+time and must never be used directly to compare kernel results. Process
+measurements require `loops_per_sample == 1`; their canonical unit is also
+`median_ns_per_loop`, representing complete process time per sample.
+Kernel and process scopes are never compared directly.
+
+Across runs, `STABLE` means amplitude and median CV are both at most 10%,
+`USABLE` means both are at most 20%, and all other results are `UNSTABLE`.
+S3 emulator O1 versus O0 is `CONCLUSIVE` only when neither side is unstable
+and the absolute change exceeds the larger observed amplitude. Otherwise it
+is `INCONCLUSIVE`; inconclusive changes must not be described as regressions.
+
 The versioned manifest is `manifests/s3bench-1.0.0.json`; the result schema is
 `schema/s3bench-1.0.0.schema.json`. Local machine-specific files under
 `benchmarks/results/` and build artifacts under `benchmarks/build/` are ignored.
