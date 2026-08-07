@@ -13,6 +13,7 @@ from bootstrap.s3.ir import (
     IRInstruction,
     IRModule,
     IROpcode,
+    IRParameter,
     IRRegister,
     IRType,
 )
@@ -165,6 +166,128 @@ def test_o1_removes_unreachable_blocks_and_threads_empty_jumps() -> None:
     assert tuple(block.name for block in function.blocks) == ("entry", "result")
     assert function.blocks[0].instructions[0].targets == ("result",)
     assert tuple(register.index for register in function.registers) == (0,)
+    verify_ir(optimized)
+
+
+def test_o1_collapses_branch_when_all_threaded_targets_match() -> None:
+    module = IRModule(
+        (
+            IRFunction(
+                "select",
+                (IRParameter("condition", 0, IRType.TRIT),),
+                IRType.TRYTE,
+                (
+                    IRRegister(0, IRType.TRIT),
+                    IRRegister(1, IRType.TRYTE),
+                ),
+                (
+                    IRBasicBlock(
+                        "entry",
+                        (
+                            IRInstruction(
+                                IROpcode.BRANCH3,
+                                operands=(0,),
+                                targets=("negative", "zero", "positive"),
+                            ),
+                        ),
+                    ),
+                    IRBasicBlock(
+                        "negative",
+                        (IRInstruction(IROpcode.JUMP, targets=("result",)),),
+                    ),
+                    IRBasicBlock(
+                        "zero",
+                        (IRInstruction(IROpcode.JUMP, targets=("result",)),),
+                    ),
+                    IRBasicBlock(
+                        "positive",
+                        (IRInstruction(IROpcode.JUMP, targets=("result",)),),
+                    ),
+                    IRBasicBlock(
+                        "result",
+                        (
+                            IRInstruction(
+                                IROpcode.CONST,
+                                result=1,
+                                immediate=42,
+                            ),
+                            IRInstruction(IROpcode.RETURN, operands=(1,)),
+                        ),
+                    ),
+                ),
+            ),
+        )
+    )
+
+    optimized = optimize_ir(module, "O1")
+    function = optimized.functions[0]
+
+    assert tuple(block.name for block in function.blocks) == ("entry", "result")
+    assert function.blocks[0].instructions == (
+        IRInstruction(IROpcode.JUMP, targets=("result",)),
+    )
+    verify_ir(optimized)
+
+
+def test_o1_preserves_branch_when_only_some_threaded_targets_match() -> None:
+    module = IRModule(
+        (
+            IRFunction(
+                "select",
+                (IRParameter("condition", 0, IRType.TRIT),),
+                IRType.TRYTE,
+                (
+                    IRRegister(0, IRType.TRIT),
+                    IRRegister(1, IRType.TRYTE),
+                    IRRegister(2, IRType.TRYTE),
+                ),
+                (
+                    IRBasicBlock(
+                        "entry",
+                        (
+                            IRInstruction(
+                                IROpcode.BRANCH3,
+                                operands=(0,),
+                                targets=("negative", "zero", "positive"),
+                            ),
+                        ),
+                    ),
+                    IRBasicBlock(
+                        "negative",
+                        (IRInstruction(IROpcode.JUMP, targets=("nonpositive",)),),
+                    ),
+                    IRBasicBlock(
+                        "zero",
+                        (IRInstruction(IROpcode.JUMP, targets=("nonpositive",)),),
+                    ),
+                    IRBasicBlock(
+                        "positive",
+                        (IRInstruction(IROpcode.JUMP, targets=("positive-result",)),),
+                    ),
+                    IRBasicBlock(
+                        "nonpositive",
+                        (
+                            IRInstruction(IROpcode.CONST, result=1, immediate=-1),
+                            IRInstruction(IROpcode.RETURN, operands=(1,)),
+                        ),
+                    ),
+                    IRBasicBlock(
+                        "positive-result",
+                        (
+                            IRInstruction(IROpcode.CONST, result=2, immediate=1),
+                            IRInstruction(IROpcode.RETURN, operands=(2,)),
+                        ),
+                    ),
+                ),
+            ),
+        )
+    )
+
+    optimized = optimize_ir(module, "O1")
+    terminator = optimized.functions[0].blocks[0].instructions[-1]
+
+    assert terminator.opcode is IROpcode.BRANCH3
+    assert terminator.targets == ("negative", "zero", "positive")
     verify_ir(optimized)
 
 

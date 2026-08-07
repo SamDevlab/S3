@@ -1,0 +1,36 @@
+{
+  "format": "s3-optimization-budgets",
+  "programs": [
+    {
+      "budget": {
+        "maximum_blocks": 1,
+        "maximum_branches": 0,
+        "maximum_instructions": 2,
+        "require_non_growth": true
+      },
+      "id": "first",
+      "source": "examples/first.s3"
+    },
+    {
+      "budget": {
+        "maximum_blocks": 5,
+        "maximum_branches": 1,
+        "maximum_instructions": 12,
+        "require_non_growth": true
+      },
+      "id": "sign",
+      "source": "examples/sign.s3"
+    },
+    {
+      "budget": {
+        "maximum_blocks": 1,
+        "maximum_branches": 0,
+        "maximum_instructions": 24,
+        "require_non_growth": true
+      },
+      "id": "static-array",
+      "source": "examples/static_array.s3"
+    }
+  ],
+  "version": "1.0.0"
+}

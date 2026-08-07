@@ -61,6 +61,8 @@ def _assert_no_internal_selection_parameters(subject) -> None:
 def test_public_package_exports_remain_small() -> None:
     assert tuple(s3.__all__) == (
         "OptimizationLevel",
+        "CompilationCache",
+        "CompilationCacheInfo",
         "compile_source",
         "deserialize_ir",
         "run_source",

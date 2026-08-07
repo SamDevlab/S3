@@ -22,6 +22,10 @@ Pode fazer folding e propagação local de constantes, DCE de instruções puras
 remoção de blocos inalcançáveis, threading de saltos triviais e remoção dos
 registros mortos correspondentes. A IR é verificada antes e depois.
 
+O threading pode substituir um `BRANCH3` por `JUMP` quando os três destinos,
+depois de atravessar apenas blocos de salto vazios, convergem comprovadamente
+para o mesmo bloco. Convergências parciais permanecem inalteradas.
+
 Não pode remover/reordenar efeitos (`CALL`, `LOAD`, `STORE`, terminadores) nem
 checks de overflow, faixa, bounds, inicialização, imutabilidade, frame limit ou
 estado trit. Folding que esconderia overflow é proibido.
@@ -55,5 +59,4 @@ métricas da infraestrutura de medição do Marco 0.8. As métricas temporais s�
 informativas, enquanto métricas determinísticas de estrutura gerada e
 instruções executadas podem funcionar como gates de CI por meio do baseline
 determinístico. Otimizações devem preservar a semântica e os contratos públicos
-da linguagem S3 e ser acompanhadas por evidências reproduzíveis. Nenhuma nova
-regra de otimização foi implementada nesta entrega.
+da linguagem S3 e ser acompanhadas por evidências reproduzíveis.

@@ -116,6 +116,16 @@ def _thread_jumps(function: IRFunction) -> IRFunction:
                 for target in terminator.targets
             )
             if (
+                terminator.opcode is IROpcode.BRANCH3
+                and len(set(targets)) == 1
+            ):
+                instructions[-1] = replace(
+                    terminator,
+                    opcode=IROpcode.JUMP,
+                    operands=(),
+                    targets=(targets[0],),
+                )
+            elif (
                 terminator.opcode is not IROpcode.BRANCH3
                 or len(set(targets)) == len(targets)
             ):
