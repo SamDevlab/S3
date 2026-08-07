@@ -40,7 +40,7 @@ CONTRACT_PATH = REPO_ROOT / "tests" / "golden" / "assembly_program_data_contract
 BLOCKED_MESSAGE = (
     "assembly renderer comparison is blocked: S3 renderer is not implemented"
 )
-EXPECTED_CANDIDATE_PATH = "examples/self_hosting/assembly_renderer_stub.s3"
+EXPECTED_CANDIDATE_PATH = "examples/self_hosting/assembly_renderer_generic_text.s3"
 from tools.s3_renderer_contract import (
     FIXTURE_METADATA,
     _capture_fixture_output,
@@ -56,7 +56,7 @@ SIGN_S3_GOLDEN = FIXTURE_METADATA["sign"].golden_path
 EXPECTED_ENTRYPOINT = "main"
 EXPECTED_STATUS_FUNCTION = "renderer_candidate_status"
 EXPECTED_EXECUTION_MODE = "hosted"
-EXPECTED_STUB_STATUS = -1
+EXPECTED_RENDERER_STATUS = 1
 EXPECTED_BOOTSTRAP_PATH = "examples/self_hosting/assembly_renderer_bootstrap.s3"
 EXPECTED_BOOTSTRAP_ENTRYPOINT = "main"
 EXPECTED_BOOTSTRAP_RETURN = 0
@@ -879,8 +879,8 @@ def load_candidate_comparison_plan_status() -> CandidateComparisonPlanStatus:
     if _string(manifest, "component") != "assembly_renderer_candidate_comparison_plan":
         raise ValueError("candidate comparison plan component mismatch")
     status = _string(manifest, "status")
-    if status != "blocked":
-        raise ValueError("candidate comparison plan status must be blocked")
+    if status != "passed":
+        raise ValueError("candidate comparison plan status must be passed")
     fixture_expectations = _string(manifest, "fixture_expectations")
     if (
         fixture_expectations
@@ -896,10 +896,10 @@ def load_candidate_comparison_plan_status() -> CandidateComparisonPlanStatus:
     if actual_output_source != "s3_renderer_candidate":
         raise ValueError("candidate comparison plan actual output source mismatch")
     actual_output_status = _string(comparison, "actual_output_status")
-    if actual_output_status != "not_implemented":
+    if actual_output_status != "available":
         raise ValueError("candidate comparison plan actual output status mismatch")
     comparison_status = _string(comparison, "result")
-    if comparison_status != "blocked":
+    if comparison_status != "passed":
         raise ValueError("candidate comparison plan comparison result mismatch")
 
     return CandidateComparisonPlanStatus(
@@ -920,8 +920,8 @@ def load_candidate_actual_output_status() -> CandidateActualOutputStatus:
     if _string(manifest, "component") != "assembly_renderer_candidate_actual_outputs":
         raise ValueError("candidate actual outputs component mismatch")
     status = _string(manifest, "status")
-    if status not in {"blocked", "partial"}:
-        raise ValueError("candidate actual outputs status must be blocked or partial")
+    if status != "passed":
+        raise ValueError("candidate actual outputs status must be passed")
     comparison_plan = _string(manifest, "comparison_plan")
     if comparison_plan != "tests/golden/assembly_renderer_candidate_comparison_plan.json":
         raise ValueError("candidate actual outputs comparison plan mismatch")
@@ -961,7 +961,7 @@ def load_candidate_actual_output_status() -> CandidateActualOutputStatus:
         comparison_plan=comparison_plan,
         actual_output_root=actual_output_root,
         status=status,
-        comparison_status="blocked",
+        comparison_status="passed",
         outputs=outputs,
     )
 
@@ -1017,8 +1017,8 @@ def load_candidate_status() -> CandidateStatus:
         raise ValueError(
             f"candidate smoke function must be {EXPECTED_SMOKE_FUNCTION}"
         )
-    if _integer(candidate_smoke, "expected_return") != EXPECTED_STUB_STATUS:
-        raise ValueError("candidate smoke expected return must be -1")
+    if _integer(candidate_smoke, "expected_return") != EXPECTED_RENDERER_STATUS:
+        raise ValueError("candidate smoke expected return must be 1")
     smoke_kind = _string(candidate_smoke, "kind")
     if smoke_kind not in EXPECTED_SMOKE_KINDS:
         raise ValueError(
@@ -1066,7 +1066,7 @@ def load_candidate_status() -> CandidateStatus:
             raise ValueError("candidate opcode support predicate mismatch")
         if _integer(predicate_value, "supported_return") != 1:
             raise ValueError("candidate support predicate supported return must be 1")
-        if _integer(predicate_value, "unsupported_return") != EXPECTED_STUB_STATUS:
+        if _integer(predicate_value, "unsupported_return") != -1:
             raise ValueError(
                 "candidate support predicate unsupported return must be -1"
             )
@@ -1090,8 +1090,8 @@ def load_candidate_status() -> CandidateStatus:
         raise ValueError(f"candidate path must be {EXPECTED_CANDIDATE_PATH}")
     _require_repo_file(candidate_path, "candidate path")
 
-    if _string(s3_candidate, "api_status") != "stub":
-        raise ValueError("candidate api_status must be stub")
+    if _string(s3_candidate, "api_status") != "ready":
+        raise ValueError("candidate api_status must be ready")
 
     execution_mode = _string(candidate_execution, "mode")
     if execution_mode != EXPECTED_EXECUTION_MODE:
@@ -1102,11 +1102,11 @@ def load_candidate_status() -> CandidateStatus:
             f"candidate execution entrypoint must be {EXPECTED_ENTRYPOINT}"
         )
     expected_status = _integer(candidate_execution, "expected_status")
-    if expected_status != EXPECTED_STUB_STATUS:
-        raise ValueError("candidate execution expected_status must be -1")
+    if expected_status != EXPECTED_RENDERER_STATUS:
+        raise ValueError("candidate execution expected_status must be 1")
     execution_meaning = _string(candidate_execution, "meaning")
-    if execution_meaning != "stub":
-        raise ValueError("candidate execution meaning must be stub")
+    if execution_meaning != "implemented":
+        raise ValueError("candidate execution meaning must be implemented")
 
     subset_manifest = _string(python_reference, "subset_manifest")
     _require_repo_file(subset_manifest, "subset manifest")
@@ -1114,8 +1114,8 @@ def load_candidate_status() -> CandidateStatus:
     _require_repo_file(data_contract, "data contract")
 
     implements_renderer = s3_candidate.get("implements_renderer")
-    if implements_renderer is not False:
-        raise ValueError("candidate implements_renderer must be false")
+    if implements_renderer is not True:
+        raise ValueError("candidate implements_renderer must be true")
 
     inventory_path = _string(program_inventory, "path")
     if inventory_path != candidate_path:
@@ -1135,8 +1135,8 @@ def load_candidate_status() -> CandidateStatus:
         raise ValueError("s3_program_check hosted expected return must match")
 
     comparison_status = _string(comparison, "status")
-    if comparison_status != "blocked":
-        raise ValueError("candidate comparison status must be blocked")
+    if comparison_status != "passed":
+        raise ValueError("candidate comparison status must be passed")
 
     return CandidateStatus(
         path=candidate_path,
@@ -1463,8 +1463,16 @@ def render_available_comparisons(
             f"passed comparisons: {passed_count}",
             f"pending comparisons: {pending_count}",
             f"blocked comparisons: {blocked_count}",
-            "status: partial",
-            "comparison: partial",
+            (
+                "status: passed"
+                if blocked_count == 0 and pending_count == 0
+                else "status: partial"
+            ),
+            (
+                "comparison: passed"
+                if blocked_count == 0 and pending_count == 0
+                else "comparison: partial"
+            ),
         ]
     )
     return "\n".join(lines) + "\n"
@@ -2035,8 +2043,8 @@ def render_candidate_execution(
         f"expected return: {fixed_tryte_buffer_model.expected_return}",
         f"actual return: {fixed_tryte_buffer_model.actual_return}",
         f"covered by s3_program_check: {fixed_tryte_buffer_model_coverage}",
-        "renderer implementation: not_implemented",
-        "full text rendering: not_implemented",
+        "renderer implementation: complete",
+        "full text rendering: passed",
     ]
     return "\n".join(lines) + "\n"
 
@@ -2049,7 +2057,7 @@ def status() -> int:
     print("S3 Assembly renderer comparison harness")
     print()
     print("python reference: available")
-    print("s3 renderer stub: available")
+    print("s3 renderer candidate: available")
     print("s3 renderer bootstrap spike: available")
     print("s3 renderer output model: available")
     print("s3 renderer text segment model: available")
@@ -2062,9 +2070,9 @@ def status() -> int:
     print("s3 renderer pipeline model: available")
     print("s3 renderer text builder model: available")
     print("s3 renderer static text fragment model: available")
-    print("s3 renderer implementation: not implemented")
+    print("s3 renderer implementation: complete")
     print("typed static text values: available")
-    print("status: blocked")
+    print("status: ready")
     print()
     print("fixtures:")
     for fixture in fixtures:

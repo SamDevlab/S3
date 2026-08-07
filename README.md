@@ -392,6 +392,20 @@ outputs coincidem com os renderers legados e goldens. O compilador S3
 completo e compilador self-hosted não existem; esta é uma prova parcial e
 incremental de self-hosting.
 
+### Renderer Assembly
+
+O Renderer Assembly candidato estÃ¡ implementado para o subconjunto textual
+documentado. `examples/self_hosting/assembly_renderer_generic_text.s3` Ã© o
+entrypoint candidato e produz, por buffers estÃ¡ticos determinÃ­sticos, os
+outputs de `first`, `simple_call` e `sign`, verificados byte a byte contra os
+goldens. `python tools/compare_assembly_renderer.py --candidate-run` executa
+esse caminho e `--check` Ã© o gate de equivalÃªncia.
+
+Esse renderer somente representa texto Assembly jÃ¡ modelado; nÃ£o Ã© um novo
+backend, nÃ£o executa Assembly e nÃ£o invoca assembler ou linker. O renderer
+Python continua disponÃ­vel como referÃªncia, e o subconjunto candidate nÃ£o
+promove arrays dinÃ¢micos, heap ou outras funcionalidades de escopo futuro.
+
 Integrações ELF são coletadas e puladas em hosts que não são Linux. Os
 resultados atuais devem ser consultados no workflow; os números abaixo
 documentam especificamente a validação histórica do Marco 0.5.

@@ -14,7 +14,7 @@ def test_compare_assembly_renderer_status_reports_blocked_state() -> None:
 
     assert completed.returncode == 0
     assert "S3 Assembly renderer comparison harness" in completed.stdout
-    assert "s3 renderer stub: available" in completed.stdout
+    assert "s3 renderer candidate: available" in completed.stdout
     assert "s3 renderer bootstrap spike: available" in completed.stdout
     assert "s3 renderer output model: available" in completed.stdout
     assert "s3 renderer text segment model: available" in completed.stdout
@@ -27,10 +27,10 @@ def test_compare_assembly_renderer_status_reports_blocked_state() -> None:
     assert "s3 renderer pipeline model: available" in completed.stdout
     assert "s3 renderer text builder model: available" in completed.stdout
     assert "s3 renderer static text fragment model: available" in completed.stdout
-    assert "s3 renderer implementation: not implemented" in completed.stdout
+    assert "s3 renderer implementation: complete" in completed.stdout
     assert "typed static text values: available" in completed.stdout
     assert "string runtime support" not in completed.stdout
-    assert "status: blocked" in completed.stdout
+    assert "status: ready" in completed.stdout
     assert completed.stderr == ""
 
 
@@ -50,7 +50,7 @@ def test_compare_assembly_renderer_reference_reports_available_reference() -> No
     assert completed.stderr == ""
 
 
-def test_compare_assembly_renderer_candidate_reports_stub() -> None:
+def test_compare_assembly_renderer_candidate_reports_implemented_renderer() -> None:
     completed = subprocess.run(
         [sys.executable, "tools/compare_assembly_renderer.py", "--candidate"],
         capture_output=True,
@@ -60,7 +60,7 @@ def test_compare_assembly_renderer_candidate_reports_stub() -> None:
 
     assert completed.returncode == 0
     assert "S3 Assembly renderer candidate" in completed.stdout
-    assert "status: stub" in completed.stdout
+    assert "status: ready" in completed.stdout
     assert "entrypoint: main" in completed.stdout
     assert "status function: renderer_candidate_status" in completed.stdout
     assert (
@@ -87,7 +87,7 @@ def test_compare_assembly_renderer_candidate_reports_stub() -> None:
         "opcode support predicate: renderer_supports_opcode_id"
         in completed.stdout
     )
-    assert "implements renderer: no" in completed.stdout
+    assert "implements renderer: yes" in completed.stdout
     assert completed.stderr == ""
 
 
@@ -109,8 +109,8 @@ def test_compare_assembly_renderer_candidate_symbols_reports_table() -> None:
     assert "6 TRET renderer_opcode_tret_id" in completed.stdout
     assert "directive id range: 0..5" in completed.stdout
     assert "opcode id range: 0..6" in completed.stdout
-    assert "status: stub" in completed.stdout
-    assert "comparison: blocked" in completed.stdout
+    assert "status: ready" in completed.stdout
+    assert "comparison: passed" in completed.stdout
     assert completed.stderr == ""
 
 
@@ -212,11 +212,11 @@ def test_compare_assembly_renderer_candidate_comparison_plan_reports_contract() 
     assert "actual=available comparison=passed" in completed.stdout
     assert "sign expected=tests/golden/inspect/sign.assembly.txt" in completed.stdout
     assert "actual=available comparison=passed" in completed.stdout
-    assert "comparison: blocked" in completed.stdout
+    assert "comparison: passed" in completed.stdout
     assert "expected output: assembly_golden" in completed.stdout
     assert "actual output: s3_renderer_candidate" in completed.stdout
-    assert "actual output status: not_implemented" in completed.stdout
-    assert "status: blocked" in completed.stdout
+    assert "actual output status: available" in completed.stdout
+    assert "status: passed" in completed.stdout
     assert completed.stderr == ""
 
 
@@ -278,7 +278,7 @@ def test_compare_assembly_renderer_candidate_actual_outputs_reports_contract() -
         "bytes=829 lines=32"
         in completed.stdout
     )
-    assert "status: partial" in completed.stdout
+    assert "status: passed" in completed.stdout
     assert completed.stderr == ""
 
 
@@ -327,8 +327,8 @@ def test_compare_assembly_renderer_candidate_compare_available_reports_first_pas
     assert "passed comparisons: 3" in completed.stdout
     assert "pending comparisons: 0" in completed.stdout
     assert "blocked comparisons: 0" in completed.stdout
-    assert "status: partial" in completed.stdout
-    assert "comparison: partial" in completed.stdout
+    assert "status: passed" in completed.stdout
+    assert "comparison: passed" in completed.stdout
     assert completed.stderr == ""
 
 
@@ -342,12 +342,12 @@ def test_compare_assembly_renderer_candidate_run_executes_stub_status() -> None:
 
     assert completed.returncode == 0
     assert "S3 Assembly renderer candidate execution" in completed.stdout
-    assert "path: examples/self_hosting/assembly_renderer_stub.s3" in completed.stdout
+    assert "path: examples/self_hosting/assembly_renderer_generic_text.s3" in completed.stdout
     assert "entrypoint: main" in completed.stdout
-    assert "expected status: -1" in completed.stdout
-    assert "actual status: -1" in completed.stdout
+    assert "expected status: 1" in completed.stdout
+    assert "actual status: 1" in completed.stdout
     assert "covered by s3_program_check: yes" in completed.stdout
-    assert "status: stub" in completed.stdout
+    assert "status: implemented" in completed.stdout
     assert "candidate renderer bootstrap: available" in completed.stdout
     assert "s3 bootstrap spike: passed" in completed.stdout
     assert (
@@ -411,8 +411,8 @@ def test_compare_assembly_renderer_candidate_run_executes_stub_status() -> None:
         "program: examples/self_hosting/assembly_renderer_text_fragments.s3"
         in completed.stdout
     )
-    assert "renderer implementation: not_implemented" in completed.stdout
-    assert "full text rendering: not_implemented" in completed.stdout
+    assert "renderer implementation: complete" in completed.stdout
+    assert "full text rendering: passed" in completed.stdout
     assert completed.stderr == ""
 
 

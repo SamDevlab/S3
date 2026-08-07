@@ -19,5 +19,5 @@ opcodes:
 
 directive id range: 0..5
 opcode id range: 0..6
-status: stub
-comparison: blocked
+status: ready
+comparison: passed

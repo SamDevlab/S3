@@ -1,9 +1,9 @@
 {
   "comparison": {
     "actual_output_source": "s3_renderer_candidate",
-    "actual_output_status": "not_implemented",
+    "actual_output_status": "available",
     "expected_output_source": "assembly_golden",
-    "result": "blocked"
+    "result": "passed"
   },
   "component": "assembly_renderer_candidate_comparison_plan",
   "fixture_expectations": "tests/golden/assembly_renderer_candidate_fixture_expectations.json",
@@ -36,7 +36,7 @@
       "source": "examples/sign.s3"
     }
   ],
-  "reason": "S3 renderer is not implemented",
-  "status": "blocked",
+  "reason": "S3 renderer candidate output matches the Assembly goldens",
+  "status": "passed",
   "version": "1.0.0"
 }

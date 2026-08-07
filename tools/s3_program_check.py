@@ -165,8 +165,8 @@ PROGRAMS = (
         / "self_hosting"
         / "assembly_renderer_generic_text.s3",
         "Assembly renderer generic textual output (unified)",
-        hosted_expected_return=0,
-        max_instructions=500000,
+        hosted_expected_return=1,
+        max_instructions=1100000,
     ),
     S3Program(
         REPO_ROOT

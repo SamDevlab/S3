@@ -147,7 +147,7 @@ def _decimal_test_source() -> str:
 
     lines.append("    return 0")
     test_main = "\n".join(lines)
-    return src.replace("fn main() -> tryte:\n    return render_first()", test_main)
+    return src.replace("fn main() -> trit:\n    return renderer_candidate_status()", test_main)
 
 
 def _capture_array(memory: dict[int, list[int | None]], length: int) -> list[int]:

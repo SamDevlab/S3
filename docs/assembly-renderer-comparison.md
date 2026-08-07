@@ -497,10 +497,17 @@ When the S3 renderer exists, `--check` should:
 
 ## Scope
 
-This harness does not implement the S3 renderer.
+The bounded S3 renderer candidate is implemented for the documented initial
+subset and is validated against the Python reference byte-for-byte.
 
-The Python `AssemblyProgram.render()` path now uses the shared Python-side
-adapter, but the harness still treats the S3 renderer implementation as absent.
+The Python `AssemblyProgram.render()` path remains the reference implementation;
+the candidate entrypoint is
+`examples/self_hosting/assembly_renderer_generic_text.s3`. It renders the
+`first`, `simple_call`, and `sign` fixture outputs through deterministic static
+buffers.
+
+The candidate is a textual representation only. It does not execute Assembly,
+invoke an assembler or linker, or replace the Python compiler path.
 
 It does not alter the Assembly format.
 

@@ -1,9 +1,5 @@
 {
-  "blockers": [
-    "structured data representation",
-    "deterministic formatting helpers",
-    "real S3 renderer implementation"
-  ],
+  "blockers": [],
   "candidate_api": {
     "entrypoint": "main",
     "status_function": "renderer_candidate_status",
@@ -20,13 +16,13 @@
   },
   "candidate_execution": {
     "entrypoint": "main",
-    "expected_status": -1,
-    "meaning": "stub",
+    "expected_status": 1,
+    "meaning": "implemented",
     "mode": "hosted"
   },
   "candidate_manifest_version": "1.0.0",
   "candidate_smoke": {
-    "expected_return": -1,
+    "expected_return": 1,
     "function": "renderer_candidate_capability_smoke",
     "kind": "hosted_assertion"
   },
@@ -109,14 +105,14 @@
     }
   },
   "comparison": {
-    "reason": "S3 renderer is not implemented",
-    "status": "blocked"
+    "reason": "S3 renderer is implemented for the bounded candidate subset",
+    "status": "passed"
   },
   "component": "assembly_renderer_subset",
   "program_inventory": {
     "covered_by_s3_program_check": true,
-    "hosted_expected_return": -1,
-    "path": "examples/self_hosting/assembly_renderer_stub.s3"
+    "hosted_expected_return": 1,
+    "path": "examples/self_hosting/assembly_renderer_generic_text.s3"
   },
   "python_reference": {
     "data_contract": "tests/golden/assembly_program_data_contract.json",
@@ -124,10 +120,10 @@
     "subset_manifest": "tests/golden/assembly_renderer_subset_manifest.json"
   },
   "s3_candidate": {
-    "api_status": "stub",
+    "api_status": "ready",
     "expected": "compiles",
-    "implements_renderer": false,
-    "path": "examples/self_hosting/assembly_renderer_stub.s3",
-    "status": "stub"
+    "implements_renderer": true,
+    "path": "examples/self_hosting/assembly_renderer_generic_text.s3",
+    "status": "ready"
   }
 }
