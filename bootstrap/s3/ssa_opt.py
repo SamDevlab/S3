@@ -33,6 +33,10 @@ from .verifier import verify_ir
 _FIXPOINT_PASSES = frozenset(contract.name for contract in SSA_PASS_CONTRACTS)
 
 
+class SSAPassVerificationError(AssertionError):
+    """Identifies the optimization pass that violated an SSA invariant."""
+
+
 def _ssa_structure(ssa_fn: SSAFunction) -> tuple[object, ...]:
     return (
         ssa_fn.parameters,
@@ -82,11 +86,16 @@ def run_fixpoint_pipeline(
             telemetry=pass_telemetry,
         )
 
-    def apply_pass(result: PassResult) -> bool:
+    def apply_pass(result: PassResult, pass_name: str) -> bool:
         nonlocal curr_fn
         curr_fn = result.function
         if verify_each_pass:
-            _verify_pipeline_ssa(curr_fn)
+            try:
+                _verify_pipeline_ssa(curr_fn)
+            except Exception as error:
+                raise SSAPassVerificationError(
+                    f"SSA verification failed after pass {pass_name!r}"
+                ) from error
         if result.changed:
             for field, count in result.telemetry:
                 setattr(telemetry, field, getattr(telemetry, field) + count)
@@ -106,14 +115,15 @@ def run_fixpoint_pipeline(
                 make_pass_result(
                     next_fn,
                     (("expressions_eliminated", gvn_cnt),),
-                )
+                ),
+                "gvn",
             ):
                 changed = True
 
         # 2. Copy Propagation
         if pass_enabled("copy_propagation"):
             next_fn = run_ssa_copy_propagation(curr_fn)
-            if apply_pass(make_pass_result(next_fn)):
+            if apply_pass(make_pass_result(next_fn), "copy_propagation"):
                 changed = True
 
         # 3. DSE (Dead Store Elimination - Milestone 0.92)
@@ -123,7 +133,8 @@ def run_fixpoint_pipeline(
                 make_pass_result(
                     next_fn,
                     (("stores_removed", dse_cnt),),
-                )
+                ),
+                "dse",
             ):
                 changed = True
 
@@ -134,14 +145,15 @@ def run_fixpoint_pipeline(
                 make_pass_result(
                     next_fn,
                     (("stores_removed", global_dse_cnt),),
-                )
+                ),
+                "global_dse",
             ):
                 changed = True
 
         # 5. DCE
         if pass_enabled("dce"):
             next_fn = run_ssa_dead_code_elimination(curr_fn)
-            if apply_pass(make_pass_result(next_fn)):
+            if apply_pass(make_pass_result(next_fn), "dce"):
                 changed = True
 
         # 5. ADCE (Aggressive DCE - Milestone 0.91)
@@ -151,7 +163,8 @@ def run_fixpoint_pipeline(
                 make_pass_result(
                     next_fn,
                     (("dead_instructions_removed", adce_cnt),),
-                )
+                ),
+                "adce",
             ):
                 changed = True
 
@@ -162,7 +175,8 @@ def run_fixpoint_pipeline(
                 make_pass_result(
                     next_fn,
                     (("licm_moves", licm_cnt),),
-                )
+                ),
+                "licm",
             ):
                 changed = True
 
@@ -176,7 +190,8 @@ def run_fixpoint_pipeline(
                         ("expressions_eliminated", sccp_expr_cnt),
                         ("branches_removed", sccp_br_cnt),
                     ),
-                )
+                ),
+                "sccp",
             ):
                 changed = True
 
@@ -187,14 +202,15 @@ def run_fixpoint_pipeline(
                 make_pass_result(
                     next_fn,
                     (("strength_reductions", sr_cnt),),
-                )
+                ),
+                "strength_reduction",
             ):
                 changed = True
 
         # 9. Peephole
         if pass_enabled("peephole"):
             next_fn = run_ssa_peephole(curr_fn)
-            if apply_pass(make_pass_result(next_fn)):
+            if apply_pass(make_pass_result(next_fn), "peephole"):
                 changed = True
 
         if not changed:
