@@ -14,6 +14,8 @@ from bootstrap.s3.backends.x86_64 import (
     X8664Backend,
     generate_native_assembly,
 )
+from bootstrap.s3.backends.x86_64.allocation import analyze_allocation
+from bootstrap.s3.backends.x86_64.registers import FULL_ALLOCATABLE_REGISTERS
 from bootstrap.s3.emulator import Emulator, EmulatorError
 from bootstrap.s3.lexer import SyntaxMode
 from bootstrap.s3.pipeline import compile_source
@@ -61,6 +63,77 @@ def test_default_path_is_identical() -> None:
     assert assembly_default == assembly_opt_out
 
 
+def test_metadata_initialization_preserves_allocated_scratch_operands() -> None:
+    source = """
+    fn copy(values: tryte[5]) -> tryte[5]:
+        return values
+
+    fn main() -> tryte:
+        source: tryte[5] = [1, 2, 3, 4, 5]
+        copied: tryte[5] = copy(source)
+        return copied[0] + copied[1] + copied[2] + copied[3] + copied[4]
+    """
+    program = compile_source(textwrap.dedent(source)).assembly
+    function = next(function for function in program.functions if function.name == "copy")
+    allocation = analyze_allocation(function)
+    assert allocation.physical_register(function.parameters[0].register) == "r8"
+    assert allocation.physical_register(function.parameters[1].register) == "rcx"
+    assert allocation.physical_register(function.parameters[4].register) == "rdi"
+
+    allocated = X8664Backend(register_allocation=True).generate(program)
+    assert "mov r10, rdi" in allocated
+    assert "mov r11, rcx" in allocated
+    assert "rep stosb" in allocated
+    assert "mov rdi, r10" in allocated
+    assert "mov rcx, r11" in allocated
+
+    default = generate_native_assembly(program)
+    assert "mov r10, rdi\n    mov r11, rcx" not in default
+    assert "mov rdi, r10\n    mov rcx, r11" not in default
+
+
+@pytest.mark.parametrize("optimization", ("O0", "O1"))
+def test_array_copy_survives_metadata_initialization_with_register_allocation(
+    optimization, native_toolchain, tmp_path
+) -> None:
+    source = textwrap.dedent(
+        """
+        fn copy(values: tryte[5]) -> tryte[5]:
+            return values
+
+        fn main() -> tryte:
+            source: tryte[5] = [1, 2, 3, 4, 5]
+            copied: tryte[5] = copy(source)
+            return copied[0] + copied[1] + copied[2] + copied[3] + copied[4]
+        """
+    )
+    compilation = compile_source(source, optimization)
+    copy_function = next(
+        function for function in compilation.assembly.functions if function.name == "copy"
+    )
+    allocation = analyze_allocation(copy_function)
+    parameter_physicals = {
+        allocation.physical_register(parameter.register)
+        for parameter in copy_function.parameters
+    }
+    assert "rdi" in parameter_physicals
+    assert "rcx" in parameter_physicals
+
+    assert Emulator().execute(compilation.assembly) == 15
+    stack_result = _run_native_allocated(
+        compilation.assembly, native_toolchain, tmp_path / f"array_copy_{optimization}_stack",
+        register_allocation=False,
+    )
+    allocated_result = _run_native_allocated(
+        compilation.assembly, native_toolchain, tmp_path / f"array_copy_{optimization}_reg",
+        register_allocation=True,
+    )
+    assert stack_result.returncode == 0
+    assert allocated_result.returncode == 0
+    assert stack_result.stdout == "program returned: 15\n"
+    assert allocated_result.stdout == "program returned: 15\n"
+
+
 def test_physical_residency_observed(native_toolchain, tmp_path) -> None:
     # FASE 25: PHYSICAL_RESIDENCY_OBSERVED=YES
     source = """
@@ -75,11 +148,15 @@ def test_physical_residency_observed(native_toolchain, tmp_path) -> None:
 
     backend = X8664Backend(register_allocation=True)
     assembly = backend.generate(program)
+    function = program.functions[0]
+    allocation = analyze_allocation(function)
+    physical = allocation.physical_register(0)
 
-    # Assert physical register (rbx) is used and saved/restored in prologue/epilogue
-    assert "rbx" in assembly
-    assert "mov qword ptr" in assembly
-    assert "rbp" in assembly
+    # Derive the observed physical register from the same AllocationPlan used
+    # by the emitter, rather than coupling integration coverage to one color.
+    assert physical is not None
+    assert physical in FULL_ALLOCATABLE_REGISTERS
+    assert f"mov {physical}, rax" in assembly
 
     # Run program to verify correctness
     executable = native_toolchain.build(assembly, tmp_path / "obs_exec")

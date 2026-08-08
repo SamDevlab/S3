@@ -14,7 +14,11 @@ from ...assembly import (
 )
 from .diagnostics import NativeBackendError
 from .layout import FrameLayout, MemorySlot, StackRegion, layout_frame
-from .registers import SYSV_INTEGER_ARGUMENT_REGISTERS
+from .registers import (
+    CALLER_SAVED_ALLOCATABLE_REGISTERS,
+    CALLEE_SAVED_ALLOCATABLE_REGISTERS,
+    SYSV_INTEGER_ARGUMENT_REGISTERS,
+)
 from .runtime import render_runtime
 from .allocation import AllocationPlan, analyze_allocation
 
@@ -153,7 +157,9 @@ class X8664Emitter:
         if layout.frame_size:
             lines.append(f"    sub rsp, {layout.frame_size}")
         if self.register_allocation and self.current_plan:
-            for phys in self.current_plan.used_physical_registers:
+            for phys in CALLEE_SAVED_ALLOCATABLE_REGISTERS:
+                if phys not in self.current_plan.used_physical_registers:
+                    continue
                 slot = layout.callee_saved_slot(phys)
                 lines.append(f"    mov qword ptr {_address(slot.region)}, {phys}")
         lines.extend(self._save_parameters(function, layout))
@@ -185,37 +191,47 @@ class X8664Emitter:
             lines.append(
                 f"    mov qword ptr {_address(layout.hidden_sret_pointer)}, rdi"
             )
-        for position, parameter in enumerate(function.parameters):
-            slot = layout.register(parameter.register)
-            native_position = position + (1 if function.result_width > 1 else 0)
-
-            phys = self.current_plan.physical_register(parameter.register) if (self.register_allocation and self.current_plan) else None
-
-            if native_position < len(_ARGUMENT_REGISTERS):
-                source = _ARGUMENT_REGISTERS[native_position]
-                if phys is None:
-                    lines.append(
-                        f"    mov qword ptr {_address(slot.value)}, {source}"
-                    )
+        if not self.register_allocation or not self.current_plan:
+            for position, parameter in enumerate(function.parameters):
+                slot = layout.register(parameter.register)
+                native_position = position + (1 if function.result_width > 1 else 0)
+                if native_position < len(_ARGUMENT_REGISTERS):
+                    source = _ARGUMENT_REGISTERS[native_position]
+                    lines.append(f"    mov qword ptr {_address(slot.value)}, {source}")
                 else:
-                    lines.append(
-                        f"    mov {phys}, {source}"
-                    )
-            else:
-                caller_offset = (
-                    16 + (native_position - len(_ARGUMENT_REGISTERS)) * 8
-                )
-                if phys is None:
+                    caller_offset = 16 + (native_position - len(_ARGUMENT_REGISTERS)) * 8
                     lines.extend(
                         (
                             f"    mov rax, qword ptr [rbp + {caller_offset}]",
                             f"    mov qword ptr {_address(slot.value)}, rax",
                         )
                     )
-                else:
-                    lines.append(
-                        f"    mov {phys}, qword ptr [rbp + {caller_offset}]"
+            return lines
+        # Snapshot every incoming argument in its logical value slot first.
+        # This deliberately avoids parallel-copy cycles when parameters are
+        # allocated to ABI argument registers.
+        for position, parameter in enumerate(function.parameters):
+            slot = layout.register(parameter.register)
+            native_position = position + (1 if function.result_width > 1 else 0)
+            if native_position < len(_ARGUMENT_REGISTERS):
+                source = _ARGUMENT_REGISTERS[native_position]
+                lines.append(f"    mov qword ptr {_address(slot.value)}, {source}")
+            else:
+                caller_offset = (
+                    16 + (native_position - len(_ARGUMENT_REGISTERS)) * 8
+                )
+                lines.extend(
+                    (
+                        f"    mov rax, qword ptr [rbp + {caller_offset}]",
+                        f"    mov qword ptr {_address(slot.value)}, rax",
                     )
+                )
+        if self.register_allocation and self.current_plan:
+            for parameter in function.parameters:
+                phys = self.current_plan.physical_register(parameter.register)
+                if phys is not None:
+                    slot = layout.register(parameter.register)
+                    lines.append(f"    mov {phys}, qword ptr {_address(slot.value)}")
         return lines
 
     def _initialize_metadata(
@@ -224,6 +240,9 @@ class X8664Emitter:
         layout: FrameLayout,
     ) -> list[str]:
         lines: list[str] = []
+        preserve_metadata_scratch = self.register_allocation and bool(layout.memories)
+        if preserve_metadata_scratch:
+            lines.extend(("    mov r10, rdi", "    mov r11, rcx"))
         for slot in layout.registers:
             lines.append(
                 f"    mov byte ptr {_address(slot.initialized)}, 0"
@@ -236,7 +255,9 @@ class X8664Emitter:
                     "    xor eax, eax",
                     "    rep stosb",
                 )
-            )
+                )
+        if preserve_metadata_scratch:
+            lines.extend(("    mov rdi, r10", "    mov rcx, r11"))
         for parameter in function.parameters:
             slot = layout.register(parameter.register)
             lines.append(
@@ -282,11 +303,65 @@ class X8664Emitter:
         lines.append(f"    mov byte ptr {_address(slot.initialized)}, 1")
         return lines
 
+    def _snapshot_register(self, layout: FrameLayout, register: int) -> list[str]:
+        """Validate and snapshot a logical argument before ABI registers change."""
+        slot = layout.register(register)
+        failure = self._instruction_failure(
+            "uninitialized register",
+            detail=f"register r{register} is uninitialized\n",
+        )
+        lines = [
+            f"    cmp byte ptr {_address(slot.initialized)}, 0",
+            f"    je {failure}",
+        ]
+        phys = self.current_plan.physical_register(register) if (self.register_allocation and self.current_plan) else None
+        if phys is not None:
+            lines.append(f"    mov qword ptr {_address(slot.value)}, {phys}")
+        return lines
+
+    @staticmethod
+    def _load_snapshot(layout: FrameLayout, register: int, target: str) -> list[str]:
+        slot = layout.register(register)
+        return [f"    mov {target}, qword ptr {_address(slot.value)}"]
+
+    def _save_caller_saved(self, layout: FrameLayout, physicals: tuple[str, ...]) -> list[str]:
+        return [
+            f"    mov qword ptr {_address(layout.caller_saved_spill_slot(phys).region)}, {phys}"
+            for phys in physicals
+        ]
+
+    def _restore_caller_saved(self, layout: FrameLayout, physicals: tuple[str, ...]) -> list[str]:
+        return [
+            f"    mov {phys}, qword ptr {_address(layout.caller_saved_spill_slot(phys).region)}"
+            for phys in physicals
+        ]
+
+    def _call_survivor_physicals(
+        self, instruction: AssemblyInstruction
+    ) -> tuple[str, ...]:
+        if not self.register_allocation or not self.current_plan:
+            return ()
+        physicals = {
+            self.current_plan.physical_register(register)
+            for register in self.current_plan.call_survivors_for(instruction)
+        }
+        return tuple(phys for phys in CALLER_SAVED_ALLOCATABLE_REGISTERS if phys in physicals)
+
+    def _used_caller_saved_physicals(self) -> tuple[str, ...]:
+        if not self.register_allocation or not self.current_plan:
+            return ()
+        return tuple(
+            phys for phys in CALLER_SAVED_ALLOCATABLE_REGISTERS
+            if phys in self.current_plan.used_physical_registers
+        )
+
     def _restore_callee_saved(self, layout: FrameLayout) -> list[str]:
         if not self.register_allocation or not self.current_plan:
             return []
         lines = []
-        for phys in self.current_plan.used_physical_registers:
+        for phys in CALLEE_SAVED_ALLOCATABLE_REGISTERS:
+            if phys not in self.current_plan.used_physical_registers:
+                continue
             slot = layout.callee_saved_slot(phys)
             lines.append(f"    mov {phys}, qword ptr {_address(slot.region)}")
         return lines
@@ -444,9 +519,11 @@ class X8664Emitter:
         destination, left, right = instruction.registers
         type_name = function.type_of(destination)
         assert type_name is not None
+        helper_physicals = self._used_caller_saved_physicals()
         lines = [
             *self._read_register(layout, left, "rax"),
             *self._read_register(layout, right, "r10"),
+            *self._save_caller_saved(layout, helper_physicals),
         ]
         if type_name is AssemblyType.TRIT:
             lines.extend(
@@ -472,6 +549,7 @@ class X8664Emitter:
                     f"    call {helper}",
                 )
             )
+        lines.extend(self._restore_caller_saved(layout, helper_physicals))
         lines.extend(self._write_register(layout, destination, "rax"))
         return lines
 
@@ -505,23 +583,38 @@ class X8664Emitter:
     ) -> list[str]:
         stack_arguments = arguments[len(_ARGUMENT_REGISTERS) :]
         padding = 1 if len(stack_arguments) % 2 else 0
+        survivor_physicals = self._call_survivor_physicals(instruction)
         lines: list[str] = []
+        if self.register_allocation:
+            for register in arguments:
+                lines.extend(self._snapshot_register(layout, register))
+            lines.extend(self._save_caller_saved(layout, survivor_physicals))
         if padding:
             lines.append("    sub rsp, 8")
         for register in reversed(stack_arguments):
-            lines.extend(self._read_register(layout, register, "rax"))
+            lines.extend(
+                self._load_snapshot(layout, register, "rax")
+                if self.register_allocation
+                else self._read_register(layout, register, "rax")
+            )
             lines.append("    push rax")
         for register, target in zip(
             arguments[: len(_ARGUMENT_REGISTERS)],
             _ARGUMENT_REGISTERS,
             strict=False,
         ):
-            lines.extend(self._read_register(layout, register, target))
+            lines.extend(
+                self._load_snapshot(layout, register, target)
+                if self.register_allocation
+                else self._read_register(layout, register, target)
+            )
         assert instruction.callee is not None
         lines.append(f"    call {mangle_function(instruction.callee)}")
         cleanup = (len(stack_arguments) + padding) * 8
         if cleanup:
             lines.append(f"    add rsp, {cleanup}")
+        if self.register_allocation:
+            lines.extend(self._restore_caller_saved(layout, survivor_physicals))
         lines.extend(self._write_register(layout, destination, "rax"))
         return lines
 
@@ -538,22 +631,37 @@ class X8664Emitter:
         stack_arguments = arguments[stack_argument_capacity:]
         pushed_words = len(stack_arguments)
         padding = 1 if (pushed_words + 1) % 2 else 0
+        survivor_physicals = self._call_survivor_physicals(instruction)
         lines: list[str] = []
+        if self.register_allocation:
+            for register in arguments:
+                lines.extend(self._snapshot_register(layout, register))
+            lines.extend(self._save_caller_saved(layout, survivor_physicals))
         if padding:
             lines.append("    sub rsp, 8")
         lines.append(f"    sub rsp, {sret_size}")
         lines.append("    mov rdi, rsp")
         for register in reversed(stack_arguments):
-            lines.extend(self._read_register(layout, register, "rax"))
+            lines.extend(
+                self._load_snapshot(layout, register, "rax")
+                if self.register_allocation
+                else self._read_register(layout, register, "rax")
+            )
             lines.append("    push rax")
         for register, target in zip(
             arguments[:stack_argument_capacity],
             _ARGUMENT_REGISTERS[1:],
             strict=False,
         ):
-            lines.extend(self._read_register(layout, register, target))
+            lines.extend(
+                self._load_snapshot(layout, register, target)
+                if self.register_allocation
+                else self._read_register(layout, register, target)
+            )
         assert instruction.callee is not None
         lines.append(f"    call {mangle_function(instruction.callee)}")
+        if self.register_allocation:
+            lines.extend(self._restore_caller_saved(layout, survivor_physicals))
         if destinations:
             for index, destination in enumerate(destinations):
                 lines.append(

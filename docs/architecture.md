@@ -283,3 +283,29 @@ Milestone 1.21 implements deterministic physical register allocation on top of t
 - **Initialization Semantics**: All reads and writes to physical registers continue to update and check the logical initialization metadata bytes. Residual/stale physical register contents never bypass initialization checks.
 - **Opt-In Mode**: Controlled via `register_allocation=True` in `X8664Backend`. The default path (`False`) remains byte-for-byte identical to the original stack-backed compilation.
 
+## Call-aware physical allocation (Milestone 1.22)
+
+Milestone 1.22 extends the opt-in allocator without changing the public S3
+Assembly or the default backend path. The full deterministic pool is
+`rbx,r12,r13,r14,r15,rdi,rsi,rdx,rcx,r8,r9`; `rsp,rbp,rax,r10,r11` remain
+reserved. Values that cross `TCALL` prefer callee-saved registers, while
+short-lived values prefer caller-saved registers.
+
+Residency remains whole-function. A logical register is physical or stack
+resident for the complete function; there is no interval splitting, general
+dynamic spilling, eviction, or frame compaction. Caller-saved values that
+survive a call use one backend-only call-spill slot per physical register,
+ordered `rdi,rsi,rdx,rcx,r8,r9`, and are saved/restored by the caller around
+the call. Callee-saved registers continue to use the function prologue and
+epilogue. Logical value slots and initialization metadata remain present and
+are not user-visible memory.
+
+Function parameters and outgoing `TCALL` arguments are staged through logical
+value slots before ABI registers are overwritten. This intentionally avoids
+parallel-copy implementation in this milestone. Snapshot and restore change
+physical contents only; initialization validity is still checked on every
+logical read and write. Returning helper calls preserve the complete used
+caller-saved set conservatively, while noreturn failure helpers need no
+artificial restore. Inline syscalls occur only in the external runtime, not in
+allocated S3 functions. Register allocation remains opt-in (`False` by
+default), and benchmark execution is classified separately from correctness.

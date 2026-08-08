@@ -5,11 +5,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from ...assembly import AssemblyFunction
 from .liveness import analyze_liveness
+from .registers import (
+    CALLER_SAVED_ALLOCATABLE_REGISTERS,
+    CALLEE_SAVED_ALLOCATABLE_REGISTERS,
+    FULL_ALLOCATABLE_REGISTERS,
+)
 
 
 @dataclass(frozen=True, slots=True)
 class AllocationPlan:
     allocations: dict[int, str | None]  # virtual register ID -> physical register name (or None)
+    call_survivors: dict[int, frozenset[int]]
 
     def physical_register(self, register: int) -> str | None:
         return self.allocations.get(register)
@@ -20,12 +26,15 @@ class AllocationPlan:
     @property
     def used_physical_registers(self) -> tuple[str, ...]:
         used = {color for color in self.allocations.values() if color is not None}
-        canonical_pool = ("rbx", "r12", "r13", "r14", "r15")
+        canonical_pool = FULL_ALLOCATABLE_REGISTERS
         return tuple(phys for phys in canonical_pool if phys in used)
 
     @property
     def stack_resident_registers(self) -> tuple[int, ...]:
         return tuple(sorted(r for r, color in self.allocations.items() if color is None))
+
+    def call_survivors_for(self, instruction: object) -> frozenset[int]:
+        return self.call_survivors.get(id(instruction), frozenset())
 
 
 def analyze_allocation(function: AssemblyFunction) -> AllocationPlan:
@@ -78,8 +87,14 @@ def analyze_allocation(function: AssemblyFunction) -> AllocationPlan:
 
     sorted_nodes = sorted(all_vregs, key=lambda r: (-get_degree(r), r))
 
+    call_survivors = {
+        id(inst_liveness.instruction): liveness.live_across_call(inst_liveness.instruction)
+        for block in liveness.blocks.values()
+        for inst_liveness in block.instructions
+        if inst_liveness.instruction.opcode.value == "TCALL"
+    }
+    call_crossing = set().union(*call_survivors.values()) if call_survivors else set()
     colors: dict[int, str | None] = {}
-    physical_pool = ("rbx", "r12", "r13", "r14", "r15")
 
     for node in sorted_nodes:
         # Get physical registers used by neighbors
@@ -88,7 +103,12 @@ def analyze_allocation(function: AssemblyFunction) -> AllocationPlan:
             if nb in colors and colors[nb] is not None
         }
 
-        # Select the first available physical register in the pool
+        physical_pool = (
+            (*CALLEE_SAVED_ALLOCATABLE_REGISTERS, *CALLER_SAVED_ALLOCATABLE_REGISTERS)
+            if node in call_crossing
+            else (*CALLER_SAVED_ALLOCATABLE_REGISTERS, *CALLEE_SAVED_ALLOCATABLE_REGISTERS)
+        )
+        # Select the first available physical register in the call-aware pool
         chosen_phys = None
         for phys in physical_pool:
             if phys not in neighbor_colors:
@@ -97,4 +117,5 @@ def analyze_allocation(function: AssemblyFunction) -> AllocationPlan:
 
         colors[node] = chosen_phys
 
-    return AllocationPlan(allocations=colors)
+    assert set(color for color in colors.values() if color) <= set(FULL_ALLOCATABLE_REGISTERS)
+    return AllocationPlan(allocations=colors, call_survivors=call_survivors)
