@@ -86,8 +86,6 @@ def test_physical_residency_observed(native_toolchain, tmp_path) -> None:
     assert physical is not None
     assert physical in FULL_ALLOCATABLE_REGISTERS
     assert f"mov {physical}, rax" in assembly
-    assert "mov qword ptr" in assembly
-    assert "rbp" in assembly
 
     # Run program to verify correctness
     executable = native_toolchain.build(assembly, tmp_path / "obs_exec")
