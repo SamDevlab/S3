@@ -14,6 +14,8 @@ from bootstrap.s3.backends.x86_64 import (
     X8664Backend,
     generate_native_assembly,
 )
+from bootstrap.s3.backends.x86_64.allocation import analyze_allocation
+from bootstrap.s3.backends.x86_64.registers import FULL_ALLOCATABLE_REGISTERS
 from bootstrap.s3.emulator import Emulator, EmulatorError
 from bootstrap.s3.lexer import SyntaxMode
 from bootstrap.s3.pipeline import compile_source
@@ -75,9 +77,15 @@ def test_physical_residency_observed(native_toolchain, tmp_path) -> None:
 
     backend = X8664Backend(register_allocation=True)
     assembly = backend.generate(program)
+    function = program.functions[0]
+    allocation = analyze_allocation(function)
+    physical = allocation.physical_register(0)
 
-    # Assert physical register (rbx) is used and saved/restored in prologue/epilogue
-    assert "rbx" in assembly
+    # Derive the observed physical register from the same AllocationPlan used
+    # by the emitter, rather than coupling integration coverage to one color.
+    assert physical is not None
+    assert physical in FULL_ALLOCATABLE_REGISTERS
+    assert f"mov {physical}, rax" in assembly
     assert "mov qword ptr" in assembly
     assert "rbp" in assembly
 
