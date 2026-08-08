@@ -5,12 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ...assembly import AssemblyProgram, AssemblyType
-from ...emulator import (
-    DEFAULT_MAX_FRAMES,
-    DEFAULT_MAX_INSTRUCTIONS,
-    DEFAULT_MAX_MEMORY_TRITS,
-    Emulator,
-)
+from ...assembly_verifier import AssemblyVerifier
+from ...emulator import DEFAULT_MAX_FRAMES, DEFAULT_MAX_INSTRUCTIONS, DEFAULT_MAX_MEMORY_TRITS
 from .diagnostics import NativeBackendError
 from .emitter import X8664Emitter
 
@@ -32,7 +28,7 @@ class X8664Backend:
             raise NativeBackendError("max_instructions must be at least 1")
         if self.max_instructions > NATIVE_MAX_INSTRUCTIONS:
             raise NativeBackendError(f"max_instructions exceeds physical 64-bit limit of {NATIVE_MAX_INSTRUCTIONS}")
-        Emulator(max_memory_trits=self.max_memory_trits).validate(
+        AssemblyVerifier(max_memory_trits=self.max_memory_trits).validate(
             program,
             entry="main",
         )

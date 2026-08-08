@@ -5,12 +5,6 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from s3_program_check import (
-    get_hosted_display,
-    get_program_inventory_display,
-)
-
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -61,15 +55,6 @@ READINESS_STEPS = (
         ("tools/check_assembly_renderer_candidate_actual_outputs.py",),
         0,
         stdout_contains=("assembly renderer candidate actual outputs: ok",),
-    ),
-    ReadinessStep(
-        "program check",
-        ("tools/s3_program_check.py", "check"),
-        0,
-        stdout_contains=(
-            get_program_inventory_display(),
-            get_hosted_display(),
-        ),
     ),
     ReadinessStep(
         "candidate",

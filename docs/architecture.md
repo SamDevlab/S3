@@ -171,6 +171,21 @@ cota lógica.
     instruções incide sobre o Assembly resultante, conforme o ADR-0014.
 12. Artefatos desconhecidos são rejeitados, nunca adivinhados.
 
+## AssemblyVerifier e validação de desenvolvimento
+
+`bootstrap.s3.assembly_verifier.AssemblyVerifier` é a fonte compartilhada de
+validação estrutural de S3 Assembly. Ele não executa programas nem aplica
+limites de estado de runtime. O `Emulator` delega sua API pública `validate`
+ao verificador e continua responsável pela execução; o backend x86-64 valida
+diretamente pelo mesmo objeto antes de emitir código nativo. O renderer apenas
+produz a representação textual.
+
+O1 expõe `verify_each_pass=True` para validação de desenvolvimento. O job
+dedicado `ssa-per-pass-verification` da CI ativa essa verificação depois de
+cada passe e identifica o passe que violou uma invariante. O padrão normal
+continua desligado para preservar o custo e o comportamento do caminho de
+execução comum.
+
 ## Riscos
 
 Todos os objetos lexicais da função são alocados ao entrar no frame, inclusive
