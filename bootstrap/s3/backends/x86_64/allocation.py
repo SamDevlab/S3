@@ -1,0 +1,100 @@
+"""Deterministic physical register allocator for S3 Assembly."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from ...assembly import AssemblyFunction
+from .liveness import analyze_liveness
+
+
+@dataclass(frozen=True, slots=True)
+class AllocationPlan:
+    allocations: dict[int, str | None]  # virtual register ID -> physical register name (or None)
+
+    def physical_register(self, register: int) -> str | None:
+        return self.allocations.get(register)
+
+    def is_stack_resident(self, register: int) -> bool:
+        return self.allocations.get(register) is None
+
+    @property
+    def used_physical_registers(self) -> tuple[str, ...]:
+        used = {color for color in self.allocations.values() if color is not None}
+        canonical_pool = ("rbx", "r12", "r13", "r14", "r15")
+        return tuple(phys for phys in canonical_pool if phys in used)
+
+    @property
+    def stack_resident_registers(self) -> tuple[int, ...]:
+        return tuple(sorted(r for r, color in self.allocations.items() if color is None))
+
+
+def analyze_allocation(function: AssemblyFunction) -> AllocationPlan:
+    """Perform deterministic physical register allocation on an AssemblyFunction."""
+    # 1. Run liveness analysis
+    liveness = analyze_liveness(function)
+
+    # 2. Collect all virtual registers used/defined/live in the function
+    all_vregs = set()
+    for param in function.parameters:
+        all_vregs.add(param.register)
+    for block in function.blocks:
+        for inst in block.instructions:
+            all_vregs.update(inst.registers)
+
+    # 3. Build interference graph
+    # Node: virtual register ID (int)
+    # Edge: interference
+    interferences: dict[int, set[int]] = {r: set() for r in all_vregs}
+
+    def add_edge(u: int, v: int) -> None:
+        if u != v:
+            interferences[u].add(v)
+            interferences[v].add(u)
+
+    for block_liveness in liveness.blocks.values():
+        for inst_liveness in block_liveness.instructions:
+            # All registers live before the instruction interfere
+            live_before = list(inst_liveness.live_before)
+            for i in range(len(live_before)):
+                for j in range(i + 1, len(live_before)):
+                    add_edge(live_before[i], live_before[j])
+
+            # All registers live after the instruction interfere
+            live_after = list(inst_liveness.live_after)
+            for i in range(len(live_after)):
+                for j in range(i + 1, len(live_after)):
+                    add_edge(live_after[i], live_after[j])
+
+            # Each DEF interferes with each register in live_after (except itself)
+            # This protects against dead definitions (values that are written but die immediately)
+            for d in inst_liveness.defs:
+                for la in inst_liveness.live_after:
+                    add_edge(d, la)
+
+    # 4. Greedy Coloring
+    # Sort nodes by degree descending, then by node ID ascending for determinism
+    def get_degree(r: int) -> int:
+        return len(interferences[r])
+
+    sorted_nodes = sorted(all_vregs, key=lambda r: (-get_degree(r), r))
+
+    colors: dict[int, str | None] = {}
+    physical_pool = ("rbx", "r12", "r13", "r14", "r15")
+
+    for node in sorted_nodes:
+        # Get physical registers used by neighbors
+        neighbor_colors = {
+            colors[nb] for nb in interferences[node]
+            if nb in colors and colors[nb] is not None
+        }
+
+        # Select the first available physical register in the pool
+        chosen_phys = None
+        for phys in physical_pool:
+            if phys not in neighbor_colors:
+                chosen_phys = phys
+                break
+
+        colors[node] = chosen_phys
+
+    return AllocationPlan(allocations=colors)
