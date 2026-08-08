@@ -186,6 +186,32 @@ cada passe e identifica o passe que violou uma invariante. O padrão normal
 continua desligado para preservar o custo e o comportamento do caminho de
 execução comum.
 
+## Status do MemorySSA e limite arquitetural
+
+A infraestrutura `bootstrap.s3.memory_ssa.MemorySSA` define as estruturas de dados
+`MemoryDef`, `MemoryUse`, `MemoryPhi` e `MemorySSA`. Seu status atual é um
+**protótipo experimental e parcial**:
+
+- **Current status**: O método `MemorySSA.build` realiza apenas uma varredura
+  linear sobre as instruções dos blocos (`ssa_fn.blocks`), gerando versões
+  locais simples `m{index}_v{v}`.
+- **Known limitations**: Os parâmetros `cfg` (ControlFlowGraph) e `dom_tree`
+  (DominatorTree) são reservados na interface, mas não são consumidos pela
+  varredura linear atual. A estrutura `MemoryPhi` está definida no modelo, mas
+  **não é construída em pontos de junção (join points) do CFG**.
+- **Production usage**: As otimizações de produção (`bootstrap.s3.ssa_opt` e
+  `bootstrap.s3.ssa_optimizer`) **não dependem do MemorySSA**. Elas operam
+  diretamente sobre a IR escalar e verificações de índice de memória.
+- **Completion criteria**: Para promover o MemorySSA a um componente completo,
+  serão necessários:
+  1. Propagação de definições de memória ciente de CFG e dominância;
+  2. Construção e inserção de `MemoryPhi` nas fronteiras de dominância;
+  3. Tratamento de backedges em laços;
+  4. Testes de cobertura cobrindo junções, laços e múltiplos mutadores;
+  5. Validação estrutural dedicada antes de qualquer adoção pelo otimizador.
+- **Non-goals**: Esta definição arquitetural não introduz ponteiros, heap,
+  análise de escape ou alocador de registradores nativos.
+
 ## Riscos
 
 Todos os objetos lexicais da função são alocados ao entrar no frame, inclusive

@@ -1,4 +1,21 @@
-"""Memory SSA Infrastructure for S3 IR memory optimizations."""
+"""Memory SSA Infrastructure for S3 IR memory optimizations.
+
+NOTE (Experimental / Prototype Status):
+----------------------------------------
+This module defines the architectural data structures for Memory SSA (MemoryDef,
+MemoryUse, MemoryPhi, MemorySSA). The current implementation is an experimental,
+flat prototype:
+
+1. `MemorySSA.build` performs a linear pass over block instructions.
+2. `cfg` (ControlFlowGraph) and `dom_tree` (DominatorTree) are accepted in the
+   `build` interface as architectural reserved parameters, but are not currently
+   consumed during version generation.
+3. `MemoryPhi` nodes are defined in the schema, but are not yet inserted at CFG
+   join points or dominance frontiers.
+4. Production optimizations (in `bootstrap.s3.ssa_opt` and `bootstrap.s3.ssa_optimizer`)
+   do NOT depend on `MemorySSA`. They operate directly on IR instructions and scalar
+   SSA forms.
+"""
 
 from __future__ import annotations
 
@@ -32,7 +49,11 @@ class MemoryUse:
 
 @dataclass(frozen=True, slots=True)
 class MemoryPhi:
-    """Represents a memory version merge at CFG join points."""
+    """Represents a memory version merge at CFG join points.
+
+    Note: MemoryPhi nodes are part of the full Memory SSA design, but are not yet
+    constructed by the current linear `MemorySSA.build` prototype.
+    """
 
     target_version: str
     operands: Dict[str, str]
@@ -41,7 +62,11 @@ class MemoryPhi:
 
 @dataclass(slots=True)
 class MemorySSA:
-    """Memory SSA representation constructed over an SSAFunction."""
+    """Memory SSA representation constructed over an SSAFunction.
+
+    Status: Experimental / Partial Prototype.
+    Production optimizations currently operate independently of this class.
+    """
 
     function: SSAFunction
     defs: List[MemoryDef] = field(default_factory=list)
@@ -55,7 +80,13 @@ class MemorySSA:
         cfg: ControlFlowGraph,
         dom_tree: DominatorTree,
     ) -> MemorySSA:
-        """Constructs Memory SSA form for the given SSAFunction."""
+        """Constructs a prototype Memory SSA form for the given SSAFunction.
+
+        Note: `cfg` and `dom_tree` are reserved parameters for future CFG-aware
+        and dominance-based Memory SSA propagation. The current implementation
+        performs a flat linear scan over `ssa_fn.blocks` and does not yet construct
+        `MemoryPhi` nodes at join points.
+        """
         mem_ssa = cls(function=ssa_fn)
         version_counter: Dict[int, int] = {}
         current_version: Dict[int, str] = {}
