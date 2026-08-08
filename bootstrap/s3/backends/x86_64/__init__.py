@@ -6,11 +6,12 @@ from .diagnostics import (
     NativePlatformError,
     NativeToolchainError,
 )
-from .layout import CalleeSavedSlot, FrameLayout, layout_frame
+from .layout import CalleeSavedSlot, CallerSavedSpillSlot, FrameLayout, layout_frame
 from .toolchain import NativeToolchain
 
 __all__ = [
     "CalleeSavedSlot",
+    "CallerSavedSpillSlot",
     "FrameLayout",
     "NativeBackendError",
     "NativePlatformError",

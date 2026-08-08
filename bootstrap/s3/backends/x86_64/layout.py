@@ -79,6 +79,12 @@ class CalleeSavedSlot:
 
 
 @dataclass(frozen=True, slots=True)
+class CallerSavedSpillSlot:
+    register: str
+    region: StackRegion
+
+
+@dataclass(frozen=True, slots=True)
 class FrameLayout:
     function_name: str
     registers: tuple[RegisterSlot, ...]
@@ -88,6 +94,7 @@ class FrameLayout:
     scratch_size: int = 0
     hidden_sret_pointer: StackRegion | None = None
     callee_saved_slots: tuple[CalleeSavedSlot, ...] = ()
+    caller_saved_spill_slots: tuple[CallerSavedSpillSlot, ...] = ()
 
     def register(self, index: int) -> RegisterSlot:
         for slot in self.registers:
@@ -113,6 +120,14 @@ class FrameLayout:
             f"function '{self.function_name}' has no callee-saved slot for {register}"
         )
 
+    def caller_saved_spill_slot(self, register: str) -> CallerSavedSpillSlot:
+        for slot in self.caller_saved_spill_slots:
+            if slot.register == register:
+                return slot
+        raise NativeBackendError(
+            f"function '{self.function_name}' has no caller-saved spill slot for {register}"
+        )
+
     @property
     def regions(self) -> tuple[StackRegion, ...]:
         return (
@@ -122,6 +137,7 @@ class FrameLayout:
             *(slot.initialized for slot in self.memories),
             *((self.hidden_sret_pointer,) if self.hidden_sret_pointer else ()),
             *(slot.region for slot in self.callee_saved_slots),
+            *(slot.region for slot in self.caller_saved_spill_slots),
         )
 
 
@@ -194,6 +210,11 @@ def layout_frame(
     for phys in ordered_phys:
         region = allocator.allocate(REGISTER_SLOT_SIZE, REGISTER_SLOT_ALIGNMENT)
         callee_saved_slots.append(CalleeSavedSlot(phys, region))
+    caller_saved_spill_slots = []
+    for phys in ("rdi", "rsi", "rdx", "rcx", "r8", "r9"):
+        if phys in physical_registers:
+            region = allocator.allocate(REGISTER_SLOT_SIZE, REGISTER_SLOT_ALIGNMENT)
+            caller_saved_spill_slots.append(CallerSavedSpillSlot(phys, region))
 
     frame_size = align_up(allocator.consumed, STACK_ALIGNMENT)
     return FrameLayout(
@@ -222,4 +243,5 @@ def layout_frame(
         sum(_logical_cost(memory) for memory in memories),
         hidden_sret_pointer=hidden_sret_pointer,
         callee_saved_slots=tuple(callee_saved_slots),
+        caller_saved_spill_slots=tuple(caller_saved_spill_slots),
     )

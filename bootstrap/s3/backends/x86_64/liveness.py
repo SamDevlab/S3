@@ -44,7 +44,7 @@ class FunctionLiveness:
         if instruction.opcode is not AssemblyOpcode.TCALL:
             raise ValueError("Instruction is not a call")
         inst_liveness = self.for_instruction(instruction)
-        return inst_liveness.live_before & inst_liveness.live_after
+        return (inst_liveness.live_before & inst_liveness.live_after) - inst_liveness.defs
 
 
 def instruction_use_def(instruction: AssemblyInstruction) -> tuple[frozenset[int], frozenset[int]]:
