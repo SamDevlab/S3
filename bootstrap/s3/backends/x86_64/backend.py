@@ -18,6 +18,7 @@ class X8664Backend:
     max_memory_trits: int = DEFAULT_MAX_MEMORY_TRITS
     max_frames: int = DEFAULT_MAX_FRAMES
     max_instructions: int = DEFAULT_MAX_INSTRUCTIONS
+    register_allocation: bool = False
 
     def generate(self, program: AssemblyProgram) -> str:
         if isinstance(self.max_instructions, bool) or not isinstance(self.max_instructions, int):
@@ -45,6 +46,7 @@ class X8664Backend:
             program,
             max_frames=self.max_frames,
             max_instructions=self.max_instructions,
+            register_allocation=self.register_allocation,
         ).emit()
 
 
