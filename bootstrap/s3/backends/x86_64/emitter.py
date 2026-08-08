@@ -14,11 +14,12 @@ from ...assembly import (
 )
 from .diagnostics import NativeBackendError
 from .layout import FrameLayout, MemorySlot, StackRegion, layout_frame
+from .registers import SYSV_INTEGER_ARGUMENT_REGISTERS
 from .runtime import render_runtime
 
 
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
-_ARGUMENT_REGISTERS = ("rdi", "rsi", "rdx", "rcx", "r8", "r9")
+_ARGUMENT_REGISTERS = SYSV_INTEGER_ARGUMENT_REGISTERS
 
 
 @dataclass(frozen=True, slots=True)
