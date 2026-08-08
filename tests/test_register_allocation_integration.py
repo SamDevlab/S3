@@ -53,10 +53,10 @@ def test_default_path_is_identical() -> None:
     .end
     """
     program = parse_assembly(source)
-    
+
     assembly_default = generate_native_assembly(program)
     assembly_opt_out = X8664Backend(register_allocation=False).generate(program)
-    
+
     assert assembly_default == assembly_opt_out
 
 
@@ -71,15 +71,15 @@ def test_physical_residency_observed(native_toolchain, tmp_path) -> None:
     .end
     """
     program = parse_assembly(source)
-    
+
     backend = X8664Backend(register_allocation=True)
     assembly = backend.generate(program)
-    
+
     # Assert physical register (rbx) is used and saved/restored in prologue/epilogue
     assert "rbx" in assembly
     assert "mov qword ptr" in assembly
     assert "rbp" in assembly
-    
+
     # Run program to verify correctness
     executable = native_toolchain.build(assembly, tmp_path / "obs_exec")
     completed = native_toolchain.run(executable)
@@ -436,17 +436,17 @@ TEST_CASES = {
 def test_equivalence_matrix(name, native_toolchain, tmp_path) -> None:
     source, expected = TEST_CASES[name]
     program = parse_assembly(source)
-    
+
     # 1. Emulator check
     assert Emulator().execute(program) == expected
-    
+
     # 2. Native Stack-Backed check (register_allocation=False)
     completed_stack = _run_native_allocated(
         program, native_toolchain, tmp_path / f"{name}_stack", register_allocation=False
     )
     assert completed_stack.returncode == 0
     assert completed_stack.stdout == f"program returned: {expected}\n"
-    
+
     # 3. Native Register-Allocated check (register_allocation=True)
     completed_reg = _run_native_allocated(
         program, native_toolchain, tmp_path / f"{name}_reg", register_allocation=True
@@ -465,17 +465,17 @@ def test_optimization_matrix_o0_o1(native_toolchain, tmp_path) -> None:
     """
     for opt in ("O0", "O1"):
         program = compile_source(high_level_source, opt, mode=SyntaxMode.V0_6).assembly
-        
+
         # Emulator
         assert Emulator().execute(program) == 30
-        
+
         # Stack-backed
         completed_stack = _run_native_allocated(
             program, native_toolchain, tmp_path / f"opt_matrix_{opt}_stack", register_allocation=False
         )
         assert completed_stack.returncode == 0
         assert completed_stack.stdout == "program returned: 30\n"
-        
+
         # Register-allocated
         completed_reg = _run_native_allocated(
             program, native_toolchain, tmp_path / f"opt_matrix_{opt}_reg", register_allocation=True
@@ -497,18 +497,18 @@ def test_uninitialized_register_error(native_toolchain, tmp_path) -> None:
     .end
     """
     program = parse_assembly(source)
-    
+
     # 1. Emulator check raises EmulatorError
     with pytest.raises(EmulatorError):
         Emulator().execute(program)
-        
+
     # 2. Native Stack-backed check fails
     completed_stack = _run_native_allocated(
         program, native_toolchain, tmp_path / "uninit_stack", register_allocation=False
     )
     assert completed_stack.returncode != 0
     assert "uninitialized register" in completed_stack.stderr.lower()
-    
+
     # 3. Native Register-allocated check fails identically
     completed_reg = _run_native_allocated(
         program, native_toolchain, tmp_path / "uninit_reg", register_allocation=True
@@ -531,18 +531,18 @@ def test_overflow_error(native_toolchain, tmp_path) -> None:
     .end
     """
     program = parse_assembly(source)
-    
+
     # Emulator
     with pytest.raises(EmulatorError):
         Emulator().execute(program)
-        
+
     # Native Stack
     completed_stack = _run_native_allocated(
         program, native_toolchain, tmp_path / "overflow_stack", register_allocation=False
     )
     assert completed_stack.returncode != 0
     assert "overflow" in completed_stack.stderr.lower()
-    
+
     # Native Register
     completed_reg = _run_native_allocated(
         program, native_toolchain, tmp_path / "overflow_reg", register_allocation=True
@@ -565,18 +565,18 @@ def test_bounds_error(native_toolchain, tmp_path) -> None:
     .end
     """
     program = parse_assembly(source)
-    
+
     # Emulator
     with pytest.raises(EmulatorError):
         Emulator().execute(program)
-        
+
     # Native Stack
     completed_stack = _run_native_allocated(
         program, native_toolchain, tmp_path / "bounds_stack", register_allocation=False
     )
     assert completed_stack.returncode != 0
     assert "out of bounds" in completed_stack.stderr.lower()
-    
+
     # Native Register
     completed_reg = _run_native_allocated(
         program, native_toolchain, tmp_path / "bounds_reg", register_allocation=True
@@ -599,11 +599,11 @@ def test_stale_physical_value_bypass_initialization(native_toolchain, tmp_path) 
     .end
     """
     program = parse_assembly(source)
-    
+
     # Emulator raises EmulatorError
     with pytest.raises(EmulatorError):
         Emulator().execute(program)
-        
+
     # Native Register allocated must raise uninitialized error
     completed = _run_native_allocated(
         program, native_toolchain, tmp_path / "stale_reg", register_allocation=True
