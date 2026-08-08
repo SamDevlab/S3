@@ -240,6 +240,9 @@ class X8664Emitter:
         layout: FrameLayout,
     ) -> list[str]:
         lines: list[str] = []
+        preserve_metadata_scratch = self.register_allocation and bool(layout.memories)
+        if preserve_metadata_scratch:
+            lines.extend(("    mov r10, rdi", "    mov r11, rcx"))
         for slot in layout.registers:
             lines.append(
                 f"    mov byte ptr {_address(slot.initialized)}, 0"
@@ -252,7 +255,9 @@ class X8664Emitter:
                     "    xor eax, eax",
                     "    rep stosb",
                 )
-            )
+                )
+        if preserve_metadata_scratch:
+            lines.extend(("    mov rdi, r10", "    mov rcx, r11"))
         for parameter in function.parameters:
             slot = layout.register(parameter.register)
             lines.append(
