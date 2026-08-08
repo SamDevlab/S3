@@ -271,3 +271,15 @@ This section outlines the physical register contracts and CFG-aware liveness ana
 - **TCALL/Live-Across-Call**: Registers live across call instructions are identified as `live_before(call) ∩ live_after(call)`, excluding registers defined/returned by the call itself.
 - **Initialization Validity vs Liveness**: Value liveness (`REGISTER_VALUE_LIVENESS`) is distinct from variable initialization validity (`REGISTER_INITIALIZATION_VALIDITY`). The future allocator must not alter or bypass the uninitialized register checks.
 - **Production Status**: The production emitter remains stack-backed and does not use the register allocator or liveness sets.
+
+## Deterministic physical register allocation
+
+Milestone 1.21 implements deterministic physical register allocation on top of the System V AMD64 contract.
+
+- **Interference Graph**: Built using undirected edges between virtual registers. An edge is added between any two registers simultaneously live before or after any instruction. Furthermore, each defined register `d` in `defs[I]` interferes with all registers `la` in `live_after[I]` (except itself), protecting against clobbers from dead definitions.
+- **Greedy Coloring**: Order-determined greedy coloring assigns physical registers. Nodes are sorted primarily by degree descending, and secondarily by virtual register ID ascending. Available colors are chosen sequentially from `("rbx", "r12", "r13", "r14", "r15")`.
+- **Stack Fallback**: If all five physical registers are occupied by neighbors, the register is allocated to `STACK` residency (falling back to its existing frame value slot).
+- **Callee-Saved Preservation**: An 8-byte stack slot is allocated for each physical register used. The prologue saves these registers, and the normal epilogue restores them before `leave` and `ret`.
+- **Initialization Semantics**: All reads and writes to physical registers continue to update and check the logical initialization metadata bytes. Residual/stale physical register contents never bypass initialization checks.
+- **Opt-In Mode**: Controlled via `register_allocation=True` in `X8664Backend`. The default path (`False`) remains byte-for-byte identical to the original stack-backed compilation.
+

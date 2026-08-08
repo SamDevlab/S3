@@ -566,3 +566,18 @@ Esta milestone estabelece os alicerces necessários para a futura alocação de 
 - **TCALL live-across-call**: Identificação de variáveis que sobrevivem a chamadas de função.
 - **Uninitialized register preservation**: Manutenção estrita da semântica de registradores não inicializados (diagnósticos de validade de inicialização são preservados e independentes de liveness).
 - **Out of scope**: Alocador de registradores nativo, spills/reloads, frame size reduction, prologue saves/restores, benchmarks de alocador. O emitter de produção permanece stack-backed (`NATIVE_ALLOCATION_ENABLED=NO`).
+
+## Marco 1.21 - Deterministic Physical Register Allocation
+
+Status: concluído e validado
+
+Esta milestone implementa o primeiro alocador físico de registradores determinístico para a S3 Assembly no backend Linux x86-64:
+
+- **Interference Graph**: Construção do grafo de interferência não direcionado com arestas entre registradores virtuais baseadas na liveness da 1.20. Inclui tratamento para defs de valores que morrem imediatamente (dead def clobber protection).
+- **Greedy Coloring**: Coloração gulosa determinística dos nós do grafo baseada no grau de interferência (descrecente) e ID de registrador virtual (crescente) como critério de desempate, utilizando os registradores físicos callee-saved System V AMD64 (`rbx`, `r12`, `r13`, `r14`, `r15`).
+- **Stack Fallback**: Registradores virtuais com alta pressão de registradores sofrem fallback automático e transparente para `STACK` residency (usando o slot de stack regular existente), sem quebra de compilação ou geração de pseudo-instruções de spill na S3 Assembly.
+- **Callee-Saved Save/Restore**: Funções preservam os registradores físicos utilizados salvando-os em posições dedicadas dentro de `FrameLayout` no prólogo e restaurando-os antes de qualquer retorno normal (`TRET` ou multi-retorno).
+- **Paridade Semântica e de Inicialização**: A validação de uso de registradores não inicializados permanece ativa e independente do conteúdo físico dos registradores, impedindo bypass por valores obsoletos (stale physical value bypass).
+- **Opt-In do Compilador**: O alocador de registradores nativo é fornecido como uma opção opt-in (`register_allocation=True` em `X8664Backend`). O caminho default (`False`) continua emitindo assembly stack-backed idêntico ao baseline.
+- **Out of Scope**: Alocação de registradores caller-saved, spills em tempo de instrução, divisão de intervalos vivos (interval splitting), compactação de frame (remoção de slots lógicos inativos) e benchmarks de performance.
+

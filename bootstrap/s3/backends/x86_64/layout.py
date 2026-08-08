@@ -73,6 +73,12 @@ class MemorySlot:
 
 
 @dataclass(frozen=True, slots=True)
+class CalleeSavedSlot:
+    register: str
+    region: StackRegion
+
+
+@dataclass(frozen=True, slots=True)
 class FrameLayout:
     function_name: str
     registers: tuple[RegisterSlot, ...]
@@ -81,6 +87,7 @@ class FrameLayout:
     logical_memory_trits: int
     scratch_size: int = 0
     hidden_sret_pointer: StackRegion | None = None
+    callee_saved_slots: tuple[CalleeSavedSlot, ...] = ()
 
     def register(self, index: int) -> RegisterSlot:
         for slot in self.registers:
@@ -98,6 +105,14 @@ class FrameLayout:
             f"function '{self.function_name}' has no memory object m{index}"
         )
 
+    def callee_saved_slot(self, register: str) -> CalleeSavedSlot:
+        for slot in self.callee_saved_slots:
+            if slot.register == register:
+                return slot
+        raise NativeBackendError(
+            f"function '{self.function_name}' has no callee-saved slot for {register}"
+        )
+
     @property
     def regions(self) -> tuple[StackRegion, ...]:
         return (
@@ -106,6 +121,7 @@ class FrameLayout:
             *(slot.data for slot in self.memories),
             *(slot.initialized for slot in self.memories),
             *((self.hidden_sret_pointer,) if self.hidden_sret_pointer else ()),
+            *(slot.region for slot in self.callee_saved_slots),
         )
 
 
@@ -138,7 +154,10 @@ def _logical_cost(memory: AssemblyMemoryObject) -> int:
     )
 
 
-def layout_frame(function: AssemblyFunction) -> FrameLayout:
+def layout_frame(
+    function: AssemblyFunction,
+    physical_registers: tuple[str, ...] = (),
+) -> FrameLayout:
     allocator = _Allocator()
     register_types = tuple(sorted(function.all_register_types.items()))
     value_regions = {
@@ -168,6 +187,14 @@ def layout_frame(function: AssemblyFunction) -> FrameLayout:
         else None
     )
 
+    # Allocate callee-saved slots in canonical order
+    canonical_pool = ("rbx", "r12", "r13", "r14", "r15")
+    ordered_phys = [r for r in canonical_pool if r in physical_registers]
+    callee_saved_slots = []
+    for phys in ordered_phys:
+        region = allocator.allocate(REGISTER_SLOT_SIZE, REGISTER_SLOT_ALIGNMENT)
+        callee_saved_slots.append(CalleeSavedSlot(phys, region))
+
     frame_size = align_up(allocator.consumed, STACK_ALIGNMENT)
     return FrameLayout(
         function.name,
@@ -194,5 +221,5 @@ def layout_frame(function: AssemblyFunction) -> FrameLayout:
         frame_size,
         sum(_logical_cost(memory) for memory in memories),
         hidden_sret_pointer=hidden_sret_pointer,
+        callee_saved_slots=tuple(callee_saved_slots),
     )
-

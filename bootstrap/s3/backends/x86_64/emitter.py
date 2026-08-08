@@ -16,6 +16,7 @@ from .diagnostics import NativeBackendError
 from .layout import FrameLayout, MemorySlot, StackRegion, layout_frame
 from .registers import SYSV_INTEGER_ARGUMENT_REGISTERS
 from .runtime import render_runtime
+from .allocation import AllocationPlan, analyze_allocation
 
 
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -83,15 +84,24 @@ def _address(
 
 
 class X8664Emitter:
-    def __init__(self, program: AssemblyProgram, *, max_frames: int, max_instructions: int):
+    def __init__(
+        self,
+        program: AssemblyProgram,
+        *,
+        max_frames: int,
+        max_instructions: int,
+        register_allocation: bool = False,
+    ):
         self.program = program
         self.max_frames = max_frames
         self.max_instructions = max_instructions
+        self.register_allocation = register_allocation
         self.failure_sites: list[FailureSite] = []
         self.current_function: AssemblyFunction | None = None
         self.current_block: str | None = None
         self.current_instruction: AssemblyInstruction | None = None
         self.functions = {function.name: function for function in program.functions}
+        self.current_plan: AllocationPlan | None = None
 
     def emit(self) -> str:
         lines = [
@@ -109,7 +119,13 @@ class X8664Emitter:
         return "\n".join(lines) + "\n"
 
     def _emit_function(self, function: AssemblyFunction) -> list[str]:
-        layout = layout_frame(function)
+        if self.register_allocation:
+            plan = analyze_allocation(function)
+            self.current_plan = plan
+            layout = layout_frame(function, plan.used_physical_registers)
+        else:
+            self.current_plan = None
+            layout = layout_frame(function)
         symbol = mangle_function(function.name)
         frame_failure = self._new_failure_site(
             category="frame limit",
@@ -136,6 +152,10 @@ class X8664Emitter:
         ]
         if layout.frame_size:
             lines.append(f"    sub rsp, {layout.frame_size}")
+        if self.register_allocation and self.current_plan:
+            for phys in self.current_plan.used_physical_registers:
+                slot = layout.callee_saved_slot(phys)
+                lines.append(f"    mov qword ptr {_address(slot.region)}, {phys}")
         lines.extend(self._save_parameters(function, layout))
         lines.extend(self._initialize_metadata(function, layout))
         lines.append(f"    jmp {mangle_block(function.name, 'entry')}")
@@ -168,21 +188,34 @@ class X8664Emitter:
         for position, parameter in enumerate(function.parameters):
             slot = layout.register(parameter.register)
             native_position = position + (1 if function.result_width > 1 else 0)
+
+            phys = self.current_plan.physical_register(parameter.register) if (self.register_allocation and self.current_plan) else None
+
             if native_position < len(_ARGUMENT_REGISTERS):
                 source = _ARGUMENT_REGISTERS[native_position]
-                lines.append(
-                    f"    mov qword ptr {_address(slot.value)}, {source}"
-                )
+                if phys is None:
+                    lines.append(
+                        f"    mov qword ptr {_address(slot.value)}, {source}"
+                    )
+                else:
+                    lines.append(
+                        f"    mov {phys}, {source}"
+                    )
             else:
                 caller_offset = (
                     16 + (native_position - len(_ARGUMENT_REGISTERS)) * 8
                 )
-                lines.extend(
-                    (
-                        f"    mov rax, qword ptr [rbp + {caller_offset}]",
-                        f"    mov qword ptr {_address(slot.value)}, rax",
+                if phys is None:
+                    lines.extend(
+                        (
+                            f"    mov rax, qword ptr [rbp + {caller_offset}]",
+                            f"    mov qword ptr {_address(slot.value)}, rax",
+                        )
                     )
-                )
+                else:
+                    lines.append(
+                        f"    mov {phys}, qword ptr [rbp + {caller_offset}]"
+                    )
         return lines
 
     def _initialize_metadata(
@@ -222,11 +255,16 @@ class X8664Emitter:
             "uninitialized register",
             detail=f"register r{register} is uninitialized\n",
         )
-        return [
+        lines = [
             f"    cmp byte ptr {_address(slot.initialized)}, 0",
             f"    je {failure}",
-            f"    mov {target}, qword ptr {_address(slot.value)}",
         ]
+        phys = self.current_plan.physical_register(register) if (self.register_allocation and self.current_plan) else None
+        if phys is None:
+            lines.append(f"    mov {target}, qword ptr {_address(slot.value)}")
+        elif phys != target:
+            lines.append(f"    mov {target}, {phys}")
+        return lines
 
     def _write_register(
         self,
@@ -235,10 +273,23 @@ class X8664Emitter:
         source: str,
     ) -> list[str]:
         slot = layout.register(register)
-        return [
-            f"    mov qword ptr {_address(slot.value)}, {source}",
-            f"    mov byte ptr {_address(slot.initialized)}, 1",
-        ]
+        phys = self.current_plan.physical_register(register) if (self.register_allocation and self.current_plan) else None
+        lines = []
+        if phys is None:
+            lines.append(f"    mov qword ptr {_address(slot.value)}, {source}")
+        elif phys != source:
+            lines.append(f"    mov {phys}, {source}")
+        lines.append(f"    mov byte ptr {_address(slot.initialized)}, 1")
+        return lines
+
+    def _restore_callee_saved(self, layout: FrameLayout) -> list[str]:
+        if not self.register_allocation or not self.current_plan:
+            return []
+        lines = []
+        for phys in self.current_plan.used_physical_registers:
+            slot = layout.callee_saved_slot(phys)
+            lines.append(f"    mov {phys}, qword ptr {_address(slot.region)}")
+        return lines
 
     @staticmethod
     def _range_check(
@@ -373,6 +424,7 @@ class X8664Emitter:
                 )
             return instrumentation + [
                 *self._read_register(layout, registers[0], "rax"),
+                *self._restore_callee_saved(layout),
                 "    dec qword ptr [rip + __s3_frame_count]",
                 "    leave",
                 "    ret",
@@ -529,6 +581,7 @@ class X8664Emitter:
         for index, register in enumerate(instruction.registers):
             lines.extend(self._read_register(layout, register, "rax"))
             lines.append(f"    mov qword ptr [r11 + {index * 8}], rax")
+        lines.extend(self._restore_callee_saved(layout))
         lines.extend(
             (
                 "    dec qword ptr [rip + __s3_frame_count]",
