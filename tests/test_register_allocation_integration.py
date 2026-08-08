@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import textwrap
 import pytest
 
 from bootstrap.s3.assembly import parse_assembly
@@ -119,10 +120,10 @@ TEST_CASES = {
     ),
     "comparisons": (
         """
-        .function main -> tryte
+        .function main -> trit
             .register r0, tryte
             .register r1, tryte
-            .register r2, tryte
+            .register r2, trit
         .label entry
             TCONST r0, 10
             TCONST r1, 20
@@ -135,10 +136,10 @@ TEST_CASES = {
     "branches": (
         """
         .function main -> tryte
-            .register r0, tryte
+            .register r0, trit
             .register r1, tryte
         .label entry
-            TCONST r0, 1
+            TCONST r0, 0
             TBR3 r0, left, right, join
         .label left
             TCONST r1, 10
@@ -156,11 +157,11 @@ TEST_CASES = {
     "joins": (
         """
         .function main -> tryte
-            .register r0, tryte
+            .register r0, trit
             .register r1, tryte
             .register r2, tryte
         .label entry
-            TCONST r0, 0
+            TCONST r0, -1
             TBR3 r0, left, right, join
         .label left
             TCONST r1, 10
@@ -182,18 +183,28 @@ TEST_CASES = {
             .register r0, tryte
             .register r1, tryte
             .register r2, tryte
+            .register r3, trit
+            .register r4, tryte
+            .register r5, tryte
         .label entry
             TCONST r0, 5
             TCONST r1, 0
-            TCONST r2, 1
+            TCONST r2, -1
+            TJMP header
         .label header
-            TBR3 r0, body, exit, exit
+            TCONST r4, 0
+            TCMP r3, r0, r4
+            TBR3 r3, exit_negative, exit_neutral, body
         .label body
             TADD r1, r1, r0
-            TMIN r0, r0, r2
+            TADD r0, r0, r2
             TJMP header
         .label exit
             TRET r1
+        .label exit_negative
+            TJMP exit
+        .label exit_neutral
+            TJMP exit
         .end
         """,
         15
@@ -205,25 +216,43 @@ TEST_CASES = {
             .register r1, tryte
             .register r2, tryte
             .register r3, tryte
+            .register r4, trit
+            .register r5, tryte
+            .register r6, tryte
         .label entry
             TCONST r0, 3
             TCONST r1, 0
             TCONST r3, 1
+            TCONST r6, -1
+            TJMP outer_header
         .label outer_header
-            TBR3 r0, outer_body, outer_exit, outer_exit
+            TCONST r5, 0
+            TCMP r4, r0, r5
+            TBR3 r4, outer_exit_negative, outer_exit_neutral, outer_body
         .label outer_body
             TCONST r2, 2
+            TJMP inner_header
         .label inner_header
-            TBR3 r2, inner_body, inner_exit, inner_exit
+            TCONST r5, 0
+            TCMP r4, r2, r5
+            TBR3 r4, inner_exit_negative, inner_exit_neutral, inner_body
         .label inner_body
             TADD r1, r1, r3
-            TMIN r2, r2, r3
+            TADD r2, r2, r6
             TJMP inner_header
         .label inner_exit
-            TMIN r0, r0, r3
+            TADD r0, r0, r6
             TJMP outer_header
+        .label inner_exit_negative
+            TJMP inner_exit
+        .label inner_exit_neutral
+            TJMP inner_exit
         .label outer_exit
             TRET r1
+        .label outer_exit_negative
+            TJMP outer_exit
+        .label outer_exit_neutral
+            TJMP outer_exit
         .end
         """,
         6
@@ -291,20 +320,27 @@ TEST_CASES = {
         .function fact -> tryte
             .param r0, tryte
             .register r1, tryte
-            .register r2, tryte
+            .register r2, trit
             .register r3, tryte
             .register r4, tryte
+            .register r5, tryte
+            .register r6, tryte
         .label entry
             TCONST r1, 1
+            TCONST r6, -1
             TCMP r2, r0, r1
-            TBR3 r2, base, base, recursive
+            TBR3 r2, base_negative, base_neutral, recursive
+        .label base_negative
+            TJMP base
         .label base
             TRET r1
+        .label base_neutral
+            TJMP base
         .label recursive
-            TMIN r3, r0, r1
+            TADD r3, r0, r6
             TCALL r4, fact, r3
-            TADD r2, r0, r0
-            TADD r2, r2, r0
+            TADD r5, r0, r0
+            TADD r5, r5, r0
             TADD r1, r4, r0
             TRET r1
         .end
@@ -312,6 +348,7 @@ TEST_CASES = {
         .function main -> tryte
             .register r0, tryte
             .register r1, tryte
+            .register r2, tryte
         .label entry
             TCONST r0, 3
             TCALL r1, fact, r0
@@ -391,13 +428,16 @@ TEST_CASES = {
             .memory m0, tryte, 3, immutable
             .register r0, tryte
             .register r1, tryte
+            .register r2, tryte
         .label entry
             TCONST r0, 1
-            TLOAD r1, m0, r0
-            TRET r1
+            TCONST r1, 42
+            TSTORE m0, r0, r1
+            TLOAD r2, m0, r0
+            TRET r2
         .end
         """,
-        0
+        42
     ),
     "high_register_pressure": (
         """
@@ -455,14 +495,21 @@ def test_equivalence_matrix(name, native_toolchain, tmp_path) -> None:
     assert completed_reg.stdout == f"program returned: {expected}\n"
 
 
+@pytest.mark.parametrize("name", list(TEST_CASES.keys()))
+def test_equivalence_matrix_fixture_is_valid(name) -> None:
+    source, expected = TEST_CASES[name]
+    program = parse_assembly(source)
+    assert Emulator().execute(program) == expected
+
+
 # FASE 27: Matrix of O0 / O1 Optimization
 def test_optimization_matrix_o0_o1(native_toolchain, tmp_path) -> None:
-    high_level_source = """
+    high_level_source = textwrap.dedent("""
     fn main() -> tryte:
         mut a: tryte = 10
         mut b: tryte = 20
         return a + b
-    """
+    """).strip()
     for opt in ("O0", "O1"):
         program = compile_source(high_level_source, opt, mode=SyntaxMode.V0_6).assembly
 
@@ -575,14 +622,14 @@ def test_bounds_error(native_toolchain, tmp_path) -> None:
         program, native_toolchain, tmp_path / "bounds_stack", register_allocation=False
     )
     assert completed_stack.returncode != 0
-    assert "out of bounds" in completed_stack.stderr.lower()
+    assert "index 5 outside [0, 3)" in completed_stack.stderr.lower()
 
     # Native Register
     completed_reg = _run_native_allocated(
         program, native_toolchain, tmp_path / "bounds_reg", register_allocation=True
     )
     assert completed_reg.returncode != 0
-    assert "out of bounds" in completed_reg.stderr.lower()
+    assert "index 5 outside [0, 3)" in completed_reg.stderr.lower()
 
 
 def test_stale_physical_value_bypass_initialization(native_toolchain, tmp_path) -> None:
