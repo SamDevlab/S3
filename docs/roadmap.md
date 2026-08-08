@@ -581,3 +581,18 @@ Esta milestone implementa o primeiro alocador físico de registradores determin�
 - **Opt-In do Compilador**: O alocador de registradores nativo é fornecido como uma opção opt-in (`register_allocation=True` em `X8664Backend`). O caminho default (`False`) continua emitindo assembly stack-backed idêntico ao baseline.
 - **Out of Scope**: Alocação de registradores caller-saved, spills em tempo de instrução, divisão de intervalos vivos (interval splitting), compactação de frame (remoção de slots lógicos inativos) e benchmarks de performance.
 
+## Marco 1.22 - Full Register Allocation Call Integration
+
+Status: implementation authored; Linux differential and s3bench execution
+gates remain required
+
+The opt-in x86-64 allocator now has the eleven-register pool, call-aware
+preference, explicit `TCALL` survivor preservation, backend call-spill slots,
+logical-slot staging for parameters and outgoing arguments, and conservative
+preservation around returning runtime helpers. Whole-function residency,
+stack fallback, initialization metadata, the existing hidden-sret ABI, and the
+stack-backed default remain unchanged. Parallel copies, interval splitting,
+general dynamic spilling, frame compaction, public language/IR/Assembly changes,
+and default enablement are out of scope. Correctness and performance evidence
+must be reported separately; the s3bench execution gate requires a real Linux
+run using the versioned 1.0.0 interface.
