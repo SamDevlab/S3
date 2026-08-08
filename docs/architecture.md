@@ -247,3 +247,27 @@ The 0.8 E2 deterministic baseline remains immutable historical evidence. Shared
 CI may execute short functional smoke cases but cannot establish authoritative
 performance. Native cross-language claims require one controlled Linux
 environment with identical inputs, checksums, and complete toolchain metadata.
+
+## Native register allocation foundation
+
+This section outlines the physical register contracts and CFG-aware liveness analysis introduced in Milestone 1.20 to prepare the S3 Linux x86-64 backend for a future register allocator.
+
+- **ABI System V AMD64**: The backend targets the standard System V AMD64 ABI on Linux.
+- **Physical Register Classes**: Registers are categorised as:
+  - Stack Pointer: `rsp` (non-allocatable)
+  - Frame Pointer: `rbp` (non-allocatable)
+  - Return Register: `rax`
+  - Argument Registers: `rdi`, `rsi`, `rdx`, `rcx`, `r8`, `r9`
+  - Caller-Saved Registers: `rax`, `rcx`, `rdx`, `rsi`, `rdi`, `r8`, `r9`, `r10`, `r11`
+  - Callee-Saved Registers: `rbx`, `rbp`, `r12`, `r13`, `r14`, `r15`
+  - Emitter Scratch Registers: `rax`, `r10`, `r11`
+- **Initial Allocatable Pool**: Configured as `rbx`, `r12`, `r13`, `r14`, `r15` for use in the future allocator.
+- **Scratch/Reserved Policy**: `rsp` and `rbp` are always reserved and non-allocatable. `rax`, `r10`, and `r11` are scratch registers reserved for the emitter. No register may belong to both the allocatable pool and reserved/scratch registers.
+- **Liveness Equations**: CFG-aware backwards register liveness analysis is performed on S3 Assembly. Successors of blocks are determined by terminators (`TJMP`, `TBR3`, `TRET`). Block equations are:
+  - `live_out[B] = ∪ live_in[S]` for all successors `S`
+  - `live_in[B] = use[B] ∪ (live_out[B] - def[B])`
+  Iterated until a fixed point is reached. Within blocks, instruction equations are:
+  - `live_before[I] = uses[I] ∪ (live_after[I] - defs[I])`
+- **TCALL/Live-Across-Call**: Registers live across call instructions are identified as `live_before(call) ∩ live_after(call)`, excluding registers defined/returned by the call itself.
+- **Initialization Validity vs Liveness**: Value liveness (`REGISTER_VALUE_LIVENESS`) is distinct from variable initialization validity (`REGISTER_INITIALIZATION_VALIDITY`). The future allocator must not alter or bypass the uninitialized register checks.
+- **Production Status**: The production emitter remains stack-backed and does not use the register allocator or liveness sets.

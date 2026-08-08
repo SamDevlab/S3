@@ -553,3 +553,16 @@ controlled Linux environment; shared CI only validates schema, build, checksum,
 and smoke execution.
 
 See [docs/milestone-1.19.md](milestone-1.19.md).
+
+## Marco 1.20 - Native Register Allocation Contract + CFG Liveness
+
+Status: concluído e validado
+
+Esta milestone estabelece os alicerces necessários para a futura alocação de registradores físicos no backend Linux x86-64 do compilador S3:
+
+- **Registers Contract**: Definição canônica das classes de registradores System V AMD64 (`STACK_POINTER`, `FRAME_POINTER`, `RETURN_REGISTER`, `SYSV_INTEGER_ARGUMENT_REGISTERS`, `SYSV_CALLER_SAVED_REGISTERS`, `SYSV_CALLEE_SAVED_REGISTERS`, `EMITTER_SCRATCH_REGISTERS`, `INITIAL_ALLOCATABLE_REGISTERS`).
+- **CFG Liveness**: Análise de liveness ciente de CFG e backwards dataflow interativo até ponto fixo.
+- **Opcode use/def**: Classificação exaustiva de usos e definições para todos os 14 opcodes de Assembly do S3.
+- **TCALL live-across-call**: Identificação de variáveis que sobrevivem a chamadas de função.
+- **Uninitialized register preservation**: Manutenção estrita da semântica de registradores não inicializados (diagnósticos de validade de inicialização são preservados e independentes de liveness).
+- **Out of scope**: Alocador de registradores nativo, spills/reloads, frame size reduction, prologue saves/restores, benchmarks de alocador. O emitter de produção permanece stack-backed (`NATIVE_ALLOCATION_ENABLED=NO`).
