@@ -1721,7 +1721,7 @@ class SemanticAnalyzer:
                 expression.location,
                 diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_NESTED,
             )
-        if expression.mutable and (binding.parameter or not binding.mutable):
+        if expression.mutable and (not binding.mutable and not binding.parameter):
             raise SemanticError(
                 "mutable reference target is not writable",
                 expression.operand.location,

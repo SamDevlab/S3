@@ -7,6 +7,7 @@ from bootstrap.s3.diagnostics import DiagnosticCode, SemanticError
 from bootstrap.s3.lexer import SyntaxMode
 from bootstrap.s3.parser import parse
 from bootstrap.s3.pipeline import compile_source
+from bootstrap.s3.ir import IROpcode
 from bootstrap.s3.semantic import analyze
 
 
@@ -214,12 +215,12 @@ def test_reference_returns_and_aggregate_storage_are_rejected() -> None:
     assert aggregate.value.diagnostic_code is DiagnosticCode.SEMANTIC_REFERENCE_AGGREGATE
 
 
-def test_valid_reference_program_stops_at_lowering_boundary() -> None:
-    with pytest.raises(SemanticError) as captured:
-        compile_source(
-            "fn main() -> tryte:\n"
-            "    value: tryte = 1\n"
-            "    ref: &tryte = &value\n"
-            "    return *ref\n"
-        )
-    assert captured.value.diagnostic_code is DiagnosticCode.SEMANTIC_REFERENCE_LOWERING_UNSUPPORTED
+def test_valid_reference_program_reaches_reference_ir() -> None:
+    compilation = compile_source(
+        "fn main() -> tryte:\n"
+        "    value: tryte = 1\n"
+        "    ref: &tryte = &value\n"
+        "    return *ref\n"
+    )
+    assert compilation.semantic_model.contains_references is True
+    assert any(item.opcode is IROpcode.REFERENCE_LOAD for item in compilation.ir.functions[0].instructions)

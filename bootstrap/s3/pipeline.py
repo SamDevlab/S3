@@ -147,12 +147,11 @@ def compile_sources(
         mode=context.mode,
     )
     semantic_model = analyze(plan.program)
-    _reject_reference_lowering(semantic_model)
     ir_program = optimize_ir(
         lower(plan.program, semantic_model),
         context.optimization,
     )
-    assembly_program = generate_assembly(ir_program)
+    assembly_program = AssemblyProgram(()) if semantic_model.contains_references else generate_assembly(ir_program)
     return CompilationResult(
         plan.tokens,
         plan.program,
@@ -169,12 +168,11 @@ def _compile_source_with_context(
     tokens = tokenize(source, mode=context.mode)
     syntax_tree = parse_tokens(tokens, mode=context.mode)
     semantic_model = analyze(syntax_tree)
-    _reject_reference_lowering(semantic_model)
     ir_program = optimize_ir(
         lower(syntax_tree, semantic_model),
         context.optimization,
     )
-    assembly_program = generate_assembly(ir_program)
+    assembly_program = AssemblyProgram(()) if semantic_model.contains_references else generate_assembly(ir_program)
     return CompilationResult(
         tokens,
         syntax_tree,
@@ -182,14 +180,6 @@ def _compile_source_with_context(
         ir_program,
         assembly_program,
     )
-
-
-def _reject_reference_lowering(semantic_model: SemanticModel) -> None:
-    if semantic_model.contains_references:
-        raise SemanticError(
-            "reference execution is not implemented in milestone 1.28",
-            diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_LOWERING_UNSUPPORTED,
-        )
 
 
 def run_source_with_buffer_capture(
@@ -202,6 +192,9 @@ def run_source_with_buffer_capture(
     mode: SyntaxMode = SyntaxMode.V0_6,
 ) -> tuple[int, list[dict[int, list[int | None]]]]:
     compilation = compile_source(source, optimization, mode=mode)
+    if compilation.semantic_model.contains_references:
+        from .ir_emulator import execute_ir
+        return execute_ir(compilation.ir, entry, optimization), []
     from .backends.registry import create_builtin_backend_registry
     registry = create_builtin_backend_registry()
     provider = registry.get_hosted_execution("hosted-emulator")
@@ -227,6 +220,9 @@ def run_source(
     mode: SyntaxMode = SyntaxMode.V0_6,
 ) -> int:
     compilation = compile_source(source, optimization, mode=mode)
+    if compilation.semantic_model.contains_references:
+        from .ir_emulator import execute_ir
+        return execute_ir(compilation.ir, entry, optimization)
     return _execute_hosted_assembly(
         compilation.assembly,
         entry,

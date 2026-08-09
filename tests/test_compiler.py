@@ -52,8 +52,11 @@ def test_subtraction_lowers_to_invert_then_add() -> None:
         IROpcode.STORE,
         IROpcode.RETURN,
         IROpcode.JUMP,
-        IROpcode.BRANCH3,
-    }
+            IROpcode.BRANCH3,
+            IROpcode.ADDRESS_OF,
+            IROpcode.REFERENCE_LOAD,
+            IROpcode.REFERENCE_STORE,
+        }
 
 
 def test_assembly_has_no_subtraction_instruction() -> None:
