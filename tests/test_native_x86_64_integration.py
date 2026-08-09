@@ -15,6 +15,8 @@ from bootstrap.s3.backends.x86_64 import (
     NativeToolchain,
     generate_native_assembly,
 )
+
+pytestmark = [pytest.mark.s3_native, pytest.mark.s3_differential]
 from bootstrap.s3.cli import main as cli_main
 from bootstrap.s3.diagnostics import (
     DiagnosticCategory,

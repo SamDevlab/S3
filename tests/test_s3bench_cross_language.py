@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.s3_benchmark
+
 from benchmarks.s3bench import load_manifest
 import benchmarks.s3bench.adapters as adapters
 from benchmarks.s3bench.adapters import ExternalCompilerAdapter, Toolchain, detect_toolchains

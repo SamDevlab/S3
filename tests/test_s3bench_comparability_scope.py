@@ -26,6 +26,9 @@ benchmark methodology rules.
 from __future__ import annotations
 
 import io
+import pytest
+
+pytestmark = pytest.mark.s3_benchmark
 import json
 import random
 from contextlib import redirect_stdout

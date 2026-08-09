@@ -16,6 +16,8 @@ from tests.support.differential import (
     assert_hosted_equivalence,
 )
 
+pytestmark = pytest.mark.s3_differential
+
 
 RECURSIVE_LIMIT_SOURCE = """\
 fn countdown(value: tryte) -> tryte:

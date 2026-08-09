@@ -1,6 +1,7 @@
 import hashlib
 import os
 import unittest
+import pytest
 from tools.s3_renderer_contract import (
     FIXTURE_FRAGMENTS,
     FIXTURE_SYMBOLS,
@@ -13,6 +14,8 @@ from tools.s3_renderer_contract import (
     verify_fixture_metadata,
     audit_duplication,
 )
+
+pytestmark = pytest.mark.s3_contract
 
 
 class TestRendererContract(unittest.TestCase):

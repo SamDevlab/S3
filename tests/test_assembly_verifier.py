@@ -7,6 +7,8 @@ from bootstrap.s3.assembly_verifier import AssemblyVerifier, AssemblyVerifierErr
 from bootstrap.s3.backends.x86_64 import generate_native_assembly
 from bootstrap.s3.emulator import Emulator, EmulatorError
 
+pytestmark = [pytest.mark.s3_fast, pytest.mark.s3_contract]
+
 
 VALID = """\
 .function main -> tryte

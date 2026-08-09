@@ -15,6 +15,8 @@ from bootstrap.s3.backends.x86_64.liveness import (
     instruction_use_def,
 )
 
+pytestmark = [pytest.mark.s3_fast, pytest.mark.s3_contract]
+
 
 def _get_first_func_liveness(source: str):
     program = parse_assembly(source)

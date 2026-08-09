@@ -3,6 +3,8 @@ from bootstrap.s3.lexer import SyntaxMode
 from bootstrap.s3.parser import ParseError, parse
 import pytest
 
+pytestmark = pytest.mark.s3_fast
+
 
 def test_parses_immutable_static_string_binding() -> None:
     program = parse(

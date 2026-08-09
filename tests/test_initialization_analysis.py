@@ -22,6 +22,8 @@ from bootstrap.s3.ir import (
     IRType,
 )
 
+pytestmark = pytest.mark.s3_contract
+
 
 def _linear_memory_module(
     *,

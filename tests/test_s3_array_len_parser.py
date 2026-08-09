@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import pytest
 
+pytestmark = pytest.mark.s3_fast
+
 from bootstrap.s3 import ast
 from bootstrap.s3.diagnostics import ParseError
 from bootstrap.s3.lexer import SyntaxMode

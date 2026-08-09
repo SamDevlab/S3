@@ -12,6 +12,10 @@ from bootstrap.s3.backends.x86_64.registers import (
     FULL_ALLOCATABLE_REGISTERS,
 )
 
+import pytest
+
+pytestmark = [pytest.mark.s3_fast, pytest.mark.s3_contract]
+
 
 def _call_program() -> object:
     return parse_assembly(

@@ -8,6 +8,8 @@ from bootstrap.s3.lexer import SyntaxMode
 from bootstrap.s3.parser import parse
 from bootstrap.s3.semantic import SemanticModel, analyze
 
+pytestmark = pytest.mark.s3_fast
+
 
 def _analyze(source: str) -> SemanticModel:
     return analyze(parse(source, mode=SyntaxMode.V0_6))
