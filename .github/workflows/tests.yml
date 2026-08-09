@@ -103,7 +103,7 @@ jobs:
       - name: Run required native x86-64 tests
         env:
           S3_NATIVE_REQUIRED: "1"
-      run: python -m pytest tests/test_native_x86_64_integration.py tests/test_instruction_limit_e3.py
+        run: python -m pytest tests/test_native_x86_64_integration.py tests/test_instruction_limit_e3.py
 
   differential-generated:
     runs-on: ubuntu-latest
