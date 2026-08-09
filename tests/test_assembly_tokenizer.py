@@ -209,9 +209,54 @@ def _program_for_error_case(case: ExpectedError) -> str:
     )
 
 
-def _execute(source: str, optimization: str) -> int:
+def _execute(source: str, optimization: str, *, max_instructions: int = 100_000) -> int:
     compilation = compile_sources(_s3_sources(source), optimization)
-    return Emulator(max_memory_trits=32_768).execute(compilation.assembly)
+    return Emulator(
+        max_memory_trits=32_768,
+        max_instructions=max_instructions,
+    ).execute(compilation.assembly)
+
+
+def _combined_corpus_program(programs: tuple[str, ...]) -> str:
+    """Run every case in one compiled module while retaining per-case checks."""
+
+    common = (
+        "module main\n"
+        "from bounded_text_types import BoundedText\n"
+        "from bounded_text_types import TextCursor\n"
+        "from selfhost.assembly.tokenizer_types import AssemblyTokenResult\n"
+        "from selfhost.assembly.assembly_tokenizer import next_assembly_token\n"
+        "fn diff(actual: tryte, expected: tryte, code: tryte) -> tryte:\n"
+        "    match actual <=> expected:\n"
+        "        0:\n"
+        "            return 0\n"
+        "        -1:\n"
+        "            return code\n"
+        "        1:\n"
+        "            return code\n"
+        "fn check(value: tryte) -> tryte:\n"
+        "    match value <=> 1:\n"
+        "        0:\n"
+        "            return 0\n"
+        "        -1:\n"
+        "            return -1\n"
+        "        1:\n"
+        "            return -1\n"
+    )
+    functions: list[str] = []
+    calls: list[str] = []
+    for index, program in enumerate(programs):
+        body = program.split("fn main() -> tryte:\n", 1)[1]
+        name = f"case_{index}"
+        functions.append(f"fn {name}() -> tryte:\n{body}")
+        calls.append(f"    status = status + check({name}())\n")
+    main = (
+        "fn main() -> tryte:\n"
+        "    mut status: tryte = 0\n"
+        + "".join(calls)
+        + "    return status\n"
+    )
+    return common + "\n".join(functions) + main
 
 
 def test_python_reference_manual_token_corpus() -> None:
@@ -249,17 +294,19 @@ def test_python_reference_end_of_input_and_repeated_calls() -> None:
 
 
 def test_s3_tokenizer_matches_manual_token_corpus_o0_o1() -> None:
-    for case in TOKEN_CASES:
-        source = _program_for_token_case(case)
-        assert _execute(source, "O0") == 1, case
-        assert _execute(source, "O1") == 1, case
+    programs = tuple(_program_for_token_case(case) for case in TOKEN_CASES)
+    source = _combined_corpus_program(programs)
+    limit = 100_000 * len(programs)
+    assert _execute(source, "O0", max_instructions=limit) == 0
+    assert _execute(source, "O1", max_instructions=limit) == 0
 
 
 def test_s3_tokenizer_matches_manual_error_corpus_o0_o1() -> None:
-    for case in ERROR_CASES:
-        source = _program_for_error_case(case)
-        assert _execute(source, "O0") == 1, case
-        assert _execute(source, "O1") == 1, case
+    programs = tuple(_program_for_error_case(case) for case in ERROR_CASES)
+    source = _combined_corpus_program(programs)
+    limit = 100_000 * len(programs)
+    assert _execute(source, "O0", max_instructions=limit) == 0
+    assert _execute(source, "O1", max_instructions=limit) == 0
 
 
 def test_s3_tokenizer_source_unit_permutations_are_deterministic() -> None:
