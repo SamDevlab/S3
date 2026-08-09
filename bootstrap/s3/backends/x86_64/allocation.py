@@ -56,7 +56,11 @@ def analyze_allocation(function: AssemblyFunction) -> AllocationPlan:
     address_taken = frozenset(
         instruction.registers[1]
         for instruction in function.instructions
-        if instruction.opcode.value == "TADDR" and len(instruction.registers) == 2
+        if (
+            instruction.opcode.value == "TADDR"
+            and instruction.memory is None
+            and len(instruction.registers) == 2
+        )
     )
 
     # 3. Build interference graph

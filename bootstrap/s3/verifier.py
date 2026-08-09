@@ -369,6 +369,8 @@ class IRVerifier:
                 self._error("address_of requires a logical storage operand", instruction.location)
             if instruction.memory is not None:
                 self._require_memory(instruction, memory_objects)
+                if len(instruction.operands) == 1 and register_types[instruction.operands[0]] is not IRType.TRYTE:
+                    self._error("address_of array index must be a tryte", instruction.location)
             if instruction.operands:
                 if register_types[instruction.operands[0]] is IRType.REFERENCE:
                     self._error("address_of cannot target a reference", instruction.location)

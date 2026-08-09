@@ -349,6 +349,10 @@ class AssemblyVerifier:
             if instruction.memory is not None:
                 if instruction.memory not in memory_objects:
                     raise EmulatorError(self._static_context(function, block, instruction, "TADDR references unknown memory"))
+                if len(instruction.registers) not in {1, 2}:
+                    raise EmulatorError(self._static_context(function, block, instruction, "TADDR memory form requires a destination and optional index"))
+                if len(instruction.registers) == 2 and register_type(instruction.registers[1]) is not AssemblyType.TRYTE:
+                    raise EmulatorError(self._static_context(function, block, instruction, "TADDR array index must be a tryte"))
                 source_type = memory_objects[instruction.memory].element_type
             else:
                 if len(instruction.registers) != 2:

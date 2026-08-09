@@ -92,7 +92,14 @@ def _execute_function(functions, function, arguments, caller):
             if not cell.mutable and cell.initialized and not instruction.initialization: raise IRExecutionError("immutable memory write")
             _store_value(cell, _read(frame, instruction.operands[1]), _memory_type(function, instruction.memory))
         elif op is IROpcode.ADDRESS_OF:
-            cell = memory[instruction.memory][0] if instruction.memory is not None else frame.registers[instruction.operands[0]]
+            if instruction.memory is not None:
+                index = _read(frame, instruction.operands[0]) if instruction.operands else 0
+                cells = memory[instruction.memory]
+                if not isinstance(index, int) or not 0 <= index < len(cells):
+                    raise IRExecutionError("array reference index is out of bounds")
+                cell = cells[index]
+            else:
+                cell = frame.registers[instruction.operands[0]]
             _write(frame, instruction.result, ReferenceValue(cell, 0, instruction.reference_mutable))
         elif op is IROpcode.REFERENCE_LOAD:
             ref = _read(frame, instruction.operands[0])
