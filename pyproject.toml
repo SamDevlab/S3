@@ -24,3 +24,11 @@ include = ["bootstrap*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+markers = [
+    "s3_fast: deterministic first-response correctness capability",
+    "s3_contract: explicit compiler, IR, optimizer, ABI, frame, renderer, or backend contract",
+    "s3_differential: semantic comparison across execution or compilation modes",
+    "s3_native: requires native compilation, assembly, linking, or native execution",
+    "s3_slow: deliberately expensive or stress-oriented correctness test",
+    "s3_benchmark: s3bench infrastructure and schema correctness test",
+]

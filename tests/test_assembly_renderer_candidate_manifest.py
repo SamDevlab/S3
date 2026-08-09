@@ -7,6 +7,10 @@ from pathlib import Path
 
 from tools.s3_program_check import find_program
 
+import pytest
+
+pytestmark = pytest.mark.s3_contract
+
 
 MANIFEST_PATH = Path("tests/golden/assembly_renderer_candidate_manifest.json")
 SUBSET_MANIFEST_PATH = Path("tests/golden/assembly_renderer_subset_manifest.json")

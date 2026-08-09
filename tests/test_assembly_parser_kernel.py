@@ -11,6 +11,10 @@ from bootstrap.s3.assembly_parser_kernel import (
 from bootstrap.s3.assembly_tokenizer import AssemblyTokenKind, next_assembly_token
 from bootstrap.s3.bounded_text import BoundedText, TextCursor, encode_ascii
 
+import pytest
+
+pytestmark = pytest.mark.s3_fast
+
 
 FINAL_VALIDATION_STATUS = "EXECUTED DURING CONSOLIDATED CAMPAIGN VALIDATION"
 

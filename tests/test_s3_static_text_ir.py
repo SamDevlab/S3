@@ -14,6 +14,8 @@ from bootstrap.s3.ir import (
     IRStaticString,
     IRType,
 )
+
+pytestmark = pytest.mark.s3_fast
 from bootstrap.s3.ir_serialization import IRSerializationError, deserialize_ir, serialize_ir
 from bootstrap.s3.optimizer import optimize_ir
 from bootstrap.s3.verifier import IRVerificationError, verify_ir

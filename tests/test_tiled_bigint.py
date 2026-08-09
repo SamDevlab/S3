@@ -384,3 +384,6 @@ def test_seed_reproducible():
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+import pytest
+
+pytestmark = pytest.mark.s3_slow

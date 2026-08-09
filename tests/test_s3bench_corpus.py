@@ -10,6 +10,10 @@ from bootstrap.s3.pipeline import run_source
 from benchmarks.s3bench import load_manifest
 from benchmarks.s3bench.cli import _load_historical_baseline
 
+import pytest
+
+pytestmark = pytest.mark.s3_benchmark
+
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "benchmarks" / "manifests" / "s3bench-1.0.0.json"
 

@@ -6,6 +6,8 @@ from bootstrap.s3.metrics import FixpointTelemetry
 from bootstrap.s3.ssa_opt import SSA_PASS_CONTRACTS, _FIXPOINT_PASSES
 from bootstrap.s3.ssa_optimizer import PassResult, SSAPassContract
 
+pytestmark = [pytest.mark.s3_fast, pytest.mark.s3_contract]
+
 
 def test_ssa_pass_contract_inventory_matches_active_fixpoint_passes() -> None:
     names = tuple(contract.name for contract in SSA_PASS_CONTRACTS)

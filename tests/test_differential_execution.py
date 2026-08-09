@@ -17,6 +17,8 @@ from tests.support.differential_execution import (
     run_four_paths,
 )
 
+pytestmark = pytest.mark.s3_differential
+
 
 def test_same_seed_is_reproducible_and_different_seeds_diverse() -> None:
     assert generate_programs(7, 5) == generate_programs(7, 5)

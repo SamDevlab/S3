@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.s3_benchmark
+
 import benchmarks.s3bench.repeatability as repeatability
 from benchmarks.s3bench.repeatability import (
     RepeatabilityError,

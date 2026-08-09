@@ -15,6 +15,8 @@ from bootstrap.s3.ir import (
 )
 from bootstrap.s3.verifier import IRVerificationError, verify_ir
 
+pytestmark = [pytest.mark.s3_fast, pytest.mark.s3_contract]
+
 
 def function(
     *,

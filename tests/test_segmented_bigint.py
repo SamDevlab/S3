@@ -82,3 +82,6 @@ def test_binary_limb_mersenne_reduce_exact():
     b = BinaryLimbBigInt.from_int(mod)
     b_red = b.mersenne_reduce(p)
     assert b_red.to_int() == 0
+import pytest
+
+pytestmark = pytest.mark.s3_slow

@@ -1,5 +1,7 @@
 import pytest
 import json
+
+pytestmark = pytest.mark.s3_fast
 from bootstrap.s3.lexer import tokenize, SyntaxMode, TokenKind
 from bootstrap.s3.diagnostics import DiagnosticCode, IndentationError
 

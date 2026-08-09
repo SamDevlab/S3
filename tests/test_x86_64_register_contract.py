@@ -14,6 +14,10 @@ from bootstrap.s3.backends.x86_64.registers import (
     SYSV_INTEGER_ARGUMENT_REGISTERS,
 )
 
+import pytest
+
+pytestmark = [pytest.mark.s3_fast, pytest.mark.s3_contract]
+
 
 def test_argument_registers() -> None:
     assert SYSV_INTEGER_ARGUMENT_REGISTERS == ("rdi", "rsi", "rdx", "rcx", "r8", "r9")

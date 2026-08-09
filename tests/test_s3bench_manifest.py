@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.s3_benchmark
+
 from benchmarks.s3bench import ManifestError, load_manifest
 
 
