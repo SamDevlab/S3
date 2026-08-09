@@ -76,6 +76,17 @@ class FunctionLowerer:
 
     def lower(self) -> IRFunction:
         for parameter in self.function.parameters:
+            if isinstance(parameter.type_name, ast.ReferenceType):
+                target = self._storage_type(parameter.type_name.target, parameter.location)
+                register = self._allocate_reference(parameter.type_name, parameter.location)
+                self.parameters.append(IRParameter(
+                    parameter.name, register, IRType.REFERENCE, parameter.location,
+                    TYPE_MAP[target], parameter.type_name.mutable,
+                ))
+                self.variable_scopes[0][parameter.name] = _LoweredBinding(
+                    parameter.type_name, parameter.type_name.mutable, register=register
+                )
+                continue
             if isinstance(parameter.type_name, ast.ArrayType):
                 assert isinstance(parameter.type_name.element_type, ast.TypeName)
                 registers: list[int] = []
@@ -323,6 +334,16 @@ class FunctionLowerer:
     ) -> int:
         index = len(self.registers)
         self.registers.append(IRRegister(index, TYPE_MAP[type_name], location))
+        return index
+
+    def _allocate_reference(
+        self, type_name: ast.ReferenceType, location: SourceLocation | None
+    ) -> int:
+        index = len(self.registers)
+        target = self._storage_type(type_name.target, location)
+        self.registers.append(IRRegister(
+            index, IRType.REFERENCE, location, TYPE_MAP[target], type_name.mutable
+        ))
         return index
 
     def _allocate_memory(
@@ -1102,6 +1123,40 @@ class FunctionLowerer:
         return (self._lower_expression(expression),)
 
     def _lower_declaration(self, declaration: ast.VariableDeclaration) -> None:
+        if isinstance(declaration.type_name, ast.ReferenceType):
+            register = self._allocate_reference(declaration.type_name, declaration.location)
+            initializer = declaration.initializer
+            if isinstance(initializer, ast.Identifier):
+                binding = self._lookup_variable(initializer.name, initializer.location)
+                if isinstance(binding.type_name, ast.ReferenceType):
+                    self._emit(IRInstruction(IROpcode.MOVE, result=register, operands=(binding.register,), location=declaration.location))
+                    self.variable_scopes[-1][declaration.name] = _LoweredBinding(
+                        declaration.type_name, declaration.mutable, register=register
+                    )
+                    return
+                if binding.register is not None:
+                    instruction = IRInstruction(
+                        IROpcode.ADDRESS_OF, result=register,
+                        operands=(binding.register,),
+                        reference_target=TYPE_MAP[self._storage_type(declaration.type_name.target, declaration.location)],
+                        reference_mutable=declaration.type_name.mutable,
+                        location=declaration.location,
+                    )
+                else:
+                    instruction = IRInstruction(
+                        IROpcode.ADDRESS_OF, result=register, memory=binding.memory,
+                        reference_target=TYPE_MAP[self._storage_type(declaration.type_name.target, declaration.location)],
+                        reference_mutable=declaration.type_name.mutable,
+                        location=declaration.location,
+                    )
+                self._emit(instruction)
+            else:
+                source = self._lower_expression(initializer)
+                self._emit(IRInstruction(IROpcode.MOVE, result=register, operands=(source,), location=declaration.location))
+            self.variable_scopes[-1][declaration.name] = _LoweredBinding(
+                declaration.type_name, declaration.mutable, register=register
+            )
+            return
         if isinstance(declaration.type_name, ast.ArrayType):
             assert isinstance(declaration.type_name.element_type, ast.TypeName)
             memory = self._allocate_memory(
@@ -1224,6 +1279,17 @@ class FunctionLowerer:
         )
 
     def _lower_assignment(self, statement: ast.AssignmentStatement) -> None:
+        if isinstance(statement.target, ast.DereferenceTarget):
+            reference = self._lower_expression(statement.target.reference)
+            value = self._lower_expression(statement.value)
+            reference_type = self.semantic_model.declared_type_of(statement.target.reference)
+            self._emit(IRInstruction(
+                IROpcode.REFERENCE_STORE, operands=(reference, value),
+                reference_target=TYPE_MAP[self._storage_type(reference_type.target, statement.location)],
+                reference_mutable=reference_type.mutable,
+                location=statement.location,
+            ))
+            return
         if isinstance(statement.target, ast.VariableTarget):
             binding = self._lookup_variable(
                 statement.target.name,
@@ -1946,6 +2012,24 @@ class FunctionLowerer:
         if simplified is not None:
             return self._lower_expression(simplified)
         declared_type = self.semantic_model.declared_type_of(expression)
+        if isinstance(declared_type, ast.ReferenceType):
+            if isinstance(expression, ast.Identifier):
+                return self._lookup_variable(expression.name, expression.location).register  # type: ignore[return-value]
+            if isinstance(expression, ast.AddressOfExpression):
+                target = expression.operand
+                if not isinstance(target, ast.Identifier):
+                    raise LoweringError("unsupported address-of target", expression.location)
+                binding = self._lookup_variable(target.name, target.location)
+                result = self._allocate_reference(declared_type, expression.location)
+                self._emit(IRInstruction(
+                    IROpcode.ADDRESS_OF, result=result,
+                    operands=() if binding.register is None else (binding.register,),
+                    memory=binding.memory,
+                    reference_target=TYPE_MAP[self._storage_type(declared_type.target, expression.location)],
+                    reference_mutable=declared_type.mutable,
+                    location=expression.location,
+                ))
+                return result
         expression_type = self._storage_type(declared_type, expression.location)
         if expression_type in (ast.TypeName.TRIT, ast.TypeName.TRYTE):
             constant = self.semantic_model.constant_value_of(expression)
@@ -2026,6 +2110,15 @@ class FunctionLowerer:
                     location=expression.location,
                 )
             )
+            return result
+        if isinstance(expression, ast.DereferenceExpression):
+            reference = self._lower_expression(expression.operand)
+            result = self._allocate(self._storage_type(declared_type, expression.location), expression.location)
+            self._emit(IRInstruction(
+                IROpcode.REFERENCE_LOAD, result=result, operands=(reference,),
+                reference_target=TYPE_MAP[self._storage_type(declared_type, expression.location)],
+                location=expression.location,
+            ))
             return result
         if isinstance(expression, ast.IndexExpression):
             if expression_type is ast.TypeName.STRING:

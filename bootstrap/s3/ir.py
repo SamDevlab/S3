@@ -13,6 +13,7 @@ class IRType(Enum):
     TRIT = "trit"
     TRYTE = "tryte"
     STRING = "string"
+    REFERENCE = "reference"
 
 
 class IROpcode(Enum):
@@ -27,6 +28,9 @@ class IROpcode(Enum):
     CALL = "call"
     LOAD = "load"
     STORE = "store"
+    ADDRESS_OF = "address_of"
+    REFERENCE_LOAD = "reference_load"
+    REFERENCE_STORE = "reference_store"
     RETURN = "return"
     JUMP = "jump"
     BRANCH3 = "branch3"
@@ -71,6 +75,8 @@ class IRRegister:
     index: int
     type: IRType
     location: SourceLocation | None = None
+    reference_target: IRType | None = None
+    reference_mutable: bool = False
 
     @property
     def name(self) -> str:
@@ -82,6 +88,9 @@ class IRRegister:
             "index": self.index,
             "type": self.type.value,
         }
+        if self.reference_target is not None:
+            result["reference_target"] = self.reference_target.value
+            result["reference_mutable"] = self.reference_mutable
         if self.location is not None:
             result["source"] = self.location.to_dict()
         return result
@@ -93,6 +102,8 @@ class IRParameter:
     register: int
     type: IRType
     location: SourceLocation | None = None
+    reference_target: IRType | None = None
+    reference_mutable: bool = False
 
     def to_dict(self) -> dict[str, object]:
         result: dict[str, object] = {
@@ -100,6 +111,9 @@ class IRParameter:
             "register": f"r{self.register}",
             "type": self.type.value,
         }
+        if self.reference_target is not None:
+            result["reference_target"] = self.reference_target.value
+            result["reference_mutable"] = self.reference_mutable
         if self.location is not None:
             result["source"] = self.location.to_dict()
         return result
@@ -143,6 +157,8 @@ class IRInstruction:
     initialization: bool = False
     location: SourceLocation | None = None
     results: tuple[int, ...] = ()
+    reference_target: IRType | None = None
+    reference_mutable: bool = False
 
     def __post_init__(self) -> None:
         if self.results and self.result is not None and self.results != (self.result,):
@@ -181,6 +197,9 @@ class IRInstruction:
             result["initialization"] = True
         if self.location is not None:
             result["source"] = self.location.to_dict()
+        if self.reference_target is not None:
+            result["reference_target"] = self.reference_target.value
+            result["reference_mutable"] = self.reference_mutable
         return result
 
 

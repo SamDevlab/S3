@@ -52,8 +52,11 @@ def test_folded_static_text_ir_contains_only_final_const_str() -> None:
         IROpcode.STORE,
         IROpcode.RETURN,
         IROpcode.JUMP,
-        IROpcode.BRANCH3,
-    }
+            IROpcode.BRANCH3,
+            IROpcode.ADDRESS_OF,
+            IROpcode.REFERENCE_LOAD,
+            IROpcode.REFERENCE_STORE,
+        }
 
 
 def test_folded_static_text_ir_metadata_is_final_utf8_content() -> None:

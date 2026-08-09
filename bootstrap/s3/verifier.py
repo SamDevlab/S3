@@ -177,6 +177,11 @@ class IRVerifier:
                     f"function '{function.name}' result cell {index} has invalid type",
                     function.location,
                 )
+            if result_type is IRType.REFERENCE:
+                self._error(
+                    "reference return values are not supported",
+                    function.location,
+                )
 
     def _collect_memory(
         self,
@@ -192,6 +197,11 @@ class IRVerifier:
             if not isinstance(memory.element_type, IRType):
                 self._error(
                     f"memory object m{memory.index} has invalid element type",
+                    memory.location,
+                )
+            if memory.element_type is IRType.REFERENCE:
+                self._error(
+                    "memory objects cannot contain references",
                     memory.location,
                 )
             if memory.length <= 0:
@@ -349,11 +359,56 @@ class IRVerifier:
                     )
             return tuple(types)
 
+        if opcode is IROpcode.ADDRESS_OF:
+            result, result_type = require_result()
+            if result_type is not IRType.REFERENCE:
+                self._error("address_of result must be a reference", instruction.location)
+            if instruction.reference_target not in {IRType.TRIT, IRType.TRYTE, IRType.STRING}:
+                self._error("address_of requires a scalar reference target", instruction.location)
+            if len(instruction.operands) not in {0, 1} or instruction.memory is None and not instruction.operands:
+                self._error("address_of requires a logical storage operand", instruction.location)
+            if instruction.memory is not None:
+                self._require_memory(instruction, memory_objects)
+            if instruction.operands:
+                if register_types[instruction.operands[0]] is IRType.REFERENCE:
+                    self._error("address_of cannot target a reference", instruction.location)
+            return
+
+        if opcode is IROpcode.REFERENCE_LOAD:
+            _, result_type = require_result()
+            operand_types = require_operands(1)
+            if operand_types[0] is not IRType.REFERENCE:
+                self._error("reference_load requires a reference operand", instruction.location)
+            if instruction.reference_target is not None and result_type is not instruction.reference_target:
+                self._error("reference_load result does not match target type", instruction.location)
+            return
+
+        if opcode is IROpcode.REFERENCE_STORE:
+            require_no_result()
+            operand_types = require_operands(2)
+            if operand_types[0] is not IRType.REFERENCE:
+                self._error("reference_store requires a reference operand", instruction.location)
+            reference_register = next(
+                register for register in function.registers
+                if register.index == instruction.operands[0]
+            )
+            if not reference_register.reference_mutable or instruction.reference_mutable is False:
+                self._error("reference_store requires a mutable reference", instruction.location)
+            if instruction.reference_target is not None and reference_register.reference_target is not instruction.reference_target:
+                self._error("reference_store target type does not match reference", instruction.location)
+            if len(instruction.operands) == 2 and instruction.operands[1] in register_types:
+                value_type = register_types[instruction.operands[1]]
+                if instruction.reference_target is not None and value_type is not instruction.reference_target:
+                    self._error("reference_store value does not match target type", instruction.location)
+            return
+
         if opcode is IROpcode.CONST:
             _, result_type = require_result()
             require_operands(0)
             if result_type is IRType.STRING:
                 self._error("const cannot produce string values", instruction.location)
+            if result_type is IRType.REFERENCE:
+                self._error("const cannot produce reference values", instruction.location)
             if instruction.immediate is None:
                 self._error("const requires an immediate", instruction.location)
             if instruction.static_string is not None:
@@ -402,6 +457,8 @@ class IRVerifier:
             )
             if result_type is IRType.STRING:
                 self._error("invert does not support string values", instruction.location)
+            if result_type is IRType.REFERENCE:
+                self._error("invert does not support reference values", instruction.location)
             return
 
         if opcode in {IROpcode.ADD, IROpcode.MINIMUM, IROpcode.MAXIMUM}:
@@ -417,6 +474,8 @@ class IRVerifier:
                     f"{opcode.value} does not support string values",
                     instruction.location,
                 )
+            if result_type is IRType.REFERENCE:
+                self._error(f"{opcode.value} does not support reference values", instruction.location)
             return
 
         if opcode is IROpcode.COMPARE:
@@ -431,6 +490,8 @@ class IRVerifier:
             )
             if operand_types and operand_types[0] is IRType.STRING:
                 self._error("compare does not support string values", instruction.location)
+            if operand_types and operand_types[0] is IRType.REFERENCE:
+                self._error("compare does not support reference values", instruction.location)
             return
 
         if opcode is IROpcode.CALL:

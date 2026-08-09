@@ -263,6 +263,16 @@ def _eliminate_dead_pure_instructions(function: IRFunction) -> IRFunction:
 
 
 def _run_ssa_optimizations(function: IRFunction) -> IRFunction:
+    if any(
+        instruction.opcode in {
+            IROpcode.ADDRESS_OF,
+            IROpcode.REFERENCE_LOAD,
+            IROpcode.REFERENCE_STORE,
+        }
+        for block in function.blocks
+        for instruction in block.instructions
+    ) or any(register.type is IRType.REFERENCE for register in function.registers):
+        return function
     from .ssa import SSABuilder
     from .ssa_opt import run_fixpoint_pipeline
 
