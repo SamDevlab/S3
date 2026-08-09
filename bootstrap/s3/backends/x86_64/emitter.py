@@ -420,6 +420,56 @@ class X8664Emitter:
                 f"    lea rax, [rip + {mangle_static_string(instruction.static_string)}]",
                 *self._write_register(layout, registers[0], "rax"),
             ]
+        if opcode is AssemblyOpcode.TADDR:
+            destination = registers[0]
+            if instruction.memory is not None:
+                address = _address(layout.memory(instruction.memory).data)
+                source_check = []
+            else:
+                source = registers[1]
+                source_check = self._read_register(layout, source, "r11")
+                address = _address(layout.register(source).value)
+            return instrumentation + [
+                *source_check,
+                f"    lea r10, {address}",
+                *self._write_register(layout, destination, "r10"),
+            ]
+        if opcode is AssemblyOpcode.TREFLOAD:
+            destination, reference = registers
+            type_name = instruction.reference_target
+            if self.current_function.reference_storage_size(reference) == 8:
+                load = "mov r11, qword ptr [r10]"
+            elif type_name is AssemblyType.TRIT:
+                load = "movsx r11, byte ptr [r10]"
+            elif type_name is AssemblyType.TRYTE:
+                load = "movsx r11, word ptr [r10]"
+            else:
+                load = "mov r11, qword ptr [r10]"
+            return instrumentation + [
+                *self._read_register(layout, reference, "r10"),
+                f"    {load}",
+                *self._write_register(layout, destination, "r11"),
+            ]
+        if opcode is AssemblyOpcode.TREFSTORE:
+            reference, source = registers
+            type_name = instruction.reference_target
+            lines = instrumentation + [
+                *self._read_register(layout, reference, "r10"),
+                *self._read_register(layout, source, "r11"),
+            ]
+            if type_name is not AssemblyType.STRING:
+                overflow = self._overflow_failure(type_name, "r11")
+                lines.extend(self._range_check(type_name, "r11", overflow))
+            storage_size = self.current_function.reference_storage_size(reference)
+            if storage_size == 8:
+                lines.append("    mov qword ptr [r10], r11")
+            elif type_name is AssemblyType.TRIT:
+                lines.append("    mov byte ptr [r10], r11b")
+            elif type_name is AssemblyType.TRYTE:
+                lines.append("    mov word ptr [r10], r11w")
+            else:
+                lines.append("    mov qword ptr [r10], r11")
+            return lines
         if opcode is AssemblyOpcode.TMOV:
             return instrumentation + [
                 *self._read_register(layout, registers[1], "rax"),

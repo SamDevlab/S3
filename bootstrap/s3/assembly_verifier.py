@@ -342,6 +342,37 @@ class AssemblyVerifier:
                 )
         elif opcode is AssemblyOpcode.TMOV:
             same_type(instruction.registers)
+        elif opcode is AssemblyOpcode.TADDR:
+            destination = instruction.registers[0]
+            if register_type(destination) is not AssemblyType.REFERENCE:
+                raise EmulatorError(self._static_context(function, block, instruction, "TADDR destination must be a reference"))
+            if instruction.memory is not None:
+                if instruction.memory not in memory_objects:
+                    raise EmulatorError(self._static_context(function, block, instruction, "TADDR references unknown memory"))
+                source_type = memory_objects[instruction.memory].element_type
+            else:
+                if len(instruction.registers) != 2:
+                    raise EmulatorError(self._static_context(function, block, instruction, "TADDR requires a direct register source"))
+                source_type = register_type(instruction.registers[1])
+                if source_type is AssemblyType.REFERENCE:
+                    raise EmulatorError(self._static_context(function, block, instruction, "TADDR source must be a direct value storage"))
+            if instruction.reference_target is not source_type:
+                raise EmulatorError(self._static_context(function, block, instruction, "TADDR target type mismatch"))
+        elif opcode is AssemblyOpcode.TREFLOAD:
+            destination, reference = instruction.registers
+            if register_type(reference) is not AssemblyType.REFERENCE:
+                raise EmulatorError(self._static_context(function, block, instruction, "TREFLOAD source must be a reference"))
+            if instruction.reference_target is None or register_type(destination) is not instruction.reference_target:
+                raise EmulatorError(self._static_context(function, block, instruction, "TREFLOAD target type mismatch"))
+        elif opcode is AssemblyOpcode.TREFSTORE:
+            reference, source = instruction.registers
+            if register_type(reference) is not AssemblyType.REFERENCE:
+                raise EmulatorError(self._static_context(function, block, instruction, "TREFSTORE destination must be a reference"))
+            info = function.reference_info(reference)
+            if info is None or not info[1] or not instruction.reference_mutable:
+                raise EmulatorError(self._static_context(function, block, instruction, "TREFSTORE requires a mutable reference"))
+            if instruction.reference_target is None or register_type(source) is not instruction.reference_target:
+                raise EmulatorError(self._static_context(function, block, instruction, "TREFSTORE source type mismatch"))
         elif opcode is AssemblyOpcode.TINV:
             type_name = same_type(instruction.registers)
             if type_name is AssemblyType.STRING:
@@ -353,6 +384,8 @@ class AssemblyVerifier:
                         "TINV does not support string values",
                     )
                 )
+            if type_name is AssemblyType.REFERENCE:
+                raise EmulatorError(self._static_context(function, block, instruction, "TINV does not support references"))
         elif opcode in {
             AssemblyOpcode.TADD,
             AssemblyOpcode.TMIN,
@@ -368,6 +401,8 @@ class AssemblyVerifier:
                         f"{opcode.value} does not support string values",
                     )
                 )
+            if type_name is AssemblyType.REFERENCE:
+                raise EmulatorError(self._static_context(function, block, instruction, f"{opcode.value} does not support references"))
         elif opcode is AssemblyOpcode.TCMP:
             destination, *sources = instruction.registers
             if register_type(destination) is not AssemblyType.TRIT:
@@ -389,6 +424,8 @@ class AssemblyVerifier:
                         "TCMP does not support string values",
                     )
                 )
+            if source_type is AssemblyType.REFERENCE:
+                raise EmulatorError(self._static_context(function, block, instruction, "TCMP does not support references"))
         elif opcode is AssemblyOpcode.TLOAD:
             destination, index = instruction.registers
             if instruction.memory not in memory_objects:

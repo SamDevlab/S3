@@ -16,6 +16,7 @@ from .registers import (
 class AllocationPlan:
     allocations: dict[int, str | None]  # virtual register ID -> physical register name (or None)
     call_survivors: dict[int, frozenset[int]]
+    address_taken: frozenset[int] = frozenset()
 
     def physical_register(self, register: int) -> str | None:
         return self.allocations.get(register)
@@ -49,6 +50,14 @@ def analyze_allocation(function: AssemblyFunction) -> AllocationPlan:
     for block in function.blocks:
         for inst in block.instructions:
             all_vregs.update(inst.registers)
+
+    # Address-taken referents are canonical stack values for the whole
+    # function.  The reference scalar itself remains allocatable.
+    address_taken = frozenset(
+        instruction.registers[1]
+        for instruction in function.instructions
+        if instruction.opcode.value == "TADDR" and len(instruction.registers) == 2
+    )
 
     # 3. Build interference graph
     # Node: virtual register ID (int)
@@ -97,6 +106,9 @@ def analyze_allocation(function: AssemblyFunction) -> AllocationPlan:
     colors: dict[int, str | None] = {}
 
     for node in sorted_nodes:
+        if node in address_taken:
+            colors[node] = None
+            continue
         # Get physical registers used by neighbors
         neighbor_colors = {
             colors[nb] for nb in interferences[node]
@@ -118,4 +130,8 @@ def analyze_allocation(function: AssemblyFunction) -> AllocationPlan:
         colors[node] = chosen_phys
 
     assert set(color for color in colors.values() if color) <= set(FULL_ALLOCATABLE_REGISTERS)
-    return AllocationPlan(allocations=colors, call_survivors=call_survivors)
+    return AllocationPlan(
+        allocations=colors,
+        call_survivors=call_survivors,
+        address_taken=address_taken,
+    )

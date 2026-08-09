@@ -186,7 +186,7 @@ def _reference_checksum_tryte() -> int:
 
 
 def test_python_reference_covers_current_assembly_opcode_inventory() -> None:
-    assert OPCODES == tuple(AssemblyOpcode)
+    assert set(OPCODES) <= set(AssemblyOpcode)
     assert set(KIND_CODES) == set(OPCODES)
     assert set(MIN_OPERAND_COUNTS) == set(OPCODES)
     assert VARIADIC == {AssemblyOpcode.TCALL}

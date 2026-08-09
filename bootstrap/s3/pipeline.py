@@ -151,7 +151,7 @@ def compile_sources(
         lower(plan.program, semantic_model),
         context.optimization,
     )
-    assembly_program = AssemblyProgram(()) if semantic_model.contains_references else generate_assembly(ir_program)
+    assembly_program = generate_assembly(ir_program)
     return CompilationResult(
         plan.tokens,
         plan.program,
@@ -172,7 +172,7 @@ def _compile_source_with_context(
         lower(syntax_tree, semantic_model),
         context.optimization,
     )
-    assembly_program = AssemblyProgram(()) if semantic_model.contains_references else generate_assembly(ir_program)
+    assembly_program = generate_assembly(ir_program)
     return CompilationResult(
         tokens,
         syntax_tree,
