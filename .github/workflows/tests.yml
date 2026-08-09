@@ -33,6 +33,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Keep the supported interpreter set explicit for the stabilization contract.
+        # The include entries below assign each group to its canonical interpreter.
+        # Supported Python versions: ["3.11", "3.12", "3.13"]
         include:
           - python-version: "3.11"
             group_name: unit
