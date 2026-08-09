@@ -117,6 +117,16 @@ def test_native_backend_emits_every_current_opcode() -> None:
     )
     programs.append(
         compile_source(
+            "fn main() -> tryte:\n"
+            "    mut value: tryte = 1\n"
+            "    ref: &mut tryte = &mut value\n"
+            "    *ref = 7\n"
+            "    return *ref\n",
+            mode=SyntaxMode.V0_6,
+        ).assembly
+    )
+    programs.append(
+        compile_source(
             """\
 fn pick(left: tryte, right: tryte) -> tryte {
     return (left & right) | right;

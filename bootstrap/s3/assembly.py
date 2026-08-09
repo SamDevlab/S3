@@ -58,6 +58,7 @@ class AssemblyType(Enum):
     TRIT = "trit"
     TRYTE = "tryte"
     STRING = "string"
+    REFERENCE = "reference"
 
 
 class AssemblyOpcode(Enum):
@@ -75,6 +76,9 @@ class AssemblyOpcode(Enum):
     TRET = "TRET"
     TJMP = "TJMP"
     TBR3 = "TBR3"
+    TADDR = "TADDR"
+    TREFLOAD = "TREFLOAD"
+    TREFSTORE = "TREFSTORE"
 
 
 TERMINATOR_OPCODES = {
@@ -97,6 +101,8 @@ class AssemblyStaticString:
 class AssemblyParameter:
     register: int
     type: AssemblyType
+    reference_target: AssemblyType | None = None
+    reference_mutable: bool = False
 
     def render(self) -> str:
         return f"    .param r{self.register}, {self.type.value}"
@@ -133,6 +139,8 @@ class AssemblyInstruction:
     source: SourceLocation | None = None
     line: int | None = field(default=None, compare=False)
     result_width: int = 1
+    reference_target: AssemblyType | None = None
+    reference_mutable: bool = False
 
     def __post_init__(self) -> None:
         if self.result_width < 0:
@@ -186,6 +194,14 @@ class AssemblyInstruction:
             )
         elif self.opcode is AssemblyOpcode.TRET:
             operands = _render_register_group(self.registers)
+        elif self.opcode is AssemblyOpcode.TADDR:
+            operands = (
+                f"r{self.registers[0]}, m{self.memory}"
+                if self.memory is not None
+                else ", ".join(f"r{register}" for register in self.registers)
+            )
+        elif self.opcode in {AssemblyOpcode.TREFLOAD, AssemblyOpcode.TREFSTORE}:
+            operands = ", ".join(f"r{register}" for register in self.registers)
         else:
             operands = ", ".join(f"r{register}" for register in self.registers)
         rendered = f"    {self.opcode.value:<6} {operands}"
@@ -217,6 +233,8 @@ class AssemblyFunction:
     blocks: tuple[AssemblyBlock, ...]
     memory_objects: tuple[AssemblyMemoryObject, ...] = ()
     result_types: tuple[AssemblyType, ...] = ()
+    reference_targets: tuple[tuple[int, AssemblyType, bool], ...] = ()
+    reference_storage_sizes: tuple[tuple[int, int], ...] = ()
 
     def __post_init__(self) -> None:
         if not self.result_types:
@@ -248,6 +266,23 @@ class AssemblyFunction:
     def type_of(self, register: int) -> AssemblyType | None:
         return self.all_register_types.get(register)
 
+    def reference_info(self, register: int) -> tuple[AssemblyType, bool] | None:
+        for index, target, mutable in self.reference_targets:
+            if index == register:
+                return target, mutable
+        for parameter in self.parameters:
+            if parameter.register == register and parameter.type is AssemblyType.REFERENCE:
+                if parameter.reference_target is None:
+                    return None
+                return parameter.reference_target, parameter.reference_mutable
+        return None
+
+    def reference_storage_size(self, register: int) -> int:
+        for index, size in self.reference_storage_sizes:
+            if index == register:
+                return size
+        return 8
+
     def render(self) -> str:
         lines = [f".function {self.name} -> {_render_type_group(self.result_types)}"]
         lines.extend(parameter.render() for parameter in self.parameters)
@@ -274,7 +309,7 @@ class AssemblyProgram:
 
 
 _IDENTIFIER = r"[A-Za-z_][A-Za-z0-9_]*"
-_TYPE = r"trit|tryte|string"
+_TYPE = r"trit|tryte|string|reference"
 _STATIC_STRING_ID = r"s[0-9]+"
 _FUNCTION_PATTERN = re.compile(rf"^\.function\s+({_IDENTIFIER})\s*->\s*(.+)$")
 _DECLARATION_PATTERN = re.compile(
@@ -470,6 +505,9 @@ def _parse_instruction(
         AssemblyOpcode.TSTORE: 3,
         AssemblyOpcode.TJMP: 1,
         AssemblyOpcode.TBR3: 4,
+        AssemblyOpcode.TADDR: 2,
+        AssemblyOpcode.TREFLOAD: 2,
+        AssemblyOpcode.TREFSTORE: 2,
     }
     if opcode is AssemblyOpcode.TRET:
         if len(operands) != 1:

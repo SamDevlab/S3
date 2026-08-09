@@ -119,6 +119,9 @@ SUPPORTED_PROGRAM_OPCODES = frozenset(
         AssemblyOpcode.TRET,
         AssemblyOpcode.TJMP,
         AssemblyOpcode.TBR3,
+        AssemblyOpcode.TADDR,
+        AssemblyOpcode.TREFLOAD,
+        AssemblyOpcode.TREFSTORE,
     }
 )
 
@@ -722,6 +725,23 @@ def _emit_supported_instruction(
             _memory(memory),
             _register(index),
             _register(source_register),
+            source=source,
+        )
+        return
+
+    if opcode in {AssemblyOpcode.TADDR, AssemblyOpcode.TREFLOAD, AssemblyOpcode.TREFSTORE}:
+        _require_no_extra_operands(
+            instruction,
+            opcode.value,
+            "supported adapter",
+            allow_memory=opcode is AssemblyOpcode.TADDR,
+        )
+        operands = tuple(_register(register) for register in instruction.registers)
+        if opcode is AssemblyOpcode.TADDR and instruction.memory is not None:
+            operands = (*operands, _memory(instruction.memory))
+        renderer.emit_instruction(
+            opcode.value,
+            *operands,
             source=source,
         )
         return
