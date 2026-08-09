@@ -208,6 +208,10 @@ class Parser:
 
     def _parse_type(self) -> ast.DeclaredType:
         start = self._peek()
+        if self._match(TokenKind.AMPERSAND):
+            mutable = self._match(TokenKind.MUT)
+            target = self._parse_type()
+            return ast.ReferenceType(target, mutable, start.location)
         if self._match(TokenKind.TRIT):
             result: ast.DeclaredType = ast.TypeName.TRIT
         elif self._match(TokenKind.TRYTE):
@@ -295,6 +299,8 @@ class Parser:
                 if next_token and next_token.kind is TokenKind.COLON:
                     return self._parse_variable_declaration_v0_6()
                 return self._parse_assignment_v0_6()
+            if self._check(TokenKind.STAR):
+                return self._parse_assignment_v0_6()
             raise ParseError("expected variable declaration, 'return', 'while', 'for', 'break', 'continue', or assignment", self._peek().location)
 
         if (
@@ -307,7 +313,7 @@ class Parser:
             return self._parse_return(self._previous())
         if self._match(TokenKind.SWITCH):
             return self._parse_switch(self._previous())
-        if self._check(TokenKind.IDENTIFIER):
+        if self._check(TokenKind.IDENTIFIER) or self._check(TokenKind.STAR):
             return self._parse_assignment()
         raise ParseError(
             "expected variable declaration, 'return', or 'switch'",
@@ -334,6 +340,14 @@ class Parser:
         )
 
     def _parse_assignment_v0_6(self) -> ast.Statement:
+        if self._match(TokenKind.STAR):
+            start = self._previous()
+            reference = self._parse_unary()
+            target = ast.DereferenceTarget(reference, start.location)
+            self._consume(TokenKind.EQUAL, "expected '=' after dereference target")
+            value = self._parse_initializer()
+            self._consume_statement_newline("expected newline after assignment")
+            return ast.AssignmentStatement(target, value, start.location)
         name = self._consume(TokenKind.IDENTIFIER, "expected assignment target")
         target: ast.AssignmentTarget
         if self._match(TokenKind.LEFT_BRACKET):
@@ -682,6 +696,15 @@ class Parser:
         return expression
 
     def _parse_unary(self) -> ast.Expression:
+        if self._match(TokenKind.AMPERSAND):
+            token = self._previous()
+            mutable = self._match(TokenKind.MUT)
+            return ast.AddressOfExpression(
+                self._parse_unary(), mutable, token.location
+            )
+        if self._match(TokenKind.STAR):
+            token = self._previous()
+            return ast.DereferenceExpression(self._parse_unary(), token.location)
         if self._match(TokenKind.TILDE):
             token = self._previous()
             return ast.UnaryExpression(

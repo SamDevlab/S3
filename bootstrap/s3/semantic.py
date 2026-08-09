@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 from . import ast
@@ -176,6 +176,19 @@ class Binding:
     location: SourceLocation
     static_text: str | None = None
     constant_value: int | None = None
+    scope_depth: int = 0
+    reference_origin: tuple[int, int, bool] | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class PlaceInfo:
+    type_name: ast.DeclaredType
+    readable: bool
+    writable: bool
+    addressable: bool
+    storage_symbol: str | None
+    declaration_scope: int
+    initialized: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -195,6 +208,9 @@ class SemanticModel:
     static_text_values: dict[int, str]
     constant_values: dict[int, int]
     simplified_expressions: dict[int, ast.Expression]
+    place_info: dict[int, PlaceInfo] = field(default_factory=dict)
+    reference_origins: dict[int, tuple[int, int, bool]] = field(default_factory=dict)
+    contains_references: bool = False
 
     def type_of(self, expression: ast.Expression) -> ast.TypeName:
         try:
@@ -564,6 +580,9 @@ class SemanticAnalyzer:
         self.parameter_names: set[str] = set()
         self.return_type: ast.DeclaredType = ast.TypeName.TRYTE
         self.loop_depth = 0
+        self.place_info: dict[int, PlaceInfo] = {}
+        self.reference_origins: dict[int, tuple[int, int, bool]] = {}
+        self.contains_references = False
 
     def analyze(self, program: ast.Program) -> SemanticModel:
         from .semantic_declarations import DeclarationCollector
@@ -572,6 +591,13 @@ class SemanticAnalyzer:
         self.enums = collected.enums
         self.records = collected.records
         self.functions = collected.functions
+        for record in self.records.values():
+            for field in record.fields:
+                self._validate_declared_type(field.type_name, aggregate=True)
+        for enum in self.enums.values():
+            for variant in enum.variants:
+                for field in variant.payload_fields:
+                    self._validate_declared_type(field.type_name, aggregate=True)
 
         if "main" not in self.functions:
             raise SemanticError("program must declare a 'main' function", program.location)
@@ -600,6 +626,9 @@ class SemanticAnalyzer:
                 diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
             )
         for function in program.functions:
+            self._validate_declared_type(function.return_type, return_type=True)
+            for parameter in function.parameters:
+                self._validate_declared_type(parameter.type_name)
             try:
                 self._analyze_function(function)
             except SemanticError as error:
@@ -613,6 +642,9 @@ class SemanticAnalyzer:
             dict(self.static_text_values),
             dict(self.constant_values),
             dict(self.simplified_expressions),
+            dict(self.place_info),
+            dict(self.reference_origins),
+            self.contains_references,
         )
 
     def _record_leaf_count(self, name: str) -> int:
@@ -646,6 +678,10 @@ class SemanticAnalyzer:
                     mutable=False,
                     parameter=True,
                     location=parameter.location,
+                    scope_depth=0,
+                    reference_origin=(id(parameter), 0, parameter.type_name.mutable)
+                    if isinstance(parameter.type_name, ast.ReferenceType)
+                    else None,
                 )
                 for parameter in function.parameters
             }
@@ -1080,6 +1116,7 @@ class SemanticAnalyzer:
 
         static_text: str | None = None
         constant_value: int | None = None
+        reference_origin = None
         self._validate_declared_type(declaration.type_name)
         if isinstance(declaration.type_name, ast.ArrayType):
             self._validate_array_type(declaration.type_name)
@@ -1115,6 +1152,8 @@ class SemanticAnalyzer:
                 declaration.initializer.location,
                 f"initializer for '{declaration.name}'",
             )
+            if isinstance(declaration.type_name, ast.ReferenceType):
+                reference_origin = self._reference_origin_of(declaration.initializer)
             if (
                 declaration.type_name is ast.TypeName.STRING
                 and not declaration.mutable
@@ -1136,9 +1175,92 @@ class SemanticAnalyzer:
             location=declaration.location,
             static_text=static_text,
             constant_value=constant_value,
+            scope_depth=len(self.scopes) - 1,
+            reference_origin=reference_origin,
         )
 
-    def _validate_declared_type(self, type_name: ast.DeclaredType) -> None:
+    def _reference_origin_of(
+        self,
+        expression: ast.Expression | ast.ArrayLiteral,
+    ) -> tuple[int, int, bool] | None:
+        if isinstance(expression, ast.AddressOfExpression):
+            if isinstance(expression.operand, ast.Identifier):
+                binding = self._lookup_binding(expression.operand.name)
+                if binding is not None:
+                    return (
+                        id(binding),
+                        binding.scope_depth,
+                        expression.mutable,
+                    )
+            return None
+        if isinstance(expression, ast.Identifier):
+            binding = self._lookup_binding(expression.name)
+            return None if binding is None else binding.reference_origin
+        if isinstance(expression, ast.DereferenceExpression):
+            return None
+        return None
+
+    def _replace_binding_reference_origin(
+        self,
+        name: str,
+        binding: Binding,
+        origin: tuple[int, int, bool] | None,
+    ) -> None:
+        for scope in reversed(self.scopes):
+            if scope.get(name) is binding:
+                scope[name] = Binding(
+                    binding.type_name,
+                    binding.mutable,
+                    binding.parameter,
+                    binding.location,
+                    binding.static_text,
+                    binding.constant_value,
+                    binding.scope_depth,
+                    origin,
+                )
+                return
+
+    def _validate_declared_type(
+        self,
+        type_name: ast.DeclaredType,
+        *,
+        return_type: bool = False,
+        aggregate: bool = False,
+    ) -> None:
+        if isinstance(type_name, ast.ReferenceType):
+            self.contains_references = True
+            if isinstance(type_name.target, ast.ReferenceType):
+                raise SemanticError(
+                    "nested reference types are not supported",
+                    type_name.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_NESTED,
+                )
+            if not isinstance(type_name.target, ast.TypeName):
+                raise SemanticError(
+                    "reference target must be a scalar type",
+                    type_name.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_AGGREGATE,
+                )
+            if return_type:
+                raise SemanticError(
+                    "reference return types are not supported",
+                    type_name.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_RETURN,
+                )
+            if aggregate:
+                raise SemanticError(
+                    "references cannot be stored in aggregate types",
+                    type_name.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_AGGREGATE,
+                )
+            return
+        if isinstance(type_name, ast.ArrayType):
+            if isinstance(type_name.element_type, ast.ReferenceType):
+                raise SemanticError(
+                    "references cannot be stored in arrays",
+                    type_name.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_AGGREGATE,
+                )
         if (
             isinstance(type_name, ast.NominalType)
             and type_name.name not in self.records
@@ -1199,6 +1321,28 @@ class SemanticAnalyzer:
             )
 
     def _analyze_assignment(self, statement: ast.AssignmentStatement) -> None:
+        if isinstance(statement.target, ast.DereferenceTarget):
+            reference_type = self._analyze_expression(statement.target.reference)
+            if not isinstance(reference_type, ast.ReferenceType):
+                raise SemanticError(
+                    "dereference assignment target must be a reference",
+                    statement.target.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_TYPE_MISMATCH,
+                )
+            if not reference_type.mutable:
+                raise SemanticError(
+                    "cannot write through a shared reference",
+                    statement.target.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_SHARED_WRITE,
+                )
+            if isinstance(statement.value, ast.ArrayLiteral):
+                raise SemanticError(
+                    "dereference assignment requires a scalar expression",
+                    statement.value.location,
+                )
+            actual = self._analyze_expression(statement.value, reference_type.target)
+            self._require_type(actual, reference_type.target, statement.value.location, "dereference assignment")
+            return
         if isinstance(statement.target, ast.VariableTarget):
             binding = self._assignment_binding(
                 statement.target.name,
@@ -1233,6 +1377,15 @@ class SemanticAnalyzer:
                 statement.value.location,
                 "assigned value",
             )
+            if isinstance(binding.type_name, ast.ReferenceType):
+                origin = self._reference_origin_of(statement.value)
+                if origin is not None and origin[1] > binding.scope_depth:
+                    raise SemanticError(
+                        "reference escapes its referent scope",
+                        statement.value.location,
+                        diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_ESCAPE,
+                    )
+                self._replace_binding_reference_origin(statement.target.name, binding, origin)
             return
 
         binding = self._assignment_binding(
@@ -1412,6 +1565,19 @@ class SemanticAnalyzer:
                     expression.location,
                     f"variable '{expression.name}'",
                 )
+            binding = self._lookup_binding(expression.name)
+            if binding is not None:
+                self.place_info[id(expression)] = PlaceInfo(
+                    result,
+                    True,
+                    binding.mutable and not binding.parameter,
+                    True,
+                    expression.name,
+                    binding.scope_depth,
+                    True,
+                )
+                if binding.reference_origin is not None:
+                    self.reference_origins[id(expression)] = binding.reference_origin
         elif isinstance(expression, ast.IndexExpression):
             array_binding = self._index_expression_array_binding(expression)
             if array_binding is not None:
@@ -1508,6 +1674,14 @@ class SemanticAnalyzer:
                     expression.location,
                     f"field '{expression.field_name}'",
                 )
+        elif isinstance(expression, ast.AddressOfExpression):
+            result = self._analyze_address_of(expression)
+            if expected is not None:
+                self._require_type(result, expected, expression.location, "address-of expression")
+        elif isinstance(expression, ast.DereferenceExpression):
+            result = self._analyze_dereference(expression)
+            if expected is not None:
+                self._require_type(result, expected, expression.location, "dereference expression")
         elif isinstance(expression, ast.UnaryExpression):
             result = self._analyze_expression(expression.operand, expected)
             self._reject_string_operation(
@@ -1527,6 +1701,63 @@ class SemanticAnalyzer:
             raise SemanticError("unsupported expression", expression.location)
         self.expression_types[id(expression)] = result
         return result
+
+    def _analyze_address_of(self, expression: ast.AddressOfExpression) -> ast.ReferenceType:
+        if not isinstance(expression.operand, ast.Identifier):
+            raise SemanticError(
+                "reference target is not addressable in V1",
+                expression.operand.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_TARGET_NOT_ADDRESSABLE,
+            )
+        binding = self._lookup_binding(expression.operand.name)
+        if binding is None:
+            raise SemanticError(
+                f"undeclared variable '{expression.operand.name}'",
+                expression.operand.location,
+            )
+        if isinstance(binding.type_name, ast.ReferenceType):
+            raise SemanticError(
+                "reference-to-reference address-of is not supported",
+                expression.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_NESTED,
+            )
+        if expression.mutable and (binding.parameter or not binding.mutable):
+            raise SemanticError(
+                "mutable reference target is not writable",
+                expression.operand.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_TARGET_NOT_ADDRESSABLE,
+            )
+        if not isinstance(binding.type_name, ast.TypeName):
+            raise SemanticError(
+                "reference target must be a scalar local or parameter",
+                expression.operand.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_AGGREGATE,
+            )
+        origin = (id(binding), binding.scope_depth, expression.mutable)
+        self.reference_origins[id(expression)] = origin
+        self.contains_references = True
+        return ast.ReferenceType(binding.type_name, expression.mutable, expression.location)
+
+    def _analyze_dereference(self, expression: ast.DereferenceExpression) -> ast.DeclaredType:
+        reference_type = self._analyze_expression(expression.operand)
+        if not isinstance(reference_type, ast.ReferenceType):
+            raise SemanticError(
+                "dereference operand must be a reference",
+                expression.operand.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_TYPE_MISMATCH,
+            )
+        origin = self.reference_origins.get(id(expression.operand))
+        self.place_info[id(expression)] = PlaceInfo(
+            reference_type.target,
+            True,
+            reference_type.mutable,
+            False,
+            None,
+            origin[1] if origin else len(self.scopes) - 1,
+            True,
+        )
+        self.contains_references = True
+        return reference_type.target
 
     def _analyze_record_or_enum_expression(
         self,
@@ -2023,6 +2254,18 @@ class SemanticAnalyzer:
         expression: ast.BinaryExpression,
         expected: ast.TypeName | None,
     ) -> ast.TypeName:
+        left_known = self._known_expression_type(expression.left)
+        right_known = self._known_expression_type(expression.right)
+        if isinstance(left_known, ast.ReferenceType) or isinstance(
+            right_known, ast.ReferenceType
+        ):
+            self._analyze_expression(expression.left, left_known)
+            self._analyze_expression(expression.right, right_known)
+            raise SemanticError(
+                "reference arithmetic and identity comparison are not supported",
+                expression.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_IDENTITY,
+            )
         RELATIONAL_OPERATORS = {
             ast.BinaryOperator.COMPARE,
             ast.BinaryOperator.EQUAL,
@@ -2271,6 +2514,16 @@ class SemanticAnalyzer:
             return self._identifier_type(expression)
         if isinstance(expression, ast.StringLiteral):
             return ast.TypeName.STRING
+        if isinstance(expression, ast.AddressOfExpression):
+            target = self._known_expression_type(expression.operand)
+            return (
+                ast.ReferenceType(target, expression.mutable, expression.location)
+                if target is not None
+                else None
+            )
+        if isinstance(expression, ast.DereferenceExpression):
+            target = self._known_expression_type(expression.operand)
+            return target.target if isinstance(target, ast.ReferenceType) else None
         if isinstance(expression, ast.IndexExpression):
             try:
                 binding = self._index_expression_array_binding(expression)
@@ -3017,6 +3270,8 @@ def _types_equal(left: ast.DeclaredType, right: ast.DeclaredType) -> bool:
             left.length == right.length
             and _types_equal(left.element_type, right.element_type)
         )
+    if isinstance(left, ast.ReferenceType) and isinstance(right, ast.ReferenceType):
+        return left.mutable == right.mutable and _types_equal(left.target, right.target)
     return False
 
 
@@ -3027,6 +3282,9 @@ def _type_display(type_name: ast.DeclaredType) -> str:
         return type_name.name
     if isinstance(type_name, ast.ArrayType):
         return f"{_type_display(type_name.element_type)}[{type_name.length}]"
+    if isinstance(type_name, ast.ReferenceType):
+        prefix = "&mut " if type_name.mutable else "&"
+        return prefix + _type_display(type_name.target)
     raise AssertionError(f"unknown declared type {type_name!r}")
 
 
