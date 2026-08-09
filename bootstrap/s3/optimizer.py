@@ -15,7 +15,10 @@ from .ir import (
     IROpcode,
     IRType,
 )
-from .memory_effects import function_has_memory_effects
+from .memory_effects import (
+    function_has_alias_observable_memory,
+    function_has_memory_effects,
+)
 from .passes import _FunctionPass, _PassManager
 from .ternary import (
     TernaryRangeError,
@@ -264,7 +267,10 @@ def _eliminate_dead_pure_instructions(function: IRFunction) -> IRFunction:
 
 
 def _run_ssa_optimizations(function: IRFunction) -> IRFunction:
-    if function_has_memory_effects(function):
+    if (
+        function_has_memory_effects(function)
+        and function_has_alias_observable_memory(function)
+    ):
         return function
     from .ssa import SSABuilder
     from .ssa_opt import run_fixpoint_pipeline

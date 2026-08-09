@@ -68,3 +68,28 @@ def function_has_memory_effects(function: IRFunction) -> bool:
         for block in function.blocks
         for instruction in block.instructions
     )
+
+
+def function_has_alias_observable_memory(function: IRFunction) -> bool:
+    """Return whether IR exposes storage through a reference-capable path."""
+
+    for instruction in function.instructions:
+        if instruction.opcode in {
+            IROpcode.ADDRESS_OF,
+            IROpcode.REFERENCE_LOAD,
+            IROpcode.REFERENCE_STORE,
+        }:
+            return True
+        if instruction.opcode is IROpcode.CALL and any(
+            next(
+                (
+                    register.type is IRType.REFERENCE
+                    for register in function.registers
+                    if register.index == operand
+                ),
+                False,
+            )
+            for operand in instruction.operands
+        ):
+            return True
+    return False

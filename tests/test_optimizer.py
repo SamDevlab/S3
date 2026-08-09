@@ -30,6 +30,18 @@ from bootstrap.s3.verifier import verify_ir
 ROOT = Path(__file__).parents[1]
 
 
+def test_o1_preserves_ssa_for_reference_free_array_memory() -> None:
+    source = (ROOT / "benchmarks" / "workloads" / "arrays.s3").read_text(
+        encoding="utf-8"
+    )
+    o0 = compile_source(source, "O0")
+    o1 = compile_source(source, "O1")
+    assert run_source(source, optimization="O0") == 60
+    assert run_source(source, optimization="O1") == 60
+    assert instruction_count(o1.ir) == 25
+    assert instruction_count(o1.ir) <= instruction_count(o0.ir)
+
+
 def test_o0_is_default_and_preserves_lowered_ir() -> None:
     source = "fn main() -> tryte { return 1 + 2; }"
     default = compile_source(source, mode=SyntaxMode.V0_5)
