@@ -423,8 +423,30 @@ class X8664Emitter:
         if opcode is AssemblyOpcode.TADDR:
             destination = registers[0]
             if instruction.memory is not None:
-                address = _address(layout.memory(instruction.memory).data)
-                source_check = []
+                memory = layout.memory(instruction.memory)
+                if len(registers) > 1:
+                    index = registers[1]
+                    bounds_failure = self._instruction_failure(
+                        "bounds",
+                        detail_prefix="array reference index ",
+                        detail_suffix=" out of bounds\n",
+                        value_register="rax",
+                    )
+                    source_check = [
+                        *self._read_register(layout, index, "rax"),
+                        "    cmp rax, 0",
+                        f"    jl {bounds_failure}",
+                        f"    cmp rax, {memory.length}",
+                        f"    jae {bounds_failure}",
+                    ]
+                    address = _address(
+                        memory.data,
+                        index="rax",
+                        scale=memory.element_size,
+                    )
+                else:
+                    address = _address(memory.data)
+                    source_check = []
             else:
                 source = registers[1]
                 source_check = self._read_register(layout, source, "r11")

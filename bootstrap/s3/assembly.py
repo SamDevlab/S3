@@ -195,11 +195,12 @@ class AssemblyInstruction:
         elif self.opcode is AssemblyOpcode.TRET:
             operands = _render_register_group(self.registers)
         elif self.opcode is AssemblyOpcode.TADDR:
-            operands = (
-                f"r{self.registers[0]}, m{self.memory}"
-                if self.memory is not None
-                else ", ".join(f"r{register}" for register in self.registers)
-            )
+            if self.memory is not None:
+                operands = f"r{self.registers[0]}, m{self.memory}"
+                if len(self.registers) > 1:
+                    operands += f", r{self.registers[1]}"
+            else:
+                operands = ", ".join(f"r{register}" for register in self.registers)
         elif self.opcode in {AssemblyOpcode.TREFLOAD, AssemblyOpcode.TREFSTORE}:
             operands = ", ".join(f"r{register}" for register in self.registers)
         else:
@@ -517,7 +518,10 @@ def _parse_instruction(
             )
     elif opcode is not AssemblyOpcode.TCALL:
         expected = fixed_counts[opcode]
-        if len(operands) != expected:
+        valid_counts = {expected}
+        if opcode is AssemblyOpcode.TADDR:
+            valid_counts.add(3)
+        if len(operands) not in valid_counts:
             raise AssemblyParseError(
                 f"{opcode.value} expects {expected} operand(s), got "
                 f"{len(operands)}",
@@ -594,6 +598,21 @@ def _parse_instruction(
                 _parse_register(operands[2], line),
             ),
             memory=_parse_memory(operands[0], line),
+            source=source,
+            line=line,
+        )
+    if opcode is AssemblyOpcode.TADDR and operands[1].startswith("m"):
+        return AssemblyInstruction(
+            opcode,
+            (
+                _parse_register(operands[0], line),
+                *(
+                    (_parse_register(operands[2], line),)
+                    if len(operands) == 3
+                    else ()
+                ),
+            ),
+            memory=_parse_memory(operands[1], line),
             source=source,
             line=line,
         )

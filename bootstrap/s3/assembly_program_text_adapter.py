@@ -736,9 +736,14 @@ def _emit_supported_instruction(
             "supported adapter",
             allow_memory=opcode is AssemblyOpcode.TADDR,
         )
-        operands = tuple(_register(register) for register in instruction.registers)
         if opcode is AssemblyOpcode.TADDR and instruction.memory is not None:
-            operands = (*operands, _memory(instruction.memory))
+            operands = (
+                _register(instruction.registers[0]),
+                _memory(instruction.memory),
+                *(_register(register) for register in instruction.registers[1:]),
+            )
+        else:
+            operands = tuple(_register(register) for register in instruction.registers)
         renderer.emit_instruction(
             opcode.value,
             *operands,

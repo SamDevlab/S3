@@ -192,6 +192,14 @@ class PlaceInfo:
 
 
 @dataclass(frozen=True, slots=True)
+class ReferenceProvenance:
+    root_storage: object
+    projection: object
+    target_type: ast.DeclaredType
+    mutable: bool
+
+
+@dataclass(frozen=True, slots=True)
 class BlockFlow:
     terminates: bool
     definitely_returns: bool
@@ -211,6 +219,7 @@ class SemanticModel:
     place_info: dict[int, PlaceInfo] = field(default_factory=dict)
     reference_origins: dict[int, tuple[int, int, bool]] = field(default_factory=dict)
     contains_references: bool = False
+    reference_provenance: dict[int, ReferenceProvenance] = field(default_factory=dict)
 
     def type_of(self, expression: ast.Expression) -> ast.TypeName:
         try:
@@ -248,6 +257,9 @@ class SemanticModel:
 
     def constant_value_of(self, expression: ast.Expression) -> int | None:
         return self.constant_values.get(id(expression))
+
+    def provenance_of(self, expression: ast.Expression) -> ReferenceProvenance | None:
+        return self.reference_provenance.get(id(expression))
 
     def simplified_expression_of(self, expression: ast.Expression) -> ast.Expression | None:
         current = expression
@@ -582,6 +594,7 @@ class SemanticAnalyzer:
         self.loop_depth = 0
         self.place_info: dict[int, PlaceInfo] = {}
         self.reference_origins: dict[int, tuple[int, int, bool]] = {}
+        self.reference_provenance: dict[int, ReferenceProvenance] = {}
         self.contains_references = False
 
     def analyze(self, program: ast.Program) -> SemanticModel:
@@ -645,6 +658,7 @@ class SemanticAnalyzer:
             dict(self.place_info),
             dict(self.reference_origins),
             self.contains_references,
+            dict(self.reference_provenance),
         )
 
     def _record_leaf_count(self, name: str) -> int:
@@ -1587,6 +1601,15 @@ class SemanticAnalyzer:
                     expression.index,
                     array_binding.type_name,
                 )
+                self.place_info[id(expression)] = PlaceInfo(
+                    result,
+                    True,
+                    array_binding.mutable and not array_binding.parameter,
+                    True,
+                    expression.array_name,
+                    array_binding.scope_depth,
+                    True,
+                )
             else:
                 target_type = self._known_expression_type(expression.target)
                 if target_type is ast.TypeName.STRING:
@@ -1703,6 +1726,91 @@ class SemanticAnalyzer:
         return result
 
     def _analyze_address_of(self, expression: ast.AddressOfExpression) -> ast.ReferenceType:
+        if isinstance(expression.operand, ast.DereferenceExpression):
+            reference_type = self._analyze_expression(expression.operand.operand)
+            if not isinstance(reference_type, ast.ReferenceType):
+                raise SemanticError(
+                    "reborrow operand must be a reference",
+                    expression.operand.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_TARGET_NOT_ADDRESSABLE,
+                )
+            if expression.mutable and not reference_type.mutable:
+                raise SemanticError(
+                    "mutable reborrow requires a mutable reference",
+                    expression.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_TARGET_NOT_ADDRESSABLE,
+                )
+            self._analyze_dereference(expression.operand)
+            self.reference_origins[id(expression)] = self.reference_origins.get(
+                id(expression.operand.operand),
+                (id(expression.operand.operand), len(self.scopes) - 1, expression.mutable),
+            )
+            prior = self.reference_provenance.get(id(expression.operand.operand))
+            if prior is not None:
+                self.reference_provenance[id(expression)] = ReferenceProvenance(
+                    prior.root_storage,
+                    prior.projection,
+                    prior.target_type,
+                    expression.mutable,
+                )
+            self.contains_references = True
+            return ast.ReferenceType(reference_type.target, expression.mutable, expression.location)
+        if isinstance(expression.operand, ast.IndexExpression):
+            target_type = self._analyze_expression(expression.operand)
+            place = self.place_info.get(id(expression.operand))
+            if place is None or not place.addressable:
+                raise SemanticError(
+                    "array element is not addressable",
+                    expression.operand.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_TARGET_NOT_ADDRESSABLE,
+                )
+            if expression.mutable and not place.writable:
+                raise SemanticError(
+                    "mutable reference target is not writable",
+                    expression.operand.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_TARGET_NOT_ADDRESSABLE,
+                )
+            assert isinstance(target_type, ast.TypeName)
+            index_value = self._constant_integer(expression.operand.index)
+            self.reference_provenance[id(expression)] = ReferenceProvenance(
+                expression.operand.target.name
+                if isinstance(expression.operand.target, ast.Identifier)
+                else "array",
+                ("element", index_value),
+                target_type,
+                expression.mutable,
+            )
+            self.contains_references = True
+            return ast.ReferenceType(target_type, expression.mutable, expression.location)
+        if isinstance(expression.operand, ast.FieldAccessExpression):
+            target_type = self._analyze_expression(expression.operand)
+            place = self.place_info.get(id(expression.operand))
+            if place is None or not place.addressable:
+                raise SemanticError(
+                    "record field is not addressable",
+                    expression.operand.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_TARGET_NOT_ADDRESSABLE,
+                )
+            if expression.mutable and not place.writable:
+                raise SemanticError(
+                    "mutable reference target is not writable",
+                    expression.operand.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_TARGET_NOT_ADDRESSABLE,
+                )
+            assert isinstance(target_type, ast.TypeName)
+            root = (
+                expression.operand.target.name
+                if isinstance(expression.operand.target, ast.Identifier)
+                else "record"
+            )
+            self.reference_provenance[id(expression)] = ReferenceProvenance(
+                root,
+                ("field", expression.operand.field_name),
+                target_type,
+                expression.mutable,
+            )
+            self.contains_references = True
+            return ast.ReferenceType(target_type, expression.mutable, expression.location)
         if not isinstance(expression.operand, ast.Identifier):
             raise SemanticError(
                 "reference target is not addressable in V1",
@@ -1735,6 +1843,12 @@ class SemanticAnalyzer:
             )
         origin = (id(binding), binding.scope_depth, expression.mutable)
         self.reference_origins[id(expression)] = origin
+        self.reference_provenance[id(expression)] = ReferenceProvenance(
+            expression.operand.name,
+            ("direct",),
+            binding.type_name,
+            expression.mutable,
+        )
         self.contains_references = True
         return ast.ReferenceType(binding.type_name, expression.mutable, expression.location)
 
@@ -1926,6 +2040,18 @@ class SemanticAnalyzer:
                 expression.location,
                 diagnostic_code=DiagnosticCode.RECORD_FIELD_UNKNOWN,
             )
+        if isinstance(expression.target, ast.Identifier):
+            binding = self._lookup_binding(expression.target.name)
+            if binding is not None:
+                self.place_info[id(expression)] = PlaceInfo(
+                    field.type_name,
+                    True,
+                    binding.mutable and not binding.parameter,
+                    True,
+                    f"{expression.target.name}.{expression.field_name}",
+                    binding.scope_depth,
+                    True,
+                )
         return field.type_name
 
     def _enum_variant_access(

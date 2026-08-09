@@ -2017,6 +2017,46 @@ class FunctionLowerer:
                 return self._lookup_variable(expression.name, expression.location).register  # type: ignore[return-value]
             if isinstance(expression, ast.AddressOfExpression):
                 target = expression.operand
+                if isinstance(target, ast.DereferenceExpression):
+                    source = self._lower_expression(target.operand)
+                    result = self._allocate_reference(declared_type, expression.location)
+                    self._emit(IRInstruction(
+                        IROpcode.MOVE,
+                        result=result,
+                        operands=(source,),
+                        location=expression.location,
+                    ))
+                    return result
+                if isinstance(target, ast.IndexExpression):
+                    if not isinstance(target.target, ast.Identifier):
+                        raise LoweringError("unsupported projected address-of target", expression.location)
+                    binding = self._lookup_variable(target.target.name, target.target.location)
+                    if binding.memory is None:
+                        raise LoweringError("array element has no stable memory storage", expression.location)
+                    index = self._lower_expression(target.index)
+                    result = self._allocate_reference(declared_type, expression.location)
+                    self._emit(IRInstruction(
+                        IROpcode.ADDRESS_OF,
+                        result=result,
+                        operands=(index,),
+                        memory=binding.memory,
+                        reference_target=TYPE_MAP[self._storage_type(declared_type.target, expression.location)],
+                        reference_mutable=declared_type.mutable,
+                        location=expression.location,
+                    ))
+                    return result
+                if isinstance(target, ast.FieldAccessExpression):
+                    source = self._lower_field_access(target)
+                    result = self._allocate_reference(declared_type, expression.location)
+                    self._emit(IRInstruction(
+                        IROpcode.ADDRESS_OF,
+                        result=result,
+                        operands=(source,),
+                        reference_target=TYPE_MAP[self._storage_type(declared_type.target, expression.location)],
+                        reference_mutable=declared_type.mutable,
+                        location=expression.location,
+                    ))
+                    return result
                 if not isinstance(target, ast.Identifier):
                     raise LoweringError("unsupported address-of target", expression.location)
                 binding = self._lookup_variable(target.name, target.location)

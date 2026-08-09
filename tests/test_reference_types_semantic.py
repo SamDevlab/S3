@@ -164,7 +164,7 @@ def test_shadowed_symbols_have_distinct_reference_origins() -> None:
             DiagnosticCode.SEMANTIC_REFERENCE_TARGET_NOT_ADDRESSABLE,
         ),
         (
-            "fn main() -> tryte:\n    mut values: tryte[1] = [1]\n    ref: &tryte = &values[0]\n    return 0\n",
+            "fn main() -> tryte:\n    return &(1 + 2)\n",
             DiagnosticCode.SEMANTIC_REFERENCE_TARGET_NOT_ADDRESSABLE,
         ),
     ],
