@@ -17,7 +17,7 @@ class TypeName(Enum):
 
 @dataclass(frozen=True, slots=True)
 class ArrayType:
-    element_type: TypeName | ArrayType
+    element_type: TypeName | ArrayType | ReferenceType
     length: int
     location: SourceLocation
 
@@ -28,12 +28,32 @@ class NominalType:
     location: SourceLocation
 
 
-DeclaredType: TypeAlias = TypeName | ArrayType | NominalType
+@dataclass(frozen=True, slots=True)
+class ReferenceType:
+    target: TypeName | ArrayType | NominalType | ReferenceType
+    mutable: bool
+    location: SourceLocation
+
+
+DeclaredType: TypeAlias = TypeName | ArrayType | NominalType | ReferenceType
 
 
 class UnaryOperator(Enum):
     INVERT = "~"
     NEGATE = "-"
+
+
+@dataclass(frozen=True, slots=True)
+class AddressOfExpression:
+    operand: Expression
+    mutable: bool
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
+class DereferenceExpression:
+    operand: Expression
+    location: SourceLocation
 
 
 class BinaryOperator(Enum):
@@ -193,6 +213,8 @@ Expression: TypeAlias = (
     | BinaryExpression
     | MatchExpression
     | LenExpression
+    | AddressOfExpression
+    | DereferenceExpression
 )
 
 
@@ -227,7 +249,13 @@ class IndexTarget:
     location: SourceLocation
 
 
-AssignmentTarget: TypeAlias = VariableTarget | IndexTarget
+@dataclass(frozen=True, slots=True)
+class DereferenceTarget:
+    reference: Expression
+    location: SourceLocation
+
+
+AssignmentTarget: TypeAlias = VariableTarget | IndexTarget | DereferenceTarget
 
 
 @dataclass(frozen=True, slots=True)

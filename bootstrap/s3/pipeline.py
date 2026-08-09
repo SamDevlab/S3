@@ -11,6 +11,7 @@ from .assembly import ASSEMBLY_FORMAT_VERSION, AssemblyProgram
 from .backends._hosted_execution import _execute_hosted_assembly
 from .codegen import generate_assembly
 from .compilation_context import CompilationContext
+from .diagnostics import DiagnosticCode, SemanticError
 from .emulator import DEFAULT_MAX_FRAMES, DEFAULT_MAX_INSTRUCTIONS
 from .ir import IRProgram
 from .ir_serialization import IR_FORMAT_VERSION
@@ -146,6 +147,7 @@ def compile_sources(
         mode=context.mode,
     )
     semantic_model = analyze(plan.program)
+    _reject_reference_lowering(semantic_model)
     ir_program = optimize_ir(
         lower(plan.program, semantic_model),
         context.optimization,
@@ -167,6 +169,7 @@ def _compile_source_with_context(
     tokens = tokenize(source, mode=context.mode)
     syntax_tree = parse_tokens(tokens, mode=context.mode)
     semantic_model = analyze(syntax_tree)
+    _reject_reference_lowering(semantic_model)
     ir_program = optimize_ir(
         lower(syntax_tree, semantic_model),
         context.optimization,
@@ -179,6 +182,14 @@ def _compile_source_with_context(
         ir_program,
         assembly_program,
     )
+
+
+def _reject_reference_lowering(semantic_model: SemanticModel) -> None:
+    if semantic_model.contains_references:
+        raise SemanticError(
+            "reference execution is not implemented in milestone 1.28",
+            diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_LOWERING_UNSUPPORTED,
+        )
 
 
 def run_source_with_buffer_capture(
