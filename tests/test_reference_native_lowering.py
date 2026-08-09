@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import platform
 from pathlib import Path
+import re
 import subprocess
 
 import pytest
@@ -32,6 +33,13 @@ def native_toolchain() -> NativeToolchain:
     return NativeToolchain.detect()
 
 
+def _parse_native_result(stdout: str) -> int:
+    match = re.fullmatch(r"program returned: (-?\d+)", stdout.strip())
+    if match is None:
+        raise ValueError(f"unexpected native result output: {stdout!r}")
+    return int(match.group(1))
+
+
 def _run_native(source: str, optimization: str, register_allocation: bool, toolchain: NativeToolchain, tmp_path: Path) -> int:
     program = compile_source(source, optimization).assembly
     assembly = X8664Backend(register_allocation=register_allocation).generate(program)
@@ -39,7 +47,24 @@ def _run_native(source: str, optimization: str, register_allocation: bool, toolc
     completed = toolchain.run(executable)
     assert completed.returncode == 0, completed.stderr
     assert completed.stderr == ""
-    return int(completed.stdout.strip())
+    return _parse_native_result(completed.stdout)
+
+
+@pytest.mark.parametrize(
+    ("stdout", "expected"),
+    (("program returned: 7", 7), ("program returned: 10", 10), ("  program returned: -10  \n\n", -10)),
+)
+def test_parse_native_result_accepts_canonical_output(stdout: str, expected: int) -> None:
+    assert _parse_native_result(stdout) == expected
+
+
+@pytest.mark.parametrize(
+    "stdout",
+    ("error 7", "program crashed 10", "foo 123 bar", "program returned:", "program returned: 7\nprogram returned: 8"),
+)
+def test_parse_native_result_rejects_noncanonical_output(stdout: str) -> None:
+    with pytest.raises(ValueError):
+        _parse_native_result(stdout)
 
 
 def _reference_program() -> AssemblyProgram:
