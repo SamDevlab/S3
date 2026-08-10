@@ -70,6 +70,7 @@ class AssemblyOpcode(Enum):
     TMOV = "TMOV"
     TINV = "TINV"
     TADD = "TADD"
+    TNSUB = "TNSUB"
     TMUL = "TMUL"
     TDIV = "TDIV"
     TREL = "TREL"
@@ -510,6 +511,7 @@ def _parse_instruction(
         AssemblyOpcode.TMOV: 2,
         AssemblyOpcode.TINV: 2,
         AssemblyOpcode.TADD: 3,
+        AssemblyOpcode.TNSUB: 3,
         AssemblyOpcode.TMUL: 3,
         AssemblyOpcode.TDIV: 3,
         AssemblyOpcode.TREL: 4,

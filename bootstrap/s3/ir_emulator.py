@@ -8,7 +8,7 @@ from .ir import IRFunction, IRInstruction, IRModule, IROpcode, IRType
 from .ternary import add, compare, invert, tritwise_max, tritwise_min, TernaryRangeError, TernaryWidth, validate
 from .verifier import verify_ir
 from .numeric import (
-    NumericError, NumericValue, checked_i64_add, checked_i64_mul,
+    NumericError, NumericValue, checked_i64_add, checked_i64_sub, checked_i64_mul,
     checked_i64_div, checked_i64_neg, checked_i64_to_tryte,
     validate_f64, validate_i64,
 )
@@ -89,13 +89,15 @@ def _execute_function(functions, function, arguments, caller):
             else:
                 result = invert(value, _width(result_type))
             _write(frame, instruction.result, result)
-        elif op in {IROpcode.ADD, IROpcode.MULTIPLY, IROpcode.DIVIDE}:
+        elif op in {IROpcode.ADD, IROpcode.NUMERIC_SUBTRACT, IROpcode.MULTIPLY, IROpcode.DIVIDE}:
             result_type = _register_type(function, instruction.result)
             left = _read(frame, instruction.operands[0])
             right = _read(frame, instruction.operands[1])
             if result_type is IRType.I64:
                 if op is IROpcode.ADD:
                     result = checked_i64_add(left, right)
+                elif op is IROpcode.NUMERIC_SUBTRACT:
+                    result = checked_i64_sub(left, right)
                 elif op is IROpcode.MULTIPLY:
                     result = checked_i64_mul(left, right)
                 else:
@@ -103,6 +105,8 @@ def _execute_function(functions, function, arguments, caller):
             elif result_type is IRType.F64:
                 if op is IROpcode.ADD:
                     result = validate_f64(float(left) + float(right))
+                elif op is IROpcode.NUMERIC_SUBTRACT:
+                    result = validate_f64(float(left) - float(right))
                 elif op is IROpcode.MULTIPLY:
                     result = validate_f64(float(left) * float(right))
                 else:

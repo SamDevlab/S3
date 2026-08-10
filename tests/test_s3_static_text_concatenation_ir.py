@@ -44,6 +44,7 @@ def test_folded_static_text_ir_contains_only_final_const_str() -> None:
         IROpcode.MOVE,
         IROpcode.INVERT,
         IROpcode.ADD,
+        IROpcode.NUMERIC_SUBTRACT,
         IROpcode.MULTIPLY,
         IROpcode.DIVIDE,
         IROpcode.RELATE,

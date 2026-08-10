@@ -143,7 +143,7 @@ fn main() -> tryte {
             "fn numeric(x: tryte, y: f64) -> trit:\n"
             "    widened: i64 = to_i64(x)\n"
             "    value: f64 = to_f64(widened)\n"
-            "    return (value * y / y) != 0.0\n"
+            "    return (value * y / y - 1.0) != 0.0\n"
             "fn main() -> trit:\n"
             "    return numeric(2, 2.0)\n",
             mode=SyntaxMode.V0_6,

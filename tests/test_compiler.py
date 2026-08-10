@@ -44,6 +44,7 @@ def test_subtraction_lowers_to_invert_then_add() -> None:
         IROpcode.MOVE,
         IROpcode.INVERT,
         IROpcode.ADD,
+        IROpcode.NUMERIC_SUBTRACT,
         IROpcode.MULTIPLY,
         IROpcode.DIVIDE,
         IROpcode.RELATE,

@@ -32,7 +32,7 @@ from .ternary import (
 from .assembly_verifier import AssemblyVerifier, AssemblyVerifierError, WIDTH_MAP
 from .metrics import EmulationMetrics
 from .numeric import (
-    NumericError, NumericValue, checked_i64_add, checked_i64_mul,
+    NumericError, NumericValue, checked_i64_add, checked_i64_sub, checked_i64_mul,
     checked_i64_div, checked_i64_neg, checked_i64_to_tryte,
     validate_f64, validate_i64,
 )
@@ -198,6 +198,7 @@ class Emulator(AssemblyVerifier):
                     frame.instruction_index += 1
                 elif opcode in {
                     AssemblyOpcode.TADD,
+                    AssemblyOpcode.TNSUB,
                     AssemblyOpcode.TMUL,
                     AssemblyOpcode.TDIV,
                     AssemblyOpcode.TMIN,
@@ -214,6 +215,8 @@ class Emulator(AssemblyVerifier):
                     if type_name is AssemblyType.I64:
                         if opcode is AssemblyOpcode.TADD:
                             result = checked_i64_add(left, right)
+                        elif opcode is AssemblyOpcode.TNSUB:
+                            result = checked_i64_sub(left, right)
                         elif opcode is AssemblyOpcode.TMUL:
                             result = checked_i64_mul(left, right)
                         elif opcode is AssemblyOpcode.TDIV:
@@ -224,6 +227,8 @@ class Emulator(AssemblyVerifier):
                     elif type_name is AssemblyType.F64:
                         if opcode is AssemblyOpcode.TADD:
                             result = validate_f64(float(left) + float(right))
+                        elif opcode is AssemblyOpcode.TNSUB:
+                            result = validate_f64(float(left) - float(right))
                         elif opcode is AssemblyOpcode.TMUL:
                             result = validate_f64(float(left) * float(right))
                         elif opcode is AssemblyOpcode.TDIV:

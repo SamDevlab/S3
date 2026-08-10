@@ -27,6 +27,8 @@ def test_checked_i64_operations_cover_required_machine_domain() -> None:
     assert checked_i64_div(-7, 3) == -2
     assert checked_i64_div(7, -3) == -2
     assert checked_i64_neg(7) == -7
+    assert checked_i64_sub(I64_MIN, I64_MIN) == 0
+    assert checked_i64_sub(-1, I64_MIN) == I64_MAX
 
 
 @pytest.mark.parametrize(

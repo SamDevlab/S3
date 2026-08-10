@@ -471,6 +471,7 @@ class IRVerifier:
 
         if opcode in {
             IROpcode.ADD,
+            IROpcode.NUMERIC_SUBTRACT,
             IROpcode.MULTIPLY,
             IROpcode.DIVIDE,
             IROpcode.MINIMUM,
@@ -489,7 +490,7 @@ class IRVerifier:
                     instruction.location,
                 )
             if (
-                opcode in {IROpcode.MULTIPLY, IROpcode.DIVIDE}
+                opcode in {IROpcode.NUMERIC_SUBTRACT, IROpcode.MULTIPLY, IROpcode.DIVIDE}
                 and result_type not in {IRType.I64, IRType.F64}
             ):
                 self._error(f"{opcode.value} requires i64 or f64 values", instruction.location)

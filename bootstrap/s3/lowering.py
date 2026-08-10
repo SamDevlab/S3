@@ -2552,6 +2552,17 @@ class FunctionLowerer:
         left = self._lower_expression(expression.left)
         right = self._lower_expression(expression.right)
         if expression.operator is ast.BinaryOperator.SUBTRACT:
+            if result_type in (ast.TypeName.I64, ast.TypeName.F64):
+                result = self._allocate(result_type, expression.location)
+                self._emit(
+                    IRInstruction(
+                        IROpcode.NUMERIC_SUBTRACT,
+                        result=result,
+                        operands=(left, right),
+                        location=expression.location,
+                    )
+                )
+                return result
             inverted = self._allocate(
                 self._storage_type(
                     self.semantic_model.declared_type_of(expression.right),

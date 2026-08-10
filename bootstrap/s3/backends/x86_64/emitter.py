@@ -606,6 +606,30 @@ class X8664Emitter:
                 *self._range_check(type_name, "rax", overflow),
                 *self._write_register(layout, registers[0], "rax"),
             ]
+        if opcode is AssemblyOpcode.TNSUB:
+            type_name = function.type_of(registers[0])
+            assert type_name in {AssemblyType.I64, AssemblyType.F64}
+            if type_name is AssemblyType.F64:
+                return instrumentation + [
+                    *self._read_register(layout, registers[1], "rax"),
+                    *self._read_register(layout, registers[2], "r10"),
+                    "    movq xmm0, rax",
+                    "    movq xmm1, r10",
+                    "    subsd xmm0, xmm1",
+                    "    movq rax, xmm0",
+                    *self._write_register(layout, registers[0], "rax"),
+                ]
+            overflow = self._instruction_failure(
+                "overflow",
+                detail="i64 subtraction overflow\n",
+            )
+            return instrumentation + [
+                *self._read_register(layout, registers[1], "rax"),
+                *self._read_register(layout, registers[2], "r10"),
+                "    sub rax, r10",
+                f"    jo {overflow}",
+                *self._write_register(layout, registers[0], "rax"),
+            ]
         if opcode in {AssemblyOpcode.TMUL, AssemblyOpcode.TDIV}:
             type_name = function.type_of(registers[0])
             assert type_name in {AssemblyType.I64, AssemblyType.F64}
