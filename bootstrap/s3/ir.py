@@ -12,6 +12,8 @@ from .diagnostics import SourceLocation
 class IRType(Enum):
     TRIT = "trit"
     TRYTE = "tryte"
+    I64 = "i64"
+    F64 = "f64"
     STRING = "string"
     REFERENCE = "reference"
 
