@@ -1,15 +1,16 @@
 name: M1.32 closure apply
 
 on:
-  push:
+  pull_request:
     branches:
-      - production/closure-1.32-numeric-20260810-1705
+      - main
     paths:
       - tools/_closure_132_apply.py
       - .github/workflows/closure-132-apply.yml
 
 permissions:
   contents: write
+  pull-requests: read
 
 jobs:
   apply:
