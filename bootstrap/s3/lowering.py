@@ -2542,6 +2542,13 @@ class FunctionLowerer:
             ast.BinaryOperator.GREATER,
             ast.BinaryOperator.GREATER_EQUAL,
         )
+        if expression.operator in RELATIONAL_OPS:
+            operand_type = self._storage_type(
+                self.semantic_model.declared_type_of(expression.left),
+                expression.left.location,
+            )
+            if operand_type is not ast.TypeName.F64:
+                return self._lower_relational_expression(expression)
         left = self._lower_expression(expression.left)
         right = self._lower_expression(expression.right)
         if expression.operator is ast.BinaryOperator.SUBTRACT:
@@ -2571,14 +2578,7 @@ class FunctionLowerer:
             )
             return result
 
-        if expression.operator in (
-            ast.BinaryOperator.EQUAL,
-            ast.BinaryOperator.NOT_EQUAL,
-            ast.BinaryOperator.LESS,
-            ast.BinaryOperator.LESS_EQUAL,
-            ast.BinaryOperator.GREATER,
-            ast.BinaryOperator.GREATER_EQUAL,
-        ):
+        if expression.operator in RELATIONAL_OPS:
             relation_codes = {
                 ast.BinaryOperator.EQUAL: 0,
                 ast.BinaryOperator.NOT_EQUAL: 1,

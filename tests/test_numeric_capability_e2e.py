@@ -32,7 +32,7 @@ def test_i64_arithmetic_is_source_visible_end_to_end() -> None:
         opcodes = {instruction.opcode for fn in compilation.ir.functions for instruction in fn.instructions}
         assert IROpcode.MULTIPLY in opcodes
         assert IROpcode.DIVIDE in opcodes
-        assert IROpcode.RELATE in opcodes
+        assert IROpcode.COMPARE in opcodes
 
 
 def test_f64_arithmetic_and_ieee_special_values_are_preserved() -> None:
@@ -68,6 +68,11 @@ def test_f64_nan_relations_follow_ieee_rules() -> None:
     compilation = compile_program(source)
     assert execute_ir(compilation.ir) == -1
     assert Emulator().execute(compilation.assembly) == -1
+    assert any(
+        instruction.opcode is IROpcode.RELATE
+        for function in compilation.ir.functions
+        for instruction in function.instructions
+    )
 
     false_relation = compile_program(
         "fn nan_value(zero: f64) -> f64:\n"
