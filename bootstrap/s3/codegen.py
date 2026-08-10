@@ -46,7 +46,7 @@ OPCODE_MAP = {
     IROpcode.MOVE: AssemblyOpcode.TMOV,
     IROpcode.INVERT: AssemblyOpcode.TINV,
     IROpcode.ADD: AssemblyOpcode.TADD,
-    IROpcode.NUMERIC_SUBTRACT: AssemblyOpcode.TNSUB,
+    IROpcode.NUMERIC_DIFFERENCE: AssemblyOpcode.TNDIFF,
     IROpcode.MULTIPLY: AssemblyOpcode.TMUL,
     IROpcode.DIVIDE: AssemblyOpcode.TDIV,
     IROpcode.RELATE: AssemblyOpcode.TREL,

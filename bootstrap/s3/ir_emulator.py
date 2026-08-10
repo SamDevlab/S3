@@ -89,14 +89,14 @@ def _execute_function(functions, function, arguments, caller):
             else:
                 result = invert(value, _width(result_type))
             _write(frame, instruction.result, result)
-        elif op in {IROpcode.ADD, IROpcode.NUMERIC_SUBTRACT, IROpcode.MULTIPLY, IROpcode.DIVIDE}:
+        elif op in {IROpcode.ADD, IROpcode.NUMERIC_DIFFERENCE, IROpcode.MULTIPLY, IROpcode.DIVIDE}:
             result_type = _register_type(function, instruction.result)
             left = _read(frame, instruction.operands[0])
             right = _read(frame, instruction.operands[1])
             if result_type is IRType.I64:
                 if op is IROpcode.ADD:
                     result = checked_i64_add(left, right)
-                elif op is IROpcode.NUMERIC_SUBTRACT:
+                elif op is IROpcode.NUMERIC_DIFFERENCE:
                     result = checked_i64_sub(left, right)
                 elif op is IROpcode.MULTIPLY:
                     result = checked_i64_mul(left, right)
@@ -105,7 +105,7 @@ def _execute_function(functions, function, arguments, caller):
             elif result_type is IRType.F64:
                 if op is IROpcode.ADD:
                     result = validate_f64(float(left) + float(right))
-                elif op is IROpcode.NUMERIC_SUBTRACT:
+                elif op is IROpcode.NUMERIC_DIFFERENCE:
                     result = validate_f64(float(left) - float(right))
                 elif op is IROpcode.MULTIPLY:
                     result = validate_f64(float(left) * float(right))

@@ -398,7 +398,7 @@ class AssemblyVerifier:
                 raise EmulatorError(self._static_context(function, block, instruction, "TINV does not support references"))
         elif opcode in {
             AssemblyOpcode.TADD,
-            AssemblyOpcode.TNSUB,
+            AssemblyOpcode.TNDIFF,
             AssemblyOpcode.TMUL,
             AssemblyOpcode.TDIV,
             AssemblyOpcode.TMIN,
@@ -417,7 +417,7 @@ class AssemblyVerifier:
             if type_name is AssemblyType.REFERENCE:
                 raise EmulatorError(self._static_context(function, block, instruction, f"{opcode.value} does not support references"))
             if (
-                opcode in {AssemblyOpcode.TNSUB, AssemblyOpcode.TMUL, AssemblyOpcode.TDIV}
+                opcode in {AssemblyOpcode.TNDIFF, AssemblyOpcode.TMUL, AssemblyOpcode.TDIV}
                 and type_name not in {AssemblyType.I64, AssemblyType.F64}
             ):
                 raise EmulatorError(self._static_context(function, block, instruction, f"{opcode.value} requires i64 or f64 values"))

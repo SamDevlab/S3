@@ -2556,7 +2556,7 @@ class FunctionLowerer:
                 result = self._allocate(result_type, expression.location)
                 self._emit(
                     IRInstruction(
-                        IROpcode.NUMERIC_SUBTRACT,
+                        IROpcode.NUMERIC_DIFFERENCE,
                         result=result,
                         operands=(left, right),
                         location=expression.location,

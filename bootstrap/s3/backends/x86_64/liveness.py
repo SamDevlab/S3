@@ -65,7 +65,7 @@ def instruction_use_def(instruction: AssemblyInstruction) -> tuple[frozenset[int
         return frozenset({regs[1]}), frozenset({regs[0]})
     elif opcode in (
         AssemblyOpcode.TADD,
-        AssemblyOpcode.TNSUB,
+        AssemblyOpcode.TNDIFF,
         AssemblyOpcode.TMUL,
         AssemblyOpcode.TDIV,
         AssemblyOpcode.TREL,

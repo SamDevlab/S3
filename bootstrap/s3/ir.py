@@ -24,7 +24,7 @@ class IROpcode(Enum):
     MOVE = "move"
     INVERT = "invert"
     ADD = "add"
-    NUMERIC_SUBTRACT = "numeric_subtract"
+    NUMERIC_DIFFERENCE = "numeric_difference"
     MULTIPLY = "multiply"
     DIVIDE = "divide"
     RELATE = "relate"

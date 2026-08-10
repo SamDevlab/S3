@@ -198,7 +198,7 @@ class Emulator(AssemblyVerifier):
                     frame.instruction_index += 1
                 elif opcode in {
                     AssemblyOpcode.TADD,
-                    AssemblyOpcode.TNSUB,
+                    AssemblyOpcode.TNDIFF,
                     AssemblyOpcode.TMUL,
                     AssemblyOpcode.TDIV,
                     AssemblyOpcode.TMIN,
@@ -215,7 +215,7 @@ class Emulator(AssemblyVerifier):
                     if type_name is AssemblyType.I64:
                         if opcode is AssemblyOpcode.TADD:
                             result = checked_i64_add(left, right)
-                        elif opcode is AssemblyOpcode.TNSUB:
+                        elif opcode is AssemblyOpcode.TNDIFF:
                             result = checked_i64_sub(left, right)
                         elif opcode is AssemblyOpcode.TMUL:
                             result = checked_i64_mul(left, right)
@@ -227,7 +227,7 @@ class Emulator(AssemblyVerifier):
                     elif type_name is AssemblyType.F64:
                         if opcode is AssemblyOpcode.TADD:
                             result = validate_f64(float(left) + float(right))
-                        elif opcode is AssemblyOpcode.TNSUB:
+                        elif opcode is AssemblyOpcode.TNDIFF:
                             result = validate_f64(float(left) - float(right))
                         elif opcode is AssemblyOpcode.TMUL:
                             result = validate_f64(float(left) * float(right))

@@ -30,7 +30,7 @@ def test_i64_arithmetic_is_source_visible_end_to_end() -> None:
         assert execute_ir(compilation.ir) == -1
         assert Emulator().execute(compilation.assembly) == -1
         opcodes = {instruction.opcode for fn in compilation.ir.functions for instruction in fn.instructions}
-        assert IROpcode.NUMERIC_SUBTRACT in opcodes
+        assert IROpcode.NUMERIC_DIFFERENCE in opcodes
         assert IROpcode.MULTIPLY in opcodes
         assert IROpcode.DIVIDE in opcodes
         assert IROpcode.COMPARE in opcodes
@@ -52,7 +52,7 @@ def test_i64_subtraction_handles_int64_min_without_false_intermediate_overflow(t
         assert execute_ir(compilation.ir) == -1
         assert Emulator().execute(compilation.assembly) == -1
         assert any(
-            instruction.opcode is IROpcode.NUMERIC_SUBTRACT
+            instruction.opcode is IROpcode.NUMERIC_DIFFERENCE
             for function in compilation.ir.functions
             for instruction in function.instructions
         )

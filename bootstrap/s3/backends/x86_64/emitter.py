@@ -606,7 +606,7 @@ class X8664Emitter:
                 *self._range_check(type_name, "rax", overflow),
                 *self._write_register(layout, registers[0], "rax"),
             ]
-        if opcode is AssemblyOpcode.TNSUB:
+        if opcode is AssemblyOpcode.TNDIFF:
             type_name = function.type_of(registers[0])
             assert type_name in {AssemblyType.I64, AssemblyType.F64}
             if type_name is AssemblyType.F64:
