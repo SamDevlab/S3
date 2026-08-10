@@ -15,7 +15,7 @@ pattern = re.compile(
     r"(?=\ndef test_f64_arithmetic_and_ieee_special_values_are_preserved\(\) -> None:)",
     re.DOTALL,
 )
-replacement = '''@pytest.mark.s3_native
+replacement = r'''@pytest.mark.s3_native
 def test_i64_subtraction_handles_int64_min_without_false_intermediate_overflow(tmp_path: Path) -> None:
     source = (
         "fn minimum(seed: i64) -> i64:\n"
@@ -43,7 +43,7 @@ def test_i64_subtraction_handles_int64_min_without_false_intermediate_overflow(t
         assert completed.stderr == ""
         assert completed.stdout.strip() == "program returned: -1"
 '''
-text, count = pattern.subn(replacement, text, count=1)
+text, count = pattern.subn(lambda _: replacement, text, count=1)
 if count != 1:
     raise RuntimeError(f"expected one generated subtraction-boundary test, got {count}")
 path.write_text(text, encoding="utf-8")
