@@ -31,7 +31,11 @@ from .ternary import (
 )
 from .assembly_verifier import AssemblyVerifier, AssemblyVerifierError, WIDTH_MAP
 from .metrics import EmulationMetrics
-from .numeric import NumericError, validate_f64, validate_i64
+from .numeric import (
+    NumericError, NumericValue, checked_i64_add, checked_i64_mul,
+    checked_i64_div, checked_i64_neg, checked_i64_to_tryte,
+    validate_f64, validate_i64,
+)
 
 
 EmulatorError = AssemblyVerifierError
@@ -183,18 +187,19 @@ class Emulator(AssemblyVerifier):
                 elif opcode is AssemblyOpcode.TINV:
                     source = instruction.registers[1]
                     type_name = self._register_type(frame, source, instruction)
-                    self._write(
-                        frame,
-                        instruction.registers[0],
-                        invert(
-                            self._read_int(frame, source, instruction),
-                            WIDTH_MAP[type_name],
-                        ),
-                        instruction,
-                    )
+                    value = self._read(frame, source, instruction)
+                    if type_name is AssemblyType.I64:
+                        result = checked_i64_neg(value)
+                    elif type_name is AssemblyType.F64:
+                        result = validate_f64(-float(value))
+                    else:
+                        result = invert(self._read_int(frame, source, instruction), WIDTH_MAP[type_name])
+                    self._write(frame, instruction.registers[0], result, instruction)
                     frame.instruction_index += 1
                 elif opcode in {
                     AssemblyOpcode.TADD,
+                    AssemblyOpcode.TMUL,
+                    AssemblyOpcode.TDIV,
                     AssemblyOpcode.TMIN,
                     AssemblyOpcode.TMAX,
                 }:
@@ -204,19 +209,63 @@ class Emulator(AssemblyVerifier):
                         destination,
                         instruction,
                     )
-                    operation = {
-                        AssemblyOpcode.TADD: add,
-                        AssemblyOpcode.TMIN: tritwise_min,
-                        AssemblyOpcode.TMAX: tritwise_max,
-                    }[opcode]
                     left = self._read(frame, left_register, instruction)
                     right = self._read(frame, right_register, instruction)
-                    if type_name is AssemblyType.I64 and opcode is AssemblyOpcode.TADD:
-                        result = validate_i64(left + right)
-                    elif type_name is AssemblyType.F64 and opcode is AssemblyOpcode.TADD:
-                        result = validate_f64(left + right)
+                    if type_name is AssemblyType.I64:
+                        if opcode is AssemblyOpcode.TADD:
+                            result = checked_i64_add(left, right)
+                        elif opcode is AssemblyOpcode.TMUL:
+                            result = checked_i64_mul(left, right)
+                        elif opcode is AssemblyOpcode.TDIV:
+                            result = checked_i64_div(left, right)
+                        else:
+                            operation = tritwise_min if opcode is AssemblyOpcode.TMIN else tritwise_max
+                            result = operation(left, right, WIDTH_MAP[type_name])
+                    elif type_name is AssemblyType.F64:
+                        if opcode is AssemblyOpcode.TADD:
+                            result = validate_f64(float(left) + float(right))
+                        elif opcode is AssemblyOpcode.TMUL:
+                            result = validate_f64(float(left) * float(right))
+                        elif opcode is AssemblyOpcode.TDIV:
+                            result = NumericValue.f64(float(left)).divide(NumericValue.f64(float(right))).value
+                        else:
+                            raise EmulatorError("balanced-ternary extreme operation received f64")
                     else:
+                        operation = {
+                            AssemblyOpcode.TADD: add,
+                            AssemblyOpcode.TMIN: tritwise_min,
+                            AssemblyOpcode.TMAX: tritwise_max,
+                        }[opcode]
                         result = operation(left, right, WIDTH_MAP[type_name])
+                    self._write(frame, destination, result, instruction)
+                    frame.instruction_index += 1
+                elif opcode is AssemblyOpcode.TREL:
+                    destination, left_register, right_register = instruction.registers
+                    left = self._read(frame, left_register, instruction)
+                    right = self._read(frame, right_register, instruction)
+                    truth = {
+                        0: left == right,
+                        1: left != right,
+                        2: left < right,
+                        3: left <= right,
+                        4: left > right,
+                        5: left >= right,
+                    }[instruction.immediate]
+                    self._write(frame, destination, -1 if truth else 0, instruction)
+                    frame.instruction_index += 1
+                elif opcode is AssemblyOpcode.TCVT:
+                    destination, source = instruction.registers
+                    source_type = self._register_type(frame, source, instruction)
+                    destination_type = self._register_type(frame, destination, instruction)
+                    value = self._read(frame, source, instruction)
+                    if destination_type is AssemblyType.I64:
+                        result = validate_i64(int(value))
+                    elif destination_type is AssemblyType.F64:
+                        result = validate_f64(value)
+                    elif source_type is AssemblyType.I64 and destination_type is AssemblyType.TRYTE:
+                        result = checked_i64_to_tryte(value)
+                    else:
+                        raise EmulatorError(f"unsupported explicit conversion {source_type.value} -> {destination_type.value}")
                     self._write(frame, destination, result, instruction)
                     frame.instruction_index += 1
                 elif opcode is AssemblyOpcode.TCMP:
@@ -485,6 +534,32 @@ class Emulator(AssemblyVerifier):
                     memory=f"m{memory.index}",
                     index=index,
                 )
+        elif memory.element_type is AssemblyType.I64:
+            try:
+                validate_i64(value)
+            except (NumericError, TypeError, ValueError) as error:
+                raise self._runtime_error(
+                    frame,
+                    instruction,
+                    f"memory m{memory.index} index {index}: {error}",
+                    DiagnosticCategory.OVERFLOW,
+                    DiagnosticCode.RUNTIME_OVERFLOW,
+                    memory=f"m{memory.index}",
+                    index=index,
+                ) from error
+        elif memory.element_type is AssemblyType.F64:
+            try:
+                validate_f64(value)
+            except (NumericError, TypeError, ValueError) as error:
+                raise self._runtime_error(
+                    frame,
+                    instruction,
+                    f"memory m{memory.index} index {index}: {error}",
+                    DiagnosticCategory.OVERFLOW,
+                    DiagnosticCode.RUNTIME_OVERFLOW,
+                    memory=f"m{memory.index}",
+                    index=index,
+                ) from error
         else:
             if not isinstance(value, int):
                 raise self._runtime_error(

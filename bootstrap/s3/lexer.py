@@ -62,6 +62,7 @@ class TokenKind(Enum):
     PLUS = auto()
     MINUS = auto()
     STAR = auto()
+    SLASH = auto()
     PLUS_EQUAL = auto()
     STAR_EQUAL = auto()
     EQUAL = auto()
@@ -427,6 +428,7 @@ class Lexer:
             "+": TokenKind.PLUS,
             "-": TokenKind.MINUS,
             "*": TokenKind.STAR,
+            "/": TokenKind.SLASH,
             "=": TokenKind.EQUAL,
             "<": TokenKind.LESS,
             ">": TokenKind.GREATER,

@@ -396,10 +396,10 @@ class AssemblyVerifier:
                 )
             if type_name is AssemblyType.REFERENCE:
                 raise EmulatorError(self._static_context(function, block, instruction, "TINV does not support references"))
-            if type_name in {AssemblyType.I64, AssemblyType.F64}:
-                raise EmulatorError(self._static_context(function, block, instruction, "TINV does not support numeric values"))
         elif opcode in {
             AssemblyOpcode.TADD,
+            AssemblyOpcode.TMUL,
+            AssemblyOpcode.TDIV,
             AssemblyOpcode.TMIN,
             AssemblyOpcode.TMAX,
         }:
@@ -415,8 +415,38 @@ class AssemblyVerifier:
                 )
             if type_name is AssemblyType.REFERENCE:
                 raise EmulatorError(self._static_context(function, block, instruction, f"{opcode.value} does not support references"))
-            if type_name in {AssemblyType.I64, AssemblyType.F64} and opcode is not AssemblyOpcode.TADD:
-                raise EmulatorError(self._static_context(function, block, instruction, f"{opcode.value} does not support numeric values"))
+            if (
+                opcode in {AssemblyOpcode.TMUL, AssemblyOpcode.TDIV}
+                and type_name not in {AssemblyType.I64, AssemblyType.F64}
+            ):
+                raise EmulatorError(self._static_context(function, block, instruction, f"{opcode.value} requires i64 or f64 values"))
+            if (
+                opcode in {AssemblyOpcode.TMIN, AssemblyOpcode.TMAX}
+                and type_name in {AssemblyType.I64, AssemblyType.F64}
+            ):
+                raise EmulatorError(self._static_context(function, block, instruction, f"{opcode.value} is balanced-ternary only"))
+        elif opcode is AssemblyOpcode.TREL:
+            destination, *sources = instruction.registers
+            if register_type(destination) is not AssemblyType.TRIT:
+                raise EmulatorError(self._static_context(function, block, instruction, "TREL destination must be trit"))
+            source_type = same_type(tuple(sources))
+            if source_type not in {AssemblyType.TRIT, AssemblyType.TRYTE, AssemblyType.I64, AssemblyType.F64}:
+                raise EmulatorError(self._static_context(function, block, instruction, "TREL requires scalar numeric operands"))
+            if not isinstance(instruction.immediate, int) or instruction.immediate not in range(6):
+                raise EmulatorError(self._static_context(function, block, instruction, "TREL relation code must be 0..5"))
+        elif opcode is AssemblyOpcode.TCVT:
+            destination, source = instruction.registers
+            pair = (register_type(source), register_type(destination))
+            allowed = {
+                (AssemblyType.TRIT, AssemblyType.I64),
+                (AssemblyType.TRYTE, AssemblyType.I64),
+                (AssemblyType.TRIT, AssemblyType.F64),
+                (AssemblyType.TRYTE, AssemblyType.F64),
+                (AssemblyType.I64, AssemblyType.F64),
+                (AssemblyType.I64, AssemblyType.TRYTE),
+            }
+            if pair not in allowed:
+                raise EmulatorError(self._static_context(function, block, instruction, f"unsupported explicit conversion {pair[0].value} -> {pair[1].value}"))
         elif opcode is AssemblyOpcode.TCMP:
             destination, *sources = instruction.registers
             if register_type(destination) is not AssemblyType.TRIT:

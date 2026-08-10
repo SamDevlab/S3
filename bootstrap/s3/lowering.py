@@ -2296,6 +2296,20 @@ class FunctionLowerer:
                     )
                 )
                 return result
+            if expression.simple_function_name in {"to_i64", "to_f64", "to_tryte"}:
+                if len(expression.arguments) != 1:
+                    raise LoweringError("numeric conversion requires one argument", expression.location)
+                source = self._lower_expression(expression.arguments[0].expression)
+                result = self._allocate(expression_type, expression.location)
+                self._emit(
+                    IRInstruction(
+                        IROpcode.CONVERT,
+                        result=result,
+                        operands=(source,),
+                        location=expression.location,
+                    )
+                )
+                return result
             arguments = self._lower_call_arguments(expression)
             result = self._allocate(expression_type, expression.location)
             self._emit(
@@ -2565,10 +2579,30 @@ class FunctionLowerer:
             ast.BinaryOperator.GREATER,
             ast.BinaryOperator.GREATER_EQUAL,
         ):
-            return self._lower_relational_expression(expression)
+            relation_codes = {
+                ast.BinaryOperator.EQUAL: 0,
+                ast.BinaryOperator.NOT_EQUAL: 1,
+                ast.BinaryOperator.LESS: 2,
+                ast.BinaryOperator.LESS_EQUAL: 3,
+                ast.BinaryOperator.GREATER: 4,
+                ast.BinaryOperator.GREATER_EQUAL: 5,
+            }
+            result = self._allocate(ast.TypeName.TRIT, expression.location)
+            self._emit(
+                IRInstruction(
+                    IROpcode.RELATE,
+                    result=result,
+                    operands=(left, right),
+                    immediate=relation_codes[expression.operator],
+                    location=expression.location,
+                )
+            )
+            return result
 
         opcode_map = {
             ast.BinaryOperator.ADD: IROpcode.ADD,
+            ast.BinaryOperator.MULTIPLY: IROpcode.MULTIPLY,
+            ast.BinaryOperator.DIVIDE: IROpcode.DIVIDE,
             ast.BinaryOperator.MINIMUM: IROpcode.MINIMUM,
             ast.BinaryOperator.MAXIMUM: IROpcode.MAXIMUM,
             ast.BinaryOperator.COMPARE: IROpcode.COMPARE,

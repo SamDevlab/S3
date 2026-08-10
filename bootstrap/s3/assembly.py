@@ -70,6 +70,10 @@ class AssemblyOpcode(Enum):
     TMOV = "TMOV"
     TINV = "TINV"
     TADD = "TADD"
+    TMUL = "TMUL"
+    TDIV = "TDIV"
+    TREL = "TREL"
+    TCVT = "TCVT"
     TMIN = "TMIN"
     TMAX = "TMAX"
     TCMP = "TCMP"
@@ -172,6 +176,10 @@ class AssemblyInstruction:
         elif self.opcode is AssemblyOpcode.TCONST_STR:
             assert self.static_string is not None
             operands = f"r{self.registers[0]}, {self.static_string}"
+        elif self.opcode is AssemblyOpcode.TREL:
+            assert self.immediate is not None
+            operands = ", ".join(f"r{register}" for register in self.registers)
+            operands += f", {self.immediate}"
         elif self.opcode is AssemblyOpcode.TCALL:
             assert self.callee is not None
             parts = [_render_register_group(self.result_registers), self.callee]
@@ -502,6 +510,10 @@ def _parse_instruction(
         AssemblyOpcode.TMOV: 2,
         AssemblyOpcode.TINV: 2,
         AssemblyOpcode.TADD: 3,
+        AssemblyOpcode.TMUL: 3,
+        AssemblyOpcode.TDIV: 3,
+        AssemblyOpcode.TREL: 4,
+        AssemblyOpcode.TCVT: 2,
         AssemblyOpcode.TMIN: 3,
         AssemblyOpcode.TMAX: 3,
         AssemblyOpcode.TCMP: 3,
@@ -539,9 +551,11 @@ def _parse_instruction(
     if opcode is AssemblyOpcode.TCONST:
         destination = _parse_register(operands[0], line)
         try:
+            lowered = operands[1].lower()
             immediate = (
                 float(operands[1])
-                if any(character in operands[1].lower() for character in (".", "e"))
+                if lowered in {"nan", "inf", "+inf", "-inf"}
+                or any(character in lowered for character in (".", "e"))
                 else int(operands[1], 10)
             )
         except ValueError as error:
@@ -549,15 +563,22 @@ def _parse_instruction(
                 f"invalid decimal constant '{operands[1]}'",
                 line,
             ) from error
-        if isinstance(immediate, float) and not math.isfinite(immediate):
-            raise AssemblyParseError(
-                f"invalid finite decimal constant '{operands[1]}'",
-                line,
-            )
         return AssemblyInstruction(
             opcode,
             (destination,),
             immediate=immediate,
+            source=source,
+            line=line,
+        )
+    if opcode is AssemblyOpcode.TREL:
+        try:
+            relation = int(operands[3], 10)
+        except ValueError as error:
+            raise AssemblyParseError("TREL relation code must be an integer", line) from error
+        return AssemblyInstruction(
+            opcode,
+            tuple(_parse_register(operand, line) for operand in operands[:3]),
+            immediate=relation,
             source=source,
             line=line,
         )

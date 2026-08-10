@@ -30,6 +30,7 @@ from .ternary import (
     tritwise_min,
 )
 from .verifier import verify_ir
+from .numeric import checked_i64_add, checked_i64_neg, validate_f64
 
 
 class OptimizationLevel(Enum):
@@ -161,9 +162,19 @@ def _fold_instruction(
         if instruction.opcode is IROpcode.MOVE:
             value = operands[0]
         elif instruction.opcode is IROpcode.INVERT:
-            value = invert(operands[0], _width(result_type))
+            if result_type is IRType.I64:
+                value = checked_i64_neg(operands[0])
+            elif result_type is IRType.F64:
+                value = validate_f64(-float(operands[0]))
+            else:
+                value = invert(operands[0], _width(result_type))
         elif instruction.opcode is IROpcode.ADD:
-            value = add(operands[0], operands[1], _width(result_type))
+            if result_type is IRType.I64:
+                value = checked_i64_add(operands[0], operands[1])
+            elif result_type is IRType.F64:
+                value = validate_f64(float(operands[0]) + float(operands[1]))
+            else:
+                value = add(operands[0], operands[1], _width(result_type))
         elif instruction.opcode is IROpcode.MINIMUM:
             value = tritwise_min(
                 operands[0],

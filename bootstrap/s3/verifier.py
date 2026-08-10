@@ -469,7 +469,13 @@ class IRVerifier:
                 self._error("invert does not support reference values", instruction.location)
             return
 
-        if opcode in {IROpcode.ADD, IROpcode.MINIMUM, IROpcode.MAXIMUM}:
+        if opcode in {
+            IROpcode.ADD,
+            IROpcode.MULTIPLY,
+            IROpcode.DIVIDE,
+            IROpcode.MINIMUM,
+            IROpcode.MAXIMUM,
+        }:
             _, result_type = require_result()
             operand_types = require_operands(2)
             self._require_same_types(
@@ -477,15 +483,54 @@ class IRVerifier:
                 opcode.value,
                 instruction.location,
             )
-            if result_type is IRType.STRING:
+            if result_type in {IRType.STRING, IRType.REFERENCE}:
                 self._error(
-                    f"{opcode.value} does not support string values",
+                    f"{opcode.value} does not support {result_type.value} values",
                     instruction.location,
                 )
-            if result_type is IRType.REFERENCE:
-                self._error(f"{opcode.value} does not support reference values", instruction.location)
-            if result_type in {IRType.I64, IRType.F64} and opcode is not IROpcode.ADD:
-                self._error(f"{opcode.value} does not support numeric values", instruction.location)
+            if (
+                opcode in {IROpcode.MULTIPLY, IROpcode.DIVIDE}
+                and result_type not in {IRType.I64, IRType.F64}
+            ):
+                self._error(f"{opcode.value} requires i64 or f64 values", instruction.location)
+            if (
+                opcode in {IROpcode.MINIMUM, IROpcode.MAXIMUM}
+                and result_type in {IRType.I64, IRType.F64}
+            ):
+                self._error(f"{opcode.value} is balanced-ternary only", instruction.location)
+            return
+
+        if opcode is IROpcode.RELATE:
+            _, result_type = require_result()
+            operand_types = require_operands(2)
+            if result_type is not IRType.TRIT:
+                self._error("relate result must have type trit", instruction.location)
+            self._require_same_types(operand_types, "relate operands", instruction.location)
+            if not operand_types or operand_types[0] not in {
+                IRType.TRIT, IRType.TRYTE, IRType.I64, IRType.F64
+            }:
+                self._error("relate requires scalar numeric operands", instruction.location)
+            if not isinstance(instruction.immediate, int) or instruction.immediate not in range(6):
+                self._error("relate requires relation code 0..5", instruction.location)
+            return
+
+        if opcode is IROpcode.CONVERT:
+            _, result_type = require_result()
+            operand_types = require_operands(1)
+            source_type = operand_types[0]
+            allowed = {
+                (IRType.TRIT, IRType.I64),
+                (IRType.TRYTE, IRType.I64),
+                (IRType.TRIT, IRType.F64),
+                (IRType.TRYTE, IRType.F64),
+                (IRType.I64, IRType.F64),
+                (IRType.I64, IRType.TRYTE),
+            }
+            if (source_type, result_type) not in allowed:
+                self._error(
+                    f"unsupported explicit conversion {source_type.value} -> {result_type.value}",
+                    instruction.location,
+                )
             return
 
         if opcode is IROpcode.COMPARE:

@@ -61,6 +61,8 @@ class DereferenceExpression:
 class BinaryOperator(Enum):
     ADD = "+"
     SUBTRACT = "-"
+    MULTIPLY = "*"
+    DIVIDE = "/"
     MINIMUM = "&"
     MAXIMUM = "|"
     COMPARE = "<=>"
@@ -210,6 +212,7 @@ class LenExpression:
 
 Expression: TypeAlias = (
     IntegerLiteral
+    | FloatLiteral
     | StringLiteral
     | Identifier
     | CallExpression

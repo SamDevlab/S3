@@ -46,6 +46,10 @@ OPCODE_MAP = {
     IROpcode.MOVE: AssemblyOpcode.TMOV,
     IROpcode.INVERT: AssemblyOpcode.TINV,
     IROpcode.ADD: AssemblyOpcode.TADD,
+    IROpcode.MULTIPLY: AssemblyOpcode.TMUL,
+    IROpcode.DIVIDE: AssemblyOpcode.TDIV,
+    IROpcode.RELATE: AssemblyOpcode.TREL,
+    IROpcode.CONVERT: AssemblyOpcode.TCVT,
     IROpcode.MINIMUM: AssemblyOpcode.TMIN,
     IROpcode.MAXIMUM: AssemblyOpcode.TMAX,
     IROpcode.COMPARE: AssemblyOpcode.TCMP,
@@ -73,6 +77,14 @@ def _generate_instruction(instruction: IRInstruction) -> AssemblyInstruction:
         return AssemblyInstruction(
             opcode,
             (instruction.result,),
+            immediate=instruction.immediate,
+            source=instruction.location,
+        )
+    if opcode is AssemblyOpcode.TREL:
+        assert instruction.result is not None
+        return AssemblyInstruction(
+            opcode,
+            (instruction.result, *instruction.operands),
             immediate=instruction.immediate,
             source=instruction.location,
         )
