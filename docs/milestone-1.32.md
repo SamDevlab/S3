@@ -19,8 +19,9 @@ coerced between `i64` and `f64`; mixed-domain arithmetic is rejected.
 ## Current implementation boundary
 
 The canonical domains, typed numeric IR evaluator, large-index model, public
-IR/Assembly type names, and ABI register contract are implemented. Parser
-syntax, verifier activation, main emulator integration, native instruction
+IR/Assembly type names, ABI register contract, and the initial native lowering
+contract (`addq`, `addsd`, `movq`, and `movsd`) are implemented. Parser syntax,
+verifier activation, main emulator integration, complete native instruction
 emission, and end-to-end differential coverage remain milestone work.
 
 The superseded heap-first implementation is intentionally excluded from this
