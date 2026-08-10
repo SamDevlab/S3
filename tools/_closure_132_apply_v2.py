@@ -6,9 +6,7 @@ script = Path(__file__).with_name("_closure_132_apply.py")
 code = script.read_text(encoding="utf-8")
 
 old = '''replace_once(\n    "bootstrap/s3/semantic.py",\n    \'\'\'                ast.BinaryOperator.ADD,\\n                ast.BinaryOperator.SUBTRACT,\\n                ast.BinaryOperator.MINIMUM,\\n\'\'\',\n    \'\'\'                ast.BinaryOperator.ADD,\\n                ast.BinaryOperator.SUBTRACT,\\n                ast.BinaryOperator.MULTIPLY,\\n                ast.BinaryOperator.DIVIDE,\\n                ast.BinaryOperator.MINIMUM,\\n\'\'\',\n)'''
-
 new = '''replace_once(\n    "bootstrap/s3/semantic.py",\n    \'\'\'        if (\\n            isinstance(expression, ast.BinaryExpression)\\n            and expression.operator\\n            in (\\n                ast.BinaryOperator.ADD,\\n                ast.BinaryOperator.SUBTRACT,\\n                ast.BinaryOperator.MINIMUM,\\n                ast.BinaryOperator.MAXIMUM,\\n            )\\n        ):\\n            left = self._known_expression_type(expression.left)\\n            right = self._known_expression_type(expression.right)\\n\'\'\',\n    \'\'\'        if (\\n            isinstance(expression, ast.BinaryExpression)\\n            and expression.operator\\n            in (\\n                ast.BinaryOperator.ADD,\\n                ast.BinaryOperator.SUBTRACT,\\n                ast.BinaryOperator.MULTIPLY,\\n                ast.BinaryOperator.DIVIDE,\\n                ast.BinaryOperator.MINIMUM,\\n                ast.BinaryOperator.MAXIMUM,\\n            )\\n        ):\\n            left = self._known_expression_type(expression.left)\\n            right = self._known_expression_type(expression.right)\\n\'\'\',\n)'''
-
 count = code.count(old)
 if count != 1:
     raise RuntimeError(f"expected one ambiguous semantic codemod block, found {count}")
@@ -52,9 +50,92 @@ replace_once(
         return left or right or ast.TypeName.TRYTE
 ''',
 )
-
 replace_once(
     "tests/test_numeric_capability_e2e.py",
     '        "    return score(2.0, 300.0, 2.0, 50.0) == -4.55\\n"\n',
     '        "    return (score(2.0, 300.0, 2.0, 50.0) > -4.551) & (score(2.0, 300.0, 2.0, 50.0) < -4.549)\\n"\n',
+)
+
+replace_once(
+    "bootstrap/s3/emulator.py",
+    '''        else:
+            if not isinstance(value, int):
+                raise self._runtime_error(
+                    frame,
+                    instruction,
+                    f"memory m{memory.index} expects a numeric value",
+                    DiagnosticCategory.INTERNAL,
+                    DiagnosticCode.RUNTIME_INVALID_STATE,
+                    memory=f"m{memory.index}",
+                    index=index,
+                )
+            try:
+                validate(value, WIDTH_MAP[memory.element_type])
+            except TernaryRangeError as error:
+                raise self._runtime_error(
+                    frame,
+                    instruction,
+                    f"memory m{memory.index} index {index}: {error}",
+                    DiagnosticCategory.OVERFLOW,
+                    DiagnosticCode.RUNTIME_OVERFLOW,
+                    memory=f"m{memory.index}",
+                    index=index,
+                    value=error.value,
+                    lower_bound=error.lower_bound,
+                    upper_bound=error.upper_bound,
+                ) from error
+''',
+    '''        elif memory.element_type is AssemblyType.I64:
+            try:
+                validate_i64(value)
+            except (NumericError, TypeError, ValueError) as error:
+                raise self._runtime_error(
+                    frame,
+                    instruction,
+                    f"memory m{memory.index} index {index}: {error}",
+                    DiagnosticCategory.OVERFLOW,
+                    DiagnosticCode.RUNTIME_OVERFLOW,
+                    memory=f"m{memory.index}",
+                    index=index,
+                ) from error
+        elif memory.element_type is AssemblyType.F64:
+            try:
+                validate_f64(value)
+            except (NumericError, TypeError, ValueError) as error:
+                raise self._runtime_error(
+                    frame,
+                    instruction,
+                    f"memory m{memory.index} index {index}: {error}",
+                    DiagnosticCategory.OVERFLOW,
+                    DiagnosticCode.RUNTIME_OVERFLOW,
+                    memory=f"m{memory.index}",
+                    index=index,
+                ) from error
+        else:
+            if not isinstance(value, int):
+                raise self._runtime_error(
+                    frame,
+                    instruction,
+                    f"memory m{memory.index} expects a numeric value",
+                    DiagnosticCategory.INTERNAL,
+                    DiagnosticCode.RUNTIME_INVALID_STATE,
+                    memory=f"m{memory.index}",
+                    index=index,
+                )
+            try:
+                validate(value, WIDTH_MAP[memory.element_type])
+            except TernaryRangeError as error:
+                raise self._runtime_error(
+                    frame,
+                    instruction,
+                    f"memory m{memory.index} index {index}: {error}",
+                    DiagnosticCategory.OVERFLOW,
+                    DiagnosticCode.RUNTIME_OVERFLOW,
+                    memory=f"m{memory.index}",
+                    index=index,
+                    value=error.value,
+                    lower_bound=error.lower_bound,
+                    upper_bound=error.upper_bound,
+                ) from error
+''',
 )
