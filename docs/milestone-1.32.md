@@ -35,11 +35,13 @@ emulation, S3 Assembly, Assembly verification/emulation, serialization, and
 Linux x86-64 native lowering. Native `f64` arithmetic uses SSE2/XMM and the
 existing mixed SysV integer/SSE calling convention.
 
-Machine-numeric subtraction uses its own checked typed operation rather than
-negate-then-add. This is required for valid expressions such as
-`INT64_MIN - INT64_MIN`, where negating the right operand would create a false
-intermediate overflow. Balanced `trit`/`tryte` subtraction retains the historic
-`INVERT` + `ADD` lowering, and the legacy `TSUB` opcode remains absent.
+Machine-numeric subtraction uses its own checked typed **numeric difference**
+operation (`NUMERIC_DIFFERENCE` / `TNDIFF`) rather than negate-then-add. This is
+required for valid expressions such as `INT64_MIN - INT64_MIN`, where negating
+the right operand would create a false intermediate overflow. The distinct
+name deliberately preserves the earlier compiler invariant that there is no
+generic IR `subtract` opcode: balanced `trit`/`tryte` subtraction retains the
+historic `INVERT` + `ADD` lowering, and the legacy `TSUB` opcode remains absent.
 
 Integer and balanced-ternary relational operators preserve the established
 `COMPARE` lowering path. `f64` relations use the typed `RELATE` path so IEEE-754
