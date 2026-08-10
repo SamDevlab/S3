@@ -30,6 +30,31 @@ class LargeIndex:
         return self.value < length.value
 
 
+@dataclass(frozen=True, slots=True)
+class SliceBounds:
+    """A checked half-open range over the large index domain."""
+
+    start: LargeIndex
+    end: LargeIndex
+
+    def __post_init__(self) -> None:
+        if self.start.value > self.end.value:
+            raise NumericError(
+                f"slice start {self.start.value} exceeds end {self.end.value}"
+            )
+
+    @classmethod
+    def from_values(cls, start: int, end: int) -> SliceBounds:
+        return cls(LargeIndex(start), LargeIndex(end))
+
+    @property
+    def length(self) -> LargeIndex:
+        return LargeIndex(self.end.value - self.start.value)
+
+    def contains(self, index: LargeIndex) -> bool:
+        return self.start.value <= index.value < self.end.value
+
+
 def validate_large_length(value: int) -> int:
     """Validate a non-negative i64 collection length."""
 
