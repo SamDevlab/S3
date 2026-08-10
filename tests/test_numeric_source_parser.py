@@ -119,3 +119,19 @@ def test_numeric_ir_and_assembly_round_trip_f64_constants() -> None:
     assembly = generate_assembly(restored_ir)
     restored_assembly = parse_assembly(assembly.render())
     assert Emulator().execute(restored_assembly) == 0.5
+
+
+def test_i64_index_executes_through_ir_assembly_and_native_lowering() -> None:
+    program = parse(
+        "fn main() -> tryte:\n"
+        "    values: tryte[3] = [4, 5, 6]\n"
+        "    index: i64 = 1\n"
+        "    return values[index]\n",
+        mode=SyntaxMode.V0_6,
+    )
+    module = lower(program, analyze(program))
+    assert execute_ir(module) == 5
+    assembly = generate_assembly(module)
+    assert Emulator().execute(assembly) == 5
+    native = generate_native_assembly(assembly)
+    assert "cmp rax, 3" in native

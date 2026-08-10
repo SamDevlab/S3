@@ -2180,13 +2180,18 @@ class SemanticAnalyzer:
         index: ast.Expression,
         type_name: ast.ArrayType,
     ) -> ast.TypeName:
-        index_type = self._analyze_expression(index, ast.TypeName.TRYTE)
-        self._require_type(
-            index_type,
-            ast.TypeName.TRYTE,
-            index.location,
-            "array index",
+        known_index_type = self._known_expression_type(index)
+        expected_index_type = (
+            ast.TypeName.I64
+            if known_index_type is ast.TypeName.I64
+            else ast.TypeName.TRYTE
         )
+        index_type = self._analyze_expression(index, expected_index_type)
+        if index_type not in {ast.TypeName.TRYTE, ast.TypeName.I64}:
+            raise SemanticError(
+                f"array index has type {_type_display(index_type)}; expected tryte or i64",
+                index.location,
+            )
         constant = self._constant_integer(index)
         if constant is not None and not 0 <= constant < type_name.length:
             raise SemanticError(

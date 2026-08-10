@@ -357,8 +357,8 @@ class AssemblyVerifier:
                     raise EmulatorError(self._static_context(function, block, instruction, "TADDR references unknown memory"))
                 if len(instruction.registers) not in {1, 2}:
                     raise EmulatorError(self._static_context(function, block, instruction, "TADDR memory form requires a destination and optional index"))
-                if len(instruction.registers) == 2 and register_type(instruction.registers[1]) is not AssemblyType.TRYTE:
-                    raise EmulatorError(self._static_context(function, block, instruction, "TADDR array index must be a tryte"))
+                if len(instruction.registers) == 2 and register_type(instruction.registers[1]) not in {AssemblyType.TRYTE, AssemblyType.I64}:
+                    raise EmulatorError(self._static_context(function, block, instruction, "TADDR array index must be a tryte or i64"))
                 source_type = memory_objects[instruction.memory].element_type
             else:
                 if len(instruction.registers) != 2:
@@ -452,13 +452,13 @@ class AssemblyVerifier:
                     )
                 )
             memory = memory_objects[instruction.memory]  # type: ignore[index]
-            if register_type(index) is not AssemblyType.TRYTE:
+            if register_type(index) not in {AssemblyType.TRYTE, AssemblyType.I64}:
                 raise EmulatorError(
                     self._static_context(
                         function,
                         block,
                         instruction,
-                        "TLOAD index must be a tryte register",
+                        "TLOAD index must be a tryte or i64 register",
                     )
                 )
             if register_type(destination) is not memory.element_type:
@@ -483,13 +483,13 @@ class AssemblyVerifier:
                     )
                 )
             memory = memory_objects[instruction.memory]  # type: ignore[index]
-            if register_type(index) is not AssemblyType.TRYTE:
+            if register_type(index) not in {AssemblyType.TRYTE, AssemblyType.I64}:
                 raise EmulatorError(
                     self._static_context(
                         function,
                         block,
                         instruction,
-                        "TSTORE index must be a tryte register",
+                        "TSTORE index must be a tryte or i64 register",
                     )
                 )
             if register_type(source) is not memory.element_type:

@@ -370,8 +370,8 @@ class IRVerifier:
                 self._error("address_of requires a logical storage operand", instruction.location)
             if instruction.memory is not None:
                 self._require_memory(instruction, memory_objects)
-                if len(instruction.operands) == 1 and register_types[instruction.operands[0]] is not IRType.TRYTE:
-                    self._error("address_of array index must be a tryte", instruction.location)
+                if len(instruction.operands) == 1 and register_types[instruction.operands[0]] not in {IRType.TRYTE, IRType.I64}:
+                    self._error("address_of array index must be a tryte or i64", instruction.location)
             if instruction.operands:
                 if register_types[instruction.operands[0]] is IRType.REFERENCE:
                     self._error("address_of cannot target a reference", instruction.location)
@@ -550,8 +550,8 @@ class IRVerifier:
             _, result_type = require_result()
             operand_types = require_operands(1)
             memory = self._require_memory(instruction, memory_objects)
-            if operand_types[0] is not IRType.TRYTE:
-                self._error("load index must have type tryte", instruction.location)
+            if operand_types[0] not in {IRType.TRYTE, IRType.I64}:
+                self._error("load index must have type tryte or i64", instruction.location)
             if result_type is not memory.element_type:
                 self._error(
                     f"load result has type {result_type.value}; memory "
@@ -564,8 +564,8 @@ class IRVerifier:
             require_no_result()
             operand_types = require_operands(2)
             memory = self._require_memory(instruction, memory_objects)
-            if operand_types[0] is not IRType.TRYTE:
-                self._error("store index must have type tryte", instruction.location)
+            if operand_types[0] not in {IRType.TRYTE, IRType.I64}:
+                self._error("store index must have type tryte or i64", instruction.location)
             if operand_types[1] is not memory.element_type:
                 self._error(
                     f"store value has type {operand_types[1].value}; memory "

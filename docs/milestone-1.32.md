@@ -21,10 +21,11 @@ coerced between `i64` and `f64`; mixed-domain arithmetic is rejected.
 The canonical domains, typed numeric IR evaluator, large-index model, public
 IR/Assembly type names, ABI register contract, initial native lowering contract
 (`addq`, `addsd`, `movq`, and `movsd`), numeric `ADD` execution in the main
-IR verifier/emulator, and the constant/return path through lexer, parser,
-semantic analysis, and lowering are implemented. Complete verifier activation,
-complete native instruction emission, and end-to-end differential coverage
-remain milestone work.
+IR and Assembly verifier/emulator, the constant/return path through lexer,
+parser, semantic analysis, and lowering, `i64` array indices, native `i64`
+overflow checks, SSE2 `f64` addition/comparison, and scalar SysV float calls are
+implemented. Linux O0/O1 native differential execution is the final platform
+gate for this milestone.
 
 The superseded heap-first implementation is intentionally excluded from this
 milestone and remains preserved on its original branch for possible M1.35 use.
