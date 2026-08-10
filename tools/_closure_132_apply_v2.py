@@ -55,6 +55,41 @@ replace_once(
     '        "    return score(2.0, 300.0, 2.0, 50.0) == -4.55\\n"\n',
     '        "    return (score(2.0, 300.0, 2.0, 50.0) > -4.551) & (score(2.0, 300.0, 2.0, 50.0) < -4.549)\\n"\n',
 )
+replace_once(
+    "tests/test_numeric_capability_e2e.py",
+    '''def test_large_i64_loop_reaches_one_million() -> None:
+''',
+    '''@pytest.mark.s3_native
+def test_large_i64_loop_reaches_one_million(tmp_path: Path) -> None:
+''',
+)
+replace_once(
+    "tests/test_numeric_capability_e2e.py",
+    '''    assert execute_ir(compilation.ir) == -1
+    assert Emulator(max_instructions=10_000_000).execute(compilation.assembly) == -1
+
+
+def test_scientific_scalar_probe_matches_expected_formula() -> None:
+''',
+    '''    assert execute_ir(compilation.ir) == -1
+    # Running ten-million-plus bytecode instructions in the Python Assembly
+    # emulator is characterization, not the capability gate.  The same typed
+    # Assembly is instead lowered and executed through the real Linux backend.
+    toolchain = NativeToolchain.detect()
+    native_source = generate_native_assembly(
+        compilation.assembly,
+        max_instructions=20_000_000,
+    )
+    executable = toolchain.build(native_source, tmp_path / "million-loop")
+    completed = toolchain.run(executable)
+    assert completed.returncode == 0
+    assert completed.stderr == ""
+    assert completed.stdout == "program returned: -1\n"
+
+
+def test_scientific_scalar_probe_matches_expected_formula() -> None:
+''',
+)
 
 replace_once(
     "bootstrap/s3/emulator.py",
