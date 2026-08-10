@@ -6,9 +6,10 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 from . import ast
+from .large_index import SliceBounds
 from .diagnostics import DiagnosticCode, SemanticError, SourceLocation
 from .static_text import StaticTextDecodeError, decode_static_text
-from .numeric import I64_MAX, I64_MIN, validate_f64, validate_i64
+from .numeric import NumericError, I64_MAX, I64_MIN, validate_f64, validate_i64
 from .ternary import (
     TRIT_MAX,
     TRIT_MIN,
@@ -3295,14 +3296,16 @@ class SemanticAnalyzer:
                         DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
                     ),
                 )
-            if start > end:
+            try:
+                bounds = SliceBounds.from_values(start, end)
+            except NumericError:
                 raise SemanticError(
                     f"static text slice start {start} exceeds end {end}",
                     expression.location,
                     diagnostic_code=(
                         DiagnosticCode.SEMANTIC_UNSUPPORTED_STRING_OPERATION
                     ),
-                )
+                ) from None
             if end > len(source):
                 raise SemanticError(
                     f"static text slice end {end} is outside text bounds [0, {len(source)}]",
@@ -3312,7 +3315,9 @@ class SemanticAnalyzer:
                     ),
                 )
             self.expression_types[id(expression)] = ast.TypeName.STRING
-            text = source[start:end]
+            text = source[
+                bounds.start.value : bounds.end.value
+            ]
             self.static_text_values[id(expression)] = text
             return text
         if isinstance(expression, ast.CallExpression):
