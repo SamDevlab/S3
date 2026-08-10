@@ -216,6 +216,10 @@ class Parser:
             result: ast.DeclaredType = ast.TypeName.TRIT
         elif self._match(TokenKind.TRYTE):
             result = ast.TypeName.TRYTE
+        elif self._match(TokenKind.I64):
+            result = ast.TypeName.I64
+        elif self._match(TokenKind.F64):
+            result = ast.TypeName.F64
         elif self._check(TokenKind.IDENTIFIER) and self._peek().text == "string":
             self._advance()
             result = ast.TypeName.STRING
@@ -232,7 +236,7 @@ class Parser:
             result = ast.NominalType(".".join(parts), nominal.location)
         else:
             raise ParseError(
-                "expected type 'trit', 'tryte', 'string', or nominal type",
+                "expected type 'trit', 'tryte', 'i64', 'f64', 'string', or nominal type",
                 self._peek().location,
             )
         while self._match(TokenKind.LEFT_BRACKET):
@@ -307,6 +311,8 @@ class Parser:
             self._check(TokenKind.MUT)
             or self._check(TokenKind.TRIT)
             or self._check(TokenKind.TRYTE)
+            or self._check(TokenKind.I64)
+            or self._check(TokenKind.F64)
         ):
             return self._parse_variable_declaration()
         if self._match(TokenKind.RETURN):
@@ -775,6 +781,9 @@ class Parser:
         if self._match(TokenKind.INTEGER):
             token = self._previous()
             return ast.IntegerLiteral(int(token.text), token.location)
+        if self._match(TokenKind.FLOAT):
+            token = self._previous()
+            return ast.FloatLiteral(float(token.text), token.location)
         if self._match(TokenKind.STRING_LITERAL):
             token = self._previous()
             return ast.StringLiteral(token.text[1:-1], token.location)

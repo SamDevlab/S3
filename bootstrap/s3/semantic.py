@@ -8,6 +8,7 @@ from enum import Enum
 from . import ast
 from .diagnostics import DiagnosticCode, SemanticError, SourceLocation
 from .static_text import StaticTextDecodeError, decode_static_text
+from .numeric import I64_MAX, I64_MIN, validate_f64
 from .ternary import (
     TRIT_MAX,
     TRIT_MIN,
@@ -214,7 +215,7 @@ class SemanticModel:
     records: dict[str, RecordType]
     enums: dict[str, EnumType]
     static_text_values: dict[int, str]
-    constant_values: dict[int, int]
+    constant_values: dict[int, int | float]
     simplified_expressions: dict[int, ast.Expression]
     place_info: dict[int, PlaceInfo] = field(default_factory=dict)
     reference_origins: dict[int, tuple[int, int, bool]] = field(default_factory=dict)
@@ -255,7 +256,7 @@ class SemanticModel:
     def static_text_of(self, expression: ast.Expression) -> str | None:
         return self.static_text_values.get(id(expression))
 
-    def constant_value_of(self, expression: ast.Expression) -> int | None:
+    def constant_value_of(self, expression: ast.Expression) -> int | float | None:
         return self.constant_values.get(id(expression))
 
     def provenance_of(self, expression: ast.Expression) -> ReferenceProvenance | None:
@@ -583,7 +584,7 @@ class SemanticAnalyzer:
     def __init__(self) -> None:
         self.expression_types: dict[int, ast.DeclaredType] = {}
         self.static_text_values: dict[int, str] = {}
-        self.constant_values: dict[int, int] = {}
+        self.constant_values: dict[int, int | float] = {}
         self.simplified_expressions: dict[int, ast.Expression] = {}
         self.functions: dict[str, FunctionType] = {}
         self.records: dict[str, RecordType] = {}
@@ -1544,11 +1545,17 @@ class SemanticAnalyzer:
         if isinstance(expression, ast.IntegerLiteral):
             result = (
                 expected
-                if expected in (ast.TypeName.TRIT, ast.TypeName.TRYTE)
+                if expected in (ast.TypeName.TRIT, ast.TypeName.TRYTE, ast.TypeName.I64)
                 else ast.TypeName.TRYTE
             )
             self._validate_literal(expression, result)
             self.constant_values[id(expression)] = expression.value
+        elif isinstance(expression, ast.FloatLiteral):
+            result = ast.TypeName.F64
+            self._validate_float_literal(expression)
+            self.constant_values[id(expression)] = expression.value
+            if expected is not None:
+                self._require_type(result, expected, expression.location, "float literal")
         elif isinstance(expression, ast.StringLiteral):
             self._validate_static_string_literal(expression)
             self.static_text_values[id(expression)] = decode_static_text(
@@ -2636,6 +2643,8 @@ class SemanticAnalyzer:
     ) -> ast.DeclaredType | None:
         if isinstance(expression, ast.IntegerLiteral):
             return ast.TypeName.TRYTE
+        if isinstance(expression, ast.FloatLiteral):
+            return ast.TypeName.F64
         if isinstance(expression, ast.Identifier):
             return self._identifier_type(expression)
         if isinstance(expression, ast.StringLiteral):
@@ -3354,17 +3363,27 @@ class SemanticAnalyzer:
         literal: ast.IntegerLiteral,
         type_name: ast.TypeName,
     ) -> None:
-        minimum, maximum = (
-            (TRIT_MIN, TRIT_MAX)
-            if type_name is ast.TypeName.TRIT
-            else (TRYTE_MIN, TRYTE_MAX)
-        )
+        if type_name is ast.TypeName.I64:
+            minimum, maximum = I64_MIN, I64_MAX
+        else:
+            minimum, maximum = (
+                (TRIT_MIN, TRIT_MAX)
+                if type_name is ast.TypeName.TRIT
+                else (TRYTE_MIN, TRYTE_MAX)
+            )
         if not minimum <= literal.value <= maximum:
             raise SemanticError(
                 f"literal {literal.value} is outside {type_name.value} range "
                 f"[{minimum}, {maximum}]",
                 literal.location,
             )
+
+    @staticmethod
+    def _validate_float_literal(literal: ast.FloatLiteral) -> None:
+        try:
+            validate_f64(literal.value)
+        except (TypeError, ValueError) as error:
+            raise SemanticError(str(error), literal.location) from error
 
     @staticmethod
     def _require_type(

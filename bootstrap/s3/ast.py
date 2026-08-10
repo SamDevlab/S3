@@ -12,6 +12,8 @@ from .diagnostics import SourceLocation
 class TypeName(Enum):
     TRIT = "trit"
     TRYTE = "tryte"
+    I64 = "i64"
+    F64 = "f64"
     STRING = "string"
 
 
@@ -73,6 +75,12 @@ class BinaryOperator(Enum):
 @dataclass(frozen=True, slots=True)
 class IntegerLiteral:
     value: int
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
+class FloatLiteral:
+    value: float
     location: SourceLocation
 
 
