@@ -2,154 +2,214 @@
 
 [![Tests](https://github.com/SamDevlab/S3/actions/workflows/tests.yml/badge.svg)](https://github.com/SamDevlab/S3/actions/workflows/tests.yml)
 
-S3 é uma linguagem experimental de sistemas baseada em ternário balanceado.
-Este repositório contém a versão publicável
-`s3-bootstrap` 0.7.0, com sintaxe fonte V0.6 por padrão e formatos IR JSON e
-S3 Assembly 0.6.0:
+S3 é uma linguagem experimental de sistemas baseada em **ternário balanceado**, com foco em semântica explícita, execução determinística, segurança de memória por construção e um caminho nativo Linux x86-64 verificável.
+
+O pacote publicável continua sendo **`s3-bootstrap` 0.7.0**. A linha interna **1.x** evolui o compilador, a linguagem e o runtime sem implicar automaticamente um novo release público.
 
 ```text
-fonte → frontend → IR verificada → análise de inicialização → O0/O1
-      → S3 Assembly 0.6 versionada e validada
-      ├→ emulador
-      └→ GNU assembly x86-64 → ELF Linux
+fonte S3
+  ↓
+lexer / parser / semântica
+  ↓
+IR tipada e verificada
+  ↓
+O0 / O1 + verificação
+  ↓
+S3 Assembly versionada
+  ├─→ emulador
+  └─→ backend Linux x86-64 → ELF nativo
 ```
 
-Python está isolado em `bootstrap/`; a fonte normativa é [`spec/`](spec/).
+O compilador de referência continua em Python dentro de `bootstrap/`. Os programas nativos gerados não dependem de Python para executar.
 
-## Suporte atual
+## Estado atual
 
-A implementação atual oferece:
+A linha atual já vai além do MVP 0.7 e inclui, entre outras capacidades:
 
-- `trit` e `tryte`, overflow detectável e sem unsigned;
-- funções, chamadas, recursão, laços `while` e `for`, `break` e `continue` em laços, operadores relacionais (`==`, `!=`, `<`, `<=`, `>`, `>=`), e `match` ternário exaustivo em statement e expressão no default V0.6;
-- sintaxe V0.5 mantida apenas como compatibilidade legada/deprecated;
+- `trit` e `tryte` balanceados, preservando a semântica ternária original;
+- `i64` assinado de 64 bits com aritmética checked;
+- `f64` IEEE-754 binary64;
+- funções, chamadas, recursão, `while`, `for`, `break`, `continue` e `match`;
 - bindings imutáveis e `mut` explícito;
-- atribuição escalar e indexada;
-- arrays estáticos unidimensionais de `trit`/`tryte` e expressão `len(array)` estática;
-- valores `string` estáticos tipados e concatenação literal-only em tempo de compilação;
-- bounds estático para índices constantes e dinâmico para calculados;
-- objetos de memória locais ao frame, sem ponteiros ou aliasing;
-- IR SSA com CFG, dominância, `LOAD` e `STORE`;
-- módulos multi-file determinísticos com `module`, imports explícitos,
-  `export fn`, qualified calls e type imports explícitos;
-- records e enums nominais mínimos, com `export record`, `export enum`,
-  tipos pontuados, constructors qualificados e campos de record limitados a
-  `trit`, `tryte`, `string`, enums fechados e records acíclicos;
-- assembly com `.memory`, `TLOAD` e `TSTORE`;
-- leitura não inicializada sempre diagnosticada;
-- backend nativo experimental Linux x86-64 para todos os opcodes atuais;
-- ELF independente de Python, C, LLVM, libc e runtime padrão;
-- System V AMD64, inclusive argumentos adicionais pela pilha;
-- entrada explícita de toda função nativa no bloco `entry`;
-- limite hospedado e nativo configurável de 100000 instruções por padrão;
-- faixa nativa u64 isolada por processo;
-- limite nativo configurável de 1024 frames por padrão;
-- diagnósticos nativos com função, bloco, opcode, origem e valor;
-- S3 Assembly `.s3asm 0.6.0` com leitura de legado 0.5 width-1;
-- S3 IR JSON canônica, versionada e verificável;
-- análise conservadora de inicialização por CFG;
-- níveis O0 (padrão) e O1 local, verificados antes/depois;
-- builds preparados para reprodutibilidade na mesma toolchain;
-- CI bootstrap em Python 3.11–3.13 e job nativo obrigatório em Ubuntu.
+- arrays estáticos e bounds checking;
+- records e enums nominais;
+- módulos determinísticos com imports/exports explícitos;
+- referências seguras `&T` e `&mut T`, sem raw pointers;
+- referências para elementos de arrays e campos de records;
+- reborrow de referências;
+- IR SSA/CFG, verificação, emulação e backend nativo;
+- O0 e O1 com contratos de correção;
+- backend Linux x86-64 com System V AMD64;
+- CI em Python 3.11–3.13, gates diferenciais, SSA, benchmark e Linux nativo obrigatório.
 
-Não existem `PHI`, `SUBTRACT`, `TSUB`, heap ou memória global.
+A versão publicável permanece 0.7.0 enquanto essas milestones internas amadurecem.
 
-## Current development status
+## Domínios numéricos
 
-Current 1.x internal milestones do not change the published package version or
-the public IR, S3 Assembly, diagnostic schema, ABI, CLI, golden artifacts, or
-baselines unless an explicit milestone says so.
+### `trit` e `tryte`
 
-- Milestones 0.60-0.95 built the optimization foundation: CFG and SSA
-  infrastructure, O1 pass orchestration, constant propagation and folding,
-  static-text semantic evaluation, de-SSA lowering, verification boundaries, and
-  differential coverage.
-- Milestone 0.96 stabilized GVN, DSE, Memory SSA, de-SSA, optimizer telemetry,
-  and the correctness contracts around those passes.
-- Milestones 0.97-1.01 delivered the differential correctness matrix, optimizer
-  architecture split, deterministic modules/imports, minimal nominal records and
-  enums, and the first S3 self-hosting component as a differential reference.
-- Milestone 1.02 completed language-composition contracts without changing
-  public IR, S3 Assembly, diagnostics schema, ABI, CLI, goldens, baselines, or
-  package version. It delivered record composition alignment, unified postfix
-  parsing, qualified calls, qualified enum variants, record member access,
-  qualified postfix lowering checks, exported nominal type symbols, imported
-  nominal record and enum values, deterministic cross-module nominal layout,
-  O0/O1 coverage, and Linux x86-64 native coverage.
-- Milestone 1.03 completed acyclic nested records without changing public IR,
-  S3 Assembly, diagnostics schema, ABI, CLI, goldens, baselines, or package
-  version. Nested records are flattened internally through the canonical
-  `SemanticModel.record_leaves()` order: depth-first, declaration-order scalar
-  leaves. The feature covers local and imported record fields, qualified nested
-  constructors, copies, parameters, member chains, multi-module determinism,
-  O0/O1 execution, and native x86-64 coverage.
-- Milestone 1.04 completed fixed-capacity static text values as scalar handles.
-  It preserved the existing static string table, `CONST_STR`/`TCONST_STR`,
-  emulator handles, and native `.rodata` path while allowing `string` leaves in
-  records and nested records. Text operations remain compile-time-only unless
-  their operands are known static text.
-- Milestone 1.05 implements the accepted ADR-0021 fixed-layout enum payload
-  model. Payload enum values use a tag-first fixed cell layout, named payload
-  fields, deterministic inactive slots, qualified construction, imported
-  nominal layouts, match payload bindings, O0/O1 execution, and native harness
-  coverage without changing the public IR, S3 Assembly, diagnostic schema, ABI,
-  CLI, goldens, baselines, or package version. Structured results are explicit
-  nominal enum conventions; there are no generics, exceptions, `?`, unwinding,
-  or implicit propagation.
-- Milestone 1.06 completed the second self-hosting step. Python remains the
-  reference compiler and default path; second-stage S3 components remain opt-in
-  and differential until explicitly adopted.
-- The current aggregate-results campaign implements IR/Assembly result groups
-  and keeps source functions as returning one logical value. Width-1 returns use
-  the scalar path; fixed-layout record/enum returns lower to ordered result
-  cells; native width > 1 returns use an internal hidden sret convention. The
-  source language still exposes no pointers, heap, tuple returns, exceptions,
-  `?`, generic result type, or implicit propagation.
+Os tipos balanceados continuam sendo parte central da linguagem. A introdução de tipos de máquina não redefine operadores ternários nem transforma valores inteiros em ponteiros.
 
-The current 1.12-1.16 campaign adds fixed `trit`/`tryte` arrays across value
-boundaries and an experimental bounded Assembly frontend foundation with
-bounded ASCII text, scalar cursors, half-open spans, an incremental tokenizer,
-an incremental parser kernel, and a summary-producing frontend candidate.
-Python remains the reference compiler and default path. Recursive types,
-general heap allocation, dynamic text, pointers, Unicode text processing,
-filesystem access, default parser replacement, and complete self-hosting are
-still not implemented.
+### `i64`
 
-The 1.17-1.19 campaign builds a separate, versioned benchmark layer. The
-`s3bench 1.0.0` protocol verifies checksums before measurement, preserves raw
-samples, separates build/runtime/end-to-end phases, and keeps emulator, native,
-and external toolchains in explicit comparison classes. During implementation,
-coverage is authored but benchmark execution remains deferred until all three
-milestones reach their structural gate. Python remains the default compiler and
-the bounded S3 frontend remains a candidate.
+`i64` é um inteiro assinado de 64 bits com operações checked:
 
-## Contrato do Marco 0.7
+```text
++
+-
+*
+/
+unary -
+== != < <= > >=
+```
 
-A versão 0.7.0 inclui fonte V0.6 por padrão e V0.5 por seleção
-explícita; `trit`, `tryte`, funções, chamadas, recursão, mutabilidade,
-`match`, arrays estáticos e acesso indexado; bounds e análise de inicialização;
-IR verificada, O0/O1, S3 Assembly e emulador; backend experimental Linux
-x86-64 com ELF independente de Python depois do build; limite de instruções
-hospedado e nativo compartilhado (default 100000); limite de frames nativo;
-diagnósticos em texto e JSON; CLI pública; e suporte a Python 3.11, 3.12 e 3.13.
+Overflow não faz wrap silencioso. Divisão por zero e o caso `INT64_MIN / -1` são tratados como falhas determinísticas.
 
-Ficam fora deste MVP: ponteiros, heap, memória global, structs, strings
-dinâmicas ou dependentes de runtime, módulos, I/O da linguagem, package
-manager, LSP, depurador, generics, macros, concorrência, ARM64, backends
-Windows/macOS, ABI C pública e arrays dinâmicos ou multidimensionais. Esses
-limites definem o escopo do MVP; não são pendências da Entrega E.
+A subtração de máquina possui uma operação tipada própria no pipeline (`NUMERIC_DIFFERENCE` / `TNDIFF`) para que casos válidos como:
+
+```text
+INT64_MIN - INT64_MIN == 0
+-1 - INT64_MIN == INT64_MAX
+```
+
+não sofram um overflow intermediário artificial causado por uma transformação `negate + add`.
+
+A subtração balanceada de `trit`/`tryte` continua usando o lowering histórico `INVERT + ADD`; não existe um opcode genérico `SUBTRACT`/`TSUB` para substituir essa semântica.
+
+### `f64`
+
+`f64` segue IEEE-754 binary64 e oferece:
+
+```text
++
+-
+*
+/
+unary -
+== != < <= > >=
+```
+
+NaN, `+Inf`, `-Inf` e signed zero permanecem valores válidos. O compilador não habilita fast-math nem reassociação que altere a semântica IEEE-754.
+
+No backend Linux x86-64, operações `f64` usam SSE2/XMM e o ABI interno suporta argumentos inteiros e floating-point no mesmo fluxo System V AMD64.
+
+### Conversões explícitas
+
+As conversões numéricas iniciais são explícitas:
+
+```text
+to_i64(trit|tryte) -> i64
+to_f64(trit|tryte|i64) -> f64
+to_tryte(i64) -> tryte
+```
+
+`to_tryte(i64)` é checked para a faixa balanceada `[-364, 364]`.
+
+Não existem casts entre referências e inteiros.
+
+## Exemplo numérico
+
+```s3
+fn score(logp: f64, mw: f64, aromatic: f64, tpsa: f64) -> f64:
+    return -3.0 + logp * -0.35 + (mw / 100.0) * -0.2 + aromatic * -0.4 + (tpsa / 50.0) * 0.15
+
+fn main() -> trit:
+    mut counter: i64 = 0
+    while counter < 1000000:
+        counter = counter + 1
+
+    return (counter == 1000000) & (score(2.0, 300.0, 2.0, 50.0) < -4.54)
+```
+
+A milestone numérica possui probes end-to-end para parser, semântica, IR, Assembly, emuladores e backend Linux x86-64, incluindo um loop nativo cujo contador `i64` chega a 1.000.000.
+
+## Referências seguras
+
+S3 possui referências tipadas seguras:
+
+```text
+&T
+&mut T
+```
+
+O modelo atual evita:
+
+- null references;
+- raw pointers;
+- pointer arithmetic;
+- casts referência ↔ inteiro;
+- comparação de identidade de ponteiros como semântica pública.
+
+`&mut` representa capacidade de escrita. Ele não deve ser interpretado automaticamente como o mesmo modelo de exclusividade/noalias de Rust.
+
+A implementação atual suporta referências a storage local, elementos de arrays, campos de records e reborrow, com proveniência preservada pelo compilador.
+
+## Pipeline do compilador
+
+O fluxo principal é:
+
+```text
+source
+  → lexer
+  → parser
+  → semantic analysis
+  → typed IR
+  → verifier
+  → optimization
+  → S3 Assembly
+  → Assembly verifier
+  ├→ Assembly emulator
+  └→ Linux x86-64 backend
+```
+
+A infraestrutura inclui:
+
+- CFG e dominância;
+- SSA e verificação por passes;
+- constant propagation/folding;
+- DCE e otimizações conservadoras;
+- Memory Effects/proveniência para referências;
+- differential testing;
+- contratos determinísticos de serialização e Assembly;
+- register allocation GPR experimental no backend nativo.
+
+Otimização nunca deve alterar a semântica observável do programa.
+
+## Backend nativo
+
+O target nativo principal é **Linux x86-64**.
+
+O backend gera GNU assembly e usa a toolchain disponível (`cc`, `gcc` ou `clang`) para montar e linkar o ELF.
+
+```bash
+s3 native-asm examples/first.s3 -o build/first.s
+s3 build examples/first.s3 -o build/first
+s3 run-native examples/first.s3
+```
+
+O caminho nativo continua sendo obrigatório mesmo com a evolução futura de containers e providers externos.
 
 ## Instalação
 
 ```bash
 python -m venv .venv
+```
 
-# PowerShell:
+PowerShell:
+
+```powershell
 .venv\Scripts\Activate.ps1
+```
 
-# Linux/macOS:
+Linux/macOS:
+
+```bash
 source .venv/bin/activate
+```
 
+Instalação:
+
+```bash
 python -m pip install .
 s3 --help
 s3 run examples/first.s3
@@ -162,28 +222,19 @@ python -m pip install -e ".[dev]"
 python -m pytest
 ```
 
-O runtime usa somente a biblioteca padrão. `pytest` é dependência de
-desenvolvimento.
+O pacote não possui dependências runtime externas obrigatórias; `pytest` e `pytest-xdist` pertencem ao ambiente de desenvolvimento.
 
 ## CLI
 
-A CLI usa a sintaxe fonte 0.6 por padrão. Os exemplos oficiais já usam V0.6,
-portanto os comandos comuns não precisam de uma opção de versão. A sintaxe
-V0.5 permanece temporariamente disponível com `--source-syntax 0.5` como
-compatibilidade legada/deprecated. Não há autodetecção, fallback ou migração automática;
-consulte o [guia de migração 0.6](docs/migration-source-0.5-to-0.6.md).
+A sintaxe fonte V0.6 continua sendo o modo padrão da versão publicável.
 
-A versão da fonte é independente dos artefatos: escritores atuais emitem IR JSON
-e S3 Assembly 0.6.0; leitores continuam aceitando artefatos legados 0.5.0 de
-largura 1. O Marco 0.7 está concluído e as milestones 1.x internas preservam a
-versão publicável do pacote até decisão explícita.
+Comandos comuns:
 
 ```bash
 s3 targets
 s3 doctor
 s3 check examples/first.s3
 s3 inspect examples/first.s3
-s3 inspect examples/first.s3 --emit summary
 s3 inspect examples/first.s3 --emit ir
 s3 inspect examples/first.s3 --emit assembly
 s3 tokens examples/static_array.s3
@@ -191,341 +242,151 @@ s3 ast examples/static_array.s3
 s3 ir examples/static_array.s3
 s3 ir-json examples/static_array.s3 -o build/array.s3ir.json
 s3 verify-ir build/array.s3ir.json
-s3 asm examples/static_array.s3
 s3 asm examples/first.s3 -O1
-s3 run examples/static_array.s3 --max-instructions 200000
-s3 run examples/static_array.s3 --diagnostic-format json
-s3 native-asm examples/first.s3 --max-instructions 200000
+s3 run examples/static_array.s3
 s3 native-asm examples/first.s3 -o build/first.s
-s3 build examples/first.s3 -o build/first --max-instructions 200000
-s3 run-native examples/first.s3 -O1 --max-frames 128 --max-instructions 200000
-s3 --source-syntax 0.5 run legacy-v0.5.s3
+s3 build examples/first.s3 -o build/first
+s3 run-native examples/first.s3 -O1
 ```
 
-Em um checkout sem instalação, a forma equivalente é
-`python -m bootstrap.s3.cli`.
+Em um checkout sem instalação:
 
-`targets` mostra os targets e providers internos disponíveis. `doctor`
-diagnostica Python, host, targets, execução hospedada, assembly nativo e a
-disponibilidade da `NativeToolchain`.
-
-`check` valida se um arquivo fonte compila, sem executar o programa, sem gerar
-ELF e sem chamar o backend nativo. `inspect` mostra um resumo da compilação por
-padrão; `--emit summary` torna esse modo explícito. `--emit ir` emite o IR JSON
-do compilador atual, e `--emit assembly` emite o S3 Assembly atual para
-inspection e comparação.
-
-`ir-json` emite o envelope `s3-ir` 0.6.0 com newline; `verify-ir` reconstrói e
-verifica artefatos 0.6.0 e o legado 0.5.0 width-1. `asm` sempre começa por
-`.s3asm 0.6.0`. `-O0` é padrão;
-`-O1` faz somente folding, DCE e threading conservadores. `native-asm` é
-determinístico e funciona em qualquer host.
-
-Diagnósticos usam texto em stderr por padrão. Todos os comandos aceitam
-`--diagnostic-format json` para emitir um objeto JSON por diagnóstico, no
-schema versionado `s3-diagnostic` 1.0.0. Resultados normais permanecem em
-stdout. Categorias, códigos, campos opcionais e regras de compatibilidade estão
-em [`spec/diagnostics.md`](spec/diagnostics.md).
-
-`--debug` repropaga exceções somente em texto. A combinação com JSON é
-rejeitada com um único diagnóstico estruturado e status 2.
-
-O runtime ELF independente continua emitindo os diagnósticos textuais de
-`spec/native-diagnostics.md`; a CLI não analisa esse texto para inventar
-diagnósticos estruturados.
-
-`build` e `run-native` exigem Linux x86-64 e `cc`, `gcc` ou `clang`; o driver
-usa somente o assembler e o linker com `-nostdlib -no-pie`.
-
-O compilador continua sendo Python. Depois do build, o ELF chama `_start`, usa
-syscalls Linux diretamente e imprime:
-
-```text
-program returned: 6
-program returned: -1
-program returned: 0
+```bash
+python -m bootstrap.s3.cli --help
 ```
 
-Cada execução imprime uma dessas linhas, conforme o valor decimal assinado
-retornado por `main`, sempre seguida por newline.
-
-Resultados dos exemplos:
-
-```text
-first.s3             → 6
-simple_call.s3       → 15
-nested_calls.s3      → 12
-sign.s3              → -1
-recursive_sum.s3     → 10
-mutable_value.s3     → 15
-mutable_switch.s3    → 10
-static_array.s3      → 13
-trit_array.s3        → 1
-recursive_memory.s3  → 6
-native_abi.s3        → 7
-```
-
-O exemplo normativo assembly
-[`assembly_recursive_sum.s3asm`](examples/assembly_recursive_sum.s3asm) também
-é executado pelos testes e retorna 10.
+A sintaxe V0.5 permanece apenas como compatibilidade legada/deprecated por seleção explícita.
 
 ## Testes e CI
+
+A suíte possui categorias explícitas para separar correção rápida, contratos, diferencial, nativo, testes lentos e benchmarks:
+
+```text
+s3_fast
+s3_contract
+s3_differential
+s3_native
+s3_slow
+s3_benchmark
+```
+
+Execução local:
 
 ```bash
 python -m pytest
 python tools/golden_inspect.py check
-python tools/golden_inspect.py update
 ```
 
-`tools/golden_inspect.py check` compara os golden artifacts versionados em
-`tests/golden/inspect/` com a saída atual do compilador. `update` regenera esses
-goldens quando uma mudança de IR ou S3 Assembly for intencional. A cobertura
-atual inclui `examples/first.s3`, `examples/simple_call.s3`,
-`examples/sign.s3` e `examples/self_hosting/assembly_renderer_stub.s3`; essa
-infraestrutura serve como ponto de comparação para a future Python-to-S3
-migration, não como benchmark.
+O workflow principal cobre Python 3.11, 3.12 e 3.13, além de gates separados para:
 
-No caminho do renderer candidato, S3 0.15 está fechado e S3 0.16 também está
-fechado após generalizar incrementalmente o renderer core para os três probes
-atuais. `first`, `simple_call` e `sign` têm actual outputs disponíveis,
-`comparison_status: passed`, e agora passam por um renderer core Python mínimo
-baseado em `StaticTextLineEmitter`. S3 0.17 está fechado após aproximar o
-modelo real `AssemblyProgram` desse core por adapters controlados; `first`,
-`simple_call` e `sign` são provados byte a byte via adapter.
-S3 0.18 está fechado após consolidar esses adapters atrás de
-`render_supported_program`, um caminho comum para o subconjunto
-`AssemblyProgram` já provado por `first`, `simple_call` e `sign`, sem alterar
-outputs versionados ou goldens. S3 0.19 está fechado após expandir esse caminho
-Python-side para cobrir a saída atual de `AssemblyProgram.render()` e fazer
-`AssemblyProgram.render()` delegar a ele. Isso preserva os inspect goldens e os
-actual outputs; o compilador Python continua sendo a implementação de referência
-e o harness, enquanto renderers estruturais genéricos estão sendo escritos em S3.
-S3 0.20 está fechado após adicionar
-`examples/self_hosting/assembly_renderer_bootstrap.s3`, um spike S3 executável
-que valida invariantes escalares do subset suportado sem emitir texto Assembly
-completo. S3 0.21 está fechado após adicionar
-`examples/self_hosting/assembly_renderer_output_model.s3`, um output model S3
-executável que calcula métricas estruturais determinísticas de `first`,
-`simple_call` e `sign`, ainda sem strings runtime, arrays ou renderização
-textual completa. S3 0.22 está fechado após adicionar
-`examples/self_hosting/assembly_renderer_text_segments.s3`, um text segment
-model S3 executável que representa segmentos textuais do renderer por IDs
-numéricos e valida métricas de segmentos dos mesmos fixtures sem strings
-runtime, arrays ou emissão textual completa.
-S3 0.23 está fechado após adicionar
-`examples/self_hosting/assembly_renderer_line_blueprints.s3`, um line blueprint
-model S3 executável que associa cada linha Assembly atual a um blueprint
-numérico primário, incluindo a variante de instrução com `source=`, ainda sem
-strings runtime, arrays ou emissão textual completa.
-S3 0.24 está fechado após adicionar
-`examples/self_hosting/assembly_renderer_line_sequences.s3`, um line sequence
-model S3 executável que registra IDs de blueprint em ordem para os fixtures
-atuais e valida transições, limites de função, totais e uma assinatura
-determinística, ainda sem strings runtime, arrays ou emissão textual completa.
-`python tools/compare_assembly_renderer.py --candidate-compare-available` é o
-modo correto para validar esses outputs disponíveis.
-`python tools/compare_assembly_renderer.py --candidate-run` também valida o
-bootstrap spike, o output model, o text segment model, o line blueprint model e
-o line sequence model, e reporta que renderer implementation/full text
-rendering continuam
-`not_implemented`.
-S3 0.25 is closed after adding
-`examples/self_hosting/assembly_renderer_line_encodings.s3`, an executable S3
-line content encoding model for categories, directives, opcodes, register
-arity, operand flags, source metadata, totals, and deterministic signatures.
-`python tools/compare_assembly_renderer.py --candidate-run` also validates this
-line content encoding model and still reports renderer implementation/full text
-rendering as `not_implemented`.
-S3 0.26 is closed after adding
-`examples/self_hosting/assembly_renderer_event_stream.s3`, an executable S3
-event stream model for ordered renderer events, payload classes, transitions,
-counts, and deterministic event/payload signatures. There are now seven
-executable S3 renderer bootstrap artifacts, and
-`python tools/compare_assembly_renderer.py --candidate-run` validates all of
-them while still reporting renderer implementation/full text rendering as
-`not_implemented`.
-S3 0.27 is closed after adding
-`examples/self_hosting/assembly_renderer_event_writer.s3`, an executable S3
-event writer state model that consumes ordered events and validates writer
-state transitions, line advancement, emitted counters, function open/close
-balance, final state, and deterministic signatures. There are now eight
-executable S3 renderer bootstrap artifacts, and
-`python tools/compare_assembly_renderer.py --candidate-run` validates all of
-them while still reporting renderer implementation/full text rendering as
-`not_implemented`.
-S3 0.28 is closed after adding
-`examples/self_hosting/assembly_renderer_output_buffer.s3`, an executable S3
-hosted output buffer model that consumes numeric writer writes and validates
-capacity, cursor progression, write counters, buffer states, overflow, final
-state, and deterministic signatures. There are now nine executable S3 renderer
-bootstrap artifacts, and
-`python tools/compare_assembly_renderer.py --candidate-run` validates all of
-them while still reporting renderer implementation/full text rendering as
-`not_implemented`.
-S3 0.29 adds `examples/self_hosting/assembly_renderer_pipeline.s3`, an
-executable S3 renderer pipeline model connecting event stream, event writer,
-output buffer, and a final numeric result. It validates stage transitions,
-fixture counters, final states, capacity and cursor, signatures, and negative
-probes for `first`, `simple_call`, and `sign`. There are now ten executable S3
-renderer bootstrap artifacts, and `python tools/compare_assembly_renderer.py
---candidate-run` validates all of them while renderer implementation and full
-text rendering remain `not_implemented`.
-S3 0.30 adds `examples/self_hosting/assembly_renderer_text_builder.s3`, an
-executable numeric text builder command model after the renderer pipeline and
-output buffer. It validates commands, states, logical byte counts, line and
-write counters, transitions, and deterministic signatures for all fixtures.
-There are now eleven executable S3 renderer bootstrap artifacts; `--candidate-run`
-validates all of them while textual rendering remains `not_implemented` and
-`compare --check` remains blocked.
-S3 0.31 adds `examples/self_hosting/assembly_renderer_text_fragments.s3`, an
-executable static text fragment model that expands numeric text-builder commands
-into numeric marker, token, layout, metadata, newline, blank-line, and end
-fragments. It validates the `first`, `simple_call`, and `sign` fragment traces,
-states, category counters, signatures, and base-300 byte pairs for 441, 448,
-and 946 logical bytes. There are now twelve executable S3 renderer bootstrap
-artifacts; `--candidate-run` validates the text fragment model while runtime
-strings, arrays, and complete textual rendering remain `not_implemented` and
-`compare --check` remains blocked.
-`python tools/compare_assembly_renderer.py --check` valida os renderers estruturais
-escritos em S3 para `first`, `simple_call` e `sign`, confirmando que seus
-outputs coincidem com os renderers legados e goldens. O compilador S3
-completo e compilador self-hosted não existem; esta é uma prova parcial e
-incremental de self-hosting.
+- Linux x86-64 nativo;
+- verificação SSA por passes;
+- diferencial determinístico;
+- renderer/goldens;
+- benchmark smoke;
+- capability probes específicos quando uma milestone exige evidência end-to-end.
 
-### Renderer Assembly
+Benchmarks são caracterização. Correção, equivalência, checksums e contratos semânticos são gates de correctness.
 
-O Renderer Assembly candidato estÃ¡ implementado para o subconjunto textual
-documentado. `examples/self_hosting/assembly_renderer_generic_text.s3` Ã© o
-entrypoint candidato e produz, por buffers estÃ¡ticos determinÃ­sticos, os
-outputs de `first`, `simple_call` e `sign`, verificados byte a byte contra os
-goldens. `python tools/compare_assembly_renderer.py --candidate-run` executa
-esse caminho e `--check` Ã© o gate de equivalÃªncia.
+## Renderer e self-hosting
 
-Esse renderer somente representa texto Assembly jÃ¡ modelado; nÃ£o Ã© um novo
-backend, nÃ£o executa Assembly e nÃ£o invoca assembler ou linker. O renderer
-Python continua disponÃ­vel como referÃªncia, e o subconjunto candidate nÃ£o
-promove arrays dinÃ¢micos, heap ou outras funcionalidades de escopo futuro.
+O projeto contém uma linha incremental de self-hosting e renderer Assembly escrita em S3.
 
-Integrações ELF são coletadas e puladas em hosts que não são Linux. Os
-resultados atuais devem ser consultados no workflow; os números abaixo
-documentam especificamente a validação histórica do Marco 0.5.
+Python continua sendo o compilador de referência e o caminho padrão. Componentes em S3 só substituem o caminho Python quando equivalência, cobertura e gates próprios demonstrarem que a migração é segura.
 
-O workflow [Tests](.github/workflows/tests.yml), com
-`actions/checkout@v6` e `actions/setup-python@v6`, executa a suíte completa em
-Ubuntu com Python 3.11, 3.12 e 3.13, além de um job Linux x86-64 separado com
-`S3_NATIVE_REQUIRED=1`.
+A estratégia é progressiva: primeiro construir componentes verificáveis, depois comparar contra a implementação de referência e somente então promover o caminho S3.
 
-Nesse job, a ausência da toolchain nativa ou o skip indevido de um teste
-obrigatório causa falha.
+## Roadmap de capacidades
 
-O Marco 0.5 foi validado remotamente pelo GitHub Actions no commit
-[`70d10a0`](https://github.com/SamDevlab/S3/commit/70d10a0), por meio da
-execução
-[`28712027579`](https://github.com/SamDevlab/S3/actions/runs/28712027579).
-
-Todos os jobs obrigatórios concluíram com sucesso:
-
-- Python 3.11;
-- Python 3.12;
-- Python 3.13;
-- Linux x86-64 nativo.
-
-Na matriz histórica do Marco 0.5, a suíte terminou com 329 testes aprovados em
-cada versão. No job nativo Linux x86-64, os 85 testes obrigatórios de
-integração foram aprovados.
-
-Uma validação manual adicional montou, ligou e executou GNU assembly com GCC
-9.5 em Linux. Os onze exemplos produziram os mesmos valores em O0 e O1;
-overflow, bounds e limite de frames exibiram contexto, valor e status 1.
-
-A reprodutibilidade byte a byte dos ELF, os hashes SHA-256 e a inspeção com
-`readelf` também são verificadas automaticamente no job Linux.
-
-A Entrega D2B foi validada no
-[run 28726929769](https://github.com/SamDevlab/S3/actions/runs/28726929769):
-os jobs Python 3.11–3.13 e Linux x86-64 nativo concluíram com sucesso.
-
-A preparação final da Entrega E, commit
-[`aceee82`](https://github.com/SamDevlab/S3/commit/aceee820ebc99b7d90fc5d32dd8fa8e699ad37b5),
-foi validada no
-[run 28737520765](https://github.com/SamDevlab/S3/actions/runs/28737520765),
-com 561 testes em cada versão de Python e 85 integrações nativas obrigatórias.
-
-## Memória lógica
-
-Objetos possuem tipo, comprimento e mutabilidade. Um `trit` custa 1 trit lógico
-e um `tryte`, 6. Cada objeto possui até 365 elementos, o espaço indexável por
-`tryte`. Cada frame recebe células próprias inicialmente vazias.
-
-Limites padrão configuráveis:
+A ordem arquitetural atual da linha de produção é:
 
 ```text
-frames:             1024
-instruções:         100000
-memória por frame:  6561 trits lógicos (3^8)
+NUMERIC
+  ↓
+SLICES
+  ↓
+FFI
+  ↓
+DYNAMIC
+  ↓
+HOST_SERVICES
+  ↓
+PROJECT_CONTAINER_MODEL
+  ↓
+S3_DOCKER
 ```
 
-Índice negativo ou fora da faixa, tipo incorreto, leitura não inicializada,
-segunda escrita imutável ou excesso de memória terminam com diagnóstico.
-
-Ciclos IR e assembly são permitidos quando estruturalmente válidos. O emulador
-limita instruções e o backend nativo impõe o mesmo limite no ELF, respeitando
-o teto u64 de `1` a `2**64 - 1` na CPU. Emulador e nativo limitam frames S3.
-O contador nativo é estado privado do runtime, não memória global da linguagem.
-
-## Backend x86-64
-
-Em objetos físicos, `trit` usa inteiro assinado de 8 bits e `tryte`, inteiro
-assinado de 16 bits. Cálculos e slots de registradores virtuais usam 64 bits.
-
-Cada frame contém valores, flags de inicialização, arrays contíguos e um byte
-de estado por elemento; o tamanho físico é alinhado a 16 bytes e não se
-confunde com a cota lógica.
-
-`TADD` valida overflow, `TBR3` valida `-1`, `0` ou `1`, e todo acesso valida
-bounds e inicialização. `TMIN` e `TMAX` de trytes usam helpers assembly
-tritwise.
-
-Erros escrevem em stderr, identificam o ponto lógico e encerram com status 1.
-
-Contratos:
-
-- [representação física](docs/decisions/ADR-0007-x86-64-physical-representation.md);
-- [ABI e runtime](docs/decisions/ADR-0008-x86-64-native-abi-and-runtime.md);
-- [especificação nativa](spec/native-x86_64.md);
-- [artefatos](spec/artifacts.md);
-- [diagnósticos](spec/native-diagnostics.md);
-- [otimização](spec/optimization.md).
-
-## Organização
+Correspondência das milestones:
 
 ```text
-bootstrap/s3/    frontend, IR, verifier, assembly, emulador e backends
-spec/            especificações normativas, incluindo diagnostics.md
-docs/decisions/  ADRs 0001–0013
-docs/releases/   notas de lançamento
-examples/        programas oficiais V0.6 e assembly normativo
-tests/           regressão, propriedades e integração
-selfhost/        fronteira da futura implementação em S3
+1.32  Numeric Domains & Large Indexing
+1.33  Borrowed Slices & Large Contiguous Buffers
+1.34  Foreign ABI, Library Mode & Zero-Copy Host Interop
+1.35  Owned Dynamic Runtime Data
+1.36  Linux Host Services & Foreign Tool Interop
+1.37  S3 Project & Container-Native Application Model
+1.38  S3 Docker V1
 ```
 
-## Limitações e próximo marco
+A existência de código, documentação ou uma PR numerada não é, sozinha, prova de conclusão de uma capacidade. Cada milestone precisa demonstrar a funcionalidade prometida de forma utilizável por um programador S3 e passar seus gates end-to-end antes de ser considerada completa.
 
-Não há ponteiros, heap, globals, arrays dinâmicos ou multidimensionais, arrays
-em assinaturas, strings dinâmicas ou dependentes de runtime, classes, métodos,
-generics, macros, I/O de linguagem, package manager, LSP, depurador,
-concorrência, linker próprio, ABI C pública, self-hosting completo ou backend
-para Windows, macOS ou ARM64.
+O princípio estratégico é **external-first quando isso for mais eficiente**: bibliotecas C, Linux, Python, Docker/OCI e outros componentes maduros podem atuar como providers enquanto o núcleo S3 amadurece. Reimplementações nativas só devem substituir esses providers quando houver motivo concreto de desempenho, controle, segurança ou self-hosting.
 
-O target nativo é somente Linux x86-64. Não há interoperabilidade C, JIT, TCO
-ou otimização interprocedural. ARM64 possui apenas um
-[estudo de viabilidade](docs/arm64-feasibility.md).
+## Interoperabilidade
 
-O Marco 0.7 está concluído e a versão 0.7.0 está publicada. As Milestones
-1.02, 1.03 e 1.04 estao concluidas como campanha interna sem bump de versao
-publica. A proxima campanha planejada deve comecar pela resolucao da ADR-0021,
-definindo a representacao publica de enum tag + payload antes de implementar
-enum payloads, structured results ou componentes adicionais de self-hosting.
-Os demais recursos classificados como Pos-MVP continuam nao implementados.
-Consulte o [roadmap](docs/roadmap.md), os planos de milestone em `docs/` e as
-[notas de lançamento](docs/releases/0.7.0.md).
+S3 não pretende existir isolado do ecossistema.
+
+A direção arquitetural inclui:
+
+- C ABI como lingua franca de interoperabilidade;
+- bibliotecas S3 carregáveis por hosts externos;
+- buffers contíguos e zero-copy;
+- integração com Python/C/C++/Rust por camadas de ABI;
+- processos, argv/env, stdin/stdout/stderr, arquivos e pipes;
+- Docker/OCI como sistema de compatibilidade e aplicação;
+- GPU inicialmente por integração com engines existentes, antes de um backend GPU próprio.
+
+Nem todas essas capacidades fazem parte da versão publicável 0.7.0; elas pertencem à evolução interna 1.x e exigem gates próprios antes de promoção.
+
+## Limitações atuais
+
+S3 ainda não é uma linguagem de produção geral e mantém limites deliberados.
+
+Entre eles:
+
+- sem raw pointers, null ou pointer arithmetic;
+- sem garbage collector;
+- sem generics gerais;
+- sem concorrência de linguagem madura;
+- sem backend nativo completo para Windows, macOS ou ARM64;
+- sem JIT ou otimização interprocedural madura;
+- self-hosting ainda incremental;
+- capacidades de slices, FFI, runtime dinâmico, serviços de host e containers só devem ser tratadas como públicas quando seus respectivos gates de capability estiverem concluídos.
+
+O target nativo de referência permanece Linux x86-64.
+
+## Organização do repositório
+
+```text
+bootstrap/s3/    frontend, IR, verifier, Assembly, emuladores e backends
+spec/            especificações e contratos normativos
+docs/            milestones, decisões arquiteturais e documentação técnica
+docs/decisions/  ADRs
+examples/        programas S3 e fixtures oficiais
+tests/           regressão, contratos, diferencial, nativo e benchmarks
+selfhost/        fronteira da evolução Python → S3
+```
+
+## Documentação
+
+Pontos de entrada úteis:
+
+- [`docs/roadmap.md`](docs/roadmap.md) — roadmap geral;
+- [`docs/milestone-1.32.md`](docs/milestone-1.32.md) — Numeric Domains & Large Indexing;
+- [`spec/`](spec/) — especificações normativas;
+- [`docs/decisions/`](docs/decisions/) — decisões arquiteturais;
+- [`docs/releases/0.7.0.md`](docs/releases/0.7.0.md) — release público 0.7.0.
+
+## Licença
+
+MIT.
