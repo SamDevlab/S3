@@ -10,6 +10,8 @@ from bootstrap.s3.numeric_ir import (
     evaluate_numeric_ir,
 )
 from bootstrap.s3.numeric_emulator import NumericEmulator
+from bootstrap.s3.ir import IRBasicBlock, IRFunction, IRInstruction, IRModule, IRRegister, IROpcode, IRType
+from bootstrap.s3.ir_emulator import execute_ir
 
 
 def test_numeric_ir_evaluates_i64_constant_and_addition() -> None:
@@ -82,3 +84,35 @@ def test_numeric_ir_rejects_invalid_return_type_contract() -> None:
                 NumericType.F64,
             )
         )
+
+
+def test_main_ir_emulator_executes_numeric_i64_addition() -> None:
+    function = IRFunction(
+        "main",
+        (),
+        IRType.I64,
+        registers=(IRRegister(0, IRType.I64), IRRegister(1, IRType.I64), IRRegister(2, IRType.I64)),
+        blocks=(IRBasicBlock("entry", (
+            IRInstruction(IROpcode.CONST, result=0, immediate=2),
+            IRInstruction(IROpcode.CONST, result=1, immediate=3),
+            IRInstruction(IROpcode.ADD, result=2, operands=(0, 1)),
+            IRInstruction(IROpcode.RETURN, operands=(2,)),
+        )),),
+    )
+    assert execute_ir(IRModule((function,))) == 5
+
+
+def test_main_ir_emulator_executes_numeric_f64_addition() -> None:
+    function = IRFunction(
+        "main",
+        (),
+        IRType.F64,
+        registers=(IRRegister(0, IRType.F64), IRRegister(1, IRType.F64), IRRegister(2, IRType.F64)),
+        blocks=(IRBasicBlock("entry", (
+            IRInstruction(IROpcode.CONST, result=0, immediate=0.5),
+            IRInstruction(IROpcode.CONST, result=1, immediate=0.25),
+            IRInstruction(IROpcode.ADD, result=2, operands=(0, 1)),
+            IRInstruction(IROpcode.RETURN, operands=(2,)),
+        )),),
+    )
+    assert execute_ir(IRModule((function,))) == 0.75

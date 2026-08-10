@@ -19,6 +19,7 @@ from .ir import (
     TERMINATOR_OPCODES,
 )
 from .ternary import TRYTE_MAX, TernaryRangeError, TernaryWidth, validate
+from .numeric import NumericError, validate_f64, validate_i64
 
 
 class IRVerificationError(S3Error):
@@ -417,8 +418,13 @@ class IRVerifier:
                 self._error("const must not have a static string id", instruction.location)
             try:
                 assert instruction.immediate is not None
-                validate(instruction.immediate, WIDTH_MAP[result_type])
-            except TernaryRangeError as error:
+                if result_type is IRType.I64:
+                    validate_i64(instruction.immediate)
+                elif result_type is IRType.F64:
+                    validate_f64(instruction.immediate)
+                else:
+                    validate(instruction.immediate, WIDTH_MAP[result_type])
+            except (TernaryRangeError, NumericError, TypeError, ValueError) as error:
                 self._error(str(error), instruction.location)
             return
 
@@ -478,6 +484,8 @@ class IRVerifier:
                 )
             if result_type is IRType.REFERENCE:
                 self._error(f"{opcode.value} does not support reference values", instruction.location)
+            if result_type in {IRType.I64, IRType.F64} and opcode is not IROpcode.ADD:
+                self._error(f"{opcode.value} does not support numeric values", instruction.location)
             return
 
         if opcode is IROpcode.COMPARE:

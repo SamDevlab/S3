@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from .ir import IRFunction, IRInstruction, IRModule, IROpcode, IRType
 from .ternary import add, compare, invert, tritwise_max, tritwise_min, TernaryRangeError, TernaryWidth, validate
 from .verifier import verify_ir
+from .numeric import NumericType, validate_f64, validate_i64
 
 
 class IRExecutionError(RuntimeError):
@@ -40,7 +41,7 @@ def _width(type_name: IRType) -> TernaryWidth:
     return TernaryWidth.TRIT if type_name is IRType.TRIT else TernaryWidth.TRYTE
 
 
-def execute_ir(module: IRModule, entry: str = "main", optimization: object = None) -> int:
+def execute_ir(module: IRModule, entry: str = "main", optimization: object = None) -> object:
     global functions_module
     functions_module = module
     verify_ir(module)
@@ -77,7 +78,13 @@ def _execute_function(functions, function, arguments, caller):
         elif op is IROpcode.INVERT:
             _write(frame, instruction.result, invert(_read(frame, instruction.operands[0]), _width(_register_type(function, instruction.result))))
         elif op is IROpcode.ADD:
-            _write(frame, instruction.result, add(_read(frame, instruction.operands[0]), _read(frame, instruction.operands[1]), _width(_register_type(function, instruction.result))))
+            result_type = _register_type(function, instruction.result)
+            if result_type is IRType.I64:
+                _write(frame, instruction.result, validate_i64(_read(frame, instruction.operands[0]) + _read(frame, instruction.operands[1])))
+            elif result_type is IRType.F64:
+                _write(frame, instruction.result, validate_f64(_read(frame, instruction.operands[0]) + _read(frame, instruction.operands[1])))
+            else:
+                _write(frame, instruction.result, add(_read(frame, instruction.operands[0]), _read(frame, instruction.operands[1]), _width(result_type)))
         elif op in {IROpcode.MINIMUM, IROpcode.MAXIMUM}:
             fn = tritwise_min if op is IROpcode.MINIMUM else tritwise_max
             _write(frame, instruction.result, fn(_read(frame, instruction.operands[0]), _read(frame, instruction.operands[1]), _width(_register_type(function, instruction.result))))
@@ -151,6 +158,16 @@ def _store_value(cell, value, value_type):
     elif value_type is IRType.STRING:
         if not isinstance(value, str):
             raise IRExecutionError("invalid string value")
+    elif value_type is IRType.I64:
+        try:
+            validate_i64(value)
+        except (TypeError, ValueError) as error:
+            raise IRExecutionError(f"invalid i64 value: {value!r}") from error
+    elif value_type is IRType.F64:
+        try:
+            validate_f64(value)
+        except (TypeError, ValueError) as error:
+            raise IRExecutionError(f"invalid f64 value: {value!r}") from error
     else:
         try:
             validate(value, _width(value_type))

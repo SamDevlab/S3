@@ -151,7 +151,7 @@ class IRInstruction:
     opcode: IROpcode
     result: int | None = None
     operands: tuple[int, ...] = ()
-    immediate: int | None = None
+    immediate: int | float | None = None
     static_string: str | None = None
     callee: str | None = None
     targets: tuple[str, ...] = ()
