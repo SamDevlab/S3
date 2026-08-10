@@ -113,7 +113,7 @@ def to_ir(ssa_fn: SSAFunction) -> IRFunction:
         res_reg = res_regs[0] if len(res_regs) == 1 else None
         op_regs = tuple(get_reg_index(op) for op in ssa_inst.operands)
 
-        imm_val: int | None = None
+        imm_val: int | float | None = None
         static_str: str | None = None
         callee_val: str | None = None
 
@@ -121,7 +121,7 @@ def to_ir(ssa_fn: SSAFunction) -> IRFunction:
             static_str = str(ssa_inst.immediate) if ssa_inst.immediate is not None else None
         elif ssa_inst.opcode is IROpcode.CALL:
             callee_val = str(ssa_inst.immediate) if ssa_inst.immediate is not None else None
-        elif isinstance(ssa_inst.immediate, int):
+        elif isinstance(ssa_inst.immediate, (int, float)):
             imm_val = ssa_inst.immediate
 
         return IRInstruction(

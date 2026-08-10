@@ -5,6 +5,7 @@ import pytest
 from bootstrap.s3 import ast
 from bootstrap.s3.lexer import SyntaxMode, TokenKind, tokenize
 from bootstrap.s3.parser import parse
+from bootstrap.s3.pipeline import compile_source
 from bootstrap.s3.semantic import analyze
 from bootstrap.s3.ir_emulator import execute_ir
 from bootstrap.s3.lowering import lower
@@ -70,6 +71,17 @@ def test_numeric_compare_lowers_and_executes_end_to_end() -> None:
         mode=SyntaxMode.V0_6,
     )
     assert execute_ir(lower(program, analyze(program))) == -1
+
+
+def test_o1_preserves_f64_immediates_through_ssa_lowering() -> None:
+    source = (
+        "fn add(left: f64, right: f64) -> f64:\n"
+        "    return left + right\n"
+        "fn main() -> trit:\n"
+        "    return add(0.0, 0.25) <=> 1.0\n"
+    )
+    compilation = compile_source(source, "O1", mode=SyntaxMode.V0_6)
+    assert execute_ir(compilation.ir) == -1
 
 
 def test_numeric_addition_executes_through_typed_assembly() -> None:
