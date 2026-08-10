@@ -35,6 +35,21 @@ emulation, S3 Assembly, Assembly verification/emulation, serialization, and
 Linux x86-64 native lowering. Native `f64` arithmetic uses SSE2/XMM and the
 existing mixed SysV integer/SSE calling convention.
 
+Integer and balanced-ternary relational operators preserve the established
+`COMPARE` lowering path. `f64` relations use the typed `RELATE` path so IEEE-754
+unordered comparisons involving NaN can be represented without collapsing them
+into an artificial three-way ordering.
+
+### Closure verification
+
+The permanent `numeric-domain-closure` GitHub Actions job exercises the public
+source syntax and compiler stack on Linux x86-64 with the native toolchain
+required. Its capability probes cover checked `i64` arithmetic, IEEE-754 `f64`,
+explicit conversions, O0/O1 integration, the scientific scalar formula, and an
+actual native loop whose `i64` counter reaches 1,000,000. The normal unit,
+renderer, differential, SSA, native, and benchmark jobs remain independent
+regression gates for the exact PR head.
+
 ### Scope boundary
 
 M1.32 does not introduce slices, heap ownership, FFI, process APIs, containers,
