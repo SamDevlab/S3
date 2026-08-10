@@ -1,8 +1,7 @@
-"""Canonical scalar domains for the numeric M1.32 foundation."""
+"""Canonical scalar domains for the numeric M1.32 capability."""
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
 from enum import Enum
 
@@ -29,12 +28,58 @@ def validate_i64(value: int) -> int:
 
 
 def validate_f64(value: float | int) -> float:
+    """Validate binary64 input while preserving IEEE-754 NaN/Inf/signed zero.
+
+    Python floats are IEEE-754 binary64 on supported S3 hosts.  The language
+    contract intentionally does not reject non-finite values: NaN, positive
+    and negative infinity, and signed zero are all valid f64 values.
+    """
+
     if isinstance(value, bool) or not isinstance(value, (float, int)):
         raise NumericError(f"f64 requires a real number, got {value!r}")
-    result = float(value)
-    if not math.isfinite(result):
-        raise NumericError(f"f64 requires a finite value, got {value!r}")
-    return result
+    return float(value)
+
+
+def checked_i64_add(left: int, right: int) -> int:
+    return validate_i64(validate_i64(left) + validate_i64(right))
+
+
+def checked_i64_sub(left: int, right: int) -> int:
+    return validate_i64(validate_i64(left) - validate_i64(right))
+
+
+def checked_i64_mul(left: int, right: int) -> int:
+    return validate_i64(validate_i64(left) * validate_i64(right))
+
+
+def checked_i64_neg(value: int) -> int:
+    return validate_i64(-validate_i64(value))
+
+
+def checked_i64_div(left: int, right: int) -> int:
+    """Checked signed i64 division truncated toward zero."""
+
+    left = validate_i64(left)
+    right = validate_i64(right)
+    if right == 0:
+        raise NumericError("i64 division by zero")
+    if left == I64_MIN and right == -1:
+        raise NumericError("i64 division overflow: INT64_MIN / -1")
+    quotient = abs(left) // abs(right)
+    if (left < 0) != (right < 0):
+        quotient = -quotient
+    return validate_i64(quotient)
+
+
+def checked_i64_to_tryte(value: int) -> int:
+    """Checked conversion to the six-trit balanced-ternary tryte domain."""
+
+    value = validate_i64(value)
+    # Six balanced trits represent [-364, 364].  Keep this conversion local to
+    # the numeric contract to avoid giving i64 any pointer/reference meaning.
+    if not -364 <= value <= 364:
+        raise NumericError("i64 value is outside tryte range [-364, 364]")
+    return value
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,8 +106,40 @@ class NumericValue:
     def add(self, other: NumericValue) -> NumericValue:
         self._require_same_type(other)
         if self.type is NumericType.I64:
-            return NumericValue.i64(validate_i64(self.value + other.value))
-        return NumericValue.f64(validate_f64(self.value + other.value))
+            return NumericValue.i64(checked_i64_add(int(self.value), int(other.value)))
+        return NumericValue.f64(float(self.value) + float(other.value))
+
+    def subtract(self, other: NumericValue) -> NumericValue:
+        self._require_same_type(other)
+        if self.type is NumericType.I64:
+            return NumericValue.i64(checked_i64_sub(int(self.value), int(other.value)))
+        return NumericValue.f64(float(self.value) - float(other.value))
+
+    def multiply(self, other: NumericValue) -> NumericValue:
+        self._require_same_type(other)
+        if self.type is NumericType.I64:
+            return NumericValue.i64(checked_i64_mul(int(self.value), int(other.value)))
+        return NumericValue.f64(float(self.value) * float(other.value))
+
+    def divide(self, other: NumericValue) -> NumericValue:
+        self._require_same_type(other)
+        if self.type is NumericType.I64:
+            return NumericValue.i64(checked_i64_div(int(self.value), int(other.value)))
+        # IEEE-754 division-by-zero is produced explicitly because Python raises
+        # ZeroDivisionError for float division, while S3 f64 preserves Inf/NaN.
+        left = float(self.value)
+        right = float(other.value)
+        if right == 0.0:
+            if left == 0.0:
+                return NumericValue.f64(float("nan"))
+            sign_negative = (left < 0.0) ^ (str(right).startswith("-"))
+            return NumericValue.f64(float("-inf") if sign_negative else float("inf"))
+        return NumericValue.f64(left / right)
+
+    def negate(self) -> NumericValue:
+        if self.type is NumericType.I64:
+            return NumericValue.i64(checked_i64_neg(int(self.value)))
+        return NumericValue.f64(-float(self.value))
 
     def _require_same_type(self, other: NumericValue) -> None:
         if self.type is not other.type:
