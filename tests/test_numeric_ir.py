@@ -53,3 +53,20 @@ def test_numeric_ir_rejects_mixed_domain_addition() -> None:
                 NumericType.I64,
             )
         )
+
+
+def test_numeric_ir_rejects_invalid_return_type_contract() -> None:
+    with pytest.raises(ValueError, match="return type"):
+        evaluate_numeric_ir(
+            NumericIRFunction(
+                (
+                    NumericIRInstruction(
+                        NumericIROpcode.CONST,
+                        0,
+                        value=NumericValue.i64(1),
+                    ),
+                    NumericIRInstruction(NumericIROpcode.RETURN, operands=(0,)),
+                ),
+                NumericType.F64,
+            )
+        )

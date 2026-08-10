@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-from .numeric import NumericValue
+from .numeric import NumericType, NumericValue
 
 
 class NumericIROpcode(Enum):
@@ -25,7 +25,7 @@ class NumericIRInstruction:
 @dataclass(frozen=True, slots=True)
 class NumericIRFunction:
     instructions: tuple[NumericIRInstruction, ...]
-    return_type: object
+    return_type: NumericType
 
 
 def evaluate_numeric_ir(function: NumericIRFunction) -> NumericValue:
@@ -57,6 +57,6 @@ def evaluate_numeric_ir(function: NumericIRFunction) -> NumericValue:
             raise ValueError(f"unsupported numeric opcode {instruction.opcode!r}")
     if returned is None:
         raise ValueError("numeric function did not return a value")
-    if returned.type.value != function.return_type.value:
+    if returned.type is not function.return_type:
         raise ValueError("numeric return type does not match function type")
     return returned
