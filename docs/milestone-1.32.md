@@ -61,6 +61,10 @@ regression to a false negate-then-add intermediate overflow. The normal unit,
 renderer, differential, SSA, native, and benchmark jobs remain independent
 regression gates for the exact PR head.
 
+The closure merge gate requires the exact candidate head to finish all standard
+partitioned CI jobs terminal-green. A running renderer or unit partition is a
+wait state, never evidence of completion.
+
 ### Scope boundary
 
 M1.32 does not introduce slices, heap ownership, FFI, process APIs, containers,
