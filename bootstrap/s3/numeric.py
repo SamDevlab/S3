@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from enum import Enum
 
@@ -30,7 +31,7 @@ def validate_i64(value: int) -> int:
 def validate_f64(value: float | int) -> float:
     """Validate binary64 input while preserving IEEE-754 NaN/Inf/signed zero.
 
-    Python floats are IEEE-754 binary64 on supported S3 hosts.  The language
+    Python floats are IEEE-754 binary64 on supported S3 hosts. The language
     contract intentionally does not reject non-finite values: NaN, positive
     and negative infinity, and signed zero are all valid f64 values.
     """
@@ -75,8 +76,6 @@ def checked_i64_to_tryte(value: int) -> int:
     """Checked conversion to the six-trit balanced-ternary tryte domain."""
 
     value = validate_i64(value)
-    # Six balanced trits represent [-364, 364].  Keep this conversion local to
-    # the numeric contract to avoid giving i64 any pointer/reference meaning.
     if not -364 <= value <= 364:
         raise NumericError("i64 value is outside tryte range [-364, 364]")
     return value
@@ -125,15 +124,14 @@ class NumericValue:
         self._require_same_type(other)
         if self.type is NumericType.I64:
             return NumericValue.i64(checked_i64_div(int(self.value), int(other.value)))
-        # IEEE-754 division-by-zero is produced explicitly because Python raises
-        # ZeroDivisionError for float division, while S3 f64 preserves Inf/NaN.
+
         left = float(self.value)
         right = float(other.value)
         if right == 0.0:
             if left == 0.0:
                 return NumericValue.f64(float("nan"))
-            sign_negative = (left < 0.0) ^ (str(right).startswith("-"))
-            return NumericValue.f64(float("-inf") if sign_negative else float("inf"))
+            sign = math.copysign(1.0, left) * math.copysign(1.0, right)
+            return NumericValue.f64(float("-inf") if sign < 0.0 else float("inf"))
         return NumericValue.f64(left / right)
 
     def negate(self) -> NumericValue:
