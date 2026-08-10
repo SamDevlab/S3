@@ -53,3 +53,12 @@ def test_numeric_addition_lowers_and_executes_end_to_end() -> None:
         mode=SyntaxMode.V0_6,
     )
     assert execute_ir(lower(program, analyze(program))) == 0.75
+
+
+def test_numeric_compare_lowers_and_executes_end_to_end() -> None:
+    program = parse(
+        "fn main() -> trit:\n"
+        "    return 1.0 <=> 2.0\n",
+        mode=SyntaxMode.V0_6,
+    )
+    assert execute_ir(lower(program, analyze(program))) == -1

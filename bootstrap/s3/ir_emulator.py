@@ -89,7 +89,14 @@ def _execute_function(functions, function, arguments, caller):
             fn = tritwise_min if op is IROpcode.MINIMUM else tritwise_max
             _write(frame, instruction.result, fn(_read(frame, instruction.operands[0]), _read(frame, instruction.operands[1]), _width(_register_type(function, instruction.result))))
         elif op is IROpcode.COMPARE:
-            _write(frame, instruction.result, compare(_read(frame, instruction.operands[0]), _read(frame, instruction.operands[1]), _width(_register_type(function, instruction.operands[0]))))
+            operand_type = _register_type(function, instruction.operands[0])
+            left = _read(frame, instruction.operands[0])
+            right = _read(frame, instruction.operands[1])
+            if operand_type in {IRType.I64, IRType.F64}:
+                result = -1 if left < right else 1 if left > right else 0
+            else:
+                result = compare(left, right, _width(operand_type))
+            _write(frame, instruction.result, result)
         elif op is IROpcode.LOAD:
             cell = memory[instruction.memory][_read(frame, instruction.operands[0])]
             if not cell.initialized: raise IRExecutionError("uninitialized memory load")
