@@ -9,6 +9,7 @@ from bootstrap.s3.numeric_ir import (
     NumericIROpcode,
     evaluate_numeric_ir,
 )
+from bootstrap.s3.numeric_emulator import NumericEmulator
 
 
 def test_numeric_ir_evaluates_i64_constant_and_addition() -> None:
@@ -24,6 +25,17 @@ def test_numeric_ir_evaluates_i64_constant_and_addition() -> None:
         )
     )
     assert result == NumericValue.i64(5)
+
+
+def test_numeric_emulator_uses_the_canonical_numeric_evaluator() -> None:
+    function = NumericIRFunction(
+        (
+            NumericIRInstruction(NumericIROpcode.CONST, 0, value=NumericValue.i64(7)),
+            NumericIRInstruction(NumericIROpcode.RETURN, operands=(0,)),
+        ),
+        NumericType.I64,
+    )
+    assert NumericEmulator().execute(function) == NumericValue.i64(7)
 
 
 def test_numeric_ir_evaluates_f64_without_coercing_to_i64() -> None:
