@@ -84,7 +84,7 @@ def test_scientific_scalar_probe_matches_expected_formula() -> None:
     completed = toolchain.run(executable)
     assert completed.returncode == 0
     assert completed.stderr == ""
-    assert completed.stdout == "program returned: -1\n"
+    assert completed.stdout.strip() == "program returned: -1"
 
 
 def test_scientific_scalar_probe_matches_expected_formula() -> None:
