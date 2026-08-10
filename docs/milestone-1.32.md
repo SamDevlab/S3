@@ -52,7 +52,10 @@ The permanent `numeric-domain-closure` GitHub Actions job exercises the public
 source syntax and compiler stack on Linux x86-64 with the native toolchain
 required. Its capability probes cover checked `i64` arithmetic, IEEE-754 `f64`,
 explicit conversions, O0/O1 integration, the scientific scalar formula, and an
-actual native loop whose `i64` counter reaches 1,000,000. The normal unit,
+actual native loop whose `i64` counter reaches 1,000,000. The subtraction probe
+also executes the valid boundary cases `INT64_MIN - INT64_MIN == 0` and
+`-1 - INT64_MIN == INT64_MAX` through the real native backend, preventing a
+regression to a false negate-then-add intermediate overflow. The normal unit,
 renderer, differential, SSA, native, and benchmark jobs remain independent
 regression gates for the exact PR head.
 
