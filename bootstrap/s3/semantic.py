@@ -8,7 +8,7 @@ from enum import Enum
 from . import ast
 from .diagnostics import DiagnosticCode, SemanticError, SourceLocation
 from .static_text import StaticTextDecodeError, decode_static_text
-from .numeric import I64_MAX, I64_MIN, validate_f64
+from .numeric import I64_MAX, I64_MIN, validate_f64, validate_i64
 from .ternary import (
     TRIT_MAX,
     TRIT_MIN,
@@ -3097,7 +3097,12 @@ class SemanticAnalyzer:
             return
         try:
             if expression.operator is ast.BinaryOperator.ADD:
-                value = add(left, right, self._width(result_type))
+                if result_type is ast.TypeName.I64:
+                    value = validate_i64(left + right)
+                elif result_type is ast.TypeName.F64:
+                    value = validate_f64(left + right)
+                else:
+                    value = add(left, right, self._width(result_type))
             elif expression.operator is ast.BinaryOperator.SUBTRACT:
                 width = self._width(result_type)
                 value = add(left, invert(right, width), width)
@@ -3108,7 +3113,10 @@ class SemanticAnalyzer:
             elif expression.operator is ast.BinaryOperator.COMPARE:
                 source_type = self.expression_types.get(id(expression.left))
                 assert isinstance(source_type, ast.TypeName)
-                value = compare(left, right, self._width(source_type))
+                if source_type in (ast.TypeName.I64, ast.TypeName.F64):
+                    value = -1 if left < right else 1 if left > right else 0
+                else:
+                    value = compare(left, right, self._width(source_type))
             elif expression.operator is ast.BinaryOperator.EQUAL:
                 value = self._comparison_result(left == right)
             elif expression.operator is ast.BinaryOperator.NOT_EQUAL:
@@ -3123,7 +3131,7 @@ class SemanticAnalyzer:
                 value = self._comparison_result(left >= right)
             else:
                 return
-        except TernaryRangeError as error:
+        except (TernaryRangeError, TypeError, ValueError) as error:
             raise SemanticError(str(error), expression.location) from error
         self.constant_values[id(expression)] = value
 

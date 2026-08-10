@@ -4,6 +4,8 @@ from bootstrap.s3 import ast
 from bootstrap.s3.lexer import SyntaxMode, TokenKind, tokenize
 from bootstrap.s3.parser import parse
 from bootstrap.s3.semantic import analyze
+from bootstrap.s3.ir_emulator import execute_ir
+from bootstrap.s3.lowering import lower
 
 
 def test_lexer_distinguishes_numeric_keywords_and_float_literals() -> None:
@@ -42,3 +44,12 @@ def test_semantic_model_records_f64_literal_type() -> None:
     model = analyze(program)
     initializer = program.functions[0].body.statements[0].initializer
     assert model.declared_type_of(initializer) is ast.TypeName.F64
+
+
+def test_numeric_addition_lowers_and_executes_end_to_end() -> None:
+    program = parse(
+        "fn main() -> f64:\n"
+        "    return 0.5 + 0.25\n",
+        mode=SyntaxMode.V0_6,
+    )
+    assert execute_ir(lower(program, analyze(program))) == 0.75
