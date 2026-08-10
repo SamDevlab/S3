@@ -31,12 +31,13 @@ from .ternary import (
 )
 from .assembly_verifier import AssemblyVerifier, AssemblyVerifierError, WIDTH_MAP
 from .metrics import EmulationMetrics
+from .numeric import NumericError, validate_f64, validate_i64
 
 
 EmulatorError = AssemblyVerifierError
 
 
-AssemblyValue = int | str
+AssemblyValue = int | float | str
 
 DEFAULT_MAX_MEMORY_TRITS = 6561
 DEFAULT_MAX_FRAMES = 1024
@@ -208,16 +209,15 @@ class Emulator(AssemblyVerifier):
                         AssemblyOpcode.TMIN: tritwise_min,
                         AssemblyOpcode.TMAX: tritwise_max,
                     }[opcode]
-                    self._write(
-                        frame,
-                        destination,
-                        operation(
-                            self._read_int(frame, left_register, instruction),
-                            self._read_int(frame, right_register, instruction),
-                            WIDTH_MAP[type_name],
-                        ),
-                        instruction,
-                    )
+                    left = self._read(frame, left_register, instruction)
+                    right = self._read(frame, right_register, instruction)
+                    if type_name is AssemblyType.I64 and opcode is AssemblyOpcode.TADD:
+                        result = validate_i64(left + right)
+                    elif type_name is AssemblyType.F64 and opcode is AssemblyOpcode.TADD:
+                        result = validate_f64(left + right)
+                    else:
+                        result = operation(left, right, WIDTH_MAP[type_name])
+                    self._write(frame, destination, result, instruction)
                     frame.instruction_index += 1
                 elif opcode is AssemblyOpcode.TCMP:
                     destination, left_register, right_register = instruction.registers
@@ -226,16 +226,13 @@ class Emulator(AssemblyVerifier):
                         left_register,
                         instruction,
                     )
-                    self._write(
-                        frame,
-                        destination,
-                        compare(
-                            self._read_int(frame, left_register, instruction),
-                            self._read_int(frame, right_register, instruction),
-                            WIDTH_MAP[source_type],
-                        ),
-                        instruction,
-                    )
+                    left = self._read(frame, left_register, instruction)
+                    right = self._read(frame, right_register, instruction)
+                    if source_type in {AssemblyType.I64, AssemblyType.F64}:
+                        result = -1 if left < right else 1 if left > right else 0
+                    else:
+                        result = compare(left, right, WIDTH_MAP[source_type])
+                    self._write(frame, destination, result, instruction)
                     frame.instruction_index += 1
                 elif opcode is AssemblyOpcode.TSTORE:
                     index_register, source_register = instruction.registers
@@ -619,6 +616,22 @@ class Emulator(AssemblyVerifier):
                     DiagnosticCode.RUNTIME_INVALID_STATE,
                     notes=(f"register r{register}",),
                 )
+        elif type_name is AssemblyType.I64:
+            try:
+                validate_i64(value)
+            except (NumericError, TypeError, ValueError) as error:
+                raise self._runtime_error(
+                    frame, instruction, str(error), DiagnosticCategory.OVERFLOW,
+                    DiagnosticCode.RUNTIME_OVERFLOW,
+                ) from error
+        elif type_name is AssemblyType.F64:
+            try:
+                validate_f64(value)
+            except (NumericError, TypeError, ValueError) as error:
+                raise self._runtime_error(
+                    frame, instruction, str(error), DiagnosticCategory.OVERFLOW,
+                    DiagnosticCode.RUNTIME_OVERFLOW,
+                ) from error
         else:
             if not isinstance(value, int):
                 raise self._runtime_error(

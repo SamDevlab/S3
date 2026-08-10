@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 from typing import Any
 
@@ -230,6 +231,16 @@ def _optional_integer(value: Any, path: str) -> int | None:
     return None if value is None else _integer(value, path)
 
 
+def _optional_number(value: Any, path: str) -> int | float | None:
+    if value is None:
+        return None
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise IRSerializationError(f"{path} must be a finite number")
+    if isinstance(value, float) and not math.isfinite(value):
+        raise IRSerializationError(f"{path} must be a finite number")
+    return value
+
+
 def _byte_array(value: Any, path: str) -> list[int]:
     result: list[int] = []
     for index, raw in enumerate(_array(value, path)):
@@ -336,7 +347,7 @@ def _instruction(value: Any, path: str, *, version: str) -> IRInstruction:
         opcode,
         result=result if len(results) <= 1 else None,
         operands=operands,
-        immediate=_optional_integer(data["immediate"], f"{path}.immediate"),
+        immediate=_optional_number(data["immediate"], f"{path}.immediate"),
         static_string=(
             None
             if "static_string" not in data

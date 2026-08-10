@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import struct
 from dataclasses import dataclass
 
 from ...assembly import (
@@ -19,12 +20,17 @@ from .registers import (
     CALLEE_SAVED_ALLOCATABLE_REGISTERS,
     SYSV_INTEGER_ARGUMENT_REGISTERS,
 )
+from ...numeric_abi import SYSV_FLOAT_ARGUMENT_REGISTERS
 from .runtime import render_runtime
 from .allocation import AllocationPlan, analyze_allocation
 
 
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _ARGUMENT_REGISTERS = SYSV_INTEGER_ARGUMENT_REGISTERS
+
+
+def _f64_bits(value: float) -> int:
+    return struct.unpack("<Q", struct.pack("<d", value))[0]
 
 
 @dataclass(frozen=True, slots=True)
@@ -185,6 +191,10 @@ class X8664Emitter:
         layout: FrameLayout,
     ) -> list[str]:
         lines: list[str] = []
+        if function.result_width == 1 and any(
+            parameter.type is AssemblyType.F64 for parameter in function.parameters
+        ):
+            return self._save_numeric_parameters(function, layout)
         if function.result_width > 1:
             if layout.hidden_sret_pointer is None:
                 raise NativeBackendError("missing hidden sret pointer slot")
@@ -232,6 +242,45 @@ class X8664Emitter:
                 if phys is not None:
                     slot = layout.register(parameter.register)
                     lines.append(f"    mov {phys}, qword ptr {_address(slot.value)}")
+        return lines
+
+    def _save_numeric_parameters(
+        self,
+        function: AssemblyFunction,
+        layout: FrameLayout,
+    ) -> list[str]:
+        lines: list[str] = []
+        integer_index = 0
+        float_index = 0
+        stack_index = 0
+        for parameter in function.parameters:
+            slot = layout.register(parameter.register)
+            if parameter.type is AssemblyType.F64 and float_index < len(SYSV_FLOAT_ARGUMENT_REGISTERS):
+                source = SYSV_FLOAT_ARGUMENT_REGISTERS[float_index]
+                float_index += 1
+                lines.extend((
+                    f"    movq rax, {source}",
+                    f"    mov qword ptr {_address(slot.value)}, rax",
+                ))
+            elif parameter.type is not AssemblyType.F64 and integer_index < len(_ARGUMENT_REGISTERS):
+                source = _ARGUMENT_REGISTERS[integer_index]
+                integer_index += 1
+                lines.append(f"    mov qword ptr {_address(slot.value)}, {source}")
+            else:
+                caller_offset = 16 + stack_index * 8
+                stack_index += 1
+                lines.extend((
+                    f"    mov rax, qword ptr [rbp + {caller_offset}]",
+                    f"    mov qword ptr {_address(slot.value)}, rax",
+                ))
+        if self.register_allocation and self.current_plan:
+            for parameter in function.parameters:
+                physical = self.current_plan.physical_register(parameter.register)
+                if physical is not None:
+                    slot = layout.register(parameter.register)
+                    lines.append(
+                        f"    mov {physical}, qword ptr {_address(slot.value)}"
+                    )
         return lines
 
     def _initialize_metadata(
@@ -410,8 +459,14 @@ class X8664Emitter:
 
         if opcode is AssemblyOpcode.TCONST:
             assert instruction.immediate is not None
+            type_name = function.type_of(registers[0])
+            immediate = (
+                _f64_bits(float(instruction.immediate))
+                if type_name is AssemblyType.F64
+                else instruction.immediate
+            )
             return instrumentation + [
-                f"    mov rax, {instruction.immediate}",
+                f"    movabs rax, {immediate}",
                 *self._write_register(layout, registers[0], "rax"),
             ]
         if opcode is AssemblyOpcode.TCONST_STR:
@@ -511,6 +566,37 @@ class X8664Emitter:
         if opcode is AssemblyOpcode.TADD:
             type_name = function.type_of(registers[0])
             assert type_name is not None
+            if type_name is AssemblyType.F64:
+                overflow = self._instruction_failure(
+                    "overflow",
+                    detail="f64 result is not finite\n",
+                )
+                return instrumentation + [
+                    *self._read_register(layout, registers[1], "rax"),
+                    *self._read_register(layout, registers[2], "r10"),
+                    "    movq xmm0, rax",
+                    "    movq xmm1, r10",
+                    "    addsd xmm0, xmm1",
+                    "    movq rax, xmm0",
+                    "    mov r11, rax",
+                    "    shl r11, 1",
+                    "    movabs r10, 18437736874454810624",
+                    "    cmp r11, r10",
+                    f"    jae {overflow}",
+                    *self._write_register(layout, registers[0], "rax"),
+                ]
+            if type_name is AssemblyType.I64:
+                overflow = self._instruction_failure(
+                    "overflow",
+                    detail="i64 addition overflow\n",
+                )
+                return instrumentation + [
+                    *self._read_register(layout, registers[1], "rax"),
+                    *self._read_register(layout, registers[2], "r10"),
+                    "    add rax, r10",
+                    f"    jo {overflow}",
+                    *self._write_register(layout, registers[0], "rax"),
+                ]
             overflow = self._overflow_failure(type_name, "rax")
             return instrumentation + [
                 *self._read_register(layout, registers[1], "rax"),
@@ -523,6 +609,22 @@ class X8664Emitter:
         if opcode in {AssemblyOpcode.TMIN, AssemblyOpcode.TMAX}:
             return instrumentation + self._emit_extreme(function, layout, instruction)
         if opcode is AssemblyOpcode.TCMP:
+            source_type = function.type_of(registers[1])
+            if source_type is AssemblyType.F64:
+                return instrumentation + [
+                    *self._read_register(layout, registers[1], "rax"),
+                    *self._read_register(layout, registers[2], "r10"),
+                    "    movq xmm0, rax",
+                    "    movq xmm1, r10",
+                    "    xor r11d, r11d",
+                    "    ucomisd xmm0, xmm1",
+                    "    mov rax, -1",
+                    "    cmovb r11, rax",
+                    "    mov rax, 1",
+                    "    cmova r11, rax",
+                    "    mov rax, r11",
+                    *self._write_register(layout, registers[0], "rax"),
+                ]
             return instrumentation + [
                 *self._read_register(layout, registers[1], "rax"),
                 *self._read_register(layout, registers[2], "r10"),
@@ -569,6 +671,16 @@ class X8664Emitter:
                     layout,
                     instruction,
                 )
+            return_type = function.return_type
+            if return_type is AssemblyType.F64:
+                return instrumentation + [
+                    *self._read_register(layout, registers[0], "rax"),
+                    "    movq xmm0, rax",
+                    *self._restore_callee_saved(layout),
+                    "    dec qword ptr [rip + __s3_frame_count]",
+                    "    leave",
+                    "    ret",
+                ]
             return instrumentation + [
                 *self._read_register(layout, registers[0], "rax"),
                 *self._restore_callee_saved(layout),
@@ -653,6 +765,14 @@ class X8664Emitter:
         arguments: tuple[int, ...],
         destination: int,
     ) -> list[str]:
+        assert instruction.callee is not None
+        callee = self.functions[instruction.callee]
+        if callee.return_type is AssemblyType.F64 or any(
+            parameter.type is AssemblyType.F64 for parameter in callee.parameters
+        ):
+            return self._emit_numeric_scalar_call(
+                layout, instruction, arguments, destination, callee
+            )
         stack_arguments = arguments[len(_ARGUMENT_REGISTERS) :]
         padding = 1 if len(stack_arguments) % 2 else 0
         survivor_physicals = self._call_survivor_physicals(instruction)
@@ -685,6 +805,68 @@ class X8664Emitter:
         cleanup = (len(stack_arguments) + padding) * 8
         if cleanup:
             lines.append(f"    add rsp, {cleanup}")
+        if self.register_allocation:
+            lines.extend(self._restore_caller_saved(layout, survivor_physicals))
+        lines.extend(self._write_register(layout, destination, "rax"))
+        return lines
+
+    def _emit_numeric_scalar_call(
+        self,
+        layout: FrameLayout,
+        instruction: AssemblyInstruction,
+        arguments: tuple[int, ...],
+        destination: int,
+        callee: AssemblyFunction,
+    ) -> list[str]:
+        integer_index = 0
+        float_index = 0
+        register_arguments: list[tuple[int, str, bool]] = []
+        stack_arguments: list[int] = []
+        for argument, parameter in zip(arguments, callee.parameters, strict=True):
+            if parameter.type is AssemblyType.F64 and float_index < len(SYSV_FLOAT_ARGUMENT_REGISTERS):
+                register_arguments.append((argument, SYSV_FLOAT_ARGUMENT_REGISTERS[float_index], True))
+                float_index += 1
+            elif parameter.type is not AssemblyType.F64 and integer_index < len(_ARGUMENT_REGISTERS):
+                register_arguments.append((argument, _ARGUMENT_REGISTERS[integer_index], False))
+                integer_index += 1
+            else:
+                stack_arguments.append(argument)
+        padding = 1 if len(stack_arguments) % 2 else 0
+        survivor_physicals = self._call_survivor_physicals(instruction)
+        lines: list[str] = []
+        if self.register_allocation:
+            for register in arguments:
+                lines.extend(self._snapshot_register(layout, register))
+            lines.extend(self._save_caller_saved(layout, survivor_physicals))
+        if padding:
+            lines.append("    sub rsp, 8")
+        for register in reversed(stack_arguments):
+            lines.extend(
+                self._load_snapshot(layout, register, "rax")
+                if self.register_allocation
+                else self._read_register(layout, register, "rax")
+            )
+            lines.append("    push rax")
+        for register, target, is_float in register_arguments:
+            if is_float:
+                lines.extend(
+                    self._load_snapshot(layout, register, "rax")
+                    if self.register_allocation
+                    else self._read_register(layout, register, "rax")
+                )
+                lines.append(f"    movq {target}, rax")
+            else:
+                lines.extend(
+                    self._load_snapshot(layout, register, target)
+                    if self.register_allocation
+                    else self._read_register(layout, register, target)
+                )
+        lines.append(f"    call {mangle_function(callee.name)}")
+        cleanup = (len(stack_arguments) + padding) * 8
+        if cleanup:
+            lines.append(f"    add rsp, {cleanup}")
+        if callee.return_type is AssemblyType.F64:
+            lines.append("    movq rax, xmm0")
         if self.register_allocation:
             lines.extend(self._restore_caller_saved(layout, survivor_physicals))
         lines.extend(self._write_register(layout, destination, "rax"))
