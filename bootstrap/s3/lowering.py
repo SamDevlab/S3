@@ -26,6 +26,8 @@ from .static_text import decode_static_text, normalize_static_text_newlines
 TYPE_MAP = {
     ast.TypeName.TRIT: IRType.TRIT,
     ast.TypeName.TRYTE: IRType.TRYTE,
+    ast.TypeName.I64: IRType.I64,
+    ast.TypeName.F64: IRType.F64,
     ast.TypeName.STRING: IRType.STRING,
 }
 
@@ -1462,7 +1464,7 @@ class FunctionLowerer:
 
     def _emit_constant(
         self,
-        value: int,
+        value: int | float,
         type_name: ast.TypeName,
         location: SourceLocation,
     ) -> int:
@@ -2071,7 +2073,7 @@ class FunctionLowerer:
                 ))
                 return result
         expression_type = self._storage_type(declared_type, expression.location)
-        if expression_type in (ast.TypeName.TRIT, ast.TypeName.TRYTE):
+        if expression_type in (ast.TypeName.TRIT, ast.TypeName.TRYTE, ast.TypeName.I64, ast.TypeName.F64):
             constant = self.semantic_model.constant_value_of(expression)
             if constant is not None:
                 return self._emit_constant(
@@ -2080,6 +2082,12 @@ class FunctionLowerer:
                     expression.location,
                 )
         if isinstance(expression, ast.IntegerLiteral):
+            return self._emit_constant(
+                expression.value,
+                expression_type,
+                expression.location,
+            )
+        if isinstance(expression, ast.FloatLiteral):
             return self._emit_constant(
                 expression.value,
                 expression_type,

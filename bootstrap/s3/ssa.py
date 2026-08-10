@@ -54,7 +54,7 @@ class SSAInstruction:
     result: SSAValue | None = None
     results: tuple[SSAValue, ...] = ()
     operands: tuple[SSAValue, ...] = ()
-    immediate: int | str | None = None
+    immediate: int | float | str | None = None
     targets: tuple[str, ...] = ()
     memory: int | None = None
     initialization: bool = False

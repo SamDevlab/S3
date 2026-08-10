@@ -42,8 +42,11 @@ class TokenKind(Enum):
     MUT = auto()
     TRIT = auto()
     TRYTE = auto()
+    I64 = auto()
+    F64 = auto()
     IDENTIFIER = auto()
     INTEGER = auto()
+    FLOAT = auto()
     STRING_LITERAL = auto()
     ARROW = auto()
     COMPARE = auto()
@@ -86,6 +89,8 @@ KEYWORDS = {
     "mut": TokenKind.MUT,
     "trit": TokenKind.TRIT,
     "tryte": TokenKind.TRYTE,
+    "i64": TokenKind.I64,
+    "f64": TokenKind.F64,
     "else": TokenKind.ELSE,
 }
 
@@ -164,7 +169,7 @@ class Lexer:
                 tokens.append(self._identifier())
                 continue
             if char.isdigit():
-                tokens.append(self._integer())
+                tokens.append(self._number())
                 continue
             if char == '"':
                 tokens.append(self._string_literal())
@@ -335,14 +340,20 @@ class Lexer:
             char.isascii() and char.isdigit()
         )
 
-    def _integer(self) -> Token:
+    def _number(self) -> Token:
         start = self.position
         line = self.line
         column = self.column
         while self._peek().isdigit():
             self._advance()
+        kind = TokenKind.INTEGER
+        if self._peek() == "." and self._peek(1).isdigit():
+            kind = TokenKind.FLOAT
+            self._advance()
+            while self._peek().isdigit():
+                self._advance()
         text = self.source[start:self.position]
-        return Token(TokenKind.INTEGER, text, line, column, start)
+        return Token(kind, text, line, column, start)
 
     def _string_literal(self) -> Token:
         start = self.position

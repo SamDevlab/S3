@@ -38,6 +38,11 @@ class X8664Backend:
             raise NativeBackendError(
                 "native entry function 'main' cannot return string"
             )
+        if main.return_type is AssemblyType.F64:
+            raise NativeBackendError(
+                "native entry function 'main' cannot return f64 until the "
+                "standalone runtime provides decimal float output"
+            )
         if main.result_width != 1:
             raise NativeBackendError(
                 "native entry function 'main' must return one result cell"

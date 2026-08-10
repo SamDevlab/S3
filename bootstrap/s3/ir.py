@@ -12,6 +12,8 @@ from .diagnostics import SourceLocation
 class IRType(Enum):
     TRIT = "trit"
     TRYTE = "tryte"
+    I64 = "i64"
+    F64 = "f64"
     STRING = "string"
     REFERENCE = "reference"
 
@@ -149,7 +151,7 @@ class IRInstruction:
     opcode: IROpcode
     result: int | None = None
     operands: tuple[int, ...] = ()
-    immediate: int | None = None
+    immediate: int | float | None = None
     static_string: str | None = None
     callee: str | None = None
     targets: tuple[str, ...] = ()

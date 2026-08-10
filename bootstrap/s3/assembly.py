@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import math
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -57,6 +58,8 @@ class AssemblyParseError(AssemblyError):
 class AssemblyType(Enum):
     TRIT = "trit"
     TRYTE = "tryte"
+    I64 = "i64"
+    F64 = "f64"
     STRING = "string"
     REFERENCE = "reference"
 
@@ -131,7 +134,7 @@ class AssemblyMemoryObject:
 class AssemblyInstruction:
     opcode: AssemblyOpcode
     registers: tuple[int, ...] = ()
-    immediate: int | None = None
+    immediate: int | float | None = None
     static_string: str | None = None
     callee: str | None = None
     labels: tuple[str, ...] = ()
@@ -310,7 +313,7 @@ class AssemblyProgram:
 
 
 _IDENTIFIER = r"[A-Za-z_][A-Za-z0-9_]*"
-_TYPE = r"trit|tryte|string|reference"
+_TYPE = r"trit|tryte|i64|f64|string|reference"
 _STATIC_STRING_ID = r"s[0-9]+"
 _FUNCTION_PATTERN = re.compile(rf"^\.function\s+({_IDENTIFIER})\s*->\s*(.+)$")
 _DECLARATION_PATTERN = re.compile(
@@ -536,12 +539,21 @@ def _parse_instruction(
     if opcode is AssemblyOpcode.TCONST:
         destination = _parse_register(operands[0], line)
         try:
-            immediate = int(operands[1], 10)
+            immediate = (
+                float(operands[1])
+                if any(character in operands[1].lower() for character in (".", "e"))
+                else int(operands[1], 10)
+            )
         except ValueError as error:
             raise AssemblyParseError(
                 f"invalid decimal constant '{operands[1]}'",
                 line,
             ) from error
+        if isinstance(immediate, float) and not math.isfinite(immediate):
+            raise AssemblyParseError(
+                f"invalid finite decimal constant '{operands[1]}'",
+                line,
+            )
         return AssemblyInstruction(
             opcode,
             (destination,),

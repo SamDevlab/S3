@@ -34,6 +34,8 @@ class CodegenError(Exception):
 TYPE_MAP = {
     IRType.TRIT: AssemblyType.TRIT,
     IRType.TRYTE: AssemblyType.TRYTE,
+    IRType.I64: AssemblyType.I64,
+    IRType.F64: AssemblyType.F64,
     IRType.STRING: AssemblyType.STRING,
     IRType.REFERENCE: AssemblyType.REFERENCE,
 }

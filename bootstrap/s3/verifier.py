@@ -19,6 +19,7 @@ from .ir import (
     TERMINATOR_OPCODES,
 )
 from .ternary import TRYTE_MAX, TernaryRangeError, TernaryWidth, validate
+from .numeric import NumericError, validate_f64, validate_i64
 
 
 class IRVerificationError(S3Error):
@@ -369,8 +370,8 @@ class IRVerifier:
                 self._error("address_of requires a logical storage operand", instruction.location)
             if instruction.memory is not None:
                 self._require_memory(instruction, memory_objects)
-                if len(instruction.operands) == 1 and register_types[instruction.operands[0]] is not IRType.TRYTE:
-                    self._error("address_of array index must be a tryte", instruction.location)
+                if len(instruction.operands) == 1 and register_types[instruction.operands[0]] not in {IRType.TRYTE, IRType.I64}:
+                    self._error("address_of array index must be a tryte or i64", instruction.location)
             if instruction.operands:
                 if register_types[instruction.operands[0]] is IRType.REFERENCE:
                     self._error("address_of cannot target a reference", instruction.location)
@@ -417,8 +418,13 @@ class IRVerifier:
                 self._error("const must not have a static string id", instruction.location)
             try:
                 assert instruction.immediate is not None
-                validate(instruction.immediate, WIDTH_MAP[result_type])
-            except TernaryRangeError as error:
+                if result_type is IRType.I64:
+                    validate_i64(instruction.immediate)
+                elif result_type is IRType.F64:
+                    validate_f64(instruction.immediate)
+                else:
+                    validate(instruction.immediate, WIDTH_MAP[result_type])
+            except (TernaryRangeError, NumericError, TypeError, ValueError) as error:
                 self._error(str(error), instruction.location)
             return
 
@@ -478,6 +484,8 @@ class IRVerifier:
                 )
             if result_type is IRType.REFERENCE:
                 self._error(f"{opcode.value} does not support reference values", instruction.location)
+            if result_type in {IRType.I64, IRType.F64} and opcode is not IROpcode.ADD:
+                self._error(f"{opcode.value} does not support numeric values", instruction.location)
             return
 
         if opcode is IROpcode.COMPARE:
@@ -542,8 +550,8 @@ class IRVerifier:
             _, result_type = require_result()
             operand_types = require_operands(1)
             memory = self._require_memory(instruction, memory_objects)
-            if operand_types[0] is not IRType.TRYTE:
-                self._error("load index must have type tryte", instruction.location)
+            if operand_types[0] not in {IRType.TRYTE, IRType.I64}:
+                self._error("load index must have type tryte or i64", instruction.location)
             if result_type is not memory.element_type:
                 self._error(
                     f"load result has type {result_type.value}; memory "
@@ -556,8 +564,8 @@ class IRVerifier:
             require_no_result()
             operand_types = require_operands(2)
             memory = self._require_memory(instruction, memory_objects)
-            if operand_types[0] is not IRType.TRYTE:
-                self._error("store index must have type tryte", instruction.location)
+            if operand_types[0] not in {IRType.TRYTE, IRType.I64}:
+                self._error("store index must have type tryte or i64", instruction.location)
             if operand_types[1] is not memory.element_type:
                 self._error(
                     f"store value has type {operand_types[1].value}; memory "
