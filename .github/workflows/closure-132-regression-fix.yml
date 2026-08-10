@@ -1,0 +1,63 @@
+name: M1.32 regression closure fix
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - tools/_closure_132_regression_fix.py
+      - .github/workflows/closure-132-regression-fix.yml
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  apply-and-validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: production/closure-1.32-numeric-20260810-1705
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[dev]'
+      - name: Apply guarded regression fixes
+        run: python tools/_closure_132_regression_fix.py
+      - name: Compile check
+        run: python -m compileall -q bootstrap tests
+      - name: Targeted regression and capability proof
+        env:
+          S3_NATIVE_REQUIRED: '1'
+        run: >-
+          python -m pytest -q
+          tests/test_compiler.py
+          tests/test_lexer_indentation.py
+          tests/test_s3_constant_comparison_lowering.py
+          tests/test_s3_static_text_concatenation_ir.py
+          tests/test_s3_static_text_constant_propagation_lowering.py
+          tests/test_s3_static_text_equality_lowering.py
+          tests/test_x86_64_liveness.py
+          tests/test_native_x86_64.py
+          tests/test_numeric_domains.py
+          tests/test_numeric_closure.py
+          tests/test_numeric_source_parser.py
+          tests/test_numeric_native_integration.py
+          tests/test_numeric_capability_e2e.py
+      - name: Diff check
+        run: git diff --check
+      - name: Commit validated fixes
+        run: |
+          rm tools/_closure_132_regression_fix.py .github/workflows/closure-132-regression-fix.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'fix(1.32): preserve comparisons and close opcode regressions'
+          git push origin HEAD:production/closure-1.32-numeric-20260810-1705
