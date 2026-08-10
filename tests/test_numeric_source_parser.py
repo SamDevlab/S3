@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from bootstrap.s3 import ast
 from bootstrap.s3.lexer import SyntaxMode, TokenKind, tokenize
 from bootstrap.s3.parser import parse
@@ -9,6 +11,7 @@ from bootstrap.s3.lowering import lower
 from bootstrap.s3.codegen import generate_assembly
 from bootstrap.s3.emulator import Emulator
 from bootstrap.s3.backends.x86_64 import generate_native_assembly
+from bootstrap.s3.backends.x86_64 import NativeBackendError
 from bootstrap.s3.assembly import parse_assembly
 from bootstrap.s3.ir_serialization import deserialize_ir, serialize_ir
 
@@ -135,3 +138,14 @@ def test_i64_index_executes_through_ir_assembly_and_native_lowering() -> None:
     assert Emulator().execute(assembly) == 5
     native = generate_native_assembly(assembly)
     assert "cmp rax, 3" in native
+
+
+def test_native_backend_rejects_unprintable_f64_entry_result() -> None:
+    program = parse(
+        "fn main() -> f64:\n"
+        "    return 0.5\n",
+        mode=SyntaxMode.V0_6,
+    )
+    assembly = generate_assembly(lower(program, analyze(program)))
+    with pytest.raises(NativeBackendError, match="cannot return f64"):
+        generate_native_assembly(assembly)
