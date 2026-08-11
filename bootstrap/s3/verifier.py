@@ -364,7 +364,7 @@ class IRVerifier:
             result, result_type = require_result()
             if result_type is not IRType.REFERENCE:
                 self._error("address_of result must be a reference", instruction.location)
-            if instruction.reference_target not in {IRType.TRIT, IRType.TRYTE, IRType.STRING}:
+            if instruction.reference_target not in {IRType.TRIT, IRType.TRYTE, IRType.I64, IRType.F64, IRType.STRING}:
                 self._error("address_of requires a scalar reference target", instruction.location)
             if len(instruction.operands) not in {0, 1} or instruction.memory is None and not instruction.operands:
                 self._error("address_of requires a logical storage operand", instruction.location)
@@ -375,6 +375,40 @@ class IRVerifier:
             if instruction.operands:
                 if register_types[instruction.operands[0]] is IRType.REFERENCE:
                     self._error("address_of cannot target a reference", instruction.location)
+            return
+
+        if opcode is IROpcode.SLICE_LENGTH:
+            result, result_type = require_result()
+            operand_types = require_operands(1)
+            if result_type is not IRType.I64 or operand_types[0] is not IRType.REFERENCE:
+                self._error("slice_length requires a reference and returns i64", instruction.location)
+            ref = next(register for register in function.registers if register.index == instruction.operands[0])
+            if not ref.reference_is_slice:
+                self._error("slice_length requires a slice reference", instruction.location)
+            return
+
+        if opcode is IROpcode.SLICE_LOAD:
+            _, result_type = require_result()
+            operand_types = require_operands(3)
+            if operand_types[0] is not IRType.REFERENCE or operand_types[1] is not IRType.I64 or operand_types[2] not in {IRType.TRYTE, IRType.I64}:
+                self._error("slice_load requires a slice reference and index", instruction.location)
+            if instruction.reference_target is not result_type:
+                self._error("slice_load result does not match element type", instruction.location)
+            ref = next(register for register in function.registers if register.index == instruction.operands[0])
+            if not ref.reference_is_slice:
+                self._error("slice_load requires a slice reference", instruction.location)
+            return
+
+        if opcode is IROpcode.SLICE_STORE:
+            require_no_result()
+            operand_types = require_operands(4)
+            if operand_types[0] is not IRType.REFERENCE or operand_types[1] is not IRType.I64 or operand_types[2] not in {IRType.TRYTE, IRType.I64}:
+                self._error("slice_store requires a slice reference and index", instruction.location)
+            ref = next(register for register in function.registers if register.index == instruction.operands[0])
+            if not ref.reference_is_slice or not ref.reference_mutable:
+                self._error("slice_store requires a mutable slice reference", instruction.location)
+            if instruction.reference_target is not operand_types[3]:
+                self._error("slice_store value does not match element type", instruction.location)
             return
 
         if opcode is IROpcode.REFERENCE_LOAD:

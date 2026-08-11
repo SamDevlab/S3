@@ -527,6 +527,70 @@ class X8664Emitter:
                 f"    {load}",
                 *self._write_register(layout, destination, "r11"),
             ]
+        if opcode is AssemblyOpcode.TSLEN:
+            destination, _reference, length = registers
+            return instrumentation + [
+                *self._read_register(layout, length, "rax"),
+                *self._write_register(layout, destination, "rax"),
+            ]
+        if opcode is AssemblyOpcode.TSLOAD:
+            destination, reference, length, index = registers
+            type_name = instruction.reference_target
+            if type_name is None:
+                raise NativeBackendError("TSLOAD is missing its element type")
+            bounds_failure = self._instruction_failure(
+                "bounds",
+                detail_prefix="slice index ",
+                detail_suffix=" out of bounds\n",
+                value_register="rax",
+            )
+            if type_name is AssemblyType.F64:
+                load = "mov r11, qword ptr [r10 + rax * 8]"
+            elif type_name is AssemblyType.I64:
+                load = "mov r11, qword ptr [r10 + rax * 8]"
+            elif type_name is AssemblyType.TRYTE:
+                load = "movsx r11, word ptr [r10 + rax * 2]"
+            else:
+                load = "movsx r11, byte ptr [r10 + rax]"
+            return instrumentation + [
+                *self._read_register(layout, reference, "r10"),
+                *self._read_register(layout, length, "r11"),
+                *self._read_register(layout, index, "rax"),
+                "    cmp rax, 0",
+                f"    jl {bounds_failure}",
+                "    cmp rax, r11",
+                f"    jae {bounds_failure}",
+                f"    {load}",
+                *self._write_register(layout, destination, "r11"),
+            ]
+        if opcode is AssemblyOpcode.TSSTORE:
+            reference, length, index, source = registers
+            type_name = instruction.reference_target
+            if type_name is None:
+                raise NativeBackendError("TSSTORE is missing its element type")
+            bounds_failure = self._instruction_failure(
+                "bounds",
+                detail_prefix="slice index ",
+                detail_suffix=" out of bounds\n",
+                value_register="rax",
+            )
+            lines = instrumentation + [
+                *self._read_register(layout, reference, "r10"),
+                *self._read_register(layout, length, "r11"),
+                *self._read_register(layout, index, "rax"),
+                *self._read_register(layout, source, "rcx"),
+                "    cmp rax, 0",
+                f"    jl {bounds_failure}",
+                "    cmp rax, r11",
+                f"    jae {bounds_failure}",
+            ]
+            if type_name is AssemblyType.TRYTE:
+                lines.append("    mov word ptr [r10 + rax * 2], cx")
+            elif type_name is AssemblyType.TRIT:
+                lines.append("    mov byte ptr [r10 + rax], cl")
+            else:
+                lines.append("    mov qword ptr [r10 + rax * 8], rcx")
+            return lines
         if opcode is AssemblyOpcode.TREFSTORE:
             reference, source = registers
             type_name = instruction.reference_target

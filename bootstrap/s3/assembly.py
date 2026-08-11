@@ -87,6 +87,9 @@ class AssemblyOpcode(Enum):
     TADDR = "TADDR"
     TREFLOAD = "TREFLOAD"
     TREFSTORE = "TREFSTORE"
+    TSLEN = "TSLEN"
+    TSLOAD = "TSLOAD"
+    TSSTORE = "TSSTORE"
 
 
 TERMINATOR_OPCODES = {
@@ -111,6 +114,7 @@ class AssemblyParameter:
     type: AssemblyType
     reference_target: AssemblyType | None = None
     reference_mutable: bool = False
+    reference_is_slice: bool = False
 
     def render(self) -> str:
         return f"    .param r{self.register}, {self.type.value}"
@@ -149,6 +153,7 @@ class AssemblyInstruction:
     result_width: int = 1
     reference_target: AssemblyType | None = None
     reference_mutable: bool = False
+    reference_is_slice: bool = False
 
     def __post_init__(self) -> None:
         if self.result_width < 0:
@@ -215,6 +220,12 @@ class AssemblyInstruction:
                 operands = ", ".join(f"r{register}" for register in self.registers)
         elif self.opcode in {AssemblyOpcode.TREFLOAD, AssemblyOpcode.TREFSTORE}:
             operands = ", ".join(f"r{register}" for register in self.registers)
+        elif self.opcode is AssemblyOpcode.TSLEN:
+            operands = f"r{self.registers[0]}, r{self.registers[1]}"
+        elif self.opcode is AssemblyOpcode.TSLOAD:
+            operands = ", ".join(f"r{register}" for register in self.registers)
+        elif self.opcode is AssemblyOpcode.TSSTORE:
+            operands = ", ".join(f"r{register}" for register in self.registers)
         else:
             operands = ", ".join(f"r{register}" for register in self.registers)
         rendered = f"    {self.opcode.value:<6} {operands}"
@@ -248,6 +259,7 @@ class AssemblyFunction:
     result_types: tuple[AssemblyType, ...] = ()
     reference_targets: tuple[tuple[int, AssemblyType, bool], ...] = ()
     reference_storage_sizes: tuple[tuple[int, int], ...] = ()
+    slice_registers: tuple[int, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.result_types:

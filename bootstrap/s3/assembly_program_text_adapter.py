@@ -121,7 +121,10 @@ SUPPORTED_PROGRAM_OPCODES = frozenset(
         AssemblyOpcode.TBR3,
         AssemblyOpcode.TADDR,
         AssemblyOpcode.TREFLOAD,
-        AssemblyOpcode.TREFSTORE,
+    AssemblyOpcode.TREFSTORE,
+    AssemblyOpcode.TSLEN,
+    AssemblyOpcode.TSLOAD,
+    AssemblyOpcode.TSSTORE,
     }
 )
 

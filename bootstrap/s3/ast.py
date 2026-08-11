@@ -37,7 +37,16 @@ class ReferenceType:
     location: SourceLocation
 
 
-DeclaredType: TypeAlias = TypeName | ArrayType | NominalType | ReferenceType
+@dataclass(frozen=True, slots=True)
+class SliceType:
+    """A borrowed contiguous view with a runtime i64 length."""
+
+    element_type: TypeName
+    mutable: bool
+    location: SourceLocation
+
+
+DeclaredType: TypeAlias = TypeName | ArrayType | NominalType | ReferenceType | SliceType
 
 
 class UnaryOperator(Enum):

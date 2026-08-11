@@ -210,6 +210,15 @@ class Parser:
         start = self._peek()
         if self._match(TokenKind.AMPERSAND):
             mutable = self._match(TokenKind.MUT)
+            if self._match(TokenKind.LEFT_BRACKET):
+                element = self._parse_type()
+                if not isinstance(element, ast.TypeName):
+                    raise ParseError(
+                        "slice element type must be a scalar type",
+                        element.location,
+                    )
+                self._consume(TokenKind.RIGHT_BRACKET, "expected ']' after slice element type")
+                return ast.SliceType(element, mutable, start.location)
             target = self._parse_type()
             return ast.ReferenceType(target, mutable, start.location)
         if self._match(TokenKind.TRIT):

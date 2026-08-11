@@ -38,6 +38,9 @@ class IROpcode(Enum):
     ADDRESS_OF = "address_of"
     REFERENCE_LOAD = "reference_load"
     REFERENCE_STORE = "reference_store"
+    SLICE_LENGTH = "slice_length"
+    SLICE_LOAD = "slice_load"
+    SLICE_STORE = "slice_store"
     RETURN = "return"
     JUMP = "jump"
     BRANCH3 = "branch3"
@@ -84,6 +87,8 @@ class IRRegister:
     location: SourceLocation | None = None
     reference_target: IRType | None = None
     reference_mutable: bool = False
+    reference_is_slice: bool = False
+    slice_length_register: int | None = None
 
     @property
     def name(self) -> str:
@@ -98,6 +103,7 @@ class IRRegister:
         if self.reference_target is not None:
             result["reference_target"] = self.reference_target.value
             result["reference_mutable"] = self.reference_mutable
+            result["reference_is_slice"] = self.reference_is_slice
         if self.location is not None:
             result["source"] = self.location.to_dict()
         return result
@@ -111,6 +117,8 @@ class IRParameter:
     location: SourceLocation | None = None
     reference_target: IRType | None = None
     reference_mutable: bool = False
+    reference_is_slice: bool = False
+    slice_length_register: int | None = None
 
     def to_dict(self) -> dict[str, object]:
         result: dict[str, object] = {
@@ -121,6 +129,7 @@ class IRParameter:
         if self.reference_target is not None:
             result["reference_target"] = self.reference_target.value
             result["reference_mutable"] = self.reference_mutable
+            result["reference_is_slice"] = self.reference_is_slice
         if self.location is not None:
             result["source"] = self.location.to_dict()
         return result
@@ -166,6 +175,8 @@ class IRInstruction:
     results: tuple[int, ...] = ()
     reference_target: IRType | None = None
     reference_mutable: bool = False
+    reference_is_slice: bool = False
+    slice_length_result: int | None = None
 
     def __post_init__(self) -> None:
         if self.results and self.result is not None and self.results != (self.result,):
@@ -207,6 +218,7 @@ class IRInstruction:
         if self.reference_target is not None:
             result["reference_target"] = self.reference_target.value
             result["reference_mutable"] = self.reference_mutable
+            result["reference_is_slice"] = self.reference_is_slice
         return result
 
 
