@@ -2296,6 +2296,20 @@ class FunctionLowerer:
                     )
                 )
                 return result
+            if expression.simple_function_name in {"to_i64", "to_f64", "to_tryte"}:
+                if len(expression.arguments) != 1:
+                    raise LoweringError("numeric conversion requires one argument", expression.location)
+                source = self._lower_expression(expression.arguments[0].expression)
+                result = self._allocate(expression_type, expression.location)
+                self._emit(
+                    IRInstruction(
+                        IROpcode.CONVERT,
+                        result=result,
+                        operands=(source,),
+                        location=expression.location,
+                    )
+                )
+                return result
             arguments = self._lower_call_arguments(expression)
             result = self._allocate(expression_type, expression.location)
             self._emit(
@@ -2528,9 +2542,27 @@ class FunctionLowerer:
             ast.BinaryOperator.GREATER,
             ast.BinaryOperator.GREATER_EQUAL,
         )
+        if expression.operator in RELATIONAL_OPS:
+            operand_type = self._storage_type(
+                self.semantic_model.declared_type_of(expression.left),
+                expression.left.location,
+            )
+            if operand_type is not ast.TypeName.F64:
+                return self._lower_relational_expression(expression)
         left = self._lower_expression(expression.left)
         right = self._lower_expression(expression.right)
         if expression.operator is ast.BinaryOperator.SUBTRACT:
+            if result_type in (ast.TypeName.I64, ast.TypeName.F64):
+                result = self._allocate(result_type, expression.location)
+                self._emit(
+                    IRInstruction(
+                        IROpcode.NUMERIC_DIFFERENCE,
+                        result=result,
+                        operands=(left, right),
+                        location=expression.location,
+                    )
+                )
+                return result
             inverted = self._allocate(
                 self._storage_type(
                     self.semantic_model.declared_type_of(expression.right),
@@ -2557,18 +2589,31 @@ class FunctionLowerer:
             )
             return result
 
-        if expression.operator in (
-            ast.BinaryOperator.EQUAL,
-            ast.BinaryOperator.NOT_EQUAL,
-            ast.BinaryOperator.LESS,
-            ast.BinaryOperator.LESS_EQUAL,
-            ast.BinaryOperator.GREATER,
-            ast.BinaryOperator.GREATER_EQUAL,
-        ):
-            return self._lower_relational_expression(expression)
+        if expression.operator in RELATIONAL_OPS:
+            relation_codes = {
+                ast.BinaryOperator.EQUAL: 0,
+                ast.BinaryOperator.NOT_EQUAL: 1,
+                ast.BinaryOperator.LESS: 2,
+                ast.BinaryOperator.LESS_EQUAL: 3,
+                ast.BinaryOperator.GREATER: 4,
+                ast.BinaryOperator.GREATER_EQUAL: 5,
+            }
+            result = self._allocate(ast.TypeName.TRIT, expression.location)
+            self._emit(
+                IRInstruction(
+                    IROpcode.RELATE,
+                    result=result,
+                    operands=(left, right),
+                    immediate=relation_codes[expression.operator],
+                    location=expression.location,
+                )
+            )
+            return result
 
         opcode_map = {
             ast.BinaryOperator.ADD: IROpcode.ADD,
+            ast.BinaryOperator.MULTIPLY: IROpcode.MULTIPLY,
+            ast.BinaryOperator.DIVIDE: IROpcode.DIVIDE,
             ast.BinaryOperator.MINIMUM: IROpcode.MINIMUM,
             ast.BinaryOperator.MAXIMUM: IROpcode.MAXIMUM,
             ast.BinaryOperator.COMPARE: IROpcode.COMPARE,

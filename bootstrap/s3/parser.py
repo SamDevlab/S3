@@ -677,10 +677,19 @@ class Parser:
 
     def _parse_additive(self) -> ast.Expression:
         return self._parse_left_associative(
-            self._parse_unary,
+            self._parse_multiplicative,
             {
                 TokenKind.PLUS: ast.BinaryOperator.ADD,
                 TokenKind.MINUS: ast.BinaryOperator.SUBTRACT,
+            },
+        )
+
+    def _parse_multiplicative(self) -> ast.Expression:
+        return self._parse_left_associative(
+            self._parse_unary,
+            {
+                TokenKind.STAR: ast.BinaryOperator.MULTIPLY,
+                TokenKind.SLASH: ast.BinaryOperator.DIVIDE,
             },
         )
 

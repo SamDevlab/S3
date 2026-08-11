@@ -9,7 +9,20 @@ from . import ast
 from .large_index import SliceBounds
 from .diagnostics import DiagnosticCode, SemanticError, SourceLocation
 from .static_text import StaticTextDecodeError, decode_static_text
-from .numeric import NumericError, I64_MAX, I64_MIN, validate_f64, validate_i64
+from .numeric import (
+    NumericError,
+    NumericValue,
+    I64_MAX,
+    I64_MIN,
+    checked_i64_add,
+    checked_i64_sub,
+    checked_i64_mul,
+    checked_i64_div,
+    checked_i64_neg,
+    checked_i64_to_tryte,
+    validate_f64,
+    validate_i64,
+)
 from .ternary import (
     TRIT_MAX,
     TRIT_MIN,
@@ -38,6 +51,12 @@ STATIC_TEXT_TRANSFORM_BUILTINS = {
     "trim": 1,
     "repeat": 2,
     "replace": 3,
+}
+
+NUMERIC_CONVERSION_BUILTINS = {
+    "to_i64": ast.TypeName.I64,
+    "to_f64": ast.TypeName.F64,
+    "to_tryte": ast.TypeName.TRYTE,
 }
 
 
@@ -1676,7 +1695,10 @@ class SemanticAnalyzer:
                     "slice expression",
                 )
         elif isinstance(expression, ast.CallExpression):
-            result = self._analyze_call(expression)
+            if expression.simple_function_name in NUMERIC_CONVERSION_BUILTINS:
+                result = self._analyze_numeric_conversion_call(expression)
+            else:
+                result = self._analyze_call(expression)
             if expected is not None:
                 call_context = "call expression"
                 if expression.simple_function_name is not None:
@@ -1720,6 +1742,14 @@ class SemanticAnalyzer:
                 expression.location,
                 f"operator '{expression.operator.value}' is not supported for string values",
             )
+            if (
+                expression.operator is ast.UnaryOperator.INVERT
+                and result in (ast.TypeName.I64, ast.TypeName.F64)
+            ):
+                raise SemanticError(
+                    "operator '~' is reserved for balanced-ternary inversion; use unary '-' for numeric negation",
+                    expression.location,
+                )
             self._fold_unary_constant(expression, result)
             self._simplify_unary_expression(expression)
         elif isinstance(expression, ast.BinaryExpression):
@@ -2203,6 +2233,63 @@ class SemanticAnalyzer:
         assert isinstance(type_name.element_type, ast.TypeName)
         return type_name.element_type
 
+    def _analyze_numeric_conversion_call(
+        self,
+        expression: ast.CallExpression,
+    ) -> ast.TypeName:
+        name = expression.simple_function_name
+        assert name in NUMERIC_CONVERSION_BUILTINS
+        if len(expression.arguments) != 1:
+            raise SemanticError(
+                f"builtin '{name}' expects 1 argument(s), got {len(expression.arguments)}",
+                expression.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+            )
+        argument = expression.arguments[0].expression
+        known = self._known_expression_type(argument)
+        if known is None:
+            known = self._analyze_expression(argument)
+        if not isinstance(known, ast.TypeName):
+            raise SemanticError(
+                f"builtin '{name}' requires a scalar numeric argument",
+                argument.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+            )
+        allowed = {
+            "to_i64": {ast.TypeName.TRIT, ast.TypeName.TRYTE},
+            "to_f64": {ast.TypeName.TRIT, ast.TypeName.TRYTE, ast.TypeName.I64},
+            "to_tryte": {ast.TypeName.I64},
+        }[name]
+        if known not in allowed:
+            raise SemanticError(
+                f"builtin '{name}' does not accept {known.value}",
+                argument.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+            )
+        actual = self._analyze_expression(argument, known)
+        self._require_type(
+            actual,
+            known,
+            argument.location,
+            f"argument to '{name}'",
+            diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+        )
+        result = NUMERIC_CONVERSION_BUILTINS[name]
+        constant = self.constant_values.get(id(argument))
+        if constant is not None:
+            try:
+                if name == "to_i64":
+                    converted: int | float = validate_i64(int(constant))
+                elif name == "to_f64":
+                    converted = validate_f64(constant)
+                else:
+                    converted = checked_i64_to_tryte(int(constant))
+            except NumericError as error:
+                raise SemanticError(str(error), expression.location) from error
+            self.constant_values[id(expression)] = converted
+        self.expression_types[id(expression)] = result
+        return result
+
     def _analyze_call(self, expression: ast.CallExpression) -> ast.DeclaredType:
         if expression.simple_function_name is None:
             raise SemanticError(
@@ -2605,6 +2692,25 @@ class SemanticAnalyzer:
             expression.location,
             f"operator '{expression.operator.value}' is not supported for string values",
         )
+        if (
+            expression.operator in (
+                ast.BinaryOperator.MULTIPLY,
+                ast.BinaryOperator.DIVIDE,
+            )
+            and operand_type not in (ast.TypeName.I64, ast.TypeName.F64)
+        ):
+            raise SemanticError(
+                f"operator '{expression.operator.value}' requires i64 or f64 operands",
+                expression.location,
+            )
+        if (
+            expression.operator in (ast.BinaryOperator.MINIMUM, ast.BinaryOperator.MAXIMUM)
+            and operand_type in (ast.TypeName.I64, ast.TypeName.F64)
+        ):
+            raise SemanticError(
+                f"operator '{expression.operator.value}' is balanced-ternary only",
+                expression.location,
+            )
         if expected is not None:
             operand_type = expected
         left_type = self._analyze_expression(expression.left, operand_type)
@@ -2639,7 +2745,19 @@ class SemanticAnalyzer:
         right = self._known_expression_type(expression.right)
         if left is ast.TypeName.STRING or right is ast.TypeName.STRING:
             return ast.TypeName.STRING
-        if left is not None and right is not None:
+        if left is not None and right is not None and left is not right:
+            # Integer literals begin in the legacy tryte domain, but a typed
+            # machine-numeric peer provides the contextual literal domain.
+            if (
+                isinstance(expression.left, ast.IntegerLiteral)
+                and right in (ast.TypeName.I64, ast.TypeName.F64)
+            ):
+                return right
+            if (
+                isinstance(expression.right, ast.IntegerLiteral)
+                and left in (ast.TypeName.I64, ast.TypeName.F64)
+            ):
+                return left
             self._require_type(left, right, expression.location, "binary operands")
         return left or right or ast.TypeName.TRYTE
 
@@ -2684,6 +2802,8 @@ class SemanticAnalyzer:
             function_name = expression.simple_function_name
             if function_name is None:
                 return None
+            if function_name in NUMERIC_CONVERSION_BUILTINS:
+                return NUMERIC_CONVERSION_BUILTINS[function_name]
             if function_name in STATIC_TEXT_QUERY_BUILTINS:
                 return STATIC_TEXT_QUERY_BUILTINS[function_name]
             if function_name in STATIC_TEXT_TRANSFORM_BUILTINS:
@@ -2719,6 +2839,8 @@ class SemanticAnalyzer:
             in (
                 ast.BinaryOperator.ADD,
                 ast.BinaryOperator.SUBTRACT,
+                ast.BinaryOperator.MULTIPLY,
+                ast.BinaryOperator.DIVIDE,
                 ast.BinaryOperator.MINIMUM,
                 ast.BinaryOperator.MAXIMUM,
             )
@@ -3087,8 +3209,13 @@ class SemanticAnalyzer:
         if operand is None:
             return
         try:
-            value = invert(operand, self._width(result_type))
-        except TernaryRangeError as error:
+            if result_type is ast.TypeName.I64:
+                value = checked_i64_neg(int(operand))
+            elif result_type is ast.TypeName.F64:
+                value = validate_f64(-float(operand))
+            else:
+                value = invert(operand, self._width(result_type))
+        except (TernaryRangeError, NumericError) as error:
             raise SemanticError(str(error), expression.location) from error
         self.constant_values[id(expression)] = value
 
@@ -3104,14 +3231,35 @@ class SemanticAnalyzer:
         try:
             if expression.operator is ast.BinaryOperator.ADD:
                 if result_type is ast.TypeName.I64:
-                    value = validate_i64(left + right)
+                    value = checked_i64_add(int(left), int(right))
                 elif result_type is ast.TypeName.F64:
-                    value = validate_f64(left + right)
+                    value = validate_f64(float(left) + float(right))
                 else:
                     value = add(left, right, self._width(result_type))
             elif expression.operator is ast.BinaryOperator.SUBTRACT:
-                width = self._width(result_type)
-                value = add(left, invert(right, width), width)
+                if result_type is ast.TypeName.I64:
+                    value = checked_i64_sub(int(left), int(right))
+                elif result_type is ast.TypeName.F64:
+                    value = validate_f64(float(left) - float(right))
+                else:
+                    width = self._width(result_type)
+                    value = add(left, invert(right, width), width)
+            elif expression.operator is ast.BinaryOperator.MULTIPLY:
+                if result_type is ast.TypeName.I64:
+                    value = checked_i64_mul(int(left), int(right))
+                elif result_type is ast.TypeName.F64:
+                    value = validate_f64(float(left) * float(right))
+                else:
+                    return
+            elif expression.operator is ast.BinaryOperator.DIVIDE:
+                if result_type is ast.TypeName.I64:
+                    value = checked_i64_div(int(left), int(right))
+                elif result_type is ast.TypeName.F64:
+                    value = NumericValue.f64(float(left)).divide(
+                        NumericValue.f64(float(right))
+                    ).value
+                else:
+                    return
             elif expression.operator is ast.BinaryOperator.MINIMUM:
                 value = tritwise_min(left, right, self._width(result_type))
             elif expression.operator is ast.BinaryOperator.MAXIMUM:
@@ -3137,7 +3285,7 @@ class SemanticAnalyzer:
                 value = self._comparison_result(left >= right)
             else:
                 return
-        except (TernaryRangeError, TypeError, ValueError) as error:
+        except (TernaryRangeError, NumericError, TypeError, ValueError) as error:
             raise SemanticError(str(error), expression.location) from error
         self.constant_values[id(expression)] = value
 

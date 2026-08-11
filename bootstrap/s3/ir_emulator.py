@@ -7,7 +7,11 @@ from dataclasses import dataclass
 from .ir import IRFunction, IRInstruction, IRModule, IROpcode, IRType
 from .ternary import add, compare, invert, tritwise_max, tritwise_min, TernaryRangeError, TernaryWidth, validate
 from .verifier import verify_ir
-from .numeric import NumericType, validate_f64, validate_i64
+from .numeric import (
+    NumericError, NumericValue, checked_i64_add, checked_i64_sub, checked_i64_mul,
+    checked_i64_div, checked_i64_neg, checked_i64_to_tryte,
+    validate_f64, validate_i64,
+)
 
 
 class IRExecutionError(RuntimeError):
@@ -76,15 +80,66 @@ def _execute_function(functions, function, arguments, caller):
             src = _read(frame, instruction.operands[0])
             _write(frame, instruction.result, src)
         elif op is IROpcode.INVERT:
-            _write(frame, instruction.result, invert(_read(frame, instruction.operands[0]), _width(_register_type(function, instruction.result))))
-        elif op is IROpcode.ADD:
             result_type = _register_type(function, instruction.result)
+            value = _read(frame, instruction.operands[0])
             if result_type is IRType.I64:
-                _write(frame, instruction.result, validate_i64(_read(frame, instruction.operands[0]) + _read(frame, instruction.operands[1])))
+                result = checked_i64_neg(value)
             elif result_type is IRType.F64:
-                _write(frame, instruction.result, validate_f64(_read(frame, instruction.operands[0]) + _read(frame, instruction.operands[1])))
+                result = validate_f64(-float(value))
             else:
-                _write(frame, instruction.result, add(_read(frame, instruction.operands[0]), _read(frame, instruction.operands[1]), _width(result_type)))
+                result = invert(value, _width(result_type))
+            _write(frame, instruction.result, result)
+        elif op in {IROpcode.ADD, IROpcode.NUMERIC_DIFFERENCE, IROpcode.MULTIPLY, IROpcode.DIVIDE}:
+            result_type = _register_type(function, instruction.result)
+            left = _read(frame, instruction.operands[0])
+            right = _read(frame, instruction.operands[1])
+            if result_type is IRType.I64:
+                if op is IROpcode.ADD:
+                    result = checked_i64_add(left, right)
+                elif op is IROpcode.NUMERIC_DIFFERENCE:
+                    result = checked_i64_sub(left, right)
+                elif op is IROpcode.MULTIPLY:
+                    result = checked_i64_mul(left, right)
+                else:
+                    result = checked_i64_div(left, right)
+            elif result_type is IRType.F64:
+                if op is IROpcode.ADD:
+                    result = validate_f64(float(left) + float(right))
+                elif op is IROpcode.NUMERIC_DIFFERENCE:
+                    result = validate_f64(float(left) - float(right))
+                elif op is IROpcode.MULTIPLY:
+                    result = validate_f64(float(left) * float(right))
+                else:
+                    result = NumericValue.f64(float(left)).divide(NumericValue.f64(float(right))).value
+            else:
+                result = add(left, right, _width(result_type))
+            _write(frame, instruction.result, result)
+        elif op is IROpcode.RELATE:
+            left = _read(frame, instruction.operands[0])
+            right = _read(frame, instruction.operands[1])
+            relation = instruction.immediate
+            truth = {
+                0: left == right,
+                1: left != right,
+                2: left < right,
+                3: left <= right,
+                4: left > right,
+                5: left >= right,
+            }[relation]
+            _write(frame, instruction.result, -1 if truth else 0)
+        elif op is IROpcode.CONVERT:
+            source_type = _register_type(function, instruction.operands[0])
+            result_type = _register_type(function, instruction.result)
+            value = _read(frame, instruction.operands[0])
+            if result_type is IRType.I64:
+                result = validate_i64(int(value))
+            elif result_type is IRType.F64:
+                result = validate_f64(value)
+            elif source_type is IRType.I64 and result_type is IRType.TRYTE:
+                result = checked_i64_to_tryte(value)
+            else:
+                raise IRExecutionError(f"unsupported conversion {source_type.value} -> {result_type.value}")
+            _write(frame, instruction.result, result)
         elif op in {IROpcode.MINIMUM, IROpcode.MAXIMUM}:
             fn = tritwise_min if op is IROpcode.MINIMUM else tritwise_max
             _write(frame, instruction.result, fn(_read(frame, instruction.operands[0]), _read(frame, instruction.operands[1]), _width(_register_type(function, instruction.result))))

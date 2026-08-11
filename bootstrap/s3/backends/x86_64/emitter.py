@@ -534,7 +534,7 @@ class X8664Emitter:
                 *self._read_register(layout, reference, "r10"),
                 *self._read_register(layout, source, "r11"),
             ]
-            if type_name is not AssemblyType.STRING:
+            if type_name in {AssemblyType.TRIT, AssemblyType.TRYTE}:
                 overflow = self._overflow_failure(type_name, "r11")
                 lines.extend(self._range_check(type_name, "r11", overflow))
             storage_size = self.current_function.reference_storage_size(reference)
@@ -555,22 +555,27 @@ class X8664Emitter:
         if opcode is AssemblyOpcode.TINV:
             type_name = function.type_of(registers[0])
             assert type_name is not None
+            if type_name is AssemblyType.F64:
+                return instrumentation + [
+                    *self._read_register(layout, registers[1], "rax"),
+                    "    movabs r10, 9223372036854775808",
+                    "    xor rax, r10",
+                    *self._write_register(layout, registers[0], "rax"),
+                ]
             overflow = self._overflow_failure(type_name, "rax")
-            return instrumentation + [
+            lines = instrumentation + [
                 *self._read_register(layout, registers[1], "rax"),
                 "    neg rax",
                 f"    jo {overflow}",
-                *self._range_check(type_name, "rax", overflow),
-                *self._write_register(layout, registers[0], "rax"),
             ]
+            if type_name in {AssemblyType.TRIT, AssemblyType.TRYTE}:
+                lines.extend(self._range_check(type_name, "rax", overflow))
+            lines.extend(self._write_register(layout, registers[0], "rax"))
+            return lines
         if opcode is AssemblyOpcode.TADD:
             type_name = function.type_of(registers[0])
             assert type_name is not None
             if type_name is AssemblyType.F64:
-                overflow = self._instruction_failure(
-                    "overflow",
-                    detail="f64 result is not finite\n",
-                )
                 return instrumentation + [
                     *self._read_register(layout, registers[1], "rax"),
                     *self._read_register(layout, registers[2], "r10"),
@@ -578,11 +583,6 @@ class X8664Emitter:
                     "    movq xmm1, r10",
                     "    addsd xmm0, xmm1",
                     "    movq rax, xmm0",
-                    "    mov r11, rax",
-                    "    shl r11, 1",
-                    "    movabs r10, 18437736874454810624",
-                    "    cmp r11, r10",
-                    f"    jae {overflow}",
                     *self._write_register(layout, registers[0], "rax"),
                 ]
             if type_name is AssemblyType.I64:
@@ -605,6 +605,134 @@ class X8664Emitter:
                 f"    jo {overflow}",
                 *self._range_check(type_name, "rax", overflow),
                 *self._write_register(layout, registers[0], "rax"),
+            ]
+        if opcode is AssemblyOpcode.TNDIFF:
+            type_name = function.type_of(registers[0])
+            assert type_name in {AssemblyType.I64, AssemblyType.F64}
+            if type_name is AssemblyType.F64:
+                return instrumentation + [
+                    *self._read_register(layout, registers[1], "rax"),
+                    *self._read_register(layout, registers[2], "r10"),
+                    "    movq xmm0, rax",
+                    "    movq xmm1, r10",
+                    "    subsd xmm0, xmm1",
+                    "    movq rax, xmm0",
+                    *self._write_register(layout, registers[0], "rax"),
+                ]
+            overflow = self._instruction_failure(
+                "overflow",
+                detail="i64 subtraction overflow\n",
+            )
+            return instrumentation + [
+                *self._read_register(layout, registers[1], "rax"),
+                *self._read_register(layout, registers[2], "r10"),
+                "    sub rax, r10",
+                f"    jo {overflow}",
+                *self._write_register(layout, registers[0], "rax"),
+            ]
+        if opcode in {AssemblyOpcode.TMUL, AssemblyOpcode.TDIV}:
+            type_name = function.type_of(registers[0])
+            assert type_name in {AssemblyType.I64, AssemblyType.F64}
+            if type_name is AssemblyType.F64:
+                operation = "mulsd" if opcode is AssemblyOpcode.TMUL else "divsd"
+                return instrumentation + [
+                    *self._read_register(layout, registers[1], "rax"),
+                    *self._read_register(layout, registers[2], "r10"),
+                    "    movq xmm0, rax",
+                    "    movq xmm1, r10",
+                    f"    {operation} xmm0, xmm1",
+                    "    movq rax, xmm0",
+                    *self._write_register(layout, registers[0], "rax"),
+                ]
+            if opcode is AssemblyOpcode.TMUL:
+                overflow = self._instruction_failure("overflow", detail="i64 multiplication overflow\n")
+                return instrumentation + [
+                    *self._read_register(layout, registers[1], "rax"),
+                    *self._read_register(layout, registers[2], "r10"),
+                    "    imul rax, r10",
+                    f"    jo {overflow}",
+                    *self._write_register(layout, registers[0], "rax"),
+                ]
+            overflow = self._instruction_failure("overflow", detail="i64 division overflow\n")
+            divide_by_zero = self._instruction_failure("division by zero", detail="i64 division by zero\n")
+            safe_label = f".L__s3_idiv_safe_{len(self.failure_sites)}"
+            return instrumentation + [
+                *self._read_register(layout, registers[1], "rax"),
+                *self._read_register(layout, registers[2], "r10"),
+                "    cmp r10, 0",
+                f"    je {divide_by_zero}",
+                "    movabs r11, -9223372036854775808",
+                "    cmp rax, r11",
+                f"    jne {safe_label}",
+                "    cmp r10, -1",
+                f"    je {overflow}",
+                f"{safe_label}:",
+                "    cqo",
+                "    idiv r10",
+                *self._write_register(layout, registers[0], "rax"),
+            ]
+        if opcode is AssemblyOpcode.TREL:
+            destination, left, right = registers
+            source_type = function.type_of(left)
+            relation = instruction.immediate
+            assert relation in range(6)
+            if source_type is AssemblyType.F64:
+                setup = [
+                    *self._read_register(layout, left, "rax"),
+                    *self._read_register(layout, right, "r10"),
+                    "    movq xmm0, rax",
+                    "    movq xmm1, r10",
+                    "    ucomisd xmm0, xmm1",
+                ]
+                if relation == 0:
+                    compare_lines = ["    sete al", "    setnp r11b", "    and al, r11b"]
+                elif relation == 1:
+                    compare_lines = ["    setne al", "    setp r11b", "    or al, r11b"]
+                elif relation == 2:
+                    compare_lines = ["    setb al", "    setnp r11b", "    and al, r11b"]
+                elif relation == 3:
+                    compare_lines = ["    setbe al", "    setnp r11b", "    and al, r11b"]
+                elif relation == 4:
+                    compare_lines = ["    seta al"]
+                else:
+                    compare_lines = ["    setae al"]
+            else:
+                setup = [
+                    *self._read_register(layout, left, "rax"),
+                    *self._read_register(layout, right, "r10"),
+                    "    cmp rax, r10",
+                ]
+                condition = {0: "e", 1: "ne", 2: "l", 3: "le", 4: "g", 5: "ge"}[relation]
+                compare_lines = [f"    set{condition} al"]
+            return instrumentation + [
+                *setup,
+                *compare_lines,
+                "    movzx r11, al",
+                "    neg r11",
+                *self._write_register(layout, destination, "r11"),
+            ]
+        if opcode is AssemblyOpcode.TCVT:
+            destination, source = registers
+            source_type = function.type_of(source)
+            destination_type = function.type_of(destination)
+            if destination_type is AssemblyType.F64:
+                return instrumentation + [
+                    *self._read_register(layout, source, "rax"),
+                    "    pxor xmm0, xmm0",
+                    "    cvtsi2sd xmm0, rax",
+                    "    movq rax, xmm0",
+                    *self._write_register(layout, destination, "rax"),
+                ]
+            if source_type is AssemblyType.I64 and destination_type is AssemblyType.TRYTE:
+                overflow = self._overflow_failure(AssemblyType.TRYTE, "rax")
+                return instrumentation + [
+                    *self._read_register(layout, source, "rax"),
+                    *self._range_check(AssemblyType.TRYTE, "rax", overflow),
+                    *self._write_register(layout, destination, "rax"),
+                ]
+            return instrumentation + [
+                *self._read_register(layout, source, "rax"),
+                *self._write_register(layout, destination, "rax"),
             ]
         if opcode in {AssemblyOpcode.TMIN, AssemblyOpcode.TMAX}:
             return instrumentation + self._emit_extreme(function, layout, instruction)
@@ -981,7 +1109,7 @@ class X8664Emitter:
             detail_suffix=f" is uninitialized in m{memory.index}\n",
             value_register="r10",
         )
-        if memory.element_type is AssemblyType.STRING:
+        if memory.element_size == 8:
             load = "mov rax, qword ptr"
         elif memory.element_size == 1:
             load = "movsx rax, byte ptr"
@@ -1015,7 +1143,7 @@ class X8664Emitter:
             *self._read_register(layout, source_register, "r10"),
             *self._memory_bounds(memory, "rax"),
         ]
-        if memory.element_type is not AssemblyType.STRING:
+        if memory.element_type in {AssemblyType.TRIT, AssemblyType.TRYTE}:
             overflow = self._overflow_failure(memory.element_type, "r10")
             lines.extend(self._range_check(memory.element_type, "r10", overflow))
         init_address = _address(memory.initialized, index="rax")
@@ -1039,7 +1167,7 @@ class X8664Emitter:
             index="rax",
             scale=memory.element_size,
         )
-        if memory.element_type is AssemblyType.STRING:
+        if memory.element_size == 8:
             source = "r10"
             size = "qword"
         elif memory.element_size == 1:

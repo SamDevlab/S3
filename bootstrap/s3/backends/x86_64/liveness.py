@@ -61,9 +61,18 @@ def instruction_use_def(instruction: AssemblyInstruction) -> tuple[frozenset[int
         return frozenset(), frozenset({regs[0]})
     elif opcode is AssemblyOpcode.TMOV:
         return frozenset({regs[1]}), frozenset({regs[0]})
-    elif opcode is AssemblyOpcode.TINV:
+    elif opcode in (AssemblyOpcode.TINV, AssemblyOpcode.TCVT):
         return frozenset({regs[1]}), frozenset({regs[0]})
-    elif opcode in (AssemblyOpcode.TADD, AssemblyOpcode.TMIN, AssemblyOpcode.TMAX, AssemblyOpcode.TCMP):
+    elif opcode in (
+        AssemblyOpcode.TADD,
+        AssemblyOpcode.TNDIFF,
+        AssemblyOpcode.TMUL,
+        AssemblyOpcode.TDIV,
+        AssemblyOpcode.TREL,
+        AssemblyOpcode.TMIN,
+        AssemblyOpcode.TMAX,
+        AssemblyOpcode.TCMP,
+    ):
         return frozenset({regs[1], regs[2]}), frozenset({regs[0]})
     elif opcode is AssemblyOpcode.TCALL:
         return frozenset(instruction.argument_registers), frozenset(instruction.result_registers)

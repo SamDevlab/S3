@@ -1,31 +1,67 @@
-# Milestone 1.32 - Numeric Domains And Large Indexing
+# Milestone 1.32 — Numeric Domains & Large Indexing
 
-This milestone introduces the programmer-visible numeric foundation for large
-scalar and index domains.
+## Capability closure
 
-## Required capability
+The original M1.32 merge established a substantial numeric foundation but was
+later classified `PARTIAL` by the post-campaign forensic audit. This closure
+completes the programmer-visible numeric contract without rewriting history.
 
-- signed `i64` scalar values;
-- finite IEEE-754 `f64` scalar values;
-- checked large non-negative indices and lengths;
-- numeric IR and emulator semantics;
-- native `i64` lowering;
-- native `f64` lowering through SSE2 and the internal System V AMD64 float ABI.
+### Public numeric domains
 
-The existing tryte language and Assembly 0.6 path remain compatible while this
-capability is integrated incrementally. Numeric values are never silently
-coerced between `i64` and `f64`; mixed-domain arithmetic is rejected.
+- `i64` is a checked signed 64-bit integer domain. `+`, `-`, `*`, `/`, unary
+  `-`, and comparisons are source-visible. Overflow does not silently wrap;
+  division by zero and `INT64_MIN / -1` are deterministic failures.
+- `f64` follows IEEE-754 binary64 for arithmetic and relational comparisons.
+  NaN, infinities, and signed zero are valid values; the compiler does not
+  enable fast-math or reassociation.
+- Balanced `trit`/`tryte` semantics remain unchanged. `~`, `&`, and `|` remain
+  balanced-ternary operations rather than being repurposed for machine numeric
+  values.
 
-## Current implementation boundary
+### Explicit conversions
 
-The canonical domains, typed numeric IR evaluator, large-index model, public
-IR/Assembly type names, ABI register contract, initial native lowering contract
-(`addq`, `addsd`, `movq`, and `movsd`), numeric `ADD` execution in the main
-IR and Assembly verifier/emulator, the constant/return path through lexer,
-parser, semantic analysis, and lowering, `i64` array indices, native `i64`
-overflow checks, SSE2 `f64` addition/comparison, and scalar SysV float calls are
-implemented. Linux O0/O1 native differential execution is the final platform
-gate for this milestone.
+The initial explicit conversion builtins are:
 
-The superseded heap-first implementation is intentionally excluded from this
-milestone and remains preserved on its original branch for possible M1.35 use.
+- `to_i64(trit|tryte) -> i64`
+- `to_f64(trit|tryte|i64) -> f64`
+- `to_tryte(i64) -> tryte` with a checked `[-364, 364]` boundary
+
+No integer/reference casts are introduced.
+
+### Compiler stack
+
+The numeric operations are represented through typed IR, verification, IR
+emulation, S3 Assembly, Assembly verification/emulation, serialization, and
+Linux x86-64 native lowering. Native `f64` arithmetic uses SSE2/XMM and the
+existing mixed SysV integer/SSE calling convention.
+
+Machine-numeric subtraction uses its own checked typed **numeric difference**
+operation (`NUMERIC_DIFFERENCE` / `TNDIFF`) rather than negate-then-add. This is
+required for valid expressions such as `INT64_MIN - INT64_MIN`, where negating
+the right operand would create a false intermediate overflow. The distinct
+name deliberately preserves the earlier compiler invariant that there is no
+generic IR `subtract` opcode: balanced `trit`/`tryte` subtraction retains the
+historic `INVERT` + `ADD` lowering, and the legacy `TSUB` opcode remains absent.
+
+Integer and balanced-ternary relational operators preserve the established
+`COMPARE` lowering path. `f64` relations use the typed `RELATE` path so IEEE-754
+unordered comparisons involving NaN can be represented without collapsing them
+into an artificial three-way ordering.
+
+### Closure verification
+
+The permanent `numeric-domain-closure` GitHub Actions job exercises the public
+source syntax and compiler stack on Linux x86-64 with the native toolchain
+required. Its capability probes cover checked `i64` arithmetic, IEEE-754 `f64`,
+explicit conversions, O0/O1 integration, the scientific scalar formula, and an
+actual native loop whose `i64` counter reaches 1,000,000. The subtraction probe
+also executes the valid boundary cases `INT64_MIN - INT64_MIN == 0` and
+`-1 - INT64_MIN == INT64_MAX` through the real native backend, preventing a
+regression to a false negate-then-add intermediate overflow. The normal unit,
+renderer, differential, SSA, native, and benchmark jobs remain independent
+regression gates for the exact PR head.
+
+### Scope boundary
+
+M1.32 does not introduce slices, heap ownership, FFI, process APIs, containers,
+or GPU execution. Those remain later roadmap capabilities.

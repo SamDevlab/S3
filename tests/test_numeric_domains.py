@@ -28,13 +28,14 @@ def test_i64_rejects_overflow_and_non_integer_values() -> None:
         validate_i64(True)  # type: ignore[arg-type]
 
 
-def test_f64_is_finite_and_preserves_float_domain() -> None:
+def test_f64_preserves_ieee754_domain() -> None:
     assert validate_f64(1) == 1.0
     assert NumericValue.f64(1.25) == NumericValue(NumericType.F64, 1.25)
-    with pytest.raises(NumericError):
-        validate_f64(math.inf)
-    with pytest.raises(NumericError):
-        validate_f64(math.nan)
+    assert math.isinf(validate_f64(math.inf))
+    assert math.isnan(validate_f64(math.nan))
+    negative_zero = validate_f64(-0.0)
+    assert negative_zero == 0.0
+    assert math.copysign(1.0, negative_zero) == -1.0
 
 
 def test_numeric_addition_is_typed_and_checked() -> None:

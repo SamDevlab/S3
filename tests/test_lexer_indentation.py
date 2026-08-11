@@ -101,12 +101,17 @@ def test_v05_comments():
     assert [t.kind for t in tokenize("x = 1 // comment\n", mode=SyntaxMode.V0_5)] == [
         TokenKind.IDENTIFIER, TokenKind.EQUAL, TokenKind.INTEGER, TokenKind.EOF
     ]
-    # // does NOT work in 0.6
-    # in 0.6, / is not a valid token in the operator set currently except if we add it. 
-    # Actually our lexer throws LexError for / if it's not a valid single token and not skipped.
-    with pytest.raises(Exception) as excinfo:
-        tokenize("x = 1 // comment\n", mode=SyntaxMode.V0_6)
-    assert "invalid character" in str(excinfo.value)
+    # V0.6 does not treat // as a comment; slash is the numeric division token.
+    assert [t.kind for t in tokenize("x = 1 // comment\n", mode=SyntaxMode.V0_6)] == [
+        TokenKind.IDENTIFIER,
+        TokenKind.EQUAL,
+        TokenKind.INTEGER,
+        TokenKind.SLASH,
+        TokenKind.SLASH,
+        TokenKind.IDENTIFIER,
+        TokenKind.NEWLINE,
+        TokenKind.EOF,
+    ]
     
 def test_multiline_in_parens():
     source = "x = (\n    1 +\n    2\n)\n"
