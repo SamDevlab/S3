@@ -156,19 +156,34 @@ def _run_s3(text: str, optimization: str = "O0") -> tuple[int, list[Token]]:
     source = _render_source(text)
     compilation = compile_source(source, optimization)
     main = next(function for function in compilation.ir.functions if function.name == "main")
-    assert [memory.length for memory in main.memory_objects] == [96, 32, 32, 32, 32, 32]
+
+    input_memories = sorted(
+        (memory for memory in main.memory_objects if memory.length == INPUT_CAPACITY),
+        key=lambda memory: memory.index,
+    )
+    token_memories = sorted(
+        (memory for memory in main.memory_objects if memory.length == TOKEN_CAPACITY),
+        key=lambda memory: memory.index,
+    )
+    assert len(input_memories) == 1
+    assert len(token_memories) == 5
+    tracked_memory_ids = {
+        input_memories[0].index,
+        *(memory.index for memory in token_memories),
+    }
 
     result, captures = run_source_with_buffer_capture(source, optimization=optimization)
     main_capture = next(
-        frame for frame in reversed(captures) if sorted(frame) == [0, 1, 2, 3, 4, 5]
+        frame
+        for frame in reversed(captures)
+        if tracked_memory_ids.issubset(frame.keys())
     )
     if result < 0:
         return result, []
 
-    types = main_capture[1]
-    starts = main_capture[2]
-    ends = main_capture[3]
-    sizes = main_capture[4]
+    types, starts, ends, sizes, _parents = (
+        main_capture[memory.index] for memory in token_memories
+    )
     tokens = [
         Token(int(types[i]), int(starts[i]), int(ends[i]), int(sizes[i]))
         for i in range(result)
