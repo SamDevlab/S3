@@ -122,3 +122,29 @@ fn main() -> i64:
     assert lib.call_host_add() == 15
     lib.call_host_scale.restype = ctypes.c_double
     assert lib.call_host_scale() == pytest.approx(5.0)
+
+
+@pytest.mark.skipif(platform.system() != "Linux", reason="requires Linux shared linker")
+def test_scientific_batch_score_matches_python_reference(tmp_path: Path) -> None:
+    source = """\
+export fn score(logp: &[f64], mw: &[f64], tpsa: &[f64], aromatic_rings: &[i64]) -> f64:
+    return -3.0 + logp[0] * -0.35 + (mw[0] / 100.0) * -0.2 + to_f64(aromatic_rings[0]) * -0.4 + (tpsa[0] / 50.0) * 0.15
+fn main() -> i64:
+    return 0
+"""
+    library = build_shared_library(source, tmp_path / "libscore.so")
+    lib = ctypes.CDLL(str(library))
+    lib.score.argtypes = [
+        ctypes.POINTER(ctypes.c_double), ctypes.c_int64,
+        ctypes.POINTER(ctypes.c_double), ctypes.c_int64,
+        ctypes.POINTER(ctypes.c_double), ctypes.c_int64,
+        ctypes.POINTER(ctypes.c_int64), ctypes.c_int64,
+    ]
+    lib.score.restype = ctypes.c_double
+    logp = (ctypes.c_double * 1)(2.1)
+    mw = (ctypes.c_double * 1)(310.0)
+    tpsa = (ctypes.c_double * 1)(75.0)
+    rings = (ctypes.c_int64 * 1)(3)
+    actual = lib.score(logp, 1, mw, 1, tpsa, 1, rings, 1)
+    expected = -3.0 + 2.1 * -0.35 + (310.0 / 100.0) * -0.2 + 3 * -0.4 + (75.0 / 50.0) * 0.15
+    assert actual == pytest.approx(expected)
