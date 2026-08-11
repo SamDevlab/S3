@@ -29,6 +29,7 @@ from .diagnostics import (
     diagnostic_from_exception,
 )
 from .emulator import DEFAULT_MAX_FRAMES, DEFAULT_MAX_INSTRUCTIONS, Emulator
+from .ffi import build_shared_library
 from .ir_serialization import deserialize_ir, serialize_ir
 from .lexer import SyntaxMode
 from .optimizer import OptimizationLevel, instruction_count
@@ -182,6 +183,7 @@ def _parser() -> argparse.ArgumentParser:
         "native-asm",
         "build",
         "run-native",
+        "ffi-build",
     )
     for cmd in commands:
         p = subparsers.add_parser(cmd, parents=[parent])
@@ -466,6 +468,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             NativeToolchain.detect().build(
                 native,
+                output,
+                keep_assembly=args.keep_assembly,
+            )
+            print(output)
+        elif args.command == "ffi-build":
+            output = (
+                args.output
+                if args.output is not None
+                else Path("build") / f"lib{args.source.stem}.so"
+            )
+            build_shared_library(
+                source,
                 output,
                 keep_assembly=args.keep_assembly,
             )

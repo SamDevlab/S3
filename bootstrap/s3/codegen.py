@@ -252,6 +252,8 @@ def generate_assembly(ir_program: IRProgram) -> AssemblyProgram:
                     for parameter in function.parameters
                     if parameter.reference_is_slice
                 ),
+                function.external,
+                function.exported,
             )
         )
     return AssemblyProgram(

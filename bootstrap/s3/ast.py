@@ -405,6 +405,26 @@ class FunctionDeclaration:
 
 
 @dataclass(frozen=True, slots=True)
+class ForeignFunctionDeclaration:
+    """A scalar or borrowed-slice function supplied by the host linker."""
+
+    signature: FunctionSignature
+    location: SourceLocation
+
+    @property
+    def name(self) -> str:
+        return self.signature.name
+
+    @property
+    def parameters(self) -> tuple[Parameter, ...]:
+        return self.signature.parameters
+
+    @property
+    def return_type(self) -> DeclaredType:
+        return self.signature.return_type
+
+
+@dataclass(frozen=True, slots=True)
 class RecordField:
     name: str
     type_name: DeclaredType
@@ -442,6 +462,7 @@ class Program:
     imports: tuple[ImportDeclaration, ...] = ()
     records: tuple[RecordDeclaration, ...] = ()
     enums: tuple[EnumDeclaration, ...] = ()
+    foreign_functions: tuple[ForeignFunctionDeclaration, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

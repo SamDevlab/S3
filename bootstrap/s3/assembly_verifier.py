@@ -121,8 +121,18 @@ class AssemblyVerifier:
                 raise EmulatorError(f"duplicate function '{function.name}'")
             functions[function.name] = function
         for function in program.functions:
+            if function.external:
+                self._validate_external_function(function)
+                continue
             self._validate_function(function, functions, static_string_ids)
         return functions
+
+    @staticmethod
+    def _validate_external_function(function: AssemblyFunction) -> None:
+        if not function.parameters and function.return_type is None:
+            raise EmulatorError(f"external function '{function.name}' has no signature")
+        if function.blocks:
+            raise EmulatorError(f"external function '{function.name}' must not have blocks")
 
     def _validate_static_strings(self, program: AssemblyProgram) -> set[str]:
         result: set[str] = set()

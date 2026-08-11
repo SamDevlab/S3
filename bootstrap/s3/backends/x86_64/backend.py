@@ -54,6 +54,14 @@ class X8664Backend:
             register_allocation=self.register_allocation,
         ).emit()
 
+    def _generate_ffi(self, program: AssemblyProgram) -> str:
+        return X8664Emitter(
+            program,
+            max_frames=self.max_frames,
+            max_instructions=self.max_instructions,
+            register_allocation=self.register_allocation,
+        ).emit()
+
 
 def generate_native_assembly(
     program: AssemblyProgram,
@@ -70,3 +78,20 @@ def generate_native_assembly(
         max_frames=max_frames,
         max_instructions=max_instructions,
     )
+
+
+def generate_ffi_assembly(
+    program: AssemblyProgram,
+    *,
+    max_memory_trits: int = DEFAULT_MAX_MEMORY_TRITS,
+    max_frames: int = DEFAULT_MAX_FRAMES,
+    max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
+) -> str:
+    """Generate native text for a hosted FFI artifact without entry restrictions."""
+
+    AssemblyVerifier(max_memory_trits=max_memory_trits).validate(program)
+    return X8664Backend(
+        max_memory_trits=max_memory_trits,
+        max_frames=max_frames,
+        max_instructions=max_instructions,
+    )._generate_ffi(program)

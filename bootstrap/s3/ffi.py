@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 from dataclasses import dataclass
 from enum import Enum
 
@@ -50,6 +51,28 @@ class FFISignature:
     @property
     def float_parameter_count(self) -> int:
         return sum(parameter.abi_class == "float" for parameter in self.parameters)
+
+
+def build_shared_library(
+    source: str,
+    output: Path,
+    *,
+    extra_objects: tuple[Path, ...] = (),
+    keep_assembly: Path | None = None,
+) -> Path:
+    """Compile ordinary S3 source into a real Linux FFI shared object."""
+
+    from .backends.x86_64 import NativeToolchain, generate_ffi_assembly
+    from .pipeline import compile_source
+
+    result = compile_source(source)
+    assembly = generate_ffi_assembly(result.assembly)
+    return NativeToolchain.detect().build_shared(
+        assembly,
+        output,
+        extra_objects=extra_objects,
+        keep_assembly=keep_assembly,
+    )
 
 
 def validate_signature(signature: FFISignature) -> FFISignature:

@@ -242,7 +242,7 @@ class DeclarationCollector:
             visit(name)
 
     def _collect_signatures(self, program: ast.Program) -> None:
-        for function in program.functions:
+        for function in (*program.functions, *program.foreign_functions):
             if function.name in self.records or function.name in self.enums:
                 raise SemanticError(
                     f"function '{function.name}' conflicts with type '{function.name}'",

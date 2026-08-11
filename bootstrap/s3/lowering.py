@@ -77,7 +77,7 @@ class FunctionLowerer:
             tuple[int, tuple[int, ...], SourceLocation]
         ] = []
 
-    def lower(self) -> IRFunction:
+    def lower(self, *, external: bool = False) -> IRFunction:
         for parameter in self.function.parameters:
             if isinstance(parameter.type_name, (ast.ReferenceType, ast.SliceType)):
                 target = self._storage_type(parameter.type_name.target if isinstance(parameter.type_name, ast.ReferenceType) else parameter.type_name.element_type, parameter.location)
@@ -207,6 +207,21 @@ class FunctionLowerer:
                 mutable=False,
                 register=register,
             )
+        if external:
+            result_types = self._result_types(
+                self.function.return_type,
+                self.function.signature.location,
+            )
+            return IRFunction(
+                name=self.function.name,
+                parameters=tuple(self.parameters),
+                return_type=result_types[0],
+                registers=tuple(self.registers),
+                blocks=(),
+                location=self.function.location,
+                result_types=result_types,
+                external=True,
+            )
         self.current = self._create_block("entry", self.function.body.location)
         for memory, registers, location in self.parameter_array_initializers:
             self._store_array_registers(
@@ -241,6 +256,7 @@ class FunctionLowerer:
             location=self.function.location,
             memory_objects=tuple(self.memory_objects),
             result_types=result_types,
+            exported=self.function.exported,
         )
 
     def _create_block(
@@ -3090,4 +3106,12 @@ def lower(program: ast.Program, semantic_model: SemanticModel) -> IRModule:
         except LoweringError as error:
             error.add_diagnostic_context(function=function.name)
             raise
+    for function in program.foreign_functions:
+        functions.append(
+            FunctionLowerer(
+                ast.FunctionDeclaration(function.signature, ast.Block((), function.location), function.location),
+                semantic_model,
+                static_string_ids,
+            ).lower(external=True)
+        )
     return IRModule(tuple(functions), tuple(static_strings))
