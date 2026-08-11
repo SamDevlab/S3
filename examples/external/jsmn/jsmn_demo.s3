@@ -399,14 +399,6 @@ fn main() -> tryte:
                                     current = current
                                 1:
                                     current = current
-                            match current <=> 32:
-                                -1:
-                                    status = -2
-                                    scanning = 0
-                                0:
-                                    current = current
-                                1:
-                                    current = current
                             match scanning:
                                 -1:
                                     scan = scan + 1
