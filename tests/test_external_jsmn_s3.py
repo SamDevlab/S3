@@ -32,6 +32,7 @@ class Token:
 
 
 def _reference_jsmn(data: bytes) -> tuple[int, list[Token]]:
+    """Independent oracle for upstream jsmn's default non-strict token contract."""
     tokens: list[Token] = []
     pos = 0
     toksuper = -1
@@ -95,8 +96,6 @@ def _reference_jsmn(data: bytes) -> tuple[int, list[Token]]:
                                 return JSMN_ERROR_INVAL, tokens
                     elif escaped not in b'"/\\bfrnt':
                         return JSMN_ERROR_INVAL, tokens
-                elif ch < 32:
-                    return JSMN_ERROR_INVAL, tokens
                 pos += 1
             else:
                 return JSMN_ERROR_PART, tokens
@@ -202,6 +201,7 @@ def _run_s3(text: str, optimization: str = "O0") -> tuple[int, list[Token]]:
         '["a","b",false,-12]',
         '{ "escaped": "a\\n\\t\\\"b" }',
         '{"unicode":"\\u0041"}',
+        '"raw\tcontrol"',
     ],
 )
 def test_s3_jsmn_matches_reference_tokens(text: str) -> None:
