@@ -58,6 +58,13 @@ class IRVerifier:
                 )
             functions[function.name] = function
         for function in module.functions:
+            if function.external:
+                if function.blocks:
+                    self._error(
+                        f"external function '{function.name}' must not have blocks",
+                        function.location,
+                    )
+                continue
             self._verify_function(function, functions)
 
     def _collect_static_strings(self, module: IRModule) -> set[str]:

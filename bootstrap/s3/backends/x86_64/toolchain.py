@@ -69,6 +69,49 @@ class NativeToolchain:
                 self._invoke(source_path, output)
         return output
 
+    def build_shared(
+        self,
+        assembly: str,
+        output: Path,
+        *,
+        extra_objects: tuple[Path, ...] = (),
+        keep_assembly: Path | None = None,
+    ) -> Path:
+        """Assemble and link a real Linux shared object for FFI clients."""
+
+        output = output.resolve()
+        output.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix="s3-ffi-") as temporary:
+            source_path = Path(temporary) / "program.s"
+            source_path.write_text(assembly, encoding="utf-8", newline="\n")
+            object_path = Path(temporary) / "program.o"
+            self._compile_assembly(source_path, object_path)
+            command = [self.compiler, "-shared", "-nostdlib", "-Wl,--build-id=none", str(object_path)]
+            command.extend(str(path.resolve()) for path in extra_objects)
+            command.extend(("-o", str(output)))
+            self._run_command(command, cwd=Path(temporary))
+        if keep_assembly is not None:
+            keep_assembly.parent.mkdir(parents=True, exist_ok=True)
+            keep_assembly.write_text(assembly, encoding="utf-8", newline="\n")
+        if not output.is_file():
+            raise NativeToolchainError("shared linker reported success without an output file")
+        return output
+
+    def _compile_assembly(self, source: Path, object_path: Path) -> None:
+        self._run_command(
+            [self.compiler, "-x", "assembler", "-c", str(source), "-o", str(object_path)],
+            cwd=source.parent,
+        )
+
+    def _run_command(self, command: list[str], *, cwd: Path) -> None:
+        try:
+            completed = subprocess.run(command, cwd=str(cwd), check=False, capture_output=True, text=True, shell=False, timeout=30.0)
+        except (OSError, subprocess.TimeoutExpired) as error:
+            raise NativeToolchainError(f"native toolchain command failed: {error}") from error
+        if completed.returncode != 0:
+            details = completed.stderr.strip() or completed.stdout.strip()
+            raise NativeToolchainError(f"native toolchain failed with status {completed.returncode}: {details}")
+
     def _invoke(self, source: Path, output: Path, *, timeout: float = 30.0) -> None:
         obj_name = source.with_suffix(".o").name
         

@@ -1,6 +1,6 @@
 """Experimental GNU assembly backend for Linux x86-64 ELF."""
 
-from .backend import X8664Backend, generate_native_assembly
+from .backend import X8664Backend, generate_ffi_assembly, generate_native_assembly
 from .diagnostics import (
     NativeBackendError,
     NativePlatformError,
@@ -19,6 +19,7 @@ __all__ = [
     "NativeToolchainError",
     "X8664Backend",
     "generate_native_assembly",
+    "generate_ffi_assembly",
     "layout_frame",
 ]
 

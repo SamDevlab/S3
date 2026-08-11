@@ -19,6 +19,7 @@ class Parser:
         functions: list[ast.FunctionDeclaration] = []
         records: list[ast.RecordDeclaration] = []
         enums: list[ast.EnumDeclaration] = []
+        foreign_functions: list[ast.ForeignFunctionDeclaration] = []
         location = self._peek().location
         self._skip_newlines()
         module = self._parse_module_declaration()
@@ -34,7 +35,9 @@ class Parser:
             exported = False
             if self.mode is SyntaxMode.V0_6 and self._match(TokenKind.EXPORT):
                 exported = True
-            if self.mode is SyntaxMode.V0_6 and self._check(TokenKind.RECORD):
+            if self.mode is SyntaxMode.V0_6 and self._match(TokenKind.FOREIGN):
+                foreign_functions.append(self._parse_foreign_function())
+            elif self.mode is SyntaxMode.V0_6 and self._check(TokenKind.RECORD):
                 records.append(self._parse_record_declaration(exported=exported))
             elif self.mode is SyntaxMode.V0_6 and self._check(TokenKind.ENUM):
                 enums.append(self._parse_enum_declaration(exported=exported))
@@ -49,6 +52,21 @@ class Parser:
             imports=tuple(imports),
             records=tuple(records),
             enums=tuple(enums),
+            foreign_functions=tuple(foreign_functions),
+        )
+
+    def _parse_foreign_function(self) -> ast.ForeignFunctionDeclaration:
+        start = self._consume(TokenKind.FN, "expected 'fn' after 'foreign'")
+        name = self._consume(TokenKind.IDENTIFIER, "expected foreign function name")
+        self._consume(TokenKind.LEFT_PAREN, "expected '(' after foreign function name")
+        parameters = self._parse_parameters()
+        self._consume(TokenKind.RIGHT_PAREN, "expected ')' after parameters")
+        self._consume(TokenKind.ARROW, "expected '->' before foreign return type")
+        return_type = self._parse_type()
+        self._consume_statement_newline("expected newline after foreign declaration")
+        return ast.ForeignFunctionDeclaration(
+            ast.FunctionSignature(name.text, tuple(parameters), return_type, name.location),
+            start.location,
         )
 
     def _parse_module_declaration(self) -> ast.ModuleDeclaration | None:

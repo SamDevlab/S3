@@ -343,5 +343,9 @@ def _analyze_function(function: IRFunction) -> FunctionInitialization:
 def analyze_initialization(module: IRModule) -> InitializationReport:
     verify_ir(module)
     return InitializationReport(
-        tuple(_analyze_function(function) for function in module.functions)
+        tuple(
+            _analyze_function(function)
+            for function in module.functions
+            if not function.external
+        )
     )

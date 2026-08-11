@@ -668,6 +668,10 @@ class SemanticAnalyzer:
             except SemanticError as error:
                 error.add_diagnostic_context(function=function.name)
                 raise
+        for function in program.foreign_functions:
+            self._validate_declared_type(function.return_type, return_type=True)
+            for parameter in function.parameters:
+                self._validate_declared_type(parameter.type_name)
         return SemanticModel(
             dict(self.expression_types),
             dict(self.functions),

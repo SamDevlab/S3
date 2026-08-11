@@ -260,6 +260,8 @@ class AssemblyFunction:
     reference_targets: tuple[tuple[int, AssemblyType, bool], ...] = ()
     reference_storage_sizes: tuple[tuple[int, int], ...] = ()
     slice_registers: tuple[int, ...] = ()
+    external: bool = False
+    exported: bool = False
 
     def __post_init__(self) -> None:
         if not self.result_types:

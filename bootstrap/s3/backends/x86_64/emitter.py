@@ -59,6 +59,16 @@ def mangle_function(name: str) -> str:
     return f"s3_{name}"
 
 
+def function_symbol(function: AssemblyFunction) -> str:
+    """Return the stable ABI symbol for exported and foreign functions."""
+
+    if function.exported or function.external:
+        if _IDENTIFIER.fullmatch(function.name) is None:
+            raise NativeBackendError(f"unsafe function identifier {function.name!r}")
+        return function.name
+    return mangle_function(function.name)
+
+
 def mangle_block(function_name: str, block_name: str) -> str:
     if (
         _IDENTIFIER.fullmatch(function_name) is None
@@ -129,6 +139,8 @@ class X8664Emitter:
         return "\n".join(lines) + "\n"
 
     def _emit_function(self, function: AssemblyFunction) -> list[str]:
+        if function.external:
+            return []
         if self.register_allocation:
             plan = analyze_allocation(function)
             self.current_plan = plan
@@ -136,7 +148,7 @@ class X8664Emitter:
         else:
             self.current_plan = None
             layout = layout_frame(function)
-        symbol = mangle_function(function.name)
+        symbol = function_symbol(function)
         frame_failure = self._new_failure_site(
             category="frame limit",
             function=function.name,
@@ -993,7 +1005,7 @@ class X8664Emitter:
                 else self._read_register(layout, register, target)
             )
         assert instruction.callee is not None
-        lines.append(f"    call {mangle_function(instruction.callee)}")
+        lines.append(f"    call {function_symbol(callee)}")
         cleanup = (len(stack_arguments) + padding) * 8
         if cleanup:
             lines.append(f"    add rsp, {cleanup}")
@@ -1053,7 +1065,7 @@ class X8664Emitter:
                     if self.register_allocation
                     else self._read_register(layout, register, target)
                 )
-        lines.append(f"    call {mangle_function(callee.name)}")
+        lines.append(f"    call {function_symbol(callee)}")
         cleanup = (len(stack_arguments) + padding) * 8
         if cleanup:
             lines.append(f"    add rsp, {cleanup}")
@@ -1105,7 +1117,7 @@ class X8664Emitter:
                 else self._read_register(layout, register, target)
             )
         assert instruction.callee is not None
-        lines.append(f"    call {mangle_function(instruction.callee)}")
+        lines.append(f"    call {function_symbol(callee)}")
         if self.register_allocation:
             lines.extend(self._restore_caller_saved(layout, survivor_physicals))
         if destinations:

@@ -250,6 +250,8 @@ class IRFunction:
     location: SourceLocation | None = None
     memory_objects: tuple[IRMemoryObject, ...] = ()
     result_types: tuple[IRType, ...] = ()
+    external: bool = False
+    exported: bool = False
 
     def __post_init__(self) -> None:
         if not self.result_types:
