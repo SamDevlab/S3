@@ -368,6 +368,39 @@ class AssemblyVerifier:
                     raise EmulatorError(self._static_context(function, block, instruction, "TADDR source must be a direct value storage"))
             if instruction.reference_target is not source_type:
                 raise EmulatorError(self._static_context(function, block, instruction, "TADDR target type mismatch"))
+        elif opcode is AssemblyOpcode.TSLEN:
+            destination, reference, length = instruction.registers
+            if register_type(reference) is not AssemblyType.REFERENCE:
+                raise EmulatorError(self._static_context(function, block, instruction, "TSLEN source must be a reference"))
+            if reference not in function.slice_registers:
+                raise EmulatorError(self._static_context(function, block, instruction, "TSLEN source must be a slice"))
+            if register_type(length) is not AssemblyType.I64:
+                raise EmulatorError(self._static_context(function, block, instruction, "TSLEN length must be i64"))
+            if register_type(destination) is not AssemblyType.I64:
+                raise EmulatorError(self._static_context(function, block, instruction, "TSLEN destination must be i64"))
+        elif opcode is AssemblyOpcode.TSLOAD:
+            destination, reference, length, index = instruction.registers
+            if register_type(reference) is not AssemblyType.REFERENCE or reference not in function.slice_registers:
+                raise EmulatorError(self._static_context(function, block, instruction, "TSLOAD source must be a slice reference"))
+            if register_type(length) is not AssemblyType.I64:
+                raise EmulatorError(self._static_context(function, block, instruction, "TSLOAD length must be i64"))
+            if register_type(index) not in {AssemblyType.TRYTE, AssemblyType.I64}:
+                raise EmulatorError(self._static_context(function, block, instruction, "TSLOAD index must be a tryte or i64 register"))
+            if instruction.reference_target is None or register_type(destination) is not instruction.reference_target:
+                raise EmulatorError(self._static_context(function, block, instruction, "TSLOAD target type mismatch"))
+        elif opcode is AssemblyOpcode.TSSTORE:
+            reference, length, index, source = instruction.registers
+            if register_type(reference) is not AssemblyType.REFERENCE or reference not in function.slice_registers:
+                raise EmulatorError(self._static_context(function, block, instruction, "TSSTORE destination must be a slice reference"))
+            if register_type(length) is not AssemblyType.I64:
+                raise EmulatorError(self._static_context(function, block, instruction, "TSSTORE length must be i64"))
+            info = function.reference_info(reference)
+            if info is None or not info[1] or not instruction.reference_mutable:
+                raise EmulatorError(self._static_context(function, block, instruction, "TSSTORE requires a mutable slice"))
+            if register_type(index) not in {AssemblyType.TRYTE, AssemblyType.I64}:
+                raise EmulatorError(self._static_context(function, block, instruction, "TSSTORE index must be a tryte or i64 register"))
+            if instruction.reference_target is None or register_type(source) is not instruction.reference_target:
+                raise EmulatorError(self._static_context(function, block, instruction, "TSSTORE source type mismatch"))
         elif opcode is AssemblyOpcode.TREFLOAD:
             destination, reference = instruction.registers
             if register_type(reference) is not AssemblyType.REFERENCE:

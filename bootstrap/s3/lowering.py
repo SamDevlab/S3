@@ -52,6 +52,7 @@ class _LoweredBinding:
     register: int | None = None
     memory: int | None = None
     fields: dict[str, _LoweredBinding] | None = None
+    slice_length_register: int | None = None
 
 
 class FunctionLowerer:
@@ -78,15 +79,30 @@ class FunctionLowerer:
 
     def lower(self) -> IRFunction:
         for parameter in self.function.parameters:
-            if isinstance(parameter.type_name, ast.ReferenceType):
-                target = self._storage_type(parameter.type_name.target, parameter.location)
+            if isinstance(parameter.type_name, (ast.ReferenceType, ast.SliceType)):
+                target = self._storage_type(parameter.type_name.target if isinstance(parameter.type_name, ast.ReferenceType) else parameter.type_name.element_type, parameter.location)
                 register = self._allocate_reference(parameter.type_name, parameter.location)
+                slice_length_register = (
+                    self._allocate(ast.TypeName.I64, parameter.location)
+                    if isinstance(parameter.type_name, ast.SliceType)
+                    else None
+                )
                 self.parameters.append(IRParameter(
                     parameter.name, register, IRType.REFERENCE, parameter.location,
                     TYPE_MAP[target], parameter.type_name.mutable,
+                    isinstance(parameter.type_name, ast.SliceType),
+                    slice_length_register,
                 ))
+                if slice_length_register is not None:
+                    self.parameters.append(IRParameter(
+                        parameter.name + "__length",
+                        slice_length_register,
+                        IRType.I64,
+                        parameter.location,
+                    ))
                 self.variable_scopes[0][parameter.name] = _LoweredBinding(
-                    parameter.type_name, parameter.type_name.mutable, register=register
+                    parameter.type_name, parameter.type_name.mutable, register=register,
+                    slice_length_register=slice_length_register,
                 )
                 continue
             if isinstance(parameter.type_name, ast.ArrayType):
@@ -339,12 +355,13 @@ class FunctionLowerer:
         return index
 
     def _allocate_reference(
-        self, type_name: ast.ReferenceType, location: SourceLocation | None
+        self, type_name: ast.ReferenceType | ast.SliceType, location: SourceLocation | None
     ) -> int:
         index = len(self.registers)
-        target = self._storage_type(type_name.target, location)
+        target = self._storage_type(type_name.target if isinstance(type_name, ast.ReferenceType) else type_name.element_type, location)
         self.registers.append(IRRegister(
-            index, IRType.REFERENCE, location, TYPE_MAP[target], type_name.mutable
+            index, IRType.REFERENCE, location, TYPE_MAP[target], type_name.mutable,
+            isinstance(type_name, ast.SliceType)
         ))
         return index
 
@@ -374,6 +391,8 @@ class FunctionLowerer:
     ) -> ast.TypeName:
         if isinstance(type_name, ast.TypeName):
             return type_name
+        if isinstance(type_name, ast.SliceType):
+            return type_name.element_type
         if (
             isinstance(type_name, ast.NominalType)
             and self.semantic_model.is_enum_type(type_name)
@@ -1125,12 +1144,12 @@ class FunctionLowerer:
         return (self._lower_expression(expression),)
 
     def _lower_declaration(self, declaration: ast.VariableDeclaration) -> None:
-        if isinstance(declaration.type_name, ast.ReferenceType):
+        if isinstance(declaration.type_name, (ast.ReferenceType, ast.SliceType)):
             register = self._allocate_reference(declaration.type_name, declaration.location)
             initializer = declaration.initializer
             if isinstance(initializer, ast.Identifier):
                 binding = self._lookup_variable(initializer.name, initializer.location)
-                if isinstance(binding.type_name, ast.ReferenceType):
+                if isinstance(binding.type_name, (ast.ReferenceType, ast.SliceType)):
                     self._emit(IRInstruction(IROpcode.MOVE, result=register, operands=(binding.register,), location=declaration.location))
                     self.variable_scopes[-1][declaration.name] = _LoweredBinding(
                         declaration.type_name, declaration.mutable, register=register
@@ -1140,15 +1159,17 @@ class FunctionLowerer:
                     instruction = IRInstruction(
                         IROpcode.ADDRESS_OF, result=register,
                         operands=(binding.register,),
-                        reference_target=TYPE_MAP[self._storage_type(declaration.type_name.target, declaration.location)],
+                        reference_target=TYPE_MAP[self._storage_type(declaration.type_name.target if isinstance(declaration.type_name, ast.ReferenceType) else declaration.type_name.element_type, declaration.location)],
                         reference_mutable=declaration.type_name.mutable,
+                        reference_is_slice=isinstance(declaration.type_name, ast.SliceType),
                         location=declaration.location,
                     )
                 else:
                     instruction = IRInstruction(
                         IROpcode.ADDRESS_OF, result=register, memory=binding.memory,
-                        reference_target=TYPE_MAP[self._storage_type(declaration.type_name.target, declaration.location)],
+                        reference_target=TYPE_MAP[self._storage_type(declaration.type_name.target if isinstance(declaration.type_name, ast.ReferenceType) else declaration.type_name.element_type, declaration.location)],
                         reference_mutable=declaration.type_name.mutable,
+                        reference_is_slice=isinstance(declaration.type_name, ast.SliceType),
                         location=declaration.location,
                     )
                 self._emit(instruction)
@@ -1341,6 +1362,26 @@ class FunctionLowerer:
             statement.target.array_name,
             statement.target.location,
         )
+        if isinstance(binding.type_name, ast.SliceType):
+            if isinstance(statement.value, ast.ArrayLiteral):
+                raise LoweringError(
+                    "slice element assignment received an array literal",
+                    statement.value.location,
+                )
+            index = self._lower_expression(statement.target.index)
+            value = self._lower_expression(statement.value)
+            if binding.slice_length_register is None:
+                raise LoweringError("slice has no runtime length", statement.location)
+            self._emit(
+                IRInstruction(
+                    IROpcode.SLICE_STORE,
+                    operands=(binding.register, binding.slice_length_register, index, value),
+                    reference_target=TYPE_MAP[binding.type_name.element_type],
+                    reference_mutable=True,
+                    location=statement.location,
+                )
+            )
+            return
         assert binding.memory is not None
         index = self._lower_expression(statement.target.index)
         if isinstance(statement.value, ast.ArrayLiteral):
@@ -2014,7 +2055,7 @@ class FunctionLowerer:
         if simplified is not None:
             return self._lower_expression(simplified)
         declared_type = self.semantic_model.declared_type_of(expression)
-        if isinstance(declared_type, ast.ReferenceType):
+        if isinstance(declared_type, (ast.ReferenceType, ast.SliceType)):
             if isinstance(expression, ast.Identifier):
                 return self._lookup_variable(expression.name, expression.location).register  # type: ignore[return-value]
             if isinstance(expression, ast.AddressOfExpression):
@@ -2042,8 +2083,9 @@ class FunctionLowerer:
                         result=result,
                         operands=(index,),
                         memory=binding.memory,
-                        reference_target=TYPE_MAP[self._storage_type(declared_type.target, expression.location)],
+                        reference_target=TYPE_MAP[self._storage_type(declared_type.target if isinstance(declared_type, ast.ReferenceType) else declared_type.element_type, expression.location)],
                         reference_mutable=declared_type.mutable,
+                        reference_is_slice=isinstance(declared_type, ast.SliceType),
                         location=expression.location,
                     ))
                     return result
@@ -2054,8 +2096,9 @@ class FunctionLowerer:
                         IROpcode.ADDRESS_OF,
                         result=result,
                         operands=(source,),
-                        reference_target=TYPE_MAP[self._storage_type(declared_type.target, expression.location)],
+                        reference_target=TYPE_MAP[self._storage_type(declared_type.target if isinstance(declared_type, ast.ReferenceType) else declared_type.element_type, expression.location)],
                         reference_mutable=declared_type.mutable,
+                        reference_is_slice=isinstance(declared_type, ast.SliceType),
                         location=expression.location,
                     ))
                     return result
@@ -2067,8 +2110,9 @@ class FunctionLowerer:
                     IROpcode.ADDRESS_OF, result=result,
                     operands=() if binding.register is None else (binding.register,),
                     memory=binding.memory,
-                    reference_target=TYPE_MAP[self._storage_type(declared_type.target, expression.location)],
+                    reference_target=TYPE_MAP[self._storage_type(declared_type.target if isinstance(declared_type, ast.ReferenceType) else declared_type.element_type, expression.location)],
                     reference_mutable=declared_type.mutable,
+                    reference_is_slice=isinstance(declared_type, ast.SliceType),
                     location=expression.location,
                 ))
                 return result
@@ -2190,6 +2234,24 @@ class FunctionLowerer:
                 )
                 return result
             array_type = self.semantic_model.declared_type_of(expression.target)
+            if isinstance(array_type, ast.SliceType):
+                if not isinstance(expression.target, ast.Identifier):
+                    raise LoweringError("slice target must be a named slice", expression.location)
+                binding = self._lookup_variable(expression.target.name, expression.target.location)
+                if binding.register is None:
+                    raise LoweringError("slice has no register storage", expression.location)
+                index = self._lower_expression(expression.index)
+                if binding.slice_length_register is None:
+                    raise LoweringError("slice has no runtime length", expression.location)
+                result = self._allocate(array_type.element_type, expression.location)
+                self._emit(IRInstruction(
+                    IROpcode.SLICE_LOAD,
+                    result=result,
+                    operands=(binding.register, binding.slice_length_register, index),
+                    reference_target=TYPE_MAP[array_type.element_type],
+                    location=expression.location,
+                ))
+                return result
             assert isinstance(array_type, ast.ArrayType)
             assert isinstance(array_type.element_type, ast.TypeName)
             memory: int
@@ -2433,6 +2495,26 @@ class FunctionLowerer:
             signature.parameter_types,
             strict=True,
         ):
+            if isinstance(parameter_type, ast.SliceType):
+                registers.append(self._lower_expression(argument.expression))
+                source_type = self.semantic_model.declared_type_of(argument.expression)
+                if isinstance(argument.expression, ast.Identifier):
+                    binding = self._lookup_variable(argument.expression.name, argument.expression.location)
+                    length_register = binding.slice_length_register
+                    if length_register is None:
+                        raise LoweringError("slice argument has no runtime length", argument.location)
+                    registers.append(length_register)
+                elif isinstance(argument.expression, ast.AddressOfExpression):
+                    target = argument.expression.operand
+                    if not isinstance(target, ast.Identifier):
+                        raise LoweringError("slice address argument must name storage", argument.location)
+                    binding = self._lookup_variable(target.name, target.location)
+                    if not isinstance(binding.type_name, ast.ArrayType):
+                        raise LoweringError("slice address argument has no static length", argument.location)
+                    registers.append(self._emit_constant(binding.type_name.length, ast.TypeName.I64, argument.location))
+                else:
+                    raise LoweringError("unsupported slice argument", argument.location)
+                continue
             if isinstance(parameter_type, ast.ArrayType):
                 registers.extend(
                     self._lower_array_registers(argument.expression, parameter_type)
@@ -2510,6 +2592,23 @@ class FunctionLowerer:
 
     def _lower_len(self, expression: ast.LenExpression) -> int:
         argument_type = self.semantic_model.declared_type_of(expression.argument)
+        if isinstance(argument_type, ast.SliceType):
+            argument = self._lower_expression(expression.argument)
+            binding = (
+                self._lookup_variable(expression.argument.name, expression.argument.location)
+                if isinstance(expression.argument, ast.Identifier)
+                else None
+            )
+            if binding is None or binding.slice_length_register is None:
+                raise LoweringError("slice has no runtime length", expression.location)
+            result = self._allocate(ast.TypeName.I64, expression.location)
+            self._emit(IRInstruction(
+                IROpcode.SLICE_LENGTH,
+                result=result,
+                operands=(argument, binding.slice_length_register),
+                location=expression.location,
+            ))
+            return result
         if isinstance(argument_type, ast.ArrayType):
             return self._emit_constant(
                 argument_type.length,

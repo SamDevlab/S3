@@ -63,6 +63,9 @@ OPCODE_MAP = {
     IROpcode.ADDRESS_OF: AssemblyOpcode.TADDR,
     IROpcode.REFERENCE_LOAD: AssemblyOpcode.TREFLOAD,
     IROpcode.REFERENCE_STORE: AssemblyOpcode.TREFSTORE,
+    IROpcode.SLICE_LENGTH: AssemblyOpcode.TSLEN,
+    IROpcode.SLICE_LOAD: AssemblyOpcode.TSLOAD,
+    IROpcode.SLICE_STORE: AssemblyOpcode.TSSTORE,
 }
 
 
@@ -148,6 +151,18 @@ def _generate_instruction(instruction: IRInstruction) -> AssemblyInstruction:
             reference_target=TYPE_MAP[instruction.reference_target] if instruction.reference_target else None,
             reference_mutable=instruction.reference_mutable,
         )
+    if opcode is AssemblyOpcode.TSLEN:
+        assert instruction.result is not None
+        return AssemblyInstruction(opcode, (instruction.result, *instruction.operands), source=instruction.location)
+    if opcode is AssemblyOpcode.TSLOAD:
+        assert instruction.result is not None
+        return AssemblyInstruction(opcode, (instruction.result, *instruction.operands), source=instruction.location,
+                                   reference_target=TYPE_MAP[instruction.reference_target] if instruction.reference_target else None,
+                                   reference_is_slice=True)
+    if opcode is AssemblyOpcode.TSSTORE:
+        return AssemblyInstruction(opcode, instruction.operands, source=instruction.location,
+                                   reference_target=TYPE_MAP[instruction.reference_target] if instruction.reference_target else None,
+                                   reference_mutable=instruction.reference_mutable, reference_is_slice=True)
     registers = (
         instruction.operands
         if not instruction.results
@@ -189,6 +204,7 @@ def generate_assembly(ir_program: IRProgram) -> AssemblyProgram:
                         TYPE_MAP[parameter.type],
                         TYPE_MAP[parameter.reference_target] if parameter.reference_target else None,
                         parameter.reference_mutable,
+                        parameter.reference_is_slice,
                     )
                     for parameter in function.parameters
                 ),
@@ -227,6 +243,15 @@ def generate_assembly(ir_program: IRProgram) -> AssemblyProgram:
                     if register.type is IRType.REFERENCE and register.reference_target is not None
                 ),
                 tuple(sorted(reference_sizes.items())),
+                tuple(
+                    register.index
+                    for register in function.registers
+                    if register.reference_is_slice
+                ) + tuple(
+                    parameter.register
+                    for parameter in function.parameters
+                    if parameter.reference_is_slice
+                ),
             )
         )
     return AssemblyProgram(

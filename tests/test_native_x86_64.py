@@ -149,6 +149,19 @@ fn main() -> tryte {
             mode=SyntaxMode.V0_6,
         ).assembly
     )
+    programs.append(
+        compile_source(
+            "fn sum(xs: &[i64]) -> i64:\n"
+            "    return xs[0] + xs[1]\n"
+            "fn mutate(xs: &mut [i64]) -> trit:\n"
+            "    xs[0] = 3\n"
+            "    return (xs[0] == 3) & (to_tryte(len(xs)) == 2)\n"
+            "fn main() -> trit:\n"
+            "    values: i64[2] = [1, 2]\n"
+            "    return (sum(&values) == 3) & (mutate(&mut values) == -1) & (len(values) == 2)\n",
+            mode=SyntaxMode.V0_6,
+        ).assembly
+    )
     seen = {
         instruction.opcode
         for program in programs

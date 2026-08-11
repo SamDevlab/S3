@@ -32,6 +32,14 @@ class ReferenceValue:
     mutable: bool
 
 
+@dataclass(frozen=True)
+class SliceValue:
+    cells: tuple[_Cell, ...]
+    offset: int
+    length: int
+    mutable: bool
+
+
 @dataclass
 class _Frame:
     function: IRFunction
@@ -166,6 +174,10 @@ def _execute_function(functions, function, arguments, caller):
                 cells = memory[instruction.memory]
                 if not isinstance(index, int) or not 0 <= index < len(cells):
                     raise IRExecutionError("array reference index is out of bounds")
+                if instruction.reference_is_slice:
+                    _write(frame, instruction.result, SliceValue(tuple(cells), index, len(cells) - index, instruction.reference_mutable))
+                    frame.index += 1
+                    continue
                 cell = cells[index]
             else:
                 cell = frame.registers[instruction.operands[0]]
@@ -178,6 +190,26 @@ def _execute_function(functions, function, arguments, caller):
             ref = _read(frame, instruction.operands[0])
             if not isinstance(ref, ReferenceValue) or not ref.mutable: raise IRExecutionError("shared reference store")
             _store_value(ref.cell, _read(frame, instruction.operands[1]), instruction.reference_target)
+        elif op is IROpcode.SLICE_LENGTH:
+            value = _read(frame, instruction.operands[0])
+            if not isinstance(value, SliceValue):
+                raise IRExecutionError("invalid slice value")
+            _write(frame, instruction.result, value.length)
+        elif op is IROpcode.SLICE_LOAD:
+            value = _read(frame, instruction.operands[0])
+            index = _read(frame, instruction.operands[2])
+            if not isinstance(value, SliceValue) or not isinstance(index, int) or not 0 <= index < value.length:
+                raise IRExecutionError("slice index is out of bounds")
+            cell = value.cells[value.offset + index]
+            if not cell.initialized:
+                raise IRExecutionError("uninitialized slice load")
+            _write(frame, instruction.result, cell.value)
+        elif op is IROpcode.SLICE_STORE:
+            value = _read(frame, instruction.operands[0])
+            index = _read(frame, instruction.operands[2])
+            if not isinstance(value, SliceValue) or not value.mutable or not isinstance(index, int) or not 0 <= index < value.length:
+                raise IRExecutionError("invalid mutable slice store")
+            _store_value(value.cells[value.offset + index], _read(frame, instruction.operands[3]), instruction.reference_target)
         elif op is IROpcode.CALL:
             callee = functions[instruction.callee]
             args = tuple(_read(frame, reg) for reg in instruction.operands)
@@ -215,7 +247,7 @@ def _memory_type(function, memory_index):
 
 def _store_value(cell, value, value_type):
     if value_type is IRType.REFERENCE:
-        if not isinstance(value, ReferenceValue):
+        if not isinstance(value, (ReferenceValue, SliceValue)):
             raise IRExecutionError("invalid null or non-provenance reference")
     elif value_type is IRType.STRING:
         if not isinstance(value, str):

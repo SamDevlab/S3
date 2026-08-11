@@ -1262,6 +1262,21 @@ class SemanticAnalyzer:
         return_type: bool = False,
         aggregate: bool = False,
     ) -> None:
+        if isinstance(type_name, ast.SliceType):
+            self.contains_references = True
+            if return_type:
+                raise SemanticError(
+                    "slice return types are not supported",
+                    type_name.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_RETURN,
+                )
+            if aggregate:
+                raise SemanticError(
+                    "slices cannot be stored in aggregate types",
+                    type_name.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_AGGREGATE,
+                )
+            return
         if isinstance(type_name, ast.ReferenceType):
             self.contains_references = True
             if isinstance(type_name.target, ast.ReferenceType):
@@ -1427,7 +1442,7 @@ class SemanticAnalyzer:
             statement.target.array_name,
             statement.target.location,
         )
-        if not isinstance(binding.type_name, ast.ArrayType):
+        if not isinstance(binding.type_name, (ast.ArrayType, ast.SliceType)):
             if binding.type_name is ast.TypeName.STRING:
                 raise SemanticError(
                     "string indexing is not supported",
@@ -1440,7 +1455,10 @@ class SemanticAnalyzer:
                 f"variable '{statement.target.array_name}' is not an array",
                 statement.target.location,
             )
-        self._require_mutable(binding, statement.target.location)
+        if isinstance(binding.type_name, ast.SliceType) and binding.type_name.mutable:
+            pass
+        else:
+            self._require_mutable(binding, statement.target.location)
         self._analyze_index(
             statement.target.array_name,
             statement.target.index,
@@ -1451,14 +1469,15 @@ class SemanticAnalyzer:
                 "array element assignment requires a scalar expression",
                 statement.value.location,
             )
-        assert isinstance(binding.type_name.element_type, ast.TypeName)
+        element_type = binding.type_name.element_type
+        assert isinstance(element_type, ast.TypeName)
         actual = self._analyze_expression(
             statement.value,
-            binding.type_name.element_type,
+            element_type,
         )
         self._require_type(
             actual,
-            binding.type_name.element_type,
+            element_type,
             statement.value.location,
             "array element assignment",
         )
@@ -1631,7 +1650,11 @@ class SemanticAnalyzer:
                 self.place_info[id(expression)] = PlaceInfo(
                     result,
                     True,
-                    array_binding.mutable and not array_binding.parameter,
+                    (
+                        array_binding.type_name.mutable
+                        if isinstance(array_binding.type_name, ast.SliceType)
+                        else array_binding.mutable and not array_binding.parameter
+                    ),
                     True,
                     expression.array_name,
                     array_binding.scope_depth,
@@ -1763,7 +1786,7 @@ class SemanticAnalyzer:
         self.expression_types[id(expression)] = result
         return result
 
-    def _analyze_address_of(self, expression: ast.AddressOfExpression) -> ast.ReferenceType:
+    def _analyze_address_of(self, expression: ast.AddressOfExpression) -> ast.DeclaredType:
         if isinstance(expression.operand, ast.DereferenceExpression):
             reference_type = self._analyze_expression(expression.operand.operand)
             if not isinstance(reference_type, ast.ReferenceType):
@@ -1867,11 +1890,33 @@ class SemanticAnalyzer:
                 expression.location,
                 diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_NESTED,
             )
-        if expression.mutable and (not binding.mutable and not binding.parameter):
+        if (
+            expression.mutable
+            and not isinstance(binding.type_name, ast.ArrayType)
+            and (not binding.mutable and not binding.parameter)
+        ):
             raise SemanticError(
                 "mutable reference target is not writable",
                 expression.operand.location,
                 diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_TARGET_NOT_ADDRESSABLE,
+            )
+        if isinstance(binding.type_name, ast.ArrayType):
+            if not isinstance(binding.type_name.element_type, ast.TypeName):
+                raise SemanticError(
+                    "slice element type must be scalar",
+                    expression.operand.location,
+                )
+            self.reference_provenance[id(expression)] = ReferenceProvenance(
+                expression.operand.name,
+                ("slice", 0, binding.type_name.length),
+                binding.type_name.element_type,
+                expression.mutable,
+            )
+            self.contains_references = True
+            return ast.SliceType(
+                binding.type_name.element_type,
+                expression.mutable,
+                expression.location,
             )
         if not isinstance(binding.type_name, ast.TypeName):
             raise SemanticError(
@@ -2124,7 +2169,7 @@ class SemanticAnalyzer:
                 f"undeclared variable '{expression.target.name}'",
                 expression.location,
             )
-        if isinstance(binding.type_name, ast.ArrayType):
+        if isinstance(binding.type_name, (ast.ArrayType, ast.SliceType)):
             return binding
         return None
 
@@ -2158,6 +2203,12 @@ class SemanticAnalyzer:
                     f"undeclared variable '{expression.argument.name}'",
                     expression.argument.location,
                 )
+            if isinstance(binding.type_name, ast.SliceType):
+                self.expression_types[id(expression.argument)] = binding.type_name
+                result = ast.TypeName.I64
+                if expected is not None:
+                    self._require_type(result, expected, expression.location, "len expression")
+                return result
             if not isinstance(binding.type_name, ast.ArrayType):
                 if binding.type_name is ast.TypeName.STRING:
                     raise SemanticError(
@@ -2209,7 +2260,7 @@ class SemanticAnalyzer:
         self,
         array_name: str,
         index: ast.Expression,
-        type_name: ast.ArrayType,
+        type_name: ast.ArrayType | ast.SliceType,
     ) -> ast.TypeName:
         known_index_type = self._known_expression_type(index)
         expected_index_type = (
@@ -2224,7 +2275,7 @@ class SemanticAnalyzer:
                 index.location,
             )
         constant = self._constant_integer(index)
-        if constant is not None and not 0 <= constant < type_name.length:
+        if isinstance(type_name, ast.ArrayType) and constant is not None and not 0 <= constant < type_name.length:
             raise SemanticError(
                 f"constant index {constant} is outside array '{array_name}' "
                 f"bounds [0, {type_name.length})",
@@ -3583,6 +3634,8 @@ def _types_equal(left: ast.DeclaredType, right: ast.DeclaredType) -> bool:
         )
     if isinstance(left, ast.ReferenceType) and isinstance(right, ast.ReferenceType):
         return left.mutable == right.mutable and _types_equal(left.target, right.target)
+    if isinstance(left, ast.SliceType) and isinstance(right, ast.SliceType):
+        return left.mutable == right.mutable and left.element_type is right.element_type
     return False
 
 
@@ -3596,6 +3649,9 @@ def _type_display(type_name: ast.DeclaredType) -> str:
     if isinstance(type_name, ast.ReferenceType):
         prefix = "&mut " if type_name.mutable else "&"
         return prefix + _type_display(type_name.target)
+    if isinstance(type_name, ast.SliceType):
+        prefix = "&mut " if type_name.mutable else "&"
+        return f"{prefix}[{_type_display(type_name.element_type)}]"
     raise AssertionError(f"unknown declared type {type_name!r}")
 
 

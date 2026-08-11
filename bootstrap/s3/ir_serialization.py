@@ -63,6 +63,12 @@ def _instruction_to_data(instruction: IRInstruction) -> dict[str, Any]:
     }
     if instruction.static_string is not None:
         result["static_string"] = instruction.static_string
+    if instruction.reference_target is not None:
+        result["reference_target"] = instruction.reference_target.value
+        result["reference_mutable"] = instruction.reference_mutable
+        result["reference_is_slice"] = instruction.reference_is_slice
+    if instruction.slice_length_result is not None:
+        result["slice_length_result"] = instruction.slice_length_result
     return result
 
 
@@ -108,6 +114,15 @@ def _module_to_data(module: IRModule) -> dict[str, Any]:
                         "register": parameter.register,
                         "source": _source_to_data(parameter.location),
                         "type": parameter.type.value,
+                        **(
+                            {
+                                "reference_target": parameter.reference_target.value,
+                                "reference_mutable": parameter.reference_mutable,
+                                "reference_is_slice": parameter.reference_is_slice,
+                                **({"slice_length_register": parameter.slice_length_register} if parameter.slice_length_register is not None else {}),
+                            }
+                            if parameter.reference_target is not None else {}
+                        ),
                     }
                     for parameter in function.parameters
                 ],
@@ -116,6 +131,15 @@ def _module_to_data(module: IRModule) -> dict[str, Any]:
                         "index": register.index,
                         "source": _source_to_data(register.location),
                         "type": register.type.value,
+                        **(
+                            {
+                                "reference_target": register.reference_target.value,
+                                "reference_mutable": register.reference_mutable,
+                                "reference_is_slice": register.reference_is_slice,
+                                **({"slice_length_register": register.slice_length_register} if register.slice_length_register is not None else {}),
+                            }
+                            if register.reference_target is not None else {}
+                        ),
                     }
                     for register in function.registers
                 ],
@@ -309,7 +333,7 @@ def _instruction(value: Any, path: str, *, version: str) -> IRInstruction:
                 f"{path} contains 0.6.0 result fields under 0.5.0"
             )
     else:
-        _keys(data, base_required | {"results"}, {"static_string"}, path)
+        _keys(data, base_required | {"results"}, {"static_string", "reference_target", "reference_mutable", "reference_is_slice", "slice_length_result"}, path)
     opcode_text = _string(data["opcode"], f"{path}.opcode")
     try:
         opcode = IROpcode(opcode_text)
@@ -362,6 +386,16 @@ def _instruction(value: Any, path: str, *, version: str) -> IRInstruction:
         ),
         location=_location(data["source"], f"{path}.source"),
         results=results,
+        reference_target=(
+            None if "reference_target" not in data
+            else _ir_type(data["reference_target"], f"{path}.reference_target")
+        ),
+        reference_mutable=_boolean(data.get("reference_mutable", False), f"{path}.reference_mutable"),
+        reference_is_slice=_boolean(data.get("reference_is_slice", False), f"{path}.reference_is_slice"),
+        slice_length_result=(
+            None if "slice_length_result" not in data
+            else _integer(data["slice_length_result"], f"{path}.slice_length_result")
+        ),
     )
 
 
@@ -413,13 +447,17 @@ def _function(value: Any, path: str, *, version: str) -> IRFunction:
     ):
         item_path = f"{path}.parameters[{index}]"
         item = _object(raw, item_path)
-        _exact_keys(item, {"name", "register", "source", "type"}, item_path)
+        _keys(item, {"name", "register", "source", "type"}, {"reference_target", "reference_mutable", "reference_is_slice", "slice_length_register"}, item_path)
         parameters.append(
             IRParameter(
                 _identifier(item["name"], f"{item_path}.name"),
                 _integer(item["register"], f"{item_path}.register"),
                 _ir_type(item["type"], f"{item_path}.type"),
                 _location(item["source"], f"{item_path}.source"),
+                None if "reference_target" not in item else _ir_type(item["reference_target"], f"{item_path}.reference_target"),
+                _boolean(item.get("reference_mutable", False), f"{item_path}.reference_mutable"),
+                _boolean(item.get("reference_is_slice", False), f"{item_path}.reference_is_slice"),
+                None if "slice_length_register" not in item else _integer(item["slice_length_register"], f"{item_path}.slice_length_register"),
             )
         )
 
@@ -429,12 +467,16 @@ def _function(value: Any, path: str, *, version: str) -> IRFunction:
     ):
         item_path = f"{path}.registers[{index}]"
         item = _object(raw, item_path)
-        _exact_keys(item, {"index", "source", "type"}, item_path)
+        _keys(item, {"index", "source", "type"}, {"reference_target", "reference_mutable", "reference_is_slice", "slice_length_register"}, item_path)
         registers.append(
             IRRegister(
                 _integer(item["index"], f"{item_path}.index"),
                 _ir_type(item["type"], f"{item_path}.type"),
                 _location(item["source"], f"{item_path}.source"),
+                None if "reference_target" not in item else _ir_type(item["reference_target"], f"{item_path}.reference_target"),
+                _boolean(item.get("reference_mutable", False), f"{item_path}.reference_mutable"),
+                _boolean(item.get("reference_is_slice", False), f"{item_path}.reference_is_slice"),
+                None if "slice_length_register" not in item else _integer(item["slice_length_register"], f"{item_path}.slice_length_register"),
             )
         )
 

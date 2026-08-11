@@ -92,6 +92,12 @@ def instruction_use_def(instruction: AssemblyInstruction) -> tuple[frozenset[int
         return frozenset({regs[1]}), frozenset({regs[0]})
     elif opcode is AssemblyOpcode.TREFSTORE:
         return frozenset(regs), frozenset()
+    elif opcode is AssemblyOpcode.TSLEN:
+        return frozenset(regs[1:]), frozenset({regs[0]})
+    elif opcode is AssemblyOpcode.TSLOAD:
+        return frozenset(regs[1:]), frozenset({regs[0]})
+    elif opcode is AssemblyOpcode.TSSTORE:
+        return frozenset(regs), frozenset()
     else:
         raise ValueError(f"Unhandled AssemblyOpcode: {opcode}")
 
