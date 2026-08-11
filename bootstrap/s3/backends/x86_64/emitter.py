@@ -499,10 +499,11 @@ class X8664Emitter:
                         detail_suffix=" out of bounds\n",
                         value_register="rax",
                     )
+                    # Valid array lengths are non-negative.  An unsigned
+                    # comparison therefore rejects both negative indices and
+                    # indices at or beyond the upper bound in one branch.
                     source_check = [
                         *self._read_register(layout, index, "rax"),
-                        "    cmp rax, 0",
-                        f"    jl {bounds_failure}",
                         f"    cmp rax, {memory.length}",
                         f"    jae {bounds_failure}",
                     ]
@@ -568,8 +569,6 @@ class X8664Emitter:
                 *self._read_register(layout, reference, "r10"),
                 *self._read_register(layout, length, "r11"),
                 *self._read_register(layout, index, "rax"),
-                "    cmp rax, 0",
-                f"    jl {bounds_failure}",
                 "    cmp rax, r11",
                 f"    jae {bounds_failure}",
                 f"    {load}",
@@ -591,8 +590,6 @@ class X8664Emitter:
                 *self._read_register(layout, length, "r11"),
                 *self._read_register(layout, index, "rax"),
                 *self._read_register(layout, source, "rcx"),
-                "    cmp rax, 0",
-                f"    jl {bounds_failure}",
                 "    cmp rax, r11",
                 f"    jae {bounds_failure}",
             ]
@@ -1165,10 +1162,8 @@ class X8664Emitter:
             value_register=index,
         )
         return [
-            f"    cmp {index}, 0",
-            f"    jl {failure}",
             f"    cmp {index}, {memory.length}",
-            f"    jge {failure}",
+            f"    jae {failure}",
         ]
 
     def _emit_load(
