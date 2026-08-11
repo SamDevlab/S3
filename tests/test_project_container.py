@@ -9,6 +9,7 @@ from bootstrap.s3.project_container import (
     CapabilityState,
     ProjectTooling,
 )
+from bootstrap.s3.s3_docker import DockerProvider
 
 
 def test_project_container_manifest_is_deterministic() -> None:
@@ -88,3 +89,22 @@ def test_manifest_rejects_missing_source_root(tmp_path) -> None:
     )
     with pytest.raises(ProjectContainerError, match="source root"):
         ProjectTooling(tmp_path).check()
+
+
+def test_project_docker_context_contains_real_project_sources(tmp_path) -> None:
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "main.s3").write_text(
+        "module main\n\nfn main() -> i64:\n    return 7\n", encoding="ascii"
+    )
+    (tmp_path / "s3.toml").write_text(
+        "[project]\nname='app'\nversion='1'\nentrypoint='main'\n"
+        "source_roots=['src']\nprofile='hosted'\n",
+        encoding="ascii",
+    )
+    tooling = ProjectTooling(tmp_path)
+    context, owner = tooling.docker_context(DockerProvider(), image="s3/runtime:1.38")
+    try:
+        assert (context / "src" / "main.s3").read_text(encoding="ascii").endswith("return 7\n")
+        assert (context / "Dockerfile").read_text(encoding="ascii").startswith("FROM s3/runtime:1.38\n")
+    finally:
+        owner.cleanup()

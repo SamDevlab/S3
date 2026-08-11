@@ -1,11 +1,24 @@
-# Milestone 1.38 - S3 Docker Contract
+# Milestone 1.38 - S3 Docker V1 Capability Closure
 
-This milestone defines an immutable, deterministic Docker invocation
-specification. It validates a lowercase image reference, a non-empty command,
-sorted unique environment names, and an execution timeout from 1 through 3600
-seconds. The resulting argv is stable and contains only the explicit Docker
-runtime request.
+M1.38 provides a real Docker provider around the S3 project model. The
+provider has two explicit modes: daemonless `plan` and `inspect`, plus real
+Docker CLI `version`, `build`, and `run` operations. Every operation exposes
+the exact argv and return status; no host paths or ambient environment values
+are added implicitly.
 
-Process execution, host filesystem mounting, image acquisition, networking,
-resource limits, and platform adapters are outside this structural contract.
-No implicit host paths or environment values are introduced by the model.
+Project contexts are deterministic. Source files are copied in sorted logical
+path order, the generated recipe is stable, and the manifest entrypoint is
+mapped to the container path. The public CLI surface is:
+
+```text
+s3 container inspect PROJECT --image IMAGE
+s3 container plan PROJECT --image IMAGE
+s3 container build PROJECT --image IMAGE
+s3 container run PROJECT --image IMAGE
+```
+
+The real closure requires evidence for daemonless planning, Docker version,
+deterministic build context, `docker build`, `docker run`, an S3 application
+running in the container, foreign-helper integration, and native non-Docker
+regression. GPU capability is declaration/passthrough only; this milestone does
+not implement a GPU backend.
