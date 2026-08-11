@@ -34,6 +34,8 @@ from .ir_serialization import deserialize_ir, serialize_ir
 from .lexer import SyntaxMode
 from .optimizer import OptimizationLevel, instruction_count
 from .pipeline import CompilationResult, compile_source
+from .project_container import ProjectTooling
+from .s3_docker import DockerProvider, DockerSpec
 from .targets import BUILTIN_TARGETS
 
 
@@ -169,6 +171,15 @@ def _parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser("doctor")
     subparsers.add_parser("targets")
+
+    container = subparsers.add_parser(
+        "container", help="inspect, plan, build, or run an S3 project container"
+    )
+    container_actions = container.add_subparsers(dest="container_action", required=True)
+    for action in ("inspect", "plan", "build", "run"):
+        action_parser = container_actions.add_parser(action)
+        action_parser.add_argument("root", type=Path, help="project root containing s3.toml")
+        action_parser.add_argument("--image", required=True, help="Docker image reference")
 
     commands = (
         "tokens",
@@ -382,6 +393,31 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "targets":
             _print_targets()
             return 0
+        if args.command == "container":
+            tooling = ProjectTooling(args.root)
+            provider = DockerProvider()
+            if args.container_action == "inspect":
+                print(json.dumps(tooling.inspect(), indent=2, sort_keys=True))
+                return 0
+            if args.container_action == "plan":
+                spec = DockerSpec(args.image, ("s3", "run", f"/app/{tooling.manifest.entrypoint}.s3"))
+                print(json.dumps(provider.plan(spec), indent=2, sort_keys=True))
+                return 0
+            context, owner = tooling.docker_context(provider, image=args.image)
+            try:
+                if args.container_action == "build":
+                    result = provider.build(context, args.image)
+                else:
+                    result = provider.run(
+                        DockerSpec(args.image, ("s3", "run", f"/app/{tooling.manifest.entrypoint}.s3"))
+                    )
+                if result.stdout:
+                    print(result.stdout, end="")
+                if result.stderr:
+                    print(result.stderr, end="", file=sys.stderr)
+                return result.returncode
+            finally:
+                owner.cleanup()
         if args.max_frames < 1:
             raise NativeBackendError("--max-frames must be at least 1")
         source = args.source.read_text(encoding="utf-8")

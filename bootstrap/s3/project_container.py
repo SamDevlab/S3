@@ -156,6 +156,29 @@ class ProjectTooling:
             "external_executables": self.manifest.external_executables,
         }
 
+    def docker_context(
+        self,
+        provider,
+        *,
+        image: str,
+        foreign_helpers: dict[str, str] | None = None,
+    ) -> tuple[Path, object]:
+        """Create a deterministic Docker context for this project.
+
+        The returned temporary-directory owner must be kept alive while the
+        context is used. The provider is injected so daemonless planning and
+        real Docker execution share the same project serialization.
+        """
+
+        self.check()
+        entrypoint = ("s3", "run", f"/app/{self.manifest.entrypoint}.s3")
+        return provider.project_build_context(
+            self._sources(),
+            image=image,
+            entrypoint=entrypoint,
+            foreign_helpers=foreign_helpers,
+        )
+
     def _sources(self) -> dict[str, str]:
         result: dict[str, str] = {}
         for root in self.manifest.source_roots:

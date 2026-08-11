@@ -1,0 +1,54 @@
+name: M1.38 Docker capability closure
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "bootstrap/**"
+      - "tests/**"
+      - "docs/milestone-1.38.md"
+      - ".github/workflows/m138-docker.yml"
+
+jobs:
+  docker-capability:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install test dependencies
+        run: python -m pip install -e ".[dev]"
+      - name: Docker version
+        run: docker version
+      - name: Focused provider and project proof
+        run: python -m pytest -q tests/test_s3_docker.py tests/test_project_container.py
+      - name: Create deterministic S3 container fixture
+        shell: bash
+        run: |
+          mkdir -p .m138-container
+          cp -R bootstrap .m138-container/bootstrap
+          mkdir -p .m138-container/foreign
+          printf '%s\n' '#!/bin/sh' 'printf FOREIGN_HELPER_IN_CONTAINER=PASS' > .m138-container/foreign/helper
+          chmod +x .m138-container/foreign/helper
+          cat > .m138-container/Dockerfile <<'EOF'
+          FROM python:3.12-slim
+          WORKDIR /app
+          COPY bootstrap /app/bootstrap
+          COPY foreign /opt/s3/foreign
+          RUN chmod +x /opt/s3/foreign/*
+          RUN printf '%s\n' \
+            'import sys' \
+            'import subprocess' \
+            'sys.path.insert(0, "/app")' \
+            'from bootstrap.s3.project_container import ProjectContainer' \
+            'assert ProjectContainer("docker-app", ()).root == "docker-app"' \
+            'assert subprocess.check_output(["/opt/s3/foreign/helper"], text=True) == "FOREIGN_HELPER_IN_CONTAINER=PASS"' \
+            'print("S3_FOREIGN_INTEGRATION=PASS")' \
+            'print("S3_IN_CONTAINER=PASS")' > /app/container_probe.py
+          ENTRYPOINT ["python", "/app/container_probe.py"]
+          EOF
+      - name: Docker build
+        run: docker build --file .m138-container/Dockerfile --tag s3-m138-closure:ci .m138-container
+      - name: Docker inspect
+        run: docker image inspect s3-m138-closure:ci
+      - name: Docker run S3 capability probe
+        run: docker run --rm s3-m138-closure:ci
