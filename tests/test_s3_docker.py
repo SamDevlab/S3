@@ -52,13 +52,17 @@ def test_docker_provider_writes_deterministic_build_context(tmp_path) -> None:
         image="s3/runtime:1.38",
         entrypoint=("s3", "run", "/app/main.s3"),
         source_files={"src/z.s3": "z\n", "src/main.s3": "main\n"},
+        foreign_helpers={"helper": "#!/bin/sh\necho helper\n"},
     )
     assert context == tmp_path
     assert (tmp_path / "Dockerfile").read_text(encoding="utf-8") == (
         "FROM s3/runtime:1.38\n"
         "WORKDIR /app\n"
         "COPY . /app\n"
+        "COPY foreign /opt/s3/foreign\n"
+        "RUN chmod +x /opt/s3/foreign/*\n"
         'ENTRYPOINT ["s3","run","/app/main.s3"]\n'
     )
+    assert (tmp_path / "foreign" / "helper").read_text(encoding="ascii").startswith("#!/bin/sh")
     assert provider.build(tmp_path, "s3/app:1.38").ok
 

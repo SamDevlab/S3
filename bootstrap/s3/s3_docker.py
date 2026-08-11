@@ -128,6 +128,7 @@ class DockerProvider:
         image: str,
         entrypoint: Sequence[str],
         source_files: dict[str, str],
+        foreign_helpers: dict[str, str] | None = None,
     ) -> Path:
         """Materialize a reproducible Docker build context and recipe."""
 
@@ -135,16 +136,27 @@ class DockerProvider:
             raise DockerConfigError(f"invalid Docker image {image!r}")
         if not entrypoint or any(not item for item in entrypoint):
             raise DockerConfigError("container entrypoint must be non-empty")
+        foreign_helpers = {} if foreign_helpers is None else foreign_helpers
+        if any(not _ENV_NAME.fullmatch(name) for name in foreign_helpers):
+            raise DockerConfigError("foreign helper names must be valid identifiers")
         root = Path(root)
         root.mkdir(parents=True, exist_ok=True)
         for logical_name in sorted(source_files):
             target = root / logical_name
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text(source_files[logical_name], encoding="utf-8", newline="\n")
+        helper_root = root / "foreign"
+        helper_root.mkdir(parents=True, exist_ok=True)
+        for name in sorted(foreign_helpers):
+            helper = helper_root / name
+            helper.parent.mkdir(parents=True, exist_ok=True)
+            helper.write_text(foreign_helpers[name], encoding="utf-8", newline="\n")
         recipe = (
             "FROM " + image + "\n"
             "WORKDIR /app\n"
             "COPY . /app\n"
+            "COPY foreign /opt/s3/foreign\n"
+            "RUN chmod +x /opt/s3/foreign/*\n"
             "ENTRYPOINT " + json.dumps(list(entrypoint), separators=(",", ":")) + "\n"
         )
         (root / "Dockerfile").write_text(recipe, encoding="utf-8", newline="\n")
@@ -156,6 +168,7 @@ class DockerProvider:
         *,
         image: str,
         entrypoint: Sequence[str],
+        foreign_helpers: dict[str, str] | None = None,
     ) -> tuple[Path, tempfile.TemporaryDirectory[str]]:
         temporary = tempfile.TemporaryDirectory(prefix="s3-docker-")
         context = self.write_deterministic_context(
@@ -163,6 +176,7 @@ class DockerProvider:
             image=image,
             entrypoint=entrypoint,
             source_files=source_files,
+            foreign_helpers=foreign_helpers,
         )
         return context, temporary
 

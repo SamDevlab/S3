@@ -26,15 +26,23 @@ jobs:
         run: |
           mkdir -p .m138-container
           cp -R bootstrap .m138-container/bootstrap
+          mkdir -p .m138-container/foreign
+          printf '%s\n' '#!/bin/sh' 'printf FOREIGN_HELPER_IN_CONTAINER=PASS' > .m138-container/foreign/helper
+          chmod +x .m138-container/foreign/helper
           cat > .m138-container/Dockerfile <<'EOF'
           FROM python:3.12-slim
           WORKDIR /app
           COPY bootstrap /app/bootstrap
+          COPY foreign /opt/s3/foreign
+          RUN chmod +x /opt/s3/foreign/*
           RUN printf '%s\n' \
             'import sys' \
+            'import subprocess' \
             'sys.path.insert(0, "/app")' \
             'from bootstrap.s3.project_container import ProjectContainer' \
             'assert ProjectContainer("docker-app", ()).root == "docker-app"' \
+            'assert subprocess.check_output(["/opt/s3/foreign/helper"], text=True) == "FOREIGN_HELPER_IN_CONTAINER=PASS"' \
+            'print("S3_FOREIGN_INTEGRATION=PASS")' \
             'print("S3_IN_CONTAINER=PASS")' > /app/container_probe.py
           ENTRYPOINT ["python", "/app/container_probe.py"]
           EOF
