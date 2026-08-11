@@ -59,8 +59,11 @@ def test_subtraction_lowers_to_invert_then_add() -> None:
         IROpcode.JUMP,
             IROpcode.BRANCH3,
             IROpcode.ADDRESS_OF,
-            IROpcode.REFERENCE_LOAD,
-            IROpcode.REFERENCE_STORE,
+        IROpcode.REFERENCE_LOAD,
+        IROpcode.REFERENCE_STORE,
+        IROpcode.SLICE_LENGTH,
+        IROpcode.SLICE_LOAD,
+        IROpcode.SLICE_STORE,
         }
 
 

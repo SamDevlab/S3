@@ -379,8 +379,8 @@ class IRVerifier:
 
         if opcode is IROpcode.SLICE_LENGTH:
             result, result_type = require_result()
-            operand_types = require_operands(1)
-            if result_type is not IRType.I64 or operand_types[0] is not IRType.REFERENCE:
+            operand_types = require_operands(2)
+            if result_type is not IRType.I64 or operand_types[0] is not IRType.REFERENCE or operand_types[1] is not IRType.I64:
                 self._error("slice_length requires a reference and returns i64", instruction.location)
             ref = next(register for register in function.registers if register.index == instruction.operands[0])
             if not ref.reference_is_slice:

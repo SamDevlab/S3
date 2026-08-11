@@ -61,6 +61,9 @@ def test_folded_static_text_ir_contains_only_final_const_str() -> None:
             IROpcode.ADDRESS_OF,
             IROpcode.REFERENCE_LOAD,
             IROpcode.REFERENCE_STORE,
+            IROpcode.SLICE_LENGTH,
+            IROpcode.SLICE_LOAD,
+            IROpcode.SLICE_STORE,
         }
 
 
