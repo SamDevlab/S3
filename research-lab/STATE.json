@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "lab": {
+    "name": "S3 Research Lab — Zettelkasten + Compiler Optimization",
+    "branch": "research/zettelkasten-lab-20260812",
+    "created_from": "a83e25c3364302227694399ebe12946f887c0ead",
+    "purpose": "Durable compiler-research workspace and conversation handoff state"
+  },
+  "production_anchor": {
+    "repository": "SamDevlab/S3",
+    "main_at_lab_creation": "a83e25c3364302227694399ebe12946f887c0ead",
+    "p1": "COMPLETE",
+    "p2": "COMPLETE",
+    "p3": "COMPLETE",
+    "p3_pr": 169,
+    "p3_implementation_head": "4643f60176aec68c7a4d7203f3623bde8bac2ae4",
+    "p3_merge_commit": "a83e25c3364302227694399ebe12946f887c0ead",
+    "p4_started": false
+  },
+  "established_findings": {
+    "post_m138": "massive representation/lowering expansion; backend/codegen immaturity rather than language-fundamental cost",
+    "p1": "bounds/control lowering compressed branches and code size but did not reduce load/store count",
+    "p2": "same-basic-block scalar forwarding is safe/useful but removes only limited frame traffic",
+    "p3": "safe cross-block scalar residence removes targeted frame moves but large representative global counters remain effectively unchanged",
+    "primary_remaining_bottleneck": "frame canonicalization and cross-block store/reload traffic",
+    "secondary_remaining_bottleneck": "phi/SSA staging",
+    "ra_primary_cause": "NOT_ESTABLISHED"
+  },
+  "research_direction": {
+    "name": "global-value-residency-and-memory-materialization",
+    "central_question": "Where is location flexibility first lost and why does a logical value become memory-identified?",
+    "default_hypothesis": "logical values should remain location-flexible until memory is semantically or resource-wise required",
+    "candidate_models": [
+      "monotone data-flow / fixed-point liveness",
+      "residence lattice / reduced product abstract domain",
+      "lazy materialization",
+      "partial materialization elimination",
+      "min-cut or min-cost materialization placement",
+      "exact bounded optimization oracle",
+      "submodular/matroid structure tests",
+      "information-loss accounting"
+    ]
+  },
+  "hard_rules": {
+    "research_branch_direct_merge_to_main": false,
+    "production_changes_from_lab": "port proven ideas to a fresh branch from current main",
+    "safety_weakened": false,
+    "benchmark_special_cases": false,
+    "p5_stacking": false,
+    "automatic_shutdown_authorized": false,
+    "full_suite_policy": "production final candidate only; not routine research iteration"
+  },
+  "next_actions": [
+    "Run prototype demo and unit checks locally",
+    "Map S3 Assembly IR logical values to the generic CFG model",
+    "Measure frame materialization causes on representative generated functions",
+    "Create Zettelkasten experiment notes for min-cut viability and exact-oracle gap",
+    "Do not choose register allocator redesign until true RA spills are measured as dominant"
+  ]
+}
