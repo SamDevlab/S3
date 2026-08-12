@@ -1,5 +1,5 @@
 {
-  "schema_version": 3,
+  "schema_version": 4,
   "lab": {
     "name": "S3 Research Lab — Zettelkasten + Compiler Optimization",
     "branch": "research/zettelkasten-lab-20260812",
@@ -26,13 +26,21 @@
     "primary_remaining_bottleneck": "frame canonicalization and cross-block store/reload traffic",
     "secondary_remaining_bottleneck": "phi/SSA staging",
     "ra_primary_cause": "NOT_ESTABLISHED",
-    "current_ra_architecture_fact": "at the P3 anchor analyze_allocation already consumes whole-function CFG liveness, builds vreg interference, and performs deterministic greedy coloring; RA OFF vs RA ON must therefore be treated as a causal experimental control rather than assuming block-local RA"
+    "current_ra_architecture_fact": "at the P3 anchor analyze_allocation already consumes whole-function CFG liveness, builds vreg interference, and performs deterministic greedy coloring; RA OFF vs RA ON is a causal experimental control rather than proof that RA is primary"
   },
   "research_direction": {
-    "name": "global-value-residency-and-memory-materialization",
-    "central_question": "Where is location flexibility first lost and why does a logical value become memory-identified?",
-    "default_hypothesis": "logical values should remain location-flexible until memory is semantically or resource-wise required",
-    "zettel_count": 15,
+    "primary": "global-value-residency-and-memory-materialization",
+    "primary_question": "Where is location flexibility first lost and why does a logical value become memory-identified?",
+    "ternary": "ternary-virtualization-and-representation-flexibility",
+    "ternary_question": "Can S3 keep trit semantics abstract long enough to choose a cheaper physical representation/control realization?",
+    "information": "compiler-information-and-proof-preservation",
+    "information_question": "Which useful semantic/representation/proof facts are irreversibly lost at each lowering boundary?",
+    "three_flexibility_dimensions": [
+      "LOCATION_FLEXIBILITY",
+      "REPRESENTATION_FLEXIBILITY",
+      "PROOF_KNOWLEDGE_FLEXIBILITY"
+    ],
+    "zettel_count": 27,
     "candidate_models": [
       "monotone data-flow / fixed-point liveness",
       "residence lattice / reduced product abstract domain",
@@ -43,7 +51,32 @@
       "exact bounded optimization oracle",
       "Lagrangian relaxation of shared register-capacity coupling into priced per-value min-cut subproblems",
       "submodular/matroid structure tests",
-      "information-loss accounting"
+      "information-loss accounting",
+      "semantic ternary virtualization",
+      "cost-optimal ternary operation-basis synthesis",
+      "finite-state/ternary control minimization",
+      "ternary representation conversion graph / DP",
+      "bounded proof/fact preservation across compiler phases",
+      "information-lossless lowering contracts"
+    ]
+  },
+  "literature_corpus": {
+    "pdfs_not_stored_in_repo": true,
+    "sources_cataloged": [
+      "Aho/Lam/Sethi/Ullman — Compilers 2e",
+      "Davey/Priestley — Introduction to Lattices and Order 2e",
+      "Ahuja/Magnanti/Orlin — Network Flows",
+      "Nielson/Nielson/Hankin — Principles of Program Analysis",
+      "Schrijver — Combinatorial Optimization A-C",
+      "Gottwald — A Treatise on Many-Valued Logics",
+      "Kohavi/Jha — Switching and Finite Automata Theory 3e",
+      "Cover/Thomas — Elements of Information Theory",
+      "Knuth — TAOCP 4A Combinatorial Algorithms Part 1",
+      "Graham/Knuth/Patashnik — Concrete Mathematics 2e",
+      "Hopcroft/Motwani/Ullman — Introduction to Automata Theory, Languages, and Computation 2e",
+      "Roland/Shiman — Strategic Computing",
+      "Enayat/Kalantari/Moniri — Logic in Tehran",
+      "Hafiz Md. Hasan Babu — Multiple-Valued Computing in Quantum Molecular Biology Vol. 2"
     ]
   },
   "prototypes": {
@@ -58,7 +91,11 @@
     "submodularity_counterexample_checker": true,
     "s3_assembly_adapter": true,
     "s3_value_trace_scaffold": true,
-    "assembly_trace_cli": true
+    "assembly_trace_cli": true,
+    "ternary_semantics_mapper": false,
+    "ternary_basis_oracle": false,
+    "ternary_representation_oracle": false,
+    "information_loss_boundary_auditor": false
   },
   "hard_rules": {
     "research_branch_direct_merge_to_main": false,
@@ -67,17 +104,22 @@
     "benchmark_special_cases": false,
     "p5_stacking": false,
     "automatic_shutdown_authorized": false,
-    "full_suite_policy": "production final candidate only; not routine research iteration"
+    "full_suite_policy": "production final candidate only; not routine research iteration",
+    "ternary_semantics_policy": "do not change S3 semantics merely to match a named many-valued logic",
+    "information_metric_policy": "do not assign Shannon entropy/mutual-information metrics without a defined probabilistic model",
+    "quantum_dna_policy": "multiple-valued quantum/DNA sources are architecture inspiration only; no such backend is implied"
   },
   "next_actions": [
-    "Run research-lab/prototypes/demo.py and capacity_demo.py in a local checkout of the research branch",
-    "Execute S3-EXP-0002 RA OFF vs RA ON on identical workloads before blaming allocator quality",
-    "Use s3_adapter.py to cross-check generic liveness against production liveness",
-    "Build a >=50-value real S3 corpus and extend attribution earlier than AssemblyFunction",
+    "Run research-lab/prototypes/demo.py and capacity_demo.py in a local checkout",
+    "Execute S3-EXP-0002 RA OFF vs RA ON on identical workloads",
+    "Build a >=50-value real S3 corpus and run S3-EXP-0005 plus S3-EXP-0013 boundary attribution",
+    "Run S3-EXP-0009 to pin exact existing S3 trit semantics before adopting any named ternary logic",
+    "Prototype S3-EXP-0010 ternary operation-basis exact oracle",
+    "Prototype S3-EXP-0012 representation conversion graph on bounded linear/expression cases",
+    "Test S3-EXP-0011 state minimization on effect-free ternary control probes before real programs",
     "Run S3-EXP-0001 at larger deterministic sample counts",
-    "Run S3-EXP-0003 Lagrangian capacity relaxation against the exact multi-value oracle and measure dual/primal gaps",
-    "Compare forward-availability/backward-necessity placement against the exact oracle",
-    "Find minimal counterexamples for matroid exchange and submodularity",
-    "Do not choose a production P4 implementation until the winning causal model is measured"
+    "Run S3-EXP-0003 Lagrangian capacity relaxation against exact multi-value oracle",
+    "Compare forward-availability/backward-necessity placement against exact oracle",
+    "Do not select production P4 until causal frame-traffic evidence and the new information/representation evidence are reconciled"
   ]
 }
