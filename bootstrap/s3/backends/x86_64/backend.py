@@ -18,7 +18,10 @@ class X8664Backend:
     max_memory_trits: int = DEFAULT_MAX_MEMORY_TRITS
     max_frames: int = DEFAULT_MAX_FRAMES
     max_instructions: int = DEFAULT_MAX_INSTRUCTIONS
-    register_allocation: bool = False
+    # Native code keeps eligible values location-flexible by default.  The
+    # explicit False mode remains available for stack-backed diagnostics and
+    # conservative compatibility probes.
+    register_allocation: bool = True
 
     def generate(self, program: AssemblyProgram) -> str:
         if isinstance(self.max_instructions, bool) or not isinstance(self.max_instructions, int):
