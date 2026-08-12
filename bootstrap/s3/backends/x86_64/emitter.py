@@ -23,6 +23,7 @@ from .registers import (
 from ...numeric_abi import SYSV_FLOAT_ARGUMENT_REGISTERS
 from .runtime import render_runtime
 from .allocation import AllocationPlan, analyze_allocation
+from .residence import analyze_cross_block_residence
 
 
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -122,6 +123,7 @@ class X8664Emitter:
         self.current_instruction: AssemblyInstruction | None = None
         self.functions = {function.name: function for function in program.functions}
         self.current_plan: AllocationPlan | None = None
+        self._physical_residence_active = False
         self.local_aliases: dict[int, int] = {}
         self.local_move_future_registers: set[int] = set()
 
@@ -148,8 +150,10 @@ class X8664Emitter:
             self.current_plan = plan
             layout = layout_frame(function, plan.used_physical_registers)
         else:
-            self.current_plan = None
-            layout = layout_frame(function)
+            plan = analyze_cross_block_residence(function)
+            self.current_plan = plan if plan.used_physical_registers else None
+            layout = layout_frame(function, plan.used_physical_registers)
+        self._physical_residence_active = self.current_plan is not None
         symbol = function_symbol(function)
         frame_failure = self._new_failure_site(
             category="frame limit",
@@ -176,7 +180,7 @@ class X8664Emitter:
         ]
         if layout.frame_size:
             lines.append(f"    sub rsp, {layout.frame_size}")
-        if self.register_allocation and self.current_plan:
+        if self._physical_residence_active and self.current_plan:
             for phys in CALLEE_SAVED_ALLOCATABLE_REGISTERS:
                 if phys not in self.current_plan.used_physical_registers:
                     continue
@@ -222,7 +226,7 @@ class X8664Emitter:
             lines.append(
                 f"    mov qword ptr {_address(layout.hidden_sret_pointer)}, rdi"
             )
-        if not self.register_allocation or not self.current_plan:
+        if not self._physical_residence_active or not self.current_plan:
             for position, parameter in enumerate(function.parameters):
                 slot = layout.register(parameter.register)
                 native_position = position + (1 if function.result_width > 1 else 0)
@@ -257,7 +261,7 @@ class X8664Emitter:
                         f"    mov qword ptr {_address(slot.value)}, rax",
                     )
                 )
-        if self.register_allocation and self.current_plan:
+        if self._physical_residence_active and self.current_plan:
             for parameter in function.parameters:
                 phys = self.current_plan.physical_register(parameter.register)
                 if phys is not None:
@@ -294,7 +298,7 @@ class X8664Emitter:
                     f"    mov rax, qword ptr [rbp + {caller_offset}]",
                     f"    mov qword ptr {_address(slot.value)}, rax",
                 ))
-        if self.register_allocation and self.current_plan:
+        if self._physical_residence_active and self.current_plan:
             for parameter in function.parameters:
                 physical = self.current_plan.physical_register(parameter.register)
                 if physical is not None:
@@ -310,7 +314,7 @@ class X8664Emitter:
         layout: FrameLayout,
     ) -> list[str]:
         lines: list[str] = []
-        preserve_metadata_scratch = self.register_allocation and bool(layout.memories)
+        preserve_metadata_scratch = self._physical_residence_active and bool(layout.memories)
         if preserve_metadata_scratch:
             lines.extend(("    mov r10, rdi", "    mov r11, rcx"))
         for slot in layout.registers:
@@ -352,7 +356,7 @@ class X8664Emitter:
             f"    cmp byte ptr {_address(slot.initialized)}, 0",
             f"    je {failure}",
         ]
-        phys = self.current_plan.physical_register(register) if (self.register_allocation and self.current_plan) else None
+        phys = self.current_plan.physical_register(register) if (self._physical_residence_active and self.current_plan) else None
         if phys is None:
             lines.append(f"    mov {target}, qword ptr {_address(slot.value)}")
         elif phys != target:
@@ -366,7 +370,7 @@ class X8664Emitter:
         source: str,
     ) -> list[str]:
         slot = layout.register(register)
-        phys = self.current_plan.physical_register(register) if (self.register_allocation and self.current_plan) else None
+        phys = self.current_plan.physical_register(register) if (self._physical_residence_active and self.current_plan) else None
         lines = []
         if phys is None:
             lines.append(f"    mov qword ptr {_address(slot.value)}, {source}")
@@ -386,7 +390,7 @@ class X8664Emitter:
             f"    cmp byte ptr {_address(slot.initialized)}, 0",
             f"    je {failure}",
         ]
-        phys = self.current_plan.physical_register(register) if (self.register_allocation and self.current_plan) else None
+        phys = self.current_plan.physical_register(register) if (self._physical_residence_active and self.current_plan) else None
         if phys is not None:
             lines.append(f"    mov qword ptr {_address(slot.value)}, {phys}")
         return lines
@@ -411,7 +415,7 @@ class X8664Emitter:
     def _call_survivor_physicals(
         self, instruction: AssemblyInstruction
     ) -> tuple[str, ...]:
-        if not self.register_allocation or not self.current_plan:
+        if not self._physical_residence_active or not self.current_plan:
             return ()
         physicals = {
             self.current_plan.physical_register(register)
@@ -420,7 +424,7 @@ class X8664Emitter:
         return tuple(phys for phys in CALLER_SAVED_ALLOCATABLE_REGISTERS if phys in physicals)
 
     def _used_caller_saved_physicals(self) -> tuple[str, ...]:
-        if not self.register_allocation or not self.current_plan:
+        if not self._physical_residence_active or not self.current_plan:
             return ()
         return tuple(
             phys for phys in CALLER_SAVED_ALLOCATABLE_REGISTERS
@@ -428,7 +432,7 @@ class X8664Emitter:
         )
 
     def _restore_callee_saved(self, layout: FrameLayout) -> list[str]:
-        if not self.register_allocation or not self.current_plan:
+        if not self._physical_residence_active or not self.current_plan:
             return []
         lines = []
         for phys in CALLEE_SAVED_ALLOCATABLE_REGISTERS:
@@ -1010,7 +1014,7 @@ class X8664Emitter:
         for register in reversed(stack_arguments):
             lines.extend(
                 self._load_snapshot(layout, register, "rax")
-                if self.register_allocation
+                if self._physical_residence_active
                 else self._read_register(layout, register, "rax")
             )
             lines.append("    push rax")
@@ -1021,7 +1025,7 @@ class X8664Emitter:
         ):
             lines.extend(
                 self._load_snapshot(layout, register, target)
-                if self.register_allocation
+                if self._physical_residence_active
                 else self._read_register(layout, register, target)
             )
         assert instruction.callee is not None
@@ -1029,7 +1033,7 @@ class X8664Emitter:
         cleanup = (len(stack_arguments) + padding) * 8
         if cleanup:
             lines.append(f"    add rsp, {cleanup}")
-        if self.register_allocation:
+        if self._physical_residence_active:
             lines.extend(self._restore_caller_saved(layout, survivor_physicals))
         lines.extend(self._write_register(layout, destination, "rax"))
         return lines
@@ -1058,7 +1062,7 @@ class X8664Emitter:
         padding = 1 if len(stack_arguments) % 2 else 0
         survivor_physicals = self._call_survivor_physicals(instruction)
         lines: list[str] = []
-        if self.register_allocation:
+        if self._physical_residence_active:
             for register in arguments:
                 lines.extend(self._snapshot_register(layout, register))
             lines.extend(self._save_caller_saved(layout, survivor_physicals))
@@ -1067,7 +1071,7 @@ class X8664Emitter:
         for register in reversed(stack_arguments):
             lines.extend(
                 self._load_snapshot(layout, register, "rax")
-                if self.register_allocation
+                if self._physical_residence_active
                 else self._read_register(layout, register, "rax")
             )
             lines.append("    push rax")
@@ -1075,14 +1079,14 @@ class X8664Emitter:
             if is_float:
                 lines.extend(
                     self._load_snapshot(layout, register, "rax")
-                    if self.register_allocation
+                    if self._physical_residence_active
                     else self._read_register(layout, register, "rax")
                 )
                 lines.append(f"    movq {target}, rax")
             else:
                 lines.extend(
                     self._load_snapshot(layout, register, target)
-                    if self.register_allocation
+                    if self._physical_residence_active
                     else self._read_register(layout, register, target)
                 )
         lines.append(f"    call {function_symbol(callee)}")
@@ -1091,7 +1095,7 @@ class X8664Emitter:
             lines.append(f"    add rsp, {cleanup}")
         if callee.return_type is AssemblyType.F64:
             lines.append("    movq rax, xmm0")
-        if self.register_allocation:
+        if self._physical_residence_active:
             lines.extend(self._restore_caller_saved(layout, survivor_physicals))
         lines.extend(self._write_register(layout, destination, "rax"))
         return lines
@@ -1111,7 +1115,7 @@ class X8664Emitter:
         padding = 1 if (pushed_words + 1) % 2 else 0
         survivor_physicals = self._call_survivor_physicals(instruction)
         lines: list[str] = []
-        if self.register_allocation:
+        if self._physical_residence_active:
             for register in arguments:
                 lines.extend(self._snapshot_register(layout, register))
             lines.extend(self._save_caller_saved(layout, survivor_physicals))
@@ -1122,7 +1126,7 @@ class X8664Emitter:
         for register in reversed(stack_arguments):
             lines.extend(
                 self._load_snapshot(layout, register, "rax")
-                if self.register_allocation
+                if self._physical_residence_active
                 else self._read_register(layout, register, "rax")
             )
             lines.append("    push rax")
@@ -1133,12 +1137,12 @@ class X8664Emitter:
         ):
             lines.extend(
                 self._load_snapshot(layout, register, target)
-                if self.register_allocation
+                if self._physical_residence_active
                 else self._read_register(layout, register, target)
             )
         assert instruction.callee is not None
         lines.append(f"    call {function_symbol(callee)}")
-        if self.register_allocation:
+        if self._physical_residence_active:
             lines.extend(self._restore_caller_saved(layout, survivor_physicals))
         if destinations:
             for index, destination in enumerate(destinations):
