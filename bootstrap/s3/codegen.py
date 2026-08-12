@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from dataclasses import replace
-
 from .diagnostics import (
     DiagnosticCategory,
     DiagnosticCode,
@@ -69,56 +67,6 @@ OPCODE_MAP = {
     IROpcode.SLICE_LOAD: AssemblyOpcode.TSLOAD,
     IROpcode.SLICE_STORE: AssemblyOpcode.TSSTORE,
 }
-
-
-def _coalesce_local_moves(
-    blocks: tuple[AssemblyBlock, ...],
-    register_types: tuple[tuple[int, AssemblyType], ...],
-) -> tuple[AssemblyBlock, ...]:
-    """Remove SSA-local copies without crossing a basic-block boundary.
-
-    Assembly registers are single-assignment values.  A TMOV therefore only
-    creates a second name for an already initialized value; keeping both
-    names forces the default emitter to materialize and reload the value.
-    The alias is deliberately limited to the remainder of one block so no
-    control-flow, call, or data-flow analysis is smuggled into codegen.
-    """
-    types = dict(register_types)
-    result: list[AssemblyBlock] = []
-    for block_index, block in enumerate(blocks):
-        future_registers = {
-            register
-            for future_block in blocks[block_index + 1 :]
-            for future_instruction in future_block.instructions
-            for register in future_instruction.registers
-        }
-        aliases: dict[int, int] = {}
-
-        def resolve(register: int) -> int:
-            path: list[int] = []
-            while register in aliases:
-                path.append(register)
-                register = aliases[register]
-            for item in path:
-                aliases[item] = register
-            return register
-
-        rewritten: list[AssemblyInstruction] = []
-        for instruction in block.instructions:
-            registers = tuple(resolve(register) for register in instruction.registers)
-            current = replace(instruction, registers=registers)
-            if (
-                current.opcode is AssemblyOpcode.TMOV
-                and len(current.registers) == 2
-                and current.registers[0] not in future_registers
-                and types.get(current.registers[0]) is not AssemblyType.REFERENCE
-                and types.get(current.registers[0]) is types.get(current.registers[1])
-            ):
-                aliases[current.registers[0]] = resolve(current.registers[1])
-                continue
-            rewritten.append(current)
-        result.append(AssemblyBlock(block.label, tuple(rewritten)))
-    return tuple(result)
 
 
 def _generate_instruction(instruction: IRInstruction) -> AssemblyInstruction:
@@ -246,18 +194,6 @@ def generate_assembly(ir_program: IRProgram) -> AssemblyProgram:
         parameter_registers = {
             parameter.register for parameter in function.parameters
         }
-        register_types = tuple(
-            (register.index, TYPE_MAP[register.type])
-            for register in function.registers
-            if register.index not in parameter_registers
-        )
-        blocks = tuple(
-            AssemblyBlock(
-                block.name,
-                tuple(_generate_instruction(instruction) for instruction in block.instructions),
-            )
-            for block in function.blocks
-        )
         functions.append(
             AssemblyFunction(
                 function.name,
@@ -272,14 +208,20 @@ def generate_assembly(ir_program: IRProgram) -> AssemblyProgram:
                     )
                     for parameter in function.parameters
                 ),
-                register_types,
-                _coalesce_local_moves(
-                    blocks,
-                    register_types
-                    + tuple(
-                        (parameter.register, TYPE_MAP[parameter.type])
-                        for parameter in function.parameters
-                    ),
+                tuple(
+                    (register.index, TYPE_MAP[register.type])
+                    for register in function.registers
+                    if register.index not in parameter_registers
+                ),
+                tuple(
+                    AssemblyBlock(
+                        block.name,
+                        tuple(
+                            _generate_instruction(instruction)
+                            for instruction in block.instructions
+                        ),
+                    )
+                    for block in function.blocks
                 ),
                 tuple(
                     AssemblyMemoryObject(

@@ -8,7 +8,9 @@
     .register r4, tryte
 .label entry
     TCONST r0, 10 ; source=2:16:35
+    TMOV   r1, r0 ; source=2:5:24
     TCONST r2, 4 ; source=3:16:53
+    TMOV   r3, r2 ; source=3:5:42
     TCONST r4, 6 ; source=4:14:68
     TRET   r4 ; source=4:5:59
 .end
