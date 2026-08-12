@@ -1,5 +1,5 @@
 {
-  "schema_version": 4,
+  "schema_version": 5,
   "lab": {
     "name": "S3 Research Lab — Zettelkasten + Compiler Optimization",
     "branch": "research/zettelkasten-lab-20260812",
@@ -13,44 +13,85 @@
     "p1": "COMPLETE",
     "p2": "COMPLETE",
     "p3": "COMPLETE",
+    "p4": "COMPLETE",
     "p3_pr": 169,
     "p3_implementation_head": "4643f60176aec68c7a4d7203f3623bde8bac2ae4",
     "p3_merge_commit": "a83e25c3364302227694399ebe12946f887c0ead",
-    "p4_started": false
+    "p4_pr": 170,
+    "p4_base_sha": "a83e25c3364302227694399ebe12946f887c0ead",
+    "p4_implementation_head": "59df1d0f9ab9147b8d7f71a1db395c5fab560171",
+    "p4_merge_commit": "a0b694fadc985c0b8e0944fb7844e14f72a838d8",
+    "main_after_p4": "a0b694fadc985c0b8e0944fb7844e14f72a838d8",
+    "p5_started": false
+  },
+  "p4_result": {
+    "root_cause_identified": true,
+    "earliest_memory_identity_layer": "emitter frame canonicalization after the default backend selected RA_OFF",
+    "earliest_location_flexibility_loss": "X8664Backend.register_allocation default false",
+    "selected_model": "existing liveness-backed global value residency with explicit stack-backed opt-out",
+    "selected_transformation": "make register allocation the native default while preserving register_allocation=false fallback",
+    "ra_primary_cause": false,
+    "target_opportunities": 13,
+    "target_transformed": 13,
+    "coverage_ratio": 1.0,
+    "frame_loads_before": 1549,
+    "frame_loads_after": 491,
+    "frame_stores_before": 1520,
+    "frame_stores_after": 471,
+    "total_frame_accesses_before": 9282,
+    "total_frame_accesses_after": 7175,
+    "metadata_accesses_before": 5638,
+    "metadata_accesses_after": 5638,
+    "text_bytes_before": 313169,
+    "text_bytes_after": 305543,
+    "static_instructions_before": 53767,
+    "static_instructions_after": 53922,
+    "gcc_relative_geo_before": 34.708283588,
+    "gcc_relative_geo_after": 38.975981467,
+    "absolute_s3_ns_per_parse_before": 8890.413541,
+    "absolute_s3_ns_per_parse_after": 8405.052702,
+    "absolute_s3_runtime_delta_percent": -5.46,
+    "compiler_time_delta_percent": -2.9208848,
+    "full_suite_exit": 0,
+    "ci": "PASS",
+    "residual_primary_bottleneck": "REPEATED_MEMORY_STATE_MATERIALIZATION",
+    "next_recommended_target": "SSA_DESTRUCTION_AND_MEMORY_STATE_METADATA_STAGING"
   },
   "established_findings": {
     "post_m138": "massive representation/lowering expansion; backend/codegen immaturity rather than language-fundamental cost",
     "p1": "bounds/control lowering compressed branches and code size but did not reduce load/store count",
     "p2": "same-basic-block scalar forwarding is safe/useful but removes only limited frame traffic",
     "p3": "safe cross-block scalar residence removes targeted frame moves but large representative global counters remain effectively unchanged",
-    "primary_remaining_bottleneck": "frame canonicalization and cross-block store/reload traffic",
-    "secondary_remaining_bottleneck": "phi/SSA staging",
-    "ra_primary_cause": "NOT_ESTABLISHED",
-    "current_ra_architecture_fact": "at the P3 anchor analyze_allocation already consumes whole-function CFG liveness, builds vreg interference, and performs deterministic greedy coloring; RA OFF vs RA ON is a causal experimental control rather than proof that RA is primary"
+    "p4": "the existing whole-function liveness-backed allocator was already capable of global value residency but register_allocation defaulted false; making it the native default cut direct frame loads/stores substantially without an allocator redesign",
+    "ra_primary_cause": "NO — allocator enablement/default policy was a major cause; allocator algorithm quality was not established as primary",
+    "current_primary_remaining_bottleneck": "repeated memory-state materialization",
+    "current_secondary_target": "SSA destruction and memory-state metadata staging",
+    "metric_interpretation": "P4 external GCC-relative slowdown worsened because the comparator denominator varied, while absolute S3 ns/parse improved 5.46%; keep causal structural, absolute S3, and comparator-relative metrics separate"
   },
   "research_direction": {
-    "primary": "global-value-residency-and-memory-materialization",
-    "primary_question": "Where is location flexibility first lost and why does a logical value become memory-identified?",
+    "primary": "memory-state-materialization-and-ssa-staging",
+    "primary_question": "Why are memory/initialized-state metadata repeatedly materialized after ordinary value residency was improved, and what fraction originates in SSA destruction versus later metadata staging?",
     "ternary": "ternary-virtualization-and-representation-flexibility",
     "ternary_question": "Can S3 keep trit semantics abstract long enough to choose a cheaper physical representation/control realization?",
     "information": "compiler-information-and-proof-preservation",
-    "information_question": "Which useful semantic/representation/proof facts are irreversibly lost at each lowering boundary?",
+    "information_question": "Which semantic, representation, memory-validity and proof facts are irreversibly lost or repeatedly re-materialized at each lowering boundary?",
     "three_flexibility_dimensions": [
       "LOCATION_FLEXIBILITY",
       "REPRESENTATION_FLEXIBILITY",
       "PROOF_KNOWLEDGE_FLEXIBILITY"
     ],
-    "zettel_count": 27,
+    "zettel_count": 31,
     "candidate_models": [
+      "memory-state metadata provenance analysis",
+      "SSA destruction / phi staging attribution",
       "monotone data-flow / fixed-point liveness",
       "residence lattice / reduced product abstract domain",
       "lazy materialization",
       "forward availability + backward memory necessity",
       "partial materialization elimination",
       "min-cut or min-cost materialization placement",
-      "exact bounded optimization oracle",
-      "Lagrangian relaxation of shared register-capacity coupling into priced per-value min-cut subproblems",
-      "submodular/matroid structure tests",
+      "exact bounded placement oracle",
+      "Lagrangian relaxation of shared register-capacity coupling",
       "information-loss accounting",
       "semantic ternary virtualization",
       "cost-optimal ternary operation-basis synthesis",
@@ -62,22 +103,8 @@
   },
   "literature_corpus": {
     "pdfs_not_stored_in_repo": true,
-    "sources_cataloged": [
-      "Aho/Lam/Sethi/Ullman — Compilers 2e",
-      "Davey/Priestley — Introduction to Lattices and Order 2e",
-      "Ahuja/Magnanti/Orlin — Network Flows",
-      "Nielson/Nielson/Hankin — Principles of Program Analysis",
-      "Schrijver — Combinatorial Optimization A-C",
-      "Gottwald — A Treatise on Many-Valued Logics",
-      "Kohavi/Jha — Switching and Finite Automata Theory 3e",
-      "Cover/Thomas — Elements of Information Theory",
-      "Knuth — TAOCP 4A Combinatorial Algorithms Part 1",
-      "Graham/Knuth/Patashnik — Concrete Mathematics 2e",
-      "Hopcroft/Motwani/Ullman — Introduction to Automata Theory, Languages, and Computation 2e",
-      "Roland/Shiman — Strategic Computing",
-      "Enayat/Kalantari/Moniri — Logic in Tehran",
-      "Hafiz Md. Hasan Babu — Multiple-Valued Computing in Quantum Molecular Biology Vol. 2"
-    ]
+    "canonical_registry": "research-lab/sources/REGISTRY.md",
+    "canonical_source_count": 25
   },
   "prototypes": {
     "generic_cfg": true,
@@ -95,7 +122,9 @@
     "ternary_semantics_mapper": false,
     "ternary_basis_oracle": false,
     "ternary_representation_oracle": false,
-    "information_loss_boundary_auditor": false
+    "information_loss_boundary_auditor": false,
+    "memory_state_metadata_auditor": false,
+    "ssa_destruction_attribution_tool": false
   },
   "hard_rules": {
     "research_branch_direct_merge_to_main": false,
@@ -107,19 +136,19 @@
     "full_suite_policy": "production final candidate only; not routine research iteration",
     "ternary_semantics_policy": "do not change S3 semantics merely to match a named many-valued logic",
     "information_metric_policy": "do not assign Shannon entropy/mutual-information metrics without a defined probabilistic model",
-    "quantum_dna_policy": "multiple-valued quantum/DNA sources are architecture inspiration only; no such backend is implied"
+    "quantum_dna_policy": "multiple-valued quantum/DNA sources are architecture inspiration only; no such backend is implied",
+    "metric_policy": "separate direct causal structural metrics, absolute S3 runtime, and external comparator-relative ratios"
   },
   "next_actions": [
-    "Run research-lab/prototypes/demo.py and capacity_demo.py in a local checkout",
-    "Execute S3-EXP-0002 RA OFF vs RA ON on identical workloads",
-    "Build a >=50-value real S3 corpus and run S3-EXP-0005 plus S3-EXP-0013 boundary attribution",
+    "Reconcile P4 reports into all future production planning; do not repeat S3-EXP-0002 as an unresolved question",
+    "Build a provenance audit for the 5638 unchanged metadata accesses and determine semantically mandatory versus repeated avoidable state realization",
+    "Measure SSA destruction / phi / loop-carried staging separately from metadata traffic before defining P5",
+    "Run S3-EXP-0013 information-loss boundary audit with memory-validity/initialization-state facts included",
     "Run S3-EXP-0009 to pin exact existing S3 trit semantics before adopting any named ternary logic",
     "Prototype S3-EXP-0010 ternary operation-basis exact oracle",
-    "Prototype S3-EXP-0012 representation conversion graph on bounded linear/expression cases",
-    "Test S3-EXP-0011 state minimization on effect-free ternary control probes before real programs",
-    "Run S3-EXP-0001 at larger deterministic sample counts",
-    "Run S3-EXP-0003 Lagrangian capacity relaxation against exact multi-value oracle",
-    "Compare forward-availability/backward-necessity placement against exact oracle",
-    "Do not select production P4 until causal frame-traffic evidence and the new information/representation evidence are reconciled"
+    "Prototype S3-EXP-0012 representation conversion graph on bounded cases",
+    "Test S3-EXP-0011 state minimization on effect-free ternary control probes",
+    "Continue min-cut/Lagrangian/oracle work as research, but do not promote it merely because P4 used global residency terminology",
+    "Do not select production P5 until repeated metadata materialization and SSA-destruction attribution are separated quantitatively"
   ]
 }
