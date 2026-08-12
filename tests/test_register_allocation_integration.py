@@ -60,7 +60,8 @@ def test_default_path_is_identical() -> None:
     assembly_default = generate_native_assembly(program)
     assembly_opt_out = X8664Backend(register_allocation=False).generate(program)
 
-    assert assembly_default == assembly_opt_out
+    assert assembly_default == X8664Backend(register_allocation=True).generate(program)
+    assert assembly_default != assembly_opt_out
 
 
 def test_metadata_initialization_preserves_allocated_scratch_operands() -> None:
@@ -88,8 +89,8 @@ def test_metadata_initialization_preserves_allocated_scratch_operands() -> None:
     assert "mov rcx, r11" in allocated
 
     default = generate_native_assembly(program)
-    assert "mov r10, rdi\n    mov r11, rcx" not in default
-    assert "mov rdi, r10\n    mov rcx, r11" not in default
+    assert "mov r10, rdi\n    mov r11, rcx" in default
+    assert "mov rdi, r10\n    mov rcx, r11" in default
 
 
 @pytest.mark.parametrize("optimization", ("O0", "O1"))

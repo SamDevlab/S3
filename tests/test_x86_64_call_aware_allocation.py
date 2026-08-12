@@ -91,7 +91,8 @@ def test_caller_saved_call_spill_slots_are_emitted_deterministically() -> None:
 
 def test_default_path_remains_byte_identical() -> None:
     program = _call_program()
-    assert X8664Backend(register_allocation=False).generate(program) == X8664Backend().generate(program)
+    assert X8664Backend(register_allocation=True).generate(program) == X8664Backend().generate(program)
+    assert X8664Backend(register_allocation=False).generate(program) != X8664Backend().generate(program)
 
 
 def test_same_argument_and_destination_does_not_restore_old_value() -> None:

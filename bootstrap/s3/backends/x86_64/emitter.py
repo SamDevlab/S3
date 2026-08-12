@@ -23,6 +23,7 @@ from .registers import (
 from ...numeric_abi import SYSV_FLOAT_ARGUMENT_REGISTERS
 from .runtime import render_runtime
 from .allocation import AllocationPlan, analyze_allocation
+from .liveness import analyze_liveness
 from .residence import analyze_cross_block_residence
 
 
@@ -126,6 +127,7 @@ class X8664Emitter:
         self._physical_residence_active = False
         self.local_aliases: dict[int, int] = {}
         self.local_move_future_registers: set[int] = set()
+        self._entry_live_registers: frozenset[int] = frozenset()
 
     def emit(self) -> str:
         lines = [
@@ -145,6 +147,11 @@ class X8664Emitter:
     def _emit_function(self, function: AssemblyFunction) -> list[str]:
         if function.external:
             return []
+        self._entry_live_registers = (
+            analyze_liveness(function).blocks[function.blocks[0].label].live_in
+            if function.blocks
+            else frozenset()
+        )
         if self.register_allocation:
             plan = analyze_allocation(function)
             self.current_plan = plan
@@ -263,6 +270,8 @@ class X8664Emitter:
                 )
         if self._physical_residence_active and self.current_plan:
             for parameter in function.parameters:
+                if parameter.register not in self._entry_live_registers:
+                    continue
                 phys = self.current_plan.physical_register(parameter.register)
                 if phys is not None:
                     slot = layout.register(parameter.register)
@@ -300,6 +309,8 @@ class X8664Emitter:
                 ))
         if self._physical_residence_active and self.current_plan:
             for parameter in function.parameters:
+                if parameter.register not in self._entry_live_registers:
+                    continue
                 physical = self.current_plan.physical_register(parameter.register)
                 if physical is not None:
                     slot = layout.register(parameter.register)
@@ -345,8 +356,7 @@ class X8664Emitter:
         register: int,
         target: str,
     ) -> list[str]:
-        while register in self.local_aliases:
-            register = self.local_aliases[register]
+        register = self._resolve_local_alias(register)
         slot = layout.register(register)
         failure = self._instruction_failure(
             "uninitialized register",
@@ -381,6 +391,7 @@ class X8664Emitter:
 
     def _snapshot_register(self, layout: FrameLayout, register: int) -> list[str]:
         """Validate and snapshot a logical argument before ABI registers change."""
+        register = self._resolve_local_alias(register)
         slot = layout.register(register)
         failure = self._instruction_failure(
             "uninitialized register",
@@ -395,8 +406,18 @@ class X8664Emitter:
             lines.append(f"    mov qword ptr {_address(slot.value)}, {phys}")
         return lines
 
-    @staticmethod
-    def _load_snapshot(layout: FrameLayout, register: int, target: str) -> list[str]:
+    def _resolve_local_alias(self, register: int) -> int:
+        while register in self.local_aliases:
+            register = self.local_aliases[register]
+        return register
+
+    def _load_snapshot(
+        self,
+        layout: FrameLayout,
+        register: int,
+        target: str,
+    ) -> list[str]:
+        register = self._resolve_local_alias(register)
         slot = layout.register(register)
         return [f"    mov {target}, qword ptr {_address(slot.value)}"]
 
