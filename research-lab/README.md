@@ -7,12 +7,12 @@ It is intentionally isolated on the branch `research/zettelkasten-lab-20260812`.
 
 The production optimization campaign P1–P3 showed that local and limited cross-block emitter improvements are real but insufficient to move the large global frame/load-store counters. The research problem is now broader: preserve useful logical-value information long enough for later compiler phases to make better representation and placement decisions.
 
-This lab exists to keep that research durable across:
+This lab keeps that research durable across:
 
-- ChatGPT conversation migrations/context limits;
+- ChatGPT/Codex conversation migrations and context limits;
 - experimental dead ends;
 - competing mathematical models;
-- prototype implementations that are not yet production quality;
+- prototypes that are not production quality;
 - literature-derived ideas and original S3 hypotheses.
 
 ## Isolation contract
@@ -22,33 +22,38 @@ This lab exists to keep that research durable across:
 When an idea is promoted:
 
 1. reproduce/validate it here;
-2. record the evidence in the Zettelkasten;
-3. define a narrow production milestone;
+2. record evidence and counterexamples in the Zettelkasten;
+3. define one narrow production milestone;
 4. create a fresh production branch from current `origin/main`;
-5. port only the proven production-quality change;
+5. port only the proven production-quality mechanism;
 6. run normal S3 correctness/native/full-suite/CI gates there.
 
-The research branch may contain prototypes, oracles, deliberately slow exact algorithms, rejected experiments, and analysis tooling.
+The research branch may contain prototypes, exact-but-exponential oracles, rejected experiments, and analysis tooling.
 
-## Directory map
+## Durable entry points
 
 ```text
 research-lab/
 ├── README.md
 ├── HANDOFF.md
 ├── STATE.json
+├── NEW_CHAT_PROMPT.md
 ├── RESEARCH_PROTOCOL.md
+├── ROADMAP.md
+├── DECISIONS.md
+├── SESSION_LOG.md
 ├── sources/
 │   └── README.md
 ├── zettelkasten/
 │   ├── README.md
 │   ├── INDEX.md
 │   ├── TEMPLATE.md
-│   └── notes/
+│   └── notes/S3-ZK-*.md
 ├── hypotheses/
 │   └── P4_GLOBAL_VALUE_RESIDENCY.md
 ├── experiments/
-│   └── README.md
+│   ├── README.md
+│   └── S3-EXP-*.md
 └── prototypes/
     ├── README.md
     ├── cfg.py
@@ -56,33 +61,60 @@ research-lab/
     ├── residence_lattice.py
     ├── materialization_cut.py
     ├── exact_oracle.py
-    └── demo.py
+    ├── combinatorial_checks.py
+    ├── lagrangian_capacity.py
+    ├── multivalue_oracle.py
+    ├── s3_adapter.py
+    ├── value_trace.py
+    ├── trace_cli.py
+    ├── demo.py
+    └── capacity_demo.py
 ```
+
+GitHub issue `#171` is the durable external locator for this lab.
 
 ## Core research question
 
 > At what earliest compiler phase does an S3 logical value unnecessarily lose location flexibility and acquire memory/frame identity?
 
-The primary architecture hypothesis is an inversion of the current default:
+Primary architecture hypothesis:
 
 ```text
 OLD MENTAL MODEL
 logical value -> frame identity -> occasionally kept in a register
 
 RESEARCH MODEL
-logical value -> location-flexible -> register | memory | rematerialize
-                                      only materialize when required
+logical value -> location-flexible
+              -> analyze constraints/liveness/cost
+              -> register | memory | rematerialize
+                 materialize only when required
+```
+
+## Mathematical directions under active investigation
+
+```text
+monotone fixed-point data flow
+residence lattices / reduced products
+forward availability + backward necessity
+lazy materialization
+min-cut / minimum-cost placement
+exact bounded optimization oracles
+Lagrangian relaxation of shared register capacity
+matroid exchange structure (prove or reject)
+submodularity (prove or reject)
+location-flexibility information-loss metrics
 ```
 
 ## Research values
 
 - Semantics and safety are hard constraints.
 - Benchmark numbers are characterization, not correctness gates.
-- A beautiful mathematical model that does not improve measured compiler behavior is a rejected experiment, not a success.
+- A beautiful model that does not improve measured compiler behavior is a rejected experiment, not a success.
 - Negative results are first-class knowledge.
 - Exact/expensive algorithms are welcome as **oracles** even when unsuitable for production.
 - Preserve information as long as possible; collapse representation choices only when a later constraint requires it.
 - Measure the earliest causal layer, not only the final emitted `mov`.
+- Do not call frame traffic a true RA spill unless the allocation decision actually caused it.
 
 ## Current production anchor
 
@@ -97,4 +129,6 @@ P3_STATUS=COMPLETE
 P4_STARTED=NO
 ```
 
-See `HANDOFF.md` and `STATE.json` before continuing research in a new session.
+Important later code-inspection fact stored in `S3-ZK-0013`: at this anchor the existing allocator already consumes whole-function CFG liveness and greedily colors virtual registers. Therefore `RA OFF` vs `RA ON` is a mandatory causal control before concluding allocator quality is the dominant remaining problem.
+
+See `HANDOFF.md`, `STATE.json`, `NEW_CHAT_PROMPT.md`, and `zettelkasten/INDEX.md` before continuing research in a new session.
