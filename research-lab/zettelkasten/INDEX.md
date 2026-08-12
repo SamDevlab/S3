@@ -160,3 +160,17 @@ Current highest-value experiments:
 `S3-EXP-0002 RA OFF vs RA ON` is now `SUPPORTED_BY_P4` rather than unresolved.
 
 No production P5 implementation should be selected until metadata provenance and SSA-destruction attribution are quantitatively separated.
+
+## P5-PREWORK additions
+
+| ID | Title | Status |
+|---|---|---|
+| S3-ZK-0035 | Dynamic frequency changes the value of metadata evidence | SUPPORTED_FOR_JSMN_AND_FOCUSED_CORPORA |
+| S3-ZK-0036 | Proven initialization checks are a bounded elision population | SUPPORTED_FOR_EXACT_JSMN_CORPUS |
+| S3-ZK-0037 | Phi relevance is conditional on materialization | SUPPORTED_AS_REFINED_MODEL |
+| S3-ZK-0038 | TADDR blocks complete hosted differential closure | NEGATIVE_RESULT |
+
+P5-PREWORK did not establish a full required/avoidable partition. Only 324
+static checks and 356 JSMN dynamic checks are directly proven; the residual
+population remains UNKNOWN/UNMEASURED. The campaign decision is
+MORE_RESEARCH_REQUIRED.

@@ -1,0 +1,11 @@
+fn leaf(value: tryte) -> tryte:
+    next: tryte = value + 1
+    return next
+fn helper(value: tryte) -> tryte:
+    first: tryte = leaf(value)
+    second: tryte = leaf(first)
+    return second
+fn main() -> tryte:
+    seed: tryte = 1
+    result: tryte = helper(seed)
+    return result

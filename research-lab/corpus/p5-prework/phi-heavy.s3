@@ -1,0 +1,16 @@
+fn choose(flag: trit) -> tryte:
+    mut value: tryte = 0
+    match flag:
+        -1:
+            value = -1
+        0:
+            value = 0
+        else:
+            value = 1
+    mut index: i64 = 0
+    while index < 2:
+        value = value + 1
+        index += 1
+    return value
+fn main() -> tryte:
+    return choose(1)

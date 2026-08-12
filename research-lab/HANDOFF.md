@@ -476,3 +476,39 @@ research-lab/hypotheses/TERNARY_VIRTUALIZATION.md
 Then independently inspect current `origin/main`.
 
 Do not merge the research branch directly to main. Continue from evidence and update durable state whenever a production milestone or major research result changes.
+
+## 17. P5-PREWORK dynamic observability — 2026-08-12
+
+The P5-PREWORK campaign is research-only and complete. It reproduced the
+P5-AUDIT lexical metric exactly on origin/main at
+a0b694fadc985c0b8e0944fb7844e14f72a838d8: 5638 byte-frame lines, decomposed
+into 4589 register-initialization, 837 memory-initialization and 212 trit
+payload accesses. The true initialization-state population is 5426.
+
+Temporary emitter/runtime counters were used only in a disposable worktree
+and reverted. They recorded register/memory initialization reads and writes,
+trit payload reads/writes, function/block/opcode and observer class, with output
+isolated on Linux fd 3. Exact JSMN produced 21221 weighted initialization
+events, including 356 direct initialization-check events and 14367 allocated
+memory reset events. A deterministic repeat matched.
+
+The direct semantic classification is intentionally bounded: 324/5426 static
+accesses and 356/21221 JSMN dynamic events have proven check outcomes. The
+remaining populations are UNKNOWN/UNMEASURED, not conditionally removable.
+Focused call, reference/address, slice, numeric and phi-heavy corpora were
+collected. Native paths passed; hosted emulator differential remains partial
+because TADDR is unsupported.
+
+P5_PREWORK_STATUS=COMPLETE
+PROMOTION_DECISION=MORE_RESEARCH_REQUIRED
+P5_STARTED=NO
+P6_STARTED=NO
+PRODUCTION_CODE_COMMITTED=NO
+PRODUCTION_PR_OPENED=NO
+FULL_SUITE_RUN=NO
+BENCHMARK_RUN=NO
+SHUTDOWN_AUTHORIZED=NO
+
+Do not start production P5 from the reset hotness alone. The next research
+questions are observer-frontier closure, reset/store deadness, proof-preserving
+metadata propagation, and hosted TADDR support.

@@ -138,23 +138,39 @@ P4 means the audit must include **configuration/pass enablement** as a boundary 
 
 ### S3-EXP-0014 — Memory-state metadata provenance
 
-STATUS=SUPPORTED_FOR_P4_JSMN_STATIC_ORIGIN / DYNAMIC_NECESSITY_OPEN
+STATUS=SUPPORTED_FOR_P4_JSMN_STATIC_ORIGIN / DYNAMIC_CLASSIFICATION_PARTIAL
 
 File: `S3-EXP-0014-memory-state-metadata-provenance.md`
 
 Related: `S3-ZK-0004`, `0021`, `0022`, `0027`, `0030`.
 
-P4 measured metadata accesses unchanged at `5638 -> 5638`. P5-AUDIT reproduced the count and decomposed it into `4589` register-initialization accesses, `837` memory-initialization accesses and `212` trit payload accesses included by the lexical metric. The physical-origin classification is complete; semantic necessity and dynamic weighting remain open.
+P4 measured metadata accesses unchanged at `5638 -> 5638`. P5-AUDIT reproduced the count and decomposed it into `4589` register-initialization accesses, `837` memory-initialization accesses and `212` trit payload accesses included by the lexical metric. P5-PREWORK added dynamic observer-aware counters. Physical origin is complete, but only 324 static and 356 JSMN dynamic checks have directly proven semantic outcomes; the remainder is UNKNOWN/UNMEASURED.
 
 ### S3-EXP-0015 — SSA destruction vs memory-state metadata staging
 
-STATUS=SUPPORTED_NEGATIVE_FOR_P4_JSMN_CORPUS / GENERALITY_OPEN
+STATUS=SUPPORTED_NEGATIVE_FOR_P4_JSMN_CORPUS / PHI_HEAVY_REFINED
 
 File: `S3-EXP-0015-ssa-destruction-metadata-staging.md`
 
 Related: `S3-ZK-0006`, `0009`, `0027`, `0030`, `0031`.
 
-Quantitatively separate ordinary value traffic, phi/loop staging, SSA-destruction metadata, initialization/memory-validity metadata, true RA spills and call/ABI traffic before selecting P5. P5-AUDIT found `0` phi accesses and `0` critical edges in the P4 JSMN corpus, so SSA is not dominant there; a phi-heavy workload is still required for generalization.
+Quantitatively separate ordinary value traffic, phi/loop staging, SSA-destruction metadata, initialization/memory-validity metadata, true RA spills and call/ABI traffic before selecting P5. P5-AUDIT found `0` emitted phi accesses and `0` critical edges in the P4 JSMN corpus. P5-PREWORK measured 712 internal O1 JSMN phis and 33 in a phi-heavy corpus; SSA is relevant when state reaches materialization, but the residual cannot be attributed to SSA alone.
+
+### S3-EXP-0016 — Dynamic observer-aware initialization necessity
+
+STATUS=SUPPORTED_FOR_OBSERVABILITY / NECESSITY_OPEN
+
+File: `S3-EXP-0016-dynamic-observer-aware-initialization.md`
+
+Related: S3-ZK-0035, 0036, 0037, 0038.
+
+Temporary native instrumentation measured register/memory initialization and
+trit payload reads/writes, observer class and dynamic site hotness across JSMN,
+call-heavy, reference/address, slice, numeric and phi-heavy workloads. The
+instrumentation is reverted. Exact JSMN dynamic weighting is reproducible, but
+the remaining reset/store and observer populations are UNKNOWN/UNMEASURED.
+Hosted emulator TADDR support is required before full reference/slice
+differential closure.
 
 ## Current promotion order
 
@@ -162,6 +178,8 @@ Quantitatively separate ordinary value traffic, phi/loop staging, SSA-destructio
 S3-EXP-0014 memory-state metadata provenance
         +
 S3-EXP-0015 SSA destruction vs metadata staging
+        +
+S3-EXP-0016 dynamic observer-aware initialization necessity
         +
 S3-EXP-0013 compiler-boundary information-loss audit
         ↓

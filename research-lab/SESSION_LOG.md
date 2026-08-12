@@ -128,3 +128,12 @@ information-loss boundary audit
 ↓
 select P5 only from measured residual cause
 ```
+## 2026-08-12 — P5-PREWORK initialization observability
+
+- Reconciled origin/main=a0b694fadc985c0b8e0944fb7844e14f72a838d8 and preserved the original checkout's unrelated untracked files.
+- Reproduced the P5-AUDIT metric: 5638 lexical byte-frame lines and 5426 true initialization-state accesses.
+- Used temporary isolated native instrumentation only in a disposable worktree; exact JSMN dynamic initialization total was 21221, with 356 proven check events and 14367 allocated-memory-reset events.
+- Repeated JSMN dynamically with exact category/function/block/observer/top-site/return/total agreement.
+- Added focused call/reference/slice/numeric/phi-heavy corpus evidence. Native paths passed; hosted emulator TADDR remains unsupported for reference/slice differential closure.
+- Corrected the reports so only directly proven populations are classified; residual shares are UNKNOWN/UNMEASURED, not fabricated conditional shares.
+- Decision: MORE_RESEARCH_REQUIRED; no production P5, PR, full suite, benchmark or shutdown.

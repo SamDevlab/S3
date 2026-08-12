@@ -1,0 +1,10 @@
+fn add(left: f64, right: f64) -> f64:
+    return left + right
+fn main() -> trit:
+    mut index: i64 = 0
+    mut total: i64 = 0
+    while index < 3:
+        total = total + index
+        index = index + 1
+    score: f64 = add(0.5, 0.25)
+    return (score <=> 1.0) & (total == 3)

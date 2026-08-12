@@ -1,5 +1,5 @@
 {
-  "schema_version": 5,
+  "schema_version": 6,
   "lab": {
     "name": "S3 Research Lab — Zettelkasten + Compiler Optimization",
     "branch": "research/zettelkasten-lab-20260812",
@@ -80,7 +80,7 @@
       "REPRESENTATION_FLEXIBILITY",
       "PROOF_KNOWLEDGE_FLEXIBILITY"
     ],
-    "zettel_count": 34,
+    "zettel_count": 38,
     "candidate_models": [
       "memory-state metadata provenance analysis",
       "SSA destruction / phi staging attribution",
@@ -142,9 +142,38 @@
     "backedges": 34,
     "critical_edges": 0,
     "primary_static_cause": "emitter initialization-state materialization",
-    "primary_dynamic_cause": "NOT_ESTABLISHED",
+    "primary_dynamic_cause": "ESTABLISHED_FOR_JSMN_RESET_DOMINATED; SEMANTIC_SHARE_OPEN",
     "recommended_future_target": "proof-preserving initialization-state propagation with lazy native materialization",
-    "cross_workload_dynamic_weighting": "OPEN"
+    "cross_workload_dynamic_weighting": "MEASURED_FOCUSED_CORPORA",
+    "dynamic_initialization_jsmn": 21221,
+    "dynamic_all_events_jsmn": 21444,
+    "proven_check_static": 324,
+    "proven_check_dynamic": 356,
+    "static_classification_coverage": 0.05971249539255437,
+    "dynamic_classification_coverage_jsmn": 0.016775835257527922,
+    "unknown_static_share": 0.9402875046074456,
+    "unknown_dynamic_share_jsmn": 0.9832241647424721,
+    "observer_frontier_status": "PARTIAL",
+    "emulator_taddr_gap": true
+  },
+  "p5_prework": {
+    "status": "COMPLETE",
+    "base": "a0b694fadc985c0b8e0944fb7844e14f72a838d8",
+    "audit_reproduction_match": true,
+    "static_initialization_total": 5426,
+    "static_classification_coverage": 0.05971249539255437,
+    "dynamic_initialization_jsmn": 21221,
+    "dynamic_classification_coverage_jsmn": 0.016775835257527922,
+    "dynamic_weighting_established": true,
+    "multi_workload_corpus": true,
+    "phi_heavy_corpus": true,
+    "reference_slice_emulator_gap": "TADDR_UNSUPPORTED",
+    "promotion_decision": "MORE_RESEARCH_REQUIRED",
+    "production_implementation_started": false,
+    "production_pr_opened": false,
+    "full_suite_run": false,
+    "benchmark_run": false,
+    "shutdown_authorized": false
   },
   "hard_rules": {
     "research_branch_direct_merge_to_main": false,
@@ -163,7 +192,8 @@
     "Reconcile P4 reports into all future production planning; do not repeat S3-EXP-0002 as an unresolved question",
     "Use the P5 decomposition: 5426 initialization-state accesses and 212 trit payload accesses were in the lexical 5638 metric",
     "Keep SSA/phi attribution negative for the P4 JSMN corpus; test a phi-heavy corpus before generalizing",
-    "Complete dynamic observer-aware provenance on call-heavy, slice/reference and numeric workloads before production P5",
+    "Complete semantic necessity classification beyond the 324 static and 356 dynamic proven checks; do not label the unknown population conditional",
+    "Complete observer-aware provenance on call-heavy, slice/reference and numeric workloads and close hosted-emulator TADDR support before production P5",
     "Run S3-EXP-0009 to pin exact existing S3 trit semantics before adopting any named ternary logic",
     "Prototype S3-EXP-0010 ternary operation-basis exact oracle",
     "Prototype S3-EXP-0012 representation conversion graph on bounded cases",

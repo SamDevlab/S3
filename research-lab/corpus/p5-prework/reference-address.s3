@@ -1,0 +1,7 @@
+fn modify(ref: &mut tryte) -> tryte:
+    *ref = 10
+    return *ref
+fn main() -> tryte:
+    mut value: tryte = 1
+    result: tryte = modify(&mut value)
+    return value + result
