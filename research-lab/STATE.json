@@ -1,10 +1,11 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "lab": {
     "name": "S3 Research Lab — Zettelkasten + Compiler Optimization",
     "branch": "research/zettelkasten-lab-20260812",
     "created_from": "a83e25c3364302227694399ebe12946f887c0ead",
-    "purpose": "Durable compiler-research workspace and conversation handoff state"
+    "purpose": "Durable compiler-research workspace and conversation handoff state",
+    "durable_locator_issue": 171
   },
   "production_anchor": {
     "repository": "SamDevlab/S3",
@@ -24,22 +25,37 @@
     "p3": "safe cross-block scalar residence removes targeted frame moves but large representative global counters remain effectively unchanged",
     "primary_remaining_bottleneck": "frame canonicalization and cross-block store/reload traffic",
     "secondary_remaining_bottleneck": "phi/SSA staging",
-    "ra_primary_cause": "NOT_ESTABLISHED"
+    "ra_primary_cause": "NOT_ESTABLISHED",
+    "current_ra_architecture_fact": "at the P3 anchor analyze_allocation already consumes whole-function CFG liveness, builds vreg interference, and performs deterministic greedy coloring; RA OFF vs RA ON must therefore be treated as a causal experimental control rather than assuming block-local RA"
   },
   "research_direction": {
     "name": "global-value-residency-and-memory-materialization",
     "central_question": "Where is location flexibility first lost and why does a logical value become memory-identified?",
     "default_hypothesis": "logical values should remain location-flexible until memory is semantically or resource-wise required",
+    "zettel_count": 14,
     "candidate_models": [
       "monotone data-flow / fixed-point liveness",
       "residence lattice / reduced product abstract domain",
       "lazy materialization",
+      "forward availability + backward memory necessity",
       "partial materialization elimination",
       "min-cut or min-cost materialization placement",
       "exact bounded optimization oracle",
       "submodular/matroid structure tests",
       "information-loss accounting"
     ]
+  },
+  "prototypes": {
+    "generic_cfg": true,
+    "fixed_point_liveness": true,
+    "residence_powerset_lattice": true,
+    "binary_materialization_min_cut": true,
+    "exact_binary_oracle": true,
+    "matroid_counterexample_checker": true,
+    "submodularity_counterexample_checker": true,
+    "s3_assembly_adapter": true,
+    "s3_value_trace_scaffold": true,
+    "assembly_trace_cli": true
   },
   "hard_rules": {
     "research_branch_direct_merge_to_main": false,
@@ -51,10 +67,13 @@
     "full_suite_policy": "production final candidate only; not routine research iteration"
   },
   "next_actions": [
-    "Run prototype demo and unit checks locally",
-    "Map S3 Assembly IR logical values to the generic CFG model",
-    "Measure frame materialization causes on representative generated functions",
-    "Create Zettelkasten experiment notes for min-cut viability and exact-oracle gap",
-    "Do not choose register allocator redesign until true RA spills are measured as dominant"
+    "Run research-lab/prototypes/demo.py in a local checkout of the research branch",
+    "Execute S3-EXP-0002 RA OFF vs RA ON on identical workloads before blaming allocator quality",
+    "Use s3_adapter.py to cross-check generic liveness against production liveness",
+    "Build a >=50-value real S3 corpus and extend attribution earlier than AssemblyFunction",
+    "Run S3-EXP-0001 at larger deterministic sample counts",
+    "Compare forward-availability/backward-necessity placement against the exact oracle",
+    "Find minimal counterexamples for multi-value register-capacity coupling, matroid exchange, and submodularity",
+    "Do not choose a production P4 implementation until the winning causal model is measured"
   ]
 }
