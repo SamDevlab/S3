@@ -10,123 +10,101 @@ S3-EXP-0002
 ...
 ```
 
-## Initial queue
+## Queue
 
 ### S3-EXP-0001 — Binary min-cut vs exact oracle
 
-File:
+File: `S3-EXP-0001-mincut-vs-oracle.md`
 
-```text
-S3-EXP-0001-mincut-vs-oracle.md
-```
+Related: `S3-ZK-0005`, `0007`.
 
-Related:
-
-```text
-[[S3-ZK-0005]]
-[[S3-ZK-0007]]
-```
-
-Cross-check the binary materialization min-cut solution against exhaustive enumeration over deterministic tiny problems.
+Cross-check binary materialization min-cut against exhaustive deterministic tiny problems.
 
 ### S3-EXP-0002 — RA OFF vs RA ON causal control
 
-File:
+File: `S3-EXP-0002-ra-off-vs-on.md`
 
-```text
-S3-EXP-0002-ra-off-vs-on.md
-```
+Related: `S3-ZK-0006`, `0009`, `0013`.
 
-Related:
-
-```text
-[[S3-ZK-0006]]
-[[S3-ZK-0009]]
-[[S3-ZK-0013]]
-```
-
-Measure how much frame/runtime behavior changes when the existing whole-function allocator is actually enabled under otherwise identical conditions.
+Measure frame/runtime behavior under identical workloads before blaming allocator quality.
 
 ### S3-EXP-0003 — Lagrangian shared-capacity decomposition
 
-File:
+File: `S3-EXP-0003-lagrangian-capacity.md`
 
-```text
-S3-EXP-0003-lagrangian-capacity.md
-```
+Related: `S3-ZK-0005`, `0007`, `0015`.
 
-Related:
-
-```text
-[[S3-ZK-0005]]
-[[S3-ZK-0007]]
-[[S3-ZK-0015]]
-```
-
-Compare priced independent min-cut subproblems with the exact tiny multi-value capacity oracle.
+Compare priced independent min-cut subproblems with exact tiny multi-value capacity optimization.
 
 ### S3-EXP-0004 — Residence-domain laws
 
-Related:
+Related: `S3-ZK-0003`, `0004`, `0011`.
 
-```text
-[[S3-ZK-0003]]
-[[S3-ZK-0004]]
-[[S3-ZK-0011]]
-```
-
-Exhaustively verify order/join/meet laws and transfer monotonicity for candidate finite residence domains.
+Exhaustively verify order/join/meet laws and transfer monotonicity.
 
 ### S3-EXP-0005 — S3 location-flexibility loss histogram
 
-Related:
+Related: `S3-ZK-0001`, `0006`, `0009`, `0013`.
 
-```text
-[[S3-ZK-0001]]
-[[S3-ZK-0006]]
-[[S3-ZK-0009]]
-[[S3-ZK-0013]]
-```
-
-Trace real S3 values through as much of:
-
-```text
-SSA -> SSA destruction -> Assembly IR -> frame planning -> RA -> emitter
-```
-
-as factual instrumentation permits and record the earliest known point each value becomes memory-only.
+Trace real values through SSA -> destruction -> Assembly IR -> frame planning -> RA -> emitter and record earliest known memory-only point.
 
 ### S3-EXP-0006 — Matroid exchange counterexample search
 
-Related:
+Related: `S3-ZK-0008`.
 
-```text
-[[S3-ZK-0008]]
-```
-
-Define a restricted resident-set independence system and search for hereditary/exchange violations.
+Search restricted residence systems for hereditary/exchange violations.
 
 ### S3-EXP-0007 — Submodularity counterexample search
 
-Related:
+Related: `S3-ZK-0012`.
 
-```text
-[[S3-ZK-0012]]
-```
-
-For an exact tiny cost model, enumerate subsets and test submodular inequalities/diminishing returns.
+Enumerate subsets and test submodular inequalities/diminishing returns.
 
 ### S3-EXP-0008 — Forward availability + backward memory necessity
 
-Related:
+Related: `S3-ZK-0002`, `0003`, `0014`.
 
-```text
-[[S3-ZK-0002]]
-[[S3-ZK-0003]]
-[[S3-ZK-0014]]
-```
+Derive materialization frontiers and compare them with the exact placement oracle.
 
-On tiny diamonds and loops, derive materialization frontiers from separate forward availability and backward necessity analyses, then compare them against the exact placement oracle.
+### S3-EXP-0009 — Current S3 ternary semantics/lowering map
+
+File: `S3-EXP-0009-ternary-semantics-map.md`
+
+Related: `S3-ZK-0016`, `0017`, `0023`.
+
+Establish exact S3 trit truth tables/operations and find the first physical-encoding layer.
+
+### S3-EXP-0010 — Ternary operation-basis synthesis oracle
+
+File: `S3-EXP-0010-ternary-basis-oracle.md`
+
+Related: `S3-ZK-0007`, `0018`, `0023`.
+
+Exhaustively search small primitive bases over exact S3 trit semantics and compare target-lowering costs.
+
+### S3-EXP-0011 — Semantic state minimization
+
+File: `S3-EXP-0011-ternary-state-minimization.md`
+
+Related: `S3-ZK-0019`, `0020`, `0023`.
+
+Test whether finite/ternary control states can be minimized before x86 branch lowering while preserving effects/failure behavior.
+
+### S3-EXP-0012 — Ternary representation conversion graph
+
+File: `S3-EXP-0012-ternary-representation-graph.md`
+
+Related: `S3-ZK-0017`, `0024`, `0007`.
+
+Compare deterministic greedy representation choice with exact shortest-path/DP solutions on bounded trit computations.
+
+### S3-EXP-0013 — Compiler information-loss boundary audit
+
+File: `S3-EXP-0013-information-loss-boundaries.md`
+
+Related: `S3-ZK-0009`, `0021`, `0022`, `0027`.
+
+Across >=50 values classify logical identity/type/trit semantics/equivalence/location flexibility/representation flexibility/range/provenance/memory validity/liveness/rematerializability as PRESERVED, DERIVABLE, LOST, INTENTIONALLY_DISCARDED or UNKNOWN at each compiler boundary.
 
 ## Experiment template
 
