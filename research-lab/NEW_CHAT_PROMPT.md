@@ -21,14 +21,17 @@ Before proposing or implementing anything:
    - research-lab/STATE.json
    - research-lab/RESEARCH_PROTOCOL.md
    - research-lab/zettelkasten/INDEX.md
+   - research-lab/sources/REGISTRY.md
    - research-lab/sources/README.md
+   - research-lab/sources/WISHLIST.md
    - research-lab/hypotheses/P4_GLOBAL_VALUE_RESIDENCY.md
    - research-lab/hypotheses/TERNARY_VIRTUALIZATION.md
    - research-lab/experiments/README.md
    - research-lab/prototypes/README.md
 
 2. Treat them as durable context for prior decisions, performance history, literature bridges,
-   Zettelkasten conventions, research hypotheses, experiments, testing policy and safety constraints.
+   canonical source/deduplication state, Zettelkasten conventions, research hypotheses,
+   experiments, testing policy and safety constraints.
 
 3. Inspect CURRENT origin/main independently. SHAs in the handoff are historical anchors only.
 
@@ -45,6 +48,7 @@ Before proposing or implementing anything:
    - do not assume S3 trit semantics equal any named many-valued logic without exact truth-table comparison;
    - treat quantum/DNA ternary literature as representation/architecture inspiration, not as a required backend;
    - information-theoretic quantities require a defined probability model; otherwise use deterministic information/precision measures;
+   - deduplicate new literature by work+authors+edition using sources/REGISTRY.md before creating new Zettels;
    - focused tests during implementation, full suite only for a coherent production candidate.
 
 6. Current research has three connected flexibility dimensions:
@@ -62,12 +66,17 @@ Before proposing or implementing anything:
    - ternary/finite-state minimization;
    - min-cut/exact-oracle and Lagrangian capacity experiments.
 
-8. If I provide new FINAL_P*_REPORT.md or *_RESULT.json files, reconcile them with STATE.json and update HANDOFF.md/STATE.json before selecting the next production milestone.
+8. If I provide new books/files, first normalize title/authors/edition and classify each as NEW,
+   EXACT_WORK_REUPLOAD, EDITION_VARIANT or TOPIC_OVERLAP in sources/REGISTRY.md. Do not create
+   duplicate Zettels merely because the uploaded filename is different.
+
+9. If I provide new FINAL_P*_REPORT.md or *_RESULT.json files, reconcile them with STATE.json and update HANDOFF.md/STATE.json before selecting the next production milestone.
 
 Start by returning:
 CURRENT_ORIGIN_MAIN=
 RESEARCH_BRANCH_HEAD=
 DURABLE_CONTEXT_LOADED=YES/NO
+SOURCE_REGISTRY_LOADED=YES/NO
 PRODUCTION_STATE_FROM_HANDOFF=
 GLOBAL_VALUE_RESEARCH_QUESTION=
 TERNARY_RESEARCH_QUESTION=
