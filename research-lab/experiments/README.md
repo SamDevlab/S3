@@ -2,7 +2,7 @@
 
 Every serious hypothesis should receive a durable experiment record before production promotion.
 
-Suggested IDs:
+IDs are permanent:
 
 ```text
 S3-EXP-0001
@@ -12,7 +12,13 @@ S3-EXP-0002
 
 ## Initial queue
 
-### S3-EXP-0001 — Binary min-cut validity
+### S3-EXP-0001 — Binary min-cut vs exact oracle
+
+File:
+
+```text
+S3-EXP-0001-mincut-vs-oracle.md
+```
 
 Related:
 
@@ -21,39 +27,45 @@ Related:
 [[S3-ZK-0007]]
 ```
 
-Goal:
+Cross-check the binary materialization min-cut solution against exhaustive enumeration over deterministic tiny problems.
 
-Cross-check the min-cut binary materialization solution against exhaustive enumeration over hundreds/thousands of deterministic tiny problems.
+### S3-EXP-0002 — RA OFF vs RA ON causal control
 
-Success:
+File:
 
 ```text
-MINCUT_COST == EXACT_ORACLE_COST
+S3-EXP-0002-ra-off-vs-on.md
 ```
 
-for every problem inside the model assumptions.
+Related:
 
-Failure:
+```text
+[[S3-ZK-0006]]
+[[S3-ZK-0009]]
+[[S3-ZK-0013]]
+```
 
-Preserve the minimal counterexample and correct/reject the graph encoding.
+Measure how much frame/runtime behavior changes when the existing whole-function allocator is actually enabled under otherwise identical conditions.
 
-### S3-EXP-0002 — Register-capacity coupling counterexample
+### S3-EXP-0003 — Lagrangian shared-capacity decomposition
+
+File:
+
+```text
+S3-EXP-0003-lagrangian-capacity.md
+```
 
 Related:
 
 ```text
 [[S3-ZK-0005]]
+[[S3-ZK-0007]]
+[[S3-ZK-0015]]
 ```
 
-Goal:
+Compare priced independent min-cut subproblems with the exact tiny multi-value capacity oracle.
 
-Introduce two or more values sharing K registers and determine the smallest case where independently optimal per-value cuts become jointly infeasible/suboptimal.
-
-Expected value:
-
-This should define the exact boundary between the elegant single-value cut model and the richer multi-value problem.
-
-### S3-EXP-0003 — Residence-domain laws
+### S3-EXP-0004 — Residence-domain laws
 
 Related:
 
@@ -63,11 +75,9 @@ Related:
 [[S3-ZK-0011]]
 ```
 
-Goal:
-
 Exhaustively verify order/join/meet laws and transfer monotonicity for candidate finite residence domains.
 
-### S3-EXP-0004 — S3 location-flexibility loss histogram
+### S3-EXP-0005 — S3 location-flexibility loss histogram
 
 Related:
 
@@ -75,19 +85,18 @@ Related:
 [[S3-ZK-0001]]
 [[S3-ZK-0006]]
 [[S3-ZK-0009]]
+[[S3-ZK-0013]]
 ```
 
-Goal:
-
-Trace real S3 logical values through:
+Trace real S3 values through as much of:
 
 ```text
 SSA -> SSA destruction -> Assembly IR -> frame planning -> RA -> emitter
 ```
 
-and record the first layer where each value becomes memory-only.
+as factual instrumentation permits and record the earliest known point each value becomes memory-only.
 
-### S3-EXP-0005 — Matroid exchange counterexample search
+### S3-EXP-0006 — Matroid exchange counterexample search
 
 Related:
 
@@ -95,11 +104,9 @@ Related:
 [[S3-ZK-0008]]
 ```
 
-Goal:
+Define a restricted resident-set independence system and search for hereditary/exchange violations.
 
-Define a restricted resident-set independence system and automatically search for violations of hereditary/exchange axioms.
-
-### S3-EXP-0006 — Submodularity counterexample search
+### S3-EXP-0007 — Submodularity counterexample search
 
 Related:
 
@@ -107,9 +114,19 @@ Related:
 [[S3-ZK-0012]]
 ```
 
-Goal:
+For an exact tiny cost model, enumerate subsets and test submodular inequalities/diminishing returns.
 
-For an exact tiny cost model, enumerate subsets and test diminishing returns. Preserve smallest violations and characterize which compiler interaction caused them.
+### S3-EXP-0008 — Forward availability + backward memory necessity
+
+Related:
+
+```text
+[[S3-ZK-0002]]
+[[S3-ZK-0003]]
+[[S3-ZK-0014]]
+```
+
+On tiny diamonds and loops, derive materialization frontiers from separate forward availability and backward necessity analyses, then compare them against the exact placement oracle.
 
 ## Experiment template
 
@@ -126,3 +143,7 @@ RESULT=
 COUNTEREXAMPLE=
 NEXT=
 ```
+
+## Rule
+
+When an experiment produces a counterexample, create a `NEGATIVE_RESULT` Zettel before changing the model so the failed hypothesis remains durable knowledge.
