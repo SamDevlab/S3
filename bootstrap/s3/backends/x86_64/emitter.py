@@ -1005,7 +1005,7 @@ class X8664Emitter:
         padding = 1 if len(stack_arguments) % 2 else 0
         survivor_physicals = self._call_survivor_physicals(instruction)
         lines: list[str] = []
-        if self.register_allocation:
+        if self._physical_residence_active:
             for register in arguments:
                 lines.extend(self._snapshot_register(layout, register))
             lines.extend(self._save_caller_saved(layout, survivor_physicals))
