@@ -122,6 +122,8 @@ class X8664Emitter:
         self.current_instruction: AssemblyInstruction | None = None
         self.functions = {function.name: function for function in program.functions}
         self.current_plan: AllocationPlan | None = None
+        self.local_aliases: dict[int, int] = {}
+        self.local_move_future_registers: set[int] = set()
 
     def emit(self) -> str:
         lines = [
@@ -183,7 +185,14 @@ class X8664Emitter:
         lines.extend(self._save_parameters(function, layout))
         lines.extend(self._initialize_metadata(function, layout))
         lines.append(f"    jmp {mangle_block(function.name, 'entry')}")
-        for block in function.blocks:
+        for block_index, block in enumerate(function.blocks):
+            self.local_aliases = {}
+            self.local_move_future_registers = {
+                register
+                for future_block in function.blocks[block_index + 1 :]
+                for future_instruction in future_block.instructions
+                for register in future_instruction.registers
+            }
             lines.append(f"{mangle_block(function.name, block.label)}:")
             for instruction in block.instructions:
                 lines.extend(
@@ -332,6 +341,8 @@ class X8664Emitter:
         register: int,
         target: str,
     ) -> list[str]:
+        while register in self.local_aliases:
+            register = self.local_aliases[register]
         slot = layout.register(register)
         failure = self._instruction_failure(
             "uninitialized register",
@@ -621,9 +632,21 @@ class X8664Emitter:
                 lines.append("    mov qword ptr [r10], r11")
             return lines
         if opcode is AssemblyOpcode.TMOV:
+            destination, source = registers
+            type_name = function.type_of(destination)
+            if (
+                type_name is not AssemblyType.REFERENCE
+                and destination not in self.local_move_future_registers
+            ):
+                while source in self.local_aliases:
+                    source = self.local_aliases[source]
+                self.local_aliases[destination] = source
+                return instrumentation + [
+                    *self._read_register(layout, source, "rax"),
+                ]
             return instrumentation + [
-                *self._read_register(layout, registers[1], "rax"),
-                *self._write_register(layout, registers[0], "rax"),
+                *self._read_register(layout, source, "rax"),
+                *self._write_register(layout, destination, "rax"),
             ]
         if opcode is AssemblyOpcode.TINV:
             type_name = function.type_of(registers[0])
