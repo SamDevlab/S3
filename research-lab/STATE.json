@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "lab": {
     "name": "S3 Research Lab — Zettelkasten + Compiler Optimization",
     "branch": "research/zettelkasten-lab-20260812",
@@ -32,7 +32,7 @@
     "name": "global-value-residency-and-memory-materialization",
     "central_question": "Where is location flexibility first lost and why does a logical value become memory-identified?",
     "default_hypothesis": "logical values should remain location-flexible until memory is semantically or resource-wise required",
-    "zettel_count": 14,
+    "zettel_count": 15,
     "candidate_models": [
       "monotone data-flow / fixed-point liveness",
       "residence lattice / reduced product abstract domain",
@@ -41,6 +41,7 @@
       "partial materialization elimination",
       "min-cut or min-cost materialization placement",
       "exact bounded optimization oracle",
+      "Lagrangian relaxation of shared register-capacity coupling into priced per-value min-cut subproblems",
       "submodular/matroid structure tests",
       "information-loss accounting"
     ]
@@ -51,6 +52,8 @@
     "residence_powerset_lattice": true,
     "binary_materialization_min_cut": true,
     "exact_binary_oracle": true,
+    "lagrangian_capacity_relaxation": true,
+    "exact_multivalue_capacity_oracle": true,
     "matroid_counterexample_checker": true,
     "submodularity_counterexample_checker": true,
     "s3_assembly_adapter": true,
@@ -67,13 +70,14 @@
     "full_suite_policy": "production final candidate only; not routine research iteration"
   },
   "next_actions": [
-    "Run research-lab/prototypes/demo.py in a local checkout of the research branch",
+    "Run research-lab/prototypes/demo.py and capacity_demo.py in a local checkout of the research branch",
     "Execute S3-EXP-0002 RA OFF vs RA ON on identical workloads before blaming allocator quality",
     "Use s3_adapter.py to cross-check generic liveness against production liveness",
     "Build a >=50-value real S3 corpus and extend attribution earlier than AssemblyFunction",
     "Run S3-EXP-0001 at larger deterministic sample counts",
+    "Run S3-EXP-0003 Lagrangian capacity relaxation against the exact multi-value oracle and measure dual/primal gaps",
     "Compare forward-availability/backward-necessity placement against the exact oracle",
-    "Find minimal counterexamples for multi-value register-capacity coupling, matroid exchange, and submodularity",
+    "Find minimal counterexamples for matroid exchange and submodularity",
     "Do not choose a production P4 implementation until the winning causal model is measured"
   ]
 }
