@@ -31,8 +31,12 @@
 | [[S3-ZK-0025]] | HYPOTHESIS | OPEN | A bounded compiler proof language may preserve useful facts cheaply. |
 | [[S3-ZK-0026]] | PERMANENT | SUPPORTED | Demonstration success is not technology maturity. |
 | [[S3-ZK-0027]] | BRIDGE | OPEN | Lowering should retain information that downstream optimization still needs. |
+| [[S3-ZK-0028]] | PERMANENT | SUPPORTED | A configuration/default can itself be the earliest information-loss boundary. |
+| [[S3-ZK-0029]] | PERMANENT | SUPPORTED | Keep causal structural, absolute runtime and external-relative performance metrics distinct. |
+| [[S3-ZK-0030]] | HYPOTHESIS | SUPPORTED_BY_P4_RESIDUAL | Memory-state metadata is a distinct optimization state space from ordinary value residency. |
+| [[S3-ZK-0031]] | PERMANENT | SUPPORTED | Allocator enablement and allocator algorithm quality are different causal variables. |
 
-## Cluster A — Global value residency
+## Cluster A — Global value residency after P4
 
 ```text
                        S3-ZK-0007 Exact Oracle
@@ -48,7 +52,15 @@ S3-ZK-0015 Lagrangian -> S3-ZK-0003 Lattice              S3-ZK-0009 Information 
                               |                                   |
                               v                                   v
                        S3-ZK-0004 Product                 S3-ZK-0013 Current RA fact
+                                                                  |
+                                                                  v
+                                                        S3-ZK-0028 Config boundary
+                                                                  |
+                                                                  v
+                                                        S3-ZK-0031 Enablement != quality
 ```
+
+P4 production evidence resolved one major branch of this graph: the existing RA mechanism was present, but native default-off configuration forced an avoidable early collapse into frame canonicalization.
 
 ## Cluster B — Ternary virtualization
 
@@ -75,12 +87,43 @@ S3-ZK-0009 Information Loss
         |
         +--> S3-ZK-0021 Information-Loss Metrics
         |          |
+        |          +--> S3-ZK-0029 Causal Metric Hierarchy
+        |          |
         |          v
         |    S3-ZK-0027 Lossless-Lowering Contract
         |          |
-        v          v
+        |          +--> S3-ZK-0028 Config Boundary
+        |          |
+        |          v
+        |    S3-ZK-0030 Metadata State Space
+        |
+        v
 S3-ZK-0022 Proof Facts ---> S3-ZK-0025 Bounded Fact Language
 ```
+
+## Post-P4 causal facts
+
+```text
+P4 selected transformation:
+register allocation becomes native default
+
+RA algorithm redesign:
+NO
+
+frame loads:
+1549 -> 491
+
+frame stores:
+1520 -> 471
+
+metadata accesses:
+5638 -> 5638
+
+residual:
+REPEATED_MEMORY_STATE_MATERIALIZATION
+```
+
+This means ordinary global value residency and memory-state metadata are now separate research targets.
 
 ## Three flexibility dimensions
 
@@ -90,17 +133,19 @@ REPRESENTATION_FLEXIBILITY
 PROOF_KNOWLEDGE_FLEXIBILITY
 ```
 
-Working long-term research question:
+Working long-term question:
 
 > Can S3 delay irreversible decisions across all three dimensions until semantic, resource or ABI constraints actually require collapse?
 
-## Promotion queue
+P4 gives one positive data point for this philosophy, but does not prove the broader architecture.
+
+## Promotion queue after P4
 
 Current highest-value experiments:
 
-1. `S3-EXP-0002` controlled RA OFF vs RA ON on identical workloads;
-2. `S3-EXP-0005` real S3 location-flexibility loss histogram;
-3. `S3-EXP-0013` property-by-boundary information-loss audit;
+1. `S3-EXP-0014` memory-state metadata provenance;
+2. `S3-EXP-0015` SSA destruction vs metadata staging;
+3. `S3-EXP-0013` compiler information-loss boundary audit, refocused after P4;
 4. `S3-EXP-0009` exact current S3 trit semantics/lowering map;
 5. `S3-EXP-0010` exhaustive ternary primitive-basis oracle;
 6. `S3-EXP-0012` ternary representation conversion graph vs exact oracle;
@@ -109,4 +154,6 @@ Current highest-value experiments:
 9. `S3-EXP-0003` Lagrangian capacity relaxation vs exact multi-value oracle;
 10. `S3-EXP-0008` forward-availability/backward-necessity frontier.
 
-No production P4 implementation should be selected until the causal frame-traffic experiments remain reconciled with the new representation/information experiments.
+`S3-EXP-0002 RA OFF vs RA ON` is now `SUPPORTED_BY_P4` rather than unresolved.
+
+No production P5 implementation should be selected until metadata provenance and SSA-destruction attribution are quantitatively separated.
