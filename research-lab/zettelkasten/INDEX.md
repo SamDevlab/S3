@@ -1,6 +1,6 @@
 # S3 Zettelkasten Index
 
-## Seed notes
+## Notes
 
 | ID | Type | Status | Atomic idea |
 |---|---|---|---|
@@ -19,8 +19,20 @@
 | [[S3-ZK-0013]] | PERMANENT | SUPPORTED | Current RA already consumes whole-function CFG liveness/cross-block vregs; RA OFF vs ON is a critical control. |
 | [[S3-ZK-0014]] | HYPOTHESIS | OPEN | Lazy materialization may require dual forward-availability and backward-necessity analyses. |
 | [[S3-ZK-0015]] | HYPOTHESIS | OPEN | Shared register-capacity coupling may be relaxed into priced per-value min-cut subproblems. |
+| [[S3-ZK-0016]] | ARCHITECTURE | OPEN | Ternary semantics should precede physical encoding. |
+| [[S3-ZK-0017]] | BRIDGE | OPEN | Representation flexibility generalizes location flexibility. |
+| [[S3-ZK-0018]] | HYPOTHESIS | OPEN | Search for a cost-optimal ternary operation basis. |
+| [[S3-ZK-0019]] | HYPOTHESIS | OPEN | Minimize semantic finite/ternary control states before binary branch lowering. |
+| [[S3-ZK-0020]] | BRIDGE | OPEN | Partition information can lower-bound future-state dependencies. |
+| [[S3-ZK-0021]] | HYPOTHESIS | OPEN | Measure compiler information loss, not only emitted instructions. |
+| [[S3-ZK-0022]] | ARCHITECTURE | OPEN | Preserve useful optimization facts as explicit bounded proof/fact objects. |
+| [[S3-ZK-0023]] | HYPOTHESIS | OPEN | A ternary virtual ISA may preserve semantic operations before x86 lowering. |
+| [[S3-ZK-0024]] | HYPOTHESIS | OPEN | Ternary representation selection may be a conversion-graph optimization problem. |
+| [[S3-ZK-0025]] | HYPOTHESIS | OPEN | A bounded compiler proof language may preserve useful facts cheaply. |
+| [[S3-ZK-0026]] | PERMANENT | SUPPORTED | Demonstration success is not technology maturity. |
+| [[S3-ZK-0027]] | BRIDGE | OPEN | Lowering should retain information that downstream optimization still needs. |
 
-## Current high-value connection cluster
+## Cluster A — Global value residency
 
 ```text
                        S3-ZK-0007 Exact Oracle
@@ -36,25 +48,65 @@ S3-ZK-0015 Lagrangian -> S3-ZK-0003 Lattice              S3-ZK-0009 Information 
                               |                                   |
                               v                                   v
                        S3-ZK-0004 Product                 S3-ZK-0013 Current RA fact
-                              |
-                              v
-                       S3-ZK-0010 Precision
-                              |
-                              v
-                       S3-ZK-0011 Convergence
-
-S3-ZK-0008 Matroid? <----> S3-ZK-0012 Submodular?
 ```
+
+## Cluster B — Ternary virtualization
+
+```text
+                  S3-ZK-0016 Semantic Trit
+                         |
+                         v
+               S3-ZK-0017 Representation Flexibility
+                  /          |             \
+                 v           v              v
+       S3-ZK-0018 Basis  S3-ZK-0023 V-ISA  S3-ZK-0024 Conversion Graph
+                 \           |              /
+                  \          v             /
+                   ---- S3-ZK-0019 State Minimization
+                               |
+                               v
+                        S3-ZK-0020 Partitions
+```
+
+## Cluster C — Information/proof preservation
+
+```text
+S3-ZK-0009 Information Loss
+        |
+        +--> S3-ZK-0021 Information-Loss Metrics
+        |          |
+        |          v
+        |    S3-ZK-0027 Lossless-Lowering Contract
+        |          |
+        v          v
+S3-ZK-0022 Proof Facts ---> S3-ZK-0025 Bounded Fact Language
+```
+
+## Three flexibility dimensions
+
+```text
+LOCATION_FLEXIBILITY
+REPRESENTATION_FLEXIBILITY
+PROOF_KNOWLEDGE_FLEXIBILITY
+```
+
+Working long-term research question:
+
+> Can S3 delay irreversible decisions across all three dimensions until semantic, resource or ABI constraints actually require collapse?
 
 ## Promotion queue
 
-Research ideas currently worth experimentally testing first:
+Current highest-value experiments:
 
-1. `S3-ZK-0013` controlled RA OFF vs RA ON structural/runtime comparison on identical workloads;
-2. `S3-ZK-0007` exact oracle for tiny CFG/value-placement problems;
-3. `S3-ZK-0005` binary materialization min-cut formulation;
-4. `S3-ZK-0015` capacity-coupled Lagrangian decomposition vs exact multi-value oracle;
-5. `S3-ZK-0014` forward-availability/backward-necessity frontier vs exact oracle;
-6. `S3-ZK-0003`/`0004` sound residence domain;
-7. `S3-ZK-0009` explicit location-flexibility loss instrumentation;
-8. `S3-ZK-0008`/`0012` proof or counterexample search for richer combinatorial structure.
+1. `S3-EXP-0002` controlled RA OFF vs RA ON on identical workloads;
+2. `S3-EXP-0005` real S3 location-flexibility loss histogram;
+3. `S3-EXP-0013` property-by-boundary information-loss audit;
+4. `S3-EXP-0009` exact current S3 trit semantics/lowering map;
+5. `S3-EXP-0010` exhaustive ternary primitive-basis oracle;
+6. `S3-EXP-0012` ternary representation conversion graph vs exact oracle;
+7. `S3-EXP-0011` semantic state minimization before branch lowering;
+8. `S3-EXP-0001` binary materialization min-cut vs exact oracle;
+9. `S3-EXP-0003` Lagrangian capacity relaxation vs exact multi-value oracle;
+10. `S3-EXP-0008` forward-availability/backward-necessity frontier.
+
+No production P4 implementation should be selected until the causal frame-traffic experiments remain reconciled with the new representation/information experiments.
