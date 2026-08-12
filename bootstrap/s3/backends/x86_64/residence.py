@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ...assembly import AssemblyFunction, AssemblyType
+from ...assembly import AssemblyFunction, AssemblyOpcode, AssemblyType
 from .allocation import AllocationPlan, analyze_allocation
 from .liveness import analyze_liveness, instruction_use_def
 
@@ -20,6 +20,15 @@ def analyze_cross_block_residence(function: AssemblyFunction) -> AllocationPlan:
     """
     full_plan = analyze_allocation(function)
     liveness = analyze_liveness(function)
+    # The default emitter has no independent call-preservation lowering. Keep
+    # call-containing functions on the canonical frame path until that barrier
+    # can be proven without adding whole-function ABI traffic.
+    if any(instruction.opcode is AssemblyOpcode.TCALL for instruction in function.instructions):
+        return AllocationPlan(
+            allocations={register: None for register in full_plan.allocations},
+            call_survivors={},
+            address_taken=full_plan.address_taken,
+        )
     defs_by_register: dict[int, set[str]] = {}
     uses_by_register: dict[int, set[str]] = {}
     address_taken = set(full_plan.address_taken)

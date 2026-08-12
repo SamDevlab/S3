@@ -136,7 +136,7 @@ def test_call_barrier_tracks_cross_block_resident_survivor() -> None:
     )
     function = program.functions[0]
     plan = analyze_cross_block_residence(function)
-    assert plan.physical_register(0) is not None
-    assert plan.call_survivors
+    assert plan.physical_register(0) is None
+    assert not plan.call_survivors
     native = generate_native_assembly(program)
     assert "caller_saved_spill" not in native
