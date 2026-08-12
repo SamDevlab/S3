@@ -1,6 +1,6 @@
 # S3 Research Handoff
 
-Use this file as a first durable context document when continuing S3 compiler research in a new ChatGPT/Codex conversation.
+This is the durable context document for continuing S3 compiler research in another ChatGPT/Codex conversation.
 
 ## 1. Project identity
 
@@ -22,28 +22,43 @@ Durable locator:
 GitHub issue #171 — [Research] S3 Zettelkasten compiler research lab
 ```
 
-**Never merge the research branch directly into `main`.** Proven ideas are reproduced/validated here and then ported selectively to a fresh production branch from the then-current `origin/main`.
+**Never merge the research branch directly into `main`.** Proven ideas are ported selectively to a fresh production branch from then-current `origin/main`.
 
-## 2. Production anchor at lab creation
+## 2. Production state after P4
+
+Historical lab creation anchor:
 
 ```text
-MAIN=a83e25c3364302227694399ebe12946f887c0ead
+MAIN_AT_LAB_CREATION=a83e25c3364302227694399ebe12946f887c0ead
+```
+
+Completed performance milestones:
+
+```text
 P1=COMPLETE
 P2=COMPLETE
 P3=COMPLETE
-P4=NOT_STARTED
-P3_PR=169
-P3_IMPLEMENTATION_HEAD=4643f60176aec68c7a4d7203f3623bde8bac2ae4
-P3_MERGE_COMMIT=a83e25c3364302227694399ebe12946f887c0ead
+P4=COMPLETE
+P5_STARTED=NO
 ```
 
-P3 final evidence included Linux full suite exit 0, natural CI green, ancestry confirmed, P4 not stacked.
+P4:
 
-A future session must fetch current `origin/main`; this SHA is an historical anchor, not a promise that production is unchanged.
+```text
+P4_PR=170
+P4_BASE_SHA=a83e25c3364302227694399ebe12946f887c0ead
+P4_IMPLEMENTATION_HEAD=59df1d0f9ab9147b8d7f71a1db395c5fab560171
+P4_MERGE_COMMIT=a0b694fadc985c0b8e0944fb7844e14f72a838d8
+MAIN_AFTER_P4=a0b694fadc985c0b8e0944fb7844e14f72a838d8
+```
+
+P4 exact-head Linux full suite passed with exit 0; natural CI was terminal/green; implementation and merge ancestry were verified.
+
+A future session must fetch current `origin/main`; the SHA above is an historical production anchor, not a promise that main has not advanced.
 
 ## 3. Capability history
 
-M1.32–M1.38 are complete:
+M1.32–M1.38 remain complete:
 
 - Numeric Domains & Large Indexing
 - Borrowed Slices
@@ -53,17 +68,17 @@ M1.32–M1.38 are complete:
 - Project & Container-Native App Model
 - S3 Docker V1
 
-Do not reopen these capability milestones merely because performance research exposes implementation opportunities.
+Do not reopen these capability milestones merely because optimization work reveals implementation opportunities.
 
-## 4. Performance campaign history
+## 4. Performance history
 
 ### Post-M1.38
 
-Forensics established massive representation/lowering expansion compared with GCC O2. Primary conclusion: backend/codegen immaturity rather than a fundamental language tax.
+Forensics established massive representation/lowering expansion versus GCC O2. Primary conclusion: backend/codegen immaturity rather than a fundamental language tax.
 
 ### P1 — Compact Indexed Access & Bounds Lowering
 
-Representative historical structural change:
+Historical representative structural change:
 
 ```text
 .text:               320689 -> 313169
@@ -72,50 +87,132 @@ branches:            13197  -> 12445
 loads/stores:         27873 -> 27873
 ```
 
-Lesson: bounds/control expansion was real; memory traffic remained.
+Bounds/control expansion was real; memory traffic remained.
 
 ### P2 — Value Locality & Representation Staging Reduction
 
-Same-basic-block eligible scalar forwarding removed targeted frame MOVs but barely moved large aggregate counters.
+Same-basic-block eligible scalar forwarding removed targeted frame MOVs but barely moved aggregate counters.
 
 ### P3 — Cross-Block Value Lifetime & Frame Canonicalization
 
-Conservative cross-block scalar residence removed further targeted frame operations but aggregate counters again moved little. Fresh characterization was roughly:
+Conservative cross-block scalar residence removed further targeted frame operations but aggregate counters again moved little. Post-P3 primary remaining diagnosis was frame canonicalization/store-reload traffic with phi/SSA staging secondary; true RA spilling was not established as primary.
+
+### P4 — Global Value Residency as Native Default
+
+P4 produced an important causal correction to the research model.
+
+The existing allocator was already whole-function, CFG-liveness-aware, interference-based and deterministic. The major early collapse was that native x86-64 backend register allocation still defaulted OFF.
+
+P4 established:
 
 ```text
-baseline geomean slowdown vs GCC O2: ~27.274x
-candidate:                            ~31.152x
+EARLIEST_LOCATION_FLEXIBILITY_LOSS=
+X8664Backend.register_allocation default false
+
+EARLIEST_MEMORY_IDENTITY_LAYER=
+emitter frame canonicalization after the default backend selected RA_OFF
+
+RA_PRIMARY_CAUSE=NO
 ```
 
-No speedup claim was made.
-
-Post-P3:
+Selected production transformation:
 
 ```text
-PRIMARY_REMAINING_BOTTLENECK=
-frame canonicalization and cross-block store/reload traffic
-
-SECONDARY=
-phi/SSA staging
-
-TRUE_RA_SPILL_DOMINANT=
-NOT ESTABLISHED
+make the existing liveness-backed register allocator the native default
+while preserving register_allocation=false as explicit stack-backed fallback
 ```
 
-## 5. Existing RA fact
+No allocator redesign, phi rewrite or Assembly IR redesign was required.
 
-At the P3 anchor, current `analyze_allocation()` already:
+Final P4 corrections also resolved local TMOV aliases in call snapshots and skipped dead incoming parameters during physical entry initialization.
 
-- consumes whole-function CFG liveness;
-- sees cross-block vregs that survive to Assembly IR;
-- builds an interference graph;
-- performs deterministic greedy coloring;
-- treats address-taken referents as stack-canonical;
-- treats call-crossing values specially in register-pool preference.
+Direct structural evidence:
 
-Therefore **RA OFF vs RA ON is a mandatory causal control**. Do not assume the remaining frame traffic is allocator spilling merely because it touches stack/frame memory.
+```text
+TARGET_OPPORTUNITIES=13
+TARGET_TRANSFORMED=13
+COVERAGE_RATIO=1.0
 
-## 6. Testing/process rules
+FRAME_LOADS:  1549 -> 491
+FRAME_STORES: 1520 -> 471
+
+TOTAL_FRAME_ACCESSES: 9282 -> 7175
+METADATA_ACCESSES:     5638 -> 5638
+
+TEXT_BYTES:            313169 -> 305543
+STATIC_INSTRUCTIONS:    53767 -> 53922
+```
+
+Important metric nuance:
+
+```text
+GCC-relative geomean:
+34.708283588x -> 38.975981467x
+
+absolute S3 runtime:
+8890.413541 ns/parse -> 8405.052702 ns/parse
+S3_RUNTIME_DELTA=-5.46%
+```
+
+The GCC denominator varied, so the relative ratio is characterization only. Absolute S3 runtime improved ~5.46% in the recorded P4 protocol. Compiler median time improved ~2.92%.
+
+P4 residual:
+
+```text
+RESIDUAL_PRIMARY_BOTTLENECK=REPEATED_MEMORY_STATE_MATERIALIZATION
+NEXT_RECOMMENDED_TARGET=SSA_DESTRUCTION_AND_MEMORY_STATE_METADATA_STAGING
+P5_STARTED=NO
+```
+
+See:
+
+```text
+research-lab/reconciliations/P4_20260812.md
+```
+
+## 5. Revised RA rule
+
+Do not conflate:
+
+```text
+RA_ENABLEMENT
+RA_INPUT_QUALITY
+RA_ALGORITHM_QUALITY
+TRUE_SPILL_BEHAVIOR
+EMITTER_USE_OF_ALLOCATION
+```
+
+P4 showed that allocator enablement/default policy was a major causal variable while allocator algorithm quality was **not** established as primary.
+
+A future RA redesign is justified only if true allocator spills become a measured dominant residual after upstream/default-policy and metadata-state problems are separated.
+
+## 6. Current research problem after P4
+
+The immediate question is no longer simply “why are values frame-backed?”
+
+P4 greatly reduced ordinary value frame traffic but left:
+
+```text
+METADATA_ACCESSES=5638 -> 5638
+```
+
+Therefore the next research question is:
+
+> Why are memory/initialized-state metadata repeatedly materialized, and what fraction originates in SSA destruction/phi/loop-carried staging versus later memory-state bookkeeping?
+
+Treat these as separate state spaces until evidence proves they should be unified:
+
+```text
+LOGICAL_VALUE_STATE
+MEMORY_VALIDITY_STATE
+INITIALIZATION_STATE
+SSA_MERGE_STATE
+ABI/OBSERVABILITY_STATE
+```
+
+Do not start P5 production implementation until this attribution is quantitative.
+
+## 7. Testing/process rules
 
 - Correctness/equivalence/safety/exact-head evidence are gates.
 - Performance benchmarks are characterization, not correctness gates.
@@ -129,56 +226,40 @@ Therefore **RA OFF vs RA ON is a mandatory causal control**. Do not assume the r
 - One production milestone = one coherent capability = one PR. No stacking.
 - Research prototypes use focused mathematical/semantic checks; production promotion re-enters normal gates.
 
-## 7. Research methodology — Zettelkasten
+## 8. Research methodology — Zettelkasten
 
-IDs:
+Permanent IDs:
 
 ```text
 S3-ZK-0001 ...
 S3-EXP-0001 ...
 ```
 
-Types include SOURCE, PERMANENT, BRIDGE, QUESTION, HYPOTHESIS, EXPERIMENT, NEGATIVE_RESULT, ARCHITECTURE.
+Types include SOURCE, PERMANENT, BRIDGE, QUESTION, HYPOTHESIS, EXPERIMENT, NEGATIVE_RESULT and ARCHITECTURE.
 
 Rules:
 
-- one Zettel = one idea;
-- separate source-established facts from S3 inference;
+- one Zettel = one atomic idea;
+- separate source-established facts from S3 inference and measurement;
 - a hypothesis needs a measurable falsifier/experiment;
-- negative results are durable knowledge;
+- negative results/counterexamples are durable knowledge;
 - exact/exponential algorithms are welcome as bounded research oracles;
 - do not promote a striking demo directly to production maturity.
 
-Current Zettelkasten count after the ternary expansion: **27 notes**.
+After P4 reconciliation the index contains **31 notes**.
 
-## 8. Initial global-value research thesis
-
-> Memory should be a consequence of necessity, not the default identity of a logical value.
-
-Distinguish:
+P4 added/refined:
 
 ```text
-LOGICAL VALUE IDENTITY
-LOCATION FLEXIBILITY
-MEMORY VALIDITY
-PHYSICAL REGISTER ASSIGNMENT
+S3-ZK-0028 configuration can itself be an information-loss boundary
+S3-ZK-0029 causal metric hierarchy: structural/absolute/relative metrics stay distinct
+S3-ZK-0030 memory-state metadata is a distinct optimization state space
+S3-ZK-0031 RA enablement and RA quality are different causal variables
 ```
 
-Primary candidate models already prototyped/researched:
+## 9. Three flexibility dimensions
 
-- fixed-point liveness;
-- finite residence lattice/reduced products;
-- lazy materialization;
-- forward availability + backward memory necessity;
-- min-cut/min-cost materialization placement;
-- exact bounded placement oracles;
-- Lagrangian relaxation for shared register capacity;
-- matroid/submodular hypotheses/counterexamples;
-- location-flexibility loss instrumentation.
-
-## 9. Expanded research thesis — three flexibility dimensions
-
-The literature/ternary synthesis expanded the architecture question to:
+The long-term research architecture remains:
 
 ```text
 LOCATION_FLEXIBILITY
@@ -186,7 +267,7 @@ REPRESENTATION_FLEXIBILITY
 PROOF_KNOWLEDGE_FLEXIBILITY
 ```
 
-Long-term model under investigation:
+Working model:
 
 ```text
 LOGICAL VALUE
@@ -203,17 +284,19 @@ irreversible choices delayed until required
 representation + materialization + physical resource assignment
 ```
 
-This is a research architecture, not an accepted production design.
+This remains a research architecture, not an accepted production design.
+
+P4 supports one part of it: default-off RA was an avoidable premature collapse. P4 does **not** prove that every memory state should be delayed or that min-cut/global optimization is the right production solution.
 
 ## 10. Ternary virtualization research
 
-The user explicitly wants S3's ternary logic/virtualization explored as a potentially disruptive direction.
+The user explicitly wants S3 ternary logic/virtualization explored as a potentially disruptive direction.
 
 Core rule:
 
-> Do not assume `trit` is merely a tiny binary integer. Preserve exact S3 trit semantics first; choose physical encoding later if evidence supports it.
+> Do not assume `trit` is merely a tiny binary integer. Preserve exact current S3 trit semantics first; choose physical encoding later if evidence supports it.
 
-Current ternary research notes:
+Current ternary research includes:
 
 ```text
 S3-ZK-0016 semantic ternary abstraction
@@ -225,7 +308,7 @@ S3-ZK-0023 ternary virtual ISA
 S3-ZK-0024 representation conversion graph
 ```
 
-Research hypothesis document:
+Hypothesis document:
 
 ```text
 research-lab/hypotheses/TERNARY_VIRTUALIZATION.md
@@ -235,81 +318,70 @@ Hard constraints:
 
 - current S3 semantics are source of truth;
 - do not call S3 Łukasiewicz/Kleene/Post logic until exact truth tables are compared;
-- no quantum/DNA backend is implied by the multiple-valued hardware literature;
-- dense base-3/packed/vector representations are hypotheses requiring cost evidence;
-- representation selection must preserve reference/provenance/safety semantics where applicable.
+- quantum/DNA sources are representation/architecture inspiration, not a backend commitment;
+- dense base-3/packed/vector forms require cost evidence;
+- representation selection must preserve S3 safety/provenance semantics.
 
 ## 11. Information/proof preservation research
 
-New notes:
+Current notes include:
 
 ```text
 S3-ZK-0021 compiler information-loss metrics
 S3-ZK-0022 proof-carrying optimization facts
 S3-ZK-0025 bounded compiler fact/proof language
 S3-ZK-0027 information-lossless lowering contracts
+S3-ZK-0028 configuration information loss
+S3-ZK-0030 metadata materialization state space
 ```
 
 Use information theory carefully:
 
 - Shannon entropy/mutual information require a defined probability model;
-- otherwise prefer deterministic measures such as legal-representation count, equivalence partitions, recoverability or partial-order precision;
+- otherwise prefer deterministic quantities such as legal-representation count, equivalence partitions, recoverability and partial-order precision;
 - do not create decorative entropy metrics.
 
-A bounded fact language is being considered for facts such as range/nonzero/equivalence/memory-version validity, not as an unrestricted theorem prover.
+## 12. Literature corpus
 
-## 12. Literature corpus cataloged
+PDFs/EPUBs are **not committed to GitHub**.
 
-PDFs are **not committed to GitHub**. A future session may need them reattached/retrieved from the user's file library.
-
-Catalog:
-
-- Aho/Lam/Sethi/Ullman — *Compilers: Principles, Techniques, and Tools*, 2e
-- Davey/Priestley — *Introduction to Lattices and Order*, 2e
-- Ahuja/Magnanti/Orlin — *Network Flows*
-- Nielson/Nielson/Hankin — *Principles of Program Analysis*
-- Schrijver — *Combinatorial Optimization: Polyhedra and Efficiency*, A–C
-- Gottwald — *A Treatise on Many-Valued Logics*
-- Kohavi/Jha — *Switching and Finite Automata Theory*, 3e
-- Cover/Thomas — *Elements of Information Theory*
-- Knuth — *TAOCP 4A: Combinatorial Algorithms, Part 1*
-- Graham/Knuth/Patashnik — *Concrete Mathematics*, 2e
-- Hopcroft/Motwani/Ullman — *Introduction to Automata Theory, Languages, and Computation*, 2e
-- Roland/Shiman — *Strategic Computing*
-- Enayat/Kalantari/Moniri — *Logic in Tehran*
-- Hafiz Md. Hasan Babu — *Multiple-Valued Computing in Quantum Molecular Biology*, Vol. 2
-
-See `research-lab/sources/README.md` for source-vs-inference bridges.
-
-## 13. New experiment queue
-
-Existing key experiments continue, especially RA OFF/ON and frame-attribution work.
-
-Added:
+Canonical bibliography and deduplication registry:
 
 ```text
-S3-EXP-0009 current exact S3 ternary semantics/lowering map
-S3-EXP-0010 ternary operation-basis synthesis oracle
+research-lab/sources/REGISTRY.md
+```
+
+It currently tracks 25 canonical sources, including compiler/dataflow references, abstract interpretation, SSA, automata, many-valued logic, term rewriting, decision procedures, quantitative architecture, combinatorial/convex/numerical optimization and parameterized algorithms.
+
+Future uploads must be classified as NEW, EXACT_WORK_REUPLOAD, EDITION_VARIANT or TOPIC_OVERLAP before new Zettels are created.
+
+## 13. Experiments
+
+`S3-EXP-0002 RA OFF vs RA ON` is no longer an unresolved top-level question: P4 production evidence established the key causal result.
+
+Highest-value unresolved sequence now is:
+
+```text
+memory-state metadata provenance
+        +
+SSA destruction / phi / loop staging attribution
+        +
+compiler-boundary information-loss audit
+        ↓
+select P5 production target
+```
+
+Ternary experiments remain parallel research:
+
+```text
+S3-EXP-0009 exact current trit semantics/lowering map
+S3-EXP-0010 ternary operation-basis exact oracle
 S3-EXP-0011 ternary/finite-state minimization
 S3-EXP-0012 ternary representation conversion graph
 S3-EXP-0013 compiler information-loss boundary audit
 ```
 
-Highest-priority combined sequence:
-
-```text
-RA OFF/ON causal control
-        +
->=50-value frame/location attribution
-        +
-compiler-boundary information-loss audit
-        +
-exact current trit semantics map
-        ↓
-only then choose whether production P4 attacks
-frame representation, information preservation,
-ternary representation, SSA/phi, or RA.
-```
+Do not let ternary research delay a clearly measured production bottleneck, and do not merge speculative ternary architecture into P5 unless causal evidence connects it.
 
 ## 14. Research prototypes already present
 
@@ -326,7 +398,7 @@ Under `research-lab/prototypes/`:
 - S3 Assembly adapter;
 - S3 value trace scaffold/CLI.
 
-Ternary semantic mapper, ternary basis oracle, ternary representation oracle and information-loss boundary auditor are **planned, not yet implemented**. Do not claim otherwise.
+Ternary semantic mapper, ternary basis oracle, ternary representation oracle, information-loss boundary auditor, metadata provenance auditor and SSA-destruction attribution tooling are planned/not yet established unless later files say otherwise.
 
 ## 15. Promotion criteria
 
@@ -348,21 +420,20 @@ Then create a fresh production branch from current `origin/main` and port only t
 
 ## 16. How to resume in a new chat
 
-Tell the new assistant:
+Tell the new assistant to open `SamDevlab/S3` branch `research/zettelkasten-lab-20260812` and read, in order:
 
 ```text
-Open SamDevlab/S3 branch research/zettelkasten-lab-20260812.
-Read, in order:
-  research-lab/HANDOFF.md
-  research-lab/STATE.json
-  research-lab/NEW_CHAT_PROMPT.md
-  research-lab/RESEARCH_PROTOCOL.md
-  research-lab/zettelkasten/INDEX.md
-  research-lab/sources/README.md
-  research-lab/hypotheses/P4_GLOBAL_VALUE_RESIDENCY.md
-  research-lab/hypotheses/TERNARY_VIRTUALIZATION.md
-  research-lab/experiments/README.md
-Then inspect current origin/main independently.
-Do not merge the research branch to main.
-Continue from evidence, and update durable handoff/state when major findings change.
+research-lab/HANDOFF.md
+research-lab/STATE.json
+research-lab/NEW_CHAT_PROMPT.md
+research-lab/RESEARCH_PROTOCOL.md
+research-lab/reconciliations/P4_20260812.md
+research-lab/zettelkasten/INDEX.md
+research-lab/sources/REGISTRY.md
+research-lab/experiments/README.md
+research-lab/hypotheses/TERNARY_VIRTUALIZATION.md
 ```
+
+Then independently inspect current `origin/main`.
+
+Do not merge the research branch directly to main. Continue from evidence and update durable state whenever a production milestone or major research result changes.
