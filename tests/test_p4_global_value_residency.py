@@ -4,8 +4,15 @@ from __future__ import annotations
 
 import textwrap
 
+import pytest
+
 from bootstrap.s3.assembly import parse_assembly
-from bootstrap.s3.backends.x86_64 import X8664Backend, generate_native_assembly
+from bootstrap.s3.backends.x86_64 import (
+    NativeBackendError,
+    NativeToolchain,
+    X8664Backend,
+    generate_native_assembly,
+)
 from bootstrap.s3.pipeline import compile_source
 
 
@@ -75,3 +82,42 @@ def test_call_aware_global_residency_keeps_liveness_contract() -> None:
     assert default != stack
     assert "call s3_helper" in default
     assert "call s3_helper" in stack
+
+
+def test_dead_incoming_parameter_does_not_clobber_live_resident_parameter(
+    tmp_path,
+) -> None:
+    program = parse_assembly(
+        """
+        .function helper -> tryte
+            .param r0, tryte
+            .param r1, tryte
+        .label entry
+            TRET r0
+        .end
+        .function main -> tryte
+            .register r0, tryte
+            .register r1, tryte
+            .register r2, tryte
+        .label entry
+            TCONST r0, 10
+            TCONST r1, 2
+            TCALL r2, helper, r0, r1
+            TRET r2
+        .end
+        """
+    )
+    try:
+        toolchain = NativeToolchain.detect()
+    except NativeBackendError as error:
+        pytest.skip(str(error))
+
+    executable = toolchain.build(
+        generate_native_assembly(program),
+        tmp_path / "dead-incoming-parameter",
+    )
+    completed = toolchain.run(executable)
+
+    assert completed.returncode == 0
+    assert completed.stderr == ""
+    assert completed.stdout == "program returned: 10\n"
