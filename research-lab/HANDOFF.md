@@ -212,6 +212,45 @@ ABI/OBSERVABILITY_STATE
 
 Do not start P5 production implementation until this attribution is quantitative.
 
+## P5-AUDIT result — 2026-08-12
+
+P5-AUDIT was completed as research only on a clean detached worktree at
+`a0b694fadc985c0b8e0944fb7844e14f72a838d8`. `origin/main` was unchanged and
+the P4 merge remained an ancestor.
+
+The P4 probe's `5638` metadata number is a lexical count of every native line
+containing `byte ptr [rbp`. Independent region-aware analysis reproduced the
+number in RA_OFF and RA_ON and decomposed it into:
+
+```text
+register initialization bytes = 4589
+memory initialization bytes   = 837
+trit payload bytes             = 212
+```
+
+The true initialization/definedness population is therefore `5426`; the `212`
+payload operations are user data included by the broad metric. The JSMN
+candidate has `34` backedges but `0` phis, `0` phi-edge copies and `0` critical
+edges. SSA destruction is not dominant for that corpus, although a phi-heavy
+corpus is still required before generalizing.
+
+The native emitter has explicit initialized bytes but no independent memory-
+validity bit. A dual-validity/reduced-product model is useful for research
+because a physical value may be current while its canonical frame value is
+stale until a call/address observer. Exact required/avoidable shares, dead
+metadata stores, true spill traffic and dynamic weights remain open.
+
+Recommended future production capability, not started here:
+
+```text
+P5 - Proof-Preserving Initialization State and Lazy Materialization
+```
+
+See `research-lab/reconciliations/P5_AUDIT_20260812.md` and the external
+`production-reports/performance-p5-memory-state-forensics/` directory. No
+production code, PR, full suite, benchmark, CI gate, P6 or shutdown was
+started.
+
 ## 7. Testing/process rules
 
 - Correctness/equivalence/safety/exact-head evidence are gates.

@@ -48,6 +48,15 @@ Before proposing or implementing anything:
    P4_MERGE_COMMIT=a0b694fadc985c0b8e0944fb7844e14f72a838d8
    P5_STARTED=NO
 
+   P5-AUDIT=COMPLETE (research only; no production P5 selected)
+
+   P5-AUDIT found that the lexical P4 byte-frame metric `5638` decomposes
+   into `4589` register-initialization accesses, `837` memory-initialization
+   accesses and `212` trit payload accesses. The exact JSMN corpus has `34`
+   backedges but `0` phis, `0` phi-edge copies and `0` critical edges. Do not
+   treat SSA as dominant without a separate phi-heavy corpus. Dynamic
+   weighting and semantic required/avoidable shares remain open.
+
 6. Critical P4 causal result:
    - the existing whole-function liveness/interference allocator was already capable;
    - X8664Backend.register_allocation defaulted false;
@@ -92,9 +101,11 @@ Before proposing or implementing anything:
    - S3-EXP-0011 ternary/finite-state minimization;
    - S3-EXP-0012 ternary representation conversion graph.
 
-12. Do NOT start or define P5 from the post-P4 recommendation alone.
-    First quantitatively separate metadata-state staging, SSA/phi/loop staging,
-    true RA spills, call/ABI traffic and mandatory reference/address identity.
+12. Do NOT start or define production P5 from the post-P4 recommendation alone.
+    P5-AUDIT has separated physical origin for the P4 JSMN corpus, but dynamic
+    weighting and semantic necessity remain promotion gates. The current
+    evidence recommends proof-preserving initialization-state propagation with
+    lazy native materialization, not a generic RA rewrite or SSA-only pass.
 
 13. If I provide new books/files, first normalize title/authors/edition and classify each as NEW,
     EXACT_WORK_REUPLOAD, EDITION_VARIANT or TOPIC_OVERLAP in sources/REGISTRY.md.

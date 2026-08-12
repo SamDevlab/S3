@@ -80,7 +80,7 @@
       "REPRESENTATION_FLEXIBILITY",
       "PROOF_KNOWLEDGE_FLEXIBILITY"
     ],
-    "zettel_count": 31,
+    "zettel_count": 34,
     "candidate_models": [
       "memory-state metadata provenance analysis",
       "SSA destruction / phi staging attribution",
@@ -122,9 +122,29 @@
     "ternary_semantics_mapper": false,
     "ternary_basis_oracle": false,
     "ternary_representation_oracle": false,
-    "information_loss_boundary_auditor": false,
-    "memory_state_metadata_auditor": false,
-    "ssa_destruction_attribution_tool": false
+    "information_loss_boundary_auditor": true,
+    "memory_state_metadata_auditor": true,
+    "ssa_destruction_attribution_tool": true
+  },
+  "p5_audit": {
+    "status": "COMPLETE",
+    "production_implementation_started": false,
+    "production_pr_opened": false,
+    "full_suite_run": false,
+    "shutdown_authorized": false,
+    "base": "a0b694fadc985c0b8e0944fb7844e14f72a838d8",
+    "metadata_metric_expected": 5638,
+    "metadata_metric_reproduced": 5638,
+    "register_initialization_accesses": 4589,
+    "memory_initialization_accesses": 837,
+    "trit_payload_accesses_in_metric": 212,
+    "ssa_phi_accesses": 0,
+    "backedges": 34,
+    "critical_edges": 0,
+    "primary_static_cause": "emitter initialization-state materialization",
+    "primary_dynamic_cause": "NOT_ESTABLISHED",
+    "recommended_future_target": "proof-preserving initialization-state propagation with lazy native materialization",
+    "cross_workload_dynamic_weighting": "OPEN"
   },
   "hard_rules": {
     "research_branch_direct_merge_to_main": false,
@@ -141,14 +161,14 @@
   },
   "next_actions": [
     "Reconcile P4 reports into all future production planning; do not repeat S3-EXP-0002 as an unresolved question",
-    "Build a provenance audit for the 5638 unchanged metadata accesses and determine semantically mandatory versus repeated avoidable state realization",
-    "Measure SSA destruction / phi / loop-carried staging separately from metadata traffic before defining P5",
-    "Run S3-EXP-0013 information-loss boundary audit with memory-validity/initialization-state facts included",
+    "Use the P5 decomposition: 5426 initialization-state accesses and 212 trit payload accesses were in the lexical 5638 metric",
+    "Keep SSA/phi attribution negative for the P4 JSMN corpus; test a phi-heavy corpus before generalizing",
+    "Complete dynamic observer-aware provenance on call-heavy, slice/reference and numeric workloads before production P5",
     "Run S3-EXP-0009 to pin exact existing S3 trit semantics before adopting any named ternary logic",
     "Prototype S3-EXP-0010 ternary operation-basis exact oracle",
     "Prototype S3-EXP-0012 representation conversion graph on bounded cases",
     "Test S3-EXP-0011 state minimization on effect-free ternary control probes",
     "Continue min-cut/Lagrangian/oracle work as research, but do not promote it merely because P4 used global residency terminology",
-    "Do not select production P5 until repeated metadata materialization and SSA-destruction attribution are separated quantitatively"
+    "Do not select production P5 until semantic necessity and dynamic weighting are measured"
   ]
 }

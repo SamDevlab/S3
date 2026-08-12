@@ -126,7 +126,7 @@ Compare deterministic greedy representation choice with exact shortest-path/DP s
 
 ### S3-EXP-0013 — Compiler information-loss boundary audit
 
-STATUS=PLANNED / REFOCUSED_AFTER_P4
+STATUS=SUPPORTED_FOR_INITIAL_CORPUS / CROSS_WORKLOAD_OPEN
 
 File: `S3-EXP-0013-information-loss-boundaries.md`
 
@@ -134,27 +134,27 @@ Related: `S3-ZK-0009`, `0021`, `0022`, `0027`, `0028`, `0030`.
 
 Across a real value/state corpus classify logical identity, type/trit semantics, equivalence, location flexibility, representation flexibility, range, provenance, memory validity, initialization state, liveness and rematerializability as `PRESERVED`, `DERIVABLE`, `LOST`, `INTENTIONALLY_DISCARDED` or `UNKNOWN` at compiler boundaries.
 
-P4 means the audit must include **configuration/pass enablement** as a boundary category, not only IR transformations.
+P4 means the audit must include **configuration/pass enablement** as a boundary category, not only IR transformations. P5-AUDIT found that the exact P4 JSMN candidate preserves the physical identity of all 5638 byte-frame lines, but semantic necessity and dynamic weighting remain open.
 
 ### S3-EXP-0014 — Memory-state metadata provenance
 
-STATUS=PLANNED / HIGHEST PRIORITY
+STATUS=SUPPORTED_FOR_P4_JSMN_STATIC_ORIGIN / DYNAMIC_NECESSITY_OPEN
 
 File: `S3-EXP-0014-memory-state-metadata-provenance.md`
 
 Related: `S3-ZK-0004`, `0021`, `0022`, `0027`, `0030`.
 
-P4 measured metadata accesses unchanged at `5638 -> 5638`. Trace those operations to initialization, memory-validity, phi/loop state, ABI/reference obligations, duplicate staging or unknown origins. Distinguish semantically mandatory from removable repeated state realization.
+P4 measured metadata accesses unchanged at `5638 -> 5638`. P5-AUDIT reproduced the count and decomposed it into `4589` register-initialization accesses, `837` memory-initialization accesses and `212` trit payload accesses included by the lexical metric. The physical-origin classification is complete; semantic necessity and dynamic weighting remain open.
 
 ### S3-EXP-0015 — SSA destruction vs memory-state metadata staging
 
-STATUS=PLANNED / HIGHEST PRIORITY
+STATUS=SUPPORTED_NEGATIVE_FOR_P4_JSMN_CORPUS / GENERALITY_OPEN
 
 File: `S3-EXP-0015-ssa-destruction-metadata-staging.md`
 
 Related: `S3-ZK-0006`, `0009`, `0027`, `0030`, `0031`.
 
-Quantitatively separate ordinary value traffic, phi/loop staging, SSA-destruction metadata, initialization/memory-validity metadata, true RA spills and call/ABI traffic before selecting P5.
+Quantitatively separate ordinary value traffic, phi/loop staging, SSA-destruction metadata, initialization/memory-validity metadata, true RA spills and call/ABI traffic before selecting P5. P5-AUDIT found `0` phi accesses and `0` critical edges in the P4 JSMN corpus, so SSA is not dominant there; a phi-heavy workload is still required for generalization.
 
 ## Current promotion order
 

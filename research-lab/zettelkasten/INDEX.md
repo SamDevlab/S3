@@ -35,6 +35,9 @@
 | [[S3-ZK-0029]] | PERMANENT | SUPPORTED | Keep causal structural, absolute runtime and external-relative performance metrics distinct. |
 | [[S3-ZK-0030]] | HYPOTHESIS | SUPPORTED_BY_P4_RESIDUAL | Memory-state metadata is a distinct optimization state space from ordinary value residency. |
 | [[S3-ZK-0031]] | PERMANENT | SUPPORTED | Allocator enablement and allocator algorithm quality are different causal variables. |
+| [[S3-ZK-0032]] | PERMANENT | SUPPORTED | The byte-frame metadata metric is physically broader than metadata and includes trit payload bytes. |
+| [[S3-ZK-0033]] | NEGATIVE_RESULT | SUPPORTED_FOR_CORPUS | SSA/phi staging is not dominant in the P4 JSMN residual because the corpus has no phis or edge copies. |
+| [[S3-ZK-0034]] | BRIDGE | SUPPORTED_AS_RESEARCH_MODEL | Initialization state and physical residence interact as separate dimensions under the emitter's snapshot rules. |
 
 ## Cluster A — Global value residency after P4
 
