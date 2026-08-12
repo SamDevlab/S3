@@ -5,6 +5,7 @@ from __future__ import annotations
 import random
 
 from cfg import Block, CFG, Instruction
+from combinatorial_checks import find_matroid_violation, find_submodularity_violation
 from exact_oracle import solve_exact
 from liveness import analyze_liveness
 from materialization_cut import (
@@ -118,15 +119,41 @@ def randomized_cut_oracle_crosscheck(seed: int = 0x533, cases: int = 200) -> Non
         }
 
 
+def demo_combinatorial_checks() -> None:
+    ground = ("a", "b", "c")
+
+    # Uniform matroid U(2,3): every subset with at most two elements is independent.
+    assert find_matroid_violation(ground, lambda subset: len(subset) <= 2) is None
+
+    # Deliberately violate heredity to prove the counterexample finder fires.
+    bad_independent = lambda subset: subset != frozenset({"a"})
+    assert find_matroid_violation(ground, bad_independent) is not None
+
+    # Concave cardinality cap is submodular.
+    assert (
+        find_submodularity_violation(ground, lambda subset: min(len(subset), 2))
+        is None
+    )
+
+    # Pure complementarity/synergy between a and b violates submodularity.
+    def synergy(subset: frozenset[str]) -> float:
+        return 1.0 if {"a", "b"}.issubset(subset) else 0.0
+
+    assert find_submodularity_violation(ground, synergy) is not None
+
+
 def main() -> None:
     validate_lattice_laws()
     validate_transfer_monotonicity()
     demo_liveness()
     demo_cut_matches_oracle()
     randomized_cut_oracle_crosscheck()
+    demo_combinatorial_checks()
     print("residence_lattice=PASS")
     print("liveness=PASS")
     print("mincut_vs_exact_oracle=PASS")
+    print("matroid_counterexample_tool=PASS")
+    print("submodularity_counterexample_tool=PASS")
     print("OK")
 
 
