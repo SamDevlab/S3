@@ -1,128 +1,147 @@
 # P4 Research Hypothesis — Global Value Residency & Memory Materialization
 
-This document is intentionally broader than a production milestone specification. It defines the research question from which a later production P4 should be selected.
+STATUS: **PRODUCTION QUESTION PARTIALLY RESOLVED BY P4 / BROADER RESEARCH REMAINS OPEN**
 
-## Problem
-
-P1–P3 removed real local/control/cross-block inefficiencies but did not materially reduce the representative aggregate load/store count. The remaining evidence points to broader frame canonicalization, with phi/SSA staging secondary and true RA spills not established as dominant.
-
-## Primary hypothesis
-
-S3 loses **location flexibility** too early.
-
-A logical value that could still be represented by a virtual/register-side value acquires canonical frame identity before enough global information exists to decide whether memory is actually required.
-
-## Architectural inversion under test
-
-Current-ish mental model:
+Production reconciliation:
 
 ```text
-logical value
-    ↓
-canonical frame identity
-    ↓
-optional late residence exceptions
+research-lab/reconciliations/P4_20260812.md
 ```
 
-Research model:
+Production PR:
 
 ```text
-logical value
-    ↓
-location-flexible identity
-    ↓
-constraints + liveness + alias/call/ABI facts
-    ↓
-choose among
-    ├── keep flexible/register-eligible
-    ├── materialize
-    ├── recover
-    └── rematerialize
+#170 — perf(p4): make global value residency the native default
 ```
 
-## Research questions
+## Original problem
 
-1. At which exact phase is location flexibility first lost for hot values?
-2. Which losses are semantically mandatory?
-3. Can memory validity and register-side validity coexist safely for address-taken values?
-4. Can materialization placement be optimized independently per value before register-capacity coupling?
-5. Does restricted materialization placement reduce to min-cut?
-6. What interaction first breaks that reduction?
-7. Can a finite residence lattice/product domain express safe confluence at CFG joins?
-8. Is an explicit `materialize` operation cleaner than implicit frame identity?
-9. How much of phi traffic is memory-roundtrip implementation convenience?
-10. After preserving cross-block virtual identity, do true RA spills finally become dominant?
+P1–P3 removed real local/control/cross-block inefficiencies but did not materially reduce representative aggregate memory traffic. The broad research hypothesis was that S3 lost **location flexibility** too early.
 
-## Mathematical toolbox
+## What P4 actually proved
 
-Candidate tools are not commitments:
+P4 found a simpler and earlier causal boundary than the more exotic candidate models:
+
+```text
+X8664Backend.register_allocation default false
+    ↓
+default native backend selected RA_OFF
+    ↓
+emitter frame canonicalization
+```
+
+The existing allocator already consumed whole-function CFG liveness and provided deterministic global value residency. P4 therefore selected:
+
+```text
+SELECTED_MODEL=
+existing liveness-backed global value residency with explicit stack-backed opt-out
+
+SELECTED_TRANSFORMATION=
+make register allocation the native default while preserving register_allocation=false fallback
+```
+
+No allocator redesign, Assembly IR redesign, phi rewrite, min-cut materialization pass or new global residence lattice was needed for the production P4 capability.
+
+Direct evidence:
+
+```text
+frame loads:  1549 -> 491
+frame stores: 1520 -> 471
+coverage: 13/13 targeted opportunities
+```
+
+This supports the core thesis that an avoidable location-flexibility collapse existed, but the specific production cause was **configuration/default policy**, not absence of global liveness/allocation machinery.
+
+## What P4 did NOT prove
+
+P4 does not prove that:
+
+- min-cut is the correct general materialization algorithm;
+- a residence lattice should become production IR state;
+- explicit `materialize` IR is required;
+- current allocator quality is optimal;
+- phi/SSA staging is dominant;
+- all remaining frame/memory traffic is avoidable.
+
+These remain research questions.
+
+## Important residual split
+
+P4 measured:
+
+```text
+TOTAL_FRAME_ACCESSES: 9282 -> 7175
+METADATA_ACCESSES:     5638 -> 5638
+```
+
+Therefore ordinary value residency and memory/initialized-state metadata must now be treated as separate causal state spaces.
+
+Residual production diagnosis:
+
+```text
+REPEATED_MEMORY_STATE_MATERIALIZATION
+```
+
+Recommended next research area:
+
+```text
+SSA_DESTRUCTION_AND_MEMORY_STATE_METADATA_STAGING
+```
+
+## Revised research questions
+
+1. What exactly constitutes the unchanged metadata access population?
+2. Which metadata accesses are semantically/ABI mandatory?
+3. Which are initialization-state, memory-validity, phi/loop or late emitter staging?
+4. What is the earliest introduction layer for repeated metadata materialization?
+5. Does SSA destruction contribute a dominant share after P4?
+6. Are loop-carried phi values dynamically dominant?
+7. Do true RA spills become significant only after metadata/SSA traffic is removed?
+8. Can reduced-product or bounded fact domains preserve memory-validity/initialization facts without repeated physical realization?
+9. Do min-cut/lazy-materialization models become relevant to the residual state problem, or were they solving the wrong level?
+10. Can exact bounded oracles quantify remaining materialization optimality gaps?
+
+## Mathematical toolbox retained as research
 
 ```text
 monotone data-flow equations
 fixed-point iteration
-lattices / complete lattices
-reduced product abstract domains
-Galois-style abstraction discipline
-min cut
-minimum-cost flow
-primal-dual reasoning
+lattices / reduced products
+abstract interpretation
+min cut / minimum-cost flow
+primal-dual/Lagrangian reasoning
 exact bounded enumeration
-integer/constraint oracle for tiny cases
-matroid counterexample search
-submodularity counterexample search
+matroid/submodularity counterexample search
 dominators / regions / loop weighting
+term rewriting / bounded decision procedures
 ```
 
-## Mandatory evidence before production design
+These are tools, not commitments.
+
+## Next mandatory evidence before P5 selection
 
 ```text
-FIRST_MEMORY_IDENTITY_LAYER_HISTOGRAM
-HOT_VALUE_CORPUS >= 50 logical values
-FRAME_TRAFFIC_CAUSE_BREAKDOWN
-RA_OFF_VS_RA_ON comparison
-PHI_STAGING attribution
-LOOP_WEIGHTED traffic attribution
-EXACT_ORACLE on tiny cases
-MINCUT_VS_ORACLE comparison
-MODEL_SCORECARD
+S3-EXP-0014 memory-state metadata provenance
+S3-EXP-0015 SSA destruction vs metadata staging
+S3-EXP-0013 information-loss boundary audit
 ```
 
-## Candidate production outcomes
-
-Research may lead to one of several different P4 implementations:
-
-### A — Explicit location-flexible Assembly IR values
-
-Use if Assembly IR/value representation is the earliest destructive layer.
-
-### B — Lazy materialization / materialization-placement pass
-
-Use if values retain identity but are eagerly made memory-valid without need.
-
-### C — Register-preserving phi/SSA destruction
-
-Use if phi/loop-carried edge staging dominates after ordinary canonicalization is accounted for.
-
-### D — Real RA improvement
-
-Use only if values reach RA correctly and measured allocator-created spills dominate.
-
-### E — New architecture discovered by experiments
-
-Allowed if it is safer/simpler/more effective than A–D and the evidence is preserved in the Zettelkasten.
-
-## Non-goals
-
-Do not use this research as an excuse for:
+Quantitatively separate:
 
 ```text
-unrelated optimizer rewrite
-GPU backend
-unsafe references
-benchmark-specific fast paths
-full LLVM-like infrastructure without measured need
+ordinary value traffic
+phi edge copies
+loop-phi staging
+SSA-destruction metadata
+initialization/memory-validity metadata
+true RA spills
+call/ABI traffic
+mandatory reference/address identity
+unknown
 ```
 
 ## Promotion rule
 
-The production P4 should be named after the **winning measured transformation**, not after this broad research umbrella.
+Do not call the next production milestone “SSA optimization” or “RA optimization” merely because those are plausible categories.
+
+Name P5 only after the dominant residual cause and its earliest introduction layer are measured.
