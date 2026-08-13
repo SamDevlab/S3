@@ -7,6 +7,7 @@ import argparse
 import json
 import re
 import sys
+from collections import Counter
 from pathlib import Path
 
 ZK_ID = re.compile(r"S3-ZK-\d{4}")
@@ -64,7 +65,12 @@ def main() -> int:
         errors.append(f"STATE.json is not valid JSON: {exc}")
 
     index_text = (lab / "zettelkasten" / "INDEX.md").read_text(encoding="utf-8")
-    indexed_ids = set(ZK_ID.findall(index_text))
+    indexed_matches = ZK_ID.findall(index_text)
+    indexed_ids = set(indexed_matches)
+    indexed_rows = re.findall(r"^\|\s*\[\[(S3-ZK-\d{4})\]\]\s*\|", index_text, re.MULTILINE)
+    for zk_id, count in sorted(Counter(indexed_rows).items()):
+        if count > 1:
+            errors.append(f"{zk_id} is indexed {count} times")
     notes_dir = lab / "zettelkasten" / "notes"
     note_files: dict[str, list[Path]] = {}
 
