@@ -196,6 +196,7 @@ class X8664Emitter:
         lines.extend(self._save_parameters(function, layout))
         lines.extend(self._initialize_metadata(function, layout))
         lines.append(f"    jmp {mangle_block(function.name, 'entry')}")
+        function_liveness = analyze_liveness(function)
         for block_index, block in enumerate(function.blocks):
             self.local_aliases = {}
             self.local_move_future_registers = {
@@ -205,16 +206,128 @@ class X8664Emitter:
                 for register in future_instruction.registers
             }
             lines.append(f"{mangle_block(function.name, block.label)}:")
-            for instruction in block.instructions:
+            instruction_index = 0
+            while instruction_index < len(block.instructions):
+                if self._can_fuse_tcmp_tbr3(
+                    block,
+                    instruction_index,
+                    function_liveness,
+                ):
+                    lines.extend(
+                        self._emit_tcmp_tbr3(
+                            function,
+                            block.label,
+                            layout,
+                            block.instructions[instruction_index],
+                            block.instructions[instruction_index + 1],
+                        )
+                    )
+                    instruction_index += 2
+                    continue
                 lines.extend(
                     self._emit_instruction(
                         function,
                         block.label,
                         layout,
-                        instruction,
+                        block.instructions[instruction_index],
                     )
                 )
+                instruction_index += 1
         lines.append(f".size {symbol}, .-{symbol}")
+        return lines
+
+    @staticmethod
+    def _can_fuse_tcmp_tbr3(
+        block: AssemblyBlock,
+        instruction_index: int,
+        function_liveness,
+    ) -> bool:
+        if instruction_index + 1 >= len(block.instructions):
+            return False
+        compare = block.instructions[instruction_index]
+        branch = block.instructions[instruction_index + 1]
+        if compare.opcode is not AssemblyOpcode.TCMP:
+            return False
+        if branch.opcode is not AssemblyOpcode.TBR3:
+            return False
+        if not branch.registers or compare.registers[0] != branch.registers[0]:
+            return False
+        # The materialized comparison result is not needed after the branch.
+        # Liveness across the CFG is the explicit proof that no successor
+        # observes the result or depends on its initialized marker.
+        return compare.registers[0] not in function_liveness.for_instruction(
+            branch
+        ).live_after
+
+    def _instruction_instrumentation(
+        self,
+        function: AssemblyFunction,
+        block_name: str,
+        instruction: AssemblyInstruction,
+    ) -> list[str]:
+        self.current_function = function
+        self.current_block = block_name
+        self.current_instruction = instruction
+        limit_failure = self._instruction_failure(
+            "instruction limit",
+            detail=f"instruction limit {self.max_instructions} exceeded\n",
+        )
+        if 0 <= self.max_instructions <= 0x7FFFFFFF:
+            instrumentation = [
+                f"    cmp qword ptr [rip + __s3_instruction_count], "
+                f"{self.max_instructions}"
+            ]
+        else:
+            instrumentation = [
+                f"    movabs r11, {self.max_instructions}",
+                "    cmp qword ptr [rip + __s3_instruction_count], r11",
+            ]
+        instrumentation.extend(
+            [
+                f"    jae {limit_failure}",
+                "    inc qword ptr [rip + __s3_instruction_count]",
+            ]
+        )
+        return instrumentation
+
+    def _emit_tcmp_tbr3(
+        self,
+        function: AssemblyFunction,
+        block_name: str,
+        layout: FrameLayout,
+        compare: AssemblyInstruction,
+        branch: AssemblyInstruction,
+    ) -> list[str]:
+        _, left, right = compare.registers
+        lines = self._instruction_instrumentation(function, block_name, compare)
+        lines.extend(self._read_register(layout, left, "rax"))
+        lines.extend(self._read_register(layout, right, "r10"))
+
+        # The second instruction's limit check intentionally precedes the
+        # native compare. The first instruction has already validated and
+        # loaded both operands, and the second check may clobber flags.
+        lines.extend(self._instruction_instrumentation(function, block_name, branch))
+        source_type = function.type_of(left)
+        if source_type is AssemblyType.F64:
+            lines.extend(
+                (
+                    "    movq xmm0, rax",
+                    "    movq xmm1, r10",
+                    "    ucomisd xmm0, xmm1",
+                    f"    jb {mangle_block(function.name, branch.labels[0])}",
+                    f"    ja {mangle_block(function.name, branch.labels[2])}",
+                    f"    jmp {mangle_block(function.name, branch.labels[1])}",
+                )
+            )
+        else:
+            lines.extend(
+                (
+                    "    cmp rax, r10",
+                    f"    jl {mangle_block(function.name, branch.labels[0])}",
+                    f"    jg {mangle_block(function.name, branch.labels[2])}",
+                    f"    jmp {mangle_block(function.name, branch.labels[1])}",
+                )
+            )
         return lines
 
     def _save_parameters(

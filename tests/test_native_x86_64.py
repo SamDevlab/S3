@@ -91,6 +91,80 @@ def test_small_integer_constant_is_written_directly_to_its_destination() -> None
     assert "movabs rax, 6" not in text
 
 
+def test_dead_tcmp_result_branches_directly_without_materializing_trit() -> None:
+    source = (ROOT / "examples" / "sign.s3").read_text(encoding="utf-8")
+
+    for optimization in ("O0", "O1"):
+        program = compile_source(source, optimization, mode=SyntaxMode.V0_6).assembly
+        text = generate_native_assembly(program)
+        body = text[text.index("s3_sign:"):text.index(".size s3_sign")]
+
+        assert "cmovl r11, rax" not in body
+        assert "cmovg r11, rax" not in body
+        assert "mov rax, r11" not in body
+        assert body.count(
+            "cmp qword ptr [rip + __s3_instruction_count], 100000"
+        ) >= 2
+        assert "    jl .L_s3_" in body
+        assert "    jg .L_s3_" in body
+
+
+def test_tcmp_result_observed_after_branch_keeps_materialization_fallback() -> None:
+    program = parse_assembly(
+        """\
+.function main -> trit
+    .register r0, tryte
+    .register r1, tryte
+    .register r2, trit
+.label entry
+    TCONST r0, 1
+    TCONST r1, 0
+    TCMP r2, r0, r1
+    TBR3 r2, negative, neutral, positive
+.label negative
+    TRET r2
+.label neutral
+    TCONST r2, 0
+    TRET r2
+.label positive
+    TCONST r2, 1
+    TRET r2
+.end
+"""
+    )
+
+    text = generate_native_assembly(program)
+    body = text[text.index("s3_main:"):text.index(".size s3_main")]
+
+    assert "cmovl r11, rax" in body
+    assert "cmovg r11, rax" in body
+    assert "mov rax, r11" in body
+
+
+def test_dead_f64_tcmp_result_uses_ordered_direct_branch_shape() -> None:
+    source = """\
+fn classify(value: f64) -> trit:
+    match value <=> 0.0:
+        -1:
+            return -1
+        0:
+            return 0
+        1:
+            return 1
+fn main() -> trit:
+    return classify(0.5)
+"""
+
+    program = compile_source(source, "O1", mode=SyntaxMode.V0_6).assembly
+    text = generate_native_assembly(program)
+    body = text[text.index("s3_classify:"):text.index(".size s3_classify")]
+
+    assert "ucomisd xmm0, xmm1" in body
+    assert "    jb .L_s3_" in body
+    assert "    ja .L_s3_" in body
+    assert "cmovl r11, rax" not in body
+
+
 def test_frame_layout_is_aligned_deterministic_and_non_overlapping() -> None:
     function = _compilation("static_array.s3").assembly.functions[0]
     first = layout_frame(function)
