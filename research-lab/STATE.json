@@ -224,6 +224,7 @@
     "ci_optimization_head": "ae278bfdec2c9b957a1d885c2076d37f58f97df2",
     "ci_optimization_merge": "1a775ba79f3abb6d3b33bb7d710ab67d0f808e18",
     "origin_main_end": "1a775ba79f3abb6d3b33bb7d710ab67d0f808e18",
+    "research_branch_head_final": "1131aeecc91f6185c533bc4630af6956720d225e",
     "measured_api_job_minutes": 22356.616667,
     "research_branch_minutes": 3716.766667,
     "duplicated_push_pr_minutes": 8068.35,
