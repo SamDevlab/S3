@@ -33,6 +33,14 @@ not shown incremental coverage or a soundness benefit.
 | C6 | F64 representation | XMM value -> integer bits/frame -> XMM | direct XMM residence | unknown | NaN, ABI, call, and exact bit behavior require a targeted corpus; no opportunity count. |
 | C7 | slice/reference metadata | base+length/provenance -> decomposed fields -> reconstructed metadata | direct metadata residence | unknown | Length, provenance, mutability, and evaluation count are semantic; no dynamic evidence. |
 
+The complete required field set for every candidate (`VALUE_FAMILY`,
+`PHASE_BEFORE`, `POSSIBILITIES_BEFORE`, `COLLAPSE_BOUNDARY`,
+`POSSIBILITIES_AFTER`, `LOST_POSSIBILITIES`, `CONSUMER`,
+`CONSUMER_CAPABILITIES`, `COLLAPSE_REQUIRED`, `OBLIGATION_WITNESS`,
+`STATIC_FREQUENCY`, `DYNAMIC_FREQUENCY`, `SIMPLE_FIX`, `COMPLEX_FIX`,
+`SAFETY_RISK`, and `STATUS`) is preserved in
+`POSSIBILITY_COLLAPSE_LEDGER_P8_2.json`.
+
 The static audit found `TCMP->TBR3` in the tiny golden corpus, but no
 `TREL->TBR3`, `TLOAD->TSTORE`, `TSTORE->TLOAD`, `TADDR->TREFLOAD`,
 `TREFLOAD->TREFSTORE`, or `TMOV->TMOV` adjacency. This is triage, not a

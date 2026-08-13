@@ -362,3 +362,5 @@ collapse ledger was compared with direct producer/consumer rules. The ledger
 is useful for organizing research witnesses, but no new collapse had a
 path-complete safety proof and the only proven conditional control collapse is
 already P7. No P8 production target was promoted.
+
+File: `../reconciliations/POSSIBILITY_COLLAPSE_LEDGER_P8_2.json`
