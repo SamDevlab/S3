@@ -64,6 +64,21 @@ def test_native_generation_is_deterministic() -> None:
     assert generate_native_assembly(program) == generate_native_assembly(program)
 
 
+def test_instruction_limit_guard_uses_compact_immediate_when_representable() -> None:
+    program = compile_source(
+        "fn main() -> tryte:\n    return 6\n",
+        mode=SyntaxMode.V0_6,
+    ).assembly
+
+    compact = generate_native_assembly(program, max_instructions=100_000)
+    assert "cmp qword ptr [rip + __s3_instruction_count], 100000" in compact
+    assert "movabs r11, 100000" not in compact
+
+    wide = generate_native_assembly(program, max_instructions=0x80000000)
+    assert "movabs r11, 2147483648" in wide
+    assert "cmp qword ptr [rip + __s3_instruction_count], r11" in wide
+
+
 def test_frame_layout_is_aligned_deterministic_and_non_overlapping() -> None:
     function = _compilation("static_array.s3").assembly.functions[0]
     first = layout_frame(function)
