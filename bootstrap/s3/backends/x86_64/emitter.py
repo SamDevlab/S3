@@ -498,12 +498,22 @@ class X8664Emitter:
             "instruction limit",
             detail=f"instruction limit {self.max_instructions} exceeded\n",
         )
-        instrumentation = [
-            f"    movabs r11, {self.max_instructions}",
-            "    cmp qword ptr [rip + __s3_instruction_count], r11",
-            f"    jae {limit_failure}",
-            "    inc qword ptr [rip + __s3_instruction_count]",
-        ]
+        if 0 <= self.max_instructions <= 0x7FFFFFFF:
+            instrumentation = [
+                f"    cmp qword ptr [rip + __s3_instruction_count], "
+                f"{self.max_instructions}"
+            ]
+        else:
+            instrumentation = [
+                f"    movabs r11, {self.max_instructions}",
+                "    cmp qword ptr [rip + __s3_instruction_count], r11",
+            ]
+        instrumentation.extend(
+            [
+                f"    jae {limit_failure}",
+                "    inc qword ptr [rip + __s3_instruction_count]",
+            ]
+        )
 
         if opcode is AssemblyOpcode.TCONST:
             assert instruction.immediate is not None
