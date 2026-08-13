@@ -698,12 +698,12 @@ rerun, retry, cancellation, or further remote write followed discovery.
 The direct cause was the research workflow trigger; the process cause was
 auditing `main` instead of the workflow state of the proposed target ref; the
 control gap was the absence of a remote-write automation provenance gate in
-`validate_lab.py`. The durable research branch remains at
-`06ed79449dcd917c3213570389a3639f6ad0be24`; remote publication is prohibited
-for the current campaign.
+`validate_lab.py`. The durable research branch was repaired and published at
+`d852a611f0c824436c736ff380d5cfb33d86feb5`; repository-level Actions are now
+disabled and no new run followed publication.
 
 The isolated local branch
-`local/workflow-provenance-containment-20260813` contains the unpublished
+`local/workflow-provenance-containment-20260813` contains the published
 repair. Its `tests.yml` now restricts `push` to `main` with the current
 production path policy, while preserving the research branch's job bodies.
 `m138-docker.yml` already restricted `push` to `main` and was not changed.
@@ -716,10 +716,38 @@ are `UNKNOWN` and non-zero. This is a local proof, not write authorization.
 
 ```text
 LOCAL_REPAIR_BRANCH=local/workflow-provenance-containment-20260813
-REMOTE_PUBLICATION_PENDING=YES
+REMOTE_PUBLICATION_PENDING=NO
 REMOTE_WRITES_THIS_CAMPAIGN=0
 GITHUB_ACTIONS_RUNS_TRIGGERED_THIS_CAMPAIGN=0
 P8_STARTED=NO
 P9_STARTED=NO
 SHUTDOWN_AUTHORIZED=NO
 ```
+
+## P8.2 checkpoint: preserved possibilities
+
+The containment repair was subsequently published at `d852a611` to
+`research/zettelkasten-lab-20260812`. Repository-level Actions are disabled;
+the remote run count after publication is zero. The exact production anchor is
+`631b51e70562a33183ac14d0be5bbe2ddd140779`.
+
+P8.2 completed a bounded possibility-collapse audit and recorded
+`S3-EXP-0029`, `S3-ZK-0054`, and
+`reconciliations/P8_2_PRESERVED_POSSIBILITIES_20260813.md`. The ledger is a
+research notation only. Initialization and memory-state materialization remain
+the strongest unresolved family, but observer/failure/alias/call/successor
+witnesses prevent promotion. The simplicity challenger remains local
+producer/consumer rules.
+
+```text
+P8_2_STATUS=COMPLETE_NO_VALID_TARGET_YET
+P8_SELECTION=NO_VALID_TARGET_YET
+P8_STARTED=NO
+PRODUCTION_CODE_CHANGED=NO
+P9_STARTED=NO
+SHUTDOWN_AUTHORIZED=NO
+```
+
+Before any future P8 implementation, run one bounded path-complete
+observer-aware attribution experiment. Do not reopen broad compiler triage or
+start P9.

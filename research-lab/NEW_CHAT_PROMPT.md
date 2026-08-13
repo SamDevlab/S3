@@ -234,6 +234,33 @@ P8_STARTED=NO
 SHUTDOWN_AUTHORIZED=NO
 ```
 
+## Current P8.2 checkpoint
+
+P8.2 `PRESERVED_POSSIBILITIES_COLLAPSE_POINTS_V1` completed as a negative
+research result. The containment publication is at `d852a611`, the production
+anchor remains `631b51e70562a33183ac14d0be5bbe2ddd140779`, and repository-level
+GitHub Actions are disabled. No new Actions run occurred after publication.
+
+The possibility-set notation is retained as a research ledger, not as a
+compiler abstraction. The seven tracked families and their concrete witnesses
+are in `reconciliations/P8_2_PRESERVED_POSSIBILITIES_20260813.md`. The only
+proven conditional collapse is the already-shipped P7 `TCMP->TBR3` case. The
+strongest unresolved family is initialization/memory-state materialization,
+but P8.1 observer and failure evidence prevents a path-complete promotion.
+
+```text
+P8_2_STATUS=COMPLETE_NO_VALID_TARGET_YET
+P8_SELECTION=NO_VALID_TARGET_YET
+P8_STARTED=NO
+PRODUCTION_CODE_CHANGED=NO
+P9_STARTED=NO
+SHUTDOWN_AUTHORIZED=NO
+```
+
+The next research step, if authorized in a later campaign, is one bounded
+path-complete observer-aware attribution experiment. Do not start production
+P8 or P9 from this checkpoint.
+
 The production change is limited to liveness-gated direct lowering of an
 adjacent `TCMP`/`TBR3` pair. Keep successor-observer fallback, instruction
 limits, initialization checks, f64 unordered behavior, ABI, reference, and

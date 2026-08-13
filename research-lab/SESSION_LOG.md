@@ -272,3 +272,20 @@ select P5 only from measured residual cause
   design. Added `S3-ZK-0053` and `S3-EXP-0028`. The repair is reachable from
   `local/workflow-provenance-containment-20260813` but is intentionally not
   published while Actions allowance is exhausted.
+
+## 2026-08-13 - P8.2 preserved possibilities and collapse points
+
+- Reconciled the published containment checkpoint at `d852a611` with
+  `origin/main=631b51e70562a33183ac14d0be5bbe2ddd140779`; the remote research
+  branch contains the repair and repository Actions are disabled by policy.
+- Audited the exact production anchor with a deterministic seven-file golden
+  structural triage. It found the already-shipped conditional `TCMP->TBR3`
+  family and no new adjacent memory/address/ternary roundtrip family.
+- Built the possibility collapse ledger across representation, location,
+  proof, control, address/memory, ABI, and ternary tracks. Initialization and
+  memory-state materialization remain the strongest unresolved family, but
+  P8.1 observer and failure witnesses prevent a path-complete safe rewrite.
+- Compared the global possibility-set notation with local producer/consumer
+  rules. The latter remain the simpler implementation model and no new target
+  was promoted. P8.2 is `NO_VALID_TARGET_YET`; no production code, branch, PR,
+  merge, full suite, benchmark, P9, or shutdown was started.

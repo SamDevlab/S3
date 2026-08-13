@@ -349,8 +349,16 @@ Results:
   possible push runs;
 - controls A-F passed, including malformed and unsupported inputs returning
   `UNKNOWN` and non-zero;
-- the repaired state still has `REMOTE_PUBLICATION_PENDING=YES` because this
-  campaign prohibits remote writes.
+- the repaired state was published at `d852a611` after repository-level
+  Actions were disabled; no new run followed publication.
 
 This is a research-infrastructure containment result, not a compiler
 optimization or a production CI authorization.
+
+### S3-EXP-0029 - P8.2 preserved possibilities and collapse points
+
+`S3-EXP-0029` records the P8.2 negative result. A seven-entry possibility
+collapse ledger was compared with direct producer/consumer rules. The ledger
+is useful for organizing research witnesses, but no new collapse had a
+path-complete safety proof and the only proven conditional control collapse is
+already P7. No P8 production target was promoted.
