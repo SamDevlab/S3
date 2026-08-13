@@ -175,6 +175,36 @@
     "benchmark_run": false,
     "shutdown_authorized": false
   },
+  "p5_research_closure": {
+    "status": "COMPLETE",
+    "base": "a0b694fadc985c0b8e0944fb7844e14f72a838d8",
+    "origin_main": "a0b694fadc985c0b8e0944fb7844e14f72a838d8",
+    "prework_reproduction_match": true,
+    "static_initialization_total": 5426,
+    "dynamic_initialization_jsmn": 21221,
+    "allocated_memory_reset_events_jsmn": 14367,
+    "reset_trace_coverage_jsmn": 1.0,
+    "reset_semantic_classification_coverage": null,
+    "direct_required_memory_reset_bytes_jsmn": 13340,
+    "overwritten_candidate_bytes_jsmn": 1024,
+    "lifetime_end_candidate_bytes_jsmn": 3,
+    "temporary_taddr_differential": true,
+    "production_taddr_support": false,
+    "o1_slice_optimizer_limitation": true,
+    "failure_path_proof_closed": false,
+    "phi_loop_proof_closed": false,
+    "frame_slot_reuse_proven": false,
+    "exact_reset_oracle_available": false,
+    "promotion_gate_pass": false,
+    "promotion_decision": "MORE_RESEARCH_REQUIRED",
+    "production_implementation_started": false,
+    "production_pr_opened": false,
+    "full_suite_run": false,
+    "benchmark_run": false,
+    "p5_started": false,
+    "p6_started": false,
+    "shutdown_authorized": false
+  },
   "hard_rules": {
     "research_branch_direct_merge_to_main": false,
     "production_changes_from_lab": "port proven ideas to a fresh branch from current main",
@@ -199,6 +229,8 @@
     "Prototype S3-EXP-0012 representation conversion graph on bounded cases",
     "Test S3-EXP-0011 state minimization on effect-free ternary control probes",
     "Continue min-cut/Lagrangian/oracle work as research, but do not promote it merely because P4 used global residency terminology",
-    "Do not select production P5 until semantic necessity and dynamic weighting are measured"
+    "Do not select production P5 until semantic necessity and dynamic weighting are measured",
+    "Complete path-complete observer provenance and failure/phi/loop closure before P5 production",
+    "Keep temporary TADDR support out of production until its contract is independently promoted"
   ]
 }

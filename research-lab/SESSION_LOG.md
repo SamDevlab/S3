@@ -137,3 +137,18 @@ select P5 only from measured residual cause
 - Added focused call/reference/slice/numeric/phi-heavy corpus evidence. Native paths passed; hosted emulator TADDR remains unsupported for reference/slice differential closure.
 - Corrected the reports so only directly proven populations are classified; residual shares are UNKNOWN/UNMEASURED, not fabricated conditional shares.
 - Decision: MORE_RESEARCH_REQUIRED; no production P5, PR, full suite, benchmark or shutdown.
+
+## 2026-08-12 - P5-RESEARCH-CLOSURE
+
+- Corrected closure trace weighting so each allocated memory metadata reset
+  contributes `length * length` bytes across the `rep stosb` execution model.
+- Reproduced exact JSMN allocated-memory reset bytes: 14367, with 2259 reset
+  operations including register metadata and 37 memory reset operations.
+- Measured direct JSMN evidence: 13340 required bytes, 1024 overwrite-before-
+  observer candidates and 3 lifetime-end candidates.
+- Added a disposable hosted TADDR/reference representation and validated six
+  O0 native/emulator comparisons. No production file was changed or committed.
+- Focused test groups passed; the O1 slice optimizer verifier limitation was
+  recorded without changing code.
+- Decision remains MORE_RESEARCH_REQUIRED. No full suite, benchmark, P5/P6
+  production work or shutdown was started.

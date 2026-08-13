@@ -214,3 +214,34 @@ NEXT=
 ## Rule
 
 When an experiment produces a counterexample, create a `NEGATIVE_RESULT` Zettel before changing the model so the failed hypothesis remains durable knowledge.
+
+### S3-EXP-0017 - Reset identity, lifetime and observer closure
+
+STATUS=SUPPORTED_FOR_JSMN_TRACE / GENERAL_PROOF_OPEN
+
+The closure trace reproduces 14367 allocated-memory reset bytes. Direct
+overwrite and lifetime candidates are measured, but aliases, calls, failure
+paths and frame-layout identity remain conservative unknowns.
+
+### S3-EXP-0018 - Hosted TADDR differential closure
+
+STATUS=SUPPORTED_FOR_O0_FOCUSED_CORPUS / O1_LIMITATION
+
+A disposable hosted reference representation matched native results on six O0
+corpora. It was not promoted to production. O1 slice compilation currently
+fails in the existing optimizer verifier before execution.
+
+### S3-EXP-0019 - Exact reset necessity oracle
+
+STATUS=PLANNED
+
+The existing bounded placement oracle is not sound for S3 reset identity. A
+future oracle must model typed validity, aliases, calls, failure exits and
+frame lifetimes.
+
+### S3-EXP-0020 - Failure, phi and loop reset proof
+
+STATUS=OPEN
+
+Focused contracts pass and phi-heavy evidence exists, but no path-complete
+reset necessity proof is established.

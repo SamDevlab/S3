@@ -174,3 +174,18 @@ P5-PREWORK did not establish a full required/avoidable partition. Only 324
 static checks and 356 JSMN dynamic checks are directly proven; the residual
 population remains UNKNOWN/UNMEASURED. The campaign decision is
 MORE_RESEARCH_REQUIRED.
+
+## P5-RESEARCH-CLOSURE additions
+
+| ID | Title | Status |
+|---|---|---|
+| S3-ZK-0039 | Reset trace coverage is not semantic deadness coverage | SUPPORTED_NEGATIVE_RESULT |
+| S3-ZK-0040 | Memory reset byte weighting must square object length | SUPPORTED_FOR_JSMN_TRACE |
+| S3-ZK-0041 | Temporary TADDR closure is an emulator experiment, not production support | SUPPORTED_FOR_O0_CORPUS |
+| S3-ZK-0042 | O1 slice optimizer verifier failure remains an independent limitation | NEGATIVE_RESULT |
+| S3-ZK-0043 | Frame metadata slot reuse was not observed | OPEN_NEGATIVE_RESULT |
+
+P5-RESEARCH-CLOSURE reproduced 14367 allocated-memory reset bytes and found
+13340 direct required bytes, 1024 overwrite candidates and 3 lifetime-end
+candidates. Alias, call, failure, phi/loop and exact-oracle closure remain
+open; promotion is not authorized.

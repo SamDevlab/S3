@@ -512,3 +512,33 @@ SHUTDOWN_AUTHORIZED=NO
 Do not start production P5 from the reset hotness alone. The next research
 questions are observer-frontier closure, reset/store deadness, proof-preserving
 metadata propagation, and hosted TADDR support.
+
+## 18. P5-RESEARCH-CLOSURE - 2026-08-12
+
+The closure campaign reproduced the 5426 true initialization-state population,
+21221 exact JSMN dynamic initialization events and 14367 allocated-memory reset
+bytes. A temporary native trace classified 13340 bytes as directly required by
+an uninitialized-memory observation, 1024 as overwrite-before-direct-observer
+candidates and 3 as lifetime-end candidates. These latter two classes remain
+conservative candidates, not semantic deadness proofs.
+
+The temporary hosted TADDR support passed six O0 native/emulator corpus
+comparisons, including reference and a valid mutable slice. It was discarded;
+production Assembly emulation remains unchanged. The existing O1 slice
+optimizer verifier error was recorded as a limitation rather than changed.
+
+```text
+P5_RESEARCH_CLOSURE=COMPLETE
+PROMOTION_DECISION=MORE_RESEARCH_REQUIRED
+RESET_SEMANTIC_CLASSIFICATION_COVERAGE=UNAVAILABLE
+PRODUCTION_CODE_COMMITTED=NO
+PRODUCTION_PR_OPENED=NO
+FULL_SUITE_RUN=NO
+BENCHMARK_RUN=NO
+P5_STARTED=NO
+P6_STARTED=NO
+SHUTDOWN_AUTHORIZED=NO
+```
+
+Canonical external report:
+`C:/Users/samue/Downloads/S3/production-reports/performance-p5-research-closure-20260812/FINAL_P5_RESEARCH_CLOSURE.md`
