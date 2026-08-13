@@ -30,6 +30,32 @@ When an idea is promoted:
 
 The research branch may contain prototypes, exact-but-exponential oracles, rejected experiments, and analysis tooling.
 
+## Operational truth and production provenance
+
+`STATE.json` is the canonical machine-readable research status. `HANDOFF.md` is the current narrative handoff. `SESSION_LOG.md`, reconciliations, and old roadmap phases are durable historical evidence and must not override current Git state or `STATE.json`.
+
+The copy of `bootstrap/` that lives on this long-lived research branch is **not automatically the current production compiler**. It may intentionally lag `main`. Therefore:
+
+- never use the research-branch `bootstrap.s3` import as evidence about current production unless its exact commit is the declared target;
+- any experiment that measures current production must declare `TARGET_MAIN_SHA`;
+- production-coupled experiments must run against a separate worktree/checkout whose `HEAD` equals that SHA;
+- record both `RESEARCH_HEAD` and `TARGET_MAIN_SHA` in persistent experiment evidence;
+- if the target checkout moves, invalidate or rerun measurements that depended on the old SHA.
+
+Before a production-coupled experiment, run:
+
+```bash
+python research-lab/tools/validate_lab.py \
+  --production-checkout /path/to/s3-main-worktree \
+  --production-sha <TARGET_MAIN_SHA>
+```
+
+For a structural lab-only check:
+
+```bash
+python research-lab/tools/validate_lab.py
+```
+
 ## Durable entry points
 
 ```text
@@ -42,6 +68,8 @@ research-lab/
 ├── ROADMAP.md
 ├── DECISIONS.md
 ├── SESSION_LOG.md
+├── tools/
+│   └── validate_lab.py
 ├── sources/
 │   └── README.md
 ├── zettelkasten/
@@ -115,10 +143,11 @@ location-flexibility information-loss metrics
 - Preserve information as long as possible; collapse representation choices only when a later constraint requires it.
 - Measure the earliest causal layer, not only the final emitted `mov`.
 - Do not call frame traffic a true RA spill unless the allocation decision actually caused it.
+- Measurements are identified by the exact compiler SHA that produced them.
 
-## Current production anchor
+## Historical production anchor at lab creation
 
-At lab creation:
+The following block is historical context, not current production state:
 
 ```text
 S3_MAIN=a83e25c3364302227694399ebe12946f887c0ead
@@ -131,4 +160,4 @@ P4_STARTED=NO
 
 Important later code-inspection fact stored in `S3-ZK-0013`: at this anchor the existing allocator already consumes whole-function CFG liveness and greedily colors virtual registers. Therefore `RA OFF` vs `RA ON` is a mandatory causal control before concluding allocator quality is the dominant remaining problem.
 
-See `HANDOFF.md`, `STATE.json`, `NEW_CHAT_PROMPT.md`, and `zettelkasten/INDEX.md` before continuing research in a new session.
+For current state, read `STATE.json`, then reconcile it with the actual Git refs. See `HANDOFF.md`, `NEW_CHAT_PROMPT.md`, and `zettelkasten/INDEX.md` for narrative context.
