@@ -157,7 +157,8 @@ def test_physical_residency_observed(native_toolchain, tmp_path) -> None:
     # by the emitter, rather than coupling integration coverage to one color.
     assert physical is not None
     assert physical in FULL_ALLOCATABLE_REGISTERS
-    assert f"mov {physical}, rax" in assembly
+    assert f"mov {physical}, 42" in assembly
+    assert f"mov {physical}, rax" not in assembly
 
     # Run program to verify correctness
     executable = native_toolchain.build(assembly, tmp_path / "obs_exec")
