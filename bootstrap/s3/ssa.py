@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from .cfg import ControlFlowGraph
 from .diagnostics import SourceLocation
@@ -32,6 +32,10 @@ class SSAValue:
     original_register: int | None = None
     type: IRType = IRType.TRYTE
     def_block: str | None = None
+    reference_target: IRType | None = None
+    reference_mutable: bool = False
+    reference_is_slice: bool = False
+    slice_length_register: int | None = None
 
 
 @dataclass(slots=True)
@@ -59,6 +63,10 @@ class SSAInstruction:
     memory: int | None = None
     initialization: bool = False
     location: SourceLocation | None = None
+    reference_target: IRType | None = None
+    reference_mutable: bool = False
+    reference_is_slice: bool = False
+    slice_length_result: int | None = None
 
     __hash__ = object.__hash__
 
@@ -125,7 +133,8 @@ class SSABuilder:
         cfg = ControlFlowGraph.build(function)
         dom_tree = DominatorTree.build(cfg)
 
-        register_types = {r.index: r.type for r in function.registers}
+        register_info = {r.index: r for r in function.registers}
+        register_types = {index: register.type for index, register in register_info.items()}
 
         # 1. Collect def blocks for each register
         def_blocks: dict[int, set[str]] = {}
@@ -171,6 +180,26 @@ class SSABuilder:
                 original_register=reg,
                 type=reg_type,
                 def_block=block_name,
+                reference_target=(
+                    register_info[reg].reference_target
+                    if reg in register_info
+                    else None
+                ),
+                reference_mutable=(
+                    register_info[reg].reference_mutable
+                    if reg in register_info
+                    else False
+                ),
+                reference_is_slice=(
+                    register_info[reg].reference_is_slice
+                    if reg in register_info
+                    else False
+                ),
+                slice_length_register=(
+                    register_info[reg].slice_length_register
+                    if reg in register_info
+                    else None
+                ),
             )
             stacks.setdefault(reg, []).append(val)
             all_ssa_values.append(val)
@@ -194,6 +223,15 @@ class SSABuilder:
         entry_block_name = function.blocks[0].name if function.blocks else "entry"
         for p in function.parameters:
             val = new_version(p.register, entry_block_name)
+            val = replace(
+                val,
+                reference_target=p.reference_target,
+                reference_mutable=p.reference_mutable,
+                reference_is_slice=p.reference_is_slice,
+                slice_length_register=p.slice_length_register,
+            )
+            stacks[p.register][-1] = val
+            all_ssa_values[-1] = val
             ssa_params.append(SSAParameter(value=val))
 
         ssa_blocks_dict: dict[str, SSABlock] = {}
@@ -232,6 +270,10 @@ class SSABuilder:
                     memory=inst.memory,
                     initialization=inst.initialization,
                     location=inst.location,
+                    reference_target=inst.reference_target,
+                    reference_mutable=inst.reference_mutable,
+                    reference_is_slice=inst.reference_is_slice,
+                    slice_length_result=inst.slice_length_result,
                 )
                 ssa_block.instructions.append(ssa_inst)
 

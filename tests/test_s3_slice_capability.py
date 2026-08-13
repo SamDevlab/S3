@@ -63,6 +63,28 @@ def test_hosted_ir_executes_shared_slice_and_mutable_slice() -> None:
     assert execute_ir(lower(program, analyze(program))) == -1
 
 
+def test_o1_preserves_slice_reference_metadata_through_ssa_lowering() -> None:
+    from bootstrap.s3.ir_emulator import execute_ir
+
+    source = (
+        "fn sum(xs: &[f64]) -> f64:\n"
+        "    return xs[0] + xs[1]\n"
+        "fn mutate(xs: &mut [i64]) -> trit:\n"
+        "    xs[0] = 9\n"
+        "    return xs[0] == 9\n"
+        "fn main() -> trit:\n"
+        "    mut values: i64[2] = [1, 2]\n"
+        "    floats: f64[2] = [0.25, 0.75]\n"
+        "    return (mutate(&mut values) == -1) & (sum(&floats) == 1.0)\n"
+    )
+    for optimization in ("O0", "O1"):
+        compilation = compile_source(source, optimization, mode=SyntaxMode.V0_6)
+        parameter = compilation.ir.functions[0].parameters[0]
+        assert parameter.reference_is_slice is True
+        assert parameter.slice_length_register is not None
+        assert execute_ir(compilation.ir) == -1
+
+
 def test_slice_length_metadata_survives_ir_round_trip() -> None:
     from bootstrap.s3.ir_serialization import deserialize_ir, serialize_ir
     from bootstrap.s3.lowering import lower
