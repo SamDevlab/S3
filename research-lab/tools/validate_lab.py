@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Validate durable S3 research-lab structure."""
+"""Validate durable S3 research-lab structure and detached target worktrees."""
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import sys
@@ -10,6 +11,7 @@ from pathlib import Path
 
 ZK_ID = re.compile(r"S3-ZK-\d{4}")
 FILE_REF = re.compile(r"^File:\s*`([^`]+)`\s*$", re.MULTILINE)
+FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
 
 
 def find_root(start: Path) -> Path:
@@ -19,7 +21,39 @@ def find_root(start: Path) -> Path:
     raise RuntimeError("could not locate research-lab/STATE.json")
 
 
+def detached_head(checkout: Path) -> str:
+    marker = checkout / ".git"
+    if marker.is_dir():
+        gitdir = marker
+    elif marker.is_file():
+        text = marker.read_text(encoding="utf-8").strip()
+        if not text.lower().startswith("gitdir:"):
+            raise RuntimeError("unsupported .git metadata")
+        gitdir = Path(text.split(":", 1)[1].strip())
+        if not gitdir.is_absolute():
+            gitdir = (checkout / gitdir).resolve()
+    else:
+        raise RuntimeError("target checkout has no .git metadata")
+
+    head = (gitdir / "HEAD").read_text(encoding="utf-8").strip()
+    if not FULL_SHA.fullmatch(head):
+        raise RuntimeError("target checkout must be detached at the declared SHA")
+    return head
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--production-checkout", type=Path)
+    parser.add_argument("--production-sha")
+    return parser.parse_args()
+
+
 def main() -> int:
+    args = parse_args()
+    if bool(args.production_checkout) != bool(args.production_sha):
+        print("ERROR: --production-checkout and --production-sha must be supplied together")
+        return 2
+
     root = find_root(Path.cwd().resolve())
     lab = root / "research-lab"
     errors: list[str] = []
@@ -59,6 +93,18 @@ def main() -> int:
         if not path.is_file():
             errors.append(f"experiment registry references missing file: {path.relative_to(root)}")
 
+    if args.production_checkout and args.production_sha:
+        expected = args.production_sha.lower()
+        if not FULL_SHA.fullmatch(expected):
+            errors.append("--production-sha must be a full 40-character lowercase SHA")
+        else:
+            try:
+                observed = detached_head(args.production_checkout.resolve())
+                if observed != expected:
+                    errors.append(f"target HEAD mismatch: expected {expected}, observed {observed}")
+            except Exception as exc:
+                errors.append(f"target checkout validation failed: {exc}")
+
     if errors:
         for error in errors:
             print(f"ERROR: {error}")
@@ -66,6 +112,9 @@ def main() -> int:
         return 1
 
     print("LAB_CONSISTENCY=PASS")
+    if args.production_checkout and args.production_sha:
+        print(f"TARGET_MAIN_SHA={args.production_sha.lower()}")
+        print("TARGET_HEAD_MATCH=YES")
     return 0
 
 
