@@ -233,3 +233,9 @@ conditionally accidental when an adjacent same-block `TBR3` consumes it and
 liveness proves no successor observer; otherwise the materialization remains
 necessary. Fresh evidence found 566 static and 66 dynamic eligible pairs. PR
 #176 merged the local emitter fusion with the conservative fallback intact.
+
+## P8.1 local-evidence additions
+
+| S3-ZK-0050 | First useful work is measured at the process boundary | SUPPORTED_BASELINE |
+| S3-ZK-0051 | Initialization state is an observed native commitment boundary | SUPPORTED_OBSERVER_BOUNDARY |
+| S3-ZK-0052 | P8.1 found no valid production target yet | NEGATIVE_RESULT |

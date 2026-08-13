@@ -230,3 +230,31 @@ select P5 only from measured residual cause
   and merge ancestry are verified against `origin/main`.
 - Added `S3-ZK-0049`, `S3-EXP-0026`, the P7 reconciliation, external numbered
   reports, and final JSON. P8 and shutdown remain unauthorized.
+
+## 2026-08-13 - P8.1 obligation frontier and first useful work
+
+- Reconciled `origin/main=631b51e70562a33183ac14d0be5bbe2ddd140779` and
+  preserved the original Windows checkout and its two pre-existing artifacts.
+- Audited the two current workflows before any remote write. Feature and
+  research branch pushes are safe under the static definitions; PR creation,
+  main pushes and workflow dispatch remain prohibited. No Actions run was
+  triggered.
+- Validated the lab structurally and against a detached exact production
+  checkout. Both validators exited 0.
+- Validated a new exact-head 12-workload O1 emulator/Linux-native profile.
+  All workloads matched expected results. The aggregate profile contained
+  10,459 native instructions, 5,093 approximate load/store/address mnemonics,
+  2,365 branches and 33 calls.
+- Ran a nine-workload first-useful-work probe with 15 process launches per
+  workload. All emulator/native results matched; launch/loader attribution
+  remains open because cold-cache state and S3-controlled share were not
+  isolated.
+- Reproduced available local workflow responsibilities in the VM:
+  compileall/golden, SSA/differential, native x86-64, instruction-limit E3,
+  numeric closure, generated differential, benchmark contracts/smoke and
+  Docker/project tests. Docker image construction was unavailable because the
+  VM has no Docker executable; only Python 3.14 was installed locally.
+- P8 promotion was falsified: initialization-state and checked materialization
+  have real observers, but no path-complete removable subpopulation was proved.
+  Added `S3-ZK-0050..0052`; no production code, branch, PR, full candidate
+  suite, P9 or shutdown was started.

@@ -310,3 +310,22 @@ emulator. The result was classified conditional, not globally accidental. PR
 while retaining materialization for successor observers and preserving both
 instruction-limit checks. Natural Linux CI passed. This is a local emitter
 lowering result and does not prove broad memory-state or SSA staging removal.
+
+### S3-EXP-0027 - P8.1 obligation frontier and first useful work
+
+STATUS=COMPLETE_NO_VALID_TARGET_YET
+
+File: `post_p7_obligation_profile.py` and `first_useful_work_profile.py`
+
+Related: `S3-ZK-0050`, `S3-ZK-0051`, `S3-ZK-0052`.
+
+The exact P7 production head was profiled locally with 12 representative
+emulator/native workloads and nine tiny first-useful-work workloads. The
+profile confirms a large repeated native materialization family, but failure,
+memory-validity, instruction-limit, ABI and observer witnesses prevent a
+blanket removal rule. The external first-output timer is a baseline only;
+process/loader cost and S3-controlled cost are not yet separated.
+
+Promotion result: `NO_VALID_TARGET_YET`. No production implementation was
+started. The next useful experiment is path-complete observer-aware attribution
+of initialization and memory-state commitments.
