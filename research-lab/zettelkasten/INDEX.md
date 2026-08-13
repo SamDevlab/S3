@@ -227,3 +227,9 @@ exact-head full-suite exit of 0 and green natural CI. The result is a local
 instruction-selection simplification, not evidence for generic operand-form
 optimization, register-allocation redesign, bounds elimination, or
 initialization-state weakening.
+
+`S3-ZK-0049` records the P7 direct-consumer result. A `TCMP` value is
+conditionally accidental when an adjacent same-block `TBR3` consumes it and
+liveness proves no successor observer; otherwise the materialization remains
+necessary. Fresh evidence found 566 static and 66 dynamic eligible pairs. PR
+#176 merged the local emitter fusion with the conservative fallback intact.

@@ -213,3 +213,20 @@ select P5 only from measured residual cause
   characterization-only.
 - P7 is not started and shutdown remains unauthorized. The original checkout
   and its two pre-existing untracked artifacts remain untouched.
+
+## 2026-08-13 - P7 necessary vs accidental intermediates
+
+- Reconciled post-P6 main at `69f5908687123a9ad7a4659b5133f815f08377b1` and
+  preserved the original detached checkout plus its two untracked artifacts.
+- Fresh 15-workload triage measured 566 static adjacent `TCMP`/`TBR3` pairs and
+  66 dynamic executions. The direct-consumer result was classified conditional:
+  liveness can prove the result dead after the branch, but successor observers
+  retain the materialization.
+- Implemented the narrow native x86-64 emitter fusion in PR #176. Focused
+  tests, natural Linux CI, native numeric closure, and the complete CI filter
+  union passed. The Windows full suite reached 100% with exit 1 only because
+  two native numeric tests reject the Windows host; this limitation is retained.
+- PR #176 merged as `631b51e70562a33183ac14d0be5bbe2ddd140779`; implementation
+  and merge ancestry are verified against `origin/main`.
+- Added `S3-ZK-0049`, `S3-EXP-0026`, the P7 reconciliation, external numbered
+  reports, and final JSON. P8 and shutdown remain unauthorized.

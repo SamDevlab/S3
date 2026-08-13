@@ -215,3 +215,27 @@ SHUTDOWN_AUTHORIZED=NO
 The P6 research reconciliation and experiment registry are authoritative for
 the two-track profiling, candidate falsification, production result, and
 negative results. Do not recreate P5, reopen P6, start P7, or issue shutdown.
+
+## Current authoritative checkpoint: P7 complete
+
+Reconcile `research-lab/STATE.json` before any further campaign. P7 selected,
+implemented, and merged PR #176:
+
+```text
+P7_NAME=P7_DIRECT_TCMP_BRANCH_LOWERING
+P7_HEAD=b118917ec5a5284899d27b1838712b2e04364caf
+P7_MERGE=631b51e70562a33183ac14d0be5bbe2ddd140779
+ORIGIN_MAIN=631b51e70562a33183ac14d0be5bbe2ddd140779
+P7_LINUX_FULL_SUITE_SOURCE=CI_SHARDED_EQUIVALENT
+P7_LINUX_FULL_SUITE_EXIT=0
+P7_WINDOWS_FULL_SUITE_EXIT=1_PLATFORM_LIMITATION
+P7_CI=PASS
+P8_STARTED=NO
+SHUTDOWN_AUTHORIZED=NO
+```
+
+The production change is limited to liveness-gated direct lowering of an
+adjacent `TCMP`/`TBR3` pair. Keep successor-observer fallback, instruction
+limits, initialization checks, f64 unordered behavior, ABI, reference, and
+memory obligations intact. Do not start P8 or issue shutdown. Read the external
+P7 final report and `S3-ZK-0049` before proposing another target.
