@@ -329,3 +329,28 @@ process/loader cost and S3-controlled cost are not yet separated.
 Promotion result: `NO_VALID_TARGET_YET`. No production implementation was
 started. The next useful experiment is path-complete observer-aware attribution
 of initialization and memory-state commitments.
+
+### S3-EXP-0028 - Exact-ref workflow-trigger containment
+
+STATUS=COMPLETE_LOCAL_ONLY
+
+File: `../tools/validate_remote_write.py` and `../tools/test_validate_remote_write.py`
+
+Hypothesis: a bounded fail-closed local validator can distinguish the
+branch-specific incident state from a repaired zero-run state using the
+proposed workflow head, target ref, event, and changed paths without remote
+execution.
+
+Results:
+
+- the historical research push `e4ea4ca -> 06ed794` classified as
+  `ACTIONS_POSSIBLE` with one matching workflow;
+- the local repaired candidate classified as `PROVEN_ZERO_ACTIONS` with zero
+  possible push runs;
+- controls A-F passed, including malformed and unsupported inputs returning
+  `UNKNOWN` and non-zero;
+- the repaired state still has `REMOTE_PUBLICATION_PENDING=YES` because this
+  campaign prohibits remote writes.
+
+This is a research-infrastructure containment result, not a compiler
+optimization or a production CI authorization.

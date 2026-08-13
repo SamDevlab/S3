@@ -684,3 +684,42 @@ C:/Users/samue/Downloads/S3/production-reports/p7-necessary-vs-accidental-interm
 
 Do not start P8 or issue a shutdown command. Preserve the original checkout's
 two untracked artifacts and keep the production branch available for audit.
+
+## Workflow provenance containment - 2026-08-13
+
+P8.1 remains complete with `P8_SELECTION=NO_VALID_TARGET_YET`; P9 remains
+unauthorized. A later read-only reconciliation found that the research ref's
+`tests.yml` had an unrestricted `push` trigger even though the exact production
+main workflow was filtered to `main` and production-relevant paths. The push
+of `06ed79449dcd917c3213570389a3639f6ad0be24` consequently created Actions run
+`31748403817`, which failed immediately under the exhausted allowance. No
+rerun, retry, cancellation, or further remote write followed discovery.
+
+The direct cause was the research workflow trigger; the process cause was
+auditing `main` instead of the workflow state of the proposed target ref; the
+control gap was the absence of a remote-write automation provenance gate in
+`validate_lab.py`. The durable research branch remains at
+`06ed79449dcd917c3213570389a3639f6ad0be24`; remote publication is prohibited
+for the current campaign.
+
+The isolated local branch
+`local/workflow-provenance-containment-20260813` contains the unpublished
+repair. Its `tests.yml` now restricts `push` to `main` with the current
+production path policy, while preserving the research branch's job bodies.
+`m138-docker.yml` already restricted `push` to `main` and was not changed.
+
+`research-lab/tools/validate_remote_write.py` models the bounded push trigger
+surface using workflow files from the proposed head, the target ref, and the
+computed diff. It classifies the old push as `ACTIONS_POSSIBLE` and the local
+repaired candidate as `PROVEN_ZERO_ACTIONS`; malformed or unsupported inputs
+are `UNKNOWN` and non-zero. This is a local proof, not write authorization.
+
+```text
+LOCAL_REPAIR_BRANCH=local/workflow-provenance-containment-20260813
+REMOTE_PUBLICATION_PENDING=YES
+REMOTE_WRITES_THIS_CAMPAIGN=0
+GITHUB_ACTIONS_RUNS_TRIGGERED_THIS_CAMPAIGN=0
+P8_STARTED=NO
+P9_STARTED=NO
+SHUTDOWN_AUTHORIZED=NO
+```

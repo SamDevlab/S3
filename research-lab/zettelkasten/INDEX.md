@@ -239,3 +239,4 @@ necessary. Fresh evidence found 566 static and 66 dynamic eligible pairs. PR
 | S3-ZK-0050 | First useful work is measured at the process boundary | SUPPORTED_BASELINE |
 | S3-ZK-0051 | Initialization state is an observed native commitment boundary | SUPPORTED_OBSERVER_BOUNDARY |
 | S3-ZK-0052 | P8.1 found no valid production target yet | NEGATIVE_RESULT |
+| [[S3-ZK-0053]] | Workflow provenance is execution provenance | SUPPORTED_BOUNDED_MODEL |

@@ -264,3 +264,11 @@ select P5 only from measured residual cause
   `31748403817` triggered on the research SHA and all jobs failed immediately
   under the exhausted Actions allowance. No rerun, retry, cancellation or
   further remote write was made. Research push safety is now `NO`.
+- Workflow provenance containment was completed locally. The research
+  `tests.yml` trigger was narrowed to the current production `main` branch and
+  path policy without changing job bodies. A bounded fail-closed validator and
+  controls A-F prove the old state as `ACTIONS_POSSIBLE` and the repaired local
+  state as `PROVEN_ZERO_ACTIONS`; pull-request semantics remain `UNKNOWN` by
+  design. Added `S3-ZK-0053` and `S3-EXP-0028`. The repair is reachable from
+  `local/workflow-provenance-containment-20260813` but is intentionally not
+  published while Actions allowance is exhausted.

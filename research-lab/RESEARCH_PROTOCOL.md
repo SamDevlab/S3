@@ -268,3 +268,36 @@ Before ending a major research session:
 6. run `python research-lab/tools/validate_lab.py`;
 7. leave `NEXT_ACTIONS` explicit;
 8. do not rely on chat memory as the only source of truth.
+
+## Workflow provenance and remote-write containment
+
+A Git ref carries both research content and the automation definitions that
+apply to events on that ref. Therefore:
+
+```text
+WORKFLOW_PROVENANCE_IS_EXECUTION_PROVENANCE
+```
+
+The safety question for a proposed write is a property of
+`(PROPOSED_REF_STATE, EVENT, DIFF)`, not of the repository name or an
+unrelated `main` checkout. Before a write, resolve the target ref and
+proposed head, inspect workflow files from the proposed state, compute the
+changed paths, evaluate the intended event, and classify the result as one of:
+
+```text
+PROVEN_ZERO_ACTIONS
+ACTIONS_POSSIBLE
+UNKNOWN
+```
+
+`UNKNOWN` is not safe. The bounded local implementation is
+`research-lab/tools/validate_remote_write.py`; it exits zero only for
+`PROVEN_ZERO_ACTIONS` and deliberately fails closed for unsupported workflow
+syntax and pull-request merge/ref semantics. This is a trigger proof only and
+does not grant write authorization. In particular, the negative result
+
+```text
+MAIN_WORKFLOW_SAFETY_DOES_NOT_PROVE_NON_MAIN_WRITE_SAFETY
+```
+
+is now part of the research protocol after the 2026-08-13 Actions incident.
