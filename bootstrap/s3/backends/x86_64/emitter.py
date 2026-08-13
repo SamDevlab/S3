@@ -523,6 +523,13 @@ class X8664Emitter:
                 if type_name is AssemblyType.F64
                 else instruction.immediate
             )
+            if (
+                type_name is not AssemblyType.F64
+                and -0x80000000 <= int(immediate) <= 0x7FFFFFFF
+            ):
+                return instrumentation + self._write_register(
+                    layout, registers[0], str(immediate)
+                )
             return instrumentation + [
                 f"    movabs rax, {immediate}",
                 *self._write_register(layout, registers[0], "rax"),

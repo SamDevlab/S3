@@ -79,6 +79,18 @@ def test_instruction_limit_guard_uses_compact_immediate_when_representable() -> 
     assert "cmp qword ptr [rip + __s3_instruction_count], r11" in wide
 
 
+def test_small_integer_constant_is_written_directly_to_its_destination() -> None:
+    program = compile_source(
+        "fn main() -> tryte:\n    return 6\n",
+        mode=SyntaxMode.V0_6,
+    ).assembly
+
+    text = generate_native_assembly(program)
+
+    assert "mov rdi, 6" in text or "mov rax, 6" in text
+    assert "movabs rax, 6" not in text
+
+
 def test_frame_layout_is_aligned_deterministic_and_non_overlapping() -> None:
     function = _compilation("static_array.s3").assembly.functions[0]
     first = layout_frame(function)
