@@ -182,8 +182,9 @@ P5_STARTED=NO
 P6_STARTED=NO
 ```
 
-The #173 renderer passed and the PR is merged. Do not create a P5 branch: the
-current evidence does not meet the semantic-necessity promotion gate. Persist
-the final campaign JSON/report and research head, verify the original Windows
-checkout is unchanged, then execute the authorized Windows shutdown command
-exactly once.
+The #173 renderer passed and the PR is merged. The subsequent P5 target
+selection v2 is complete: PR #174 implemented the bounded x86-64 immediate
+instruction-limit guard and merged as
+`a08ee420e9bd0734a28363d60fc0f5f3e1169fb4`. Read
+`research-lab/reconciliations/P5_TARGET_SELECTION_V2_20260813.md` and the
+external P5 report. P6 remains forbidden, and shutdown remains unauthorized.

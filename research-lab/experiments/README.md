@@ -273,3 +273,15 @@ Eight workloads passed hosted IR and Linux native execution. JSMN remains the
 dominant shape by native text/instruction count and compile time. The broad
 memory-state metadata hypothesis remains unproven as removable; no production
 P5 was selected.
+
+### S3-EXP-0024 - P5 v2 immediate instruction-limit guard
+
+STATUS=SUPPORTED_AND_PROMOTED_PR_174_PENDING_CI
+
+The fresh 15-workload reprofile isolated repeated x86-64 emitter expansion of
+the bounded instruction-limit guard. A signed imm32 compare removes the
+per-instruction `movabs r11` while retaining the wider-limit fallback. The
+prototype reduced aggregate O1 native instructions by 4.748% and text by
+1.694%, with all Linux native workload results preserved. This is a bounded
+emitter capability; it does not establish a spill, SSA, bounds, or
+initialization-state optimization.

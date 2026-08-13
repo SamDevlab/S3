@@ -588,9 +588,14 @@ shape, but the metadata/reset population is not proven removable and sound
 dynamic per-value attribution is unavailable.
 
 ```text
-P5_SELECTION=NO_VALID_TARGET_YET
-P5_STARTED=NO
+P5_SELECTION=READY_FOR_IMPLEMENTATION
+P5_STARTED=YES
+P5_IMPLEMENTED=YES
+P5_PR=174
+P5_HEAD=a615d298b8d72f355a03e8abb2df5bd5a58d4758
+P5_MERGE=a08ee420e9bd0734a28363d60fc0f5f3e1169fb4
 P6_STARTED=NO
+SHUTDOWN_AUTHORIZED=NO
 ```
 
 The external campaign evidence is under:
@@ -600,7 +605,9 @@ C:/Users/samue/Downloads/S3/production-reports/github-actions-efficiency-2026081
 C:/Users/samue/Downloads/S3/production-reports/ci-p5-autonomous-campaign-20260812/
 ```
 
-The #173 gate is terminal green and the PR is merged. The factual merge SHA is
-in `STATE.json`, this handoff and the external JSON. Push the research branch,
-verify the original checkout is preserved, then issue the authorized Windows
-shutdown as the final action.
+The #173 gate is terminal green and the PR is merged. The fresh P5 v2 campaign
+then selected, implemented, and merged the bounded instruction-limit immediate
+guard in PR #174. The factual merge SHA is in `STATE.json`, this handoff and
+the external P5 JSON. Push the research branch after the document updates,
+verify the original checkout is preserved, and do not start P6 or issue a
+shutdown command.

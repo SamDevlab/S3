@@ -177,3 +177,15 @@ select P5 only from measured residual cause
 - Final research reconciliation is now the only required persistence step
   before the authorized local Windows shutdown; no P5/P6 implementation is to
   be started.
+
+## 2026-08-13 - P5 target selection v2 shipped
+
+- Rebased independently from `origin/main=1a775ba79f3abb6d3b33bb7d710ab67d0f808e18`.
+- Profiled 15 workloads at O0/O1 with Linux native correctness evidence.
+- Selected the bounded x86-64 immediate instruction-limit guard after a
+  4.748% aggregate O1 instruction and 1.694% text reduction prototype.
+- Implemented commit `a615d298b8d72f355a03e8abb2df5bd5a58d4758` in PR #174.
+- Focused tests, exact-head full suite, Linux native, and all natural CI checks
+  passed. PR #174 merged as `a08ee420e9bd0734a28363d60fc0f5f3e1169fb4`.
+- P6 was not started. Shutdown remains unauthorized. The original checkout and
+  its two pre-existing untracked artifacts remain preserved.

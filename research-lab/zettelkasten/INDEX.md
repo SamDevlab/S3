@@ -208,3 +208,11 @@ in future P5 reports.
 Linux native execution; JSMN dominates current code size and compile time, but
 no sound dynamic per-value attribution or semantic reset-deadness proof exists.
 The correct promotion decision is `NO_VALID_TARGET_YET`, not a speculative P5.
+
+`S3-ZK-0047` records the fresh P5 v2 rebase. Across 15 workloads, repeated
+x86-64 emitter materialization of the bounded instruction limit was isolated as
+a small sound transformation boundary. A signed imm32 compare removed the
+per-instruction `movabs r11` while preserving the wide-limit fallback; the
+prototype reduced aggregate O1 native instructions by 4.748% and text by
+1.694%. PR #174 merged this capability. This does not establish spill,
+initialization deadness, SSA, or generic RA optimization.
