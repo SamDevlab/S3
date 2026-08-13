@@ -2,7 +2,36 @@ name: Tests
 
 on:
   push:
+    branches: [main]
+    paths:
+      - "bootstrap/**"
+      - "tests/**"
+      - "tools/**"
+      - "examples/**"
+      - "benchmarks/**"
+      - "spec/**"
+      - "pyproject.toml"
+      - "README.md"
+      - "docs/ai-capabilities.json"
+      - "docs/decisions/**"
+      - ".github/workflows/**"
   pull_request:
+    paths:
+      - "bootstrap/**"
+      - "tests/**"
+      - "tools/**"
+      - "examples/**"
+      - "benchmarks/**"
+      - "spec/**"
+      - "pyproject.toml"
+      - "README.md"
+      - "docs/ai-capabilities.json"
+      - "docs/decisions/**"
+      - ".github/workflows/**"
+
+concurrency:
+  group: tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   ssa-per-pass-verification:
@@ -16,6 +45,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
 
       - name: Install project
         run: |
@@ -61,6 +92,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
 
       - name: Install project
         run: |
@@ -85,6 +118,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
 
       - name: Validate native toolchain
         run: |
@@ -116,6 +151,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
 
       - name: Validate native numeric toolchain
         run: |
@@ -151,6 +188,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
 
       - name: Install project
         run: |
@@ -174,6 +213,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
 
       - name: Install project
         run: |

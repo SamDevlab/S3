@@ -6,7 +6,9 @@ on:
   pull_request:
     paths:
       - "bootstrap/**"
-      - "tests/**"
+      - "tests/test_s3_docker.py"
+      - "tests/test_project_container.py"
+      - "pyproject.toml"
       - "docs/milestone-1.38.md"
       - ".github/workflows/m138-docker.yml"
 
