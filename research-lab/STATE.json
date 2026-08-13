@@ -254,7 +254,7 @@
     "metric_policy": "separate direct causal structural metrics, absolute S3 runtime, and external comparator-relative ratios"
   },
   "p5_target_selection_v2": {
-    "status": "IMPLEMENTED_PR_174_PENDING_CI",
+    "status": "COMPLETE",
     "origin_main_start": "1a775ba79f3abb6d3b33bb7d710ab67d0f808e18",
     "research_head_start": "13253cf0a9e388c7bed0eb0073da7ee56accfaad",
     "workloads_total": 15,
@@ -272,7 +272,9 @@
     "linux_native": "PASS",
     "full_suite_head": "a615d298b8d72f355a03e8abb2df5bd5a58d4758",
     "full_suite_exit": 0,
-    "ci_status": "PENDING",
+    "ci_status": "PASS",
+    "merge_commit": "a08ee420e9bd0734a28363d60fc0f5f3e1169fb4",
+    "origin_main_final": "a08ee420e9bd0734a28363d60fc0f5f3e1169fb4",
     "p5_started": true,
     "p5_implemented": true,
     "p6_started": false,

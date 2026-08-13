@@ -28,6 +28,7 @@ bytes (-1.694%), without changing memory operands, frame accesses, branches, or
 address calculations.
 
 The production implementation is one commit, `a615d298b8d72f355a03e8abb2df5bd5a58d4758`,
-in PR #174. Focused tests and the exact-head full suite passed. Natural CI was
-still pending for the renderer shard at the time of this checkpoint; all other
-observed checks were green. P6 and shutdown remain prohibited.
+in PR #174. Focused tests and the exact-head full suite passed. All 11 natural
+CI checks, including the renderer shard, passed. PR #174 merged as
+`a08ee420e9bd0734a28363d60fc0f5f3e1169fb4`, which is now `origin/main`.
+P6 and shutdown remain prohibited.
