@@ -2,7 +2,34 @@ name: Tests
 
 on:
   push:
+    branches: [main]
+    paths:
+      - "bootstrap/**"
+      - "tests/**"
+      - "tools/**"
+      - "examples/**"
+      - "benchmarks/**"
+      - "spec/**"
+      - "pyproject.toml"
+      - "README.md"
+      - "docs/ai-capabilities.json"
+      - "docs/decisions/**"
+      - "docs/diagnostics.md"
+      - ".github/workflows/**"
   pull_request:
+    paths:
+      - "bootstrap/**"
+      - "tests/**"
+      - "tools/**"
+      - "examples/**"
+      - "benchmarks/**"
+      - "spec/**"
+      - "pyproject.toml"
+      - "README.md"
+      - "docs/ai-capabilities.json"
+      - "docs/decisions/**"
+      - "docs/diagnostics.md"
+      - ".github/workflows/**"
 
 jobs:
   ssa-per-pass-verification:
