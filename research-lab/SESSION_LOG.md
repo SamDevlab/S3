@@ -189,3 +189,27 @@ select P5 only from measured residual cause
   passed. PR #174 merged as `a08ee420e9bd0734a28363d60fc0f5f3e1169fb4`.
 - P6 was not started. Shutdown remains unauthorized. The original checkout and
   its two pre-existing untracked artifacts remain preserved.
+
+## 2026-08-13 - P6 simplicity-first discovery shipped
+
+- Rebased from post-P5 `origin/main=a08ee420e9bd0734a28363d60fc0f5f3e1169fb4`
+  and profiled 15 workloads across heavy-bottleneck and simplicity-first
+  tracks.
+- The selected local opportunity was non-F64 signed-imm32 `TCONST` lowering:
+  7351 static one-use materializations, 7347 eligible, and 200250 eligible
+  dynamic events. The direct destination write preserved initialized-state
+  marking and avoided the temporary register only where sound.
+- The first candidate full suite exposed one stale physical-residency test
+  expectation. The narrow test-contract correction was followed by the exact
+  final candidate suite with `FULL_SUITE_EXIT=0`.
+- P6 implementation head is
+  `b9ac7d9e8370f013889b8efc9acaed0429447ac2`, PR #175 merged as
+  `69f5908687123a9ad7a4659b5133f815f08377b1`, and all 11 natural CI checks
+  passed. Implementation and merge ancestry are verified against
+  `origin/main`.
+- Aggregate O1 native instructions changed `290658 -> 283311` and `.text`
+  changed `16814716 -> 16667776`; memory operands, frame accesses, branches,
+  and address calculations were unchanged. Runtime evidence remains
+  characterization-only.
+- P7 is not started and shutdown remains unauthorized. The original checkout
+  and its two pre-existing untracked artifacts remain untouched.

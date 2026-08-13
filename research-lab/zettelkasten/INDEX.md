@@ -216,3 +216,14 @@ per-instruction `movabs r11` while preserving the wide-limit fallback; the
 prototype reduced aggregate O1 native instructions by 4.748% and text by
 1.694%. PR #174 merged this capability. This does not establish spill,
 initialization deadness, SSA, or generic RA optimization.
+
+`S3-ZK-0048` records the P6 simplicity-first result. Across the same 15-workload
+post-P5 corpus, 7351 static one-use non-F64 constant materializations were
+observed and 7347 were signed-imm32 eligible; the dynamic eligible population
+was 200250. The smallest sound fix reused the existing destination writer to
+lower eligible `TCONST` values directly, preserving initialized-state marking
+and retaining the wide/F64 fallback. PR #175 merged the capability with an
+exact-head full-suite exit of 0 and green natural CI. The result is a local
+instruction-selection simplification, not evidence for generic operand-form
+optimization, register-allocation redesign, bounds elimination, or
+initialization-state weakening.

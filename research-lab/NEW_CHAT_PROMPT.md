@@ -188,3 +188,30 @@ instruction-limit guard and merged as
 `a08ee420e9bd0734a28363d60fc0f5f3e1169fb4`. Read
 `research-lab/reconciliations/P5_TARGET_SELECTION_V2_20260813.md` and the
 external P5 report. P6 remains forbidden, and shutdown remains unauthorized.
+
+## Authoritative current checkpoint - P6 complete
+
+The preceding block is historical. The P6 simplicity-first campaign was
+completed after that checkpoint. Reconcile against `STATE.json` before any
+future work:
+
+```text
+P6_CAMPAIGN=P6_SIMPLICITY_FIRST_DISCOVERY_V1
+P6_SELECTION=READY_FOR_IMPLEMENTATION
+P6_NAME=P6_DIRECT_NON_F64_TCONST_IMMEDIATE
+P6_BASE=a08ee420e9bd0734a28363d60fc0f5f3e1169fb4
+P6_HEAD=b9ac7d9e8370f013889b8efc9acaed0429447ac2
+P6_PR=175
+P6_MERGE=69f5908687123a9ad7a4659b5133f815f08377b1
+ORIGIN_MAIN_FINAL=69f5908687123a9ad7a4659b5133f815f08377b1
+FULL_SUITE_HEAD=b9ac7d9e8370f013889b8efc9acaed0429447ac2
+FULL_SUITE_EXIT=0
+LINUX_NATIVE=PASS
+CI=PASS
+P7_STARTED=NO
+SHUTDOWN_AUTHORIZED=NO
+```
+
+The P6 research reconciliation and experiment registry are authoritative for
+the two-track profiling, candidate falsification, production result, and
+negative results. Do not recreate P5, reopen P6, start P7, or issue shutdown.

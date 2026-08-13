@@ -276,7 +276,7 @@ P5 was selected.
 
 ### S3-EXP-0024 - P5 v2 immediate instruction-limit guard
 
-STATUS=SUPPORTED_AND_PROMOTED_PR_174_PENDING_CI
+STATUS=SUPPORTED_AND_MERGED_PR_174
 
 The fresh 15-workload reprofile isolated repeated x86-64 emitter expansion of
 the bounded instruction-limit guard. A signed imm32 compare removes the
@@ -285,3 +285,16 @@ prototype reduced aggregate O1 native instructions by 4.748% and text by
 1.694%, with all Linux native workload results preserved. This is a bounded
 emitter capability; it does not establish a spill, SSA, bounds, or
 initialization-state optimization.
+
+### S3-EXP-0025 - P6 direct non-F64 TCONST immediate
+
+STATUS=SUPPORTED_AND_MERGED_PR_175
+
+Post-P5 profiling found 7351 static O1 one-use constant materializations, with
+7347 signed-imm32 eligible and 200250 dynamic eligible events. The minimum
+sound emitter-local rewrite passes the immediate directly to the existing
+destination writer, preserving initialized-state marking. It reduced O1 native
+instructions by 7347 and `.text` by 146940 bytes against the post-P5 baseline.
+All 15 Linux native workloads, the exact-head full suite, and natural CI passed.
+This experiment does not justify generic operand-form optimization, RA
+redesign, bounds elimination, or guard weakening.

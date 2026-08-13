@@ -611,3 +611,35 @@ guard in PR #174. The factual merge SHA is in `STATE.json`, this handoff and
 the external P5 JSON. Push the research branch after the document updates,
 verify the original checkout is preserved, and do not start P6 or issue a
 shutdown command.
+
+## Current P6 closure - 2026-08-13
+
+The preceding P5 handoff is historical. P6 was subsequently profiled,
+implemented, validated, and merged as PR #175. The selected capability was
+`P6_DIRECT_NON_F64_TCONST_IMMEDIATE`, using the existing destination writer for
+signed-imm32 non-F64 constants while retaining the wide/F64 fallback.
+
+```text
+P6_SELECTION=READY_FOR_IMPLEMENTATION
+P6_STARTED=YES
+P6_IMPLEMENTED=YES
+P6_PR=175
+P6_HEAD=b9ac7d9e8370f013889b8efc9acaed0429447ac2
+P6_MERGE=69f5908687123a9ad7a4659b5133f815f08377b1
+P6_FULL_SUITE_HEAD=b9ac7d9e8370f013889b8efc9acaed0429447ac2
+P6_FULL_SUITE_EXIT=0
+P6_LINUX_NATIVE=PASS
+P6_CI=PASS
+P6_P7_STARTED=NO
+SHUTDOWN_AUTHORIZED=NO
+```
+
+The first candidate full-suite failure was a stale physical-residency test
+expectation; it was corrected narrowly, and the exact final candidate suite
+passed. P6 reduced aggregate O1 native instructions from 290658 to 283311 and
+`.text` from 16814716 to 16667776; memory operands, frame accesses, branches,
+and address calculations were unchanged. No runtime speedup is claimed.
+
+The original checkout remains preserved with its two pre-existing untracked
+artifacts. Do not start P7, do not merge this research branch into production,
+and do not issue a shutdown command.
