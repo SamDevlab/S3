@@ -298,3 +298,15 @@ instructions by 7347 and `.text` by 146940 bytes against the post-P5 baseline.
 All 15 Linux native workloads, the exact-head full suite, and natural CI passed.
 This experiment does not justify generic operand-form optimization, RA
 redesign, bounds elimination, or guard weakening.
+
+### S3-EXP-0026 - P7 direct comparison-to-branch lowering
+
+STATUS=SUPPORTED_AND_MERGED_PR_176
+
+Fresh O1 triage found 566 adjacent `TCMP`/`TBR3` pairs whose comparison result
+was not observed later in the same function corpus; 66 executed in the hosted
+emulator. The result was classified conditional, not globally accidental. PR
+#176 added same-block liveness-gated direct integer and ordered-f64 branches,
+while retaining materialization for successor observers and preserving both
+instruction-limit checks. Natural Linux CI passed. This is a local emitter
+lowering result and does not prove broad memory-state or SSA staging removal.

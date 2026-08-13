@@ -643,3 +643,44 @@ and address calculations were unchanged. No runtime speedup is claimed.
 The original checkout remains preserved with its two pre-existing untracked
 artifacts. Do not start P7, do not merge this research branch into production,
 and do not issue a shutdown command.
+
+## Authoritative P7 closure - 2026-08-13
+
+The preceding P6 block is historical. P7 was profiled, implemented, validated,
+and merged as PR #176. The selected capability was
+`P7_DIRECT_TCMP_BRANCH_LOWERING`: a same-block liveness-gated direct branch for
+an adjacent `TCMP`/`TBR3` pair, with the old materializing fallback whenever a
+successor can observe the result.
+
+```text
+P7_SELECTION=READY_FOR_IMPLEMENTATION
+P7_STARTED=YES
+P7_IMPLEMENTED=YES
+P7_PR=176
+P7_HEAD=b118917ec5a5284899d27b1838712b2e04364caf
+P7_MERGE=631b51e70562a33183ac14d0be5bbe2ddd140779
+P7_LINUX_FULL_SUITE_SOURCE=CI_SHARDED_EQUIVALENT
+P7_LINUX_FULL_SUITE_EXIT=0
+P7_WINDOWS_FULL_SUITE_EXIT=1_PLATFORM_LIMITATION
+P7_CI=PASS
+P7_IMPLEMENTATION_ANCESTOR=YES
+P7_MERGE_ANCESTOR=YES
+P8_STARTED=NO
+SHUTDOWN_AUTHORIZED=NO
+```
+
+Fresh evidence found 566 static eligible pairs and 66 dynamic executions. The
+Windows full suite reached 100% but its two Linux-native numeric tests
+correctly rejected the Windows host; natural Linux CI, including numeric
+closure and the complete unit/renderer/benchmark filter union, provided the
+canonical full-suite-equivalent proof. No new comparable runtime measurement
+was made.
+
+The P7 external evidence is under:
+
+```text
+C:/Users/samue/Downloads/S3/production-reports/p7-necessary-vs-accidental-intermediates-20260813/
+```
+
+Do not start P8 or issue a shutdown command. Preserve the original checkout's
+two untracked artifacts and keep the production branch available for audit.
