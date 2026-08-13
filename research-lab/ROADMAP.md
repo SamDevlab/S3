@@ -1,8 +1,25 @@
 # S3 Research Lab Roadmap
 
+## Status of this document
+
+This file preserves the original P4-era research roadmap. It is historical planning evidence, not the authoritative current queue.
+
+Do not interpret labels such as `NEXT`, `P4 selection`, or the R0-R6 ordering below as current program status. For current state use, in order:
+
+1. actual Git refs and observed execution facts;
+2. `STATE.json`;
+3. `HANDOFF.md`;
+4. current Zettelkasten, experiment records, and reconciliations.
+
+When current work advances beyond this historical plan, preserve the old plan rather than rewriting history. New active research direction belongs in `STATE.json`, `HANDOFF.md`, experiment records, and dated reconciliations.
+
+---
+
+## Historical roadmap - P4 research campaign
+
 This is a research roadmap, not the production milestone roadmap.
 
-## R0 — Durable research substrate — DONE
+## R0 - Durable research substrate - DONE
 
 - long-lived isolated branch;
 - handoff document;
@@ -12,7 +29,7 @@ This is a research roadmap, not the production milestone roadmap.
 - experiment registry;
 - generic mathematical prototypes.
 
-## R1 — Mathematical sanity — NEXT
+## R1 - Mathematical sanity - HISTORICAL PLAN
 
 Goals:
 
@@ -28,7 +45,7 @@ S3-EXP-0001..0003
 new ZK notes / negative results
 ```
 
-## R2 — Real S3 trace bridge
+## R2 - Real S3 trace bridge - HISTORICAL PLAN
 
 Goals:
 
@@ -44,7 +61,7 @@ Key metric:
 FIRST_LOCATION_FLEXIBILITY_LOSS_HISTOGRAM
 ```
 
-## R3 — Frame traffic attribution
+## R3 - Frame traffic attribution - HISTORICAL PLAN
 
 Goals:
 
@@ -62,7 +79,7 @@ unknown
 
 Weight hot loops separately from cold static traffic.
 
-## R4 — Competing architecture prototypes
+## R4 - Competing architecture prototypes - HISTORICAL PLAN
 
 At least compare:
 
@@ -76,20 +93,26 @@ E. selected novel mathematical model
 
 Use exact oracle where small enough.
 
-## R5 — Production P4 selection
+## R5 - Production P4 selection - HISTORICAL, COMPLETED LATER
 
-Select **one** winning coherent capability from evidence.
+Historical intent:
+
+Select one winning coherent capability from evidence.
 
 Only here define the production P4 name/scope.
 
 Create a fresh production branch from current main; do not merge this research branch.
 
-## R6 — Post-P4 knowledge update
+The later research record shows that P4 was selected, promoted and followed by subsequent production campaigns. Consult `STATE.json` and dated reconciliations for factual current status.
 
-After production P4 merges:
+## R6 - Post-P4 knowledge update - HISTORICAL, COMPLETED/CONTINUED LATER
+
+Historical intent after production P4 merged:
 
 - update `STATE.json`;
 - update `HANDOFF.md`;
 - promote/reject relevant Zettels;
 - record post-merge bottleneck;
 - decide whether RA, phi/SSA, loops, calls, instruction selection, or another layer is next.
+
+This activity became an ongoing research practice rather than a one-time roadmap phase.
