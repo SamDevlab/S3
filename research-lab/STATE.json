@@ -87,7 +87,7 @@
       "REPRESENTATION_FLEXIBILITY",
       "PROOF_KNOWLEDGE_FLEXIBILITY"
     ],
-    "zettel_count": 38,
+    "zettel_count": 49,
     "candidate_models": [
       "memory-state metadata provenance analysis",
       "SSA destruction / phi staging attribution",

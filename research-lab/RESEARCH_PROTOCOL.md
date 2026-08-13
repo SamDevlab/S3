@@ -26,6 +26,58 @@ PRODUCTION MILESTONE
 
 Do not jump from literature directly to production code.
 
+## State authority
+
+`STATE.json` is the canonical machine-readable status for the research program.
+
+Use the following precedence when sources disagree:
+
+```text
+ACTUAL_GIT_REFS / OBSERVED_RUNTIME_FACTS
+    ↓
+STATE.json
+    ↓
+HANDOFF.md
+    ↓
+Zettelkasten / experiment records / reconciliations
+    ↓
+SESSION_LOG.md / historical roadmap text / old chat prompts
+```
+
+A lower-precedence document is not silently treated as current when it conflicts with a higher-precedence source. Reconcile the drift explicitly.
+
+## Production provenance gate
+
+The long-lived research branch can lag production. The `bootstrap/` tree present on the research branch must therefore never be assumed to represent current `main`.
+
+Every experiment that imports, executes, profiles, or inspects current production compiler code must record:
+
+```text
+RESEARCH_HEAD=
+TARGET_MAIN_SHA=
+TARGET_CHECKOUT=
+TARGET_HEAD_MATCH=YES/NO
+TARGET_MAIN_ANCESTRY=YES/NO/UNKNOWN
+PRODUCTION_IMPORTS=YES/NO
+```
+
+Rules:
+
+1. `TARGET_MAIN_SHA` is immutable for one evidence set.
+2. If `PRODUCTION_IMPORTS=YES`, run against a separate checkout/worktree at exactly `TARGET_MAIN_SHA`.
+3. Do not import `bootstrap.s3` from the research branch merely because the lab directory is present there.
+4. If `TARGET_HEAD_MATCH=NO`, the measurement is invalid for the declared target.
+5. If a later production merge changes a relevant compiler layer, classify old evidence as historical until revalidated.
+6. Before promotion, reproduce the winning result from a fresh branch based on then-current `origin/main`.
+
+Validation helper:
+
+```bash
+python research-lab/tools/validate_lab.py \
+  --production-checkout /path/to/production/worktree \
+  --production-sha <TARGET_MAIN_SHA>
+```
+
 ## Atomicity rule
 
 Each note should assert one main idea. If a note requires several independent claims, split it.
@@ -197,6 +249,9 @@ OPPORTUNITY_COVERAGE=MEASURED
 CROSS_WORKLOAD_GENERALITY=YES
 COMPILE_TIME_COST=ACCEPTABLE
 SIMPLER_ALTERNATIVES_COMPARED=YES
+TARGET_HEAD_MATCH=YES
+PROVENANCE_RECORDED=YES
+LAB_CONSISTENCY=PASS
 ```
 
 Then create a fresh production branch from current `origin/main`.
@@ -210,5 +265,6 @@ Before ending a major research session:
 3. add or revise Zettelkasten notes;
 4. record negative results;
 5. ensure prototype entry points still run;
-6. leave `NEXT_ACTIONS` explicit;
-7. do not rely on chat memory as the only source of truth.
+6. run `python research-lab/tools/validate_lab.py`;
+7. leave `NEXT_ACTIONS` explicit;
+8. do not rely on chat memory as the only source of truth.
