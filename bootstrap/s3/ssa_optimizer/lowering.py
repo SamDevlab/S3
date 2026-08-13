@@ -32,7 +32,16 @@ def to_ir(ssa_fn: SSAFunction) -> IRFunction:
         if val.name not in ssa_val_to_reg:
             idx = len(ir_registers)
             ssa_val_to_reg[val.name] = idx
-            ir_registers.append(IRRegister(index=idx, type=val.type))
+            ir_registers.append(
+                IRRegister(
+                    index=idx,
+                    type=val.type,
+                    reference_target=val.reference_target,
+                    reference_mutable=val.reference_mutable,
+                    reference_is_slice=val.reference_is_slice,
+                    slice_length_register=val.slice_length_register,
+                )
+            )
         return ssa_val_to_reg[val.name]
 
     def new_register(type_name: IRType) -> int:
@@ -136,9 +145,26 @@ def to_ir(ssa_fn: SSAFunction) -> IRFunction:
             memory=ssa_inst.memory,
             initialization=ssa_inst.initialization,
             location=ssa_inst.location,
+            reference_target=ssa_inst.reference_target,
+            reference_mutable=ssa_inst.reference_mutable,
+            reference_is_slice=ssa_inst.reference_is_slice,
+            slice_length_result=ssa_inst.slice_length_result,
         )
 
     ir_params: List[IRParameter] = []
+    parameter_values_by_original = {
+        parameter.value.original_register: parameter.value
+        for parameter in ssa_fn.parameters
+        if parameter.value.original_register is not None
+    }
+
+    def mapped_length_register(value: SSAValue) -> int | None:
+        original = value.slice_length_register
+        if original is None:
+            return None
+        length_value = parameter_values_by_original.get(original)
+        return None if length_value is None else get_reg_index(length_value)
+
     for param in ssa_fn.parameters:
         reg_idx = get_reg_index(param.value)
         ir_params.append(
@@ -146,6 +172,10 @@ def to_ir(ssa_fn: SSAFunction) -> IRFunction:
                 name=param.value.name,
                 register=reg_idx,
                 type=param.value.type,
+                reference_target=param.value.reference_target,
+                reference_mutable=param.value.reference_mutable,
+                reference_is_slice=param.value.reference_is_slice,
+                slice_length_register=mapped_length_register(param.value),
             )
         )
 
