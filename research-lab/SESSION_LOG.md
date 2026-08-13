@@ -258,3 +258,9 @@ select P5 only from measured residual cause
   have real observers, but no path-complete removable subpopulation was proved.
   Added `S3-ZK-0050..0052`; no production code, branch, PR, full candidate
   suite, P9 or shutdown was started.
+- A remote-write audit incident was discovered after the optional research
+  persistence push: the production checkout's filtered `tests.yml` differed
+  from the research branch's unfiltered `on: push:` definition. Run
+  `31748403817` triggered on the research SHA and all jobs failed immediately
+  under the exhausted Actions allowance. No rerun, retry, cancellation or
+  further remote write was made. Research push safety is now `NO`.
