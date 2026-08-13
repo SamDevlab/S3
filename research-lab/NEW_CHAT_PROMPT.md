@@ -160,4 +160,30 @@ SHUTDOWN_AUTHORIZED=NO
 
 Read the external numbered closure reports before selecting any production
 change. Do not turn the temporary TADDR experiment into a production patch.
+
+## CI/P5 autonomous campaign checkpoint - 2026-08-13
+
+The current campaign has completed the Actions audit, pytest collection audit,
+O1 slice root-cause correction and eight-workload post-P4 reprofile. Read
+`research-lab/reconciliations/CI_P5_AUTONOMOUS_CAMPAIGN_20260812.md` and the
+external campaign reports before acting.
+
+```text
+O1_SLICE_FIX_PR=172
+O1_SLICE_FIX_HEAD=19b39c71fb644d2f4d923d1695eb3ac43e7e49e7
+O1_SLICE_FIX_MERGE=229811359948cf8e12848036882edaa89108a9fa
+CI_OPTIMIZATION_PR=173
+CI_OPTIMIZATION_HEAD=ae278bfdec2c9b957a1d885c2076d37f58f97df2
+CI_OPTIMIZATION_STATUS=MERGED
+CI_OPTIMIZATION_MERGE=1a775ba79f3abb6d3b33bb7d710ab67d0f808e18
+ORIGIN_MAIN_END=1a775ba79f3abb6d3b33bb7d710ab67d0f808e18
+P5_SELECTION=NO_VALID_TARGET_YET
+P5_STARTED=NO
+P6_STARTED=NO
 ```
+
+The #173 renderer passed and the PR is merged. Do not create a P5 branch: the
+current evidence does not meet the semantic-necessity promotion gate. Persist
+the final campaign JSON/report and research head, verify the original Windows
+checkout is unchanged, then execute the authorized Windows shutdown command
+exactly once.

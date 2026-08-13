@@ -152,3 +152,28 @@ select P5 only from measured residual cause
   recorded without changing code.
 - Decision remains MORE_RESEARCH_REQUIRED. No full suite, benchmark, P5/P6
   production work or shutdown was started.
+
+## 2026-08-13 - CI cost audit, O1 correction, and post-P4 reprofile
+
+- Audited 591 Actions runs / 5506 jobs from 2026-08-01 onward: 22356.616667
+  timestamp-derived job minutes, 12274.700000 non-main Tests-push minutes,
+  3716.766667 research-branch minutes, and 8068.350000 redundant push-side
+  minutes across 197 same-SHA push/PR pairs.
+- Collected 2709 unique pytest nodes. The current matrix executes 7449 node
+  instances, with 4740 duplicate executions. No test knowledge was deleted.
+- Reproduced and fixed the real O1 slice SSA-to-IR metadata-loss bug in PR #172;
+  natural CI passed and merged as 229811359948cf8e12848036882edaa89108a9fa.
+- Opened the single CI-efficiency PR #173 from the P4 main anchor. Its natural
+  run retains native, differential, SSA, Python, benchmark-smoke and Docker
+  gates; only the slow renderer remains pending at this checkpoint.
+- Reprofiled eight workloads on hosted IR and Linux x86-64 native. All results
+  matched expected values. JSMN remains the dominant code-size/compile-time
+  shape; dynamic per-value attribution is unavailable.
+- Decision: NO_VALID_TARGET_YET for production P5. P6 not started. Shutdown is
+  authorized only after PR #173 merge and final report persistence.
+- PR #173 natural CI finished green, including the 31m04s renderer, and merged
+  at 1a775ba79f3abb6d3b33bb7d710ab67d0f808e18. Both production PR heads and
+  merge ancestry are verified against origin/main.
+- Final research reconciliation is now the only required persistence step
+  before the authorized local Windows shutdown; no P5/P6 implementation is to
+  be started.

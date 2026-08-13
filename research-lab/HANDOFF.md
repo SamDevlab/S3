@@ -542,3 +542,65 @@ SHUTDOWN_AUTHORIZED=NO
 
 Canonical external report:
 `C:/Users/samue/Downloads/S3/production-reports/performance-p5-research-closure-20260812/FINAL_P5_RESEARCH_CLOSURE.md`
+
+## 19. CI cost audit and O1 correction campaign - 2026-08-13
+
+The campaign `CI_COST_TEST_AUDIT_AND_CONDITIONAL_P5` audited the Actions API,
+the pytest collection, the O1 slice failure and the current post-P4 backend.
+
+```text
+API_RUNS=591
+API_JOBS=5506
+API_JOB_MINUTES=22356.616667
+USER_METER_MINUTES=25340
+USER_GROSS_USD=152.04
+TEST_COLLECTION_TOTAL=2709
+DUPLICATE_TEST_EXECUTIONS=4740
+NON_MAIN_TESTS_PUSH_MINUTES=12274.700000
+RESEARCH_BRANCH_MINUTES=3716.766667
+DUPLICATED_PUSH_SIDE_MINUTES=8068.350000
+```
+
+The O1 slice issue was real metadata loss in SSA-to-IR lowering. PR #172,
+implementation `19b39c71fb644d2f4d923d1695eb3ac43e7e49e7`, passed both natural
+CI runs and merged as `229811359948cf8e12848036882edaa89108a9fa`. It is a
+correctness correction, not a performance P5.
+
+The single CI-efficiency PR is:
+
+```text
+CI_OPTIMIZATION_PR=173
+CI_OPTIMIZATION_HEAD=ae278bfdec2c9b957a1d885c2076d37f58f97df2
+CI_OPTIMIZATION_MERGE=1a775ba79f3abb6d3b33bb7d710ab67d0f808e18
+ORIGIN_MAIN_END=1a775ba79f3abb6d3b33bb7d710ab67d0f808e18
+```
+
+It restricts Tests pushes to main, keeps executable PR paths, adds PR-only
+concurrency cancellation, enables official pip caching and narrows M1.38
+Docker paths. Native, differential, SSA, Python 3.11/3.12/3.13, benchmark
+smoke and Docker gates are preserved. The modeled trigger replay reduction is
+54.94% of historical Tests minutes; concurrency/cache gains are not added.
+
+The post-P4 reprofile covered JSMN, numeric integer, nested loop,
+branch-heavy, call-heavy, slice/reference, f64 and trit-heavy workloads. All
+passed hosted IR and Linux x86-64 native execution. JSMN remains the largest
+shape, but the metadata/reset population is not proven removable and sound
+dynamic per-value attribution is unavailable.
+
+```text
+P5_SELECTION=NO_VALID_TARGET_YET
+P5_STARTED=NO
+P6_STARTED=NO
+```
+
+The external campaign evidence is under:
+
+```text
+C:/Users/samue/Downloads/S3/production-reports/github-actions-efficiency-20260812/
+C:/Users/samue/Downloads/S3/production-reports/ci-p5-autonomous-campaign-20260812/
+```
+
+The #173 gate is terminal green and the PR is merged. The factual merge SHA is
+in `STATE.json`, this handoff and the external JSON. Push the research branch,
+verify the original checkout is preserved, then issue the authorized Windows
+shutdown as the final action.

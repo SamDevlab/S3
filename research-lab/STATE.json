@@ -22,7 +22,14 @@
     "p4_implementation_head": "59df1d0f9ab9147b8d7f71a1db395c5fab560171",
     "p4_merge_commit": "a0b694fadc985c0b8e0944fb7844e14f72a838d8",
     "main_after_p4": "a0b694fadc985c0b8e0944fb7844e14f72a838d8",
-    "p5_started": false
+    "p5_started": false,
+    "current_origin_main": "1a775ba79f3abb6d3b33bb7d710ab67d0f808e18",
+    "ci_optimization_pr": 173,
+    "ci_optimization_head": "ae278bfdec2c9b957a1d885c2076d37f58f97df2",
+    "ci_optimization_merge": "1a775ba79f3abb6d3b33bb7d710ab67d0f808e18",
+    "o1_slice_fix_pr": 172,
+    "o1_slice_fix_head": "19b39c71fb644d2f4d923d1695eb3ac43e7e49e7",
+    "o1_slice_fix_merge": "229811359948cf8e12848036882edaa89108a9fa"
   },
   "p4_result": {
     "root_cause_identified": true,
@@ -205,13 +212,41 @@
     "p6_started": false,
     "shutdown_authorized": false
   },
+  "ci_p5_autonomous_campaign": {
+    "status": "COMPLETE_PENDING_SHUTDOWN",
+    "audit_complete": true,
+    "test_area_audit_complete": true,
+    "origin_main_start": "a0b694fadc985c0b8e0944fb7844e14f72a838d8",
+    "o1_slice_fix_pr": 172,
+    "o1_slice_fix_head": "19b39c71fb644d2f4d923d1695eb3ac43e7e49e7",
+    "o1_slice_fix_merge": "229811359948cf8e12848036882edaa89108a9fa",
+    "ci_optimization_pr": 173,
+    "ci_optimization_head": "ae278bfdec2c9b957a1d885c2076d37f58f97df2",
+    "ci_optimization_merge": "1a775ba79f3abb6d3b33bb7d710ab67d0f808e18",
+    "origin_main_end": "1a775ba79f3abb6d3b33bb7d710ab67d0f808e18",
+    "measured_api_job_minutes": 22356.616667,
+    "research_branch_minutes": 3716.766667,
+    "duplicated_push_pr_minutes": 8068.35,
+    "test_collection_total": 2709,
+    "duplicate_test_executions": 4740,
+    "o1_slice_classification": "REAL_SSA_TO_IR_REFERENCE_METADATA_LOSS_FIXED",
+    "post_p4_primary_bottleneck": "REPEATED_MEMORY_STATE_MATERIALIZATION_AND_METADATA_STAGING",
+    "p5_selection": "NO_VALID_TARGET_YET",
+    "p5_started": false,
+    "p6_started": false,
+    "full_suite_run": false,
+    "shutdown_authorized": true,
+    "shutdown_command_issued": false,
+    "implementation_ancestry": true,
+    "merge_ancestry": true
+  },
   "hard_rules": {
     "research_branch_direct_merge_to_main": false,
     "production_changes_from_lab": "port proven ideas to a fresh branch from current main",
     "safety_weakened": false,
     "benchmark_special_cases": false,
     "p5_stacking": false,
-    "automatic_shutdown_authorized": false,
+    "automatic_shutdown_authorized": true,
     "full_suite_policy": "production final candidate only; not routine research iteration",
     "ternary_semantics_policy": "do not change S3 semantics merely to match a named many-valued logic",
     "information_metric_policy": "do not assign Shannon entropy/mutual-information metrics without a defined probabilistic model",
@@ -231,6 +266,9 @@
     "Continue min-cut/Lagrangian/oracle work as research, but do not promote it merely because P4 used global residency terminology",
     "Do not select production P5 until semantic necessity and dynamic weighting are measured",
     "Complete path-complete observer provenance and failure/phi/loop closure before P5 production",
-    "Keep temporary TADDR support out of production until its contract is independently promoted"
+    "Keep temporary TADDR support out of production until its contract is independently promoted",
+    "Complete CI PR #173 natural checks and merge only after all jobs are green",
+    "Keep P5 rejected until semantic necessity and dynamic attribution become promotion-grade",
+    "Persist final CI/P5 campaign evidence before issuing the authorized local Windows shutdown"
   ]
 }

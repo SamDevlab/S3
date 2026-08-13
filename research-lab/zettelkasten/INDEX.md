@@ -189,3 +189,22 @@ P5-RESEARCH-CLOSURE reproduced 14367 allocated-memory reset bytes and found
 13340 direct required bytes, 1024 overwrite candidates and 3 lifetime-end
 candidates. Alias, call, failure, phi/loop and exact-oracle closure remain
 open; promotion is not authorized.
+
+## CI/P5 autonomous campaign additions
+
+`S3-ZK-0044` records that trigger duplication, rather than missing correctness
+gates, was the dominant measured Actions cost. The research branch alone
+consumed 3716.766667 job minutes; 197 same-SHA push/PR pairs proved
+8068.350000 redundant push-side minutes. PR #173 applies trigger precision,
+PR-only cancellation, pip caching and a narrow Docker path without deleting
+coverage.
+
+`S3-ZK-0045` records the O1 slice finding: metadata loss in SSA-to-IR lowering
+was a real verifier/correctness bug, fixed in PR #172 and merged as
+229811359948cf8e12848036882edaa89108a9fa. The old limitation must not remain
+in future P5 reports.
+
+`S3-ZK-0046` records the post-P4 reprofile. Eight workloads passed emulator and
+Linux native execution; JSMN dominates current code size and compile time, but
+no sound dynamic per-value attribution or semantic reset-deadness proof exists.
+The correct promotion decision is `NO_VALID_TARGET_YET`, not a speculative P5.

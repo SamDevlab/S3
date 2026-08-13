@@ -245,3 +245,31 @@ STATUS=OPEN
 
 Focused contracts pass and phi-heavy evidence exists, but no path-complete
 reset necessity proof is established.
+
+### S3-EXP-0021 - GitHub Actions efficiency and test-area audit
+
+STATUS=SUPPORTED_FOR_TRIGGER_DUPLICATION / CI_PR_173_PENDING
+
+The 2026-08-12 audit measured 22356.616667 API-derived job minutes, 12274.700000
+non-main push minutes, 3716.766667 research-branch minutes, 197 same-SHA
+push/PR pairs, and 4740 duplicate pytest executions. The safe promotion is
+trigger precision + PR-only cancellation + official pip caching, while native,
+differential, SSA, Python compatibility, benchmark smoke and Docker gates stay.
+
+### S3-EXP-0022 - O1 slice metadata transport
+
+STATUS=SUPPORTED_AND_MERGED_PR_172
+
+Valid O0 slice programs failed after SSA optimization because SSA-to-IR lowering
+dropped reference target, mutability, slice and parameter length metadata. The
+small correction preserved the contract and passed natural CI. This is a
+correctness fix, not a P5 performance target.
+
+### S3-EXP-0023 - Post-P4 whole-backend reprofile
+
+STATUS=SUPPORTED_FOR_CURRENT_CHARACTERIZATION / P5_REJECTED
+
+Eight workloads passed hosted IR and Linux native execution. JSMN remains the
+dominant shape by native text/instruction count and compile time. The broad
+memory-state metadata hypothesis remains unproven as removable; no production
+P5 was selected.
