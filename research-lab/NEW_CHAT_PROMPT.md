@@ -353,6 +353,8 @@ Read `research-lab/HANDOFF.md`, `STATE.json`,
 P9.1 is closed as `NO_VALID_TARGET_YET`. The P9 dynamic model reproduced
 exactly at 289500 across 15 workloads. Explicit safety realization was 65224
 modelled dynamic x86 lines; bounds were 17464 and memory initialization 6660.
+The coherent P9.1 result was published at research commit
+`05f08dcf574ff2ab4bab4539e74d6136ef3fd45c`.
 The minimum local-constant, success-edge, loop and same-object reuse models
 found zero proven eligible sites. `AVOIDABLE_DYNAMIC=0`.
 
