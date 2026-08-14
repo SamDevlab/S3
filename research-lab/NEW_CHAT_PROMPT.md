@@ -398,3 +398,31 @@ authorize shutdown from this negative result. Read
 `reconciliations/P9_2_RESULT.json`,
 `experiments/S3-EXP-0034-p9-2-explicit-range-fact-contract.md`, and
 `zettelkasten/notes/S3-ZK-0059.md`.
+
+## P9.3 authoritative checkpoint - 2026-08-14
+
+P9.3 closed the UNKNOWN causal attribution line on correctness candidate A+B:
+
+```text
+P9_3_TARGET_SHA=045bbb1427af941b71d28b93cf1e5fe9bf245af7
+P9_3_BASELINE=289512
+P9_3_BASELINE_REPRODUCED=YES
+TOTAL_UNKNOWN_DYNAMIC=26456
+UNKNOWN_CLASSIFICATION_COVERAGE=1.0
+P8_REGISTER_INIT_UNKNOWN_STATIC=30096
+P8_REGISTER_INIT_UNKNOWN_DYNAMIC=26456
+P9_RELEVANT_UNKNOWN_DYNAMIC=0
+MAX_THEORETICAL_AVOIDABLE_DYNAMIC=0
+P9_3_SELECTION=NO_P9_BOUNDS_OPPORTUNITY
+BOUNDS_VALIDITY_LINE_STATUS=CLOSE
+P9_4_AUTHORIZED_BY_EVIDENCE=NO
+NEXT_GLOBAL_OPTIMIZATION_QUESTION=NO_NEW_TARGET_YET
+P9_PRODUCTION_STARTED=NO
+```
+
+All UNKNOWN events are the existing P8 register-init mechanism. Do not reopen
+P9 bounds/validity, strengthen range analysis to change labels, start P9.4,
+modify production, run benchmarks, execute Actions, or authorize shutdown.
+The A+B integration reconciliation is static only and remains blocked because
+feature publication is safe but PR semantics are UNKNOWN and main publication
+would make Actions possible.

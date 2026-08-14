@@ -392,3 +392,23 @@ select P5 only from measured residual cause
 - P9.2 closes as `NO_VALID_TARGET_YET`. No production code, PR, benchmark,
   Actions run or shutdown was performed. The next experiment remains a small
   hand-written proof-bearing loop corpus, only with separate authorization.
+
+## 2026-08-14 - P9.3 UNKNOWN causal attribution
+
+- Reconciled A+B as one validated correctness candidate: main -> A -> B at
+  `045bbb1427af941b71d28b93cf1e5fe9bf245af7`. The exact candidate full suite,
+  native, differential, compileall and diff checks were already green; main
+  was not changed.
+- Analyzed integration routes statically. Feature push is
+  `PROVEN_ZERO_ACTIONS`; pull-request semantics remain `UNKNOWN`; a main-ref
+  update is `ACTIONS_POSSIBLE`. No alternative was executed, no PR was
+  opened, and no workflow was modified.
+- Reproduced the P9 model at `289512` on the exact detached candidate. The
+  P9.1 ledger partitioned all `26456` UNKNOWN dynamic events into
+  `REGISTER_INITIALIZATION_CHECK`: `30096` static lines, `8892` structural
+  sites and six workloads.
+- P9.3 therefore removes the population from the P9 bounds/validity question:
+  `P9_RELEVANT_UNKNOWN_DYNAMIC=0`, maximum theoretical avoidable dynamic is
+  zero, and no concrete P9-redundant example exists.
+- Closed P9 bounds/validity as `NO_P9_BOUNDS_OPPORTUNITY`. No production code,
+  benchmark, Actions run or shutdown occurred; no P9.4 was authorized.

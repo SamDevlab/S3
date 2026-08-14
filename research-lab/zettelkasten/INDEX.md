@@ -293,3 +293,14 @@ Assembly contract on the A+B correctness candidate. The old model reproduced
 at `289500`; A+B measured `289512` as a correctness-only delta. Classification
 coverage stayed `1.0`, but `AVOIDABLE_DYNAMIC=0` and no provably redundant site
 survived the invalidator controls. P9.2 closes as `NO_VALID_TARGET_YET`.
+
+## P9.3 UNKNOWN causal attribution
+
+| [[S3-ZK-0060]] | UNKNOWN is not an optimization opportunity | NEGATIVE_RESULT |
+
+`S3-EXP-0035` reproduced the A+B model at `289512` and showed that all
+`UNKNOWN_DYNAMIC=26456` events belong exactly to the existing P8
+`REGISTER_INITIALIZATION_CHECK` population. The class has `30096` static lines,
+`8892` structural sites and six workloads. No P9-relevant UNKNOWN dynamic
+population remains, so `MAX_THEORETICAL_AVOIDABLE_DYNAMIC=0` and the P9
+bounds/validity line closes as `NO_P9_BOUNDS_OPPORTUNITY`.

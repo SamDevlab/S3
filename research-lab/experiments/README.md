@@ -443,3 +443,28 @@ proven eligible sites. Focused native correctness passed for five candidate
 workloads. No production compiler change, benchmark rerun or Actions run
 occurred. See `S3-EXP-0033-p9-1-bounds-validity-contract-attribution.md` and
 `reconciliations/P9_1_BOUNDS_VALIDITY_CONTRACT_ATTRIBUTION_20260814.md`.
+
+### S3-EXP-0034 - P9.2 explicit range-fact contract
+
+STATUS=COMPLETE_NO_VALID_TARGET_YET
+
+P9.2 compared bounded recomputation, a private verified fact and a public
+Assembly contract on the A+B correctness candidate. The old model reproduced
+at 289500; A+B measured 289512 as a correctness-only delta. Classification
+coverage remained 1.0, but no provably redundant site or dynamic event
+survived the invalidator controls. See
+`S3-EXP-0034-p9-2-explicit-range-fact-contract.md` and
+`../reconciliations/P9_2_EXPLICIT_RANGE_FACT_CONTRACT_20260814.md`.
+
+### S3-EXP-0035 - P9.3 UNKNOWN causal attribution
+
+STATUS=SUPPORTED_NEGATIVE
+
+P9.3 reproduced the A+B P9 sidecar at 289512 and reconciled the complete
+26456-event UNKNOWN population. All events are exactly the existing P8
+`REGISTER_INITIALIZATION_CHECK` class: 30096 static lines, 8892 structural
+sites and six workloads. No P9-relevant UNKNOWN dynamic population remains,
+so the maximum theoretical P9 avoidable dynamic is zero and the bounds/
+validity line closes without a P9.4. See
+`S3-EXP-0035-p9-3-unknown-causal-attribution.md` and
+`../reconciliations/P9_3_RESULT.json`.

@@ -1,0 +1,366 @@
+{
+  "attribution_limit_only_dynamic": 0,
+  "baseline_expected": 289512,
+  "baseline_reproduced": true,
+  "benchmark_executed": false,
+  "bounds_validity_line_status": "CLOSE",
+  "campaign": "P9_3_UNKNOWN_CAUSAL_ATTRIBUTION_V1",
+  "concrete_redundant_example_found": false,
+  "github_actions_executed": false,
+  "inherently_required_dynamic": 0,
+  "material_p9_class_found": false,
+  "max_theoretical_avoidable_dynamic": 0,
+  "max_theoretical_share_of_model": 0.0,
+  "modelled_dynamic_total": 289512,
+  "negative_results": [
+    "UNKNOWN_DYNAMIC_IS_EXACTLY_P8_REGISTER_INIT",
+    "NO_P9_RELEVANT_UNKNOWN_DYNAMIC_REMAINS",
+    "NO_CONCRETE_REDUNDANT_P9_EXAMPLE",
+    "NO_P9_4_GATE_SATISFIED"
+  ],
+  "next_global_optimization_question": "NO_NEW_TARGET_YET",
+  "next_smallest_experiment": "NONE_WITHIN_P9_BOUNDS",
+  "out_of_scope_existing_mechanism_dynamic": 26456,
+  "p8_register_init_dynamic_by_opcode": {
+    "TLOAD": 5856,
+    "TSTORE": 20600
+  },
+  "p8_register_init_dynamic_by_workload": {
+    "tiny_01_empty_obj": 2940,
+    "tiny_02_empty_arr": 2940,
+    "tiny_03_pair": 4552,
+    "tiny_04_arr": 5772,
+    "tiny_05_string": 3000,
+    "tiny_06_bool_null": 7252
+  },
+  "p8_register_init_unknown_dynamic": 26456,
+  "p8_register_init_unknown_sites": 8892,
+  "p8_register_init_unknown_static": 30096,
+  "p8_register_init_unknown_workloads": [
+    "tiny_01_empty_obj",
+    "tiny_02_empty_arr",
+    "tiny_03_pair",
+    "tiny_04_arr",
+    "tiny_05_string",
+    "tiny_06_bool_null"
+  ],
+  "p9_3_selection": "NO_P9_BOUNDS_OPPORTUNITY",
+  "p9_4_authorized_by_evidence": false,
+  "p9_4_recommended_target": "NONE",
+  "p9_production_started": false,
+  "p9_relevant_unknown_dynamic": 0,
+  "potentially_avoidable_unproven_dynamic": 0,
+  "production_code_changed": false,
+  "provably_avoidable_dynamic": 0,
+  "provenance": "LOCAL_RESEARCH_ONLY_PENDING_PUBLICATION",
+  "shutdown_authorized": false,
+  "status": "COMPLETE_RESEARCH_ONLY",
+  "target_head_match": true,
+  "target_is_main": false,
+  "target_is_validated_correctness_candidate": true,
+  "target_main_sha": "5dd6844607ba3a2d5830ed836fb9026eed86d0fb",
+  "target_sha": "045bbb1427af941b71d28b93cf1e5fe9bf245af7",
+  "top_unknown_families": [
+    {
+      "cause": "P8_REGISTER_INITIALIZATION_EXISTING_MECHANISM",
+      "dynamic_weight": 26456,
+      "family": "UNKNOWN_P8_REGISTER_INIT",
+      "likely_required": true,
+      "potentially_avoidable": false,
+      "proof_cost": "OUT_OF_SCOPE_FOR_P9; requires the P8-specific safety proof boundary",
+      "share_of_total_unknown": 1.0,
+      "workload_count": 6
+    }
+  ],
+  "top_unknown_p9_relevant_families": [],
+  "top_unknown_p9_relevant_sites": [],
+  "top_unknown_sites": [
+    {
+      "block": "entry",
+      "counterexample": "Range facts do not prove register initialization. Removing the check on that basis would conflate P8 observer/initialization semantics with P9 range validity.",
+      "current_check": "REGISTER_INITIALIZATION_CHECK",
+      "dynamic_weight": 92,
+      "execution_count": 23,
+      "function": "is_whitespace",
+      "instruction_site": "is_whitespace::entry::2::TSTORE",
+      "minimum_required_proof": "P8-specific observer-aware register-initialization proof with an exact native checked fallback; outside this P9.3 experiment.",
+      "opcode": "TSTORE",
+      "optimization": "O0",
+      "possible_redundancy": "NOT_A_P9_BOUNDS_CLAIM",
+      "static_register_init_lines": 4,
+      "why_unknown": "P9.1 assigns this population to REGISTER_INITIALIZATION_CHECK; it is an existing P8 safety mechanism, not a P9 bounds/validity range fact.",
+      "workload": "tiny_06_bool_null"
+    },
+    {
+      "block": "entry",
+      "counterexample": "Range facts do not prove register initialization. Removing the check on that basis would conflate P8 observer/initialization semantics with P9 range validity.",
+      "current_check": "REGISTER_INITIALIZATION_CHECK",
+      "dynamic_weight": 92,
+      "execution_count": 23,
+      "function": "is_whitespace",
+      "instruction_site": "is_whitespace::entry::2::TSTORE",
+      "minimum_required_proof": "P8-specific observer-aware register-initialization proof with an exact native checked fallback; outside this P9.3 experiment.",
+      "opcode": "TSTORE",
+      "optimization": "O1",
+      "possible_redundancy": "NOT_A_P9_BOUNDS_CLAIM",
+      "static_register_init_lines": 4,
+      "why_unknown": "P9.1 assigns this population to REGISTER_INITIALIZATION_CHECK; it is an existing P8 safety mechanism, not a P9 bounds/validity range fact.",
+      "workload": "tiny_06_bool_null"
+    },
+    {
+      "block": "switch_neutral_13",
+      "counterexample": "Range facts do not prove register initialization. Removing the check on that basis would conflate P8 observer/initialization semantics with P9 range validity.",
+      "current_check": "REGISTER_INITIALIZATION_CHECK",
+      "dynamic_weight": 92,
+      "execution_count": 23,
+      "function": "is_whitespace",
+      "instruction_site": "is_whitespace::switch_neutral_13::3::TSTORE",
+      "minimum_required_proof": "P8-specific observer-aware register-initialization proof with an exact native checked fallback; outside this P9.3 experiment.",
+      "opcode": "TSTORE",
+      "optimization": "O0",
+      "possible_redundancy": "NOT_A_P9_BOUNDS_CLAIM",
+      "static_register_init_lines": 4,
+      "why_unknown": "P9.1 assigns this population to REGISTER_INITIALIZATION_CHECK; it is an existing P8 safety mechanism, not a P9 bounds/validity range fact.",
+      "workload": "tiny_06_bool_null"
+    },
+    {
+      "block": "switch_neutral_13",
+      "counterexample": "Range facts do not prove register initialization. Removing the check on that basis would conflate P8 observer/initialization semantics with P9 range validity.",
+      "current_check": "REGISTER_INITIALIZATION_CHECK",
+      "dynamic_weight": 92,
+      "execution_count": 23,
+      "function": "is_whitespace",
+      "instruction_site": "is_whitespace::switch_neutral_13::3::TSTORE",
+      "minimum_required_proof": "P8-specific observer-aware register-initialization proof with an exact native checked fallback; outside this P9.3 experiment.",
+      "opcode": "TSTORE",
+      "optimization": "O1",
+      "possible_redundancy": "NOT_A_P9_BOUNDS_CLAIM",
+      "static_register_init_lines": 4,
+      "why_unknown": "P9.1 assigns this population to REGISTER_INITIALIZATION_CHECK; it is an existing P8 safety mechanism, not a P9 bounds/validity range fact.",
+      "workload": "tiny_06_bool_null"
+    },
+    {
+      "block": "switch_neutral_1",
+      "counterexample": "Range facts do not prove register initialization. Removing the check on that basis would conflate P8 observer/initialization semantics with P9 range validity.",
+      "current_check": "REGISTER_INITIALIZATION_CHECK",
+      "dynamic_weight": 92,
+      "execution_count": 23,
+      "function": "is_whitespace",
+      "instruction_site": "is_whitespace::switch_neutral_1::3::TSTORE",
+      "minimum_required_proof": "P8-specific observer-aware register-initialization proof with an exact native checked fallback; outside this P9.3 experiment.",
+      "opcode": "TSTORE",
+      "optimization": "O0",
+      "possible_redundancy": "NOT_A_P9_BOUNDS_CLAIM",
+      "static_register_init_lines": 4,
+      "why_unknown": "P9.1 assigns this population to REGISTER_INITIALIZATION_CHECK; it is an existing P8 safety mechanism, not a P9 bounds/validity range fact.",
+      "workload": "tiny_06_bool_null"
+    },
+    {
+      "block": "switch_neutral_1",
+      "counterexample": "Range facts do not prove register initialization. Removing the check on that basis would conflate P8 observer/initialization semantics with P9 range validity.",
+      "current_check": "REGISTER_INITIALIZATION_CHECK",
+      "dynamic_weight": 92,
+      "execution_count": 23,
+      "function": "is_whitespace",
+      "instruction_site": "is_whitespace::switch_neutral_1::3::TSTORE",
+      "minimum_required_proof": "P8-specific observer-aware register-initialization proof with an exact native checked fallback; outside this P9.3 experiment.",
+      "opcode": "TSTORE",
+      "optimization": "O1",
+      "possible_redundancy": "NOT_A_P9_BOUNDS_CLAIM",
+      "static_register_init_lines": 4,
+      "why_unknown": "P9.1 assigns this population to REGISTER_INITIALIZATION_CHECK; it is an existing P8 safety mechanism, not a P9 bounds/validity range fact.",
+      "workload": "tiny_06_bool_null"
+    },
+    {
+      "block": "switch_neutral_5",
+      "counterexample": "Range facts do not prove register initialization. Removing the check on that basis would conflate P8 observer/initialization semantics with P9 range validity.",
+      "current_check": "REGISTER_INITIALIZATION_CHECK",
+      "dynamic_weight": 92,
+      "execution_count": 23,
+      "function": "is_whitespace",
+      "instruction_site": "is_whitespace::switch_neutral_5::3::TSTORE",
+      "minimum_required_proof": "P8-specific observer-aware register-initialization proof with an exact native checked fallback; outside this P9.3 experiment.",
+      "opcode": "TSTORE",
+      "optimization": "O0",
+      "possible_redundancy": "NOT_A_P9_BOUNDS_CLAIM",
+      "static_register_init_lines": 4,
+      "why_unknown": "P9.1 assigns this population to REGISTER_INITIALIZATION_CHECK; it is an existing P8 safety mechanism, not a P9 bounds/validity range fact.",
+      "workload": "tiny_06_bool_null"
+    },
+    {
+      "block": "switch_neutral_5",
+      "counterexample": "Range facts do not prove register initialization. Removing the check on that basis would conflate P8 observer/initialization semantics with P9 range validity.",
+      "current_check": "REGISTER_INITIALIZATION_CHECK",
+      "dynamic_weight": 92,
+      "execution_count": 23,
+      "function": "is_whitespace",
+      "instruction_site": "is_whitespace::switch_neutral_5::3::TSTORE",
+      "minimum_required_proof": "P8-specific observer-aware register-initialization proof with an exact native checked fallback; outside this P9.3 experiment.",
+      "opcode": "TSTORE",
+      "optimization": "O1",
+      "possible_redundancy": "NOT_A_P9_BOUNDS_CLAIM",
+      "static_register_init_lines": 4,
+      "why_unknown": "P9.1 assigns this population to REGISTER_INITIALIZATION_CHECK; it is an existing P8 safety mechanism, not a P9 bounds/validity range fact.",
+      "workload": "tiny_06_bool_null"
+    },
+    {
+      "block": "switch_neutral_9",
+      "counterexample": "Range facts do not prove register initialization. Removing the check on that basis would conflate P8 observer/initialization semantics with P9 range validity.",
+      "current_check": "REGISTER_INITIALIZATION_CHECK",
+      "dynamic_weight": 92,
+      "execution_count": 23,
+      "function": "is_whitespace",
+      "instruction_site": "is_whitespace::switch_neutral_9::3::TSTORE",
+      "minimum_required_proof": "P8-specific observer-aware register-initialization proof with an exact native checked fallback; outside this P9.3 experiment.",
+      "opcode": "TSTORE",
+      "optimization": "O0",
+      "possible_redundancy": "NOT_A_P9_BOUNDS_CLAIM",
+      "static_register_init_lines": 4,
+      "why_unknown": "P9.1 assigns this population to REGISTER_INITIALIZATION_CHECK; it is an existing P8 safety mechanism, not a P9 bounds/validity range fact.",
+      "workload": "tiny_06_bool_null"
+    },
+    {
+      "block": "switch_neutral_9",
+      "counterexample": "Range facts do not prove register initialization. Removing the check on that basis would conflate P8 observer/initialization semantics with P9 range validity.",
+      "current_check": "REGISTER_INITIALIZATION_CHECK",
+      "dynamic_weight": 92,
+      "execution_count": 23,
+      "function": "is_whitespace",
+      "instruction_site": "is_whitespace::switch_neutral_9::3::TSTORE",
+      "minimum_required_proof": "P8-specific observer-aware register-initialization proof with an exact native checked fallback; outside this P9.3 experiment.",
+      "opcode": "TSTORE",
+      "optimization": "O1",
+      "possible_redundancy": "NOT_A_P9_BOUNDS_CLAIM",
+      "static_register_init_lines": 4,
+      "why_unknown": "P9.1 assigns this population to REGISTER_INITIALIZATION_CHECK; it is an existing P8 safety mechanism, not a P9 bounds/validity range fact.",
+      "workload": "tiny_06_bool_null"
+    }
+  ],
+  "total_unknown_dynamic": 26456,
+  "unknown_class_details": [
+    {
+      "cause": "P8_REGISTER_INITIALIZATION_EXISTING_MECHANISM",
+      "check": "REGISTER_INITIALIZATION_CHECK",
+      "classification": "OUT_OF_SCOPE_EXISTING_MECHANISM",
+      "dynamic": 26456,
+      "hot": true,
+      "name": "UNKNOWN_P8_REGISTER_INIT",
+      "out_of_scope_for_p9_bounds": true,
+      "p9_relevant": false,
+      "proof_gap": "P9 range facts do not transport register-initialization state",
+      "sites": 8892,
+      "static": 30096,
+      "workloads": 6
+    },
+    {
+      "classification": "NOT_OBSERVED_IN_P9_1_UNKNOWN_POPULATION",
+      "dynamic": 0,
+      "name": "UNKNOWN_OBJECT_IDENTITY",
+      "p9_relevant": false
+    },
+    {
+      "classification": "NOT_OBSERVED_IN_P9_1_UNKNOWN_POPULATION",
+      "dynamic": 0,
+      "name": "UNKNOWN_INDEX_IDENTITY",
+      "p9_relevant": false
+    },
+    {
+      "classification": "NOT_OBSERVED_IN_P9_1_UNKNOWN_POPULATION",
+      "dynamic": 0,
+      "name": "UNKNOWN_LENGTH_IDENTITY",
+      "p9_relevant": false
+    },
+    {
+      "classification": "NOT_OBSERVED_IN_P9_1_UNKNOWN_POPULATION",
+      "dynamic": 0,
+      "name": "UNKNOWN_ALIAS",
+      "p9_relevant": false
+    },
+    {
+      "classification": "NOT_OBSERVED_IN_P9_1_UNKNOWN_POPULATION",
+      "dynamic": 0,
+      "name": "UNKNOWN_CALL_EFFECT",
+      "p9_relevant": false
+    },
+    {
+      "classification": "NOT_OBSERVED_IN_P9_1_UNKNOWN_POPULATION",
+      "dynamic": 0,
+      "name": "UNKNOWN_MUTATION",
+      "p9_relevant": false
+    },
+    {
+      "classification": "NOT_OBSERVED_IN_P9_1_UNKNOWN_POPULATION",
+      "dynamic": 0,
+      "name": "UNKNOWN_LIFETIME",
+      "p9_relevant": false
+    },
+    {
+      "classification": "NOT_OBSERVED_IN_P9_1_UNKNOWN_POPULATION",
+      "dynamic": 0,
+      "name": "UNKNOWN_OVERFLOW",
+      "p9_relevant": false
+    },
+    {
+      "classification": "NOT_OBSERVED_IN_P9_1_UNKNOWN_POPULATION",
+      "dynamic": 0,
+      "name": "UNKNOWN_CFG_PATH",
+      "p9_relevant": false
+    },
+    {
+      "classification": "NOT_OBSERVED_IN_P9_1_UNKNOWN_POPULATION",
+      "dynamic": 0,
+      "name": "UNKNOWN_LOOP_CARRIED_FACT",
+      "p9_relevant": false
+    },
+    {
+      "classification": "NOT_OBSERVED_IN_P9_1_UNKNOWN_POPULATION",
+      "dynamic": 0,
+      "name": "UNKNOWN_REFERENCE",
+      "p9_relevant": false
+    },
+    {
+      "classification": "NOT_OBSERVED_IN_P9_1_UNKNOWN_POPULATION",
+      "dynamic": 0,
+      "name": "UNKNOWN_SLICE",
+      "p9_relevant": false
+    },
+    {
+      "classification": "NOT_OBSERVED_IN_P9_1_UNKNOWN_POPULATION",
+      "dynamic": 0,
+      "name": "UNKNOWN_FAILURE_ORDER",
+      "p9_relevant": false
+    },
+    {
+      "classification": "NOT_OBSERVED_IN_P9_1_UNKNOWN_POPULATION",
+      "dynamic": 0,
+      "name": "UNKNOWN_INSTRUCTION_LIMIT_INTERACTION",
+      "p9_relevant": false
+    },
+    {
+      "classification": "NOT_OBSERVED_IN_P9_1_UNKNOWN_POPULATION",
+      "dynamic": 0,
+      "name": "UNKNOWN_OTHER",
+      "p9_relevant": false
+    }
+  ],
+  "unknown_classes": {
+    "UNKNOWN_ALIAS": 0,
+    "UNKNOWN_CALL_EFFECT": 0,
+    "UNKNOWN_CFG_PATH": 0,
+    "UNKNOWN_FAILURE_ORDER": 0,
+    "UNKNOWN_INDEX_IDENTITY": 0,
+    "UNKNOWN_INSTRUCTION_LIMIT_INTERACTION": 0,
+    "UNKNOWN_LENGTH_IDENTITY": 0,
+    "UNKNOWN_LIFETIME": 0,
+    "UNKNOWN_LOOP_CARRIED_FACT": 0,
+    "UNKNOWN_MUTATION": 0,
+    "UNKNOWN_OBJECT_IDENTITY": 0,
+    "UNKNOWN_OTHER": 0,
+    "UNKNOWN_OVERFLOW": 0,
+    "UNKNOWN_P8_REGISTER_INIT": 26456,
+    "UNKNOWN_REFERENCE": 0,
+    "UNKNOWN_SLICE": 0
+  },
+  "unknown_classification_coverage": 1.0,
+  "unknown_partition_sum": 26456
+}

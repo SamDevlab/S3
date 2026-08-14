@@ -931,3 +931,51 @@ does not authorize public Assembly proof metadata. Read
 `reconciliations/P9_2_RESULT.json`,
 `experiments/S3-EXP-0034-p9-2-explicit-range-fact-contract.md`, and
 `zettelkasten/notes/S3-ZK-0059.md` before any future range-fact work.
+
+## Authoritative current checkpoint: P9.3 closed - 2026-08-14
+
+P9.3 is complete research-only on the validated A+B correctness candidate. It
+did not integrate the candidate and did not start production P9:
+
+```text
+P9_3_CAMPAIGN=P9_3_UNKNOWN_CAUSAL_ATTRIBUTION_V1
+P9_3_STATUS=COMPLETE_RESEARCH_ONLY
+P9_3_TARGET_SHA=045bbb1427af941b71d28b93cf1e5fe9bf245af7
+TARGET_IS_MAIN=NO
+TARGET_IS_VALIDATED_CORRECTNESS_CANDIDATE=YES
+TARGET_HEAD_MATCH=YES
+P9_3_BASELINE_EXPECTED=289512
+P9_3_BASELINE_REPRODUCED=YES
+TOTAL_UNKNOWN_DYNAMIC=26456
+UNKNOWN_CLASSIFICATION_COVERAGE=1.0
+P8_REGISTER_INIT_UNKNOWN_STATIC=30096
+P8_REGISTER_INIT_UNKNOWN_DYNAMIC=26456
+P9_RELEVANT_UNKNOWN_DYNAMIC=0
+INHERENTLY_REQUIRED_DYNAMIC=0
+OUT_OF_SCOPE_EXISTING_MECHANISM_DYNAMIC=26456
+ATTRIBUTION_LIMIT_ONLY_DYNAMIC=0
+POTENTIALLY_AVOIDABLE_UNPROVEN_DYNAMIC=0
+PROVABLY_AVOIDABLE_DYNAMIC=0
+MAX_THEORETICAL_AVOIDABLE_DYNAMIC=0
+MAX_THEORETICAL_SHARE_OF_MODEL=0.0
+P9_3_SELECTION=NO_P9_BOUNDS_OPPORTUNITY
+P9_PRODUCTION_STARTED=NO
+P9_4_AUTHORIZED_BY_EVIDENCE=NO
+BOUNDS_VALIDITY_LINE_STATUS=CLOSE
+NEXT_GLOBAL_OPTIMIZATION_QUESTION=NO_NEW_TARGET_YET
+```
+
+The complete UNKNOWN population is exactly the existing P8 register-init
+mechanism, measured over 8892 structural sites and six workloads. No
+P9-relevant UNKNOWN class or concrete redundant example remains. The exact
+candidate baseline is `289512`, and the classification partition has complete
+coverage. Read `reconciliations/P9_3_RESULT.json`,
+`reconciliations/CORRECTNESS_A_B_INTEGRATION_20260814.md`,
+`experiments/S3-EXP-0035-p9-3-unknown-causal-attribution.md`, and
+`zettelkasten/notes/S3-ZK-0060.md` before any future campaign.
+
+The A+B integration route was analyzed statically. Feature-branch publication
+is `PROVEN_ZERO_ACTIONS`, but pull-request semantics are `UNKNOWN` and the
+resulting main-ref update is `ACTIONS_POSSIBLE`; therefore
+`CORRECTNESS_INTEGRATION=BLOCKED`, `MAIN_UPDATED=NO`, and `PR_CREATED=NO`.
+No workflow was changed and no alternative route was executed.
