@@ -250,3 +250,12 @@ separate evidence layers. A bounded definite register-init-check population was
 measured, but it is emulator-only, has no native structural effect, and lacks a
 proof-bearing Assembly/runtime contract with checked fallback. P8.3 is
 `NO_VALID_TARGET_YET`.
+
+## P8 final production closure
+
+`S3-ZK-0056` records the merged P8 result: a bounded fail-closed native
+recomputation can consume validated Assembly facts without adding forgeable
+public proof metadata. PR #178 removed only proven redundant native
+initialization checks, preserved the checked fallback, and passed the exact
+candidate Linux full suite. Runtime and compile-time measurements remain
+unavailable under a comparable protocol.

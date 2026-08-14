@@ -306,3 +306,25 @@ select P5 only from measured residual cause
 - No native structural effect was measured. Public runtime proof transport and
   exact fallback are missing, so P8.3 is `NO_VALID_TARGET_YET`; no production
   code, branch, PR, full suite, benchmark, P9 or shutdown was started.
+
+## 2026-08-14 - P8 final proof-guided native initialization-check elision
+
+- Reconciled P8.4's bounded transport/recompute comparison with the exact
+  production candidate `87eb49cd19a78570f07d66ce7982650c8b422210`, based on
+  `631b51e70562a33183ac14d0be5bbe2ddd140779`.
+- The candidate computes a fail-closed definite register-initialization set at
+  the native consumer. It does not add public proof metadata; calls,
+  references, slices, address-taken registers, unsafe joins/loops and unknown
+  facts retain the existing checked path.
+- P8.3 population matched exactly: 416 safe static sites and 1660 dynamic
+  events. The native consumer used 402 sites and 1558 events. All 24 Linux O0/O1
+  pairs preserved semantics. Aggregate native checks changed 550->148,
+  instructions 20903->20099, branches 4746->4344, text 107709->102646, while
+  loads/stores stayed 10175.
+- The persistent exact-head Linux full suite exited 0. The earlier SSH timeout
+  is classified as external harness interruption, not product failure. PR #178
+  was merged as `5dd6844607ba3a2d5830ed836fb9026eed86d0fb`; implementation and
+  merge ancestry both passed. Post-merge focused smoke passed on origin/main.
+- Actions permissions remained disabled and no candidate-branch run existed.
+  Runtime and compile-time measurements remain unavailable/not-comparable. P9
+  and reboot were not started.

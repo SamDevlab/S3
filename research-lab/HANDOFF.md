@@ -778,3 +778,40 @@ The authoritative experiment is `S3-EXP-0030`, the new zettel is
 `reconciliations/P8_3_MEMORY_STATE_NECESSITY_20260813.md`. Do not reopen this
 hypothesis without proof-bearing Assembly transport, checked fallback, and a
 measured emulator-cost benefit.
+
+## Authoritative current checkpoint: P8 complete - 2026-08-14
+
+P8 is now a real merged production capability, not the earlier P8.3 negative
+research checkpoint. The final mechanism is bounded fail-closed native
+recomputation of definite register initialization at the x86-64 native
+consumer. Generic proof transport was tested and rejected as unnecessary; the
+public Assembly/verifier trust boundary is unchanged.
+
+```text
+P8_NAME=P8_PROOF_GUIDED_NATIVE_INIT_CHECK_ELISION
+P8_BASE=631b51e70562a33183ac14d0be5bbe2ddd140779
+P8_IMPLEMENTATION_HEAD=87eb49cd19a78570f07d66ce7982650c8b422210
+P8_PR=178
+P8_MERGE=5dd6844607ba3a2d5830ed836fb9026eed86d0fb
+ORIGIN_MAIN=5dd6844607ba3a2d5830ed836fb9026eed86d0fb
+P8_IMPLEMENTATION_ANCESTOR=YES
+P8_MERGE_ANCESTOR=YES
+P8_FULL_SUITE_HEAD=87eb49cd19a78570f07d66ce7982650c8b422210
+P8_FULL_SUITE_EXIT=0
+P8_ACTIONS_ENABLED=NO
+P8_NEW_ACTIONS_RUNS=0
+P9_STARTED=NO
+SHUTDOWN_AUTHORIZED=NO
+REBOOT_EXECUTED=NO
+```
+
+P8.3's 416 static safe sites and 1660 dynamic events were reproduced exactly;
+402 sites and 1558 events reached the native consumer. Across 24 Linux O0/O1
+pairs, semantics matched baseline. Aggregate initialization checks fell
+550->148, static instructions 20903->20099, branches 4746->4344 and text
+107709->102646; loads/stores remained 10175. Runtime and compile-time values
+are unavailable under a directly comparable protocol and must not be inferred.
+
+The durable P8.4 result is in `S3-EXP-0031`, `S3-ZK-0056`, and
+`reconciliations/P8_FINAL_PROOF_GUIDED_INIT_ELISION_20260814.md`. Do not start
+P9 or reboot from this checkpoint.

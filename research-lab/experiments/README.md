@@ -380,3 +380,20 @@ was promoted.
 Files: `p8_3_memory_state_necessity.py`,
 `p8_3_memory_state_necessity.json`, and
 `test_p8_3_memory_state_necessity.py`.
+
+### S3-EXP-0031 - P8 final proof-guided native initialization-check elision
+
+STATUS=SUPPORTED_AND_MERGED_PR_178
+
+P8.4 was promoted after the exact candidate reproduced the P8.3 bounded safe
+population and established a native effect. The selected implementation is
+fail-closed native recomputation from existing CFG/use-def facts; it does not
+transport a general proof through public Assembly. Across 24 Linux O0/O1 pairs,
+semantics matched baseline and aggregate initialization checks changed from
+550 to 148. PR #178 merged the three-file production diff as
+`5dd6844607ba3a2d5830ed836fb9026eed86d0fb`.
+
+The full suite ran once on exact candidate
+`87eb49cd19a78570f07d66ce7982650c8b422210` and exited 0. Actions remained
+disabled and no candidate-branch run existed. Runtime and compile-time results
+were not measured under a comparable protocol.

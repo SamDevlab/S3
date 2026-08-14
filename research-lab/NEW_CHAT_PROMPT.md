@@ -290,3 +290,40 @@ exist. TADDR remains unsupported by the existing emulator. Read
 `research-lab/reconciliations/P8_3_MEMORY_STATE_NECESSITY_20260813.md`,
 `S3-EXP-0030`, and `S3-ZK-0055` before any future campaign. Do not start P9 or
 issue shutdown.
+
+## Authoritative P8 final closure - 2026-08-14
+
+The previous P8.3 negative checkpoint was superseded by the final P8 promotion.
+P8 is merged and must not be restarted:
+
+```text
+CURRENT_ORIGIN_MAIN=5dd6844607ba3a2d5830ed836fb9026eed86d0fb
+P8_NAME=P8_PROOF_GUIDED_NATIVE_INIT_CHECK_ELISION
+P8_BASE=631b51e70562a33183ac14d0be5bbe2ddd140779
+P8_IMPLEMENTATION_HEAD=87eb49cd19a78570f07d66ce7982650c8b422210
+P8_PR=178
+P8_MERGE=5dd6844607ba3a2d5830ed836fb9026eed86d0fb
+P8_STATUS=COMPLETE_MERGED
+P8_FULL_SUITE_HEAD=87eb49cd19a78570f07d66ce7982650c8b422210
+P8_FULL_SUITE_EXIT=0
+P8_ACTIONS_ENABLED=NO
+P8_NEW_ACTIONS_RUNS=0
+P9_STARTED=NO
+SHUTDOWN_AUTHORIZED=NO
+REBOOT_EXECUTED=NO
+```
+
+The selected implementation is conservative native recomputation from
+validated CFG/use-def facts. It does not add public proof metadata. P8.3's
+416 safe static sites and 1660 dynamic events matched exactly; 402 sites and
+1558 events were native-consumable. All 24 Linux O0/O1 pairs preserved
+semantics. Structural totals changed checks 550->148, instructions
+20903->20099, branches 4746->4344 and text 107709->102646; loads/stores stayed
+10175. Runtime and compile-time measurements are unavailable/not-comparable.
+
+Read `research-lab/HANDOFF.md`, `STATE.json`,
+`reconciliations/P8_FINAL_PROOF_GUIDED_INIT_ELISION_20260814.md`,
+`experiments/S3-EXP-0031-p8-final-proof-guided-init-elision.md`, and
+`zettelkasten/notes/S3-ZK-0056.md` before any future work. P9 remains
+unauthorized; only an explicitly requested read-only readiness audit is
+allowed.
