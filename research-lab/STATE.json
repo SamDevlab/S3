@@ -510,6 +510,7 @@
     "origin_main_start": "631b51e70562a33183ac14d0be5bbe2ddd140779",
     "origin_main_final": "5dd6844607ba3a2d5830ed836fb9026eed86d0fb",
     "research_head_start": "ef189f3033245d5da62e9936d95c7b50b3ebc9f7",
+    "research_head_final": "9b8718e290653d1f6f8026a983f28cdb7c452313",
     "p8_base": "631b51e70562a33183ac14d0be5bbe2ddd140779",
     "p8_candidate_head": "87eb49cd19a78570f07d66ce7982650c8b422210",
     "p8_name": "P8_PROOF_GUIDED_NATIVE_INIT_CHECK_ELISION",
