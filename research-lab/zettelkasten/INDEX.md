@@ -316,3 +316,16 @@ P9; semantic payload was not treated as overhead; and frame canonicalization
 at `39081` did not establish true spill. No concrete avoidable example or
 positive potentially-avoidable population was found. P10 closes as
 `NO_VALID_TARGET_YET` with no next target.
+
+## P10.1 frame representation causal decomposition
+
+| [[S3-ZK-0062]] | Frame residency and spill are different causal phenomena | NEGATIVE_RESULT |
+
+`S3-EXP-0037` decomposed the exact P10 frame class on the frozen A+B candidate:
+`14795` dynamic logical frame-value traffic plus `24286` other frame
+representation events, exactly reconciling to `39081`. The `10063`
+stack-resident value count is an overlay, not evidence of true spill. The
+sidecar lacks the liveness, pressure, frame-slot, call-clobber and
+counterfactual facts needed to prove avoidability. P10.1 therefore closes as
+`NO_VALID_TARGET_YET` with `FRAME_LINE_STATUS=CLOSE`; Correction B's `240`
+TMOV events remain out of scope.

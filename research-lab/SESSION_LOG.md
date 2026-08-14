@@ -432,3 +432,23 @@ select P5 only from measured residual cause
 - No family had a concrete avoidable example or positive potentially-avoidable
   dynamic population. P10 closes as `NO_VALID_TARGET_YET`; no production
   optimization, benchmark, Actions run or shutdown occurred.
+
+## 2026-08-14 - P10.1 frame representation causal decomposition
+
+- Reconciled the exact P10 broad frame/representation class on frozen
+  correctness candidate `045bbb1427af941b71d28b93cf1e5fe9bf245af7`, preserving
+  `origin/main=5dd6844607ba3a2d5830ed836fb9026eed86d0fb` and research start
+  `0b4ea40b6555689712ae616b346f49aef5253c21`.
+- Reproduced the `289512` model across 15 workloads and split the broad
+  `39081` dynamic population exactly into logical frame-value traffic `14795`
+  and other frame representation `24286`. The `10063` stack-resident value
+  count is an overlay, not an additive class and not proof of spill.
+- Sidecar evidence did not expose exact direction, liveness, pressure,
+  frame-slot identity, call-clobber survivors or a valid counterfactual. True
+  spill/reload and an avoidable non-spill example remain unproven; all
+  unresolved frame events are `ATTRIBUTION_LIMIT_ONLY`.
+- Recorded Correction B TMOV materialization separately at `240` dynamic
+  events and did not reopen its correctness decision. P10.1 closes the frame
+  line as `NO_VALID_TARGET_YET` / `FRAME_LINE_STATUS=CLOSE`.
+- No production code, candidate change, benchmark, GitHub Actions run,
+  correctness integration or shutdown occurred.

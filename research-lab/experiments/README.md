@@ -482,3 +482,25 @@ frame stack residency did not establish spill causality. No concrete avoidable
 example was found, so `P10_SELECTION=NO_VALID_TARGET_YET` and no production
 target was selected. See `S3-EXP-0036-p10-global-dynamic-opportunity-census.md`
 and `../reconciliations/P10_GLOBAL_DYNAMIC_OPPORTUNITY_CENSUS_20260814.md`.
+
+### S3-EXP-0037 - P10.1 frame representation causal decomposition
+
+STATUS=COMPLETE_NO_VALID_TARGET_YET
+
+P10.1 consumed the exact P10 sidecar on the frozen A+B correctness candidate
+and reproduced `289512` across 15 workloads. The broad
+`FRAME_CANONICALIZATION=39081` class reconciles exactly into logical
+frame-value traffic `14795` and other frame representation `24286`. The
+`10063` stack-resident frame-value events are an overlay and are not relabeled
+as spill. Correction B's TMOV materialization is recorded separately at `240`
+dynamic events and was not reopened.
+
+The sidecar does not provide the causal facts needed for exact load/store
+direction, liveness, pressure, frame slots, call-clobber survivors or a valid
+counterfactual. True spill/reload and an avoidable non-spill example were not
+proven; all unresolved frame events are `ATTRIBUTION_LIMIT_ONLY`. P10.1 closes
+the frame line as `NO_VALID_TARGET_YET` with `FRAME_LINE_STATUS=CLOSE`. No
+production code, benchmark, Actions run or shutdown occurred. See
+`S3-EXP-0037-p10-1-frame-representation-causal-decomposition.md`,
+`../reconciliations/P10_1_FRAME_REPRESENTATION_CAUSAL_DECOMPOSITION_20260814.md`,
+and `../reconciliations/P10_1_RESULT.json`.

@@ -459,3 +459,43 @@ Do not select a target because its counter is large. Do not reopen P9, modify
 the A+B candidate, retry integration without provenance changes, run a
 benchmark, execute Actions or authorize shutdown. The next campaign requires
 a new bounded causal question and a concrete falsifiable removable example.
+
+## P10.1 authoritative checkpoint - 2026-08-14
+
+P10.1 completed a research-only causal decomposition of the broad frame class
+on the frozen A+B correctness candidate. It did not change production, main,
+the candidate, Actions configuration or integration state:
+
+```text
+P10_1_CAMPAIGN=P10_1_FRAME_REPRESENTATION_CAUSAL_DECOMPOSITION_V1
+P10_1_STATUS=COMPLETE_RESEARCH_ONLY
+P10_1_TARGET_SHA=045bbb1427af941b71d28b93cf1e5fe9bf245af7
+P10_1_BASELINE=289512
+P10_1_BASELINE_REPRODUCED=YES
+P10_1_WORKLOADS=15
+FRAME_REPRESENTATION_BROAD_DYNAMIC=39081
+LOGICAL_FRAME_VALUE_TRAFFIC_DYNAMIC=14795
+OTHER_FRAME_REPRESENTATION_DYNAMIC=24286
+PHYSICAL_STACK_VALUE_TRAFFIC_DYNAMIC=10063
+TMOV_COPY_MATERIALIZATION_DYNAMIC=240
+TRUE_SPILL_DYNAMIC=0_PROVEN
+TRUE_RELOAD_DYNAMIC=0_PROVEN
+MAX_REGISTER_PRESSURE_OBSERVED=UNKNOWN_NOT_MEASURED
+ORACLE_USED=NO
+P10_1_SELECTION=NO_VALID_TARGET_YET
+FRAME_LINE_STATUS=CLOSE
+NEXT_EXPERIMENT=NONE_WITHIN_FRAME
+PRODUCTION_OPTIMIZATION_STARTED=NO
+CORRECTNESS_INTEGRATION_STATUS=STILL_BLOCKED_BY_PROVENANCE
+GITHUB_ACTIONS_EXECUTED=NO
+BENCHMARK_EXECUTED=NO
+SHUTDOWN_AUTHORIZED=NO
+```
+
+Do not call stack residence spill, do not reopen Correction B or P9, and do
+not promote production work without a new causal example and valid
+counterfactual. Before publishing the P10.1 checkpoint, run `validate_lab.py`
+against the exact candidate and require `LAB_CONSISTENCY=PASS` and
+`TARGET_HEAD_MATCH=YES`; run `validate_remote_write.py` and require
+`PROVEN_ZERO_ACTIONS`. No PR, benchmark, Actions execution or shutdown is
+authorized.
