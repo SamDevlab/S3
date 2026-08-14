@@ -25,6 +25,7 @@ from .runtime import render_runtime
 from .allocation import AllocationPlan, analyze_allocation
 from .liveness import analyze_liveness
 from .residence import analyze_cross_block_residence
+from .register_init_safety import proven_initialized_register_reads
 
 
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -128,6 +129,8 @@ class X8664Emitter:
         self.local_aliases: dict[int, int] = {}
         self.local_move_future_registers: set[int] = set()
         self._entry_live_registers: frozenset[int] = frozenset()
+        self._safe_register_reads: frozenset[tuple[str, int, int]] = frozenset()
+        self._current_instruction_sites: dict[int, tuple[str, int]] = {}
 
     def emit(self) -> str:
         lines = [
@@ -147,6 +150,12 @@ class X8664Emitter:
     def _emit_function(self, function: AssemblyFunction) -> list[str]:
         if function.external:
             return []
+        self._safe_register_reads = proven_initialized_register_reads(function)
+        self._current_instruction_sites = {
+            id(instruction): (block.label, index)
+            for block in function.blocks
+            for index, instruction in enumerate(block.instructions)
+        }
         self._entry_live_registers = (
             analyze_liveness(function).blocks[function.blocks[0].label].live_in
             if function.blocks
@@ -469,8 +478,24 @@ class X8664Emitter:
         register: int,
         target: str,
     ) -> list[str]:
+        site = self._current_instruction_sites.get(id(self.current_instruction))
+        skip_initialization_check = (
+            site is not None
+            and (site[0], site[1], register) in self._safe_register_reads
+        )
         register = self._resolve_local_alias(register)
         slot = layout.register(register)
+        if skip_initialization_check:
+            phys = (
+                self.current_plan.physical_register(register)
+                if (self._physical_residence_active and self.current_plan)
+                else None
+            )
+            if phys is None:
+                return [f"    mov {target}, qword ptr {_address(slot.value)}"]
+            if phys != target:
+                return [f"    mov {target}, {phys}"]
+            return []
         failure = self._instruction_failure(
             "uninitialized register",
             detail=f"register r{register} is uninitialized\n",
