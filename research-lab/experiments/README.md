@@ -468,3 +468,17 @@ so the maximum theoretical P9 avoidable dynamic is zero and the bounds/
 validity line closes without a P9.4. See
 `S3-EXP-0035-p9-3-unknown-causal-attribution.md` and
 `../reconciliations/P9_3_RESULT.json`.
+
+### S3-EXP-0036 - P10 global dynamic opportunity census
+
+STATUS=COMPLETE_NO_VALID_TARGET_YET
+
+P10 consumed the exact A+B P9 sidecar on 15 workloads and 30 O0/O1 runs. It
+reproduced 289512 and established a complete one-primary-class partition.
+Instruction-limit accounting was 99036 dynamic lines, bounds 56500, frame
+canonicalization 39081, semantic payload 38050 and memory validity 29408.
+The top non-semantic necessity ledgers found no proven removable population;
+frame stack residency did not establish spill causality. No concrete avoidable
+example was found, so `P10_SELECTION=NO_VALID_TARGET_YET` and no production
+target was selected. See `S3-EXP-0036-p10-global-dynamic-opportunity-census.md`
+and `../reconciliations/P10_GLOBAL_DYNAMIC_OPPORTUNITY_CENSUS_20260814.md`.

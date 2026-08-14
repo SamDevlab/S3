@@ -1,0 +1,116 @@
+# P10 Global Dynamic Opportunity Census Reconciliation
+
+## Final State
+
+```text
+P10_CAMPAIGN=P10_GLOBAL_DYNAMIC_OPPORTUNITY_CENSUS_V1
+INITIAL_MAIN=5dd6844607ba3a2d5830ed836fb9026eed86d0fb
+CORRECTNESS_CANDIDATE_SHA=045bbb1427af941b71d28b93cf1e5fe9bf245af7
+RESEARCH_HEAD_START=9e40cf15780fd2e4ce4175c7f98ab778b7c0a92e
+TARGET_IS_MAIN=NO
+TARGET_IS_VALIDATED_CORRECTNESS_CANDIDATE=YES
+TARGET_HEAD_MATCH=YES
+TARGET_MAIN_ANCESTRY=YES
+```
+
+P9 was formally closed before P10:
+
+```text
+P9_STATUS=CLOSED
+P9_BOUNDS_VALIDITY_STATUS=CLOSED
+P9_NEXT_EXPERIMENT=NONE
+P9_UNKNOWN_DYNAMIC=26456
+P9_UNKNOWN_P8_REGISTER_INIT=26456
+P9_RELEVANT_UNKNOWN_DYNAMIC=0
+P9_AVOIDABLE_DYNAMIC=0
+P9_MAX_THEORETICAL_AVOIDABLE_DYNAMIC=0
+```
+
+The P9 population is not reintroduced into the P10 opportunity census.
+
+## Baseline And Coverage
+
+```text
+BASELINE_EXPECTED=289512
+BASELINE_REPRODUCED=YES
+BASELINE_ACTUAL=289512
+WORKLOADS=15
+OPTIMIZATION_RUNS=30
+CLASSIFICATION_COVERAGE=1.0
+```
+
+The census consumed the existing sidecar JSON only. It used the exact
+per-site `class_counts`, checked that each site's primary class counts sum to
+its x86 line count, and checked that the dynamic sum equals the published
+289512 total. No compiler or benchmark execution occurred.
+
+## Cost Census
+
+```text
+TOP_DYNAMIC_FAMILY=INSTRUCTION_LIMIT_ACCOUNTING
+TOP_DYNAMIC_FAMILY_DYNAMIC=99036
+TOP_DYNAMIC_FAMILY_SHARE=0.34207908480477495
+TOP_NON_SEMANTIC_FAMILY=INSTRUCTION_LIMIT_ACCOUNTING
+TOP_NON_SEMANTIC_DYNAMIC=99036
+SEMANTIC_PAYLOAD_DYNAMIC=38050
+INSTRUCTION_LIMIT_DYNAMIC=99036
+REGISTER_INITIALIZATION_DYNAMIC=0
+MEMORY_INITIALIZATION_DYNAMIC=6660_SUBTYPE_OVERLAY_ONLY
+BOUNDS_DYNAMIC=56500
+FRAME_ADDRESSING_DYNAMIC=39081_BROAD_CANONICALIZATION_CLASS
+FRAME_VALUE_LOAD_DYNAMIC=NOT_SEPARATELY_MEASURED
+FRAME_VALUE_STORE_DYNAMIC=NOT_SEPARATELY_MEASURED
+TRUE_SPILL_DYNAMIC=UNKNOWN_NOT_ESTABLISHED
+TRUE_RELOAD_DYNAMIC=UNKNOWN_NOT_ESTABLISHED
+ABI_OVERHEAD_DYNAMIC=1196
+BRANCH_CONTROL_DYNAMIC=19221
+REPRESENTATION_DYNAMIC=39081
+OTHER_DYNAMIC=1248
+UNKNOWN_DYNAMIC=0_PRIMARY_CLASS
+UNKNOWN_AVOIDABILITY_DYNAMIC=39081_FRAME_CLASS
+```
+
+The full top-15 family ranking and top-25 structural sites are in
+`P10_RESULT.json`. The top five non-semantic necessity ledgers are also
+machine-readable there. Frame overlays are not additive to the primary
+taxonomy: `frame_value_modelled_dynamic=14795` and
+`stack_resident_frame_value_modelled_dynamic=10063` describe observed
+subtraffic, while true spill/reload remain unestablished.
+
+## Opportunity Decision
+
+```text
+PROVABLY_REQUIRED_DYNAMIC=250431
+PROVABLY_AVOIDABLE_DYNAMIC=0
+POTENTIALLY_AVOIDABLE_DYNAMIC=0
+UNKNOWN_AVOIDABILITY_DYNAMIC=39081
+CONCRETE_AVOIDABLE_EXAMPLE_FOUND=NO
+MATERIAL_AVOIDABLE_FAMILY_FOUND=NO
+P10_SELECTION=NO_VALID_TARGET_YET
+NEXT_GLOBAL_TARGET=NONE
+NEXT_DISCRIMINATING_QUESTION=NONE_WITHOUT_A_CONCRETE_AVOIDABLE_EXAMPLE
+```
+
+No family passed the complete target gate. The frame family is materially
+large and causally unresolved, but the current evidence does not distinguish
+frame addressing, value movement, spill/reload, ABI save/restore or repeated
+memory-state metadata. Selecting it now would turn a census into an
+unsupported optimization hypothesis. Instruction-limit, bounds, memory
+validity and branch families likewise retain their semantic, policy or prior
+negative boundaries.
+
+## Integration And Safety
+
+```text
+PRODUCTION_OPTIMIZATION_STARTED=NO
+CORRECTNESS_INTEGRATION_STATUS=STILL_BLOCKED_BY_PROVENANCE
+CORRECTNESS_INTEGRATED=NO
+LAB_CONSISTENCY=PASS
+REMOTE_WRITE_PROVENANCE=PENDING_VALIDATION
+GITHUB_ACTIONS_EXECUTED=NO
+BENCHMARK_EXECUTED=NO
+SHUTDOWN_AUTHORIZED=NO
+```
+
+The A+B candidate remains frozen. The known integration route was not retried
+because workflow/provenance state did not change after P9.3.

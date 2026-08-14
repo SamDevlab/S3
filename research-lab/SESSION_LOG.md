@@ -412,3 +412,23 @@ select P5 only from measured residual cause
   zero, and no concrete P9-redundant example exists.
 - Closed P9 bounds/validity as `NO_P9_BOUNDS_OPPORTUNITY`. No production code,
   benchmark, Actions run or shutdown occurred; no P9.4 was authorized.
+
+## 2026-08-14 - P10 global dynamic opportunity census
+
+- Reconciled P9 as formally closed before starting P10. The P9 UNKNOWN
+  population remains the excluded P8 register-init mechanism; no P9.4 was
+  created.
+- Kept the A+B correctness candidate frozen at
+  `045bbb1427af941b71d28b93cf1e5fe9bf245af7`, separate from the research
+  branch and not main. The known integration route was not retried.
+- Consumed the existing P9 sidecar JSON without compiler imports, benchmark or
+  Actions execution. The exact 15-workload/O0-O1 corpus reproduced
+  `289512`; per-site primary class counts covered `1.0` of the model.
+- Ranked instruction-limit accounting at `99036`, bounds at `56500`, frame
+  canonicalization at `39081`, semantic payload at `38050` and memory validity
+  at `29408`. The top five non-semantic necessity ledgers closed exactly.
+- Frame traffic remains causally unresolved: frame-value overlay `14795`,
+  stack-resident overlay `10063`, true spill/reload not established.
+- No family had a concrete avoidable example or positive potentially-avoidable
+  dynamic population. P10 closes as `NO_VALID_TARGET_YET`; no production
+  optimization, benchmark, Actions run or shutdown occurred.

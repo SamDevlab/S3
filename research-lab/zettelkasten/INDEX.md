@@ -304,3 +304,15 @@ survived the invalidator controls. P9.2 closes as `NO_VALID_TARGET_YET`.
 `8892` structural sites and six workloads. No P9-relevant UNKNOWN dynamic
 population remains, so `MAX_THEORETICAL_AVOIDABLE_DYNAMIC=0` and the P9
 bounds/validity line closes as `NO_P9_BOUNDS_OPPORTUNITY`.
+
+## P10 global dynamic opportunity census
+
+| [[S3-ZK-0061]] | A hot dynamic family is not an optimization opportunity | NEGATIVE_RESULT |
+
+`S3-EXP-0036` reproduced the exact A+B sidecar at `289512` across 15
+workloads. Instruction-limit accounting was the largest family at `99036`,
+but it remained policy-required; bounds and memory validity were closed by
+P9; semantic payload was not treated as overhead; and frame canonicalization
+at `39081` did not establish true spill. No concrete avoidable example or
+positive potentially-avoidable population was found. P10 closes as
+`NO_VALID_TARGET_YET` with no next target.

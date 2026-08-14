@@ -426,3 +426,36 @@ modify production, run benchmarks, execute Actions, or authorize shutdown.
 The A+B integration reconciliation is static only and remains blocked because
 feature publication is safe but PR semantics are UNKNOWN and main publication
 would make Actions possible.
+
+## P10 authoritative checkpoint - 2026-08-14
+
+P9 is closed and P9.4 is forbidden. P10 completed a research-only global
+dynamic opportunity census on the frozen A+B correctness candidate:
+
+```text
+P10_CAMPAIGN=P10_GLOBAL_DYNAMIC_OPPORTUNITY_CENSUS_V1
+P10_STATUS=COMPLETE_RESEARCH_ONLY
+P10_TARGET_SHA=045bbb1427af941b71d28b93cf1e5fe9bf245af7
+P10_BASELINE_EXPECTED=289512
+P10_BASELINE_REPRODUCED=YES
+P10_WORKLOADS=15
+P10_CLASSIFICATION_COVERAGE=1.0
+TOP_DYNAMIC_FAMILY=INSTRUCTION_LIMIT_ACCOUNTING
+TOP_DYNAMIC_FAMILY_DYNAMIC=99036
+BOUNDS_DYNAMIC=56500
+FRAME_CANONICALIZATION_DYNAMIC=39081
+SEMANTIC_PAYLOAD_DYNAMIC=38050
+MEMORY_VALIDITY_DYNAMIC=29408
+TRUE_SPILL=UNKNOWN_NOT_ESTABLISHED
+PROVABLY_AVOIDABLE_DYNAMIC=0
+POTENTIALLY_AVOIDABLE_DYNAMIC=0
+CONCRETE_AVOIDABLE_EXAMPLE_FOUND=NO
+P10_SELECTION=NO_VALID_TARGET_YET
+NEXT_GLOBAL_TARGET=NONE
+PRODUCTION_OPTIMIZATION_STARTED=NO
+```
+
+Do not select a target because its counter is large. Do not reopen P9, modify
+the A+B candidate, retry integration without provenance changes, run a
+benchmark, execute Actions or authorize shutdown. The next campaign requires
+a new bounded causal question and a concrete falsifiable removable example.
