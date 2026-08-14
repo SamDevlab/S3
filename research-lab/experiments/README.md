@@ -195,6 +195,22 @@ S3-EXP-0001/0003/0004/0006/0007/0008 mathematical placement models
 
 Do not let a speculative model displace the measured post-P4 bottleneck without causal evidence.
 
+### S3-EXP-0034 - Explicit range-fact contract
+
+STATUS=SUPPORTED_NEGATIVE
+
+File: `S3-EXP-0034-p9-2-explicit-range-fact-contract.md`
+
+P9.2 compared recomputation at the native consumer, a private verified fact
+keyed by structural `InstructionSite`, and a public Assembly contract on the
+stacked A+B correctness candidate. The old P9 model reproduced at `289500`;
+the candidate measured `289512` as a correctness-only delta. Across 15
+workloads, classification coverage was `1.0`, but
+`AVOIDABLE_DYNAMIC=0` and `PROVABLY_REDUNDANT_SITES=0`. Model A was sufficient
+to close the negative; Model B was not needed and Model C was not justified.
+All invalidators retain checks. P9.2 is `NO_VALID_TARGET_YET` and did not
+start production.
+
 ## Experiment template
 
 ```text

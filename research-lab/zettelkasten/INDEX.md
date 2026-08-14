@@ -283,3 +283,13 @@ safety realization was 65224 modelled dynamic x86 lines, but the minimum
 local-constant, success-edge, loop and same-object check-reuse models found no
 proven eligible site. Bounds and memory initialization remain material;
 `AVOIDABLE_DYNAMIC=0`. P9.1 closes as `NO_VALID_TARGET_YET`.
+
+## P9.2 explicit range-fact contract
+
+| [[S3-ZK-0059]] | Explicit range facts did not yield a safe target | NEGATIVE_RESULT |
+
+`S3-EXP-0034` compared recomputation, private verified facts and a public
+Assembly contract on the A+B correctness candidate. The old model reproduced
+at `289500`; A+B measured `289512` as a correctness-only delta. Classification
+coverage stayed `1.0`, but `AVOIDABLE_DYNAMIC=0` and no provably redundant site
+survived the invalidator controls. P9.2 closes as `NO_VALID_TARGET_YET`.

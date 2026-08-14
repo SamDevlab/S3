@@ -885,3 +885,47 @@ overflow and failure-order invalidators closed. Read
 `reconciliations/P9_1_BOUNDS_VALIDITY_CONTRACT_ATTRIBUTION_20260814.md`,
 `experiments/S3-EXP-0033-p9-1-bounds-validity-contract-attribution.md`, and
 `zettelkasten/notes/S3-ZK-0058.md` before any future work.
+
+## Authoritative current checkpoint: P9.2 closed - 2026-08-14
+
+P9.2 was research-only on the stacked correctness candidate A+B. It did not
+change production or imply that the candidate is main:
+
+```text
+P9_2_CAMPAIGN=P9_2_EXPLICIT_RANGE_FACT_CONTRACT_V1
+P9_2_STATUS=COMPLETE_RESEARCH_ONLY
+P9_2_TARGET_KIND=CORRECTNESS_CANDIDATE_NOT_MAIN
+P9_2_TARGET_SHA=045bbb1427af941b71d28b93cf1e5fe9bf245af7
+TARGET_IS_MAIN=NO
+TARGET_HEAD_MATCH=YES
+OLD_P9_MODEL_EXPECTED=289500
+OLD_P9_MODEL_REPRODUCED=YES
+POST_CORRECTNESS_MODEL=289512
+CORRECTNESS_ONLY_DELTA=12
+WORKLOADS=15
+CLASSIFICATION_COVERAGE=1.0
+REQUIRED_DYNAMIC=65224
+AVOIDABLE_DYNAMIC=0
+UNKNOWN_DYNAMIC=26456
+PROVABLY_REDUNDANT_SITES=0
+PROVABLY_REDUNDANT_DYNAMIC=0
+MODEL_A_RECOMPUTE=PASS_NO_SAFE_AVOIDABLE_SUBCLASS
+MODEL_B_PRIVATE_FACT=NOT_NEEDED
+MODEL_C_PUBLIC_CONTRACT=REJECTED_NOT_JUSTIFIED
+P9_2_SELECTION=NO_VALID_TARGET_YET
+P9_PRODUCTION_STARTED=NO
+PRODUCTION_CODE_CHANGED=NO
+BENCHMARK_EXECUTED=NO
+GITHUB_ACTIONS_EXECUTED=NO
+SHUTDOWN_AUTHORIZED=NO
+```
+
+The bounded domain was explicit object/index/length identity plus range and
+validity status. Path disagreement, unsupported loops and all listed
+invalidators map to `UNKNOWN`, which retains the check. The first fact-loss
+boundary remains `ASSEMBLY_TO_EMITTER_RANGE_FACT_CONTRACT_NOT_EXPLICIT`; it
+does not authorize public Assembly proof metadata. Read
+`reconciliations/P9_2_EXPLICIT_RANGE_FACT_CONTRACT_20260814.md`,
+`reconciliations/P9_2_RESULT.json`,
+`experiments/S3-EXP-0034-p9-2-explicit-range-fact-contract.md`, and
+`zettelkasten/notes/S3-ZK-0059.md` before any future range-fact work.

@@ -367,3 +367,34 @@ benchmark rerun, Actions run or shutdown occurred. Read
 `reconciliations/P9_1_BOUNDS_VALIDITY_CONTRACT_ATTRIBUTION_20260814.md`,
 `experiments/S3-EXP-0033-p9-1-bounds-validity-contract-attribution.md`, and
 `zettelkasten/notes/S3-ZK-0058.md` before future work.
+
+## P9.2 explicit range-fact checkpoint
+
+P9.2 is complete research-only on correctness candidate A+B, not main:
+
+```text
+P9_2_TARGET_SHA=045bbb1427af941b71d28b93cf1e5fe9bf245af7
+P9_2_TARGET_IS_MAIN=NO
+OLD_P9_MODEL_REPRODUCED=YES
+OLD_P9_MODEL=289500
+POST_CORRECTNESS_MODEL=289512
+CORRECTNESS_ONLY_DELTA=12
+REQUIRED_DYNAMIC=65224
+AVOIDABLE_DYNAMIC=0
+UNKNOWN_DYNAMIC=26456
+CLASSIFICATION_COVERAGE=1.0
+PROVABLY_REDUNDANT_SITES=0
+MODEL_A_RECOMPUTE=PASS_NO_SAFE_AVOIDABLE_SUBCLASS
+MODEL_B_PRIVATE_FACT=NOT_NEEDED
+MODEL_C_PUBLIC_CONTRACT=REJECTED_NOT_JUSTIFIED
+P9_2_SELECTION=NO_VALID_TARGET_YET
+P9_PRODUCTION_STARTED=NO
+```
+
+All listed invalidators retain checks. Do not add public Assembly proof
+metadata, create a P9 production branch, rerun benchmarks, execute Actions or
+authorize shutdown from this negative result. Read
+`reconciliations/P9_2_EXPLICIT_RANGE_FACT_CONTRACT_20260814.md`,
+`reconciliations/P9_2_RESULT.json`,
+`experiments/S3-EXP-0034-p9-2-explicit-range-fact-contract.md`, and
+`zettelkasten/notes/S3-ZK-0059.md`.

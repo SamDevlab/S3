@@ -372,3 +372,23 @@ select P5 only from measured residual cause
 - P9.1 closes as `NO_VALID_TARGET_YET`: the safety family is material but no
   sound avoidable subclass was established. No production code, branch, PR,
   benchmark timing, Actions run or shutdown occurred.
+
+## 2026-08-14 - P9.2 explicit range-fact contract
+
+- Reconciled the stacked correctness candidate A+B without calling it main.
+  Correction A used structural `InstructionSite` identity and Correction B
+  materialized TMOV snapshots; both were validated separately from P9.
+- Reproduced the old P9 model at `289500` on exact target
+  `5dd6844607ba3a2d5830ed836fb9026eed86d0fb`. The same model on A+B at
+  `045bbb1427af941b71d28b93cf1e5fe9bf245af7` measured `289512`, a
+  correctness-only delta of `+12`, not a performance result.
+- The adapted P9.1 ledger over 15 workloads retained complete classification:
+  `REQUIRED_DYNAMIC=65224`, `AVOIDABLE_DYNAMIC=0`, `UNKNOWN_DYNAMIC=26456`,
+  `CLASSIFICATION_COVERAGE=1.0`, and zero provably redundant sites/dynamic.
+- Compared Model A recomputation, Model B private verified facts and Model C
+  public Assembly contract. Model A was sufficient to establish the negative;
+  Model B was not needed and Model C was not justified. All 20 invalidators
+  retained their checks.
+- P9.2 closes as `NO_VALID_TARGET_YET`. No production code, PR, benchmark,
+  Actions run or shutdown was performed. The next experiment remains a small
+  hand-written proof-bearing loop corpus, only with separate authorization.
