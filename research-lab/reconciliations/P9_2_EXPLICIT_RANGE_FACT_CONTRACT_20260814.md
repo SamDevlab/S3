@@ -89,6 +89,6 @@ SHUTDOWN_AUTHORIZED=NO
 ```
 
 The temporary candidate analysis used an exact detached checkout. The durable
-research branch remains separate from production. No research push is recorded
-until the remote-write validator returns `PROVEN_ZERO_ACTIONS` for the exact
-proposed ref.
+research branch remains separate from production. The research push was
+validated with `PROVEN_ZERO_ACTIONS` for the exact proposed ref and published
+at `5717ca0aa03a8c54bb69007ac412ba528f143280`.
