@@ -273,3 +273,13 @@ and did not establish spill causality. P9 therefore closes as
 `NO_VALID_TARGET_YET`; the next smallest experiment is proof-bearing
 loop-carried bounds/validity analysis with checked fallback and failure-order
 controls.
+
+## P9.1 bounds and validity contract attribution
+
+| [[S3-ZK-0058]] | A hot safety family can still have no sound optimization target | NEGATIVE_RESULT |
+
+`S3-EXP-0033` reproduced the P9 model exactly across 15 workloads. Explicit
+safety realization was 65224 modelled dynamic x86 lines, but the minimum
+local-constant, success-edge, loop and same-object check-reuse models found no
+proven eligible site. Bounds and memory initialization remain material;
+`AVOIDABLE_DYNAMIC=0`. P9.1 closes as `NO_VALID_TARGET_YET`.

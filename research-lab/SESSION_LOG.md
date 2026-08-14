@@ -350,3 +350,25 @@ select P5 only from measured residual cause
   TLOAD/TSTORE bounds and validity analysis with checked fallback and failure
   order preserved. No production code, branch, PR, benchmark rerun, Actions
   run or shutdown occurred.
+
+## 2026-08-14 - P9.1 bounds and validity contract attribution
+
+- Reconciled P9's published negative result and reproduced its
+  `MODELLED_NATIVE_DYNAMIC_COUNT` exactly: 289500 across 15 workloads, with
+  the previous class breakdown unchanged.
+- Built an explicit obligation ledger separating negative index, upper bound,
+  array/slice length, memory initialization, register initialization, object
+  and reference validity, slice provenance, mutability, address validity,
+  failure realization and other safety.
+- Explicit safety realization was 65224 modelled dynamic x86 lines
+  (22.529879101900%). Bounds were 17464 (6.032469775475%); memory
+  initialization was 6660 (2.300518134715%). Hot failure edges and cold
+  handlers were measured separately; cold handler setup has zero modelled
+  dynamic weight on the correctness inputs.
+- The minimum local-constant, dominated-compare, loop-alignment and
+  same-object/index/length reuse models found zero proven eligible sites.
+  Focused native correctness passed for array_loop, fixed_array, nested_loop,
+  branch_heavy and tiny_04_arr. Register initialization remains P8 territory.
+- P9.1 closes as `NO_VALID_TARGET_YET`: the safety family is material but no
+  sound avoidable subclass was established. No production code, branch, PR,
+  benchmark timing, Actions run or shutdown occurred.

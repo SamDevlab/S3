@@ -414,3 +414,16 @@ P9 closes with `NO_VALID_TARGET_YET`. No production compiler change, branch,
 PR, benchmark rerun or Actions execution occurred. See
 `S3-EXP-0032-p9-causal-frame-representation-attribution.md` and
 `reconciliations/P9_TARGET_SELECTION_CAUSAL_FRAME_20260814.md`.
+
+### S3-EXP-0033 - P9.1 bounds and validity contract attribution
+
+STATUS=COMPLETE_NO_VALID_TARGET_YET
+
+P9.1 reproduced the `MODELLED_NATIVE_DYNAMIC_COUNT` total of 289500 across 15
+workloads. Explicit safety realization was 65224 modelled dynamic x86 lines;
+bounds were 17464 and memory initialization was 6660. The bounded local
+constant, success-edge, loop and same-object check-reuse models found zero
+proven eligible sites. Focused native correctness passed for five candidate
+workloads. No production compiler change, benchmark rerun or Actions run
+occurred. See `S3-EXP-0033-p9-1-bounds-validity-contract-attribution.md` and
+`reconciliations/P9_1_BOUNDS_VALIDITY_CONTRACT_ATTRIBUTION_20260814.md`.

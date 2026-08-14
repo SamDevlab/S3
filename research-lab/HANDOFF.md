@@ -849,3 +849,37 @@ fallback obligations. It is not part of this checkpoint. Read
 `reconciliations/P9_TARGET_SELECTION_CAUSAL_FRAME_20260814.md`,
 `experiments/S3-EXP-0032-p9-causal-frame-representation-attribution.md`, and
 `zettelkasten/notes/S3-ZK-0057.md` before any future work.
+
+## Authoritative current checkpoint: P9.1 closed - 2026-08-14
+
+P9.1 bounds/validity attribution is complete research only:
+
+```text
+P9_1_CAMPAIGN=P9_1_BOUNDS_VALIDITY_CONTRACT_ATTRIBUTION_V1
+P9_1_STATUS=COMPLETE_RESEARCH_ONLY
+P9_1_SELECTION=NO_VALID_TARGET_YET
+P9_1_STARTED=NO
+MODELLED_NATIVE_DYNAMIC_COUNT_REPRODUCED=YES
+MODELLED_DYNAMIC_TOTAL=289500
+WORKLOADS=15
+SAFETY_RELATED_DYNAMIC=65224
+BOUNDS_DYNAMIC=17464
+VALIDITY_DYNAMIC=6660
+AVOIDABLE_DYNAMIC=0
+UNKNOWN_DYNAMIC=26456
+NATIVE_FOCUSED=PASS
+PRODUCTION_COMPILER_CHANGED=NO
+EXTERNAL_BENCHMARK_RERUN=NO
+GITHUB_ACTIONS_EXECUTED=NO
+SHUTDOWN_AUTHORIZED=NO
+```
+
+The safety family is material, but no minimum local fact model established a
+proven reusable object/index/length subset. The first observed boundary is
+the Assembly-to-emitter range-fact contract, where control shape exists but
+no explicit range fact is serialized. The strongest future question is a
+proof-bearing loop-carried access with all alias, call, mutation, lifetime,
+overflow and failure-order invalidators closed. Read
+`reconciliations/P9_1_BOUNDS_VALIDITY_CONTRACT_ATTRIBUTION_20260814.md`,
+`experiments/S3-EXP-0033-p9-1-bounds-validity-contract-attribution.md`, and
+`zettelkasten/notes/S3-ZK-0058.md` before any future work.

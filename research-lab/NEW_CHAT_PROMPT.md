@@ -347,3 +347,21 @@ Read `research-lab/HANDOFF.md`, `STATE.json`,
 `reconciliations/P9_TARGET_SELECTION_CAUSAL_FRAME_20260814.md`,
 `experiments/S3-EXP-0032-p9-causal-frame-representation-attribution.md`, and
 `zettelkasten/notes/S3-ZK-0057.md` before future work.
+
+## P9.1 bounds/validity checkpoint
+
+P9.1 is closed as `NO_VALID_TARGET_YET`. The P9 dynamic model reproduced
+exactly at 289500 across 15 workloads. Explicit safety realization was 65224
+modelled dynamic x86 lines; bounds were 17464 and memory initialization 6660.
+The minimum local-constant, success-edge, loop and same-object reuse models
+found zero proven eligible sites. `AVOIDABLE_DYNAMIC=0`.
+
+Do not start production P9. Register initialization remains P8 territory;
+slices were not silently treated as fixed arrays. The next discriminating
+question is proof-bearing loop-carried object/index/length identity through
+the Assembly contract with all invalidators closed. No production code,
+benchmark rerun, Actions run or shutdown occurred. Read
+`research-lab/HANDOFF.md`, `STATE.json`,
+`reconciliations/P9_1_BOUNDS_VALIDITY_CONTRACT_ATTRIBUTION_20260814.md`,
+`experiments/S3-EXP-0033-p9-1-bounds-validity-contract-attribution.md`, and
+`zettelkasten/notes/S3-ZK-0058.md` before future work.
