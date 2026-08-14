@@ -452,3 +452,7 @@ select P5 only from measured residual cause
   line as `NO_VALID_TARGET_YET` / `FRAME_LINE_STATUS=CLOSE`.
 - No production code, candidate change, benchmark, GitHub Actions run,
   correctness integration or shutdown occurred.
+- The proposed research push from `0b4ea40` to the first P10.1 commit was
+  checked by `validate_remote_write.py`: workflow drift was none, matched
+  workflows were none, possible Actions runs were zero, and the result was
+  `PROVEN_ZERO_ACTIONS`.
