@@ -5,7 +5,7 @@ from __future__ import annotations
 from bootstrap.s3.assembly import parse_assembly
 from bootstrap.s3.backends.x86_64 import X8664Backend
 from bootstrap.s3.backends.x86_64.allocation import analyze_allocation
-from bootstrap.s3.backends.x86_64.liveness import analyze_liveness
+from bootstrap.s3.backends.x86_64.liveness import InstructionSite, analyze_liveness
 from bootstrap.s3.backends.x86_64.registers import (
     CALLER_SAVED_ALLOCATABLE_REGISTERS,
     CALLEE_SAVED_ALLOCATABLE_REGISTERS,
@@ -67,7 +67,7 @@ def test_call_survivor_excludes_call_destination() -> None:
     call = next(inst for block in function.blocks for inst in block.instructions if inst.opcode.value == "TCALL")
     assert function.result_width == 1
     assert call.result_registers == (7,)
-    assert 7 not in analyze_liveness(function).live_across_call(call)
+    assert 7 not in analyze_liveness(function).live_across_call(InstructionSite("entry", 7))
 
 
 def test_call_crossing_values_prefer_callee_saved_registers() -> None:
@@ -116,6 +116,6 @@ def test_same_argument_and_destination_does_not_restore_old_value() -> None:
     function = program.functions[1]
     call = next(inst for block in function.blocks for inst in block.instructions if inst.opcode.value == "TCALL")
     plan = analyze_allocation(function)
-    assert 0 not in plan.call_survivors_for(call)
+    assert 0 not in plan.call_survivors_for(InstructionSite("entry", 1))
     assembly = X8664Backend(register_allocation=True).generate(program)
     assert assembly.count("call s3_helper") == 1

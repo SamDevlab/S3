@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from ...assembly import AssemblyFunction
-from .liveness import analyze_liveness
+from .liveness import InstructionSite, analyze_liveness
 from .registers import (
     CALLER_SAVED_ALLOCATABLE_REGISTERS,
     CALLEE_SAVED_ALLOCATABLE_REGISTERS,
@@ -15,7 +15,7 @@ from .registers import (
 @dataclass(frozen=True, slots=True)
 class AllocationPlan:
     allocations: dict[int, str | None]  # virtual register ID -> physical register name (or None)
-    call_survivors: dict[int, frozenset[int]]
+    call_survivors: dict[InstructionSite, frozenset[int]]
     address_taken: frozenset[int] = frozenset()
 
     def physical_register(self, register: int) -> str | None:
@@ -34,8 +34,8 @@ class AllocationPlan:
     def stack_resident_registers(self) -> tuple[int, ...]:
         return tuple(sorted(r for r, color in self.allocations.items() if color is None))
 
-    def call_survivors_for(self, instruction: object) -> frozenset[int]:
-        return self.call_survivors.get(id(instruction), frozenset())
+    def call_survivors_for(self, site: InstructionSite) -> frozenset[int]:
+        return self.call_survivors.get(site, frozenset())
 
 
 def analyze_allocation(function: AssemblyFunction) -> AllocationPlan:
@@ -101,7 +101,7 @@ def analyze_allocation(function: AssemblyFunction) -> AllocationPlan:
     sorted_nodes = sorted(all_vregs, key=lambda r: (-get_degree(r), r))
 
     call_survivors = {
-        id(inst_liveness.instruction): liveness.live_across_call(inst_liveness.instruction)
+        inst_liveness.site: liveness.live_across_call(inst_liveness.site)
         for block in liveness.blocks.values()
         for inst_liveness in block.instructions
         if inst_liveness.instruction.opcode.value == "TCALL"

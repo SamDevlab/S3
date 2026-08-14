@@ -23,7 +23,7 @@ from .registers import (
 from ...numeric_abi import SYSV_FLOAT_ARGUMENT_REGISTERS
 from .runtime import render_runtime
 from .allocation import AllocationPlan, analyze_allocation
-from .liveness import analyze_liveness
+from .liveness import InstructionSite, analyze_liveness
 from .residence import analyze_cross_block_residence
 from .register_init_safety import proven_initialized_register_reads
 
@@ -130,7 +130,7 @@ class X8664Emitter:
         self.local_move_future_registers: set[int] = set()
         self._entry_live_registers: frozenset[int] = frozenset()
         self._safe_register_reads: frozenset[tuple[str, int, int]] = frozenset()
-        self._current_instruction_sites: dict[int, tuple[str, int]] = {}
+        self._current_instruction_site: InstructionSite | None = None
 
     def emit(self) -> str:
         lines = [
@@ -151,11 +151,6 @@ class X8664Emitter:
         if function.external:
             return []
         self._safe_register_reads = proven_initialized_register_reads(function)
-        self._current_instruction_sites = {
-            id(instruction): (block.label, index)
-            for block in function.blocks
-            for index, instruction in enumerate(block.instructions)
-        }
         self._entry_live_registers = (
             analyze_liveness(function).blocks[function.blocks[0].label].live_in
             if function.blocks
@@ -229,6 +224,8 @@ class X8664Emitter:
                             layout,
                             block.instructions[instruction_index],
                             block.instructions[instruction_index + 1],
+                            InstructionSite(block.label, instruction_index),
+                            InstructionSite(block.label, instruction_index + 1),
                         )
                     )
                     instruction_index += 2
@@ -239,6 +236,7 @@ class X8664Emitter:
                         block.label,
                         layout,
                         block.instructions[instruction_index],
+                        InstructionSite(block.label, instruction_index),
                     )
                 )
                 instruction_index += 1
@@ -264,8 +262,9 @@ class X8664Emitter:
         # The materialized comparison result is not needed after the branch.
         # Liveness across the CFG is the explicit proof that no successor
         # observes the result or depends on its initialized marker.
-        return compare.registers[0] not in function_liveness.for_instruction(
-            branch
+        branch_site = InstructionSite(block.label, instruction_index + 1)
+        return compare.registers[0] not in function_liveness.for_site(
+            branch_site
         ).live_after
 
     def _instruction_instrumentation(
@@ -273,10 +272,12 @@ class X8664Emitter:
         function: AssemblyFunction,
         block_name: str,
         instruction: AssemblyInstruction,
+        site: InstructionSite,
     ) -> list[str]:
         self.current_function = function
         self.current_block = block_name
         self.current_instruction = instruction
+        self._current_instruction_site = site
         limit_failure = self._instruction_failure(
             "instruction limit",
             detail=f"instruction limit {self.max_instructions} exceeded\n",
@@ -306,16 +307,22 @@ class X8664Emitter:
         layout: FrameLayout,
         compare: AssemblyInstruction,
         branch: AssemblyInstruction,
+        compare_site: InstructionSite,
+        branch_site: InstructionSite,
     ) -> list[str]:
         _, left, right = compare.registers
-        lines = self._instruction_instrumentation(function, block_name, compare)
+        lines = self._instruction_instrumentation(
+            function, block_name, compare, compare_site
+        )
         lines.extend(self._read_register(layout, left, "rax"))
         lines.extend(self._read_register(layout, right, "r10"))
 
         # The second instruction's limit check intentionally precedes the
         # native compare. The first instruction has already validated and
         # loaded both operands, and the second check may clobber flags.
-        lines.extend(self._instruction_instrumentation(function, block_name, branch))
+        lines.extend(
+            self._instruction_instrumentation(function, block_name, branch, branch_site)
+        )
         source_type = function.type_of(left)
         if source_type is AssemblyType.F64:
             lines.extend(
@@ -478,10 +485,13 @@ class X8664Emitter:
         register: int,
         target: str,
     ) -> list[str]:
-        site = self._current_instruction_sites.get(id(self.current_instruction))
         skip_initialization_check = (
-            site is not None
-            and (site[0], site[1], register) in self._safe_register_reads
+            self._current_instruction_site is not None
+            and (
+                self._current_instruction_site.block,
+                self._current_instruction_site.index,
+                register,
+            ) in self._safe_register_reads
         )
         register = self._resolve_local_alias(register)
         slot = layout.register(register)
@@ -571,14 +581,18 @@ class X8664Emitter:
             for phys in physicals
         ]
 
-    def _call_survivor_physicals(
-        self, instruction: AssemblyInstruction
-    ) -> tuple[str, ...]:
-        if not self._physical_residence_active or not self.current_plan:
+    def _call_survivor_physicals(self) -> tuple[str, ...]:
+        if (
+            not self._physical_residence_active
+            or not self.current_plan
+            or self._current_instruction_site is None
+        ):
             return ()
         physicals = {
             self.current_plan.physical_register(register)
-            for register in self.current_plan.call_survivors_for(instruction)
+            for register in self.current_plan.call_survivors_for(
+                self._current_instruction_site
+            )
         }
         return tuple(phys for phys in CALLER_SAVED_ALLOCATABLE_REGISTERS if phys in physicals)
 
@@ -625,10 +639,12 @@ class X8664Emitter:
         block_name: str,
         layout: FrameLayout,
         instruction: AssemblyInstruction,
+        site: InstructionSite,
     ) -> list[str]:
         self.current_function = function
         self.current_block = block_name
         self.current_instruction = instruction
+        self._current_instruction_site = site
         opcode = instruction.opcode
         registers = instruction.registers
 
@@ -1179,7 +1195,7 @@ class X8664Emitter:
             )
         stack_arguments = arguments[len(_ARGUMENT_REGISTERS) :]
         padding = 1 if len(stack_arguments) % 2 else 0
-        survivor_physicals = self._call_survivor_physicals(instruction)
+        survivor_physicals = self._call_survivor_physicals()
         lines: list[str] = []
         if self._physical_residence_active:
             for register in arguments:
@@ -1236,7 +1252,7 @@ class X8664Emitter:
             else:
                 stack_arguments.append(argument)
         padding = 1 if len(stack_arguments) % 2 else 0
-        survivor_physicals = self._call_survivor_physicals(instruction)
+        survivor_physicals = self._call_survivor_physicals()
         lines: list[str] = []
         if self._physical_residence_active:
             for register in arguments:
@@ -1289,7 +1305,7 @@ class X8664Emitter:
         stack_arguments = arguments[stack_argument_capacity:]
         pushed_words = len(stack_arguments)
         padding = 1 if (pushed_words + 1) % 2 else 0
-        survivor_physicals = self._call_survivor_physicals(instruction)
+        survivor_physicals = self._call_survivor_physicals()
         lines: list[str] = []
         if self._physical_residence_active:
             for register in arguments:

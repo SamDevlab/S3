@@ -12,7 +12,16 @@ from ...assembly import (
 
 
 @dataclass(frozen=True, slots=True)
+class InstructionSite:
+    """Structural identity of an instruction occurrence within a function."""
+
+    block: str
+    index: int
+
+
+@dataclass(frozen=True, slots=True)
 class InstructionLiveness:
+    site: InstructionSite
     instruction: AssemblyInstruction
     uses: frozenset[int]
     defs: frozenset[int]
@@ -33,17 +42,17 @@ class BlockLiveness:
 class FunctionLiveness:
     blocks: dict[str, BlockLiveness]
 
-    def for_instruction(self, instruction: AssemblyInstruction) -> InstructionLiveness:
-        for block_liveness in self.blocks.values():
-            for inst_liveness in block_liveness.instructions:
-                if inst_liveness.instruction is instruction:
-                    return inst_liveness
-        raise ValueError("Instruction not found in function liveness")
+    def for_site(self, site: InstructionSite) -> InstructionLiveness:
+        try:
+            block_liveness = self.blocks[site.block]
+            return block_liveness.instructions[site.index]
+        except (KeyError, IndexError) as error:
+            raise ValueError(f"Instruction site not found: {site!r}") from error
 
-    def live_across_call(self, instruction: AssemblyInstruction) -> frozenset[int]:
-        if instruction.opcode is not AssemblyOpcode.TCALL:
+    def live_across_call(self, site: InstructionSite) -> frozenset[int]:
+        inst_liveness = self.for_site(site)
+        if inst_liveness.instruction.opcode is not AssemblyOpcode.TCALL:
             raise ValueError("Instruction is not a call")
-        inst_liveness = self.for_instruction(instruction)
         return (inst_liveness.live_before & inst_liveness.live_after) - inst_liveness.defs
 
 
@@ -173,13 +182,14 @@ def analyze_liveness(function: AssemblyFunction) -> FunctionLiveness:
         current_live = set(live_out[label])
         inst_liveness_list: list[InstructionLiveness] = []
 
-        for inst in reversed(block.instructions):
+        for index, inst in reversed(tuple(enumerate(block.instructions))):
             uses_i, defs_i = instruction_use_def(inst)
             live_after_i = frozenset(current_live)
             live_before_i = frozenset(uses_i | (current_live - defs_i))
 
             inst_liveness_list.append(
                 InstructionLiveness(
+                    site=InstructionSite(label, index),
                     instruction=inst,
                     uses=uses_i,
                     defs=defs_i,

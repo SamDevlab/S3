@@ -61,10 +61,10 @@ def analyze_cross_block_residence(function: AssemblyFunction) -> AllocationPlan:
         register for register, physical in selected.items() if physical is not None
     )
     call_survivors = {
-        instruction_id: frozenset(
+        site: frozenset(
             register for register in survivors if register in selected_registers
         )
-        for instruction_id, survivors in full_plan.call_survivors.items()
+        for site, survivors in full_plan.call_survivors.items()
     }
     return AllocationPlan(
         allocations=selected,

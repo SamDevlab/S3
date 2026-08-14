@@ -11,6 +11,7 @@ from bootstrap.s3.assembly import (
     parse_assembly,
 )
 from bootstrap.s3.backends.x86_64.liveness import (
+    InstructionSite,
     analyze_liveness,
     instruction_use_def,
 )
@@ -280,17 +281,17 @@ def test_tcall_liveness() -> None:
     # r1 is defined before the call and used after the call, so it survives the call (live across call)
     assert 1 in entry.instructions[2].live_before
     assert 1 in entry.instructions[2].live_after
-    assert liveness.live_across_call(tcall_inst) == frozenset({1})
+    assert liveness.live_across_call(InstructionSite("entry", 2)) == frozenset({1})
 
     # r0 is used by the call but not live after the call, so it does not survive the call
     assert 0 not in entry.instructions[2].live_after
-    assert 0 not in liveness.live_across_call(tcall_inst)
+    assert 0 not in liveness.live_across_call(InstructionSite("entry", 2))
 
     # r2 is defined by the call, so it is in live_after but NOT in live_before of the call.
     # Therefore it is not live across call.
     assert 2 in entry.instructions[2].live_after
     assert 2 not in entry.instructions[2].live_before
-    assert 2 not in liveness.live_across_call(tcall_inst)
+    assert 2 not in liveness.live_across_call(InstructionSite("entry", 2))
 
 
 def test_tload_tstore() -> None:
