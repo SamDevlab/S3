@@ -289,3 +289,20 @@ select P5 only from measured residual cause
   rules. The latter remain the simpler implementation model and no new target
   was promoted. P8.2 is `NO_VALID_TARGET_YET`; no production code, branch, PR,
   merge, full suite, benchmark, P9, or shutdown was started.
+
+## 2026-08-13 - P8.3 path-complete memory-state necessity
+
+- Reconciled stale state count 49 against 54 unique index/note IDs before
+  assigning `S3-ZK-0055`; the next experiment ID was `S3-EXP-0030`.
+- Profiled exact production HEAD `631b51e70562a33183ac14d0be5bbe2ddd140779`
+  over 12 workloads at O0/O1. The simple CFG/use-def worklist fixed point
+  converged and three focused model-control tests passed.
+- Static census: 1587 sites; dynamic tracking: 4350 events. The largest
+  bounded accidental family was definite `REGISTER_INIT_CHECK`, 1660 events
+  across 11 workloads. Static unknown share was 20.163831127914303%; dynamic
+  unknown share was 1.1954022988505748% of observed events.
+- Linux native profile passed all 24 O0/O1 pairs. The two `slice_reference`
+  emulator pairs were recorded as unsupported at TADDR, not treated as zero.
+- No native structural effect was measured. Public runtime proof transport and
+  exact fallback are missing, so P8.3 is `NO_VALID_TARGET_YET`; no production
+  code, branch, PR, full suite, benchmark, P9 or shutdown was started.

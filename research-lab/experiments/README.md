@@ -364,3 +364,19 @@ path-complete safety proof and the only proven conditional control collapse is
 already P7. No P8 production target was promoted.
 
 File: `../reconciliations/POSSIBILITY_COLLAPSE_LEDGER_P8_2.json`
+
+### S3-EXP-0030 - P8.3 path-complete memory-state necessity
+
+STATUS=COMPLETE_NO_VALID_TARGET_YET
+
+The exact P7 main head was analyzed with a simple CFG/use-def worklist fixed
+point and a semantics-preserving emulator boundary tracker. The largest bounded
+accidental subclass was definite `REGISTER_INIT_CHECK` in functions without
+call/reference/slice visibility: 1660 dynamic events across 11 workloads. It
+has no measured native effect, the public runtime proof transport is absent,
+and TADDR remains unsupported by the existing emulator. No production target
+was promoted.
+
+Files: `p8_3_memory_state_necessity.py`,
+`p8_3_memory_state_necessity.json`, and
+`test_p8_3_memory_state_necessity.py`.

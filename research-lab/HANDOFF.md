@@ -751,3 +751,30 @@ SHUTDOWN_AUTHORIZED=NO
 Before any future P8 implementation, run one bounded path-complete
 observer-aware attribution experiment. Do not reopen broad compiler triage or
 start P9.
+
+## P8.3 checkpoint: path-complete memory-state necessity - 2026-08-13
+
+P8.3 completed the bounded experiment on exact production HEAD
+`631b51e70562a33183ac14d0be5bbe2ddd140779`. The fixed-point CFG/use-def model
+and emulator boundary tracker passed three focused control tests, 12 workloads,
+and 24 Linux native O0/O1 pairs. The largest bounded accidental family was
+definite register initialization checks, but this is an emulator-only safety
+check with no measured native reduction. Calls, references, slices, failure
+paths, loops and aliases remain conservative, and TADDR is an explicit emulator
+observability gap.
+
+```text
+P8_3_STATUS=COMPLETE_NO_VALID_TARGET_YET
+P8_SELECTION=NO_VALID_TARGET_YET
+P8_STARTED=NO
+PRODUCTION_CODE_CHANGED=NO
+FULL_SUITE_RUN=NO
+P9_STARTED=NO
+SHUTDOWN_AUTHORIZED=NO
+```
+
+The authoritative experiment is `S3-EXP-0030`, the new zettel is
+`S3-ZK-0055`, and the reconciliation is
+`reconciliations/P8_3_MEMORY_STATE_NECESSITY_20260813.md`. Do not reopen this
+hypothesis without proof-bearing Assembly transport, checked fallback, and a
+measured emulator-cost benefit.

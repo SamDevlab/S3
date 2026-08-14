@@ -266,3 +266,27 @@ adjacent `TCMP`/`TBR3` pair. Keep successor-observer fallback, instruction
 limits, initialization checks, f64 unordered behavior, ABI, reference, and
 memory obligations intact. Do not start P8 or issue shutdown. Read the external
 P7 final report and `S3-ZK-0049` before proposing another target.
+
+## Authoritative current checkpoint: P8.3 closed without a production target
+
+P8.3 performed the required bounded path-complete memory-state necessity
+experiment on `631b51e70562a33183ac14d0be5bbe2ddd140779`.
+
+```text
+P8_3_STATUS=COMPLETE_NO_VALID_TARGET_YET
+P8_SELECTION=NO_VALID_TARGET_YET
+P8_STARTED=NO
+PRODUCTION_CODE_CHANGED=NO
+FULL_SUITE_RUN=NO
+P9_STARTED=NO
+SHUTDOWN_AUTHORIZED=NO
+```
+
+The largest bounded accidental subclass was a definite non-address-taken
+`REGISTER_INIT_CHECK` family with 1660 dynamic events in 11 workloads. It is
+emulator-only, has no measured native effect, and cannot replace the public
+runtime safety check until proof-bearing Assembly transport and exact fallback
+exist. TADDR remains unsupported by the existing emulator. Read
+`research-lab/reconciliations/P8_3_MEMORY_STATE_NECESSITY_20260813.md`,
+`S3-EXP-0030`, and `S3-ZK-0055` before any future campaign. Do not start P9 or
+issue shutdown.

@@ -242,3 +242,11 @@ necessary. Fresh evidence found 566 static and 66 dynamic eligible pairs. PR
 | [[S3-ZK-0053]] | Workflow provenance is execution provenance | SUPPORTED_BOUNDED_MODEL |
 
 | [[S3-ZK-0054]] | A possibility ledger does not by itself authorize a rewrite | NEGATIVE_RESULT |
+
+## P8.3 path-complete memory-state necessity
+
+`S3-ZK-0055` records that path-complete necessity and dynamic hotness are
+separate evidence layers. A bounded definite register-init-check population was
+measured, but it is emulator-only, has no native structural effect, and lacks a
+proof-bearing Assembly/runtime contract with checked fallback. P8.3 is
+`NO_VALID_TARGET_YET`.
