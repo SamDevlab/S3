@@ -328,3 +328,25 @@ select P5 only from measured residual cause
 - Actions permissions remained disabled and no candidate-branch run existed.
   Runtime and compile-time measurements remain unavailable/not-comparable. P9
   and reboot were not started.
+
+## 2026-08-14 - P9 causal frame and representation attribution
+
+- Reconciled the merged P8 production anchor, the merged benchmark evidence,
+  and the existing measurement harness without rerunning the benchmark or
+  triggering Actions.
+- Built a deterministic Assembly-to-x86 sidecar attribution over 15
+  workloads. The model is explicitly `MODELLED_NATIVE_DYNAMIC_COUNT`, not a
+  hardware counter. Sidecar identity, model validation and frozen external
+  correctness passed; `slice_reference` was explicitly excluded for the
+  existing emulator TADDR limitation.
+- O1 model total was 143151. The broad frame class was 19725, scalar frame
+  value traffic 7807, and observed stack-resident frame value traffic 5431,
+  exactly 3.793895956018% of the O1 model. Direct indexed addressing already
+  exists for the fixed-array shape, and true spill causality was not
+  established.
+- P9 closes as `NO_VALID_TARGET_YET`. The strongest candidate to carry forward
+  is the bounds-validity contract surface, but no sound production predicate
+  was established. The next smallest experiment is proof-bearing loop-carried
+  TLOAD/TSTORE bounds and validity analysis with checked fallback and failure
+  order preserved. No production code, branch, PR, benchmark rerun, Actions
+  run or shutdown occurred.

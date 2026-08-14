@@ -259,3 +259,17 @@ public proof metadata. PR #178 removed only proven redundant native
 initialization checks, preserved the checked fallback, and passed the exact
 candidate Linux full suite. Runtime and compile-time measurements remain
 unavailable under a comparable protocol.
+
+## P9 causal frame and representation attribution
+
+| [[S3-ZK-0057]] | Observed frame residency is not established spill causality | NEGATIVE_RESULT |
+
+`S3-EXP-0032` records the P9 selection experiment. A validated
+`MODELLED_NATIVE_DYNAMIC_COUNT` sidecar model covered 15 workloads without
+rerunning the frozen external benchmark. Direct indexed addressing falsified
+the current fixed-array base-reload hypothesis, while 5431 observed
+stack-resident frame-value events were only 3.793895956018% of the O1 model
+and did not establish spill causality. P9 therefore closes as
+`NO_VALID_TARGET_YET`; the next smallest experiment is proof-bearing
+loop-carried bounds/validity analysis with checked fallback and failure-order
+controls.

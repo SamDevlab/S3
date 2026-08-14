@@ -397,3 +397,20 @@ The full suite ran once on exact candidate
 `87eb49cd19a78570f07d66ce7982650c8b422210` and exited 0. Actions remained
 disabled and no candidate-branch run existed. Runtime and compile-time results
 were not measured under a comparable protocol.
+
+### S3-EXP-0032 - P9 causal frame and representation attribution
+
+STATUS=COMPLETE_NO_VALID_TARGET_YET
+
+The validated Assembly-to-x86 sidecar model covered nine internal workloads
+and six frozen JSMN fixtures using `MODELLED_NATIVE_DYNAMIC_COUNT`. External
+correctness and sidecar identity passed. The O1 model total was 143151;
+instruction-limit, bounds, frame, semantic-payload and memory-validity sites
+dominated. Direct indexed addressing falsified the current fixed-array
+base-reload hypothesis. Observed stack-resident frame-value events were 5431,
+or 3.793895956018% of O1, and true spill causality was not established.
+
+P9 closes with `NO_VALID_TARGET_YET`. No production compiler change, branch,
+PR, benchmark rerun or Actions execution occurred. See
+`S3-EXP-0032-p9-causal-frame-representation-attribution.md` and
+`reconciliations/P9_TARGET_SELECTION_CAUSAL_FRAME_20260814.md`.

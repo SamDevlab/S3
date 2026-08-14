@@ -327,3 +327,23 @@ Read `research-lab/HANDOFF.md`, `STATE.json`,
 `zettelkasten/notes/S3-ZK-0056.md` before any future work. P9 remains
 unauthorized; only an explicitly requested read-only readiness audit is
 allowed.
+
+## P9 selection checkpoint
+
+P9 selection research is now closed as `NO_VALID_TARGET_YET`. Do not start
+production P9 from this checkpoint. The validated sidecar model covered 15
+workloads and counted 143151 O1 modelled native dynamic x86 executions. The
+5431 observed stack-resident frame-value events were exactly
+3.793895956018% of that model; they do not establish spills or a removable
+family. Direct indexed addressing falsified the current fixed-array base
+reload hypothesis. Register allocation is not promoted automatically.
+
+The strongest candidate to carry forward is the bounds-validity contract
+surface. The next smallest research experiment is proof-bearing loop-carried
+TLOAD/TSTORE bounds and validity sharing or hoisting with checked fallback,
+failure-order, initialization, immutability and instruction-limit controls.
+No production code, benchmark rerun, Actions execution or shutdown occurred.
+Read `research-lab/HANDOFF.md`, `STATE.json`,
+`reconciliations/P9_TARGET_SELECTION_CAUSAL_FRAME_20260814.md`,
+`experiments/S3-EXP-0032-p9-causal-frame-representation-attribution.md`, and
+`zettelkasten/notes/S3-ZK-0057.md` before future work.

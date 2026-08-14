@@ -816,3 +816,36 @@ are unavailable under a directly comparable protocol and must not be inferred.
 The durable P8.4 result is in `S3-EXP-0031`, `S3-ZK-0056`, and
 `reconciliations/P8_FINAL_PROOF_GUIDED_INIT_ELISION_20260814.md`. Do not start
 P9 or reboot from this checkpoint.
+
+## Authoritative current checkpoint: P9 selection closed - 2026-08-14
+
+P9 selection research is complete and did not authorize a production target:
+
+```text
+P9_CAMPAIGN=P9_CAUSAL_FRAME_REPRESENTATION_ATTRIBUTION_V1
+P9_SELECTION=NO_VALID_TARGET_YET
+P9_STATUS=COMPLETE_RESEARCH_ONLY
+P9_STARTED=NO
+P9_PRODUCTION_COMPILER_CHANGED=NO
+P9_BENCHMARK_RERUN=NO
+P9_ACTIONS_EXECUTION=NO
+SHUTDOWN_AUTHORIZED=NO
+```
+
+The experiment `S3-EXP-0032` used the frozen P8 and benchmark evidence and a
+validated `MODELLED_NATIVE_DYNAMIC_COUNT` sidecar, not a hardware counter. It
+covered nine internal workloads and six frozen JSMN fixtures. The O1 model
+total was 143151; frame-value traffic was 7807 and observed stack-resident
+frame-value traffic was 5431, exactly 3.793895956018% of the model. Direct
+indexed addressing falsified the current fixed-array base-reload hypothesis.
+Stack residency did not establish spill causality, and register allocation is
+not promoted automatically.
+
+The strongest candidate to carry forward is the bounds-validity contract
+surface. The smallest next experiment is a proof-bearing loop-carried
+TLOAD/TSTORE bounds and validity sharing or hoisting analysis preserving
+initialization, immutability, instruction-limit, failure-order and checked
+fallback obligations. It is not part of this checkpoint. Read
+`reconciliations/P9_TARGET_SELECTION_CAUSAL_FRAME_20260814.md`,
+`experiments/S3-EXP-0032-p9-causal-frame-representation-attribution.md`, and
+`zettelkasten/notes/S3-ZK-0057.md` before any future work.
