@@ -4,7 +4,7 @@
 DATE=2026-08-15
 STATUS=ACTIVE
 OFFICIAL_ZETTEL_IDS_ALLOCATED=NO
-CANDIDATE_COUNT=8
+CANDIDATE_COUNT=13
 ```
 
 These are second-order syntheses produced by connecting existing supported and open notes after the P13.R0 literature rebase.
@@ -319,6 +319,205 @@ Candidate experiment:
 
 P13.0/P13.2 should map where semantic type, representation legality and target lowering are currently conflated versus explicitly separated.
 
+---
+
+## IC-009 — Reference evaluation can be an independent semantic boundary
+
+Synthesis:
+
+```text
+SOURCE SEMANTICS
+      ↓
+REFERENCE EVALUATION
+      ↓ semantic result/failure
+
+independent from
+
+SOURCE SEMANTICS
+      ↓
+COMPILER / NATIVE EXECUTION
+      ↓ semantic result/failure
+```
+
+Source connection:
+
+```text
+SICP JS 2022
+4.1 Metacircular Evaluator
+5.5 Compilation
+```
+
+Existing S3 connections:
+
+```text
+[[S3-ZK-0026]]
+[[S3-ZK-0069]]
+[[S3-ZK-0075]]
+IC-008
+```
+
+Why temporary:
+
+SICP demonstrates evaluator/compiler separation for its language, but S3 has not yet established that a new independent evaluator is necessary or higher-value than existing O0/O1/native differential infrastructure.
+
+Candidate experiment:
+
+P13.0 should first classify the actual current semantic oracle. Only if a concrete oracle gap remains should a bounded evaluator/reference-machine prototype be considered.
+
+---
+
+## IC-010 — Explicit-control machines expose semantic-to-machine commitments
+
+Synthesis:
+
+Transforming an evaluator into an explicit register/stack controller can reveal where implicit semantic mechanisms become concrete state, control, environment and calling commitments.
+
+Source connection:
+
+```text
+SICP JS 2022
+5.1.2 Abstraction in Machine Design
+5.4 Explicit-Control Evaluator
+```
+
+Existing S3 connections:
+
+```text
+[[S3-ZK-0009]]
+[[S3-ZK-0027]]
+[[S3-ZK-0067]]
+IC-005
+IC-008
+```
+
+Why temporary:
+
+This is a conceptual machine-design bridge. It does not establish that S3 needs another IR or register-machine implementation.
+
+Candidate experiment:
+
+For one bounded feature with difficult semantics, map source semantic state → first explicit compiler commitment → native realization. Add no new machine layer unless the map exposes an actionable correctness or observability gap.
+
+---
+
+## IC-011 — Abstract-machine cost is a causal layer, not a runtime oracle
+
+Synthesis:
+
+```text
+SEMANTIC WORK
+→ ABSTRACT-MACHINE WORK
+→ IR/SSA WORK
+→ NATIVE STRUCTURE
+→ RUNTIME
+```
+
+Source connection:
+
+```text
+SICP JS 2022
+5.2.4 Monitoring Machine Performance
+```
+
+Existing S3 connections:
+
+```text
+[[S3-ZK-0029]]
+[[S3-ZK-0068]]
+[[S3-ZK-0071]]
+```
+
+Why temporary:
+
+Machine-level instruction/stack counters can improve causal localization, but current S3 has no established abstract machine whose counters are known to explain a useful gap.
+
+Candidate experiment:
+
+Only when a future P14 target has an interpreter/reference-machine path, measure matched semantic operations and abstract-machine operations alongside native runtime. Reject the metric if it adds no discriminating information.
+
+---
+
+## IC-012 — Self-hosting should progress by semantic-layer replacement
+
+Synthesis:
+
+```text
+REFERENCE SEMANTICS
+      ↓
+REPLACE ONE IMPLEMENTATION LAYER
+      ↓
+DIFFERENTIAL VALIDATION
+      ↓
+NEXT LAYER ONLY IF TRUST INCREASES
+```
+
+Source connection:
+
+```text
+SICP JS 2022
+4.1 evaluator
+5.4 explicit control
+5.5 compiler
+5.5.7 evaluator/compiler integration
+```
+
+Existing S3 connections:
+
+```text
+[[S3-ZK-0026]]
+[[S3-ZK-0069]]
+IC-009
+```
+
+Why temporary:
+
+This is a migration strategy, not evidence that self-hosting is currently the highest-value S3 milestone.
+
+Candidate experiment:
+
+When self-hosting is eventually authorized, select one semantically bounded compiler component and require differential equivalence before replacing the next layer. Do not start that program during P13 foundation work.
+
+---
+
+## IC-013 — Evaluator/compiler agreement can be a bounded differential oracle
+
+Synthesis:
+
+```text
+VALID BOUNDED S3 PROGRAM
+    ├── REFERENCE EVALUATOR
+    ├── O0
+    ├── O1
+    └── NATIVE
+          ↓
+RESULT + FAILURE-BEHAVIOR AGREEMENT
+```
+
+Source connection:
+
+```text
+SICP JS 2022
+5.5 interpretation vs compilation
+5.5.7 compiled/interpreted interoperability
+```
+
+Existing S3 connections:
+
+```text
+[[S3-ZK-0063]]
+[[S3-ZK-0064]]
+[[S3-ZK-0069]]
+[[S3-ZK-0072]]
+```
+
+Why temporary:
+
+A differential evaluator could strengthen correctness evidence, but only if its implementation errors are sufficiently independent from the compiler and the supported semantic subset is explicit.
+
+Candidate experiment:
+
+If P13.3 exposes a semantic family poorly covered by the existing Python reference/O0/native oracles, prototype the smallest independent evaluator for that family, freeze generated seeds, and compare result and failure semantics. Do not generalize from one subset.
+
 ## Promotion rule for insight candidates
 
 An `IC-*` candidate may become a normal `S3-ZK-*` note only after it has:
@@ -332,4 +531,4 @@ FALSIFIER
 BOUNDED VALIDATION PATH
 ```
 
-Do not promote all eight automatically. Negative evidence may reject or merge candidates.
+Do not promote all thirteen automatically. Negative evidence may reject or merge candidates.
