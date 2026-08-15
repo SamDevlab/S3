@@ -7,6 +7,8 @@ BASE_HISTORICAL_INDEX_MAX=S3-ZK-0062
 P13_R0_INITIAL_RANGE=S3-ZK-0063..S3-ZK-0069
 P13_R0_EXTENSION_RANGE=S3-ZK-0070..S3-ZK-0075
 P13_R0_CURRENT_RANGE=S3-ZK-0063..S3-ZK-0075
+OFFICIAL_RANGE_UNCHANGED_BY_SICP=YES
+TEMPORARY_INSIGHT_CANDIDATES=IC-001..IC-013
 DATE=2026-08-15
 ```
 
@@ -89,15 +91,36 @@ S3-ZK-0074 Unique realizable effects
       P14 causal census
 ```
 
+## Temporary semantic-machine synthesis after SICP
+
+SICP JS was added as the eighth active technical source with a P1 language-semantics / abstract-machine role. It did **not** allocate official Zettel IDs. Five new second-order candidates remain temporary:
+
+```text
+IC-009 Reference evaluation can be an independent semantic boundary
+IC-010 Explicit-control machines expose semantic-to-machine commitments
+IC-011 Abstract-machine cost is a causal layer, not a runtime oracle
+IC-012 Self-hosting should progress by semantic-layer replacement
+IC-013 Evaluator/compiler agreement can be a bounded differential oracle
+```
+
+Read them in `temporary/INSIGHT_CANDIDATES.md`. Promotion requires bounded S3 evidence under `LIFECYCLE_POLICY.md`.
+
 ## Scope reconciliation
 
 Historical `S3-ZK-0033` remains valid for the P4 JSMN residual corpus where no phis or edge copies existed. It must not be generalized to later loop/phi-heavy workloads. P12.10–P12.14.2 provide later evidence that phi/reconstruction semantics can be correctness-critical.
 
-The P13.R0 source set was extended after the initial closure from five to seven technical sources. The original files remain historical; the V2 files are the current source-set summary.
+The P13.R0 source set progressed from five to seven and now eight technical sources. Historical summaries remain preserved. V3 is the current source-set summary.
 
 ## Read with
 
 Current authoritative P13.R0 literature summary:
+
+- `research-lab/sources/P13_R0_FOUNDATION_CORPUS_V3.md`
+- `research-lab/P13_R0_LITERATURE_REBASE_V3.md`
+- `research-lab/sources/SICP_JS_2022_BRIDGE.md`
+- `research-lab/zettelkasten/temporary/INSIGHT_CANDIDATES.md`
+
+Previous seven-source summary:
 
 - `research-lab/sources/P13_R0_FOUNDATION_CORPUS_V2.md`
 - `research-lab/P13_R0_LITERATURE_REBASE_V2.md`
