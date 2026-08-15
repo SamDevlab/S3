@@ -14,6 +14,36 @@ S3-ZK-0002
 
 Never reuse an ID after deletion/rejection. Prefer deprecation notes over deletion.
 
+## Lifecycle separation
+
+Canonical note bodies remain in:
+
+```text
+notes/S3-ZK-*.md
+```
+
+Do not move or duplicate them merely to classify lifecycle. Stable IDs and historical links must remain intact.
+
+Current lifecycle navigation:
+
+```text
+LIFECYCLE_POLICY.md
+permanent/INDEX.md
+ temporary/INDEX.md
+ temporary/INSIGHT_CANDIDATES.md
+```
+
+Interpretation:
+
+```text
+PERMANENT = supported durable knowledge within an explicit scope
+TEMPORARY = open, speculative, inconclusive or superseded current-state knowledge
+```
+
+A scoped negative result can be permanent. An attractive architecture proposal can remain temporary.
+
+The lifecycle class is therefore epistemic, not a synonym for the note's `TYPE`.
+
 ## Note types
 
 ```text
