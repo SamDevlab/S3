@@ -29,8 +29,8 @@ Current lifecycle navigation:
 ```text
 LIFECYCLE_POLICY.md
 permanent/INDEX.md
- temporary/INDEX.md
- temporary/INSIGHT_CANDIDATES.md
+temporary/INDEX.md
+temporary/INSIGHT_CANDIDATES.md
 ```
 
 Interpretation:
