@@ -4,7 +4,7 @@
 DATE=2026-08-15
 LIFECYCLE=PERMANENT
 CANONICAL_NOTE_FILES=../notes/S3-ZK-*.md
-COUNT=52
+COUNT=55
 ```
 
 This index classifies durable research knowledge. Canonical note bodies remain under `../notes/`; this file is navigation and lifecycle classification only.
@@ -67,6 +67,9 @@ These notes remain permanent because the bounded claim is supported, even when l
 | [[S3-ZK-0048]] | P6 | One-use eligible `TCONST` materializations admitted a local direct-destination lowering with conservative fallback. |
 | [[S3-ZK-0049]] | P7 | Adjacent same-block `TCMP -> TBR3` materialization was conditionally accidental under liveness/successor constraints. |
 | [[S3-ZK-0056]] | P8 | A bounded fail-closed native recomputation could consume validated Assembly facts while retaining checked fallback. |
+| [[S3-ZK-0076]] | P14_1_EXISTING_JSMN | The selected target exhibited mixed fixed-plus-per-input-byte scaling under the frozen protocol. |
+| [[S3-ZK-0077]] | P14_2_REPRESENTATIVE_INPUT | The first material amplification in the measured semantic-to-native funnel was dynamic execution. |
+| [[S3-ZK-0078]] | P14_EXISTING_JSMN | Repeated parser-loop input/token-array loads/stores were localized as the measured dynamic mechanism. |
 
 ## Permanent negative results / exclusion knowledge
 

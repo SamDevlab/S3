@@ -1110,3 +1110,48 @@ Read `reconciliations/P10_1_FRAME_REPRESENTATION_CAUSAL_DECOMPOSITION_20260814.m
 `reconciliations/P10_1_RESULT.json`,
 `experiments/S3-EXP-0037-p10-1-frame-representation-causal-decomposition.md`,
 and `zettelkasten/notes/S3-ZK-0062.md` before any future work.
+
+## Authoritative current checkpoint: post-P13/P14 knowledge reconciliation - 2026-08-15
+
+The P13/P14 research evidence has been reconciled into the durable knowledge
+graph. This is a research closure, not a new optimization campaign:
+
+```text
+P13_P14_RECONCILIATION_STATUS=COMPLETE
+P13_STATUS=COMPILER_RESEARCH_FOUNDATION_VALIDATED
+P14_0=NEW_RUNTIME_TARGET_SELECTED
+P14_1=P14_1_MIXED_SCALING
+P14_2=P14_2_MECHANISM_LOCALIZED
+P14_3_STARTED=NO
+P14_WORKTREE_HEAD=87a5f8bea876b62b564c729feb6975ecc69bed58
+FIRST_MATERIAL_AMPLIFICATION_STAGE=DYNAMIC_EXECUTION
+LOCALIZED_MECHANISM=repeated parser-loop input/token-array loads/stores
+WORK_PROVABLY_AVOIDABLE=UNKNOWN
+LEGAL_TRANSFORMATION_ESTABLISHED=NO
+REALIZABLE_SAVING_ESTABLISHED=NO
+PROFITABILITY_ESTABLISHED=NO
+PERMANENT_ZETTELS=S3-ZK-0076..S3-ZK-0078
+TEMPORARY_OPEN_QUESTION=S3-ZK-0079
+PRODUCTION_CODE_CHANGED=NO
+BENCHMARK_EXECUTED=NO
+REMOTE_WRITE_EXECUTED=NO
+SHUTDOWN_EXECUTED=NO
+```
+
+The selected target was the existing JSMN S3 parser state-loop workload with
+input-length scaling. P14.1 established mixed scaling. P14.2 localized the
+first material amplification to dynamic execution and identified repeated
+input/token-array load-store materialization. The evidence deliberately does
+not call that work redundant or avoidable.
+
+The open question remains bounded by aliasing, mutation, call effects,
+reference semantics, bounds and failure ordering, memory validity,
+loop-carried state, SSA identity, memory versions, instruction-limit
+semantics, and observer effects. Reopening requires new compiler, workload,
+memory-provenance, alias, mutation or semantic evidence, or an explicit
+explanation of why the unknown is resolvable.
+
+Read `P13_P14_RECONCILIATION.md`, `zettelkasten/P14_INDEX.md`, and
+`zettelkasten/notes/S3-ZK-0076.md` through `S3-ZK-0079.md` before any future
+performance research. Do not start P14.3 or production optimization from
+this checkpoint.

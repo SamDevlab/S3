@@ -879,6 +879,35 @@
     "new_experiments": ["S3-EXP-0037"],
     "new_zettels": ["S3-ZK-0062"]
   },
+  "p13_p14_reconciliation": {
+    "status": "COMPLETE",
+    "campaign": "POST_P13_P14_KNOWLEDGE_RECONCILIATION",
+    "p13_status": "COMPILER_RESEARCH_FOUNDATION_VALIDATED",
+    "p14_0_status": "NEW_RUNTIME_TARGET_SELECTED",
+    "p14_1_status": "P14_1_MIXED_SCALING",
+    "p14_2_status": "P14_2_MECHANISM_LOCALIZED",
+    "p14_3_started": false,
+    "target_selected": "existing JSMN S3 parser state-loop workload with input-length scaling",
+    "scaling_class": "P14_1_MIXED_SCALING",
+    "first_material_amplification_stage": "DYNAMIC_EXECUTION",
+    "localized_mechanism": "repeated parser-loop input/token-array loads/stores",
+    "work_provably_avoidable": "UNKNOWN",
+    "legal_transformation_established": false,
+    "realizable_saving_established": false,
+    "profitability_established": false,
+    "permanent_zettels": ["S3-ZK-0076", "S3-ZK-0077", "S3-ZK-0078"],
+    "temporary_zettels": ["S3-ZK-0079"],
+    "insight_candidates_updated": ["IC-001", "IC-005", "IC-006", "IC-007", "IC-011"],
+    "production_code_changed": false,
+    "remote_write_executed": false,
+    "shutdown_executed": false,
+    "p14_artifacts": [
+      "C:/Users/samue/Downloads/S3/S3-Benchmarks-p14-lab-20260815/reports/p14-final/FINAL_P14_REPORT.md",
+      "C:/Users/samue/Downloads/S3/S3-Benchmarks-p14-lab-20260815/reports/p14-2/P14_2_RESULT.json",
+      "C:/Users/samue/Downloads/S3/S3-Benchmarks-p14-lab-20260815/reports/p14-1/P14_1_RESULT.json"
+    ],
+    "future_question_candidate": "Are the repeated input/token-array memory operations provably avoidable under S3 semantics?"
+  },
   "next_actions": [
     "Preserve the P4/P5/P6 evidence as historical research context; do not reopen rejected hypotheses without new measurements",
     "Keep temporary TADDR support, generic RA redesign, and broad initialization-state elimination out of production until independently promoted",
@@ -912,6 +941,10 @@
     "Keep 10063 stack-resident frame-value events as an overlay, not as true spill evidence",
     "Do not reopen Correction B despite 240 TMOV materialization events",
     "P10.1 found no pressure, liveness or valid counterfactual evidence; close the frame line as NO_VALID_TARGET_YET",
-    "Publish P10.1 only after validate_lab returns PASS and validate_remote_write returns PROVEN_ZERO_ACTIONS"
+    "Publish P10.1 only after validate_lab returns PASS and validate_remote_write returns PROVEN_ZERO_ACTIONS",
+    "P13/P14 knowledge reconciliation is complete; preserve the bounded P14 claims and do not start P14.3",
+    "Keep repeated parser-loop input/token-array loads/stores as an open avoidability question only",
+    "Require new compiler, workload, provenance or semantic evidence before reopening the P14 question",
+    "Keep production optimization, benchmark execution, GitHub Actions execution and shutdown unauthorized"
   ]
 }

@@ -532,3 +532,55 @@ BOUNDED VALIDATION PATH
 ```
 
 Do not promote all thirteen automatically. Negative evidence may reject or merge candidates.
+
+## P14 reconciliation review
+
+The five requested candidates were reviewed against the bounded P14 evidence.
+They remain temporary and none was promoted automatically.
+
+```text
+IC_ID=IC-001
+P14_RELATION=P14 demonstrates the distinction between observed work, avoidability, legality, realizability and profitability for one selected target; it supports gate separation but does not prove a universal independent three-gate architecture or a transformation.
+SUPPORTED_COMPONENTS=separate safety, mechanism and objective checks; observed dynamic work is not proof of savings
+UNSUPPORTED_COMPONENTS=universal realizability gate; general transformation authorization
+NEW_EVIDENCE=P14_1 mixed scaling and P14_2 mechanism localization with WORK_PROVABLY_AVOIDABLE=UNKNOWN
+STATUS_AFTER_P14=REMAINS_TEMPORARY_SUPPORTED_IN_PART
+PROMOTE_TO_ZETTEL=NO
+
+IC_ID=IC-005
+P14_RELATION=P14 shows a dynamic gap without a static structural delta in the measured funnel, so the question of where representation is committed remains relevant; it does not establish a general commitment metric.
+SUPPORTED_COMPONENTS=need to identify the commitment boundary before assigning a representation transformation
+UNSUPPORTED_COMPONENTS=explicit representation commitment boundary in this workload; general commitment metric
+NEW_EVIDENCE=P14_2 typed IR, SSA, de-SSA and Assembly marginal counts were zero while dynamic work was material
+STATUS_AFTER_P14=REMAINS_TEMPORARY_OPEN
+PROMOTE_TO_ZETTEL=NO
+
+IC_ID=IC-006
+P14_RELATION=P13.2 plus the P14 semantic-to-native funnel support stage-aware auditing; P14 did not prove that a general proof-flow graph architecture is required.
+SUPPORTED_COMPONENTS=auditing causal stages and preserving IR-level attribution
+UNSUPPORTED_COMPONENTS=general proof-flow graph architecture; replacement of existing contracts
+NEW_EVIDENCE=P14_2 recorded typed IR, SSA, de-SSA, Assembly, native and dynamic stages
+STATUS_AFTER_P14=REMAINS_TEMPORARY_SUPPORTED_AS_METHOD_ONLY
+PROMOTE_TO_ZETTEL=NO
+
+IC_ID=IC-007
+P14_RELATION=P14 supplies a scoped exclusion: hot dynamic loads/stores, repeated addresses, or structural reductions do not prove avoidability; it does not generalize this exclusion to all workloads.
+SUPPORTED_COMPONENTS=negative evidence can constrain the exact P14 target line; unknown is not authorization
+UNSUPPORTED_COMPONENTS=general exclusion schema; universal negative result
+NEW_EVIDENCE=P14_2 localized LOADS_STORES while leaving WORK_PROVABLY_AVOIDABLE=UNKNOWN
+STATUS_AFTER_P14=REMAINS_TEMPORARY_SCOPED
+PROMOTE_TO_ZETTEL=NO
+
+IC_ID=IC-011
+P14_RELATION=P14 used a semantic -> typed IR -> SSA -> de-SSA -> Assembly -> x86 -> dynamic -> runtime funnel, supporting causal-layer discipline; it does not prove an abstract-machine cost model.
+SUPPORTED_COMPONENTS=structural layers and runtime must remain distinct causal evidence
+UNSUPPORTED_COMPONENTS=established abstract machine; abstract-machine counters as a runtime oracle
+NEW_EVIDENCE=P14_2 identified DYNAMIC_EXECUTION as first material amplification and LOADS_STORES as the dominant extra work class
+STATUS_AFTER_P14=REMAINS_TEMPORARY_SUPPORTED_AS_DISCIPLINE_ONLY
+PROMOTE_TO_ZETTEL=NO
+```
+
+```text
+P14_RECONCILIATION_ZETTELS=S3-ZK-0076..S3-ZK-0079
+PROMOTE_TO_ZETTEL=NO for IC-001,IC-005,IC-006,IC-007,IC-011
+```

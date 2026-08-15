@@ -4,7 +4,7 @@
 DATE=2026-08-15
 LIFECYCLE=TEMPORARY
 CANONICAL_NOTE_FILES=../notes/S3-ZK-*.md
-COUNT=23
+COUNT=24
 ```
 
 Temporary notes are active research objects, not discarded notes. They remain canonical under `../notes/` and keep their permanent IDs.
@@ -50,6 +50,7 @@ These ideas are plausible and connected to supported knowledge, but the architec
 |---|---|---|
 | [[S3-ZK-0042]] | SUPERSEDED_AS_CURRENT_LIMITATION | The O1 slice verifier/correctness limitation was later fixed and recorded by [[S3-ZK-0045]]. Keep only as provenance of the earlier state. |
 | [[S3-ZK-0043]] | OPEN_NEGATIVE_RESULT | Frame metadata slot reuse was not observed, but the negative result did not close the broader hypothesis with sufficient proof. |
+| [[S3-ZK-0079]] | OPEN_QUESTION | Under which exact S3 semantic and memory-effect conditions can the localized parser-loop operations be proven reusable or unnecessary? |
 
 ## Promotion requirements
 
