@@ -239,3 +239,93 @@ necessary. Fresh evidence found 566 static and 66 dynamic eligible pairs. PR
 | S3-ZK-0050 | First useful work is measured at the process boundary | SUPPORTED_BASELINE |
 | S3-ZK-0051 | Initialization state is an observed native commitment boundary | SUPPORTED_OBSERVER_BOUNDARY |
 | S3-ZK-0052 | P8.1 found no valid production target yet | NEGATIVE_RESULT |
+| [[S3-ZK-0053]] | Workflow provenance is execution provenance | SUPPORTED_BOUNDED_MODEL |
+
+| [[S3-ZK-0054]] | A possibility ledger does not by itself authorize a rewrite | NEGATIVE_RESULT |
+
+## P8.3 path-complete memory-state necessity
+
+`S3-ZK-0055` records that path-complete necessity and dynamic hotness are
+separate evidence layers. A bounded definite register-init-check population was
+measured, but it is emulator-only, has no native structural effect, and lacks a
+proof-bearing Assembly/runtime contract with checked fallback. P8.3 is
+`NO_VALID_TARGET_YET`.
+
+## P8 final production closure
+
+`S3-ZK-0056` records the merged P8 result: a bounded fail-closed native
+recomputation can consume validated Assembly facts without adding forgeable
+public proof metadata. PR #178 removed only proven redundant native
+initialization checks, preserved the checked fallback, and passed the exact
+candidate Linux full suite. Runtime and compile-time measurements remain
+unavailable under a comparable protocol.
+
+## P9 causal frame and representation attribution
+
+| [[S3-ZK-0057]] | Observed frame residency is not established spill causality | NEGATIVE_RESULT |
+
+`S3-EXP-0032` records the P9 selection experiment. A validated
+`MODELLED_NATIVE_DYNAMIC_COUNT` sidecar model covered 15 workloads without
+rerunning the frozen external benchmark. Direct indexed addressing falsified
+the current fixed-array base-reload hypothesis, while 5431 observed
+stack-resident frame-value events were only 3.793895956018% of the O1 model
+and did not establish spill causality. P9 therefore closes as
+`NO_VALID_TARGET_YET`; the next smallest experiment is proof-bearing
+loop-carried bounds/validity analysis with checked fallback and failure-order
+controls.
+
+## P9.1 bounds and validity contract attribution
+
+| [[S3-ZK-0058]] | A hot safety family can still have no sound optimization target | NEGATIVE_RESULT |
+
+`S3-EXP-0033` reproduced the P9 model exactly across 15 workloads. Explicit
+safety realization was 65224 modelled dynamic x86 lines, but the minimum
+local-constant, success-edge, loop and same-object check-reuse models found no
+proven eligible site. Bounds and memory initialization remain material;
+`AVOIDABLE_DYNAMIC=0`. P9.1 closes as `NO_VALID_TARGET_YET`.
+
+## P9.2 explicit range-fact contract
+
+| [[S3-ZK-0059]] | Explicit range facts did not yield a safe target | NEGATIVE_RESULT |
+
+`S3-EXP-0034` compared recomputation, private verified facts and a public
+Assembly contract on the A+B correctness candidate. The old model reproduced
+at `289500`; A+B measured `289512` as a correctness-only delta. Classification
+coverage stayed `1.0`, but `AVOIDABLE_DYNAMIC=0` and no provably redundant site
+survived the invalidator controls. P9.2 closes as `NO_VALID_TARGET_YET`.
+
+## P9.3 UNKNOWN causal attribution
+
+| [[S3-ZK-0060]] | UNKNOWN is not an optimization opportunity | NEGATIVE_RESULT |
+
+`S3-EXP-0035` reproduced the A+B model at `289512` and showed that all
+`UNKNOWN_DYNAMIC=26456` events belong exactly to the existing P8
+`REGISTER_INITIALIZATION_CHECK` population. The class has `30096` static lines,
+`8892` structural sites and six workloads. No P9-relevant UNKNOWN dynamic
+population remains, so `MAX_THEORETICAL_AVOIDABLE_DYNAMIC=0` and the P9
+bounds/validity line closes as `NO_P9_BOUNDS_OPPORTUNITY`.
+
+## P10 global dynamic opportunity census
+
+| [[S3-ZK-0061]] | A hot dynamic family is not an optimization opportunity | NEGATIVE_RESULT |
+
+`S3-EXP-0036` reproduced the exact A+B sidecar at `289512` across 15
+workloads. Instruction-limit accounting was the largest family at `99036`,
+but it remained policy-required; bounds and memory validity were closed by
+P9; semantic payload was not treated as overhead; and frame canonicalization
+at `39081` did not establish true spill. No concrete avoidable example or
+positive potentially-avoidable population was found. P10 closes as
+`NO_VALID_TARGET_YET` with no next target.
+
+## P10.1 frame representation causal decomposition
+
+| [[S3-ZK-0062]] | Frame residency and spill are different causal phenomena | NEGATIVE_RESULT |
+
+`S3-EXP-0037` decomposed the exact P10 frame class on the frozen A+B candidate:
+`14795` dynamic logical frame-value traffic plus `24286` other frame
+representation events, exactly reconciling to `39081`. The `10063`
+stack-resident value count is an overlay, not evidence of true spill. The
+sidecar lacks the liveness, pressure, frame-slot, call-clobber and
+counterfactual facts needed to prove avoidability. P10.1 therefore closes as
+`NO_VALID_TARGET_YET` with `FRAME_LINE_STATUS=CLOSE`; Correction B's `240`
+TMOV events remain out of scope.

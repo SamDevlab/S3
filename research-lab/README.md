@@ -56,6 +56,25 @@ For a structural lab-only check:
 python research-lab/tools/validate_lab.py
 ```
 
+## Workflow provenance containment
+
+Automation policy is part of the state of the exact ref being published.
+Before a future remote write, use the local bounded simulator against the
+proposed commit, target branch, and diff base:
+
+```bash
+python research-lab/tools/validate_remote_write.py \
+  --target-ref research/zettelkasten-lab-20260812 \
+  --target-head-before <REMOTE_HEAD> \
+  --proposed-head <LOCAL_PROPOSED_HEAD> \
+  --event push
+```
+
+The tool returns exit 0 only for `PROVEN_ZERO_ACTIONS`. Unsupported YAML,
+unknown trigger shapes, pull-request merge semantics, and parsing failures
+return `UNKNOWN` and a non-zero exit. A `PROVEN_ZERO_ACTIONS` result answers
+only the trigger question; it does not authorize a remote write.
+
 ## Durable entry points
 
 ```text
@@ -69,7 +88,9 @@ research-lab/
 ├── DECISIONS.md
 ├── SESSION_LOG.md
 ├── tools/
-│   └── validate_lab.py
+│   ├── validate_lab.py
+│   ├── validate_remote_write.py
+│   └── test_validate_remote_write.py
 ├── sources/
 │   └── README.md
 ├── zettelkasten/

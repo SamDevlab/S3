@@ -234,8 +234,270 @@ P8_STARTED=NO
 SHUTDOWN_AUTHORIZED=NO
 ```
 
+## Current P8.2 checkpoint
+
+P8.2 `PRESERVED_POSSIBILITIES_COLLAPSE_POINTS_V1` completed as a negative
+research result. The containment publication is at `d852a611`, the production
+anchor remains `631b51e70562a33183ac14d0be5bbe2ddd140779`, and repository-level
+GitHub Actions are disabled. No new Actions run occurred after publication.
+
+The possibility-set notation is retained as a research ledger, not as a
+compiler abstraction. The seven tracked families and their concrete witnesses
+are in `reconciliations/P8_2_PRESERVED_POSSIBILITIES_20260813.md`. The only
+proven conditional collapse is the already-shipped P7 `TCMP->TBR3` case. The
+strongest unresolved family is initialization/memory-state materialization,
+but P8.1 observer and failure evidence prevents a path-complete promotion.
+
+```text
+P8_2_STATUS=COMPLETE_NO_VALID_TARGET_YET
+P8_SELECTION=NO_VALID_TARGET_YET
+P8_STARTED=NO
+PRODUCTION_CODE_CHANGED=NO
+P9_STARTED=NO
+SHUTDOWN_AUTHORIZED=NO
+```
+
+The next research step, if authorized in a later campaign, is one bounded
+path-complete observer-aware attribution experiment. Do not start production
+P8 or P9 from this checkpoint.
+
 The production change is limited to liveness-gated direct lowering of an
 adjacent `TCMP`/`TBR3` pair. Keep successor-observer fallback, instruction
 limits, initialization checks, f64 unordered behavior, ABI, reference, and
 memory obligations intact. Do not start P8 or issue shutdown. Read the external
 P7 final report and `S3-ZK-0049` before proposing another target.
+
+## Authoritative current checkpoint: P8.3 closed without a production target
+
+P8.3 performed the required bounded path-complete memory-state necessity
+experiment on `631b51e70562a33183ac14d0be5bbe2ddd140779`.
+
+```text
+P8_3_STATUS=COMPLETE_NO_VALID_TARGET_YET
+P8_SELECTION=NO_VALID_TARGET_YET
+P8_STARTED=NO
+PRODUCTION_CODE_CHANGED=NO
+FULL_SUITE_RUN=NO
+P9_STARTED=NO
+SHUTDOWN_AUTHORIZED=NO
+```
+
+The largest bounded accidental subclass was a definite non-address-taken
+`REGISTER_INIT_CHECK` family with 1660 dynamic events in 11 workloads. It is
+emulator-only, has no measured native effect, and cannot replace the public
+runtime safety check until proof-bearing Assembly transport and exact fallback
+exist. TADDR remains unsupported by the existing emulator. Read
+`research-lab/reconciliations/P8_3_MEMORY_STATE_NECESSITY_20260813.md`,
+`S3-EXP-0030`, and `S3-ZK-0055` before any future campaign. Do not start P9 or
+issue shutdown.
+
+## Authoritative P8 final closure - 2026-08-14
+
+The previous P8.3 negative checkpoint was superseded by the final P8 promotion.
+P8 is merged and must not be restarted:
+
+```text
+CURRENT_ORIGIN_MAIN=5dd6844607ba3a2d5830ed836fb9026eed86d0fb
+P8_NAME=P8_PROOF_GUIDED_NATIVE_INIT_CHECK_ELISION
+P8_BASE=631b51e70562a33183ac14d0be5bbe2ddd140779
+P8_IMPLEMENTATION_HEAD=87eb49cd19a78570f07d66ce7982650c8b422210
+P8_PR=178
+P8_MERGE=5dd6844607ba3a2d5830ed836fb9026eed86d0fb
+P8_STATUS=COMPLETE_MERGED
+P8_FULL_SUITE_HEAD=87eb49cd19a78570f07d66ce7982650c8b422210
+P8_FULL_SUITE_EXIT=0
+P8_ACTIONS_ENABLED=NO
+P8_NEW_ACTIONS_RUNS=0
+P9_STARTED=NO
+SHUTDOWN_AUTHORIZED=NO
+REBOOT_EXECUTED=NO
+```
+
+The selected implementation is conservative native recomputation from
+validated CFG/use-def facts. It does not add public proof metadata. P8.3's
+416 safe static sites and 1660 dynamic events matched exactly; 402 sites and
+1558 events were native-consumable. All 24 Linux O0/O1 pairs preserved
+semantics. Structural totals changed checks 550->148, instructions
+20903->20099, branches 4746->4344 and text 107709->102646; loads/stores stayed
+10175. Runtime and compile-time measurements are unavailable/not-comparable.
+
+Read `research-lab/HANDOFF.md`, `STATE.json`,
+`reconciliations/P8_FINAL_PROOF_GUIDED_INIT_ELISION_20260814.md`,
+`experiments/S3-EXP-0031-p8-final-proof-guided-init-elision.md`, and
+`zettelkasten/notes/S3-ZK-0056.md` before any future work. P9 remains
+unauthorized; only an explicitly requested read-only readiness audit is
+allowed.
+
+## P9 selection checkpoint
+
+P9 selection research is now closed as `NO_VALID_TARGET_YET`. Do not start
+production P9 from this checkpoint. The validated sidecar model covered 15
+workloads and counted 143151 O1 modelled native dynamic x86 executions. The
+5431 observed stack-resident frame-value events were exactly
+3.793895956018% of that model; they do not establish spills or a removable
+family. Direct indexed addressing falsified the current fixed-array base
+reload hypothesis. Register allocation is not promoted automatically.
+
+The strongest candidate to carry forward is the bounds-validity contract
+surface. The next smallest research experiment is proof-bearing loop-carried
+TLOAD/TSTORE bounds and validity sharing or hoisting with checked fallback,
+failure-order, initialization, immutability and instruction-limit controls.
+No production code, benchmark rerun, Actions execution or shutdown occurred.
+Read `research-lab/HANDOFF.md`, `STATE.json`,
+`reconciliations/P9_TARGET_SELECTION_CAUSAL_FRAME_20260814.md`,
+`experiments/S3-EXP-0032-p9-causal-frame-representation-attribution.md`, and
+`zettelkasten/notes/S3-ZK-0057.md` before future work.
+
+## P9.1 bounds/validity checkpoint
+
+P9.1 is closed as `NO_VALID_TARGET_YET`. The P9 dynamic model reproduced
+exactly at 289500 across 15 workloads. Explicit safety realization was 65224
+modelled dynamic x86 lines; bounds were 17464 and memory initialization 6660.
+The coherent P9.1 result was published at research commit
+`05f08dcf574ff2ab4bab4539e74d6136ef3fd45c`.
+The minimum local-constant, success-edge, loop and same-object reuse models
+found zero proven eligible sites. `AVOIDABLE_DYNAMIC=0`.
+
+Do not start production P9. Register initialization remains P8 territory;
+slices were not silently treated as fixed arrays. The next discriminating
+question is proof-bearing loop-carried object/index/length identity through
+the Assembly contract with all invalidators closed. No production code,
+benchmark rerun, Actions run or shutdown occurred. Read
+`research-lab/HANDOFF.md`, `STATE.json`,
+`reconciliations/P9_1_BOUNDS_VALIDITY_CONTRACT_ATTRIBUTION_20260814.md`,
+`experiments/S3-EXP-0033-p9-1-bounds-validity-contract-attribution.md`, and
+`zettelkasten/notes/S3-ZK-0058.md` before future work.
+
+## P9.2 explicit range-fact checkpoint
+
+P9.2 is complete research-only on correctness candidate A+B, not main:
+
+```text
+P9_2_TARGET_SHA=045bbb1427af941b71d28b93cf1e5fe9bf245af7
+P9_2_TARGET_IS_MAIN=NO
+OLD_P9_MODEL_REPRODUCED=YES
+OLD_P9_MODEL=289500
+POST_CORRECTNESS_MODEL=289512
+CORRECTNESS_ONLY_DELTA=12
+REQUIRED_DYNAMIC=65224
+AVOIDABLE_DYNAMIC=0
+UNKNOWN_DYNAMIC=26456
+CLASSIFICATION_COVERAGE=1.0
+PROVABLY_REDUNDANT_SITES=0
+MODEL_A_RECOMPUTE=PASS_NO_SAFE_AVOIDABLE_SUBCLASS
+MODEL_B_PRIVATE_FACT=NOT_NEEDED
+MODEL_C_PUBLIC_CONTRACT=REJECTED_NOT_JUSTIFIED
+P9_2_SELECTION=NO_VALID_TARGET_YET
+P9_PRODUCTION_STARTED=NO
+```
+
+All listed invalidators retain checks. Do not add public Assembly proof
+metadata, create a P9 production branch, rerun benchmarks, execute Actions or
+authorize shutdown from this negative result. Read
+`reconciliations/P9_2_EXPLICIT_RANGE_FACT_CONTRACT_20260814.md`,
+`reconciliations/P9_2_RESULT.json`,
+`experiments/S3-EXP-0034-p9-2-explicit-range-fact-contract.md`, and
+`zettelkasten/notes/S3-ZK-0059.md`.
+
+## P9.3 authoritative checkpoint - 2026-08-14
+
+P9.3 closed the UNKNOWN causal attribution line on correctness candidate A+B:
+
+```text
+P9_3_TARGET_SHA=045bbb1427af941b71d28b93cf1e5fe9bf245af7
+P9_3_BASELINE=289512
+P9_3_BASELINE_REPRODUCED=YES
+TOTAL_UNKNOWN_DYNAMIC=26456
+UNKNOWN_CLASSIFICATION_COVERAGE=1.0
+P8_REGISTER_INIT_UNKNOWN_STATIC=30096
+P8_REGISTER_INIT_UNKNOWN_DYNAMIC=26456
+P9_RELEVANT_UNKNOWN_DYNAMIC=0
+MAX_THEORETICAL_AVOIDABLE_DYNAMIC=0
+P9_3_SELECTION=NO_P9_BOUNDS_OPPORTUNITY
+BOUNDS_VALIDITY_LINE_STATUS=CLOSE
+P9_4_AUTHORIZED_BY_EVIDENCE=NO
+NEXT_GLOBAL_OPTIMIZATION_QUESTION=NO_NEW_TARGET_YET
+P9_PRODUCTION_STARTED=NO
+```
+
+All UNKNOWN events are the existing P8 register-init mechanism. Do not reopen
+P9 bounds/validity, strengthen range analysis to change labels, start P9.4,
+modify production, run benchmarks, execute Actions, or authorize shutdown.
+The A+B integration reconciliation is static only and remains blocked because
+feature publication is safe but PR semantics are UNKNOWN and main publication
+would make Actions possible.
+
+## P10 authoritative checkpoint - 2026-08-14
+
+P9 is closed and P9.4 is forbidden. P10 completed a research-only global
+dynamic opportunity census on the frozen A+B correctness candidate:
+
+```text
+P10_CAMPAIGN=P10_GLOBAL_DYNAMIC_OPPORTUNITY_CENSUS_V1
+P10_STATUS=COMPLETE_RESEARCH_ONLY
+P10_TARGET_SHA=045bbb1427af941b71d28b93cf1e5fe9bf245af7
+P10_BASELINE_EXPECTED=289512
+P10_BASELINE_REPRODUCED=YES
+P10_WORKLOADS=15
+P10_CLASSIFICATION_COVERAGE=1.0
+TOP_DYNAMIC_FAMILY=INSTRUCTION_LIMIT_ACCOUNTING
+TOP_DYNAMIC_FAMILY_DYNAMIC=99036
+BOUNDS_DYNAMIC=56500
+FRAME_CANONICALIZATION_DYNAMIC=39081
+SEMANTIC_PAYLOAD_DYNAMIC=38050
+MEMORY_VALIDITY_DYNAMIC=29408
+TRUE_SPILL=UNKNOWN_NOT_ESTABLISHED
+PROVABLY_AVOIDABLE_DYNAMIC=0
+POTENTIALLY_AVOIDABLE_DYNAMIC=0
+CONCRETE_AVOIDABLE_EXAMPLE_FOUND=NO
+P10_SELECTION=NO_VALID_TARGET_YET
+NEXT_GLOBAL_TARGET=NONE
+PRODUCTION_OPTIMIZATION_STARTED=NO
+```
+
+Do not select a target because its counter is large. Do not reopen P9, modify
+the A+B candidate, retry integration without provenance changes, run a
+benchmark, execute Actions or authorize shutdown. The next campaign requires
+a new bounded causal question and a concrete falsifiable removable example.
+
+## P10.1 authoritative checkpoint - 2026-08-14
+
+P10.1 completed a research-only causal decomposition of the broad frame class
+on the frozen A+B correctness candidate. It did not change production, main,
+the candidate, Actions configuration or integration state:
+
+```text
+P10_1_CAMPAIGN=P10_1_FRAME_REPRESENTATION_CAUSAL_DECOMPOSITION_V1
+P10_1_STATUS=COMPLETE_RESEARCH_ONLY
+P10_1_TARGET_SHA=045bbb1427af941b71d28b93cf1e5fe9bf245af7
+P10_1_BASELINE=289512
+P10_1_BASELINE_REPRODUCED=YES
+P10_1_WORKLOADS=15
+FRAME_REPRESENTATION_BROAD_DYNAMIC=39081
+LOGICAL_FRAME_VALUE_TRAFFIC_DYNAMIC=14795
+OTHER_FRAME_REPRESENTATION_DYNAMIC=24286
+PHYSICAL_STACK_VALUE_TRAFFIC_DYNAMIC=10063
+TMOV_COPY_MATERIALIZATION_DYNAMIC=240
+TRUE_SPILL_DYNAMIC=0_PROVEN
+TRUE_RELOAD_DYNAMIC=0_PROVEN
+MAX_REGISTER_PRESSURE_OBSERVED=UNKNOWN_NOT_MEASURED
+ORACLE_USED=NO
+P10_1_SELECTION=NO_VALID_TARGET_YET
+FRAME_LINE_STATUS=CLOSE
+NEXT_EXPERIMENT=NONE_WITHIN_FRAME
+PRODUCTION_OPTIMIZATION_STARTED=NO
+CORRECTNESS_INTEGRATION_STATUS=STILL_BLOCKED_BY_PROVENANCE
+LAB_CONSISTENCY=PASS
+REMOTE_WRITE_PROVENANCE=PROVEN_ZERO_ACTIONS
+GITHUB_ACTIONS_EXECUTED=NO
+BENCHMARK_EXECUTED=NO
+SHUTDOWN_AUTHORIZED=NO
+```
+
+Do not call stack residence spill, do not reopen Correction B or P9, and do
+not promote production work without a new causal example and valid
+counterfactual. Before publishing the P10.1 checkpoint, run `validate_lab.py`
+against the exact candidate and require `LAB_CONSISTENCY=PASS` and
+`TARGET_HEAD_MATCH=YES`; run `validate_remote_write.py` and require
+`PROVEN_ZERO_ACTIONS`. No PR, benchmark, Actions execution or shutdown is
+authorized.

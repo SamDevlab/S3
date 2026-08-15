@@ -195,6 +195,22 @@ S3-EXP-0001/0003/0004/0006/0007/0008 mathematical placement models
 
 Do not let a speculative model displace the measured post-P4 bottleneck without causal evidence.
 
+### S3-EXP-0034 - Explicit range-fact contract
+
+STATUS=SUPPORTED_NEGATIVE
+
+File: `S3-EXP-0034-p9-2-explicit-range-fact-contract.md`
+
+P9.2 compared recomputation at the native consumer, a private verified fact
+keyed by structural `InstructionSite`, and a public Assembly contract on the
+stacked A+B correctness candidate. The old P9 model reproduced at `289500`;
+the candidate measured `289512` as a correctness-only delta. Across 15
+workloads, classification coverage was `1.0`, but
+`AVOIDABLE_DYNAMIC=0` and `PROVABLY_REDUNDANT_SITES=0`. Model A was sufficient
+to close the negative; Model B was not needed and Model C was not justified.
+All invalidators retain checks. P9.2 is `NO_VALID_TARGET_YET` and did not
+start production.
+
 ## Experiment template
 
 ```text
@@ -329,3 +345,162 @@ process/loader cost and S3-controlled cost are not yet separated.
 Promotion result: `NO_VALID_TARGET_YET`. No production implementation was
 started. The next useful experiment is path-complete observer-aware attribution
 of initialization and memory-state commitments.
+
+### S3-EXP-0028 - Exact-ref workflow-trigger containment
+
+STATUS=COMPLETE_LOCAL_ONLY
+
+File: `../tools/validate_remote_write.py` and `../tools/test_validate_remote_write.py`
+
+Hypothesis: a bounded fail-closed local validator can distinguish the
+branch-specific incident state from a repaired zero-run state using the
+proposed workflow head, target ref, event, and changed paths without remote
+execution.
+
+Results:
+
+- the historical research push `e4ea4ca -> 06ed794` classified as
+  `ACTIONS_POSSIBLE` with one matching workflow;
+- the local repaired candidate classified as `PROVEN_ZERO_ACTIONS` with zero
+  possible push runs;
+- controls A-F passed, including malformed and unsupported inputs returning
+  `UNKNOWN` and non-zero;
+- the repaired state was published at `d852a611` after repository-level
+  Actions were disabled; no new run followed publication.
+
+This is a research-infrastructure containment result, not a compiler
+optimization or a production CI authorization.
+
+### S3-EXP-0029 - P8.2 preserved possibilities and collapse points
+
+`S3-EXP-0029` records the P8.2 negative result. A seven-entry possibility
+collapse ledger was compared with direct producer/consumer rules. The ledger
+is useful for organizing research witnesses, but no new collapse had a
+path-complete safety proof and the only proven conditional control collapse is
+already P7. No P8 production target was promoted.
+
+File: `../reconciliations/POSSIBILITY_COLLAPSE_LEDGER_P8_2.json`
+
+### S3-EXP-0030 - P8.3 path-complete memory-state necessity
+
+STATUS=COMPLETE_NO_VALID_TARGET_YET
+
+The exact P7 main head was analyzed with a simple CFG/use-def worklist fixed
+point and a semantics-preserving emulator boundary tracker. The largest bounded
+accidental subclass was definite `REGISTER_INIT_CHECK` in functions without
+call/reference/slice visibility: 1660 dynamic events across 11 workloads. It
+has no measured native effect, the public runtime proof transport is absent,
+and TADDR remains unsupported by the existing emulator. No production target
+was promoted.
+
+Files: `p8_3_memory_state_necessity.py`,
+`p8_3_memory_state_necessity.json`, and
+`test_p8_3_memory_state_necessity.py`.
+
+### S3-EXP-0031 - P8 final proof-guided native initialization-check elision
+
+STATUS=SUPPORTED_AND_MERGED_PR_178
+
+P8.4 was promoted after the exact candidate reproduced the P8.3 bounded safe
+population and established a native effect. The selected implementation is
+fail-closed native recomputation from existing CFG/use-def facts; it does not
+transport a general proof through public Assembly. Across 24 Linux O0/O1 pairs,
+semantics matched baseline and aggregate initialization checks changed from
+550 to 148. PR #178 merged the three-file production diff as
+`5dd6844607ba3a2d5830ed836fb9026eed86d0fb`.
+
+The full suite ran once on exact candidate
+`87eb49cd19a78570f07d66ce7982650c8b422210` and exited 0. Actions remained
+disabled and no candidate-branch run existed. Runtime and compile-time results
+were not measured under a comparable protocol.
+
+### S3-EXP-0032 - P9 causal frame and representation attribution
+
+STATUS=COMPLETE_NO_VALID_TARGET_YET
+
+The validated Assembly-to-x86 sidecar model covered nine internal workloads
+and six frozen JSMN fixtures using `MODELLED_NATIVE_DYNAMIC_COUNT`. External
+correctness and sidecar identity passed. The O1 model total was 143151;
+instruction-limit, bounds, frame, semantic-payload and memory-validity sites
+dominated. Direct indexed addressing falsified the current fixed-array
+base-reload hypothesis. Observed stack-resident frame-value events were 5431,
+or 3.793895956018% of O1, and true spill causality was not established.
+
+P9 closes with `NO_VALID_TARGET_YET`. No production compiler change, branch,
+PR, benchmark rerun or Actions execution occurred. See
+`S3-EXP-0032-p9-causal-frame-representation-attribution.md` and
+`reconciliations/P9_TARGET_SELECTION_CAUSAL_FRAME_20260814.md`.
+
+### S3-EXP-0033 - P9.1 bounds and validity contract attribution
+
+STATUS=COMPLETE_NO_VALID_TARGET_YET
+
+P9.1 reproduced the `MODELLED_NATIVE_DYNAMIC_COUNT` total of 289500 across 15
+workloads. Explicit safety realization was 65224 modelled dynamic x86 lines;
+bounds were 17464 and memory initialization was 6660. The bounded local
+constant, success-edge, loop and same-object check-reuse models found zero
+proven eligible sites. Focused native correctness passed for five candidate
+workloads. No production compiler change, benchmark rerun or Actions run
+occurred. See `S3-EXP-0033-p9-1-bounds-validity-contract-attribution.md` and
+`reconciliations/P9_1_BOUNDS_VALIDITY_CONTRACT_ATTRIBUTION_20260814.md`.
+
+### S3-EXP-0034 - P9.2 explicit range-fact contract
+
+STATUS=COMPLETE_NO_VALID_TARGET_YET
+
+P9.2 compared bounded recomputation, a private verified fact and a public
+Assembly contract on the A+B correctness candidate. The old model reproduced
+at 289500; A+B measured 289512 as a correctness-only delta. Classification
+coverage remained 1.0, but no provably redundant site or dynamic event
+survived the invalidator controls. See
+`S3-EXP-0034-p9-2-explicit-range-fact-contract.md` and
+`../reconciliations/P9_2_EXPLICIT_RANGE_FACT_CONTRACT_20260814.md`.
+
+### S3-EXP-0035 - P9.3 UNKNOWN causal attribution
+
+STATUS=SUPPORTED_NEGATIVE
+
+P9.3 reproduced the A+B P9 sidecar at 289512 and reconciled the complete
+26456-event UNKNOWN population. All events are exactly the existing P8
+`REGISTER_INITIALIZATION_CHECK` class: 30096 static lines, 8892 structural
+sites and six workloads. No P9-relevant UNKNOWN dynamic population remains,
+so the maximum theoretical P9 avoidable dynamic is zero and the bounds/
+validity line closes without a P9.4. See
+`S3-EXP-0035-p9-3-unknown-causal-attribution.md` and
+`../reconciliations/P9_3_RESULT.json`.
+
+### S3-EXP-0036 - P10 global dynamic opportunity census
+
+STATUS=COMPLETE_NO_VALID_TARGET_YET
+
+P10 consumed the exact A+B P9 sidecar on 15 workloads and 30 O0/O1 runs. It
+reproduced 289512 and established a complete one-primary-class partition.
+Instruction-limit accounting was 99036 dynamic lines, bounds 56500, frame
+canonicalization 39081, semantic payload 38050 and memory validity 29408.
+The top non-semantic necessity ledgers found no proven removable population;
+frame stack residency did not establish spill causality. No concrete avoidable
+example was found, so `P10_SELECTION=NO_VALID_TARGET_YET` and no production
+target was selected. See `S3-EXP-0036-p10-global-dynamic-opportunity-census.md`
+and `../reconciliations/P10_GLOBAL_DYNAMIC_OPPORTUNITY_CENSUS_20260814.md`.
+
+### S3-EXP-0037 - P10.1 frame representation causal decomposition
+
+STATUS=COMPLETE_NO_VALID_TARGET_YET
+
+P10.1 consumed the exact P10 sidecar on the frozen A+B correctness candidate
+and reproduced `289512` across 15 workloads. The broad
+`FRAME_CANONICALIZATION=39081` class reconciles exactly into logical
+frame-value traffic `14795` and other frame representation `24286`. The
+`10063` stack-resident frame-value events are an overlay and are not relabeled
+as spill. Correction B's TMOV materialization is recorded separately at `240`
+dynamic events and was not reopened.
+
+The sidecar does not provide the causal facts needed for exact load/store
+direction, liveness, pressure, frame slots, call-clobber survivors or a valid
+counterfactual. True spill/reload and an avoidable non-spill example were not
+proven; all unresolved frame events are `ATTRIBUTION_LIMIT_ONLY`. P10.1 closes
+the frame line as `NO_VALID_TARGET_YET` with `FRAME_LINE_STATUS=CLOSE`. No
+production code, benchmark, Actions run or shutdown occurred. See
+`S3-EXP-0037-p10-1-frame-representation-causal-decomposition.md`,
+`../reconciliations/P10_1_FRAME_REPRESENTATION_CAUSAL_DECOMPOSITION_20260814.md`,
+and `../reconciliations/P10_1_RESULT.json`.

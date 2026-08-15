@@ -1,0 +1,33 @@
+{
+  "target_main_sha": "631b51e70562a33183ac14d0be5bbe2ddd140779",
+  "target_head": "631b51e70562a33183ac14d0be5bbe2ddd140779",
+  "target_head_match": true,
+  "corpus": "tests/golden/**/*.assembly.txt",
+  "corpus_kind": "small_static_triage_only",
+  "assembly_files": 7,
+  "instructions": 370,
+  "opcode_counts": {
+    "TADD": 2,
+    "TBR3": 20,
+    "TCALL": 25,
+    "TCMP": 20,
+    "TCONST": 153,
+    "TJMP": 42,
+    "TLOAD": 15,
+    "TMOV": 4,
+    "TRET": 46,
+    "TSTORE": 43
+  },
+  "adjacent_pattern_counts": {
+    "TADDR->TREFLOAD": 0,
+    "TCMP->TBR3": 20,
+    "TLOAD->TSTORE": 0,
+    "TMOV->TMOV": 0,
+    "TREFLOAD->TREFSTORE": 0,
+    "TREL->TBR3": 0,
+    "TSTORE->TLOAD": 0
+  },
+  "dynamic_frequency": "UNAVAILABLE",
+  "semantic_safety": "NOT_INFERRED_FROM_ADJACENCY",
+  "promotion": "NO_VALID_TARGET_YET"
+}

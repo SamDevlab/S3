@@ -684,3 +684,429 @@ C:/Users/samue/Downloads/S3/production-reports/p7-necessary-vs-accidental-interm
 
 Do not start P8 or issue a shutdown command. Preserve the original checkout's
 two untracked artifacts and keep the production branch available for audit.
+
+## Workflow provenance containment - 2026-08-13
+
+P8.1 remains complete with `P8_SELECTION=NO_VALID_TARGET_YET`; P9 remains
+unauthorized. A later read-only reconciliation found that the research ref's
+`tests.yml` had an unrestricted `push` trigger even though the exact production
+main workflow was filtered to `main` and production-relevant paths. The push
+of `06ed79449dcd917c3213570389a3639f6ad0be24` consequently created Actions run
+`31748403817`, which failed immediately under the exhausted allowance. No
+rerun, retry, cancellation, or further remote write followed discovery.
+
+The direct cause was the research workflow trigger; the process cause was
+auditing `main` instead of the workflow state of the proposed target ref; the
+control gap was the absence of a remote-write automation provenance gate in
+`validate_lab.py`. The durable research branch was repaired and published at
+`d852a611f0c824436c736ff380d5cfb33d86feb5`; repository-level Actions are now
+disabled and no new run followed publication.
+
+The isolated local branch
+`local/workflow-provenance-containment-20260813` contains the published
+repair. Its `tests.yml` now restricts `push` to `main` with the current
+production path policy, while preserving the research branch's job bodies.
+`m138-docker.yml` already restricted `push` to `main` and was not changed.
+
+`research-lab/tools/validate_remote_write.py` models the bounded push trigger
+surface using workflow files from the proposed head, the target ref, and the
+computed diff. It classifies the old push as `ACTIONS_POSSIBLE` and the local
+repaired candidate as `PROVEN_ZERO_ACTIONS`; malformed or unsupported inputs
+are `UNKNOWN` and non-zero. This is a local proof, not write authorization.
+
+```text
+LOCAL_REPAIR_BRANCH=local/workflow-provenance-containment-20260813
+REMOTE_PUBLICATION_PENDING=NO
+REMOTE_WRITES_THIS_CAMPAIGN=0
+GITHUB_ACTIONS_RUNS_TRIGGERED_THIS_CAMPAIGN=0
+P8_STARTED=NO
+P9_STARTED=NO
+SHUTDOWN_AUTHORIZED=NO
+```
+
+## P8.2 checkpoint: preserved possibilities
+
+The containment repair was subsequently published at `d852a611` to
+`research/zettelkasten-lab-20260812`. Repository-level Actions are disabled;
+the remote run count after publication is zero. The exact production anchor is
+`631b51e70562a33183ac14d0be5bbe2ddd140779`.
+
+P8.2 completed a bounded possibility-collapse audit and recorded
+`S3-EXP-0029`, `S3-ZK-0054`, and
+`reconciliations/P8_2_PRESERVED_POSSIBILITIES_20260813.md`. The ledger is a
+research notation only. Initialization and memory-state materialization remain
+the strongest unresolved family, but observer/failure/alias/call/successor
+witnesses prevent promotion. The simplicity challenger remains local
+producer/consumer rules.
+
+```text
+P8_2_STATUS=COMPLETE_NO_VALID_TARGET_YET
+P8_SELECTION=NO_VALID_TARGET_YET
+P8_STARTED=NO
+PRODUCTION_CODE_CHANGED=NO
+P9_STARTED=NO
+SHUTDOWN_AUTHORIZED=NO
+```
+
+Before any future P8 implementation, run one bounded path-complete
+observer-aware attribution experiment. Do not reopen broad compiler triage or
+start P9.
+
+## P8.3 checkpoint: path-complete memory-state necessity - 2026-08-13
+
+P8.3 completed the bounded experiment on exact production HEAD
+`631b51e70562a33183ac14d0be5bbe2ddd140779`. The fixed-point CFG/use-def model
+and emulator boundary tracker passed three focused control tests, 12 workloads,
+and 24 Linux native O0/O1 pairs. The largest bounded accidental family was
+definite register initialization checks, but this is an emulator-only safety
+check with no measured native reduction. Calls, references, slices, failure
+paths, loops and aliases remain conservative, and TADDR is an explicit emulator
+observability gap.
+
+```text
+P8_3_STATUS=COMPLETE_NO_VALID_TARGET_YET
+P8_SELECTION=NO_VALID_TARGET_YET
+P8_STARTED=NO
+PRODUCTION_CODE_CHANGED=NO
+FULL_SUITE_RUN=NO
+P9_STARTED=NO
+SHUTDOWN_AUTHORIZED=NO
+```
+
+The authoritative experiment is `S3-EXP-0030`, the new zettel is
+`S3-ZK-0055`, and the reconciliation is
+`reconciliations/P8_3_MEMORY_STATE_NECESSITY_20260813.md`. Do not reopen this
+hypothesis without proof-bearing Assembly transport, checked fallback, and a
+measured emulator-cost benefit.
+
+## Authoritative current checkpoint: P8 complete - 2026-08-14
+
+P8 is now a real merged production capability, not the earlier P8.3 negative
+research checkpoint. The final mechanism is bounded fail-closed native
+recomputation of definite register initialization at the x86-64 native
+consumer. Generic proof transport was tested and rejected as unnecessary; the
+public Assembly/verifier trust boundary is unchanged.
+
+```text
+P8_NAME=P8_PROOF_GUIDED_NATIVE_INIT_CHECK_ELISION
+P8_BASE=631b51e70562a33183ac14d0be5bbe2ddd140779
+P8_IMPLEMENTATION_HEAD=87eb49cd19a78570f07d66ce7982650c8b422210
+P8_PR=178
+P8_MERGE=5dd6844607ba3a2d5830ed836fb9026eed86d0fb
+ORIGIN_MAIN=5dd6844607ba3a2d5830ed836fb9026eed86d0fb
+RESEARCH_HEAD_FINAL=9b8718e290653d1f6f8026a983f28cdb7c452313
+P8_IMPLEMENTATION_ANCESTOR=YES
+P8_MERGE_ANCESTOR=YES
+P8_FULL_SUITE_HEAD=87eb49cd19a78570f07d66ce7982650c8b422210
+P8_FULL_SUITE_EXIT=0
+P8_ACTIONS_ENABLED=NO
+P8_NEW_ACTIONS_RUNS=0
+P9_STARTED=NO
+SHUTDOWN_AUTHORIZED=NO
+REBOOT_EXECUTED=NO
+```
+
+P8.3's 416 static safe sites and 1660 dynamic events were reproduced exactly;
+402 sites and 1558 events reached the native consumer. Across 24 Linux O0/O1
+pairs, semantics matched baseline. Aggregate initialization checks fell
+550->148, static instructions 20903->20099, branches 4746->4344 and text
+107709->102646; loads/stores remained 10175. Runtime and compile-time values
+are unavailable under a directly comparable protocol and must not be inferred.
+
+The durable P8.4 result is in `S3-EXP-0031`, `S3-ZK-0056`, and
+`reconciliations/P8_FINAL_PROOF_GUIDED_INIT_ELISION_20260814.md`. Do not start
+P9 or reboot from this checkpoint.
+
+## Authoritative current checkpoint: P9 selection closed - 2026-08-14
+
+P9 selection research is complete and did not authorize a production target:
+
+```text
+P9_CAMPAIGN=P9_CAUSAL_FRAME_REPRESENTATION_ATTRIBUTION_V1
+P9_SELECTION=NO_VALID_TARGET_YET
+P9_STATUS=COMPLETE_RESEARCH_ONLY
+P9_STARTED=NO
+P9_PRODUCTION_COMPILER_CHANGED=NO
+P9_BENCHMARK_RERUN=NO
+P9_ACTIONS_EXECUTION=NO
+SHUTDOWN_AUTHORIZED=NO
+```
+
+The experiment `S3-EXP-0032` used the frozen P8 and benchmark evidence and a
+validated `MODELLED_NATIVE_DYNAMIC_COUNT` sidecar, not a hardware counter. It
+covered nine internal workloads and six frozen JSMN fixtures. The O1 model
+total was 143151; frame-value traffic was 7807 and observed stack-resident
+frame-value traffic was 5431, exactly 3.793895956018% of the model. Direct
+indexed addressing falsified the current fixed-array base-reload hypothesis.
+Stack residency did not establish spill causality, and register allocation is
+not promoted automatically.
+
+The strongest candidate to carry forward is the bounds-validity contract
+surface. The smallest next experiment is a proof-bearing loop-carried
+TLOAD/TSTORE bounds and validity sharing or hoisting analysis preserving
+initialization, immutability, instruction-limit, failure-order and checked
+fallback obligations. It is not part of this checkpoint. Read
+`reconciliations/P9_TARGET_SELECTION_CAUSAL_FRAME_20260814.md`,
+`experiments/S3-EXP-0032-p9-causal-frame-representation-attribution.md`, and
+`zettelkasten/notes/S3-ZK-0057.md` before any future work.
+
+## Authoritative current checkpoint: P9.1 closed - 2026-08-14
+
+P9.1 bounds/validity attribution is complete research only:
+
+```text
+P9_1_CAMPAIGN=P9_1_BOUNDS_VALIDITY_CONTRACT_ATTRIBUTION_V1
+P9_1_STATUS=COMPLETE_RESEARCH_ONLY
+P9_1_SELECTION=NO_VALID_TARGET_YET
+P9_1_STARTED=NO
+P9_1_RESEARCH_PUBLICATION_COMMIT=05f08dcf574ff2ab4bab4539e74d6136ef3fd45c
+P9_1_RESEARCH_HEAD_AT_PUBLICATION=05f08dcf574ff2ab4bab4539e74d6136ef3fd45c
+MODELLED_NATIVE_DYNAMIC_COUNT_REPRODUCED=YES
+MODELLED_DYNAMIC_TOTAL=289500
+WORKLOADS=15
+SAFETY_RELATED_DYNAMIC=65224
+BOUNDS_DYNAMIC=17464
+VALIDITY_DYNAMIC=6660
+AVOIDABLE_DYNAMIC=0
+UNKNOWN_DYNAMIC=26456
+NATIVE_FOCUSED=PASS
+PRODUCTION_COMPILER_CHANGED=NO
+EXTERNAL_BENCHMARK_RERUN=NO
+GITHUB_ACTIONS_EXECUTED=NO
+SHUTDOWN_AUTHORIZED=NO
+REMOTE_WRITE_PROVENANCE=PROVEN_ZERO_ACTIONS
+P9_2_RESEARCH_HEAD_FINAL=5717ca0aa03a8c54bb69007ac412ba528f143280
+```
+
+The safety family is material, but no minimum local fact model established a
+proven reusable object/index/length subset. The first observed boundary is
+the Assembly-to-emitter range-fact contract, where control shape exists but
+no explicit range fact is serialized. The strongest future question is a
+proof-bearing loop-carried access with all alias, call, mutation, lifetime,
+overflow and failure-order invalidators closed. Read
+`reconciliations/P9_1_BOUNDS_VALIDITY_CONTRACT_ATTRIBUTION_20260814.md`,
+`experiments/S3-EXP-0033-p9-1-bounds-validity-contract-attribution.md`, and
+`zettelkasten/notes/S3-ZK-0058.md` before any future work.
+
+## Authoritative current checkpoint: P9.2 closed - 2026-08-14
+
+P9.2 was research-only on the stacked correctness candidate A+B. It did not
+change production or imply that the candidate is main:
+
+```text
+P9_2_CAMPAIGN=P9_2_EXPLICIT_RANGE_FACT_CONTRACT_V1
+P9_2_STATUS=COMPLETE_RESEARCH_ONLY
+P9_2_TARGET_KIND=CORRECTNESS_CANDIDATE_NOT_MAIN
+P9_2_TARGET_SHA=045bbb1427af941b71d28b93cf1e5fe9bf245af7
+TARGET_IS_MAIN=NO
+TARGET_HEAD_MATCH=YES
+OLD_P9_MODEL_EXPECTED=289500
+OLD_P9_MODEL_REPRODUCED=YES
+POST_CORRECTNESS_MODEL=289512
+CORRECTNESS_ONLY_DELTA=12
+WORKLOADS=15
+CLASSIFICATION_COVERAGE=1.0
+REQUIRED_DYNAMIC=65224
+AVOIDABLE_DYNAMIC=0
+UNKNOWN_DYNAMIC=26456
+PROVABLY_REDUNDANT_SITES=0
+PROVABLY_REDUNDANT_DYNAMIC=0
+MODEL_A_RECOMPUTE=PASS_NO_SAFE_AVOIDABLE_SUBCLASS
+MODEL_B_PRIVATE_FACT=NOT_NEEDED
+MODEL_C_PUBLIC_CONTRACT=REJECTED_NOT_JUSTIFIED
+P9_2_SELECTION=NO_VALID_TARGET_YET
+P9_PRODUCTION_STARTED=NO
+PRODUCTION_CODE_CHANGED=NO
+BENCHMARK_EXECUTED=NO
+GITHUB_ACTIONS_EXECUTED=NO
+SHUTDOWN_AUTHORIZED=NO
+```
+
+The bounded domain was explicit object/index/length identity plus range and
+validity status. Path disagreement, unsupported loops and all listed
+invalidators map to `UNKNOWN`, which retains the check. The first fact-loss
+boundary remains `ASSEMBLY_TO_EMITTER_RANGE_FACT_CONTRACT_NOT_EXPLICIT`; it
+does not authorize public Assembly proof metadata. Read
+`reconciliations/P9_2_EXPLICIT_RANGE_FACT_CONTRACT_20260814.md`,
+`reconciliations/P9_2_RESULT.json`,
+`experiments/S3-EXP-0034-p9-2-explicit-range-fact-contract.md`, and
+`zettelkasten/notes/S3-ZK-0059.md` before any future range-fact work.
+
+## Authoritative current checkpoint: P9.3 closed - 2026-08-14
+
+P9.3 is complete research-only on the validated A+B correctness candidate. It
+did not integrate the candidate and did not start production P9:
+
+```text
+P9_3_CAMPAIGN=P9_3_UNKNOWN_CAUSAL_ATTRIBUTION_V1
+P9_3_STATUS=COMPLETE_RESEARCH_ONLY
+P9_3_TARGET_SHA=045bbb1427af941b71d28b93cf1e5fe9bf245af7
+TARGET_IS_MAIN=NO
+TARGET_IS_VALIDATED_CORRECTNESS_CANDIDATE=YES
+TARGET_HEAD_MATCH=YES
+P9_3_BASELINE_EXPECTED=289512
+P9_3_BASELINE_REPRODUCED=YES
+TOTAL_UNKNOWN_DYNAMIC=26456
+UNKNOWN_CLASSIFICATION_COVERAGE=1.0
+P8_REGISTER_INIT_UNKNOWN_STATIC=30096
+P8_REGISTER_INIT_UNKNOWN_DYNAMIC=26456
+P9_RELEVANT_UNKNOWN_DYNAMIC=0
+INHERENTLY_REQUIRED_DYNAMIC=0
+OUT_OF_SCOPE_EXISTING_MECHANISM_DYNAMIC=26456
+ATTRIBUTION_LIMIT_ONLY_DYNAMIC=0
+POTENTIALLY_AVOIDABLE_UNPROVEN_DYNAMIC=0
+PROVABLY_AVOIDABLE_DYNAMIC=0
+MAX_THEORETICAL_AVOIDABLE_DYNAMIC=0
+MAX_THEORETICAL_SHARE_OF_MODEL=0.0
+P9_3_SELECTION=NO_P9_BOUNDS_OPPORTUNITY
+P9_PRODUCTION_STARTED=NO
+P9_4_AUTHORIZED_BY_EVIDENCE=NO
+BOUNDS_VALIDITY_LINE_STATUS=CLOSE
+NEXT_GLOBAL_OPTIMIZATION_QUESTION=NO_NEW_TARGET_YET
+REMOTE_WRITE_PROVENANCE=PROVEN_ZERO_ACTIONS
+REMOTE_WRITE_EVENT=push
+REMOTE_WRITE_TARGET_REF=research/zettelkasten-lab-20260812
+REMOTE_WRITE_POSSIBLE_ACTIONS=0
+```
+
+The complete UNKNOWN population is exactly the existing P8 register-init
+mechanism, measured over 8892 structural sites and six workloads. No
+P9-relevant UNKNOWN class or concrete redundant example remains. The exact
+candidate baseline is `289512`, and the classification partition has complete
+coverage. Read `reconciliations/P9_3_RESULT.json`,
+`reconciliations/CORRECTNESS_A_B_INTEGRATION_20260814.md`,
+`experiments/S3-EXP-0035-p9-3-unknown-causal-attribution.md`, and
+`zettelkasten/notes/S3-ZK-0060.md` before any future campaign.
+
+The A+B integration route was analyzed statically. Feature-branch publication
+is `PROVEN_ZERO_ACTIONS`, but pull-request semantics are `UNKNOWN` and the
+resulting main-ref update is `ACTIONS_POSSIBLE`; therefore
+`CORRECTNESS_INTEGRATION=BLOCKED`, `MAIN_UPDATED=NO`, and `PR_CREATED=NO`.
+No workflow was changed and no alternative route was executed.
+
+## Authoritative current checkpoint: P10 census complete - 2026-08-14
+
+P10 is research-only and did not select or implement a production optimization:
+
+```text
+P10_CAMPAIGN=P10_GLOBAL_DYNAMIC_OPPORTUNITY_CENSUS_V1
+P10_STATUS=COMPLETE_RESEARCH_ONLY
+INITIAL_MAIN=5dd6844607ba3a2d5830ed836fb9026eed86d0fb
+CORRECTNESS_CANDIDATE_SHA=045bbb1427af941b71d28b93cf1e5fe9bf245af7
+RESEARCH_HEAD_START=9e40cf15780fd2e4ce4175c7f98ab778b7c0a92e
+TARGET_IS_MAIN=NO
+TARGET_IS_VALIDATED_CORRECTNESS_CANDIDATE=YES
+TARGET_HEAD_MATCH=YES
+TARGET_MAIN_ANCESTRY=YES
+P9_STATUS=CLOSED
+P9_BOUNDS_VALIDITY_STATUS=CLOSED
+BASELINE_EXPECTED=289512
+BASELINE_REPRODUCED=YES
+BASELINE_ACTUAL=289512
+WORKLOADS=15
+CLASSIFICATION_COVERAGE=1.0
+TOP_DYNAMIC_FAMILY=INSTRUCTION_LIMIT_ACCOUNTING
+TOP_DYNAMIC_FAMILY_DYNAMIC=99036
+TOP_NON_SEMANTIC_FAMILY=INSTRUCTION_LIMIT_ACCOUNTING
+TOP_NON_SEMANTIC_DYNAMIC=99036
+FRAME_CANONICALIZATION_DYNAMIC=39081
+FRAME_VALUE_DYNAMIC=14795
+STACK_RESIDENT_FRAME_VALUE_DYNAMIC=10063
+TRUE_SPILL=UNKNOWN_NOT_ESTABLISHED
+TRUE_RELOAD=UNKNOWN_NOT_ESTABLISHED
+PROVABLY_REQUIRED_DYNAMIC=250431
+PROVABLY_AVOIDABLE_DYNAMIC=0
+POTENTIALLY_AVOIDABLE_DYNAMIC=0
+UNKNOWN_AVOIDABILITY_DYNAMIC=39081
+CONCRETE_AVOIDABLE_EXAMPLE_FOUND=NO
+MATERIAL_AVOIDABLE_FAMILY_FOUND=NO
+P10_SELECTION=NO_VALID_TARGET_YET
+NEXT_GLOBAL_TARGET=NONE
+PRODUCTION_OPTIMIZATION_STARTED=NO
+LAB_CONSISTENCY=PASS
+REMOTE_WRITE_PROVENANCE=PROVEN_ZERO_ACTIONS
+REMOTE_WRITE_EVENT=push
+REMOTE_WRITE_TARGET_REF=research/zettelkasten-lab-20260812
+REMOTE_WRITE_POSSIBLE_ACTIONS=0
+```
+
+The primary sidecar partition is exact. Instruction-limit is policy-required;
+bounds and memory validity are closed by P9; semantic payload is not treated
+as overhead; and frame traffic is not established as spill. The P10 census
+found no concrete avoidable example and selected no next target. Read
+`reconciliations/P10_GLOBAL_DYNAMIC_OPPORTUNITY_CENSUS_20260814.md`,
+`reconciliations/P10_RESULT.json`,
+`experiments/S3-EXP-0036-p10-global-dynamic-opportunity-census.md`, and
+`zettelkasten/notes/S3-ZK-0061.md` before any future campaign.
+
+The A+B integration remains `STILL_BLOCKED_BY_PROVENANCE`; it was not retried.
+No production code, benchmark, GitHub Actions run or shutdown occurred.
+
+## Authoritative current checkpoint: P10.1 frame representation causal decomposition - 2026-08-14
+
+P10.1 is complete research-only on the frozen correctness candidate A+B. It
+consumed the existing P9/P10 sidecars and did not import or modify production:
+
+```text
+P10_1_CAMPAIGN=P10_1_FRAME_REPRESENTATION_CAUSAL_DECOMPOSITION_V1
+P10_1_STATUS=COMPLETE_RESEARCH_ONLY
+INITIAL_MAIN=5dd6844607ba3a2d5830ed836fb9026eed86d0fb
+CORRECTNESS_CANDIDATE_SHA=045bbb1427af941b71d28b93cf1e5fe9bf245af7
+RESEARCH_HEAD_START=0b4ea40b6555689712ae616b346f49aef5253c21
+TARGET_IS_MAIN=NO
+TARGET_IS_VALIDATED_CORRECTNESS_CANDIDATE=YES
+TARGET_HEAD_MATCH=YES
+TARGET_MAIN_ANCESTRY=YES
+BASELINE_EXPECTED=289512
+BASELINE_REPRODUCED=YES
+BASELINE_ACTUAL=289512
+WORKLOADS=15
+FRAME_REPRESENTATION_BROAD_EXPECTED=39081
+FRAME_REPRESENTATION_BROAD_ACTUAL=39081
+LOGICAL_FRAME_VALUE_TRAFFIC_DYNAMIC=14795
+PHYSICAL_STACK_VALUE_TRAFFIC_DYNAMIC=10063
+OTHER_FRAME_REPRESENTATION_DYNAMIC=24286
+TMOV_COPY_MATERIALIZATION_DYNAMIC=240
+TRUE_SPILL_STORE_DYNAMIC=0_PROVEN
+TRUE_SPILL_RELOAD_DYNAMIC=0_PROVEN
+CAUSAL_CLASSIFICATION_COVERAGE=1.0
+AVOIDABILITY_CLASSIFICATION_COVERAGE=1.0
+PROVABLY_REQUIRED_DYNAMIC=0
+PROVABLY_AVOIDABLE_DYNAMIC=0
+POTENTIALLY_AVOIDABLE_UNPROVEN_DYNAMIC=0
+ATTRIBUTION_LIMIT_ONLY_DYNAMIC=39081
+MAX_THEORETICAL_REMOVABLE_DYNAMIC=0
+MAX_REGISTER_PRESSURE_OBSERVED=UNKNOWN_NOT_MEASURED
+CONCRETE_SPILL_EXAMPLE_FOUND=NO
+CONCRETE_NON_SPILL_AVOIDABLE_EXAMPLE_FOUND=NO
+ORACLE_USED=NO
+FIRST_CAUSAL_BOUNDARY=FRAME_LAYOUT_OR_EMITTER_LOCAL_DECISION_NOT_SEPARATED
+P10_1_SELECTION=NO_VALID_TARGET_YET
+TARGET_SUBCLASS=NONE
+FRAME_LINE_STATUS=CLOSE
+NEXT_EXPERIMENT=NONE_WITHIN_FRAME
+PRODUCTION_OPTIMIZATION_STARTED=NO
+CORRECTNESS_INTEGRATION_STATUS=STILL_BLOCKED_BY_PROVENANCE
+CORRECTNESS_INTEGRATED=NO
+LAB_CONSISTENCY=PASS
+REMOTE_WRITE_PROVENANCE=PROVEN_ZERO_ACTIONS
+REMOTE_WRITE_EVENT=push
+REMOTE_WRITE_TARGET_REF=research/zettelkasten-lab-20260812
+REMOTE_WRITE_POSSIBLE_ACTIONS=0
+GITHUB_ACTIONS_EXECUTED=NO
+BENCHMARK_EXECUTED=NO
+SHUTDOWN_AUTHORIZED=NO
+```
+
+The broad class reconciles exactly as `14795 + 24286 = 39081`. The `10063`
+stack-resident frame-value events are an overlay inside the logical-value
+row, not a third additive class and not proof of spill. The sidecar does not
+provide exact load/store direction, liveness, pressure, frame slots,
+call-clobber survivors or a valid counterfactual, so all unresolved frame
+events are `ATTRIBUTION_LIMIT_ONLY`. Correction B's `ALWAYS_MATERIALIZE_TMOV`
+decision is recorded at `240` dynamic events and is not reopened.
+
+Read `reconciliations/P10_1_FRAME_REPRESENTATION_CAUSAL_DECOMPOSITION_20260814.md`,
+`reconciliations/P10_1_RESULT.json`,
+`experiments/S3-EXP-0037-p10-1-frame-representation-causal-decomposition.md`,
+and `zettelkasten/notes/S3-ZK-0062.md` before any future work.

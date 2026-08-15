@@ -264,3 +264,195 @@ select P5 only from measured residual cause
   `31748403817` triggered on the research SHA and all jobs failed immediately
   under the exhausted Actions allowance. No rerun, retry, cancellation or
   further remote write was made. Research push safety is now `NO`.
+- Workflow provenance containment was completed locally. The research
+  `tests.yml` trigger was narrowed to the current production `main` branch and
+  path policy without changing job bodies. A bounded fail-closed validator and
+  controls A-F prove the old state as `ACTIONS_POSSIBLE` and the repaired local
+  state as `PROVEN_ZERO_ACTIONS`; pull-request semantics remain `UNKNOWN` by
+  design. Added `S3-ZK-0053` and `S3-EXP-0028`. The repair is reachable from
+  `local/workflow-provenance-containment-20260813` but is intentionally not
+  published while Actions allowance is exhausted.
+
+## 2026-08-13 - P8.2 preserved possibilities and collapse points
+
+- Reconciled the published containment checkpoint at `d852a611` with
+  `origin/main=631b51e70562a33183ac14d0be5bbe2ddd140779`; the remote research
+  branch contains the repair and repository Actions are disabled by policy.
+- Audited the exact production anchor with a deterministic seven-file golden
+  structural triage. It found the already-shipped conditional `TCMP->TBR3`
+  family and no new adjacent memory/address/ternary roundtrip family.
+- Built the possibility collapse ledger across representation, location,
+  proof, control, address/memory, ABI, and ternary tracks. Initialization and
+  memory-state materialization remain the strongest unresolved family, but
+  P8.1 observer and failure witnesses prevent a path-complete safe rewrite.
+- Compared the global possibility-set notation with local producer/consumer
+  rules. The latter remain the simpler implementation model and no new target
+  was promoted. P8.2 is `NO_VALID_TARGET_YET`; no production code, branch, PR,
+  merge, full suite, benchmark, P9, or shutdown was started.
+
+## 2026-08-13 - P8.3 path-complete memory-state necessity
+
+- Reconciled stale state count 49 against 54 unique index/note IDs before
+  assigning `S3-ZK-0055`; the next experiment ID was `S3-EXP-0030`.
+- Profiled exact production HEAD `631b51e70562a33183ac14d0be5bbe2ddd140779`
+  over 12 workloads at O0/O1. The simple CFG/use-def worklist fixed point
+  converged and three focused model-control tests passed.
+- Static census: 1587 sites; dynamic tracking: 4350 events. The largest
+  bounded accidental family was definite `REGISTER_INIT_CHECK`, 1660 events
+  across 11 workloads. Static unknown share was 20.163831127914303%; dynamic
+  unknown share was 1.1954022988505748% of observed events.
+- Linux native profile passed all 24 O0/O1 pairs. The two `slice_reference`
+  emulator pairs were recorded as unsupported at TADDR, not treated as zero.
+- No native structural effect was measured. Public runtime proof transport and
+  exact fallback are missing, so P8.3 is `NO_VALID_TARGET_YET`; no production
+  code, branch, PR, full suite, benchmark, P9 or shutdown was started.
+
+## 2026-08-14 - P8 final proof-guided native initialization-check elision
+
+- Reconciled P8.4's bounded transport/recompute comparison with the exact
+  production candidate `87eb49cd19a78570f07d66ce7982650c8b422210`, based on
+  `631b51e70562a33183ac14d0be5bbe2ddd140779`.
+- The candidate computes a fail-closed definite register-initialization set at
+  the native consumer. It does not add public proof metadata; calls,
+  references, slices, address-taken registers, unsafe joins/loops and unknown
+  facts retain the existing checked path.
+- P8.3 population matched exactly: 416 safe static sites and 1660 dynamic
+  events. The native consumer used 402 sites and 1558 events. All 24 Linux O0/O1
+  pairs preserved semantics. Aggregate native checks changed 550->148,
+  instructions 20903->20099, branches 4746->4344, text 107709->102646, while
+  loads/stores stayed 10175.
+- The persistent exact-head Linux full suite exited 0. The earlier SSH timeout
+  is classified as external harness interruption, not product failure. PR #178
+  was merged as `5dd6844607ba3a2d5830ed836fb9026eed86d0fb`; implementation and
+  merge ancestry both passed. Post-merge focused smoke passed on origin/main.
+- Actions permissions remained disabled and no candidate-branch run existed.
+  Runtime and compile-time measurements remain unavailable/not-comparable. P9
+  and reboot were not started.
+
+## 2026-08-14 - P9 causal frame and representation attribution
+
+- Reconciled the merged P8 production anchor, the merged benchmark evidence,
+  and the existing measurement harness without rerunning the benchmark or
+  triggering Actions.
+- Built a deterministic Assembly-to-x86 sidecar attribution over 15
+  workloads. The model is explicitly `MODELLED_NATIVE_DYNAMIC_COUNT`, not a
+  hardware counter. Sidecar identity, model validation and frozen external
+  correctness passed; `slice_reference` was explicitly excluded for the
+  existing emulator TADDR limitation.
+- O1 model total was 143151. The broad frame class was 19725, scalar frame
+  value traffic 7807, and observed stack-resident frame value traffic 5431,
+  exactly 3.793895956018% of the O1 model. Direct indexed addressing already
+  exists for the fixed-array shape, and true spill causality was not
+  established.
+- P9 closes as `NO_VALID_TARGET_YET`. The strongest candidate to carry forward
+  is the bounds-validity contract surface, but no sound production predicate
+  was established. The next smallest experiment is proof-bearing loop-carried
+  TLOAD/TSTORE bounds and validity analysis with checked fallback and failure
+  order preserved. No production code, branch, PR, benchmark rerun, Actions
+  run or shutdown occurred.
+
+## 2026-08-14 - P9.1 bounds and validity contract attribution
+
+- Reconciled P9's published negative result and reproduced its
+  `MODELLED_NATIVE_DYNAMIC_COUNT` exactly: 289500 across 15 workloads, with
+  the previous class breakdown unchanged.
+- Built an explicit obligation ledger separating negative index, upper bound,
+  array/slice length, memory initialization, register initialization, object
+  and reference validity, slice provenance, mutability, address validity,
+  failure realization and other safety.
+- Explicit safety realization was 65224 modelled dynamic x86 lines
+  (22.529879101900%). Bounds were 17464 (6.032469775475%); memory
+  initialization was 6660 (2.300518134715%). Hot failure edges and cold
+  handlers were measured separately; cold handler setup has zero modelled
+  dynamic weight on the correctness inputs.
+- The minimum local-constant, dominated-compare, loop-alignment and
+  same-object/index/length reuse models found zero proven eligible sites.
+  Focused native correctness passed for array_loop, fixed_array, nested_loop,
+  branch_heavy and tiny_04_arr. Register initialization remains P8 territory.
+- P9.1 closes as `NO_VALID_TARGET_YET`: the safety family is material but no
+  sound avoidable subclass was established. No production code, branch, PR,
+  benchmark timing, Actions run or shutdown occurred.
+
+## 2026-08-14 - P9.2 explicit range-fact contract
+
+- Reconciled the stacked correctness candidate A+B without calling it main.
+  Correction A used structural `InstructionSite` identity and Correction B
+  materialized TMOV snapshots; both were validated separately from P9.
+- Reproduced the old P9 model at `289500` on exact target
+  `5dd6844607ba3a2d5830ed836fb9026eed86d0fb`. The same model on A+B at
+  `045bbb1427af941b71d28b93cf1e5fe9bf245af7` measured `289512`, a
+  correctness-only delta of `+12`, not a performance result.
+- The adapted P9.1 ledger over 15 workloads retained complete classification:
+  `REQUIRED_DYNAMIC=65224`, `AVOIDABLE_DYNAMIC=0`, `UNKNOWN_DYNAMIC=26456`,
+  `CLASSIFICATION_COVERAGE=1.0`, and zero provably redundant sites/dynamic.
+- Compared Model A recomputation, Model B private verified facts and Model C
+  public Assembly contract. Model A was sufficient to establish the negative;
+  Model B was not needed and Model C was not justified. All 20 invalidators
+  retained their checks.
+- P9.2 closes as `NO_VALID_TARGET_YET`. No production code, PR, benchmark,
+  Actions run or shutdown was performed. The next experiment remains a small
+  hand-written proof-bearing loop corpus, only with separate authorization.
+
+## 2026-08-14 - P9.3 UNKNOWN causal attribution
+
+- Reconciled A+B as one validated correctness candidate: main -> A -> B at
+  `045bbb1427af941b71d28b93cf1e5fe9bf245af7`. The exact candidate full suite,
+  native, differential, compileall and diff checks were already green; main
+  was not changed.
+- Analyzed integration routes statically. Feature push is
+  `PROVEN_ZERO_ACTIONS`; pull-request semantics remain `UNKNOWN`; a main-ref
+  update is `ACTIONS_POSSIBLE`. No alternative was executed, no PR was
+  opened, and no workflow was modified.
+- Reproduced the P9 model at `289512` on the exact detached candidate. The
+  P9.1 ledger partitioned all `26456` UNKNOWN dynamic events into
+  `REGISTER_INITIALIZATION_CHECK`: `30096` static lines, `8892` structural
+  sites and six workloads.
+- P9.3 therefore removes the population from the P9 bounds/validity question:
+  `P9_RELEVANT_UNKNOWN_DYNAMIC=0`, maximum theoretical avoidable dynamic is
+  zero, and no concrete P9-redundant example exists.
+- Closed P9 bounds/validity as `NO_P9_BOUNDS_OPPORTUNITY`. No production code,
+  benchmark, Actions run or shutdown occurred; no P9.4 was authorized.
+
+## 2026-08-14 - P10 global dynamic opportunity census
+
+- Reconciled P9 as formally closed before starting P10. The P9 UNKNOWN
+  population remains the excluded P8 register-init mechanism; no P9.4 was
+  created.
+- Kept the A+B correctness candidate frozen at
+  `045bbb1427af941b71d28b93cf1e5fe9bf245af7`, separate from the research
+  branch and not main. The known integration route was not retried.
+- Consumed the existing P9 sidecar JSON without compiler imports, benchmark or
+  Actions execution. The exact 15-workload/O0-O1 corpus reproduced
+  `289512`; per-site primary class counts covered `1.0` of the model.
+- Ranked instruction-limit accounting at `99036`, bounds at `56500`, frame
+  canonicalization at `39081`, semantic payload at `38050` and memory validity
+  at `29408`. The top five non-semantic necessity ledgers closed exactly.
+- Frame traffic remains causally unresolved: frame-value overlay `14795`,
+  stack-resident overlay `10063`, true spill/reload not established.
+- No family had a concrete avoidable example or positive potentially-avoidable
+  dynamic population. P10 closes as `NO_VALID_TARGET_YET`; no production
+  optimization, benchmark, Actions run or shutdown occurred.
+
+## 2026-08-14 - P10.1 frame representation causal decomposition
+
+- Reconciled the exact P10 broad frame/representation class on frozen
+  correctness candidate `045bbb1427af941b71d28b93cf1e5fe9bf245af7`, preserving
+  `origin/main=5dd6844607ba3a2d5830ed836fb9026eed86d0fb` and research start
+  `0b4ea40b6555689712ae616b346f49aef5253c21`.
+- Reproduced the `289512` model across 15 workloads and split the broad
+  `39081` dynamic population exactly into logical frame-value traffic `14795`
+  and other frame representation `24286`. The `10063` stack-resident value
+  count is an overlay, not an additive class and not proof of spill.
+- Sidecar evidence did not expose exact direction, liveness, pressure,
+  frame-slot identity, call-clobber survivors or a valid counterfactual. True
+  spill/reload and an avoidable non-spill example remain unproven; all
+  unresolved frame events are `ATTRIBUTION_LIMIT_ONLY`.
+- Recorded Correction B TMOV materialization separately at `240` dynamic
+  events and did not reopen its correctness decision. P10.1 closes the frame
+  line as `NO_VALID_TARGET_YET` / `FRAME_LINE_STATUS=CLOSE`.
+- No production code, candidate change, benchmark, GitHub Actions run,
+  correctness integration or shutdown occurred.
+- The proposed research push from `0b4ea40` to the first P10.1 commit was
+  checked by `validate_remote_write.py`: workflow drift was none, matched
+  workflows were none, possible Actions runs were zero, and the result was
+  `PROVEN_ZERO_ACTIONS`.
