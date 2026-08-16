@@ -34,6 +34,7 @@ from .lexer import SyntaxMode
 from .optimizer import OptimizationLevel, instruction_count
 from .pipeline import CompilationResult, compile_source
 from .targets import BUILTIN_TARGETS
+from .test_runner import TestRunnerError, render_test_report, run_test_manifest
 
 
 class _CLIUsageError(Exception):
@@ -202,6 +203,19 @@ def _parser() -> argparse.ArgumentParser:
                     f"maximum S3 opcodes (default: {DEFAULT_MAX_INSTRUCTIONS})"
                 ),
             )
+    test_parser = subparsers.add_parser("test")
+    test_parser.add_argument("manifest", type=Path, help="path to an s3-test.toml manifest")
+    test_parser.add_argument(
+        "--mode",
+        choices=("hosted", "native", "both"),
+        help="execution mode overriding the manifest",
+    )
+    test_parser.add_argument(
+        "--report",
+        type=Path,
+        help="write the deterministic machine-readable report to this path",
+    )
+    test_parser.set_defaults(diagnostic_format="text", debug=False)
 
     return parser
 
@@ -380,6 +394,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "targets":
             _print_targets()
             return 0
+        if args.command == "test":
+            report = run_test_manifest(args.manifest, mode=args.mode)
+            rendered = render_test_report(report)
+            if args.report is not None:
+                args.report.parent.mkdir(parents=True, exist_ok=True)
+                args.report.write_text(rendered, encoding="utf-8", newline="\n")
+            print(rendered, end="")
+            return 1 if report["summary"]["status"] == "FAIL" else 2 if report["summary"]["status"] == "SKIP" else 0
         if args.max_frames < 1:
             raise NativeBackendError("--max-frames must be at least 1")
         source = args.source.read_text(encoding="utf-8")
@@ -527,13 +549,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         AssemblyError,
         CodegenError,
         NativeBackendError,
+        TestRunnerError,
     ) as error:
         if args.debug:
             raise
         _emit_error(
             error,
             args.diagnostic_format,
-            file=str(args.source),
+            file=str(getattr(args, "source", getattr(args, "manifest", ""))),
             internal=False,
         )
         return 1
@@ -543,7 +566,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         _emit_error(
             error,
             args.diagnostic_format,
-            file=str(args.source),
+            file=str(getattr(args, "source", getattr(args, "manifest", ""))),
             internal=True,
         )
         return 1
