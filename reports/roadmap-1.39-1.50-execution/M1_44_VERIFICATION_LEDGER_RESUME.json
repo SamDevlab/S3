@@ -1,0 +1,33 @@
+{
+  "milestone": "1.44",
+  "title": "Small Layered Standard Library Core",
+  "status": "COMPLETE",
+  "base_implementation": "026ebf7",
+  "implementation_head": "6bf35fd",
+  "focused_tests": "PASS",
+  "focused_test_file": "tests/test_m144_standard_library.py",
+  "focused_test_count": 4,
+  "hosted_cross_module_text_collections": "PASS",
+  "hosted_capability_wrappers": "PASS",
+  "native_linux_x86_64": "PASS",
+  "native_probes": {
+    "core_o0": "PASS (4)",
+    "core_o1": "PASS (4)",
+    "host_io_o0": "PASS (2)",
+    "host_io_o1": "PASS (2)"
+  },
+  "unused_host_call_symbols": "PASS",
+  "compileall": "PASS",
+  "diff_check": "PASS",
+  "full_suite_terminal": true,
+  "full_suite_exit": 0,
+  "versioned_manifest": true,
+  "explicit_capabilities": true,
+  "ambient_host_access": false,
+  "general_parametric_generics": false,
+  "exceptions": false,
+  "remote_writes": false,
+  "next_milestone_started": false,
+  "next_milestone": "1.45",
+  "shutdown": "CANCELLED"
+}

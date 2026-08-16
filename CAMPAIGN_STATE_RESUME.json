@@ -1,17 +1,19 @@
 {
   "campaign": "roadmap-1.39-1.50",
-  "status": "M1.43_COMPLETE_NEXT_MILESTONE_NOT_STARTED",
-  "current_milestone": "1.43",
+  "status": "M1.44_COMPLETE_NEXT_MILESTONE_NOT_STARTED",
+  "current_milestone": "1.44",
   "completed_milestones": [
     "1.39",
     "1.40",
     "1.41",
     "1.42",
-    "1.43"
+    "1.43",
+    "1.44"
   ],
-  "next_milestone": "1.44",
-  "last_safe_commit": "aebdf96",
+  "next_milestone": "1.45",
+  "last_safe_commit": "6bf35fd",
   "full_suite_exit_m143": 0,
+  "full_suite_exit_m144": 0,
   "native_result_gate_m143": "PASS_LINUX_X86_64_SSH",
   "remote_writes": false,
   "shutdown": "CANCELLED",
