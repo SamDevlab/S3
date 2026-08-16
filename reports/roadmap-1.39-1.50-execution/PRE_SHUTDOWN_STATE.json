@@ -1,0 +1,16 @@
+{
+  "campaign_status": "STOPPED_AT_MILESTONE_1.39",
+  "stop_reason": "BLOCKED_ARCHITECTURE_DECISION",
+  "current_milestone": "1.39",
+  "last_verified_milestone": "1.37",
+  "last_verified_commit": "4c3915e7ab8d9d27e050bbe458634d8ec573524e",
+  "current_head": "4c3915e7ab8d9d27e050bbe458634d8ec573524e",
+  "worktree": "C:/Users/samue/Downloads/S3/S3-roadmap-139-150-auto-20260815",
+  "worktree_clean_before_manifest_commit": true,
+  "primary_checkout_preserved": true,
+  "report_path": "reports/roadmap-1.39-1.50-execution/CAMPAIGN_FAILURE_REPORT.md",
+  "remote_write_executed": false,
+  "shutdown_authorized": true,
+  "shutdown_target": "Windows primary host",
+  "shutdown_command": "shutdown.exe /s /t 60 /c \"S3 autonomous milestone campaign stopped at safe architecture gate\""
+}
