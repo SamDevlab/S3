@@ -1,0 +1,31 @@
+{
+  "milestone": "1.48",
+  "title": "Capability-Scoped Network Provider",
+  "status": "IMPLEMENTATION_COMPLETE_WITH_DEFERRED_ENVIRONMENT_CERTIFICATION",
+  "implementation_head": "13a3e3bbfe173d41a07463634dcb4af2334d1a9d",
+  "tested_sha": "13a3e3bbfe173d41a07463634dcb4af2334d1a9d",
+  "focused_tests": "PASS (25)",
+  "focused_test_file": "tests/test_m148_network_provider.py",
+  "adjacent_regression_tests": "PASS (tests/test_m143_scoped_resources.py, tests/test_host_services.py, tests/test_m147_python_buffer_abi.py)",
+  "address_normalization": "PASS",
+  "capability_denial": "PASS",
+  "bounded_partial_io": "PASS",
+  "timeout_eof_close": "PASS",
+  "resource_limits": "PASS",
+  "fake_provider": "PASS",
+  "loopback_provider_local_host": "PASS",
+  "fake_loopback_trace_equivalence": "PASS",
+  "compileall": "PASS",
+  "diff_check": "PASS",
+  "full_suite_terminal": true,
+  "full_suite_exit": 0,
+  "full_suite_log": "%TEMP%/s3-m148-full-suite.log",
+  "full_suite_status": "%TEMP%/s3-m148-full-suite.status",
+  "linux_x86_64_loopback": "DEFERRED_ENVIRONMENT",
+  "environment_blocks": [
+    "Linux x86-64 loopback certification was not executed because this campaign does not copy source to the remote VM; local Windows loopback is not Linux evidence."
+  ],
+  "remote_writes": false,
+  "shutdown": "CANCELLED",
+  "next_milestone": "1.49"
+}
