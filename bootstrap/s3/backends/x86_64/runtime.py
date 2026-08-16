@@ -1184,6 +1184,99 @@ __s3_builtin_i64_set_at:
 .type __s3_builtin_i64_set_clone,@function
 __s3_builtin_i64_set_clone:
     jmp __s3_dyn_clone
+.type __s3_builtin_host_capability_grant,@function
+__s3_builtin_host_capability_grant:
+    cmp rdi,1
+    jb __s3_fail_bounds
+    cmp rdi,3
+    ja __s3_fail_bounds
+    mov rax,rdi
+    ret
+.type __s3_resource_find,@function
+__s3_resource_find:
+    mov rax,[rdi]
+    test rax,rax
+    jz .L__s3_resource_find_no
+    lea r10,[rip+__s3_resource_slots]
+    xor ecx,ecx
+.L__s3_resource_find_loop:
+    cmp qword ptr [r10+rcx*8],rax
+    je .L__s3_resource_find_match
+    inc ecx
+    cmp ecx,3
+    jb .L__s3_resource_find_loop
+.L__s3_resource_find_no:
+    mov rax,-1
+    jmp .L__s3_resource_find_done
+.L__s3_resource_find_match:
+    mov rax,rcx
+.L__s3_resource_find_done:
+    ret
+.type __s3_builtin_resource_open,@function
+__s3_builtin_resource_open:
+    cmp rdi,1
+    jb __s3_fail_bounds
+    cmp rdi,3
+    ja __s3_fail_bounds
+    mov r10,rdi
+    lea r11,[rip+__s3_resource_slots]
+    xor ecx,ecx
+.L__s3_resource_open_loop:
+    cmp qword ptr [r11+rcx*8],0
+    je .L__s3_resource_open_slot
+    inc ecx
+    cmp ecx,3
+    jb .L__s3_resource_open_loop
+    jmp __s3_fail_capacity
+.L__s3_resource_open_slot:
+    lea rdx,[rip+__s3_resource_generations]
+    inc qword ptr [rdx+rcx*8]
+    mov rax,[rdx+rcx*8]
+    mov r8,r10
+    shl r8,56
+    mov r9,rcx
+    inc r9
+    shl r9,48
+    or rax,r8
+    or rax,r9
+    mov [r11+rcx*8],rax
+    ret
+.type __s3_builtin_resource_is_open,@function
+__s3_builtin_resource_is_open:
+    call __s3_resource_find
+    cmp rax,-1
+    je .L__s3_resource_is_open_no
+    mov rax,-1
+    ret
+.L__s3_resource_is_open_no:
+    xor eax,eax
+    ret
+.type __s3_builtin_resource_kind,@function
+__s3_builtin_resource_kind:
+    call __s3_resource_find
+    cmp rax,-1
+    je __s3_fail_bounds
+    mov r10,[rdi]
+    shr r10,56
+    mov rax,r10
+    ret
+.type __s3_builtin_resource_invoke,@function
+__s3_builtin_resource_invoke:
+    call __s3_resource_find
+    cmp rax,-1
+    je __s3_fail_bounds
+    xor eax,eax
+    ret
+.type __s3_builtin_resource_close,@function
+__s3_builtin_resource_close:
+    call __s3_resource_find
+    cmp rax,-1
+    je __s3_fail_bounds
+    lea r11,[rip+__s3_resource_slots]
+    mov qword ptr [r11+rax*8],0
+    mov qword ptr [rdi],0
+    xor eax,eax
+    ret
 """.strip("\n").splitlines()
 
 
@@ -1348,6 +1441,12 @@ def render_runtime() -> str:
         "    .align 8",
         "__s3_instruction_count:",
         "    .zero 8",
+        "    .align 8",
+        "__s3_resource_slots:",
+        "    .zero 24",
+        "    .align 8",
+        "__s3_resource_generations:",
+        "    .zero 24",
         "",
         '.section .note.GNU-stack,"",@progbits',
     ]

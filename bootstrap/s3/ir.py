@@ -97,6 +97,17 @@ DYNAMIC_BUILTIN_SIGNATURES.update(
     }
 )
 
+DYNAMIC_BUILTIN_SIGNATURES.update(
+    {
+        "host_capability_grant": ((IRType.I64,), (IRType.I64,)),
+        "resource_open": ((IRType.I64,), (IRType.I64,)),
+        "resource_is_open": ((IRType.REFERENCE,), (IRType.TRIT,)),
+        "resource_kind": ((IRType.REFERENCE,), (IRType.I64,)),
+        "resource_invoke": ((IRType.REFERENCE, IRType.I64), (IRType.TRYTE,)),
+        "resource_close": ((IRType.REFERENCE,), (IRType.TRYTE,)),
+    }
+)
+
 
 class IROpcode(Enum):
     CONST = "const"

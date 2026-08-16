@@ -1038,7 +1038,7 @@ class X8664Emitter:
             detail_suffix=f" is uninitialized in m{memory.index}\n",
             value_register="r10",
         )
-        if memory.element_type is AssemblyType.STRING:
+        if memory.element_type in {AssemblyType.I64, AssemblyType.F64, AssemblyType.STRING}:
             load = "mov rax, qword ptr"
         elif memory.element_size == 1:
             load = "movsx rax, byte ptr"
@@ -1072,7 +1072,7 @@ class X8664Emitter:
             *self._read_register(layout, source_register, "r10"),
             *self._memory_bounds(memory, "rax"),
         ]
-        if memory.element_type is not AssemblyType.STRING:
+        if memory.element_type not in {AssemblyType.I64, AssemblyType.F64, AssemblyType.STRING}:
             overflow = self._overflow_failure(memory.element_type, "r10")
             lines.extend(self._range_check(memory.element_type, "r10", overflow))
         init_address = _address(memory.initialized, index="rax")
@@ -1096,7 +1096,7 @@ class X8664Emitter:
             index="rax",
             scale=memory.element_size,
         )
-        if memory.element_type is AssemblyType.STRING:
+        if memory.element_type in {AssemblyType.I64, AssemblyType.F64, AssemblyType.STRING}:
             source = "r10"
             size = "qword"
         elif memory.element_size == 1:

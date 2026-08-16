@@ -26,6 +26,7 @@ from .dynamic import (
     text_from_bytes,
     text_new,
 )
+from .host_services import SourceResourceRuntime
 from .ternary import add, compare, invert, tritwise_max, tritwise_min, TernaryRangeError, TernaryWidth, validate
 from .verifier import verify_ir
 from .numeric import NumericType, validate_f64, validate_i64
@@ -63,8 +64,9 @@ def _width(type_name: IRType) -> TernaryWidth:
 
 
 def execute_ir(module: IRModule, entry: str = "main", optimization: object = None) -> object:
-    global functions_module
+    global functions_module, resource_runtime
     functions_module = module
+    resource_runtime = SourceResourceRuntime()
     verify_ir(module)
     functions = {function.name: function for function in module.functions}
     if entry not in functions:
@@ -224,6 +226,22 @@ def _reference_owner(value):
 
 
 def _execute_dynamic_builtin(name: str, args: tuple[object, ...]) -> object:
+    if name == "host_capability_grant":
+        return resource_runtime.grant(args[0])
+    if name == "resource_open":
+        return resource_runtime.open(args[0])
+    if name == "resource_is_open":
+        return resource_runtime.is_open(_reference_owner(args[0]))
+    if name == "resource_kind":
+        return resource_runtime.kind(_reference_owner(args[0]))
+    if name == "resource_invoke":
+        return resource_runtime.invoke(_reference_owner(args[0]), args[1])
+    if name == "resource_close":
+        reference = args[0]
+        handle = _reference_owner(reference)
+        resource_runtime.close(handle)
+        reference.cell.value = 0
+        return 0
     if name == "bytes_new":
         return bytes_new(args[0])
     if name == "bytes_len":
@@ -387,3 +405,4 @@ def _execute_set_builtin(name: str, args: tuple[object, ...]) -> object:
 
 
 functions_module = IRModule(())
+resource_runtime = SourceResourceRuntime()

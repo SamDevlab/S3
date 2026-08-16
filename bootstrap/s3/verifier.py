@@ -365,7 +365,7 @@ class IRVerifier:
             result, result_type = require_result()
             if result_type is not IRType.REFERENCE:
                 self._error("address_of result must be a reference", instruction.location)
-            if instruction.reference_target not in {IRType.TRIT, IRType.TRYTE, IRType.STRING, IRType.BYTES, IRType.TEXT, IRType.VECTOR}:
+            if instruction.reference_target not in {IRType.TRIT, IRType.TRYTE, IRType.I64, IRType.F64, IRType.STRING, IRType.BYTES, IRType.TEXT, IRType.VECTOR}:
                 self._error("address_of requires a scalar reference target", instruction.location)
             if len(instruction.operands) not in {0, 1} or instruction.memory is None and not instruction.operands:
                 self._error("address_of requires a logical storage operand", instruction.location)

@@ -131,6 +131,25 @@ _DYNAMIC_BUILTINS.update(
     }
 )
 
+_HOST_CAPABILITY = ast.TypeName.HOST_CAPABILITY
+_RESOURCE_HANDLE = ast.TypeName.RESOURCE_HANDLE
+_RESOURCE_SHARED = ast.ReferenceType(
+    _RESOURCE_HANDLE, False, _DYNAMIC_BUILTIN_LOCATION
+)
+_RESOURCE_MUTABLE = ast.ReferenceType(
+    _RESOURCE_HANDLE, True, _DYNAMIC_BUILTIN_LOCATION
+)
+_DYNAMIC_BUILTINS.update(
+    {
+        "host_capability_grant": ((ast.TypeName.I64,), _HOST_CAPABILITY),
+        "resource_open": ((_HOST_CAPABILITY,), _RESOURCE_HANDLE),
+        "resource_is_open": ((_RESOURCE_SHARED,), ast.TypeName.TRIT),
+        "resource_kind": ((_RESOURCE_SHARED,), ast.TypeName.I64),
+        "resource_invoke": ((_RESOURCE_SHARED, ast.TypeName.I64), ast.TypeName.TRYTE),
+        "resource_close": ((_RESOURCE_MUTABLE,), ast.TypeName.TRYTE),
+    }
+)
+
 _DYNAMIC_TYPES = {
     ast.TypeName.BYTES,
     ast.TypeName.TEXT,

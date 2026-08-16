@@ -22,6 +22,8 @@ class TypeName(Enum):
     F64_VECTOR = "f64_vector"
     I64_MAP = "i64_map"
     I64_SET = "i64_set"
+    HOST_CAPABILITY = "host_capability"
+    RESOURCE_HANDLE = "resource_handle"
 
 
 @dataclass(frozen=True, slots=True)

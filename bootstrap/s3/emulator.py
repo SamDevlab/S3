@@ -485,6 +485,32 @@ class Emulator(AssemblyVerifier):
                     memory=f"m{memory.index}",
                     index=index,
                 )
+        elif memory.element_type is AssemblyType.I64:
+            try:
+                validate_i64(value)
+            except (NumericError, TypeError, ValueError) as error:
+                raise self._runtime_error(
+                    frame,
+                    instruction,
+                    str(error),
+                    DiagnosticCategory.OVERFLOW,
+                    DiagnosticCode.RUNTIME_OVERFLOW,
+                    memory=f"m{memory.index}",
+                    index=index,
+                ) from error
+        elif memory.element_type is AssemblyType.F64:
+            try:
+                validate_f64(value)
+            except (NumericError, TypeError, ValueError) as error:
+                raise self._runtime_error(
+                    frame,
+                    instruction,
+                    str(error),
+                    DiagnosticCategory.OVERFLOW,
+                    DiagnosticCode.RUNTIME_OVERFLOW,
+                    memory=f"m{memory.index}",
+                    index=index,
+                ) from error
         else:
             if not isinstance(value, int):
                 raise self._runtime_error(

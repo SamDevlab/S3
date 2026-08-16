@@ -101,6 +101,14 @@ for _collection_prefix in ("i64_map", "i64_set"):
     ):
         _DYNAMIC_REFERENCE_TARGETS[f"{_collection_prefix}_{_collection_operation}"] = AssemblyType.VECTOR
 
+for _resource_operation in (
+    "resource_is_open",
+    "resource_kind",
+    "resource_invoke",
+    "resource_close",
+):
+    _DYNAMIC_REFERENCE_TARGETS[_resource_operation] = AssemblyType.I64
+
 
 class AssemblyVerifierError(AssemblyError):
     """Raised when Assembly violates a structural invariant."""

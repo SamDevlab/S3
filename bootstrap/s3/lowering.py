@@ -36,6 +36,8 @@ TYPE_MAP = {
     ast.TypeName.F64_VECTOR: IRType.VECTOR,
     ast.TypeName.I64_MAP: IRType.VECTOR,
     ast.TypeName.I64_SET: IRType.VECTOR,
+    ast.TypeName.HOST_CAPABILITY: IRType.I64,
+    ast.TypeName.RESOURCE_HANDLE: IRType.I64,
 }
 
 _DYNAMIC_TYPES = {
