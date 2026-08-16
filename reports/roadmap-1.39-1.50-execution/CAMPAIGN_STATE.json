@@ -2,8 +2,8 @@
   "campaign": "S3-AUTO-139-150",
   "current_milestone": "1.39",
   "completed": [],
-  "status": "blocked",
-  "last_safe_commit": "2ed94e526d43edca9830e353f731b638090a3a40",
+  "status": "stopped",
+  "last_safe_commit": "8c22bd4f33a6372c59ce2057b777bd3c10c96f1f",
   "shutdown_required": true,
   "stop_reason": "BLOCKED_ARCHITECTURE_DECISION",
   "last_verified_milestone": "1.37",
@@ -13,5 +13,8 @@
   "primary_checkout_changed": false,
   "remote_write_executed": false,
   "p14_3_started": false,
-  "m138_docker_certification": "deferred"
+  "m138_docker_certification": "deferred",
+  "current_head_before_final_state_commit": "8c22bd4f33a6372c59ce2057b777bd3c10c96f1f",
+  "shutdown_target": "Windows primary host",
+  "shutdown_command": "shutdown.exe /s /t 60 /c \"S3 autonomous milestone campaign stopped at safe architecture gate\""
 }

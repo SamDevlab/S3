@@ -13,13 +13,14 @@ DIAGNOSTIC_ATTEMPTS=1 architecture reconciliation; no implementation repair atte
 FILES_CHANGED=Campaign evidence only; no production or test files
 LAST_VERIFIED_MILESTONE=1.37
 LAST_VERIFIED_COMMIT=2ed94e526d43edca9830e353f731b638090a3a40
-CURRENT_HEAD=2ed94e526d43edca9830e353f731b638090a3a40
+CURRENT_HEAD=8c22bd4f33a6372c59ce2057b777bd3c10c96f1f
+EVIDENCE_COMMIT=8c22bd4f33a6372c59ce2057b777bd3c10c96f1f
 SAFE_TO_RESUME_FROM=M1.39 architecture contract review
 NEXT_RECOMMENDED_ACTION=Approve an ADR/specification for dynamic buffers/text and reconcile M1.39 versus M1.42 error ordering before implementation
 PRIMARY_CHECKOUT_PRESERVED=YES
 REMOTE_WRITE_EXECUTED=NO
 SHUTDOWN_AUTHORIZED=YES
-SHUTDOWN_INITIATED=PENDING
+SHUTDOWN_INITIATED=READY_AFTER_FINAL_STATE_COMMIT
 ```
 
 This is a safe architecture stop. The partial-implementation policy does not
