@@ -147,10 +147,9 @@ def compile_sources(
         mode=context.mode,
     )
     semantic_model = analyze(plan.program)
-    ir_program = optimize_ir(
-        lower(plan.program, semantic_model),
-        context.optimization,
-    )
+    ir_program = lower(plan.program, semantic_model)
+    if not semantic_model.contains_dynamic:
+        ir_program = optimize_ir(ir_program, context.optimization)
     assembly_program = generate_assembly(ir_program)
     return CompilationResult(
         plan.tokens,
@@ -168,10 +167,9 @@ def _compile_source_with_context(
     tokens = tokenize(source, mode=context.mode)
     syntax_tree = parse_tokens(tokens, mode=context.mode)
     semantic_model = analyze(syntax_tree)
-    ir_program = optimize_ir(
-        lower(syntax_tree, semantic_model),
-        context.optimization,
-    )
+    ir_program = lower(syntax_tree, semantic_model)
+    if not semantic_model.contains_dynamic:
+        ir_program = optimize_ir(ir_program, context.optimization)
     assembly_program = generate_assembly(ir_program)
     return CompilationResult(
         tokens,
@@ -192,7 +190,7 @@ def run_source_with_buffer_capture(
     mode: SyntaxMode = SyntaxMode.V0_6,
 ) -> tuple[int, list[dict[int, list[int | None]]]]:
     compilation = compile_source(source, optimization, mode=mode)
-    if compilation.semantic_model.contains_references:
+    if compilation.semantic_model.contains_references or compilation.semantic_model.contains_dynamic:
         from .ir_emulator import execute_ir
         return execute_ir(compilation.ir, entry, optimization), []
     from .backends.registry import create_builtin_backend_registry
@@ -220,7 +218,7 @@ def run_source(
     mode: SyntaxMode = SyntaxMode.V0_6,
 ) -> int:
     compilation = compile_source(source, optimization, mode=mode)
-    if compilation.semantic_model.contains_references:
+    if compilation.semantic_model.contains_references or compilation.semantic_model.contains_dynamic:
         from .ir_emulator import execute_ir
         return execute_ir(compilation.ir, entry, optimization)
     return _execute_hosted_assembly(

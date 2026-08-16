@@ -4,7 +4,22 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .ir import IRFunction, IRInstruction, IRModule, IROpcode, IRType
+from .ir import (
+    DYNAMIC_BUILTIN_SIGNATURES,
+    IRFunction,
+    IRInstruction,
+    IRModule,
+    IROpcode,
+    IRType,
+)
+from .dynamic import (
+    DynamicBytes,
+    DynamicText,
+    bytes_from_text,
+    bytes_new,
+    text_from_bytes,
+    text_new,
+)
 from .ternary import add, compare, invert, tritwise_max, tritwise_min, TernaryRangeError, TernaryWidth, validate
 from .verifier import verify_ir
 from .numeric import NumericType, validate_f64, validate_i64
@@ -124,9 +139,12 @@ def _execute_function(functions, function, arguments, caller):
             if not isinstance(ref, ReferenceValue) or not ref.mutable: raise IRExecutionError("shared reference store")
             _store_value(ref.cell, _read(frame, instruction.operands[1]), instruction.reference_target)
         elif op is IROpcode.CALL:
-            callee = functions[instruction.callee]
             args = tuple(_read(frame, reg) for reg in instruction.operands)
-            result = _execute_function(functions, callee, args, frame)
+            if instruction.callee in DYNAMIC_BUILTIN_SIGNATURES:
+                result = _execute_dynamic_builtin(instruction.callee, args)
+            else:
+                callee = functions[instruction.callee]
+                result = _execute_function(functions, callee, args, frame)
             if instruction.results: _write(frame, instruction.results[0], result)
         elif op is IROpcode.RETURN:
             return _read(frame, instruction.operands[0])
@@ -165,6 +183,12 @@ def _store_value(cell, value, value_type):
     elif value_type is IRType.STRING:
         if not isinstance(value, str):
             raise IRExecutionError("invalid string value")
+    elif value_type is IRType.BYTES:
+        if not isinstance(value, DynamicBytes):
+            raise IRExecutionError("invalid bytes value")
+    elif value_type is IRType.TEXT:
+        if not isinstance(value, DynamicText):
+            raise IRExecutionError("invalid text value")
     elif value_type is IRType.I64:
         try:
             validate_i64(value)
@@ -182,6 +206,68 @@ def _store_value(cell, value, value_type):
             raise IRExecutionError(f"invalid {value_type.value} value: {value!r}") from error
     cell.value = value
     cell.initialized = True
+
+
+def _reference_owner(value):
+    if not isinstance(value, ReferenceValue) or not value.cell.initialized:
+        raise IRExecutionError("invalid dynamic buffer reference")
+    return value.cell.value
+
+
+def _execute_dynamic_builtin(name: str, args: tuple[object, ...]) -> object:
+    if name == "bytes_new":
+        return bytes_new(args[0])
+    if name == "bytes_len":
+        return _reference_owner(args[0]).length
+    if name == "bytes_capacity":
+        return _reference_owner(args[0]).capacity
+    if name == "bytes_get":
+        return _reference_owner(args[0]).get(args[1])
+    if name == "bytes_set":
+        _reference_owner(args[0]).set(args[1], args[2])
+        return 0
+    if name == "bytes_push":
+        _reference_owner(args[0]).push(args[1])
+        return 0
+    if name == "bytes_reserve":
+        _reference_owner(args[0]).reserve(args[1])
+        return 0
+    if name == "bytes_clone":
+        return _reference_owner(args[0]).clone()
+    if name == "bytes_concat":
+        return _reference_owner(args[0]).concat(_reference_owner(args[1]))
+    if name == "bytes_slice":
+        return _reference_owner(args[0]).slice(args[1], args[2])
+    if name == "bytes_from_text":
+        return bytes_from_text(_reference_owner(args[0]))
+    if name == "text_new":
+        return text_new(args[0])
+    if name == "text_from_static":
+        return DynamicText.from_static(args[0])
+    if name == "text_len":
+        return _reference_owner(args[0]).length
+    if name == "text_capacity":
+        return _reference_owner(args[0]).capacity
+    if name == "text_reserve":
+        _reference_owner(args[0]).reserve(args[1])
+        return 0
+    if name == "text_append":
+        _reference_owner(args[0]).append(_reference_owner(args[1]))
+        return 0
+    if name == "text_append_static":
+        _reference_owner(args[0]).append_static(args[1])
+        return 0
+    if name == "text_clone":
+        return _reference_owner(args[0]).clone()
+    if name == "text_concat":
+        return _reference_owner(args[0]).concat(_reference_owner(args[1]))
+    if name == "text_slice":
+        return _reference_owner(args[0]).slice(args[1], args[2])
+    if name == "text_find":
+        return _reference_owner(args[0]).find(_reference_owner(args[1]))
+    if name == "text_from_bytes":
+        return text_from_bytes(_reference_owner(args[0]))
+    raise IRExecutionError(f"unsupported dynamic builtin '{name}'")
 
 
 functions_module = IRModule(())

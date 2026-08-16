@@ -35,6 +35,11 @@ def _validate_array_type(type_name: ast.ArrayType) -> None:
             "arrays of string are not supported in milestone 0.53",
             type_name.location,
         )
+    if type_name.element_type in {ast.TypeName.BYTES, ast.TypeName.TEXT}:
+        raise SemanticError(
+            "dynamic text and buffer values cannot be stored in arrays",
+            type_name.location,
+        )
     if isinstance(type_name.element_type, ast.NominalType):
         raise SemanticError(
             "arrays of nominal types are not supported",

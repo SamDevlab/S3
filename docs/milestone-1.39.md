@@ -101,3 +101,15 @@ tests.
 No general generics, GC, public raw pointers, automatic buffer growth, numeric
 vectors, maps, records containing owners, element references, exceptions,
 structured Result values, threads, async, or C ownership transfer.
+
+## Implementation checkpoint
+
+The first implementation slice is now present in the bootstrap pipeline. It
+adds the closed `bytes`/`text` type names, semantic built-in signatures,
+linear owner checks for direct moves, lexical dynamic-buffer borrow conflicts,
+typed IR registers and calls, exact-capacity hosted runtime objects, and
+hosted IR-emulator execution. Assembly artifacts preserve the logical dynamic
+types and calls. Native x86-64 execution of dynamic descriptors remains a
+separate gate because the existing native emitter has no descriptor ABI yet;
+the implementation is not promoted past this checkpoint until that gate is
+available on a Linux host.

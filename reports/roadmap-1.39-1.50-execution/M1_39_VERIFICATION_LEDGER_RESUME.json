@@ -1,0 +1,32 @@
+{
+  "milestone": "1.39",
+  "status": "IMPLEMENTATION_CHECKPOINT_NOT_PROMOTED",
+  "architecture": "CLOSED",
+  "focused_tests": "PASS",
+  "shared_regression": "PASS",
+  "compileall": "PASS",
+  "full_suite_terminal": true,
+  "full_suite_exit": 0,
+  "hosted_ir": "PASS",
+  "assembly_logical_types": "PASS",
+  "linux_native_descriptor_abi": "WAITING_FOR_LINUX_NATIVE_BACKEND",
+  "remote_writes": false,
+  "production_code_changed": true,
+  "implementation_scope": [
+    "bootstrap/s3/dynamic.py",
+    "bootstrap/s3/ast.py",
+    "bootstrap/s3/parser.py",
+    "bootstrap/s3/semantic.py",
+    "bootstrap/s3/semantic_declarations.py",
+    "bootstrap/s3/ir.py",
+    "bootstrap/s3/lowering.py",
+    "bootstrap/s3/ir_emulator.py",
+    "bootstrap/s3/verifier.py",
+    "bootstrap/s3/assembly.py",
+    "bootstrap/s3/codegen.py",
+    "bootstrap/s3/pipeline.py",
+    "bootstrap/s3/diagnostics.py",
+    "spec/diagnostics.md",
+    "tests/test_m139_dynamic_buffers.py"
+  ]
+}

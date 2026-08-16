@@ -15,7 +15,36 @@ class IRType(Enum):
     I64 = "i64"
     F64 = "f64"
     STRING = "string"
+    BYTES = "bytes"
+    TEXT = "text"
     REFERENCE = "reference"
+
+
+DYNAMIC_BUILTIN_SIGNATURES: dict[str, tuple[tuple[IRType, ...], tuple[IRType, ...]]] = {
+    "bytes_new": ((IRType.I64,), (IRType.BYTES,)),
+    "bytes_len": ((IRType.REFERENCE,), (IRType.I64,)),
+    "bytes_capacity": ((IRType.REFERENCE,), (IRType.I64,)),
+    "bytes_get": ((IRType.REFERENCE, IRType.I64), (IRType.TRYTE,)),
+    "bytes_set": ((IRType.REFERENCE, IRType.I64, IRType.TRYTE), (IRType.TRYTE,)),
+    "bytes_push": ((IRType.REFERENCE, IRType.TRYTE), (IRType.TRYTE,)),
+    "bytes_reserve": ((IRType.REFERENCE, IRType.I64), (IRType.TRYTE,)),
+    "bytes_clone": ((IRType.REFERENCE,), (IRType.BYTES,)),
+    "bytes_concat": ((IRType.REFERENCE, IRType.REFERENCE), (IRType.BYTES,)),
+    "bytes_slice": ((IRType.REFERENCE, IRType.I64, IRType.I64), (IRType.BYTES,)),
+    "bytes_from_text": ((IRType.REFERENCE,), (IRType.BYTES,)),
+    "text_new": ((IRType.I64,), (IRType.TEXT,)),
+    "text_from_static": ((IRType.STRING,), (IRType.TEXT,)),
+    "text_len": ((IRType.REFERENCE,), (IRType.I64,)),
+    "text_capacity": ((IRType.REFERENCE,), (IRType.I64,)),
+    "text_reserve": ((IRType.REFERENCE, IRType.I64), (IRType.TRYTE,)),
+    "text_append": ((IRType.REFERENCE, IRType.REFERENCE), (IRType.TRYTE,)),
+    "text_append_static": ((IRType.REFERENCE, IRType.STRING), (IRType.TRYTE,)),
+    "text_clone": ((IRType.REFERENCE,), (IRType.TEXT,)),
+    "text_concat": ((IRType.REFERENCE, IRType.REFERENCE), (IRType.TEXT,)),
+    "text_slice": ((IRType.REFERENCE, IRType.I64, IRType.I64), (IRType.TEXT,)),
+    "text_find": ((IRType.REFERENCE, IRType.REFERENCE), (IRType.I64,)),
+    "text_from_bytes": ((IRType.REFERENCE,), (IRType.TEXT,)),
+}
 
 
 class IROpcode(Enum):

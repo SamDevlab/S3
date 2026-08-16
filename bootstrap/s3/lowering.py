@@ -29,6 +29,8 @@ TYPE_MAP = {
     ast.TypeName.I64: IRType.I64,
     ast.TypeName.F64: IRType.F64,
     ast.TypeName.STRING: IRType.STRING,
+    ast.TypeName.BYTES: IRType.BYTES,
+    ast.TypeName.TEXT: IRType.TEXT,
 }
 
 
@@ -397,6 +399,11 @@ class FunctionLowerer:
         type_name: ast.DeclaredType,
         location: SourceLocation | None,
     ) -> tuple[IRType, ...]:
+        if isinstance(type_name, ast.TypeName) and type_name in {
+            ast.TypeName.BYTES,
+            ast.TypeName.TEXT,
+        }:
+            return (TYPE_MAP[type_name],)
         layout = self.semantic_model.fixed_value_layout(type_name)
         if not layout.cells:
             raise LoweringError("function result layout has no cells", location)
@@ -1237,6 +1244,22 @@ class FunctionLowerer:
             )
         storage_type = self._storage_type(declaration.type_name, declaration.location)
         initializer = self._lower_expression(declaration.initializer)
+        if storage_type in (ast.TypeName.BYTES, ast.TypeName.TEXT):
+            variable = self._allocate(storage_type, declaration.location)
+            self._emit(
+                IRInstruction(
+                    IROpcode.MOVE,
+                    result=variable,
+                    operands=(initializer,),
+                    location=declaration.location,
+                )
+            )
+            self.variable_scopes[-1][declaration.name] = _LoweredBinding(
+                declaration.type_name,
+                declaration.mutable,
+                register=variable,
+            )
+            return
         if declaration.mutable:
             memory = self._allocate_memory(
                 storage_type,

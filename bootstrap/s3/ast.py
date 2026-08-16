@@ -15,6 +15,8 @@ class TypeName(Enum):
     I64 = "i64"
     F64 = "f64"
     STRING = "string"
+    BYTES = "bytes"
+    TEXT = "text"
 
 
 @dataclass(frozen=True, slots=True)
