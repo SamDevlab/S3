@@ -94,6 +94,54 @@ def test_lockfile_is_content_hashed_and_matches_independent_manifest(tmp_path) -
     assert changed.artifact_identity != graph.artifact_identity
 
 
+def test_lockfile_write_uses_canonical_utf8_lf_bytes(tmp_path) -> None:
+    manifest = _write_project(tmp_path / "project")
+    graph = BuildGraph.from_toml(manifest)
+    lockfile = tmp_path / "project" / "s3.lock.json"
+
+    graph.write_lockfile(lockfile)
+
+    encoded = graph.lockfile_text.encode("utf-8")
+    assert lockfile.read_bytes() == encoded
+    assert encoded.endswith(b"\n")
+    assert b"\r\n" not in encoded
+    assert not encoded.startswith(b"\xef\xbb\xbf")
+
+
+def test_foreign_library_abi_bytes_change_artifact_identity(tmp_path) -> None:
+    manifest_text = MANIFEST.replace(
+        'dependencies = ["math"]',
+        'dependencies = ["math"]\nforeign_libraries = ["libc"]',
+    ).replace(
+        'kind = "system"',
+        'kind = "static"\npath = "libdemo.a"',
+    )
+    manifest = _write_project(tmp_path / "project", manifest_text)
+    foreign = tmp_path / "project" / "libdemo.a"
+    foreign.write_bytes(b"abi-v1")
+    first = BuildGraph.from_toml(manifest)
+
+    foreign.write_bytes(b"abi-v2")
+    second = BuildGraph.from_toml(manifest)
+
+    first_record = first.lockfile_payload["foreign_libraries"][0]
+    second_record = second.lockfile_payload["foreign_libraries"][0]
+    assert first_record["sha256"] != second_record["sha256"]
+    assert first.artifact_identity != second.artifact_identity
+
+
+def test_undeclared_environment_does_not_change_identity(tmp_path, monkeypatch) -> None:
+    manifest = _write_project(tmp_path / "project")
+
+    monkeypatch.setenv("S3_BUILD_GRAPH_TEST_ENV", "first")
+    first = BuildGraph.from_toml(manifest)
+    monkeypatch.setenv("S3_BUILD_GRAPH_TEST_ENV", "second")
+    second = BuildGraph.from_toml(manifest)
+
+    assert first.lockfile_text == second.lockfile_text
+    assert first.artifact_identity == second.artifact_identity
+
+
 def test_graph_sources_compile_in_isolated_topological_order(tmp_path) -> None:
     graph = BuildGraph.from_toml(_write_project(tmp_path / "project"))
     sources = graph.load_sources()
