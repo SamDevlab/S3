@@ -12,16 +12,26 @@ class FFIError(ValueError):
 
 
 class FFIType(Enum):
-    """Scalar types with an explicit native ABI class."""
+    """Closed foreign types with an explicit native ABI class."""
 
     TRIT = "trit"
     TRYTE = "tryte"
     I64 = "i64"
     F64 = "f64"
+    BYTES_VIEW = "bytes_view"
+    TEXT_VIEW = "text_view"
 
     @property
     def abi_class(self) -> str:
-        return "float" if self is FFIType.F64 else "integer"
+        if self is FFIType.F64:
+            return "float"
+        if self in (FFIType.BYTES_VIEW, FFIType.TEXT_VIEW):
+            return "memory"
+        return "integer"
+
+    @property
+    def is_buffer_view(self) -> bool:
+        return self in (FFIType.BYTES_VIEW, FFIType.TEXT_VIEW)
 
 
 _SYMBOL = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -29,7 +39,7 @@ _SYMBOL = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 @dataclass(frozen=True, slots=True)
 class FFISignature:
-    """A named, scalar-only external function signature."""
+    """A named external function signature over the closed FFI type set."""
 
     symbol: str
     parameters: tuple[FFIType, ...]
@@ -50,6 +60,10 @@ class FFISignature:
     @property
     def float_parameter_count(self) -> int:
         return sum(parameter.abi_class == "float" for parameter in self.parameters)
+
+    @property
+    def buffer_parameter_count(self) -> int:
+        return sum(parameter.is_buffer_view for parameter in self.parameters)
 
 
 def validate_signature(signature: FFISignature) -> FFISignature:
