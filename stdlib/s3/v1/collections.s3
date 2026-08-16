@@ -1,0 +1,16 @@
+module s3.v1.collections
+
+export fn new_map(capacity: i64) -> i64_map:
+    return i64_map_new(capacity)
+
+export fn put_map(values: &mut i64_map, key: i64, value: i64) -> tryte:
+    return i64_map_put(values, key, value)
+
+export fn get_map(values: &i64_map, key: i64) -> i64:
+    return i64_map_get(values, key)
+
+export fn new_set(capacity: i64) -> i64_set:
+    return i64_set_new(capacity)
+
+export fn add_set(values: &mut i64_set, value: i64) -> tryte:
+    return i64_set_add(values, value)

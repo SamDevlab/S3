@@ -2474,6 +2474,7 @@ class SemanticAnalyzer:
                 f"{len(expression.arguments)}",
                 expression.location,
             )
+        borrow_snapshot = dict(self.active_borrows)
         for index, (argument, parameter_type) in enumerate(
             zip(expression.arguments, signature.parameter_types, strict=True),
             start=1,
@@ -2488,6 +2489,7 @@ class SemanticAnalyzer:
             )
             if isinstance(parameter_type, ast.TypeName) and parameter_type in _DYNAMIC_TYPES:
                 self._consume_owner(argument.expression)
+        self.active_borrows = borrow_snapshot
         return signature.return_type
 
     def _analyze_static_text_query_call(
