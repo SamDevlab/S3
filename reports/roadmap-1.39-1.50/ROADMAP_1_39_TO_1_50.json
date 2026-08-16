@@ -7,6 +7,10 @@
   "remote_write_executed": false,
   "p14_3_started": false,
   "m138_docker_validation": "deferred",
+  "m139_architecture_status": "CLOSED",
+  "m139_architecture_ref": "docs/decisions/ADR-0027-m1.39-owned-dynamic-buffer-contract.md",
+  "m139_spec_ref": "spec/dynamic-buffers.md",
+  "m139_milestone_ref": "docs/milestone-1.39.md",
   "roadmap": [
     {
       "milestone": "1.39",
@@ -19,6 +23,9 @@
       "internal_evidence": ["README.md:29-31,55", "docs/ai-agent-guide.md:33-36", "tests/test_external_jsmn_s3.py:134-190"],
       "external_evidence": ["https://docs.python.org/3/c-api/buffer.html", "https://ziglang.org/documentation/master/"],
       "complexity": "HIGH",
+      "architecture_status": "CLOSED",
+      "architecture_contract": "Move-only bytes/text values with lexical borrows, explicit exact-capacity reserve, deterministic traps, private descriptor IR, and borrowed-only C views.",
+      "architecture_ref": "docs/decisions/ADR-0027-m1.39-owned-dynamic-buffer-contract.md",
       "unlocks": ["1.40", "1.41", "1.42", "1.43", "1.47", "1.48", "1.49", "1.50"]
     },
     {

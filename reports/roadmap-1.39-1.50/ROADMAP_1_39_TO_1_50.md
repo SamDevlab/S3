@@ -712,3 +712,17 @@ and additional native backends.
 All milestones remain independently gated. 1.48 may be parallelized with late
 1.47 implementation only after the shared resource/error contract is closed;
 otherwise the default sequence is linear to prevent semantic stacking.
+
+## Post-M1.39-A clarification
+
+The architecture-only campaign `S3-M139-A` closed the M1.39 public contract
+without implementing it. The authoritative implementation references are
+`docs/decisions/ADR-0027-m1.39-owned-dynamic-buffer-contract.md`,
+`spec/dynamic-buffers.md`, and `docs/milestone-1.39.md`.
+
+M1.39 is narrowed to move-only `bytes` and `text` values, lexical `&`/`&mut`
+borrows, explicit exact-capacity `reserve`, deterministic trap failures, and
+borrowed `(base, length)` FFI views. It does not introduce generic buffers,
+numeric vectors, map/set support, structured result propagation, public
+pointers, GC, or automatic growth. M1.40 remains the owner of dynamically sized
+numeric collections and their growth policy.
