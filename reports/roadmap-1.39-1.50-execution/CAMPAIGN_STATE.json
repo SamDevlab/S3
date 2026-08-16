@@ -1,0 +1,17 @@
+{
+  "campaign": "S3-AUTO-139-150",
+  "current_milestone": "1.39",
+  "completed": [],
+  "status": "blocked",
+  "last_safe_commit": "2ed94e526d43edca9830e353f731b638090a3a40",
+  "shutdown_required": true,
+  "stop_reason": "BLOCKED_ARCHITECTURE_DECISION",
+  "last_verified_milestone": "1.37",
+  "research_base_sha": "85541b782571c80d4857d013d1fb25b4997c1eb9",
+  "research_head": "2ed94e526d43edca9830e353f731b638090a3a40",
+  "primary_checkout": "C:/Users/samue/Downloads/S3/S3-language",
+  "primary_checkout_changed": false,
+  "remote_write_executed": false,
+  "p14_3_started": false,
+  "m138_docker_certification": "deferred"
+}
