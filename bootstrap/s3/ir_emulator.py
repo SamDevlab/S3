@@ -15,8 +15,12 @@ from .ir import (
 from .dynamic import (
     DynamicBytes,
     DynamicText,
+    DynamicVector,
     bytes_from_text,
     bytes_new,
+    f64_vector_new,
+    i64_vector_new,
+    tryte_vector_new,
     text_from_bytes,
     text_new,
 )
@@ -189,6 +193,9 @@ def _store_value(cell, value, value_type):
     elif value_type is IRType.TEXT:
         if not isinstance(value, DynamicText):
             raise IRExecutionError("invalid text value")
+    elif value_type is IRType.VECTOR:
+        if not isinstance(value, DynamicVector):
+            raise IRExecutionError("invalid vector value")
     elif value_type is IRType.I64:
         try:
             validate_i64(value)
@@ -267,7 +274,44 @@ def _execute_dynamic_builtin(name: str, args: tuple[object, ...]) -> object:
         return _reference_owner(args[0]).find(_reference_owner(args[1]))
     if name == "text_from_bytes":
         return text_from_bytes(_reference_owner(args[0]))
+    if name.startswith("tryte_vector_"):
+        return _execute_vector_builtin(name, args, "tryte", tryte_vector_new)
+    if name.startswith("i64_vector_"):
+        return _execute_vector_builtin(name, args, "i64", i64_vector_new)
+    if name.startswith("f64_vector_"):
+        return _execute_vector_builtin(name, args, "f64", f64_vector_new)
     raise IRExecutionError(f"unsupported dynamic builtin '{name}'")
+
+
+def _execute_vector_builtin(name: str, args: tuple[object, ...], element_type: str, constructor) -> object:
+    operation = name[len(element_type) + len("_vector_") :]
+    if operation == "new":
+        return constructor(args[0])
+    owner = _reference_owner(args[0])
+    if not isinstance(owner, DynamicVector) or owner.element_type != element_type:
+        raise IRExecutionError(f"invalid {element_type} vector reference")
+    if operation == "len":
+        return owner.length
+    if operation == "capacity":
+        return owner.capacity
+    if operation == "reserve":
+        owner.reserve(args[1])
+        return 0
+    if operation == "push":
+        owner.push(args[1])
+        return 0
+    if operation == "pop":
+        return owner.pop()
+    if operation == "get":
+        return owner.get(args[1])
+    if operation == "set":
+        owner.set(args[1], args[2])
+        return 0
+    if operation == "clone":
+        return owner.clone()
+    if operation == "slice":
+        return owner.slice(args[1], args[2])
+    raise IRExecutionError(f"unsupported vector builtin '{name}'")
 
 
 functions_module = IRModule(())

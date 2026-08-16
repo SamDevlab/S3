@@ -31,6 +31,17 @@ TYPE_MAP = {
     ast.TypeName.STRING: IRType.STRING,
     ast.TypeName.BYTES: IRType.BYTES,
     ast.TypeName.TEXT: IRType.TEXT,
+    ast.TypeName.TRYTE_VECTOR: IRType.VECTOR,
+    ast.TypeName.I64_VECTOR: IRType.VECTOR,
+    ast.TypeName.F64_VECTOR: IRType.VECTOR,
+}
+
+_DYNAMIC_TYPES = {
+    ast.TypeName.BYTES,
+    ast.TypeName.TEXT,
+    ast.TypeName.TRYTE_VECTOR,
+    ast.TypeName.I64_VECTOR,
+    ast.TypeName.F64_VECTOR,
 }
 
 
@@ -399,10 +410,7 @@ class FunctionLowerer:
         type_name: ast.DeclaredType,
         location: SourceLocation | None,
     ) -> tuple[IRType, ...]:
-        if isinstance(type_name, ast.TypeName) and type_name in {
-            ast.TypeName.BYTES,
-            ast.TypeName.TEXT,
-        }:
+        if isinstance(type_name, ast.TypeName) and type_name in _DYNAMIC_TYPES:
             return (TYPE_MAP[type_name],)
         layout = self.semantic_model.fixed_value_layout(type_name)
         if not layout.cells:
@@ -1244,7 +1252,7 @@ class FunctionLowerer:
             )
         storage_type = self._storage_type(declaration.type_name, declaration.location)
         initializer = self._lower_expression(declaration.initializer)
-        if storage_type in (ast.TypeName.BYTES, ast.TypeName.TEXT):
+        if storage_type in _DYNAMIC_TYPES:
             variable = self._allocate(storage_type, declaration.location)
             self._emit(
                 IRInstruction(
@@ -1347,7 +1355,7 @@ class FunctionLowerer:
             value = self._lower_expression(statement.value)
             if (
                 isinstance(binding.type_name, ast.TypeName)
-                and binding.type_name in {ast.TypeName.BYTES, ast.TypeName.TEXT}
+                and binding.type_name in _DYNAMIC_TYPES
             ):
                 if binding.register is None:
                     raise LoweringError(

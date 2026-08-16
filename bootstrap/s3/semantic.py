@@ -69,6 +69,46 @@ _DYNAMIC_BUILTINS: dict[str, tuple[tuple[ast.DeclaredType, ...], ast.TypeName]] 
 }
 
 
+def _vector_builtin_signatures(
+    prefix: str,
+    vector_type: ast.TypeName,
+    element_type: ast.TypeName,
+) -> dict[str, tuple[tuple[ast.DeclaredType, ...], ast.TypeName]]:
+    shared = ast.ReferenceType(vector_type, False, _DYNAMIC_BUILTIN_LOCATION)
+    mutable = ast.ReferenceType(vector_type, True, _DYNAMIC_BUILTIN_LOCATION)
+    return {
+        f"{prefix}_vector_new": ((ast.TypeName.I64,), vector_type),
+        f"{prefix}_vector_len": ((shared,), ast.TypeName.I64),
+        f"{prefix}_vector_capacity": ((shared,), ast.TypeName.I64),
+        f"{prefix}_vector_reserve": ((mutable, ast.TypeName.I64), ast.TypeName.TRYTE),
+        f"{prefix}_vector_push": ((mutable, element_type), ast.TypeName.TRYTE),
+        f"{prefix}_vector_pop": ((mutable,), element_type),
+        f"{prefix}_vector_get": ((shared, ast.TypeName.I64), element_type),
+        f"{prefix}_vector_set": ((mutable, ast.TypeName.I64, element_type), ast.TypeName.TRYTE),
+        f"{prefix}_vector_clone": ((shared,), vector_type),
+        f"{prefix}_vector_slice": ((shared, ast.TypeName.I64, ast.TypeName.I64), vector_type),
+    }
+
+
+_DYNAMIC_BUILTINS.update(
+    _vector_builtin_signatures("tryte", ast.TypeName.TRYTE_VECTOR, ast.TypeName.TRYTE)
+)
+_DYNAMIC_BUILTINS.update(
+    _vector_builtin_signatures("i64", ast.TypeName.I64_VECTOR, ast.TypeName.I64)
+)
+_DYNAMIC_BUILTINS.update(
+    _vector_builtin_signatures("f64", ast.TypeName.F64_VECTOR, ast.TypeName.F64)
+)
+
+_DYNAMIC_TYPES = {
+    ast.TypeName.BYTES,
+    ast.TypeName.TEXT,
+    ast.TypeName.TRYTE_VECTOR,
+    ast.TypeName.I64_VECTOR,
+    ast.TypeName.F64_VECTOR,
+}
+
+
 @dataclass(frozen=True, slots=True)
 class FunctionType:
     name: str
@@ -1291,7 +1331,7 @@ class SemanticAnalyzer:
 
     @staticmethod
     def _is_dynamic_type(type_name: ast.DeclaredType) -> bool:
-        return type_name in (ast.TypeName.BYTES, ast.TypeName.TEXT)
+        return type_name in _DYNAMIC_TYPES
 
     def _consume_owner(self, expression: ast.Expression) -> None:
         if not isinstance(expression, ast.Identifier):
@@ -1320,10 +1360,7 @@ class SemanticAnalyzer:
         return_type: bool = False,
         aggregate: bool = False,
     ) -> None:
-        if isinstance(type_name, ast.TypeName) and type_name in {
-            ast.TypeName.BYTES,
-            ast.TypeName.TEXT,
-        }:
+        if isinstance(type_name, ast.TypeName) and type_name in _DYNAMIC_TYPES:
             self.contains_dynamic = True
             if aggregate:
                 raise SemanticError(
@@ -1333,7 +1370,7 @@ class SemanticAnalyzer:
                 )
             return
         if isinstance(type_name, ast.ReferenceType):
-            if type_name.target in (ast.TypeName.BYTES, ast.TypeName.TEXT):
+            if type_name.target in _DYNAMIC_TYPES:
                 self.contains_dynamic = True
             self.contains_references = True
             if isinstance(type_name.target, ast.ReferenceType):
@@ -1389,7 +1426,7 @@ class SemanticAnalyzer:
                 "arrays of string are not supported in milestone 0.53",
                 type_name.location,
             )
-        if type_name.element_type in {ast.TypeName.BYTES, ast.TypeName.TEXT}:
+        if type_name.element_type in _DYNAMIC_TYPES:
             raise SemanticError(
                 "dynamic text and buffer values cannot be stored in arrays",
                 type_name.location,
@@ -1941,6 +1978,12 @@ class SemanticAnalyzer:
                 expression.location,
                 diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_NESTED,
             )
+        if self._is_dynamic_type(binding.type_name) and id(binding) in self.moved_bindings:
+            raise SemanticError(
+                f"use of moved dynamic binding '{expression.operand.name}'",
+                expression.operand.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_USE_AFTER_MOVE,
+            )
         if expression.mutable and (not binding.mutable and not binding.parameter):
             raise SemanticError(
                 "mutable reference target is not writable",
@@ -2391,10 +2434,7 @@ class SemanticAnalyzer:
                 f"argument {index} to '{expression.function_name}'",
                 diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
             )
-            if isinstance(parameter_type, ast.TypeName) and parameter_type in {
-                ast.TypeName.BYTES,
-                ast.TypeName.TEXT,
-            }:
+            if isinstance(parameter_type, ast.TypeName) and parameter_type in _DYNAMIC_TYPES:
                 self._consume_owner(argument.expression)
         return signature.return_type
 

@@ -224,12 +224,18 @@ class Parser:
             "string",
             "bytes",
             "text",
+            "tryte_vector",
+            "i64_vector",
+            "f64_vector",
         }:
             name = self._advance().text
             result = {
                 "string": ast.TypeName.STRING,
                 "bytes": ast.TypeName.BYTES,
                 "text": ast.TypeName.TEXT,
+                "tryte_vector": ast.TypeName.TRYTE_VECTOR,
+                "i64_vector": ast.TypeName.I64_VECTOR,
+                "f64_vector": ast.TypeName.F64_VECTOR,
             }[name]
         elif self._check(TokenKind.IDENTIFIER):
             nominal = self._advance()

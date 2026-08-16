@@ -13,6 +13,7 @@ from enum import Enum
 from typing import Iterator
 
 from .numeric import validate_f64, validate_i64
+from .ternary import TRYTE_MAX, TRYTE_MIN
 
 
 class DynamicError(TypeError):
@@ -158,14 +159,14 @@ class Allocator:
 class BorrowedBuffer:
     """Lexically manageable non-owning view of a dynamic byte/text owner."""
 
-    def __init__(self, owner: "DynamicBytes | DynamicText", mutable: bool) -> None:
+    def __init__(self, owner: "DynamicBytes | DynamicText | DynamicVector", mutable: bool) -> None:
         self._owner = owner
         self.mutable = mutable
         self._closed = False
         owner._acquire_borrow(mutable)
 
     @property
-    def owner(self) -> "DynamicBytes | DynamicText":
+    def owner(self) -> "DynamicBytes | DynamicText | DynamicVector":
         if self._closed:
             raise BorrowConflictError("borrow is no longer active")
         return self._owner
@@ -416,11 +417,157 @@ class DynamicText:
         return BorrowedBuffer(self, mutable)
 
 
+class DynamicVector:
+    """Owned ordered collection for one closed scalar element family."""
+
+    _ELEMENT_SIZES = {"tryte": 2, "i64": 8, "f64": 8}
+
+    def __init__(
+        self,
+        element_type: str,
+        capacity: int = 0,
+        *,
+        allocator: Allocator | None = None,
+        _data: tuple[int | float, ...] = (),
+    ) -> None:
+        if element_type not in self._ELEMENT_SIZES:
+            raise DynamicError(f"unsupported vector element type '{element_type}'")
+        self.element_type = element_type
+        self.allocator = allocator or Allocator()
+        _validate_vector_capacity(capacity, self._ELEMENT_SIZES[element_type])
+        if len(_data) > capacity:
+            raise BufferCapacityError("initial vector data exceeds capacity")
+        for value in _data:
+            _validate_vector_element(element_type, value)
+        if capacity:
+            self.allocator.reserve(capacity * self._ELEMENT_SIZES[element_type])
+        self._storage = list(_data) + [0] * (capacity - len(_data))
+        self._length = len(_data)
+        self._shared_borrows = 0
+        self._mutable_borrow = False
+        self._moved = False
+
+    @property
+    def length(self) -> int:
+        self._require_live()
+        return self._length
+
+    @property
+    def capacity(self) -> int:
+        self._require_live()
+        return len(self._storage)
+
+    def _require_live(self) -> None:
+        if self._moved:
+            raise MovedValueError("owned vector was moved")
+
+    def _require_unborrowed(self) -> None:
+        self._require_live()
+        if self._shared_borrows or self._mutable_borrow:
+            raise BorrowConflictError("owner operation overlaps an active borrow")
+
+    def _acquire_borrow(self, mutable: bool) -> None:
+        self._require_live()
+        if mutable:
+            if self._mutable_borrow or self._shared_borrows:
+                raise BorrowConflictError("mutable borrow overlaps an active borrow")
+            self._mutable_borrow = True
+        else:
+            if self._mutable_borrow:
+                raise BorrowConflictError("shared borrow overlaps a mutable borrow")
+            self._shared_borrows += 1
+
+    def _release_borrow(self, mutable: bool) -> None:
+        if mutable:
+            self._mutable_borrow = False
+        elif self._shared_borrows:
+            self._shared_borrows -= 1
+
+    def move(self) -> "DynamicVector":
+        self._require_unborrowed()
+        replacement = object.__new__(type(self))
+        replacement.element_type = self.element_type
+        replacement.allocator = self.allocator
+        replacement._storage = self._storage
+        replacement._length = self._length
+        replacement._shared_borrows = 0
+        replacement._mutable_borrow = False
+        replacement._moved = False
+        self._moved = True
+        return replacement
+
+    def reserve(self, capacity: int) -> None:
+        self._require_unborrowed()
+        _validate_vector_capacity(capacity, self._ELEMENT_SIZES[self.element_type])
+        if capacity <= self.capacity:
+            return
+        self.allocator.reserve(capacity * self._ELEMENT_SIZES[self.element_type])
+        self._storage.extend([0] * (capacity - self.capacity))
+
+    def push(self, value: int | float) -> None:
+        self._require_unborrowed()
+        _validate_vector_element(self.element_type, value)
+        if self._length >= self.capacity:
+            raise BufferFullError("vector has no reserved capacity")
+        self._storage[self._length] = value
+        self._length += 1
+
+    def pop(self) -> int | float:
+        self._require_unborrowed()
+        if self._length == 0:
+            raise BufferBoundsError("cannot pop an empty vector")
+        self._length -= 1
+        return self._storage[self._length]
+
+    def get(self, index: int) -> int | float:
+        self._require_live()
+        _validate_vector_index(index, self._length)
+        return self._storage[index]
+
+    def set(self, index: int, value: int | float) -> None:
+        self._require_unborrowed()
+        _validate_vector_index(index, self._length)
+        _validate_vector_element(self.element_type, value)
+        self._storage[index] = value
+
+    def clone(self) -> "DynamicVector":
+        self._require_live()
+        return DynamicVector(
+            self.element_type,
+            self.capacity,
+            allocator=self.allocator,
+            _data=tuple(self._storage[: self._length]),
+        )
+
+    def slice(self, start: int, end: int) -> "DynamicVector":
+        self._require_live()
+        _validate_slice(start, end, self._length)
+        return DynamicVector(
+            self.element_type,
+            end - start,
+            allocator=self.allocator,
+            _data=tuple(self._storage[start:end]),
+        )
+
+    def borrow(self, *, mutable: bool = False) -> BorrowedBuffer:
+        return BorrowedBuffer(self, mutable)
+
+    def __iter__(self) -> Iterator[int | float]:
+        self._require_live()
+        return iter(tuple(self._storage[: self._length]))
+
+    def __getitem__(self, index: int) -> int | float:
+        return self.get(index)
+
+    def __setitem__(self, index: int, value: int | float) -> None:
+        self.set(index, value)
+
+
 def bytes_new(capacity: int, *, allocator: Allocator | None = None) -> DynamicBytes:
     return DynamicBytes(capacity, allocator=allocator)
 
 
-def _owned(value: DynamicBytes | DynamicText | BorrowedBuffer):
+def _owned(value: DynamicBytes | DynamicText | DynamicVector | BorrowedBuffer):
     return value.owner if isinstance(value, BorrowedBuffer) else value
 
 
@@ -508,9 +655,199 @@ def text_find(value: DynamicText | BorrowedBuffer, needle: DynamicText | Borrowe
     return _owned(value).find(_owned(needle))
 
 
+def _vector_owner(value: DynamicVector | BorrowedBuffer, element_type: str) -> DynamicVector:
+    owner = _owned(value)
+    if not isinstance(owner, DynamicVector) or owner.element_type != element_type:
+        raise DynamicError(f"expected {element_type} vector")
+    return owner
+
+
+def _vector_new(element_type: str, capacity: int, allocator: Allocator | None = None) -> DynamicVector:
+    return DynamicVector(element_type, capacity, allocator=allocator)
+
+
+def tryte_vector_new(capacity: int, *, allocator: Allocator | None = None) -> DynamicVector:
+    return _vector_new("tryte", capacity, allocator)
+
+
+def i64_vector_new(capacity: int, *, allocator: Allocator | None = None) -> DynamicVector:
+    return _vector_new("i64", capacity, allocator)
+
+
+def f64_vector_new(capacity: int, *, allocator: Allocator | None = None) -> DynamicVector:
+    return _vector_new("f64", capacity, allocator)
+
+
+def _vector_len(value: DynamicVector | BorrowedBuffer, element_type: str) -> int:
+    return _vector_owner(value, element_type).length
+
+
+def _vector_capacity(value: DynamicVector | BorrowedBuffer, element_type: str) -> int:
+    return _vector_owner(value, element_type).capacity
+
+
+def _vector_reserve(value: DynamicVector | BorrowedBuffer, capacity: int, element_type: str) -> None:
+    _vector_owner(value, element_type).reserve(capacity)
+
+
+def _vector_push(value: DynamicVector | BorrowedBuffer, element: int | float, element_type: str) -> None:
+    _vector_owner(value, element_type).push(element)
+
+
+def _vector_pop(value: DynamicVector | BorrowedBuffer, element_type: str) -> int | float:
+    return _vector_owner(value, element_type).pop()
+
+
+def _vector_get(value: DynamicVector | BorrowedBuffer, index: int, element_type: str) -> int | float:
+    return _vector_owner(value, element_type).get(index)
+
+
+def _vector_set(value: DynamicVector | BorrowedBuffer, index: int, element: int | float, element_type: str) -> None:
+    _vector_owner(value, element_type).set(index, element)
+
+
+def _vector_clone(value: DynamicVector | BorrowedBuffer, element_type: str) -> DynamicVector:
+    return _vector_owner(value, element_type).clone()
+
+
+def _vector_slice(value: DynamicVector | BorrowedBuffer, start: int, end: int, element_type: str) -> DynamicVector:
+    return _vector_owner(value, element_type).slice(start, end)
+
+
+def tryte_vector_len(value: DynamicVector | BorrowedBuffer) -> int:
+    return _vector_len(value, "tryte")
+
+
+def i64_vector_len(value: DynamicVector | BorrowedBuffer) -> int:
+    return _vector_len(value, "i64")
+
+
+def f64_vector_len(value: DynamicVector | BorrowedBuffer) -> int:
+    return _vector_len(value, "f64")
+
+
+def tryte_vector_capacity(value: DynamicVector | BorrowedBuffer) -> int:
+    return _vector_capacity(value, "tryte")
+
+
+def i64_vector_capacity(value: DynamicVector | BorrowedBuffer) -> int:
+    return _vector_capacity(value, "i64")
+
+
+def f64_vector_capacity(value: DynamicVector | BorrowedBuffer) -> int:
+    return _vector_capacity(value, "f64")
+
+
+def tryte_vector_reserve(value, capacity: int) -> None:
+    _vector_reserve(value, capacity, "tryte")
+
+
+def i64_vector_reserve(value, capacity: int) -> None:
+    _vector_reserve(value, capacity, "i64")
+
+
+def f64_vector_reserve(value, capacity: int) -> None:
+    _vector_reserve(value, capacity, "f64")
+
+
+def tryte_vector_push(value, element: int) -> None:
+    _vector_push(value, element, "tryte")
+
+
+def i64_vector_push(value, element: int) -> None:
+    _vector_push(value, element, "i64")
+
+
+def f64_vector_push(value, element: float) -> None:
+    _vector_push(value, element, "f64")
+
+
+def tryte_vector_pop(value) -> int:
+    return _vector_pop(value, "tryte")
+
+
+def i64_vector_pop(value) -> int:
+    return _vector_pop(value, "i64")
+
+
+def f64_vector_pop(value) -> float:
+    return _vector_pop(value, "f64")
+
+
+def tryte_vector_get(value, index: int) -> int:
+    return _vector_get(value, index, "tryte")
+
+
+def i64_vector_get(value, index: int) -> int:
+    return _vector_get(value, index, "i64")
+
+
+def f64_vector_get(value, index: int) -> float:
+    return _vector_get(value, index, "f64")
+
+
+def tryte_vector_set(value, index: int, element: int) -> None:
+    _vector_set(value, index, element, "tryte")
+
+
+def i64_vector_set(value, index: int, element: int) -> None:
+    _vector_set(value, index, element, "i64")
+
+
+def f64_vector_set(value, index: int, element: float) -> None:
+    _vector_set(value, index, element, "f64")
+
+
+def tryte_vector_clone(value) -> DynamicVector:
+    return _vector_clone(value, "tryte")
+
+
+def i64_vector_clone(value) -> DynamicVector:
+    return _vector_clone(value, "i64")
+
+
+def f64_vector_clone(value) -> DynamicVector:
+    return _vector_clone(value, "f64")
+
+
+def tryte_vector_slice(value, start: int, end: int) -> DynamicVector:
+    return _vector_slice(value, start, end, "tryte")
+
+
+def i64_vector_slice(value, start: int, end: int) -> DynamicVector:
+    return _vector_slice(value, start, end, "i64")
+
+
+def f64_vector_slice(value, start: int, end: int) -> DynamicVector:
+    return _vector_slice(value, start, end, "f64")
+
+
 def _validate_capacity(value: int) -> None:
     if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= MAX_BUFFER_BYTES:
         raise BufferCapacityError("capacity must be a non-negative i64 within the buffer limit")
+
+
+def _validate_vector_capacity(value: int, element_size: int) -> None:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise BufferCapacityError("vector capacity must be a non-negative i64")
+    if value > MAX_BUFFER_BYTES // element_size:
+        raise BufferCapacityError("vector capacity exceeds the byte limit")
+
+
+def _validate_vector_index(value: int, length: int) -> None:
+    if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value < length:
+        raise BufferBoundsError("vector index is outside [0, length)")
+
+
+def _validate_vector_element(element_type: str, value: int | float) -> None:
+    if element_type == "tryte":
+        if isinstance(value, bool) or not isinstance(value, int) or not TRYTE_MIN <= value <= TRYTE_MAX:
+            raise BufferOctetRangeError("value is outside tryte range")
+        return
+    if element_type == "i64":
+        validate_i64(value)
+        return
+    validate_f64(value)
 
 
 def _validate_octet(value: int) -> None:

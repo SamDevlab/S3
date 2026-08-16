@@ -539,6 +539,7 @@ class X8664Emitter:
                 AssemblyType.STRING,
                 AssemblyType.BYTES,
                 AssemblyType.TEXT,
+                AssemblyType.VECTOR,
             }:
                 overflow = self._overflow_failure(type_name, "r11")
                 lines.extend(self._range_check(type_name, "r11", overflow))

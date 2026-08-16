@@ -365,7 +365,7 @@ class IRVerifier:
             result, result_type = require_result()
             if result_type is not IRType.REFERENCE:
                 self._error("address_of result must be a reference", instruction.location)
-            if instruction.reference_target not in {IRType.TRIT, IRType.TRYTE, IRType.STRING, IRType.BYTES, IRType.TEXT}:
+            if instruction.reference_target not in {IRType.TRIT, IRType.TRYTE, IRType.STRING, IRType.BYTES, IRType.TEXT, IRType.VECTOR}:
                 self._error("address_of requires a scalar reference target", instruction.location)
             if len(instruction.operands) not in {0, 1} or instruction.memory is None and not instruction.operands:
                 self._error("address_of requires a logical storage operand", instruction.location)
@@ -411,6 +411,8 @@ class IRVerifier:
             require_operands(0)
             if result_type is IRType.STRING:
                 self._error("const cannot produce string values", instruction.location)
+            if result_type in {IRType.BYTES, IRType.TEXT, IRType.VECTOR}:
+                self._error("const cannot produce dynamic values", instruction.location)
             if result_type is IRType.REFERENCE:
                 self._error("const cannot produce reference values", instruction.location)
             if instruction.immediate is None:
@@ -466,6 +468,8 @@ class IRVerifier:
             )
             if result_type is IRType.STRING:
                 self._error("invert does not support string values", instruction.location)
+            if result_type in {IRType.BYTES, IRType.TEXT, IRType.VECTOR}:
+                self._error("invert does not support dynamic values", instruction.location)
             if result_type is IRType.REFERENCE:
                 self._error("invert does not support reference values", instruction.location)
             return
@@ -481,6 +485,11 @@ class IRVerifier:
             if result_type is IRType.STRING:
                 self._error(
                     f"{opcode.value} does not support string values",
+                    instruction.location,
+                )
+            if result_type in {IRType.BYTES, IRType.TEXT, IRType.VECTOR}:
+                self._error(
+                    f"{opcode.value} does not support dynamic values",
                     instruction.location,
                 )
             if result_type is IRType.REFERENCE:
@@ -501,6 +510,8 @@ class IRVerifier:
             )
             if operand_types and operand_types[0] is IRType.STRING:
                 self._error("compare does not support string values", instruction.location)
+            if operand_types and operand_types[0] in {IRType.BYTES, IRType.TEXT, IRType.VECTOR}:
+                self._error("compare does not support dynamic values", instruction.location)
             if operand_types and operand_types[0] is IRType.REFERENCE:
                 self._error("compare does not support reference values", instruction.location)
             return

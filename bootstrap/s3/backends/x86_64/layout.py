@@ -161,7 +161,7 @@ def _element_size(type_name: AssemblyType) -> int:
         return 2
     if type_name is AssemblyType.STRING:
         return 8
-    if type_name in {AssemblyType.BYTES, AssemblyType.TEXT, AssemblyType.REFERENCE}:
+    if type_name in {AssemblyType.BYTES, AssemblyType.TEXT, AssemblyType.VECTOR, AssemblyType.REFERENCE}:
         return 8
     raise NativeBackendError(f"unsupported memory element type {type_name!r}")
 

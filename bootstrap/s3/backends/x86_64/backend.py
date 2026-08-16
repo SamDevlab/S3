@@ -38,7 +38,7 @@ class X8664Backend:
             raise NativeBackendError(
                 "native entry function 'main' cannot return string"
             )
-        if main.return_type in {AssemblyType.BYTES, AssemblyType.TEXT}:
+        if main.return_type in {AssemblyType.BYTES, AssemblyType.TEXT, AssemblyType.VECTOR}:
             raise NativeBackendError(
                 "native entry function 'main' cannot return a dynamic value"
             )

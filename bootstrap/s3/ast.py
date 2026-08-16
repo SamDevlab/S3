@@ -17,6 +17,9 @@ class TypeName(Enum):
     STRING = "string"
     BYTES = "bytes"
     TEXT = "text"
+    TRYTE_VECTOR = "tryte_vector"
+    I64_VECTOR = "i64_vector"
+    F64_VECTOR = "f64_vector"
 
 
 @dataclass(frozen=True, slots=True)

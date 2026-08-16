@@ -63,6 +63,7 @@ class AssemblyType(Enum):
     STRING = "string"
     BYTES = "bytes"
     TEXT = "text"
+    VECTOR = "vector"
     REFERENCE = "reference"
 
 

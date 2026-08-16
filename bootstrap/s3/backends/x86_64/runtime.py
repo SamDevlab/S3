@@ -666,6 +666,276 @@ __s3_builtin_text_find:
     pop r13
     pop r12
     ret
+
+.type __s3_vec_new,@function
+__s3_vec_new:
+    test rdi,rdi
+    js __s3_fail_capacity
+    imul rdi,rsi
+    jo __s3_fail_capacity
+    jmp __s3_dyn_new
+.type __s3_vec_reserve,@function
+__s3_vec_reserve:
+    test rsi,rsi
+    js __s3_fail_capacity
+    imul rsi,rdx
+    jo __s3_fail_capacity
+    jmp __s3_dyn_reserve
+
+.type __s3_builtin_tryte_vector_new,@function
+__s3_builtin_tryte_vector_new:
+    mov esi,2
+    jmp __s3_vec_new
+.type __s3_builtin_i64_vector_new,@function
+__s3_builtin_i64_vector_new:
+    mov esi,8
+    jmp __s3_vec_new
+.type __s3_builtin_f64_vector_new,@function
+__s3_builtin_f64_vector_new:
+    mov esi,8
+    jmp __s3_vec_new
+
+.type __s3_vec_len_2,@function
+__s3_vec_len_2:
+    mov r10,[rdi]
+    mov rax,[r10+8]
+    sar rax,1
+    ret
+.type __s3_vec_len_8,@function
+__s3_vec_len_8:
+    mov r10,[rdi]
+    mov rax,[r10+8]
+    sar rax,3
+    ret
+.type __s3_vec_cap_2,@function
+__s3_vec_cap_2:
+    mov r10,[rdi]
+    mov rax,[r10+16]
+    sar rax,1
+    ret
+.type __s3_vec_cap_8,@function
+__s3_vec_cap_8:
+    mov r10,[rdi]
+    mov rax,[r10+16]
+    sar rax,3
+    ret
+.type __s3_builtin_tryte_vector_len,@function
+__s3_builtin_tryte_vector_len:
+    jmp __s3_vec_len_2
+.type __s3_builtin_tryte_vector_capacity,@function
+__s3_builtin_tryte_vector_capacity:
+    jmp __s3_vec_cap_2
+.type __s3_builtin_i64_vector_len,@function
+__s3_builtin_i64_vector_len:
+    jmp __s3_vec_len_8
+.type __s3_builtin_i64_vector_capacity,@function
+__s3_builtin_i64_vector_capacity:
+    jmp __s3_vec_cap_8
+.type __s3_builtin_f64_vector_len,@function
+__s3_builtin_f64_vector_len:
+    jmp __s3_vec_len_8
+.type __s3_builtin_f64_vector_capacity,@function
+__s3_builtin_f64_vector_capacity:
+    jmp __s3_vec_cap_8
+
+.type __s3_builtin_tryte_vector_reserve,@function
+__s3_builtin_tryte_vector_reserve:
+    mov edx,2
+    jmp __s3_vec_reserve
+.type __s3_builtin_i64_vector_reserve,@function
+__s3_builtin_i64_vector_reserve:
+    mov edx,8
+    jmp __s3_vec_reserve
+.type __s3_builtin_f64_vector_reserve,@function
+__s3_builtin_f64_vector_reserve:
+    mov edx,8
+    jmp __s3_vec_reserve
+
+.type __s3_vec_push_2,@function
+__s3_vec_push_2:
+    cmp rsi,-364
+    jl __s3_fail_capacity
+    cmp rsi,364
+    jg __s3_fail_capacity
+    mov r10,[rdi]
+    mov rax,[r10+8]
+    mov r8,rax
+    add r8,2
+    jc __s3_fail_capacity
+    cmp r8,[r10+16]
+    ja __s3_fail_capacity
+    mov r11,[r10]
+    mov word ptr [r11+rax],si
+    mov [r10+8],r8
+    xor eax,eax
+    ret
+.type __s3_vec_push_8,@function
+__s3_vec_push_8:
+    mov r10,[rdi]
+    mov rax,[r10+8]
+    mov r8,rax
+    add r8,8
+    jc __s3_fail_capacity
+    cmp r8,[r10+16]
+    ja __s3_fail_capacity
+    mov r11,[r10]
+    mov qword ptr [r11+rax],rsi
+    mov [r10+8],r8
+    xor eax,eax
+    ret
+.type __s3_builtin_tryte_vector_push,@function
+__s3_builtin_tryte_vector_push:
+    jmp __s3_vec_push_2
+.type __s3_builtin_i64_vector_push,@function
+__s3_builtin_i64_vector_push:
+    jmp __s3_vec_push_8
+.type __s3_builtin_f64_vector_push,@function
+__s3_builtin_f64_vector_push:
+    jmp __s3_vec_push_8
+
+.type __s3_vec_get_2,@function
+__s3_vec_get_2:
+    mov r10,[rdi]
+    test rsi,rsi
+    js __s3_fail_bounds
+    mov rax,rsi
+    shl rax,1
+    jc __s3_fail_bounds
+    cmp rax,[r10+8]
+    jae __s3_fail_bounds
+    mov r11,[r10]
+    movsx eax,word ptr [r11+rax]
+    ret
+.type __s3_vec_get_8,@function
+__s3_vec_get_8:
+    mov r10,[rdi]
+    test rsi,rsi
+    js __s3_fail_bounds
+    mov rax,rsi
+    shl rax,3
+    jc __s3_fail_bounds
+    cmp rax,[r10+8]
+    jae __s3_fail_bounds
+    mov r11,[r10]
+    mov rax,[r11+rax]
+    ret
+.type __s3_builtin_tryte_vector_get,@function
+__s3_builtin_tryte_vector_get:
+    jmp __s3_vec_get_2
+.type __s3_builtin_i64_vector_get,@function
+__s3_builtin_i64_vector_get:
+    jmp __s3_vec_get_8
+.type __s3_builtin_f64_vector_get,@function
+__s3_builtin_f64_vector_get:
+    jmp __s3_vec_get_8
+
+.type __s3_vec_set_2,@function
+__s3_vec_set_2:
+    cmp rdx,-364
+    jl __s3_fail_capacity
+    cmp rdx,364
+    jg __s3_fail_capacity
+    mov r10,[rdi]
+    test rsi,rsi
+    js __s3_fail_bounds
+    mov rax,rsi
+    shl rax,1
+    jc __s3_fail_bounds
+    cmp rax,[r10+8]
+    jae __s3_fail_bounds
+    mov r11,[r10]
+    mov word ptr [r11+rax],dx
+    xor eax,eax
+    ret
+.type __s3_vec_set_8,@function
+__s3_vec_set_8:
+    mov r10,[rdi]
+    test rsi,rsi
+    js __s3_fail_bounds
+    mov rax,rsi
+    shl rax,3
+    jc __s3_fail_bounds
+    cmp rax,[r10+8]
+    jae __s3_fail_bounds
+    mov r11,[r10]
+    mov qword ptr [r11+rax],rdx
+    xor eax,eax
+    ret
+.type __s3_builtin_tryte_vector_set,@function
+__s3_builtin_tryte_vector_set:
+    jmp __s3_vec_set_2
+.type __s3_builtin_i64_vector_set,@function
+__s3_builtin_i64_vector_set:
+    jmp __s3_vec_set_8
+.type __s3_builtin_f64_vector_set,@function
+__s3_builtin_f64_vector_set:
+    jmp __s3_vec_set_8
+
+.type __s3_vec_pop_2,@function
+__s3_vec_pop_2:
+    mov r10,[rdi]
+    mov rax,[r10+8]
+    cmp rax,2
+    jb __s3_fail_bounds
+    sub rax,2
+    mov [r10+8],rax
+    mov r11,[r10]
+    movsx eax,word ptr [r11+rax]
+    ret
+.type __s3_vec_pop_8,@function
+__s3_vec_pop_8:
+    mov r10,[rdi]
+    mov rax,[r10+8]
+    cmp rax,8
+    jb __s3_fail_bounds
+    sub rax,8
+    mov [r10+8],rax
+    mov r11,[r10]
+    mov rax,[r11+rax]
+    ret
+.type __s3_builtin_tryte_vector_pop,@function
+__s3_builtin_tryte_vector_pop:
+    jmp __s3_vec_pop_2
+.type __s3_builtin_i64_vector_pop,@function
+__s3_builtin_i64_vector_pop:
+    jmp __s3_vec_pop_8
+.type __s3_builtin_f64_vector_pop,@function
+__s3_builtin_f64_vector_pop:
+    jmp __s3_vec_pop_8
+
+.type __s3_builtin_tryte_vector_clone,@function
+__s3_builtin_tryte_vector_clone:
+    jmp __s3_dyn_clone
+.type __s3_builtin_i64_vector_clone,@function
+__s3_builtin_i64_vector_clone:
+    jmp __s3_dyn_clone
+.type __s3_builtin_f64_vector_clone,@function
+__s3_builtin_f64_vector_clone:
+    jmp __s3_dyn_clone
+
+.type __s3_vec_slice_2,@function
+__s3_vec_slice_2:
+    shl rsi,1
+    jo __s3_fail_bounds
+    shl rdx,1
+    jo __s3_fail_bounds
+    jmp __s3_dyn_slice
+.type __s3_vec_slice_8,@function
+__s3_vec_slice_8:
+    shl rsi,3
+    jo __s3_fail_bounds
+    shl rdx,3
+    jo __s3_fail_bounds
+    jmp __s3_dyn_slice
+.type __s3_builtin_tryte_vector_slice,@function
+__s3_builtin_tryte_vector_slice:
+    jmp __s3_vec_slice_2
+.type __s3_builtin_i64_vector_slice,@function
+__s3_builtin_i64_vector_slice:
+    jmp __s3_vec_slice_8
+.type __s3_builtin_f64_vector_slice,@function
+__s3_builtin_f64_vector_slice:
+    jmp __s3_vec_slice_8
 """.strip("\n").splitlines()
 
 

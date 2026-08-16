@@ -17,6 +17,7 @@ class IRType(Enum):
     STRING = "string"
     BYTES = "bytes"
     TEXT = "text"
+    VECTOR = "vector"
     REFERENCE = "reference"
 
 
@@ -45,6 +46,31 @@ DYNAMIC_BUILTIN_SIGNATURES: dict[str, tuple[tuple[IRType, ...], tuple[IRType, ..
     "text_find": ((IRType.REFERENCE, IRType.REFERENCE), (IRType.I64,)),
     "text_from_bytes": ((IRType.REFERENCE,), (IRType.TEXT,)),
 }
+
+
+def _vector_ir_signatures(
+    prefix: str,
+    element_type: IRType,
+) -> dict[str, tuple[tuple[IRType, ...], tuple[IRType, ...]]]:
+    reference = (IRType.REFERENCE,)
+    mutable = (IRType.REFERENCE,)
+    return {
+        f"{prefix}_vector_new": ((IRType.I64,), (IRType.VECTOR,)),
+        f"{prefix}_vector_len": (reference, (IRType.I64,)),
+        f"{prefix}_vector_capacity": (reference, (IRType.I64,)),
+        f"{prefix}_vector_reserve": ((IRType.REFERENCE, IRType.I64), (IRType.TRYTE,)),
+        f"{prefix}_vector_push": ((IRType.REFERENCE, element_type), (IRType.TRYTE,)),
+        f"{prefix}_vector_pop": (mutable, (element_type,)),
+        f"{prefix}_vector_get": ((IRType.REFERENCE, IRType.I64), (element_type,)),
+        f"{prefix}_vector_set": ((IRType.REFERENCE, IRType.I64, element_type), (IRType.TRYTE,)),
+        f"{prefix}_vector_clone": (reference, (IRType.VECTOR,)),
+        f"{prefix}_vector_slice": ((IRType.REFERENCE, IRType.I64, IRType.I64), (IRType.VECTOR,)),
+    }
+
+
+DYNAMIC_BUILTIN_SIGNATURES.update(_vector_ir_signatures("tryte", IRType.TRYTE))
+DYNAMIC_BUILTIN_SIGNATURES.update(_vector_ir_signatures("i64", IRType.I64))
+DYNAMIC_BUILTIN_SIGNATURES.update(_vector_ir_signatures("f64", IRType.F64))
 
 
 class IROpcode(Enum):

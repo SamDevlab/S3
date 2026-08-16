@@ -34,6 +34,7 @@ _IR_TO_ASSEMBLY_TYPE = {
     IRType.STRING: AssemblyType.STRING,
     IRType.BYTES: AssemblyType.BYTES,
     IRType.TEXT: AssemblyType.TEXT,
+    IRType.VECTOR: AssemblyType.VECTOR,
     IRType.REFERENCE: AssemblyType.REFERENCE,
 }
 
@@ -69,6 +70,20 @@ _DYNAMIC_REFERENCE_TARGETS = {
     ),
     "text_from_bytes": AssemblyType.BYTES,
 }
+
+for _vector_prefix in ("tryte", "i64", "f64"):
+    for _vector_operation in (
+        "len",
+        "capacity",
+        "reserve",
+        "push",
+        "pop",
+        "get",
+        "set",
+        "clone",
+        "slice",
+    ):
+        _DYNAMIC_REFERENCE_TARGETS[f"{_vector_prefix}_vector_{_vector_operation}"] = AssemblyType.VECTOR
 
 
 class AssemblyVerifierError(AssemblyError):
@@ -340,6 +355,7 @@ class AssemblyVerifier:
                 AssemblyType.STRING,
                 AssemblyType.BYTES,
                 AssemblyType.TEXT,
+                AssemblyType.VECTOR,
                 AssemblyType.REFERENCE,
             }:
                 raise EmulatorError(
@@ -440,6 +456,7 @@ class AssemblyVerifier:
                 AssemblyType.STRING,
                 AssemblyType.BYTES,
                 AssemblyType.TEXT,
+                AssemblyType.VECTOR,
             }:
                 raise EmulatorError(
                     self._static_context(
@@ -463,6 +480,7 @@ class AssemblyVerifier:
                 AssemblyType.STRING,
                 AssemblyType.BYTES,
                 AssemblyType.TEXT,
+                AssemblyType.VECTOR,
             }:
                 raise EmulatorError(
                     self._static_context(
@@ -492,6 +510,7 @@ class AssemblyVerifier:
                 AssemblyType.STRING,
                 AssemblyType.BYTES,
                 AssemblyType.TEXT,
+                AssemblyType.VECTOR,
             }:
                 raise EmulatorError(
                     self._static_context(
