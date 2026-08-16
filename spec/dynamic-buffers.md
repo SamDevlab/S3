@@ -426,4 +426,3 @@ owned fields, element references, automatic growth, a user allocator, a public
 pointer type, GC, exceptions, async, threads, C ownership transfer, NUL
 termination, code-point indexing, grapheme semantics, locale, or structured
 result propagation.
-
