@@ -1320,8 +1320,8 @@ class FunctionLowerer:
                 statement.target.name,
                 statement.target.location,
             )
-            assert binding.memory is not None
             if isinstance(binding.type_name, ast.ArrayType):
+                assert binding.memory is not None
                 if isinstance(statement.value, ast.ArrayLiteral):
                     registers = tuple(
                         self._lower_expression(element)
@@ -1345,6 +1345,44 @@ class FunctionLowerer:
                     statement.value.location,
                 )
             value = self._lower_expression(statement.value)
+            if (
+                isinstance(binding.type_name, ast.TypeName)
+                and binding.type_name in {ast.TypeName.BYTES, ast.TypeName.TEXT}
+            ):
+                if binding.register is None:
+                    raise LoweringError(
+                        "dynamic binding has no stable storage",
+                        statement.target.location,
+                    )
+                reference_type = ast.ReferenceType(
+                    binding.type_name,
+                    True,
+                    statement.target.location,
+                )
+                reference = self._allocate_reference(
+                    reference_type,
+                    statement.target.location,
+                )
+                self._emit(
+                    IRInstruction(
+                        IROpcode.ADDRESS_OF,
+                        result=reference,
+                        operands=(binding.register,),
+                        reference_target=TYPE_MAP[binding.type_name],
+                        reference_mutable=True,
+                        location=statement.target.location,
+                    )
+                )
+                self._emit(
+                    IRInstruction(
+                        IROpcode.REFERENCE_STORE,
+                        operands=(reference, value),
+                        reference_target=TYPE_MAP[binding.type_name],
+                        reference_mutable=True,
+                        location=statement.location,
+                    )
+                )
+                return
             index = self._emit_constant(
                 0,
                 ast.TypeName.TRYTE,

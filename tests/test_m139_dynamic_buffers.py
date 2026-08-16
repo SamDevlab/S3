@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 
 from bootstrap.s3 import compile_source, run_source
+from bootstrap.s3.backends.x86_64.backend import X8664Backend
 from bootstrap.s3.diagnostics import DiagnosticCode, SemanticError
 from bootstrap.s3.dynamic import (
     Allocator,
@@ -133,3 +134,30 @@ fn main() -> i64:
     with pytest.raises(SemanticError) as error:
         compile_source(source)
     assert error.value.diagnostic_code is DiagnosticCode.SEMANTIC_BORROW_CONFLICT
+
+
+def test_dynamic_descriptor_calls_lower_through_native_backend() -> None:
+    source = """\
+fn main() -> tryte:
+    mut value: bytes = bytes_new(2)
+    discard bytes_push(&mut value, 65)
+    discard bytes_push(&mut value, 66)
+    return bytes_get(&value, 1)
+"""
+    compilation = compile_source(source)
+    native = X8664Backend().generate(compilation.assembly)
+    assert "__s3_builtin_bytes_new" in native
+    assert "__s3_builtin_bytes_push" in native
+    assert "__s3_builtin_bytes_get" in native
+
+
+def test_dynamic_assignment_transfers_descriptor_ownership() -> None:
+    source = """\
+fn main() -> i64:
+    mut source: bytes = bytes_new(1)
+    discard bytes_push(&mut source, 65)
+    mut target: bytes = bytes_new(2)
+    target = source
+    return bytes_len(&target)
+"""
+    assert run_source(source) == 1

@@ -1489,6 +1489,8 @@ class SemanticAnalyzer:
                 statement.value.location,
                 "assigned value",
             )
+            if self._is_dynamic_type(binding.type_name):
+                self._consume_owner(statement.value)
             if isinstance(binding.type_name, ast.ReferenceType):
                 origin = self._reference_origin_of(statement.value)
                 if origin is not None and origin[1] > binding.scope_depth:
