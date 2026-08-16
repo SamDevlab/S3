@@ -1,20 +1,23 @@
 {
-  "campaign": "S3-AUTO-139-150",
-  "current_milestone": "1.39",
-  "completed": [],
-  "status": "stopped",
-  "last_safe_commit": "8c22bd4f33a6372c59ce2057b777bd3c10c96f1f",
-  "shutdown_required": true,
-  "stop_reason": "BLOCKED_ARCHITECTURE_DECISION",
-  "last_verified_milestone": "1.37",
-  "research_base_sha": "85541b782571c80d4857d013d1fb25b4997c1eb9",
-  "research_head": "2ed94e526d43edca9830e353f731b638090a3a40",
+  "schema_version": "s3.campaign-state.v2",
+  "campaign_id": "S3-AUTO-139-150",
+  "current_milestone": "1.46",
+  "status": "M1.45_RECONCILED_M1.46_CLOSURE_PENDING",
+  "last_verified_milestone": "1.45",
+  "last_verified_commit": "4b8b08e0e68bc804dc4b1c07313ad1d5494911a1",
+  "next_milestone": "1.46",
   "primary_checkout": "C:/Users/samue/Downloads/S3/S3-language",
   "primary_checkout_changed": false,
   "remote_write_executed": false,
-  "p14_3_started": false,
-  "m138_docker_certification": "deferred",
-  "current_head_before_final_state_commit": "8c22bd4f33a6372c59ce2057b777bd3c10c96f1f",
-  "shutdown_target": "Windows primary host",
-  "shutdown_command": "shutdown.exe /s /t 60 /c \"S3 autonomous milestone campaign stopped at safe architecture gate\""
+  "shutdown": "CANCELLED",
+  "milestones": [
+    {"milestone":"1.39","status":"IMPLEMENTED_TEST_INCOMPLETE","implementation_sha":"e16cb14f5db943f5cdf33c9b8313eb410505c02f","tested_sha":null,"closure_sha":"6cea5b558b2a8ecbbbb387d6a254e24de6f6dae5","missing_gates":["exact tested SHA provenance"],"environment_blocks":[]},
+    {"milestone":"1.40","status":"IMPLEMENTED_TEST_INCOMPLETE","implementation_sha":"c9fc6f45d5a3123df1d8cdc8e01241ef0cd2bb94","tested_sha":null,"closure_sha":"06f2b8fa061fd188b1f92cffb9532f8337069400","missing_gates":["exact tested SHA provenance"],"environment_blocks":[]},
+    {"milestone":"1.41","status":"IMPLEMENTED_TEST_INCOMPLETE","implementation_sha":"88d32a428a2c0a6646dbd34ca3fdfab3f42e014d","tested_sha":null,"closure_sha":"e78c7189d1ed5ead05dd8f62d10b11581570f3c7","missing_gates":["exact tested SHA provenance"],"environment_blocks":[]},
+    {"milestone":"1.42","status":"IMPLEMENTED_TEST_INCOMPLETE","implementation_sha":"5555d6735eeea95f761619eb29ec4decb8921ae2","tested_sha":null,"closure_sha":"4ebfa982d37f29e821cc44ec5cbdd9d76f16c60d","missing_gates":["exact tested SHA provenance"],"environment_blocks":[]},
+    {"milestone":"1.43","status":"IMPLEMENTED_TEST_INCOMPLETE","implementation_sha":"aebdf96c68b8d43f5aaad201a1b443dac012dc49","tested_sha":null,"closure_sha":"026ebf7215290eef4adbf986f07c68d14a6bd6b1","missing_gates":["exact tested SHA provenance"],"environment_blocks":[]},
+    {"milestone":"1.44","status":"IMPLEMENTED_TEST_INCOMPLETE","implementation_sha":"6bf35fd8cfcf81735a24d3906b8919a4742182eb","tested_sha":null,"closure_sha":"fbb96f2b7ef60ecf97eb87ecaad03477ee84b899","missing_gates":["exact tested SHA provenance"],"environment_blocks":[]},
+    {"milestone":"1.45","status":"VERIFIED_COMPLETE","implementation_sha":"518104af7c006a03a26e4d557962a0b23ccba778","tested_sha":"518104af7c006a03a26e4d557962a0b23ccba778","closure_sha":"4b8b08e0e68bc804dc4b1c07313ad1d5494911a1","missing_gates":[],"environment_blocks":[]},
+    {"milestone":"1.46","status":"IMPLEMENTED_TEST_COMPLETE_CLOSURE_PENDING","implementation_sha":"bf34bd0597b310facd8bf74e837a90ac1ccdd2e4","tested_sha":"bf34bd0597b310facd8bf74e837a90ac1ccdd2e4","closure_sha":null,"missing_gates":["milestone closure report and ledger"],"environment_blocks":[]}
+  ]
 }

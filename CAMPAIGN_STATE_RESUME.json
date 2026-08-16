@@ -1,6 +1,8 @@
 {
   "campaign": "roadmap-1.39-1.50",
-  "status": "M1.45_HARDENING_COMPLETE_M1.46_RESUMED",
+  "schema_version": "s3.campaign-state.v2",
+  "campaign_id": "S3-AUTO-139-150",
+  "status": "M1.45_RECONCILED_M1.46_CLOSURE_PENDING",
   "current_milestone": "1.46",
   "completed_milestones": [
     "1.39",
@@ -12,7 +14,7 @@
     "1.45"
   ],
   "next_milestone": "1.47",
-  "last_safe_commit": "7b654a3",
+  "last_safe_commit": "bf34bd0",
   "full_suite_exit_m143": 0,
   "full_suite_exit_m144": 0,
   "full_suite_exit_m145": 0,
@@ -22,6 +24,9 @@
   "m145_hardened_focused_tests": "9 passed",
   "m145_second_full_suite_required": false,
   "m146_start_held_for_contract_integration": false,
+  "m146_start_held_for_evidence_reconciliation": false,
+  "canonical_state": "reports/roadmap-1.39-1.50-execution/CAMPAIGN_STATE.json",
+  "evidence_reconciliation": "reports/roadmap-1.39-1.50-execution/EVIDENCE_RECONCILIATION_M139_M145.json",
   "native_result_gate_m143": "PASS_LINUX_X86_64_SSH",
   "remote_writes": false,
   "shutdown": "CANCELLED",
