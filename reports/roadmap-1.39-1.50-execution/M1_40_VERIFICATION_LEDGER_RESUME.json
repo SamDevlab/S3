@@ -1,0 +1,31 @@
+{
+  "milestone": "1.40",
+  "title": "Deterministic Ordered User Collections",
+  "status": "COMPLETE",
+  "base_implementation": "6cea5b5",
+  "implementation_head": "c9fc6f4",
+  "focused_tests": "PASS",
+  "focused_test_file": "tests/test_m140_ordered_collections.py",
+  "shared_regression": "PASS",
+  "compileall": "PASS",
+  "diff_check": "PASS",
+  "full_suite_initial_diagnostic": "one legacy string diagnostic message",
+  "full_suite_terminal": true,
+  "full_suite_exit": 0,
+  "native_linux_x86_64": "PASS",
+  "native_host": "s3-vm: Ubuntu x86-64 via SSH",
+  "native_probes": {
+    "i64_mutation_reserve_get": "PASS (7)",
+    "i64_pop": "PASS (5)",
+    "i64_clone_slice_get": "PASS (5)",
+    "f64_reserve_capacity": "PASS (2)",
+    "tryte_push_get": "PASS (364)"
+  },
+  "differential_reference_trace": "PASS",
+  "o0_o1_equivalence": "PASS",
+  "general_parametric_generics": false,
+  "remote_writes": false,
+  "production_code_changed": true,
+  "next_milestone_started": false,
+  "next_milestone": "1.41"
+}
