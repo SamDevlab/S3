@@ -1,0 +1,9 @@
+{
+  "schema_version": "s3.wasi-certification.v1",
+  "required_fields": ["wasmtime_version","wasmtime_checksum","wasm_tools_version","wasm_tools_checksum","fuel_enabled","fuel_value","epoch_enabled","outer_timeout_ms","memory_limit_bytes","target","compiler_sha","artifact_sha256","logical_s3_instruction_limit"],
+  "logical_s3_instruction_limit": 100000,
+  "runtime_safety": "fuel/epoch are additional and must never replace logical_s3_instruction_limit",
+  "target": "wasm32-wasip1-s3",
+  "memory_limit_bytes": 67108864,
+  "tool_versions": "exact values required after provisioning; absent values mean environment not certified"
+}

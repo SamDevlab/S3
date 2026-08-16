@@ -1,0 +1,7 @@
+{
+  "schema_version": "s3.wasi-filesystem-rights.v1",
+  "root": "declared preopened directory only",
+  "path": "relative UTF-8 NFC path, '/' separators, traversal rejected",
+  "operations": [{"name":"open","capability":"filesystem.read or filesystem.write","rights":"corresponding preopen right"},{"name":"read","capability":"filesystem.read","rights":"fd_read"},{"name":"write","capability":"filesystem.write","rights":"fd_write"},{"name":"seek","capability":"filesystem.read or filesystem.write","rights":"fd_seek"},{"name":"stat","capability":"filesystem.read","rights":"path_filestat_get"}],
+  "denial": "CAPABILITY_DENIED; no ambient fallback"
+}

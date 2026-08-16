@@ -1,0 +1,17 @@
+{
+  "schema_version": "s3.artifact-identity.v1",
+  "algorithm": "SHA-256",
+  "domain_prefix": "S3-ARTIFACT-V1\\0",
+  "input_order": ["compiler_id", "target", "profile", "lockfile_bytes", "source_records", "foreign_abi_records"],
+  "source_records": "node_id\\0source_path\\0sha256(source_bytes)\\0, in node_id order",
+  "foreign_abi_records": "foreign_abi_id\\0, in lexical order",
+  "target_included": true,
+  "profile_included": true,
+  "foreign_abi_included": true,
+  "compiler_id_included": true,
+  "lockfile_bytes_included": true,
+  "source_content_included": true,
+  "absolute_paths_included": false,
+  "ambient_environment_included": false,
+  "declared_environment_inputs": "included as canonical project records"
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": "s3.m145-goldens.v1",
+  "cases": [
+    {"id":"M145-G-CANONICAL-LOCK","input":"equivalent graph with permuted maps/filesystem order","expected":"identical lockfile_bytes"},
+    {"id":"M145-G-ARTIFACT-RECOMPUTE","input":"same lock/source/target/profile/compiler","expected":"identical artifact_id"},
+    {"id":"M145-G-SOURCE-CHANGE","input":"one source byte changed","expected":"artifact_id changes"},
+    {"id":"M145-G-TARGET-CHANGE","input":"target changed","expected":"artifact_id changes"},
+    {"id":"M145-G-PROFILE-CHANGE","input":"profile changed","expected":"artifact_id changes"},
+    {"id":"M145-G-FOREIGN-ABI-CHANGE","input":"foreign ABI hash changed","expected":"artifact_id changes"},
+    {"id":"M145-G-AMBIENT-ENV","input":"undeclared environment changed","expected":"identity unchanged"},
+    {"id":"M145-G-DECLARED-ENV","input":"declared environment record changed","expected":"identity changes"},
+    {"id":"M145-G-CYCLE","input":"cyclic graph","expected":"stable cycle diagnostic"},
+    {"id":"M145-G-MISSING","input":"missing local dependency","expected":"stable missing-dependency diagnostic"}
+  ]
+}
