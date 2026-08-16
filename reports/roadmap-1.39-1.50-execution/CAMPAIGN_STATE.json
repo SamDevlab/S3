@@ -1,11 +1,11 @@
 {
   "schema_version": "s3.campaign-state.v2",
   "campaign_id": "S3-AUTO-139-150",
-  "current_milestone": "1.46",
-  "status": "M1.46_COMPLETE_NEXT_MILESTONE_NOT_STARTED",
-  "last_verified_milestone": "1.46",
-  "last_verified_commit": "2d2c6b3d9c365480f05e091284728bfe82cc838d",
-  "next_milestone": "1.47",
+  "current_milestone": "1.47",
+  "status": "M1.47_COMPLETE_ENVIRONMENT_CERTIFICATION_DEFERRED_NEXT_MILESTONE_NOT_STARTED",
+  "last_verified_milestone": "1.47",
+  "last_verified_commit": "afcac1099e9b39561ade9c52c604f7e1bc3f0777",
+  "next_milestone": "1.48",
   "primary_checkout": "C:/Users/samue/Downloads/S3/S3-language",
   "primary_checkout_changed": false,
   "remote_write_executed": false,
@@ -18,6 +18,7 @@
     {"milestone":"1.43","status":"IMPLEMENTED_TEST_INCOMPLETE","implementation_sha":"aebdf96c68b8d43f5aaad201a1b443dac012dc49","tested_sha":null,"closure_sha":"026ebf7215290eef4adbf986f07c68d14a6bd6b1","missing_gates":["exact tested SHA provenance"],"environment_blocks":[]},
     {"milestone":"1.44","status":"IMPLEMENTED_TEST_INCOMPLETE","implementation_sha":"6bf35fd8cfcf81735a24d3906b8919a4742182eb","tested_sha":null,"closure_sha":"fbb96f2b7ef60ecf97eb87ecaad03477ee84b899","missing_gates":["exact tested SHA provenance"],"environment_blocks":[]},
     {"milestone":"1.45","status":"VERIFIED_COMPLETE","implementation_sha":"518104af7c006a03a26e4d557962a0b23ccba778","tested_sha":"518104af7c006a03a26e4d557962a0b23ccba778","closure_sha":"4b8b08e0e68bc804dc4b1c07313ad1d5494911a1","missing_gates":[],"environment_blocks":[]},
-    {"milestone":"1.46","status":"COMPLETE","implementation_sha":"bf34bd0597b310facd8bf74e837a90ac1ccdd2e4","tested_sha":"bf34bd0597b310facd8bf74e837a90ac1ccdd2e4","closure_sha":"2d2c6b3d9c365480f05e091284728bfe82cc838d","missing_gates":[],"environment_blocks":[]}
+    {"milestone":"1.46","status":"COMPLETE","implementation_sha":"bf34bd0597b310facd8bf74e837a90ac1ccdd2e4","tested_sha":"bf34bd0597b310facd8bf74e837a90ac1ccdd2e4","closure_sha":"2d2c6b3d9c365480f05e091284728bfe82cc838d","missing_gates":[],"environment_blocks":[]},
+    {"milestone":"1.47","status":"IMPLEMENTATION_COMPLETE_WITH_DEFERRED_ENVIRONMENT_CERTIFICATION","implementation_sha":"9816eba9144a69b8fc0da3367b9689c89da6c157","tested_sha":"9816eba9144a69b8fc0da3367b9689c89da6c157","closure_sha":"afcac1099e9b39561ade9c52c604f7e1bc3f0777","missing_gates":["Linux Python Stable ABI compile/link evidence"],"environment_blocks":["Python.h unavailable on s3-vm; current Windows host is not native certification evidence"]}
   ]
 }
