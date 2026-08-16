@@ -7,13 +7,20 @@ import json
 import multiprocessing
 import re
 import tempfile
+import time
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from queue import Empty
 from typing import Any, Mapping
 
-from .backends.x86_64 import NativeBackendError, NativeToolchain, generate_native_assembly
+from .backends.x86_64 import (
+    NativeBackendError,
+    NativePlatformError,
+    NativeToolchain,
+    NativeToolchainError,
+    generate_native_assembly,
+)
 from .emulator import DEFAULT_MAX_FRAMES, DEFAULT_MAX_INSTRUCTIONS, Emulator
 from .ir_emulator import execute_ir
 from .optimizer import OptimizationLevel
@@ -28,6 +35,15 @@ class TestRunnerError(ValueError):
 
 _NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*$")
 _MODES = {"hosted", "native", "both"}
+_STATUS_EXIT = {
+    "PASS": 0,
+    "SKIP": 0,
+    "FAIL": 1,
+    "TIMEOUT": 1,
+    "CAPABILITY_DENIED": 1,
+    "RESOURCE_LIMIT": 1,
+    "INFRASTRUCTURE_FAILURE": 2,
+}
 _CAPABILITY_MARKERS = {
     "host_capability_grant": "resource",
     "resource_open": "resource",
@@ -109,7 +125,7 @@ class S3TestManifest:
         if not isinstance(runner, Mapping):
             raise TestRunnerError("[runner] must be a table")
         seed = runner.get("seed", 0)
-        timeout_ms = runner.get("timeout_ms", 5000)
+        timeout_ms = runner.get("timeout_ms", 10000)
         max_frames = runner.get("max_frames", DEFAULT_MAX_FRAMES)
         max_instructions = runner.get("max_instructions", DEFAULT_MAX_INSTRUCTIONS)
         for field, value in (
@@ -124,7 +140,10 @@ class S3TestManifest:
                 raise TestRunnerError(f"runner {field} must be a {qualifier} integer")
         if timeout_ms > 3_600_000:
             raise TestRunnerError("runner timeout_ms must not exceed 3600000")
-        optimization = OptimizationLevel.parse(runner.get("optimization", "O0")).value
+        try:
+            optimization = OptimizationLevel.parse(runner.get("optimization", "O0")).value
+        except ValueError as error:
+            raise TestRunnerError(f"unsupported optimization level: {error}") from error
         mode = runner.get("mode", "hosted")
         if mode not in _MODES:
             raise TestRunnerError(f"unsupported test runner mode {mode!r}")
@@ -171,6 +190,29 @@ def _error_text(error: BaseException) -> str:
     return f"{type(error).__name__}: {message}" if message else type(error).__name__
 
 
+def _outcome(status: str, **fields: object) -> dict[str, object]:
+    if status not in _STATUS_EXIT:
+        raise TestRunnerError(f"unsupported runner status {status!r}")
+    result: dict[str, object] = {
+        "status": status,
+        "failure_class": None if status == "PASS" else status,
+        "exit_status": _STATUS_EXIT[status],
+        "stdout": "",
+        "stderr": "",
+        "capability_denials": [],
+        "resource_failure": status in {"TIMEOUT", "RESOURCE_LIMIT"},
+    }
+    result.update(fields)
+    return result
+
+
+def _hosted_failure_status(error: BaseException) -> str:
+    message = str(error).lower()
+    if "frame limit" in message or "instruction limit" in message:
+        return "RESOURCE_LIMIT"
+    return "FAIL"
+
+
 def _compile_test_sources(
     sources: dict[str, str],
     optimization: str,
@@ -200,9 +242,14 @@ def _hosted_worker(
             ).execute(compilation.assembly, entry)
         if not isinstance(value, int):
             raise TestRunnerError("test entry must return one integer result")
-        result_queue.put({"status": "PASS", "value": value})
+        result_queue.put(_outcome("PASS", value=value))
     except BaseException as error:
-        result_queue.put({"status": "FAIL", "error": _error_text(error)})
+        result_queue.put(
+            _outcome(
+                _hosted_failure_status(error),
+                error=_error_text(error),
+            )
+        )
 
 
 class S3TestRunner:
@@ -251,31 +298,40 @@ class S3TestRunner:
         if process.is_alive():
             process.terminate()
             process.join()
-            return {"status": "FAIL", "error": "timeout"}
+            return _outcome("TIMEOUT", error="timeout")
         try:
             result = result_queue.get(timeout=0.5)
         except Empty:
-            return {"status": "FAIL", "error": f"worker exited with status {process.exitcode}"}
+            return _outcome(
+                "INFRASTRUCTURE_FAILURE",
+                error=f"worker exited with status {process.exitcode}",
+            )
         finally:
             result_queue.close()
         if result.get("status") != "PASS":
             return result
         value = result.get("value")
         if value != case.expected:
-            return {
-                "status": "FAIL",
-                "error": f"expected {case.expected}, got {value}",
-                "value": value,
-            }
-        return {"status": "PASS", "value": value}
+            return _outcome(
+                "FAIL",
+                error=f"expected {case.expected}, got {value}",
+                value=value,
+            )
+        return _outcome("PASS", value=value)
 
     def _run_native(self, case: S3TestCase, sources: dict[str, str]) -> dict[str, object]:
         try:
             compilation = _compile_test_sources(sources, self.manifest.optimization, case.entry)
             native = generate_native_assembly(compilation.assembly)
             toolchain = NativeToolchain.detect()
+        except NativePlatformError:
+            return _outcome("SKIP", reason="native toolchain unavailable")
+        except NativeToolchainError as error:
+            return _outcome("INFRASTRUCTURE_FAILURE", error=_error_text(error))
         except NativeBackendError as error:
-            return {"status": "SKIP", "reason": "native toolchain unavailable"}
+            return _outcome("FAIL", error=_error_text(error))
+        except Exception as error:
+            return _outcome("FAIL", error=_error_text(error))
         try:
             with tempfile.TemporaryDirectory(prefix="s3-test-native-") as temporary:
                 executable = toolchain.build(native, Path(temporary) / "program")
@@ -283,17 +339,34 @@ class S3TestRunner:
                     executable,
                     timeout=self.manifest.timeout_ms / 1000,
                 )
-        except NativeBackendError as error:
-            return {"status": "FAIL", "error": _error_text(error)}
+        except NativeToolchainError as error:
+            status = "TIMEOUT" if "timed out" in str(error).lower() else "INFRASTRUCTURE_FAILURE"
+            return _outcome(status, error=_error_text(error))
         if completed.returncode != 0:
-            return {"status": "FAIL", "error": f"native exit status {completed.returncode}"}
+            return _outcome("FAIL", error=f"native exit status {completed.returncode}")
         match = re.fullmatch(r"program returned: (-?\d+)", completed.stdout.strip())
         if match is None:
-            return {"status": "FAIL", "error": "native output did not match runner schema"}
+            return _outcome(
+                "FAIL",
+                error="native output did not match runner schema",
+                stdout=completed.stdout,
+                stderr=completed.stderr,
+            )
         value = int(match.group(1))
         if value != case.expected:
-            return {"status": "FAIL", "error": f"expected {case.expected}, got {value}", "value": value}
-        return {"status": "PASS", "value": value}
+            return _outcome(
+                "FAIL",
+                error=f"expected {case.expected}, got {value}",
+                value=value,
+                stdout=completed.stdout,
+                stderr=completed.stderr,
+            )
+        return _outcome(
+            "PASS",
+            value=value,
+            stdout=completed.stdout,
+            stderr=completed.stderr,
+        )
 
     def run(self, mode: str | None = None) -> dict[str, object]:
         selected_mode = mode or self.manifest.mode
@@ -304,15 +377,22 @@ class S3TestRunner:
             sources = self._load_sources(case)
             required = self._required_capabilities(sources)
             missing = tuple(sorted(set(required) - set(case.capabilities)))
+            started_ns = time.monotonic_ns()
             case_report: dict[str, object] = {
                 "name": case.name,
+                "test_id": case.name,
+                "discovery_index": len(reports),
                 "sources": list(case.sources),
                 "entry": case.entry,
                 "expected": case.expected,
                 "capabilities": list(case.capabilities),
             }
             if missing:
-                failure = {"status": "FAIL", "error": f"undeclared capability: {missing[0]}"}
+                failure = _outcome(
+                    "CAPABILITY_DENIED",
+                    error=f"undeclared capability: {missing[0]}",
+                    capability_denials=list(missing),
+                )
                 if selected_mode in {"hosted", "both"}:
                     case_report["hosted"] = failure
                 if selected_mode in {"native", "both"}:
@@ -327,15 +407,52 @@ class S3TestRunner:
                 for key, value in case_report.items()
                 if key in {"hosted", "native"}
             ]
-            case_report["status"] = (
-                "FAIL" if "FAIL" in outcomes else "SKIP" if "SKIP" in outcomes else "PASS"
+            failure_order = (
+                "INFRASTRUCTURE_FAILURE",
+                "TIMEOUT",
+                "RESOURCE_LIMIT",
+                "CAPABILITY_DENIED",
+                "FAIL",
             )
+            case_report["status"] = next(
+                (status for status in failure_order if status in outcomes),
+                "SKIP" if "SKIP" in outcomes else "PASS",
+            )
+            case_report["failure_class"] = (
+                None if case_report["status"] == "PASS" else case_report["status"]
+            )
+            case_report["exit_status"] = _STATUS_EXIT[case_report["status"]]
+            case_report["duration_ms"] = (time.monotonic_ns() - started_ns) // 1_000_000
+            case_report["stdout"] = ""
+            case_report["stderr"] = ""
+            case_report["capability_denials"] = list(missing)
+            case_report["resource_failure"] = case_report["status"] in {"TIMEOUT", "RESOURCE_LIMIT"}
             reports.append(case_report)
         counts = {status: sum(report["status"] == status for report in reports) for status in ("PASS", "FAIL", "SKIP")}
-        overall = "FAIL" if counts["FAIL"] else "SKIP" if counts["SKIP"] else "PASS"
+        for status in _STATUS_EXIT:
+            counts.setdefault(status, sum(report["status"] == status for report in reports))
+        overall = next(
+            (
+                status
+                for status in (
+                    "INFRASTRUCTURE_FAILURE",
+                    "TIMEOUT",
+                    "RESOURCE_LIMIT",
+                    "CAPABILITY_DENIED",
+                    "FAIL",
+                    "SKIP",
+                    "PASS",
+                )
+                if counts[status]
+            ),
+            "PASS",
+        )
         return {
             "schema": "s3-test-report",
-            "schema_version": "1.0.0",
+            "schema_version": "s3.test-report.v1",
+            "project": self.root.name,
+            "target": "linux-x86_64",
+            "profile": self.manifest.optimization,
             "manifest_sha256": self.manifest.manifest_sha256,
             "seed": self.manifest.seed,
             "timeout_ms": self.manifest.timeout_ms,
@@ -349,6 +466,10 @@ class S3TestRunner:
                 "passed": counts["PASS"],
                 "failed": counts["FAIL"],
                 "skipped": counts["SKIP"],
+                "timed_out": counts["TIMEOUT"],
+                "capability_denied": counts["CAPABILITY_DENIED"],
+                "resource_limited": counts["RESOURCE_LIMIT"],
+                "infrastructure_failed": counts["INFRASTRUCTURE_FAILURE"],
             },
         }
 

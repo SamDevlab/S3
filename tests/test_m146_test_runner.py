@@ -70,9 +70,23 @@ expected = 2
     first = run_test_manifest(manifest)
     second = run_test_manifest(manifest)
 
-    assert first == second
+    first_for_identity = json.loads(json.dumps(first))
+    second_for_identity = json.loads(json.dumps(second))
+    for report in first_for_identity["tests"] + second_for_identity["tests"]:
+        report.pop("duration_ms")
+    assert first_for_identity == second_for_identity
     assert [case["name"] for case in first["tests"]] == ["a_case", "z_case"]
-    assert first["summary"] == {"status": "PASS", "passed": 2, "failed": 0, "skipped": 0}
+    assert first["schema_version"] == "s3.test-report.v1"
+    assert first["summary"] == {
+        "status": "PASS",
+        "passed": 2,
+        "failed": 0,
+        "skipped": 0,
+        "timed_out": 0,
+        "capability_denied": 0,
+        "resource_limited": 0,
+        "infrastructure_failed": 0,
+    }
     assert render_test_report(first).endswith("\n")
 
 
@@ -142,7 +156,8 @@ expected = 0
     )
 
     report = run_test_manifest(manifest)
-    assert report["summary"]["status"] == "FAIL"
+    assert report["summary"]["status"] == "RESOURCE_LIMIT"
+    assert report["tests"][0]["status"] == "RESOURCE_LIMIT"
     assert "frame" in report["tests"][0]["hosted"]["error"].lower()
 
 
@@ -163,7 +178,9 @@ expected = 2
     )
 
     report = run_test_manifest(manifest)
-    assert report["summary"]["status"] == "FAIL"
+    assert report["summary"]["status"] == "CAPABILITY_DENIED"
+    assert report["tests"][0]["status"] == "CAPABILITY_DENIED"
+    assert report["tests"][0]["capability_denials"] == ["resource"]
     assert report["tests"][0]["hosted"]["error"] == "undeclared capability: resource"
 
 
