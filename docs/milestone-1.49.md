@@ -1,18 +1,46 @@
-# Milestone 1.49 — Portable WASI Host and Target Contract
+# Milestone 1.49 - Portable WASI Host and Target Contract
 
-M1.49 defines the bounded internal target `wasm32-wasip1-s3`: a core
-WebAssembly `.wasm` module using `wasi_snapshot_preview1`, certified by a
-version-pinned Wasmtime runtime. It does not implement the Component Model,
-WASI Preview 2, browser execution, or a second WASI generation.
+Status: IMPLEMENTATION_COMPLETE_WITH_DEFERRED_ENVIRONMENT_CERTIFICATION.
 
-Deliverables are the target manifest, canonical artifact policy, linear-memory
-descriptor ABI, capability map, explicit error/exit model, and integration
-with M1.45/M1.46. The exact normative contract is in
-[`spec/wasi-target.md`](../spec/wasi-target.md) and ADR-0036.
+## Delivered contract
 
-Required environment: Linux x86-64, a version-pinned WebAssembly encoder or
-backend, `wasm-tools` for validation, and Wasmtime for certification. None is
-installed or provisioned by this campaign.
+M1.49 defines the bounded internal target `wasm32-wasip1-s3` and its
+structural artifact contract. The implementation provides:
 
-Acceptance is defined by `M149-G01` through `M149-G11`; the gates are not run
-until the dedicated provisioning campaign completes.
+- a target identity distinct from native targets;
+- a closed `wasi_snapshot_preview1` import manifest with capability mapping;
+- explicit forbidden and unsupported import rejection;
+- bounded 64 MiB linear memory and a logical instruction limit;
+- deterministic core-module section ordering and fixture encoding;
+- canonical artifact identity from source, lockfile, target, profile, compiler,
+  and encoder inputs only;
+- explicit separation between structural artifact construction and runtime
+  execution.
+
+The contract does not implement the Component Model, WASI Preview 2, browser
+execution, or a second WASI generation. The normative target specification is
+in [`spec/wasi-target.md`](../spec/wasi-target.md) and ADR-0036.
+
+## Verification
+
+- structural M1.49 tests: PASS (6);
+- target/regression tests with `tests/test_target_spec.py` and
+  `tests/test_m146_test_runner.py`: PASS (18);
+- deterministic fixture bytes, canonical section order, import closure,
+  identity locking, and no-runtime-claim checks: PASS;
+- compileall: PASS;
+- diff check: PASS;
+- full suite on exact candidate
+  `26c6cbb35e12c69f54840c43761162c506a8681b`: terminal exit 0;
+- Wasmtime/wasm-tools runtime execution and Linux WASI certification:
+  DEFERRED; neither toolchain is available in the approved environments.
+
+The deferred runtime gates are environmental evidence gaps, not simulated
+runtime results. No benchmark, remote write, CI trigger, Docker/virtualization
+change, or shutdown action was performed.
+
+## Boundary
+
+The target and artifact identity contract is closed for this milestone.
+Runtime execution remains a separate environment-certification gate and must
+not be inferred from the structural fixture tests.
