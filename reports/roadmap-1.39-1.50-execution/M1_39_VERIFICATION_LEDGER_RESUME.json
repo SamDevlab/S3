@@ -1,6 +1,6 @@
 {
   "milestone": "1.39",
-  "status": "IMPLEMENTATION_CHECKPOINT_NOT_PROMOTED",
+  "status": "COMPLETE",
   "architecture": "CLOSED",
   "focused_tests": "PASS",
   "shared_regression": "PASS",
@@ -9,9 +9,21 @@
   "full_suite_exit": 0,
   "hosted_ir": "PASS",
   "assembly_logical_types": "PASS",
-  "linux_native_descriptor_abi": "WAITING_FOR_LINUX_NATIVE_BACKEND",
+  "linux_native_descriptor_abi": "PASS",
+  "linux_native_host": "s3-vm: Ubuntu x86-64 via SSH",
+  "linux_native_probes": {
+    "bytes_push_get": "PASS (66)",
+    "text_reserve_append": "PASS (3)",
+    "bytes_concat": "PASS (2)",
+    "text_slice": "PASS (2)",
+    "text_find": "PASS (1)",
+    "text_from_bytes_utf8": "PASS (2)",
+    "text_from_bytes_invalid_utf8": "PASS (deterministic trap, exit 1)"
+  },
   "remote_writes": false,
   "production_code_changed": true,
+  "implementation_head": "e16cb14f5db943f5cdf33c9b8313eb410505c02f",
+  "next_milestone_started": false,
   "implementation_scope": [
     "bootstrap/s3/dynamic.py",
     "bootstrap/s3/ast.py",
