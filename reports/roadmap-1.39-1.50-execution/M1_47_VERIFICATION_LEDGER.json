@@ -1,0 +1,34 @@
+{
+  "milestone": "1.47",
+  "title": "Richer C ABI and Python Buffer Interop",
+  "status": "IMPLEMENTATION_COMPLETE_WITH_DEFERRED_ENVIRONMENT_CERTIFICATION",
+  "implementation_head": "9816eba9144a69b8fc0da3367b9689c89da6c157",
+  "tested_sha": "9816eba9144a69b8fc0da3367b9689c89da6c157",
+  "focused_tests": "PASS (23)",
+  "focused_test_files": [
+    "tests/test_m147_python_buffer_abi.py",
+    "tests/test_ffi.py",
+    "tests/test_m139_dynamic_buffers.py"
+  ],
+  "descriptor_layout": "PASS",
+  "python_buffer_profile": "PASS",
+  "release_and_use_after_release": "PASS",
+  "s3_borrow_reallocation_guard": "PASS",
+  "copy_retention": "PASS",
+  "mixed_scalar_buffer_manifest_and_header": "PASS",
+  "compileall": "PASS",
+  "diff_check": "PASS",
+  "full_suite_terminal": true,
+  "full_suite_exit": 0,
+  "full_suite_log": "%TEMP%/s3-m147-full-suite.log",
+  "full_suite_status": "%TEMP%/s3-m147-full-suite.status",
+  "linux_cc": "AVAILABLE",
+  "python_stable_abi_native": "DEFERRED_ENVIRONMENT",
+  "python_headers": "UNAVAILABLE_ON_S3_VM",
+  "environment_blocks": [
+    "Linux Python development headers are unavailable; Python.h-based compile/link evidence is deferred."
+  ],
+  "remote_writes": false,
+  "shutdown": "CANCELLED",
+  "next_milestone": "1.48"
+}
