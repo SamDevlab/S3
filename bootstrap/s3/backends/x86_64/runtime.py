@@ -936,6 +936,254 @@ __s3_builtin_i64_vector_slice:
 .type __s3_builtin_f64_vector_slice,@function
 __s3_builtin_f64_vector_slice:
     jmp __s3_vec_slice_8
+
+.type __s3_i64_map_find,@function
+__s3_i64_map_find:
+    mov r10,[rdi]
+    mov r11,[r10+8]
+    mov r9,[r10]
+    xor eax,eax
+.L__s3_i64_map_find_loop:
+    cmp rax,r11
+    jae .L__s3_i64_map_find_no
+    mov r8,[r9+rax]
+    cmp r8,rsi
+    je .L__s3_i64_map_find_done
+    add rax,16
+    jmp .L__s3_i64_map_find_loop
+.L__s3_i64_map_find_no:
+    mov rax,-1
+.L__s3_i64_map_find_done:
+    ret
+
+.type __s3_builtin_i64_map_new,@function
+__s3_builtin_i64_map_new:
+    mov esi,16
+    jmp __s3_vec_new
+.type __s3_builtin_i64_map_len,@function
+__s3_builtin_i64_map_len:
+    mov r10,[rdi]
+    mov rax,[r10+8]
+    sar rax,4
+    ret
+.type __s3_builtin_i64_map_capacity,@function
+__s3_builtin_i64_map_capacity:
+    mov r10,[rdi]
+    mov rax,[r10+16]
+    sar rax,4
+    ret
+.type __s3_builtin_i64_map_reserve,@function
+__s3_builtin_i64_map_reserve:
+    mov edx,16
+    jmp __s3_vec_reserve
+
+.type __s3_builtin_i64_map_put,@function
+__s3_builtin_i64_map_put:
+    push r12
+    push r13
+    push r14
+    mov r12,rdi
+    mov r13,rsi
+    mov r14,rdx
+    call __s3_i64_map_find
+    cmp rax,-1
+    je .L__s3_i64_map_put_new
+    mov r10,[r12]
+    mov r11,[r10]
+    mov [r11+rax+8],r14
+    xor eax,eax
+    pop r14
+    pop r13
+    pop r12
+    ret
+.L__s3_i64_map_put_new:
+    mov r10,[r12]
+    mov rax,[r10+8]
+    mov r8,rax
+    add r8,16
+    jc __s3_fail_capacity
+    cmp r8,[r10+16]
+    ja __s3_fail_capacity
+    mov r11,[r10]
+    mov [r11+rax],r13
+    mov [r11+rax+8],r14
+    mov [r10+8],r8
+    xor eax,eax
+    pop r14
+    pop r13
+    pop r12
+    ret
+
+.type __s3_builtin_i64_map_contains,@function
+__s3_builtin_i64_map_contains:
+    call __s3_i64_map_find
+    cmp rax,-1
+    je .L__s3_i64_map_contains_no
+    mov eax,-1
+    ret
+.L__s3_i64_map_contains_no:
+    xor eax,eax
+    ret
+.type __s3_builtin_i64_map_get,@function
+__s3_builtin_i64_map_get:
+    call __s3_i64_map_find
+    cmp rax,-1
+    je __s3_fail_bounds
+    mov r10,[rdi]
+    mov r11,[r10]
+    mov rax,[r11+rax+8]
+    ret
+.type __s3_builtin_i64_map_key_at,@function
+__s3_builtin_i64_map_key_at:
+    mov r10,[rdi]
+    test rsi,rsi
+    js __s3_fail_bounds
+    mov rax,rsi
+    shl rax,4
+    jc __s3_fail_bounds
+    cmp rax,[r10+8]
+    jae __s3_fail_bounds
+    mov r11,[r10]
+    mov rax,[r11+rax]
+    ret
+.type __s3_builtin_i64_map_value_at,@function
+__s3_builtin_i64_map_value_at:
+    mov r10,[rdi]
+    test rsi,rsi
+    js __s3_fail_bounds
+    mov rax,rsi
+    shl rax,4
+    jc __s3_fail_bounds
+    cmp rax,[r10+8]
+    jae __s3_fail_bounds
+    mov r11,[r10]
+    mov rax,[r11+rax+8]
+    ret
+.type __s3_builtin_i64_map_remove,@function
+__s3_builtin_i64_map_remove:
+    push r12
+    push r13
+    push r14
+    mov r12,rdi
+    call __s3_i64_map_find
+    cmp rax,-1
+    je .L__s3_i64_map_remove_done
+    mov r13,rax
+    mov r10,[r12]
+    mov r14,[r10+8]
+    mov r8,r14
+    sub r8,r13
+    sub r8,16
+    jz .L__s3_i64_map_remove_length
+    mov rdi,[r10]
+    add rdi,r13
+    mov rsi,rdi
+    add rsi,16
+    mov rcx,r8
+    call __s3_dyn_copy
+.L__s3_i64_map_remove_length:
+    sub r14,16
+    mov [r10+8],r14
+.L__s3_i64_map_remove_done:
+    xor eax,eax
+    pop r14
+    pop r13
+    pop r12
+    ret
+.type __s3_builtin_i64_map_clone,@function
+__s3_builtin_i64_map_clone:
+    jmp __s3_dyn_clone
+
+.type __s3_i64_set_find,@function
+__s3_i64_set_find:
+    mov r10,[rdi]
+    mov r11,[r10+8]
+    mov r9,[r10]
+    xor eax,eax
+.L__s3_i64_set_find_loop:
+    cmp rax,r11
+    jae .L__s3_i64_set_find_no
+    mov r8,[r9+rax]
+    cmp r8,rsi
+    je .L__s3_i64_set_find_done
+    add rax,8
+    jmp .L__s3_i64_set_find_loop
+.L__s3_i64_set_find_no:
+    mov rax,-1
+.L__s3_i64_set_find_done:
+    ret
+.type __s3_builtin_i64_set_new,@function
+__s3_builtin_i64_set_new:
+    jmp __s3_builtin_i64_vector_new
+.type __s3_builtin_i64_set_len,@function
+__s3_builtin_i64_set_len:
+    jmp __s3_builtin_i64_vector_len
+.type __s3_builtin_i64_set_capacity,@function
+__s3_builtin_i64_set_capacity:
+    jmp __s3_builtin_i64_vector_capacity
+.type __s3_builtin_i64_set_reserve,@function
+__s3_builtin_i64_set_reserve:
+    jmp __s3_builtin_i64_vector_reserve
+.type __s3_builtin_i64_set_add,@function
+__s3_builtin_i64_set_add:
+    push r12
+    mov r12,rsi
+    call __s3_i64_set_find
+    cmp rax,-1
+    jne .L__s3_i64_set_add_done
+    mov rsi,r12
+    call __s3_vec_push_8
+.L__s3_i64_set_add_done:
+    xor eax,eax
+    pop r12
+    ret
+.type __s3_builtin_i64_set_contains,@function
+__s3_builtin_i64_set_contains:
+    call __s3_i64_set_find
+    cmp rax,-1
+    je .L__s3_i64_set_contains_no
+    mov eax,-1
+    ret
+.L__s3_i64_set_contains_no:
+    xor eax,eax
+    ret
+.type __s3_builtin_i64_set_remove,@function
+__s3_builtin_i64_set_remove:
+    push r12
+    push r13
+    push r14
+    mov r12,rdi
+    call __s3_i64_set_find
+    cmp rax,-1
+    je .L__s3_i64_set_remove_done
+    mov r13,rax
+    mov r10,[r12]
+    mov r14,[r10+8]
+    mov r8,r14
+    sub r8,r13
+    sub r8,8
+    jz .L__s3_i64_set_remove_length
+    mov rdi,[r10]
+    add rdi,r13
+    mov rsi,rdi
+    add rsi,8
+    mov rcx,r8
+    call __s3_dyn_copy
+.L__s3_i64_set_remove_length:
+    sub r14,8
+    mov [r10+8],r14
+.L__s3_i64_set_remove_done:
+    xor eax,eax
+    pop r14
+    pop r13
+    pop r12
+    ret
+.type __s3_builtin_i64_set_at,@function
+__s3_builtin_i64_set_at:
+    jmp __s3_vec_get_8
+.type __s3_builtin_i64_set_clone,@function
+__s3_builtin_i64_set_clone:
+    jmp __s3_dyn_clone
 """.strip("\n").splitlines()
 
 

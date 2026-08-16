@@ -100,12 +100,45 @@ _DYNAMIC_BUILTINS.update(
     _vector_builtin_signatures("f64", ast.TypeName.F64_VECTOR, ast.TypeName.F64)
 )
 
+_I64_MAP = ast.TypeName.I64_MAP
+_I64_SET = ast.TypeName.I64_SET
+_MAP_SHARED = ast.ReferenceType(_I64_MAP, False, _DYNAMIC_BUILTIN_LOCATION)
+_MAP_MUTABLE = ast.ReferenceType(_I64_MAP, True, _DYNAMIC_BUILTIN_LOCATION)
+_SET_SHARED = ast.ReferenceType(_I64_SET, False, _DYNAMIC_BUILTIN_LOCATION)
+_SET_MUTABLE = ast.ReferenceType(_I64_SET, True, _DYNAMIC_BUILTIN_LOCATION)
+_DYNAMIC_BUILTINS.update(
+    {
+        "i64_map_new": ((ast.TypeName.I64,), _I64_MAP),
+        "i64_map_len": ((_MAP_SHARED,), ast.TypeName.I64),
+        "i64_map_capacity": ((_MAP_SHARED,), ast.TypeName.I64),
+        "i64_map_reserve": ((_MAP_MUTABLE, ast.TypeName.I64), ast.TypeName.TRYTE),
+        "i64_map_put": ((_MAP_MUTABLE, ast.TypeName.I64, ast.TypeName.I64), ast.TypeName.TRYTE),
+        "i64_map_contains": ((_MAP_SHARED, ast.TypeName.I64), ast.TypeName.TRIT),
+        "i64_map_get": ((_MAP_SHARED, ast.TypeName.I64), ast.TypeName.I64),
+        "i64_map_remove": ((_MAP_MUTABLE, ast.TypeName.I64), ast.TypeName.TRYTE),
+        "i64_map_key_at": ((_MAP_SHARED, ast.TypeName.I64), ast.TypeName.I64),
+        "i64_map_value_at": ((_MAP_SHARED, ast.TypeName.I64), ast.TypeName.I64),
+        "i64_map_clone": ((_MAP_SHARED,), _I64_MAP),
+        "i64_set_new": ((ast.TypeName.I64,), _I64_SET),
+        "i64_set_len": ((_SET_SHARED,), ast.TypeName.I64),
+        "i64_set_capacity": ((_SET_SHARED,), ast.TypeName.I64),
+        "i64_set_reserve": ((_SET_MUTABLE, ast.TypeName.I64), ast.TypeName.TRYTE),
+        "i64_set_add": ((_SET_MUTABLE, ast.TypeName.I64), ast.TypeName.TRYTE),
+        "i64_set_contains": ((_SET_SHARED, ast.TypeName.I64), ast.TypeName.TRIT),
+        "i64_set_remove": ((_SET_MUTABLE, ast.TypeName.I64), ast.TypeName.TRYTE),
+        "i64_set_at": ((_SET_SHARED, ast.TypeName.I64), ast.TypeName.I64),
+        "i64_set_clone": ((_SET_SHARED,), _I64_SET),
+    }
+)
+
 _DYNAMIC_TYPES = {
     ast.TypeName.BYTES,
     ast.TypeName.TEXT,
     ast.TypeName.TRYTE_VECTOR,
     ast.TypeName.I64_VECTOR,
     ast.TypeName.F64_VECTOR,
+    ast.TypeName.I64_MAP,
+    ast.TypeName.I64_SET,
 }
 
 

@@ -563,11 +563,282 @@ class DynamicVector:
         self.set(index, value)
 
 
+class DynamicMap:
+    """Ordered i64 to i64 map with explicit capacity and stable insertion order."""
+
+    def __init__(
+        self,
+        capacity: int = 0,
+        *,
+        allocator: Allocator | None = None,
+        _data: tuple[tuple[int, int], ...] = (),
+    ) -> None:
+        _validate_collection_capacity(capacity, 16)
+        if len(_data) > capacity:
+            raise BufferCapacityError("initial map data exceeds capacity")
+        for key, value in _data:
+            _validate_i64_pair(key, value)
+        self.allocator = allocator or Allocator()
+        if capacity:
+            self.allocator.reserve(capacity * 16)
+        self._storage = list(_data) + [(0, 0)] * (capacity - len(_data))
+        self._length = len(_data)
+        self._shared_borrows = 0
+        self._mutable_borrow = False
+        self._moved = False
+
+    @property
+    def length(self) -> int:
+        self._require_live()
+        return self._length
+
+    @property
+    def capacity(self) -> int:
+        self._require_live()
+        return len(self._storage)
+
+    def _require_live(self) -> None:
+        if self._moved:
+            raise MovedValueError("owned map was moved")
+
+    def _require_unborrowed(self) -> None:
+        self._require_live()
+        if self._shared_borrows or self._mutable_borrow:
+            raise BorrowConflictError("owner operation overlaps an active borrow")
+
+    def _acquire_borrow(self, mutable: bool) -> None:
+        self._require_live()
+        if mutable:
+            if self._mutable_borrow or self._shared_borrows:
+                raise BorrowConflictError("mutable borrow overlaps an active borrow")
+            self._mutable_borrow = True
+        else:
+            if self._mutable_borrow:
+                raise BorrowConflictError("shared borrow overlaps a mutable borrow")
+            self._shared_borrows += 1
+
+    def _release_borrow(self, mutable: bool) -> None:
+        if mutable:
+            self._mutable_borrow = False
+        elif self._shared_borrows:
+            self._shared_borrows -= 1
+
+    def _find(self, key: int) -> int:
+        _validate_i64_pair(key, 0)
+        for index in range(self._length):
+            if self._storage[index][0] == key:
+                return index
+        return -1
+
+    def move(self) -> "DynamicMap":
+        self._require_unborrowed()
+        replacement = object.__new__(type(self))
+        replacement.allocator = self.allocator
+        replacement._storage = self._storage
+        replacement._length = self._length
+        replacement._shared_borrows = 0
+        replacement._mutable_borrow = False
+        replacement._moved = False
+        self._moved = True
+        return replacement
+
+    def reserve(self, capacity: int) -> None:
+        self._require_unborrowed()
+        _validate_collection_capacity(capacity, 16)
+        if capacity <= self.capacity:
+            return
+        self.allocator.reserve(capacity * 16)
+        self._storage.extend([(0, 0)] * (capacity - self.capacity))
+
+    def put(self, key: int, value: int) -> None:
+        self._require_unborrowed()
+        _validate_i64_pair(key, value)
+        index = self._find(key)
+        if index >= 0:
+            self._storage[index] = (key, value)
+            return
+        if self._length >= self.capacity:
+            raise BufferFullError("map has no reserved capacity")
+        self._storage[self._length] = (key, value)
+        self._length += 1
+
+    def contains(self, key: int) -> int:
+        self._require_live()
+        return -1 if self._find(key) >= 0 else 0
+
+    def get(self, key: int) -> int:
+        self._require_live()
+        index = self._find(key)
+        if index < 0:
+            raise BufferBoundsError("map key is absent")
+        return self._storage[index][1]
+
+    def remove(self, key: int) -> None:
+        self._require_unborrowed()
+        index = self._find(key)
+        if index < 0:
+            return
+        self._storage[index : self._length - 1] = self._storage[index + 1 : self._length]
+        self._length -= 1
+        self._storage[self._length] = (0, 0)
+
+    def key_at(self, index: int) -> int:
+        _validate_vector_index(index, self._length)
+        return self._storage[index][0]
+
+    def value_at(self, index: int) -> int:
+        _validate_vector_index(index, self._length)
+        return self._storage[index][1]
+
+    def clone(self) -> "DynamicMap":
+        self._require_live()
+        return DynamicMap(
+            self.capacity,
+            allocator=self.allocator,
+            _data=tuple(self._storage[: self._length]),
+        )
+
+    def borrow(self, *, mutable: bool = False) -> BorrowedBuffer:
+        return BorrowedBuffer(self, mutable)
+
+
+class DynamicSet:
+    """Ordered i64 set derived from the same explicit collection contract."""
+
+    def __init__(
+        self,
+        capacity: int = 0,
+        *,
+        allocator: Allocator | None = None,
+        _data: tuple[int, ...] = (),
+    ) -> None:
+        _validate_collection_capacity(capacity, 8)
+        if len(_data) > capacity:
+            raise BufferCapacityError("initial set data exceeds capacity")
+        for value in _data:
+            validate_i64(value)
+        if len(set(_data)) != len(_data):
+            raise DynamicError("set data contains duplicate values")
+        self.allocator = allocator or Allocator()
+        if capacity:
+            self.allocator.reserve(capacity * 8)
+        self._storage = list(_data) + [0] * (capacity - len(_data))
+        self._length = len(_data)
+        self._shared_borrows = 0
+        self._mutable_borrow = False
+        self._moved = False
+
+    @property
+    def length(self) -> int:
+        self._require_live()
+        return self._length
+
+    @property
+    def capacity(self) -> int:
+        self._require_live()
+        return len(self._storage)
+
+    def _require_live(self) -> None:
+        if self._moved:
+            raise MovedValueError("owned set was moved")
+
+    def _require_unborrowed(self) -> None:
+        self._require_live()
+        if self._shared_borrows or self._mutable_borrow:
+            raise BorrowConflictError("owner operation overlaps an active borrow")
+
+    def _acquire_borrow(self, mutable: bool) -> None:
+        self._require_live()
+        if mutable:
+            if self._mutable_borrow or self._shared_borrows:
+                raise BorrowConflictError("mutable borrow overlaps an active borrow")
+            self._mutable_borrow = True
+        else:
+            if self._mutable_borrow:
+                raise BorrowConflictError("shared borrow overlaps a mutable borrow")
+            self._shared_borrows += 1
+
+    def _release_borrow(self, mutable: bool) -> None:
+        if mutable:
+            self._mutable_borrow = False
+        elif self._shared_borrows:
+            self._shared_borrows -= 1
+
+    def _find(self, value: int) -> int:
+        validate_i64(value)
+        for index in range(self._length):
+            if self._storage[index] == value:
+                return index
+        return -1
+
+    def move(self) -> "DynamicSet":
+        self._require_unborrowed()
+        replacement = object.__new__(type(self))
+        replacement.allocator = self.allocator
+        replacement._storage = self._storage
+        replacement._length = self._length
+        replacement._shared_borrows = 0
+        replacement._mutable_borrow = False
+        replacement._moved = False
+        self._moved = True
+        return replacement
+
+    def reserve(self, capacity: int) -> None:
+        self._require_unborrowed()
+        _validate_collection_capacity(capacity, 8)
+        if capacity <= self.capacity:
+            return
+        self.allocator.reserve(capacity * 8)
+        self._storage.extend([0] * (capacity - self.capacity))
+
+    def add(self, value: int) -> None:
+        self._require_unborrowed()
+        validate_i64(value)
+        if self._find(value) >= 0:
+            return
+        if self._length >= self.capacity:
+            raise BufferFullError("set has no reserved capacity")
+        self._storage[self._length] = value
+        self._length += 1
+
+    def contains(self, value: int) -> int:
+        self._require_live()
+        return -1 if self._find(value) >= 0 else 0
+
+    def remove(self, value: int) -> None:
+        self._require_unborrowed()
+        index = self._find(value)
+        if index < 0:
+            return
+        self._storage[index : self._length - 1] = self._storage[index + 1 : self._length]
+        self._length -= 1
+        self._storage[self._length] = 0
+
+    def at(self, index: int) -> int:
+        return self.get(index)
+
+    def get(self, index: int) -> int:
+        self._require_live()
+        _validate_vector_index(index, self._length)
+        return self._storage[index]
+
+    def clone(self) -> "DynamicSet":
+        self._require_live()
+        return DynamicSet(
+            self.capacity,
+            allocator=self.allocator,
+            _data=tuple(self._storage[: self._length]),
+        )
+
+    def borrow(self, *, mutable: bool = False) -> BorrowedBuffer:
+        return BorrowedBuffer(self, mutable)
+
+
 def bytes_new(capacity: int, *, allocator: Allocator | None = None) -> DynamicBytes:
     return DynamicBytes(capacity, allocator=allocator)
 
 
-def _owned(value: DynamicBytes | DynamicText | DynamicVector | BorrowedBuffer):
+def _owned(value: DynamicBytes | DynamicText | DynamicVector | DynamicMap | DynamicSet | BorrowedBuffer):
     return value.owner if isinstance(value, BorrowedBuffer) else value
 
 
@@ -822,6 +1093,100 @@ def f64_vector_slice(value, start: int, end: int) -> DynamicVector:
     return _vector_slice(value, start, end, "f64")
 
 
+def _map_owner(value: DynamicMap | BorrowedBuffer) -> DynamicMap:
+    owner = _owned(value)
+    if not isinstance(owner, DynamicMap):
+        raise DynamicError("expected i64 map")
+    return owner
+
+
+def _set_owner(value: DynamicSet | BorrowedBuffer) -> DynamicSet:
+    owner = _owned(value)
+    if not isinstance(owner, DynamicSet):
+        raise DynamicError("expected i64 set")
+    return owner
+
+
+def i64_map_new(capacity: int, *, allocator: Allocator | None = None) -> DynamicMap:
+    return DynamicMap(capacity, allocator=allocator)
+
+
+def i64_map_len(value) -> int:
+    return _map_owner(value).length
+
+
+def i64_map_capacity(value) -> int:
+    return _map_owner(value).capacity
+
+
+def i64_map_reserve(value, capacity: int) -> None:
+    _map_owner(value).reserve(capacity)
+
+
+def i64_map_put(value, key: int, item: int) -> None:
+    _map_owner(value).put(key, item)
+
+
+def i64_map_contains(value, key: int) -> int:
+    return _map_owner(value).contains(key)
+
+
+def i64_map_get(value, key: int) -> int:
+    return _map_owner(value).get(key)
+
+
+def i64_map_remove(value, key: int) -> None:
+    _map_owner(value).remove(key)
+
+
+def i64_map_key_at(value, index: int) -> int:
+    return _map_owner(value).key_at(index)
+
+
+def i64_map_value_at(value, index: int) -> int:
+    return _map_owner(value).value_at(index)
+
+
+def i64_map_clone(value) -> DynamicMap:
+    return _map_owner(value).clone()
+
+
+def i64_set_new(capacity: int, *, allocator: Allocator | None = None) -> DynamicSet:
+    return DynamicSet(capacity, allocator=allocator)
+
+
+def i64_set_len(value) -> int:
+    return _set_owner(value).length
+
+
+def i64_set_capacity(value) -> int:
+    return _set_owner(value).capacity
+
+
+def i64_set_reserve(value, capacity: int) -> None:
+    _set_owner(value).reserve(capacity)
+
+
+def i64_set_add(value, item: int) -> None:
+    _set_owner(value).add(item)
+
+
+def i64_set_contains(value, item: int) -> int:
+    return _set_owner(value).contains(item)
+
+
+def i64_set_remove(value, item: int) -> None:
+    _set_owner(value).remove(item)
+
+
+def i64_set_at(value, index: int) -> int:
+    return _set_owner(value).at(index)
+
+
+def i64_set_clone(value) -> DynamicSet:
+    return _set_owner(value).clone()
+
+
 def _validate_capacity(value: int) -> None:
     if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= MAX_BUFFER_BYTES:
         raise BufferCapacityError("capacity must be a non-negative i64 within the buffer limit")
@@ -832,6 +1197,18 @@ def _validate_vector_capacity(value: int, element_size: int) -> None:
         raise BufferCapacityError("vector capacity must be a non-negative i64")
     if value > MAX_BUFFER_BYTES // element_size:
         raise BufferCapacityError("vector capacity exceeds the byte limit")
+
+
+def _validate_collection_capacity(value: int, element_size: int) -> None:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise BufferCapacityError("collection capacity must be a non-negative i64")
+    if value > MAX_BUFFER_BYTES // element_size:
+        raise BufferCapacityError("collection capacity exceeds the byte limit")
+
+
+def _validate_i64_pair(key: int, value: int) -> None:
+    validate_i64(key)
+    validate_i64(value)
 
 
 def _validate_vector_index(value: int, length: int) -> None:

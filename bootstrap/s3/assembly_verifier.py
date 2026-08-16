@@ -84,6 +84,22 @@ for _vector_prefix in ("tryte", "i64", "f64"):
         "slice",
     ):
         _DYNAMIC_REFERENCE_TARGETS[f"{_vector_prefix}_vector_{_vector_operation}"] = AssemblyType.VECTOR
+for _collection_prefix in ("i64_map", "i64_set"):
+    for _collection_operation in (
+        "len",
+        "capacity",
+        "reserve",
+        "put",
+        "contains",
+        "get",
+        "remove",
+        "key_at",
+        "value_at",
+        "clone",
+        "add",
+        "at",
+    ):
+        _DYNAMIC_REFERENCE_TARGETS[f"{_collection_prefix}_{_collection_operation}"] = AssemblyType.VECTOR
 
 
 class AssemblyVerifierError(AssemblyError):

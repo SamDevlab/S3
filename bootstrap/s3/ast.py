@@ -20,6 +20,8 @@ class TypeName(Enum):
     TRYTE_VECTOR = "tryte_vector"
     I64_VECTOR = "i64_vector"
     F64_VECTOR = "f64_vector"
+    I64_MAP = "i64_map"
+    I64_SET = "i64_set"
 
 
 @dataclass(frozen=True, slots=True)

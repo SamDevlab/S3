@@ -16,6 +16,8 @@ from .dynamic import (
     DynamicBytes,
     DynamicText,
     DynamicVector,
+    DynamicMap,
+    DynamicSet,
     bytes_from_text,
     bytes_new,
     f64_vector_new,
@@ -194,7 +196,7 @@ def _store_value(cell, value, value_type):
         if not isinstance(value, DynamicText):
             raise IRExecutionError("invalid text value")
     elif value_type is IRType.VECTOR:
-        if not isinstance(value, DynamicVector):
+        if not isinstance(value, (DynamicVector, DynamicMap, DynamicSet)):
             raise IRExecutionError("invalid vector value")
     elif value_type is IRType.I64:
         try:
@@ -280,6 +282,10 @@ def _execute_dynamic_builtin(name: str, args: tuple[object, ...]) -> object:
         return _execute_vector_builtin(name, args, "i64", i64_vector_new)
     if name.startswith("f64_vector_"):
         return _execute_vector_builtin(name, args, "f64", f64_vector_new)
+    if name.startswith("i64_map_"):
+        return _execute_map_builtin(name, args)
+    if name.startswith("i64_set_"):
+        return _execute_set_builtin(name, args)
     raise IRExecutionError(f"unsupported dynamic builtin '{name}'")
 
 
@@ -312,6 +318,72 @@ def _execute_vector_builtin(name: str, args: tuple[object, ...], element_type: s
     if operation == "slice":
         return owner.slice(args[1], args[2])
     raise IRExecutionError(f"unsupported vector builtin '{name}'")
+
+
+def _execute_map_builtin(name: str, args: tuple[object, ...]) -> object:
+    from .dynamic import i64_map_new
+
+    if name == "i64_map_new":
+        return i64_map_new(args[0])
+    owner = _reference_owner(args[0])
+    if not isinstance(owner, DynamicMap):
+        raise IRExecutionError("invalid i64 map reference")
+    operation = name[len("i64_map_") :]
+    if operation == "len":
+        return owner.length
+    if operation == "capacity":
+        return owner.capacity
+    if operation == "reserve":
+        owner.reserve(args[1])
+        return 0
+    if operation == "put":
+        owner.put(args[1], args[2])
+        return 0
+    if operation == "contains":
+        return owner.contains(args[1])
+    if operation == "get":
+        return owner.get(args[1])
+    if operation == "remove":
+        owner.remove(args[1])
+        return 0
+    if operation == "key_at":
+        return owner.key_at(args[1])
+    if operation == "value_at":
+        return owner.value_at(args[1])
+    if operation == "clone":
+        return owner.clone()
+    raise IRExecutionError(f"unsupported map builtin '{name}'")
+
+
+def _execute_set_builtin(name: str, args: tuple[object, ...]) -> object:
+    from .dynamic import i64_set_new
+
+    if name == "i64_set_new":
+        return i64_set_new(args[0])
+    owner = _reference_owner(args[0])
+    if not isinstance(owner, DynamicSet):
+        raise IRExecutionError("invalid i64 set reference")
+    operation = name[len("i64_set_") :]
+    if operation == "len":
+        return owner.length
+    if operation == "capacity":
+        return owner.capacity
+    if operation == "reserve":
+        owner.reserve(args[1])
+        return 0
+    if operation == "add":
+        owner.add(args[1])
+        return 0
+    if operation == "contains":
+        return owner.contains(args[1])
+    if operation == "remove":
+        owner.remove(args[1])
+        return 0
+    if operation == "at":
+        return owner.at(args[1])
+    if operation == "clone":
+        return owner.clone()
+    raise IRExecutionError(f"unsupported set builtin '{name}'")
 
 
 functions_module = IRModule(())

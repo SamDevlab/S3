@@ -72,6 +72,31 @@ DYNAMIC_BUILTIN_SIGNATURES.update(_vector_ir_signatures("tryte", IRType.TRYTE))
 DYNAMIC_BUILTIN_SIGNATURES.update(_vector_ir_signatures("i64", IRType.I64))
 DYNAMIC_BUILTIN_SIGNATURES.update(_vector_ir_signatures("f64", IRType.F64))
 
+DYNAMIC_BUILTIN_SIGNATURES.update(
+    {
+        "i64_map_new": ((IRType.I64,), (IRType.VECTOR,)),
+        "i64_map_len": ((IRType.REFERENCE,), (IRType.I64,)),
+        "i64_map_capacity": ((IRType.REFERENCE,), (IRType.I64,)),
+        "i64_map_reserve": ((IRType.REFERENCE, IRType.I64), (IRType.TRYTE,)),
+        "i64_map_put": ((IRType.REFERENCE, IRType.I64, IRType.I64), (IRType.TRYTE,)),
+        "i64_map_contains": ((IRType.REFERENCE, IRType.I64), (IRType.TRIT,)),
+        "i64_map_get": ((IRType.REFERENCE, IRType.I64), (IRType.I64,)),
+        "i64_map_remove": ((IRType.REFERENCE, IRType.I64), (IRType.TRYTE,)),
+        "i64_map_key_at": ((IRType.REFERENCE, IRType.I64), (IRType.I64,)),
+        "i64_map_value_at": ((IRType.REFERENCE, IRType.I64), (IRType.I64,)),
+        "i64_map_clone": ((IRType.REFERENCE,), (IRType.VECTOR,)),
+        "i64_set_new": ((IRType.I64,), (IRType.VECTOR,)),
+        "i64_set_len": ((IRType.REFERENCE,), (IRType.I64,)),
+        "i64_set_capacity": ((IRType.REFERENCE,), (IRType.I64,)),
+        "i64_set_reserve": ((IRType.REFERENCE, IRType.I64), (IRType.TRYTE,)),
+        "i64_set_add": ((IRType.REFERENCE, IRType.I64), (IRType.TRYTE,)),
+        "i64_set_contains": ((IRType.REFERENCE, IRType.I64), (IRType.TRIT,)),
+        "i64_set_remove": ((IRType.REFERENCE, IRType.I64), (IRType.TRYTE,)),
+        "i64_set_at": ((IRType.REFERENCE, IRType.I64), (IRType.I64,)),
+        "i64_set_clone": ((IRType.REFERENCE,), (IRType.VECTOR,)),
+    }
+)
+
 
 class IROpcode(Enum):
     CONST = "const"

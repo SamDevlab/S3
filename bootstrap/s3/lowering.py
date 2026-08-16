@@ -34,6 +34,8 @@ TYPE_MAP = {
     ast.TypeName.TRYTE_VECTOR: IRType.VECTOR,
     ast.TypeName.I64_VECTOR: IRType.VECTOR,
     ast.TypeName.F64_VECTOR: IRType.VECTOR,
+    ast.TypeName.I64_MAP: IRType.VECTOR,
+    ast.TypeName.I64_SET: IRType.VECTOR,
 }
 
 _DYNAMIC_TYPES = {
@@ -42,6 +44,8 @@ _DYNAMIC_TYPES = {
     ast.TypeName.TRYTE_VECTOR,
     ast.TypeName.I64_VECTOR,
     ast.TypeName.F64_VECTOR,
+    ast.TypeName.I64_MAP,
+    ast.TypeName.I64_SET,
 }
 
 
