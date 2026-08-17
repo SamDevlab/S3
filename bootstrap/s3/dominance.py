@@ -33,6 +33,23 @@ class DominatorTree:
                 children={},
             )
 
+        # Reverse postorder makes the fixed-point pass converge quickly even
+        # for generated functions with thousands of small control-flow blocks.
+        postorder: list[str] = []
+        visited: set[str] = set()
+
+        def visit(name: str) -> None:
+            if name in visited:
+                return
+            visited.add(name)
+            for successor in sorted(cfg.nodes[name].successors):
+                if successor in reachable:
+                    visit(successor)
+            postorder.append(name)
+
+        visit(entry)
+        reverse_postorder = list(reversed(postorder))
+
         # 1. Compute Dominators (Iterative Algorithm)
         dom: dict[str, set[str]] = {}
         dom[entry] = {entry}
@@ -42,7 +59,9 @@ class DominatorTree:
         changed = True
         while changed:
             changed = False
-            for node in sorted(reachable - {entry}):
+            for node in reverse_postorder:
+                if node == entry:
+                    continue
                 preds = [p for p in cfg.nodes[node].predecessors if p in reachable]
                 if preds:
                     new_dom = {node} | set.intersection(*(dom[p] for p in preds))
@@ -58,11 +77,7 @@ class DominatorTree:
 
         for node in sorted(reachable - {entry}):
             strict_doms = dom[node] - {node}
-            immed = None
-            for d in strict_doms:
-                if all(d in dom[other] for other in (strict_doms - {d})):
-                    immed = d
-                    break
+            immed = max(strict_doms, key=lambda name: len(dom[name]), default=None)
             idom[node] = immed
             if immed is not None:
                 children[immed].add(node)
