@@ -1,0 +1,40 @@
+{
+  "milestone": "1.55",
+  "name": "generic-ordered-vector-v1",
+  "status": "IMPLEMENTED_FOCUSED_VERIFIED",
+  "implementation_commit": "578e067435703784aec51626ba6c31fa4e7c47a1",
+  "closure_commit": null,
+  "parent_checkpoint": "578e067435703784aec51626ba6c31fa4e7c47a1",
+  "production_paths": [
+    "bootstrap/s3/generics.py"
+  ],
+  "test_paths": [
+    "tests/test_m155_generic_vector.py",
+    "tests/test_m140_ordered_collections.py",
+    "tests/test_m139_dynamic_buffers.py",
+    "tests/test_m153_generic_functions.py",
+    "tests/test_m154_parametric_types.py"
+  ],
+  "smart_runner": {
+    "profile": "shard",
+    "argument": "m155",
+    "selected": 5,
+    "passed": 5,
+    "failed": 0,
+    "timed_out": 0,
+    "head": "578e067435703784aec51626ba6c31fa4e7c47a1"
+  },
+  "focused_tests": {
+    "status": "PASS",
+    "passed": 3,
+    "failed": 0
+  },
+  "generic_vector_surface": "PASS",
+  "existing_runtime_representation_reused": true,
+  "closed_element_domain": "PASS",
+  "diff_check": "PASS",
+  "native_linux": "DEFERRED_BY_ENVIRONMENT",
+  "wasi": "DEFERRED_BY_ENVIRONMENT",
+  "benchmarks": "NOT_RUN",
+  "remote_writes": 0
+}

@@ -24,6 +24,25 @@ _OWNED_TYPES = {
     ast.TypeName.I64_MAP,
     ast.TypeName.I64_SET,
 }
+_VECTOR_ELEMENT_TYPES = {
+    ast.TypeName.TRYTE: "tryte",
+    ast.TypeName.I64: "i64",
+    ast.TypeName.F64: "f64",
+}
+_GENERIC_VECTOR_BUILTINS = frozenset(
+    {
+        "vector_new",
+        "vector_len",
+        "vector_capacity",
+        "vector_reserve",
+        "vector_push",
+        "vector_pop",
+        "vector_get",
+        "vector_set",
+        "vector_clone",
+        "vector_slice",
+    }
+)
 
 
 def _type_key(type_name: ast.DeclaredType) -> str:
@@ -145,10 +164,14 @@ def _rewrite_type(
             for argument in type_name.type_arguments
         )
         if arguments:
-            return ast.NominalType(
-                specialize_type(type_name.name, arguments, type_name.location),
+            specialized_name = specialize_type(
+                type_name.name,
+                arguments,
                 type_name.location,
             )
+            if isinstance(specialized_name, ast.TypeName):
+                return specialized_name
+            return ast.NominalType(specialized_name, type_name.location)
         return replace(type_name, type_arguments=())
     return type_name
 
@@ -196,6 +219,16 @@ def _expression(
                     diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
                 )
             name = specialize(callee.name, type_arguments, expression.location)
+            callee = replace(callee, name=name)
+            type_arguments = ()
+        elif isinstance(callee, ast.Identifier) and callee.name in specialize.generic_builtin_names:
+            if not type_arguments:
+                raise SemanticError(
+                    f"generic builtin '{callee.name}' requires explicit type arguments",
+                    expression.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+                )
+            name = specialize.generic_builtin(callee.name, type_arguments, expression.location)
             callee = replace(callee, name=name)
             type_arguments = ()
         return replace(
@@ -390,8 +423,6 @@ def specialize_generic_functions(program: ast.Program) -> ast.Program:
         if enum.type_parameters
     }
     generic_types = {**generic_records, **generic_enums}
-    if not generic_functions and not generic_types:
-        return program
 
     specialized_records: dict[tuple[str, tuple[str, ...]], ast.RecordDeclaration] = {}
     specialized_enums: dict[tuple[str, tuple[str, ...]], ast.EnumDeclaration] = {}
@@ -409,6 +440,25 @@ def specialize_generic_functions(program: ast.Program) -> ast.Program:
             arguments: tuple[ast.DeclaredType, ...],
             location,
         ) -> str:
+            if name == "vector":
+                if len(arguments) != 1:
+                    raise SemanticError(
+                        f"generic type 'vector' expects one type argument, got {len(arguments)}",
+                        location,
+                        diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+                    )
+                element = arguments[0]
+                if element not in _VECTOR_ELEMENT_TYPES:
+                    raise SemanticError(
+                        "vector<T> accepts only tryte, i64, or f64 elements",
+                        location,
+                        diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+                    )
+                return {
+                    ast.TypeName.TRYTE: ast.TypeName.TRYTE_VECTOR,
+                    ast.TypeName.I64: ast.TypeName.I64_VECTOR,
+                    ast.TypeName.F64: ast.TypeName.F64_VECTOR,
+                }[element]
             declaration = generic_types.get(name)
             if declaration is None:
                 raise SemanticError(
@@ -491,12 +541,22 @@ def specialize_generic_functions(program: ast.Program) -> ast.Program:
 
     class Specializer:
         generic_names = frozenset(generic_functions)
+        generic_builtin_names = _GENERIC_VECTOR_BUILTINS
 
         def rewrite_type(self, type_name: ast.DeclaredType, location):
             return type_specializer.rewrite_type(type_name, location)
 
         def type_name(self, name: str, arguments, location):
             return type_specializer.type_name(name, arguments, location)
+
+        def generic_builtin(self, name: str, arguments, location):
+            if len(arguments) != 1 or arguments[0] not in _VECTOR_ELEMENT_TYPES:
+                raise SemanticError(
+                    f"generic builtin '{name}' requires one of tryte, i64, or f64 as its type argument",
+                    location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+                )
+            return _VECTOR_ELEMENT_TYPES[arguments[0]] + "_" + name
 
         def __call__(self, name: str, arguments: tuple[ast.DeclaredType, ...], location):
             function = generic_functions[name]
