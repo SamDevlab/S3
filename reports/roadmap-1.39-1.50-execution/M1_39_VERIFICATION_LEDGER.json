@@ -1,0 +1,66 @@
+{
+  "milestone": "1.39",
+  "status": "BLOCKED_ARCHITECTURE_DECISION",
+  "requirements": [
+    {
+      "requirement": "owned byte buffer",
+      "evidence": "Blocked before implementation: ownership, representation, allocation source, growth, and lifetime are not specified.",
+      "status": "BLOCKED"
+    },
+    {
+      "requirement": "UTF-8 validation boundary",
+      "evidence": "Encoding validation is named, but the source value representation and invalid-input result contract are not specified.",
+      "status": "BLOCKED"
+    },
+    {
+      "requirement": "append/concat/slice/search",
+      "evidence": "Public value syntax, aliasing/invalidation rules, and slice ownership are not specified.",
+      "status": "BLOCKED"
+    },
+    {
+      "requirement": "integer parse and deterministic integer format",
+      "evidence": "Failure/result transport is deferred to M1.42 and no M1.39 error boundary is defined.",
+      "status": "BLOCKED"
+    },
+    {
+      "requirement": "explicit copy and borrow rules",
+      "evidence": "The roadmap requires these rules but does not define lifetime, invalidation, aliasing, or rejection semantics.",
+      "status": "BLOCKED"
+    },
+    {
+      "requirement": "valid and invalid UTF-8 corpus",
+      "evidence": "No implementation was started because the invalid-input observable contract is unresolved.",
+      "status": "BLOCKED"
+    },
+    {
+      "requirement": "capacity and overflow failures",
+      "evidence": "Maximum capacity, allocator/arena policy, and failure representation are unresolved.",
+      "status": "BLOCKED"
+    },
+    {
+      "requirement": "O0/O1 equivalence",
+      "evidence": "No implementation candidate exists to verify.",
+      "status": "BLOCKED"
+    },
+    {
+      "requirement": "hosted/native differential",
+      "evidence": "Dynamic storage layout and native ABI are unresolved.",
+      "status": "BLOCKED"
+    },
+    {
+      "requirement": "deterministic serialization",
+      "evidence": "Runtime buffer representation and text failure state are unresolved.",
+      "status": "BLOCKED"
+    },
+    {
+      "requirement": "Linux x86-64 native round trips",
+      "evidence": "No native representation, lifetime, or ABI contract is defined.",
+      "status": "BLOCKED"
+    },
+    {
+      "requirement": "relevant regressions",
+      "evidence": "No production or test code changed; focused regressions are not meaningful before architecture closure.",
+      "status": "BLOCKED"
+    }
+  ]
+}

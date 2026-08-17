@@ -1,0 +1,19 @@
+module s3.v1.core
+
+export fn clamp_tryte(value: tryte, lower: tryte, upper: tryte) -> tryte:
+    match value <=> lower:
+        -1:
+            return lower
+        0:
+            return lower
+        1:
+            match value <=> upper:
+                -1:
+                    return value
+                0:
+                    return upper
+                1:
+                    return upper
+
+export fn identity_i64(value: i64) -> i64:
+    return value

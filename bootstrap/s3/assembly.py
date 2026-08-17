@@ -61,6 +61,9 @@ class AssemblyType(Enum):
     I64 = "i64"
     F64 = "f64"
     STRING = "string"
+    BYTES = "bytes"
+    TEXT = "text"
+    VECTOR = "vector"
     REFERENCE = "reference"
 
 
@@ -336,7 +339,7 @@ class AssemblyProgram:
 
 
 _IDENTIFIER = r"[A-Za-z_][A-Za-z0-9_]*"
-_TYPE = r"trit|tryte|i64|f64|string|reference"
+_TYPE = r"trit|tryte|i64|f64|string|bytes|text|reference"
 _STATIC_STRING_ID = r"s[0-9]+"
 _FUNCTION_PATTERN = re.compile(rf"^\.function\s+({_IDENTIFIER})\s*->\s*(.+)$")
 _DECLARATION_PATTERN = re.compile(

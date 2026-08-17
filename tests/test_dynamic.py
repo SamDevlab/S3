@@ -83,10 +83,12 @@ def test_owned_buffer_supports_all_closed_numeric_kinds() -> None:
 def test_dynamic_bytes_and_text_are_runtime_owned() -> None:
     data = DynamicBytes(capacity=1)
     data.push(65)
+    data.reserve(2)
     data.push(66)
     assert data.length == 2
     text = DynamicText("S3")
-    text.append(" runtime")
+    text.reserve(len("S3 runtime".encode("utf-8")))
+    text.append_static(" runtime")
     assert text.to_string() == "S3 runtime"
     assert text.length == len("S3 runtime".encode("utf-8"))
 

@@ -1,0 +1,28 @@
+{
+  "milestone": "1.42",
+  "title": "Explicit Structured Result and Error Flow",
+  "status": "COMPLETE",
+  "base_implementation": "e78c718",
+  "implementation_head": "5555d67",
+  "production_code_changed": false,
+  "focused_tests": "PASS",
+  "focused_test_file": "tests/test_m142_structured_results.py",
+  "focused_test_count": 4,
+  "hosted_o0_o1": "PASS (24, 24)",
+  "native_linux_x86_64": "PASS",
+  "native_probes": {
+    "o0": "PASS (24)",
+    "o1": "PASS (24)"
+  },
+  "deterministic_ir_assembly": "PASS",
+  "compileall": "PASS",
+  "full_suite_terminal": true,
+  "full_suite_exit": 0,
+  "full_suite_recovery_status": "FULL_SUITE_EXIT=0",
+  "general_parametric_generics": false,
+  "exceptions": false,
+  "implicit_propagation": false,
+  "remote_writes": false,
+  "next_milestone_started": false,
+  "next_milestone": "1.43"
+}

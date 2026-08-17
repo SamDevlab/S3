@@ -15,6 +15,15 @@ class TypeName(Enum):
     I64 = "i64"
     F64 = "f64"
     STRING = "string"
+    BYTES = "bytes"
+    TEXT = "text"
+    TRYTE_VECTOR = "tryte_vector"
+    I64_VECTOR = "i64_vector"
+    F64_VECTOR = "f64_vector"
+    I64_MAP = "i64_map"
+    I64_SET = "i64_set"
+    HOST_CAPABILITY = "host_capability"
+    RESOURCE_HANDLE = "resource_handle"
 
 
 @dataclass(frozen=True, slots=True)

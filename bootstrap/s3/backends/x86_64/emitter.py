@@ -21,6 +21,7 @@ from .registers import (
     SYSV_INTEGER_ARGUMENT_REGISTERS,
 )
 from ...numeric_abi import SYSV_FLOAT_ARGUMENT_REGISTERS
+from ...ir import DYNAMIC_BUILTIN_SIGNATURES
 from .runtime import render_runtime
 from .allocation import AllocationPlan, analyze_allocation
 from .liveness import analyze_liveness
@@ -1148,6 +1149,8 @@ class X8664Emitter:
         instruction: AssemblyInstruction,
     ) -> list[str]:
         assert instruction.callee is not None
+        if instruction.callee in DYNAMIC_BUILTIN_SIGNATURES:
+            return self._emit_dynamic_builtin_call(layout, instruction)
         callee = self.functions[instruction.callee]
         destinations = instruction.result_registers
         arguments = instruction.argument_registers
@@ -1161,6 +1164,55 @@ class X8664Emitter:
         if destinations and len(destinations) != callee.result_width:
             raise NativeBackendError("multi-cell native call result width mismatch")
         return self._emit_sret_call(layout, instruction, arguments, destinations, callee)
+
+    def _emit_dynamic_builtin_call(
+        self,
+        layout: FrameLayout,
+        instruction: AssemblyInstruction,
+    ) -> list[str]:
+        """Lower an internal dynamic-buffer call using the logical descriptor ABI."""
+
+        if len(instruction.result_registers) != 1:
+            raise NativeBackendError(
+                "dynamic builtin calls must return exactly one logical cell"
+            )
+        arguments = instruction.argument_registers
+        stack_arguments = arguments[len(_ARGUMENT_REGISTERS):]
+        padding = 1 if len(stack_arguments) % 2 else 0
+        survivor_physicals = self._call_survivor_physicals(instruction)
+        lines: list[str] = []
+        if self.register_allocation:
+            for register in arguments:
+                lines.extend(self._snapshot_register(layout, register))
+            lines.extend(self._save_caller_saved(layout, survivor_physicals))
+        if padding:
+            lines.append("    sub rsp, 8")
+        for register in reversed(stack_arguments):
+            lines.extend(
+                self._load_snapshot(layout, register, "rax")
+                if self.register_allocation
+                else self._read_register(layout, register, "rax")
+            )
+            lines.append("    push rax")
+        for register, target in zip(
+            arguments[: len(_ARGUMENT_REGISTERS)],
+            _ARGUMENT_REGISTERS,
+            strict=False,
+        ):
+            lines.extend(
+                self._load_snapshot(layout, register, target)
+                if self.register_allocation
+                else self._read_register(layout, register, target)
+            )
+        assert instruction.callee is not None
+        lines.append(f"    call __s3_builtin_{instruction.callee}")
+        cleanup = (len(stack_arguments) + padding) * 8
+        if cleanup:
+            lines.append(f"    add rsp, {cleanup}")
+        if self.register_allocation:
+            lines.extend(self._restore_caller_saved(layout, survivor_physicals))
+        lines.extend(self._write_register(layout, instruction.result_registers[0], "rax"))
+        return lines
 
     def _emit_scalar_call(
         self,

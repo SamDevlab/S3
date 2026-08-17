@@ -1,0 +1,8 @@
+{
+  "schema_version": "s3.tcp-provider.v1",
+  "limits": {"max_listeners": {"value":4,"unit":"handles","failure":"RESOURCE_LIMIT"},"max_connections":{"value":16,"unit":"handles","failure":"RESOURCE_LIMIT"},"max_outstanding_handles":{"value":32,"unit":"handles","failure":"RESOURCE_LIMIT"},"max_read_write":{"value":65536,"unit":"bytes per operation","failure":"RESOURCE_LIMIT"},"max_trace_entries":{"value":4096,"unit":"events","failure":"RESOURCE_LIMIT"},"max_address_length":{"value":64,"unit":"bytes","failure":"INVALID_ADDRESS"}},
+  "address": "binary family tag + 16-byte address + big-endian u16 port; IPv4 uses mapped 16-byte form",
+  "trace_fields": ["sequence","event","handle","address","requested","transferred","status","error_code"],
+  "events": ["create","bind","listen","connect","accept","read","write","timeout","eof","close","capability_denied","resource_limit"],
+  "field_order": "listed order; absent fields omitted; LF JSON canonical encoding"
+}

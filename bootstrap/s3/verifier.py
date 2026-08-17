@@ -10,6 +10,7 @@ from .diagnostics import (
     SourceLocation,
 )
 from .ir import (
+    DYNAMIC_BUILTIN_SIGNATURES,
     IRFunction,
     IRInstruction,
     IRMemoryObject,
@@ -371,7 +372,7 @@ class IRVerifier:
             result, result_type = require_result()
             if result_type is not IRType.REFERENCE:
                 self._error("address_of result must be a reference", instruction.location)
-            if instruction.reference_target not in {IRType.TRIT, IRType.TRYTE, IRType.I64, IRType.F64, IRType.STRING}:
+            if instruction.reference_target not in {IRType.TRIT, IRType.TRYTE, IRType.I64, IRType.F64, IRType.STRING, IRType.BYTES, IRType.TEXT, IRType.VECTOR}:
                 self._error("address_of requires a scalar reference target", instruction.location)
             if len(instruction.operands) not in {0, 1} or instruction.memory is None and not instruction.operands:
                 self._error("address_of requires a logical storage operand", instruction.location)
@@ -451,6 +452,8 @@ class IRVerifier:
             require_operands(0)
             if result_type is IRType.STRING:
                 self._error("const cannot produce string values", instruction.location)
+            if result_type in {IRType.BYTES, IRType.TEXT, IRType.VECTOR}:
+                self._error("const cannot produce dynamic values", instruction.location)
             if result_type is IRType.REFERENCE:
                 self._error("const cannot produce reference values", instruction.location)
             if instruction.immediate is None:
@@ -506,6 +509,8 @@ class IRVerifier:
             )
             if result_type is IRType.STRING:
                 self._error("invert does not support string values", instruction.location)
+            if result_type in {IRType.BYTES, IRType.TEXT, IRType.VECTOR}:
+                self._error("invert does not support dynamic values", instruction.location)
             if result_type is IRType.REFERENCE:
                 self._error("invert does not support reference values", instruction.location)
             return
@@ -573,6 +578,13 @@ class IRVerifier:
                     f"unsupported explicit conversion {source_type.value} -> {result_type.value}",
                     instruction.location,
                 )
+            if result_type in {IRType.BYTES, IRType.TEXT, IRType.VECTOR}:
+                self._error(
+                    f"{opcode.value} does not support dynamic values",
+                    instruction.location,
+                )
+            if result_type is IRType.REFERENCE:
+                self._error(f"{opcode.value} does not support reference values", instruction.location)
             return
 
         if opcode is IROpcode.COMPARE:
@@ -587,6 +599,8 @@ class IRVerifier:
             )
             if operand_types and operand_types[0] is IRType.STRING:
                 self._error("compare does not support string values", instruction.location)
+            if operand_types and operand_types[0] in {IRType.BYTES, IRType.TEXT, IRType.VECTOR}:
+                self._error("compare does not support dynamic values", instruction.location)
             if operand_types and operand_types[0] is IRType.REFERENCE:
                 self._error("compare does not support reference values", instruction.location)
             return
@@ -596,36 +610,41 @@ class IRVerifier:
             if instruction.callee is None:
                 self._error("call requires a function name", instruction.location)
             callee = functions.get(instruction.callee or "")
-            if callee is None:
+            builtin = DYNAMIC_BUILTIN_SIGNATURES.get(instruction.callee or "")
+            if callee is None and builtin is None:
                 self._error(
                     f"call to nonexistent function '{instruction.callee}'",
                     instruction.location,
                 )
-            assert callee is not None
-            expected_types = tuple(parameter.type for parameter in callee.parameters)
+            expected_types = (
+                tuple(parameter.type for parameter in callee.parameters)
+                if callee is not None
+                else builtin[0]
+            )
             if len(operand_types) != len(expected_types):
                 self._error(
-                    f"call to '{callee.name}' expects {len(expected_types)} "
+                    f"call to '{instruction.callee}' expects {len(expected_types)} "
                     f"argument(s), got {len(operand_types)}",
                     instruction.location,
                 )
             if operand_types != expected_types:
                 self._error(
-                    f"call to '{callee.name}' has incompatible argument types",
+                    f"call to '{instruction.callee}' has incompatible argument types",
                     instruction.location,
                 )
             if instruction.results:
-                if len(instruction.results) != len(callee.result_types):
+                expected_results = callee.result_types if callee is not None else builtin[1]
+                if len(instruction.results) != len(expected_results):
                     self._error(
                         f"call result count {len(instruction.results)} does not "
-                        f"match '{callee.name}' result width "
-                        f"{len(callee.result_types)}",
+                        f"match '{instruction.callee}' result width "
+                        f"{len(expected_results)}",
                         instruction.location,
                     )
                 result_types = tuple(register_types[result] for result in instruction.results)
-                if result_types != callee.result_types:
+                if result_types != expected_results:
                     rendered = ", ".join(type_name.value for type_name in result_types)
-                    expected = ", ".join(type_name.value for type_name in callee.result_types)
+                    expected = ", ".join(type_name.value for type_name in expected_results)
                     self._error(
                         f"call results have types [{rendered}]; "
                         f"'{callee.name}' returns [{expected}]",

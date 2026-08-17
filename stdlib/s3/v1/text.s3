@@ -1,0 +1,7 @@
+module s3.v1.text
+
+export fn from_static(value: string) -> text:
+    return text_from_static(value)
+
+export fn length(value: &text) -> i64:
+    return text_len(value)

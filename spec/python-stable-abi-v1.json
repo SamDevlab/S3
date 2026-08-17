@@ -1,0 +1,9 @@
+{
+  "schema_version": "s3.python-stable-abi.v1",
+  "minimum_python_abi": "CPython limited API 3.11",
+  "required_declarations": ["Python.h","PyObject","Py_buffer","PyObject_GetBuffer","PyBuffer_Release","PyBUF_SIMPLE","PyBUF_WRITABLE","PyBUF_C_CONTIGUOUS"],
+  "required_buffer_profile": "one-dimensional byte-format C-contiguous views",
+  "forbidden_apis": ["private CPython headers","non-limited implementation symbols","callbacks","thread APIs"],
+  "ownership": "S3-owned; Python view call-scoped; exact release once",
+  "platform_note": "availability must be proven by future Linux compile gate; current Windows headers are not certification evidence"
+}

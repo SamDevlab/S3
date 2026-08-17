@@ -1,0 +1,12 @@
+{
+  "schema_version": "s3.test-report.v1",
+  "field_order": ["schema_version","project","target","profile","seed","timeout_ms","test_id","discovery_index","mode","status","failure_class","exit_status","duration_ms","stdout","stderr","capability_denials","resource_failure"],
+  "statuses": ["PASS","FAIL","SKIP","TIMEOUT","CAPABILITY_DENIED","RESOURCE_LIMIT","INFRASTRUCTURE_FAILURE"],
+  "failure_class": "required for every non-PASS result",
+  "duration": "integer milliseconds; informational, excluded from identity",
+  "ordering": "discovery_index ascending, then test_id",
+  "exit_status": {"PASS":0,"SKIP":0,"FAIL":1,"TIMEOUT":1,"CAPABILITY_DENIED":1,"RESOURCE_LIMIT":1,"INFRASTRUCTURE_FAILURE":2},
+  "timeout_ms": {"default":10000,"minimum":1,"maximum":3600000,"zero_allowed":false,"override":"CLI/project field, recorded in report"},
+  "capability_denied": "intentional denied operation; distinct from infrastructure failure",
+  "host_metadata": "not part of deterministic identity"
+}

@@ -17,12 +17,97 @@ from .assembly import (
 )
 from .ternary import TernaryRangeError, TernaryWidth, TRYTE_MAX, validate
 from .numeric import NumericError, validate_f64, validate_i64
+from .ir import DYNAMIC_BUILTIN_SIGNATURES, IRType
 
 
 WIDTH_MAP = {
     AssemblyType.TRIT: TernaryWidth.TRIT,
     AssemblyType.TRYTE: TernaryWidth.TRYTE,
 }
+
+
+_IR_TO_ASSEMBLY_TYPE = {
+    IRType.TRIT: AssemblyType.TRIT,
+    IRType.TRYTE: AssemblyType.TRYTE,
+    IRType.I64: AssemblyType.I64,
+    IRType.F64: AssemblyType.F64,
+    IRType.STRING: AssemblyType.STRING,
+    IRType.BYTES: AssemblyType.BYTES,
+    IRType.TEXT: AssemblyType.TEXT,
+    IRType.VECTOR: AssemblyType.VECTOR,
+    IRType.REFERENCE: AssemblyType.REFERENCE,
+}
+
+_DYNAMIC_REFERENCE_TARGETS = {
+    **dict.fromkeys(
+        (
+            "bytes_len",
+            "bytes_capacity",
+            "bytes_get",
+            "bytes_set",
+            "bytes_push",
+            "bytes_reserve",
+            "bytes_clone",
+            "bytes_concat",
+            "bytes_slice",
+        ),
+        AssemblyType.BYTES,
+    ),
+    "bytes_from_text": AssemblyType.TEXT,
+    **dict.fromkeys(
+        (
+            "text_len",
+            "text_capacity",
+            "text_reserve",
+            "text_append",
+            "text_append_static",
+            "text_clone",
+            "text_concat",
+            "text_slice",
+            "text_find",
+        ),
+        AssemblyType.TEXT,
+    ),
+    "text_from_bytes": AssemblyType.BYTES,
+}
+
+for _vector_prefix in ("tryte", "i64", "f64"):
+    for _vector_operation in (
+        "len",
+        "capacity",
+        "reserve",
+        "push",
+        "pop",
+        "get",
+        "set",
+        "clone",
+        "slice",
+    ):
+        _DYNAMIC_REFERENCE_TARGETS[f"{_vector_prefix}_vector_{_vector_operation}"] = AssemblyType.VECTOR
+for _collection_prefix in ("i64_map", "i64_set"):
+    for _collection_operation in (
+        "len",
+        "capacity",
+        "reserve",
+        "put",
+        "contains",
+        "get",
+        "remove",
+        "key_at",
+        "value_at",
+        "clone",
+        "add",
+        "at",
+    ):
+        _DYNAMIC_REFERENCE_TARGETS[f"{_collection_prefix}_{_collection_operation}"] = AssemblyType.VECTOR
+
+for _resource_operation in (
+    "resource_is_open",
+    "resource_kind",
+    "resource_invoke",
+    "resource_close",
+):
+    _DYNAMIC_REFERENCE_TARGETS[_resource_operation] = AssemblyType.I64
 
 
 class AssemblyVerifierError(AssemblyError):
@@ -300,7 +385,13 @@ class AssemblyVerifier:
         opcode = instruction.opcode
         if opcode is AssemblyOpcode.TCONST:
             type_name = register_type(instruction.registers[0])
-            if type_name is AssemblyType.STRING:
+            if type_name in {
+                AssemblyType.STRING,
+                AssemblyType.BYTES,
+                AssemblyType.TEXT,
+                AssemblyType.VECTOR,
+                AssemblyType.REFERENCE,
+            }:
                 raise EmulatorError(
                     self._static_context(
                         function,
@@ -428,7 +519,12 @@ class AssemblyVerifier:
                 raise EmulatorError(self._static_context(function, block, instruction, "TREFSTORE source type mismatch"))
         elif opcode is AssemblyOpcode.TINV:
             type_name = same_type(instruction.registers)
-            if type_name is AssemblyType.STRING:
+            if type_name in {
+                AssemblyType.STRING,
+                AssemblyType.BYTES,
+                AssemblyType.TEXT,
+                AssemblyType.VECTOR,
+            }:
                 raise EmulatorError(
                     self._static_context(
                         function,
@@ -448,7 +544,12 @@ class AssemblyVerifier:
             AssemblyOpcode.TMAX,
         }:
             type_name = same_type(instruction.registers)
-            if type_name is AssemblyType.STRING:
+            if type_name in {
+                AssemblyType.STRING,
+                AssemblyType.BYTES,
+                AssemblyType.TEXT,
+                AssemblyType.VECTOR,
+            }:
                 raise EmulatorError(
                     self._static_context(
                         function,
@@ -503,7 +604,12 @@ class AssemblyVerifier:
                     )
                 )
             source_type = same_type(tuple(sources))
-            if source_type is AssemblyType.STRING:
+            if source_type in {
+                AssemblyType.STRING,
+                AssemblyType.BYTES,
+                AssemblyType.TEXT,
+                AssemblyType.VECTOR,
+            }:
                 raise EmulatorError(
                     self._static_context(
                         function,
@@ -583,6 +689,50 @@ class AssemblyVerifier:
                 register_type(destination)
             for argument in arguments:
                 register_type(argument)
+            if instruction.callee in DYNAMIC_BUILTIN_SIGNATURES:
+                argument_types, result_types = DYNAMIC_BUILTIN_SIGNATURES[instruction.callee]
+                expected_arguments = tuple(
+                    _IR_TO_ASSEMBLY_TYPE[type_name] for type_name in argument_types
+                )
+                expected_results = tuple(
+                    _IR_TO_ASSEMBLY_TYPE[type_name] for type_name in result_types
+                )
+                actual_arguments = tuple(register_type(argument) for argument in arguments)
+                if actual_arguments != expected_arguments:
+                    raise EmulatorError(
+                        self._static_context(
+                            function,
+                            block,
+                            instruction,
+                            f"dynamic call to '{instruction.callee}' has incompatible argument types",
+                        )
+                    )
+                for argument, expected in zip(arguments, argument_types, strict=True):
+                    if expected is not IRType.REFERENCE:
+                        continue
+                    info = function.reference_info(argument)
+                    if info is None or info[0] is not _DYNAMIC_REFERENCE_TARGETS[instruction.callee]:
+                        raise EmulatorError(
+                            self._static_context(
+                                function,
+                                block,
+                                instruction,
+                                f"dynamic call to '{instruction.callee}' has incompatible reference target",
+                            )
+                        )
+                destination_types = tuple(
+                    register_type(destination) for destination in destinations
+                )
+                if destinations and destination_types != expected_results:
+                    raise EmulatorError(
+                        self._static_context(
+                            function,
+                            block,
+                            instruction,
+                            f"dynamic call destination types do not match '{instruction.callee}'",
+                        )
+                    )
+                return
             if instruction.callee not in functions:
                 raise EmulatorError(
                     self._static_context(

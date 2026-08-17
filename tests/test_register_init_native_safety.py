@@ -216,8 +216,11 @@ def test_positive_native_shape_removes_only_initialization_check() -> None:
     )
 
     native = X8664Backend().generate(AssemblyProgram((function,)))
+    function_start = native.index(".type s3_main, @function")
+    function_end = native.index(".size s3_main, .-s3_main", function_start)
+    main_native = native[function_start:function_end]
 
-    assert "cmp byte ptr" not in native
+    assert "cmp byte ptr" not in main_native
     assert "mov qword ptr" in native or "mov rax," in native
 
 

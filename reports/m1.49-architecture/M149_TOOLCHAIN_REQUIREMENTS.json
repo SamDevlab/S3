@@ -1,0 +1,18 @@
+{
+  "selected_wasi_model": "WASI Preview 1 / wasi_snapshot_preview1",
+  "target": "wasm32-wasip1-s3",
+  "artifact": "core-wasm-module",
+  "reference_runtime": "Wasmtime",
+  "required_tools": [
+    {"name": "s3-wasm-backend-or-encoder", "purpose": "emit canonical .wasm", "version_policy": "locked by M1.45 artifact identity", "installation_scope": "isolated campaign environment"},
+    {"name": "wasm-tools", "purpose": "validate and inspect core modules", "version_policy": "exact release and checksum recorded before provisioning", "installation_scope": "isolated campaign environment"},
+    {"name": "wasmtime", "purpose": "authoritative WASI Preview 1 execution", "version_policy": "exact release and checksum recorded before provisioning", "installation_scope": "isolated campaign environment"}
+  ],
+  "platform": "Linux x86-64",
+  "validation_commands": [
+    "wasm-tools validate artifact.wasm",
+    "wasmtime run --dir=<declared-preopen> artifact.wasm"
+  ],
+  "environment_provisioned": false,
+  "docker_required": false
+}

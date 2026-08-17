@@ -1,0 +1,8 @@
+{
+  "schema_version": "s3.m146-discovery.v1",
+  "roots": ["tests"],
+  "path_policy": "workspace-relative, '/' separators, UTF-8 NFC, lexicographic",
+  "test_file_policy": "lexicographic canonical path; filesystem enumeration ignored",
+  "entrypoint_policy": "one declared entrypoint per test unit; duplicate IDs reject",
+  "fixture": {"enumeration_a":["tests/z.s3","tests/a.s3"],"enumeration_b":["tests/a.s3","tests/z.s3"],"expected":["tests/a.s3","tests/z.s3"]}
+}
