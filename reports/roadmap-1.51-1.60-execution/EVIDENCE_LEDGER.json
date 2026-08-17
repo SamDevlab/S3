@@ -1,0 +1,17 @@
+{
+  "campaign": "M1.51-M1.60",
+  "base": "ee6cdb7a2ee22f6c4e64c4091549b2740b963504",
+  "branch": "feature/m151-m160-autonomous-20260817",
+  "worktree": "C:/Users/samue/Downloads/S3-m151-m160-autonomous-20260817",
+  "remote_writes": 0,
+  "milestones": {
+    "1.51": {
+      "status": "IMPLEMENTED_FOCUSED_VERIFIED",
+      "implementation_commit": "c9af2922404e95ae06453ce8489fffccd3d800b6",
+      "closure_report": "reports/roadmap-1.51-1.60-execution/m1.51/EXECUTION_REPORT.md",
+      "closure_json": "reports/roadmap-1.51-1.60-execution/m1.51/EXECUTION_REPORT.json"
+    }
+  },
+  "next_milestone": "1.52",
+  "t4_full_suite": "NOT_RUN_UNTIL_AFTER_M1.60"
+}
