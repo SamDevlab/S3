@@ -49,7 +49,7 @@
     },
     "1.58": {
       "status": "IMPLEMENTED_FOCUSED_VERIFIED",
-      "implementation_commit": "5c3b4e40a236491b3074dda2d8f853ed6fbcb211",
+      "implementation_commit": "6af27b3eb1d8e4717fd3da24db6cfdfe65a9bcf8",
       "closure_report": "reports/roadmap-1.51-1.60-execution/m1.58/EXECUTION_REPORT.md",
       "closure_json": "reports/roadmap-1.51-1.60-execution/m1.58/EXECUTION_REPORT.json"
     }

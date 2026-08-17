@@ -2,7 +2,7 @@
   "milestone": "1.58",
   "name": "language-server-protocol-v1",
   "status": "IMPLEMENTED_FOCUSED_VERIFIED",
-  "implementation_commit": "5c3b4e40a236491b3074dda2d8f853ed6fbcb211",
+  "implementation_commit": "6af27b3eb1d8e4717fd3da24db6cfdfe65a9bcf8",
   "closure_commit": null,
   "parent_checkpoint": "5c3b4e40a236491b3074dda2d8f853ed6fbcb211",
   "production_paths": [
@@ -20,7 +20,7 @@
     "passed": 3,
     "failed": 0,
     "timed_out": 0,
-    "head": "5c3b4e40a236491b3074dda2d8f853ed6fbcb211"
+    "head": "6af27b3eb1d8e4717fd3da24db6cfdfe65a9bcf8"
   },
   "focused_tests": {
     "status": "PASS",
