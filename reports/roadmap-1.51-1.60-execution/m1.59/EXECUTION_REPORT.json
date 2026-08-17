@@ -2,7 +2,7 @@
   "milestone": "1.59",
   "name": "canonical-source-and-developer-experience",
   "status": "IMPLEMENTED_FOCUSED_VERIFIED",
-  "implementation_commit": "c335b8994e27fe1768322362d9ea7cb0852ddb38",
+  "implementation_commit": "c0ae46161ec7297381a0abf9bebb45ab59c0f219",
   "closure_commit": null,
   "parent_checkpoint": "c335b8994e27fe1768322362d9ea7cb0852ddb38",
   "production_paths": [
@@ -20,7 +20,7 @@
     "passed": 3,
     "failed": 0,
     "timed_out": 0,
-    "head": "c335b8994e27fe1768322362d9ea7cb0852ddb38"
+    "head": "c0ae46161ec7297381a0abf9bebb45ab59c0f219"
   },
   "focused_tests": {
     "status": "PASS",
