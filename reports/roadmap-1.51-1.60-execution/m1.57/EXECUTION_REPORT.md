@@ -16,9 +16,9 @@ existing compiler build graph.
 
 ## Local Evidence
 
-- Implementation checkpoint: `5ab4e10f25f87d5548aaf321962cc7d4e824ae88`
+- Implementation checkpoint: `758df4e2716b47145a468760682a85a000ce82a2`
 - Smart runner: `python tools/s3test.py shard m157 --format json`
-- Smart shard result: `3/3 PASS`, `0` failed, `0` timed out
+- Smart shard result on the implementation HEAD: `3/3 PASS`, `0` failed, `0` timed out
 - Focused M1.57 result: `3 passed`
 - `python -m py_compile bootstrap/s3/incremental_build.py`: PASS
 - `git diff --check`: PASS

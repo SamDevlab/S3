@@ -2,7 +2,7 @@
   "milestone": "1.57",
   "name": "content-addressed-incremental-builds",
   "status": "IMPLEMENTED_FOCUSED_VERIFIED",
-  "implementation_commit": "5ab4e10f25f87d5548aaf321962cc7d4e824ae88",
+  "implementation_commit": "758df4e2716b47145a468760682a85a000ce82a2",
   "closure_commit": null,
   "parent_checkpoint": "5ab4e10f25f87d5548aaf321962cc7d4e824ae88",
   "production_paths": [
@@ -20,7 +20,7 @@
     "passed": 3,
     "failed": 0,
     "timed_out": 0,
-    "head": "5ab4e10f25f87d5548aaf321962cc7d4e824ae88"
+    "head": "758df4e2716b47145a468760682a85a000ce82a2"
   },
   "focused_tests": {
     "status": "PASS",
