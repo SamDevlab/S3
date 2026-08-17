@@ -123,24 +123,17 @@ def test_module_record_composition_stays_module_local_without_nesting() -> None:
         assert execute_assembly(compilation.assembly) == 2
 
 
-@pytest.mark.parametrize(
-    ("source", "message"),
-    (
-        (
-            "record Box:\n"
-            "    value: tryte\n"
-            "fn main() -> tryte:\n"
-            "    boxes: Box[1] = [Box(value=1)]\n"
-            "    return 0\n",
-            "arrays of nominal types are not supported",
-        ),
-    ),
-)
-def test_record_composition_rejects_unsupported_aggregate_shapes(
-    source: str,
-    message: str,
-) -> None:
-    _assert_semantic_rejection(source, message)
+def test_record_composition_accepts_arrays_of_records() -> None:
+    source = (
+        "record Box:\n"
+        "    value: tryte\n"
+        "fn main() -> tryte:\n"
+        "    boxes: Box[1] = [Box(value=1)]\n"
+        "    return boxes[0].value\n"
+    )
+
+    assert run_source(source, optimization="O0") == 1
+    assert run_source(source, optimization="O1") == 1
 
 
 def test_record_composition_accepts_static_text_field() -> None:

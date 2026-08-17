@@ -1735,6 +1735,21 @@ class SemanticAnalyzer:
             )
 
     def _validate_array_type(self, type_name: ast.ArrayType) -> None:
+        if isinstance(type_name.element_type, ast.ArrayType):
+            raise SemanticError(
+                "nested arrays are not supported",
+                type_name.location,
+            )
+        if type_name.element_type is ast.TypeName.STRING:
+            raise SemanticError(
+                "arrays of string are not supported in milestone 0.53",
+                type_name.location,
+            )
+        if type_name.element_type in _DYNAMIC_TYPES:
+            raise SemanticError(
+                "dynamic text and buffer values cannot be stored in arrays",
+                type_name.location,
+            )
         if isinstance(type_name.element_type, ast.ReferenceType):
             raise SemanticError(
                 "references cannot be stored in arrays",
