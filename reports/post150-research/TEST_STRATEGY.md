@@ -64,4 +64,4 @@ The orchestrator self-tests cover dynamic and native impact selection,
 docs-only selection, changed-test selection, cross-cutting expansion, stable
 ordering, fingerprint changes, state persistence, failure retention, timeout
 classification, stale-cache rejection, and explainability. Focused validation
-passed: `20 passed` including the existing M1.46 runner tests.
+passed: `21 passed` including the existing M1.46 runner tests.
