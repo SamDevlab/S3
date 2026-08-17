@@ -4,6 +4,7 @@
   "autonomous_closure_sha": "4d670528a2f9e3f78fe99caa147fcd27231014a2",
   "common_base": "48ad3ab70c179abc1eb942e78780b8cad6338509",
   "integration_merge_commit": "208db9df9466673e0cc89c111ba13ca3654bcb3a",
+  "integration_repair_commit": "0628d1fb37343a69245c71a16ea66601ecb63611",
   "integration_branch": "integration/m139-m150-main-reconciliation-20260817",
   "integration_focused_sha": "efcbd464c091508fd975a6a647ba8bc023a7db21",
   "merge_conflict_count": 9,
@@ -25,11 +26,15 @@
   },
   "m150_historical_closure_sha": "4d670528a2f9e3f78fe99caa147fcd27231014a2",
   "deferred_environment_certification": ["M147-L", "M148-L", "M149-W", "M150-W"],
-  "final_publication_full_suite_sha": null,
-  "final_publication_full_suite_exit": null,
-  "unexpected_files": null,
-  "secret_findings": null,
+  "final_publication_full_suite_sha": "0628d1fb37343a69245c71a16ea66601ecb63611",
+  "final_publication_full_suite_exit": 0,
+  "final_publication_full_suite_start": "2026-08-17T02:03:20.7552470-03:00",
+  "final_publication_full_suite_end": "2026-08-17T03:06:36.4027992-03:00",
+  "final_publication_full_suite_command": "python -m pytest -q -p no:cacheprovider --basetemp <external-temp>",
+  "unexpected_files": "NONE",
+  "secret_findings": "NONE",
+  "recommended_publication_mode": "PUSH_INTEGRATION_BRANCH_AND_OPEN_PR_TO_MAIN",
   "remote_write_executed": false,
   "primary_checkout_changed": false,
-  "status": "FOCUSED_PASS_PENDING_FINAL_FULL_SUITE"
+  "status": "READY_FOR_PUBLICATION_LOCAL_ONLY_WITH_DEFERRED_ENVIRONMENT_CERTIFICATION"
 }

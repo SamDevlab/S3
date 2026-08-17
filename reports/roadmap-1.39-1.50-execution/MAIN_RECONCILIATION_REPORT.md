@@ -52,6 +52,14 @@ cost on the Windows host. A bounded, semantics-preserving reverse-postorder
 convergence repair was made in `bootstrap/s3/dominance.py`; the dominance/GVN
 regression tests passed, and the focused batch then completed successfully.
 
+The final integrated suite also exposed four merge-tree compatibility defects:
+the legacy dynamic-buffer test assumed implicit growth, the verifier rejected
+valid numeric conversions, a native-shape assertion searched runtime helpers,
+and two native-only tests lacked a Linux x86-64 skip. These were repaired in
+the integration-only commit
+`0628d1fb37343a69245c71a16ea66601ecb63611`; the production verifier change
+and the test-contract/platform-gate changes are included in the candidate.
+
 M1.50 historical closure metadata now records:
 
 ```text
@@ -64,23 +72,33 @@ deferment is unchanged. No goldens were changed.
 
 ## Final Suite
 
-The canonical final full suite is required after this evidence commit. Its
-command and exact certification SHA will be recorded in the final closure
-amendment; no parallel suite is permitted.
+The canonical final full suite passed after the integration repair commit.
+Its exact candidate SHA is recorded here; the report-only closure commit that
+follows this suite does not alter implementation behavior.
 
 ```text
-FINAL_PUBLICATION_FULL_SUITE_EXIT=PENDING
+FINAL_PUBLICATION_FULL_SUITE_SHA=0628d1fb37343a69245c71a16ea66601ecb63611
+FINAL_PUBLICATION_FULL_SUITE_START=2026-08-17T02:03:20.7552470-03:00
+FINAL_PUBLICATION_FULL_SUITE_END=2026-08-17T03:06:36.4027992-03:00
+FINAL_PUBLICATION_FULL_SUITE_EXIT=0
+FINAL_PUBLICATION_FULL_SUITE_COMMAND=python -m pytest -q -p no:cacheprovider --basetemp <external-temp>
 ```
 
-## Readiness Before Final Suite
+The Windows host skipped Linux-only native execution gates. Those skips do
+not replace the deferred environment certifications recorded for M147-L,
+M148-L, M149-W, and M150-W.
+
+## Final Readiness
 
 ```text
 MERGE_CONFLICT_COUNT=9
 MERGE_CONFLICTS_RESOLVED=YES
 MAIN_ONLY_COMMITS_PRESERVED=YES
 AUTONOMOUS_ONLY_COMMITS_PRESERVED=YES
-UNEXPECTED_FILES=TO_BE_VALIDATED
-SECRET_FINDINGS=TO_BE_VALIDATED
-READY_TO_PUBLISH=PENDING_FINAL_FULL_SUITE
+UNEXPECTED_FILES=NONE
+SECRET_FINDINGS=NONE
+READY_TO_PUBLISH=YES_LOCAL_ONLY
+STATUS=READY_FOR_PUBLICATION_LOCAL_ONLY_WITH_DEFERRED_ENVIRONMENT_CERTIFICATION
+RECOMMENDED_PUBLICATION_MODE=PUSH_INTEGRATION_BRANCH_AND_OPEN_PR_TO_MAIN
 REMOTE_WRITE_EXECUTED=NO
 ```
