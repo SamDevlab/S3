@@ -30,6 +30,13 @@
       "tests/test_enums.py",
       "tests/test_reference_types_semantic.py"
     ],
+    "m153": [
+      "tests/test_m153_generic_functions.py",
+      "tests/test_m151_composite_owned_values.py",
+      "tests/test_m152_ownership_flow.py",
+      "tests/test_functions_control_flow.py",
+      "tests/test_compiler.py"
+    ],
     "m145-m146": ["tests/test_m145_build_graph.py", "tests/test_m146_test_runner.py"],
     "m147": ["tests/test_m147_python_buffer_abi.py"],
     "m148": ["tests/test_m148_network_provider.py"],
@@ -74,6 +81,21 @@
       ],
       "milestones": ["m152"],
       "shards": ["m152"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/{ast.py,parser.py,generics.py,pipeline.py}",
+      "tests": [
+        "tests/test_m153_generic_functions.py",
+        "tests/test_m151_composite_owned_values.py",
+        "tests/test_m152_ownership_flow.py",
+        "tests/test_functions_control_flow.py",
+        "tests/test_compiler.py"
+      ],
+      "milestones": ["m153"],
+      "shards": ["m153"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false

@@ -14,6 +14,7 @@ class Parser:
         self.tokens = tokens
         self.current = 0
         self.mode = mode
+        self._active_type_parameters: set[str] = set()
 
     def parse_program(self) -> ast.Program:
         functions: list[ast.FunctionDeclaration] = []
@@ -110,29 +111,58 @@ class Parser:
     def _parse_function(self, *, exported: bool = False) -> ast.FunctionDeclaration:
         start = self._consume(TokenKind.FN, "expected 'fn'")
         name = self._consume(TokenKind.IDENTIFIER, "expected function name")
-        self._consume(TokenKind.LEFT_PAREN, "expected '(' after function name")
-        parameters = self._parse_parameters()
-        self._consume(TokenKind.RIGHT_PAREN, "expected ')' after parameters")
-        self._consume(TokenKind.ARROW, "expected '->' before return type")
-        return_type = self._parse_type()
-
-        if self.mode is SyntaxMode.V0_6:
-            if self._check(TokenKind.LEFT_BRACE):
-                raise ParseError("obsolete brace syntax", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_OBSOLETE_BRACE)
-            self._consume(TokenKind.COLON, "expected ':' after return type")
-            self._consume(TokenKind.NEWLINE, "expected newline after ':'")
-            self._consume(TokenKind.INDENT, "expected indented block")
-            body = self._parse_block_v0_6()
-        else:
-            body = self._parse_block()
+        type_parameters = self._parse_type_parameters()
+        prior_type_parameters = self._active_type_parameters
+        self._active_type_parameters = {item.name for item in type_parameters}
+        try:
+            self._consume(TokenKind.LEFT_PAREN, "expected '(' after function name")
+            parameters = self._parse_parameters()
+            self._consume(TokenKind.RIGHT_PAREN, "expected ')' after parameters")
+            self._consume(TokenKind.ARROW, "expected '->' before return type")
+            return_type = self._parse_type()
+            if self.mode is SyntaxMode.V0_6:
+                if self._check(TokenKind.LEFT_BRACE):
+                    raise ParseError("obsolete brace syntax", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_OBSOLETE_BRACE)
+                self._consume(TokenKind.COLON, "expected ':' after return type")
+                self._consume(TokenKind.NEWLINE, "expected newline after ':'")
+                self._consume(TokenKind.INDENT, "expected indented block")
+                body = self._parse_block_v0_6()
+            else:
+                body = self._parse_block()
+        finally:
+            self._active_type_parameters = prior_type_parameters
 
         signature = ast.FunctionSignature(
             name.text,
             tuple(parameters),
             return_type,
             name.location,
+            tuple(type_parameters),
         )
         return ast.FunctionDeclaration(signature, body, start.location, exported)
+
+    def _parse_type_parameters(self) -> list[ast.TypeParameter]:
+        if not self._match(TokenKind.LESS):
+            return []
+        parameters: list[ast.TypeParameter] = []
+        while True:
+            token = self._consume(TokenKind.IDENTIFIER, "expected type parameter name")
+            constraint = "value"
+            if self._match(TokenKind.COLON):
+                constraint = self._consume(
+                    TokenKind.IDENTIFIER,
+                    "expected type parameter constraint",
+                ).text
+            parameters.append(ast.TypeParameter(token.text, constraint, token.location))
+            if not self._match(TokenKind.COMMA):
+                break
+            if self._check(TokenKind.GREATER):
+                raise ParseError("expected type parameter after ','", self._peek().location)
+        self._consume(TokenKind.GREATER, "expected '>' after type parameters")
+        names = [item.name for item in parameters]
+        if len(set(names)) != len(names):
+            raise ParseError("duplicate type parameter", parameters[-1].location)
+        return parameters
 
     def _parse_record_declaration(
         self,
@@ -274,6 +304,14 @@ class Parser:
             }[name]
         elif self._check(TokenKind.IDENTIFIER):
             nominal = self._advance()
+            if nominal.text in self._active_type_parameters:
+                result = ast.TypeParameterType(nominal.text, nominal.location)
+                while self._match(TokenKind.LEFT_BRACKET):
+                    raise ParseError(
+                        "type parameter arrays require a concrete specialization",
+                        nominal.location,
+                    )
+                return result
             parts = [nominal.text]
             while self.mode is SyntaxMode.V0_6 and self._match(TokenKind.DOT):
                 parts.append(
@@ -835,6 +873,25 @@ class Parser:
                 else:
                     expression = self._finish_call(expression)
                 continue
+            if (
+                isinstance(expression, ast.Identifier)
+                and self._is_generic_call_start()
+            ):
+                self._consume(TokenKind.LESS, "expected '<' before type arguments")
+                type_arguments: list[ast.DeclaredType] = []
+                while True:
+                    type_arguments.append(self._parse_type())
+                    if not self._match(TokenKind.COMMA):
+                        break
+                self._consume(TokenKind.GREATER, "expected '>' after type arguments")
+                self._consume(TokenKind.LEFT_PAREN, "expected '(' after type arguments")
+                expression = ast.CallExpression(
+                    expression,
+                    self._finish_call(expression).arguments,
+                    expression.location,
+                    tuple(type_arguments),
+                )
+                continue
             if self._match(TokenKind.LEFT_BRACKET):
                 start = self._parse_expression()
                 if self._match(TokenKind.COLON):
@@ -868,6 +925,25 @@ class Parser:
                 continue
             break
         return expression
+
+    def _is_generic_call_start(self) -> bool:
+        if self.current >= len(self.tokens) or self.tokens[self.current].kind is not TokenKind.LESS:
+            return False
+        cursor = self.current + 1
+        depth = 1
+        while cursor < len(self.tokens):
+            kind = self.tokens[cursor].kind
+            if kind is TokenKind.LESS:
+                depth += 1
+            elif kind is TokenKind.GREATER:
+                depth -= 1
+                if depth == 0:
+                    return (
+                        cursor + 1 < len(self.tokens)
+                        and self.tokens[cursor + 1].kind is TokenKind.LEFT_PAREN
+                    )
+            cursor += 1
+        return False
 
     def _parse_primary_atom(self) -> ast.Expression:
         if self.mode == SyntaxMode.V0_6 and self._match(TokenKind.MATCH):

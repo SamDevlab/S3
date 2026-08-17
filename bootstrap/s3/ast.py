@@ -55,7 +55,27 @@ class SliceType:
     location: SourceLocation
 
 
-DeclaredType: TypeAlias = TypeName | ArrayType | NominalType | ReferenceType | SliceType
+@dataclass(frozen=True, slots=True)
+class TypeParameterType:
+    name: str
+    location: SourceLocation
+
+
+DeclaredType: TypeAlias = (
+    TypeName
+    | ArrayType
+    | NominalType
+    | ReferenceType
+    | SliceType
+    | TypeParameterType
+)
+
+
+@dataclass(frozen=True, slots=True)
+class TypeParameter:
+    name: str
+    constraint: str
+    location: SourceLocation
 
 
 class UnaryOperator(Enum):
@@ -127,6 +147,7 @@ class CallExpression:
     callee: Expression
     arguments: tuple[CallArgument, ...]
     location: SourceLocation
+    type_arguments: tuple[DeclaredType, ...] = ()
 
     @property
     def function_name(self) -> str:
@@ -398,6 +419,7 @@ class FunctionSignature:
     parameters: tuple[Parameter, ...]
     return_type: DeclaredType
     location: SourceLocation
+    type_parameters: tuple[TypeParameter, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

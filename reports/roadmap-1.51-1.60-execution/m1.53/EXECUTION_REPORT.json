@@ -1,0 +1,45 @@
+{
+  "milestone": "1.53",
+  "name": "constrained-generic-functions-v1",
+  "status": "IMPLEMENTED_FOCUSED_VERIFIED",
+  "implementation_commit": "68e507286282b8d6eef4c22c7849ff1ace37ac8c",
+  "closure_commit": null,
+  "parent_checkpoint": "68e507286282b8d6eef4c22c7849ff1ace37ac8c",
+  "production_paths": [
+    "bootstrap/s3/ast.py",
+    "bootstrap/s3/parser.py",
+    "bootstrap/s3/generics.py",
+    "bootstrap/s3/pipeline.py"
+  ],
+  "test_paths": [
+    "tests/test_m153_generic_functions.py",
+    "tests/test_m151_composite_owned_values.py",
+    "tests/test_m152_ownership_flow.py",
+    "tests/test_functions_control_flow.py",
+    "tests/test_lexer_parser.py",
+    "tests/test_compiler.py"
+  ],
+  "smart_runner": {
+    "profile": "shard",
+    "argument": "m153",
+    "selected": 5,
+    "passed": 5,
+    "failed": 0,
+    "timed_out": 0,
+    "head": "68e507286282b8d6eef4c22c7849ff1ace37ac8c"
+  },
+  "focused_tests": {
+    "status": "PASS",
+    "passed": 60,
+    "failed": 0
+  },
+  "explicit_type_arguments": "PASS",
+  "finite_constraints": "PASS",
+  "deterministic_specialization": "PASS",
+  "compileall": "PASS",
+  "diff_check": "PASS",
+  "native_linux": "DEFERRED_BY_ENVIRONMENT",
+  "wasi": "DEFERRED_BY_ENVIRONMENT",
+  "benchmarks": "NOT_RUN",
+  "remote_writes": 0
+}
