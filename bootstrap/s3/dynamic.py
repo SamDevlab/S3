@@ -557,7 +557,7 @@ class DynamicText:
         return DynamicText(_bytes=data[start:end], allocator=self._bytes.allocator)
 
     def find(self, needle: "DynamicText") -> int:
-        return self.to_string().find(needle.to_string())
+        return self._bytes.to_bytes().find(needle._bytes.to_bytes())
 
     def to_string(self) -> str:
         return _decode_utf8(self._bytes.to_bytes())
