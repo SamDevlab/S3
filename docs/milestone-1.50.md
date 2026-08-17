@@ -1,13 +1,20 @@
 # Milestone 1.50 — Portable Component Gate
 
-M1.50 retains exactly one bounded component: the existing Assembly renderer
-subset. Its portable gate is `M149-G11`: the component must compile as
-`wasm32-wasip1-s3`, execute under the M1.49 certification runtime without
-undeclared imports, and produce byte-identical logical output to the existing
-Python renderer oracle for the locked fixture corpus.
+M1.50 implements a bounded self-hosting slice around
+`AssemblyProgramTextAdapter` and `render_supported_program`. The scope is
+limited to the existing supported Assembly renderer subset; it is not a
+complete self-hosting compiler and does not change optimizer behavior.
 
-The component memory budget is **8 MiB maximum linear memory**. This is larger
-than the current bounded fixture corpus and leaves room for renderer buffers,
-while remaining materially below the global runtime ceiling. Exceeding it is
-a deterministic resource failure. This does not claim complete self-hosting or
-promote the candidate to the default compiler.
+The previously completed verification evidence applies to
+`3e5a3898fe5d3578b96061be14bae1d8c42e980d`: focused verification PASS,
+structured component gate PASS, corrective full suite PASS, O0/oracle PASS,
+and O1 execution PASS. O1 output parity is deferred under the accepted
+observable-memory optimizer contract, not classified as an optimizer failure.
+
+Linux native and WASI certification remain deferred by environment and are not
+claimed here. Accordingly the candidate status is
+`IMPLEMENTED_UNVERIFIED_BLOCKED_BY_ENVIRONMENT`.
+
+SELFHOST_CANDIDATE=YES
+DEFAULT_COMPILER=NO
+PYTHON_REFERENCE_REMAINS_AUTHORITATIVE=YES

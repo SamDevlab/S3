@@ -1,0 +1,21 @@
+{
+  "milestone": "1.50",
+  "status": "IMPLEMENTED_UNVERIFIED_BLOCKED_BY_ENVIRONMENT",
+  "implementation_sha": "3e5a3898fe5d3578b96061be14bae1d8c42e980d",
+  "tested_sha": "3e5a3898fe5d3578b96061be14bae1d8c42e980d",
+  "focused": {"status": "PASS", "exit": 0, "command": null, "evidence_note": "Previously completed evidence; exact command text was not recoverable."},
+  "structured_gate": {"status": "PASS", "exit": 0, "command": null, "evidence_note": "Previously completed component gate; exact command text was not recoverable."},
+  "full_suite": {"status": "PASS", "exit": 0, "command": null, "evidence_note": "Previously completed corrective full suite; exact command text was not recoverable."},
+  "O0": "PASS",
+  "O1": "PASS",
+  "oracle": "PASS",
+  "parity": "DEFERRED_BY_ACCEPTED_OBSERVABLE_MEMORY_OPTIMIZER_CONTRACT",
+  "native": "DEFERRED_BY_ENVIRONMENT",
+  "WASI": "DEFERRED_BY_ENVIRONMENT",
+  "deferred_gates": ["Linux native certification", "WASI certification", "O1 output parity under accepted observable-memory condition"],
+  "environment_blocks": ["Linux native and WASI certification environments were unavailable."],
+  "production_changes_after_verification": false,
+  "golden_changes_after_verification": false,
+  "remote_write": false,
+  "primary_checkout_preserved": true
+}
