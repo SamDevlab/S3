@@ -2,7 +2,7 @@
   "milestone": "1.56",
   "name": "package-dependencies-v1",
   "status": "IMPLEMENTED_FOCUSED_VERIFIED",
-  "implementation_commit": "9d33412c5118bd49f3abb7c01bdb70a8e09e77e9",
+  "implementation_commit": "c19231f14ed741a9fcadb295ae4f10e4553f87e9",
   "closure_commit": null,
   "parent_checkpoint": "9d33412c5118bd49f3abb7c01bdb70a8e09e77e9",
   "production_paths": [
@@ -20,7 +20,7 @@
     "passed": 3,
     "failed": 0,
     "timed_out": 0,
-    "head": "9d33412c5118bd49f3abb7c01bdb70a8e09e77e9"
+    "head": "c19231f14ed741a9fcadb295ae4f10e4553f87e9"
   },
   "focused_tests": {
     "status": "PASS",
