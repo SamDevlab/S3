@@ -1342,6 +1342,8 @@ def render_runtime() -> str:
         "    xor r9d, r9d",
         "    test rax, rax",
         "    jns .L__s3_print_digits",
+        "    mov r9d, 1",
+        "    neg rax",
         ".L__s3_print_digits:",
         "    xor edx, edx",
         "    mov r10, 10",
