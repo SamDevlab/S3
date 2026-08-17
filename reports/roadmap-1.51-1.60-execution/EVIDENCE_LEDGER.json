@@ -58,8 +58,14 @@
       "implementation_commit": "c0ae46161ec7297381a0abf9bebb45ab59c0f219",
       "closure_report": "reports/roadmap-1.51-1.60-execution/m1.59/EXECUTION_REPORT.md",
       "closure_json": "reports/roadmap-1.51-1.60-execution/m1.59/EXECUTION_REPORT.json"
+    },
+    "1.60": {
+      "status": "IMPLEMENTED_FOCUSED_VERIFIED",
+      "implementation_commit": "97bf9ada5c7cd60d72a114bfa0671e4b045d4e4e",
+      "closure_report": "reports/roadmap-1.51-1.60-execution/m1.60/EXECUTION_REPORT.md",
+      "closure_json": "reports/roadmap-1.51-1.60-execution/m1.60/EXECUTION_REPORT.json"
     }
   },
-  "next_milestone": "1.60",
+  "next_milestone": null,
   "t4_full_suite": "NOT_RUN_UNTIL_AFTER_M1.60"
 }
