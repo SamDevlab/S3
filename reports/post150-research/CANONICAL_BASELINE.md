@@ -19,6 +19,8 @@ a replacement certification campaign:
 - shard C passed 151 tests;
 - shard B aggregate and one adapter file timed out on both fix and main;
 - Linux x86-64 native certification remains environment-deferred.
+- Recommendation: `READY_FOR_PR_WITH_DEFERRED_NATIVE_CERTIFICATION`; the
+  historical aggregate timeout does not justify restarting the full suite.
 
 The fix sanity set was rerun locally on the fix worktree and passed 27 tests:
 `tests/test_post150_runtime_correctness.py`,

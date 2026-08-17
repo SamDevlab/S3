@@ -27,6 +27,11 @@
    `pyproject.toml`/README say MIT while `LICENSE` is Apache-2.0. No license
    file was changed.
 
+The post-1.50 correctness branch recommendation is
+`READY_FOR_PR_WITH_DEFERRED_NATIVE_CERTIFICATION`: focused correctness and
+local fix sanity are green, while Linux native certification remains an
+environment gate. No PR was created.
+
 ## Research Decisions
 
 - Keep ownership before generics: generic values without aggregate ownership

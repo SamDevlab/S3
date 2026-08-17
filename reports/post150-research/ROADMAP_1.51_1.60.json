@@ -1,5 +1,6 @@
 {
   "schema": "s3.research-roadmap.v1",
+  "schema_version": "s3.research-roadmap.v1",
   "base_sha": "0c4b83853f8ec091d5cf41d3f2071fc1ae06c481",
   "research_head": "da77bc5c8d174e84cb4ae5ae08343ec31dd39638",
   "capability_snapshot": "reports/post150-research/CAPABILITY_MATRIX.json",
@@ -11,7 +12,7 @@
     "content-addressed incremental build invalidation",
     "bounded developer tooling and self-hosting scope"
   ],
-  "selected_milestones": [
+  "milestones": [
     {
       "id": "M1.51",
       "title": "Composite Owned Values",
@@ -164,6 +165,7 @@
     }
   ],
   "deferred_topics": ["threads", "async", "atomics", "shared memory", "ARM64", "Windows native", "macOS native", "public registry", "mature JIT", "GC", "raw pointers", "Docker certification"],
+  "test_strategy": "reports/post150-research/SMART_TEST_STRATEGY.md",
   "test_policy": {
     "full_suite_default": false,
     "required_when": ["merge candidate", "release candidate", "explicit user request", "global parser/semantic/IR impact", "uncertain partitionability"],
