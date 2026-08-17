@@ -942,6 +942,18 @@ class FunctionLowerer:
                 return scope[name]
         return None
 
+    def _replace_variable_binding(
+        self,
+        name: str,
+        binding: _LoweredBinding,
+        location: SourceLocation,
+    ) -> None:
+        for scope in reversed(self.variable_scopes):
+            if name in scope:
+                scope[name] = binding
+                return
+        raise LoweringError(f"unknown variable '{name}'", location)
+
     def _lower_record_fields_from_expression(
         self,
         expression: ast.Initializer,
@@ -1544,6 +1556,46 @@ class FunctionLowerer:
                 statement.target.name,
                 statement.target.location,
             )
+            if (
+                isinstance(binding.type_name, ast.NominalType)
+                and self.semantic_model.is_record_type(binding.type_name)
+            ):
+                record = self.semantic_model.record(binding.type_name.name)
+                fields = self._lower_record_fields_from_expression(
+                    statement.value,
+                    record,
+                    statement.target.location,
+                )
+                self._replace_variable_binding(
+                    statement.target.name,
+                    _LoweredBinding(
+                        binding.type_name,
+                        binding.mutable,
+                        fields=fields,
+                    ),
+                    statement.target.location,
+                )
+                return
+            if (
+                isinstance(binding.type_name, ast.NominalType)
+                and self.semantic_model.is_enum_type(binding.type_name)
+                and self.semantic_model.enum_cell_count(binding.type_name.name) > 1
+            ):
+                lowered = self._lower_enum_binding_from_expression(
+                    statement.value,
+                    binding.type_name.name,
+                    statement.target.location,
+                )
+                self._replace_variable_binding(
+                    statement.target.name,
+                    _LoweredBinding(
+                        binding.type_name,
+                        binding.mutable,
+                        fields=lowered.fields,
+                    ),
+                    statement.target.location,
+                )
+                return
             if isinstance(binding.type_name, ast.ArrayType):
                 registers = self._lower_array_registers(
                     statement.value,
@@ -1557,12 +1609,14 @@ class FunctionLowerer:
                         initialization=False,
                     )
                 else:
-                    self.variable_scopes[-1][statement.target.name] = (
+                    self._replace_variable_binding(
+                        statement.target.name,
                         self._array_binding_from_registers(
                             binding.type_name,
                             registers,
                             statement.location,
-                        )
+                        ),
+                        statement.target.location,
                     )
                 return
             if isinstance(statement.value, ast.ArrayLiteral):
