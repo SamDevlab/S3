@@ -67,5 +67,15 @@
     }
   },
   "next_milestone": null,
-  "t4_full_suite": "NOT_RUN_UNTIL_AFTER_M1.60"
+  "t4_full_suite": {
+    "head": "c5163032d9c19713f8497d5bf9d15d73f55c6fef",
+    "selected": 328,
+    "passed": 298,
+    "failed": 7,
+    "timed_out": 23,
+    "status": "TIMEOUT",
+    "final_correction_head": "f673351236f7d1ca6a69f9537276e7dd98f7e3be",
+    "rerun_after_correction": false
+  },
+  "campaign_status": "FOCUSED_COMPLETE_T4_LIMITED"
 }

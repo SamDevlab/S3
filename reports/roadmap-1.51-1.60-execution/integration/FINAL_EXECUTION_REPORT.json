@@ -1,0 +1,57 @@
+{
+  "campaign": "M1.51-M1.60",
+  "status": "FOCUSED_COMPLETE_T4_LIMITED",
+  "branch": "feature/m151-m160-autonomous-20260817",
+  "final_head": "f673351236f7d1ca6a69f9537276e7dd98f7e3be",
+  "remote_writes": 0,
+  "benchmarks": "NOT_RUN",
+  "milestones": {
+    "1.51": "IMPLEMENTED_FOCUSED_VERIFIED",
+    "1.52": "IMPLEMENTED_FOCUSED_VERIFIED",
+    "1.53": "IMPLEMENTED_FOCUSED_VERIFIED",
+    "1.54": "IMPLEMENTED_FOCUSED_VERIFIED",
+    "1.55": "IMPLEMENTED_FOCUSED_VERIFIED",
+    "1.56": "IMPLEMENTED_FOCUSED_VERIFIED",
+    "1.57": "IMPLEMENTED_FOCUSED_VERIFIED",
+    "1.58": "IMPLEMENTED_FOCUSED_VERIFIED",
+    "1.59": "IMPLEMENTED_FOCUSED_VERIFIED",
+    "1.60": "IMPLEMENTED_FOCUSED_VERIFIED"
+  },
+  "m160_head": "97bf9ada5c7cd60d72a114bfa0671e4b045d4e4e",
+  "post_t4_correction_head": "f673351236f7d1ca6a69f9537276e7dd98f7e3be",
+  "targeted_proof": {
+    "m151_shard": {
+      "selected": 8,
+      "passed": 8,
+      "failed": 0,
+      "timed_out": 0,
+      "status": "PASS"
+    },
+    "aggregate_boundary_tests": {
+      "passed": 15,
+      "failed": 0,
+      "status": "PASS"
+    }
+  },
+  "t4_full_suite": {
+    "head": "c5163032d9c19713f8497d5bf9d15d73f55c6fef",
+    "selected": 328,
+    "passed": 298,
+    "failed": 7,
+    "timed_out": 23,
+    "status": "TIMEOUT",
+    "rerun_after_correction": false
+  },
+  "known_unresolved": [
+    {
+      "test": "tests/test_external_jsmn_s3.py::test_s3_jsmn_representative_fixture_is_stable_across_optimization[O1]",
+      "classification": "PREEXISTING_OPTIMIZER_OBSERVABLE_MEMORY_CONTRACT"
+    },
+    {
+      "scope": "Assembly/renderer Windows cluster",
+      "classification": "PREEXISTING_ENVIRONMENT_TIMEOUT_CLUSTER"
+    }
+  ],
+  "m161_started": false,
+  "shutdown": false
+}
