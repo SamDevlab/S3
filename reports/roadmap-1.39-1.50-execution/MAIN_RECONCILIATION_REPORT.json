@@ -1,0 +1,35 @@
+{
+  "schema_version": "s3.main-reconciliation.v1",
+  "origin_main_sha": "5dd6844607ba3a2d5830ed836fb9026eed86d0fb",
+  "autonomous_closure_sha": "4d670528a2f9e3f78fe99caa147fcd27231014a2",
+  "common_base": "48ad3ab70c179abc1eb942e78780b8cad6338509",
+  "integration_merge_commit": "208db9df9466673e0cc89c111ba13ca3654bcb3a",
+  "integration_branch": "integration/m139-m150-main-reconciliation-20260817",
+  "integration_focused_sha": "efcbd464c091508fd975a6a647ba8bc023a7db21",
+  "merge_conflict_count": 9,
+  "merge_conflicts_resolved": true,
+  "main_only_commits_preserved": true,
+  "autonomous_only_commits_preserved": true,
+  "historical_evidence": {
+    "M1.39": {"mode": "HISTORICAL_EVIDENCE_INCOMPLETE", "historical_tested_sha": null, "certification_sha": "efcbd464c091508fd975a6a647ba8bc023a7db21", "certification_mode": "RETROACTIVE_FINAL_TREE_CERTIFICATION"},
+    "M1.40": {"mode": "HISTORICAL_EVIDENCE_INCOMPLETE", "historical_tested_sha": null, "certification_sha": "efcbd464c091508fd975a6a647ba8bc023a7db21", "certification_mode": "RETROACTIVE_FINAL_TREE_CERTIFICATION"},
+    "M1.41": {"mode": "HISTORICAL_EVIDENCE_INCOMPLETE", "historical_tested_sha": null, "certification_sha": "efcbd464c091508fd975a6a647ba8bc023a7db21", "certification_mode": "RETROACTIVE_FINAL_TREE_CERTIFICATION"},
+    "M1.42": {"mode": "HISTORICAL_EVIDENCE_INCOMPLETE", "historical_tested_sha": null, "certification_sha": "efcbd464c091508fd975a6a647ba8bc023a7db21", "certification_mode": "RETROACTIVE_FINAL_TREE_CERTIFICATION"},
+    "M1.43": {"mode": "HISTORICAL_EVIDENCE_INCOMPLETE", "historical_tested_sha": null, "certification_sha": "efcbd464c091508fd975a6a647ba8bc023a7db21", "certification_mode": "RETROACTIVE_FINAL_TREE_CERTIFICATION"},
+    "M1.44": {"mode": "HISTORICAL_EVIDENCE_INCOMPLETE", "historical_tested_sha": null, "certification_sha": "efcbd464c091508fd975a6a647ba8bc023a7db21", "certification_mode": "RETROACTIVE_FINAL_TREE_CERTIFICATION"}
+  },
+  "integrated_focused": {
+    "command": "python -m pytest -q tests/test_m139_dynamic_buffers.py tests/test_m140_ordered_collections.py tests/test_m141_ordered_maps_sets.py tests/test_m142_structured_results.py tests/test_m143_scoped_resources.py tests/test_m144_standard_library.py tests/test_m145_build_graph.py tests/test_m146_test_runner.py tests/test_m147_python_buffer_abi.py tests/test_m148_network_provider.py tests/test_m149_wasm_target.py tests/test_m150_renderer_component.py",
+    "sha": "efcbd464c091508fd975a6a647ba8bc023a7db21",
+    "exit": 0
+  },
+  "m150_historical_closure_sha": "4d670528a2f9e3f78fe99caa147fcd27231014a2",
+  "deferred_environment_certification": ["M147-L", "M148-L", "M149-W", "M150-W"],
+  "final_publication_full_suite_sha": null,
+  "final_publication_full_suite_exit": null,
+  "unexpected_files": null,
+  "secret_findings": null,
+  "remote_write_executed": false,
+  "primary_checkout_changed": false,
+  "status": "FOCUSED_PASS_PENDING_FINAL_FULL_SUITE"
+}

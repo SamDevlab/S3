@@ -3,6 +3,7 @@
   "status": "IMPLEMENTED_UNVERIFIED_BLOCKED_BY_ENVIRONMENT",
   "implementation_sha": "3e5a3898fe5d3578b96061be14bae1d8c42e980d",
   "tested_sha": "3e5a3898fe5d3578b96061be14bae1d8c42e980d",
+  "closure_sha": "4d670528a2f9e3f78fe99caa147fcd27231014a2",
   "focused": {"status": "PASS", "exit": 0, "command": null, "evidence_note": "Previously completed evidence; exact command text was not recoverable."},
   "structured_gate": {"status": "PASS", "exit": 0, "command": null, "evidence_note": "Previously completed component gate; exact command text was not recoverable."},
   "full_suite": {"status": "PASS", "exit": 0, "command": null, "evidence_note": "Previously completed corrective full suite; exact command text was not recoverable."},
