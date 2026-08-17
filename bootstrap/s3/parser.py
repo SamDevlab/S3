@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import replace
 
 from . import ast
 from .diagnostics import DiagnosticCode, ParseError, SourceLocation
@@ -171,23 +172,35 @@ class Parser:
     ) -> ast.RecordDeclaration:
         start = self._consume(TokenKind.RECORD, "expected 'record'")
         name = self._consume(TokenKind.IDENTIFIER, "expected record name")
-        self._consume(TokenKind.COLON, "expected ':' after record name")
-        self._consume(TokenKind.NEWLINE, "expected newline after record ':'")
-        self._consume(TokenKind.INDENT, "expected indented record fields")
-        fields: list[ast.RecordField] = []
-        while not self._check(TokenKind.DEDENT) and not self._check(TokenKind.EOF):
-            field_name = self._consume(
-                TokenKind.IDENTIFIER,
-                "expected record field name",
-            )
-            self._consume(TokenKind.COLON, "expected ':' after record field name")
-            type_name = self._parse_type()
-            self._consume_statement_newline("expected newline after record field")
-            fields.append(ast.RecordField(field_name.text, type_name, field_name.location))
-        if not fields:
-            raise ParseError("expected at least one record field", name.location)
-        self._consume(TokenKind.DEDENT, "expected dedent after record declaration")
-        return ast.RecordDeclaration(name.text, tuple(fields), start.location, exported)
+        type_parameters = self._parse_type_parameters()
+        prior_type_parameters = self._active_type_parameters
+        self._active_type_parameters = {item.name for item in type_parameters}
+        try:
+            self._consume(TokenKind.COLON, "expected ':' after record name")
+            self._consume(TokenKind.NEWLINE, "expected newline after record ':'")
+            self._consume(TokenKind.INDENT, "expected indented record fields")
+            fields: list[ast.RecordField] = []
+            while not self._check(TokenKind.DEDENT) and not self._check(TokenKind.EOF):
+                field_name = self._consume(
+                    TokenKind.IDENTIFIER,
+                    "expected record field name",
+                )
+                self._consume(TokenKind.COLON, "expected ':' after record field name")
+                type_name = self._parse_type()
+                self._consume_statement_newline("expected newline after record field")
+                fields.append(ast.RecordField(field_name.text, type_name, field_name.location))
+            if not fields:
+                raise ParseError("expected at least one record field", name.location)
+            self._consume(TokenKind.DEDENT, "expected dedent after record declaration")
+        finally:
+            self._active_type_parameters = prior_type_parameters
+        return ast.RecordDeclaration(
+            name.text,
+            tuple(fields),
+            start.location,
+            exported,
+            tuple(type_parameters),
+        )
 
     def _parse_enum_declaration(
         self,
@@ -196,46 +209,58 @@ class Parser:
     ) -> ast.EnumDeclaration:
         start = self._consume(TokenKind.ENUM, "expected 'enum'")
         name = self._consume(TokenKind.IDENTIFIER, "expected enum name")
-        self._consume(TokenKind.COLON, "expected ':' after enum name")
-        self._consume(TokenKind.NEWLINE, "expected newline after enum ':'")
-        self._consume(TokenKind.INDENT, "expected indented enum variants")
-        variants: list[ast.EnumVariant] = []
-        while not self._check(TokenKind.DEDENT) and not self._check(TokenKind.EOF):
-            variant = self._consume(
-                TokenKind.IDENTIFIER,
-                "expected enum variant name",
-            )
-            payload_fields: list[ast.RecordField] = []
-            if self._match(TokenKind.LEFT_PAREN):
-                if self._check(TokenKind.RIGHT_PAREN):
-                    raise ParseError("expected enum payload field", self._peek().location)
-                while True:
-                    field_name = self._consume(
-                        TokenKind.IDENTIFIER,
-                        "expected enum payload field name",
-                    )
-                    self._consume(
-                        TokenKind.COLON,
-                        "expected ':' after enum payload field name",
-                    )
-                    field_type = self._parse_type()
-                    payload_fields.append(
-                        ast.RecordField(field_name.text, field_type, field_name.location)
-                    )
-                    if not self._match(TokenKind.COMMA):
-                        break
+        type_parameters = self._parse_type_parameters()
+        prior_type_parameters = self._active_type_parameters
+        self._active_type_parameters = {item.name for item in type_parameters}
+        try:
+            self._consume(TokenKind.COLON, "expected ':' after enum name")
+            self._consume(TokenKind.NEWLINE, "expected newline after enum ':'")
+            self._consume(TokenKind.INDENT, "expected indented enum variants")
+            variants: list[ast.EnumVariant] = []
+            while not self._check(TokenKind.DEDENT) and not self._check(TokenKind.EOF):
+                variant = self._consume(
+                    TokenKind.IDENTIFIER,
+                    "expected enum variant name",
+                )
+                payload_fields: list[ast.RecordField] = []
+                if self._match(TokenKind.LEFT_PAREN):
                     if self._check(TokenKind.RIGHT_PAREN):
-                        raise ParseError(
-                            "expected enum payload field after ','",
-                            self._peek().location,
+                        raise ParseError("expected enum payload field", self._peek().location)
+                    while True:
+                        field_name = self._consume(
+                            TokenKind.IDENTIFIER,
+                            "expected enum payload field name",
                         )
-                self._consume(TokenKind.RIGHT_PAREN, "expected ')' after enum payload fields")
-            self._consume_statement_newline("expected newline after enum variant")
-            variants.append(ast.EnumVariant(variant.text, variant.location, tuple(payload_fields)))
-        if not variants:
-            raise ParseError("expected at least one enum variant", name.location)
-        self._consume(TokenKind.DEDENT, "expected dedent after enum declaration")
-        return ast.EnumDeclaration(name.text, tuple(variants), start.location, exported)
+                        self._consume(
+                            TokenKind.COLON,
+                            "expected ':' after enum payload field name",
+                        )
+                        field_type = self._parse_type()
+                        payload_fields.append(
+                            ast.RecordField(field_name.text, field_type, field_name.location)
+                        )
+                        if not self._match(TokenKind.COMMA):
+                            break
+                        if self._check(TokenKind.RIGHT_PAREN):
+                            raise ParseError(
+                                "expected enum payload field after ','",
+                                self._peek().location,
+                            )
+                    self._consume(TokenKind.RIGHT_PAREN, "expected ')' after enum payload fields")
+                self._consume_statement_newline("expected newline after enum variant")
+                variants.append(ast.EnumVariant(variant.text, variant.location, tuple(payload_fields)))
+            if not variants:
+                raise ParseError("expected at least one enum variant", name.location)
+            self._consume(TokenKind.DEDENT, "expected dedent after enum declaration")
+        finally:
+            self._active_type_parameters = prior_type_parameters
+        return ast.EnumDeclaration(
+            name.text,
+            tuple(variants),
+            start.location,
+            exported,
+            tuple(type_parameters),
+        )
 
     def _parse_parameters(self) -> list[ast.Parameter]:
         parameters: list[ast.Parameter] = []
@@ -320,7 +345,8 @@ class Parser:
                         "expected nominal type name after '.'",
                     ).text
                 )
-            result = ast.NominalType(".".join(parts), nominal.location)
+            type_arguments = self._parse_type_arguments()
+            result = ast.NominalType(".".join(parts), nominal.location, tuple(type_arguments))
         else:
             raise ParseError(
                 "expected type 'trit', 'tryte', 'i64', 'f64', 'string', or nominal type",
@@ -341,6 +367,19 @@ class Parser:
             )
             result = ast.ArrayType(result, value, start.location)
         return result
+
+    def _parse_type_arguments(self) -> list[ast.DeclaredType]:
+        if not self._match(TokenKind.LESS):
+            return []
+        arguments: list[ast.DeclaredType] = []
+        while True:
+            arguments.append(self._parse_type())
+            if not self._match(TokenKind.COMMA):
+                break
+            if self._check(TokenKind.GREATER):
+                raise ParseError("expected type argument after ','", self._peek().location)
+        self._consume(TokenKind.GREATER, "expected '>' after type arguments")
+        return arguments
 
     def _parse_block(self) -> ast.Block:
         start = self._consume(TokenKind.LEFT_BRACE, "expected '{'")
@@ -608,6 +647,13 @@ class Parser:
             raise ParseError("expected integer case label or 'else'", self._peek().location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_INVALID_MATCH_ARM)
         if self._check(TokenKind.IDENTIFIER):
             enum_name = self._advance()
+            enum_target: ast.Expression = ast.Identifier(enum_name.text, enum_name.location)
+            if self._is_generic_type_qualifier_start():
+                enum_target = ast.GenericTypeExpression(
+                    enum_target,
+                    tuple(self._parse_type_arguments()),
+                    enum_name.location,
+                )
             if not self._match(TokenKind.DOT):
                 raise ParseError("expected integer case label or 'else'", enum_name.location, diagnostic_category=None, diagnostic_code=DiagnosticCode.PARSE_INVALID_MATCH_ARM)
             member = self._consume(
@@ -615,7 +661,7 @@ class Parser:
                 "expected enum variant in case label",
             )
             label: ast.FieldAccessExpression = ast.FieldAccessExpression(
-                ast.Identifier(enum_name.text, enum_name.location),
+                enum_target,
                 member.text,
                 enum_name.location,
             )
@@ -877,19 +923,27 @@ class Parser:
                 isinstance(expression, ast.Identifier)
                 and self._is_generic_call_start()
             ):
-                self._consume(TokenKind.LESS, "expected '<' before type arguments")
-                type_arguments: list[ast.DeclaredType] = []
-                while True:
-                    type_arguments.append(self._parse_type())
-                    if not self._match(TokenKind.COMMA):
-                        break
-                self._consume(TokenKind.GREATER, "expected '>' after type arguments")
+                type_arguments = self._parse_type_arguments()
                 self._consume(TokenKind.LEFT_PAREN, "expected '(' after type arguments")
-                expression = ast.CallExpression(
+                if self._is_record_field_argument_start():
+                    expression = self._finish_record_expression(
+                        expression,
+                        tuple(type_arguments),
+                    )
+                else:
+                    expression = replace(
+                        self._finish_call(expression),
+                        type_arguments=tuple(type_arguments),
+                    )
+                continue
+            if (
+                isinstance(expression, ast.Identifier)
+                and self._is_generic_type_qualifier_start()
+            ):
+                expression = ast.GenericTypeExpression(
                     expression,
-                    self._finish_call(expression).arguments,
+                    tuple(self._parse_type_arguments()),
                     expression.location,
-                    tuple(type_arguments),
                 )
                 continue
             if self._match(TokenKind.LEFT_BRACKET):
@@ -945,6 +999,25 @@ class Parser:
             cursor += 1
         return False
 
+    def _is_generic_type_qualifier_start(self) -> bool:
+        if self.current >= len(self.tokens) or self.tokens[self.current].kind is not TokenKind.LESS:
+            return False
+        cursor = self.current + 1
+        depth = 1
+        while cursor < len(self.tokens):
+            kind = self.tokens[cursor].kind
+            if kind is TokenKind.LESS:
+                depth += 1
+            elif kind is TokenKind.GREATER:
+                depth -= 1
+                if depth == 0:
+                    return (
+                        cursor + 1 < len(self.tokens)
+                        and self.tokens[cursor + 1].kind is TokenKind.DOT
+                    )
+            cursor += 1
+        return False
+
     def _parse_primary_atom(self) -> ast.Expression:
         if self.mode == SyntaxMode.V0_6 and self._match(TokenKind.MATCH):
             return self._parse_match_expression_v0_6(self._previous())
@@ -978,6 +1051,8 @@ class Parser:
     def _expression_to_qualified_name(self, expression: ast.Expression) -> str | None:
         if isinstance(expression, ast.Identifier):
             return expression.name
+        if isinstance(expression, ast.GenericTypeExpression):
+            return self._expression_to_qualified_name(expression.target)
         if isinstance(expression, ast.FieldAccessExpression):
             prefix = self._expression_to_qualified_name(expression.target)
             if prefix is None:
@@ -985,7 +1060,11 @@ class Parser:
             return f"{prefix}.{expression.field_name}"
         return None
 
-    def _finish_record_expression(self, type_name: ast.Expression) -> ast.RecordExpression:
+    def _finish_record_expression(
+        self,
+        type_name: ast.Expression,
+        type_arguments: tuple[ast.DeclaredType, ...] = (),
+    ) -> ast.RecordExpression:
         record_name = self._expression_to_qualified_name(type_name)
         if record_name is None:
             raise ParseError(
@@ -1006,7 +1085,17 @@ class Parser:
                     self._peek().location,
                 )
         self._consume(TokenKind.RIGHT_PAREN, "expected ')' after record fields")
-        return ast.RecordExpression(record_name, tuple(fields), type_name.location)
+        generic_target = type_name
+        while isinstance(generic_target, ast.FieldAccessExpression):
+            generic_target = generic_target.target
+        if isinstance(generic_target, ast.GenericTypeExpression):
+            type_arguments = generic_target.type_arguments
+        return ast.RecordExpression(
+            record_name,
+            tuple(fields),
+            type_name.location,
+            type_arguments,
+        )
 
     def _parse_len_v0_6(self, start: Token) -> ast.LenExpression:
         self._consume(TokenKind.LEFT_PAREN, "expected '(' after 'len'")

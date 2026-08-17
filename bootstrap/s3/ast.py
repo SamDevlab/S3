@@ -37,6 +37,7 @@ class ArrayType:
 class NominalType:
     name: str
     location: SourceLocation
+    type_arguments: tuple[DeclaredType, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -174,6 +175,14 @@ class RecordExpression:
     type_name: str
     fields: tuple[RecordFieldValue, ...]
     location: SourceLocation
+    type_arguments: tuple[DeclaredType, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class GenericTypeExpression:
+    target: Expression
+    type_arguments: tuple[DeclaredType, ...]
+    location: SourceLocation
 
 
 @dataclass(frozen=True, slots=True)
@@ -256,6 +265,7 @@ Expression: TypeAlias = (
     | Identifier
     | CallExpression
     | RecordExpression
+    | GenericTypeExpression
     | IndexExpression
     | SliceExpression
     | FieldAccessExpression
@@ -475,6 +485,7 @@ class RecordDeclaration:
     fields: tuple[RecordField, ...]
     location: SourceLocation
     exported: bool = False
+    type_parameters: tuple[TypeParameter, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -490,6 +501,7 @@ class EnumDeclaration:
     variants: tuple[EnumVariant, ...]
     location: SourceLocation
     exported: bool = False
+    type_parameters: tuple[TypeParameter, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

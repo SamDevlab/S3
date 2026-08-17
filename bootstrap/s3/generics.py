@@ -32,6 +32,10 @@ def _type_key(type_name: ast.DeclaredType) -> str:
     if isinstance(type_name, ast.TypeParameterType):
         return type_name.name
     if isinstance(type_name, ast.NominalType):
+        if type_name.type_arguments:
+            return f"{type_name.name}__" + "__".join(
+                _type_key(argument) for argument in type_name.type_arguments
+            )
         return type_name.name
     if isinstance(type_name, ast.ArrayType):
         return f"{_type_key(type_name.element_type)}_array{type_name.length}"
@@ -64,6 +68,14 @@ def _substitute_type(
         return replace(
             type_name,
             target=_substitute_type(type_name.target, substitutions),
+        )
+    if isinstance(type_name, ast.NominalType):
+        return replace(
+            type_name,
+            type_arguments=tuple(
+                _substitute_type(argument, substitutions)
+                for argument in type_name.type_arguments
+            ),
         )
     return type_name
 
@@ -100,19 +112,80 @@ def _validate_constraint(
         )
 
 
+def _rewrite_type(
+    type_name: ast.DeclaredType,
+    substitutions: dict[str, ast.DeclaredType],
+    specialize_type,
+    location,
+) -> ast.DeclaredType:
+    type_name = _substitute_type(type_name, substitutions)
+    if isinstance(type_name, ast.ArrayType):
+        return replace(
+            type_name,
+            element_type=_rewrite_type(
+                type_name.element_type,
+                substitutions,
+                specialize_type,
+                location,
+            ),
+        )
+    if isinstance(type_name, ast.ReferenceType):
+        return replace(
+            type_name,
+            target=_rewrite_type(
+                type_name.target,
+                substitutions,
+                specialize_type,
+                location,
+            ),
+        )
+    if isinstance(type_name, ast.NominalType):
+        arguments = tuple(
+            _rewrite_type(argument, substitutions, specialize_type, location)
+            for argument in type_name.type_arguments
+        )
+        if arguments:
+            return ast.NominalType(
+                specialize_type(type_name.name, arguments, type_name.location),
+                type_name.location,
+            )
+        return replace(type_name, type_arguments=())
+    return type_name
+
+
+def _label(label, substitutions, specialize):
+    if isinstance(label, ast.FieldAccessExpression):
+        return replace(
+            label,
+            target=_expression(label.target, substitutions, specialize),
+        )
+    if isinstance(label, ast.MatchPayloadLabel):
+        return replace(
+            label,
+            variant=replace(
+                label.variant,
+                target=_expression(label.variant.target, substitutions, specialize),
+            ),
+        )
+    return label
+
+
 def _expression(
     expression: ast.Expression,
     substitutions: dict[str, ast.DeclaredType],
     specialize,
 ) -> ast.Expression:
     if isinstance(expression, ast.CallExpression):
-        callee = expression.callee
+        callee = _expression(expression.callee, substitutions, specialize)
         arguments = tuple(
             replace(argument, expression=_expression(argument.expression, substitutions, specialize))
             for argument in expression.arguments
         )
         type_arguments = tuple(
-            _substitute_type(argument, substitutions)
+            specialize.rewrite_type(
+                _substitute_type(argument, substitutions),
+                expression.location,
+            )
             for argument in expression.type_arguments
         )
         if isinstance(callee, ast.Identifier) and callee.name in specialize.generic_names:
@@ -131,9 +204,43 @@ def _expression(
             arguments=arguments,
             type_arguments=type_arguments,
         )
+    if isinstance(expression, ast.GenericTypeExpression):
+        target = _expression(expression.target, substitutions, specialize)
+        if not isinstance(target, ast.Identifier):
+            raise SemanticError(
+                "generic type qualifier must name a declared type",
+                expression.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+            )
+        type_arguments = tuple(
+            specialize.rewrite_type(
+                _substitute_type(argument, substitutions),
+                expression.location,
+            )
+            for argument in expression.type_arguments
+        )
+        return replace(
+            target,
+            name=specialize.type_name(target.name, type_arguments, expression.location),
+        )
     if isinstance(expression, ast.RecordExpression):
+        type_arguments = tuple(
+            specialize.rewrite_type(
+                _substitute_type(argument, substitutions),
+                expression.location,
+            )
+            for argument in expression.type_arguments
+        )
+        record_name = expression.type_name
+        if type_arguments:
+            base, separator, suffix = record_name.partition(".")
+            record_name = specialize.type_name(base, type_arguments, expression.location)
+            if separator:
+                record_name += separator + suffix
         return replace(
             expression,
+            type_name=record_name,
+            type_arguments=(),
             fields=tuple(
                 replace(field, expression=_expression(field.expression, substitutions, specialize))
                 for field in expression.fields
@@ -171,7 +278,11 @@ def _expression(
             expression,
             selector=_expression(expression.selector, substitutions, specialize),
             cases=tuple(
-                replace(case, expression=_expression(case.expression, substitutions, specialize))
+                replace(
+                    case,
+                    label=_label(case.label, substitutions, specialize),
+                    expression=_expression(case.expression, substitutions, specialize),
+                )
                 for case in expression.cases
             ),
         )
@@ -210,7 +321,10 @@ def _statement(statement: ast.Statement, substitutions, specialize):
     if isinstance(statement, ast.VariableDeclaration):
         return replace(
             statement,
-            type_name=_substitute_type(statement.type_name, substitutions),
+            type_name=specialize.rewrite_type(
+                _substitute_type(statement.type_name, substitutions),
+                statement.location,
+            ),
             initializer=_initializer(statement.initializer, substitutions, specialize),
         )
     if isinstance(statement, ast.AssignmentStatement):
@@ -234,7 +348,11 @@ def _statement(statement: ast.Statement, substitutions, specialize):
             statement,
             expression=_expression(statement.expression, substitutions, specialize),
             cases=tuple(
-                replace(case, body=_block(case.body, substitutions, specialize))
+                replace(
+                    case,
+                    label=_label(case.label, substitutions, specialize),
+                    body=_block(case.body, substitutions, specialize),
+                )
                 for case in statement.cases
             ),
         )
@@ -256,22 +374,132 @@ def _statement(statement: ast.Statement, substitutions, specialize):
 
 
 def specialize_generic_functions(program: ast.Program) -> ast.Program:
-    generic = {
+    generic_functions = {
         function.name: function
         for function in program.functions
         if function.signature.type_parameters
     }
-    if not generic:
+    generic_records = {
+        record.name: record
+        for record in program.records
+        if record.type_parameters
+    }
+    generic_enums = {
+        enum.name: enum
+        for enum in program.enums
+        if enum.type_parameters
+    }
+    generic_types = {**generic_records, **generic_enums}
+    if not generic_functions and not generic_types:
         return program
 
-    specialized: dict[tuple[str, tuple[str, ...]], ast.FunctionDeclaration] = {}
-    building: set[tuple[str, tuple[str, ...]]] = set()
+    specialized_records: dict[tuple[str, tuple[str, ...]], ast.RecordDeclaration] = {}
+    specialized_enums: dict[tuple[str, tuple[str, ...]], ast.EnumDeclaration] = {}
+    building_types: set[tuple[str, tuple[str, ...]]] = set()
+
+    class TypeSpecializer:
+        generic_names = frozenset(generic_types)
+
+        def rewrite_type(self, type_name: ast.DeclaredType, location):
+            return _rewrite_type(type_name, {}, self, location)
+
+        def type_name(
+            self,
+            name: str,
+            arguments: tuple[ast.DeclaredType, ...],
+            location,
+        ) -> str:
+            declaration = generic_types.get(name)
+            if declaration is None:
+                raise SemanticError(
+                    f"type '{name}' does not accept type arguments",
+                    location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+                )
+            parameters = declaration.type_parameters
+            if len(arguments) != len(parameters):
+                raise SemanticError(
+                    f"generic type '{name}' expects {len(parameters)} type argument(s), got {len(arguments)}",
+                    location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+                )
+            for parameter, argument in zip(parameters, arguments, strict=True):
+                _validate_constraint(parameter, argument, location)
+            key = (name, tuple(_type_key(argument) for argument in arguments))
+            specialized_name = "__s3_generic_type__" + name + "__" + "__".join(key[1])
+            if key in specialized_records or key in specialized_enums:
+                return specialized_name
+            if key in building_types:
+                return specialized_name
+            building_types.add(key)
+            substitutions = dict(
+                zip((item.name for item in parameters), arguments, strict=True)
+            )
+            if isinstance(declaration, ast.RecordDeclaration):
+                clone = replace(
+                    declaration,
+                    name=specialized_name,
+                    type_parameters=(),
+                    fields=tuple(
+                        replace(
+                            field,
+                            type_name=_rewrite_type(
+                                field.type_name,
+                                substitutions,
+                                self,
+                                field.location,
+                            ),
+                        )
+                        for field in declaration.fields
+                    ),
+                )
+                specialized_records[key] = clone
+            else:
+                clone = replace(
+                    declaration,
+                    name=specialized_name,
+                    type_parameters=(),
+                    variants=tuple(
+                        replace(
+                            variant,
+                            payload_fields=tuple(
+                                replace(
+                                    field,
+                                    type_name=_rewrite_type(
+                                        field.type_name,
+                                        substitutions,
+                                        self,
+                                        field.location,
+                                    ),
+                                )
+                                for field in variant.payload_fields
+                            ),
+                        )
+                        for variant in declaration.variants
+                    ),
+                )
+                specialized_enums[key] = clone
+            building_types.remove(key)
+            return specialized_name
+
+        __call__ = type_name
+
+    type_specializer = TypeSpecializer()
+
+    specialized_functions: dict[tuple[str, tuple[str, ...]], ast.FunctionDeclaration] = {}
+    building_functions: set[tuple[str, tuple[str, ...]]] = set()
 
     class Specializer:
-        generic_names = frozenset(generic)
+        generic_names = frozenset(generic_functions)
+
+        def rewrite_type(self, type_name: ast.DeclaredType, location):
+            return type_specializer.rewrite_type(type_name, location)
+
+        def type_name(self, name: str, arguments, location):
+            return type_specializer.type_name(name, arguments, location)
 
         def __call__(self, name: str, arguments: tuple[ast.DeclaredType, ...], location):
-            function = generic[name]
+            function = generic_functions[name]
             parameters = function.signature.type_parameters
             if len(arguments) != len(parameters):
                 raise SemanticError(
@@ -279,16 +507,20 @@ def specialize_generic_functions(program: ast.Program) -> ast.Program:
                     location,
                     diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
                 )
+            arguments = tuple(
+                type_specializer.rewrite_type(argument, location)
+                for argument in arguments
+            )
             substitutions = dict(zip((item.name for item in parameters), arguments, strict=True))
             for parameter, argument in zip(parameters, arguments, strict=True):
                 _validate_constraint(parameter, argument, location)
             key = (name, tuple(_type_key(argument) for argument in arguments))
             specialized_name = "__s3_generic__" + name + "__" + "__".join(key[1])
-            if key in specialized:
+            if key in specialized_functions:
                 return specialized_name
-            if key in building:
+            if key in building_functions:
                 return specialized_name
-            building.add(key)
+            building_functions.add(key)
             signature = replace(
                 function.signature,
                 name=specialized_name,
@@ -296,11 +528,21 @@ def specialize_generic_functions(program: ast.Program) -> ast.Program:
                 parameters=tuple(
                     replace(
                         parameter,
-                        type_name=_substitute_type(parameter.type_name, substitutions),
+                        type_name=_rewrite_type(
+                            parameter.type_name,
+                            substitutions,
+                            type_specializer,
+                            parameter.location,
+                        ),
                     )
                     for parameter in function.parameters
                 ),
-                return_type=_substitute_type(function.return_type, substitutions),
+                return_type=_rewrite_type(
+                    function.return_type,
+                    substitutions,
+                    type_specializer,
+                    function.location,
+                ),
             )
             clone = ast.FunctionDeclaration(
                 signature,
@@ -308,20 +550,105 @@ def specialize_generic_functions(program: ast.Program) -> ast.Program:
                 function.location,
                 function.exported,
             )
-            specialized[key] = clone
-            building.remove(key)
+            specialized_functions[key] = clone
+            building_functions.remove(key)
             return specialized_name
 
     specializer = Specializer()
+
+    rewritten_records = [
+        replace(
+            record,
+            fields=tuple(
+                replace(
+                    field,
+                    type_name=type_specializer.rewrite_type(field.type_name, field.location),
+                )
+                for field in record.fields
+            ),
+        )
+        for record in program.records
+        if not record.type_parameters
+    ]
+    rewritten_enums = [
+        replace(
+            enum,
+            variants=tuple(
+                replace(
+                    variant,
+                    payload_fields=tuple(
+                        replace(
+                            field,
+                            type_name=type_specializer.rewrite_type(
+                                field.type_name,
+                                field.location,
+                            ),
+                        )
+                        for field in variant.payload_fields
+                    ),
+                )
+                for variant in enum.variants
+            ),
+        )
+        for enum in program.enums
+        if not enum.type_parameters
+    ]
     rewritten: list[ast.FunctionDeclaration] = []
     for function in program.functions:
         if function.signature.type_parameters:
             continue
+        signature = replace(
+            function.signature,
+            parameters=tuple(
+                replace(
+                    parameter,
+                    type_name=type_specializer.rewrite_type(
+                        parameter.type_name,
+                        parameter.location,
+                    ),
+                )
+                for parameter in function.parameters
+            ),
+            return_type=type_specializer.rewrite_type(
+                function.return_type,
+                function.location,
+            ),
+        )
         rewritten.append(
             replace(
                 function,
+                signature=signature,
                 body=_block(function.body, {}, specializer),
             )
         )
-    rewritten.extend(specialized.values())
-    return replace(program, functions=tuple(rewritten))
+    rewritten.extend(specialized_functions.values())
+    rewritten_foreign = tuple(
+        replace(
+            foreign,
+            signature=replace(
+                foreign.signature,
+                parameters=tuple(
+                    replace(
+                        parameter,
+                        type_name=type_specializer.rewrite_type(
+                            parameter.type_name,
+                            parameter.location,
+                        ),
+                    )
+                    for parameter in foreign.signature.parameters
+                ),
+                return_type=type_specializer.rewrite_type(
+                    foreign.signature.return_type,
+                    foreign.location,
+                ),
+            ),
+        )
+        for foreign in program.foreign_functions
+    )
+    return replace(
+        program,
+        functions=tuple(rewritten),
+        records=tuple(rewritten_records) + tuple(specialized_records.values()),
+        enums=tuple(rewritten_enums) + tuple(specialized_enums.values()),
+        foreign_functions=rewritten_foreign,
+    )
