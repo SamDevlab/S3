@@ -1,0 +1,39 @@
+{
+  "milestone": "1.58",
+  "name": "language-server-protocol-v1",
+  "status": "IMPLEMENTED_FOCUSED_VERIFIED",
+  "implementation_commit": "5c3b4e40a236491b3074dda2d8f853ed6fbcb211",
+  "closure_commit": null,
+  "parent_checkpoint": "5c3b4e40a236491b3074dda2d8f853ed6fbcb211",
+  "production_paths": [
+    "bootstrap/s3/lsp.py"
+  ],
+  "test_paths": [
+    "tests/test_m158_lsp.py",
+    "tests/test_compiler.py",
+    "tests/test_lexer_parser.py"
+  ],
+  "smart_runner": {
+    "profile": "shard",
+    "argument": "m158",
+    "selected": 3,
+    "passed": 3,
+    "failed": 0,
+    "timed_out": 0,
+    "head": "5c3b4e40a236491b3074dda2d8f853ed6fbcb211"
+  },
+  "focused_tests": {
+    "status": "PASS",
+    "passed": 4,
+    "failed": 0
+  },
+  "initialize": "PASS",
+  "diagnostics": "PASS",
+  "hover_definition_symbols_completion": "PASS",
+  "full_document_sync_only": "PASS",
+  "diff_check": "PASS",
+  "native_linux": "NOT_REQUIRED_TOOLING_ONLY",
+  "wasi": "NOT_REQUIRED_TOOLING_ONLY",
+  "benchmarks": "NOT_RUN",
+  "remote_writes": 0
+}

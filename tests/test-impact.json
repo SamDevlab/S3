@@ -62,6 +62,11 @@
       "tests/test_m145_build_graph.py",
       "tests/test_m156_package_dependencies.py"
     ],
+    "m158": [
+      "tests/test_m158_lsp.py",
+      "tests/test_compiler.py",
+      "tests/test_lexer_parser.py"
+    ],
     "m145-m146": ["tests/test_m145_build_graph.py", "tests/test_m146_test_runner.py"],
     "m147": ["tests/test_m147_python_buffer_abi.py"],
     "m148": ["tests/test_m148_network_provider.py"],
@@ -178,6 +183,19 @@
       ],
       "milestones": ["m157", "build"],
       "shards": ["m157", "m145-m146"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/lsp.py",
+      "tests": [
+        "tests/test_m158_lsp.py",
+        "tests/test_compiler.py",
+        "tests/test_lexer_parser.py"
+      ],
+      "milestones": ["m158", "tooling"],
+      "shards": ["m158", "compiler"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
