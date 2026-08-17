@@ -2,7 +2,7 @@
   "milestone": "1.55",
   "name": "generic-ordered-vector-v1",
   "status": "IMPLEMENTED_FOCUSED_VERIFIED",
-  "implementation_commit": "578e067435703784aec51626ba6c31fa4e7c47a1",
+  "implementation_commit": "0405bec83b64894725de22ad18267049ec023137",
   "closure_commit": null,
   "parent_checkpoint": "578e067435703784aec51626ba6c31fa4e7c47a1",
   "production_paths": [
@@ -22,7 +22,7 @@
     "passed": 5,
     "failed": 0,
     "timed_out": 0,
-    "head": "578e067435703784aec51626ba6c31fa4e7c47a1"
+    "head": "0405bec83b64894725de22ad18267049ec023137"
   },
   "focused_tests": {
     "status": "PASS",

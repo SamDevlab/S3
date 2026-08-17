@@ -17,9 +17,9 @@ authoritative.
 
 ## Local Evidence
 
-- Implementation checkpoint: `578e067435703784aec51626ba6c31fa4e7c47a1`
+- Implementation checkpoint: `0405bec83b64894725de22ad18267049ec023137`
 - Smart runner: `python tools/s3test.py shard m155 --format json`
-- Smart shard result: `5/5 PASS`, `0` failed, `0` timed out
+- Smart shard result on the implementation HEAD: `5/5 PASS`, `0` failed, `0` timed out
 - Focused M1.55 result: `3 passed`
 - `git diff --check`: PASS
 
