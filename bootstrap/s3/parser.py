@@ -409,6 +409,13 @@ class Parser:
             index = self._parse_expression()
             self._consume(TokenKind.RIGHT_BRACKET, "expected ']' after index")
             target = ast.IndexTarget(name.text, index, name.location)
+        elif self._match(TokenKind.DOT):
+            base: ast.Expression = ast.Identifier(name.text, name.location)
+            field = self._consume(TokenKind.IDENTIFIER, "expected field name after '.'")
+            while self._match(TokenKind.DOT):
+                base = ast.FieldAccessExpression(base, field.text, field.location)
+                field = self._consume(TokenKind.IDENTIFIER, "expected field name after '.'")
+            target = ast.FieldTarget(base, field.text, field.location)
         else:
             target = ast.VariableTarget(name.text, name.location)
         if self._match(TokenKind.PLUS_EQUAL):
@@ -633,6 +640,13 @@ class Parser:
             index = self._parse_expression()
             self._consume(TokenKind.RIGHT_BRACKET, "expected ']' after index")
             target = ast.IndexTarget(name.text, index, name.location)
+        elif self._match(TokenKind.DOT):
+            base = ast.Identifier(name.text, name.location)
+            field = self._consume(TokenKind.IDENTIFIER, "expected field name after '.'")
+            while self._match(TokenKind.DOT):
+                base = ast.FieldAccessExpression(base, field.text, field.location)
+                field = self._consume(TokenKind.IDENTIFIER, "expected field name after '.'")
+            target = ast.FieldTarget(base, field.text, field.location)
         else:
             target = ast.VariableTarget(name.text, name.location)
         self._consume(TokenKind.EQUAL, "expected '=' after assignment target")

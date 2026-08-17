@@ -393,17 +393,6 @@ def test_imported_static_text_record_fields_compose_across_modules() -> None:
             "recursive record layout cycle: Node -> Node",
             DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
         ),
-        (
-            "record Inner:\n"
-            "    value: tryte\n"
-            "record Outer:\n"
-            "    inner: Inner\n"
-            "fn main() -> tryte:\n"
-            "    values: Inner[1] = [Inner(value=1)]\n"
-            "    return 0\n",
-            "arrays of nominal types are not supported",
-            DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
-        ),
     ),
 )
 def test_nested_record_negative_diagnostics_are_stable(

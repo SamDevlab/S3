@@ -180,6 +180,40 @@ _DYNAMIC_TYPES = {
 }
 
 
+def _type_contains_dynamic(
+    records: dict[str, "RecordType"],
+    enums: dict[str, "EnumType"],
+    type_name: ast.DeclaredType,
+    seen: set[str] | None = None,
+) -> bool:
+    """Return whether a declared value transitively owns a dynamic leaf."""
+
+    if isinstance(type_name, ast.TypeName):
+        return type_name in _DYNAMIC_TYPES
+    if isinstance(type_name, ast.ArrayType):
+        return _type_contains_dynamic(records, enums, type_name.element_type, seen)
+    if not isinstance(type_name, ast.NominalType):
+        return False
+    visited = set() if seen is None else set(seen)
+    if type_name.name in visited:
+        return False
+    visited.add(type_name.name)
+    record = records.get(type_name.name)
+    if record is not None:
+        return any(
+            _type_contains_dynamic(records, enums, field.type_name, visited)
+            for field in record.fields
+        )
+    enum = enums.get(type_name.name)
+    if enum is not None:
+        return any(
+            _type_contains_dynamic(records, enums, field.type_name, visited)
+            for variant in enum.variants
+            for field in variant.payload_fields
+        )
+    return False
+
+
 @dataclass(frozen=True, slots=True)
 class FunctionType:
     name: str
@@ -472,48 +506,66 @@ def _record_leaves(
     name: str,
     prefix: tuple[str, ...] = (),
 ) -> tuple[RecordLeaf, ...]:
+    return _record_type_leaves(records, enums, records[name].fields, prefix)
+
+
+def _record_type_leaves(
+    records: dict[str, RecordType],
+    enums: dict[str, EnumType],
+    fields: tuple[ast.RecordField, ...],
+    prefix: tuple[str, ...],
+) -> tuple[RecordLeaf, ...]:
     leaves: list[RecordLeaf] = []
-    record = records[name]
-    for field in record.fields:
-        path = (*prefix, field.name)
-        if isinstance(field.type_name, ast.TypeName):
-            leaves.append(RecordLeaf(path, field.type_name, field.location))
-        elif isinstance(field.type_name, ast.ArrayType):
-            assert isinstance(field.type_name.element_type, ast.TypeName)
-            leaves.extend(
-                RecordLeaf(
-                    (*path, f"index{index}"),
-                    field.type_name.element_type,
-                    field.location,
-                )
-                for index in range(field.type_name.length)
+    for field in fields:
+        leaves.extend(
+            _declared_type_leaves(
+                records,
+                enums,
+                field.type_name,
+                (*prefix, field.name),
+                field.location,
             )
-        elif isinstance(field.type_name, ast.NominalType):
-            if field.type_name.name in enums:
-                layout = _enum_layout(records, enums, field.type_name.name)
-                if layout.cell_count == 1:
-                    leaves.append(RecordLeaf(path, ast.TypeName.TRYTE, field.location))
-                else:
-                    for index in range(layout.cell_count):
-                        leaves.append(
-                            RecordLeaf(
-                                (*path, f"cell{index}"),
-                                ast.TypeName.TRYTE,
-                                field.location,
-                            )
-                        )
-            elif field.type_name.name in records:
-                leaves.extend(
-                    _record_leaves(records, enums, field.type_name.name, path)
-                )
-            else:
-                raise SemanticError(
-                    f"unknown type '{field.type_name.name}'",
-                    field.location,
-                )
-        else:
-            raise SemanticError("unsupported record field type", field.location)
+        )
     return tuple(leaves)
+
+
+def _declared_type_leaves(
+    records: dict[str, RecordType],
+    enums: dict[str, EnumType],
+    type_name: ast.DeclaredType,
+    prefix: tuple[str, ...],
+    location: SourceLocation,
+) -> tuple[RecordLeaf, ...]:
+    if isinstance(type_name, ast.TypeName):
+        return (RecordLeaf(prefix, type_name, location),)
+    if isinstance(type_name, ast.ArrayType):
+        leaves: list[RecordLeaf] = []
+        for index in range(type_name.length):
+            leaves.extend(
+                _declared_type_leaves(
+                    records,
+                    enums,
+                    type_name.element_type,
+                    (*prefix, f"index{index}"),
+                    type_name.location,
+                )
+            )
+        return tuple(leaves)
+    if isinstance(type_name, ast.NominalType):
+        if type_name.name in enums:
+            layout = _enum_layout(records, enums, type_name.name)
+            return tuple(
+                RecordLeaf(
+                    prefix if layout.cell_count == 1 else (*prefix, f"cell{index}"),
+                    slot_type,
+                    location,
+                )
+                for index, slot_type in enumerate(layout.slot_types)
+            )
+        if type_name.name in records:
+            return _record_leaves(records, enums, type_name.name, prefix)
+        raise SemanticError(f"unknown type '{type_name.name}'", location)
+    raise SemanticError("unsupported aggregate field type", location)
 
 
 def _fixed_value_layout(
@@ -522,29 +574,30 @@ def _fixed_value_layout(
     type_name: ast.DeclaredType,
 ) -> FixedValueLayout:
     if isinstance(type_name, ast.ArrayType):
-        if not isinstance(type_name.element_type, ast.TypeName) or (
-            type_name.element_type not in (ast.TypeName.TRIT, ast.TypeName.TRYTE)
-        ):
-            raise SemanticError(
-                "fixed array value layout requires trit or tryte elements",
-                type_name.location,
-            )
         if not 1 <= type_name.length <= TRYTE_MAX + 1:
             raise SemanticError(
                 f"fixed array length must be in [1, {TRYTE_MAX + 1}]",
                 type_name.location,
             )
+        cells = tuple(
+            ValueCell(
+                (f"index{index}", *leaf.path),
+                leaf.type_name,
+                leaf.location,
+            )
+            for index in range(type_name.length)
+            for leaf in _declared_type_leaves(
+                records,
+                enums,
+                type_name.element_type,
+                (),
+                type_name.location,
+            )
+        )
         return FixedValueLayout(
             type_name,
             ValueLayoutKind.FIXED_ARRAY,
-            tuple(
-                ValueCell(
-                    (f"index{index}",),
-                    type_name.element_type,
-                    type_name.location,
-                )
-                for index in range(type_name.length)
-            ),
+            cells,
             type_name.location,
         )
     if isinstance(type_name, ast.TypeName):
@@ -622,54 +675,10 @@ def _enum_payload_leaves(
     fields: tuple[ast.RecordField, ...],
     prefix: tuple[str, ...] = (),
 ) -> tuple[EnumPayloadLeaf, ...]:
-    leaves: list[EnumPayloadLeaf] = []
-    for field in fields:
-        path = (*prefix, field.name)
-        if isinstance(field.type_name, ast.TypeName):
-            leaves.append(
-                EnumPayloadLeaf(variant_name, path, field.type_name, field.location)
-            )
-        elif isinstance(field.type_name, ast.ArrayType):
-            assert isinstance(field.type_name.element_type, ast.TypeName)
-            leaves.extend(
-                EnumPayloadLeaf(
-                    variant_name,
-                    (*path, f"index{index}"),
-                    field.type_name.element_type,
-                    field.location,
-                )
-                for index in range(field.type_name.length)
-            )
-        elif isinstance(field.type_name, ast.NominalType):
-            if field.type_name.name in enums:
-                layout = _enum_layout(records, enums, field.type_name.name)
-                for index in range(layout.cell_count):
-                    leaves.append(
-                        EnumPayloadLeaf(
-                            variant_name,
-                            (*path, f"cell{index}"),
-                            ast.TypeName.TRYTE,
-                            field.location,
-                        )
-                    )
-            elif field.type_name.name in records:
-                for leaf in _record_leaves(records, enums, field.type_name.name, path):
-                    leaves.append(
-                        EnumPayloadLeaf(
-                            variant_name,
-                            leaf.path,
-                            leaf.type_name,
-                            leaf.location,
-                        )
-                    )
-            else:
-                raise SemanticError(
-                    f"unknown type '{field.type_name.name}'",
-                    field.location,
-                )
-        else:
-            raise SemanticError("unsupported enum payload field type", field.location)
-    return tuple(leaves)
+    return tuple(
+        EnumPayloadLeaf(variant_name, leaf.path, leaf.type_name, leaf.location)
+        for leaf in _record_type_leaves(records, enums, fields, prefix)
+    )
 
 
 def _enum_layout(
@@ -912,7 +921,7 @@ class SemanticAnalyzer:
                 "returned expression",
                 diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
             )
-            if self._is_dynamic_type(self.return_type):
+            if _type_contains_dynamic(self.records, self.enums, self.return_type):
                 self._consume_owner(statement.expression)
             return BlockFlow(terminates=True, definitely_returns=True)
         if isinstance(statement, ast.BreakStatement):
@@ -1334,7 +1343,9 @@ class SemanticAnalyzer:
                 declaration.initializer.location,
                 f"initializer for '{declaration.name}'",
             )
-            if self._is_dynamic_type(declaration.type_name):
+            if _type_contains_dynamic(
+                self.records, self.enums, declaration.type_name
+            ):
                 self._consume_owner(declaration.initializer)
             if isinstance(declaration.type_name, ast.ReferenceType):
                 reference_origin = self._reference_origin_of(declaration.initializer)
@@ -1409,20 +1420,33 @@ class SemanticAnalyzer:
         return type_name in _DYNAMIC_TYPES
 
     def _consume_owner(self, expression: ast.Expression) -> None:
+        if isinstance(expression, ast.FieldAccessExpression):
+            field_type = self._known_expression_type(expression)
+            if field_type is not None and _type_contains_dynamic(
+                self.records, self.enums, field_type
+            ):
+                raise SemanticError(
+                    "partial field move is not supported for owned aggregates",
+                    expression.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+                )
+            return
         if not isinstance(expression, ast.Identifier):
             return
         binding = self._lookup_binding(expression.name)
-        if binding is None or not self._is_dynamic_type(binding.type_name):
+        if binding is None or not _type_contains_dynamic(
+            self.records, self.enums, binding.type_name
+        ):
             return
         if id(binding) in self.moved_bindings:
             raise SemanticError(
-                f"use of moved dynamic binding '{expression.name}'",
+                f"use of moved owned binding '{expression.name}'",
                 expression.location,
                 diagnostic_code=DiagnosticCode.SEMANTIC_USE_AFTER_MOVE,
             )
         if id(binding) in self.active_borrows:
             raise SemanticError(
-                f"cannot move dynamic binding '{expression.name}' while borrowed",
+                f"cannot move owned binding '{expression.name}' while borrowed",
                 expression.location,
                 diagnostic_code=DiagnosticCode.SEMANTIC_BORROWED_OWNER,
             )
@@ -1452,12 +1476,6 @@ class SemanticAnalyzer:
             return
         if isinstance(type_name, ast.TypeName) and type_name in _DYNAMIC_TYPES:
             self.contains_dynamic = True
-            if aggregate:
-                raise SemanticError(
-                    "dynamic buffers cannot be stored in records, arrays, or enums",
-                    _DYNAMIC_BUILTIN_LOCATION,
-                    diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
-                )
             return
         if isinstance(type_name, ast.ReferenceType):
             if type_name.target in _DYNAMIC_TYPES:
@@ -1495,6 +1513,8 @@ class SemanticAnalyzer:
                     type_name.location,
                     diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_AGGREGATE,
                 )
+            self._validate_declared_type(type_name.element_type, aggregate=True)
+            return
         if (
             isinstance(type_name, ast.NominalType)
             and type_name.name not in self.records
@@ -1506,26 +1526,13 @@ class SemanticAnalyzer:
             )
 
     def _validate_array_type(self, type_name: ast.ArrayType) -> None:
-        if isinstance(type_name.element_type, ast.ArrayType):
+        if isinstance(type_name.element_type, ast.ReferenceType):
             raise SemanticError(
-                "nested arrays are not supported",
+                "references cannot be stored in arrays",
                 type_name.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_AGGREGATE,
             )
-        if type_name.element_type is ast.TypeName.STRING:
-            raise SemanticError(
-                "arrays of string are not supported in milestone 0.53",
-                type_name.location,
-            )
-        if type_name.element_type in _DYNAMIC_TYPES:
-            raise SemanticError(
-                "dynamic text and buffer values cannot be stored in arrays",
-                type_name.location,
-            )
-        if isinstance(type_name.element_type, ast.NominalType):
-            raise SemanticError(
-                "arrays of nominal types are not supported",
-                type_name.location,
-            )
+        self._validate_declared_type(type_name.element_type, aggregate=True)
         if type_name.length <= 0:
             raise SemanticError(
                 f"array length must be positive, got {type_name.length}",
@@ -1543,7 +1550,6 @@ class SemanticAnalyzer:
         literal: ast.ArrayLiteral,
         type_name: ast.ArrayType,
     ) -> None:
-        assert isinstance(type_name.element_type, ast.TypeName)
         if len(literal.elements) != type_name.length:
             raise SemanticError(
                 f"array initializer has {len(literal.elements)} element(s); "
@@ -1558,8 +1564,44 @@ class SemanticAnalyzer:
                 element.location,
                 f"array element {index}",
             )
+            if _type_contains_dynamic(
+                self.records, self.enums, type_name.element_type
+            ):
+                self._consume_owner(element)
 
     def _analyze_assignment(self, statement: ast.AssignmentStatement) -> None:
+        if isinstance(statement.target, ast.FieldTarget):
+            field_expression = ast.FieldAccessExpression(
+                statement.target.target,
+                statement.target.field_name,
+                statement.target.location,
+            )
+            field_type = self._analyze_field_access(field_expression)
+            place = self.place_info.get(id(field_expression))
+            if place is None or not place.writable:
+                raise SemanticError(
+                    "owned field replacement requires a mutable aggregate",
+                    statement.target.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_TARGET_NOT_ADDRESSABLE,
+                )
+            if isinstance(statement.value, ast.ArrayLiteral):
+                if not isinstance(field_type, ast.ArrayType):
+                    raise SemanticError(
+                        "field replacement requires a value of the field type",
+                        statement.value.location,
+                    )
+                self._analyze_array_literal(statement.value, field_type)
+            else:
+                actual = self._analyze_expression(statement.value, field_type)
+                self._require_type(
+                    actual,
+                    field_type,
+                    statement.value.location,
+                    f"replacement for field '{statement.target.field_name}'",
+                )
+            if _type_contains_dynamic(self.records, self.enums, field_type):
+                self._consume_owner(statement.value)
+            return
         if isinstance(statement.target, ast.DereferenceTarget):
             reference_type = self._analyze_expression(statement.target.reference)
             if not isinstance(reference_type, ast.ReferenceType):
@@ -1616,7 +1658,7 @@ class SemanticAnalyzer:
                 statement.value.location,
                 "assigned value",
             )
-            if self._is_dynamic_type(binding.type_name):
+            if _type_contains_dynamic(self.records, self.enums, binding.type_name):
                 self._consume_owner(statement.value)
             if isinstance(binding.type_name, ast.ReferenceType):
                 origin = self._reference_origin_of(statement.value)
@@ -1805,9 +1847,13 @@ class SemanticAnalyzer:
                 allow_array=isinstance(expected, ast.ArrayType),
             )
             binding = self._lookup_binding(expression.name)
-            if binding is not None and self._is_dynamic_type(binding.type_name) and id(binding) in self.moved_bindings:
+            if (
+                binding is not None
+                and _type_contains_dynamic(self.records, self.enums, binding.type_name)
+                and id(binding) in self.moved_bindings
+            ):
                 raise SemanticError(
-                    f"use of moved dynamic binding '{expression.name}'",
+                f"use of moved owned binding '{expression.name}'",
                     expression.location,
                     diagnostic_code=DiagnosticCode.SEMANTIC_USE_AFTER_MOVE,
                 )
@@ -2067,6 +2113,11 @@ class SemanticAnalyzer:
                 target_type,
                 expression.mutable,
             )
+            self._register_owner_borrow(
+                expression.operand,
+                expression.mutable,
+                expression.location,
+            )
             self.contains_references = True
             return ast.ReferenceType(target_type, expression.mutable, expression.location)
         if not isinstance(expression.operand, ast.Identifier):
@@ -2087,7 +2138,10 @@ class SemanticAnalyzer:
                 expression.location,
                 diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_NESTED,
             )
-        if self._is_dynamic_type(binding.type_name) and id(binding) in self.moved_bindings:
+        if (
+            _type_contains_dynamic(self.records, self.enums, binding.type_name)
+            and id(binding) in self.moved_bindings
+        ):
             raise SemanticError(
                 f"use of moved dynamic binding '{expression.operand.name}'",
                 expression.operand.location,
@@ -2136,26 +2190,47 @@ class SemanticAnalyzer:
             expression.mutable,
         )
         self.contains_references = True
-        if self._is_dynamic_type(binding.type_name):
-            key = id(binding)
-            shared, mutable = self.active_borrows.get(key, (0, False))
-            if expression.mutable:
-                if mutable or shared:
-                    raise SemanticError(
-                        "mutable dynamic buffer borrow overlaps an active borrow",
-                        expression.location,
-                        diagnostic_code=DiagnosticCode.SEMANTIC_BORROW_CONFLICT,
-                    )
-                self.active_borrows[key] = (shared, True)
-            else:
-                if mutable:
-                    raise SemanticError(
-                        "shared dynamic buffer borrow overlaps a mutable borrow",
-                        expression.location,
-                        diagnostic_code=DiagnosticCode.SEMANTIC_BORROW_CONFLICT,
-                    )
-                self.active_borrows[key] = (shared + 1, False)
+        self._register_owner_borrow(
+            expression.operand,
+            expression.mutable,
+            expression.location,
+        )
         return ast.ReferenceType(binding.type_name, expression.mutable, expression.location)
+
+    def _register_owner_borrow(
+        self,
+        expression: ast.Expression,
+        mutable_borrow: bool,
+        location: SourceLocation,
+    ) -> None:
+        root = expression
+        while isinstance(root, (ast.FieldAccessExpression, ast.IndexExpression)):
+            root = root.target
+        if not isinstance(root, ast.Identifier):
+            return
+        binding = self._lookup_binding(root.name)
+        if binding is None or not _type_contains_dynamic(
+            self.records, self.enums, binding.type_name
+        ):
+            return
+        key = id(binding)
+        shared, mutable = self.active_borrows.get(key, (0, False))
+        if mutable_borrow:
+            if mutable or shared:
+                raise SemanticError(
+                    "mutable owned-value borrow overlaps an active borrow",
+                    location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_BORROW_CONFLICT,
+                )
+            self.active_borrows[key] = (shared, True)
+        else:
+            if mutable:
+                raise SemanticError(
+                    "shared owned-value borrow overlaps a mutable borrow",
+                    location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_BORROW_CONFLICT,
+                )
+            self.active_borrows[key] = (shared + 1, False)
 
     def _analyze_dereference(self, expression: ast.DereferenceExpression) -> ast.DeclaredType:
         reference_type = self._analyze_expression(expression.operand)
@@ -2357,6 +2432,18 @@ class SemanticAnalyzer:
                     binding.scope_depth,
                     True,
                 )
+        else:
+            target_place = self.place_info.get(id(expression.target))
+            if target_place is not None:
+                self.place_info[id(expression)] = PlaceInfo(
+                    field.type_name,
+                    target_place.readable,
+                    target_place.writable,
+                    target_place.addressable,
+                    target_place.storage_symbol,
+                    target_place.declaration_scope,
+                    target_place.initialized,
+                )
         return field.type_name
 
     def _enum_variant_access(
@@ -2483,7 +2570,7 @@ class SemanticAnalyzer:
         array_name: str,
         index: ast.Expression,
         type_name: ast.ArrayType | ast.SliceType,
-    ) -> ast.TypeName:
+    ) -> ast.DeclaredType:
         known_index_type = self._known_expression_type(index)
         expected_index_type = (
             ast.TypeName.I64
@@ -2503,7 +2590,6 @@ class SemanticAnalyzer:
                 f"bounds [0, {type_name.length})",
                 index.location,
             )
-        assert isinstance(type_name.element_type, ast.TypeName)
         return type_name.element_type
 
     def _analyze_numeric_conversion_call(
@@ -2629,7 +2715,7 @@ class SemanticAnalyzer:
                 f"argument {index} to '{expression.function_name}'",
                 diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
             )
-            if isinstance(parameter_type, ast.TypeName) and parameter_type in _DYNAMIC_TYPES:
+            if _type_contains_dynamic(self.records, self.enums, parameter_type):
                 self._consume_owner(argument.expression)
         self.active_borrows = borrow_snapshot
         return signature.return_type

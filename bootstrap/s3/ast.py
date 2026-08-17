@@ -284,7 +284,14 @@ class DereferenceTarget:
     location: SourceLocation
 
 
-AssignmentTarget: TypeAlias = VariableTarget | IndexTarget | DereferenceTarget
+@dataclass(frozen=True, slots=True)
+class FieldTarget:
+    target: Expression
+    field_name: str
+    location: SourceLocation
+
+
+AssignmentTarget: TypeAlias = VariableTarget | IndexTarget | DereferenceTarget | FieldTarget
 
 
 @dataclass(frozen=True, slots=True)
