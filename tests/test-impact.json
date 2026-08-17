@@ -72,6 +72,11 @@
       "tests/test_project_container.py",
       "tests/test_cli.py"
     ],
+    "m160": [
+      "tests/test_m160_self_hosting_gate.py",
+      "tests/test_m146_test_runner.py",
+      "tests/test_compiler.py"
+    ],
     "m145-m146": ["tests/test_m145_build_graph.py", "tests/test_m146_test_runner.py"],
     "m147": ["tests/test_m147_python_buffer_abi.py"],
     "m148": ["tests/test_m148_network_provider.py"],
@@ -214,6 +219,19 @@
       ],
       "milestones": ["m159", "tooling"],
       "shards": ["m159", "compiler"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/self_hosting_gate.py",
+      "tests": [
+        "tests/test_m160_self_hosting_gate.py",
+        "tests/test_m146_test_runner.py",
+        "tests/test_compiler.py"
+      ],
+      "milestones": ["m160", "tooling"],
+      "shards": ["m160", "compiler"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
