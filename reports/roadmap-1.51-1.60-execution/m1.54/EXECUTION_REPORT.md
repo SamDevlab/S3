@@ -15,9 +15,9 @@ collections, and partial aggregate polymorphism remain out of scope.
 
 ## Local Evidence
 
-- Implementation checkpoint: `e506a64ab3f94abde276a847321840862a8f2f44`
+- Implementation checkpoint: `895523ce9032aadd07d2717cfddf9d48cbf81f39`
 - Smart runner: `python tools/s3test.py shard m154 --format json`
-- Smart shard result: `6/6 PASS`, `0` failed, `0` timed out
+- Smart shard result on the implementation HEAD: `6/6 PASS`, `0` failed, `0` timed out
 - Focused M1.54 result: `4 passed`
 - `python -m py_compile bootstrap/s3/ast.py bootstrap/s3/parser.py bootstrap/s3/generics.py bootstrap/s3/pipeline.py`: PASS
 - `git diff --check`: PASS

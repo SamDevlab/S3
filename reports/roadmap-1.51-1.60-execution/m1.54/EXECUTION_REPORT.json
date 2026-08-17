@@ -2,7 +2,7 @@
   "milestone": "1.54",
   "name": "parametric-records-and-enums",
   "status": "IMPLEMENTED_FOCUSED_VERIFIED",
-  "implementation_commit": "e506a64ab3f94abde276a847321840862a8f2f44",
+  "implementation_commit": "895523ce9032aadd07d2717cfddf9d48cbf81f39",
   "closure_commit": null,
   "parent_checkpoint": "e506a64ab3f94abde276a847321840862a8f2f44",
   "production_paths": [
@@ -26,7 +26,7 @@
     "passed": 6,
     "failed": 0,
     "timed_out": 0,
-    "head": "e506a64ab3f94abde276a847321840862a8f2f44"
+    "head": "895523ce9032aadd07d2717cfddf9d48cbf81f39"
   },
   "focused_tests": {
     "status": "PASS",
