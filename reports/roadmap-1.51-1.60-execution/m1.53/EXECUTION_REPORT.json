@@ -2,7 +2,7 @@
   "milestone": "1.53",
   "name": "constrained-generic-functions-v1",
   "status": "IMPLEMENTED_FOCUSED_VERIFIED",
-  "implementation_commit": "68e507286282b8d6eef4c22c7849ff1ace37ac8c",
+  "implementation_commit": "2bebd534a8952200141518d7963b5a0e01a11707",
   "closure_commit": null,
   "parent_checkpoint": "68e507286282b8d6eef4c22c7849ff1ace37ac8c",
   "production_paths": [
@@ -26,7 +26,7 @@
     "passed": 5,
     "failed": 0,
     "timed_out": 0,
-    "head": "68e507286282b8d6eef4c22c7849ff1ace37ac8c"
+    "head": "2bebd534a8952200141518d7963b5a0e01a11707"
   },
   "focused_tests": {
     "status": "PASS",

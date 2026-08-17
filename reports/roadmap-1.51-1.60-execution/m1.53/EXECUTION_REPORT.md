@@ -17,9 +17,9 @@ existing semantic, ownership, lowering, IR, and emulator paths.
 
 ## Local Evidence
 
-- Implementation checkpoint: `68e507286282b8d6eef4c22c7849ff1ace37ac8c`
+- Implementation checkpoint: `2bebd534a8952200141518d7963b5a0e01a11707`
 - Smart runner: `python tools/s3test.py shard m153 --format json`
-- Smart shard result: `5/5 PASS`, `0` failed, `0` timed out
+- Smart shard result on the implementation HEAD: `5/5 PASS`, `0` failed, `0` timed out
 - Focused M1.53 result: `5 passed`
 - M1.51/M1.52, parser, compiler, and control-flow regression set: `60 passed`
 - `python -m compileall -q bootstrap/s3`: PASS

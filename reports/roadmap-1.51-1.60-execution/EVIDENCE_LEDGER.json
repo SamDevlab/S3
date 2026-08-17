@@ -19,7 +19,7 @@
     },
     "1.53": {
       "status": "IMPLEMENTED_FOCUSED_VERIFIED",
-      "implementation_commit": "68e507286282b8d6eef4c22c7849ff1ace37ac8c",
+      "implementation_commit": "2bebd534a8952200141518d7963b5a0e01a11707",
       "closure_report": "reports/roadmap-1.51-1.60-execution/m1.53/EXECUTION_REPORT.md",
       "closure_json": "reports/roadmap-1.51-1.60-execution/m1.53/EXECUTION_REPORT.json"
     }
