@@ -1,0 +1,39 @@
+{
+  "milestone": "1.57",
+  "name": "content-addressed-incremental-builds",
+  "status": "IMPLEMENTED_FOCUSED_VERIFIED",
+  "implementation_commit": "5ab4e10f25f87d5548aaf321962cc7d4e824ae88",
+  "closure_commit": null,
+  "parent_checkpoint": "5ab4e10f25f87d5548aaf321962cc7d4e824ae88",
+  "production_paths": [
+    "bootstrap/s3/incremental_build.py"
+  ],
+  "test_paths": [
+    "tests/test_m157_incremental_build.py",
+    "tests/test_m145_build_graph.py",
+    "tests/test_m156_package_dependencies.py"
+  ],
+  "smart_runner": {
+    "profile": "shard",
+    "argument": "m157",
+    "selected": 3,
+    "passed": 3,
+    "failed": 0,
+    "timed_out": 0,
+    "head": "5ab4e10f25f87d5548aaf321962cc7d4e824ae88"
+  },
+  "focused_tests": {
+    "status": "PASS",
+    "passed": 3,
+    "failed": 0
+  },
+  "cold_plan": "PASS",
+  "warm_reuse": "PASS",
+  "dependency_invalidation": "PASS",
+  "path_free_identity": "PASS",
+  "diff_check": "PASS",
+  "native_linux": "NOT_REQUIRED_TOOLING_ONLY",
+  "wasi": "NOT_REQUIRED_TOOLING_ONLY",
+  "benchmarks": "NOT_RUN",
+  "remote_writes": 0
+}

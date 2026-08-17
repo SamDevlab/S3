@@ -57,6 +57,11 @@
       "tests/test_m145_build_graph.py",
       "tests/test_project_container.py"
     ],
+    "m157": [
+      "tests/test_m157_incremental_build.py",
+      "tests/test_m145_build_graph.py",
+      "tests/test_m156_package_dependencies.py"
+    ],
     "m145-m146": ["tests/test_m145_build_graph.py", "tests/test_m146_test_runner.py"],
     "m147": ["tests/test_m147_python_buffer_abi.py"],
     "m148": ["tests/test_m148_network_provider.py"],
@@ -160,6 +165,19 @@
       ],
       "milestones": ["m156", "build"],
       "shards": ["m156", "m145-m146"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/incremental_build.py",
+      "tests": [
+        "tests/test_m157_incremental_build.py",
+        "tests/test_m145_build_graph.py",
+        "tests/test_m156_package_dependencies.py"
+      ],
+      "milestones": ["m157", "build"],
+      "shards": ["m157", "m145-m146"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
