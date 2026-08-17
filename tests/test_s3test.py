@@ -5,7 +5,13 @@ from pathlib import Path
 
 import pytest
 
-from tools.s3test import ImpactMap, StateStore, execution_fingerprint, render_plan
+from tools.s3test import (
+    ImpactMap,
+    StateStore,
+    execute_profile,
+    execution_fingerprint,
+    render_plan,
+)
 
 
 ROOT = Path(__file__).parents[1]
@@ -101,3 +107,28 @@ def test_resume_cache_requires_exact_fingerprint(tmp_path: Path) -> None:
     store = StateStore(tmp_path)
     store.save({"fingerprint": "old", "profile": "affected", "tests": [], "summary": {"status": "PASS"}})
     assert json.loads(store.latest.read_text(encoding="utf-8"))["fingerprint"] == "old"
+
+
+def test_resume_reuses_persisted_failed_selection(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    store = StateStore(tmp_path)
+    monkeypatch.setattr("tools.s3test._git", lambda root, *args, check=True: "HEAD\n" if args[:2] == ("rev-parse", "HEAD") else "")
+    fingerprint = execution_fingerprint(tmp_path, ["tests/test_a.py"], manifest_version=1)
+    store.save({
+        "fingerprint": fingerprint,
+        "profile": "affected",
+        "tests": [{
+            "test": "tests/test_a.py",
+            "status": "FAIL",
+            "tiers": ["T1"],
+            "reason": "direct",
+            "native_required": False,
+            "environment_requirements": [],
+            "output": "failure",
+            "returncode": 1,
+        }],
+        "summary": {"status": "FAIL"},
+    })
+    monkeypatch.setattr("tools.s3test.run_pytest_file", lambda root, test, timeout: {"status": "PASS", "output": "", "returncode": 0})
+    report = execute_profile(tmp_path, IMPACT, "resume", None, None, 1, store)
+    assert report["summary"]["status"] == "PASS"
+    assert report["tests"][0]["test"] == "tests/test_a.py"

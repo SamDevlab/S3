@@ -397,21 +397,32 @@ def execute_profile(
     timeout_seconds: int,
     state: StateStore,
 ) -> dict[str, Any]:
-    selections, tests = _profile_selection(root, impact, profile, argument, base)
-    fingerprint = execution_fingerprint(root, tests, manifest_version=impact.version)
     previous = state.load() if profile == "resume" else None
     if profile == "resume":
         if previous is None:
             raise S3TestOrchestratorError("no resumable test state exists")
+        saved_tests = tuple(
+            str(item["test"])
+            for item in previous.get("tests", [])
+            if isinstance(item, Mapping) and isinstance(item.get("test"), str)
+        )
+        fingerprint = execution_fingerprint(root, saved_tests, manifest_version=impact.version)
         if previous.get("fingerprint") != fingerprint:
             raise S3TestOrchestratorError("saved state fingerprint is stale; refusing cache reuse")
+        pending = {
+            result["test"]
+            for result in previous.get("tests", [])
+            if isinstance(result, Mapping) and result.get("status") not in {STATUS_PASS, "SKIP"}
+        }
         selections = tuple(
-            item for item in selections if item.test in {
-                result["test"] for result in previous.get("tests", [])
-                if result.get("status") not in {STATUS_PASS, "SKIP"}
-            }
+            Selection(test, ("resumed from persisted failure state",), ("T1",), False, (), (), ())
+            for test in saved_tests
+            if test in pending
         )
         tests = tuple(item.test for item in selections)
+    else:
+        selections, tests = _profile_selection(root, impact, profile, argument, base)
+        fingerprint = execution_fingerprint(root, tests, manifest_version=impact.version)
     reports=[]
     for selection in selections:
         result = run_pytest_file(root, selection.test, timeout_seconds)
