@@ -1,0 +1,39 @@
+{
+  "milestone": "1.56",
+  "name": "package-dependencies-v1",
+  "status": "IMPLEMENTED_FOCUSED_VERIFIED",
+  "implementation_commit": "9d33412c5118bd49f3abb7c01bdb70a8e09e77e9",
+  "closure_commit": null,
+  "parent_checkpoint": "9d33412c5118bd49f3abb7c01bdb70a8e09e77e9",
+  "production_paths": [
+    "bootstrap/s3/package_dependencies.py"
+  ],
+  "test_paths": [
+    "tests/test_m156_package_dependencies.py",
+    "tests/test_m145_build_graph.py",
+    "tests/test_project_container.py"
+  ],
+  "smart_runner": {
+    "profile": "shard",
+    "argument": "m156",
+    "selected": 3,
+    "passed": 3,
+    "failed": 0,
+    "timed_out": 0,
+    "head": "9d33412c5118bd49f3abb7c01bdb70a8e09e77e9"
+  },
+  "focused_tests": {
+    "status": "PASS",
+    "passed": 3,
+    "failed": 0
+  },
+  "offline_resolution": "PASS",
+  "revision_pinning": "PASS",
+  "cycle_detection": "PASS",
+  "canonical_lock_identity": "PASS",
+  "diff_check": "PASS",
+  "native_linux": "NOT_REQUIRED_TOOLING_ONLY",
+  "wasi": "NOT_REQUIRED_TOOLING_ONLY",
+  "benchmarks": "NOT_RUN",
+  "remote_writes": 0
+}
