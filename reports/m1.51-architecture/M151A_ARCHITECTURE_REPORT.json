@@ -1,0 +1,109 @@
+{
+  "schema": "s3.m151a.architecture-report.v1",
+  "base_sha": "0c4b83853f8ec091d5cf41d3f2071fc1ae06c481",
+  "research_parent_sha": "fb6820ffe82980576ecc36a8db9ad935da466f4d",
+  "architecture_head": "1ba5ca9eb6dc99ea4d81150635d2d458b616fcba",
+  "status": "ARCHITECTURE_CLOSED",
+  "milestone": "M1.51",
+  "title": "Composite Owned Values",
+  "owned_leaf_types": ["bytes", "text", "tryte_vector", "i64_vector", "f64_vector", "i64_map", "i64_set"],
+  "license": {
+    "intent": "Apache-2.0",
+    "metadata_status": "RESOLVED_APACHE_2_0",
+    "reconciliation_commit": "1ba5ca9eb6dc99ea4d81150635d2d458b616fcba"
+  },
+  "ownership_model": {
+    "ownership_unit": "WHOLE_AGGREGATE",
+    "supported_aggregates": ["records", "enum_payloads", "static_arrays", "nested_fixed_aggregates"],
+    "supported_owned_leaves": ["bytes", "text", "tryte_vector", "i64_vector", "f64_vector", "i64_map", "i64_set"],
+    "dynamic_collections_of_aggregates": false,
+    "partial_field_move": false,
+    "runtime_moved_flag": false,
+    "zero_after_move_required": false
+  },
+  "aggregate_layout": {
+    "model": "INLINE_FIELDS_WITH_TARGET_NATIVE_ALIGNMENT",
+    "field_order": "DECLARATION_ORDER",
+    "array_model": "CONTIGUOUS_ALIGNED_STRIDE",
+    "enum_model": "EXISTING_DISCRIMINANT_PLUS_ALIGNED_ACTIVE_PAYLOAD",
+    "outer_aggregate_descriptor": false,
+    "language_layout": "TARGET_INDEPENDENT",
+    "x86_64_dynamic_descriptor": ["base", "length", "capacity"],
+    "x86_64_dynamic_descriptor_size": 24,
+    "x86_64_dynamic_descriptor_alignment": 8
+  },
+  "call_abi": {
+    "owned_aggregate_internal_parameters": "INDIRECT_INTERNAL_ABI",
+    "owned_argument_semantics": "MOVE_TO_CALLEE",
+    "owned_aggregate_returns": "CALLER_PROVIDED_RESULT_SLOT",
+    "source_pointer_exposure": false,
+    "aggregate_descriptor_abi_status": "CLOSED"
+  },
+  "move_model": "WHOLE_AGGREGATE_DESTRUCTIVE_TRANSFER",
+  "borrow_model": "LEXICAL_FIELD_PROJECTION",
+  "replacement_model": "EVALUATE_NEW_THEN_DROP_OLD_THEN_MOVE_NEW",
+  "clone_model": {
+    "kind": "DEEP_STATIC_RECURSIVE_CLONE",
+    "bytes_text_capacity": "EXACT_LOGICAL_LENGTH",
+    "vector_map_set_capacity": "PRESERVE_SOURCE_CAPACITY",
+    "partial_failure_cleanup": "DROP_SUCCESSFULLY_CREATED_DESTINATION_FIELDS_EXACTLY_ONCE",
+    "source_remains_valid_after_failure": true
+  },
+  "drop_model": {
+    "kind": "STATIC_COMPILER_GENERATED_RECURSIVE_DROP_GLUE",
+    "exactly_once": true,
+    "record_order": "REVERSE_DECLARATION_ORDER",
+    "array_order": "REVERSE_INDEX_ORDER",
+    "enum_order": "ACTIVE_PAYLOAD_ONLY"
+  },
+  "cfg_model": {
+    "ownership_granularity": "WHOLE_AGGREGATE",
+    "field_sensitive_cfg": false,
+    "m152_boundary": "FIELD_SENSITIVE_PATH_DEPENDENT_MOVE_BORROW_DROP_AND_REINITIALIZATION"
+  },
+  "ffi_policy": {
+    "owned_aggregates_cross_c": false,
+    "c_ownership_transfer": false,
+    "scalar_and_borrowed_views_remain": true
+  },
+  "resource_policy": {
+    "aggregate_global_memory_limit": false,
+    "existing_dynamic_resource_limits": "PRESERVED",
+    "gc": false,
+    "refcounting": false,
+    "raw_pointers": false,
+    "general_generics": false,
+    "traits": false
+  },
+  "optimizer_contract": {
+    "o0_reference_semantics": "PRESERVED",
+    "o1_equivalence_required": true,
+    "ownership_elision": false
+  },
+  "determinism_contract": [
+    "stable nominal type identity",
+    "declaration-order layout",
+    "deterministic alignment and tail padding",
+    "deterministic clone and drop order",
+    "stable diagnostics and IR ownership metadata",
+    "no addresses, paths, timestamps, random hashes, or allocation history"
+  ],
+  "implementation_map": {
+    "parser": ["bootstrap/s3/parser.py:_parse_type", "bootstrap/s3/parser.py:_parse_record_declaration", "bootstrap/s3/parser.py:_parse_enum_declaration"],
+    "semantic": ["bootstrap/s3/semantic.py:SemanticModel", "bootstrap/s3/semantic.py:SemanticAnalyzer.analyze", "bootstrap/s3/semantic.py:_validate_declared_type", "bootstrap/s3/semantic.py:_validate_array_type", "bootstrap/s3/semantic.py:_analyze_record_or_enum_expression", "bootstrap/s3/semantic.py:_analyze_field_access", "bootstrap/s3/semantic.py:_consume_owner"],
+    "type_system": ["bootstrap/s3/ast.py:DeclaredType", "bootstrap/s3/ast.py:RecordDeclaration", "bootstrap/s3/ast.py:EnumDeclaration", "bootstrap/s3/semantic.py:FixedValueLayout"],
+    "ir": ["bootstrap/s3/ir.py:IRType", "bootstrap/s3/ir.py:DYNAMIC_BUILTIN_SIGNATURES", "bootstrap/s3/ir.py:IRFunction", "bootstrap/s3/ir_serialization.py"],
+    "ssa_and_verifier": ["bootstrap/s3/ssa.py:SSAValue", "bootstrap/s3/ssa.py:SSAPhiNode", "bootstrap/s3/ssa.py:SSABuilder", "bootstrap/s3/ssa.py:validate_ssa", "bootstrap/s3/verifier.py:IRVerifier"],
+    "lowering": ["bootstrap/s3/lowering.py:FunctionLowerer.lower", "bootstrap/s3/lowering.py:_result_types", "bootstrap/s3/lowering.py:_lower_return_expression", "bootstrap/s3/lowering.py:_lower_declaration"],
+    "emulator": ["bootstrap/s3/ir_emulator.py:_execute_function", "bootstrap/s3/emulator.py:call-stack and return destinations"],
+    "x86_64": ["bootstrap/s3/backends/x86_64/layout.py:FrameLayout", "bootstrap/s3/backends/x86_64/layout.py:layout_frame", "bootstrap/s3/backends/x86_64/emitter.py:_save_parameters", "bootstrap/s3/backends/x86_64/emitter.py:_emit_sret_call", "bootstrap/s3/backends/x86_64/registers.py"],
+    "ffi": ["bootstrap/s3/ffi.py:FFIType and FFISignature", "bootstrap/s3/python_buffer_abi.py:borrow/copy adapters"],
+    "tests": ["tests/test_composite_types.py", "tests/test_recursive_composite_layouts.py", "tests/test_enum_payload_architecture_gate.py", "tests/test_fixed_array_value_boundaries.py", "tests/test_aggregate_function_results.py", "tests/test_m139_dynamic_buffers.py", "tests/test_m140_ordered_collections.py"]
+  },
+  "m152_boundary": {
+    "status": "RESERVED",
+    "scope": ["partial field moves", "conditional reinitialization", "path-dependent ownership", "join and backedge state", "edge cleanup", "exactly-once cleanup verification"]
+  },
+  "open_questions": [],
+  "nonblocking_notes": ["The exact internal ownership-op encoding and private backend slot allocator are implementation-campaign decisions constrained by this closure.", "Current semantic validation still rejects dynamic aggregate leaves; no implementation is claimed."]
+}

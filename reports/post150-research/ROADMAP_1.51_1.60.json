@@ -3,6 +3,10 @@
   "schema_version": "s3.research-roadmap.v1",
   "base_sha": "0c4b83853f8ec091d5cf41d3f2071fc1ae06c481",
   "research_head": "da77bc5c8d174e84cb4ae5ae08343ec31dd39638",
+  "m151a_architecture_status": "CLOSED_LOCAL_ONLY",
+  "m151_implementation_status": "NOT_STARTED",
+  "m151a_architecture_reference": "docs/decisions/ADR-0037-m1.51a-composite-owned-values.md",
+  "m152_boundary": "FIELD_SENSITIVE_PATH_DEPENDENT_MOVE_BORROW_DROP_AND_REINITIALIZATION",
   "capability_snapshot": "reports/post150-research/CAPABILITY_MATRIX.json",
   "architecture_debts": [
     "composite owned values and aggregate control-flow ownership",
@@ -21,12 +25,12 @@
       "why_now": "Dynamic bytes/text/collections cannot be fields of records, arrays, or enums; this is the largest application-model gap.",
       "scope": "owned bytes, text, vectors, maps, and sets in explicitly declared aggregates",
       "public_surface": "bounded owned bytes, text, vectors, maps, and sets as explicitly declared aggregate fields",
-      "internal_architecture": "ownership-aware aggregate layout, field paths, allocation identity, and deterministic destruction metadata",
+      "internal_architecture": "whole-aggregate ownership, inline target-aligned layout, field projections, allocation identity, and deterministic destruction metadata",
       "out_of_scope": ["generics", "GC", "raw pointers", "concurrency"],
       "test_tiers": ["T0", "T1", "T2", "T3", "T4 at merge candidate"],
       "environment_requirements": ["Linux native for descriptor ABI evidence"],
       "risks": "aggregate layout, partial construction, and cleanup ABI",
-      "exit_criteria": "normative aggregate ownership contract and hosted/reference gates pass"
+      "exit_criteria": "normative aggregate ownership contract is closed; implementation and hosted/reference gates remain pending"
     },
     {
       "id": "M1.52",
@@ -172,5 +176,5 @@
     "not_required_when": ["docs-only", "isolated test addition", "narrow runtime fix with T1/T2/T3 evidence", "environment-only rerun", "known failing node repair", "roadmap research"],
     "after_t4_failure": "rerun exact failed nodes and affected closures, then resume valid shards"
   },
-  "open_decisions": ["LICENSE_INTENT_REQUIRES_USER_DECISION", "choose exact aggregate descriptor ABI in M1.51", "choose package namespace identity before M1.56"]
+  "open_decisions": ["choose package namespace identity before M1.56"]
 }

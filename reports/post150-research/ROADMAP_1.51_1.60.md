@@ -1,24 +1,31 @@
 # Recommended S3 Roadmap: M1.51 to M1.60
 
 This is a research recommendation only. Official roadmap/spec files are not
-changed. The sequence is dependency-first: ownership, constrained generics,
+changed. M1.51A architecture is now closed locally by ADR-0037 and
+`spec/composite-owned-values.md`; M1.51 implementation remains not started.
+The sequence is dependency-first: ownership, constrained generics,
 packages/build identity, then human tooling and bounded self-hosting.
 
 ## M1.51 — Composite Owned Values
 
+ARCHITECTURE_STATUS: CLOSED_LOCAL_ONLY
+IMPLEMENTATION_STATUS: NOT_STARTED
+ARCHITECTURE_REFERENCE: ADR-0037 / spec/composite-owned-values.md
+M1.52_BOUNDARY: field-sensitive path-dependent aggregate ownership flow
+
 - WHY_NOW: Dynamic bytes/text/collections cannot be fields of records, arrays, or enums; this is the largest application-model gap.
 - DEPENDENCIES: M1.39-M1.50; fixed-value layout; dynamic buffer contracts.
 - PUBLIC_SURFACE: bounded owned bytes, text, vectors, maps, and sets as explicitly declared aggregate fields.
-- INTERNAL_ARCHITECTURE: ownership-aware aggregate layout, field paths, allocation identity, and deterministic destruction metadata.
+- INTERNAL_ARCHITECTURE: whole-aggregate ownership, inline target-aligned layout, field projections, allocation identity, and deterministic destruction metadata.
 - OUT_OF_SCOPE: general generics, GC, raw pointers, implicit growth, concurrency.
 - LANGUAGE_SEMANTICS: explicit move/borrow/clone/drop; no owner use after move; no move while borrowed.
 - PARSER_IMPACT: no new syntax required beyond existing aggregate declarations unless separately approved.
 - SEMANTIC_IMPACT: ownership-aware aggregate legality, field paths, initialization, and moved-state diagnostics.
-- IR_IMPACT: aggregate value descriptors and explicit ownership operations; no hidden aggregate return.
-- SSA_IMPACT: aggregate owner state across projections, joins, and partial construction.
+- IR_IMPACT: typed aggregate identity and explicit ownership operations; owned parameters are indirect and owned returns use a caller-provided result slot; no public pointer.
+- SSA_IMPACT: whole-aggregate owner state at joins/backedges; field-sensitive path state is M1.52.
 - LOWERING_IMPACT: deterministic field projection, construction, destruction, and failure paths.
 - OPTIMIZER_IMPACT: preserve ownership operations and O0/O1 semantics; no ownership-eliding optimization by default.
-- NATIVE_BACKEND_IMPACT: descriptor/aggregate ABI contract required before native promotion.
+- NATIVE_BACKEND_IMPACT: closed private x86-64 leaf descriptor and aggregate slot ABI, with native promotion deferred to implementation.
 - EMULATOR_IMPACT: hosted ownership and allocation failure oracle.
 - FFI_IMPACT: no new foreign ownership transfer.
 - BUILD_TOOLING_IMPACT: none beyond capability/test manifest updates.
