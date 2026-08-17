@@ -1,0 +1,45 @@
+{
+  "milestone": "1.52",
+  "name": "aggregate-move-borrow-and-drop-flow",
+  "status": "IMPLEMENTED_FOCUSED_VERIFIED",
+  "implementation_commit": "3f397b4ff9b382c57d5598d3faa8ed6674b1955e",
+  "closure_commit": null,
+  "parent_checkpoint": "b399851b1e6c6bdd94cb6a95affb20b436a93129",
+  "production_paths": [
+    "bootstrap/s3/parser.py",
+    "bootstrap/s3/semantic.py",
+    "bootstrap/s3/lowering.py"
+  ],
+  "test_paths": [
+    "tests/test_m152_ownership_flow.py",
+    "tests/test_m151_composite_owned_values.py",
+    "tests/test_nested_record_composition_integration.py",
+    "tests/test_functions_control_flow.py",
+    "tests/test_enums.py",
+    "tests/test_reference_types_semantic.py"
+  ],
+  "smart_runner": {
+    "profile": "shard",
+    "argument": "m152",
+    "selected": 6,
+    "passed": 6,
+    "failed": 0,
+    "timed_out": 0,
+    "head": "3f397b4ff9b382c57d5598d3faa8ed6674b1955e"
+  },
+  "focused_tests": {
+    "status": "PASS",
+    "passed": 83,
+    "failed": 0
+  },
+  "ownership_flow": "PASS",
+  "join_state_validation": "PASS",
+  "backedge_validation": "PASS",
+  "compileall": "PASS",
+  "diff_check": "PASS",
+  "ir_drop_opcode": "NOT_PRESENT_IN_EXISTING_IR",
+  "native_linux": "DEFERRED_BY_ENVIRONMENT",
+  "wasi": "DEFERRED_BY_ENVIRONMENT",
+  "benchmarks": "NOT_RUN",
+  "remote_writes": 0
+}
