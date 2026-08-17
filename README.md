@@ -389,4 +389,4 @@ Pontos de entrada úteis:
 
 ## Licença
 
-MIT.
+Apache-2.0.

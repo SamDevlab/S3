@@ -8,7 +8,7 @@ version = "0.7.0"
 description = "Reference bootstrap toolchain for the S3 balanced-ternary language"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = { text = "Apache-2.0" }
 authors = [{ name = "S3 contributors" }]
 dependencies = []
 
