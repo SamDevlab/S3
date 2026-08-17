@@ -585,8 +585,6 @@ class IRVerifier:
                 )
             if result_type is IRType.REFERENCE:
                 self._error(f"{opcode.value} does not support reference values", instruction.location)
-            if result_type in {IRType.I64, IRType.F64} and opcode is not IROpcode.ADD:
-                self._error(f"{opcode.value} does not support numeric values", instruction.location)
             return
 
         if opcode is IROpcode.COMPARE:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import os
+import platform
 from pathlib import Path
 
 import pytest
@@ -37,6 +38,10 @@ def test_i64_arithmetic_is_source_visible_end_to_end() -> None:
 
 
 @pytest.mark.s3_native
+@pytest.mark.skipif(
+    platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="requires Linux x86-64 native toolchain",
+)
 def test_i64_subtraction_handles_int64_min_without_false_intermediate_overflow(tmp_path: Path) -> None:
     source = (
         "fn minimum(seed: i64) -> i64:\n"
@@ -150,6 +155,10 @@ def test_checked_i64_to_tryte_rejects_runtime_out_of_range() -> None:
 
 
 @pytest.mark.s3_native
+@pytest.mark.skipif(
+    platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"},
+    reason="requires Linux x86-64 native toolchain",
+)
 def test_large_i64_loop_reaches_one_million(tmp_path: Path) -> None:
     source = (
         "fn main() -> trit:\n"
