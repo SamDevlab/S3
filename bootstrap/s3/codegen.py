@@ -37,6 +37,9 @@ TYPE_MAP = {
     IRType.I64: AssemblyType.I64,
     IRType.F64: AssemblyType.F64,
     IRType.STRING: AssemblyType.STRING,
+    IRType.BYTES: AssemblyType.BYTES,
+    IRType.TEXT: AssemblyType.TEXT,
+    IRType.VECTOR: AssemblyType.VECTOR,
     IRType.REFERENCE: AssemblyType.REFERENCE,
 }
 

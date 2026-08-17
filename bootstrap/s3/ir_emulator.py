@@ -4,7 +4,29 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .ir import IRFunction, IRInstruction, IRModule, IROpcode, IRType
+from .ir import (
+    DYNAMIC_BUILTIN_SIGNATURES,
+    IRFunction,
+    IRInstruction,
+    IRModule,
+    IROpcode,
+    IRType,
+)
+from .dynamic import (
+    DynamicBytes,
+    DynamicText,
+    DynamicVector,
+    DynamicMap,
+    DynamicSet,
+    bytes_from_text,
+    bytes_new,
+    f64_vector_new,
+    i64_vector_new,
+    tryte_vector_new,
+    text_from_bytes,
+    text_new,
+)
+from .host_services import SourceResourceRuntime
 from .ternary import add, compare, invert, tritwise_max, tritwise_min, TernaryRangeError, TernaryWidth, validate
 from .verifier import verify_ir
 from .numeric import (
@@ -54,8 +76,9 @@ def _width(type_name: IRType) -> TernaryWidth:
 
 
 def execute_ir(module: IRModule, entry: str = "main", optimization: object = None) -> object:
-    global functions_module
+    global functions_module, resource_runtime
     functions_module = module
+    resource_runtime = SourceResourceRuntime()
     verify_ir(module)
     functions = {function.name: function for function in module.functions}
     if entry not in functions:
@@ -211,9 +234,12 @@ def _execute_function(functions, function, arguments, caller):
                 raise IRExecutionError("invalid mutable slice store")
             _store_value(value.cells[value.offset + index], _read(frame, instruction.operands[3]), instruction.reference_target)
         elif op is IROpcode.CALL:
-            callee = functions[instruction.callee]
             args = tuple(_read(frame, reg) for reg in instruction.operands)
-            result = _execute_function(functions, callee, args, frame)
+            if instruction.callee in DYNAMIC_BUILTIN_SIGNATURES:
+                result = _execute_dynamic_builtin(instruction.callee, args)
+            else:
+                callee = functions[instruction.callee]
+                result = _execute_function(functions, callee, args, frame)
             if instruction.results: _write(frame, instruction.results[0], result)
         elif op is IROpcode.RETURN:
             return _read(frame, instruction.operands[0])
@@ -252,6 +278,15 @@ def _store_value(cell, value, value_type):
     elif value_type is IRType.STRING:
         if not isinstance(value, str):
             raise IRExecutionError("invalid string value")
+    elif value_type is IRType.BYTES:
+        if not isinstance(value, DynamicBytes):
+            raise IRExecutionError("invalid bytes value")
+    elif value_type is IRType.TEXT:
+        if not isinstance(value, DynamicText):
+            raise IRExecutionError("invalid text value")
+    elif value_type is IRType.VECTOR:
+        if not isinstance(value, (DynamicVector, DynamicMap, DynamicSet)):
+            raise IRExecutionError("invalid vector value")
     elif value_type is IRType.I64:
         try:
             validate_i64(value)
@@ -271,4 +306,190 @@ def _store_value(cell, value, value_type):
     cell.initialized = True
 
 
+def _reference_owner(value):
+    if not isinstance(value, ReferenceValue) or not value.cell.initialized:
+        raise IRExecutionError("invalid dynamic buffer reference")
+    return value.cell.value
+
+
+def _execute_dynamic_builtin(name: str, args: tuple[object, ...]) -> object:
+    if name == "host_capability_grant":
+        return resource_runtime.grant(args[0])
+    if name == "resource_open":
+        return resource_runtime.open(args[0])
+    if name == "resource_is_open":
+        return resource_runtime.is_open(_reference_owner(args[0]))
+    if name == "resource_kind":
+        return resource_runtime.kind(_reference_owner(args[0]))
+    if name == "resource_invoke":
+        return resource_runtime.invoke(_reference_owner(args[0]), args[1])
+    if name == "resource_close":
+        reference = args[0]
+        handle = _reference_owner(reference)
+        resource_runtime.close(handle)
+        reference.cell.value = 0
+        return 0
+    if name == "bytes_new":
+        return bytes_new(args[0])
+    if name == "bytes_len":
+        return _reference_owner(args[0]).length
+    if name == "bytes_capacity":
+        return _reference_owner(args[0]).capacity
+    if name == "bytes_get":
+        return _reference_owner(args[0]).get(args[1])
+    if name == "bytes_set":
+        _reference_owner(args[0]).set(args[1], args[2])
+        return 0
+    if name == "bytes_push":
+        _reference_owner(args[0]).push(args[1])
+        return 0
+    if name == "bytes_reserve":
+        _reference_owner(args[0]).reserve(args[1])
+        return 0
+    if name == "bytes_clone":
+        return _reference_owner(args[0]).clone()
+    if name == "bytes_concat":
+        return _reference_owner(args[0]).concat(_reference_owner(args[1]))
+    if name == "bytes_slice":
+        return _reference_owner(args[0]).slice(args[1], args[2])
+    if name == "bytes_from_text":
+        return bytes_from_text(_reference_owner(args[0]))
+    if name == "text_new":
+        return text_new(args[0])
+    if name == "text_from_static":
+        return DynamicText.from_static(args[0])
+    if name == "text_len":
+        return _reference_owner(args[0]).length
+    if name == "text_capacity":
+        return _reference_owner(args[0]).capacity
+    if name == "text_reserve":
+        _reference_owner(args[0]).reserve(args[1])
+        return 0
+    if name == "text_append":
+        _reference_owner(args[0]).append(_reference_owner(args[1]))
+        return 0
+    if name == "text_append_static":
+        _reference_owner(args[0]).append_static(args[1])
+        return 0
+    if name == "text_clone":
+        return _reference_owner(args[0]).clone()
+    if name == "text_concat":
+        return _reference_owner(args[0]).concat(_reference_owner(args[1]))
+    if name == "text_slice":
+        return _reference_owner(args[0]).slice(args[1], args[2])
+    if name == "text_find":
+        return _reference_owner(args[0]).find(_reference_owner(args[1]))
+    if name == "text_from_bytes":
+        return text_from_bytes(_reference_owner(args[0]))
+    if name.startswith("tryte_vector_"):
+        return _execute_vector_builtin(name, args, "tryte", tryte_vector_new)
+    if name.startswith("i64_vector_"):
+        return _execute_vector_builtin(name, args, "i64", i64_vector_new)
+    if name.startswith("f64_vector_"):
+        return _execute_vector_builtin(name, args, "f64", f64_vector_new)
+    if name.startswith("i64_map_"):
+        return _execute_map_builtin(name, args)
+    if name.startswith("i64_set_"):
+        return _execute_set_builtin(name, args)
+    raise IRExecutionError(f"unsupported dynamic builtin '{name}'")
+
+
+def _execute_vector_builtin(name: str, args: tuple[object, ...], element_type: str, constructor) -> object:
+    operation = name[len(element_type) + len("_vector_") :]
+    if operation == "new":
+        return constructor(args[0])
+    owner = _reference_owner(args[0])
+    if not isinstance(owner, DynamicVector) or owner.element_type != element_type:
+        raise IRExecutionError(f"invalid {element_type} vector reference")
+    if operation == "len":
+        return owner.length
+    if operation == "capacity":
+        return owner.capacity
+    if operation == "reserve":
+        owner.reserve(args[1])
+        return 0
+    if operation == "push":
+        owner.push(args[1])
+        return 0
+    if operation == "pop":
+        return owner.pop()
+    if operation == "get":
+        return owner.get(args[1])
+    if operation == "set":
+        owner.set(args[1], args[2])
+        return 0
+    if operation == "clone":
+        return owner.clone()
+    if operation == "slice":
+        return owner.slice(args[1], args[2])
+    raise IRExecutionError(f"unsupported vector builtin '{name}'")
+
+
+def _execute_map_builtin(name: str, args: tuple[object, ...]) -> object:
+    from .dynamic import i64_map_new
+
+    if name == "i64_map_new":
+        return i64_map_new(args[0])
+    owner = _reference_owner(args[0])
+    if not isinstance(owner, DynamicMap):
+        raise IRExecutionError("invalid i64 map reference")
+    operation = name[len("i64_map_") :]
+    if operation == "len":
+        return owner.length
+    if operation == "capacity":
+        return owner.capacity
+    if operation == "reserve":
+        owner.reserve(args[1])
+        return 0
+    if operation == "put":
+        owner.put(args[1], args[2])
+        return 0
+    if operation == "contains":
+        return owner.contains(args[1])
+    if operation == "get":
+        return owner.get(args[1])
+    if operation == "remove":
+        owner.remove(args[1])
+        return 0
+    if operation == "key_at":
+        return owner.key_at(args[1])
+    if operation == "value_at":
+        return owner.value_at(args[1])
+    if operation == "clone":
+        return owner.clone()
+    raise IRExecutionError(f"unsupported map builtin '{name}'")
+
+
+def _execute_set_builtin(name: str, args: tuple[object, ...]) -> object:
+    from .dynamic import i64_set_new
+
+    if name == "i64_set_new":
+        return i64_set_new(args[0])
+    owner = _reference_owner(args[0])
+    if not isinstance(owner, DynamicSet):
+        raise IRExecutionError("invalid i64 set reference")
+    operation = name[len("i64_set_") :]
+    if operation == "len":
+        return owner.length
+    if operation == "capacity":
+        return owner.capacity
+    if operation == "reserve":
+        owner.reserve(args[1])
+        return 0
+    if operation == "add":
+        owner.add(args[1])
+        return 0
+    if operation == "contains":
+        return owner.contains(args[1])
+    if operation == "remove":
+        owner.remove(args[1])
+        return 0
+    if operation == "at":
+        return owner.at(args[1])
+    if operation == "clone":
+        return owner.clone()
+    raise IRExecutionError(f"unsupported set builtin '{name}'")
+
+
 functions_module = IRModule(())
+resource_runtime = SourceResourceRuntime()

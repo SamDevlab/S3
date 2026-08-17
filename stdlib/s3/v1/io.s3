@@ -1,0 +1,7 @@
+module s3.v1.io
+
+export fn kind(handle: &resource_handle) -> i64:
+    return resource_kind(handle)
+
+export fn close_resource(handle: &mut resource_handle) -> tryte:
+    return resource_close(handle)

@@ -1,0 +1,30 @@
+{
+  "milestone": "1.49",
+  "title": "Portable WASI Host and Target Contract",
+  "status": "IMPLEMENTATION_COMPLETE_WITH_DEFERRED_ENVIRONMENT_CERTIFICATION",
+  "implementation_head": "26c6cbb35e12c69f54840c43761162c506a8681b",
+  "tested_sha": "26c6cbb35e12c69f54840c43761162c506a8681b",
+  "focused_tests": "PASS (6)",
+  "focused_test_file": "tests/test_m149_wasm_target.py",
+  "adjacent_regression_tests": "PASS (18; tests/test_target_spec.py, tests/test_m146_test_runner.py)",
+  "deterministic_fixture": "PASS",
+  "canonical_section_order": "PASS",
+  "import_manifest": "PASS",
+  "artifact_identity_locking": "PASS",
+  "runtime_execution_claim": "NONE",
+  "compileall": "PASS",
+  "diff_check": "PASS",
+  "full_suite_terminal": true,
+  "full_suite_exit": 0,
+  "full_suite_log": "%TEMP%/s3-m149-full-suite.log",
+  "full_suite_status": "%TEMP%/s3-m149-full-suite.status",
+  "wasmtime_runtime": "DEFERRED_ENVIRONMENT",
+  "wasm_tools_validation": "DEFERRED_ENVIRONMENT",
+  "linux_wasi_certification": "DEFERRED_ENVIRONMENT",
+  "environment_blocks": [
+    "Wasmtime and wasm-tools are unavailable in the approved environments; no runtime or Linux WASI certification is claimed."
+  ],
+  "remote_writes": false,
+  "shutdown": "CANCELLED",
+  "next_milestone": "1.50"
+}

@@ -1,0 +1,617 @@
+fn eq(a: tryte, b: tryte) -> trit:
+    match a <=> b:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            return 0
+
+fn is_whitespace(ch: tryte) -> trit:
+    mut result: trit = 0
+    match eq(ch, 9):
+        -1:
+            result = -1
+        0:
+            result = result
+        1:
+            result = result
+    match eq(ch, 10):
+        -1:
+            result = -1
+        0:
+            result = result
+        1:
+            result = result
+    match eq(ch, 13):
+        -1:
+            result = -1
+        0:
+            result = result
+        1:
+            result = result
+    match eq(ch, 32):
+        -1:
+            result = -1
+        0:
+            result = result
+        1:
+            result = result
+    return result
+
+fn is_delimiter(ch: tryte) -> trit:
+    mut result: trit = is_whitespace(ch)
+    match eq(ch, 44):
+        -1:
+            result = -1
+        0:
+            result = result
+        1:
+            result = result
+    match eq(ch, 58):
+        -1:
+            result = -1
+        0:
+            result = result
+        1:
+            result = result
+    match eq(ch, 93):
+        -1:
+            result = -1
+        0:
+            result = result
+        1:
+            result = result
+    match eq(ch, 125):
+        -1:
+            result = -1
+        0:
+            result = result
+        1:
+            result = result
+    return result
+
+fn is_simple_escape(ch: tryte) -> trit:
+    mut result: trit = 0
+    match eq(ch, 34):
+        -1:
+            result = -1
+        0:
+            result = result
+        1:
+            result = result
+    match eq(ch, 47):
+        -1:
+            result = -1
+        0:
+            result = result
+        1:
+            result = result
+    match eq(ch, 92):
+        -1:
+            result = -1
+        0:
+            result = result
+        1:
+            result = result
+    match eq(ch, 98):
+        -1:
+            result = -1
+        0:
+            result = result
+        1:
+            result = result
+    match eq(ch, 102):
+        -1:
+            result = -1
+        0:
+            result = result
+        1:
+            result = result
+    match eq(ch, 110):
+        -1:
+            result = -1
+        0:
+            result = result
+        1:
+            result = result
+    match eq(ch, 114):
+        -1:
+            result = -1
+        0:
+            result = result
+        1:
+            result = result
+    match eq(ch, 116):
+        -1:
+            result = -1
+        0:
+            result = result
+        1:
+            result = result
+    return result
+
+fn is_hex(ch: tryte) -> trit:
+    match ch <=> 48:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match ch <=> 57:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    match ch <=> 65:
+                        -1:
+                            return 0
+                        0:
+                            return -1
+                        1:
+                            match ch <=> 70:
+                                -1:
+                                    return -1
+                                0:
+                                    return -1
+                                1:
+                                    match ch <=> 97:
+                                        -1:
+                                            return 0
+                                        0:
+                                            return -1
+                                        1:
+                                            match ch <=> 102:
+                                                -1:
+                                                    return -1
+                                                0:
+                                                    return -1
+                                                1:
+                                                    return 0
+
+fn main() -> tryte:
+    input_length: tryte = 7
+    input: tryte[96] = [123, 34, 97, 34, 58, 49, 125, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+    mut token_type: tryte[32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut token_start: tryte[32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut token_end: tryte[32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut token_size: tryte[32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut token_parent: tryte[32] = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    mut pos: tryte = 0
+    mut toknext: tryte = 0
+    mut toksuper: tryte = -1
+    mut status: tryte = 0
+
+    while pos <=> input_length:
+        ch: tryte = input[pos]
+        mut handled: trit = 0
+        mut open_type: tryte = 0
+        mut close_type: tryte = 0
+
+        match eq(ch, 123):
+            -1:
+                open_type = 1
+                handled = -1
+            0:
+                handled = handled
+            1:
+                handled = handled
+        match eq(ch, 91):
+            -1:
+                open_type = 2
+                handled = -1
+            0:
+                handled = handled
+            1:
+                handled = handled
+
+        match open_type <=> 0:
+            -1:
+                open_type = open_type
+            0:
+                open_type = open_type
+            1:
+                match toknext <=> 32:
+                    -1:
+                        token_type[toknext] = open_type
+                        token_start[toknext] = pos
+                        token_end[toknext] = -1
+                        token_size[toknext] = 0
+                        token_parent[toknext] = toksuper
+                        match -1 <=> toksuper:
+                            -1:
+                                token_size[toksuper] = token_size[toksuper] + 1
+                            0:
+                                toksuper = toksuper
+                            1:
+                                toksuper = toksuper
+                        toksuper = toknext
+                        toknext = toknext + 1
+                    0:
+                        status = -1
+                        pos = input_length
+                    1:
+                        status = -1
+                        pos = input_length
+
+        match eq(ch, 125):
+            -1:
+                close_type = 1
+                handled = -1
+            0:
+                handled = handled
+            1:
+                handled = handled
+        match eq(ch, 93):
+            -1:
+                close_type = 2
+                handled = -1
+            0:
+                handled = handled
+            1:
+                handled = handled
+
+        match close_type <=> 0:
+            -1:
+                close_type = close_type
+            0:
+                close_type = close_type
+            1:
+                mut scan: tryte = toknext - 1
+                mut found: trit = 0
+                mut searching: trit = -1
+                while searching:
+                    match -1 <=> scan:
+                        -1:
+                            match eq(token_end[scan], -1):
+                                -1:
+                                    mut container: trit = 0
+                                    match eq(token_type[scan], 1):
+                                        -1:
+                                            container = -1
+                                        0:
+                                            container = container
+                                        1:
+                                            container = container
+                                    match eq(token_type[scan], 2):
+                                        -1:
+                                            container = -1
+                                        0:
+                                            container = container
+                                        1:
+                                            container = container
+                                    match container:
+                                        -1:
+                                            match eq(token_type[scan], close_type):
+                                                -1:
+                                                    token_end[scan] = pos + 1
+                                                    toksuper = token_parent[scan]
+                                                    found = -1
+                                                    searching = 0
+                                                0:
+                                                    status = -2
+                                                    found = -1
+                                                    searching = 0
+                                                    pos = input_length
+                                                1:
+                                                    status = -2
+                                                    found = -1
+                                                    searching = 0
+                                                    pos = input_length
+                                        0:
+                                            scan = scan - 1
+                                        1:
+                                            scan = scan - 1
+                                0:
+                                    scan = scan - 1
+                                1:
+                                    scan = scan - 1
+                        0:
+                            searching = 0
+                        1:
+                            searching = 0
+                match found:
+                    -1:
+                        found = found
+                    0:
+                        match status <=> 0:
+                            -1:
+                                status = status
+                            0:
+                                status = -2
+                                pos = input_length
+                            1:
+                                status = status
+                    1:
+                        found = found
+
+        match eq(ch, 34):
+            -1:
+                handled = -1
+                start: tryte = pos + 1
+                mut scan: tryte = start
+                mut closed: trit = 0
+                mut scanning: trit = -1
+                while scanning:
+                    match scan <=> input_length:
+                        -1:
+                            mut current: tryte = input[scan]
+                            match eq(current, 34):
+                                -1:
+                                    closed = -1
+                                    scanning = 0
+                                0:
+                                    closed = closed
+                                1:
+                                    closed = closed
+                            match eq(current, 92):
+                                -1:
+                                    scan = scan + 1
+                                    match scan <=> input_length:
+                                        -1:
+                                            mut escaped: tryte = input[scan]
+                                            match eq(escaped, 117):
+                                                -1:
+                                                    mut hex_count: tryte = 0
+                                                    while hex_count <=> 4:
+                                                        scan = scan + 1
+                                                        match scan <=> input_length:
+                                                            -1:
+                                                                match is_hex(input[scan]):
+                                                                    -1:
+                                                                        hex_count = hex_count + 1
+                                                                    0:
+                                                                        status = -2
+                                                                        scanning = 0
+                                                                        hex_count = 4
+                                                                    1:
+                                                                        status = -2
+                                                                        scanning = 0
+                                                                        hex_count = 4
+                                                            0:
+                                                                status = -3
+                                                                scanning = 0
+                                                                hex_count = 4
+                                                            1:
+                                                                status = -3
+                                                                scanning = 0
+                                                                hex_count = 4
+                                                0:
+                                                    match is_simple_escape(escaped):
+                                                        -1:
+                                                            escaped = escaped
+                                                        0:
+                                                            status = -2
+                                                            scanning = 0
+                                                        1:
+                                                            status = -2
+                                                            scanning = 0
+                                                1:
+                                                    escaped = escaped
+                                        0:
+                                            status = -3
+                                            scanning = 0
+                                        1:
+                                            status = -3
+                                            scanning = 0
+                                0:
+                                    current = current
+                                1:
+                                    current = current
+                            match scanning:
+                                -1:
+                                    scan = scan + 1
+                                0:
+                                    scan = scan
+                                1:
+                                    scan = scan
+                        0:
+                            scanning = 0
+                        1:
+                            scanning = 0
+                match closed:
+                    -1:
+                        match status <=> 0:
+                            -1:
+                                status = status
+                            0:
+                                match toknext <=> 32:
+                                    -1:
+                                        token_type[toknext] = 4
+                                        token_start[toknext] = start
+                                        token_end[toknext] = scan
+                                        token_size[toknext] = 0
+                                        token_parent[toknext] = toksuper
+                                        match -1 <=> toksuper:
+                                            -1:
+                                                token_size[toksuper] = token_size[toksuper] + 1
+                                            0:
+                                                toksuper = toksuper
+                                            1:
+                                                toksuper = toksuper
+                                        toknext = toknext + 1
+                                        pos = scan
+                                    0:
+                                        status = -1
+                                        pos = input_length
+                                    1:
+                                        status = -1
+                                        pos = input_length
+                            1:
+                                status = status
+                    0:
+                        match status <=> 0:
+                            -1:
+                                status = status
+                            0:
+                                status = -3
+                                pos = input_length
+                            1:
+                                status = status
+                    1:
+                        closed = closed
+            0:
+                handled = handled
+            1:
+                handled = handled
+
+        match is_whitespace(ch):
+            -1:
+                handled = -1
+            0:
+                handled = handled
+            1:
+                handled = handled
+
+        match eq(ch, 58):
+            -1:
+                handled = -1
+                match toknext <=> 0:
+                    -1:
+                        toksuper = toksuper
+                    0:
+                        toksuper = toksuper
+                    1:
+                        toksuper = toknext - 1
+            0:
+                handled = handled
+            1:
+                handled = handled
+
+        match eq(ch, 44):
+            -1:
+                handled = -1
+                match -1 <=> toksuper:
+                    -1:
+                        mut container: trit = 0
+                        match eq(token_type[toksuper], 1):
+                            -1:
+                                container = -1
+                            0:
+                                container = container
+                            1:
+                                container = container
+                        match eq(token_type[toksuper], 2):
+                            -1:
+                                container = -1
+                            0:
+                                container = container
+                            1:
+                                container = container
+                        match container:
+                            -1:
+                                container = container
+                            0:
+                                toksuper = token_parent[toksuper]
+                            1:
+                                toksuper = token_parent[toksuper]
+                    0:
+                        toksuper = toksuper
+                    1:
+                        toksuper = toksuper
+            0:
+                handled = handled
+            1:
+                handled = handled
+
+        match handled:
+            -1:
+                handled = handled
+            0:
+                start: tryte = pos
+                mut scan: tryte = pos
+                mut scanning: trit = -1
+                while scanning:
+                    match scan <=> input_length:
+                        -1:
+                            primitive_ch: tryte = input[scan]
+                            match is_delimiter(primitive_ch):
+                                -1:
+                                    scanning = 0
+                                0:
+                                    match primitive_ch <=> 32:
+                                        -1:
+                                            status = -2
+                                            scanning = 0
+                                        0:
+                                            scan = scan + 1
+                                        1:
+                                            match primitive_ch <=> 127:
+                                                -1:
+                                                    scan = scan + 1
+                                                0:
+                                                    status = -2
+                                                    scanning = 0
+                                                1:
+                                                    status = -2
+                                                    scanning = 0
+                                1:
+                                    scanning = scanning
+                        0:
+                            scanning = 0
+                        1:
+                            scanning = 0
+                match status <=> 0:
+                    -1:
+                        status = status
+                    0:
+                        match toknext <=> 32:
+                            -1:
+                                token_type[toknext] = 8
+                                token_start[toknext] = start
+                                token_end[toknext] = scan
+                                token_size[toknext] = 0
+                                token_parent[toknext] = toksuper
+                                match -1 <=> toksuper:
+                                    -1:
+                                        token_size[toksuper] = token_size[toksuper] + 1
+                                    0:
+                                        toksuper = toksuper
+                                    1:
+                                        toksuper = toksuper
+                                toknext = toknext + 1
+                                pos = scan - 1
+                            0:
+                                status = -1
+                                pos = input_length
+                            1:
+                                status = -1
+                                pos = input_length
+                    1:
+                        status = status
+            1:
+                handled = handled
+
+        pos = pos + 1
+
+    match status <=> 0:
+        -1:
+            return status
+        0:
+            mut scan: tryte = toknext - 1
+            mut checking: trit = -1
+            while checking:
+                match -1 <=> scan:
+                    -1:
+                        match eq(token_end[scan], -1):
+                            -1:
+                                status = -3
+                                checking = 0
+                            0:
+                                scan = scan - 1
+                            1:
+                                scan = scan - 1
+                    0:
+                        checking = 0
+                    1:
+                        checking = 0
+            match status <=> 0:
+                -1:
+                    return status
+                0:
+                    return toknext
+                1:
+                    return status
+        1:
+            return status

@@ -1,0 +1,12 @@
+{
+  "schema_version": "s3.wasi-preview1-imports.v1",
+  "module": "wasi_snapshot_preview1",
+  "imports": [
+    {"name":"args_sizes_get","required":true,"capability":"argv"},{"name":"args_get","required":true,"capability":"argv"},
+    {"name":"environ_sizes_get","required":true,"capability":"environment.read"},{"name":"environ_get","required":true,"capability":"environment.read"},
+    {"name":"fd_read","required":true,"capability":"filesystem.read"},{"name":"fd_write","required":true,"capability":"filesystem.write"},{"name":"fd_close","required":true,"capability":"filesystem.read/write"},{"name":"fd_seek","required":true,"capability":"filesystem.read/write"},
+    {"name":"path_open","required":true,"capability":"filesystem.read/write"},{"name":"path_filestat_get","required":true,"capability":"filesystem.read"},{"name":"proc_exit","required":true,"capability":"process.exit"}
+  ],
+  "forbidden": ["clock_time_get","random_get","poll_oneoff","sock_accept","sock_recv","sock_send","sock_shutdown","path_create_directory","path_remove_directory"],
+  "tcp": "M1.48 adapter only; no Preview 1 socket imports are whitelisted"
+}

@@ -1,0 +1,6 @@
+{
+  "schema_version": "s3.tcp-errors.v1",
+  "codes": {"CAPABILITY_DENIED":1,"INVALID_ADDRESS":2,"CONNECTION_REFUSED":3,"CONNECTION_RESET":4,"TIMEOUT":5,"EOF":6,"RESOURCE_LIMIT":7,"CLOSED_HANDLE":8,"INVALID_STATE":9,"HOST_FAILURE":10},
+  "eof": "zero-length read with EOF status; not an error payload",
+  "scope": "TCP only; no UDP/DNS/TLS/async"
+}

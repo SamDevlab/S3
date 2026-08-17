@@ -1,0 +1,20 @@
+{
+  "schema_version": "s3.lock.v1",
+  "encoding": "UTF-8",
+  "field_order": ["schema_version", "project", "target", "profile", "nodes", "artifacts", "foreign_abis"],
+  "string_encoding": "UTF-8 NFC",
+  "integer_encoding": "canonical decimal, no leading zero, nonnegative unless specified",
+  "path_encoding": "workspace-relative UTF-8 with '/' separators; reject traversal; case-sensitive",
+  "newline": "LF with exactly one trailing LF",
+  "optional_fields": "omitted when absent; defaults are not serialized",
+  "unknown_fields": "reject",
+  "dependency_order": "stable topological order, ties by node_id",
+  "graph_node_order": "lexicographic node_id",
+  "target_encoding": "canonical target string",
+  "profile_encoding": "canonical profile string",
+  "hash_encoding": "lowercase hex SHA-256",
+  "artifact_id_encoding": "sha256:lowercase-hex",
+  "foreign_abi_id_encoding": "name@target:abi-hash",
+  "ambient_inputs": "excluded",
+  "timestamps": "excluded"
+}

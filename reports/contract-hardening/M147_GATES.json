@@ -1,0 +1,5 @@
+{
+  "schema_version": "s3.m147-gates.v1",
+  "descriptor": {"fields":[{"name":"offset","width":4,"alignment":4},{"name":"length","width":4,"alignment":4},{"name":"capacity","width":4,"alignment":4}],"size":12,"alignment":4,"format":"little-endian i32 fields","mutability":"separate call permission; not stored in descriptor"},
+  "gates":[{"id":"M147-G-ABI-SYMBOLS","requirement":"Stable ABI surface","environment":"Linux x86-64 Python dev headers","deferrable":true},{"id":"M147-G-DESCRIPTOR-LAYOUT","requirement":"descriptor bytes/layout","environment":"hosted/structural","deferrable":false},{"id":"M147-G-LIVE-BORROW-REALLOC","requirement":"reject capacity-changing operation during live borrow","input":"owned buffer with active borrowed view","expected":"closed resource/borrow diagnostic and unchanged allocation","release":"view release before retry","environment":"hosted/native","deferrable":false}]
+}

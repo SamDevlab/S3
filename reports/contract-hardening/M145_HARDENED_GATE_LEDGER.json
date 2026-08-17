@@ -1,0 +1,39 @@
+{
+  "milestone": "1.45",
+  "status": "PASS",
+  "gates": [
+    {
+      "id": "M145-G-CANONICAL-LOCK",
+      "requirement": "Canonical lockfile byte encoding is deterministic UTF-8 with LF and no BOM.",
+      "evidence": "BuildGraph.lockfile_text and write_lockfile preserve the canonical bytes.",
+      "test": "tests/test_m145_build_graph.py::test_lockfile_write_uses_canonical_utf8_lf_bytes",
+      "status": "PASS"
+    },
+    {
+      "id": "M145-G-ARTIFACT-RECOMPUTE",
+      "requirement": "Equivalent source, target, profile, and compiler inputs reproduce the same artifact identity.",
+      "evidence": "Independent project roots produce identical lockfile text/hash and artifact identity.",
+      "test": "tests/test_m145_build_graph.py::test_graph_lock_and_topological_plan_are_reproducible",
+      "status": "PASS"
+    },
+    {
+      "id": "M145-G-FOREIGN-ABI-CHANGE",
+      "requirement": "A changed declared foreign-library ABI byte identity changes the artifact identity.",
+      "evidence": "The declared local foreign library hash and resulting artifact identity change after one ABI file byte changes.",
+      "test": "tests/test_m145_build_graph.py::test_foreign_library_abi_bytes_change_artifact_identity",
+      "status": "PASS"
+    },
+    {
+      "id": "M145-G-AMBIENT-ENV",
+      "requirement": "Undeclared environment changes do not affect graph or artifact identity.",
+      "evidence": "Changing an unrelated environment variable leaves lockfile text and artifact identity unchanged.",
+      "test": "tests/test_m145_build_graph.py::test_undeclared_environment_does_not_change_identity",
+      "status": "PASS"
+    }
+  ],
+  "focused_tests": "9 passed",
+  "original_full_suite_exit": 0,
+  "second_full_suite_required": false,
+  "production_source_changed_by_hardening_integration": false,
+  "test_source_changed_by_hardening_integration": false
+}

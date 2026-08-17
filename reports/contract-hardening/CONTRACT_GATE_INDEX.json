@@ -1,0 +1,10 @@
+{
+  "schema_version": "s3.contract-gate-index.v1",
+  "entries": [
+    {"milestone":"1.45","requirement":"canonical lockfile and artifact identity","spec":["spec/lockfile-v1.json","spec/artifact-identity-v1.json"],"fixture":"reports/contract-hardening/M145_GOLDENS.json","gates":["M145-G-CANONICAL-LOCK","M145-G-ARTIFACT-RECOMPUTE"],"environment":"hosted/structural","deferrable":false},
+    {"milestone":"1.46","requirement":"report/status/discovery/timeout","spec":["spec/test-report-v1.json"],"fixture":"reports/contract-hardening/M146_DISCOVERY_GOLDEN.json","gates":["M146-G-REPORT-SCHEMA","M146-G-DISCOVERY-ORDER","M146-G-TIMEOUT"],"environment":"hosted","deferrable":false},
+    {"milestone":"1.47","requirement":"Stable ABI and live borrow","spec":["spec/python-stable-abi-v1.json"],"fixture":"reports/contract-hardening/M147_GATES.json","gates":["M147-G-ABI-SYMBOLS","M147-G-LIVE-BORROW-REALLOC"],"environment":"Linux for ABI; hosted for layout","deferrable":true},
+    {"milestone":"1.48","requirement":"TCP errors/limits/trace","spec":["spec/network-errors-v1.json","spec/network-provider-v1.json"],"fixture":"spec/network-provider-v1.json","gates":["M148-G-ERROR-TAXONOMY","M148-G-TRACE-EQUIVALENCE"],"environment":"hosted fake + Linux loopback","deferrable":true},
+    {"milestone":"1.49","requirement":"imports/filesystem/certification","spec":["spec/wasi-import-manifest-v1.json","spec/wasi-filesystem-rights-v1.json","spec/wasi-certification-profile-v1.json"],"fixture":"spec/wasi-import-manifest-v1.json","gates":["M149-G-IMPORT-MANIFEST","M149-G-FILESYSTEM-RIGHTS","M149-G-CERTIFICATION-PROFILE"],"environment":"structural + Wasmtime","deferrable":true}
+  ]
+}

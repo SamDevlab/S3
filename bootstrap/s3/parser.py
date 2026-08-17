@@ -247,9 +247,31 @@ class Parser:
             result = ast.TypeName.I64
         elif self._match(TokenKind.F64):
             result = ast.TypeName.F64
-        elif self._check(TokenKind.IDENTIFIER) and self._peek().text == "string":
-            self._advance()
-            result = ast.TypeName.STRING
+        elif self._check(TokenKind.IDENTIFIER) and self._peek().text in {
+            "string",
+            "bytes",
+            "text",
+            "tryte_vector",
+            "i64_vector",
+            "f64_vector",
+            "i64_map",
+            "i64_set",
+            "host_capability",
+            "resource_handle",
+        }:
+            name = self._advance().text
+            result = {
+                "string": ast.TypeName.STRING,
+                "bytes": ast.TypeName.BYTES,
+                "text": ast.TypeName.TEXT,
+                "tryte_vector": ast.TypeName.TRYTE_VECTOR,
+                "i64_vector": ast.TypeName.I64_VECTOR,
+                "f64_vector": ast.TypeName.F64_VECTOR,
+                "i64_map": ast.TypeName.I64_MAP,
+                "i64_set": ast.TypeName.I64_SET,
+                "host_capability": ast.TypeName.HOST_CAPABILITY,
+                "resource_handle": ast.TypeName.RESOURCE_HANDLE,
+            }[name]
         elif self._check(TokenKind.IDENTIFIER):
             nominal = self._advance()
             parts = [nominal.text]

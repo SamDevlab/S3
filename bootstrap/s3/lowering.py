@@ -29,6 +29,25 @@ TYPE_MAP = {
     ast.TypeName.I64: IRType.I64,
     ast.TypeName.F64: IRType.F64,
     ast.TypeName.STRING: IRType.STRING,
+    ast.TypeName.BYTES: IRType.BYTES,
+    ast.TypeName.TEXT: IRType.TEXT,
+    ast.TypeName.TRYTE_VECTOR: IRType.VECTOR,
+    ast.TypeName.I64_VECTOR: IRType.VECTOR,
+    ast.TypeName.F64_VECTOR: IRType.VECTOR,
+    ast.TypeName.I64_MAP: IRType.VECTOR,
+    ast.TypeName.I64_SET: IRType.VECTOR,
+    ast.TypeName.HOST_CAPABILITY: IRType.I64,
+    ast.TypeName.RESOURCE_HANDLE: IRType.I64,
+}
+
+_DYNAMIC_TYPES = {
+    ast.TypeName.BYTES,
+    ast.TypeName.TEXT,
+    ast.TypeName.TRYTE_VECTOR,
+    ast.TypeName.I64_VECTOR,
+    ast.TypeName.F64_VECTOR,
+    ast.TypeName.I64_MAP,
+    ast.TypeName.I64_SET,
 }
 
 
@@ -432,6 +451,8 @@ class FunctionLowerer:
         type_name: ast.DeclaredType,
         location: SourceLocation | None,
     ) -> tuple[IRType, ...]:
+        if isinstance(type_name, ast.TypeName) and type_name in _DYNAMIC_TYPES:
+            return (TYPE_MAP[type_name],)
         layout = self.semantic_model.fixed_value_layout(type_name)
         if not layout.cells:
             raise LoweringError("function result layout has no cells", location)
@@ -1274,6 +1295,22 @@ class FunctionLowerer:
             )
         storage_type = self._storage_type(declaration.type_name, declaration.location)
         initializer = self._lower_expression(declaration.initializer)
+        if storage_type in _DYNAMIC_TYPES:
+            variable = self._allocate(storage_type, declaration.location)
+            self._emit(
+                IRInstruction(
+                    IROpcode.MOVE,
+                    result=variable,
+                    operands=(initializer,),
+                    location=declaration.location,
+                )
+            )
+            self.variable_scopes[-1][declaration.name] = _LoweredBinding(
+                declaration.type_name,
+                declaration.mutable,
+                register=variable,
+            )
+            return
         if declaration.mutable:
             memory = self._allocate_memory(
                 storage_type,
@@ -1334,8 +1371,8 @@ class FunctionLowerer:
                 statement.target.name,
                 statement.target.location,
             )
-            assert binding.memory is not None
             if isinstance(binding.type_name, ast.ArrayType):
+                assert binding.memory is not None
                 if isinstance(statement.value, ast.ArrayLiteral):
                     registers = tuple(
                         self._lower_expression(element)
@@ -1359,6 +1396,44 @@ class FunctionLowerer:
                     statement.value.location,
                 )
             value = self._lower_expression(statement.value)
+            if (
+                isinstance(binding.type_name, ast.TypeName)
+                and binding.type_name in _DYNAMIC_TYPES
+            ):
+                if binding.register is None:
+                    raise LoweringError(
+                        "dynamic binding has no stable storage",
+                        statement.target.location,
+                    )
+                reference_type = ast.ReferenceType(
+                    binding.type_name,
+                    True,
+                    statement.target.location,
+                )
+                reference = self._allocate_reference(
+                    reference_type,
+                    statement.target.location,
+                )
+                self._emit(
+                    IRInstruction(
+                        IROpcode.ADDRESS_OF,
+                        result=reference,
+                        operands=(binding.register,),
+                        reference_target=TYPE_MAP[binding.type_name],
+                        reference_mutable=True,
+                        location=statement.target.location,
+                    )
+                )
+                self._emit(
+                    IRInstruction(
+                        IROpcode.REFERENCE_STORE,
+                        operands=(reference, value),
+                        reference_target=TYPE_MAP[binding.type_name],
+                        reference_mutable=True,
+                        location=statement.location,
+                    )
+                )
+                return
             index = self._emit_constant(
                 0,
                 ast.TypeName.TRYTE,

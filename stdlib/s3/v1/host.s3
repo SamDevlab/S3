@@ -1,0 +1,13 @@
+module s3.v1.host
+
+export fn grant(kind: i64) -> host_capability:
+    return host_capability_grant(kind)
+
+export fn open(capability: host_capability) -> resource_handle:
+    return resource_open(capability)
+
+export fn active(handle: &resource_handle) -> trit:
+    return resource_is_open(handle)
+
+export fn invoke(handle: &resource_handle, argument: i64) -> tryte:
+    return resource_invoke(handle, argument)

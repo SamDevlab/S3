@@ -60,6 +60,126 @@ NUMERIC_CONVERSION_BUILTINS = {
 }
 
 
+_DYNAMIC_BUILTIN_LOCATION = SourceLocation(0, 1, 1)
+_DYNAMIC_BUILTINS: dict[str, tuple[tuple[ast.DeclaredType, ...], ast.TypeName]] = {
+    "bytes_new": ((ast.TypeName.I64,), ast.TypeName.BYTES),
+    "bytes_len": ((ast.ReferenceType(ast.TypeName.BYTES, False, _DYNAMIC_BUILTIN_LOCATION),), ast.TypeName.I64),
+    "bytes_capacity": ((ast.ReferenceType(ast.TypeName.BYTES, False, _DYNAMIC_BUILTIN_LOCATION),), ast.TypeName.I64),
+    "bytes_get": ((ast.ReferenceType(ast.TypeName.BYTES, False, _DYNAMIC_BUILTIN_LOCATION), ast.TypeName.I64), ast.TypeName.TRYTE),
+    "bytes_set": ((ast.ReferenceType(ast.TypeName.BYTES, True, _DYNAMIC_BUILTIN_LOCATION), ast.TypeName.I64, ast.TypeName.TRYTE), ast.TypeName.TRYTE),
+    "bytes_push": ((ast.ReferenceType(ast.TypeName.BYTES, True, _DYNAMIC_BUILTIN_LOCATION), ast.TypeName.TRYTE), ast.TypeName.TRYTE),
+    "bytes_reserve": ((ast.ReferenceType(ast.TypeName.BYTES, True, _DYNAMIC_BUILTIN_LOCATION), ast.TypeName.I64), ast.TypeName.TRYTE),
+    "bytes_clone": ((ast.ReferenceType(ast.TypeName.BYTES, False, _DYNAMIC_BUILTIN_LOCATION),), ast.TypeName.BYTES),
+    "bytes_concat": ((ast.ReferenceType(ast.TypeName.BYTES, False, _DYNAMIC_BUILTIN_LOCATION), ast.ReferenceType(ast.TypeName.BYTES, False, _DYNAMIC_BUILTIN_LOCATION)), ast.TypeName.BYTES),
+    "bytes_slice": ((ast.ReferenceType(ast.TypeName.BYTES, False, _DYNAMIC_BUILTIN_LOCATION), ast.TypeName.I64, ast.TypeName.I64), ast.TypeName.BYTES),
+    "bytes_from_text": ((ast.ReferenceType(ast.TypeName.TEXT, False, _DYNAMIC_BUILTIN_LOCATION),), ast.TypeName.BYTES),
+    "text_new": ((ast.TypeName.I64,), ast.TypeName.TEXT),
+    "text_from_static": ((ast.TypeName.STRING,), ast.TypeName.TEXT),
+    "text_len": ((ast.ReferenceType(ast.TypeName.TEXT, False, _DYNAMIC_BUILTIN_LOCATION),), ast.TypeName.I64),
+    "text_capacity": ((ast.ReferenceType(ast.TypeName.TEXT, False, _DYNAMIC_BUILTIN_LOCATION),), ast.TypeName.I64),
+    "text_reserve": ((ast.ReferenceType(ast.TypeName.TEXT, True, _DYNAMIC_BUILTIN_LOCATION), ast.TypeName.I64), ast.TypeName.TRYTE),
+    "text_append": ((ast.ReferenceType(ast.TypeName.TEXT, True, _DYNAMIC_BUILTIN_LOCATION), ast.ReferenceType(ast.TypeName.TEXT, False, _DYNAMIC_BUILTIN_LOCATION)), ast.TypeName.TRYTE),
+    "text_append_static": ((ast.ReferenceType(ast.TypeName.TEXT, True, _DYNAMIC_BUILTIN_LOCATION), ast.TypeName.STRING), ast.TypeName.TRYTE),
+    "text_clone": ((ast.ReferenceType(ast.TypeName.TEXT, False, _DYNAMIC_BUILTIN_LOCATION),), ast.TypeName.TEXT),
+    "text_concat": ((ast.ReferenceType(ast.TypeName.TEXT, False, _DYNAMIC_BUILTIN_LOCATION), ast.ReferenceType(ast.TypeName.TEXT, False, _DYNAMIC_BUILTIN_LOCATION)), ast.TypeName.TEXT),
+    "text_slice": ((ast.ReferenceType(ast.TypeName.TEXT, False, _DYNAMIC_BUILTIN_LOCATION), ast.TypeName.I64, ast.TypeName.I64), ast.TypeName.TEXT),
+    "text_find": ((ast.ReferenceType(ast.TypeName.TEXT, False, _DYNAMIC_BUILTIN_LOCATION), ast.ReferenceType(ast.TypeName.TEXT, False, _DYNAMIC_BUILTIN_LOCATION)), ast.TypeName.I64),
+    "text_from_bytes": ((ast.ReferenceType(ast.TypeName.BYTES, False, _DYNAMIC_BUILTIN_LOCATION),), ast.TypeName.TEXT),
+}
+
+
+def _vector_builtin_signatures(
+    prefix: str,
+    vector_type: ast.TypeName,
+    element_type: ast.TypeName,
+) -> dict[str, tuple[tuple[ast.DeclaredType, ...], ast.TypeName]]:
+    shared = ast.ReferenceType(vector_type, False, _DYNAMIC_BUILTIN_LOCATION)
+    mutable = ast.ReferenceType(vector_type, True, _DYNAMIC_BUILTIN_LOCATION)
+    return {
+        f"{prefix}_vector_new": ((ast.TypeName.I64,), vector_type),
+        f"{prefix}_vector_len": ((shared,), ast.TypeName.I64),
+        f"{prefix}_vector_capacity": ((shared,), ast.TypeName.I64),
+        f"{prefix}_vector_reserve": ((mutable, ast.TypeName.I64), ast.TypeName.TRYTE),
+        f"{prefix}_vector_push": ((mutable, element_type), ast.TypeName.TRYTE),
+        f"{prefix}_vector_pop": ((mutable,), element_type),
+        f"{prefix}_vector_get": ((shared, ast.TypeName.I64), element_type),
+        f"{prefix}_vector_set": ((mutable, ast.TypeName.I64, element_type), ast.TypeName.TRYTE),
+        f"{prefix}_vector_clone": ((shared,), vector_type),
+        f"{prefix}_vector_slice": ((shared, ast.TypeName.I64, ast.TypeName.I64), vector_type),
+    }
+
+
+_DYNAMIC_BUILTINS.update(
+    _vector_builtin_signatures("tryte", ast.TypeName.TRYTE_VECTOR, ast.TypeName.TRYTE)
+)
+_DYNAMIC_BUILTINS.update(
+    _vector_builtin_signatures("i64", ast.TypeName.I64_VECTOR, ast.TypeName.I64)
+)
+_DYNAMIC_BUILTINS.update(
+    _vector_builtin_signatures("f64", ast.TypeName.F64_VECTOR, ast.TypeName.F64)
+)
+
+_I64_MAP = ast.TypeName.I64_MAP
+_I64_SET = ast.TypeName.I64_SET
+_MAP_SHARED = ast.ReferenceType(_I64_MAP, False, _DYNAMIC_BUILTIN_LOCATION)
+_MAP_MUTABLE = ast.ReferenceType(_I64_MAP, True, _DYNAMIC_BUILTIN_LOCATION)
+_SET_SHARED = ast.ReferenceType(_I64_SET, False, _DYNAMIC_BUILTIN_LOCATION)
+_SET_MUTABLE = ast.ReferenceType(_I64_SET, True, _DYNAMIC_BUILTIN_LOCATION)
+_DYNAMIC_BUILTINS.update(
+    {
+        "i64_map_new": ((ast.TypeName.I64,), _I64_MAP),
+        "i64_map_len": ((_MAP_SHARED,), ast.TypeName.I64),
+        "i64_map_capacity": ((_MAP_SHARED,), ast.TypeName.I64),
+        "i64_map_reserve": ((_MAP_MUTABLE, ast.TypeName.I64), ast.TypeName.TRYTE),
+        "i64_map_put": ((_MAP_MUTABLE, ast.TypeName.I64, ast.TypeName.I64), ast.TypeName.TRYTE),
+        "i64_map_contains": ((_MAP_SHARED, ast.TypeName.I64), ast.TypeName.TRIT),
+        "i64_map_get": ((_MAP_SHARED, ast.TypeName.I64), ast.TypeName.I64),
+        "i64_map_remove": ((_MAP_MUTABLE, ast.TypeName.I64), ast.TypeName.TRYTE),
+        "i64_map_key_at": ((_MAP_SHARED, ast.TypeName.I64), ast.TypeName.I64),
+        "i64_map_value_at": ((_MAP_SHARED, ast.TypeName.I64), ast.TypeName.I64),
+        "i64_map_clone": ((_MAP_SHARED,), _I64_MAP),
+        "i64_set_new": ((ast.TypeName.I64,), _I64_SET),
+        "i64_set_len": ((_SET_SHARED,), ast.TypeName.I64),
+        "i64_set_capacity": ((_SET_SHARED,), ast.TypeName.I64),
+        "i64_set_reserve": ((_SET_MUTABLE, ast.TypeName.I64), ast.TypeName.TRYTE),
+        "i64_set_add": ((_SET_MUTABLE, ast.TypeName.I64), ast.TypeName.TRYTE),
+        "i64_set_contains": ((_SET_SHARED, ast.TypeName.I64), ast.TypeName.TRIT),
+        "i64_set_remove": ((_SET_MUTABLE, ast.TypeName.I64), ast.TypeName.TRYTE),
+        "i64_set_at": ((_SET_SHARED, ast.TypeName.I64), ast.TypeName.I64),
+        "i64_set_clone": ((_SET_SHARED,), _I64_SET),
+    }
+)
+
+_HOST_CAPABILITY = ast.TypeName.HOST_CAPABILITY
+_RESOURCE_HANDLE = ast.TypeName.RESOURCE_HANDLE
+_RESOURCE_SHARED = ast.ReferenceType(
+    _RESOURCE_HANDLE, False, _DYNAMIC_BUILTIN_LOCATION
+)
+_RESOURCE_MUTABLE = ast.ReferenceType(
+    _RESOURCE_HANDLE, True, _DYNAMIC_BUILTIN_LOCATION
+)
+_DYNAMIC_BUILTINS.update(
+    {
+        "host_capability_grant": ((ast.TypeName.I64,), _HOST_CAPABILITY),
+        "resource_open": ((_HOST_CAPABILITY,), _RESOURCE_HANDLE),
+        "resource_is_open": ((_RESOURCE_SHARED,), ast.TypeName.TRIT),
+        "resource_kind": ((_RESOURCE_SHARED,), ast.TypeName.I64),
+        "resource_invoke": ((_RESOURCE_SHARED, ast.TypeName.I64), ast.TypeName.TRYTE),
+        "resource_close": ((_RESOURCE_MUTABLE,), ast.TypeName.TRYTE),
+    }
+)
+
+_DYNAMIC_TYPES = {
+    ast.TypeName.BYTES,
+    ast.TypeName.TEXT,
+    ast.TypeName.TRYTE_VECTOR,
+    ast.TypeName.I64_VECTOR,
+    ast.TypeName.F64_VECTOR,
+    ast.TypeName.I64_MAP,
+    ast.TypeName.I64_SET,
+}
+
+
 @dataclass(frozen=True, slots=True)
 class FunctionType:
     name: str
@@ -241,6 +361,7 @@ class SemanticModel:
     reference_origins: dict[int, tuple[int, int, bool]] = field(default_factory=dict)
     contains_references: bool = False
     reference_provenance: dict[int, ReferenceProvenance] = field(default_factory=dict)
+    contains_dynamic: bool = False
 
     def type_of(self, expression: ast.Expression) -> ast.TypeName:
         try:
@@ -617,6 +738,9 @@ class SemanticAnalyzer:
         self.reference_origins: dict[int, tuple[int, int, bool]] = {}
         self.reference_provenance: dict[int, ReferenceProvenance] = {}
         self.contains_references = False
+        self.contains_dynamic = False
+        self.moved_bindings: set[int] = set()
+        self.active_borrows: dict[int, tuple[int, bool]] = {}
 
     def analyze(self, program: ast.Program) -> SemanticModel:
         from .semantic_declarations import DeclarationCollector
@@ -625,6 +749,18 @@ class SemanticAnalyzer:
         self.enums = collected.enums
         self.records = collected.records
         self.functions = collected.functions
+        for name, (parameter_types, return_type) in _DYNAMIC_BUILTINS.items():
+            if name in self.functions:
+                raise SemanticError(
+                    f"function '{name}' conflicts with reserved dynamic builtin",
+                    _DYNAMIC_BUILTIN_LOCATION,
+                )
+            self.functions[name] = FunctionType(
+                name,
+                parameter_types,
+                return_type,
+                _DYNAMIC_BUILTIN_LOCATION,
+            )
         for record in self.records.values():
             for field in record.fields:
                 self._validate_declared_type(field.type_name, aggregate=True)
@@ -684,6 +820,7 @@ class SemanticAnalyzer:
             dict(self.reference_origins),
             self.contains_references,
             dict(self.reference_provenance),
+            self.contains_dynamic,
         )
 
     def _record_leaf_count(self, name: str) -> int:
@@ -710,6 +847,8 @@ class SemanticAnalyzer:
         signature = self.functions[function.name]
         self.return_type = signature.return_type
         self.parameter_names = {parameter.name for parameter in function.parameters}
+        self.moved_bindings = set()
+        self.active_borrows = {}
         self.scopes = [
             {
                 parameter.name: Binding(
@@ -734,6 +873,7 @@ class SemanticAnalyzer:
             )
 
     def _analyze_block(self, block: ast.Block, *, create_scope: bool) -> BlockFlow:
+        borrow_snapshot = dict(self.active_borrows)
         if create_scope:
             self.scopes.append({})
         block_terminates = False
@@ -752,6 +892,7 @@ class SemanticAnalyzer:
                     definitely_returns = True
             return BlockFlow(terminates=block_terminates, definitely_returns=definitely_returns)
         finally:
+            self.active_borrows = borrow_snapshot
             if create_scope:
                 self.scopes.pop()
 
@@ -771,6 +912,8 @@ class SemanticAnalyzer:
                 "returned expression",
                 diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
             )
+            if self._is_dynamic_type(self.return_type):
+                self._consume_owner(statement.expression)
             return BlockFlow(terminates=True, definitely_returns=True)
         if isinstance(statement, ast.BreakStatement):
             if self.loop_depth == 0:
@@ -1191,6 +1334,8 @@ class SemanticAnalyzer:
                 declaration.initializer.location,
                 f"initializer for '{declaration.name}'",
             )
+            if self._is_dynamic_type(declaration.type_name):
+                self._consume_owner(declaration.initializer)
             if isinstance(declaration.type_name, ast.ReferenceType):
                 reference_origin = self._reference_origin_of(declaration.initializer)
             if (
@@ -1259,6 +1404,30 @@ class SemanticAnalyzer:
                 )
                 return
 
+    @staticmethod
+    def _is_dynamic_type(type_name: ast.DeclaredType) -> bool:
+        return type_name in _DYNAMIC_TYPES
+
+    def _consume_owner(self, expression: ast.Expression) -> None:
+        if not isinstance(expression, ast.Identifier):
+            return
+        binding = self._lookup_binding(expression.name)
+        if binding is None or not self._is_dynamic_type(binding.type_name):
+            return
+        if id(binding) in self.moved_bindings:
+            raise SemanticError(
+                f"use of moved dynamic binding '{expression.name}'",
+                expression.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_USE_AFTER_MOVE,
+            )
+        if id(binding) in self.active_borrows:
+            raise SemanticError(
+                f"cannot move dynamic binding '{expression.name}' while borrowed",
+                expression.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_BORROWED_OWNER,
+            )
+        self.moved_bindings.add(id(binding))
+
     def _validate_declared_type(
         self,
         type_name: ast.DeclaredType,
@@ -1281,7 +1450,18 @@ class SemanticAnalyzer:
                     diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_AGGREGATE,
                 )
             return
+        if isinstance(type_name, ast.TypeName) and type_name in _DYNAMIC_TYPES:
+            self.contains_dynamic = True
+            if aggregate:
+                raise SemanticError(
+                    "dynamic buffers cannot be stored in records, arrays, or enums",
+                    _DYNAMIC_BUILTIN_LOCATION,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+                )
+            return
         if isinstance(type_name, ast.ReferenceType):
+            if type_name.target in _DYNAMIC_TYPES:
+                self.contains_dynamic = True
             self.contains_references = True
             if isinstance(type_name.target, ast.ReferenceType):
                 raise SemanticError(
@@ -1334,6 +1514,11 @@ class SemanticAnalyzer:
         if type_name.element_type is ast.TypeName.STRING:
             raise SemanticError(
                 "arrays of string are not supported in milestone 0.53",
+                type_name.location,
+            )
+        if type_name.element_type in _DYNAMIC_TYPES:
+            raise SemanticError(
+                "dynamic text and buffer values cannot be stored in arrays",
                 type_name.location,
             )
         if isinstance(type_name.element_type, ast.NominalType):
@@ -1431,6 +1616,8 @@ class SemanticAnalyzer:
                 statement.value.location,
                 "assigned value",
             )
+            if self._is_dynamic_type(binding.type_name):
+                self._consume_owner(statement.value)
             if isinstance(binding.type_name, ast.ReferenceType):
                 origin = self._reference_origin_of(statement.value)
                 if origin is not None and origin[1] > binding.scope_depth:
@@ -1618,6 +1805,12 @@ class SemanticAnalyzer:
                 allow_array=isinstance(expected, ast.ArrayType),
             )
             binding = self._lookup_binding(expression.name)
+            if binding is not None and self._is_dynamic_type(binding.type_name) and id(binding) in self.moved_bindings:
+                raise SemanticError(
+                    f"use of moved dynamic binding '{expression.name}'",
+                    expression.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_USE_AFTER_MOVE,
+                )
             if binding is not None and binding.static_text is not None:
                 self.static_text_values[id(expression)] = binding.static_text
             if binding is not None and binding.constant_value is not None:
@@ -1894,6 +2087,12 @@ class SemanticAnalyzer:
                 expression.location,
                 diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_NESTED,
             )
+        if self._is_dynamic_type(binding.type_name) and id(binding) in self.moved_bindings:
+            raise SemanticError(
+                f"use of moved dynamic binding '{expression.operand.name}'",
+                expression.operand.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_USE_AFTER_MOVE,
+            )
         if (
             expression.mutable
             and not isinstance(binding.type_name, ast.ArrayType)
@@ -1937,6 +2136,25 @@ class SemanticAnalyzer:
             expression.mutable,
         )
         self.contains_references = True
+        if self._is_dynamic_type(binding.type_name):
+            key = id(binding)
+            shared, mutable = self.active_borrows.get(key, (0, False))
+            if expression.mutable:
+                if mutable or shared:
+                    raise SemanticError(
+                        "mutable dynamic buffer borrow overlaps an active borrow",
+                        expression.location,
+                        diagnostic_code=DiagnosticCode.SEMANTIC_BORROW_CONFLICT,
+                    )
+                self.active_borrows[key] = (shared, True)
+            else:
+                if mutable:
+                    raise SemanticError(
+                        "shared dynamic buffer borrow overlaps a mutable borrow",
+                        expression.location,
+                        diagnostic_code=DiagnosticCode.SEMANTIC_BORROW_CONFLICT,
+                    )
+                self.active_borrows[key] = (shared + 1, False)
         return ast.ReferenceType(binding.type_name, expression.mutable, expression.location)
 
     def _analyze_dereference(self, expression: ast.DereferenceExpression) -> ast.DeclaredType:
@@ -2358,6 +2576,30 @@ class SemanticAnalyzer:
             )
         if expression.function_name in STATIC_TEXT_QUERY_BUILTINS:
             return self._analyze_static_text_query_call(expression)
+        if expression.function_name in _DYNAMIC_BUILTINS:
+            borrow_snapshot = dict(self.active_borrows)
+            signature = self.functions[expression.function_name]
+            if len(expression.arguments) != len(signature.parameter_types):
+                raise SemanticError(
+                    f"builtin '{expression.function_name}' expects {len(signature.parameter_types)} argument(s), got {len(expression.arguments)}",
+                    expression.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+                )
+            for index, (argument, parameter_type) in enumerate(
+                zip(expression.arguments, signature.parameter_types, strict=True),
+                start=1,
+            ):
+                actual = self._analyze_expression(argument.expression, parameter_type)
+                self._require_type(
+                    actual,
+                    parameter_type,
+                    argument.location,
+                    f"argument {index} to '{expression.function_name}'",
+                    diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+                )
+            self.active_borrows = borrow_snapshot
+            self.contains_dynamic = True
+            return signature.return_type
         if expression.function_name in STATIC_TEXT_TRANSFORM_BUILTINS:
             if expression.function_name not in self.functions or self._is_constant_static_text_transform_call(expression):
                 return self._analyze_static_text_transform_call(expression)
@@ -2374,6 +2616,7 @@ class SemanticAnalyzer:
                 f"{len(expression.arguments)}",
                 expression.location,
             )
+        borrow_snapshot = dict(self.active_borrows)
         for index, (argument, parameter_type) in enumerate(
             zip(expression.arguments, signature.parameter_types, strict=True),
             start=1,
@@ -2386,6 +2629,9 @@ class SemanticAnalyzer:
                 f"argument {index} to '{expression.function_name}'",
                 diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
             )
+            if isinstance(parameter_type, ast.TypeName) and parameter_type in _DYNAMIC_TYPES:
+                self._consume_owner(argument.expression)
+        self.active_borrows = borrow_snapshot
         return signature.return_type
 
     def _analyze_static_text_query_call(
