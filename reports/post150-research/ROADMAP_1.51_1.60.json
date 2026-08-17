@@ -1,0 +1,144 @@
+{
+  "schema": "s3.research-roadmap.v1",
+  "base_sha": "0c4b83853f8ec091d5cf41d3f2071fc1ae06c481",
+  "research_head": "8ef35c078613ec0bcf0ceddd924840cc0a42f69c",
+  "capability_snapshot": "reports/post150-research/CAPABILITY_MATRIX.json",
+  "architecture_debts": [
+    "composite owned values and aggregate control-flow ownership",
+    "specialized collection identity versus parametric abstraction",
+    "semantic.py module scale and ownership/layout coupling",
+    "package namespace and dependency identity",
+    "content-addressed incremental build invalidation",
+    "bounded developer tooling and self-hosting scope"
+  ],
+  "selected_milestones": [
+    {
+      "id": "M1.51",
+      "title": "Composite Owned Values",
+      "priority": 1,
+      "dependencies": ["M1.39-M1.50"],
+      "scope": "owned bytes, text, vectors, maps, and sets in explicitly declared aggregates",
+      "out_of_scope": ["generics", "GC", "raw pointers", "concurrency"],
+      "test_tiers": ["T0", "T1", "T2", "T3", "T4 at merge candidate"],
+      "environment_requirements": ["Linux native for descriptor ABI evidence"],
+      "risk": "aggregate layout, partial construction, and cleanup ABI",
+      "exit_criteria": "normative aggregate ownership contract and hosted/reference gates pass"
+    },
+    {
+      "id": "M1.52",
+      "title": "Aggregate Move Borrow Drop Flow",
+      "priority": 2,
+      "dependencies": ["M1.51"],
+      "scope": "path-sensitive ownership at joins, returns, early exits, and loops",
+      "out_of_scope": ["exceptions", "async", "shared ownership", "GC"],
+      "test_tiers": ["T0", "T1", "T2", "T3", "T4 at merge candidate"],
+      "environment_requirements": [],
+      "risk": "path explosion and double-drop/omitted-drop behavior",
+      "exit_criteria": "verifier proves exactly-once cleanup on all valid paths"
+    },
+    {
+      "id": "M1.53",
+      "title": "Constrained Generic Functions V1",
+      "priority": 3,
+      "dependencies": ["M1.51", "M1.52"],
+      "scope": "closed compile-time generic functions with deterministic monomorphization",
+      "out_of_scope": ["traits", "typeclasses", "higher-kinded types", "reflection", "dynamic dispatch"],
+      "test_tiers": ["T0", "T1", "T2", "T3", "T4 for global IR changes"],
+      "environment_requirements": [],
+      "risk": "code-size explosion and accidental trait system",
+      "exit_criteria": "constrained specializations are concrete before IR/Assembly"
+    },
+    {
+      "id": "M1.54",
+      "title": "Parametric Records and Enums",
+      "priority": 4,
+      "dependencies": ["M1.51", "M1.52", "M1.53"],
+      "scope": "closed acyclic parametric aggregates with concrete specialized layouts",
+      "out_of_scope": ["open extension", "reflection", "unbounded generic recursion"],
+      "test_tiers": ["T0", "T1", "T2", "T3", "T4 at merge candidate"],
+      "environment_requirements": ["Linux native for aggregate ABI evidence"],
+      "risk": "nominal identity and layout drift",
+      "exit_criteria": "parametric aggregates remain compatible with ownership and fixed-layout contracts"
+    },
+    {
+      "id": "M1.55",
+      "title": "Generic Ordered Vector V1",
+      "priority": 5,
+      "dependencies": ["M1.51", "M1.52", "M1.53", "M1.54"],
+      "scope": "first generic ordered collection with explicit capacity and compatibility migration",
+      "out_of_scope": ["generic maps", "generic sets", "implicit growth", "concurrency"],
+      "test_tiers": ["T0", "T1", "T2", "T3", "T4 for IR/ABI changes"],
+      "environment_requirements": ["Linux native for concrete vector ABI"],
+      "risk": "breaking specialized ternary/native domains",
+      "exit_criteria": "generic vector works without erasing closed specialized families"
+    },
+    {
+      "id": "M1.56",
+      "title": "Local Package Dependencies V1",
+      "priority": 6,
+      "dependencies": ["M1.45", "M1.53", "M1.55"],
+      "scope": "local path and pinned Git revision dependencies with offline lock resolution",
+      "out_of_scope": ["public registry", "network installation", "implicit version ranges"],
+      "test_tiers": ["T0", "T1", "T2", "T3", "T4 reproducibility gate"],
+      "environment_requirements": ["Git fixture repositories only"],
+      "risk": "nondeterministic remote resolution and namespace collisions",
+      "exit_criteria": "locked dependencies build offline with identical identities"
+    },
+    {
+      "id": "M1.57",
+      "title": "Content-Addressed Incremental Builds",
+      "priority": 7,
+      "dependencies": ["M1.45", "M1.56"],
+      "scope": "dependency-aware exact artifact reuse keyed by canonical content",
+      "out_of_scope": ["timestamps", "absolute paths", "remote cache service"],
+      "test_tiers": ["T0", "T1", "T2", "T3", "T4 cold/warm certification"],
+      "environment_requirements": ["toolchain identity probes"],
+      "risk": "incomplete invalidation and cache poisoning",
+      "exit_criteria": "warm builds reuse only exact compatible artifacts"
+    },
+    {
+      "id": "M1.58",
+      "title": "Language Server Protocol V1",
+      "priority": 8,
+      "dependencies": ["M1.56", "M1.57", "diagnostic schema"],
+      "scope": ["initialize", "didOpen", "didChange", "diagnostics", "hover", "definition", "symbols", "deterministic completion"],
+      "out_of_scope": ["rename", "references", "code actions", "build daemon"],
+      "test_tiers": ["T0", "T1", "T2"],
+      "environment_requirements": [],
+      "risk": "second compiler front end and unbounded IDE scope",
+      "exit_criteria": "editor facts come from the authoritative compiler"
+    },
+    {
+      "id": "M1.59",
+      "title": "Canonical Source and Developer Experience",
+      "priority": 9,
+      "dependencies": ["M1.56", "M1.57", "M1.58"],
+      "scope": ["formatter", "project init", "build/test/run UX", "error summaries", "examples", "capability discovery"],
+      "out_of_scope": ["IDE-specific features", "registry", "language redesign"],
+      "test_tiers": ["T0", "T1", "T2"],
+      "environment_requirements": [],
+      "risk": "duplicate capability claims and documentation drift",
+      "exit_criteria": "a human can discover, build, test, and diagnose a small project predictably"
+    },
+    {
+      "id": "M1.60",
+      "title": "Bounded Self-Hosted Manifest/Test Reader",
+      "priority": 10,
+      "dependencies": ["M1.56", "M1.57", "M1.59"],
+      "scope": "one bounded manifest or test-report reader with Python oracle and fallback",
+      "out_of_scope": ["self-hosted compiler", "package manager", "JIT", "runtime replacement"],
+      "test_tiers": ["T0", "T1", "T2", "T3/T4 at promotion"],
+      "environment_requirements": ["Python oracle remains authoritative"],
+      "risk": "scope creep into compiler self-hosting",
+      "exit_criteria": "one useful bounded component has exact deterministic parity and safe fallback"
+    }
+  ],
+  "deferred_topics": ["threads", "async", "atomics", "shared memory", "ARM64", "Windows native", "macOS native", "public registry", "mature JIT", "GC", "raw pointers", "Docker certification"],
+  "test_policy": {
+    "full_suite_default": false,
+    "required_when": ["merge candidate", "release candidate", "explicit user request", "global parser/semantic/IR impact", "uncertain partitionability"],
+    "not_required_when": ["docs-only", "isolated test addition", "narrow runtime fix with T1/T2/T3 evidence", "environment-only rerun", "known failing node repair", "roadmap research"],
+    "after_t4_failure": "rerun exact failed nodes and affected closures, then resume valid shards"
+  },
+  "open_decisions": ["LICENSE_INTENT_REQUIRES_USER_DECISION", "choose exact aggregate descriptor ABI in M1.51", "choose package namespace identity before M1.56"]
+}

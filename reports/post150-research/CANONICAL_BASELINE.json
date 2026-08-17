@@ -1,0 +1,33 @@
+{
+  "schema": "s3.post150-canonical-baseline.v1",
+  "base_sha": "0c4b83853f8ec091d5cf41d3f2071fc1ae06c481",
+  "research_head": "8ef35c078613ec0bcf0ceddd924840cc0a42f69c",
+  "post150_fix_sha": "06430710d05df925912603bd0a788022439079d5",
+  "post150_focused": "PASS_27_OF_27",
+  "fix_sanity_local": "PASS_27_OF_27",
+  "large_suite_reuse": {
+    "shard_a": "HISTORICAL_2135_PASSED_4_UNRELATED_FAILURES_194_SKIPPED",
+    "shard_b": "HISTORICAL_TIMEOUT",
+    "shard_c": "HISTORICAL_151_PASSED",
+    "fix_only_regression": false,
+    "linux_native_certification": "DEFERRED_BY_ENVIRONMENT"
+  },
+  "authority": {
+    "compiler": "bootstrap-python",
+    "parser": "python-reference",
+    "optimizer": "python-reference",
+    "emulator": "python-reference"
+  },
+  "architecture": {
+    "dynamic_owned_bytes_text": "IMPLEMENTED_LIMITED",
+    "specialized_collections": "IMPLEMENTED_LIMITED",
+    "composite_owned_values": "NOT_PUBLICLY_SUPPORTED",
+    "general_generics": "NOT_IMPLEMENTED",
+    "build_graph_lockfile": "IMPLEMENTED_CONTENT_ADDRESSED",
+    "test_runner": "IMPLEMENTED_M1_46_PLUS_LOCAL_SMART_ORCHESTRATOR",
+    "wasi": "STRUCTURAL_ONLY_RUNTIME_DEFERRED",
+    "self_hosting": "INCREMENTAL_PYTHON_AUTHORITATIVE"
+  },
+  "license_intent": "LICENSE_INTENT_REQUIRES_USER_DECISION",
+  "normative_roadmap_changed": false
+}
