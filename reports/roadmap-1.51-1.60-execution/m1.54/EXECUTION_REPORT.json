@@ -1,0 +1,45 @@
+{
+  "milestone": "1.54",
+  "name": "parametric-records-and-enums",
+  "status": "IMPLEMENTED_FOCUSED_VERIFIED",
+  "implementation_commit": "895523ce9032aadd07d2717cfddf9d48cbf81f39",
+  "closure_commit": null,
+  "parent_checkpoint": "e506a64ab3f94abde276a847321840862a8f2f44",
+  "production_paths": [
+    "bootstrap/s3/ast.py",
+    "bootstrap/s3/parser.py",
+    "bootstrap/s3/generics.py",
+    "bootstrap/s3/pipeline.py"
+  ],
+  "test_paths": [
+    "tests/test_m154_parametric_types.py",
+    "tests/test_m153_generic_functions.py",
+    "tests/test_m151_composite_owned_values.py",
+    "tests/test_m152_ownership_flow.py",
+    "tests/test_enums.py",
+    "tests/test_fixed_value_layouts.py"
+  ],
+  "smart_runner": {
+    "profile": "shard",
+    "argument": "m154",
+    "selected": 6,
+    "passed": 6,
+    "failed": 0,
+    "timed_out": 0,
+    "head": "895523ce9032aadd07d2717cfddf9d48cbf81f39"
+  },
+  "focused_tests": {
+    "status": "PASS",
+    "passed": 4,
+    "failed": 0
+  },
+  "parametric_record": "PASS",
+  "parametric_enum": "PASS",
+  "deterministic_monomorphization": "PASS",
+  "compileall": "PASS",
+  "diff_check": "PASS",
+  "native_linux": "DEFERRED_BY_ENVIRONMENT",
+  "wasi": "DEFERRED_BY_ENVIRONMENT",
+  "benchmarks": "NOT_RUN",
+  "remote_writes": 0
+}

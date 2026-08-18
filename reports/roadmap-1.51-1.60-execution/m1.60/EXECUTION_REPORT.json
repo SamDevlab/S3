@@ -1,0 +1,46 @@
+{
+  "milestone": "1.60",
+  "name": "bounded-self-hosting-manifest-projection",
+  "status": "IMPLEMENTED_FOCUSED_VERIFIED",
+  "implementation_commit": "97bf9ada5c7cd60d72a114bfa0671e4b045d4e4e",
+  "closure_commit": null,
+  "parent_checkpoint": "af409878d93c614627dab429a992003fa13396fb",
+  "production_paths": [
+    "bootstrap/s3/self_hosting_gate.py"
+  ],
+  "test_paths": [
+    "tests/test_m160_self_hosting_gate.py",
+    "tests/test_m146_test_runner.py",
+    "tests/test_compiler.py"
+  ],
+  "smart_runner": {
+    "profile": "shard",
+    "argument": "m160",
+    "selected": 3,
+    "passed": 3,
+    "failed": 0,
+    "timed_out": 0,
+    "head": "97bf9ada5c7cd60d72a114bfa0671e4b045d4e4e"
+  },
+  "focused_tests": {
+    "status": "PASS",
+    "passed": 5,
+    "failed": 0
+  },
+  "python_oracle_parity": "PASS",
+  "candidate_determinism": "PASS",
+  "fallback_contract": "PASS",
+  "semantic_disagreement_fail_closed": "PASS",
+  "candidate_limits": {
+    "max_frames": 8,
+    "max_instructions": 256,
+    "max_source_bytes": 2048,
+    "max_memory_cells": 4096
+  },
+  "toml_reader": "PYTHON_AUTHORITATIVE",
+  "native_linux": "NOT_REQUIRED_HOSTED_TOOLING",
+  "wasi": "NOT_REQUIRED_HOSTED_TOOLING",
+  "benchmarks": "NOT_RUN",
+  "diff_check": "PASS",
+  "remote_writes": 0
+}

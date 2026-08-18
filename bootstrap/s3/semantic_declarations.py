@@ -25,26 +25,18 @@ from .semantic import (
 
 
 def _validate_array_type(type_name: ast.ArrayType) -> None:
-    if isinstance(type_name.element_type, ast.ArrayType):
-        raise SemanticError(
-            "nested arrays are not supported",
-            type_name.location,
-        )
     if type_name.element_type is ast.TypeName.STRING:
         raise SemanticError(
             "arrays of string are not supported in milestone 0.53",
             type_name.location,
         )
-    if type_name.element_type in {ast.TypeName.BYTES, ast.TypeName.TEXT}:
+    if isinstance(type_name.element_type, ast.ReferenceType):
         raise SemanticError(
-            "dynamic text and buffer values cannot be stored in arrays",
+            "references cannot be stored in arrays",
             type_name.location,
         )
-    if isinstance(type_name.element_type, ast.NominalType):
-        raise SemanticError(
-            "arrays of nominal types are not supported",
-            type_name.location,
-        )
+    if isinstance(type_name.element_type, ast.ArrayType):
+        _validate_array_type(type_name.element_type)
     if type_name.length <= 0:
         raise SemanticError(
             f"array length must be positive, got {type_name.length}",

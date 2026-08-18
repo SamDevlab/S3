@@ -1,0 +1,38 @@
+{
+  "milestone": "1.59",
+  "name": "canonical-source-and-developer-experience",
+  "status": "IMPLEMENTED_FOCUSED_VERIFIED",
+  "implementation_commit": "c0ae46161ec7297381a0abf9bebb45ab59c0f219",
+  "closure_commit": null,
+  "parent_checkpoint": "c335b8994e27fe1768322362d9ea7cb0852ddb38",
+  "production_paths": [
+    "bootstrap/s3/developer_experience.py"
+  ],
+  "test_paths": [
+    "tests/test_m159_developer_experience.py",
+    "tests/test_project_container.py",
+    "tests/test_cli.py"
+  ],
+  "smart_runner": {
+    "profile": "shard",
+    "argument": "m159",
+    "selected": 3,
+    "passed": 3,
+    "failed": 0,
+    "timed_out": 0,
+    "head": "c0ae46161ec7297381a0abf9bebb45ab59c0f219"
+  },
+  "focused_tests": {
+    "status": "PASS",
+    "passed": 3,
+    "failed": 0
+  },
+  "formatter_idempotence": "PASS",
+  "project_initialization": "PASS",
+  "diagnostic_presentation": "PASS",
+  "diff_check": "PASS",
+  "native_linux": "NOT_REQUIRED_TOOLING_ONLY",
+  "wasi": "NOT_REQUIRED_TOOLING_ONLY",
+  "benchmarks": "NOT_RUN",
+  "remote_writes": 0
+}

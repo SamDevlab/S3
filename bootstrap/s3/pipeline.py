@@ -16,6 +16,7 @@ from .emulator import DEFAULT_MAX_FRAMES, DEFAULT_MAX_INSTRUCTIONS
 from .ir import IRProgram
 from .ir_serialization import IR_FORMAT_VERSION
 from .lexer import SyntaxMode, Token, tokenize
+from .generics import specialize_generic_functions
 from .lowering import lower
 from .module_compilation import SourceCollection, prepare_module_compilation
 from .optimizer import OptimizationLevel, optimize_ir
@@ -146,14 +147,15 @@ def compile_sources(
         entry_module=entry_module,
         mode=context.mode,
     )
-    semantic_model = analyze(plan.program)
-    ir_program = lower(plan.program, semantic_model)
+    syntax_tree = specialize_generic_functions(plan.program)
+    semantic_model = analyze(syntax_tree)
+    ir_program = lower(syntax_tree, semantic_model)
     if not semantic_model.contains_dynamic:
         ir_program = optimize_ir(ir_program, context.optimization)
     assembly_program = generate_assembly(ir_program)
     return CompilationResult(
         plan.tokens,
-        plan.program,
+        syntax_tree,
         semantic_model,
         ir_program,
         assembly_program,
@@ -165,7 +167,7 @@ def _compile_source_with_context(
     context: CompilationContext,
 ) -> CompilationResult:
     tokens = tokenize(source, mode=context.mode)
-    syntax_tree = parse_tokens(tokens, mode=context.mode)
+    syntax_tree = specialize_generic_functions(parse_tokens(tokens, mode=context.mode))
     semantic_model = analyze(syntax_tree)
     ir_program = lower(syntax_tree, semantic_model)
     if not semantic_model.contains_dynamic:

@@ -1,0 +1,96 @@
+{
+  "campaign": "M1.51-M1.60",
+  "base": "ee6cdb7a2ee22f6c4e64c4091549b2740b963504",
+  "branch": "feature/m151-m160-autonomous-20260817",
+  "worktree": "C:/Users/samue/Downloads/S3-m151-m160-autonomous-20260817",
+  "remote_writes": 0,
+  "milestones": {
+    "1.51": {
+      "status": "IMPLEMENTED_FOCUSED_VERIFIED",
+      "implementation_commit": "c9af2922404e95ae06453ce8489fffccd3d800b6",
+      "closure_report": "reports/roadmap-1.51-1.60-execution/m1.51/EXECUTION_REPORT.md",
+      "closure_json": "reports/roadmap-1.51-1.60-execution/m1.51/EXECUTION_REPORT.json"
+    },
+    "1.52": {
+      "status": "IMPLEMENTED_FOCUSED_VERIFIED",
+      "implementation_commit": "3f397b4ff9b382c57d5598d3faa8ed6674b1955e",
+      "closure_report": "reports/roadmap-1.51-1.60-execution/m1.52/EXECUTION_REPORT.md",
+      "closure_json": "reports/roadmap-1.51-1.60-execution/m1.52/EXECUTION_REPORT.json"
+    },
+    "1.53": {
+      "status": "IMPLEMENTED_FOCUSED_VERIFIED",
+      "implementation_commit": "2bebd534a8952200141518d7963b5a0e01a11707",
+      "closure_report": "reports/roadmap-1.51-1.60-execution/m1.53/EXECUTION_REPORT.md",
+      "closure_json": "reports/roadmap-1.51-1.60-execution/m1.53/EXECUTION_REPORT.json"
+    },
+    "1.54": {
+      "status": "IMPLEMENTED_FOCUSED_VERIFIED",
+      "implementation_commit": "895523ce9032aadd07d2717cfddf9d48cbf81f39",
+      "closure_report": "reports/roadmap-1.51-1.60-execution/m1.54/EXECUTION_REPORT.md",
+      "closure_json": "reports/roadmap-1.51-1.60-execution/m1.54/EXECUTION_REPORT.json"
+    },
+    "1.55": {
+      "status": "IMPLEMENTED_FOCUSED_VERIFIED",
+      "implementation_commit": "0405bec83b64894725de22ad18267049ec023137",
+      "closure_report": "reports/roadmap-1.51-1.60-execution/m1.55/EXECUTION_REPORT.md",
+      "closure_json": "reports/roadmap-1.51-1.60-execution/m1.55/EXECUTION_REPORT.json"
+    },
+    "1.56": {
+      "status": "IMPLEMENTED_FOCUSED_VERIFIED",
+      "implementation_commit": "c19231f14ed741a9fcadb295ae4f10e4553f87e9",
+      "closure_report": "reports/roadmap-1.51-1.60-execution/m1.56/EXECUTION_REPORT.md",
+      "closure_json": "reports/roadmap-1.51-1.60-execution/m1.56/EXECUTION_REPORT.json"
+    },
+    "1.57": {
+      "status": "IMPLEMENTED_FOCUSED_VERIFIED",
+      "implementation_commit": "758df4e2716b47145a468760682a85a000ce82a2",
+      "closure_report": "reports/roadmap-1.51-1.60-execution/m1.57/EXECUTION_REPORT.md",
+      "closure_json": "reports/roadmap-1.51-1.60-execution/m1.57/EXECUTION_REPORT.json"
+    },
+    "1.58": {
+      "status": "IMPLEMENTED_FOCUSED_VERIFIED",
+      "implementation_commit": "6af27b3eb1d8e4717fd3da24db6cfdfe65a9bcf8",
+      "closure_report": "reports/roadmap-1.51-1.60-execution/m1.58/EXECUTION_REPORT.md",
+      "closure_json": "reports/roadmap-1.51-1.60-execution/m1.58/EXECUTION_REPORT.json"
+    },
+    "1.59": {
+      "status": "IMPLEMENTED_FOCUSED_VERIFIED",
+      "implementation_commit": "c0ae46161ec7297381a0abf9bebb45ab59c0f219",
+      "closure_report": "reports/roadmap-1.51-1.60-execution/m1.59/EXECUTION_REPORT.md",
+      "closure_json": "reports/roadmap-1.51-1.60-execution/m1.59/EXECUTION_REPORT.json"
+    },
+    "1.60": {
+      "status": "IMPLEMENTED_FOCUSED_VERIFIED",
+      "implementation_commit": "97bf9ada5c7cd60d72a114bfa0671e4b045d4e4e",
+      "closure_report": "reports/roadmap-1.51-1.60-execution/m1.60/EXECUTION_REPORT.md",
+      "closure_json": "reports/roadmap-1.51-1.60-execution/m1.60/EXECUTION_REPORT.json"
+    }
+  },
+  "next_milestone": null,
+  "final_code_tested_sha": "f673351236f7d1ca6a69f9537276e7dd98f7e3be",
+  "final_evidence_head": "f76af7f78c05acb25406bceee7cd67aca98ef7cd",
+  "production_or_test_changes_after_final_code_tested_sha": false,
+  "t4_full_suite": {
+    "head": "c5163032d9c19713f8497d5bf9d15d73f55c6fef",
+    "selected": 328,
+    "passed": 298,
+    "failed": 7,
+    "timed_out": 23,
+    "status": "TIMEOUT",
+    "final_correction_head": "f673351236f7d1ca6a69f9537276e7dd98f7e3be",
+    "rerun_after_correction": false
+  },
+  "campaign_status": "IMPLEMENTATION_COMPLETE_WITH_DEFERRED_ENVIRONMENT_CERTIFICATION",
+  "t4_triage": {
+    "report": "reports/roadmap-1.51-1.60-execution/integration/T4_TRIAGE_REPORT.md",
+    "failure_matrix": "reports/roadmap-1.51-1.60-execution/integration/T4_FAILURE_MATRIX.json",
+    "timeout_matrix": "reports/roadmap-1.51-1.60-execution/integration/T4_TIMEOUT_MATRIX.json",
+    "failures_inventoried": 7,
+    "timeouts_inventoried": 23,
+    "m151_regressions_repaired": 2,
+    "stale_tests_corrected": 4,
+    "final_timeouts": 0,
+    "unresolved_correctness_regressions": 0,
+    "ready_for_publication_review": true
+  }
+}

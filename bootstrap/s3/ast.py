@@ -37,6 +37,7 @@ class ArrayType:
 class NominalType:
     name: str
     location: SourceLocation
+    type_arguments: tuple[DeclaredType, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,7 +56,27 @@ class SliceType:
     location: SourceLocation
 
 
-DeclaredType: TypeAlias = TypeName | ArrayType | NominalType | ReferenceType | SliceType
+@dataclass(frozen=True, slots=True)
+class TypeParameterType:
+    name: str
+    location: SourceLocation
+
+
+DeclaredType: TypeAlias = (
+    TypeName
+    | ArrayType
+    | NominalType
+    | ReferenceType
+    | SliceType
+    | TypeParameterType
+)
+
+
+@dataclass(frozen=True, slots=True)
+class TypeParameter:
+    name: str
+    constraint: str
+    location: SourceLocation
 
 
 class UnaryOperator(Enum):
@@ -127,6 +148,7 @@ class CallExpression:
     callee: Expression
     arguments: tuple[CallArgument, ...]
     location: SourceLocation
+    type_arguments: tuple[DeclaredType, ...] = ()
 
     @property
     def function_name(self) -> str:
@@ -152,6 +174,14 @@ class RecordFieldValue:
 class RecordExpression:
     type_name: str
     fields: tuple[RecordFieldValue, ...]
+    location: SourceLocation
+    type_arguments: tuple[DeclaredType, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class GenericTypeExpression:
+    target: Expression
+    type_arguments: tuple[DeclaredType, ...]
     location: SourceLocation
 
 
@@ -235,6 +265,7 @@ Expression: TypeAlias = (
     | Identifier
     | CallExpression
     | RecordExpression
+    | GenericTypeExpression
     | IndexExpression
     | SliceExpression
     | FieldAccessExpression
@@ -284,7 +315,14 @@ class DereferenceTarget:
     location: SourceLocation
 
 
-AssignmentTarget: TypeAlias = VariableTarget | IndexTarget | DereferenceTarget
+@dataclass(frozen=True, slots=True)
+class FieldTarget:
+    target: Expression
+    field_name: str
+    location: SourceLocation
+
+
+AssignmentTarget: TypeAlias = VariableTarget | IndexTarget | DereferenceTarget | FieldTarget
 
 
 @dataclass(frozen=True, slots=True)
@@ -391,6 +429,7 @@ class FunctionSignature:
     parameters: tuple[Parameter, ...]
     return_type: DeclaredType
     location: SourceLocation
+    type_parameters: tuple[TypeParameter, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -446,6 +485,7 @@ class RecordDeclaration:
     fields: tuple[RecordField, ...]
     location: SourceLocation
     exported: bool = False
+    type_parameters: tuple[TypeParameter, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -461,6 +501,7 @@ class EnumDeclaration:
     variants: tuple[EnumVariant, ...]
     location: SourceLocation
     exported: bool = False
+    type_parameters: tuple[TypeParameter, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

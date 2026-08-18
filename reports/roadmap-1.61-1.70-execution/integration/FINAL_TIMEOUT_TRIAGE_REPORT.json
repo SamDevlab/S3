@@ -1,0 +1,39 @@
+{
+  "schema": "s3.m161-m170.final-timeout-triage.v1",
+  "status": "TIMEOUT_TRIAGE_COMPLETE_NO_M161_M170_REGRESSION",
+  "campaign_base_sha": "06324bccd0cfee03452d34c5f04596b8f3973813",
+  "final_code_tested_sha": "8a5d018150401060a6b9b5ddfe91205d9bf21f1c",
+  "t4_execution_head": "0bd50143d8e555b12d70849aef827761acfb8f34",
+  "t4_evidence_head": "f4f386c1de9dbdd767202b0db82418adb4ba87c3",
+  "implementation_ancestor_of_t4": true,
+  "t4_head_ancestor_of_evidence": true,
+  "production_or_test_changes_after_final_code_tested_sha": false,
+  "original_t4": {
+    "selected": 338,
+    "passed": 316,
+    "failed": 0,
+    "timed_out": 22,
+    "skipped": 0,
+    "raw_full_restarts": 0
+  },
+  "triage": {
+    "matrix": "reports/roadmap-1.61-1.70-execution/integration/FINAL_TIMEOUT_MATRIX.json",
+    "final_isolated_timeout_count": 22,
+    "base_timeout_count": 22,
+    "preexisting_timeout_count": 22,
+    "candidate_only_timeout_regressions": 0,
+    "candidate_only_failures": 0,
+    "production_repairs": 0,
+    "classification": "PREEXISTING_TIMEOUT"
+  },
+  "environment_deferments": [
+    "windows-pe-and-native-execution",
+    "linux-native-certification",
+    "wasi-runtime-certification",
+    "trusted-tls-fixture"
+  ],
+  "benchmarks_executed": false,
+  "remote_write_executed": false,
+  "shutdown_authorized_after_final_gate": true,
+  "shutdown_executed_at_report_creation": false
+}

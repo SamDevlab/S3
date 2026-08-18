@@ -100,5 +100,41 @@
     "exceptions": false,
     "concurrency": false,
     "windows_native_execution": false
+  },
+  "roadmap_provider_status": {
+    "m1.61": {
+      "generic_map": "YES_V1_I64_DOMAIN",
+      "generic_set": "YES_V1_I64_DOMAIN"
+    },
+    "m1.62": {
+      "borrowed_slices": "YES_V1_HOSTED"
+    },
+    "m1.63": {
+      "deterministic_iteration": "YES_V1_HOSTED"
+    },
+    "m1.64": {
+      "result_propagation": "YES_V1_EXPLICIT_MATCH",
+      "exceptions": "NO"
+    },
+    "m1.65": {
+      "windows_x86_64": "STRUCTURAL_ONLY_DEFERRED_CERTIFICATION"
+    },
+    "m1.66": {
+      "cross_platform_os_services": "YES_V1_HOSTED"
+    },
+    "m1.67": {
+      "udp": "YES_V1_HOSTED",
+      "dns": "YES_V1_HOSTED"
+    },
+    "m1.68": {
+      "tls_client": "IMPLEMENTED_DEFERRED_PROVIDER_CERTIFICATION"
+    },
+    "m1.69": {
+      "threads": "YES_V1_HOSTED"
+    },
+    "m1.70": {
+      "atomics": "YES_V1_HOSTED",
+      "synchronization": "YES_V1_HOSTED"
+    }
   }
 }

@@ -1,0 +1,8 @@
+{
+  "schema": "s3.m161-m170.t4-failure-inventory.v1",
+  "t4_head": "0bd50143d8e555b12d70849aef827761acfb8f34",
+  "fingerprint": "6100145909676ce46f016e063bece350cbfd3f045bf715ef0ad7c7008e0a8be4",
+  "count": 0,
+  "classification": "NO_FAILURE_NODES_RECORDED",
+  "items": []
+}

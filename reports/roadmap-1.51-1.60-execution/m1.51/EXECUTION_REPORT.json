@@ -1,0 +1,46 @@
+{
+  "milestone": "1.51",
+  "name": "composite-owned-values",
+  "status": "IMPLEMENTED_FOCUSED_VERIFIED",
+  "campaign_base": "ee6cdb7a2ee22f6c4e64c4091549b2740b963504",
+  "prerequisite_merge": "0ada7993d2157f968b49422455f77475c52a93d7",
+  "implementation_commit": "c9af2922404e95ae06453ce8489fffccd3d800b6",
+  "closure_commit": null,
+  "production_paths": [
+    "bootstrap/s3/ast.py",
+    "bootstrap/s3/lowering.py",
+    "bootstrap/s3/parser.py",
+    "bootstrap/s3/semantic.py",
+    "bootstrap/s3/semantic_declarations.py"
+  ],
+  "test_paths": [
+    "tests/test_m151_composite_owned_values.py",
+    "tests/test_nested_record_composition_integration.py",
+    "tests/test_fixed_value_layouts.py",
+    "tests/test_fixed_array_value_boundaries.py",
+    "tests/test_enum_payload_layout.py",
+    "tests/test_aggregate_function_results.py",
+    "tests/test_m139_dynamic_buffers.py",
+    "tests/test_m140_ordered_collections.py"
+  ],
+  "smart_runner": {
+    "profile": "shard",
+    "argument": "m151",
+    "selected": 8,
+    "passed": 8,
+    "failed": 0,
+    "timed_out": 0,
+    "head": "c9af2922404e95ae06453ce8489fffccd3d800b6"
+  },
+  "focused_tests": {
+    "status": "PASS",
+    "passed": 65,
+    "failed": 0
+  },
+  "compileall": "PASS",
+  "diff_check": "PASS",
+  "native_linux": "DEFERRED_BY_ENVIRONMENT",
+  "wasi": "DEFERRED_BY_ENVIRONMENT",
+  "benchmarks": "NOT_RUN",
+  "remote_writes": 0
+}

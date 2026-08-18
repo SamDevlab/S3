@@ -269,21 +269,16 @@ def test_multimodule_postfix_composition_rejects_invalid_public_shapes(
     )
 
 
-def test_unsupported_aggregate_shapes_remain_rejected_in_differential_path() -> None:
-    for source, message in (
-        (
-            "record Box:\n"
-            "    value: tryte\n"
-            "fn main() -> tryte:\n"
-            "    boxes: Box[1] = [Box(value=1)]\n"
-            "    return 0\n",
-            "arrays of nominal types are not supported",
-        ),
-    ):
-        with pytest.raises(SemanticError) as captured:
-            compile_source(source)
-
-        assert diagnostic_from_exception(captured.value).message == message
+def test_arrays_of_records_remain_executable_in_differential_path() -> None:
+    source = (
+        "record Box:\n"
+        "    value: tryte\n"
+        "fn main() -> tryte:\n"
+        "    boxes: Box[1] = [Box(value=1)]\n"
+        "    return boxes[0].value\n"
+    )
+    assert _run_sources({"main.s3": source}, OptimizationLevel.O0) == 1
+    assert _run_sources({"main.s3": source}, OptimizationLevel.O1) == 1
 
 
 def test_nested_record_declaration_is_accepted_in_differential_path() -> None:

@@ -1846,18 +1846,6 @@ def test_o0_o1_native_imported_aggregate_result_sources(
             "field access requires a record value",
             DiagnosticCode.RECORD_FIELD_UNKNOWN,
         ),
-        (
-            "array-of-records",
-            "record Inner:\n"
-            "    value: tryte\n"
-            "record Outer:\n"
-            "    inner: Inner\n"
-            "fn main() -> tryte:\n"
-            "    values: Inner[1] = [Inner(value=1)]\n"
-            "    return 0\n",
-            "arrays of nominal types are not supported",
-            DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
-        ),
     ),
 )
 def test_nested_record_native_semantic_rejections_stay_before_backend(

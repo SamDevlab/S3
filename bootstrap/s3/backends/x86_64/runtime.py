@@ -137,6 +137,8 @@ __s3_dyn_new:
     mov r12,rdi
     test rdi,rdi
     js __s3_fail_capacity
+    cmp rdi,67108864
+    ja __s3_fail_allocation
     add rdi,24
     jc __s3_fail_capacity
     mov rsi,rdi
@@ -263,8 +265,26 @@ __s3_builtin_bytes_reserve:
 __s3_builtin_text_reserve:
     jmp __s3_dyn_reserve
 
-.type __s3_dyn_clone,@function
-__s3_dyn_clone:
+.type __s3_dyn_clone_exact_length,@function
+__s3_dyn_clone_exact_length:
+    push r12
+    push r13
+    mov r12,[rdi]
+    mov rdi,[r12+8]
+    call __s3_dyn_new
+    mov r13,rax
+    mov rcx,[r12+8]
+    mov rsi,[r12]
+    mov rdi,[r13]
+    call __s3_dyn_copy
+    mov rax,[r12+8]
+    mov [r13+8],rax
+    mov rax,r13
+    pop r13
+    pop r12
+    ret
+.type __s3_dyn_clone_preserve_capacity,@function
+__s3_dyn_clone_preserve_capacity:
     push r12
     push r13
     mov r12,[rdi]
@@ -283,13 +303,13 @@ __s3_dyn_clone:
     ret
 .type __s3_builtin_bytes_clone,@function
 __s3_builtin_bytes_clone:
-    jmp __s3_dyn_clone
+    jmp __s3_dyn_clone_exact_length
 .type __s3_builtin_text_clone,@function
 __s3_builtin_text_clone:
-    jmp __s3_dyn_clone
+    jmp __s3_dyn_clone_exact_length
 .type __s3_builtin_bytes_from_text,@function
 __s3_builtin_bytes_from_text:
-    jmp __s3_dyn_clone
+    jmp __s3_dyn_clone_exact_length
 
 .type __s3_dyn_concat,@function
 __s3_dyn_concat:
@@ -539,23 +559,40 @@ __s3_dyn_utf8_valid:
     and eax,192
     cmp eax,128
     jne .L__s3_utf8_no
-    cmp r9d,224
-    jne .L__s3_utf8_three_not_e0
-    movzx eax,byte ptr [r10-2]
-    cmp eax,160
-    jb .L__s3_utf8_no
-.L__s3_utf8_three_not_e0:
-    cmp r9d,237
-    jne .L__s3_utf8_three_done
-    movzx eax,byte ptr [r10-2]
-    cmp eax,159
-    ja .L__s3_utf8_no
-.L__s3_utf8_three_done:
     jmp .L__s3_utf8_loop
 .L__s3_utf8_three:
     add r10,3
     cmp r10,r11
     ja .L__s3_utf8_no
+    movzx eax,byte ptr [r10-2]
+    mov r8d,eax
+    and eax,192
+    cmp eax,128
+    jne .L__s3_utf8_no
+    movzx eax,byte ptr [r10-1]
+    and eax,192
+    cmp eax,128
+    jne .L__s3_utf8_no
+    cmp r9d,224
+    jne .L__s3_utf8_three_not_e0
+    cmp r8d,160
+    jb .L__s3_utf8_no
+.L__s3_utf8_three_not_e0:
+    cmp r9d,237
+    jne .L__s3_utf8_three_done
+    cmp r8d,159
+    ja .L__s3_utf8_no
+.L__s3_utf8_three_done:
+    jmp .L__s3_utf8_loop
+.L__s3_utf8_four:
+    add r10,4
+    cmp r10,r11
+    ja .L__s3_utf8_no
+    movzx eax,byte ptr [r10-3]
+    mov r8d,eax
+    and eax,192
+    cmp eax,128
+    jne .L__s3_utf8_no
     movzx eax,byte ptr [r10-2]
     and eax,192
     cmp eax,128
@@ -566,33 +603,14 @@ __s3_dyn_utf8_valid:
     jne .L__s3_utf8_no
     cmp r9d,240
     jne .L__s3_utf8_four_not_f0
-    movzx eax,byte ptr [r10-3]
-    cmp eax,144
+    cmp r8d,144
     jb .L__s3_utf8_no
 .L__s3_utf8_four_not_f0:
     cmp r9d,244
     jne .L__s3_utf8_four_done
-    movzx eax,byte ptr [r10-3]
-    cmp eax,143
+    cmp r8d,143
     ja .L__s3_utf8_no
 .L__s3_utf8_four_done:
-    jmp .L__s3_utf8_loop
-.L__s3_utf8_four:
-    add r10,4
-    cmp r10,r11
-    ja .L__s3_utf8_no
-    movzx eax,byte ptr [r10-3]
-    and eax,192
-    cmp eax,128
-    jne .L__s3_utf8_no
-    movzx eax,byte ptr [r10-2]
-    and eax,192
-    cmp eax,128
-    jne .L__s3_utf8_no
-    movzx eax,byte ptr [r10-1]
-    and eax,192
-    cmp eax,128
-    jne .L__s3_utf8_no
     jmp .L__s3_utf8_loop
 .L__s3_utf8_yes:
     mov eax,1
@@ -610,7 +628,7 @@ __s3_builtin_text_from_bytes:
     call __s3_dyn_utf8_valid
     test eax,eax
     jz __s3_fail_encoding
-    mov rdi,[r12+16]
+    mov rdi,[r12+8]
     call __s3_dyn_new
     mov r14,rax
     mov rcx,[r12+8]
@@ -905,13 +923,13 @@ __s3_builtin_f64_vector_pop:
 
 .type __s3_builtin_tryte_vector_clone,@function
 __s3_builtin_tryte_vector_clone:
-    jmp __s3_dyn_clone
+    jmp __s3_dyn_clone_preserve_capacity
 .type __s3_builtin_i64_vector_clone,@function
 __s3_builtin_i64_vector_clone:
-    jmp __s3_dyn_clone
+    jmp __s3_dyn_clone_preserve_capacity
 .type __s3_builtin_f64_vector_clone,@function
 __s3_builtin_f64_vector_clone:
-    jmp __s3_dyn_clone
+    jmp __s3_dyn_clone_preserve_capacity
 
 .type __s3_vec_slice_2,@function
 __s3_vec_slice_2:
@@ -1092,7 +1110,7 @@ __s3_builtin_i64_map_remove:
     ret
 .type __s3_builtin_i64_map_clone,@function
 __s3_builtin_i64_map_clone:
-    jmp __s3_dyn_clone
+    jmp __s3_dyn_clone_preserve_capacity
 
 .type __s3_i64_set_find,@function
 __s3_i64_set_find:
@@ -1183,7 +1201,7 @@ __s3_builtin_i64_set_at:
     jmp __s3_vec_get_8
 .type __s3_builtin_i64_set_clone,@function
 __s3_builtin_i64_set_clone:
-    jmp __s3_dyn_clone
+    jmp __s3_dyn_clone_preserve_capacity
 .type __s3_builtin_host_capability_grant,@function
 __s3_builtin_host_capability_grant:
     cmp rdi,1

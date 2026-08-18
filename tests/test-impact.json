@@ -1,0 +1,641 @@
+{
+  "schema": "s3.test-impact.v1",
+  "version": 1,
+  "default": {
+    "tests": ["tests/test_cli_source_syntax.py", "tests/test_compiler.py"],
+    "milestones": ["global"],
+    "shards": ["compiler"],
+    "native_required": false,
+    "environment_requirements": [],
+    "global_impact": false
+  },
+  "shards": {
+    "compiler": ["tests/test_compiler.py", "tests/test_cli_source_syntax.py"],
+    "m139-m140": ["tests/test_m139_dynamic_buffers.py", "tests/test_m140_ordered_collections.py"],
+    "m151": [
+      "tests/test_aggregate_function_results.py",
+      "tests/test_enum_payload_layout.py",
+      "tests/test_fixed_array_value_boundaries.py",
+      "tests/test_fixed_value_layouts.py",
+      "tests/test_m139_dynamic_buffers.py",
+      "tests/test_m140_ordered_collections.py",
+      "tests/test_m151_composite_owned_values.py",
+      "tests/test_nested_record_composition_integration.py"
+    ],
+    "m152": [
+      "tests/test_m151_composite_owned_values.py",
+      "tests/test_m152_ownership_flow.py",
+      "tests/test_nested_record_composition_integration.py",
+      "tests/test_functions_control_flow.py",
+      "tests/test_enums.py",
+      "tests/test_reference_types_semantic.py"
+    ],
+    "m153": [
+      "tests/test_m153_generic_functions.py",
+      "tests/test_m151_composite_owned_values.py",
+      "tests/test_m152_ownership_flow.py",
+      "tests/test_functions_control_flow.py",
+      "tests/test_compiler.py"
+    ],
+    "m154": [
+      "tests/test_m154_parametric_types.py",
+      "tests/test_m153_generic_functions.py",
+      "tests/test_m151_composite_owned_values.py",
+      "tests/test_m152_ownership_flow.py",
+      "tests/test_enums.py",
+      "tests/test_fixed_value_layouts.py"
+    ],
+    "m155": [
+      "tests/test_m155_generic_vector.py",
+      "tests/test_m154_parametric_types.py",
+      "tests/test_m153_generic_functions.py",
+      "tests/test_m140_ordered_collections.py",
+      "tests/test_m139_dynamic_buffers.py"
+    ],
+    "m156": [
+      "tests/test_m156_package_dependencies.py",
+      "tests/test_m145_build_graph.py",
+      "tests/test_project_container.py"
+    ],
+    "m157": [
+      "tests/test_m157_incremental_build.py",
+      "tests/test_m145_build_graph.py",
+      "tests/test_m156_package_dependencies.py"
+    ],
+    "m158": [
+      "tests/test_m158_lsp.py",
+      "tests/test_compiler.py",
+      "tests/test_lexer_parser.py"
+    ],
+    "m159": [
+      "tests/test_m159_developer_experience.py",
+      "tests/test_project_container.py",
+      "tests/test_cli.py"
+    ],
+    "m160": [
+      "tests/test_m160_self_hosting_gate.py",
+      "tests/test_m146_test_runner.py",
+      "tests/test_compiler.py"
+    ],
+    "m161": [
+      "tests/test_m161_generic_map_set.py",
+      "tests/test_m155_generic_vector.py",
+      "tests/test_m141_ordered_maps_sets.py",
+      "tests/test_m154_parametric_types.py",
+      "tests/test_m151_composite_owned_values.py",
+      "tests/test_ir_verifier.py",
+      "tests/test_native_x86_64.py",
+      "tests/test_native_x86_64_integration.py",
+      "tests/test_compiler.py"
+    ],
+    "m162": [
+      "tests/test_m162_borrowed_views.py",
+      "tests/test_s3_slice_capability.py",
+      "tests/test_advanced_reference_semantics.py",
+      "tests/test_dynamic.py",
+      "tests/test_advanced_reference_native.py",
+      "tests/test_ir_verifier.py",
+      "tests/test_native_x86_64_integration.py"
+    ],
+    "m163": [
+      "tests/test_m163_deterministic_iteration.py",
+      "tests/test_s3_for_execution.py",
+      "tests/test_s3_for_semantic.py",
+      "tests/test_s3_for_lowering.py",
+      "tests/test_s3_range_step_execution.py",
+      "tests/test_s3_range_step_semantic.py",
+      "tests/test_s3_range_single_bound_execution.py",
+      "tests/test_m141_ordered_maps_sets.py",
+      "tests/test_m162_borrowed_views.py",
+      "tests/test_ir_verifier.py",
+      "tests/test_native_x86_64_integration.py"
+    ],
+    "m164": [
+      "tests/test_m164_explicit_result_propagation.py",
+      "tests/test_m142_structured_results.py",
+      "tests/test_aggregate_function_results.py",
+      "tests/test_structured_result_flows.py",
+      "tests/test_m154_parametric_types.py",
+      "tests/test_enum_payload_layout.py",
+      "tests/test_ir_verifier.py",
+      "tests/test_native_x86_64_integration.py"
+    ],
+    "m165": [
+      "tests/test_m165_windows_x86_64_backend.py",
+      "tests/test_target_spec.py",
+      "tests/test_backend_registry.py",
+      "tests/test_native_x86_64.py",
+      "tests/test_native_backend_routing.py",
+      "tests/test_ir_verifier.py"
+    ],
+    "m166": [
+      "tests/test_m166_cross_platform_os_services.py",
+      "tests/test_host_services.py",
+      "tests/test_m143_scoped_resources.py",
+      "tests/test_project_container.py",
+      "tests/test_m145_build_graph.py",
+      "tests/test_m142_structured_results.py"
+    ],
+    "m167": [
+      "tests/test_m167_udp_dns.py",
+      "tests/test_m148_network_provider.py",
+      "tests/test_host_services.py",
+      "tests/test_m143_scoped_resources.py",
+      "tests/test_ir_verifier.py"
+    ],
+    "m168": [
+      "tests/test_m168_tls_client.py",
+      "tests/test_m167_udp_dns.py",
+      "tests/test_m148_network_provider.py",
+      "tests/test_m143_scoped_resources.py",
+      "tests/test_m142_structured_results.py"
+    ],
+    "m169": [
+      "tests/test_m169_threads.py",
+      "tests/test_m164_explicit_result_propagation.py",
+      "tests/test_m152_ownership_flow.py",
+      "tests/test_m143_scoped_resources.py",
+      "tests/test_host_services.py"
+    ],
+    "m170": [
+      "tests/test_m170_atomics_sync.py",
+      "tests/test_m169_threads.py",
+      "tests/test_m164_explicit_result_propagation.py",
+      "tests/test_m152_ownership_flow.py",
+      "tests/test_m143_scoped_resources.py"
+    ],
+    "m145-m146": ["tests/test_m145_build_graph.py", "tests/test_m146_test_runner.py"],
+    "m147": ["tests/test_m147_python_buffer_abi.py"],
+    "m148": ["tests/test_m148_network_provider.py"],
+    "m149": ["tests/test_m149_wasm_target.py"],
+    "m150": ["tests/test_m150_renderer_component.py"]
+  },
+  "rules": [
+    {
+      "pattern": "bootstrap/s3/dynamic.py",
+      "tests": ["tests/test_dynamic.py", "tests/test_m139_dynamic_buffers.py", "tests/test_m140_ordered_collections.py"],
+      "milestones": ["m139", "m140"],
+      "shards": ["m139-m140"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/{ast.py,parser.py,semantic_declarations.py,lowering.py}",
+      "tests": [
+        "tests/test_aggregate_function_results.py",
+        "tests/test_enum_payload_layout.py",
+        "tests/test_fixed_array_value_boundaries.py",
+        "tests/test_fixed_value_layouts.py",
+        "tests/test_m151_composite_owned_values.py",
+        "tests/test_nested_record_composition_integration.py"
+      ],
+      "milestones": ["m151"],
+      "shards": ["m151"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/{parser.py,semantic.py,lowering.py}",
+      "tests": [
+        "tests/test_m151_composite_owned_values.py",
+        "tests/test_m152_ownership_flow.py",
+        "tests/test_nested_record_composition_integration.py",
+        "tests/test_functions_control_flow.py",
+        "tests/test_enums.py",
+        "tests/test_reference_types_semantic.py"
+      ],
+      "milestones": ["m152"],
+      "shards": ["m152"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/{ast.py,parser.py,generics.py,pipeline.py}",
+      "tests": [
+        "tests/test_m153_generic_functions.py",
+        "tests/test_m151_composite_owned_values.py",
+        "tests/test_m152_ownership_flow.py",
+        "tests/test_functions_control_flow.py",
+        "tests/test_compiler.py"
+      ],
+      "milestones": ["m153"],
+      "shards": ["m153"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/{ast.py,parser.py,generics.py,pipeline.py,semantic.py,lowering.py}",
+      "tests": [
+        "tests/test_m154_parametric_types.py",
+        "tests/test_m153_generic_functions.py",
+        "tests/test_m151_composite_owned_values.py",
+        "tests/test_m152_ownership_flow.py",
+        "tests/test_enums.py",
+        "tests/test_fixed_value_layouts.py"
+      ],
+      "milestones": ["m154"],
+      "shards": ["m154"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/{generics.py,ast.py,parser.py,pipeline.py}",
+      "tests": [
+        "tests/test_m155_generic_vector.py",
+        "tests/test_m154_parametric_types.py",
+        "tests/test_m153_generic_functions.py",
+        "tests/test_m140_ordered_collections.py",
+        "tests/test_m139_dynamic_buffers.py"
+      ],
+      "milestones": ["m155"],
+      "shards": ["m155"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/generics.py",
+      "tests": [
+        "tests/test_m141_ordered_maps_sets.py",
+        "tests/test_m151_composite_owned_values.py",
+        "tests/test_m161_generic_map_set.py",
+        "tests/test_m155_generic_vector.py",
+        "tests/test_m154_parametric_types.py",
+        "tests/test_m153_generic_functions.py"
+      ],
+      "milestones": ["m161", "m155", "m154", "m153"],
+      "shards": ["m161", "m155", "m154", "m153"],
+      "native_required": true,
+      "environment_requirements": ["native-x86_64"],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/dynamic.py",
+      "tests": [
+        "tests/test_m162_borrowed_views.py",
+        "tests/test_s3_slice_capability.py",
+        "tests/test_advanced_reference_semantics.py",
+        "tests/test_dynamic.py"
+      ],
+      "milestones": ["m162"],
+      "shards": ["m162"],
+      "native_required": true,
+      "environment_requirements": ["native-x86_64"],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/results.py",
+      "tests": [
+        "tests/test_m164_explicit_result_propagation.py",
+        "tests/test_m142_structured_results.py",
+        "tests/test_aggregate_function_results.py",
+        "tests/test_structured_result_flows.py"
+      ],
+      "milestones": ["m164"],
+      "shards": ["m164"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/{targets.py,windows_x86_64.py}",
+      "tests": [
+        "tests/test_m165_windows_x86_64_backend.py",
+        "tests/test_target_spec.py",
+        "tests/test_backend_registry.py",
+        "tests/test_native_x86_64.py",
+        "tests/test_native_backend_routing.py",
+        "tests/test_ir_verifier.py"
+      ],
+      "milestones": ["m165"],
+      "shards": ["m165"],
+      "native_required": false,
+      "environment_requirements": ["windows-native-toolchain-optional"],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/os_services.py",
+      "tests": [
+        "tests/test_m166_cross_platform_os_services.py",
+        "tests/test_host_services.py",
+        "tests/test_m143_scoped_resources.py",
+        "tests/test_project_container.py",
+        "tests/test_m145_build_graph.py",
+        "tests/test_m142_structured_results.py"
+      ],
+      "milestones": ["m166"],
+      "shards": ["m166"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/udp_dns.py",
+      "tests": [
+        "tests/test_m167_udp_dns.py",
+        "tests/test_m148_network_provider.py",
+        "tests/test_host_services.py",
+        "tests/test_m143_scoped_resources.py",
+        "tests/test_ir_verifier.py"
+      ],
+      "milestones": ["m167"],
+      "shards": ["m167"],
+      "native_required": false,
+      "environment_requirements": ["loopback-network-optional"],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/tls_client.py",
+      "tests": [
+        "tests/test_m168_tls_client.py",
+        "tests/test_m167_udp_dns.py",
+        "tests/test_m148_network_provider.py",
+        "tests/test_m143_scoped_resources.py",
+        "tests/test_m142_structured_results.py"
+      ],
+      "milestones": ["m168"],
+      "shards": ["m168"],
+      "native_required": false,
+      "environment_requirements": ["trusted-tls-fixture-optional"],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/threads.py",
+      "tests": [
+        "tests/test_m169_threads.py",
+        "tests/test_m164_explicit_result_propagation.py",
+        "tests/test_m152_ownership_flow.py",
+        "tests/test_m143_scoped_resources.py",
+        "tests/test_host_services.py"
+      ],
+      "milestones": ["m169"],
+      "shards": ["m169"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/synchronization.py",
+      "tests": [
+        "tests/test_m170_atomics_sync.py",
+        "tests/test_m169_threads.py",
+        "tests/test_m164_explicit_result_propagation.py",
+        "tests/test_m152_ownership_flow.py",
+        "tests/test_m143_scoped_resources.py"
+      ],
+      "milestones": ["m170"],
+      "shards": ["m170"],
+      "native_required": false,
+      "environment_requirements": ["native-execution-optional"],
+      "global_impact": false
+    },
+    {
+      "pattern": "docs/milestone-1.64.md",
+      "tests": [],
+      "milestones": ["m164"],
+      "shards": [],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/iteration.py",
+      "tests": [
+        "tests/test_m163_deterministic_iteration.py",
+        "tests/test_s3_for_execution.py",
+        "tests/test_s3_for_semantic.py",
+        "tests/test_s3_for_lowering.py",
+        "tests/test_s3_range_step_execution.py",
+        "tests/test_s3_range_step_semantic.py",
+        "tests/test_s3_range_single_bound_execution.py",
+        "tests/test_m141_ordered_maps_sets.py",
+        "tests/test_m162_borrowed_views.py",
+        "tests/test_ir_verifier.py",
+        "tests/test_native_x86_64_integration.py"
+      ],
+      "milestones": ["m163"],
+      "shards": ["m163"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/dynamic.py",
+      "tests": [
+        "tests/test_m163_deterministic_iteration.py",
+        "tests/test_m162_borrowed_views.py",
+        "tests/test_m141_ordered_maps_sets.py"
+      ],
+      "milestones": ["m163"],
+      "shards": ["m163"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/package_dependencies.py",
+      "tests": [
+        "tests/test_m156_package_dependencies.py",
+        "tests/test_m145_build_graph.py",
+        "tests/test_project_container.py"
+      ],
+      "milestones": ["m156", "build"],
+      "shards": ["m156", "m145-m146"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/incremental_build.py",
+      "tests": [
+        "tests/test_m157_incremental_build.py",
+        "tests/test_m145_build_graph.py",
+        "tests/test_m156_package_dependencies.py"
+      ],
+      "milestones": ["m157", "build"],
+      "shards": ["m157", "m145-m146"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/lsp.py",
+      "tests": [
+        "tests/test_m158_lsp.py",
+        "tests/test_compiler.py",
+        "tests/test_lexer_parser.py"
+      ],
+      "milestones": ["m158", "tooling"],
+      "shards": ["m158", "compiler"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/developer_experience.py",
+      "tests": [
+        "tests/test_m159_developer_experience.py",
+        "tests/test_project_container.py",
+        "tests/test_cli.py"
+      ],
+      "milestones": ["m159", "tooling"],
+      "shards": ["m159", "compiler"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/self_hosting_gate.py",
+      "tests": [
+        "tests/test_m160_self_hosting_gate.py",
+        "tests/test_m146_test_runner.py",
+        "tests/test_compiler.py"
+      ],
+      "milestones": ["m160", "tooling"],
+      "shards": ["m160", "compiler"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/backends/x86_64/runtime.py",
+      "tests": ["tests/test_native_x86_64.py", "tests/test_native_x86_64_integration.py", "tests/test_dynamic.py"],
+      "milestones": ["native", "m139", "m150"],
+      "shards": ["m139-m140", "compiler"],
+      "native_required": true,
+      "environment_requirements": ["native-x86_64"],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/semantic.py",
+      "tests": ["tests/test_reference_types_semantic.py", "tests/test_diagnostics.py", "tests/test_numeric_type_contract.py"],
+      "milestones": ["semantic"],
+      "shards": ["compiler"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": true
+    },
+    {
+      "pattern": "bootstrap/s3/ir.py",
+      "tests": ["tests/test_ir_verifier.py", "tests/test_reference_ir_emulator.py", "tests/test_assembly_verifier.py"],
+      "milestones": ["ir"],
+      "shards": ["compiler"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": true
+    },
+    {
+      "pattern": "bootstrap/s3/{pipeline.py,codegen.py,assembly.py,optimizer.py}",
+      "tests": ["tests/test_compiler.py", "tests/test_optimizer.py", "tests/test_ir_verifier.py", "tests/test_assembly_verifier.py"],
+      "milestones": ["compiler", "optimizer"],
+      "shards": ["compiler"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": true
+    },
+    {
+      "pattern": "bootstrap/s3/host_services.py",
+      "tests": ["tests/test_host_services.py", "tests/test_m142_structured_results.py"],
+      "milestones": ["host-services"],
+      "shards": ["compiler"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/network.py",
+      "tests": ["tests/test_m148_network_provider.py"],
+      "milestones": ["m148"],
+      "shards": ["m148"],
+      "native_required": false,
+      "environment_requirements": ["loopback-network-optional"],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/project_container.py",
+      "tests": ["tests/test_project_container.py", "tests/test_m145_build_graph.py"],
+      "milestones": ["m145", "build"],
+      "shards": ["m145-m146"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_*.py",
+      "tests": [],
+      "milestones": ["tests"],
+      "shards": [],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "docs/**",
+      "tests": [],
+      "milestones": ["docs"],
+      "shards": [],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "reports/**",
+      "tests": [],
+      "milestones": ["docs"],
+      "shards": [],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": ".gitignore",
+      "tests": [],
+      "milestones": ["tooling"],
+      "shards": [],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tools/s3test.py",
+      "tests": ["tests/test_s3test.py"],
+      "milestones": ["tooling"],
+      "shards": ["compiler"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test-impact.json",
+      "tests": ["tests/test_s3test.py"],
+      "milestones": ["tooling"],
+      "shards": ["compiler"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "spec/**",
+      "tests": [],
+      "milestones": ["spec"],
+      "shards": [],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "pyproject.toml",
+      "tests": ["tests/test_cli.py", "tests/test_m146_test_runner.py"],
+      "milestones": ["tooling"],
+      "shards": ["compiler", "m145-m146"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    }
+  ]
+}

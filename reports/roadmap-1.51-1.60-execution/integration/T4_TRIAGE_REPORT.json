@@ -1,0 +1,96 @@
+{
+  "schema": "s3.m151-m160.t4-triage-report.v1",
+  "status": "IMPLEMENTATION_COMPLETE_WITH_DEFERRED_ENVIRONMENT_CERTIFICATION",
+  "campaign_branch": "feature/m151-m160-autonomous-20260817",
+  "final_code_tested_sha": "f673351236f7d1ca6a69f9537276e7dd98f7e3be",
+  "final_evidence_head": "f76af7f78c05acb25406bceee7cd67aca98ef7cd",
+  "triage_execution_head": "fcc173a58e0d55875b5a76be5cea052721edaade",
+  "campaign_base": "ee6cdb7a2ee22f6c4e64c4091549b2740b963504",
+  "m151a_head": "ee6cdb7a2ee22f6c4e64c4091549b2740b963504",
+  "post150_fix_head": "06430710d05df925912603bd0a788022439079d5",
+  "python": "3.11.9",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "original_t4": {
+    "head": "c5163032d9c19713f8497d5bf9d15d73f55c6fef",
+    "selected": 328,
+    "passed": 298,
+    "failed": 7,
+    "timed_out": 23,
+    "status": "TIMEOUT"
+  },
+  "failure_inventory": {
+    "path": "reports/roadmap-1.51-1.60-execution/integration/T4_FAILURE_INVENTORY.json",
+    "matrix_path": "reports/roadmap-1.51-1.60-execution/integration/T4_FAILURE_MATRIX.json",
+    "inventoried": 7,
+    "reproduced_after_repair": 0,
+    "non_reproducible": 1,
+    "m151_regressions_found": 2,
+    "m151_regressions_repaired": 2,
+    "stale_tests_corrected": 4,
+    "unknown": 0
+  },
+  "timeout_inventory": {
+    "path": "reports/roadmap-1.51-1.60-execution/integration/T4_TIMEOUT_INVENTORY.json",
+    "matrix_path": "reports/roadmap-1.51-1.60-execution/integration/T4_TIMEOUT_MATRIX.json",
+    "inventoried": 23,
+    "localized": 23,
+    "isolated_passes": 23,
+    "final_timeouts": 0,
+    "aggregate_or_parallel": 23,
+    "unknown": 0
+  },
+  "repair_commits": [
+    "f673351236f7d1ca6a69f9537276e7dd98f7e3be"
+  ],
+  "smart_test": {
+    "original_t4_fingerprint": "0a36a7f84ce8949d363c711c583a0aa02cb1d43760405f7dfe102e5126003232",
+    "current_full_fingerprint": "f276c16772453abaf4de502392c3ff47d71cd81087a8aca7d1006d388a8b8e6c",
+    "state_fingerprint": "INVALID",
+    "resume_used": false,
+    "t4_resume_count": 0,
+    "valid_t4_passes_reused": 0,
+    "invalidated_results": 30,
+    "reexecuted_results": 30,
+    "raw_full_t4_restarted": false,
+    "valid_persisted_evidence_discarded": false
+  },
+  "reruns": {
+    "exact_failure_entries": 7,
+    "timeout_files": 23,
+    "t1": 0,
+    "t2": 0,
+    "t3": 2,
+    "directed": 15
+  },
+  "milestone_regressions": {
+    "1.51": 2,
+    "1.52": 0,
+    "1.53": 0,
+    "1.54": 0,
+    "1.55": 0,
+    "1.56": 0,
+    "1.57": 0,
+    "1.58": 0,
+    "1.59": 0,
+    "1.60": 0,
+    "post150_prerequisite": 0
+  },
+  "certification": {
+    "native_linux": "DEFERRED_BY_ENVIRONMENT",
+    "wasi": "DEFERRED_BY_ENVIRONMENT",
+    "optional_toolchain": 0,
+    "python_version_issues": 0,
+    "smart_test_runner_issues": 0,
+    "test_harness_issues": 0,
+    "benchmarks": "NO"
+  },
+  "publication": {
+    "ready_for_publication_review": true,
+    "remote_write": false,
+    "pr_created": false,
+    "merge_to_main": false,
+    "tag_created": false,
+    "release_created": false,
+    "shutdown": false
+  }
+}

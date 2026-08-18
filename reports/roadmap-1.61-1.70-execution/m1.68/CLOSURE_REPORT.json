@@ -1,0 +1,21 @@
+{
+  "milestone": "M1.68",
+  "title": "TLS Client Provider V1",
+  "status": "COMPLETE",
+  "base_sha": "00331a3dbdc05d0c460b09b879c8c7e45914493a",
+  "implementation_sha": "ca15561b50631322b60f018ef0c087236dd0afbf",
+  "closure_sha": "8a5d018150401060a6b9b5ddfe91205d9bf21f1c",
+  "prior_closure_sha": "ca15561b50631322b60f018ef0c087236dd0afbf",
+  "t0": {"status": "PASS", "selected": 2, "failed": 0},
+  "t1": {"status": "PASS", "selected_files": 10, "failed": 0},
+  "t2": {"status": "PASS", "selected_files": 5, "failed": 0},
+  "t3": {"status": "PASS", "selected_files": 5, "failed": 0},
+  "o0_o1": "PASS_BY_EXISTING_HOSTED_CONTRACTS",
+  "trusted_tls_fixture": "DEFERRED_BY_ENVIRONMENT",
+  "global_t4_executed": false,
+  "remote_write_executed": false,
+  "known_correctness_regressions": [],
+  "production_paths_changed": ["bootstrap/s3/tls_client.py"],
+  "tests_added": ["tests/test_m168_tls_client.py"],
+  "correction_tests": ["bounded TLS timeout"]
+}

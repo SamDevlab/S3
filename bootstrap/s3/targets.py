@@ -76,7 +76,19 @@ LINUX_X86_64_TARGET = TargetSpec(
     environment="linux",
 )
 
+WINDOWS_X86_64_TARGET = TargetSpec(
+    name="windows-x86_64",
+    architecture="x86_64",
+    environment="windows",
+)
+
 BUILTIN_TARGETS = (LINUX_X86_64_TARGET,)
+
+
+def cross_platform_target_catalog() -> TargetCatalog:
+    """Return the explicit desktop target inventory without changing defaults."""
+
+    return TargetCatalog((*BUILTIN_TARGETS, WINDOWS_X86_64_TARGET))
 
 
 def builtin_target_catalog() -> TargetCatalog:

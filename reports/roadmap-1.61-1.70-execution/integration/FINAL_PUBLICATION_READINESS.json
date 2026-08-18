@@ -1,0 +1,32 @@
+{
+  "schema": "s3.m161-m170.publication-readiness.v1",
+  "status": "READY_WITH_ENVIRONMENT_DEFERMENTS",
+  "final_code_tested_sha": "8a5d018150401060a6b9b5ddfe91205d9bf21f1c",
+  "t4_execution_head": "0bd50143d8e555b12d70849aef827761acfb8f34",
+  "t4_evidence_head": "f4f386c1de9dbdd767202b0db82418adb4ba87c3",
+  "t0": "PASS",
+  "t1": "PASS",
+  "t2": "PASS",
+  "t3": "PASS",
+  "t4_passed": 316,
+  "t4_failed": 0,
+  "t4_timed_out": 22,
+  "timeout_triage": "22_PREEXISTING_TIMEOUT",
+  "m161_m170_correctness_regressions": 0,
+  "production_or_test_changes_after_final_code_tested_sha": false,
+  "environment_deferments": [
+    "windows-pe-and-native-execution",
+    "linux-native-certification",
+    "wasi-runtime-certification",
+    "trusted-tls-fixture"
+  ],
+  "benchmarks_executed": false,
+  "remote_write_executed": false,
+  "pr_created": false,
+  "merge_executed": false,
+  "tag_created": false,
+  "release_created": false,
+  "shutdown_authorized": true,
+  "shutdown_executed": false,
+  "shutdown_command": "shutdown.exe /s /t 60 /c \"S3 M1.61-M1.70 campaign completed successfully\""
+}

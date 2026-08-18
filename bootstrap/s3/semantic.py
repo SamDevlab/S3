@@ -180,6 +180,40 @@ _DYNAMIC_TYPES = {
 }
 
 
+def _type_contains_dynamic(
+    records: dict[str, "RecordType"],
+    enums: dict[str, "EnumType"],
+    type_name: ast.DeclaredType,
+    seen: set[str] | None = None,
+) -> bool:
+    """Return whether a declared value transitively owns a dynamic leaf."""
+
+    if isinstance(type_name, ast.TypeName):
+        return type_name in _DYNAMIC_TYPES
+    if isinstance(type_name, ast.ArrayType):
+        return _type_contains_dynamic(records, enums, type_name.element_type, seen)
+    if not isinstance(type_name, ast.NominalType):
+        return False
+    visited = set() if seen is None else set(seen)
+    if type_name.name in visited:
+        return False
+    visited.add(type_name.name)
+    record = records.get(type_name.name)
+    if record is not None:
+        return any(
+            _type_contains_dynamic(records, enums, field.type_name, visited)
+            for field in record.fields
+        )
+    enum = enums.get(type_name.name)
+    if enum is not None:
+        return any(
+            _type_contains_dynamic(records, enums, field.type_name, visited)
+            for variant in enum.variants
+            for field in variant.payload_fields
+        )
+    return False
+
+
 @dataclass(frozen=True, slots=True)
 class FunctionType:
     name: str
@@ -472,48 +506,66 @@ def _record_leaves(
     name: str,
     prefix: tuple[str, ...] = (),
 ) -> tuple[RecordLeaf, ...]:
+    return _record_type_leaves(records, enums, records[name].fields, prefix)
+
+
+def _record_type_leaves(
+    records: dict[str, RecordType],
+    enums: dict[str, EnumType],
+    fields: tuple[ast.RecordField, ...],
+    prefix: tuple[str, ...],
+) -> tuple[RecordLeaf, ...]:
     leaves: list[RecordLeaf] = []
-    record = records[name]
-    for field in record.fields:
-        path = (*prefix, field.name)
-        if isinstance(field.type_name, ast.TypeName):
-            leaves.append(RecordLeaf(path, field.type_name, field.location))
-        elif isinstance(field.type_name, ast.ArrayType):
-            assert isinstance(field.type_name.element_type, ast.TypeName)
-            leaves.extend(
-                RecordLeaf(
-                    (*path, f"index{index}"),
-                    field.type_name.element_type,
-                    field.location,
-                )
-                for index in range(field.type_name.length)
+    for field in fields:
+        leaves.extend(
+            _declared_type_leaves(
+                records,
+                enums,
+                field.type_name,
+                (*prefix, field.name),
+                field.location,
             )
-        elif isinstance(field.type_name, ast.NominalType):
-            if field.type_name.name in enums:
-                layout = _enum_layout(records, enums, field.type_name.name)
-                if layout.cell_count == 1:
-                    leaves.append(RecordLeaf(path, ast.TypeName.TRYTE, field.location))
-                else:
-                    for index in range(layout.cell_count):
-                        leaves.append(
-                            RecordLeaf(
-                                (*path, f"cell{index}"),
-                                ast.TypeName.TRYTE,
-                                field.location,
-                            )
-                        )
-            elif field.type_name.name in records:
-                leaves.extend(
-                    _record_leaves(records, enums, field.type_name.name, path)
-                )
-            else:
-                raise SemanticError(
-                    f"unknown type '{field.type_name.name}'",
-                    field.location,
-                )
-        else:
-            raise SemanticError("unsupported record field type", field.location)
+        )
     return tuple(leaves)
+
+
+def _declared_type_leaves(
+    records: dict[str, RecordType],
+    enums: dict[str, EnumType],
+    type_name: ast.DeclaredType,
+    prefix: tuple[str, ...],
+    location: SourceLocation,
+) -> tuple[RecordLeaf, ...]:
+    if isinstance(type_name, ast.TypeName):
+        return (RecordLeaf(prefix, type_name, location),)
+    if isinstance(type_name, ast.ArrayType):
+        leaves: list[RecordLeaf] = []
+        for index in range(type_name.length):
+            leaves.extend(
+                _declared_type_leaves(
+                    records,
+                    enums,
+                    type_name.element_type,
+                    (*prefix, f"index{index}"),
+                    type_name.location,
+                )
+            )
+        return tuple(leaves)
+    if isinstance(type_name, ast.NominalType):
+        if type_name.name in enums:
+            layout = _enum_layout(records, enums, type_name.name)
+            return tuple(
+                RecordLeaf(
+                    prefix if layout.cell_count == 1 else (*prefix, f"cell{index}"),
+                    slot_type,
+                    location,
+                )
+                for index, slot_type in enumerate(layout.slot_types)
+            )
+        if type_name.name in records:
+            return _record_leaves(records, enums, type_name.name, prefix)
+        raise SemanticError(f"unknown type '{type_name.name}'", location)
+    raise SemanticError("unsupported aggregate field type", location)
 
 
 def _fixed_value_layout(
@@ -522,29 +574,30 @@ def _fixed_value_layout(
     type_name: ast.DeclaredType,
 ) -> FixedValueLayout:
     if isinstance(type_name, ast.ArrayType):
-        if not isinstance(type_name.element_type, ast.TypeName) or (
-            type_name.element_type not in (ast.TypeName.TRIT, ast.TypeName.TRYTE)
-        ):
-            raise SemanticError(
-                "fixed array value layout requires trit or tryte elements",
-                type_name.location,
-            )
         if not 1 <= type_name.length <= TRYTE_MAX + 1:
             raise SemanticError(
                 f"fixed array length must be in [1, {TRYTE_MAX + 1}]",
                 type_name.location,
             )
+        cells = tuple(
+            ValueCell(
+                (f"index{index}", *leaf.path),
+                leaf.type_name,
+                leaf.location,
+            )
+            for index in range(type_name.length)
+            for leaf in _declared_type_leaves(
+                records,
+                enums,
+                type_name.element_type,
+                (),
+                type_name.location,
+            )
+        )
         return FixedValueLayout(
             type_name,
             ValueLayoutKind.FIXED_ARRAY,
-            tuple(
-                ValueCell(
-                    (f"index{index}",),
-                    type_name.element_type,
-                    type_name.location,
-                )
-                for index in range(type_name.length)
-            ),
+            cells,
             type_name.location,
         )
     if isinstance(type_name, ast.TypeName):
@@ -622,54 +675,10 @@ def _enum_payload_leaves(
     fields: tuple[ast.RecordField, ...],
     prefix: tuple[str, ...] = (),
 ) -> tuple[EnumPayloadLeaf, ...]:
-    leaves: list[EnumPayloadLeaf] = []
-    for field in fields:
-        path = (*prefix, field.name)
-        if isinstance(field.type_name, ast.TypeName):
-            leaves.append(
-                EnumPayloadLeaf(variant_name, path, field.type_name, field.location)
-            )
-        elif isinstance(field.type_name, ast.ArrayType):
-            assert isinstance(field.type_name.element_type, ast.TypeName)
-            leaves.extend(
-                EnumPayloadLeaf(
-                    variant_name,
-                    (*path, f"index{index}"),
-                    field.type_name.element_type,
-                    field.location,
-                )
-                for index in range(field.type_name.length)
-            )
-        elif isinstance(field.type_name, ast.NominalType):
-            if field.type_name.name in enums:
-                layout = _enum_layout(records, enums, field.type_name.name)
-                for index in range(layout.cell_count):
-                    leaves.append(
-                        EnumPayloadLeaf(
-                            variant_name,
-                            (*path, f"cell{index}"),
-                            ast.TypeName.TRYTE,
-                            field.location,
-                        )
-                    )
-            elif field.type_name.name in records:
-                for leaf in _record_leaves(records, enums, field.type_name.name, path):
-                    leaves.append(
-                        EnumPayloadLeaf(
-                            variant_name,
-                            leaf.path,
-                            leaf.type_name,
-                            leaf.location,
-                        )
-                    )
-            else:
-                raise SemanticError(
-                    f"unknown type '{field.type_name.name}'",
-                    field.location,
-                )
-        else:
-            raise SemanticError("unsupported enum payload field type", field.location)
-    return tuple(leaves)
+    return tuple(
+        EnumPayloadLeaf(variant_name, leaf.path, leaf.type_name, leaf.location)
+        for leaf in _record_type_leaves(records, enums, fields, prefix)
+    )
 
 
 def _enum_layout(
@@ -740,6 +749,7 @@ class SemanticAnalyzer:
         self.contains_references = False
         self.contains_dynamic = False
         self.moved_bindings: set[int] = set()
+        self.moved_paths: dict[int, set[tuple[str, ...]]] = {}
         self.active_borrows: dict[int, tuple[int, bool]] = {}
 
     def analyze(self, program: ast.Program) -> SemanticModel:
@@ -848,6 +858,7 @@ class SemanticAnalyzer:
         self.return_type = signature.return_type
         self.parameter_names = {parameter.name for parameter in function.parameters}
         self.moved_bindings = set()
+        self.moved_paths = {}
         self.active_borrows = {}
         self.scopes = [
             {
@@ -864,6 +875,8 @@ class SemanticAnalyzer:
                 for parameter in function.parameters
             }
         ]
+        for binding in self.scopes[0].values():
+            self._ensure_owner_state(binding)
         flow = self._analyze_block(function.body, create_scope=False)
         if not flow.definitely_returns:
             raise SemanticError(
@@ -871,6 +884,187 @@ class SemanticAnalyzer:
                 f"{_type_display(self.return_type)}",
                 function.location,
             )
+
+    def _owner_binding_and_path(
+        self,
+        expression: ast.Expression,
+    ) -> tuple[Binding, tuple[str, ...]] | None:
+        path: list[str] = []
+        current = expression
+        while isinstance(current, ast.FieldAccessExpression):
+            path.insert(0, current.field_name)
+            current = current.target
+        while isinstance(current, ast.IndexExpression):
+            index = self._constant_integer(current.index)
+            if index is None:
+                return None
+            path.insert(0, f"index{index}")
+            current = current.target
+        if not isinstance(current, ast.Identifier):
+            return None
+        binding = self._lookup_binding(current.name)
+        if binding is None or not _type_contains_dynamic(
+            self.records,
+            self.enums,
+            binding.type_name,
+        ):
+            return None
+        return binding, tuple(path)
+
+    def _ensure_owner_state(self, binding: Binding) -> None:
+        if _type_contains_dynamic(self.records, self.enums, binding.type_name):
+            self.moved_paths.setdefault(id(binding), set())
+
+    def _path_is_moved(self, binding: Binding, path: tuple[str, ...]) -> bool:
+        moved = self.moved_paths.get(id(binding), set())
+        return any(path[: len(prefix)] == prefix for prefix in moved)
+
+    def _reject_moved_owner_use(
+        self,
+        expression: ast.Expression,
+        *,
+        aggregate_use: bool = False,
+    ) -> None:
+        owner = self._owner_binding_and_path(expression)
+        if owner is None:
+            return
+        binding, path = owner
+        moved = self.moved_paths.get(id(binding), set())
+        if not moved:
+            return
+        if self._path_is_moved(binding, path):
+            if path:
+                message = "use of moved owned field"
+            else:
+                message = "use of moved owned binding"
+            raise SemanticError(
+                message,
+                expression.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_USE_AFTER_MOVE,
+            )
+        if aggregate_use or not path:
+            raise SemanticError(
+                "use of partially moved owned aggregate",
+                expression.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_USE_AFTER_MOVE,
+            )
+
+    def _mark_owner_moved(
+        self,
+        binding: Binding,
+        path: tuple[str, ...],
+        location: SourceLocation,
+    ) -> None:
+        self._ensure_owner_state(binding)
+        moved = self.moved_paths[id(binding)]
+        if self._path_is_moved(binding, path):
+            raise SemanticError(
+                "use of moved owned field" if path else "use of moved owned binding",
+                location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_USE_AFTER_MOVE,
+            )
+        if not path and moved:
+            raise SemanticError(
+                "cannot move partially moved owned aggregate",
+                location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_USE_AFTER_MOVE,
+            )
+        moved.add(path)
+        if not path:
+            self.moved_bindings.add(id(binding))
+
+    def _reinitialize_owner_path(
+        self,
+        expression: ast.Expression,
+        location: SourceLocation,
+    ) -> None:
+        owner = self._owner_binding_and_path(expression)
+        if owner is None:
+            return
+        binding, path = owner
+        moved = self.moved_paths.get(id(binding))
+        if not moved:
+            return
+        if any(prefix != path and path[: len(prefix)] == prefix for prefix in moved):
+            raise SemanticError(
+                "cannot reinitialize a field of a moved owned aggregate",
+                location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_USE_AFTER_MOVE,
+            )
+        if not path:
+            moved.clear()
+            self.moved_bindings.discard(id(binding))
+            return
+        moved.difference_update(
+            moved_path
+            for moved_path in tuple(moved)
+            if moved_path == path or moved_path[: len(path)] == path
+        )
+
+    def _ownership_snapshot(self) -> dict[int, set[tuple[str, ...]]]:
+        return {
+            key: set(paths)
+            for key, paths in self.moved_paths.items()
+        }
+
+    def _restore_ownership_snapshot(
+        self,
+        snapshot: dict[int, set[tuple[str, ...]]],
+    ) -> None:
+        self.moved_paths = {
+            key: set(paths)
+            for key, paths in snapshot.items()
+        }
+        self.moved_bindings = {
+            key
+            for key, paths in self.moved_paths.items()
+            if () in paths
+        }
+
+    def _join_ownership_states(
+        self,
+        baseline: dict[int, set[tuple[str, ...]]],
+        states: list[dict[int, set[tuple[str, ...]]]],
+        location: SourceLocation,
+    ) -> None:
+        if not states:
+            self._restore_ownership_snapshot(baseline)
+            return
+        keys = set(baseline)
+        for key in keys:
+            expected = states[0].get(key, set())
+            if any(state.get(key, set()) != expected for state in states[1:]):
+                self._restore_ownership_snapshot(baseline)
+                raise SemanticError(
+                    "owned-value state differs at control-flow join; reinitialize fields on every path",
+                    location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+                )
+        joined = {
+            key: set(states[0].get(key, set()))
+            for key in keys
+        }
+        self._restore_ownership_snapshot(joined)
+
+    def _analyze_owned_branches(
+        self,
+        branches: tuple[object, ...],
+        location: SourceLocation,
+    ) -> list[BlockFlow]:
+        baseline = self._ownership_snapshot()
+        borrow_baseline = dict(self.active_borrows)
+        flows: list[BlockFlow] = []
+        states: list[dict[int, set[tuple[str, ...]]]] = []
+        for branch in branches:
+            self._restore_ownership_snapshot(baseline)
+            self.active_borrows = dict(borrow_baseline)
+            flow = branch()
+            flows.append(flow)
+            if not flow.terminates:
+                states.append(self._ownership_snapshot())
+        self._join_ownership_states(baseline, states, location)
+        self.active_borrows = borrow_baseline
+        return flows
 
     def _analyze_block(self, block: ast.Block, *, create_scope: bool) -> BlockFlow:
         borrow_snapshot = dict(self.active_borrows)
@@ -912,7 +1106,7 @@ class SemanticAnalyzer:
                 "returned expression",
                 diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_RETURN_TYPE,
             )
-            if self._is_dynamic_type(self.return_type):
+            if _type_contains_dynamic(self.records, self.enums, self.return_type):
                 self._consume_owner(statement.expression)
             return BlockFlow(terminates=True, definitely_returns=True)
         if isinstance(statement, ast.BreakStatement):
@@ -989,8 +1183,18 @@ class SemanticAnalyzer:
             location=statement.location,
         )
         self.loop_depth += 1
+        ownership_before = self._ownership_snapshot()
         try:
-            self._analyze_block(statement.body, create_scope=False)
+            body_flow = self._analyze_block(statement.body, create_scope=False)
+            body_state = self._ownership_snapshot()
+            if body_flow.definitely_returns:
+                self._restore_ownership_snapshot(ownership_before)
+            else:
+                self._join_ownership_states(
+                    ownership_before,
+                    [ownership_before, body_state],
+                    statement.location,
+                )
         finally:
             self.loop_depth -= 1
             self.scopes.pop()
@@ -1008,8 +1212,18 @@ class SemanticAnalyzer:
             "while condition",
         )
         self.loop_depth += 1
+        ownership_before = self._ownership_snapshot()
         try:
-            self._analyze_block(statement.body, create_scope=True)
+            body_flow = self._analyze_block(statement.body, create_scope=True)
+            body_state = self._ownership_snapshot()
+            if body_flow.definitely_returns:
+                self._restore_ownership_snapshot(ownership_before)
+            else:
+                self._join_ownership_states(
+                    ownership_before,
+                    [ownership_before, body_state],
+                    statement.location,
+                )
         finally:
             self.loop_depth -= 1
         return BlockFlow(terminates=False, definitely_returns=False)
@@ -1086,10 +1300,16 @@ class SemanticAnalyzer:
                     statement.location,
                 )
 
-        case_flows = [
-            self._analyze_block(cases_by_label[label].body, create_scope=True)
-            for label in (-1, 0, 1)
-        ]
+        case_flows = self._analyze_owned_branches(
+            tuple(
+                lambda case=cases_by_label[label]: self._analyze_block(
+                    case.body,
+                    create_scope=True,
+                )
+                for label in (-1, 0, 1)
+            ),
+            statement.location,
+        )
         return BlockFlow(
             terminates=all(flow.terminates for flow in case_flows),
             definitely_returns=all(flow.definitely_returns for flow in case_flows),
@@ -1154,13 +1374,16 @@ class SemanticAnalyzer:
                 diagnostic_code=DiagnosticCode.MATCH_NON_EXHAUSTIVE,
             )
 
-        case_flows = [
-            self._analyze_enum_match_case_block(
-                cases_by_label[enum.discriminant(variant.name)],
-                variant,
-            )
-            for variant in enum.variants
-        ]
+        case_flows = self._analyze_owned_branches(
+            tuple(
+                lambda variant=variant: self._analyze_enum_match_case_block(
+                    cases_by_label[enum.discriminant(variant.name)],
+                    variant,
+                )
+                for variant in enum.variants
+            ),
+            statement.location,
+        )
         return BlockFlow(
             terminates=all(flow.terminates for flow in case_flows),
             definitely_returns=all(flow.definitely_returns for flow in case_flows),
@@ -1334,7 +1557,9 @@ class SemanticAnalyzer:
                 declaration.initializer.location,
                 f"initializer for '{declaration.name}'",
             )
-            if self._is_dynamic_type(declaration.type_name):
+            if _type_contains_dynamic(
+                self.records, self.enums, declaration.type_name
+            ):
                 self._consume_owner(declaration.initializer)
             if isinstance(declaration.type_name, ast.ReferenceType):
                 reference_origin = self._reference_origin_of(declaration.initializer)
@@ -1352,7 +1577,7 @@ class SemanticAnalyzer:
                 and not declaration.mutable
             ):
                 constant_value = self.constant_values.get(id(declaration.initializer))
-        current_scope[declaration.name] = Binding(
+        binding = Binding(
             declaration.type_name,
             declaration.mutable,
             parameter=False,
@@ -1362,6 +1587,8 @@ class SemanticAnalyzer:
             scope_depth=len(self.scopes) - 1,
             reference_origin=reference_origin,
         )
+        current_scope[declaration.name] = binding
+        self._ensure_owner_state(binding)
 
     def _reference_origin_of(
         self,
@@ -1409,24 +1636,30 @@ class SemanticAnalyzer:
         return type_name in _DYNAMIC_TYPES
 
     def _consume_owner(self, expression: ast.Expression) -> None:
-        if not isinstance(expression, ast.Identifier):
+        owner = self._owner_binding_and_path(expression)
+        if owner is None:
             return
-        binding = self._lookup_binding(expression.name)
-        if binding is None or not self._is_dynamic_type(binding.type_name):
-            return
-        if id(binding) in self.moved_bindings:
+        binding, path = owner
+        self._ensure_owner_state(binding)
+        if self._path_is_moved(binding, path):
             raise SemanticError(
-                f"use of moved dynamic binding '{expression.name}'",
+                "use of moved owned field" if path else "use of moved owned binding",
+                expression.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_USE_AFTER_MOVE,
+            )
+        if not path and self.moved_paths.get(id(binding)):
+            raise SemanticError(
+                "cannot move partially moved owned aggregate",
                 expression.location,
                 diagnostic_code=DiagnosticCode.SEMANTIC_USE_AFTER_MOVE,
             )
         if id(binding) in self.active_borrows:
             raise SemanticError(
-                f"cannot move dynamic binding '{expression.name}' while borrowed",
+                "cannot move owned value while borrowed",
                 expression.location,
                 diagnostic_code=DiagnosticCode.SEMANTIC_BORROWED_OWNER,
             )
-        self.moved_bindings.add(id(binding))
+        self._mark_owner_moved(binding, path, expression.location)
 
     def _validate_declared_type(
         self,
@@ -1452,12 +1685,6 @@ class SemanticAnalyzer:
             return
         if isinstance(type_name, ast.TypeName) and type_name in _DYNAMIC_TYPES:
             self.contains_dynamic = True
-            if aggregate:
-                raise SemanticError(
-                    "dynamic buffers cannot be stored in records, arrays, or enums",
-                    _DYNAMIC_BUILTIN_LOCATION,
-                    diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
-                )
             return
         if isinstance(type_name, ast.ReferenceType):
             if type_name.target in _DYNAMIC_TYPES:
@@ -1495,6 +1722,8 @@ class SemanticAnalyzer:
                     type_name.location,
                     diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_AGGREGATE,
                 )
+            self._validate_declared_type(type_name.element_type, aggregate=True)
+            return
         if (
             isinstance(type_name, ast.NominalType)
             and type_name.name not in self.records
@@ -1521,11 +1750,13 @@ class SemanticAnalyzer:
                 "dynamic text and buffer values cannot be stored in arrays",
                 type_name.location,
             )
-        if isinstance(type_name.element_type, ast.NominalType):
+        if isinstance(type_name.element_type, ast.ReferenceType):
             raise SemanticError(
-                "arrays of nominal types are not supported",
+                "references cannot be stored in arrays",
                 type_name.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_AGGREGATE,
             )
+        self._validate_declared_type(type_name.element_type, aggregate=True)
         if type_name.length <= 0:
             raise SemanticError(
                 f"array length must be positive, got {type_name.length}",
@@ -1543,7 +1774,6 @@ class SemanticAnalyzer:
         literal: ast.ArrayLiteral,
         type_name: ast.ArrayType,
     ) -> None:
-        assert isinstance(type_name.element_type, ast.TypeName)
         if len(literal.elements) != type_name.length:
             raise SemanticError(
                 f"array initializer has {len(literal.elements)} element(s); "
@@ -1558,8 +1788,51 @@ class SemanticAnalyzer:
                 element.location,
                 f"array element {index}",
             )
+            if _type_contains_dynamic(
+                self.records, self.enums, type_name.element_type
+            ):
+                self._consume_owner(element)
 
     def _analyze_assignment(self, statement: ast.AssignmentStatement) -> None:
+        if isinstance(statement.target, ast.FieldTarget):
+            field_expression = ast.FieldAccessExpression(
+                statement.target.target,
+                statement.target.field_name,
+                statement.target.location,
+            )
+            field_type = self._analyze_field_access(
+                field_expression,
+                check_moved=False,
+            )
+            place = self.place_info.get(id(field_expression))
+            if place is None or not place.writable:
+                raise SemanticError(
+                    "owned field replacement requires a mutable aggregate",
+                    statement.target.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_TARGET_NOT_ADDRESSABLE,
+                )
+            if isinstance(statement.value, ast.ArrayLiteral):
+                if not isinstance(field_type, ast.ArrayType):
+                    raise SemanticError(
+                        "field replacement requires a value of the field type",
+                        statement.value.location,
+                    )
+                self._analyze_array_literal(statement.value, field_type)
+            else:
+                actual = self._analyze_expression(statement.value, field_type)
+                self._require_type(
+                    actual,
+                    field_type,
+                    statement.value.location,
+                    f"replacement for field '{statement.target.field_name}'",
+                )
+            if _type_contains_dynamic(self.records, self.enums, field_type):
+                self._consume_owner(statement.value)
+                self._reinitialize_owner_path(
+                    field_expression,
+                    statement.target.location,
+                )
+            return
         if isinstance(statement.target, ast.DereferenceTarget):
             reference_type = self._analyze_expression(statement.target.reference)
             if not isinstance(reference_type, ast.ReferenceType):
@@ -1602,6 +1875,19 @@ class SemanticAnalyzer:
                         statement.value.location,
                         "assigned array value",
                     )
+                if _type_contains_dynamic(
+                    self.records,
+                    self.enums,
+                    binding.type_name,
+                ):
+                    self._consume_owner(statement.value)
+                    self._reinitialize_owner_path(
+                        ast.Identifier(
+                            statement.target.name,
+                            statement.target.location,
+                        ),
+                        statement.target.location,
+                    )
                 return
             self._require_mutable(binding, statement.target.location)
             if isinstance(statement.value, ast.ArrayLiteral):
@@ -1616,8 +1902,15 @@ class SemanticAnalyzer:
                 statement.value.location,
                 "assigned value",
             )
-            if self._is_dynamic_type(binding.type_name):
+            if _type_contains_dynamic(self.records, self.enums, binding.type_name):
                 self._consume_owner(statement.value)
+                self._reinitialize_owner_path(
+                    ast.Identifier(
+                        statement.target.name,
+                        statement.target.location,
+                    ),
+                    statement.target.location,
+                )
             if isinstance(binding.type_name, ast.ReferenceType):
                 origin = self._reference_origin_of(statement.value)
                 if origin is not None and origin[1] > binding.scope_depth:
@@ -1805,11 +2098,10 @@ class SemanticAnalyzer:
                 allow_array=isinstance(expected, ast.ArrayType),
             )
             binding = self._lookup_binding(expression.name)
-            if binding is not None and self._is_dynamic_type(binding.type_name) and id(binding) in self.moved_bindings:
-                raise SemanticError(
-                    f"use of moved dynamic binding '{expression.name}'",
-                    expression.location,
-                    diagnostic_code=DiagnosticCode.SEMANTIC_USE_AFTER_MOVE,
+            if binding is not None:
+                self._reject_moved_owner_use(
+                    expression,
+                    aggregate_use=not isinstance(result, ast.TypeName),
                 )
             if binding is not None and binding.static_text is not None:
                 self.static_text_values[id(expression)] = binding.static_text
@@ -1893,6 +2185,10 @@ class SemanticAnalyzer:
                     expression.location,
                     "index expression",
                 )
+            self._reject_moved_owner_use(
+                expression,
+                aggregate_use=not isinstance(result, ast.TypeName),
+            )
         elif isinstance(expression, ast.SliceExpression):
             if isinstance(expression.target, ast.Identifier):
                 binding = self._lookup_binding(expression.target.name)
@@ -2067,6 +2363,11 @@ class SemanticAnalyzer:
                 target_type,
                 expression.mutable,
             )
+            self._register_owner_borrow(
+                expression.operand,
+                expression.mutable,
+                expression.location,
+            )
             self.contains_references = True
             return ast.ReferenceType(target_type, expression.mutable, expression.location)
         if not isinstance(expression.operand, ast.Identifier):
@@ -2087,12 +2388,10 @@ class SemanticAnalyzer:
                 expression.location,
                 diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_NESTED,
             )
-        if self._is_dynamic_type(binding.type_name) and id(binding) in self.moved_bindings:
-            raise SemanticError(
-                f"use of moved dynamic binding '{expression.operand.name}'",
-                expression.operand.location,
-                diagnostic_code=DiagnosticCode.SEMANTIC_USE_AFTER_MOVE,
-            )
+        self._reject_moved_owner_use(
+            expression.operand,
+            aggregate_use=not isinstance(binding.type_name, ast.TypeName),
+        )
         if (
             expression.mutable
             and not isinstance(binding.type_name, ast.ArrayType)
@@ -2136,26 +2435,47 @@ class SemanticAnalyzer:
             expression.mutable,
         )
         self.contains_references = True
-        if self._is_dynamic_type(binding.type_name):
-            key = id(binding)
-            shared, mutable = self.active_borrows.get(key, (0, False))
-            if expression.mutable:
-                if mutable or shared:
-                    raise SemanticError(
-                        "mutable dynamic buffer borrow overlaps an active borrow",
-                        expression.location,
-                        diagnostic_code=DiagnosticCode.SEMANTIC_BORROW_CONFLICT,
-                    )
-                self.active_borrows[key] = (shared, True)
-            else:
-                if mutable:
-                    raise SemanticError(
-                        "shared dynamic buffer borrow overlaps a mutable borrow",
-                        expression.location,
-                        diagnostic_code=DiagnosticCode.SEMANTIC_BORROW_CONFLICT,
-                    )
-                self.active_borrows[key] = (shared + 1, False)
+        self._register_owner_borrow(
+            expression.operand,
+            expression.mutable,
+            expression.location,
+        )
         return ast.ReferenceType(binding.type_name, expression.mutable, expression.location)
+
+    def _register_owner_borrow(
+        self,
+        expression: ast.Expression,
+        mutable_borrow: bool,
+        location: SourceLocation,
+    ) -> None:
+        root = expression
+        while isinstance(root, (ast.FieldAccessExpression, ast.IndexExpression)):
+            root = root.target
+        if not isinstance(root, ast.Identifier):
+            return
+        binding = self._lookup_binding(root.name)
+        if binding is None or not _type_contains_dynamic(
+            self.records, self.enums, binding.type_name
+        ):
+            return
+        key = id(binding)
+        shared, mutable = self.active_borrows.get(key, (0, False))
+        if mutable_borrow:
+            if mutable or shared:
+                raise SemanticError(
+                    "mutable owned-value borrow overlaps an active borrow",
+                    location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_BORROW_CONFLICT,
+                )
+            self.active_borrows[key] = (shared, True)
+        else:
+            if mutable:
+                raise SemanticError(
+                    "shared owned-value borrow overlaps a mutable borrow",
+                    location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_BORROW_CONFLICT,
+                )
+            self.active_borrows[key] = (shared + 1, False)
 
     def _analyze_dereference(self, expression: ast.DereferenceExpression) -> ast.DeclaredType:
         reference_type = self._analyze_expression(expression.operand)
@@ -2292,6 +2612,8 @@ class SemanticAnalyzer:
     def _analyze_field_access(
         self,
         expression: ast.FieldAccessExpression,
+        *,
+        check_moved: bool = True,
     ) -> ast.DeclaredType:
         enum_access = self._enum_variant_access(expression)
         if enum_access is not None:
@@ -2319,7 +2641,24 @@ class SemanticAnalyzer:
                     diagnostic_code=DiagnosticCode.RECORD_FIELD_UNKNOWN,
                 )
 
-        target_type = self._analyze_expression(expression.target)
+        if not check_moved and isinstance(expression.target, ast.Identifier):
+            target_binding = self._lookup_binding(expression.target.name)
+            if target_binding is None:
+                raise SemanticError(
+                    f"undeclared variable '{expression.target.name}'",
+                    expression.target.location,
+                )
+            target_type = target_binding.type_name
+            self.expression_types[id(expression.target)] = target_type
+        elif not check_moved and isinstance(expression.target, ast.FieldAccessExpression):
+            target_type = self._analyze_field_access(
+                expression.target,
+                check_moved=False,
+            )
+        elif not check_moved and isinstance(expression.target, ast.IndexExpression):
+            target_type = self._analyze_index_lvalue(expression.target)
+        else:
+            target_type = self._analyze_expression(expression.target)
         if not isinstance(target_type, ast.NominalType):
             raise SemanticError(
                 "field access requires a record value",
@@ -2357,6 +2696,20 @@ class SemanticAnalyzer:
                     binding.scope_depth,
                     True,
                 )
+        else:
+            target_place = self.place_info.get(id(expression.target))
+            if target_place is not None:
+                self.place_info[id(expression)] = PlaceInfo(
+                    field.type_name,
+                    target_place.readable,
+                    target_place.writable,
+                    target_place.addressable,
+                    target_place.storage_symbol,
+                    target_place.declaration_scope,
+                    target_place.initialized,
+                )
+        if check_moved:
+            self._reject_moved_owner_use(expression)
         return field.type_name
 
     def _enum_variant_access(
@@ -2483,7 +2836,7 @@ class SemanticAnalyzer:
         array_name: str,
         index: ast.Expression,
         type_name: ast.ArrayType | ast.SliceType,
-    ) -> ast.TypeName:
+    ) -> ast.DeclaredType:
         known_index_type = self._known_expression_type(index)
         expected_index_type = (
             ast.TypeName.I64
@@ -2503,8 +2856,40 @@ class SemanticAnalyzer:
                 f"bounds [0, {type_name.length})",
                 index.location,
             )
-        assert isinstance(type_name.element_type, ast.TypeName)
         return type_name.element_type
+
+    def _analyze_index_lvalue(
+        self,
+        expression: ast.IndexExpression,
+    ) -> ast.DeclaredType:
+        array_binding = self._index_expression_array_binding(expression)
+        if array_binding is None:
+            raise SemanticError(
+                "indexed target is not an addressable array",
+                expression.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_TARGET_NOT_ADDRESSABLE,
+            )
+        self.expression_types[id(expression.target)] = array_binding.type_name
+        result = self._analyze_index(
+            expression.array_name,
+            expression.index,
+            array_binding.type_name,
+        )
+        self.expression_types[id(expression)] = result
+        self.place_info[id(expression)] = PlaceInfo(
+            result,
+            True,
+            (
+                array_binding.type_name.mutable
+                if isinstance(array_binding.type_name, ast.SliceType)
+                else array_binding.mutable and not array_binding.parameter
+            ),
+            True,
+            expression.array_name,
+            array_binding.scope_depth,
+            True,
+        )
+        return result
 
     def _analyze_numeric_conversion_call(
         self,
@@ -2629,7 +3014,7 @@ class SemanticAnalyzer:
                 f"argument {index} to '{expression.function_name}'",
                 diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
             )
-            if isinstance(parameter_type, ast.TypeName) and parameter_type in _DYNAMIC_TYPES:
+            if _type_contains_dynamic(self.records, self.enums, parameter_type):
                 self._consume_owner(argument.expression)
         self.active_borrows = borrow_snapshot
         return signature.return_type
@@ -3254,18 +3639,25 @@ class SemanticAnalyzer:
                 )
 
         arm_types: list[ast.DeclaredType] = []
-        for label in (-1, 0, 1):
-            case = cases_by_label[label]
-            arm_expected = expected or (arm_types[0] if arm_types else None)
-            arm_type = self._analyze_expression(case.expression, arm_expected)
-            if arm_types:
+        case_flows = self._analyze_owned_branches(
+            tuple(
+                lambda case=cases_by_label[label]: arm_types.append(
+                    self._analyze_expression(case.expression, expected)
+                )
+                or BlockFlow(terminates=False, definitely_returns=False)
+                for label in (-1, 0, 1)
+            ),
+            expression.location,
+        )
+        del case_flows
+        for arm_type, label in zip(arm_types, (-1, 0, 1), strict=True):
+            if arm_type != arm_types[0]:
                 self._require_type(
                     arm_type,
                     arm_types[0],
-                    case.expression.location,
+                    cases_by_label[label].expression.location,
                     "match expression arm",
                 )
-            arm_types.append(arm_type)
 
         result_type = arm_types[0]
         self.expression_types[id(expression)] = result_type
@@ -3349,23 +3741,28 @@ class SemanticAnalyzer:
             )
 
         arm_types: list[ast.DeclaredType] = []
-        for variant in enum.variants:
-            label = enum.discriminant(variant.name)
-            case = cases_by_label[label]
-            arm_expected = expected or (arm_types[0] if arm_types else None)
-            arm_type = self._analyze_enum_match_case_expression(
-                case,
-                variant,
-                arm_expected,
-            )
-            if arm_types:
+        self._analyze_owned_branches(
+            tuple(
+                lambda variant=variant: arm_types.append(
+                    self._analyze_enum_match_case_expression(
+                        cases_by_label[enum.discriminant(variant.name)],
+                        variant,
+                        expected,
+                    )
+                )
+                or BlockFlow(terminates=False, definitely_returns=False)
+                for variant in enum.variants
+            ),
+            expression.location,
+        )
+        for arm_type, variant in zip(arm_types, enum.variants, strict=True):
+            if arm_type != arm_types[0]:
                 self._require_type(
                     arm_type,
                     arm_types[0],
-                    case.expression.location,
+                    cases_by_label[enum.discriminant(variant.name)].expression.location,
                     "enum match expression arm",
                 )
-            arm_types.append(arm_type)
 
         result_type = arm_types[0]
         self.expression_types[id(expression)] = result_type

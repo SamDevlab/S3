@@ -1,0 +1,42 @@
+{
+  "schema": "s3.m151-m160.t4-timeout-matrix.v1",
+  "original_t4_head": "c5163032d9c19713f8497d5bf9d15d73f55c6fef",
+  "final_code_tested_sha": "f673351236f7d1ca6a69f9537276e7dd98f7e3be",
+  "triage_execution_head": "fcc173a58e0d55875b5a76be5cea052721edaade",
+  "default_timeout_seconds": 180,
+  "renderer_timeout_seconds": 300,
+  "timeouts": [
+    {"id": 1, "scope": "file", "path_node": "tests/test_assembly_program_text_adapter.py", "localized_to": "file", "classification": "AGGREGATE_OR_PARALLEL_TIMEOUT", "base_result": "NOT_REQUIRED_FINAL_PASS", "final_result": "PASS_ISOLATED", "repair_sha": null},
+    {"id": 2, "scope": "file", "path_node": "tests/test_assembly_renderer_candidate_readiness.py", "localized_to": "file", "classification": "AGGREGATE_OR_PARALLEL_TIMEOUT", "base_result": "NOT_REQUIRED_FINAL_PASS", "final_result": "PASS_ISOLATED", "repair_sha": null},
+    {"id": 3, "scope": "file", "path_node": "tests/test_assembly_text_renderer.py", "localized_to": "file", "classification": "AGGREGATE_OR_PARALLEL_TIMEOUT", "base_result": "NOT_REQUIRED_FINAL_PASS", "final_result": "PASS_ISOLATED", "repair_sha": null},
+    {"id": 4, "scope": "file", "path_node": "tests/test_assembly_tokenizer.py", "localized_to": "file", "classification": "AGGREGATE_OR_PARALLEL_TIMEOUT", "base_result": "NOT_REQUIRED_FINAL_PASS", "final_result": "PASS_ISOLATED", "repair_sha": null},
+    {"id": 5, "scope": "file", "path_node": "tests/test_compare_assembly_renderer.py", "localized_to": "file", "classification": "AGGREGATE_OR_PARALLEL_TIMEOUT", "base_result": "NOT_REQUIRED_FINAL_PASS", "final_result": "PASS_ISOLATED", "repair_sha": null},
+    {"id": 6, "scope": "file", "path_node": "tests/test_m150_renderer_component.py", "localized_to": "file", "classification": "AGGREGATE_OR_PARALLEL_TIMEOUT", "base_result": "NOT_REQUIRED_FINAL_PASS", "final_result": "PASS_ISOLATED", "repair_sha": null},
+    {"id": 7, "scope": "file", "path_node": "tests/test_s3_program_check.py", "localized_to": "file", "classification": "AGGREGATE_OR_PARALLEL_TIMEOUT", "base_result": "NOT_REQUIRED_FINAL_PASS", "final_result": "PASS_ISOLATED", "repair_sha": null},
+    {"id": 8, "scope": "file", "path_node": "tests/test_s3_renderer_bootstrap_spike.py", "localized_to": "file", "classification": "AGGREGATE_OR_PARALLEL_TIMEOUT", "base_result": "NOT_REQUIRED_FINAL_PASS", "final_result": "PASS_ISOLATED", "repair_sha": null},
+    {"id": 9, "scope": "file", "path_node": "tests/test_s3_renderer_contract.py", "localized_to": "file", "classification": "AGGREGATE_OR_PARALLEL_TIMEOUT", "base_result": "NOT_REQUIRED_FINAL_PASS", "final_result": "PASS_ISOLATED", "repair_sha": null},
+    {"id": 10, "scope": "file", "path_node": "tests/test_s3_renderer_event_stream.py", "localized_to": "file", "classification": "AGGREGATE_OR_PARALLEL_TIMEOUT", "base_result": "NOT_REQUIRED_FINAL_PASS", "final_result": "PASS_ISOLATED", "repair_sha": null},
+    {"id": 11, "scope": "file", "path_node": "tests/test_s3_renderer_event_writer.py", "localized_to": "file", "classification": "AGGREGATE_OR_PARALLEL_TIMEOUT", "base_result": "NOT_REQUIRED_FINAL_PASS", "final_result": "PASS_ISOLATED", "repair_sha": null},
+    {"id": 12, "scope": "file", "path_node": "tests/test_s3_renderer_first_text.py", "localized_to": "file", "classification": "AGGREGATE_OR_PARALLEL_TIMEOUT", "base_result": "NOT_REQUIRED_FINAL_PASS", "final_result": "PASS_ISOLATED", "repair_sha": null},
+    {"id": 13, "scope": "file", "path_node": "tests/test_s3_renderer_generic_sign.py", "localized_to": "file", "classification": "AGGREGATE_OR_PARALLEL_TIMEOUT", "base_result": "NOT_REQUIRED_FINAL_PASS", "final_result": "PASS_ISOLATED", "repair_sha": null},
+    {"id": 14, "scope": "file", "path_node": "tests/test_s3_renderer_generic_simple_call.py", "localized_to": "file", "classification": "AGGREGATE_OR_PARALLEL_TIMEOUT", "base_result": "NOT_REQUIRED_FINAL_PASS", "final_result": "PASS_ISOLATED", "repair_sha": null},
+    {"id": 15, "scope": "file", "path_node": "tests/test_s3_renderer_generic_text.py", "localized_to": "file", "classification": "AGGREGATE_OR_PARALLEL_TIMEOUT", "base_result": "NOT_REQUIRED_FINAL_PASS", "final_result": "PASS_ISOLATED", "repair_sha": null},
+    {"id": 16, "scope": "file", "path_node": "tests/test_s3_renderer_line_blueprints.py", "localized_to": "file", "classification": "AGGREGATE_OR_PARALLEL_TIMEOUT", "base_result": "NOT_REQUIRED_FINAL_PASS", "final_result": "PASS_ISOLATED", "repair_sha": null},
+    {"id": 17, "scope": "file", "path_node": "tests/test_s3_renderer_line_encodings.py", "localized_to": "file", "classification": "AGGREGATE_OR_PARALLEL_TIMEOUT", "base_result": "NOT_REQUIRED_FINAL_PASS", "final_result": "PASS_ISOLATED", "repair_sha": null},
+    {"id": 18, "scope": "file", "path_node": "tests/test_s3_renderer_line_sequences.py", "localized_to": "file", "classification": "AGGREGATE_OR_PARALLEL_TIMEOUT", "base_result": "NOT_REQUIRED_FINAL_PASS", "final_result": "PASS_ISOLATED", "repair_sha": null},
+    {"id": 19, "scope": "file", "path_node": "tests/test_s3_renderer_output_buffer.py", "localized_to": "file", "classification": "AGGREGATE_OR_PARALLEL_TIMEOUT", "base_result": "NOT_REQUIRED_FINAL_PASS", "final_result": "PASS_ISOLATED", "repair_sha": null},
+    {"id": 20, "scope": "file", "path_node": "tests/test_s3_renderer_output_model.py", "localized_to": "file", "classification": "AGGREGATE_OR_PARALLEL_TIMEOUT", "base_result": "NOT_REQUIRED_FINAL_PASS", "final_result": "PASS_ISOLATED", "repair_sha": null},
+    {"id": 21, "scope": "file", "path_node": "tests/test_s3_renderer_sign_text.py", "localized_to": "file", "classification": "AGGREGATE_OR_PARALLEL_TIMEOUT", "base_result": "NOT_REQUIRED_FINAL_PASS", "final_result": "PASS_ISOLATED", "repair_sha": null},
+    {"id": 22, "scope": "file", "path_node": "tests/test_s3_renderer_simple_call_text.py", "localized_to": "file", "classification": "AGGREGATE_OR_PARALLEL_TIMEOUT", "base_result": "NOT_REQUIRED_FINAL_PASS", "final_result": "PASS_ISOLATED", "repair_sha": null},
+    {"id": 23, "scope": "file", "path_node": "tests/test_s3_renderer_text_segments.py", "localized_to": "file", "classification": "AGGREGATE_OR_PARALLEL_TIMEOUT", "base_result": "NOT_REQUIRED_FINAL_PASS", "final_result": "PASS_ISOLATED", "repair_sha": null}
+  ],
+  "counts": {
+    "inventoried": 23,
+    "localized": 23,
+    "final_timeouts": 0,
+    "aggregate_or_parallel_timeouts": 23,
+    "preexisting_timeouts": 0,
+    "environment_timeouts": 0,
+    "unknown": 0
+  }
+}

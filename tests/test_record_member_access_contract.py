@@ -186,7 +186,10 @@ def test_record_member_access_rejects_non_record_and_unknown_member_shapes(
 
 
 def test_record_member_access_rejects_member_assignment_target() -> None:
-    with pytest.raises(ParseError, match="expected '=' or '\\+=' after assignment target"):
+    with pytest.raises(
+        SemanticError,
+        match="owned field replacement requires a mutable aggregate",
+    ):
         compile_source(
             "record Box:\n"
             "    value: tryte\n"
