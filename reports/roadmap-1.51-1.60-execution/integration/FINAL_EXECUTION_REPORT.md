@@ -10,7 +10,11 @@ The primary and other user worktrees were not modified.
 
 Final local branch: `feature/m151-m160-autonomous-20260817`
 
-Triage verified HEAD: `fcc173a58e0d55875b5a76be5cea052721edaade`
+Final code tested SHA: `f673351236f7d1ca6a69f9537276e7dd98f7e3be`
+
+Final evidence head: `f76af7f78c05acb25406bceee7cd67aca98ef7cd`
+
+T4 triage execution checkpoint: `fcc173a58e0d55875b5a76be5cea052721edaade`
 
 The M1.60 implementation remains the bounded manifest projection candidate:
 Python is authoritative for TOML and filesystem behavior, while the generated

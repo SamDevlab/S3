@@ -5,7 +5,9 @@ Status: `IMPLEMENTATION_COMPLETE_WITH_DEFERRED_ENVIRONMENT_CERTIFICATION`
 ## Authoritative Checkpoint
 
 - Campaign branch: `feature/m151-m160-autonomous-20260817`
-- Triage verified HEAD: `fcc173a58e0d55875b5a76be5cea052721edaade`
+- Final code tested SHA: `f673351236f7d1ca6a69f9537276e7dd98f7e3be`
+- Final evidence head: `f76af7f78c05acb25406bceee7cd67aca98ef7cd`
+- T4 triage execution checkpoint: `fcc173a58e0d55875b5a76be5cea052721edaade`
 - Campaign base: `ee6cdb7a2ee22f6c4e64c4091549b2740b963504`
 - M1.51A architecture: `ee6cdb7a2ee22f6c4e64c4091549b2740b963504`
 - Post-1.50 prerequisite fix: `06430710d05df925912603bd0a788022439079d5`

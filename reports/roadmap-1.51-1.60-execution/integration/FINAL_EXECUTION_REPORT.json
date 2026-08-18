@@ -2,7 +2,9 @@
   "campaign": "M1.51-M1.60",
   "status": "IMPLEMENTATION_COMPLETE_WITH_DEFERRED_ENVIRONMENT_CERTIFICATION",
   "branch": "feature/m151-m160-autonomous-20260817",
-  "final_head": "fcc173a58e0d55875b5a76be5cea052721edaade",
+  "final_code_tested_sha": "f673351236f7d1ca6a69f9537276e7dd98f7e3be",
+  "final_evidence_head": "f76af7f78c05acb25406bceee7cd67aca98ef7cd",
+  "triage_execution_head": "fcc173a58e0d55875b5a76be5cea052721edaade",
   "remote_writes": 0,
   "benchmarks": "NOT_RUN",
   "milestones": {

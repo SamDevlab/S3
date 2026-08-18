@@ -67,6 +67,9 @@
     }
   },
   "next_milestone": null,
+  "final_code_tested_sha": "f673351236f7d1ca6a69f9537276e7dd98f7e3be",
+  "final_evidence_head": "f76af7f78c05acb25406bceee7cd67aca98ef7cd",
+  "production_or_test_changes_after_final_code_tested_sha": false,
   "t4_full_suite": {
     "head": "c5163032d9c19713f8497d5bf9d15d73f55c6fef",
     "selected": 328,
