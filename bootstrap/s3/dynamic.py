@@ -207,6 +207,10 @@ class BorrowedSlice(Generic[T]):
             raise IndexError("borrowed slice index out of bounds")
         self._owner[self._start + index] = value
 
+    def __iter__(self) -> Iterator[T]:
+        for index in range(self.length):
+            yield self[index]
+
 
 class OwnedBuffer(Generic[T]):
     """Compatibility scalar buffer retained for the M1.35 public API."""
@@ -386,6 +390,10 @@ class BorrowedBuffer:
         _validate_vector_index(absolute, owner.length)
         _validate_vector_element(owner.element_type, value)
         owner._storage[absolute] = value
+
+    def __iter__(self) -> Iterator[int]:
+        for index in range(self.length):
+            yield self[index]
 
 
 class DynamicBytes:
@@ -899,6 +907,10 @@ class DynamicMap:
     def borrow(self, *, mutable: bool = False) -> BorrowedBuffer:
         return BorrowedBuffer(self, mutable)
 
+    def __iter__(self) -> Iterator[tuple[int, int]]:
+        self._require_live()
+        yield from tuple(self._storage[: self._length])
+
 
 class DynamicSet:
     """Ordered i64 set derived from the same explicit collection contract."""
@@ -1030,6 +1042,10 @@ class DynamicSet:
 
     def borrow(self, *, mutable: bool = False) -> BorrowedBuffer:
         return BorrowedBuffer(self, mutable)
+
+    def __iter__(self) -> Iterator[int]:
+        self._require_live()
+        yield from tuple(self._storage[: self._length])
 
 
 def bytes_new(capacity: int, *, allocator: Allocator | None = None) -> DynamicBytes:
