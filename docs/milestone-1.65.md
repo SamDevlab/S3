@@ -32,3 +32,9 @@ Focused tests cover target identity, Win64 register/stack classification,
 shadow space and alignment, saved registers, scalar and aggregate result
 transport, deterministic backend planning, and fail-closed toolchain
 discovery. Existing Linux backend tests remain the non-regression gate.
+
+## Implementation status and dependency
+
+COMPLETE as the structural Win64 ABI/backend plan permitted by the available
+toolchain. PE/object emission and Windows execution remain deferred. M1.66
+consumes the target/provider boundary for cross-platform OS services.

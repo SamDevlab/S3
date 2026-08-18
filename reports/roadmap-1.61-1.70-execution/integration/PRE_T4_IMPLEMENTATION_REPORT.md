@@ -19,8 +19,8 @@ dedicated certification prompt.
 - Campaign base: `06324bccd0cfee03452d34c5f04596b8f3973813`
 - Branch: `feature/m161-m170-autonomous-20260817`
 - Worktree: `C:\Users\samue\Downloads\S3-m161-m170-autonomous-20260817`
-- Final implementation/evidence HEAD before this report commit: `aaad2eb3f082e8066fdc4b260de3e6ea6ce1b0c0`
-- Final M1.70 implementation candidate: `3dda8767f0b1c6d6595cf77516a9b022ebc74eef`
+- Final implementation candidate before this report reconciliation: `615eb0ce6a56abc0504390ba868e9f3010ff3440`
+- Latest closure-evidence checkpoint before this report commit: `86c9ca7b34e71fb31eb2fc01b8c22d1a38454686`
 - M1.51-M1.60 final code-tested SHA: `f673351236f7d1ca6a69f9537276e7dd98f7e3be`
 - M1.51-M1.60 final evidence head: `f76af7f78c05acb25406bceee7cd67aca98ef7cd`
 
@@ -37,11 +37,11 @@ worktrees were not modified.
 | M1.63 | COMPLETE | `926326941797141ccaa7005acc3b69a2b836a763` | `a2938034edc39f74ef25b836b70d3dbb340147ef` | Deterministic iteration and checked ranges |
 | M1.64 | COMPLETE | `8ac120637a487c057630206f6f3656fc2f1787b4` | `3a83858e5c0259a05f6bb62ec83b732d7bccc8d1` | Explicit hosted Result/Option propagation |
 | M1.65 | COMPLETE | `5a0ffcba2749c3439dee3f65bd0283d7472f83c0` | `2e7ffe754017f0ef25607d12af41032cd3c73da8` | Structural Win64 ABI/backend plan |
-| M1.66 | COMPLETE | `ced3724b7c5717708bc77e417cbe8fc291a8b561` | `f217478475f80558746d66d55d5758bf3b57d210` | Bounded cross-platform OS provider |
-| M1.67 | COMPLETE | `1e6ee598c532b18671345863821bc4a4e8d8c5a8` | `00331a3dbdc05d0c460b09b879c8c7e45914493a` | Blocking UDP and deterministic DNS provider |
-| M1.68 | COMPLETE | `ca15561b50631322b60f018ef0c087236dd0afbf` | `431c3d457db45990a84093c9e56f88cd139d398f` | Vetted blocking TLS client provider |
-| M1.69 | COMPLETE | `e450c77be6ea34ded6aa788ebcc4b95940c58227` | `bbf43de58a9b421bf9dd33dfb359078e363ac634` | Explicit transfer and joinable threads |
-| M1.70 | COMPLETE | `3dda8767f0b1c6d6595cf77516a9b022ebc74eef` | `aaad2eb3f082e8066fdc4b260de3e6ea6ce1b0c0` | Lock-backed Atomics and guard-scoped Mutex |
+| M1.66 | COMPLETE | `ced3724b7c5717708bc77e417cbe8fc291a8b561` + correction `8a5d0181` | `86c9ca7b34e71fb31eb2fc01b8c22d1a38454686` | Bounded cross-platform OS provider |
+| M1.67 | COMPLETE | `1e6ee598c532b18671345863821bc4a4e8d8c5a8` + correction `8a5d0181` | `86c9ca7b34e71fb31eb2fc01b8c22d1a38454686` | Blocking UDP and deterministic DNS provider |
+| M1.68 | COMPLETE | `ca15561b50631322b60f018ef0c087236dd0afbf` + correction `8a5d0181` | `86c9ca7b34e71fb31eb2fc01b8c22d1a38454686` | Vetted blocking TLS client provider |
+| M1.69 | COMPLETE | `e450c77be6ea34ded6aa788ebcc4b95940c58227` + correction `615eb0ce` | `7934e73` | Explicit transfer, joinable threads, and guarded sharing |
+| M1.70 | COMPLETE | `3dda8767f0b1c6d6595cf77516a9b022ebc74eef` + correction `615eb0ce` | `7934e73` | Lock-backed Atomics and guard-scoped Mutex |
 
 M1.64 also contains the targeted `tests/test_s3test.py` expectation
 reconciliation commit `54e4213049c5e6d03b4cf2d2baf5bba0b38d2871`; it addressed

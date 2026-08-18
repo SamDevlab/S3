@@ -29,3 +29,10 @@ compare-exchange, overflow preservation, guard lifecycle, timeout behavior,
 context-manager cleanup, and a bounded four-thread counter. Hosted T0/T1/T2/T3
 gates are required. Native Windows/Linux execution certification remains an
 environment gate for this isolated Windows campaign.
+
+## Implementation status and dependency
+
+COMPLETE for hosted lock-backed `AtomicI64`, `Mutex[T]`, and `MutexGuard[T]`.
+Linux and Windows native execution certification is
+`DEFERRED_BY_ENVIRONMENT`; global T4 is the next required certification step.
+M1.71 and all deferred capabilities remain unstarted.

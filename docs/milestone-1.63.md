@@ -24,3 +24,9 @@ Focused tests cover positive, negative, and empty ranges; zero-step rejection;
 vector/view iteration; and map/set insertion-order iteration. Existing source
 range, loop, borrow, collection, IR, and native tests form the milestone
 subsystem and cross-subsystem gates.
+
+## Implementation status, environment, and dependency
+
+COMPLETE for the closed hosted iteration family and checked `I64Range`.
+Linux native execution is `DEFERRED_BY_ENVIRONMENT`. M1.64 may consume this
+deterministic iteration contract for explicit result/collection control flow.

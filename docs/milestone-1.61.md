@@ -36,3 +36,8 @@ unsupported domains. Broader cross-subsystem closure is recorded under
 
 M1.62 may build on the existing borrow model without depending on a wider
 generic collection representation.
+
+## Implementation and environment status
+
+COMPLETE for the bounded `i64` specialization. Hosted, O0/O1, and native
+lowering gates pass; Linux native execution is `DEFERRED_BY_ENVIRONMENT`.

@@ -37,3 +37,9 @@ certification is reported separately when the local toolchain is unavailable.
 ## Dependency
 
 M1.65 may use the same explicit enum/result ABI for target-specific lowering.
+
+## Implementation status and environment
+
+COMPLETE for explicit hosted values and source-level exhaustive matching.
+Linux native certification is `DEFERRED_BY_ENVIRONMENT`; no hidden propagation
+operator was introduced because ADR-0030 requires explicit control flow.

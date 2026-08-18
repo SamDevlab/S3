@@ -22,3 +22,9 @@ The existing TCP `NetworkRegistry`, fake provider, loopback provider, numeric
 address format, limits, and traces are unchanged. No async scheduler, raw
 socket handle in the language surface, public-internet fixture, or unbounded
 buffer was added.
+
+## Implementation status, public surface, and dependency
+
+COMPLETE for hosted blocking `UdpSocket` and `DnsResolver`. Loopback and DNS
+provider behavior are locally covered; cross-platform native certification is
+environment-dependent. M1.68 consumes this network boundary for TLS.

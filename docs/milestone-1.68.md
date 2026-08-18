@@ -20,3 +20,9 @@ cleanup, connection failure, and provider presence with injected local doubles.
 No public internet is required. A real certificate fixture is deliberately not
 committed; end-to-end certificate-chain execution remains dependent on a
 locally supplied trusted fixture/provider environment.
+
+## Implementation status, public surface, and dependency
+
+COMPLETE for the hosted verified TLS client provider. Trusted certificate-chain
+execution is `DEFERRED_BY_ENVIRONMENT`; M1.69 consumes the explicit Result and
+resource-close model for thread results and lifecycle errors.

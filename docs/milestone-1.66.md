@@ -26,3 +26,9 @@ contract can be exercised on Linux or Windows using temporary roots.
 
 ACL policy, filesystem watchers, async I/O, platform-specific GUI APIs, and
 unbounded directory/process streaming remain out of scope.
+
+## Implementation status, public surface, and dependency
+
+COMPLETE for the hosted `HostPath`, `OwnedTextFile`, directory, environment,
+argv, and shell-free process provider. M1.67 consumes this explicit
+OS/resource boundary. No additional native certification is claimed here.

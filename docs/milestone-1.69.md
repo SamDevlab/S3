@@ -23,3 +23,9 @@ raw thread handles, or general shared ownership were added. Static borrow
 escape diagnostics remain a compiler-language follow-up; this provider accepts
 only explicit owned wrappers, copyable immutable values, or explicit
 synchronization roots. Arbitrary direct mutable sharing is rejected.
+
+## Implementation status, environment, and dependency
+
+COMPLETE for the bounded hosted thread provider. Windows native execution is
+`DEFERRED_BY_ENVIRONMENT`; M1.70 consumes the explicit synchronization-root
+boundary and adds shared-state primitives.

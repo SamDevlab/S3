@@ -24,3 +24,10 @@ Focused tests cover static array slices, ranged vector/byte views, mutable
 exclusivity, relative bounds, text byte length, UTF-8 boundaries, and O0/O1
 array-slice execution. Existing reference and native slice contracts remain
 part of the M1.62 T2/T3 gates.
+
+## Implementation status, environment, and dependency
+
+COMPLETE for static-array ABI slices and hosted ranged views over vectors,
+bytes, and text. Linux native execution is `DEFERRED_BY_ENVIRONMENT`.
+M1.63 consumes the view iteration contract without adding a general iterator
+trait.
