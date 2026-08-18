@@ -143,6 +143,13 @@
       "tests/test_m143_scoped_resources.py",
       "tests/test_ir_verifier.py"
     ],
+    "m168": [
+      "tests/test_m168_tls_client.py",
+      "tests/test_m167_udp_dns.py",
+      "tests/test_m148_network_provider.py",
+      "tests/test_m143_scoped_resources.py",
+      "tests/test_m142_structured_results.py"
+    ],
     "m145-m146": ["tests/test_m145_build_graph.py", "tests/test_m146_test_runner.py"],
     "m147": ["tests/test_m147_python_buffer_abi.py"],
     "m148": ["tests/test_m148_network_provider.py"],
@@ -326,6 +333,21 @@
       "shards": ["m167"],
       "native_required": false,
       "environment_requirements": ["loopback-network-optional"],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/tls_client.py",
+      "tests": [
+        "tests/test_m168_tls_client.py",
+        "tests/test_m167_udp_dns.py",
+        "tests/test_m148_network_provider.py",
+        "tests/test_m143_scoped_resources.py",
+        "tests/test_m142_structured_results.py"
+      ],
+      "milestones": ["m168"],
+      "shards": ["m168"],
+      "native_required": false,
+      "environment_requirements": ["trusted-tls-fixture-optional"],
       "global_impact": false
     },
     {
