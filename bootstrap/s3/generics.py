@@ -29,6 +29,12 @@ _VECTOR_ELEMENT_TYPES = {
     ast.TypeName.I64: "i64",
     ast.TypeName.F64: "f64",
 }
+_GENERIC_MAP_TYPES = {
+    (ast.TypeName.I64, ast.TypeName.I64): ast.TypeName.I64_MAP,
+}
+_GENERIC_SET_TYPES = {
+    (ast.TypeName.I64,): ast.TypeName.I64_SET,
+}
 _GENERIC_VECTOR_BUILTINS = frozenset(
     {
         "vector_new",
@@ -42,6 +48,37 @@ _GENERIC_VECTOR_BUILTINS = frozenset(
         "vector_clone",
         "vector_slice",
     }
+)
+_GENERIC_MAP_BUILTINS = frozenset(
+    {
+        "map_new",
+        "map_len",
+        "map_capacity",
+        "map_reserve",
+        "map_put",
+        "map_contains",
+        "map_get",
+        "map_remove",
+        "map_key_at",
+        "map_value_at",
+        "map_clone",
+    }
+)
+_GENERIC_SET_BUILTINS = frozenset(
+    {
+        "set_new",
+        "set_len",
+        "set_capacity",
+        "set_reserve",
+        "set_add",
+        "set_contains",
+        "set_remove",
+        "set_at",
+        "set_clone",
+    }
+)
+_GENERIC_COLLECTION_BUILTINS = (
+    _GENERIC_VECTOR_BUILTINS | _GENERIC_MAP_BUILTINS | _GENERIC_SET_BUILTINS
 )
 
 
@@ -459,6 +496,19 @@ def specialize_generic_functions(program: ast.Program) -> ast.Program:
                     ast.TypeName.I64: ast.TypeName.I64_VECTOR,
                     ast.TypeName.F64: ast.TypeName.F64_VECTOR,
                 }[element]
+            if name in {"map", "set"}:
+                supported = (
+                    _GENERIC_MAP_TYPES if name == "map" else _GENERIC_SET_TYPES
+                )
+                try:
+                    return supported[arguments]
+                except KeyError as error:
+                    expected = "map<i64, i64>" if name == "map" else "set<i64>"
+                    raise SemanticError(
+                        f"generic type '{name}' currently supports only {expected}",
+                        location,
+                        diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+                    ) from error
             declaration = generic_types.get(name)
             if declaration is None:
                 raise SemanticError(
@@ -541,7 +591,7 @@ def specialize_generic_functions(program: ast.Program) -> ast.Program:
 
     class Specializer:
         generic_names = frozenset(generic_functions)
-        generic_builtin_names = _GENERIC_VECTOR_BUILTINS
+        generic_builtin_names = _GENERIC_COLLECTION_BUILTINS
 
         def rewrite_type(self, type_name: ast.DeclaredType, location):
             return type_specializer.rewrite_type(type_name, location)
@@ -550,13 +600,36 @@ def specialize_generic_functions(program: ast.Program) -> ast.Program:
             return type_specializer.type_name(name, arguments, location)
 
         def generic_builtin(self, name: str, arguments, location):
-            if len(arguments) != 1 or arguments[0] not in _VECTOR_ELEMENT_TYPES:
+            if name in _GENERIC_VECTOR_BUILTINS:
+                if len(arguments) != 1 or arguments[0] not in _VECTOR_ELEMENT_TYPES:
+                    raise SemanticError(
+                        f"generic builtin '{name}' requires one of tryte, i64, or f64 as its type argument",
+                        location,
+                        diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+                    )
+                return _VECTOR_ELEMENT_TYPES[arguments[0]] + "_" + name
+            if name in _GENERIC_MAP_BUILTINS:
+                if tuple(arguments) != (ast.TypeName.I64, ast.TypeName.I64):
+                    raise SemanticError(
+                        f"generic builtin '{name}' requires map<i64, i64> type arguments",
+                        location,
+                        diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+                    )
+                return "i64_" + name
+            if name in _GENERIC_SET_BUILTINS:
+                if tuple(arguments) != (ast.TypeName.I64,):
+                    raise SemanticError(
+                        f"generic builtin '{name}' requires set<i64> type arguments",
+                        location,
+                        diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+                    )
+                return "i64_" + name
+            else:
                 raise SemanticError(
-                    f"generic builtin '{name}' requires one of tryte, i64, or f64 as its type argument",
+                    f"unknown generic builtin '{name}'",
                     location,
                     diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
                 )
-            return _VECTOR_ELEMENT_TYPES[arguments[0]] + "_" + name
 
         def __call__(self, name: str, arguments: tuple[ast.DeclaredType, ...], location):
             function = generic_functions[name]

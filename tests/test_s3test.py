@@ -59,6 +59,19 @@ def test_shard_selection_is_sorted() -> None:
     )
 
 
+def test_milestone_selection_uses_milestone_rules_instead_of_default() -> None:
+    selected = IMPACT.select(["milestone:m161"], milestone="m161")
+    assert [item.test for item in selected] == [
+        "tests/test_m141_ordered_maps_sets.py",
+        "tests/test_m151_composite_owned_values.py",
+        "tests/test_m153_generic_functions.py",
+        "tests/test_m154_parametric_types.py",
+        "tests/test_m155_generic_vector.py",
+        "tests/test_m161_generic_map_set.py",
+    ]
+    assert all("T2" in item.tiers for item in selected)
+
+
 def test_state_round_trip_and_resume_data(tmp_path: Path) -> None:
     store = StateStore(tmp_path)
     report = {"fingerprint": "abc", "profile": "affected", "summary": {"status": "FAIL"}, "tests": []}

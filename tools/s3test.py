@@ -149,7 +149,9 @@ class ImpactMap:
         for changed in normalized:
             matched = [rule for rule in self.rules if self._matches(rule.pattern, changed)]
             if not matched:
-                matched = [self.default]
+                # A synthetic milestone selector must resolve through the
+                # milestone metadata, not the generic default profile.
+                matched = [] if milestone is not None and changed.startswith("milestone:") else [self.default]
             for rule in matched:
                 if milestone is None or milestone in rule.milestones or "global" in rule.milestones:
                     matches.extend((changed, rule, "direct impact mapping") for _ in (0,))
