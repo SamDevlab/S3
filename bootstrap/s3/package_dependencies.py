@@ -166,6 +166,7 @@ class PackageLock:
                 )
         states: dict[str, int] = {}
         order: list[str] = []
+        reachable_references: dict[str, list[PackageDependency]] = {}
 
         def visit(name: str, stack: tuple[str, ...]) -> None:
             state = states.get(name, 0)
@@ -179,6 +180,7 @@ class PackageLock:
                 raise PackageDependencyError(f"missing package dependency '{name}'")
             states[name] = 1
             for dependency in manifest.dependencies:
+                reachable_references.setdefault(dependency.name, []).append(dependency)
                 visit(dependency.name, (*stack, name))
             states[name] = 2
             order.append(name)
@@ -187,21 +189,27 @@ class PackageLock:
         entries: list[PackageLockEntry] = []
         for name in order:
             manifest = manifests[name]
-            dependency = next(
-                (
-                    item
-                    for parent in manifests.values()
-                    for item in parent.dependencies
-                    if item.name == name
-                ),
-                None,
-            )
+            if name == root:
+                source = "."
+                revision = None
+            else:
+                references = reachable_references.get(name, [])
+                if not references:
+                    raise PackageDependencyError(
+                        f"missing dependency identity for package '{name}'"
+                    )
+                identity = (references[0].source, references[0].revision)
+                if any((item.source, item.revision) != identity for item in references[1:]):
+                    raise PackageDependencyError(
+                        f"inconsistent dependency identity for package '{name}'"
+                    )
+                source, revision = identity
             entries.append(
                 PackageLockEntry(
                     name,
                     manifest.version,
-                    dependency.source if dependency is not None else ".",
-                    dependency.revision if dependency is not None else None,
+                    source,
+                    revision,
                     manifest.content_sha256,
                 )
             )

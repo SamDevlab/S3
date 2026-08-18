@@ -73,3 +73,95 @@ def test_package_source_and_revision_contracts_are_fail_closed() -> None:
         PackageDependency("core", "git+https://example.invalid/core")
     with pytest.raises(PackageDependencyError, match="hexadecimal"):
         PackageDependency("core", "core", "not-a-revision")
+
+
+def _diamond_manifests(
+    left_reference: PackageDependency,
+    right_reference: PackageDependency,
+    *,
+    include_unreachable: bool = False,
+) -> dict[str, PackageManifest]:
+    manifests = {
+        "root": PackageManifest(
+            "root",
+            "1.0.0",
+            (
+                PackageDependency("left", "left"),
+                PackageDependency("right", "right"),
+            ),
+        ),
+        "left": PackageManifest("left", "1.0.0", (left_reference,)),
+        "right": PackageManifest("right", "1.0.0", (right_reference,)),
+        "core": PackageManifest("core", "1.0.0"),
+    }
+    if include_unreachable:
+        manifests["unreachable"] = PackageManifest(
+            "unreachable",
+            "1.0.0",
+            (PackageDependency("core", "unrelated", "ccccccc"),),
+        )
+    return manifests
+
+
+def test_conflicting_reachable_dependency_sources_fail_closed() -> None:
+    forward = _diamond_manifests(
+        PackageDependency("core", "vendor/core-a", "aaaaaaa"),
+        PackageDependency("core", "vendor/core-b", "bbbbbbb"),
+    )
+    reverse = {
+        "root": forward["root"],
+        "right": forward["right"],
+        "left": forward["left"],
+        "core": forward["core"],
+    }
+    messages = []
+    for manifests in (forward, reverse):
+        with pytest.raises(PackageDependencyError, match="inconsistent dependency identity.*core") as error:
+            PackageLock.resolve("root", manifests)
+        messages.append(str(error.value))
+    assert messages[0] == messages[1]
+
+
+def test_conflicting_reachable_dependency_revisions_fail_closed() -> None:
+    manifests = _diamond_manifests(
+        PackageDependency("core", "vendor/core", "aaaaaaa"),
+        PackageDependency("core", "vendor/core", "bbbbbbb"),
+    )
+    with pytest.raises(PackageDependencyError, match="inconsistent dependency identity.*core"):
+        PackageLock.resolve("root", manifests)
+
+
+def test_identical_multi_parent_dependency_is_canonical_and_order_independent() -> None:
+    manifests = _diamond_manifests(
+        PackageDependency("core", "vendor/core", "aaaaaaa"),
+        PackageDependency("core", "vendor/core", "aaaaaaa"),
+    )
+    reversed_manifests = {
+        "root": manifests["root"],
+        "right": manifests["right"],
+        "left": manifests["left"],
+        "core": manifests["core"],
+    }
+    lock = PackageLock.resolve("root", manifests)
+    reversed_lock = PackageLock.resolve("root", reversed_manifests)
+    core = next(entry for entry in lock.entries if entry.name == "core")
+    assert core.source == "vendor/core"
+    assert core.revision == "aaaaaaa"
+    assert lock.text == reversed_lock.text
+    assert lock.sha256 == reversed_lock.sha256
+
+
+def test_unreachable_dependency_reference_does_not_influence_root_lock() -> None:
+    reachable = _diamond_manifests(
+        PackageDependency("core", "vendor/core", "aaaaaaa"),
+        PackageDependency("core", "vendor/core", "aaaaaaa"),
+    )
+    with_unreachable = _diamond_manifests(
+        PackageDependency("core", "vendor/core", "aaaaaaa"),
+        PackageDependency("core", "vendor/core", "aaaaaaa"),
+        include_unreachable=True,
+    )
+    lock = PackageLock.resolve("root", reachable)
+    lock_with_unreachable = PackageLock.resolve("root", with_unreachable)
+    assert lock.text == lock_with_unreachable.text
+    assert lock.sha256 == lock_with_unreachable.sha256

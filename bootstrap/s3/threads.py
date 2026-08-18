@@ -102,11 +102,14 @@ class ThreadRuntime:
         self._max_active = max_active
         self._handles: list[ThreadHandle[object]] = []
         self._lock = threading.Lock()
+        self._reserved_active = 0
 
     @property
     def active_count(self) -> int:
+        """Return active execution reservations, excluding completed handles."""
+
         with self._lock:
-            return sum(not handle.joined and handle._thread.is_alive() for handle in self._handles)
+            return self._reserved_active
 
     def spawn(
         self,
@@ -124,30 +127,60 @@ class ThreadRuntime:
                 )
             )
         with self._lock:
-            active = sum(not handle.joined and handle._thread.is_alive() for handle in self._handles)
-            if active >= self._max_active:
+            if self._reserved_active >= self._max_active:
                 return Result.err(ThreadError(ThreadErrorCode.RESOURCE_LIMIT, "spawn", "active thread limit exceeded"))
-        if isinstance(argument, OwnedValue):
-            moved = argument.move()
-            if moved.is_err:
-                return Result.err(moved.error_or(None))
-            payload = moved.value_or(None)
-        else:
-            payload = argument
-        result_box: dict[str, object] = {}
+            self._reserved_active += 1
 
-        def run() -> None:
+        slot_released = False
+        slot_release_lock = threading.Lock()
+
+        def release_slot() -> None:
+            nonlocal slot_released
+            with slot_release_lock:
+                if slot_released:
+                    return
+                slot_released = True
+            with self._lock:
+                self._reserved_active -= 1
+
+        try:
+            if isinstance(argument, OwnedValue):
+                moved = argument.move()
+                if moved.is_err:
+                    release_slot()
+                    return Result.err(moved.error_or(None))
+                payload = moved.value_or(None)
+            else:
+                payload = argument
+            result_box: dict[str, object] = {}
+
+            def run() -> None:
+                try:
+                    result_box["result"] = entry(payload)  # type: ignore[arg-type]
+                except BaseException as error:
+                    result_box["result"] = ThreadError(
+                        ThreadErrorCode.WORKER_FAILURE,
+                        "worker",
+                        type(error).__name__,
+                    )
+                finally:
+                    release_slot()
+
+            thread = threading.Thread(target=run, daemon=False)
+            handle: ThreadHandle[U] = ThreadHandle(thread, result_box)
+            with self._lock:
+                self._handles.append(handle)  # type: ignore[arg-type]
             try:
-                result_box["result"] = entry(payload)  # type: ignore[arg-type]
-            except BaseException as error:
-                result_box["result"] = ThreadError(ThreadErrorCode.WORKER_FAILURE, "worker", type(error).__name__)
-
-        thread = threading.Thread(target=run, daemon=False)
-        handle: ThreadHandle[U] = ThreadHandle(thread, result_box)
-        with self._lock:
-            self._handles.append(handle)  # type: ignore[arg-type]
-        thread.start()
-        return Result.ok(handle)
+                thread.start()
+            except BaseException:
+                with self._lock:
+                    self._handles.remove(handle)  # type: ignore[arg-type]
+                release_slot()
+                raise
+            return Result.ok(handle)
+        except BaseException:
+            release_slot()
+            raise
 
     def join_all(self) -> tuple[Result[object, ThreadError], ...]:
         return tuple(handle.join() for handle in tuple(self._handles) if not handle.joined)
