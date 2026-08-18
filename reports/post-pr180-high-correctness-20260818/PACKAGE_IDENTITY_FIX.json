@@ -1,0 +1,17 @@
+{
+  "schema": "s3.post-pr180-package-fix.v1",
+  "finding": "PR180-PKG-001",
+  "base_sha": "76030c5d5428e47f6839c219c4930db4cb1862d8",
+  "fix_sha": "cf5f8f925853ebbba34866296816d9f254b549e8",
+  "reachable_identity": "unique canonical (source, revision) per package name",
+  "root_identity": {"source": ".", "revision": null},
+  "conflicting_source_rejected": "PASS",
+  "conflicting_revision_rejected": "PASS",
+  "identical_multi_parent_accepted": "PASS",
+  "mapping_order_independent": "PASS",
+  "unreachable_reference_ignored": "PASS",
+  "lock_deterministic": "PASS",
+  "existing_m156_tests": "PASS",
+  "t2_m156": "PASS",
+  "unresolved_regressions": 0
+}

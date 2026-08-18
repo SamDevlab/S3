@@ -1,0 +1,17 @@
+{
+  "schema": "s3.post-pr180-thread-fix.v1",
+  "finding": "PR180-THREAD-001",
+  "base_sha": "76030c5d5428e47f6839c219c4930db4cb1862d8",
+  "fix_sha": "1223fd435fa724b01eb19123cbdd079589350895",
+  "max_active_atomic": "PASS",
+  "concurrent_spawn_limit": "PASS",
+  "resource_limit_preserves_ownership": "PASS",
+  "slot_rollback": "PASS",
+  "slot_reusable_after_completion": "PASS",
+  "active_count_bounded": "PASS",
+  "existing_m169_tests": "PASS",
+  "t2_m169": "PASS",
+  "t2_m170": "NOT_REQUIRED",
+  "m170_synchronization_changed": false,
+  "unresolved_regressions": 0
+}

@@ -1,0 +1,24 @@
+{
+  "schema": "s3.post-pr180-baseline.v1",
+  "base_sha": "76030c5d5428e47f6839c219c4930db4cb1862d8",
+  "package": {
+    "finding": "PR180-PKG-001",
+    "reproduced": true,
+    "node": "controlled_conflicting_reachable_source",
+    "forward_identity": ["X", "aaaaaaa"],
+    "reverse_identity": ["Y", "bbbbbbb"],
+    "failure_mode": "mapping-order-dependent first reference"
+  },
+  "threads": {
+    "finding": "PR180-THREAD-001",
+    "reproduced": true,
+    "node": "controlled_two_caller_admission",
+    "max_active": 1,
+    "baseline_success_count": 2,
+    "failure_mode": "check-then-register admission race"
+  },
+  "full_t4_restarted": false,
+  "full_pytest_restarted": false,
+  "benchmarks_executed": false,
+  "remote_write_executed": false
+}
