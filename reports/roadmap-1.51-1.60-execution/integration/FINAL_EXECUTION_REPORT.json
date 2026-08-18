@@ -1,8 +1,8 @@
 {
   "campaign": "M1.51-M1.60",
-  "status": "FOCUSED_COMPLETE_T4_LIMITED",
+  "status": "IMPLEMENTATION_COMPLETE_WITH_DEFERRED_ENVIRONMENT_CERTIFICATION",
   "branch": "feature/m151-m160-autonomous-20260817",
-  "final_head": "f673351236f7d1ca6a69f9537276e7dd98f7e3be",
+  "final_head": "fcc173a58e0d55875b5a76be5cea052721edaade",
   "remote_writes": 0,
   "benchmarks": "NOT_RUN",
   "milestones": {
@@ -40,18 +40,16 @@
     "failed": 7,
     "timed_out": 23,
     "status": "TIMEOUT",
-    "rerun_after_correction": false
+    "rerun_after_correction": false,
+    "triage_report": "reports/roadmap-1.51-1.60-execution/integration/T4_TRIAGE_REPORT.md",
+    "failure_matrix": "reports/roadmap-1.51-1.60-execution/integration/T4_FAILURE_MATRIX.json",
+    "timeout_matrix": "reports/roadmap-1.51-1.60-execution/integration/T4_TIMEOUT_MATRIX.json",
+    "final_timeouts": 0
   },
-  "known_unresolved": [
-    {
-      "test": "tests/test_external_jsmn_s3.py::test_s3_jsmn_representative_fixture_is_stable_across_optimization[O1]",
-      "classification": "PREEXISTING_OPTIMIZER_OBSERVABLE_MEMORY_CONTRACT"
-    },
-    {
-      "scope": "Assembly/renderer Windows cluster",
-      "classification": "PREEXISTING_ENVIRONMENT_TIMEOUT_CLUSTER"
-    }
-  ],
+  "known_unresolved": [],
+  "native_linux": "DEFERRED_BY_ENVIRONMENT",
+  "wasi": "DEFERRED_BY_ENVIRONMENT",
+  "ready_for_publication_review": true,
   "m161_started": false,
   "shutdown": false
 }

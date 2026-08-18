@@ -1,0 +1,85 @@
+{
+  "schema": "s3.m151-m160.t4-failure-inventory.v1",
+  "t4_head": "c5163032d9c19713f8497d5bf9d15d73f55c6fef",
+  "current_head": "fcc173a58e0d55875b5a76be5cea052721edaade",
+  "status": "TRIAGED",
+  "failures": [
+    {
+      "id": 1,
+      "node": "tests/test_external_jsmn_s3.py::test_s3_jsmn_representative_fixture_is_stable_across_optimization[O1]",
+      "file": "tests/test_external_jsmn_s3.py",
+      "original_failure": "TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'",
+      "original_traceback_summary": "O1 token capture contained None for a token start/end/size field after run_source_with_buffer_capture.",
+      "milestone": "M1.50_or_earlier",
+      "subsystem": "optimizer_observable_memory",
+      "potentially_fix_related": false,
+      "status": "NON_REPRODUCIBLE_TRANSIENT"
+    },
+    {
+      "id": 2,
+      "node": "tests/test_memory_frontend.py::test_nested_arrays_remain_rejected",
+      "file": "tests/test_memory_frontend.py",
+      "original_failure": "expected SemanticError matching 'nested arrays', but array initializer length validation ran first",
+      "original_traceback_summary": "Local array type validation did not reject nested arrays before analyzing an empty initializer.",
+      "milestone": "M1.51",
+      "subsystem": "semantic_array_validation",
+      "potentially_fix_related": true,
+      "status": "M151_REGRESSION_REPAIRED"
+    },
+    {
+      "id": 3,
+      "node": "tests/test_native_x86_64_integration.py::test_nested_record_native_semantic_rejections_stay_before_backend",
+      "file": "tests/test_native_x86_64_integration.py",
+      "original_failure": "array-of-records case no longer raised 'arrays of nominal types are not supported'",
+      "original_traceback_summary": "The test's array-of-records rejection case contradicted the M1.51 composite-owned-value capability.",
+      "milestone": "M1.51",
+      "subsystem": "composite_owned_array_semantics",
+      "potentially_fix_related": true,
+      "status": "STALE_TEST_CORRECTED"
+    },
+    {
+      "id": 4,
+      "node": "tests/test_postfix_qualified_composition_integration.py::test_unsupported_aggregate_shapes_remain_rejected_in_differential_path",
+      "file": "tests/test_postfix_qualified_composition_integration.py",
+      "original_failure": "array-of-records case was accepted instead of rejected",
+      "original_traceback_summary": "The test expected the pre-M1.51 nominal-array restriction.",
+      "milestone": "M1.51",
+      "subsystem": "composite_owned_array_semantics",
+      "potentially_fix_related": true,
+      "status": "STALE_TEST_CORRECTED"
+    },
+    {
+      "id": 5,
+      "node": "tests/test_record_composition_contract.py::test_record_composition_rejects_unsupported_aggregate_shapes[record Box...arrays of nominal types are not supported]",
+      "file": "tests/test_record_composition_contract.py",
+      "original_failure": "array-of-records case was accepted instead of rejected",
+      "original_traceback_summary": "The test expected the pre-M1.51 nominal-array restriction.",
+      "milestone": "M1.51",
+      "subsystem": "composite_owned_array_semantics",
+      "potentially_fix_related": true,
+      "status": "STALE_TEST_CORRECTED"
+    },
+    {
+      "id": 6,
+      "node": "tests/test_record_member_access_contract.py::test_record_member_access_rejects_member_assignment_target",
+      "file": "tests/test_record_member_access_contract.py",
+      "original_failure": "expected ParseError, received SemanticError: owned field replacement requires a mutable aggregate",
+      "original_traceback_summary": "M1.51 added field assignment parsing and semantic mutability enforcement.",
+      "milestone": "M1.51",
+      "subsystem": "owned_field_assignment",
+      "potentially_fix_related": true,
+      "status": "STALE_TEST_CORRECTED"
+    },
+    {
+      "id": 7,
+      "node": "tests/test_s3_static_text_semantic.py::test_string_arrays_are_outside_0_53",
+      "file": "tests/test_s3_static_text_semantic.py",
+      "original_failure": "expected SemanticError matching 'arrays of string are not supported', but declaration was accepted",
+      "original_traceback_summary": "Local array type validation did not preserve the existing string-array rejection boundary.",
+      "milestone": "M1.51",
+      "subsystem": "semantic_array_validation",
+      "potentially_fix_related": true,
+      "status": "M151_REGRESSION_REPAIRED"
+    }
+  ]
+}

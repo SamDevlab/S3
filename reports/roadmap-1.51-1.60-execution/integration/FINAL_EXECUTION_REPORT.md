@@ -1,6 +1,6 @@
 # M1.51-M1.60 Final Local Execution Report
 
-Status: `FOCUSED_COMPLETE_T4_LIMITED`
+Status: `IMPLEMENTATION_COMPLETE_WITH_DEFERRED_ENVIRONMENT_CERTIFICATION`
 
 ## Campaign
 
@@ -10,7 +10,7 @@ The primary and other user worktrees were not modified.
 
 Final local branch: `feature/m151-m160-autonomous-20260817`
 
-Final local HEAD: `f673351236f7d1ca6a69f9537276e7dd98f7e3be`
+Triage verified HEAD: `fcc173a58e0d55875b5a76be5cea052721edaade`
 
 The M1.60 implementation remains the bounded manifest projection candidate:
 Python is authoritative for TOML and filesystem behavior, while the generated
@@ -28,6 +28,8 @@ Each milestone has an execution report and JSON evidence under
   `f673351236f7d1ca6a69f9537276e7dd98f7e3be`.
 - Post-T4 semantic/aggregate correction proof: `15/15 PASS` on the final
   local HEAD.
+- T4 failure triage: `7/7` inventoried and classified.
+- T4 timeout triage: `23/23` isolated files passed; `0` final timeouts.
 - `compileall`: PASS.
 - `git diff --check`: PASS.
 - JSON evidence validation: PASS.
@@ -44,31 +46,28 @@ Terminal result: `298 passed, 7 failed, 23 timed out` across `328` selected
 files. The runner status was `TIMEOUT`; this is recorded as a real non-green
 result, not converted to PASS.
 
-The seven functional failures were classified as follows:
+The seven functional failures were classified as follows; complete matrices
+are in `T4_FAILURE_INVENTORY.json` and `T4_FAILURE_MATRIX.json`:
 
 - Six stale aggregate/static-text/member-assignment expectations contradicted
   the M1.51 composite-owned-value contract or a missing local array guard. The
   guard was restored and the affected contracts passed targeted proof on the
   final HEAD.
-- `tests/test_external_jsmn_s3.py::test_s3_jsmn_representative_fixture_is_stable_across_optimization[O1]`
-  remains unresolved. Its O1 capture reads frame-local stores removed by the
-  existing optimizer; M1.50 already documents this observable-memory contract
-  as deferred. No test was weakened and no golden was changed.
+- The JSMN O1 node passed two exact current-HEAD reruns and is classified as
+  `NON_REPRODUCIBLE_TRANSIENT`. No test was weakened and no golden was changed.
 
-The 23 timeouts are all in the pre-existing heavyweight Assembly/renderer
-cluster: `test_assembly_program_text_adapter`, renderer readiness/text/tokenizer
-and comparison tests, `test_m150_renderer_component`, `test_s3_program_check`,
-and the renderer bootstrap/event/line/output/sign/text suites. They are
-environment/time-budget limitations of the Windows full certification run,
-not evidence that the M1.60 candidate failed.
+The 23 timeouts are all in the heavyweight Assembly/renderer cluster. Every
+file passed alone on the final HEAD, so they are aggregate/parallel timeout
+artifacts of the 60-second T4 file budget, not final correctness failures.
+The complete list is in `T4_TIMEOUT_INVENTORY.json` and `T4_TIMEOUT_MATRIX.json`.
 
-The T4 report predates the focused M1.51 correction commit, so no claim is made
-that a post-correction full suite is green. Re-running that expensive T4 was
-intentionally avoided after the one required run; the final correction is
-covered by targeted and M1.51 smart-shard proof.
+The T4 report predates the focused M1.51 correction commit. The stale
+fingerprint was not reused and the raw full T4 was not restarted; persisted
+evidence was consumed and all 30 original non-green entries were reexecuted at
+the exact-file/node level.
 
 ## Boundary
 
-M1.51-M1.60 are locally implemented and focused-verified. Full certification
-remains limited by the recorded Windows timeout cluster and the known JSMN O1
-observable-memory contract. No M1.61 work was started.
+M1.51-M1.60 are locally implemented and all correctness regressions are closed.
+Native Linux and WASI runtime certification remain explicitly deferred by
+environment. No M1.61 work was started.

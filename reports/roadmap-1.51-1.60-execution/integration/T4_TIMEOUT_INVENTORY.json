@@ -1,0 +1,32 @@
+{
+  "schema": "s3.m151-m160.t4-timeout-inventory.v1",
+  "t4_head": "c5163032d9c19713f8497d5bf9d15d73f55c6fef",
+  "current_head": "fcc173a58e0d55875b5a76be5cea052721edaade",
+  "timeout_seconds": 60,
+  "status": "TRIAGED",
+  "timeouts": [
+    {"id": 1, "scope": "file", "path_node": "tests/test_assembly_program_text_adapter.py", "last_observed_output": "...........................", "milestone": "M1.50_or_earlier", "subsystem": "assembly_text_adapter", "environment_requirement": "Windows_hosted", "status": "UNTRIAGED"},
+    {"id": 2, "scope": "file", "path_node": "tests/test_assembly_renderer_candidate_readiness.py", "last_observed_output": "", "milestone": "M1.50_or_earlier", "subsystem": "assembly_renderer", "environment_requirement": "Windows_hosted", "status": "UNTRIAGED"},
+    {"id": 3, "scope": "file", "path_node": "tests/test_assembly_text_renderer.py", "last_observed_output": ".............", "milestone": "M1.50_or_earlier", "subsystem": "assembly_renderer", "environment_requirement": "Windows_hosted", "status": "UNTRIAGED"},
+    {"id": 4, "scope": "file", "path_node": "tests/test_assembly_tokenizer.py", "last_observed_output": "...", "milestone": "M1.50_or_earlier", "subsystem": "assembly_tokenizer", "environment_requirement": "Windows_hosted", "status": "UNTRIAGED"},
+    {"id": 5, "scope": "file", "path_node": "tests/test_compare_assembly_renderer.py", "last_observed_output": ".........", "milestone": "M1.50_or_earlier", "subsystem": "assembly_renderer_comparison", "environment_requirement": "Windows_hosted", "status": "UNTRIAGED"},
+    {"id": 6, "scope": "file", "path_node": "tests/test_m150_renderer_component.py", "last_observed_output": "..", "milestone": "M1.50", "subsystem": "assembly_renderer_component", "environment_requirement": "Windows_hosted", "status": "UNTRIAGED"},
+    {"id": 7, "scope": "file", "path_node": "tests/test_s3_program_check.py", "last_observed_output": "...", "milestone": "M1.50_or_earlier", "subsystem": "assembly_program_check", "environment_requirement": "Windows_hosted", "status": "UNTRIAGED"},
+    {"id": 8, "scope": "file", "path_node": "tests/test_s3_renderer_bootstrap_spike.py", "last_observed_output": "......", "milestone": "M1.50_or_earlier", "subsystem": "assembly_renderer_bootstrap", "environment_requirement": "Windows_hosted", "status": "UNTRIAGED"},
+    {"id": 9, "scope": "file", "path_node": "tests/test_s3_renderer_contract.py", "last_observed_output": ".....", "milestone": "M1.50_or_earlier", "subsystem": "assembly_renderer_contract", "environment_requirement": "Windows_hosted", "status": "UNTRIAGED"},
+    {"id": 10, "scope": "file", "path_node": "tests/test_s3_renderer_event_stream.py", "last_observed_output": ".......", "milestone": "M1.50_or_earlier", "subsystem": "assembly_renderer_event_stream", "environment_requirement": "Windows_hosted", "status": "UNTRIAGED"},
+    {"id": 11, "scope": "file", "path_node": "tests/test_s3_renderer_event_writer.py", "last_observed_output": ".......", "milestone": "M1.50_or_earlier", "subsystem": "assembly_renderer_event_writer", "environment_requirement": "Windows_hosted", "status": "UNTRIAGED"},
+    {"id": 12, "scope": "file", "path_node": "tests/test_s3_renderer_first_text.py", "last_observed_output": "..", "milestone": "M1.50_or_earlier", "subsystem": "assembly_renderer_text", "environment_requirement": "Windows_hosted", "status": "UNTRIAGED"},
+    {"id": 13, "scope": "file", "path_node": "tests/test_s3_renderer_generic_sign.py", "last_observed_output": ".................", "milestone": "M1.50_or_earlier", "subsystem": "assembly_renderer_generic", "environment_requirement": "Windows_hosted", "status": "UNTRIAGED"},
+    {"id": 14, "scope": "file", "path_node": "tests/test_s3_renderer_generic_simple_call.py", "last_observed_output": "..........", "milestone": "M1.50_or_earlier", "subsystem": "assembly_renderer_generic", "environment_requirement": "Windows_hosted", "status": "UNTRIAGED"},
+    {"id": 15, "scope": "file", "path_node": "tests/test_s3_renderer_generic_text.py", "last_observed_output": "..............", "milestone": "M1.50_or_earlier", "subsystem": "assembly_renderer_generic", "environment_requirement": "Windows_hosted", "status": "UNTRIAGED"},
+    {"id": 16, "scope": "file", "path_node": "tests/test_s3_renderer_line_blueprints.py", "last_observed_output": ".......", "milestone": "M1.50_or_earlier", "subsystem": "assembly_renderer_line_model", "environment_requirement": "Windows_hosted", "status": "UNTRIAGED"},
+    {"id": 17, "scope": "file", "path_node": "tests/test_s3_renderer_line_encodings.py", "last_observed_output": "........", "milestone": "M1.50_or_earlier", "subsystem": "assembly_renderer_line_model", "environment_requirement": "Windows_hosted", "status": "UNTRIAGED"},
+    {"id": 18, "scope": "file", "path_node": "tests/test_s3_renderer_line_sequences.py", "last_observed_output": ".........", "milestone": "M1.50_or_earlier", "subsystem": "assembly_renderer_line_model", "environment_requirement": "Windows_hosted", "status": "UNTRIAGED"},
+    {"id": 19, "scope": "file", "path_node": "tests/test_s3_renderer_output_buffer.py", "last_observed_output": "......", "milestone": "M1.50_or_earlier", "subsystem": "assembly_renderer_output", "environment_requirement": "Windows_hosted", "status": "UNTRIAGED"},
+    {"id": 20, "scope": "file", "path_node": "tests/test_s3_renderer_output_model.py", "last_observed_output": ".......", "milestone": "M1.50_or_earlier", "subsystem": "assembly_renderer_output", "environment_requirement": "Windows_hosted", "status": "UNTRIAGED"},
+    {"id": 21, "scope": "file", "path_node": "tests/test_s3_renderer_sign_text.py", "last_observed_output": "", "milestone": "M1.50_or_earlier", "subsystem": "assembly_renderer_text", "environment_requirement": "Windows_hosted", "status": "UNTRIAGED"},
+    {"id": 22, "scope": "file", "path_node": "tests/test_s3_renderer_simple_call_text.py", "last_observed_output": ".", "milestone": "M1.50_or_earlier", "subsystem": "assembly_renderer_text", "environment_requirement": "Windows_hosted", "status": "UNTRIAGED"},
+    {"id": 23, "scope": "file", "path_node": "tests/test_s3_renderer_text_segments.py", "last_observed_output": ".......", "milestone": "M1.50_or_earlier", "subsystem": "assembly_renderer_text", "environment_requirement": "Windows_hosted", "status": "UNTRIAGED"}
+  ]
+}

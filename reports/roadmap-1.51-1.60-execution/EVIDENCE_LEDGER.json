@@ -77,5 +77,17 @@
     "final_correction_head": "f673351236f7d1ca6a69f9537276e7dd98f7e3be",
     "rerun_after_correction": false
   },
-  "campaign_status": "FOCUSED_COMPLETE_T4_LIMITED"
+  "campaign_status": "IMPLEMENTATION_COMPLETE_WITH_DEFERRED_ENVIRONMENT_CERTIFICATION",
+  "t4_triage": {
+    "report": "reports/roadmap-1.51-1.60-execution/integration/T4_TRIAGE_REPORT.md",
+    "failure_matrix": "reports/roadmap-1.51-1.60-execution/integration/T4_FAILURE_MATRIX.json",
+    "timeout_matrix": "reports/roadmap-1.51-1.60-execution/integration/T4_TIMEOUT_MATRIX.json",
+    "failures_inventoried": 7,
+    "timeouts_inventoried": 23,
+    "m151_regressions_repaired": 2,
+    "stale_tests_corrected": 4,
+    "final_timeouts": 0,
+    "unresolved_correctness_regressions": 0,
+    "ready_for_publication_review": true
+  }
 }
