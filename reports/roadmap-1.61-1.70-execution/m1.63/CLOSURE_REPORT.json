@@ -1,0 +1,22 @@
+{
+  "milestone": "M1.63",
+  "title": "Deterministic Iteration and Ranges V1",
+  "status": "COMPLETE",
+  "base_sha": "234bd0d55e767b4d57aa19754bad7f1c6743e2a4",
+  "implementation_sha": "926326941797141ccaa7005acc3b69a2b836a763",
+  "closure_sha": "926326941797141ccaa7005acc3b69a2b836a763",
+  "t0": {"status": "PASS", "selected": 2, "failed": 0},
+  "t1": {"status": "PASS", "passed": 33, "failed": 0},
+  "t2": {"status": "PASS", "selected_files": 11, "failed": 0},
+  "t3": {"status": "PASS", "selected_files": 11, "failed": 0},
+  "o0_o1": "PASS",
+  "linux_native": "DEFERRED_BY_ENVIRONMENT",
+  "global_t4_executed": false,
+  "remote_write_executed": false,
+  "known_correctness_regressions": [],
+  "production_paths_changed": [
+    "bootstrap/s3/dynamic.py",
+    "bootstrap/s3/iteration.py"
+  ],
+  "tests_added": ["tests/test_m163_deterministic_iteration.py"]
+}

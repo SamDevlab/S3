@@ -27,7 +27,18 @@
       "t3": "PASS",
       "environment_deferments": ["linux-native-certification"],
       "known_correctness_regressions": []
+    },
+    "M1.63": {
+      "status": "COMPLETE",
+      "implementation_sha": "926326941797141ccaa7005acc3b69a2b836a763",
+      "closure_sha": "926326941797141ccaa7005acc3b69a2b836a763",
+      "t0": "PASS",
+      "t1": "PASS",
+      "t2": "PASS",
+      "t3": "PASS",
+      "environment_deferments": ["linux-native-certification"],
+      "known_correctness_regressions": []
     }
   },
-  "next_milestone": "M1.63"
+  "next_milestone": "M1.64"
 }
