@@ -7,7 +7,7 @@
   "closure_sha": "8a5d018150401060a6b9b5ddfe91205d9bf21f1c",
   "prior_closure_sha": "ca15561b50631322b60f018ef0c087236dd0afbf",
   "t0": {"status": "PASS", "selected": 2, "failed": 0},
-  "t1": {"status": "PASS", "selected_files": 6, "failed": 0},
+  "t1": {"status": "PASS", "selected_files": 10, "failed": 0},
   "t2": {"status": "PASS", "selected_files": 5, "failed": 0},
   "t3": {"status": "PASS", "selected_files": 5, "failed": 0},
   "o0_o1": "PASS_BY_EXISTING_HOSTED_CONTRACTS",
