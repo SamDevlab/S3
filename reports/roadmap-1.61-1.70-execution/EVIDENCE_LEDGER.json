@@ -63,7 +63,18 @@
         "windows-native-execution"
       ],
       "known_correctness_regressions": []
+    },
+    "M1.66": {
+      "status": "COMPLETE",
+      "implementation_sha": "ced3724b7c5717708bc77e417cbe8fc291a8b561",
+      "closure_sha": "ced3724b7c5717708bc77e417cbe8fc291a8b561",
+      "t0": "PASS",
+      "t1": "PASS",
+      "t2": "PASS",
+      "t3": "PASS",
+      "environment_deferments": [],
+      "known_correctness_regressions": []
     }
   },
-  "next_milestone": "M1.66"
+  "next_milestone": "M1.67"
 }

@@ -1,0 +1,18 @@
+{
+  "milestone": "M1.66",
+  "title": "Cross-Platform OS Services V1",
+  "status": "COMPLETE",
+  "base_sha": "2e7ffe754017f0ef25607d12af41032cd3c73da8",
+  "implementation_sha": "ced3724b7c5717708bc77e417cbe8fc291a8b561",
+  "closure_sha": "ced3724b7c5717708bc77e417cbe8fc291a8b561",
+  "t0": {"status": "PASS", "selected": 2, "failed": 0},
+  "t1": {"status": "PASS", "selected_files": 7, "failed": 0},
+  "t2": {"status": "PASS", "selected_files": 6, "failed": 0},
+  "t3": {"status": "PASS", "selected_files": 6, "failed": 0},
+  "o0_o1": "PASS_BY_EXISTING_HOSTED_CONTRACTS",
+  "global_t4_executed": false,
+  "remote_write_executed": false,
+  "known_correctness_regressions": [],
+  "production_paths_changed": ["bootstrap/s3/os_services.py"],
+  "tests_added": ["tests/test_m166_cross_platform_os_services.py"]
+}
