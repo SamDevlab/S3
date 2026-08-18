@@ -85,7 +85,18 @@
       "t3": "PASS",
       "environment_deferments": [],
       "known_correctness_regressions": []
+    },
+    "M1.68": {
+      "status": "COMPLETE",
+      "implementation_sha": "ca15561b50631322b60f018ef0c087236dd0afbf",
+      "closure_sha": "ca15561b50631322b60f018ef0c087236dd0afbf",
+      "t0": "PASS",
+      "t1": "PASS",
+      "t2": "PASS",
+      "t3": "PASS",
+      "environment_deferments": ["trusted-tls-fixture"],
+      "known_correctness_regressions": []
     }
   },
-  "next_milestone": "M1.68"
+  "next_milestone": "M1.69"
 }
