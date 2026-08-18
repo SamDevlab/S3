@@ -1,6 +1,6 @@
 # S3 M1.51-M1.70 Publication Reconciliation
 
-`PUBLICATION_STATUS=PRE_PUSH_READY`
+`PUBLICATION_STATUS=PUBLICATION_PR_OPEN_READY_FOR_REVIEW`
 
 This report records the bounded publication audit for the completed local
 M1.51-M1.70 line. It does not certify an unperformed native environment and it
@@ -13,7 +13,8 @@ does not convert either historical T4 result into a synthetic all-green run.
 - main moved since the prior audit: `NO`
 - publication branch: `integration/m151-m170-main-reconciliation-20260818`
 - publication start: `ea8d1015c8bf0ab9d593da9b58c7351a08ca0708`
-- publication head at this report: `ea8d1015c8bf0ab9d593da9b58c7351a08ca0708`
+- publication head before publication metadata update: `4a4791f74365bd925735d4356c1d9d076ed3757f`
+- publication report update: normal fast-forward on the same branch
 - origin/main reconciliation merge: `NOT REQUIRED`; origin/main is an ancestor
 - post-M1.50 correctness fix: `06430710d05df925912603bd0a788022439079d5`, included
 - M1.51A architecture: `ee6cdb7a2ee22f6c4e64c4091549b2740b963504`, included
@@ -94,12 +95,17 @@ spec 1, docs 13, reports 85, tools 1, selfhost 0, and other 3.
 
 ## Remote Write Boundary
 
-Before this report was committed, no remote write had occurred in this
-campaign. The authorized next actions are one normal push of this dedicated
-publication branch and creation of one PR targeting `main`. Merge, auto-merge,
-tag, release, force-push, branch deletion, direct main push, and shutdown are
-out of scope.
+- publication branch push: `1` normal push, accepted
+- Pull Request: `#180`,
+  https://github.com/SamDevlab/S3/pull/180
+- PR base/head: `main` /
+  `integration/m151-m170-main-reconciliation-20260818`
+- PR state: `OPEN`, `isDraft=false`, `MERGEABLE`
+- auto-merge: `OFF`
+- CI at campaign observation: no checks reported yet (`CI_STATUS=NOT_REPORTED`)
+- report update: one normal fast-forward update to this same branch is
+  authorized and will not create another PR
 
-PR and CI fields are intentionally finalized after the first push and PR
-creation; the post-push report update, if needed, must be a normal fast-forward
-update to this same branch.
+Merge, auto-merge, tag, release, force-push, branch deletion, direct main push,
+and shutdown are out of scope. Main remained unchanged by the publication
+push and PR creation.

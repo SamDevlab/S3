@@ -1,9 +1,9 @@
 {
   "campaign": "S3-M151-M170-PUBLICATION-RECONCILIATION-20260818",
-  "status": "PRE_PUSH_READY",
+  "status": "PUBLICATION_PR_OPEN_READY_FOR_REVIEW",
   "publication_branch": "integration/m151-m170-main-reconciliation-20260818",
   "publication_start_sha": "ea8d1015c8bf0ab9d593da9b58c7351a08ca0708",
-  "publication_head": "ea8d1015c8bf0ab9d593da9b58c7351a08ca0708",
+  "publication_head_before_report_update": "4a4791f74365bd925735d4356c1d9d076ed3757f",
   "origin_main_before": "0c4b83853f8ec091d5cf41d3f2071fc1ae06c481",
   "origin_main_last_known": "0c4b83853f8ec091d5cf41d3f2071fc1ae06c481",
   "main_moved_since_last_audit": false,
@@ -53,8 +53,21 @@
     "wasi_runtime_certification",
     "trusted_tls_fixture_provider_certification"
   ],
-  "remote_branch_push_executed": false,
-  "pull_request_created": false,
+  "remote_branch_push_executed": true,
+  "remote_branch_push_count": 1,
+  "remote_branch_head_at_pr_creation": "4a4791f74365bd925735d4356c1d9d076ed3757f",
+  "pull_request_created": true,
+  "pull_request": {
+    "number": 180,
+    "url": "https://github.com/SamDevlab/S3/pull/180",
+    "base": "main",
+    "head": "integration/m151-m170-main-reconciliation-20260818",
+    "state": "OPEN",
+    "draft": false,
+    "mergeable": "MERGEABLE",
+    "auto_merge": false,
+    "ci_status": "NOT_REPORTED"
+  },
   "merge_executed": false,
   "auto_merge_enabled": false,
   "shutdown_executed": false
