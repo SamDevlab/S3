@@ -1,0 +1,4079 @@
+{
+  "argument": null,
+  "base": null,
+  "environment_blocks": [],
+  "fingerprint": "6100145909676ce46f016e063bece350cbfd3f045bf715ef0ad7c7008e0a8be4",
+  "head": "0bd50143d8e555b12d70849aef827761acfb8f34",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "profile": "full",
+  "python": "3.11.9",
+  "resume_eligible": true,
+  "runner_version": "s3test.v1",
+  "schema": "s3.smart-test-report",
+  "schema_version": "s3.smart-test-report.v1",
+  "summary": {
+    "failed": 0,
+    "passed": 316,
+    "selected": 338,
+    "status": "TIMEOUT",
+    "timed_out": 22
+  },
+  "tests": [
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_adr_0021_enum_payload_layout_decision.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..ssss                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_advanced_reference_native.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_advanced_reference_semantics.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_aggregate_function_results.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_ai_authoring_contract.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_ai_capabilities.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_array_capability_inventory.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "................                                                         [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_artifact_versioning.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".............                                                            [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_assembly_control_flow.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_assembly_emulator.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_assembly_frontend_candidate.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_assembly_multicell_results.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_assembly_parser_kernel.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_assembly_program_data_contract.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_assembly_program_render.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...........................",
+      "reason": "full certification profile",
+      "returncode": null,
+      "status": "TIMEOUT",
+      "test": "tests/test_assembly_program_text_adapter.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_assembly_renderer_candidate_actual_outputs.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_assembly_renderer_candidate_comparison_plan.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_assembly_renderer_candidate_fixture_expectations.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_assembly_renderer_candidate_fixtures.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......                                                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_assembly_renderer_candidate_manifest.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "",
+      "reason": "full certification profile",
+      "returncode": null,
+      "status": "TIMEOUT",
+      "test": "tests/test_assembly_renderer_candidate_readiness.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_assembly_renderer_candidate_symbols.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_assembly_renderer_subset_manifest.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".............",
+      "reason": "full certification profile",
+      "returncode": null,
+      "status": "TIMEOUT",
+      "test": "tests/test_assembly_text_renderer.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...",
+      "reason": "full certification profile",
+      "returncode": null,
+      "status": "TIMEOUT",
+      "test": "tests/test_assembly_tokenizer.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_assembly_verifier.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_backend_implicit_register_contracts.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..............                                                           [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_backend_registry.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".........                                                                [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_benchmark_metrics.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "............                                                             [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_benchmark_runner.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "............                                                             [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_benchmark_workloads.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..........                                                               [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_bounded_text_primitives.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".................................                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_cli.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...............................                                          [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_cli_source_syntax.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".........",
+      "reason": "full certification profile",
+      "returncode": null,
+      "status": "TIMEOUT",
+      "test": "tests/test_compare_assembly_renderer.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...........                                                              [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_compilation_cache.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "........                                                                 [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_compilation_context.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "............                                                             [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_compiler.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".........                                                                [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_cross_module_nominal_type_symbols.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....              [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_decimal_functions.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".........                                                                [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_deterministic_differential_generation.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_deterministic_robustness.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "................                                                         [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_diagnostics.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..............................................                           [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_differential_correctness_matrix.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......s                                                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_differential_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_differential_harness.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "........s                                                                [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_dynamic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_enum_payload_architecture_gate.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_enum_payload_layout.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "........                                                                 [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_enum_payload_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......                                                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_enum_payload_parser.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "................                                                         [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_enum_payload_semantics.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "............                                                             [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_enums.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..................................                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_examples_v0_6.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "ss                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_external_jsmn_native.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..................                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_external_jsmn_s3.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_ffi.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..sss                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_ffi_capability.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_first_fixture_output_probe.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".........                                                                [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_fixed_array_value_boundaries.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_fixed_value_layouts.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......................                                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_functions_control_flow.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_golden_diagnostics.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_golden_inspect.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_host_services.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...........                                                              [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_hosted_backend_routing.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "........                                                                 [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_imported_nominal_values.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..........                                                               [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_initialization_analysis.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..............................................                           [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_instruction_limit_e1.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "........                                                                 [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_instruction_limit_e2.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "sssssss                                                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_instruction_limit_e3.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "................                                                         [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_integration_milestone_02.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...............                                                          [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_integration_milestone_03.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......                                                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_internal_architecture_contracts.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_ir_multicell_results.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "............                                                             [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_ir_verifier.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_large_index.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......................                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_lexer_indentation.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......                                                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_lexer_parser.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_lucas_lehmer_benchmark.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...........                                                              [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m139_dynamic_buffers.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..........                                                               [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m140_ordered_collections.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......                                                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m141_ordered_maps_sets.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m142_structured_results.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m143_scoped_resources.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m144_standard_library.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".........                                                                [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m145_build_graph.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......                                                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m146_test_runner.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".........                                                                [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m147_python_buffer_abi.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......                                                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m148_network_provider.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m149_wasm_target.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..",
+      "reason": "full certification profile",
+      "returncode": null,
+      "status": "TIMEOUT",
+      "test": "tests/test_m150_renderer_component.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m151_composite_owned_values.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "........                                                                 [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m152_ownership_flow.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m153_generic_functions.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m154_parametric_types.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m155_generic_vector.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m156_package_dependencies.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m157_incremental_build.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m158_lsp.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m159_developer_experience.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m160_self_hosting_gate.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m161_generic_map_set.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m162_borrowed_views.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m163_deterministic_iteration.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m164_explicit_result_propagation.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m165_windows_x86_64_backend.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m166_cross_platform_os_services.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m167_udp_dns.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m168_tls_client.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m169_threads.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......                                                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m170_atomics_sync.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..................                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_memory_assembly_emulator.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...........................                                              [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_memory_frontend.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".............                                                            [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_memory_ir_and_dominance.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_memory_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".........                                                                [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_module_graph.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".............                                                            [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_modules_pipeline.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......                                                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_native_backend_routing.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...........................                                              [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_native_x86_64.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss [ 43%]\nsssssssssssssssssssssss.....sssss...sss...sss.s....ssss.s..............s [ 86%]\nsssssssssssssssssssssss                                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_native_x86_64_integration.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".................                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_nested_record_composition_integration.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "........                                                                 [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_nested_record_values.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_nominal_layout_across_modules.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_numeric_abi.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".s....s.s                                                                [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_numeric_capability_e2e.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...........                                                              [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_numeric_closure.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_numeric_domains.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......                                                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_numeric_ir.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "s                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_numeric_native_integration.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "............                                                             [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_numeric_source_parser.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_numeric_type_contract.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".........                                                                [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_optimization_budgets.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......................                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_optimizer.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_p1_compact_indexed_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_p2_value_locality_staging.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...s                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_p4_global_value_residency.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "............                                                             [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_parser_arrays_v0_6.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".................................                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_parser_match_v0_6.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_parser_modules.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "............................                                             [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_parser_postfix.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..............................                                           [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_parser_syntax_v0_6.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".........                                                                [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_pass_manager.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_post150_runtime_correctness.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...........                                                              [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_postfix_qualified_composition_integration.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_project_container.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...............                                                          [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_qualified_module_resolution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_qualified_postfix_lowering_contract.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......                                                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_record_composition_contract.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "............                                                             [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_record_member_access_contract.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..........                                                               [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_records.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".................                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_recursive_composite_layouts.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_recursive_enum_payload_layouts.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......                                                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_reference_ir_emulator.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...........ssssssss                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_reference_native_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..................                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_reference_types_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..sssssssssssssssss..............sssss                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_register_allocation_integration.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..........s                                                              [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_register_init_native_safety.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_adce.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_alias_analysis.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_array_len_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_array_len_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_array_len_parser.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_array_len_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_cfg.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_compound_assignment_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_compound_assignment_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_compound_assignment_parser.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_compound_assignment_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_constant_arithmetic_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_constant_arithmetic_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_constant_arithmetic_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_constant_comparison_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_constant_comparison_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..........                                                               [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_constant_comparison_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_constant_if_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_constant_if_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_constant_if_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_constant_logical_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_constant_logical_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......                                                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_constant_logical_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_constant_match_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_constant_match_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_constant_match_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_constant_propagation_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_constant_propagation_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_constant_propagation_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_constant_simplification_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_constant_simplification_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_constant_simplification_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_copy_propagation.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_cse.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".........                                                                [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_de_ssa.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_dead_branch_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_dead_branch_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_dead_branch_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_dead_code_elimination.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".........                                                                [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_dead_store_elimination.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_discard_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_discard_parser.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_discard_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_docker.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_dominator_tree.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_fixpoint_pipeline.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......                                                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_for_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_for_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_for_parser.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_for_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_global_dead_store_elimination.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......                                                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_gvn.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_licm.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_match_expression_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_match_expression_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_match_expression_parser.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_match_expression_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..........                                                               [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_match_fallback_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_match_fallback_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_match_fallback_parser.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_match_fallback_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_memory_gvn.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_memory_ssa.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_numeric_constant_pack_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_numeric_constant_pack_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".............                                                            [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_numeric_constant_pack_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_optimization_metrics.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_optimization_pipeline.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_pass_manager.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_phi_placement.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...",
+      "reason": "full certification profile",
+      "returncode": null,
+      "status": "TIMEOUT",
+      "test": "tests/test_s3_program_check.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_range_single_bound_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_range_single_bound_parser.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_range_single_bound_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_range_step_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_range_step_parser.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_range_step_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_reachability.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...............                                                          [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_relational_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_relational_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_relational_parser.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_relational_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......",
+      "reason": "full certification profile",
+      "returncode": null,
+      "status": "TIMEOUT",
+      "test": "tests/test_s3_renderer_bootstrap_spike.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......",
+      "reason": "full certification profile",
+      "returncode": null,
+      "status": "TIMEOUT",
+      "test": "tests/test_s3_renderer_contract.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..................                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_renderer_event_proof.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......",
+      "reason": "full certification profile",
+      "returncode": null,
+      "status": "TIMEOUT",
+      "test": "tests/test_s3_renderer_event_stream.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......",
+      "reason": "full certification profile",
+      "returncode": null,
+      "status": "TIMEOUT",
+      "test": "tests/test_s3_renderer_event_writer.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_renderer_first_text.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".................",
+      "reason": "full certification profile",
+      "returncode": null,
+      "status": "TIMEOUT",
+      "test": "tests/test_s3_renderer_generic_sign.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..........",
+      "reason": "full certification profile",
+      "returncode": null,
+      "status": "TIMEOUT",
+      "test": "tests/test_s3_renderer_generic_simple_call.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..............",
+      "reason": "full certification profile",
+      "returncode": null,
+      "status": "TIMEOUT",
+      "test": "tests/test_s3_renderer_generic_text.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......",
+      "reason": "full certification profile",
+      "returncode": null,
+      "status": "TIMEOUT",
+      "test": "tests/test_s3_renderer_line_blueprints.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "........",
+      "reason": "full certification profile",
+      "returncode": null,
+      "status": "TIMEOUT",
+      "test": "tests/test_s3_renderer_line_encodings.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".........",
+      "reason": "full certification profile",
+      "returncode": null,
+      "status": "TIMEOUT",
+      "test": "tests/test_s3_renderer_line_sequences.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......",
+      "reason": "full certification profile",
+      "returncode": null,
+      "status": "TIMEOUT",
+      "test": "tests/test_s3_renderer_output_buffer.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......",
+      "reason": "full certification profile",
+      "returncode": null,
+      "status": "TIMEOUT",
+      "test": "tests/test_s3_renderer_output_model.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_renderer_pipeline.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "",
+      "reason": "full certification profile",
+      "returncode": null,
+      "status": "TIMEOUT",
+      "test": "tests/test_s3_renderer_sign_text.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".",
+      "reason": "full certification profile",
+      "returncode": null,
+      "status": "TIMEOUT",
+      "test": "tests/test_s3_renderer_simple_call_text.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_renderer_text_builder.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "........                                                                 [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_renderer_text_fragments.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......",
+      "reason": "full certification profile",
+      "returncode": null,
+      "status": "TIMEOUT",
+      "test": "tests/test_s3_renderer_text_segments.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_sccp.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....ss                                                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_slice_capability.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_ssa_builder.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_ssa_constant_propagation.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_ssa_pass_contracts.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_ssa_peephole.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_ssa_pipeline.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_ssa_validation.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_assembly.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_concatenation_assembly_emulator.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_concatenation_ir.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......................                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_concatenation_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_constant_propagation_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_constant_propagation_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...............                                                          [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_constant_propagation_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_emulator.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_equality_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......                                                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_equality_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".................                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_equality_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_indexing_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_indexing_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_indexing_parser.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...............                                                          [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_indexing_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_ir.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_len_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_len_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "........                                                                 [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_len_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......                                                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......                                                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_native.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_parser.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_query_pack_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_query_pack_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_query_pack_parser.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "........................                                                 [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_query_pack_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".............                                                            [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_transform_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_transform_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..............                                                           [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_static_text_transform_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_strength_reduction.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "................                                                         [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_while_execution.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..................                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_while_lowering.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...................                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_while_parser.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..................                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3_while_semantic.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...........                                                              [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3bench_comparability_scope.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".............                                                            [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3bench_core.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "........                                                                 [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3bench_corpus.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..............                                                           [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3bench_cross_language.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3bench_manifest.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..............                                                           [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3bench_process_explosion.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......................................                                  [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3bench_repeatability.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...............                                                          [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3test.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..........                                                               [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_segmented_bigint.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "............                                                             [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_segmented_prime_benchmark.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...........................s                                             [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_self_hosting_opcode_classifier.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "........................................................s                [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_self_hosting_second_stage_components.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_self_hosting_third_stage_components.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_sign_fixture_output_probe.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_simple_call_fixture_output_probe.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "................................                                         [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_source_syntax_defaults.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_ssa_per_pass_verification.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_stabilization_milestone_02.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_static_string_boundary.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_static_string_literal_contract.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".........                                                                [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_static_string_table.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..............                                                           [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_static_text.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_string_capability_inventory.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".                                                                        [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_structured_data_inventory.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_structured_result_flows.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_target_spec.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...........                                                              [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_ternary.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_test_gate_markers.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..............................                                           [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_tiled_bigint.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_x86_64_call_aware_allocation.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_x86_64_cross_block_residence.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "............                                                             [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_x86_64_liveness.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..............                                                           [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_x86_64_register_allocation.py",
+      "tiers": [
+        "T4"
+      ]
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "......                                                                   [100%]\n",
+      "reason": "full certification profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_x86_64_register_contract.py",
+      "tiers": [
+        "T4"
+      ]
+    }
+  ]
+}

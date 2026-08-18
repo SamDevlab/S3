@@ -1,0 +1,27 @@
+{
+  "schema": "s3.m161-m170.t4-plan.v1",
+  "campaign_base_sha": "06324bccd0cfee03452d34c5f04596b8f3973813",
+  "final_implementation_head": "8a5d018150401060a6b9b5ddfe91205d9bf21f1c",
+  "t4_head": "0bd50143d8e555b12d70849aef827761acfb8f34",
+  "profile": "full",
+  "global_impact": true,
+  "t4_required": true,
+  "selected_count": 338,
+  "t4_fingerprint": "6100145909676ce46f016e063bece350cbfd3f045bf715ef0ad7c7008e0a8be4",
+  "outer_timeout_seconds": 60,
+  "selection": {
+    "category": "tests/test_*.py discovered files",
+    "selected": true,
+    "reason": "full certification profile; global M1.61-M1.70 impact",
+    "subsystem": "repository-wide integration",
+    "milestones": ["M1.61", "M1.62", "M1.63", "M1.64", "M1.65", "M1.66", "M1.67", "M1.68", "M1.69", "M1.70"],
+    "platform_requirement": "Windows hosted execution; native and WASI gates classified independently",
+    "selection_source": "tools/s3test.py discover_tests(root), sorted and fingerprinted"
+  },
+  "state_reuse": {
+    "lower_tier_state_retained": true,
+    "completed_t4_state_persisted": true,
+    "valid_t4_evidence_discarded": false,
+    "raw_full_t4_restarts": 0
+  }
+}
