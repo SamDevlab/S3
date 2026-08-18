@@ -61,3 +61,10 @@ def test_resource_limit_and_explicit_close_do_not_detach_running_thread() -> Non
     release.set()
     time.sleep(0.01)
     assert first.join().is_ok
+
+
+def test_direct_mutable_sharing_is_rejected_without_an_explicit_sync_root() -> None:
+    runtime = ThreadRuntime()
+    result = runtime.spawn(lambda value: len(value), [1, 2, 3])
+    failure = result.error_or(None)
+    assert failure.code is ThreadErrorCode.UNSAFE_SHARED_STATE

@@ -53,15 +53,23 @@ def _is_order(value: object) -> bool:
 
 
 def _valid_load_order(order: object) -> bool:
-    return order in {MemoryOrder.RELAXED, MemoryOrder.ACQUIRE, MemoryOrder.SEQ_CST}
+    return isinstance(order, MemoryOrder) and order in {
+        MemoryOrder.RELAXED,
+        MemoryOrder.ACQUIRE,
+        MemoryOrder.SEQ_CST,
+    }
 
 
 def _valid_store_order(order: object) -> bool:
-    return order in {MemoryOrder.RELAXED, MemoryOrder.RELEASE, MemoryOrder.SEQ_CST}
+    return isinstance(order, MemoryOrder) and order in {
+        MemoryOrder.RELAXED,
+        MemoryOrder.RELEASE,
+        MemoryOrder.SEQ_CST,
+    }
 
 
 def _valid_rmw_order(order: object) -> bool:
-    return _is_order(order)
+    return isinstance(order, MemoryOrder)
 
 
 def _valid_compare_orders(success: object, failure: object) -> bool:
@@ -91,6 +99,7 @@ class AtomicI64:
     """
 
     lock_free = False
+    __s3_thread_shareable__ = True
 
     def __init__(self, value: int = 0) -> None:
         self._value = validate_i64(value)
@@ -181,6 +190,8 @@ class AtomicI64:
 
 class Mutex(Generic[T]):
     """A mutex whose protected value is reachable only through a guard."""
+
+    __s3_thread_shareable__ = True
 
     def __init__(self, value: T) -> None:
         self._value = value

@@ -26,6 +26,7 @@ def test_atomic_load_store_and_fetch_add_validate_orders_and_i64() -> None:
     assert atomic.load(MemoryOrder.RELEASE).error_or(None).code is SyncErrorCode.INVALID_ORDER
     assert atomic.store(1, MemoryOrder.ACQUIRE).error_or(None).code is SyncErrorCode.INVALID_ORDER
     assert atomic.store(1 << 63, MemoryOrder.RELEASE).error_or(None).code is SyncErrorCode.INVALID_VALUE
+    assert atomic.load([]).error_or(None).code is SyncErrorCode.INVALID_ORDER
 
 
 def test_atomic_compare_exchange_reports_observed_value_and_ordering() -> None:

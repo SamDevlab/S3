@@ -22,6 +22,7 @@ class ThreadErrorCode(Enum):
     JOINED = "joined"
     RUNNING = "running"
     WORKER_FAILURE = "worker_failure"
+    UNSAFE_SHARED_STATE = "unsafe_shared_state"
 
 
 @dataclass(frozen=True, slots=True)
@@ -114,6 +115,14 @@ class ThreadRuntime:
     ) -> Result[ThreadHandle[U], ThreadError]:
         if not callable(entry):
             return Result.err(ThreadError(ThreadErrorCode.INVALID_ENTRY, "spawn", "entry must be callable"))
+        if not isinstance(argument, OwnedValue) and not _is_safe_direct_argument(argument):
+            return Result.err(
+                ThreadError(
+                    ThreadErrorCode.UNSAFE_SHARED_STATE,
+                    "spawn",
+                    "direct thread arguments must be immutable or explicit synchronization roots",
+                )
+            )
         with self._lock:
             active = sum(not handle.joined and handle._thread.is_alive() for handle in self._handles)
             if active >= self._max_active:
@@ -142,3 +151,15 @@ class ThreadRuntime:
 
     def join_all(self) -> tuple[Result[object, ThreadError], ...]:
         return tuple(handle.join() for handle in tuple(self._handles) if not handle.joined)
+
+
+def _is_safe_direct_argument(value: object) -> bool:
+    """Reject implicit mutable sharing while allowing explicit sync roots."""
+
+    if value is None or isinstance(value, (bool, int, float, str, bytes)):
+        return True
+    if isinstance(value, tuple):
+        return all(_is_safe_direct_argument(item) for item in value)
+    if isinstance(value, frozenset):
+        return all(_is_safe_direct_argument(item) for item in value)
+    return bool(getattr(value, "__s3_thread_shareable__", False))
