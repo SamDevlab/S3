@@ -1,0 +1,27 @@
+{
+  "milestone": "M1.61",
+  "title": "Generic Ordered Map and Set V1",
+  "status": "COMPLETE",
+  "base_sha": "06324bccd0cfee03452d34c5f04596b8f3973813",
+  "implementation_sha": "7766b5566dc6d742c71eb77d5d851043c0add79e",
+  "closure_sha": "7766b5566dc6d742c71eb77d5d851043c0add79e",
+  "t0": {"status": "PASS", "selected": 2, "failed": 0},
+  "t1": {"status": "PASS", "passed": 28, "failed": 0},
+  "t2": {"status": "PASS", "selected_files": 6, "failed": 0},
+  "t3": {"status": "PASS", "selected_files": 9, "failed": 0},
+  "o0_o1": "PASS",
+  "native_lowering": "PASS",
+  "linux_native": "DEFERRED_BY_ENVIRONMENT",
+  "global_t4_executed": false,
+  "remote_write_executed": false,
+  "known_correctness_regressions": [],
+  "production_paths_changed": [
+    "bootstrap/s3/generics.py",
+    "tools/s3test.py"
+  ],
+  "tests_added": ["tests/test_m161_generic_map_set.py"],
+  "unsupported_domains": [
+    "map<K,V> beyond map<i64,i64>",
+    "set<T> beyond set<i64>"
+  ]
+}
