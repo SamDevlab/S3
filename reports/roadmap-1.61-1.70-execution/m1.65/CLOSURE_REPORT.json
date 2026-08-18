@@ -1,0 +1,25 @@
+{
+  "milestone": "M1.65",
+  "title": "Windows x86-64 Backend V1",
+  "status": "COMPLETE",
+  "implementation_status": "STRUCTURAL_BACKEND_PLAN",
+  "base_sha": "3a83858e5c0259a05f6bb62ec83b732d7bccc8d1",
+  "implementation_sha": "5a0ffcba2749c3439dee3f65bd0283d7472f83c0",
+  "closure_sha": "5a0ffcba2749c3439dee3f65bd0283d7472f83c0",
+  "t0": {"status": "PASS", "selected": 2, "failed": 0},
+  "t1": {"status": "PASS", "selected_files": 4, "failed": 0},
+  "t2": {"status": "PASS", "selected_files": 6, "failed": 0},
+  "t3": {"status": "PASS", "selected_files": 6, "failed": 0},
+  "o0_o1": "PASS_BY_EXISTING_LINUX_AND_HOSTED_CONTRACTS",
+  "pe_object_generation": "DEFERRED_BY_ENVIRONMENT",
+  "windows_execution": "DEFERRED_BY_ENVIRONMENT",
+  "toolchain_missing": ["compiler", "linker", "assembler"],
+  "global_t4_executed": false,
+  "remote_write_executed": false,
+  "known_correctness_regressions": [],
+  "production_paths_changed": [
+    "bootstrap/s3/targets.py",
+    "bootstrap/s3/windows_x86_64.py"
+  ],
+  "tests_added": ["tests/test_m165_windows_x86_64_backend.py"]
+}

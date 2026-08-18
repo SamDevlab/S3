@@ -49,7 +49,21 @@
       "t3": "PASS",
       "environment_deferments": ["linux-native-certification"],
       "known_correctness_regressions": []
+    },
+    "M1.65": {
+      "status": "COMPLETE",
+      "implementation_sha": "5a0ffcba2749c3439dee3f65bd0283d7472f83c0",
+      "closure_sha": "5a0ffcba2749c3439dee3f65bd0283d7472f83c0",
+      "t0": "PASS",
+      "t1": "PASS",
+      "t2": "PASS",
+      "t3": "PASS",
+      "environment_deferments": [
+        "windows-pe-toolchain",
+        "windows-native-execution"
+      ],
+      "known_correctness_regressions": []
     }
   },
-  "next_milestone": "M1.65"
+  "next_milestone": "M1.66"
 }
