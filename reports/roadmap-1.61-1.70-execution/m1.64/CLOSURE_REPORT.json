@@ -1,0 +1,26 @@
+{
+  "milestone": "M1.64",
+  "title": "Explicit Result Propagation V1",
+  "status": "COMPLETE",
+  "base_sha": "a2938034edc39f74ef25b836b70d3dbb340147ef",
+  "implementation_sha": "8ac120637a487c057630206f6f3656fc2f1787b4",
+  "closure_sha": "54e4213049c5e6d03b4cf2d2baf5bba0b38d2871",
+  "t0": {"status": "PASS", "selected": 2, "failed": 0},
+  "t1": {"status": "PASS", "selected_files": 5, "failed": 0},
+  "t2": {"status": "PASS", "selected_files": 4, "failed": 0},
+  "t3": {"status": "PASS", "selected_files": 8, "failed": 0},
+  "o0_o1": "PASS",
+  "linux_native": "DEFERRED_BY_ENVIRONMENT",
+  "global_t4_executed": false,
+  "remote_write_executed": false,
+  "known_correctness_regressions": [],
+  "expected_boundaries": [
+    "fixed enum payload slots require compatible cell types"
+  ],
+  "production_paths_changed": ["bootstrap/s3/results.py"],
+  "tests_added_or_changed": [
+    "tests/test_m164_explicit_result_propagation.py",
+    "tests/test_s3test.py",
+    "tests/test-impact.json"
+  ]
+}
