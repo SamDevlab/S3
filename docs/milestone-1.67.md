@@ -11,6 +11,8 @@ terminal outcome for one operation, with no hidden retry loop.
 DNS uses the system resolver, but its result representation is deterministic:
 numeric addresses are normalized to the existing `NetworkAddress`,
 deduplicated by serialized address, and sorted by family, host, and port.
+IPv4 and IPv6 socket address layouts are normalized at the provider boundary,
+and invalid destination addresses return an explicit address error.
 Resolver answers remain external inputs and are never treated as compiler
 nondeterminism.
 

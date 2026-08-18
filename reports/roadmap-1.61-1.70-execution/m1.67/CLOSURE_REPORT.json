@@ -4,7 +4,8 @@
   "status": "COMPLETE",
   "base_sha": "f217478475f80558746d66d55d5758bf3b57d210",
   "implementation_sha": "1e6ee598c532b18671345863821bc4a4e8d8c5a8",
-  "closure_sha": "1e6ee598c532b18671345863821bc4a4e8d8c5a8",
+  "closure_sha": "8a5d018150401060a6b9b5ddfe91205d9bf21f1c",
+  "prior_closure_sha": "1e6ee598c532b18671345863821bc4a4e8d8c5a8",
   "t0": {"status": "PASS", "selected": 2, "failed": 0},
   "t1": {"status": "PASS", "selected_files": 6, "failed": 0},
   "t2": {"status": "PASS", "selected_files": 5, "failed": 0},
@@ -15,5 +16,6 @@
   "remote_write_executed": false,
   "known_correctness_regressions": [],
   "production_paths_changed": ["bootstrap/s3/udp_dns.py"],
-  "tests_added": ["tests/test_m167_udp_dns.py"]
+  "tests_added": ["tests/test_m167_udp_dns.py"],
+  "correction_tests": ["invalid UDP destination address"]
 }

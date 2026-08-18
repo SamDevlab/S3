@@ -12,7 +12,8 @@ Expected file, directory, process, and close failures are returned as explicit
 `Result` values with a typed `HostErrorCode`. Optional environment values use
 `Option`. `OwnedTextFile` closes deterministically and idempotently and never
 relies on a finalizer for correctness. Non-zero child exit is a process result,
-not a provider failure.
+not a provider failure. Process waits are explicitly bounded to 30 seconds and
+malformed command arguments are rejected before process creation.
 
 ## Compatibility and safety
 

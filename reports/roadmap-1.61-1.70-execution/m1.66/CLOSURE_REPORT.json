@@ -4,7 +4,8 @@
   "status": "COMPLETE",
   "base_sha": "2e7ffe754017f0ef25607d12af41032cd3c73da8",
   "implementation_sha": "ced3724b7c5717708bc77e417cbe8fc291a8b561",
-  "closure_sha": "ced3724b7c5717708bc77e417cbe8fc291a8b561",
+  "closure_sha": "8a5d018150401060a6b9b5ddfe91205d9bf21f1c",
+  "prior_closure_sha": "ced3724b7c5717708bc77e417cbe8fc291a8b561",
   "t0": {"status": "PASS", "selected": 2, "failed": 0},
   "t1": {"status": "PASS", "selected_files": 7, "failed": 0},
   "t2": {"status": "PASS", "selected_files": 6, "failed": 0},
@@ -14,5 +15,6 @@
   "remote_write_executed": false,
   "known_correctness_regressions": [],
   "production_paths_changed": ["bootstrap/s3/os_services.py"],
-  "tests_added": ["tests/test_m166_cross_platform_os_services.py"]
+  "tests_added": ["tests/test_m166_cross_platform_os_services.py"],
+  "correction_tests": ["process timeout and malformed argument rejection"]
 }

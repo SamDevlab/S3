@@ -6,7 +6,7 @@ M1.68 adds an owned blocking `TlsClient` backed by Python's vetted system
 OpenSSL provider. Its default context requires certificate validation, enables
 hostname validation, and limits negotiation to TLS 1.2 through TLS 1.3. The
 client exposes bounded read/write and idempotent close operations with typed
-`Result` errors.
+`Result` errors. Connection timeout configuration is bounded to 60 seconds.
 
 No cryptographic primitive, certificate parser, insecure default, secret
 logging, or private-key fixture was added. Server TLS and custom stores remain

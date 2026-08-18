@@ -17,6 +17,7 @@
 - T1: PASS, 6 selected affected files, 0 failed;
 - T2: PASS, 5 selected milestone files, 0 failed;
 - T3: PASS, 5 selected cross-subsystem files, 0 failed;
+- invalid UDP destination address mapping: PASS;
 - UDP loopback bind/send/receive/close: PASS;
 - timeout and datagram limit mapping: PASS;
 - DNS localhost sorting/deduplication: PASS;

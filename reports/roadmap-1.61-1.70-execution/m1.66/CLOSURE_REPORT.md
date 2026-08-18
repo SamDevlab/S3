@@ -19,6 +19,7 @@
 - T1: PASS, 7 selected affected files, 0 failed;
 - T2: PASS, 6 selected milestone files, 0 failed;
 - T3: PASS, 6 selected cross-subsystem files, 0 failed;
+- bounded process timeout and malformed argument rejection: PASS;
 - deterministic relative path and directory ordering: PASS;
 - owned file write/close/use-after-close contract: PASS;
 - missing/escape path diagnostics: PASS;
