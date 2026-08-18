@@ -21,9 +21,14 @@ IMPACT = ImpactMap.load(ROOT / "tests" / "test-impact.json")
 def test_dynamic_selection_is_stable_and_explainable() -> None:
     selected = IMPACT.select(["bootstrap/s3/dynamic.py"])
     assert [item.test for item in selected] == [
+        "tests/test_advanced_reference_semantics.py",
         "tests/test_dynamic.py",
         "tests/test_m139_dynamic_buffers.py",
         "tests/test_m140_ordered_collections.py",
+        "tests/test_m141_ordered_maps_sets.py",
+        "tests/test_m162_borrowed_views.py",
+        "tests/test_m163_deterministic_iteration.py",
+        "tests/test_s3_slice_capability.py",
     ]
     plan = render_plan(selected, ["bootstrap/s3/dynamic.py"])
     assert "REASON=direct impact mapping" in plan
