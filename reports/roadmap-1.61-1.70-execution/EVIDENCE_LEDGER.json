@@ -1,129 +1,164 @@
 {
-  "schema": "s3.m161-m170.evidence-ledger.v1",
+  "branch": "feature/m161-m170-autonomous-20260817",
   "campaign": "S3-M161-M170-AUTONOMOUS-20260817",
   "campaign_base_sha": "06324bccd0cfee03452d34c5f04596b8f3973813",
-  "branch": "feature/m161-m170-autonomous-20260817",
-  "global_t4_executed": false,
-  "remote_write_executed": false,
+  "global_t4_executed": true,
   "milestones": {
     "M1.61": {
-      "status": "COMPLETE",
-      "implementation_sha": "7766b5566dc6d742c71eb77d5d851043c0add79e",
       "closure_sha": "7766b5566dc6d742c71eb77d5d851043c0add79e",
+      "environment_deferments": [
+        "linux-native-certification"
+      ],
+      "implementation_sha": "7766b5566dc6d742c71eb77d5d851043c0add79e",
+      "known_correctness_regressions": [],
+      "status": "COMPLETE",
       "t0": "PASS",
       "t1": "PASS",
       "t2": "PASS",
-      "t3": "PASS",
-      "environment_deferments": ["linux-native-certification"],
-      "known_correctness_regressions": []
+      "t3": "PASS"
     },
     "M1.62": {
-      "status": "COMPLETE",
-      "implementation_sha": "4d2bd284d63aa570b26a76d811e9450c2389c28f",
       "closure_sha": "4d2bd284d63aa570b26a76d811e9450c2389c28f",
+      "environment_deferments": [
+        "linux-native-certification"
+      ],
+      "implementation_sha": "4d2bd284d63aa570b26a76d811e9450c2389c28f",
+      "known_correctness_regressions": [],
+      "status": "COMPLETE",
       "t0": "PASS",
       "t1": "PASS",
       "t2": "PASS",
-      "t3": "PASS",
-      "environment_deferments": ["linux-native-certification"],
-      "known_correctness_regressions": []
+      "t3": "PASS"
     },
     "M1.63": {
-      "status": "COMPLETE",
-      "implementation_sha": "926326941797141ccaa7005acc3b69a2b836a763",
       "closure_sha": "926326941797141ccaa7005acc3b69a2b836a763",
+      "environment_deferments": [
+        "linux-native-certification"
+      ],
+      "implementation_sha": "926326941797141ccaa7005acc3b69a2b836a763",
+      "known_correctness_regressions": [],
+      "status": "COMPLETE",
       "t0": "PASS",
       "t1": "PASS",
       "t2": "PASS",
-      "t3": "PASS",
-      "environment_deferments": ["linux-native-certification"],
-      "known_correctness_regressions": []
+      "t3": "PASS"
     },
     "M1.64": {
-      "status": "COMPLETE",
-      "implementation_sha": "8ac120637a487c057630206f6f3656fc2f1787b4",
       "closure_sha": "54e4213049c5e6d03b4cf2d2baf5bba0b38d2871",
+      "environment_deferments": [
+        "linux-native-certification"
+      ],
+      "implementation_sha": "8ac120637a487c057630206f6f3656fc2f1787b4",
+      "known_correctness_regressions": [],
+      "status": "COMPLETE",
       "t0": "PASS",
       "t1": "PASS",
       "t2": "PASS",
-      "t3": "PASS",
-      "environment_deferments": ["linux-native-certification"],
-      "known_correctness_regressions": []
+      "t3": "PASS"
     },
     "M1.65": {
-      "status": "COMPLETE",
-      "implementation_sha": "5a0ffcba2749c3439dee3f65bd0283d7472f83c0",
       "closure_sha": "5a0ffcba2749c3439dee3f65bd0283d7472f83c0",
-      "t0": "PASS",
-      "t1": "PASS",
-      "t2": "PASS",
-      "t3": "PASS",
       "environment_deferments": [
         "windows-pe-toolchain",
         "windows-native-execution"
       ],
-      "known_correctness_regressions": []
+      "implementation_sha": "5a0ffcba2749c3439dee3f65bd0283d7472f83c0",
+      "known_correctness_regressions": [],
+      "status": "COMPLETE",
+      "t0": "PASS",
+      "t1": "PASS",
+      "t2": "PASS",
+      "t3": "PASS"
     },
     "M1.66": {
-      "status": "COMPLETE",
-      "implementation_sha": "ced3724b7c5717708bc77e417cbe8fc291a8b561",
       "closure_sha": "8a5d018150401060a6b9b5ddfe91205d9bf21f1c",
+      "environment_deferments": [],
+      "implementation_sha": "ced3724b7c5717708bc77e417cbe8fc291a8b561",
+      "known_correctness_regressions": [],
       "prior_closure_sha": "ced3724b7c5717708bc77e417cbe8fc291a8b561",
+      "status": "COMPLETE",
       "t0": "PASS",
       "t1": "PASS",
       "t2": "PASS",
-      "t3": "PASS",
-      "environment_deferments": [],
-      "known_correctness_regressions": []
+      "t3": "PASS"
     },
     "M1.67": {
-      "status": "COMPLETE",
-      "implementation_sha": "1e6ee598c532b18671345863821bc4a4e8d8c5a8",
       "closure_sha": "8a5d018150401060a6b9b5ddfe91205d9bf21f1c",
+      "environment_deferments": [],
+      "implementation_sha": "1e6ee598c532b18671345863821bc4a4e8d8c5a8",
+      "known_correctness_regressions": [],
       "prior_closure_sha": "1e6ee598c532b18671345863821bc4a4e8d8c5a8",
+      "status": "COMPLETE",
       "t0": "PASS",
       "t1": "PASS",
       "t2": "PASS",
-      "t3": "PASS",
-      "environment_deferments": [],
-      "known_correctness_regressions": []
+      "t3": "PASS"
     },
     "M1.68": {
-      "status": "COMPLETE",
-      "implementation_sha": "ca15561b50631322b60f018ef0c087236dd0afbf",
       "closure_sha": "8a5d018150401060a6b9b5ddfe91205d9bf21f1c",
+      "environment_deferments": [
+        "trusted-tls-fixture"
+      ],
+      "implementation_sha": "ca15561b50631322b60f018ef0c087236dd0afbf",
+      "known_correctness_regressions": [],
       "prior_closure_sha": "ca15561b50631322b60f018ef0c087236dd0afbf",
+      "status": "COMPLETE",
       "t0": "PASS",
       "t1": "PASS",
       "t2": "PASS",
-      "t3": "PASS",
-      "environment_deferments": ["trusted-tls-fixture"],
-      "known_correctness_regressions": []
+      "t3": "PASS"
     },
     "M1.69": {
-      "status": "COMPLETE",
-      "implementation_sha": "e450c77be6ea34ded6aa788ebcc4b95940c58227",
       "closure_sha": "615eb0ce6a56abc0504390ba868e9f3010ff3440",
+      "environment_deferments": [
+        "windows-execution"
+      ],
+      "implementation_sha": "e450c77be6ea34ded6aa788ebcc4b95940c58227",
+      "known_correctness_regressions": [],
       "prior_closure_sha": "bbf43de58a9b421bf9dd33dfb359078e363ac634",
+      "status": "COMPLETE",
       "t0": "PASS",
       "t1": "PASS",
       "t2": "PASS",
-      "t3": "PASS",
-      "environment_deferments": ["windows-execution"],
-      "known_correctness_regressions": []
+      "t3": "PASS"
     },
     "M1.70": {
-      "status": "COMPLETE",
-      "implementation_sha": "3dda8767f0b1c6d6595cf77516a9b022ebc74eef",
       "closure_sha": "615eb0ce6a56abc0504390ba868e9f3010ff3440",
+      "environment_deferments": [
+        "native-linux-and-windows-execution"
+      ],
+      "implementation_sha": "3dda8767f0b1c6d6595cf77516a9b022ebc74eef",
+      "known_correctness_regressions": [],
       "prior_closure_sha": "3dda8767f0b1c6d6595cf77516a9b022ebc74eef",
+      "status": "COMPLETE",
       "t0": "PASS",
       "t1": "PASS",
       "t2": "PASS",
-      "t3": "PASS",
-      "environment_deferments": ["native-linux-and-windows-execution"],
-      "known_correctness_regressions": []
+      "t3": "PASS"
     }
   },
-  "next_milestone": "PRE_T4_RECONCILIATION"
+  "next_milestone": "PUBLICATION_READINESS",
+  "remote_write_executed": false,
+  "schema": "s3.m161-m170.evidence-ledger.v1",
+  "t4": {
+    "evidence_head": "f4f386c1de9dbdd767202b0db82418adb4ba87c3",
+    "failed": 0,
+    "fingerprint": "6100145909676ce46f016e063bece350cbfd3f045bf715ef0ad7c7008e0a8be4",
+    "head": "0bd50143d8e555b12d70849aef827761acfb8f34",
+    "passed": 316,
+    "raw_full_restarts": 0,
+    "selected": 338,
+    "skipped": 0,
+    "status": "T4_COMPLETE_WITH_NON_GREEN_ITEMS_FOR_TRIAGE",
+    "timed_out": 22
+  },
+  "timeout_triage": {
+    "base_timeouts": 22,
+    "final_isolated_timeouts": 22,
+    "m161_m170_regressions": 0,
+    "matrix": "reports/roadmap-1.61-1.70-execution/integration/FINAL_TIMEOUT_MATRIX.json",
+    "original_count": 22,
+    "preexisting_timeouts": 22,
+    "status": "COMPLETE"
+  }
 }
