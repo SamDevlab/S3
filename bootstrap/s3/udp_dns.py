@@ -33,9 +33,11 @@ class UdpDatagram:
     address: NetworkAddress
 
 
-def _socket_address(address: NetworkAddress) -> tuple[str, int]:
+def _socket_address(address: NetworkAddress) -> tuple[object, ...]:
     if not isinstance(address, NetworkAddress):
-        raise TypeError("UDP address must be NetworkAddress")
+        raise ValueError("UDP address must be NetworkAddress")
+    if address.family is NetworkFamily.IPV6:
+        return (address.host, address.port, 0, 0)
     return address.host, address.port
 
 
@@ -96,6 +98,8 @@ class UdpSocket:
     ) -> Result[int, UdpError]:
         if self._closed:
             return Result.err(UdpError(UdpErrorCode.CLOSED, "send_to", "socket is closed"))
+        if not isinstance(address, NetworkAddress):
+            return Result.err(UdpError(UdpErrorCode.INVALID_ADDRESS, "send_to", "address must be NetworkAddress"))
         if not isinstance(data, bytes) or len(data) > self._max_datagram:
             return Result.err(UdpError(UdpErrorCode.RESOURCE_LIMIT, "send_to", "datagram exceeds configured limit"))
         if isinstance(timeout_ms, bool) or not isinstance(timeout_ms, int) or timeout_ms < 0:

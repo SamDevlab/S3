@@ -57,6 +57,8 @@ def test_environment_argv_and_nonzero_process_result_are_explicit(tmp_path) -> N
     result = provider.spawn(sys.executable, ("-c", "import sys; sys.exit(7)"))
     assert result.is_ok
     assert result.value_or(None).returncode == 7
+    assert provider.spawn(sys.executable, ("-c", "pass"), timeout=30.001).error_or(None).code is HostErrorCode.TIMEOUT
+    assert provider.spawn(sys.executable, (None,)).error_or(None).code is HostErrorCode.PROCESS_START
 
 
 def test_linux_and_windows_style_provider_contract_uses_no_absolute_identity(tmp_path) -> None:

@@ -102,3 +102,12 @@ def test_connection_failure_is_mapped_without_secret_logging(monkeypatch) -> Non
     assert result.is_err
     assert result.error_or(None).code is TlsErrorCode.CONNECTION
     assert "private" not in result.error_or(None).detail.lower()
+
+
+def test_tls_timeout_is_bounded() -> None:
+    try:
+        TlsClientConfig(timeout_ms=60_001)
+    except ValueError as error:
+        assert "within" in str(error)
+    else:
+        raise AssertionError("unbounded TLS timeout was accepted")

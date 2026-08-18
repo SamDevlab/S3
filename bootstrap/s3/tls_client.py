@@ -11,6 +11,9 @@ from typing import Callable
 from .results import Result
 
 
+MAX_TLS_TIMEOUT_MS = 60_000
+
+
 class TlsErrorCode(Enum):
     INVALID_ADDRESS = "invalid_address"
     INVALID_DATA = "invalid_data"
@@ -38,8 +41,12 @@ class TlsClientConfig:
     maximum_version: ssl.TLSVersion = ssl.TLSVersion.TLSv1_3
 
     def __post_init__(self) -> None:
-        if isinstance(self.timeout_ms, bool) or not isinstance(self.timeout_ms, int) or self.timeout_ms < 0:
-            raise ValueError("TLS timeout must be a non-negative integer")
+        if (
+            isinstance(self.timeout_ms, bool)
+            or not isinstance(self.timeout_ms, int)
+            or not 0 <= self.timeout_ms <= MAX_TLS_TIMEOUT_MS
+        ):
+            raise ValueError(f"TLS timeout must be within [0, {MAX_TLS_TIMEOUT_MS}] milliseconds")
         if isinstance(self.max_read_write, bool) or not isinstance(self.max_read_write, int) or self.max_read_write <= 0:
             raise ValueError("TLS max_read_write must be positive")
         if self.minimum_version > self.maximum_version:

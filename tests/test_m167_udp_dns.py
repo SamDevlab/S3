@@ -36,6 +36,8 @@ def test_udp_timeout_invalid_address_and_bounded_payload_are_explicit() -> None:
         assert timeout.code is UdpErrorCode.TIMEOUT
         oversized = owned.send_to(b"12345", NetworkAddress.numeric("127.0.0.1", 9), 1).error_or(None)
         assert oversized.code is UdpErrorCode.RESOURCE_LIMIT
+        invalid_address = owned.send_to(b"x", object(), 1).error_or(None)
+        assert invalid_address.code is UdpErrorCode.INVALID_ADDRESS
     finally:
         owned.close()
     closed = owned.receive(1).error_or(None)

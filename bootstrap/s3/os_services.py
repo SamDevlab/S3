@@ -13,6 +13,9 @@ from .host_services import ProcessResult
 from .results import Option, Result
 
 
+MAX_PROCESS_TIMEOUT_SECONDS = 30.0
+
+
 class HostErrorCode(Enum):
     INVALID_PATH = "invalid_path"
     NOT_FOUND = "not_found"
@@ -170,9 +173,31 @@ class CrossPlatformOSServices:
         stdin: str = "",
         timeout: float = 30.0,
     ) -> Result[ProcessResult, HostOperationError]:
-        if not command or any("\x00" in value for value in (command, *args)):
+        try:
+            normalized_args = tuple(args)
+        except TypeError:
+            normalized_args = None
+        if (
+            not isinstance(command, str)
+            or not command
+            or "\x00" in command
+            or normalized_args is None
+            or any(not isinstance(value, str) or "\x00" in value for value in normalized_args)
+        ):
             return Result.err(HostOperationError(HostErrorCode.PROCESS_START, "spawn", "invalid command"))
-        command_line = (command, *(str(value) for value in args))
+        if (
+            isinstance(timeout, bool)
+            or not isinstance(timeout, (int, float))
+            or not 0 <= timeout <= MAX_PROCESS_TIMEOUT_SECONDS
+        ):
+            return Result.err(
+                HostOperationError(
+                    HostErrorCode.TIMEOUT,
+                    "spawn",
+                    f"timeout must be within [0, {MAX_PROCESS_TIMEOUT_SECONDS}] seconds",
+                )
+            )
+        command_line = (command, *normalized_args)
         try:
             completed = subprocess.run(
                 list(command_line),
