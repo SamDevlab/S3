@@ -82,6 +82,12 @@ LINUX_AARCH64_TARGET = TargetSpec(
     environment="linux",
 )
 
+MACOS_ARM64_TARGET = TargetSpec(
+    name="macos-arm64",
+    architecture="arm64",
+    environment="macos",
+)
+
 WINDOWS_X86_64_TARGET = TargetSpec(
     name="windows-x86_64",
     architecture="x86_64",
@@ -94,13 +100,19 @@ BUILTIN_TARGETS = (LINUX_X86_64_TARGET,)
 def cross_platform_target_catalog() -> TargetCatalog:
     """Return the explicit desktop target inventory without changing defaults."""
 
-    return TargetCatalog((*BUILTIN_TARGETS, WINDOWS_X86_64_TARGET, LINUX_AARCH64_TARGET))
+    return TargetCatalog((*BUILTIN_TARGETS, WINDOWS_X86_64_TARGET, LINUX_AARCH64_TARGET, MACOS_ARM64_TARGET))
 
 
 def arm64_target_catalog() -> TargetCatalog:
     """Return the explicit ARM64 structural target inventory."""
 
     return TargetCatalog((LINUX_AARCH64_TARGET,))
+
+
+def apple_arm64_target_catalog() -> TargetCatalog:
+    """Return the explicit macOS ARM64 structural target inventory."""
+
+    return TargetCatalog((MACOS_ARM64_TARGET,))
 
 
 def builtin_target_catalog() -> TargetCatalog:
