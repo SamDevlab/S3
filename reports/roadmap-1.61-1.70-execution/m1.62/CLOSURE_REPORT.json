@@ -1,0 +1,20 @@
+{
+  "milestone": "M1.62",
+  "title": "Borrowed Slices and Views V1",
+  "status": "COMPLETE",
+  "base_sha": "3c8a4f5d77f3e5cd6486ac287c52148f107403cd",
+  "implementation_sha": "4d2bd284d63aa570b26a76d811e9450c2389c28f",
+  "closure_sha": "4d2bd284d63aa570b26a76d811e9450c2389c28f",
+  "t0": {"status": "PASS", "selected": 2, "failed": 0},
+  "t1": {"status": "PASS", "passed": 24, "skipped": 3, "failed": 0},
+  "t2": {"status": "PASS", "selected_files": 4, "failed": 0},
+  "t3": {"status": "PASS", "selected_files": 7, "failed": 0},
+  "o0_o1": "PASS",
+  "linux_native": "DEFERRED_BY_ENVIRONMENT",
+  "global_t4_executed": false,
+  "remote_write_executed": false,
+  "known_correctness_regressions": [],
+  "production_paths_changed": ["bootstrap/s3/dynamic.py"],
+  "tests_added": ["tests/test_m162_borrowed_views.py"],
+  "text_view_policy": "shared_read_only_utf8_boundary_checked"
+}
