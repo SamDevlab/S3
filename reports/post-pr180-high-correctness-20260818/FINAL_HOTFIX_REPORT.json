@@ -4,7 +4,7 @@
   "package_fix_sha": "cf5f8f925853ebbba34866296816d9f254b549e8",
   "thread_fix_sha": "1223fd435fa724b01eb19123cbdd079589350895",
   "final_code_tested_sha": "1223fd435fa724b01eb19123cbdd079589350895",
-  "final_evidence_head": "PENDING_REPORT_COMMIT",
+  "final_evidence_head": "82b1b98e5096945a9fcc3eb1f11aec0d5ba89f9e",
   "t0": "PASS",
   "t1_package": "PASS",
   "t1_threads": "PASS",
