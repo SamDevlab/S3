@@ -7,7 +7,8 @@
 ## Checkpoints
 
 - base SHA: `431c3d457db45990a84093c9e56f88cd139d398f`
-- implementation/closure SHA: `e450c77be6ea34ded6aa788ebcc4b95940c58227`
+- implementation SHA: `e450c77be6ea34ded6aa788ebcc4b95940c58227`
+- final correction candidate: `615eb0ce6a56abc0504390ba868e9f3010ff3440`
 - remote writes: none
 - global T4: not run by campaign policy
 
@@ -23,10 +24,12 @@
 - worker failure mapped to explicit error: PASS;
 - multiple thread results and active limit: PASS;
 - running handle cannot be silently closed/detached: PASS;
+- arbitrary direct mutable sharing is rejected: PASS;
 - existing ownership/result/resource contracts: PASS.
 
 ## Boundary
 
 The provider does not claim a general compiler borrow-escape proof. It accepts
-explicit `OwnedValue` transfers or copyable immutable values, does not expose
-shared mutable state, and has no detached or finalizer-based lifecycle.
+explicit `OwnedValue` transfers, copyable immutable values, or explicit
+synchronization roots. Arbitrary direct mutable sharing is rejected, and there
+is no detached or finalizer-based lifecycle.

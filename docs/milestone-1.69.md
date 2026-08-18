@@ -12,11 +12,14 @@ Join is explicit and exactly once. A timeout is a single terminal observation,
 not a hidden retry. `close()` refuses to discard a running thread, and
 `join_all()` provides a bounded owner operation. Worker exceptions are caught at
 the provider boundary and mapped to `WORKER_FAILURE`; they are not propagated
-as cross-thread unwinding.
+as cross-thread unwinding. Direct arguments are limited to immutable values or
+explicit synchronization roots; arbitrary mutable objects must be wrapped in
+`OwnedValue` before transfer.
 
 ## Safety boundary
 
 No detached threads, unrestricted shared mutable state, GC finalizer cleanup,
 raw thread handles, or general shared ownership were added. Static borrow
 escape diagnostics remain a compiler-language follow-up; this provider accepts
-only explicit owned wrappers or copyable immutable values.
+only explicit owned wrappers, copyable immutable values, or explicit
+synchronization roots. Arbitrary direct mutable sharing is rejected.

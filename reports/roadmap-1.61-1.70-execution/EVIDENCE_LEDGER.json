@@ -100,7 +100,8 @@
     "M1.69": {
       "status": "COMPLETE",
       "implementation_sha": "e450c77be6ea34ded6aa788ebcc4b95940c58227",
-      "closure_sha": "bbf43de58a9b421bf9dd33dfb359078e363ac634",
+      "closure_sha": "615eb0ce6a56abc0504390ba868e9f3010ff3440",
+      "prior_closure_sha": "bbf43de58a9b421bf9dd33dfb359078e363ac634",
       "t0": "PASS",
       "t1": "PASS",
       "t2": "PASS",
@@ -111,7 +112,8 @@
     "M1.70": {
       "status": "COMPLETE",
       "implementation_sha": "3dda8767f0b1c6d6595cf77516a9b022ebc74eef",
-      "closure_sha": "3dda8767f0b1c6d6595cf77516a9b022ebc74eef",
+      "closure_sha": "615eb0ce6a56abc0504390ba868e9f3010ff3440",
+      "prior_closure_sha": "3dda8767f0b1c6d6595cf77516a9b022ebc74eef",
       "t0": "PASS",
       "t1": "PASS",
       "t2": "PASS",
