@@ -19,7 +19,7 @@ dedicated certification prompt.
 - Campaign base: `06324bccd0cfee03452d34c5f04596b8f3973813`
 - Branch: `feature/m161-m170-autonomous-20260817`
 - Worktree: `C:\Users\samue\Downloads\S3-m161-m170-autonomous-20260817`
-- Final implementation candidate before this report reconciliation: `615eb0ce6a56abc0504390ba868e9f3010ff3440`
+- Final implementation candidate before this report commit: `8a5d018150401060a6b9b5ddfe91205d9bf21f1c`
 - Latest closure-evidence checkpoint before this report commit: `86c9ca7b34e71fb31eb2fc01b8c22d1a38454686`
 - M1.51-M1.60 final code-tested SHA: `f673351236f7d1ca6a69f9537276e7dd98f7e3be`
 - M1.51-M1.60 final evidence head: `f76af7f78c05acb25406bceee7cd67aca98ef7cd`
