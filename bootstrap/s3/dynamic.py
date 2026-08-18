@@ -305,11 +305,29 @@ class OwnedBuffer(Generic[T]):
 class BorrowedBuffer:
     """Lexically manageable non-owning view of a dynamic byte/text owner."""
 
-    def __init__(self, owner: "DynamicBytes | DynamicText | DynamicVector", mutable: bool) -> None:
+    def __init__(
+        self,
+        owner: "DynamicBytes | DynamicText | DynamicVector",
+        mutable: bool,
+        start: int = 0,
+        end: int | None = None,
+    ) -> None:
+        self._closed = True
+        if end is None:
+            end = owner.length
+        _validate_slice(start, end, owner.length)
+        if isinstance(owner, DynamicText):
+            data = owner._bytes.to_bytes()
+            if not _is_utf8_boundary(data, start) or not _is_utf8_boundary(data, end):
+                raise TextBoundaryError("text view is not on a UTF-8 boundary")
+            if mutable:
+                raise BorrowConflictError("mutable text views are not supported")
         self._owner = owner
         self.mutable = mutable
-        self._closed = False
+        self._start = start
+        self._end = end
         owner._acquire_borrow(mutable)
+        self._closed = False
 
     @property
     def owner(self) -> "DynamicBytes | DynamicText | DynamicVector":
@@ -319,11 +337,13 @@ class BorrowedBuffer:
 
     @property
     def length(self) -> int:
-        return self.owner.length
+        self.owner
+        return self._end - self._start
 
     @property
     def capacity(self) -> int:
-        return self.owner.capacity
+        self.owner
+        return self.length
 
     def close(self) -> None:
         if not self._closed:
@@ -340,12 +360,32 @@ class BorrowedBuffer:
         self.close()
 
     def __getitem__(self, index: int) -> int:
-        return self.owner[index]
+        if isinstance(index, bool) or not isinstance(index, int) or not 0 <= index < self.length:
+            raise BufferBoundsError("borrowed view index is outside [0, length)")
+        owner = self.owner
+        absolute = self._start + index
+        if isinstance(owner, DynamicText):
+            return owner._bytes.get(absolute)
+        return owner[absolute]
 
     def __setitem__(self, index: int, value: int) -> None:
         if not self.mutable:
             raise BorrowConflictError("shared borrow is immutable")
-        self.owner[index] = value
+        if isinstance(index, bool) or not isinstance(index, int) or not 0 <= index < self.length:
+            raise BufferBoundsError("borrowed view index is outside [0, length)")
+        owner = self.owner
+        if isinstance(owner, DynamicText):
+            raise BorrowConflictError("mutable text views are not supported")
+        absolute = self._start + index
+        if isinstance(owner, DynamicBytes):
+            owner._require_live()
+            _validate_octet(value)
+            owner._storage[absolute] = value
+            return
+        owner._require_live()
+        _validate_vector_index(absolute, owner.length)
+        _validate_vector_element(owner.element_type, value)
+        owner._storage[absolute] = value
 
 
 class DynamicBytes:
@@ -470,6 +510,9 @@ class DynamicBytes:
     def borrow(self, *, mutable: bool = False) -> BorrowedBuffer:
         return BorrowedBuffer(self, mutable)
 
+    def borrow_range(self, start: int, end: int, *, mutable: bool = False) -> BorrowedBuffer:
+        return BorrowedBuffer(self, mutable, start, end)
+
     def __getitem__(self, index: int) -> int:
         return self.get(index)
 
@@ -564,6 +607,9 @@ class DynamicText:
 
     def borrow(self, *, mutable: bool = False) -> BorrowedBuffer:
         return BorrowedBuffer(self, mutable)
+
+    def borrow_range(self, start: int, end: int, *, mutable: bool = False) -> BorrowedBuffer:
+        return BorrowedBuffer(self, mutable, start, end)
 
 
 class DynamicVector:
@@ -700,6 +746,9 @@ class DynamicVector:
 
     def borrow(self, *, mutable: bool = False) -> BorrowedBuffer:
         return BorrowedBuffer(self, mutable)
+
+    def borrow_range(self, start: int, end: int, *, mutable: bool = False) -> BorrowedBuffer:
+        return BorrowedBuffer(self, mutable, start, end)
 
     def __iter__(self) -> Iterator[int | float]:
         self._require_live()

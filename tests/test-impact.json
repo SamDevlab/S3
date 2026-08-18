@@ -88,6 +88,15 @@
       "tests/test_native_x86_64_integration.py",
       "tests/test_compiler.py"
     ],
+    "m162": [
+      "tests/test_m162_borrowed_views.py",
+      "tests/test_s3_slice_capability.py",
+      "tests/test_advanced_reference_semantics.py",
+      "tests/test_dynamic.py",
+      "tests/test_advanced_reference_native.py",
+      "tests/test_ir_verifier.py",
+      "tests/test_native_x86_64_integration.py"
+    ],
     "m145-m146": ["tests/test_m145_build_graph.py", "tests/test_m146_test_runner.py"],
     "m147": ["tests/test_m147_python_buffer_abi.py"],
     "m148": ["tests/test_m148_network_provider.py"],
@@ -194,6 +203,20 @@
       ],
       "milestones": ["m161", "m155", "m154", "m153"],
       "shards": ["m161", "m155", "m154", "m153"],
+      "native_required": true,
+      "environment_requirements": ["native-x86_64"],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/dynamic.py",
+      "tests": [
+        "tests/test_m162_borrowed_views.py",
+        "tests/test_s3_slice_capability.py",
+        "tests/test_advanced_reference_semantics.py",
+        "tests/test_dynamic.py"
+      ],
+      "milestones": ["m162"],
+      "shards": ["m162"],
       "native_required": true,
       "environment_requirements": ["native-x86_64"],
       "global_impact": false
