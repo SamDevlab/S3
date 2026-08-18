@@ -1,0 +1,20 @@
+{
+  "milestone": "M1.69",
+  "title": "Threads V1",
+  "status": "COMPLETE",
+  "base_sha": "431c3d457db45990a84093c9e56f88cd139d398f",
+  "implementation_sha": "e450c77be6ea34ded6aa788ebcc4b95940c58227",
+  "closure_sha": "e450c77be6ea34ded6aa788ebcc4b95940c58227",
+  "t0": {"status": "PASS", "selected": 2, "failed": 0},
+  "t1": {"status": "PASS", "selected_files": 6, "failed": 0},
+  "t2": {"status": "PASS", "selected_files": 5, "failed": 0},
+  "t3": {"status": "PASS", "selected_files": 5, "failed": 0},
+  "o0_o1": "PASS_BY_EXISTING_HOSTED_CONTRACTS",
+  "linux_execution": "PASS",
+  "windows_execution": "DEFERRED_BY_ENVIRONMENT",
+  "global_t4_executed": false,
+  "remote_write_executed": false,
+  "known_correctness_regressions": [],
+  "production_paths_changed": ["bootstrap/s3/threads.py"],
+  "tests_added": ["tests/test_m169_threads.py"]
+}
