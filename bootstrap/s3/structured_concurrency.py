@@ -30,13 +30,14 @@ class TaskError:
 
 
 class TaskHandle(Generic[T]):
-    """An owned child handle.  Joining consumes its terminal result once."""
+    """An owned child handle. Joining consumes its exact terminal result once."""
 
     def __init__(self, identifier: int, future: AsyncFuture[T], owner: TaskGroup) -> None:
         self.identifier = identifier
         self._future = future
         self._owner = owner
         self._joined = False
+        self._terminal_poll: Poll[T] | None = None
 
     @property
     def joined(self) -> bool:
@@ -49,29 +50,41 @@ class TaskHandle(Generic[T]):
     def poll(self) -> Poll[T] | TaskError:
         if self._joined:
             return TaskError(TaskErrorCode.JOINED, "poll", "task handle was already joined")
-        return self._future.poll()
+        if self._terminal_poll is not None:
+            return self._terminal_poll
+        outcome = self._future.poll()
+        if outcome.kind in {PollKind.READY, PollKind.FAILED} and outcome.state in {
+            AsyncState.COMPLETED,
+            AsyncState.FAILED,
+            AsyncState.CANCELLED,
+        }:
+            self._terminal_poll = outcome
+        return outcome
 
     def join(self) -> Result[Poll[T], TaskError]:
         if self._joined:
             return Result.err(TaskError(TaskErrorCode.JOINED, "join", "task handle was already joined"))
         if self._future.state not in {AsyncState.COMPLETED, AsyncState.FAILED, AsyncState.CANCELLED}:
             return Result.err(TaskError(TaskErrorCode.UNFINISHED, "join", "task is not terminal"))
+        if self._terminal_poll is None:
+            return Result.err(TaskError(TaskErrorCode.INVALID_STATE, "join", "terminal task result was not retained by its owned handle"))
         self._joined = True
-        return Result.ok(Poll(self._kind(), self._future.state))
+        return Result.ok(self._terminal_poll)
 
     def cancel(self) -> Result[None, TaskError]:
         if self._joined:
             return Result.err(TaskError(TaskErrorCode.JOINED, "cancel", "task handle was already joined"))
+        if self._terminal_poll is not None:
+            return Result.err(TaskError(TaskErrorCode.INVALID_STATE, "cancel", "task is already terminal"))
         result = self._future.cancel()
         if result.is_err:
             error = result.error_or(None)
             return Result.err(TaskError(TaskErrorCode.INVALID_STATE, "cancel", error.detail))
+        self._terminal_poll = Poll.failed(
+            AsyncState.CANCELLED,
+            AsyncError(AsyncErrorCode.CANCELLED, "cancel", "task was cancelled"),
+        )
         return Result.ok(None)
-
-    def _kind(self) -> PollKind:
-        if self._future.state is AsyncState.COMPLETED:
-            return PollKind.READY
-        return PollKind.FAILED
 
 
 class TaskGroup:
@@ -151,8 +164,6 @@ class TaskGroup:
 
 
 def task_failure(error: AsyncError) -> TaskError:
-    """Translate a frame error at the structured-concurrency boundary."""
-
     code = TaskErrorCode.CHILD_FAILED
     if error.code is AsyncErrorCode.CANCELLED:
         code = TaskErrorCode.INVALID_STATE

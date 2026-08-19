@@ -8,19 +8,24 @@ from hashlib import sha256
 
 from . import ast
 from .assembly import ASSEMBLY_FORMAT_VERSION, AssemblyProgram
+from .async_frontend import (
+    AsyncStateMachinePlan,
+    AsyncSyntaxTree,
+    lower_async_program,
+    parse_async_source,
+    validate_async_semantics,
+)
 from .backends._hosted_execution import _execute_hosted_assembly
 from .codegen import generate_assembly
 from .compilation_context import CompilationContext
-from .diagnostics import DiagnosticCode, SemanticError
 from .emulator import DEFAULT_MAX_FRAMES, DEFAULT_MAX_INSTRUCTIONS
 from .ir import IRProgram
 from .ir_serialization import IR_FORMAT_VERSION
-from .lexer import SyntaxMode, Token, tokenize
+from .lexer import SyntaxMode, Token
 from .generics import specialize_generic_functions
 from .lowering import lower
 from .module_compilation import SourceCollection, prepare_module_compilation
 from .optimizer import OptimizationLevel, optimize_ir
-from .parser import parse_tokens
 from .semantic import SemanticModel, analyze
 
 
@@ -31,13 +36,15 @@ class CompilationResult:
     semantic_model: SemanticModel
     ir: IRProgram
     assembly: AssemblyProgram
+    async_syntax: AsyncSyntaxTree = AsyncSyntaxTree()
+    async_state_machines: tuple[AsyncStateMachinePlan, ...] = ()
 
     @property
     def assembly_text(self) -> str:
         return self.assembly.render()
 
 
-COMPILATION_CACHE_VERSION = "1.0.0"
+COMPILATION_CACHE_VERSION = "1.1.0"
 
 
 @dataclass(frozen=True, slots=True)
@@ -166,19 +173,23 @@ def _compile_source_with_context(
     source: str,
     context: CompilationContext,
 ) -> CompilationResult:
-    tokens = tokenize(source, mode=context.mode)
-    syntax_tree = specialize_generic_functions(parse_tokens(tokens, mode=context.mode))
+    parsed = parse_async_source(source, mode=context.mode)
+    validate_async_semantics(parsed.program, parsed.syntax)
+    async_state_machines = lower_async_program(parsed.program, parsed.syntax)
+    syntax_tree = specialize_generic_functions(parsed.program)
     semantic_model = analyze(syntax_tree)
     ir_program = lower(syntax_tree, semantic_model)
     if not semantic_model.contains_dynamic:
         ir_program = optimize_ir(ir_program, context.optimization)
     assembly_program = generate_assembly(ir_program)
     return CompilationResult(
-        tokens,
+        parsed.tokens,
         syntax_tree,
         semantic_model,
         ir_program,
         assembly_program,
+        parsed.syntax,
+        async_state_machines,
     )
 
 
@@ -205,7 +216,7 @@ def run_source_with_buffer_capture(
         max_frames=max_frames,
         max_instructions=max_instructions,
         max_memory_trits=3**8,
-        capture_memory=capture
+        capture_memory=capture,
     )
     return result, capture
 

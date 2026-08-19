@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Protocol
 
-from .async_core import AsyncFuture, AsyncFrame, AsyncErrorCode, complete, fail, pending
+from .async_core import AsyncFuture, AsyncFrame, complete, fail, pending
 from .network import NetworkAddress
 from .results import Result
 
@@ -29,7 +29,7 @@ class AsyncNetworkError:
 
 @dataclass(frozen=True, slots=True)
 class PendingOperation:
-    """The provider is waiting for reactor readiness or a timer."""
+    pass
 
 
 @dataclass(frozen=True, slots=True)
@@ -130,31 +130,53 @@ class AsyncNetworkService:
         return Result.ok(None)
 
     def _resource_future(self, operation: str, call):
+        pending_resource: object | None = None
+
         def step(frame: AsyncFrame):
+            nonlocal pending_resource
             outcome = call()
             if isinstance(outcome, PendingOperation):
                 return pending()
             if isinstance(outcome, ProviderFailure):
                 return fail(outcome.error.code, operation, outcome.error.detail)
             if isinstance(outcome, PendingResource):
-                if frame.own("network-resource", outcome.resource, self.provider.close).is_err:
+                if pending_resource is not None and outcome.resource is not pending_resource:
                     self.provider.close(outcome.resource)
-                    return fail(AsyncNetworkErrorCode.RESOURCE_LIMIT, operation, "frame resource slot unavailable")
+                    return fail(AsyncNetworkErrorCode.PROVIDER_FAILURE, operation, "provider replaced an already pending resource")
+                pending_resource = outcome.resource
+                if "network-resource" not in frame.slots:
+                    if frame.own("network-resource", outcome.resource, self.provider.close).is_err:
+                        self.provider.close(outcome.resource)
+                        pending_resource = None
+                        return fail(AsyncNetworkErrorCode.RESOURCE_LIMIT, operation, "frame resource slot unavailable")
                 return pending()
+
             resource = outcome
-            if len(self._handles) >= self.max_handles:
+            if pending_resource is not None and resource is not pending_resource:
                 self.provider.close(resource)
+                return fail(AsyncNetworkErrorCode.PROVIDER_FAILURE, operation, "provider completion replaced the frame-owned pending resource")
+
+            if len(self._handles) >= self.max_handles:
+                if pending_resource is None:
+                    self.provider.close(resource)
                 return fail(AsyncNetworkErrorCode.RESOURCE_LIMIT, operation, "network handle limit exceeded")
-            if "network-resource" in frame.slots and not frame.slots["network-resource"].moved:
+
+            if pending_resource is not None:
                 moved = frame.move("network-resource")
+                if moved.is_err:
+                    return fail(AsyncNetworkErrorCode.PROVIDER_FAILURE, operation, "pending resource transfer failed")
+                resource = moved.value_or(None)
+                pending_resource = None
             else:
                 if frame.own("network-resource", resource, self.provider.close).is_err:
                     self.provider.close(resource)
                     return fail(AsyncNetworkErrorCode.RESOURCE_LIMIT, operation, "frame resource slot unavailable")
                 moved = frame.move("network-resource")
-            if moved.is_err:
-                self.provider.close(resource)
-                return fail(AsyncNetworkErrorCode.PROVIDER_FAILURE, operation, "resource transfer failed")
+                if moved.is_err:
+                    self.provider.close(resource)
+                    return fail(AsyncNetworkErrorCode.PROVIDER_FAILURE, operation, "resource transfer failed")
+                resource = moved.value_or(None)
+
             handle = AsyncNetworkHandle(self._next_id, resource, self)
             self._next_id += 1
             self._handles[handle.identifier] = handle

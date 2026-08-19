@@ -1,8 +1,8 @@
 """Deterministic hosted async/await core for S3 M1.71.
 
-The module models the normative state machine directly.  It intentionally
-does not use Python generators: a transition callback receives an explicit
-frame and returns one explicit transition.
+The module models the normative state machine directly. It intentionally does
+not use Python generators: a transition callback receives an explicit frame
+and returns one explicit transition.
 """
 
 from __future__ import annotations
@@ -88,9 +88,7 @@ class OwnedSlot(Generic[T]):
 
     def move(self) -> Result[T, AsyncError]:
         if self._moved or self._dropped:
-            return Result.err(
-                AsyncError(AsyncErrorCode.OWNERSHIP, "move", "frame slot was already consumed")
-            )
+            return Result.err(AsyncError(AsyncErrorCode.OWNERSHIP, "move", "frame slot was already consumed"))
         self._moved = True
         return Result.ok(self._value)
 
@@ -158,13 +156,7 @@ class AsyncFrame:
 
     def suspend(self) -> Result[None, AsyncError]:
         if self._borrows:
-            return Result.err(
-                AsyncError(
-                    AsyncErrorCode.BORROW_ACROSS_AWAIT,
-                    "suspend",
-                    "ordinary lexical borrow is live across await",
-                )
-            )
+            return Result.err(AsyncError(AsyncErrorCode.BORROW_ACROSS_AWAIT, "suspend", "ordinary lexical borrow is live across await"))
         self.state = AsyncState.SUSPENDED
         self.trace.append(AsyncState.SUSPENDED.value)
         return Result.ok(None)
@@ -191,7 +183,7 @@ class AsyncFrame:
 
 @dataclass(frozen=True, slots=True)
 class Pending:
-    """A transition that suspends the frame until a later poll."""
+    pass
 
 
 @dataclass(frozen=True, slots=True)
@@ -228,16 +220,12 @@ class AsyncFuture(Generic[T]):
 
     def poll(self) -> Poll[T]:
         if self._terminal_consumed:
-            return Poll.failed(
-                self.frame.state,
-                AsyncError(AsyncErrorCode.INVALID_STATE, "poll", "terminal future was already consumed"),
-            )
+            return Poll.failed(self.frame.state, AsyncError(AsyncErrorCode.INVALID_STATE, "poll", "terminal future was already consumed"))
+        if self.frame.state is AsyncState.RUNNING:
+            return Poll.failed(self.frame.state, AsyncError(AsyncErrorCode.INVALID_STATE, "poll", "re-entrant future poll is not allowed"))
         if self.frame.state in {AsyncState.COMPLETED, AsyncState.FAILED, AsyncState.CANCELLED}:
             self._terminal_consumed = True
-            return Poll.failed(
-                self.frame.state,
-                AsyncError(AsyncErrorCode.INVALID_STATE, "poll", "future is already terminal"),
-            )
+            return Poll.failed(self.frame.state, AsyncError(AsyncErrorCode.INVALID_STATE, "poll", "future is already terminal"))
         self.frame.state = AsyncState.RUNNING
         self.frame.trace.append(AsyncState.RUNNING.value)
         try:
@@ -271,6 +259,8 @@ class AsyncFuture(Generic[T]):
     def cancel(self) -> Result[None, AsyncError]:
         if self._terminal_consumed:
             return Result.err(AsyncError(AsyncErrorCode.INVALID_STATE, "cancel", "future was already consumed"))
+        if self.frame.state is AsyncState.RUNNING:
+            return Result.err(AsyncError(AsyncErrorCode.INVALID_STATE, "cancel", "running future cannot be cancelled re-entrantly"))
         if self.frame.state in {AsyncState.COMPLETED, AsyncState.FAILED, AsyncState.CANCELLED}:
             return Result.err(AsyncError(AsyncErrorCode.INVALID_STATE, "cancel", "future is already terminal"))
         self.frame.cancel()

@@ -7,7 +7,6 @@ import json
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 import tarfile
-from typing import Iterable
 
 
 class RegistryError(ValueError):
@@ -41,15 +40,37 @@ class RegistryArtifact:
     archive: bytes
 
 
-class RegistryClient:
-    """Read-only local registry with immutable object identity."""
+@dataclass(frozen=True, slots=True)
+class _ValidatedMember:
+    member: tarfile.TarInfo
+    canonical_name: str
+    target: Path
 
-    def __init__(self, root: Path, *, cache: Path | None = None, max_archive_bytes: int = 16 * 1024 * 1024) -> None:
+
+class RegistryClient:
+    """Read-only local registry with immutable identity and bounded extraction."""
+
+    def __init__(
+        self,
+        root: Path,
+        *,
+        cache: Path | None = None,
+        max_archive_bytes: int = 16 * 1024 * 1024,
+        max_member_bytes: int = 16 * 1024 * 1024,
+        max_extracted_bytes: int = 64 * 1024 * 1024,
+    ) -> None:
         self.root = Path(root)
         self.cache = Path(cache) if cache is not None else self.root / "cache"
-        if isinstance(max_archive_bytes, bool) or not isinstance(max_archive_bytes, int) or max_archive_bytes <= 0:
-            raise ValueError("max_archive_bytes must be positive")
+        for name, value in (
+            ("max_archive_bytes", max_archive_bytes),
+            ("max_member_bytes", max_member_bytes),
+            ("max_extracted_bytes", max_extracted_bytes),
+        ):
+            if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+                raise ValueError(f"{name} must be positive")
         self.max_archive_bytes = max_archive_bytes
+        self.max_member_bytes = max_member_bytes
+        self.max_extracted_bytes = max_extracted_bytes
         self._entries = self._load_index()
 
     @property
@@ -78,7 +99,6 @@ class RegistryClient:
         if isinstance(max_members, bool) or not isinstance(max_members, int) or max_members <= 0:
             raise RegistryError("max_members must be positive")
         destination = Path(destination)
-        destination.mkdir(parents=True, exist_ok=True)
         try:
             archive = tarfile.open(fileobj=_BytesReader(artifact.archive), mode="r:*")
         except (tarfile.TarError, OSError) as error:
@@ -87,20 +107,46 @@ class RegistryClient:
             members = archive.getmembers()
             if len(members) > max_members:
                 raise RegistryError("package archive member limit exceeded")
-            names = tuple(sorted(member.name for member in members))
-            for member in members:
-                target = _safe_archive_target(destination, member.name)
-                if not member.isfile():
-                    raise RegistryError(f"archive member is not a regular file: {member.name!r}")
-                source = archive.extractfile(member)
+            validated = self._validate_members(destination, members)
+            destination.mkdir(parents=True, exist_ok=True)
+            actual_total = 0
+            for item in validated:
+                source = archive.extractfile(item.member)
                 if source is None:
-                    raise RegistryError(f"archive member cannot be read: {member.name!r}")
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_bytes(source.read())
-        return names
+                    raise RegistryError(f"archive member cannot be read: {item.canonical_name!r}")
+                data = source.read(item.member.size + 1)
+                if len(data) != item.member.size:
+                    raise RegistryError(f"archive member size mismatch: {item.canonical_name!r}")
+                actual_total += len(data)
+                if actual_total > self.max_extracted_bytes:
+                    raise RegistryError("package extracted byte limit exceeded")
+                item.target.parent.mkdir(parents=True, exist_ok=True)
+                item.target.write_bytes(data)
+        return tuple(sorted(item.canonical_name for item in validated))
 
     def publish(self, _artifact: RegistryArtifact) -> None:
         raise RegistryError("registry client is read-only; publishing is not implemented")
+
+    def _validate_members(self, destination: Path, members: list[tarfile.TarInfo]) -> tuple[_ValidatedMember, ...]:
+        validated: list[_ValidatedMember] = []
+        canonical_paths: set[str] = set()
+        total = 0
+        for member in members:
+            if not member.isfile():
+                raise RegistryError(f"archive member is not a regular file: {member.name!r}")
+            if isinstance(member.size, bool) or not isinstance(member.size, int) or member.size < 0:
+                raise RegistryError(f"archive member has invalid size: {member.name!r}")
+            if member.size > self.max_member_bytes:
+                raise RegistryError(f"archive member exceeds configured size: {member.name!r}")
+            total += member.size
+            if total > self.max_extracted_bytes:
+                raise RegistryError("package extracted byte limit exceeded")
+            canonical_name = _canonical_archive_name(member.name)
+            if canonical_name in canonical_paths:
+                raise RegistryError(f"duplicate canonical archive path: {canonical_name!r}")
+            canonical_paths.add(canonical_name)
+            validated.append(_ValidatedMember(member, canonical_name, _safe_archive_target(destination, canonical_name)))
+        return tuple(validated)
 
     def _load_index(self) -> tuple[RegistryEntry, ...]:
         try:
@@ -181,11 +227,20 @@ class _BytesReader:
         return self._position
 
 
-def _safe_archive_target(destination: Path, name: str) -> Path:
+def _canonical_archive_name(name: str) -> str:
     normalized = name.replace("\\", "/")
     relative = PurePosixPath(normalized)
     if relative.is_absolute() or not relative.parts or ".." in relative.parts or ":" in relative.parts[0]:
         raise RegistryError(f"archive path traversal rejected: {name!r}")
+    parts = tuple(part for part in relative.parts if part not in {"", "."})
+    if not parts:
+        raise RegistryError(f"archive path is empty: {name!r}")
+    return "/".join(parts)
+
+
+def _safe_archive_target(destination: Path, name: str) -> Path:
+    canonical = _canonical_archive_name(name)
+    relative = PurePosixPath(canonical)
     target = (destination / Path(*relative.parts)).resolve()
     root = destination.resolve()
     if target != root and root not in target.parents:
