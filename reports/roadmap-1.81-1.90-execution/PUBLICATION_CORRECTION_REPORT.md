@@ -6,6 +6,7 @@ ORIGINAL_PUBLICATION_REVIEW_HEAD=8ba7858c3b9a5ddb5de667479d185afe7f572ab1
 CAMPAIGN_BASE_SHA=cd6804f72757d6936ca1ec6c20d5badf55d1aac4
 CORRECTION_BRANCH=feature/m181-m190-autonomous-20260819
 CORRECTION_HEAD=this documentation commit and its ancestors
+CORRECTION_REMOTE_SOURCE_REVIEW=PASS_PENDING_LOCAL_EXECUTION
 CORRECTION_LOCAL_TEST_STATUS=PENDING
 READY_FOR_PR=NO_PENDING_LOCAL_FOCUSED_GATE
 MERGE_EXECUTED=NO
@@ -30,6 +31,22 @@ The publication review of the original M1.81-M1.90 evidence head identified impl
 - **M1.87:** the selected production signature path is Ed25519 through the optional vetted `cryptography` provider. Canonical payload binds key id and HTTPS source identity in addition to package identity, digest, publisher, and bounded provenance. No private-key persistence path is introduced.
 - **M1.88/M1.89:** Linux/macOS ARM64 now accept complete compiler `AssemblyProgram` input through bounded AArch64 program lowering, explicit AAPCS64 ABI metadata, target selection, runtime symbol/relocation build plans, and a bounded platform-toolchain provider boundary. Native assemble/link/execution certification remains deferred on the Windows campaign host and is not inferred from structural lowering.
 - **M1.90:** structural PASS requires target-specific validation rather than arbitrary bytes. Release candidates require Apache-2.0 license text, record Apache-2.0 metadata, verify the deterministic bundle, and still cannot publish.
+
+## Publication-review findings closed in source
+
+The correction branch was re-reviewed against the concrete publication blockers. The following source-level gates are now present:
+
+- async `run_source()` dispatches an async entry to executable async IR instead of ignoring the async IR side channel;
+- module compilation builds async module metadata and specialization identities before executable async IR lowering;
+- task admission, active-poll ownership, deferred wake, and cancellation serialization share the executor synchronization root;
+- process capture applies the byte budget while stdout/stderr are being drained and kills/reaps on overflow;
+- HTTP has a real socket transport and secure default TLS context while deterministic fixture transport remains injectable;
+- registry object fetching uses the bounded HTTP(S) client and verifies digest before cache insertion;
+- production signature verification selects Ed25519 from `cryptography` with no custom crypto fallback;
+- Linux/macOS ARM64 integration lowers full public S3 Assembly opcode input through direct operations or explicit runtime-helper ABI calls, with native execution kept as a separate certificate;
+- release-candidate structural PASS is validator-backed and Apache-2.0 license text is mandatory.
+
+This is a **source review only**. It does not convert the correction commits into tested evidence. Local execution remains mandatory before PR publication.
 
 ## Historical test truth
 
