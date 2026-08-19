@@ -73,13 +73,15 @@ class _Task:
 
 
 class BoundedThreadExecutor:
-    """Fixed-worker executor with explicit admission and wakeup bounds."""
+    """Fixed-worker executor with atomic admission and exactly-one active poll."""
 
     def __init__(self, *, limits: ThreadExecutorLimits | None = None) -> None:
         self.limits = limits or ThreadExecutorLimits()
         self._queue: queue.Queue[int | None] = queue.Queue(maxsize=self.limits.max_ready)
         self._tasks: dict[int, _Task] = {}
         self._queued: set[int] = set()
+        self._active: set[int] = set()
+        self._deferred_wake: set[int] = set()
         self._polls: list[ThreadPoll[object]] = []
         self._lock = threading.Lock()
         self._closed = False
@@ -108,25 +110,33 @@ class BoundedThreadExecutor:
     ) -> Result[int, ThreadExecutorError]:
         if not isinstance(owner, MoveOnlyFuture):
             return Result.err(ThreadExecutorError(ThreadExecutorErrorCode.OWNERSHIP, "spawn", "spawn requires an owned Future"))
+        # Capacity check, ownership transfer, task-id reservation, task insertion,
+        # and initial ready-queue admission are one lock transaction.  This is
+        # intentionally the same fail-closed shape as the post-PR180 resource
+        # admission fix: no unlocked check followed by a later reservation.
         with self._lock:
             if self._closed:
                 return Result.err(ThreadExecutorError(ThreadExecutorErrorCode.INVALID_STATE, "spawn", "executor is closed"))
             if len(self._tasks) >= self.limits.max_tasks:
                 return Result.err(ThreadExecutorError(ThreadExecutorErrorCode.RESOURCE_LIMIT, "spawn", "task limit exceeded"))
-        moved = owner.move()
-        if moved.is_err:
-            error = moved.error_or(None)
-            return Result.err(ThreadExecutorError(ThreadExecutorErrorCode.OWNERSHIP, "spawn", error.detail))
-        with self._lock:
+            if self._queue.full():
+                return Result.err(ThreadExecutorError(ThreadExecutorErrorCode.QUEUE_FULL, "spawn", "ready queue is full"))
+            moved = owner.move()
+            if moved.is_err:
+                error = moved.error_or(None)
+                return Result.err(ThreadExecutorError(ThreadExecutorErrorCode.OWNERSHIP, "spawn", error.detail))
             identifier = self._next_task
             self._next_task += 1
             self._tasks[identifier] = _Task(moved.value_or(None), transfer)
-        queued = self.wake(identifier)
-        if queued.is_err:
-            with self._lock:
-                self._tasks.pop(identifier, None)
-            return Result.err(queued.error_or(None))
-        return Result.ok(identifier)
+            self._queued.add(identifier)
+            try:
+                self._queue.put_nowait(identifier)
+            except queue.Full:  # Defensive: all queue mutations are serialized by _lock.
+                self._queued.discard(identifier)
+                task = self._tasks.pop(identifier)
+                task.owner.cancel()
+                return Result.err(ThreadExecutorError(ThreadExecutorErrorCode.QUEUE_FULL, "spawn", "ready queue became full"))
+            return Result.ok(identifier)
 
     def wake(self, task_id: int) -> Result[None, ThreadExecutorError]:
         with self._lock:
@@ -136,6 +146,12 @@ class BoundedThreadExecutor:
             if task is None:
                 return Result.err(ThreadExecutorError(ThreadExecutorErrorCode.UNKNOWN_TASK, "wake", "task is unknown"))
             if task.owner.state in {AsyncState.COMPLETED, AsyncState.FAILED, AsyncState.CANCELLED}:
+                return Result.ok(None)
+            if task_id in self._active:
+                # Do not enqueue a second concurrent poll.  Preserve the wake so
+                # the worker can schedule one follow-up poll after it leaves the
+                # active set.
+                self._deferred_wake.add(task_id)
                 return Result.ok(None)
             if task_id in self._queued:
                 return Result.ok(None)
@@ -160,12 +176,16 @@ class BoundedThreadExecutor:
         for task in tasks:
             if task.owner.state not in {AsyncState.COMPLETED, AsyncState.FAILED, AsyncState.CANCELLED}:
                 task.owner.cancel()
+        # Queue sentinel insertion may need to wait for workers to consume
+        # already-admitted bounded work.  No new wake/spawn is possible now.
         for _worker in self._workers:
             self._queue.put(None)
         for worker in self._workers:
             worker.join()
         with self._lock:
             self._queued.clear()
+            self._active.clear()
+            self._deferred_wake.clear()
             self._tasks.clear()
         return Result.ok(None)
 
@@ -178,13 +198,55 @@ class BoundedThreadExecutor:
                 with self._lock:
                     self._queued.discard(task_id)
                     task = self._tasks.get(task_id)
-                if task is None:
-                    continue
+                    if task is None:
+                        self._flush_deferred_locked()
+                        continue
+                    if task_id in self._active:
+                        # This should only be reachable if a corrupted/adversarial
+                        # queue duplicates an id.  Never poll concurrently.
+                        self._deferred_wake.add(task_id)
+                        self._flush_deferred_locked()
+                        continue
+                    self._active.add(task_id)
                 outcome = task.owner.poll()
+                poll = outcome.value_or(None)
                 with self._lock:
-                    self._polls.append(ThreadPoll(task_id, outcome.value_or(None), worker_index))
+                    self._polls.append(ThreadPoll(task_id, poll, worker_index))
+                    self._active.discard(task_id)
+                    terminal = (
+                        outcome.is_err
+                        or poll is None
+                        or poll.kind in {PollKind.READY, PollKind.FAILED}
+                        or task.owner.state in {AsyncState.COMPLETED, AsyncState.FAILED, AsyncState.CANCELLED}
+                    )
+                    if terminal:
+                        self._tasks.pop(task_id, None)
+                        self._deferred_wake.discard(task_id)
+                    elif task_id in self._deferred_wake:
+                        self._deferred_wake.discard(task_id)
+                        self._enqueue_locked(task_id)
+                    self._flush_deferred_locked()
             finally:
                 self._queue.task_done()
+
+    def _enqueue_locked(self, task_id: int) -> bool:
+        if task_id not in self._tasks or task_id in self._queued or task_id in self._active:
+            return False
+        if self._queue.full():
+            self._deferred_wake.add(task_id)
+            return False
+        self._queued.add(task_id)
+        self._queue.put_nowait(task_id)
+        return True
+
+    def _flush_deferred_locked(self) -> None:
+        if self._queue.full():
+            return
+        for task_id in sorted(tuple(self._deferred_wake)):
+            if self._queue.full():
+                return
+            if self._enqueue_locked(task_id):
+                self._deferred_wake.discard(task_id)
 
 
 def _transfer_safe(value: object) -> bool:
