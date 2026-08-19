@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import struct
 
+from bootstrap.s3.aarch64_toolchain import AAPCS64_V1, LinuxAArch64NativeAssemblyBackend, create_cross_platform_backend_registry
 from bootstrap.s3.arm64_integration import Arm64ExecutionStatus, LinuxAArch64Integration, MacOSArm64Integration
 from bootstrap.s3.backends.aarch64 import AARCH64_ELF_MACHINE
 from bootstrap.s3.backends.macos_arm64 import ARM64_CPU_TYPE
@@ -41,6 +42,33 @@ def test_linux_aarch64_lowers_complete_s3_assembly_program_not_only_scalar_fixtu
     assert "bl add" in artifact.text
     assert any(symbol.endswith("tadd") for symbol in artifact.runtime_symbols)
     assert 0 < artifact.instruction_count <= 100_000
+
+
+def test_cross_platform_registry_selects_arm64_backends_without_changing_default_registry() -> None:
+    registry = create_cross_platform_backend_registry()
+    assert registry.native_assembly_targets == ("linux-aarch64", "linux-x86_64", "macos-arm64")
+    compilation = compile_source("fn main() -> i64:\n    return 7\n")
+    linux_text = registry.get_native_assembly("linux-aarch64").generate(compilation.assembly)
+    macos_text = registry.get_native_assembly("macos-arm64").generate(compilation.assembly)
+    assert ".globl main" in linux_text
+    assert ".globl _main" in macos_text
+
+
+def test_aapcs64_build_plan_records_abi_and_runtime_relocations() -> None:
+    compilation = compile_source(
+        "fn main() -> i64:\n"
+        "    return 4 + 5\n"
+    )
+    backend = LinuxAArch64NativeAssemblyBackend()
+    plan = backend.build_plan(compilation.assembly)
+    assert plan.structurally_complete
+    assert plan.abi is AAPCS64_V1
+    assert plan.abi.stack_alignment == 16
+    assert plan.abi.integer_arguments == ("x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7")
+    assert plan.abi.floating_arguments == ("v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7")
+    assert plan.abi.indirect_result == "x8"
+    assert plan.abi.max_program_instructions == 100_000
+    assert any(relocation.symbol.endswith("tadd") for relocation in plan.relocations)
 
 
 def test_macos_and_linux_program_lowering_share_s3_program_semantics_but_platform_symbols_differ() -> None:
