@@ -1,10 +1,7 @@
 # M1.89 Architecture
 
-M1.89 closes the macOS ARM64 target artifact path using the existing shared
-AArch64 instruction contract and the Mach-O 64-bit ARM64 header contract. The
-target identity, assembly body, container identity, and native execution
-certificate are distinct fields in the integration result.
+M1.89 applies the same complete S3 Assembly program lowering surface to Darwin ARM64 while keeping platform identity separate. `MacOSArm64Integration.build_program()` and `build_macos_arm64_program()` emit Mach-O/ARM64-targeted AArch64 text with Darwin symbol spelling, bounded instruction count, runtime helper identities, and an explicit Mach-O 64 ARM64 container contract.
 
-The current host is Windows, so macOS ARM64 execution is not attempted and is
-reported as `DEFERRED_BY_ENVIRONMENT`. Structural Mach-O validation is not
-reclassified as Apple Silicon execution evidence.
+The shared AAPCS64-level value/call model is reused where Darwin permits it, while target symbol/container behavior is selected by the macOS route rather than copied from ELF. The cross-platform backend registry exposes a dedicated `macos-arm64` native-assembly provider and native build plan/toolchain boundary.
+
+This campaign host is Windows. Therefore assembler/linker and Apple Silicon execution certification remain `DEFERRED_BY_ENVIRONMENT`. Structural Mach-O identity and complete compiler-program lowering are recorded independently and are not described as a successful macOS execution certificate.
