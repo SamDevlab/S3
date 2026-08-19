@@ -13,6 +13,7 @@ from .async_frontend import AsyncStateMachinePlan, AsyncSuspensionPoint
 from .async_ir import AsyncIRPollKind, AsyncIRProgram, execute_async_program, lower_executable_async_ir
 from .async_language import AsyncAction, AsyncActionKind, AsyncExecutableProgram, AsyncLanguageSyntax, lower_async_language_program, parse_async_language_source
 from .async_modules import prepare_async_modules
+from .async_specialization import specialize_async_executable
 from .async_validation import validate_async_language_semantics
 from .backends._hosted_execution import _execute_hosted_assembly
 from .codegen import generate_assembly
@@ -44,7 +45,7 @@ class CompilationResult:
         return self.assembly.render()
 
 
-COMPILATION_CACHE_VERSION = "1.2.0"
+COMPILATION_CACHE_VERSION = "1.3.0"
 
 
 @dataclass(frozen=True, slots=True)
@@ -136,7 +137,7 @@ def compile_sources(
     if not semantic_model.contains_dynamic:
         ir_program = optimize_ir(ir_program, context.optimization)
     assembly_program = generate_assembly(ir_program)
-    executable = async_preparation.executable
+    executable = specialize_async_executable(async_preparation.executable)
     return CompilationResult(
         plan.tokens,
         syntax_tree,
@@ -152,7 +153,7 @@ def compile_sources(
 def _compile_source_with_context(source: str, context: CompilationContext) -> CompilationResult:
     parsed = parse_async_language_source(source, mode=context.mode)
     validate_async_language_semantics(parsed)
-    executable = lower_async_language_program(parsed)
+    executable = specialize_async_executable(lower_async_language_program(parsed))
     async_state_machines = _compat_state_plans(executable)
     async_ir = lower_executable_async_ir(executable)
     syntax_tree = specialize_generic_functions(parsed.program)
