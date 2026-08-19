@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import struct
 
-from bootstrap.s3.arm64_integration import Arm64ExecutionStatus, LinuxAArch64Integration
-from bootstrap.s3.arm64_integration import MacOSArm64Integration
+from bootstrap.s3.arm64_integration import Arm64ExecutionStatus, LinuxAArch64Integration, MacOSArm64Integration
 from bootstrap.s3.backends.aarch64 import AARCH64_ELF_MACHINE
 from bootstrap.s3.backends.macos_arm64 import ARM64_CPU_TYPE
+from bootstrap.s3.pipeline import compile_source
 
 
 def test_linux_aarch64_artifact_is_structurally_integrated_without_fake_execution() -> None:
@@ -23,6 +23,39 @@ def test_macos_arm64_artifact_uses_macho_identity_and_explicit_deferment() -> No
     assert struct.unpack_from("<I", artifact.container_header, 0)[0] == 0xFEEDFACF
     assert struct.unpack_from("<i", artifact.container_header, 4)[0] == ARM64_CPU_TYPE
     assert artifact.execution_status is Arm64ExecutionStatus.DEFERRED_BY_ENVIRONMENT
+
+
+def test_linux_aarch64_lowers_complete_s3_assembly_program_not_only_scalar_fixture() -> None:
+    compilation = compile_source(
+        "fn add(a: i64, b: i64) -> i64:\n"
+        "    return a + b\n"
+        "fn main() -> i64:\n"
+        "    return add(2, 3)\n"
+    )
+    artifact = LinuxAArch64Integration().build_program(compilation.assembly)
+    assert artifact.target.name == "linux-aarch64"
+    assert artifact.structural_valid
+    assert artifact.execution_status is Arm64ExecutionStatus.DEFERRED_BY_ENVIRONMENT
+    assert ".globl add" in artifact.text
+    assert ".globl main" in artifact.text
+    assert "bl add" in artifact.text
+    assert any(symbol.endswith("tadd") for symbol in artifact.runtime_symbols)
+    assert 0 < artifact.instruction_count <= 100_000
+
+
+def test_macos_and_linux_program_lowering_share_s3_program_semantics_but_platform_symbols_differ() -> None:
+    compilation = compile_source(
+        "fn child() -> i64:\n"
+        "    return 4\n"
+        "fn main() -> i64:\n"
+        "    return child()\n"
+    )
+    linux = LinuxAArch64Integration().build_program(compilation.assembly)
+    macos = MacOSArm64Integration().build_program(compilation.assembly)
+    assert "bl child" in linux.text
+    assert "bl _child" in macos.text
+    assert linux.instruction_count == macos.instruction_count
+    assert macos.execution_status is Arm64ExecutionStatus.DEFERRED_BY_ENVIRONMENT
 
 
 def test_native_certificate_requires_exact_result() -> None:
