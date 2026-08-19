@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import socket
+import ssl
 import threading
+
+import pytest
 
 from bootstrap.s3.async_http import (
     BoundedHTTPClient,
@@ -9,6 +12,7 @@ from bootstrap.s3.async_http import (
     HTTPErrorCode,
     LocalHTTPClient,
     LocalHTTPFixtures,
+    SocketHTTPTransport,
     parse_http_response,
 )
 
@@ -50,6 +54,18 @@ def test_http_parser_rejects_chunked_oversized_and_injected_headers() -> None:
         headers=(("X-Test", "ok\r\nInjected: yes"),),
     ).poll().value_or(None)
     assert injected.error is not None
+
+
+def test_https_transport_secure_defaults_cannot_be_disabled_accidentally() -> None:
+    transport = SocketHTTPTransport()
+    assert transport._tls_context.verify_mode == ssl.CERT_REQUIRED
+    assert transport._tls_context.check_hostname is True
+
+    insecure = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    insecure.check_hostname = False
+    insecure.verify_mode = ssl.CERT_NONE
+    with pytest.raises(ValueError, match="certificate and hostname"):
+        SocketHTTPTransport(tls_context=insecure)
 
 
 def test_real_loopback_tcp_transport_executes_bounded_http_request() -> None:
