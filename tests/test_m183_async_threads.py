@@ -126,3 +126,28 @@ def test_wake_during_active_poll_never_creates_two_active_polls() -> None:
     assert len(results) >= 2
     assert max_active == 1
     assert executor.close().is_ok
+
+
+def test_cancel_during_active_poll_is_deferred_until_poll_finishes() -> None:
+    entered = threading.Event()
+    release = threading.Event()
+    finished = threading.Event()
+
+    def step(_frame):
+        entered.set()
+        release.wait(timeout=2)
+        finished.set()
+        return pending()
+
+    executor = BoundedThreadExecutor(limits=ThreadExecutorLimits(max_workers=1, max_tasks=1, max_ready=1))
+    task_id = executor.spawn(MoveOnlyFuture(AsyncFuture(step))).value_or(None)
+    assert entered.wait(timeout=2)
+    assert executor.cancel(task_id).is_ok
+    assert not finished.is_set()
+    release.set()
+    _wait_for_polls(executor, 1)
+    deadline = time.monotonic() + 2
+    while executor.task_count and time.monotonic() < deadline:
+        time.sleep(0.005)
+    assert executor.task_count == 0
+    assert executor.close().is_ok
