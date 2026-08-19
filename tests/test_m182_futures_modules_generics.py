@@ -140,7 +140,7 @@ def test_constrained_generic_async_specialization_is_deterministic_and_closed() 
     assert rejected.error_or(None).code is FutureErrorCode.INVALID_TYPE_ARGUMENT
 
 
-def test_source_generic_async_function_uses_closed_core_specialization_and_async_ir() -> None:
+def test_source_generic_async_function_gets_a_deterministic_specialized_frame() -> None:
     source = (
         "async fn identity<T: scalar>(value: T) -> T:\n"
         "    return value\n"
@@ -151,7 +151,29 @@ def test_source_generic_async_function_uses_closed_core_specialization_and_async
     second = compile_source(source)
     assert first.async_ir is not None and second.async_ir is not None
     assert first.async_ir.to_dict() == second.async_ir.to_dict()
+    names = [function.name for function in first.async_ir.functions]
+    assert "identity" not in names
+    specializations = [name for name in names if name.startswith("identity__async_spec_")]
+    assert len(specializations) == 1
+    main = first.async_ir.ir_function("main")
+    assert main is not None and main.executable is not None
+    assert main.executable.actions[0].callee == specializations[0]
     assert run_source(source) == 41
+
+
+def test_two_async_generic_instantiations_have_distinct_stable_frame_identities() -> None:
+    source = (
+        "async fn identity<T: value>(value: T) -> T:\n"
+        "    return value\n"
+        "async fn main() -> i64:\n"
+        "    first: i64 = await identity<i64>(4)\n"
+        "    discard identity<tryte>(1)\n"
+        "    return first\n"
+    )
+    # An unawaited async call remains illegal even when generic; keep the gate
+    # explicit rather than turning it into an implicit detached Future.
+    with pytest.raises(SemanticError, match="must be awaited or stored"):
+        compile_source(source)
 
 
 def test_generic_registry_keeps_module_boundaries() -> None:
