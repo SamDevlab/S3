@@ -1,13 +1,7 @@
 # M1.86 Architecture
 
-M1.86 adds a read-only remote registry transport contract for HTTPS/TLS and
-content-addressed objects. A registry object is requested by a lowercase
-SHA-256 digest, the URI must use HTTPS, and the injected transport must report
-certificate/hostname verification as successful. The client verifies the
-returned bytes independently before exposing or caching them.
+M1.86 is a read-only content-addressed registry client layered on the real bounded M1.85 HTTP client. Registry origin is an explicit canonical HTTPS authority and becomes part of each object's immutable identity. Publishing remains disabled.
 
-The cache is bounded by entry count and total bytes. Entries are immutable,
-verified before insertion, and evicted deterministically in insertion order.
-There is no remote publish path, no HTTP fallback, no unverified cache hit, no
-credential handling, and no external network use in the tests; the fixture
-transport models only the verified HTTPS boundary.
+An object request is `https://<authority>/objects/<lowercase-sha256>`. `HTTPSContentAddressedRegistry` delegates transport to `BoundedHTTPClient`, whose default HTTPS path uses certificate-required, hostname-checked TLS. The registry requires HTTP 200, independently hashes returned bytes, and exposes/caches them only after the digest matches. 404 and other statuses are explicit failures.
+
+The verified cache is bounded by entry count and total bytes and evicts deterministically. Cache hits contain only previously hash-verified bytes. There is no HTTP downgrade, provider-supplied `certificate_verified` boolean, credential handling, or publish path. Tests use an injected HTTPS transport boundary without public network access while asserting that registry requests remain HTTPS and content verification stays independent of transport.
