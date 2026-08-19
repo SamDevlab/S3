@@ -4,9 +4,9 @@
 
 - Base: `cbfd833437dac7f3b6083b3aa28a6653cbe149ca` (post-PR181 main line)
 - Branch: `feature/m171-m180-autonomous-20260818`
-- Final evidence HEAD: `FINAL_EVIDENCE_HEAD` is filled after this report commit.
+- Final evidence HEAD: `732c9b62afde10d5a29eb1de274f4d2a6e59a4fb` is the immutable evidence commit containing the raw T4 result.
 - Campaign continuation worktree: `C:\Users\samue\AppData\Local\Temp\s3-m171-m180-campaign-20260818`
-- The requested external worktree and primary checkout were preserved. No primary checkout files were changed.
+- The requested external worktree and primary checkout were preserved. No primary checkout files were changed. The count includes 20 milestone architecture/implementation commits, one closure/test-contract commit, and four local evidence commits through the final amended evidence commit.
 - `origin/main` visible in this local clone is `16f3766157766e3079cfb97c46f0fd340001fde2`; the campaign base remains the explicit post-PR181 commit above. No remote write was performed.
 
 ## Milestone closure
@@ -68,7 +68,7 @@ FINAL_T4_EXECUTION_HEAD=d0d2cc2e4812c8b54899f76809e108048667cb1e
 FINAL_EVIDENCE_HEAD=732c9b62afde10d5a29eb1de274f4d2a6e59a4fb
 GIT_DIFF_CHECK=PASS
 WORKING_TREE_CLEAN=YES_AFTER_REPORT_COMMIT_AND_T4_STATE_CLEANUP
-LOCAL_COMMITS_CREATED=22
+LOCAL_COMMITS_CREATED=25
 READY_FOR_PUBLICATION_REVIEW=YES_WITH_EXPLICIT_ENVIRONMENT_DEFERMENTS
 REMOTE_WRITE_EXECUTED=NO
 PUSH_EXECUTED=NO
