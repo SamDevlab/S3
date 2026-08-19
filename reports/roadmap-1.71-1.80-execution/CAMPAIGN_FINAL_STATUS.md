@@ -65,7 +65,7 @@ SECRET_AUDIT=PASS
 FINAL_IMPLEMENTATION_HEAD=76b3511500e92013102882257ba9955a09f83364
 FINAL_CODE_TESTED_SHA=0608c29545369a4f8f2c93ed274ad6d1dc014d80
 FINAL_T4_EXECUTION_HEAD=d0d2cc2e4812c8b54899f76809e108048667cb1e
-FINAL_EVIDENCE_HEAD=SET_AFTER_REPORT_COMMIT
+FINAL_EVIDENCE_HEAD=732c9b62afde10d5a29eb1de274f4d2a6e59a4fb
 GIT_DIFF_CHECK=PASS
 WORKING_TREE_CLEAN=YES_AFTER_REPORT_COMMIT_AND_T4_STATE_CLEANUP
 LOCAL_COMMITS_CREATED=22
@@ -115,7 +115,7 @@ FINAL_STATUS=M171_M180_IMPLEMENTATION_COMPLETE_WITH_EXPLICIT_ENVIRONMENT_DEFERME
 29. Failures were classified as 33 environment permission deferments, one stale catalog test repaired locally, and one non-reproducible JSMN result. Timeouts were classified as 10 pass-in-isolation, one environment permission deferment and 11 pre-existing renderer timeouts.
 30. No known M1.71-M1.80 correctness regression remains unresolved.
 31. Final code-tested SHA: `0608c29545369a4f8f2c93ed274ad6d1dc014d80`.
-32. Final evidence HEAD is the report commit created after this document is committed.
+32. Final evidence HEAD is the report commit `732c9b62afde10d5a29eb1de274f4d2a6e59a4fb`, which contains this document and the raw T4 evidence.
 33. Yes, ready for a separate publication review with the explicit Windows-host and target-execution deferments recorded above.
 
 ## Final display
