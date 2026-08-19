@@ -1,19 +1,9 @@
 # M1.83 Architecture
 
-M1.83 adds a bounded multithread executor around the move-only Future from
-M1.82. The executor has a fixed worker count, a bounded ready queue, bounded
-task admission, deterministic task identifiers, and explicit wakeups. A
-pending task is not re-polled implicitly; its owner or an I/O provider must
-explicitly wake it.
+M1.83 provides a fixed-worker bounded executor for move-only Futures. Task admission is one lock transaction: closed/capacity checks, Future ownership move, task-id reservation, task insertion, and initial ready-queue admission cannot be interleaved by a competing submitter.
 
-Cross-thread transfer uses a closed `TransferValue` domain. Scalar values,
-text, bytes, and recursively closed tuples are accepted; mutable containers,
-arbitrary host objects, and implicit aliases are rejected. Submission consumes
-the Future owner and the transfer token. Workers publish only immutable poll
-records under a lock, and `close()` cancels unfinished work, signals every
-worker, joins them, and clears the queue.
+The executor tracks queued and actively-polled task ids separately. A wake that arrives while a task is actively being polled is recorded as one deferred wake rather than enqueuing a second copy. A worker leaves the active set before a deferred follow-up poll can be admitted, enforcing the exactly-one-active-poll invariant. Wakeups remain deduplicated and ready-queue capacity is bounded.
 
-This is a hosted implementation of the ownership and boundedness contract.
-The language remains free of shared mutable values, raw pointers, GC, and
-exception-driven control flow. Native execution certification is deferred when
-the required target environment is unavailable.
+Cross-thread transfer uses the closed immutable `TransferValue` domain: scalars, text/bytes, and recursively transfer-safe tuples. Mutable containers and arbitrary host objects fail closed. Submission consumes Future ownership. Terminal tasks are removed, shutdown cancels unfinished owners, signals and joins all workers, and clears bounded executor state.
+
+Concurrency correctness tests use barriers/events for atomic admission and active-poll races; they do not depend on random sleeps to create the race. Runtime completion order across workers is not promised deterministic, while task ownership and result semantics are.
