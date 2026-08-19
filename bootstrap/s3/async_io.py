@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-import os
 from pathlib import Path
 import subprocess
-from typing import Sequence
+import threading
+import time
+from typing import BinaryIO, Sequence
 
 from .async_core import AsyncErrorCode, AsyncFuture, complete, fail
 from .async_futures import MoveOnlyFuture
@@ -70,7 +71,11 @@ class AsyncIOService:
             try:
                 if resolved.stat().st_size > self.limits.max_bytes:
                     return _failure(AsyncIOError(AsyncIOErrorCode.OUTPUT_LIMIT, "read_file", "file exceeds byte budget"))
-                return complete(resolved.read_bytes())
+                with resolved.open("rb") as handle:
+                    data = handle.read(self.limits.max_bytes + 1)
+                if len(data) > self.limits.max_bytes:
+                    return _failure(AsyncIOError(AsyncIOErrorCode.OUTPUT_LIMIT, "read_file", "file exceeds byte budget"))
+                return complete(data)
             except FileNotFoundError:
                 return _failure(AsyncIOError(AsyncIOErrorCode.NOT_FOUND, "read_file", str(resolved)))
             except PermissionError:
@@ -119,24 +124,96 @@ class AsyncIOService:
             if any(not isinstance(value, str) or "\x00" in value for value in normalized):
                 return _failure(AsyncIOError(AsyncIOErrorCode.INVALID_ARGUMENT, "run_process", "invalid process argument"))
             argv = (command, *normalized)
-            try:
-                completed = subprocess.run(
-                    list(argv),
-                    cwd=self.root,
-                    input=stdin,
-                    capture_output=True,
-                    shell=False,
-                    check=False,
-                    timeout=timeout,
-                )
-            except subprocess.TimeoutExpired:
-                return _failure(AsyncIOError(AsyncIOErrorCode.TIMEOUT, "run_process", "process timed out"))
-            except OSError as error:
-                return _failure(AsyncIOError(AsyncIOErrorCode.PROCESS_START, "run_process", str(error)))
-            if len(completed.stdout) > self.limits.max_bytes or len(completed.stderr) > self.limits.max_bytes:
-                return _failure(AsyncIOError(AsyncIOErrorCode.OUTPUT_LIMIT, "run_process", "process output exceeds byte budget"))
-            return complete(AsyncProcessOutput(argv, completed.stdout, completed.stderr, completed.returncode))
+            return self._run_process_bounded(argv, stdin=stdin, timeout=float(timeout))
         return MoveOnlyFuture(AsyncFuture(lambda _frame: operation()))
+
+    def _run_process_bounded(self, argv: tuple[str, ...], *, stdin: bytes, timeout: float):
+        try:
+            process = subprocess.Popen(
+                list(argv),
+                cwd=self.root,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                shell=False,
+            )
+        except OSError as error:
+            return _failure(AsyncIOError(AsyncIOErrorCode.PROCESS_START, "run_process", str(error)))
+
+        stdout = bytearray()
+        stderr = bytearray()
+        total = 0
+        budget_lock = threading.Lock()
+        overflow = threading.Event()
+        reader_errors: list[OSError] = []
+
+        def pump(stream: BinaryIO, target: bytearray) -> None:
+            nonlocal total
+            try:
+                while not overflow.is_set():
+                    with budget_lock:
+                        remaining = self.limits.max_bytes - total
+                    if remaining < 0:
+                        overflow.set()
+                        return
+                    chunk = stream.read(min(4096, remaining + 1))
+                    if not chunk:
+                        return
+                    with budget_lock:
+                        if total + len(chunk) > self.limits.max_bytes:
+                            overflow.set()
+                            return
+                        target.extend(chunk)
+                        total += len(chunk)
+            except OSError as error:
+                reader_errors.append(error)
+                overflow.set()
+
+        readers = (
+            threading.Thread(target=pump, args=(process.stdout, stdout), daemon=True, name="s3-process-stdout"),
+            threading.Thread(target=pump, args=(process.stderr, stderr), daemon=True, name="s3-process-stderr"),
+        )
+        for reader in readers:
+            reader.start()
+
+        try:
+            if process.stdin is not None:
+                process.stdin.write(stdin)
+                process.stdin.close()
+        except (BrokenPipeError, OSError):
+            # A child may legitimately exit before consuming stdin.  Its exit
+            # status remains the authoritative process result.
+            pass
+
+        deadline = time.monotonic() + timeout
+        timed_out = False
+        while process.poll() is None:
+            if overflow.is_set():
+                process.kill()
+                break
+            if time.monotonic() >= deadline:
+                timed_out = True
+                process.kill()
+                break
+            time.sleep(0.005)
+        try:
+            returncode = process.wait(timeout=1.0)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            returncode = process.wait()
+        for reader in readers:
+            reader.join(timeout=1.0)
+        for stream in (process.stdout, process.stderr):
+            if stream is not None:
+                stream.close()
+
+        if timed_out:
+            return _failure(AsyncIOError(AsyncIOErrorCode.TIMEOUT, "run_process", "process timed out"))
+        if overflow.is_set() and not reader_errors:
+            return _failure(AsyncIOError(AsyncIOErrorCode.OUTPUT_LIMIT, "run_process", "combined process output exceeds byte budget"))
+        if reader_errors:
+            return _failure(AsyncIOError(AsyncIOErrorCode.IO, "run_process", str(reader_errors[0])))
+        return complete(AsyncProcessOutput(argv, bytes(stdout), bytes(stderr), returncode))
 
     def _resolve(self, value: str, operation: str) -> Path | AsyncIOError:
         if not isinstance(value, str) or not value or "\x00" in value:
