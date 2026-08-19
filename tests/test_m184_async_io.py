@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 
-from bootstrap.s3.async_io import AsyncIOErrorCode, AsyncIOLimits, AsyncIOService
+from bootstrap.s3.async_io import AsyncIOLimits, AsyncIOService
 
 
 def test_filesystem_future_is_root_confined_and_bounded(tmp_path) -> None:
@@ -25,8 +25,22 @@ def test_process_future_uses_argv_without_shell_and_bounds_output(tmp_path) -> N
 
 
 def test_process_output_overflow_and_timeout_are_explicit(tmp_path) -> None:
-    service = AsyncIOService(root=tmp_path, limits=AsyncIOLimits(max_bytes=4, max_timeout_seconds=5))
-    overflow = service.run_process(sys.executable, ("-c", "print('123456')"), timeout=5).poll().value_or(None)
+    service = AsyncIOService(root=tmp_path, limits=AsyncIOLimits(max_bytes=32, max_timeout_seconds=5))
+    overflow = service.run_process(
+        sys.executable,
+        ("-c", "import sys; sys.stdout.write('x' * 100000); sys.stdout.flush()"),
+        timeout=5,
+    ).poll().value_or(None)
     assert overflow.error is not None and "output_limit" in overflow.error.detail
     invalid_timeout = service.run_process(sys.executable, ("-c", "print(1)"), timeout=9).poll().value_or(None)
     assert invalid_timeout.error is not None and "timeout" in invalid_timeout.error.detail
+
+
+def test_stdout_and_stderr_share_one_capture_budget(tmp_path) -> None:
+    service = AsyncIOService(root=tmp_path, limits=AsyncIOLimits(max_bytes=8, max_timeout_seconds=5))
+    overflow = service.run_process(
+        sys.executable,
+        ("-c", "import sys; sys.stdout.write('12345'); sys.stderr.write('67890')"),
+        timeout=5,
+    ).poll().value_or(None)
+    assert overflow.error is not None and "output_limit" in overflow.error.detail
