@@ -1,17 +1,7 @@
 # M1.84 Architecture
 
-M1.84 exposes filesystem and process operations as explicit async Future
-factories. Filesystem paths are relative to an injected root and are resolved
-with traversal checks. Reads, writes, argument counts, stdin, stdout, and
-stderr are bounded by a single immutable I/O budget.
+M1.84 exposes root-confined filesystem and shell-free process operations as owned Future factories. File paths are relative to an injected root, traversal/absolute paths fail closed, and file reads use a bounded `max_bytes + 1` read rather than trusting only pre-read metadata.
 
-Process execution accepts an executable plus an argv tuple and always invokes
-the host with `shell=False`. A shell request is rejected rather than silently
-interpreted. Timeouts and output overflow become explicit failed Future
-results. The service never returns an unbounded host buffer or a borrowed
-handle; the Future owns the returned bytes and deterministic frame cleanup
-remains authoritative.
+Process execution accepts an executable plus argv and always invokes the host with `shell=False`; requesting a shell is rejected. stdin is bounded before spawn. stdout and stderr are pumped concurrently from `Popen` pipes into one shared byte budget while the process is running. Crossing the budget kills/reaps the child and returns `OUTPUT_LIMIT`; output is therefore not first captured without bounds and checked afterwards. Timeout also kills/reaps the child.
 
-The implementation is a hosted adapter over the existing OS boundary. It does
-not claim kernel-native async completion, and no native ARM certificate is
-manufactured when that environment is unavailable.
+Argument count, input/output bytes, and timeout are immutable service limits. Returned process output is owned bytes with explicit exit status. No borrowed OS handles escape the service. This remains a hosted OS adapter rather than a claim of kernel-native completion APIs.
