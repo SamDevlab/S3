@@ -2,60 +2,26 @@
 
 ## Problem
 
-M1.71 records async suspension as a deterministic frontend plan and hosted
-future state machine, but the compiler IR does not yet carry the frame,
-program-counter, or resume edges. M1.81 graduates that plan into a distinct,
-verifiable IR representation without making direct-call execution normative.
+M1.71 introduced source-visible `async fn`/`await` and a deterministic suspension plan, but ordinary execution still followed the conventional synchronous IR. M1.81 makes resumable async IR an executable compiler path rather than side metadata.
 
 ## Public surface
 
-`AsyncIRProgram`, `AsyncIRFunction`, `AsyncIRFrame`, `AsyncIRSlot`,
-`AsyncIROp`, `AsyncIRBlock`, and `execute_async_ir` are hosted compiler/runtime
-contracts. `lower_async_ir` converts an existing `AsyncStateMachinePlan` into
-the deterministic native async IR model.
+`AsyncIRProgram`, `AsyncIRFunction`, `AsyncIRFrame`, `AsyncIRSlot`, `AsyncIRBlock`, `AsyncIROp`, `execute_async_ir`, and `execute_async_program` are compiler/runtime contracts. `CompilationResult.async_ir` carries the executable async program.
+
+## Lowering and execution
+
+The async language preprocessor removes only contextual `async`/`await` syntax before delegating core parsing, while retaining exact compiler metadata. Executable actions are lowered into deterministic frame slots and explicit running/suspended/terminal states. For an async entry, `pipeline.run_source()` now routes through `execute_async_program`; it does not execute the conventional direct-call result as the normative async path.
+
+Each await produces a real suspension boundary. The first poll reaches `suspended_N`; a later poll resolves the owned awaited Future/callee, stores the result if required, and resumes at `running_N+1`. Completion, failure, cancellation, poll budget, and terminal consumption are explicit.
 
 ## Ownership and borrow model
 
-Each frame slot has one owner and an explicit initialized/moved state. A slot
-that is moved is excluded from later cleanup. Ordinary lexical borrows remain
-forbidden across suspension; M1.81 does not add frame-self borrow syntax.
+Each frame value has one owner. `Future<T>` ownership is handled by M1.82. Ordinary references/slices remain forbidden across await and PR182's fail-closed borrow rule is revalidated before async lowering. Terminal cleanup drops live, non-moved owned Future values once; moved/consumed values are not dropped again.
 
-## Resource and failure model
+## Boundedness and determinism
 
-Frame slots, suspension states, blocks, and terminal transitions are bounded.
-Invalid resume, poll after terminal consumption, uninitialized access,
-use-after-move, missing cleanup, and invalid suspension targets fail closed
-through verifier errors. Cancellation walks initialized, non-moved slots once.
+Async polls are capped at `100000`. Frame slot order, action order, suspension numbering, block names, compiler metadata, and serialized async IR are deterministic. Unsupported suspension inside control-flow is rejected in V1 rather than silently falling back to synchronous execution.
 
-## Lowering model
+## Platform model
 
-Every async function receives a frame descriptor with a deterministic state
-table. Each await becomes a `SUSPEND` edge from the running block to a named
-suspended block and a `RESUME` edge to the next running block. Completion,
-failure, and cancellation are explicit terminal blocks. The representation is
-IR-owned; the old hosted direct-call plan remains compatibility metadata only.
-
-## Runtime model
-
-The hosted executor interprets the async IR one operation at a time. A frame
-can be polled once per step, suspended, resumed, completed, failed, or
-cancelled. Terminal consumption is one-shot and cleanup is deterministic.
-
-## Determinism and platform model
-
-Function order, frame slot order, state numbering, block names, and serialized
-operations are stable. M1.81 execution is hosted. Native certification remains
-deferred unless the available target/toolchain can execute this IR directly.
-
-## Security and out of scope
-
-No public raw pointers, GC, general reference counting, JIT, implicit sharing,
-or exception-driven language control flow are introduced. M1.82 futures,
-multithread transfer, and platform-native async lowering are out of scope.
-
-## Test strategy
-
-Focused tests cover zero/one/multiple awaits, nested plans, frame ownership,
-move/drop behavior, cancellation at each state, terminal errors, invalid
-resume and deterministic layout/serialization. Existing M1.71 focused tests
-remain the regression proof.
+Hosted execution is the certification path available on this campaign host. Platform-native async-frame execution remains a separate target certificate and is not inferred from hosted execution.
