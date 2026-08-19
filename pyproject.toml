@@ -14,6 +14,7 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-xdist>=3.5"]
+crypto = ["cryptography>=43"]
 
 [project.scripts]
 s3 = "bootstrap.s3.cli:main"
