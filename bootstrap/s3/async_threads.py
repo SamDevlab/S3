@@ -62,8 +62,6 @@ class ThreadExecutorLimits:
         values = (self.max_workers, self.max_tasks, self.max_ready)
         if any(isinstance(value, bool) or not isinstance(value, int) or value <= 0 for value in values):
             raise ValueError("thread executor limits must be positive integers")
-        if self.max_workers > self.max_tasks:
-            raise ValueError("worker count cannot exceed task limit")
 
 
 @dataclass(slots=True)

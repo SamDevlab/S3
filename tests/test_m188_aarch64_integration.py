@@ -56,8 +56,10 @@ def test_cross_platform_registry_selects_arm64_backends_without_changing_default
 
 def test_aapcs64_build_plan_records_abi_and_runtime_relocations() -> None:
     compilation = compile_source(
+        "fn add(a: i64, b: i64) -> i64:\n"
+        "    return a + b\n"
         "fn main() -> i64:\n"
-        "    return 4 + 5\n"
+        "    return add(4, 5)\n"
     )
     backend = LinuxAArch64NativeAssemblyBackend()
     plan = backend.build_plan(compilation.assembly)
