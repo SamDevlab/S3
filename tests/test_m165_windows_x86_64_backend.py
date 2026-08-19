@@ -22,7 +22,9 @@ def test_windows_target_identity_is_explicit_without_changing_linux_default() ->
     assert WINDOWS_X86_64_TARGET.architecture == LINUX_X86_64_TARGET.architecture
     assert WINDOWS_X86_64_TARGET.environment == "windows"
     assert cross_platform_target_catalog().names == (
+        "linux-aarch64",
         "linux-x86_64",
+        "macos-arm64",
         "windows-x86_64",
     )
 
