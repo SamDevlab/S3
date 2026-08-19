@@ -8,14 +8,17 @@ from hashlib import sha256
 
 from . import ast
 from .assembly import ASSEMBLY_FORMAT_VERSION, AssemblyProgram
-from .async_frontend import (
-    AsyncStateMachinePlan,
-    AsyncSyntaxTree,
-    lower_async_program,
-    parse_async_source,
-    validate_async_semantics,
+from .async_frontend import AsyncStateMachinePlan, AsyncSuspensionPoint
+from .async_ir import AsyncIRPollKind, AsyncIRProgram, execute_async_program, lower_executable_async_ir
+from .async_language import (
+    AsyncAction,
+    AsyncActionKind,
+    AsyncExecutableProgram,
+    AsyncLanguageSyntax,
+    lower_async_language_program,
+    parse_async_language_source,
+    prepare_async_module_sources,
 )
-from .async_ir import AsyncIRProgram, lower_async_ir
 from .backends._hosted_execution import _execute_hosted_assembly
 from .codegen import generate_assembly
 from .compilation_context import CompilationContext
@@ -37,7 +40,7 @@ class CompilationResult:
     semantic_model: SemanticModel
     ir: IRProgram
     assembly: AssemblyProgram
-    async_syntax: AsyncSyntaxTree = AsyncSyntaxTree()
+    async_syntax: AsyncLanguageSyntax = AsyncLanguageSyntax()
     async_state_machines: tuple[AsyncStateMachinePlan, ...] = ()
     async_ir: AsyncIRProgram | None = None
 
@@ -46,7 +49,7 @@ class CompilationResult:
         return self.assembly.render()
 
 
-COMPILATION_CACHE_VERSION = "1.1.0"
+COMPILATION_CACHE_VERSION = "1.2.0"
 
 
 @dataclass(frozen=True, slots=True)
@@ -116,10 +119,7 @@ class CompilationCache:
         )
 
 
-def _compilation_cache_key(
-    source: str,
-    context: CompilationContext,
-) -> _CompilationCacheKey:
+def _compilation_cache_key(source: str, context: CompilationContext) -> _CompilationCacheKey:
     optimization = OptimizationLevel.parse(context.optimization)
     if not isinstance(context.mode, SyntaxMode):
         raise TypeError("mode must be a SyntaxMode")
@@ -151,8 +151,9 @@ def compile_sources(
     mode: SyntaxMode = SyntaxMode.V0_6,
 ) -> CompilationResult:
     context = CompilationContext(optimization=optimization, mode=mode)
+    async_preparation = prepare_async_module_sources(sources, entry_module=entry_module, mode=context.mode)
     plan = prepare_module_compilation(
-        sources,
+        async_preparation.core_sources,
         entry_module=entry_module,
         mode=context.mode,
     )
@@ -162,23 +163,26 @@ def compile_sources(
     if not semantic_model.contains_dynamic:
         ir_program = optimize_ir(ir_program, context.optimization)
     assembly_program = generate_assembly(ir_program)
+    executable = async_preparation.executable
+    async_ir = lower_executable_async_ir(executable)
+    combined_syntax = _combined_module_syntax(async_preparation.parsed_sources)
     return CompilationResult(
         plan.tokens,
         syntax_tree,
         semantic_model,
         ir_program,
         assembly_program,
+        combined_syntax,
+        _compat_state_plans(executable),
+        async_ir,
     )
 
 
-def _compile_source_with_context(
-    source: str,
-    context: CompilationContext,
-) -> CompilationResult:
-    parsed = parse_async_source(source, mode=context.mode)
-    validate_async_semantics(parsed.program, parsed.syntax)
-    async_state_machines = lower_async_program(parsed.program, parsed.syntax)
-    async_ir = lower_async_ir(async_state_machines)
+def _compile_source_with_context(source: str, context: CompilationContext) -> CompilationResult:
+    parsed = parse_async_language_source(source, mode=context.mode)
+    executable = lower_async_language_program(parsed)
+    async_state_machines = _compat_state_plans(executable)
+    async_ir = lower_executable_async_ir(executable)
     syntax_tree = specialize_generic_functions(parsed.program)
     semantic_model = analyze(syntax_tree)
     ir_program = lower(syntax_tree, semantic_model)
@@ -207,6 +211,9 @@ def run_source_with_buffer_capture(
     mode: SyntaxMode = SyntaxMode.V0_6,
 ) -> tuple[int, list[dict[int, list[int | None]]]]:
     compilation = compile_source(source, optimization, mode=mode)
+    async_value = _run_async_entry(compilation, entry, max_instructions=max_instructions)
+    if async_value is not None:
+        return async_value, []
     if compilation.semantic_model.contains_references or compilation.semantic_model.contains_dynamic:
         from .ir_emulator import execute_ir
         return execute_ir(compilation.ir, entry, optimization), []
@@ -235,6 +242,9 @@ def run_source(
     mode: SyntaxMode = SyntaxMode.V0_6,
 ) -> int:
     compilation = compile_source(source, optimization, mode=mode)
+    async_value = _run_async_entry(compilation, entry, max_instructions=max_instructions)
+    if async_value is not None:
+        return async_value
     if compilation.semantic_model.contains_references or compilation.semantic_model.contains_dynamic:
         from .ir_emulator import execute_ir
         return execute_ir(compilation.ir, entry, optimization)
@@ -244,3 +254,63 @@ def run_source(
         max_frames=max_frames,
         max_instructions=max_instructions,
     )
+
+
+def _run_async_entry(compilation: CompilationResult, entry: str, *, max_instructions: int) -> int | None:
+    program = compilation.async_ir
+    if program is None or program.executable(entry) is None:
+        return None
+    executable = program.executable(entry)
+    if executable is None or not executable.async_function:
+        return None
+    max_polls = max(1, min(int(max_instructions), 100_000))
+    result = execute_async_program(program, entry, max_polls=max_polls)
+    if result.kind is not AsyncIRPollKind.READY:
+        raise RuntimeError(f"async execution failed: {result.error or result.kind.value}")
+    if isinstance(result.value, bool) or not isinstance(result.value, int):
+        raise RuntimeError("S3 async entry must produce an integer scalar result")
+    return result.value
+
+
+def _compat_state_plans(executable: AsyncExecutableProgram) -> tuple[AsyncStateMachinePlan, ...]:
+    result: list[AsyncStateMachinePlan] = []
+    for function in executable.functions:
+        if not function.async_function:
+            continue
+        await_actions = [action for action in function.actions if _is_await_action(action)]
+        points = tuple(
+            AsyncSuspensionPoint(
+                index,
+                action.source_offset,
+                action.callee or action.source_future or "Future",
+                f"suspended_{index}",
+                f"running_{index + 1}",
+            )
+            for index, action in enumerate(await_actions)
+        )
+        states: list[str] = ["created", "running_0"]
+        for point in points:
+            states.extend((point.suspended_state, point.resume_state))
+        states.extend(("completed", "failed", "cancelled"))
+        result.append(AsyncStateMachinePlan(function.name, function.frame_slots, points, tuple(states)))
+    return tuple(result)
+
+
+def _is_await_action(action: AsyncAction) -> bool:
+    return action.kind in {AsyncActionKind.AWAIT_CALL, AsyncActionKind.AWAIT_FUTURE} or (
+        action.kind is AsyncActionKind.DISCARD and (action.callee is not None or action.source_future is not None)
+    )
+
+
+def _combined_module_syntax(parsed_sources) -> AsyncLanguageSyntax:
+    functions = []
+    awaits = []
+    futures = []
+    hashes = []
+    for _path, parsed in parsed_sources:
+        functions.extend(parsed.syntax.functions)
+        awaits.extend(parsed.syntax.awaits)
+        futures.extend(parsed.syntax.futures)
+        hashes.append(parsed.syntax.source_sha256)
+    digest = sha256("\n".join(hashes).encode("ascii")).hexdigest() if hashes else ""
+    return AsyncLanguageSyntax(tuple(functions), tuple(awaits), tuple(futures), digest)
