@@ -80,7 +80,7 @@ class AsyncStateMachinePlan:
     frame_slots: tuple[str, ...]
     suspension_points: tuple[AsyncSuspensionPoint, ...]
     states: tuple[str, ...]
-    lowering_model: str = "compiler_state_machine_plan_with_hosted_direct_call_execution"
+    lowering_model: str = "compiler_async_ir_with_hosted_resumable_execution"
 
 
 def parse_async_source(

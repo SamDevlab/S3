@@ -15,6 +15,7 @@ from .async_frontend import (
     parse_async_source,
     validate_async_semantics,
 )
+from .async_ir import AsyncIRProgram, lower_async_ir
 from .backends._hosted_execution import _execute_hosted_assembly
 from .codegen import generate_assembly
 from .compilation_context import CompilationContext
@@ -38,6 +39,7 @@ class CompilationResult:
     assembly: AssemblyProgram
     async_syntax: AsyncSyntaxTree = AsyncSyntaxTree()
     async_state_machines: tuple[AsyncStateMachinePlan, ...] = ()
+    async_ir: AsyncIRProgram | None = None
 
     @property
     def assembly_text(self) -> str:
@@ -176,6 +178,7 @@ def _compile_source_with_context(
     parsed = parse_async_source(source, mode=context.mode)
     validate_async_semantics(parsed.program, parsed.syntax)
     async_state_machines = lower_async_program(parsed.program, parsed.syntax)
+    async_ir = lower_async_ir(async_state_machines)
     syntax_tree = specialize_generic_functions(parsed.program)
     semantic_model = analyze(syntax_tree)
     ir_program = lower(syntax_tree, semantic_model)
@@ -190,6 +193,7 @@ def _compile_source_with_context(
         assembly_program,
         parsed.syntax,
         async_state_machines,
+        async_ir,
     )
 
 
