@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import OrderedDict
+from collections.abc import Mapping
 from dataclasses import dataclass
 from hashlib import sha256
 
@@ -19,6 +20,7 @@ from .async_language import (
     parse_async_language_source,
     prepare_async_module_sources,
 )
+from .async_validation import validate_async_language_semantics
 from .backends._hosted_execution import _execute_hosted_assembly
 from .codegen import generate_assembly
 from .compilation_context import CompilationContext
@@ -151,7 +153,14 @@ def compile_sources(
     mode: SyntaxMode = SyntaxMode.V0_6,
 ) -> CompilationResult:
     context = CompilationContext(optimization=optimization, mode=mode)
-    async_preparation = prepare_async_module_sources(sources, entry_module=entry_module, mode=context.mode)
+    raw_items = sources.items() if isinstance(sources, Mapping) else sources
+    materialized = tuple(raw_items)
+    # Validate every original source before the module preprocessor erases
+    # contextual async/Future syntax.  This keeps PR182's fail-closed rules
+    # authoritative in multi-file compilation too.
+    for _path, source in materialized:
+        validate_async_language_semantics(parse_async_language_source(source, mode=context.mode))
+    async_preparation = prepare_async_module_sources(materialized, entry_module=entry_module, mode=context.mode)
     plan = prepare_module_compilation(
         async_preparation.core_sources,
         entry_module=entry_module,
@@ -180,6 +189,7 @@ def compile_sources(
 
 def _compile_source_with_context(source: str, context: CompilationContext) -> CompilationResult:
     parsed = parse_async_language_source(source, mode=context.mode)
+    validate_async_language_semantics(parsed)
     executable = lower_async_language_program(parsed)
     async_state_machines = _compat_state_plans(executable)
     async_ir = lower_executable_async_ir(executable)
