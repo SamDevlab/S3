@@ -1,4 +1,4 @@
-# M1.71 - Async/Await Core V1 Architecture (Corrected for PR #182)
+# M1.71 - Async/Await Core V1 Architecture (PR #182 corrected)
 
 ## MILESTONE
 
@@ -15,26 +15,27 @@ Source syntax V1 accepts:
 - `async fn name(...) -> T:`
 - `await direct_async_call(...)`
 
-`CompilationResult` exposes the parsed async syntax side tree and deterministic `AsyncStateMachinePlan` values. The hosted runtime surface remains `AsyncFuture`, `AsyncFrame`, `Poll`, and owned frame slots.
+`CompilationResult` exposes an `AsyncSyntaxTree` and deterministic `AsyncStateMachinePlan` values. The hosted runtime remains `AsyncFuture`, `AsyncFrame`, `Poll`, and owned frame slots.
 
 ## FRONT-END / PARSER MODEL
 
-`async_frontend.parse_async_source()` is the M1.71 parser extension. The existing recursive-descent parser remains the core grammar parser. The extension lexes the original source, recognizes contextual `async` / `await` markers outside strings/comments, replaces only the marker spans with whitespace so every source offset remains stable, delegates the resulting grammar to the core parser, then binds the source markers back to parsed functions and direct call expressions.
+`async_frontend.parse_async_source()` is the bounded M1.71 parser extension. The existing recursive-descent parser remains the core grammar parser.
 
-This keeps the existing AST ABI stable while still giving the compiler a first-class `AsyncSyntaxTree` with exact source locations. `async` and `await` are reserved in the M1.71 source surface.
+The extension first lexes the original source, recognizes contextual `async` / `await` markers outside comments and string literals, removes only the marker prefixes before delegation to the core parser, and deterministically maps the transformed parser offsets back to the original async marker/call locations. Removing the prefixes rather than replacing a top-level `async` marker with spaces avoids producing a false indentation token at column 1.
+
+The core AST therefore keeps its existing ABI and transformed parser offsets; the async side tree keeps the original source locations plus the mapped parser offsets used to bind async markers to parsed functions/direct calls. No global lexer keyword change is required.
 
 ## SEMANTIC MODEL
 
-The async semantic pass runs before the existing core semantic analyzer and enforces:
+The async semantic pass runs before the existing core semantic analyzer and fails closed unless:
 
-- `await` only inside an `async fn`;
-- an async function call must be immediately awaited;
-- the awaited target must be an async function;
-- ordinary lexical reference/slice bindings may not be live at an await point;
-- generic async functions are deferred in V1;
-- arbitrary/stored Future expressions are deferred in V1.
+- `await` appears inside an `async fn`;
+- the awaited expression is a direct call to a declared async function;
+- every async function call in V1 is immediately awaited;
+- no ordinary lexical reference or slice binding is live at the await point;
+- the async function is non-generic in V1.
 
-The immediate-await restriction is intentional: M1.71 does not introduce a general public Future type, reference counting, or new lifetime syntax.
+The immediate-await restriction is intentional. M1.71 does not introduce a general public `Future<T>` storage type, reference counting, or lifetime annotations.
 
 ## OWNERSHIP MODEL
 
@@ -44,18 +45,18 @@ A live hosted `BorrowToken` rejects suspension. The source semantic pass additio
 
 ## RE-ENTRANCY
 
-A future in `RUNNING` state rejects another `poll()` and rejects re-entrant cancellation. This prevents simultaneous/re-entrant entry into the same state machine.
+A future already in `RUNNING` rejects another `poll()` and rejects re-entrant cancellation. This prevents simultaneous/re-entrant entry into the same hosted state machine.
 
 ## LOWERING MODEL
 
 For each source-level async function the compiler emits a deterministic `AsyncStateMachinePlan` containing:
 
-- frame slots derived from parameters/locals;
+- frame-slot identities derived from parameters/locals;
 - await points in stable source order;
 - explicit suspended/resume state names;
 - terminal `completed`, `failed`, and `cancelled` states.
 
-The hosted execution path currently lowers an immediately-awaited call through the existing direct call IR while retaining the explicit suspension plan as compiler metadata. This is intentionally narrower than a native resumable-frame IR/backend implementation; native resumable state-machine code generation is not claimed by M1.71 V1.
+For M1.71 V1, an immediately-awaited call still uses the existing direct call IR for hosted execution while the compiler retains the explicit suspension plan as async lowering metadata. This closes the previously missing source/parser/semantic/lowering integration, but it does **not** claim native resumable-frame IR/backend execution. Materializing resumable frames as first-class IR/backend state is reserved for M1.81.
 
 ## RESOURCE MODEL
 
@@ -67,16 +68,16 @@ Invalid await scope/target, un-awaited async calls, live references across await
 
 ## DETERMINISM MODEL
 
-Source offsets are preserved through the parser extension. Async functions and await points are emitted in declaration/source order. State names and frame-slot identities are deterministic.
+Original async marker/call locations are retained explicitly while parser offsets are mapped deterministically after contextual-prefix removal. Async functions and await points are emitted in declaration/source order. State names and frame-slot identities are deterministic.
 
 ## PLATFORM MODEL
 
-The M1.71 source/compiler surface and hosted state machine are platform-neutral. Native resumable execution certification is not claimed here.
+The source/compiler surface and hosted state machine are platform-neutral. Native resumable execution certification is not claimed by M1.71.
 
 ## OUT OF SCOPE
 
-Stored/general Future values, generic async functions, multi-file async rewriting, async traits, async streams, generators, multi-thread task migration, native resumable-frame code generation, and work stealing.
+Stored/general Future values, generic async functions, multi-file async rewriting, async traits, async streams, generators, multi-thread task migration, native resumable-frame IR/backend code generation, and work stealing.
 
 ## TEST STRATEGY
 
-Focused PR #182 correction tests cover source `async fn` / `await` compilation, deterministic suspension plans, await scope/target diagnostics, ordinary-reference rejection across await, re-entrant poll rejection, and hosted end-to-end immediate-ready execution. Existing M1.71 hosted ownership/drop tests remain applicable.
+Focused PR #182 correction tests cover source `async fn` / `await` compilation, deterministic suspension plans, await scope/target diagnostics, ordinary-reference rejection across await, re-entrant poll rejection, and hosted immediate-await execution. Existing M1.71 hosted ownership/drop tests remain applicable.

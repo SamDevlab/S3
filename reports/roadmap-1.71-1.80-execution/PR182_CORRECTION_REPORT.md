@@ -7,16 +7,18 @@ Campaign: `S3-PR182-CORRECTION-20260819`
 - PR: #182
 - Base main: `cbfd833437dac7f3b6083b3aa28a6653cbe149ca`
 - Reviewed pre-correction head: `46a6d7dc86a7fe98c969e59b711a6e490bf0183c`
-- Corrective semantic/code commit: `9f9eaa5937c81cd50929a7d5ed366b68327022ad`
-- Remote mutation: one normal fast-forward branch update; no force push, no main push, no merge.
+- Main corrective semantic/code commit: `9f9eaa5937c81cd50929a7d5ed366b68327022ad`
+- Async front-end follow-up: `c33d0d66a4aba1b899f58900352eb9a79a3bb039`
+- Follow-up reason: the first contextual-marker implementation replaced top-level `async` with spaces, which could be interpreted by the V0.6 indentation lexer as indentation. The follow-up removes contextual marker prefixes and maps parser offsets deterministically back to original async source locations.
+- Remote branch movement has remained normal fast-forward only; no force push, direct main push, or merge.
 
 ## Review findings addressed
 
 ### M1.71 source/compiler BLOCKER
 
-Implemented a bounded compiler front-end extension for source-visible `async fn` and `await direct_call()` syntax. It preserves source offsets, delegates the unchanged core grammar to the existing parser, binds contextual async syntax into an `AsyncSyntaxTree`, runs explicit async semantic validation, and emits deterministic `AsyncStateMachinePlan` compiler metadata.
+Implemented a bounded compiler front-end extension for source-visible `async fn` and `await direct_call()` syntax. It delegates the stable core grammar to the existing parser, retains original async source locations plus deterministic transformed-offset bindings, runs explicit async semantic validation, and emits `AsyncStateMachinePlan` compiler metadata.
 
-V1 intentionally requires immediate await of async calls and rejects generic async functions, stored/general Future expressions, multi-file async rewriting, and native resumable-frame codegen. The hosted execution path uses the existing direct-call IR for an immediately-awaited call while the compiler retains the explicit suspension plan. This closes the missing source/compiler integration without claiming native resumable execution that is not implemented.
+V1 intentionally requires immediate await of async calls and rejects generic async functions, stored/general Future expressions, multi-file async rewriting, and native resumable-frame codegen. The hosted execution path uses the existing direct-call IR for an immediately-awaited call while the compiler retains the explicit suspension plan. Native resumable IR/backend execution is not claimed and is planned as M1.81 work after PR #182 closure.
 
 ### M1.71 re-entrant poll HIGH
 
@@ -28,11 +30,11 @@ V1 intentionally requires immediate await of async calls and rejects generic asy
 
 ### M1.74 pending-resource HIGH
 
-The resource future now retains the pending resource identity. Completion must return that exact resource. A replacement resource fails closed; the replacement is closed immediately and frame failure drops the original pending resource. Successful completion creates the handle from the value moved out of the frame-owned slot.
+The resource future retains the pending resource identity. Completion must return that exact resource. A replacement resource fails closed; the replacement is closed immediately and frame failure drops the original pending resource. Successful completion creates the handle from the value moved out of the frame-owned slot.
 
 ### M1.79 extraction-bound HIGH
 
-Registry extraction now prevalidates all members before creating/writing the destination tree, rejects non-regular members and duplicate canonical output paths, enforces per-member uncompressed size and cumulative extracted-byte limits, and performs bounded reads checked against TarInfo size.
+Registry extraction prevalidates all members before creating/writing the destination tree, rejects non-regular members and duplicate canonical output paths, enforces per-member uncompressed size and cumulative extracted-byte limits, and performs bounded reads checked against TarInfo size.
 
 ## Added focused correction coverage
 
@@ -48,7 +50,7 @@ Registry extraction now prevalidates all members before creating/writing the des
 
 ## Test execution status
 
-GitHub Actions is unavailable/disabled for this repository and the connected GitHub tool does not provide a repository execution environment. Therefore the correction was source-reviewed remotely but the focused pytest/compileall gate has not been executed here.
+GitHub Actions is unavailable/disabled for this repository and the connected GitHub tool does not provide a repository execution environment. Therefore the correction is source-reviewed remotely but the focused pytest/compileall gate has not been executed here.
 
 Required local focused gate before changing PR #182 from Draft to merge-ready:
 
@@ -57,7 +59,7 @@ python -m compileall bootstrap/s3
 python -m pytest -q tests/test_m171_async_core.py tests/test_pr182_corrections.py tests/test_m172_structured_concurrency.py tests/test_m174_async_network.py tests/test_m179_registry_client.py tests/test_m180_toolchain_distribution.py tests/test_m165_windows_x86_64_backend.py
 ```
 
-Do not restart the global T4 merely for publication ceremony. If the focused gate finds a real cross-subsystem regression, expand only according to the impact map.
+Use a unique `--basetemp` locally if the historical Windows pytest temp-directory permission issue reappears. Do not restart the global T4 merely for publication ceremony. If the focused gate finds a real cross-subsystem regression, expand only according to the impact map.
 
 ## Preserved truth
 
