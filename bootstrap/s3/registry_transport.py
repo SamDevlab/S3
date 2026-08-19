@@ -6,20 +6,20 @@ from collections import OrderedDict
 from dataclasses import dataclass
 import hashlib
 import re
-from typing import Protocol
-from urllib.parse import urlsplit
 
 from .async_core import AsyncErrorCode, AsyncFuture, complete, fail
 from .async_futures import MoveOnlyFuture
+from .async_http import BoundedHTTPClient
 
 
 _DIGEST = re.compile(r"^[0-9a-f]{64}$")
+_HOST = re.compile(r"^[A-Za-z0-9.-]+$")
 
 
 class RegistryTransportErrorCode:
     INVALID_DIGEST = "invalid_digest"
     INVALID_URI = "invalid_uri"
-    TLS = "tls"
+    HTTP = "http"
     NOT_FOUND = "not_found"
     DIGEST_MISMATCH = "digest_mismatch"
     CACHE_LIMIT = "cache_limit"
@@ -27,14 +27,16 @@ class RegistryTransportErrorCode:
 
 
 @dataclass(frozen=True, slots=True)
-class VerifiedHTTPSBody:
-    certificate_verified: bool
-    hostname_verified: bool
-    body: bytes
+class RegistryOrigin:
+    authority: str
 
+    def __post_init__(self) -> None:
+        if not isinstance(self.authority, str) or not self.authority or _HOST.fullmatch(self.authority) is None or self.authority.startswith(".") or self.authority.endswith("."):
+            raise ValueError("registry authority must be a canonical host name")
 
-class HTTPSRegistryProvider(Protocol):
-    def fetch(self, uri: str) -> VerifiedHTTPSBody: ...
+    @property
+    def base_uri(self) -> str:
+        return f"https://{self.authority}"
 
 
 class BoundedVerifiedCache:
@@ -69,6 +71,8 @@ class BoundedVerifiedCache:
         while self._items and (len(self._items) >= self.max_entries or self._bytes + len(body) > self.max_bytes):
             _old_digest, old_body = self._items.popitem(last=False)
             self._bytes -= len(old_body)
+        if len(self._items) >= self.max_entries or self._bytes + len(body) > self.max_bytes:
+            return False
         self._items[digest] = body
         self._bytes += len(body)
         return True
@@ -76,26 +80,33 @@ class BoundedVerifiedCache:
 
 @dataclass(frozen=True, slots=True)
 class RegistryObject:
+    origin: RegistryOrigin
     digest: str
     body: bytes
     from_cache: bool
 
+    @property
+    def immutable_identity(self) -> str:
+        return f"{self.origin.base_uri}/objects/{self.digest}"
+
 
 class HTTPSContentAddressedRegistry:
-    """Read-only verified object fetcher with bounded cache."""
+    """Read-only registry object fetcher using the real bounded HTTP/TLS client."""
 
     def __init__(
         self,
-        provider: HTTPSRegistryProvider,
+        client: BoundedHTTPClient | None = None,
         *,
         authority: str = "registry.fixture",
         cache: BoundedVerifiedCache | None = None,
+        timeout: float = 10.0,
     ) -> None:
-        if not authority or "/" in authority or ":" in authority:
-            raise ValueError("registry authority must be a host name")
-        self.provider = provider
-        self.authority = authority
+        self.client = client or BoundedHTTPClient()
+        self.origin = RegistryOrigin(authority)
         self.cache = cache or BoundedVerifiedCache()
+        if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or timeout <= 0:
+            raise ValueError("registry timeout must be positive")
+        self.timeout = float(timeout)
 
     def fetch(self, digest: str) -> MoveOnlyFuture[RegistryObject]:
         def operation():
@@ -103,36 +114,27 @@ class HTTPSContentAddressedRegistry:
                 return _failure(RegistryTransportErrorCode.INVALID_DIGEST, "digest is not lowercase SHA-256")
             cached = self.cache.get(digest)
             if cached is not None:
-                return complete(RegistryObject(digest, cached, True))
-            uri = f"https://{self.authority}/objects/{digest}"
-            try:
-                result = self.provider.fetch(uri)
-            except Exception as error:
-                return _failure(RegistryTransportErrorCode.TRANSPORT, type(error).__name__)
-            if not isinstance(result, VerifiedHTTPSBody) or not result.certificate_verified or not result.hostname_verified:
-                return _failure(RegistryTransportErrorCode.TLS, "certificate and hostname verification are required")
-            if not isinstance(result.body, bytes):
-                return _failure(RegistryTransportErrorCode.TRANSPORT, "provider body must be bytes")
-            actual = hashlib.sha256(result.body).hexdigest()
+                return complete(RegistryObject(self.origin, digest, cached, True))
+            uri = f"{self.origin.base_uri}/objects/{digest}"
+            response_result = self.client.get(uri, timeout=self.timeout).await_once(max_polls=4)
+            if response_result.is_err:
+                error = response_result.error_or(None)
+                return _failure(RegistryTransportErrorCode.TRANSPORT, error.detail)
+            response = response_result.value_or(None)
+            if response.status == 404:
+                return _failure(RegistryTransportErrorCode.NOT_FOUND, uri)
+            if response.status != 200:
+                return _failure(RegistryTransportErrorCode.HTTP, f"registry returned HTTP {response.status}")
+            actual = hashlib.sha256(response.body).hexdigest()
             if actual != digest:
                 return _failure(RegistryTransportErrorCode.DIGEST_MISMATCH, "returned object hash does not match requested digest")
-            if not self.cache.put(digest, result.body):
+            if not self.cache.put(digest, response.body):
                 return _failure(RegistryTransportErrorCode.CACHE_LIMIT, "verified object exceeds cache byte budget")
-            return complete(RegistryObject(digest, result.body, False))
+            return complete(RegistryObject(self.origin, digest, response.body, False))
         return MoveOnlyFuture(AsyncFuture(lambda _frame: operation()))
 
-
-class LocalVerifiedHTTPSFixtures:
-    """Test-only HTTPS/TLS provider with explicit verification metadata."""
-
-    def __init__(self) -> None:
-        self.responses: dict[str, VerifiedHTTPSBody] = {}
-
-    def add(self, uri: str, body: bytes, *, certificate_verified: bool = True, hostname_verified: bool = True) -> None:
-        self.responses[uri] = VerifiedHTTPSBody(certificate_verified, hostname_verified, body)
-
-    def fetch(self, uri: str) -> VerifiedHTTPSBody:
-        return self.responses[uri]
+    def publish(self, _body: bytes) -> None:
+        raise RuntimeError("M1.86 registry transport is read-only; publishing is disabled")
 
 
 def _failure(code: str, detail: str):
