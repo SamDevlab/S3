@@ -1,16 +1,9 @@
 # M1.87 Architecture
 
-M1.87 verifies package signatures and provenance after the M1.86 content
-address check. The package envelope binds name, version, SHA-256, publisher,
-key identity, and bounded provenance metadata into one canonical byte string.
+M1.87 verifies package authenticity after content-address verification. The canonical signing payload binds package name, version, SHA-256 digest, publisher, key id, canonical HTTPS source identity, and bounded unique provenance metadata. Signing ambiguous human-formatted text is avoided by deterministic JSON serialization.
 
-The compiler owns only a public-key trust store and a narrow
-`VettedSignatureVerifier` protocol. Signature math is delegated to a vetted
-host crypto provider; this repository does not generate, persist, or accept
-private keys. Unknown key identities, publisher mismatches, digest mismatches,
-malformed metadata, and verifier failures are rejected through explicit
-`Result` errors. Verified bytes are immutable and can be passed to the bounded
-registry cache.
+The selected production algorithm/provider is **Ed25519 via the `cryptography` package** (`CryptographyEd25519Verifier`). The bootstrap core does not implement signature mathematics and has no home-grown fallback. `cryptography` is an optional `crypto` project extra so minimal/offline bootstrap use remains possible; attempting production verification without the provider fails closed through the verifier boundary.
 
-The test verifier is a deterministic fixture double, not a production crypto
-implementation and not evidence of a cryptographic execution certificate.
+The repository owns only bounded public-key trust records. There is no private-key generation/storage path. Unknown keys, publisher mismatch, digest mismatch, source/provenance tampering, oversized metadata/signatures, invalid Ed25519 signatures, and verifier/provider failures are explicit `Result` errors. The deterministic fixture verifier remains unit-test-only and is not represented as a production crypto certificate.
+
+A provider-available focused test generates an ephemeral Ed25519 fixture key, signs the canonical payload, and verifies it through the production adapter. The private fixture key exists only in test process memory and is not committed.
