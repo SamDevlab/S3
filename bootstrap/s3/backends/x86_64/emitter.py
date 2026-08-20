@@ -512,6 +512,25 @@ class X8664Emitter:
             lines.append(f"    mov {target}, {phys}")
         return lines
 
+    def _check_register_initialized(
+        self,
+        layout: FrameLayout,
+        register: int,
+    ) -> list[str]:
+        site = self._current_instruction_sites.get(id(self.current_instruction))
+        if site is not None and (site[0], site[1], register) in self._safe_register_reads:
+            return []
+        register = self._resolve_local_alias(register)
+        slot = layout.register(register)
+        failure = self._instruction_failure(
+            "uninitialized register",
+            detail=f"register r{register} is uninitialized\n",
+        )
+        return [
+            f"    cmp byte ptr {_address(slot.initialized)}, 0",
+            f"    je {failure}",
+        ]
+
     def _write_register(
         self,
         layout: FrameLayout,
@@ -814,6 +833,8 @@ class X8664Emitter:
             return lines
         if opcode is AssemblyOpcode.TMOV:
             destination, source = registers
+            if destination == source:
+                return instrumentation + self._check_register_initialized(layout, source)
             type_name = function.type_of(destination)
             if (
                 type_name is not AssemblyType.REFERENCE

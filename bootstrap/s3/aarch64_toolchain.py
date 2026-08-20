@@ -7,7 +7,6 @@ from typing import Protocol
 
 from .aarch64_program import AArch64ProgramArtifact, AArch64ProgramLowerer
 from .assembly import AssemblyProgram
-from .codegen_optimization import eliminate_redundant_noop_moves
 from .backends.registry import (
     BackendRegistry,
     HostedEmulatorBackend,
@@ -72,14 +71,11 @@ class LinuxAArch64NativeAssemblyBackend:
     def generate(self, program: AssemblyProgram, **limits) -> str:
         requested = int(limits.get("max_instructions", self.max_instructions))
         limit = min(self.max_instructions, requested, 100_000)
-        optimized, _optimization = eliminate_redundant_noop_moves(program)
-        return AArch64ProgramLowerer("linux-aarch64", max_instructions=limit).lower(optimized).text
+        return AArch64ProgramLowerer("linux-aarch64", max_instructions=limit).lower(program).text
 
     def build_plan(self, program: AssemblyProgram) -> AArch64NativeBuildPlan:
         return _plan(
-            AArch64ProgramLowerer("linux-aarch64", max_instructions=self.max_instructions).lower(
-                eliminate_redundant_noop_moves(program)[0]
-            ),
+            AArch64ProgramLowerer("linux-aarch64", max_instructions=self.max_instructions).lower(program),
             program,
         )
 
@@ -91,14 +87,11 @@ class MacOSArm64NativeAssemblyBackend:
     def generate(self, program: AssemblyProgram, **limits) -> str:
         requested = int(limits.get("max_instructions", self.max_instructions))
         limit = min(self.max_instructions, requested, 100_000)
-        optimized, _optimization = eliminate_redundant_noop_moves(program)
-        return AArch64ProgramLowerer("macos-arm64", max_instructions=limit).lower(optimized).text
+        return AArch64ProgramLowerer("macos-arm64", max_instructions=limit).lower(program).text
 
     def build_plan(self, program: AssemblyProgram) -> AArch64NativeBuildPlan:
         return _plan(
-            AArch64ProgramLowerer("macos-arm64", max_instructions=self.max_instructions).lower(
-                eliminate_redundant_noop_moves(program)[0]
-            ),
+            AArch64ProgramLowerer("macos-arm64", max_instructions=self.max_instructions).lower(program),
             program,
         )
 
