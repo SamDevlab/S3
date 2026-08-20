@@ -1,11 +1,13 @@
 # M2.00 Closure Checkpoint
 
-Status: `BLOCKED_BY_FINAL_T4`
+Status: `BLOCKED_BY_FINAL_T4_TIMEOUT_POLICY`
 
-The release-candidate stability gate is implemented and focused evidence is
-green, with explicit deferred native targets. The single final T4 on the
-corrected source terminated with exit 1: 342 files passed, 26 timed out under
-the 60-second per-file Windows orchestration limit, and
-`tests/test_m194_tls_server.py::test_tls_handshake_timeout_releases_reserved_budget`
-failed and reproduced in focused triage. No public release, tag, merge, or
-remote publication is authorized while that blocker remains.
+The release-candidate stability gate has zero failed files after the TLS test
+correction: 344 of 369 selected files passed and 25 reached the Windows
+per-file orchestrator timeout. Twenty-three are verified historical timeout
+files and two remain new relative to that historical set. The campaign
+contract does not authorize release promotion with that mixed timeout set.
+
+The M1.94 TLS functional blocker is closed by deterministic test evidence.
+No public release, tag, merge, or M2.01 implementation is authorized while
+the final T4 timeout policy blocker remains.

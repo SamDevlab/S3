@@ -1,115 +1,98 @@
 {
-  "campaign": "M1.91-M2.00 post-review correctness and performance",
+  "campaign": "M1.91-M2.00 terminal TLS test correction",
   "branch": "feature/m191-m200-autonomous-20260819",
-  "old_head": "6dfd33f7d14a4fbcda212a109be8fbfd26859db3",
-  "final_tested_source_head": "7b99ebb9ae4119ecc54b96f78313f0996c476b09",
+  "final_tested_source_head": "1808cc560fa52a474d7d1b6d84734abc18585ce8",
   "final_candidate_head": null,
-  "final_candidate_head_note": "Documentation is pending its own normal commit; no source changed after final source gates.",
+  "final_candidate_head_note": "Documentation commit is created after source gates; this field is reported separately after commit because a commit cannot contain its own SHA.",
   "source_changed_after_final_gates": false,
   "historical_t4_untouched": true,
-  "global_t4": {
-    "head": "7b99ebb9ae4119ecc54b96f78313f0996c476b09",
-    "selected_files": 369,
-    "passed_files": 342,
-    "failed_files": 1,
-    "timeout_files": 26,
-    "exit": 1,
-    "rerun": false,
-    "report": "reports/roadmap-1.91-2.00-execution/T4-post-review-20260820-182130.txt"
-  },
-  "t4_triage": {
-    "failing_test": "tests/test_m194_tls_server.py::test_tls_handshake_timeout_releases_reserved_budget",
-    "focused_reproduction": "FAIL",
-    "observed": "PollKind.PENDING",
-    "expected": "PollKind.FAILED",
-    "timeout_classification": "WINDOWS_ORCHESTRATOR_PER_FILE_TIMEOUT",
-    "unresolved": 1
-  },
-  "findings": {
-    "uninitialized_self_move": "REPRODUCED_AND_FIXED",
-    "instruction_budget_divergence": "REPRODUCED_AND_FIXED",
-    "logical_tmov_semantics": "PRESERVED",
-    "initialization_failure": "PRESERVED",
-    "instruction_accounting": "PRESERVED",
-    "aarch64_assembly_deletion": "NOT_APPLIED",
-    "blockers": 1,
-    "high": 0,
-    "medium": 0,
-    "low": 0
+  "tls_blocker_triage": {
+    "original_failure_reproduced": true,
+    "classification": "TEST_CLOCK_NONDETERMINISM",
+    "production_change": false,
+    "test_change": true,
+    "test_correction": "DETERMINISTIC_CLOCK",
+    "deterministic_before_first_poll": "PASS",
+    "deterministic_after_frame_ownership": "PASS",
+    "deterministic_not_expired": "PASS",
+    "resource_release": "PASS",
+    "exactly_once_close": "PASS",
+    "connection_budget_release": "PASS",
+    "repeatability": "20/20 PASS"
   },
   "gates": {
     "compileall": "PASS",
-    "m199_focused": "20 passed, 1 skipped",
-    "t2_native_aarch64": "176 passed, 159 skipped",
-    "t3_cross_layer": "67 passed, 1 skipped",
-    "diff_check": "PASS",
-    "m181_m190_compatibility": "PASS_WITH_DEFERRED",
-    "m199_benchmark_correctness": "PASS",
-    "benchmark_protocol_metadata": "PASS",
-    "benchmark_commit_pin_self_check": "PASS"
+    "m1_93_focused": "8 passed",
+    "tls_server": "7 passed",
+    "http_adjacent": "49 passed",
+    "async_ownership": "PASS",
+    "t2": "40 passed",
+    "t3": "49 passed",
+    "smart_affected": "1 passed",
+    "diff_check": "PASS"
+  },
+  "timeout_triage": {
+    "previous_timeout_count": 23,
+    "post_review_timeout_count": 26,
+    "post_review_verified_preexisting": 23,
+    "post_review_new": 3,
+    "post_review_resolved": 0,
+    "final_timeout_count": 25,
+    "final_verified_preexisting": 23,
+    "final_new_relative_to_previous": 2,
+    "final_resolved_relative_to_post_review": 1,
+    "new_files_without_changed_code_correlation": [
+      "tests/test_decimal_functions.py",
+      "tests/test_self_hosting_opcode_classifier.py"
+    ]
+  },
+  "global_t4": {
+    "head": "1808cc560fa52a474d7d1b6d84734abc18585ce8",
+    "selected_files": 369,
+    "passed_files": 344,
+    "failed_files": 0,
+    "timeout_files": 25,
+    "exit": 1,
+    "rerun": false,
+    "report": "T4-post-tls-20260820-194441.txt",
+    "status": "TIMEOUT_BLOCKED_BY_RELEASE_POLICY"
   },
   "benchmark": {
-    "schema": "s3.m199.self-move.v2",
-    "s3_head": "7b99ebb9ae4119ecc54b96f78313f0996c476b09",
-    "repository_head": "c13f159bb19f13cac9e83e523b6e392baae71738",
-    "baseline_s3_sha": "2a5f7bdb0e0dfd03fcae5249cb76bff118a642b6",
-    "optimization_introduction_sha": "a06baa8991dc0217d387bb156fc524caa13c5fd4",
-    "correctness": "PASS",
+    "head": "c13f159bb19f13cac9e83e523b6e392baae71738",
     "timing_class": "CHARACTERIZATION_ONLY",
-    "native_execution_available": false,
     "native_comparative_valid": false,
     "native_speedup_claim": "NO",
-    "protocol": {
-      "warmups": 5,
-      "repetitions": 30,
-      "loops_per_sample": 25,
-      "order": "deterministic alternating OFF/ON, ON/OFF",
-      "timed_scope": "hosted Emulator execution",
-      "off": "original AssemblyProgram",
-      "on": "eliminate_redundant_noop_moves(original)",
-      "native_x86_generation": "supplementary structural probe only"
-    },
-    "with_self_moves": {
-      "off_median_ns": 9476150,
-      "on_median_ns": 11359500,
-      "off_iqr_ns": 5785425,
-      "on_iqr_ns": 4390725,
-      "samples_per_variant": 30
-    },
-    "without_self_moves": {
-      "off_median_ns": 30585300,
-      "on_median_ns": 36196150,
-      "samples_per_variant": 30
-    }
+    "rerun": false
   },
   "milestones": {
     "M1.91": "PASS",
     "M1.92": "PASS",
     "M1.93": "PASS",
-    "M1.94": "BLOCKED_BY_REPRODUCIBLE_T4_FAILURE",
+    "M1.94": "PASS_WITH_PROVIDER_DEFERRED",
     "M1.95": "PASS",
     "M1.96": "PASS_WITH_PROVIDER_DEFERRED",
     "M1.97": "PASS_STRUCTURAL_LINK_NATIVE_DEFERRED",
     "M1.98": "PASS_STRUCTURAL_NATIVE_DEFERRED",
     "M1.99": "PASS_FOCUSED_AND_BENCHMARKED",
-    "M2.00": "BLOCKED_BY_FINAL_T4"
+    "M2.00": "BLOCKED_BY_FINAL_T4_TIMEOUT_POLICY"
   },
-  "environment": {
-    "platform": "Windows",
-    "linux_aarch64_native": "DEFERRED_BY_ENVIRONMENT",
-    "macos_arm64_native": "DEFERRED_BY_ENVIRONMENT",
-    "cryptography_provider": "DEFERRED_BY_ENVIRONMENT"
+  "findings": {
+    "blockers": 1,
+    "high": 0,
+    "medium": 0,
+    "low": 0
   },
   "publication": {
     "s3_pr": 184,
     "benchmark_pr": 6,
     "push": "YES",
-    "force_push": "NO",
     "merge": "NO",
+    "auto_merge": "NO",
+    "force_push": "NO",
     "tag": "NO",
     "release": "NO",
     "m2_01_started": "NO",
     "ready_for_pr": "NO"
   },
-  "status": "BLOCKED_FINAL_T4"
+  "status": "BLOCKED_FINAL_T4_TIMEOUT_POLICY"
 }
