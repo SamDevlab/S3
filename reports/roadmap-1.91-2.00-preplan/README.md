@@ -1,12 +1,18 @@
-# M1.91-M2.00 Provisional Pre-Plan
+# M1.91-M2.00 Campaign Pre-Plan
 
-This document is a planning checkpoint only. It does not authorize runtime
-implementation, a branch, a pull request, a merge, or benchmark publication.
-The repository contains no substantive pre-existing M1.91-M2.00 roadmap; the
-only earlier reference records that M1.91 had not started. This provisional
-sequence is therefore preserved as a new planning artifact.
+This directory defines the planning contract for the M1.91-M2.00 line.
+The predecessor line M1.81-M1.90 is now merged into canonical `main` through
+PR #183 at merge commit `a9e430551f2ee77aa2ef229daf9e967333e83e2c`.
 
-## Proposed sequence
+A campaign base branch has been prepared from that exact canonical commit:
+
+`feature/m191-m200-autonomous-20260819`
+
+Preparing the branch and documentation does **not** start M1.91 implementation.
+No source/runtime change, pull request, merge, tag, release, or benchmark
+publication is authorized by this base preparation alone.
+
+## Planned sequence
 
 | Milestone | Capability focus |
 |---|---|
@@ -22,13 +28,24 @@ sequence is therefore preserved as a new planning artifact.
 | M2.00 | release candidate and language stability gate |
 
 M1.91-M1.92 are ordered prerequisites. M1.93 and M1.95 may be researched in
-parallel after M1.92, while M1.94 and M1.96 consume their respective outputs.
-M1.97, M1.98, M1.99, and M2.00 remain ordered release gates.
+parallel after M1.92, but implementation remains sequential inside the campaign
+unless the campaign contract explicitly records otherwise. M1.94 and M1.96
+consume their respective predecessor outputs. M1.97, M1.98, M1.99, and M2.00
+remain ordered release gates.
+
+The executable campaign rules live in:
+
+- `reports/roadmap-1.91-2.00-execution/CAMPAIGN_BASELINE.md`
+- `reports/roadmap-1.91-2.00-execution/CAMPAIGN_CONTRACT.md`
+- `reports/roadmap-1.91-2.00-execution/HANDOFF_STATE.md`
 
 ## Status lock
 
-`M191_M200_IMPLEMENTATION_STARTED=NO`
-
-The M1.81-M1.90 publication campaign is not merged into the canonical main
-line by this pre-plan. Entry criteria and promotion rules are defined in the
-companion files and must be satisfied before any implementation campaign.
+```text
+M181_M190_MERGED=YES
+M181_M190_MERGE_SHA=a9e430551f2ee77aa2ef229daf9e967333e83e2c
+M191_M200_BASE_BRANCH=feature/m191-m200-autonomous-20260819
+M191_M200_BASE_PREPARED=YES
+M191_M200_IMPLEMENTATION_STARTED=NO
+M191_STARTED=NO
+```
