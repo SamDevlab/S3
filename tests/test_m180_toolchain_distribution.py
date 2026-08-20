@@ -79,7 +79,11 @@ def test_unmanifested_extra_and_duplicate_zip_members_are_rejected() -> None:
 def test_noncanonical_archive_paths_and_manifest_divergence_are_rejected() -> None:
     bundler = ToolchainBundler()
     bundle = bundler.build({"dir/file": b"ok"}, license_text="Apache", metadata={})
-    noncanonical = _rewrite_bundle(bundle, extras=(("dir\\other", b"x"),))
+    # zipfile normalizes backslashes to '/' on Windows before writing the
+    # central-directory name.  A repeated separator survives on every host
+    # while PurePosixPath canonicalization collapses it, so this fixture
+    # actually exercises the verifier's raw-name != canonical-name rejection.
+    noncanonical = _rewrite_bundle(bundle, extras=(("dir//other", b"x"),))
     with pytest.raises(DistributionError, match="not canonical"):
         bundler.verify(noncanonical)
 
