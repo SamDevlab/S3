@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import socket
+
 from bootstrap.s3.async_http import HTTPLimits
 from bootstrap.s3.async_http_server import (
     HTTPServerErrorCode,
     HTTPServerResponse,
+    LoopbackHTTPServer,
     StreamingHTTPServer,
 )
 
@@ -45,3 +48,48 @@ def test_response_header_policy_and_connection_budget_are_bounded() -> None:
     assert unsafe.error_or(None).code is HTTPServerErrorCode.FRAMING
     assert server.close("one").is_ok
     assert server.receive("one", b"").error_or(None).code is HTTPServerErrorCode.CLOSED
+
+
+def test_loopback_server_executes_real_tcp_request_and_closes_deterministically() -> None:
+    server = LoopbackHTTPServer(
+        limits=HTTPLimits(max_timeout_seconds=2),
+        max_chunk_bytes=3,
+    )
+    started = server.start()
+    assert started.is_ok
+    host, port = started.value_or(("", 0))
+    client = socket.create_connection((host, port), timeout=2)
+    try:
+        client.sendall(b"POST /echo HTTP/1.1\r\nContent-Length: 5\r\n\r\nhello")
+        served = server.serve_once(
+            lambda request: HTTPServerResponse(200, "OK", (("X-Body", str(len(request.body))),), request.body)
+        )
+        assert served.is_ok
+        client.settimeout(2)
+        response = bytearray()
+        while True:
+            chunk = client.recv(64)
+            if not chunk:
+                break
+            response.extend(chunk)
+        assert b"HTTP/1.1 200 OK" in response
+        assert b"Content-Length: 5" in response
+        assert response.endswith(b"hello")
+    finally:
+        client.close()
+        assert server.close().is_ok
+    assert server.active_connections == 0
+
+
+def test_loopback_server_enforces_one_global_request_deadline() -> None:
+    server = LoopbackHTTPServer(limits=HTTPLimits(max_timeout_seconds=0.05))
+    started = server.start()
+    assert started.is_ok
+    host, port = started.value_or(("", 0))
+    client = socket.create_connection((host, port), timeout=1)
+    try:
+        result = server.serve_once(lambda _request: HTTPServerResponse(200, "OK", (), b""))
+        assert result.error_or(None).code is HTTPServerErrorCode.TIMEOUT
+    finally:
+        client.close()
+        assert server.close().is_ok

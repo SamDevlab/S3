@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+import ipaddress
+import socket
+import time
+from typing import Callable
 
 from .async_http import HTTPLimits
 from .results import Result
@@ -19,6 +23,9 @@ class HTTPServerErrorCode(Enum):
     MALFORMED = "malformed"
     UNSUPPORTED_TRANSFER = "unsupported_transfer"
     QUEUE_LIMIT = "queue_limit"
+    TIMEOUT = "timeout"
+    TRANSPORT = "transport"
+    HANDLER = "handler"
 
 
 @dataclass(frozen=True, slots=True)
@@ -176,6 +183,147 @@ class StreamingHTTPServer:
         return Result.ok(None)
 
 
+class LoopbackHTTPServer:
+    """Bounded real-TCP loopback adapter for the HTTP server protocol."""
+
+    def __init__(
+        self,
+        *,
+        host: str = "127.0.0.1",
+        port: int = 0,
+        limits: HTTPLimits | None = None,
+        max_connections: int = 32,
+        max_chunk_bytes: int = 4096,
+    ) -> None:
+        try:
+            address = ipaddress.ip_address(host)
+        except ValueError as error:
+            raise ValueError("loopback HTTP host must be a numeric address") from error
+        if not address.is_loopback:
+            raise ValueError("loopback HTTP server requires a loopback address")
+        if isinstance(port, bool) or not isinstance(port, int) or not 0 <= port <= 65535:
+            raise ValueError("loopback HTTP port must be in 0..65535")
+        if isinstance(max_connections, bool) or not isinstance(max_connections, int) or max_connections <= 0:
+            raise ValueError("max_connections must be a positive integer")
+        if isinstance(max_chunk_bytes, bool) or not isinstance(max_chunk_bytes, int) or max_chunk_bytes <= 0:
+            raise ValueError("max_chunk_bytes must be a positive integer")
+        self.host = host
+        self.port = port
+        self.limits = limits or HTTPLimits()
+        self.max_connections = max_connections
+        self.max_chunk_bytes = max_chunk_bytes
+        self._listener: socket.socket | None = None
+        self._address: tuple[str, int] | None = None
+        self._active_connections = 0
+
+    @property
+    def address(self) -> tuple[str, int] | None:
+        return self._address
+
+    @property
+    def active_connections(self) -> int:
+        return self._active_connections
+
+    def start(self) -> Result[tuple[str, int], HTTPServerError]:
+        if self._listener is not None:
+            return Result.err(HTTPServerError(HTTPServerErrorCode.INVALID_ARGUMENT, "start", "server is already started"))
+        family = socket.AF_INET6 if ":" in self.host else socket.AF_INET
+        listener = socket.socket(family, socket.SOCK_STREAM)
+        try:
+            listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            listener.bind((self.host, self.port))
+            listener.listen(self.max_connections)
+            bound = listener.getsockname()
+            self._listener = listener
+            self._address = (self.host, int(bound[1]))
+            return Result.ok(self._address)
+        except OSError as error:
+            listener.close()
+            return Result.err(HTTPServerError(HTTPServerErrorCode.TRANSPORT, "start", f"loopback listen failed: {error}"))
+
+    def serve_once(self, handler: Callable[[HTTPRequest], HTTPServerResponse]) -> Result[None, HTTPServerError]:
+        if not callable(handler):
+            return Result.err(HTTPServerError(HTTPServerErrorCode.INVALID_ARGUMENT, "serve_once", "request handler is not callable"))
+        listener = self._listener
+        if listener is None:
+            return Result.err(HTTPServerError(HTTPServerErrorCode.CLOSED, "serve_once", "server is not started"))
+        deadline = time.monotonic() + self.limits.max_timeout_seconds
+        try:
+            remaining = _remaining_seconds(deadline)
+            if remaining <= 0:
+                return Result.err(HTTPServerError(HTTPServerErrorCode.TIMEOUT, "accept", "request deadline expired"))
+            listener.settimeout(remaining)
+            connection, _address = listener.accept()
+        except socket.timeout:
+            return Result.err(HTTPServerError(HTTPServerErrorCode.TIMEOUT, "accept", "request deadline expired"))
+        except OSError as error:
+            return Result.err(HTTPServerError(HTTPServerErrorCode.TRANSPORT, "accept", f"loopback accept failed: {error}"))
+
+        self._active_connections += 1
+        try:
+            with connection:
+                parser = IncrementalHTTPRequestParser(limits=self.limits, max_frames=1)
+                requests: tuple[HTTPRequest, ...] = ()
+                while not requests:
+                    remaining = _remaining_seconds(deadline)
+                    if remaining <= 0:
+                        return Result.err(HTTPServerError(HTTPServerErrorCode.TIMEOUT, "receive", "request deadline expired"))
+                    connection.settimeout(remaining)
+                    try:
+                        chunk = connection.recv(min(self.max_chunk_bytes, self.limits.max_request_bytes + self.limits.max_body_bytes))
+                    except socket.timeout:
+                        return Result.err(HTTPServerError(HTTPServerErrorCode.TIMEOUT, "receive", "request deadline expired"))
+                    except OSError as error:
+                        return Result.err(HTTPServerError(HTTPServerErrorCode.TRANSPORT, "receive", f"loopback receive failed: {error}"))
+                    if not chunk:
+                        return Result.err(HTTPServerError(HTTPServerErrorCode.MALFORMED, "receive", "peer closed before a complete request"))
+                    parsed = parser.feed(chunk)
+                    if parsed.is_err:
+                        return Result.err(parsed.error_or(None))
+                    requests = parsed.value_or(())
+
+                try:
+                    response = handler(requests[0])
+                except Exception as error:
+                    return Result.err(HTTPServerError(HTTPServerErrorCode.HANDLER, "handler", f"request handler failed: {error}"))
+                if not isinstance(response, HTTPServerResponse):
+                    return Result.err(HTTPServerError(HTTPServerErrorCode.HANDLER, "handler", "request handler returned an invalid response"))
+                encoded = response.encode(self.limits)
+                if encoded.is_err:
+                    return Result.err(encoded.error_or(None))
+                payload = encoded.value_or(b"")
+                offset = 0
+                while offset < len(payload):
+                    remaining = _remaining_seconds(deadline)
+                    if remaining <= 0:
+                        return Result.err(HTTPServerError(HTTPServerErrorCode.TIMEOUT, "send", "response deadline expired"))
+                    connection.settimeout(remaining)
+                    try:
+                        sent = connection.send(payload[offset : offset + self.max_chunk_bytes])
+                    except socket.timeout:
+                        return Result.err(HTTPServerError(HTTPServerErrorCode.TIMEOUT, "send", "response deadline expired"))
+                    except OSError as error:
+                        return Result.err(HTTPServerError(HTTPServerErrorCode.TRANSPORT, "send", f"loopback send failed: {error}"))
+                    if sent <= 0:
+                        return Result.err(HTTPServerError(HTTPServerErrorCode.TRANSPORT, "send", "loopback send made no progress"))
+                    offset += sent
+                return Result.ok(None)
+        finally:
+            self._active_connections -= 1
+
+    def close(self) -> Result[None, HTTPServerError]:
+        listener = self._listener
+        self._listener = None
+        self._address = None
+        if listener is None:
+            return Result.ok(None)
+        try:
+            listener.close()
+        except OSError as error:
+            return Result.err(HTTPServerError(HTTPServerErrorCode.TRANSPORT, "close", f"loopback close failed: {error}"))
+        return Result.ok(None)
+
+
 def _parse_request_head(
     raw: bytes,
     limits: HTTPLimits,
@@ -228,3 +376,7 @@ def _parse_request_head(
 
 def _valid_header_name(name: str) -> bool:
     return bool(name) and all(character.isalnum() or character == "-" for character in name)
+
+
+def _remaining_seconds(deadline: float) -> float:
+    return deadline - time.monotonic()
