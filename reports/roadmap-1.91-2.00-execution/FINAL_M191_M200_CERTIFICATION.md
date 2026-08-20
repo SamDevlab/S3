@@ -1,78 +1,89 @@
-# M1.91-M2.00 Terminal Correction Certification
+# M1.91-M2.00 Terminal Hardening Certification
 
-This record covers the bounded correction delta after the reviewed candidate.
-It does not replace or rewrite the historical full-suite records.
+This record certifies the final bounded local candidate after terminal
+hardening corrections. Historical global-suite records remain immutable and
+are not reused as certification for later source.
 
 ```text
 REPOSITORY=SamDevlab/S3
 WORKTREE=C:\Users\samue\Downloads\S3-m191-m200-autonomous-20260819
 BRANCH=feature/m191-m200-autonomous-20260819
-REVIEWED_BASE=20e4487e86d7eec98e2ea52f4937912e3bfb7261
+START_HEAD=ac829053b83a241f84700aa962dfdd3bd6cd3d08
+FINAL_TESTED_SOURCE_HEAD=1632367cda087bce8feca4e559f2538ca7cbcbea
+FINAL_DOCUMENTATION_HEAD=THIS_LOCAL_CERTIFICATION_COMMIT
+SOURCE_CHANGED_AFTER_FINAL_GATES=NO
 HISTORICAL_T4_SOURCE_HEAD=eb8ce3e1e8417844810cd4a804c17102bee7fc18
-CORRECTION_HEAD=43767528cf86ca83e2911ad154f9b75c248d727d
-SOURCE_CHANGED_AFTER_HISTORICAL_T4=YES
 GLOBAL_T4_RUNS_TOTAL=3
 ADDITIONAL_T4_RUNS=0
-MILESTONES_ACCOUNTED_FOR=10/10
 M2_01=NO
 ```
 
 The historical T4 at `eb8ce3e1e8417844810cd4a804c17102bee7fc18` remains
 immutable evidence for that exact source: selected 3107, passed 2912, failed
-0, timed out 0, skipped 195, exit 0. It is not a certification of the
-correction candidate. No fourth T4 was executed.
+0, timed out 0, skipped 195, exit 0. No fourth T4 was executed.
 
-## Correction Gates
+## Finding Closure
 
 ```text
-H1_SELECT_READINESS=PASS
-H2_SELECT_IR_TRUTHFULNESS=PASS
-H3_ASYNC_SYNC=PASS
-H4_HTTP_BODY_STREAMING=PASS
-H5_TLS_DEADLINES=PASS
-H6_VERSION_RESOLUTION=PASS
-H7_REAL_ELF_OBJECT_LINK=PASS
-H8_GIT_COMMIT_IDENTITY=PASS
-H9_VETTED_PROVENANCE=PASS
+H1_DUPLICATE_SELECT_FUTURE=PASS
+H2_BOUNDED_SYNC_WAKE_STATE=PASS
+H3_REQUEST_BODY_STREAMING=PASS
+H4_TLS_HANDSHAKE_BUDGET=PASS
+H5_CONSTRAINT_LOCK_SEPARATION=PASS
+H6_AARCH64_SEMANTIC_OBJECT_LINK=PASS
+H7_PROVENANCE_POLICY_SPLIT=PASS
+M1_MIXED_IR_FALLBACK=PASS
+M2_GIT_40_HEX_TEST=PASS
+M3_REGISTRY_ERROR_TAXONOMY=PASS
+M4_DIRECT_TLS_ELF_TESTS=PASS
+BLOCKERS=0
+HIGH_FINDINGS=0
+MEDIUM_FINDINGS=0
+LOW_FINDINGS=1
+```
 
-M1_ASYNC_METADATA_SELECT=PASS
-M2_HTTP_ASCII=PASS
-M3_HTTP_CONNECTION_LIMIT=PASS
-M4_REGISTRY_BOUNDS_ORIGIN=PASS
+The one non-blocking low finding is evidence scope: the raw native OFF probe
+is not emitted because the production x86-64 emitter requires the
+self-move-eliminated input. The controlled OFF/ON AssemblyProgram comparison,
+semantic execution, and production ON emission remain valid. No native
+speedup claim is made from this limitation.
 
-COMPILEALL=PASS (exit 0)
-FOCUSED_SELECTED=38
-FOCUSED_PASS=38
+## Final Bounded Gates
+
+```text
+COMPILEALL=PASS (python -m compileall -q bootstrap/s3)
+FOCUSED_SELECTED=70
+FOCUSED_PASS=70
 FOCUSED_FAIL=0
 FOCUSED_SKIP=0
 FOCUSED_EXIT=0
-CROSS_LAYER_SELECTED=109
-CROSS_LAYER_PASS=108
+CROSS_LAYER_SELECTED=121
+CROSS_LAYER_PASS=120
 CROSS_LAYER_FAIL=0
 CROSS_LAYER_SKIP=1
 CROSS_LAYER_EXIT=0
-SMART_SELECTED=7
-SMART_PASS=7
+SMART_SELECTED=11
+SMART_PASS=11
 SMART_FAIL=0
 SMART_TIMEOUT=0
 SMART_EXIT=0
 DIFF_CHECK=PASS
 ```
 
-The one cross-layer skip is the cryptography-dependent test skipped because
-the provider is unavailable on this host. Native target execution has not been
-claimed where its environment is unavailable.
+The cross-layer skip is the cryptography-provider test, deferred because the
+provider is unavailable on this Windows host. The smart gate was run against
+`ac829053b83a241f84700aa962dfdd3bd6cd3d08` and tested source HEAD
+`1632367cda087bce8feca4e559f2538ca7cbcbea`.
 
 ```text
 CRYPTO_PROVIDER=DEFERRED_BY_ENVIRONMENT
+PROVENANCE_POLICY=PASS
+PROVENANCE_SIGNATURE=DEFERRED_BY_ENVIRONMENT
+LINUX_AARCH64_OBJECT=PASS
+LINUX_AARCH64_LINK=PASS
 LINUX_AARCH64_NATIVE=DEFERRED_BY_ENVIRONMENT
 MACOS_ARM64_NATIVE=DEFERRED_BY_ENVIRONMENT
-BENCHMARK_RUN=NO
-BENCH_REQUIRED_BEFORE_PR=YES
 ```
-
-M1.99 remains `IMPLEMENTED_PENDING_BENCHMARK_EVIDENCE`. No performance claim
-is made by this correction record.
 
 ## Milestone Status
 
@@ -83,23 +94,37 @@ M1.93=PASS
 M1.94=PASS_WITH_PROVIDER_DEFERRED
 M1.95=PASS
 M1.96=PASS_WITH_PROVIDER_DEFERRED
-M1.97=PASS_STRUCTURAL_NATIVE_DEFERRED
+M1.97=PASS_STRUCTURAL_LINK_NATIVE_DEFERRED
 M1.98=PASS_STRUCTURAL_NATIVE_DEFERRED
-M1.99=IMPLEMENTED_PENDING_BENCHMARK_EVIDENCE
-M2.00=PASS_WITH_PROVIDER_DEFERRED
+M1.99=PASS_WITH_BENCHMARK_EVIDENCE
+M2.00=PASS_WITH_EXPLICIT_ENVIRONMENT_DEFERMENTS
+READY_FOR_SOURCE_REVIEW=YES
+READY_FOR_BENCH=YES
+READY_FOR_PR=YES
 ```
 
-The correction candidate has no unresolved blocker, high finding, or medium
-finding in the bounded self-review. It is ready for independent source review,
-but not for benchmark or publication.
+M1.99 benchmark evidence is pinned to:
 
 ```text
-BLOCKERS=0
-HIGH_FINDINGS=0
-MEDIUM_FINDINGS=0
-READY_FOR_EXTERNAL_SOURCE_REVIEW=YES
-READY_FOR_BENCH=NO
-READY_FOR_PR=NO
+BENCHMARK_RUN=YES
+BENCHMARK_S3_HEAD=1632367cda087bce8feca4e559f2538ca7cbcbea
+BENCHMARK_REPO_HEAD=9b506d97d5a8be3282d0cc4df0f4c57abb10b78f
+BENCH_CORRECTNESS=PASS
+BENCH_TIMING_CLASS=CHARACTERIZATION_ONLY
+BENCHMARK_CLAIM=Two self-moves removed with equivalent hosted-emulator results; no native speedup claim.
+```
+
+The benchmark protocol used two warmups, seven repetitions, and 25 emulator
+loops per sample. It covered workloads with and without self-moves, including
+a call, mutable memory, and control flow. Both variants were semantically
+equivalent before and after the pass; the first removed two `TMOV rN, rN`
+instructions and the second removed none. Native execution remains
+environment-deferred on this Windows host.
+
+## Publication Boundary
+
+```text
+WORKTREE_CLEAN=YES
 PUSH=NO
 PR=NO
 MERGE=NO
@@ -107,35 +132,14 @@ TAG=NO
 RELEASE=NO
 ```
 
-## Correction Delta
-
-Production files changed: 13. Test files changed: 5. Report files changed: 3.
-Benchmark files changed: 0.
+Source commits after the start checkpoint:
 
 ```text
-bootstrap/s3/aarch64_object_link.py
-bootstrap/s3/async_core.py
-bootstrap/s3/async_http_server.py
-bootstrap/s3/async_ir.py
-bootstrap/s3/async_sync.py
-bootstrap/s3/async_tls_server.py
-bootstrap/s3/backend_parity.py
-bootstrap/s3/package_signatures.py
-bootstrap/s3/pipeline.py
-bootstrap/s3/registry_security.py
-bootstrap/s3/registry_v2.py
-bootstrap/s3/release_stability.py
-bootstrap/s3/signed_registry_index.py
-tests/test_m191_async_select.py
-tests/test_m192_async_sync.py
-tests/test_m193_http_server.py
-tests/test_m195_registry_v2.py
-tests/test_m200_release_stability.py
-reports/roadmap-1.91-2.00-execution/FINAL_M191_M200_CERTIFICATION.md
-reports/roadmap-1.91-2.00-execution/TERMINAL_CORRECTION_EVIDENCE.md
-reports/roadmap-1.91-2.00-execution/TERMINAL_CORRECTION_RESULT.json
+1632367 fix(runtime): close remaining bounded resource edges
+eed07bf fix(runtime): close registry native and provenance contracts
+1a1d426 fix(runtime): harden bounded async and network contracts
 ```
 
-No remote publication, benchmark, or M2.01 work was performed. The next gate
-is independent source review, followed by a separate bounded benchmark gate
-for M1.99 if that review passes.
+The source was not changed after the final gates. The final documentation
+commit OID is reported by the terminal certification output after commit
+creation; this file intentionally does not self-embed its own Git object ID.
