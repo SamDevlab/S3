@@ -39,6 +39,7 @@ AAPCS64_V1 = AArch64ABIContract()
 class AArch64Relocation:
     symbol: str
     kind: str = "call26"
+    offset: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,6 +50,8 @@ class AArch64NativeBuildPlan:
     runtime_symbols: tuple[str, ...]
     relocations: tuple[AArch64Relocation, ...]
     abi: AArch64ABIContract = AAPCS64_V1
+    defined_symbols: tuple[str, ...] = ()
+    entry_symbol: str = "main"
 
     @property
     def structurally_complete(self) -> bool:
@@ -71,7 +74,10 @@ class LinuxAArch64NativeAssemblyBackend:
         return AArch64ProgramLowerer("linux-aarch64", max_instructions=limit).lower(program).text
 
     def build_plan(self, program: AssemblyProgram) -> AArch64NativeBuildPlan:
-        return _plan(AArch64ProgramLowerer("linux-aarch64", max_instructions=self.max_instructions).lower(program))
+        return _plan(
+            AArch64ProgramLowerer("linux-aarch64", max_instructions=self.max_instructions).lower(program),
+            program,
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,7 +90,10 @@ class MacOSArm64NativeAssemblyBackend:
         return AArch64ProgramLowerer("macos-arm64", max_instructions=limit).lower(program).text
 
     def build_plan(self, program: AssemblyProgram) -> AArch64NativeBuildPlan:
-        return _plan(AArch64ProgramLowerer("macos-arm64", max_instructions=self.max_instructions).lower(program))
+        return _plan(
+            AArch64ProgramLowerer("macos-arm64", max_instructions=self.max_instructions).lower(program),
+            program,
+        )
 
 
 def create_cross_platform_backend_registry() -> BackendRegistry:
@@ -122,12 +131,18 @@ def build_native_with_provider(
     return output
 
 
-def _plan(artifact: AArch64ProgramArtifact) -> AArch64NativeBuildPlan:
-    relocations = tuple(AArch64Relocation(symbol) for symbol in artifact.runtime_symbols)
+def _plan(artifact: AArch64ProgramArtifact, program: AssemblyProgram) -> AArch64NativeBuildPlan:
+    defined_symbols = tuple(function.name for function in program.functions)
+    relocations: list[AArch64Relocation] = []
+    for offset, line in enumerate(artifact.text.splitlines()):
+        stripped = line.strip()
+        if stripped.startswith("bl "):
+            relocations.append(AArch64Relocation(stripped[3:].strip(), offset=offset))
     return AArch64NativeBuildPlan(
         artifact.target,
         artifact.text,
         artifact.container_header,
         artifact.runtime_symbols,
-        relocations,
+        tuple(relocations),
+        defined_symbols=defined_symbols,
     )
