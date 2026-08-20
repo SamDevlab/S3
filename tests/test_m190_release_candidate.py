@@ -1,7 +1,13 @@
 from __future__ import annotations
 
+import io
+import zipfile
+
+import pytest
+
 from bootstrap.s3.arm64_integration import LinuxAArch64Integration, MacOSArm64Integration
 from bootstrap.s3.release_candidate import CertificateStatus, LocalReleaseCandidateBuilder, ReleaseCandidateError
+from bootstrap.s3.toolchain_distribution import DistributionError
 
 
 APACHE_FIXTURE = "Apache License\nVersion 2.0, January 2004\n"
@@ -34,6 +40,8 @@ def test_release_candidate_is_deterministic_and_has_explicit_matrix() -> None:
     assert all(item.structural is CertificateStatus.STRUCTURAL_PASS for item in first.certificates)
     assert {item.native for item in first.certificates} == {CertificateStatus.DEFERRED_BY_ENVIRONMENT}
     assert first.bundle.manifest["metadata"]["license"] == "Apache-2.0"
+    assert first.bundle.manifest["license"] == "LICENSE"
+    assert len(first.bundle.manifest["license_sha256"]) == 64
 
 
 def test_release_candidate_rejects_fake_structural_artifacts() -> None:
@@ -51,6 +59,19 @@ def test_release_candidate_rejects_fake_structural_artifacts() -> None:
         assert "structural" in str(error)
     else:
         raise AssertionError("invalid target bytes must not receive structural PASS")
+
+
+def test_release_candidate_bundle_verifier_rejects_unmanifested_member() -> None:
+    builder = LocalReleaseCandidateBuilder()
+    candidate = _build()
+    output = io.BytesIO()
+    with zipfile.ZipFile(io.BytesIO(candidate.bundle.data), "r") as source, zipfile.ZipFile(output, "w", compression=zipfile.ZIP_STORED) as target:
+        for info in source.infolist():
+            target.writestr(info, source.read(info.filename))
+        target.writestr("unexpected.bin", b"must-not-be-ignored")
+    tampered = type(candidate.bundle)(output.getvalue(), candidate.bundle.manifest)
+    with pytest.raises(DistributionError, match="membership differs"):
+        builder.bundler.verify(tampered)
 
 
 def test_release_candidate_requires_apache_license_text() -> None:
