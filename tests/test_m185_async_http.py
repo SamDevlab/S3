@@ -6,6 +6,7 @@ import threading
 
 import pytest
 
+import bootstrap.s3.async_http as async_http_module
 from bootstrap.s3.async_http import (
     BoundedHTTPClient,
     HTTPLimits,
@@ -56,6 +57,24 @@ def test_http_parser_rejects_chunked_oversized_and_injected_headers() -> None:
     assert injected.error is not None
 
 
+def test_non_ascii_request_headers_fail_closed_before_transport() -> None:
+    class NoopTransport:
+        def request(self, **_kwargs):
+            raise AssertionError("non-ASCII request must be rejected before transport")
+
+    bad_name = BoundedHTTPClient(NoopTransport()).get(
+        "http://example.test/",
+        headers=(("X-Ünicode", "ok"),),
+    ).poll().value_or(None)
+    assert bad_name.error is not None and HTTPErrorCode.MALFORMED_RESPONSE.value in bad_name.error.detail
+
+    bad_value = BoundedHTTPClient(NoopTransport()).get(
+        "http://example.test/",
+        headers=(("X-Test", "olá"),),
+    ).poll().value_or(None)
+    assert bad_value.error is not None and HTTPErrorCode.MALFORMED_RESPONSE.value in bad_value.error.detail
+
+
 def test_https_transport_secure_defaults_cannot_be_disabled_accidentally() -> None:
     transport = SocketHTTPTransport()
     assert transport._tls_context.verify_mode == ssl.CERT_REQUIRED
@@ -66,6 +85,43 @@ def test_https_transport_secure_defaults_cannot_be_disabled_accidentally() -> No
     insecure.verify_mode = ssl.CERT_NONE
     with pytest.raises(ValueError, match="certificate and hostname"):
         SocketHTTPTransport(tls_context=insecure)
+
+
+def test_socket_transport_uses_one_global_deadline(monkeypatch) -> None:
+    class FakeSocket:
+        def __init__(self) -> None:
+            self.timeouts = []
+            self.recv_calls = 0
+
+        def settimeout(self, value) -> None:
+            self.timeouts.append(value)
+
+        def sendall(self, _request: bytes) -> None:
+            return None
+
+        def recv(self, _size: int) -> bytes:
+            self.recv_calls += 1
+            return b"x"
+
+        def close(self) -> None:
+            return None
+
+    fake = FakeSocket()
+    clock = iter((0.0, 0.1, 0.2, 0.3, 0.4, 1.1))
+    monkeypatch.setattr(async_http_module.time, "monotonic", lambda: next(clock))
+    monkeypatch.setattr(async_http_module.socket, "create_connection", lambda _address, timeout: fake)
+
+    with pytest.raises(TimeoutError, match="deadline"):
+        SocketHTTPTransport().request(
+            scheme="http",
+            host="127.0.0.1",
+            port=80,
+            request=b"GET / HTTP/1.1\r\nHost: localhost\r\n\r\n",
+            max_response_bytes=32,
+            timeout=1.0,
+        )
+    assert fake.recv_calls == 1
+    assert fake.timeouts and all(timeout > 0 for timeout in fake.timeouts)
 
 
 def test_real_loopback_tcp_transport_executes_bounded_http_request() -> None:
