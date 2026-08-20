@@ -60,3 +60,14 @@ def test_registry_v2_limits_resolution_and_cache(tmp_path) -> None:
     client = RegistryV2Client(root, expected_origin="https://registry.fixture", limits=RegistryV2Limits(max_resolved_packages=1))
     with pytest.raises(RegistryV2Error, match="resolved package"):
         client.resolve("root", "1.0")
+
+
+def test_registry_v2_resolves_a_bounded_semver_range_deterministically(tmp_path) -> None:
+    root, _root_digest, leaf_digest = _registry(tmp_path)
+    data = json.loads((root / "index.json").read_text(encoding="utf-8"))
+    leaf = data["packages"][1]
+    data["packages"].append({**leaf, "version": "1.1"})
+    data["packages"][0]["dependencies"] = [{"name": "leaf", "version": "^1.0", "sha256": leaf_digest}]
+    (root / "index.json").write_text(json.dumps(data), encoding="utf-8")
+    client = RegistryV2Client(root, expected_origin="https://registry.fixture")
+    assert client.resolve("root", "1.0").packages[-1].version == "1.1"

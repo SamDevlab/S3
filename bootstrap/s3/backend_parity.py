@@ -13,6 +13,8 @@ import math
 import re
 
 from .assembly import AssemblyProgram
+from .aarch64_object_link import AArch64ObjectLinker
+from .aarch64_toolchain import LinuxAArch64NativeAssemblyBackend
 from .backends.registry import BackendRegistry, BackendRegistryError
 from .emulator import AssemblyValue
 from .targets import LINUX_AARCH64_TARGET, LINUX_X86_64_TARGET, MACOS_ARM64_TARGET, TargetSpec
@@ -35,6 +37,8 @@ class BackendParityEvidence:
     instruction_count: int
     hosted_result: AssemblyValue
     native_status: str = "STRUCTURAL_ONLY_TOOLCHAIN_DEFERRED"
+    object_contract: str = "not-applicable"
+    object_structural_valid: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,6 +93,14 @@ def build_backend_parity_matrix(
         instruction_count = sum(1 for line in text.splitlines() if line.startswith("    "))
         if not 1 <= instruction_count <= MAX_PARITY_INSTRUCTIONS:
             raise BackendParityError(f"target {target.name!r} emitted an invalid instruction count")
+        object_contract = "not-applicable"
+        object_structural_valid = False
+        if target.name == "linux-aarch64":
+            object = AArch64ObjectLinker().build_object(LinuxAArch64NativeAssemblyBackend().build_plan(program))
+            object_contract = object.format
+            object_structural_valid = object.structural_valid
+            if not object_structural_valid:
+                raise BackendParityError("AArch64 object contract is not structurally valid")
         evidence.append(
             BackendParityEvidence(
                 target,
@@ -96,6 +108,8 @@ def build_backend_parity_matrix(
                 hashlib.sha256(text.encode("utf-8")).hexdigest(),
                 instruction_count,
                 hosted_result,
+                object_contract=object_contract,
+                object_structural_valid=object_structural_valid,
             )
         )
     matrix = BackendParityMatrix(source_sha256, hosted_result, tuple(evidence))
@@ -117,6 +131,8 @@ def validate_backend_parity(matrix: BackendParityMatrix) -> None:
             raise BackendParityError("parity assembly identity is invalid")
         if item.native_status != "STRUCTURAL_ONLY_TOOLCHAIN_DEFERRED":
             raise BackendParityError("unbound native parity status is not allowed")
+        if item.target.name == "linux-aarch64" and (item.object_contract != "ELF64-REL-AARCH64" or not item.object_structural_valid):
+            raise BackendParityError("AArch64 parity does not bind the corrected ELF object contract")
         if isinstance(item.hosted_result, float) and not math.isfinite(item.hosted_result):
             raise BackendParityError("parity semantic result is not finite")
     if tuple(sorted(seen)) != tuple(sorted(target.name for target in PARITY_TARGETS)):

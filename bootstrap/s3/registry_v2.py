@@ -9,12 +9,15 @@ import json
 from pathlib import Path, PurePosixPath
 import re
 
+from .registry_security import canonical_https_origin, read_bounded_bytes
+
 
 class RegistryV2Error(ValueError):
     pass
 
 
 _DIGEST = re.compile(r"^[0-9a-f]{64}$")
+_VERSION = re.compile(r"^(0|[1-9][0-9]*)(?:\.(0|[1-9][0-9]*))?(?:\.(0|[1-9][0-9]*))?$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,6 +66,13 @@ class RegistryV2Resolution:
     packages: tuple[RegistryV2Lock, ...]
 
 
+@dataclass(frozen=True, order=True, slots=True)
+class _SemVer:
+    major: int
+    minor: int
+    patch: int
+
+
 class RegistryV2Client:
     """Read-only v2 resolver with exact identity and bounded verification."""
 
@@ -87,7 +97,7 @@ class RegistryV2Client:
             return cached
         root = self._entry(name, version, None)
         ordered: list[RegistryV2Lock] = []
-        visited: set[tuple[str, str]] = set()
+        selected: dict[str, RegistryV2Entry] = {}
         active: set[tuple[str, str]] = set()
 
         def visit(entry: RegistryV2Entry, depth: int) -> None:
@@ -96,16 +106,19 @@ class RegistryV2Client:
                 raise RegistryV2Error("registry dependency depth limit exceeded")
             if identity in active:
                 raise RegistryV2Error("registry dependency cycle detected")
-            if identity in visited:
+            previous = selected.get(entry.lock.name)
+            if previous is not None and previous.lock.version != entry.lock.version:
+                raise RegistryV2Error("registry dependency version conflict")
+            if previous is not None:
                 return
             if len(ordered) >= self.limits.max_resolved_packages:
                 raise RegistryV2Error("registry resolved package limit exceeded")
             active.add(identity)
+            selected[entry.lock.name] = entry
             ordered.append(entry.lock)
             for dependency in sorted(entry.dependencies, key=lambda item: (item.name, item.version, item.sha256)):
                 visit(self._entry(dependency.name, dependency.version, dependency.sha256), depth + 1)
             active.remove(identity)
-            visited.add(identity)
 
         visit(root, 0)
         result = RegistryV2Resolution(root.lock, tuple(ordered))
@@ -123,9 +136,9 @@ class RegistryV2Client:
         entry = self._entry(lock.name, lock.version, lock.sha256)
         path = self.root / entry.object_name
         try:
-            body = path.read_bytes()
-        except OSError as error:
-            raise RegistryV2Error("registry v2 object is missing") from error
+            body = read_bounded_bytes(path, self.limits.max_cache_bytes, label="registry v2 object")
+        except ValueError as error:
+            raise RegistryV2Error(str(error)) from error
         if hashlib.sha256(body).hexdigest() != lock.sha256:
             raise RegistryV2Error("registry v2 object digest mismatch")
         if len(body) > self.limits.max_cache_bytes:
@@ -146,19 +159,30 @@ class RegistryV2Client:
         raise RegistryV2Error("registry v2 is read-only; publishing is disabled")
 
     def _entry(self, name: str, version: str, digest: str | None) -> RegistryV2Entry:
-        matches = tuple(item for item in self._entries if item.lock.name == name and item.lock.version == version)
+        if not isinstance(name, str) or not name or not isinstance(version, str) or not version:
+            raise RegistryV2Error("registry v2 package constraint is invalid")
+        matches = tuple(
+            item
+            for item in self._entries
+            if item.lock.name == name and _constraint_matches(item.lock.version, version)
+        )
         if digest is not None:
             matches = tuple(item for item in matches if item.lock.sha256 == digest)
         if len(matches) != 1:
-            raise RegistryV2Error("registry v2 package identity is missing or ambiguous")
+            if not matches:
+                raise RegistryV2Error("registry v2 package identity or compatible version is missing")
+            # A range may select one highest compatible version only.  Equal
+            # versions remain impossible because index identities are unique.
+            ordered = sorted(matches, key=lambda item: (_parse_version(item.lock.version), item.lock.sha256), reverse=True)
+            if len(ordered) > 1 and _parse_version(ordered[0].lock.version) == _parse_version(ordered[1].lock.version):
+                raise RegistryV2Error("registry v2 package identity is ambiguous")
+            return ordered[0]
         return matches[0]
 
     def _load_index(self) -> tuple[RegistryV2Entry, ...]:
         path = self.root / "index.json"
         try:
-            raw_bytes = path.read_bytes()
-            if len(raw_bytes) > self.limits.max_index_bytes:
-                raise RegistryV2Error("registry v2 index exceeds byte limit")
+            raw_bytes = read_bounded_bytes(path, self.limits.max_index_bytes, label="registry v2 index")
             raw = json.loads(raw_bytes.decode("utf-8"))
         except RegistryV2Error:
             raise
@@ -195,6 +219,54 @@ class RegistryV2Client:
 
 
 def _canonical_origin(origin: str) -> str:
-    if not isinstance(origin, str) or not origin.startswith("https://") or origin.endswith("/") or any(character.isspace() for character in origin):
-        raise RegistryV2Error("registry origin must be an HTTPS identity")
-    return origin.lower()
+    try:
+        return canonical_https_origin(origin)
+    except ValueError as error:
+        raise RegistryV2Error("registry origin must be a canonical HTTPS identity") from error
+
+
+def _parse_version(value: str) -> _SemVer:
+    match = _VERSION.fullmatch(value)
+    if match is None:
+        raise RegistryV2Error(f"invalid semantic version or constraint: {value!r}")
+    numbers = [int(item) if item is not None else 0 for item in match.groups()]
+    return _SemVer(*numbers)
+
+
+def _constraint_matches(version: str, constraint: str) -> bool:
+    if not isinstance(constraint, str) or not constraint or any(character.isspace() for character in constraint):
+        raise RegistryV2Error("registry version constraint is invalid")
+    candidate = _parse_version(version)
+    if constraint in {"*", "x", "X"}:
+        return True
+    if constraint.startswith("^"):
+        base = _parse_version(constraint[1:])
+        upper = _SemVer(base.major + 1, 0, 0) if base.major else _SemVer(0, base.minor + 1, 0)
+        return base <= candidate < upper
+    if constraint.startswith("~"):
+        base = _parse_version(constraint[1:])
+        return base <= candidate < _SemVer(base.major, base.minor + 1, 0)
+    if constraint.startswith((">", "<")) or "," in constraint:
+        for part in constraint.split(","):
+            if len(part) < 2 or part[:2] not in {">=", "<=", "=="} and part[0] not in "><":
+                raise RegistryV2Error("registry version comparator is invalid")
+            operator = part[:2] if part[:2] in {">=", "<=", "=="} else part[0]
+            target = _parse_version(part[len(operator):])
+            if operator == ">=" and not candidate >= target:
+                return False
+            if operator == "<=" and not candidate <= target:
+                return False
+            if operator == "==" and not candidate == target:
+                return False
+            if operator == ">" and not candidate > target:
+                return False
+            if operator == "<" and not candidate < target:
+                return False
+        return True
+    if constraint.endswith((".*", ".x", ".X")):
+        prefix = constraint.rsplit(".", 1)[0]
+        parts = prefix.split(".")
+        if len(parts) not in {1, 2} or any(not item.isdigit() for item in parts):
+            raise RegistryV2Error("registry wildcard constraint is invalid")
+        return candidate.major == int(parts[0]) and (len(parts) == 1 or candidate.minor == int(parts[1]))
+    return candidate == _parse_version(constraint)

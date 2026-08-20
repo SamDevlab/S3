@@ -69,22 +69,17 @@ def _provenance(candidate):
     )
 
 
-def test_release_stability_is_deterministic_and_explicitly_local() -> None:
+def test_release_stability_rejects_unvetted_fixture_provenance() -> None:
     first = _build_candidate()
     second = _build_candidate()
-    evidence = evaluate_release_stability(
-        first,
-        repeat_bundle_sha256=second.bundle.sha256,
-        provenance=_provenance(first),
-        signature_service=_service(),
-        compatibility_scope=("linux-aarch64", "linux-x86_64", "macos-arm64"),
-    )
-    assert first.bundle_sha256 == second.bundle_sha256
-    assert evidence.reproducible
-    assert evidence.provenance_verified
-    assert evidence.license_bound
-    assert evidence.status == "READY_WITH_DEFERRED_NATIVE_TARGETS"
-    assert evidence.native_deferred_targets == ("linux-aarch64", "linux-x86_64", "macos-arm64")
+    with pytest.raises(ReleaseStabilityError, match="not vetted"):
+        evaluate_release_stability(
+            first,
+            repeat_bundle_sha256=second.bundle.sha256,
+            provenance=_provenance(first),
+            signature_service=_service(),
+            compatibility_scope=("linux-aarch64", "linux-x86_64", "macos-arm64"),
+        )
 
 
 def test_release_stability_rejects_unbound_provenance() -> None:

@@ -10,6 +10,7 @@ import re
 from typing import Protocol
 
 from .results import Result
+from .registry_security import canonical_https_origin
 
 
 _DIGEST = re.compile(r"^[0-9a-f]{64}$")
@@ -101,6 +102,8 @@ class PublicTrustStore:
             not isinstance(key.key_id, str)
             or not key.key_id
             or len(key.key_id) > 128
+            or not key.key_id.isascii()
+            or any(character.isspace() for character in key.key_id)
             or not isinstance(key.publisher, str)
             or not key.publisher
             or len(key.publisher) > 256
@@ -137,6 +140,24 @@ class PackageSignatureService:
         self.verifier = verifier or CryptographyEd25519Verifier()
         self.max_provenance = max_provenance
         self.max_signature_bytes = max_signature_bytes
+
+    @property
+    def provider_identity(self) -> str:
+        return f"{getattr(self.verifier, 'provider', type(self.verifier).__name__)}:{getattr(self.verifier, 'algorithm', 'unknown')}"
+
+    @property
+    def provider_is_vetted(self) -> bool:
+        return isinstance(self.verifier, CryptographyEd25519Verifier)
+
+    @property
+    def provider_is_available(self) -> bool:
+        if not self.provider_is_vetted:
+            return False
+        try:
+            from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey  # noqa: F401
+        except ImportError:
+            return False
+        return True
 
     def verify(self, envelope: PackageSignatureEnvelope, body: bytes) -> Result[VerifiedPackage, SignatureError]:
         if not _valid_envelope(envelope, body, self.max_signature_bytes):
@@ -203,8 +224,16 @@ def _valid_envelope(envelope: PackageSignatureEnvelope, body: bytes, max_signatu
         and isinstance(envelope.key_id, str)
         and 0 < len(envelope.key_id) <= 128
         and isinstance(envelope.source, str)
-        and envelope.source.startswith("https://")
+        and _valid_source(envelope.source)
         and len(envelope.source) <= 2048
         and isinstance(envelope.signature, bytes)
         and 0 < len(envelope.signature) <= max_signature_bytes
     )
+
+
+def _valid_source(source: str) -> bool:
+    try:
+        canonical_https_origin(source)
+    except ValueError:
+        return False
+    return True

@@ -12,7 +12,7 @@ from .release_candidate import CertificateStatus, ReleaseCandidate
 
 
 RELEASE_TARGETS = ("linux-aarch64", "linux-x86_64", "macos-arm64")
-_COMMIT = re.compile(r"^[0-9a-f]{64}$")
+_COMMIT = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
 _VERSION = re.compile(r"^2\.0\.0-rc[0-9]+$")
 
 
@@ -30,6 +30,8 @@ class ReleaseStabilityEvidence:
     license_bound: bool
     reproducible: bool
     provenance_verified: bool
+    provenance_provider: str
+    provenance_status: str
     native_deferred_targets: tuple[str, ...]
     status: str
 
@@ -43,6 +45,8 @@ class ReleaseStabilityEvidence:
                 "license_bound": self.license_bound,
                 "native_deferred_targets": list(self.native_deferred_targets),
                 "provenance_verified": self.provenance_verified,
+                "provenance_provider": self.provenance_provider,
+                "provenance_status": self.provenance_status,
                 "reproducible": self.reproducible,
                 "status": self.status,
                 "target_names": list(self.target_names),
@@ -67,7 +71,7 @@ def evaluate_release_stability(
     if _VERSION.fullmatch(candidate.version) is None:
         raise ReleaseStabilityError("candidate version must be an S3 2.0.0 release candidate")
     if _COMMIT.fullmatch(candidate.compiler_commit) is None:
-        raise ReleaseStabilityError("candidate compiler commit must be an exact SHA-256")
+        raise ReleaseStabilityError("candidate compiler commit must be an exact lowercase Git SHA-1 or SHA-256")
     if tuple(sorted(compatibility_scope)) != tuple(sorted(RELEASE_TARGETS)):
         raise ReleaseStabilityError("compatibility scope must cover the exact release target matrix")
     target_names = tuple(item.target for item in candidate.certificates)
@@ -92,11 +96,19 @@ def evaluate_release_stability(
         raise ReleaseStabilityError("repeated release bundle is not byte-identical")
     if provenance.digest != candidate.bundle.sha256 or provenance.version != candidate.version or provenance.name != "s3-toolchain-release-candidate":
         raise ReleaseStabilityError("provenance envelope is not bound to this candidate")
-    verified = signature_service.verify(provenance, candidate.bundle.data)
-    if not verified.is_ok:
-        raise ReleaseStabilityError("release provenance verification failed")
+    if not signature_service.provider_is_vetted:
+        raise ReleaseStabilityError("release provenance provider is not vetted")
+    if not signature_service.provider_is_available:
+        provenance_verified = False
+        provenance_status = "DEFERRED_PROVIDER_UNAVAILABLE"
+    else:
+        verified = signature_service.verify(provenance, candidate.bundle.data)
+        if not verified.is_ok:
+            raise ReleaseStabilityError("release provenance verification failed")
+        provenance_verified = True
+        provenance_status = "VERIFIED"
     matrix_sha = hashlib.sha256(candidate.certificate_matrix_json.encode("utf-8")).hexdigest()
-    status = "READY_WITH_DEFERRED_NATIVE_TARGETS" if deferred else "COMPLETE"
+    status = "READY_WITH_DEFERRED_NATIVE_TARGETS" if deferred and provenance_verified else ("READY_WITH_DEFERRED_NATIVE_AND_PROVENANCE" if deferred else ("READY_WITH_DEFERRED_PROVENANCE" if not provenance_verified else "COMPLETE"))
     return ReleaseStabilityEvidence(
         candidate.version,
         candidate.compiler_commit,
@@ -105,7 +117,9 @@ def evaluate_release_stability(
         target_names,
         True,
         True,
-        True,
+        provenance_verified,
+        signature_service.provider_identity,
+        provenance_status,
         deferred,
         status,
     )
