@@ -1,11 +1,21 @@
-# M1.99 Architecture: Narrow Native Codegen Optimization
+# M1.99 Architecture: Native Self-Move Lowering
 
-The reviewed optimization removes only a same-register `TMOV` within the
-Assembly program before native emission. It cannot remove loads, stores,
-branches, bounds checks, calls, or any instruction with observable memory or
-control-flow effects. The transformed Assembly is revalidated before x86-64
-emission, and the AArch64 providers consume the same bounded transformation.
+`AssemblyProgram` remains semantically intact. The public candidate-analysis
+helper reports `TMOV rN, rN` sites without deleting logical Assembly
+instructions, so emulator behavior, diagnostics, resource limits, and
+instruction accounting remain unchanged.
 
-The measured effect is an exact structural instruction-count reduction on the
-pinned fixture. No wall-clock or cross-machine speedup is claimed because the
-campaign has no independent comparable native timing protocol at this point.
+On x86-64, the emitter preserves the logical instruction instrumentation. When
+the existing definite-initialization proof establishes that the self-read is
+safe, only the physical value copy is omitted. When the proof is not available,
+the emitter keeps the fail-closed initialization check. Non-self moves,
+address-taken registers, calls, and non-definite branch joins remain
+conservative.
+
+AArch64 does not apply Assembly-level self-move deletion. Its current M1.99
+optimization status is `DEFERRED`; the lowerer receives the original Assembly
+program unchanged.
+
+No native speedup claim is made. The Windows benchmark measures hosted Emulator
+execution and uses native x86 generation only as a supplementary structural
+probe.

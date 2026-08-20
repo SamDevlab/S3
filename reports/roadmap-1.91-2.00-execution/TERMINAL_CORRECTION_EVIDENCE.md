@@ -1,82 +1,68 @@
-# M1.91-M2.00 Terminal Hardening Evidence
+# M1.91-M2.00 Terminal Correction Evidence
+
+## Corrected Source
 
 ```text
-START_HEAD=ac829053b83a241f84700aa962dfdd3bd6cd3d08
-FINAL_TESTED_SOURCE_HEAD=4be50ffff0aa3fb1f4eff3b3c9b29d2685ba7238
-HISTORICAL_T4_SOURCE_HEAD=eb8ce3e1e8417844810cd4a804c17102bee7fc18
-GLOBAL_T4_RUNS_TOTAL=3
-ADDITIONAL_T4_RUNS=0
+OLD_HEAD=6dfd33f7d14a4fbcda212a109be8fbfd26859db3
+FINAL_TESTED_SOURCE_HEAD=7b99ebb9ae4119ecc54b96f78313f0996c476b09
+SOURCE_CHANGED_AFTER_FINAL_GATES=NO
+LOGICAL_TMOV_SEMANTICS_PRESERVED=YES
+INIT_FAILURE_PRESERVED=YES
+INSTRUCTION_ACCOUNTING_PRESERVED=YES
 ```
 
-## Bounded Results
+The Assembly optimizer is now analysis-only. x86-64 lowers a proven-safe
+self-move without a physical value copy while retaining the logical instruction
+site; unproven reads retain the initialization check. AArch64 does not apply
+the Assembly transformation.
+
+## Gates Before T4
 
 ```text
 COMPILEALL=PASS
-FOCUSED=70 passed, 0 skipped, 0 failed, exit 0
-CROSS_LAYER=120 passed, 1 skipped, 0 failed, exit 0
-SMART=11 selected, 11 passed, 0 failed, 0 timeout, exit 0
-DIFF_CHECK=PASS
-HTTP_LOOPBACK_BACKPRESSURE=PASS
+M199_FOCUSED=PASS
+NATIVE_X86_FOCUSED=PASS
+AARCH64_FOCUSED=PASS_WITH_DEFERRED_NATIVE_EXECUTION
+T3_CROSS_LAYER=PASS
+M181_M190_COMPATIBILITY=PASS_WITH_DEFERRED
+M199_BENCH_CORRECTNESS=PASS
 BENCH_PROTOCOL_METADATA=PASS
 BENCH_COMMIT_PIN_SELF_CHECK=PASS
-BLOCKER=0
+BENCHMARK_HEAD=c13f159bb19f13cac9e83e523b6e392baae71738
+```
+
+## T4 Truth
+
+```text
+FINAL_T4=FAIL
+FINAL_T4_HEAD=7b99ebb9ae4119ecc54b96f78313f0996c476b09
+FINAL_T4_SELECTED_FILES=369
+FINAL_T4_PASS_FILES=342
+FINAL_T4_FAIL_FILES=1
+FINAL_T4_TIMEOUT_FILES=26
+FINAL_T4_EXIT=1
+ADDITIONAL_T4_RUNS=0
+```
+
+The raw transcript is
+`T4-post-review-20260820-182130.txt`. The historical
+`T4-20260820-071828.txt` and earlier campaign transcripts were not modified.
+The focused reproduction of the final T4 failure is
+`tests/test_m194_tls_server.py::test_tls_handshake_timeout_releases_reserved_budget`;
+no runtime correction was attempted after T4 and no T4 rerun was made.
+
+## Final Status
+
+```text
+BLOCKER=1
 HIGH=0
 MEDIUM=0
 LOW=0
+READY_FOR_PR=NO
+PUSH=YES
+PR=184_AND_6_EXISTING_OPEN
+MERGE=NO
+TAG=NO
+RELEASE=NO
+M2.01_STARTED=NO
 ```
-
-The cryptography-dependent cross-layer test is deferred by the environment.
-The Linux AArch64 object/link checks are structural PASS; native execution for
-Linux AArch64 and macOS ARM64 is deferred by the Windows host.
-
-## Hardening Contracts
-
-```text
-H1_DUPLICATE_SELECT_FUTURE=PASS
-H2_BOUNDED_SYNC_WAKE_STATE=PASS
-H3_REQUEST_BODY_STREAMING=PASS
-H4_TLS_HANDSHAKE_BUDGET=PASS
-H5_CONSTRAINT_LOCK_SEPARATION=PASS
-H6_AARCH64_SEMANTIC_OBJECT_LINK=PASS
-H7_PROVENANCE_POLICY_SPLIT=PASS
-M1_MIXED_IR_FALLBACK=PASS
-M2_GIT_40_HEX_TEST=PASS
-M3_REGISTRY_ERROR_TAXONOMY=PASS
-M4_DIRECT_TLS_ELF_TESTS=PASS
-```
-
-The final source review found zero blockers, highs, mediums, or open low
-findings. Native OFF emission is not attempted because the production emitter
-requires the self-move-eliminated input; this remains a disclosed benchmark
-limitation, and the benchmark therefore makes no native speedup claim.
-
-## M1.99 Evidence
-
-```text
-BENCHMARK_REPO_HEAD=782b77f8deb2d8d777b89cb36d6420759c4f48d6
-BENCHMARK_S3_HEAD=4be50ffff0aa3fb1f4eff3b3c9b29d2685ba7238
-BENCH_CORRECTNESS=PASS
-BENCH_TIMING_CLASS=CHARACTERIZATION_ONLY
-BENCHMARK_RUN=YES
-BENCH_PROTOCOL_METADATA=PASS
-BENCH_COMMIT_PIN_SELF_CHECK=PASS
-```
-
-The controlled AssemblyProgram comparison used the same workload with the
-optimization disabled and enabled. It covered redundant and non-redundant
-self-moves, calls, mutable memory, and control flow. Outputs matched in both
-cases; the self-move workload removed two instructions and the workload
-without self-moves removed zero. Hosted-emulator timings were recorded with
-two warmups, seven repetitions, and 25 loops per sample. Native execution is
-deferred because this host is Windows without a Linux x86-64 toolchain.
-
-Final hosted-emulator medians: self-move workload 10,899,500 ns OFF and
-10,700,900 ns ON; no-self-move workload 11,606,400 ns OFF and 13,374,100 ns
-ON. These are characterization values only. The timed control was the same
-parsed AssemblyProgram/workload, with OFF as the original program and ON as
-`eliminate_redundant_noop_moves(original)`. Native x86 generation was a
-supplementary structural probe only, with no native speedup claim. Both local
-Git HEADs matched their pinned evidence SHAs.
-
-Historical T4 evidence remains unchanged: three runs total, no additional run.
-No publication action was performed.

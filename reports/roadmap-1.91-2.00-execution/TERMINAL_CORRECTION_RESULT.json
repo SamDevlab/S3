@@ -1,89 +1,115 @@
 {
-  "campaign": "M1.91-M2.00 terminal hardening",
-  "start_head": "ac829053b83a241f84700aa962dfdd3bd6cd3d08",
-  "final_tested_source_head": "4be50ffff0aa3fb1f4eff3b3c9b29d2685ba7238",
-  "final_candidate_head": null,
-  "final_documentation_head": null,
-  "final_head_note": "The documentation commit is the final candidate HEAD reported after commit creation.",
+  "campaign": "M1.91-M2.00 post-review correctness and performance",
   "branch": "feature/m191-m200-autonomous-20260819",
-  "global_t4_runs_total": 3,
-  "additional_t4_runs": 0,
-  "historical_t4_source_head": "eb8ce3e1e8417844810cd4a804c17102bee7fc18",
-  "historical_t4": {"selected": 3107, "passed": 2912, "failed": 0, "timed_out": 0, "skipped": 195, "exit": 0},
+  "old_head": "6dfd33f7d14a4fbcda212a109be8fbfd26859db3",
+  "final_tested_source_head": "7b99ebb9ae4119ecc54b96f78313f0996c476b09",
+  "final_candidate_head": null,
+  "final_candidate_head_note": "Documentation is pending its own normal commit; no source changed after final source gates.",
+  "source_changed_after_final_gates": false,
+  "historical_t4_untouched": true,
+  "global_t4": {
+    "head": "7b99ebb9ae4119ecc54b96f78313f0996c476b09",
+    "selected_files": 369,
+    "passed_files": 342,
+    "failed_files": 1,
+    "timeout_files": 26,
+    "exit": 1,
+    "rerun": false,
+    "report": "reports/roadmap-1.91-2.00-execution/T4-post-review-20260820-182130.txt"
+  },
+  "t4_triage": {
+    "failing_test": "tests/test_m194_tls_server.py::test_tls_handshake_timeout_releases_reserved_budget",
+    "focused_reproduction": "FAIL",
+    "observed": "PollKind.PENDING",
+    "expected": "PollKind.FAILED",
+    "timeout_classification": "WINDOWS_ORCHESTRATOR_PER_FILE_TIMEOUT",
+    "unresolved": 1
+  },
   "findings": {
-    "H1_duplicate_select_future": "PASS",
-    "H2_bounded_sync_wake_state": "PASS",
-    "H3_request_body_streaming": "PASS",
-    "H4_tls_handshake_budget": "PASS",
-    "H5_constraint_lock_separation": "PASS",
-    "H6_aarch64_semantic_object_link": "PASS",
-    "H7_provenance_policy_split": "PASS",
-    "M1_mixed_ir_fallback": "PASS",
-    "M2_git_40_hex_test": "PASS",
-    "M3_registry_error_taxonomy": "PASS",
-    "M4_direct_tls_elf_tests": "PASS"
+    "uninitialized_self_move": "REPRODUCED_AND_FIXED",
+    "instruction_budget_divergence": "REPRODUCED_AND_FIXED",
+    "logical_tmov_semantics": "PRESERVED",
+    "initialization_failure": "PRESERVED",
+    "instruction_accounting": "PRESERVED",
+    "aarch64_assembly_deletion": "NOT_APPLIED",
+    "blockers": 1,
+    "high": 0,
+    "medium": 0,
+    "low": 0
   },
   "gates": {
-    "compileall": {"status": "PASS", "exit": 0},
-    "focused": {"selected": 70, "passed": 70, "failed": 0, "skipped": 0, "exit": 0},
-    "cross_layer": {"selected": 121, "passed": 120, "failed": 0, "skipped": 1, "exit": 0},
-    "smart": {"selected": 11, "passed": 11, "failed": 0, "timed_out": 0, "exit": 0},
+    "compileall": "PASS",
+    "m199_focused": "20 passed, 1 skipped",
+    "t2_native_aarch64": "176 passed, 159 skipped",
+    "t3_cross_layer": "67 passed, 1 skipped",
     "diff_check": "PASS",
-    "http_loopback_backpressure": "PASS",
-    "bench_protocol_metadata": "PASS",
-    "bench_commit_pin_self_check": "PASS"
+    "m181_m190_compatibility": "PASS_WITH_DEFERRED",
+    "m199_benchmark_correctness": "PASS",
+    "benchmark_protocol_metadata": "PASS",
+    "benchmark_commit_pin_self_check": "PASS"
+  },
+  "benchmark": {
+    "schema": "s3.m199.self-move.v2",
+    "s3_head": "7b99ebb9ae4119ecc54b96f78313f0996c476b09",
+    "repository_head": "c13f159bb19f13cac9e83e523b6e392baae71738",
+    "baseline_s3_sha": "2a5f7bdb0e0dfd03fcae5249cb76bff118a642b6",
+    "optimization_introduction_sha": "a06baa8991dc0217d387bb156fc524caa13c5fd4",
+    "correctness": "PASS",
+    "timing_class": "CHARACTERIZATION_ONLY",
+    "native_execution_available": false,
+    "native_comparative_valid": false,
+    "native_speedup_claim": "NO",
+    "protocol": {
+      "warmups": 5,
+      "repetitions": 30,
+      "loops_per_sample": 25,
+      "order": "deterministic alternating OFF/ON, ON/OFF",
+      "timed_scope": "hosted Emulator execution",
+      "off": "original AssemblyProgram",
+      "on": "eliminate_redundant_noop_moves(original)",
+      "native_x86_generation": "supplementary structural probe only"
+    },
+    "with_self_moves": {
+      "off_median_ns": 9476150,
+      "on_median_ns": 11359500,
+      "off_iqr_ns": 5785425,
+      "on_iqr_ns": 4390725,
+      "samples_per_variant": 30
+    },
+    "without_self_moves": {
+      "off_median_ns": 30585300,
+      "on_median_ns": 36196150,
+      "samples_per_variant": 30
+    }
   },
   "milestones": {
     "M1.91": "PASS",
     "M1.92": "PASS",
     "M1.93": "PASS",
-    "M1.94": "PASS_WITH_PROVIDER_DEFERRED",
+    "M1.94": "BLOCKED_BY_REPRODUCIBLE_T4_FAILURE",
     "M1.95": "PASS",
     "M1.96": "PASS_WITH_PROVIDER_DEFERRED",
     "M1.97": "PASS_STRUCTURAL_LINK_NATIVE_DEFERRED",
     "M1.98": "PASS_STRUCTURAL_NATIVE_DEFERRED",
-    "M1.99": "PASS_WITH_BENCHMARK_EVIDENCE",
-    "M2.00": "PASS_WITH_EXPLICIT_ENVIRONMENT_DEFERMENTS"
+    "M1.99": "PASS_FOCUSED_AND_BENCHMARKED",
+    "M2.00": "BLOCKED_BY_FINAL_T4"
   },
   "environment": {
-    "crypto_provider": "DEFERRED_BY_ENVIRONMENT",
-    "provenance_policy": "PASS",
-    "provenance_signature": "DEFERRED_BY_ENVIRONMENT",
-    "linux_aarch64_object": "PASS",
-    "linux_aarch64_link": "PASS",
+    "platform": "Windows",
     "linux_aarch64_native": "DEFERRED_BY_ENVIRONMENT",
-    "macos_arm64_native": "DEFERRED_BY_ENVIRONMENT"
+    "macos_arm64_native": "DEFERRED_BY_ENVIRONMENT",
+    "cryptography_provider": "DEFERRED_BY_ENVIRONMENT"
   },
-  "benchmark": {
-    "run": "YES",
-    "s3_head": "4be50ffff0aa3fb1f4eff3b3c9b29d2685ba7238",
-    "repository_head": "782b77f8deb2d8d777b89cb36d6420759c4f48d6",
-    "correctness": "PASS",
-    "timing_class": "CHARACTERIZATION_ONLY",
-    "claim": "Two self-moves removed with equivalent hosted-emulator results; no native speedup claim.",
-    "protocol": {"warmups": 2, "repetitions": 7, "loops_per_sample": 25, "timed_scope": "hosted Assembly emulator execution", "control": "same parsed AssemblyProgram/workload; OFF = original AssemblyProgram; ON = eliminate_redundant_noop_moves(original); timing = hosted Emulator; native x86 generation = supplementary structural probe only; no native speedup claim", "provenance_check": "PASS"},
-    "cases": [
-      {"name": "with_self_moves", "before": 14, "after": 14, "removed_self_moves": 2},
-      {"name": "without_self_moves", "before": 14, "after": 14, "removed_self_moves": 0}
-    ],
-    "timing_medians_ns": {
-      "with_self_moves": {"off": 10899500, "on": 10700900},
-      "without_self_moves": {"off": 11606400, "on": 13374100}
-    },
-    "native_execution": "DEFERRED_BY_ENVIRONMENT",
-    "native_off_artifact": "NOT_EMITTED_BY_BACKEND_PRECONDITION"
+  "publication": {
+    "s3_pr": 184,
+    "benchmark_pr": 6,
+    "push": "YES",
+    "force_push": "NO",
+    "merge": "NO",
+    "tag": "NO",
+    "release": "NO",
+    "m2_01_started": "NO",
+    "ready_for_pr": "NO"
   },
-  "findings_remaining": {
-    "blockers": 0,
-    "high": 0,
-    "medium": 0,
-    "low": 0,
-    "low_details": [],
-    "limitations": ["Native OFF emission is outside the production emitter precondition; comparison remains structural and hosted-emulator based."]
-  },
-  "ready_for_source_review": true,
-  "ready_for_benchmark": true,
-  "ready_for_pr": true,
-  "publication": {"push": "NO", "pr": "NO", "merge": "NO", "tag": "NO", "release": "NO", "m2_01": "NO"},
-  "worktree_clean": "YES"
+  "status": "BLOCKED_FINAL_T4"
 }
