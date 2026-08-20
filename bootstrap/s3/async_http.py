@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from enum import Enum
 import socket
 import ssl
+import time
 from typing import Protocol
 from urllib.parse import urlsplit
 
@@ -91,7 +92,7 @@ class HTTPTransport(Protocol):
 
 
 class SocketHTTPTransport:
-    """Real TCP/TLS transport with secure HTTPS defaults and bounded reads."""
+    """Real TCP/TLS transport with secure HTTPS defaults and one global deadline."""
 
     def __init__(self, *, tls_context: ssl.SSLContext | None = None) -> None:
         context = tls_context or ssl.create_default_context()
@@ -109,18 +110,28 @@ class SocketHTTPTransport:
         max_response_bytes: int,
         timeout: float,
     ) -> bytes:
-        raw_socket = socket.create_connection((host, port), timeout=timeout)
+        if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or timeout <= 0:
+            raise ValueError("HTTP transport timeout must be positive")
+        if isinstance(max_response_bytes, bool) or not isinstance(max_response_bytes, int) or max_response_bytes <= 0:
+            raise ValueError("HTTP response byte budget must be positive")
+        deadline = time.monotonic() + float(timeout)
+        raw_socket = socket.create_connection((host, port), timeout=_remaining(deadline))
         channel: socket.socket = raw_socket
         try:
+            raw_socket.settimeout(_remaining(deadline))
             if scheme == "https":
                 channel = self._tls_context.wrap_socket(raw_socket, server_hostname=host)
             elif scheme != "http":
                 raise ValueError("unsupported HTTP transport scheme")
-            channel.settimeout(timeout)
+            channel.settimeout(_remaining(deadline))
             channel.sendall(request)
             response = bytearray()
             while True:
-                chunk = channel.recv(min(16 * 1024, max_response_bytes + 1 - len(response)))
+                channel.settimeout(_remaining(deadline))
+                remaining_bytes = max_response_bytes + 1 - len(response)
+                if remaining_bytes <= 0:
+                    raise ValueError("HTTP response exceeds transport byte budget")
+                chunk = channel.recv(min(16 * 1024, remaining_bytes))
                 if not chunk:
                     break
                 response.extend(chunk)
@@ -279,6 +290,10 @@ def _prepare_request(
     if not host or "\x00" in host:
         return HTTPError(HTTPErrorCode.INVALID_URL, "request", "URL host is invalid")
     try:
+        host.encode("ascii")
+    except UnicodeEncodeError:
+        return HTTPError(HTTPErrorCode.INVALID_URL, "request", "URL host must be ASCII in V1")
+    try:
         port = parsed.port or (443 if parsed.scheme == "https" else 80)
     except ValueError:
         return HTTPError(HTTPErrorCode.INVALID_URL, "request", "URL port is invalid")
@@ -297,15 +312,24 @@ def _prepare_request(
     normalized: list[tuple[str, str]] = []
     seen: set[str] = set()
     for key, value in headers:
-        if not _valid_header_name(key) or not isinstance(value, str) or "\r" in value or "\n" in value or "\x00" in value:
-            return HTTPError(HTTPErrorCode.MALFORMED_RESPONSE, "request", "request header contains invalid characters")
+        if (
+            not _valid_header_name(key)
+            or not isinstance(value, str)
+            or not value.isascii()
+            or "\r" in value
+            or "\n" in value
+            or "\x00" in value
+        ):
+            return HTTPError(HTTPErrorCode.MALFORMED_RESPONSE, "request", "request header contains invalid or non-ASCII characters")
         lower = key.lower()
         if lower in seen or lower in {"host", "content-length", "connection"}:
             return HTTPError(HTTPErrorCode.FRAMING, "request", "duplicate or reserved framing header")
         seen.add(lower)
         normalized.append((key, value.strip()))
 
-    host_header = host if port in {80, 443} else f"{host}:{port}"
+    host_literal = f"[{host}]" if ":" in host else host
+    default_port = 443 if parsed.scheme == "https" else 80
+    host_header = host_literal if port == default_port else f"{host_literal}:{port}"
     wire_headers = [("Host", host_header), *normalized, ("Content-Length", str(len(body))), ("Connection", "close")]
     header_lines = [f"{key}: {value}".encode("ascii") for key, value in wire_headers]
     if any(len(line) > limits.max_header_line_bytes for line in header_lines):
@@ -381,10 +405,17 @@ def parse_http_response(raw: bytes, limits: HTTPLimits | None = None) -> HTTPRes
 
 
 def _valid_header_name(value: str) -> bool:
-    if not isinstance(value, str) or not value:
+    if not isinstance(value, str) or not value or not value.isascii():
         return False
     token = "!#$%&'*+-.^_`|~"
-    return all(char.isalnum() or char in token for char in value)
+    return all("A" <= char <= "Z" or "a" <= char <= "z" or "0" <= char <= "9" or char in token for char in value)
+
+
+def _remaining(deadline: float) -> float:
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise TimeoutError("HTTP transport deadline exceeded")
+    return remaining
 
 
 def _failure(error: HTTPError):
