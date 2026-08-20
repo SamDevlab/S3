@@ -40,11 +40,17 @@ class CompilationResult:
     async_state_machines: tuple[AsyncStateMachinePlan, ...] = ()
     async_ir: AsyncIRProgram | None = None
 
+    def require_ordinary_artifacts(self) -> tuple[IRProgram, AssemblyProgram]:
+        if self.ir is None or self.assembly is None:
+            raise RuntimeError(
+                "ordinary execution artifact is unavailable for a compilation containing async select"
+            )
+        return self.ir, self.assembly
+
     @property
     def assembly_text(self) -> str:
-        if self.assembly is None:
-            raise RuntimeError("ordinary IR/Assembly is unavailable for async select; use async_ir")
-        return self.assembly.render()
+        _, assembly = self.require_ordinary_artifacts()
+        return assembly.render()
 
 
 COMPILATION_CACHE_VERSION = "1.3.0"
@@ -201,13 +207,14 @@ def run_source_with_buffer_capture(
     async_value = _run_async_entry(compilation, entry, max_instructions=max_instructions)
     if async_value is not None:
         return async_value, []
+    ir, assembly = compilation.require_ordinary_artifacts()
     if compilation.semantic_model.contains_references or compilation.semantic_model.contains_dynamic:
         from .ir_emulator import execute_ir
-        return execute_ir(compilation.ir, entry, optimization), []
+        return execute_ir(ir, entry, optimization), []
     from .backends.registry import create_builtin_backend_registry
     provider = create_builtin_backend_registry().get_hosted_execution("hosted-emulator")
     capture: list[dict[int, list[int | None]]] = []
-    result = provider.execute(compilation.assembly, entry, max_frames=max_frames, max_instructions=max_instructions, max_memory_trits=3**8, capture_memory=capture)
+    result = provider.execute(assembly, entry, max_frames=max_frames, max_instructions=max_instructions, max_memory_trits=3**8, capture_memory=capture)
     return result, capture
 
 
@@ -224,10 +231,11 @@ def run_source(
     async_value = _run_async_entry(compilation, entry, max_instructions=max_instructions)
     if async_value is not None:
         return async_value
+    ir, assembly = compilation.require_ordinary_artifacts()
     if compilation.semantic_model.contains_references or compilation.semantic_model.contains_dynamic:
         from .ir_emulator import execute_ir
-        return execute_ir(compilation.ir, entry, optimization)
-    return _execute_hosted_assembly(compilation.assembly, entry, max_frames=max_frames, max_instructions=max_instructions)
+        return execute_ir(ir, entry, optimization)
+    return _execute_hosted_assembly(assembly, entry, max_frames=max_frames, max_instructions=max_instructions)
 
 
 def _run_async_entry(compilation: CompilationResult, entry: str, *, max_instructions: int) -> int | None:

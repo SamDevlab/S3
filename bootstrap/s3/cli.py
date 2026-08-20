@@ -329,10 +329,11 @@ def _print_inspection(
     syntax: str,
     optimization: OptimizationLevel,
 ) -> None:
+    ir, assembly = compilation.require_ordinary_artifacts()
     function_names = tuple(function.name for function in compilation.ast.functions)
     assembly_instructions = sum(
         len(block.instructions)
-        for function in compilation.assembly.functions
+        for function in assembly.functions
         for block in function.blocks
     )
     lines = [
@@ -350,7 +351,7 @@ def _print_inspection(
         f"  entry: {'main' if 'main' in function_names else 'not found'}",
         "",
         "IR:",
-        f"  instructions: {instruction_count(compilation.ir)}",
+        f"  instructions: {instruction_count(ir)}",
         "",
         "Assembly:",
         f"  instructions: {assembly_instructions}",
@@ -461,9 +462,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                     optimization=optimization,
                 )
             elif args.emit == "ir":
+                ir, _ = compilation.require_ordinary_artifacts()
                 _print_inspection_artifact(
                     "ir",
-                    json.dumps(compilation.ir.to_dict(), indent=2),
+                    json.dumps(ir.to_dict(), indent=2),
                 )
             elif args.emit == "assembly":
                 _print_inspection_artifact(
@@ -480,9 +482,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         elif args.command == "ast":
             print(json.dumps(ast.to_dict(compilation.ast), indent=2))
         elif args.command == "ir":
-            print(json.dumps(compilation.ir.to_dict(), indent=2))
+            ir, _ = compilation.require_ordinary_artifacts()
+            print(json.dumps(ir.to_dict(), indent=2))
         elif args.command == "ir-json":
-            artifact = serialize_ir(compilation.ir)
+            ir, _ = compilation.require_ordinary_artifacts()
+            artifact = serialize_ir(ir)
             if args.output is None:
                 print(artifact, end="")
             else:
@@ -495,16 +499,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         elif args.command == "asm":
             print(compilation.assembly_text, end="")
         elif args.command == "run":
+            _, assembly = compilation.require_ordinary_artifacts()
             result = Emulator(
                 max_frames=args.max_frames,
                 max_instructions=args.max_instructions,
             ).execute(
-                compilation.assembly
+                assembly
             )
             print(f"program returned: {result}")
         elif args.command == "native-asm":
+            _, assembly = compilation.require_ordinary_artifacts()
             native = generate_native_assembly(
-                compilation.assembly,
+                assembly,
                 max_frames=args.max_frames,
                 max_instructions=args.max_instructions,
             )
@@ -514,8 +520,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 args.output.parent.mkdir(parents=True, exist_ok=True)
                 args.output.write_text(native, encoding="utf-8", newline="\n")
         elif args.command == "build":
+            _, assembly = compilation.require_ordinary_artifacts()
             native = generate_native_assembly(
-                compilation.assembly,
+                assembly,
                 max_frames=args.max_frames,
                 max_instructions=args.max_instructions,
             )
@@ -543,8 +550,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             print(output)
         elif args.command == "run-native":
+            _, assembly = compilation.require_ordinary_artifacts()
             native = generate_native_assembly(
-                compilation.assembly,
+                assembly,
                 max_frames=args.max_frames,
                 max_instructions=args.max_instructions,
             )

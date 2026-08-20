@@ -10,6 +10,7 @@ from bootstrap.s3.async_http_server import (
     LoopbackHTTPServer,
     StreamingHTTPServer,
 )
+from bootstrap.s3.results import Result
 
 
 def test_incremental_server_frames_partial_headers_and_body() -> None:
@@ -43,16 +44,41 @@ def test_server_rejects_smuggling_and_oversize_frames() -> None:
 
 def test_request_and_response_streams_preserve_chunk_boundaries_and_accounting() -> None:
     parser = IncrementalHTTPRequestParser()
-    assert parser.feed(b"POST / HTTP/1.1\r\nContent-Length: 5\r\n\r\nhe").value_or(()) == ()
+    first = parser.feed(b"POST / HTTP/1.1\r\nContent-Length: 5\r\n\r\nhe").value_or(())
+    assert len(first) == 1
+    request = first[0]
+    assert request.body_complete is False
+    assert request.body_reader is not None
+    assert request.body_reader.read_chunk().value_or(None) == b"he"
     assert parser.body_bytes_received == 2
     parsed = parser.feed(b"llo").value_or(())
-    assert parsed[0].body_chunks == (b"he", b"llo")
+    assert parsed == ()
+    assert tuple(request.iter_body()) == (b"llo",)
+    assert request.body_complete is True
     response = HTTPServerResponse(200, "OK", (), (b"ab", b"c"), content_length=3)
     stream = response.open_stream().value_or(None)
     assert stream.next_chunk().value_or(None).startswith(b"HTTP/1.1 200 OK")
     assert stream.next_chunk().value_or(None) == b"ab"
     assert stream.next_chunk().value_or(None) == b"c"
     assert stream.next_chunk().value_or(b"bad") is None
+
+
+def test_request_reader_pulls_progressively_and_enforces_buffer_window() -> None:
+    chunks = iter((b"abc", b"de"))
+
+    def pull(_amount):
+        return Result.ok(next(chunks, None))
+
+    parser = IncrementalHTTPRequestParser(limits=HTTPLimits(max_body_bytes=8, max_buffered_body_bytes=3))
+    parser.set_body_puller(pull)
+    request = parser.feed(b"POST / HTTP/1.1\r\nContent-Length: 5\r\n\r\n").value_or(())[0]
+    assert request.body_complete is False
+    assert tuple(request.iter_body()) == (b"abc", b"de")
+    assert request.body_complete is True
+
+    bounded = IncrementalHTTPRequestParser(limits=HTTPLimits(max_body_bytes=8, max_buffered_body_bytes=2))
+    rejected = bounded.feed(b"POST / HTTP/1.1\r\nContent-Length: 3\r\n\r\nabc")
+    assert rejected.error_or(None).code is HTTPServerErrorCode.QUEUE_LIMIT
 
 
 def test_response_header_policy_and_connection_budget_are_bounded() -> None:
@@ -76,9 +102,11 @@ def test_loopback_server_executes_real_tcp_request_and_closes_deterministically(
     client = socket.create_connection((host, port), timeout=2)
     try:
         client.sendall(b"POST /echo HTTP/1.1\r\nContent-Length: 5\r\n\r\nhello")
-        served = server.serve_once(
-            lambda request: HTTPServerResponse(200, "OK", (("X-Body", str(len(request.body))),), request.body)
-        )
+        def handle(request):
+            body = request.body
+            return HTTPServerResponse(200, "OK", (("X-Body", str(len(body))),), body)
+
+        served = server.serve_once(handle)
         assert served.is_ok
         client.settimeout(2)
         response = bytearray()

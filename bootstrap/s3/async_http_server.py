@@ -27,6 +27,7 @@ class HTTPServerErrorCode(Enum):
     TIMEOUT = "timeout"
     TRANSPORT = "transport"
     HANDLER = "handler"
+    BODY_PENDING = "body_pending"
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,29 +37,145 @@ class HTTPServerError:
     detail: str
 
 
+class HTTPBodyStreamError(RuntimeError):
+    def __init__(self, error: HTTPServerError) -> None:
+        super().__init__(error.detail)
+        self.error = error
+
+
+class HTTPBodyReader:
+    """Bounded pull-driven Content-Length body reader."""
+
+    def __init__(
+        self,
+        content_length: int,
+        limits: HTTPLimits,
+        pull: Callable[[int], Result[bytes | None, HTTPServerError]] | None = None,
+    ) -> None:
+        self._content_length = content_length
+        self._limits = limits
+        self._pull = pull
+        self._buffer = bytearray()
+        self._received = 0
+        self._consumed = 0
+        self._ended = content_length == 0
+
+    @property
+    def content_length(self) -> int:
+        return self._content_length
+
+    @property
+    def body_bytes_received(self) -> int:
+        return self._received
+
+    @property
+    def body_bytes_consumed(self) -> int:
+        return self._consumed
+
+    @property
+    def body_complete(self) -> bool:
+        return self._received == self._content_length
+
+    @property
+    def buffered_bytes(self) -> int:
+        return len(self._buffer)
+
+    def feed_bytes(self, data: bytes) -> Result[None, HTTPServerError]:
+        if not isinstance(data, bytes):
+            return Result.err(HTTPServerError(HTTPServerErrorCode.INVALID_ARGUMENT, "body", "body input must be bytes"))
+        if self.body_complete and data:
+            return Result.err(HTTPServerError(HTTPServerErrorCode.FRAMING, "body", "body received bytes after Content-Length completion"))
+        remaining = self._content_length - self._received
+        if len(data) > remaining:
+            return Result.err(HTTPServerError(HTTPServerErrorCode.FRAMING, "body", "body exceeds Content-Length"))
+        if len(self._buffer) + len(data) > self._limits.max_buffered_body_bytes:
+            return Result.err(HTTPServerError(HTTPServerErrorCode.QUEUE_LIMIT, "body", "body buffer window exceeded; consumer backpressure required"))
+        self._buffer.extend(data)
+        self._received += len(data)
+        return Result.ok(None)
+
+    def read_chunk(self, max_bytes: int | None = None) -> Result[bytes | None, HTTPServerError]:
+        limit = max_bytes or self._limits.max_buffered_body_bytes
+        if isinstance(limit, bool) or not isinstance(limit, int) or limit <= 0:
+            return Result.err(HTTPServerError(HTTPServerErrorCode.INVALID_ARGUMENT, "body", "body read size must be positive"))
+        if self._buffer:
+            size = min(limit, len(self._buffer))
+            chunk = bytes(self._buffer[:size])
+            del self._buffer[:size]
+            self._consumed += len(chunk)
+            return Result.ok(chunk)
+        if self.body_complete:
+            self._ended = True
+            return Result.ok(None)
+        if self._pull is None:
+            return Result.err(HTTPServerError(HTTPServerErrorCode.BODY_PENDING, "body", "body needs more transport data"))
+        pulled = self._pull(min(limit, self._limits.max_buffered_body_bytes))
+        if pulled.is_err:
+            return Result.err(pulled.error_or(None))
+        data = pulled.value_or(None)
+        if data is None or not data:
+            return Result.err(HTTPServerError(HTTPServerErrorCode.MALFORMED, "body", "peer closed before Content-Length body completion"))
+        fed = self.feed_bytes(data)
+        if fed.is_err:
+            return Result.err(fed.error_or(None))
+        return self.read_chunk(limit)
+
+    def read_all(self) -> Result[bytes, HTTPServerError]:
+        chunks: list[bytes] = []
+        while True:
+            result = self.read_chunk()
+            if result.is_err:
+                return Result.err(result.error_or(None))
+            chunk = result.value_or(None)
+            if chunk is None:
+                return Result.ok(b"".join(chunks))
+            chunks.append(chunk)
+
+    def __iter__(self) -> Iterator[bytes]:
+        while True:
+            result = self.read_chunk()
+            if result.is_err:
+                raise HTTPBodyStreamError(result.error_or(None))
+            chunk = result.value_or(None)
+            if chunk is None:
+                return
+            yield chunk
+
+
 @dataclass(frozen=True, slots=True)
 class HTTPRequest:
     method: str
     target: str
     version: str
     headers: tuple[tuple[str, str], ...]
-    body_chunks: tuple[bytes, ...] = ()
+    body_reader: HTTPBodyReader | None = None
 
     @property
     def body(self) -> bytes:
-        """Compatibility view; streaming consumers should use body_chunks."""
-        return b"".join(self.body_chunks)
+        """Compatibility view that drains the bounded reader on demand."""
+        if self.body_reader is None:
+            return b""
+        result = self.body_reader.read_all()
+        if result.is_err:
+            raise HTTPBodyStreamError(result.error_or(None))
+        return result.value_or(b"")
+
+    @property
+    def body_chunks(self) -> tuple[bytes, ...]:
+        if self.body_reader is None:
+            return ()
+        return tuple(self.body_reader)
 
     @property
     def body_bytes_received(self) -> int:
-        return sum(len(chunk) for chunk in self.body_chunks)
+        return 0 if self.body_reader is None else self.body_reader.body_bytes_received
 
     @property
     def body_complete(self) -> bool:
-        return True
+        return self.body_reader is None or self.body_reader.body_complete
 
     def iter_body(self) -> Iterator[bytes]:
-        return iter(self.body_chunks)
+        return iter(self.body_reader or ())
 
     def header(self, name: str) -> str | None:
         lowered = name.lower()
@@ -217,63 +334,66 @@ class IncrementalHTTPRequestParser:
         self.max_frames = max_frames
         self._buffer = bytearray()
         self._head: tuple[str, str, str, tuple[tuple[str, str], ...], int] | None = None
-        self._body_chunks: list[bytes] = []
-        self._body_received = 0
+        self._request: HTTPRequest | None = None
+        self._body_reader: HTTPBodyReader | None = None
+        self._body_puller: Callable[[int], Result[bytes | None, HTTPServerError]] | None = None
+
+    def set_body_puller(self, pull: Callable[[int], Result[bytes | None, HTTPServerError]]) -> None:
+        if not callable(pull):
+            raise TypeError("body puller must be callable")
+        self._body_puller = pull
 
     def feed(self, data: bytes) -> Result[tuple[HTTPRequest, ...], HTTPServerError]:
         if not isinstance(data, bytes):
             return Result.err(HTTPServerError(HTTPServerErrorCode.INVALID_ARGUMENT, "feed", "input must be bytes"))
+        if self._request is not None:
+            fed = self._body_reader.feed_bytes(data) if self._body_reader is not None else Result.ok(None)
+            if fed.is_err:
+                return Result.err(fed.error_or(None))
+            return Result.ok(())
         if len(self._buffer) + len(data) > self.limits.max_request_bytes + self.limits.max_body_bytes:
             return Result.err(HTTPServerError(HTTPServerErrorCode.BODY_LIMIT, "feed", "request stream exceeds byte budget"))
         self._buffer.extend(data)
-        requests: list[HTTPRequest] = []
-        while len(requests) < self.max_frames:
-            if self._head is None:
-                marker = self._buffer.find(b"\r\n\r\n")
-                if marker < 0:
-                    if len(self._buffer) > self.limits.max_header_bytes:
-                        return Result.err(HTTPServerError(HTTPServerErrorCode.HEADER_LIMIT, "feed", "request headers exceed limit"))
-                    break
-                head_bytes = bytes(self._buffer[:marker])
-                del self._buffer[: marker + 4]
-                parsed = _parse_request_head(head_bytes, self.limits)
-                if isinstance(parsed, HTTPServerError):
-                    return Result.err(parsed)
-                self._head = parsed
-            assert self._head is not None
-            method, target, version, headers, length = self._head
-            remaining = length - self._body_received
-            if remaining:
-                take = min(remaining, len(self._buffer))
-                if take:
-                    self._body_chunks.append(bytes(self._buffer[:take]))
-                    del self._buffer[:take]
-                    self._body_received += take
-            if self._body_received < length:
-                break
-            requests.append(HTTPRequest(method, target, version, headers, tuple(self._body_chunks)))
-            self._head = None
-            self._body_chunks = []
-            self._body_received = 0
-        if self._head is None and self._buffer and len(requests) >= self.max_frames:
-            return Result.err(HTTPServerError(HTTPServerErrorCode.QUEUE_LIMIT, "feed", "request frame queue limit exceeded"))
-        return Result.ok(tuple(requests))
+        marker = self._buffer.find(b"\r\n\r\n")
+        if marker < 0:
+            if len(self._buffer) > self.limits.max_header_bytes:
+                return Result.err(HTTPServerError(HTTPServerErrorCode.HEADER_LIMIT, "feed", "request headers exceed limit"))
+            return Result.ok(())
+        head_bytes = bytes(self._buffer[:marker])
+        del self._buffer[: marker + 4]
+        parsed = _parse_request_head(head_bytes, self.limits)
+        if isinstance(parsed, HTTPServerError):
+            return Result.err(parsed)
+        self._head = parsed
+        method, target, version, headers, length = parsed
+        self._body_reader = HTTPBodyReader(length, self.limits, self._body_puller)
+        self._request = HTTPRequest(method, target, version, headers, self._body_reader)
+        if self._buffer:
+            fed = self._body_reader.feed_bytes(bytes(self._buffer))
+            self._buffer.clear()
+            if fed.is_err:
+                return Result.err(fed.error_or(None))
+        return Result.ok((self._request,))
 
     @property
     def buffered_bytes(self) -> int:
-        return len(self._buffer) + (0 if self._head is None else self._head[4] - self._body_received)
+        return len(self._buffer) + (0 if self._body_reader is None else self._body_reader.buffered_bytes)
 
     @property
     def body_bytes_received(self) -> int:
-        return self._body_received
+        return 0 if self._body_reader is None else self._body_reader.body_bytes_received
 
     @property
     def body_complete(self) -> bool:
-        return self._head is None or self._body_received == self._head[4]
+        return self._body_reader is None or self._body_reader.body_complete
 
     @property
     def body_chunks(self) -> tuple[bytes, ...]:
-        return tuple(self._body_chunks)
+        return () if self._body_reader is None else tuple(self._body_reader)
+
+    @property
+    def body_reader(self) -> HTTPBodyReader | None:
+        return self._body_reader
 
 
 @dataclass(slots=True)
@@ -408,6 +528,22 @@ class LoopbackHTTPServer:
         try:
             with connection:
                 parser = IncrementalHTTPRequestParser(limits=self.limits, max_frames=1)
+                def pull_body(amount: int) -> Result[bytes | None, HTTPServerError]:
+                    remaining = _remaining_seconds(deadline)
+                    if remaining <= 0:
+                        return Result.err(HTTPServerError(HTTPServerErrorCode.TIMEOUT, "receive", "request deadline expired"))
+                    connection.settimeout(remaining)
+                    try:
+                        chunk = connection.recv(amount)
+                    except socket.timeout:
+                        return Result.err(HTTPServerError(HTTPServerErrorCode.TIMEOUT, "receive", "request deadline expired"))
+                    except OSError as error:
+                        return Result.err(HTTPServerError(HTTPServerErrorCode.TRANSPORT, "receive", f"loopback receive failed: {error}"))
+                    if not chunk:
+                        return Result.ok(None)
+                    return Result.ok(chunk)
+
+                parser.set_body_puller(pull_body)
                 requests: tuple[HTTPRequest, ...] = ()
                 while not requests:
                     remaining = _remaining_seconds(deadline)
@@ -415,7 +551,12 @@ class LoopbackHTTPServer:
                         return Result.err(HTTPServerError(HTTPServerErrorCode.TIMEOUT, "receive", "request deadline expired"))
                     connection.settimeout(remaining)
                     try:
-                        chunk = connection.recv(min(self.max_chunk_bytes, self.limits.max_request_bytes + self.limits.max_body_bytes))
+                        chunk = connection.recv(
+                            min(
+                                self.max_chunk_bytes,
+                                self.limits.max_header_bytes + self.limits.max_buffered_body_bytes,
+                            )
+                        )
                     except socket.timeout:
                         return Result.err(HTTPServerError(HTTPServerErrorCode.TIMEOUT, "receive", "request deadline expired"))
                     except OSError as error:
@@ -429,6 +570,8 @@ class LoopbackHTTPServer:
 
                 try:
                     response = handler(requests[0])
+                except HTTPBodyStreamError as error:
+                    return Result.err(error.error)
                 except Exception as error:
                     return Result.err(HTTPServerError(HTTPServerErrorCode.HANDLER, "handler", f"request handler failed: {error}"))
                 if not isinstance(response, HTTPServerResponse):

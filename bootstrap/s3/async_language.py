@@ -535,6 +535,12 @@ def _select_action(
             call_map=call_map,
         )
         if source_future is not None:
+            if source_future in selected_future_names:
+                raise SemanticError(
+                    f"Future '{source_future}' cannot appear in multiple select arms",
+                    arm.operation.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+                )
             selected_future_names.add(source_future)
         body_actions = _lower_block_actions(
             function,

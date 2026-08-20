@@ -74,3 +74,29 @@ def test_async_mutex_and_event_keep_wake_grants_until_the_owner_polls() -> None:
     assert cancelled.poll().kind.value == "pending"
     assert cancelled.cancel().is_ok
     assert event.cancel_wait(5).error_or(None).code is SyncErrorCode.INVALID_STATE
+
+
+def test_wake_storage_is_bounded_without_diagnostic_draining() -> None:
+    mutex = BoundedMutex(max_waiters=2)
+    owner = mutex.acquire(1).value_or(None)
+    assert owner is not None
+    for task_id in range(2, 2002):
+        waiter = mutex.acquire_async(task_id)
+        assert waiter.poll().kind.value == "pending"
+        assert owner.release().is_ok
+        promoted = waiter.poll()
+        assert promoted.kind.value == "ready"
+        guard = promoted.value
+        assert guard is not None
+        assert guard.release().is_ok
+        owner = mutex.acquire(1).value_or(None)
+        assert owner is not None
+        assert mutex.wake_storage_count <= mutex.max_waiters
+
+    event = BoundedEvent(max_waiters=1, auto_reset=True)
+    for task_id in range(1, 2001):
+        waiter = event.wait_async(task_id)
+        assert waiter.poll().kind.value == "pending"
+        assert event.set().is_ok
+        assert waiter.poll().value is True
+        assert event.wake_storage_count <= event.max_waiters

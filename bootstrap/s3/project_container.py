@@ -138,7 +138,8 @@ class ProjectTooling:
         from .emulator import Emulator
 
         compilation = self.build()
-        return Emulator().execute(compilation.assembly, entry=self.manifest.entrypoint)
+        _, assembly = compilation.require_ordinary_artifacts()
+        return Emulator().execute(assembly, entry=self.manifest.entrypoint)
 
     def container_plan(self) -> dict[str, object]:
         self.check()

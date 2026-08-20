@@ -69,6 +69,7 @@ class BoundedMutex:
             return Result.err(error)
         if task_id in self._granted and self._owner == task_id:
             self._granted.remove(task_id)
+            self._forget_wakeup(task_id)
             return Result.ok(MutexGuard(self, task_id))
         if self._owner is None:
             self._owner = task_id
@@ -92,6 +93,7 @@ class BoundedMutex:
             nonlocal registered
             if task_id in self._granted and self._owner == task_id:
                 self._granted.remove(task_id)
+                self._forget_wakeup(task_id)
                 return complete(MutexGuard(self, task_id))
             if self._owner is None:
                 self._owner = task_id
@@ -118,11 +120,12 @@ class BoundedMutex:
             if self._owner == task_id:
                 self._owner = None
                 self._promote_next()
-            self._wakeups = deque(item for item in self._wakeups if item != task_id)
+            self._forget_wakeup(task_id)
             return Result.ok(None)
         if task_id not in self._waiters:
             return Result.err(SyncError(SyncErrorCode.INVALID_STATE, "cancel_wait", "task is not waiting"))
         self._waiters.remove(task_id)
+        self._forget_wakeup(task_id)
         return Result.ok(None)
 
     def drain_wakeups(self) -> tuple[int, ...]:
@@ -147,8 +150,25 @@ class BoundedMutex:
             next_task = self._waiters.popleft()
             self._owner = next_task
             self._granted.add(next_task)
-            self._wakeups.append(next_task)
+            self._record_wakeup(next_task)
             return
+
+    def _record_wakeup(self, task_id: int) -> None:
+        if task_id in self._wakeups:
+            return
+        if len(self._wakeups) >= self.max_waiters:
+            raise RuntimeError("mutex wake storage bound was exceeded")
+        self._wakeups.append(task_id)
+
+    def _forget_wakeup(self, task_id: int) -> None:
+        try:
+            self._wakeups.remove(task_id)
+        except ValueError:
+            pass
+
+    @property
+    def wake_storage_count(self) -> int:
+        return len(self._wakeups)
 
 
 class BoundedEvent:
@@ -180,6 +200,7 @@ class BoundedEvent:
             return Result.err(error)
         if task_id in self._granted:
             self._granted.remove(task_id)
+            self._forget_wakeup(task_id)
             return Result.ok(True)
         if self._set:
             if self.auto_reset:
@@ -204,6 +225,7 @@ class BoundedEvent:
             nonlocal registered
             if task_id in self._granted:
                 self._granted.remove(task_id)
+                self._forget_wakeup(task_id)
                 return complete(True)
             if self._set and not self.auto_reset:
                 return complete(True)
@@ -227,13 +249,13 @@ class BoundedEvent:
             if self._waiters:
                 task_id = self._waiters.popleft()
                 self._granted.add(task_id)
-                self._wakeups.append(task_id)
+                self._record_wakeup(task_id)
                 self._set = False
             return Result.ok(None)
         while self._waiters:
             task_id = self._waiters.popleft()
             self._granted.add(task_id)
-            self._wakeups.append(task_id)
+            self._record_wakeup(task_id)
         return Result.ok(None)
 
     def clear(self) -> Result[None, SyncError]:
@@ -246,14 +268,32 @@ class BoundedEvent:
             return Result.err(error)
         if task_id in self._granted:
             self._granted.remove(task_id)
-            self._wakeups = deque(item for item in self._wakeups if item != task_id)
+            self._forget_wakeup(task_id)
             return Result.ok(None)
         if task_id not in self._waiters:
             return Result.err(SyncError(SyncErrorCode.INVALID_STATE, "cancel_wait", "task is not waiting"))
         self._waiters.remove(task_id)
+        self._forget_wakeup(task_id)
         return Result.ok(None)
 
     def drain_wakeups(self) -> tuple[int, ...]:
         result = tuple(self._wakeups)
         self._wakeups.clear()
         return result
+
+    def _record_wakeup(self, task_id: int) -> None:
+        if task_id in self._wakeups:
+            return
+        if len(self._wakeups) >= self.max_waiters:
+            raise RuntimeError("event wake storage bound was exceeded")
+        self._wakeups.append(task_id)
+
+    def _forget_wakeup(self, task_id: int) -> None:
+        try:
+            self._wakeups.remove(task_id)
+        except ValueError:
+            pass
+
+    @property
+    def wake_storage_count(self) -> int:
+        return len(self._wakeups)

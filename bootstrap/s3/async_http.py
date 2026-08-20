@@ -42,6 +42,7 @@ class HTTPLimits:
     max_header_line_bytes: int = 2048
     max_headers: int = 64
     max_body_bytes: int = 1 << 20
+    max_buffered_body_bytes: int | None = 64 * 1024
     max_timeout_seconds: float = 30.0
 
     def __post_init__(self) -> None:
@@ -56,6 +57,12 @@ class HTTPLimits:
             raise ValueError("HTTP integer limits must be positive")
         if self.max_header_line_bytes > self.max_header_bytes:
             raise ValueError("HTTP header-line limit cannot exceed total header limit")
+        if self.max_buffered_body_bytes is None:
+            object.__setattr__(self, "max_buffered_body_bytes", min(self.max_body_bytes, 64 * 1024))
+        elif isinstance(self.max_buffered_body_bytes, bool) or not isinstance(self.max_buffered_body_bytes, int) or self.max_buffered_body_bytes <= 0:
+            raise ValueError("HTTP body buffer limit must be positive")
+        elif self.max_buffered_body_bytes > self.max_body_bytes:
+            object.__setattr__(self, "max_buffered_body_bytes", self.max_body_bytes)
         if isinstance(self.max_timeout_seconds, bool) or not isinstance(self.max_timeout_seconds, (int, float)) or not 0 < self.max_timeout_seconds <= 300:
             raise ValueError("HTTP timeout limit must be within (0, 300]")
 

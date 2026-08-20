@@ -129,6 +129,20 @@ def test_select_rejects_double_consumption_and_unbounded_arity() -> None:
     with pytest.raises(SemanticError, match="already moved or consumed"):
         compile_source(double_consume)
 
+    duplicate_future = (
+        "async fn first() -> i64:\n"
+        "    return 7\n"
+        "async fn main() -> i64:\n"
+        "    selected: Future<i64> = first()\n"
+        "    select:\n"
+        "        case await selected:\n"
+        "            return 1\n"
+        "        case await selected:\n"
+        "            return 2\n"
+    )
+    with pytest.raises(SemanticError, match="multiple select arms"):
+        compile_source(duplicate_future)
+
     arms = "\n".join(
         f"        case await first():\n            return {index}\n"
         for index in range(9)
@@ -141,6 +155,27 @@ def test_select_rejects_double_consumption_and_unbounded_arity() -> None:
             "    select:\n"
             f"{arms}"
         )
+
+
+def test_mixed_sync_entry_fails_closed_when_async_select_disables_ordinary_artifacts() -> None:
+    source = (
+        "async fn first() -> i64:\n"
+        "    return 1\n"
+        "async fn asynchronous() -> i64:\n"
+        "    select:\n"
+        "        case await first():\n"
+        "            return 1\n"
+        "fn main() -> i64:\n"
+        "    return 2\n"
+    )
+    compilation = compile_source(source)
+    assert compilation.ir is None
+    with pytest.raises(RuntimeError, match="ordinary execution artifact is unavailable"):
+        compilation.require_ordinary_artifacts()
+    with pytest.raises(RuntimeError, match="ordinary execution artifact is unavailable"):
+        _ = compilation.assembly_text
+    with pytest.raises(RuntimeError, match="ordinary execution artifact is unavailable"):
+        run_source(source)
 
 
 def test_channel_select_is_bounded_deterministic_and_fail_closed() -> None:
