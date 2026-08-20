@@ -1,0 +1,101 @@
+{
+  "campaign": "M1.91-M2.00 terminal correction",
+  "reviewed_base": "20e4487e86d7eec98e2ea52f4937912e3bfb7261",
+  "historical_t4_source_head": "eb8ce3e1e8417844810cd4a804c17102bee7fc18",
+  "correction_head": "43767528cf86ca83e2911ad154f9b75c248d727d",
+  "branch": "feature/m191-m200-autonomous-20260819",
+  "source_changed_after_historical_t4": true,
+  "global_t4_runs_total": 3,
+  "additional_t4_runs": 0,
+  "historical_t4": {
+    "selected": 3107,
+    "passed": 2912,
+    "failed": 0,
+    "timed_out": 0,
+    "skipped": 195,
+    "exit": 0
+  },
+  "findings": {
+    "H1_select_readiness": "PASS",
+    "H2_select_ir_truthfulness": "PASS",
+    "H3_async_sync": "PASS",
+    "H4_http_body_streaming": "PASS",
+    "H5_tls_deadlines": "PASS",
+    "H6_version_resolution": "PASS",
+    "H7_real_elf_object_link": "PASS",
+    "H8_git_commit_identity": "PASS",
+    "H9_vetted_provenance": "PASS",
+    "M1_async_metadata_select": "PASS",
+    "M2_http_ascii": "PASS",
+    "M3_http_connection_limit": "PASS",
+    "M4_registry_bounds_origin": "PASS"
+  },
+  "milestones": {
+    "M1.91": "PASS",
+    "M1.92": "PASS",
+    "M1.93": "PASS",
+    "M1.94": "PASS_WITH_PROVIDER_DEFERRED",
+    "M1.95": "PASS",
+    "M1.96": "PASS_WITH_PROVIDER_DEFERRED",
+    "M1.97": "PASS_STRUCTURAL_NATIVE_DEFERRED",
+    "M1.98": "PASS_STRUCTURAL_NATIVE_DEFERRED",
+    "M1.99": "IMPLEMENTED_PENDING_BENCHMARK_EVIDENCE",
+    "M2.00": "PASS_WITH_PROVIDER_DEFERRED"
+  },
+  "gates": {
+    "compileall": {"status": "PASS", "exit": 0},
+    "focused": {"selected": 38, "passed": 38, "failed": 0, "skipped": 0, "exit": 0},
+    "cross_layer": {"selected": 109, "passed": 108, "failed": 0, "skipped": 1, "exit": 0},
+    "smart": {"selected": 7, "passed": 7, "failed": 0, "timed_out": 0, "exit": 0},
+    "diff_check": "PASS"
+  },
+  "environment": {
+    "crypto_provider": "DEFERRED_BY_ENVIRONMENT",
+    "linux_aarch64_native": "DEFERRED_BY_ENVIRONMENT",
+    "macos_arm64_native": "DEFERRED_BY_ENVIRONMENT"
+  },
+  "publication": {
+    "benchmark_run": "NO",
+    "benchmark_required_before_pr": "YES",
+    "push": "NO",
+    "pr": "NO",
+    "merge": "NO",
+    "tag": "NO",
+    "release": "NO",
+    "m2_01": "NO"
+  },
+  "findings_remaining": {"blockers": 0, "high": 0, "medium": 0},
+  "ready_for_external_source_review": true,
+  "ready_for_benchmark": false,
+  "ready_for_pr": false,
+  "correction_delta": {
+    "production_files": 13,
+    "test_files": 5,
+    "report_files": 3,
+    "benchmark_files": 0,
+    "files": [
+      "bootstrap/s3/aarch64_object_link.py",
+      "bootstrap/s3/async_core.py",
+      "bootstrap/s3/async_http_server.py",
+      "bootstrap/s3/async_ir.py",
+      "bootstrap/s3/async_sync.py",
+      "bootstrap/s3/async_tls_server.py",
+      "bootstrap/s3/backend_parity.py",
+      "bootstrap/s3/package_signatures.py",
+      "bootstrap/s3/pipeline.py",
+      "bootstrap/s3/registry_security.py",
+      "bootstrap/s3/registry_v2.py",
+      "bootstrap/s3/release_stability.py",
+      "bootstrap/s3/signed_registry_index.py",
+      "tests/test_m191_async_select.py",
+      "tests/test_m192_async_sync.py",
+      "tests/test_m193_http_server.py",
+      "tests/test_m195_registry_v2.py",
+      "tests/test_m200_release_stability.py",
+      "reports/roadmap-1.91-2.00-execution/FINAL_M191_M200_CERTIFICATION.md",
+      "reports/roadmap-1.91-2.00-execution/TERMINAL_CORRECTION_EVIDENCE.md",
+      "reports/roadmap-1.91-2.00-execution/TERMINAL_CORRECTION_RESULT.json"
+    ]
+  },
+  "status": "READY_FOR_EXTERNAL_SOURCE_REVIEW"
+}

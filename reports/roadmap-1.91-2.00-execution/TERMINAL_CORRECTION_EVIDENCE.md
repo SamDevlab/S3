@@ -1,0 +1,100 @@
+# M1.91-M2.00 Terminal Correction Evidence
+
+```text
+REVIEWED_BASE=20e4487e86d7eec98e2ea52f4937912e3bfb7261
+HISTORICAL_T4_SOURCE_HEAD=eb8ce3e1e8417844810cd4a804c17102bee7fc18
+CORRECTION_HEAD=43767528cf86ca83e2911ad154f9b75c248d727d
+BRANCH=feature/m191-m200-autonomous-20260819
+SOURCE_CHANGED_AFTER_HISTORICAL_T4=YES
+GLOBAL_T4_RUNS_TOTAL=3
+ADDITIONAL_T4_RUNS=0
+```
+
+The historical T4 result is retained for `HISTORICAL_T4_SOURCE_HEAD` only:
+3107 selected, 2912 passed, 0 failed, 0 timed out, 195 skipped, exit 0. No
+additional T4 or benchmark was executed after the source correction.
+
+## Required Findings
+
+```text
+H1_SELECT_READINESS=PASS
+H2_SELECT_IR_TRUTHFULNESS=PASS
+H3_ASYNC_SYNC=PASS
+H4_HTTP_BODY_STREAMING=PASS
+H5_TLS_DEADLINES=PASS
+H6_VERSION_RESOLUTION=PASS
+H7_REAL_ELF_OBJECT_LINK=PASS
+H8_GIT_COMMIT_IDENTITY=PASS
+H9_VETTED_PROVENANCE=PASS
+M1_ASYNC_METADATA_SELECT=PASS
+M2_HTTP_ASCII=PASS
+M3_HTTP_CONNECTION_LIMIT=PASS
+M4_REGISTRY_BOUNDS_ORIGIN=PASS
+```
+
+The correction implements resumable select candidates, truthful artifact
+availability for async select, durable async synchronization grants, bounded
+request and response body progression, monotonic TLS deadlines, deterministic
+version constraints, real ELF64 AArch64 object structures, exact Git identity
+validation, and explicit vetted-provider provenance status.
+
+## Bounded Gates
+
+```text
+COMPILEALL=PASS (exit 0)
+FOCUSED_SELECTED=38
+FOCUSED_PASS=38
+FOCUSED_FAIL=0
+FOCUSED_SKIP=0
+FOCUSED_EXIT=0
+CROSS_LAYER_SELECTED=109
+CROSS_LAYER_PASS=108
+CROSS_LAYER_FAIL=0
+CROSS_LAYER_SKIP=1
+CROSS_LAYER_EXIT=0
+SMART_SELECTED=7
+SMART_PASS=7
+SMART_FAIL=0
+SMART_TIMEOUT=0
+SMART_EXIT=0
+DIFF_CHECK=PASS
+```
+
+The cross-layer skip is cryptography-provider dependent and was unavailable on
+the host. Native AArch64 and macOS ARM64 execution remain environment-deferred.
+
+```text
+CRYPTO_PROVIDER=DEFERRED_BY_ENVIRONMENT
+LINUX_AARCH64_NATIVE=DEFERRED_BY_ENVIRONMENT
+MACOS_ARM64_NATIVE=DEFERRED_BY_ENVIRONMENT
+BENCHMARK_RUN=NO
+BENCH_REQUIRED_BEFORE_PR=YES
+```
+
+```text
+M1.91=PASS
+M1.92=PASS
+M1.93=PASS
+M1.94=PASS_WITH_PROVIDER_DEFERRED
+M1.95=PASS
+M1.96=PASS_WITH_PROVIDER_DEFERRED
+M1.97=PASS_STRUCTURAL_NATIVE_DEFERRED
+M1.98=PASS_STRUCTURAL_NATIVE_DEFERRED
+M1.99=IMPLEMENTED_PENDING_BENCHMARK_EVIDENCE
+M2.00=PASS_WITH_PROVIDER_DEFERRED
+BLOCKERS=0
+HIGH_FINDINGS=0
+MEDIUM_FINDINGS=0
+READY_FOR_EXTERNAL_SOURCE_REVIEW=YES
+READY_FOR_BENCH=NO
+READY_FOR_PR=NO
+PUSH=NO
+PR=NO
+MERGE=NO
+TAG=NO
+RELEASE=NO
+M2_01=NO
+```
+
+The worktree is required to be clean after the evidence commit. The correction
+candidate is stopped at source review and makes no publication claim.
