@@ -1,7 +1,7 @@
 {
   "campaign": "M1.91-M2.00 terminal hardening",
   "start_head": "ac829053b83a241f84700aa962dfdd3bd6cd3d08",
-  "final_tested_source_head": "1632367cda087bce8feca4e559f2538ca7cbcbea",
+  "final_tested_source_head": "4be50ffff0aa3fb1f4eff3b3c9b29d2685ba7238",
   "final_candidate_head": null,
   "final_documentation_head": null,
   "final_head_note": "The documentation commit is the final candidate HEAD reported after commit creation.",
@@ -28,7 +28,10 @@
     "focused": {"selected": 70, "passed": 70, "failed": 0, "skipped": 0, "exit": 0},
     "cross_layer": {"selected": 121, "passed": 120, "failed": 0, "skipped": 1, "exit": 0},
     "smart": {"selected": 11, "passed": 11, "failed": 0, "timed_out": 0, "exit": 0},
-    "diff_check": "PASS"
+    "diff_check": "PASS",
+    "http_loopback_backpressure": "PASS",
+    "bench_protocol_metadata": "PASS",
+    "bench_commit_pin_self_check": "PASS"
   },
   "milestones": {
     "M1.91": "PASS",
@@ -53,19 +56,19 @@
   },
   "benchmark": {
     "run": "YES",
-    "s3_head": "1632367cda087bce8feca4e559f2538ca7cbcbea",
-    "repository_head": "9b506d97d5a8be3282d0cc4df0f4c57abb10b78f",
+    "s3_head": "4be50ffff0aa3fb1f4eff3b3c9b29d2685ba7238",
+    "repository_head": "782b77f8deb2d8d777b89cb36d6420759c4f48d6",
     "correctness": "PASS",
     "timing_class": "CHARACTERIZATION_ONLY",
     "claim": "Two self-moves removed with equivalent hosted-emulator results; no native speedup claim.",
-    "protocol": {"warmups": 2, "repetitions": 7, "loops_per_sample": 25, "timed_scope": "hosted Assembly emulator execution"},
+    "protocol": {"warmups": 2, "repetitions": 7, "loops_per_sample": 25, "timed_scope": "hosted Assembly emulator execution", "control": "same parsed AssemblyProgram/workload; OFF = original AssemblyProgram; ON = eliminate_redundant_noop_moves(original); timing = hosted Emulator; native x86 generation = supplementary structural probe only; no native speedup claim", "provenance_check": "PASS"},
     "cases": [
       {"name": "with_self_moves", "before": 14, "after": 14, "removed_self_moves": 2},
       {"name": "without_self_moves", "before": 14, "after": 14, "removed_self_moves": 0}
     ],
     "timing_medians_ns": {
-      "with_self_moves": {"off": 8788500, "on": 7287200},
-      "without_self_moves": {"off": 8338800, "on": 7775200}
+      "with_self_moves": {"off": 10899500, "on": 10700900},
+      "without_self_moves": {"off": 11606400, "on": 13374100}
     },
     "native_execution": "DEFERRED_BY_ENVIRONMENT",
     "native_off_artifact": "NOT_EMITTED_BY_BACKEND_PRECONDITION"
@@ -74,8 +77,9 @@
     "blockers": 0,
     "high": 0,
     "medium": 0,
-    "low": 1,
-    "low_details": [{"file": "benchmark repository benchmarks/m199/benchmark.py", "reason": "Native OFF emission is outside the production emitter precondition; comparison remains structural and hosted-emulator based.", "blocks_pr": false}]
+    "low": 0,
+    "low_details": [],
+    "limitations": ["Native OFF emission is outside the production emitter precondition; comparison remains structural and hosted-emulator based."]
   },
   "ready_for_source_review": true,
   "ready_for_benchmark": true,

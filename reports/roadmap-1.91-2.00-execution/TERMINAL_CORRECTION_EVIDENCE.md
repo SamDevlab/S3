@@ -2,7 +2,7 @@
 
 ```text
 START_HEAD=ac829053b83a241f84700aa962dfdd3bd6cd3d08
-FINAL_TESTED_SOURCE_HEAD=1632367cda087bce8feca4e559f2538ca7cbcbea
+FINAL_TESTED_SOURCE_HEAD=4be50ffff0aa3fb1f4eff3b3c9b29d2685ba7238
 HISTORICAL_T4_SOURCE_HEAD=eb8ce3e1e8417844810cd4a804c17102bee7fc18
 GLOBAL_T4_RUNS_TOTAL=3
 ADDITIONAL_T4_RUNS=0
@@ -16,6 +16,13 @@ FOCUSED=70 passed, 0 skipped, 0 failed, exit 0
 CROSS_LAYER=120 passed, 1 skipped, 0 failed, exit 0
 SMART=11 selected, 11 passed, 0 failed, 0 timeout, exit 0
 DIFF_CHECK=PASS
+HTTP_LOOPBACK_BACKPRESSURE=PASS
+BENCH_PROTOCOL_METADATA=PASS
+BENCH_COMMIT_PIN_SELF_CHECK=PASS
+BLOCKER=0
+HIGH=0
+MEDIUM=0
+LOW=0
 ```
 
 The cryptography-dependent cross-layer test is deferred by the environment.
@@ -38,19 +45,21 @@ M3_REGISTRY_ERROR_TAXONOMY=PASS
 M4_DIRECT_TLS_ELF_TESTS=PASS
 ```
 
-The final source review found zero blockers, highs, or mediums. One low
-evidence-scope item remains: native OFF emission is not attempted because the
-production emitter requires the self-move-eliminated input. The benchmark
-therefore makes no native speedup claim.
+The final source review found zero blockers, highs, mediums, or open low
+findings. Native OFF emission is not attempted because the production emitter
+requires the self-move-eliminated input; this remains a disclosed benchmark
+limitation, and the benchmark therefore makes no native speedup claim.
 
 ## M1.99 Evidence
 
 ```text
-BENCHMARK_REPO_HEAD=9b506d97d5a8be3282d0cc4df0f4c57abb10b78f
-BENCHMARK_S3_HEAD=1632367cda087bce8feca4e559f2538ca7cbcbea
+BENCHMARK_REPO_HEAD=782b77f8deb2d8d777b89cb36d6420759c4f48d6
+BENCHMARK_S3_HEAD=4be50ffff0aa3fb1f4eff3b3c9b29d2685ba7238
 BENCH_CORRECTNESS=PASS
 BENCH_TIMING_CLASS=CHARACTERIZATION_ONLY
 BENCHMARK_RUN=YES
+BENCH_PROTOCOL_METADATA=PASS
+BENCH_COMMIT_PIN_SELF_CHECK=PASS
 ```
 
 The controlled AssemblyProgram comparison used the same workload with the
@@ -61,9 +70,13 @@ without self-moves removed zero. Hosted-emulator timings were recorded with
 two warmups, seven repetitions, and 25 loops per sample. Native execution is
 deferred because this host is Windows without a Linux x86-64 toolchain.
 
-Final hosted-emulator medians: self-move workload 8,788,500 ns OFF and
-7,287,200 ns ON; no-self-move workload 8,338,800 ns OFF and 7,775,200 ns ON.
-These are characterization values only.
+Final hosted-emulator medians: self-move workload 10,899,500 ns OFF and
+10,700,900 ns ON; no-self-move workload 11,606,400 ns OFF and 13,374,100 ns
+ON. These are characterization values only. The timed control was the same
+parsed AssemblyProgram/workload, with OFF as the original program and ON as
+`eliminate_redundant_noop_moves(original)`. Native x86 generation was a
+supplementary structural probe only, with no native speedup claim. Both local
+Git HEADs matched their pinned evidence SHAs.
 
 Historical T4 evidence remains unchanged: three runs total, no additional run.
 No publication action was performed.
