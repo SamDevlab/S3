@@ -1,6 +1,6 @@
 # M1.91 Closure Checkpoint
 
-Status: `IMPLEMENTED_LOCALLY_PENDING_CAMPAIGN_GATES`
+Status: `PASS`
 
 Implemented in the campaign branch:
 

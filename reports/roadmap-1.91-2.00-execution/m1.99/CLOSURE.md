@@ -1,6 +1,6 @@
 # M1.99 Closure Checkpoint
 
-Status: `IMPLEMENTED_LOCALLY_STRUCTURAL_CHARACTERIZATION_ONLY`
+Status: `PASS_STRUCTURAL_ONLY`
 
 The narrow transformation is implemented, bounded, deterministic, and
 semantics-preserving under focused tests. A comparable native performance
