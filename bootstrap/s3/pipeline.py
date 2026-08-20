@@ -34,14 +34,16 @@ class CompilationResult:
     tokens: tuple[Token, ...]
     ast: ast.Program
     semantic_model: SemanticModel
-    ir: IRProgram
-    assembly: AssemblyProgram
+    ir: IRProgram | None
+    assembly: AssemblyProgram | None
     async_syntax: AsyncLanguageSyntax = AsyncLanguageSyntax()
     async_state_machines: tuple[AsyncStateMachinePlan, ...] = ()
     async_ir: AsyncIRProgram | None = None
 
     @property
     def assembly_text(self) -> str:
+        if self.assembly is None:
+            raise RuntimeError("ordinary IR/Assembly is unavailable for async select; use async_ir")
         return self.assembly.render()
 
 
@@ -133,14 +135,15 @@ def compile_sources(
     plan = prepare_module_compilation(async_preparation.core_sources, entry_module=entry_module, mode=context.mode)
     syntax_tree = specialize_generic_functions(plan.program)
     semantic_model = analyze(syntax_tree)
-    ir_program = lower(syntax_tree, semantic_model)
-    if not semantic_model.contains_dynamic:
+    executable = specialize_async_executable(async_preparation.executable)
+    ordinary_ir_available = not _contains_async_select(executable)
+    ir_program = lower(syntax_tree, semantic_model) if ordinary_ir_available else None
+    if ir_program is not None and not semantic_model.contains_dynamic:
         ir_program = optimize_ir(
             ir_program,
             context.optimization,
         )
-    assembly_program = generate_assembly(ir_program)
-    executable = specialize_async_executable(async_preparation.executable)
+    assembly_program = generate_assembly(ir_program) if ir_program is not None else None
     return CompilationResult(
         plan.tokens,
         syntax_tree,
@@ -166,14 +169,15 @@ def _compile_source_with_context(
     async_ir = lower_executable_async_ir(executable)
     syntax_tree = specialize_generic_functions(parsed.program)
     semantic_model = analyze(syntax_tree)
-    ir_program = lower(syntax_tree, semantic_model)
-    if not semantic_model.contains_dynamic:
+    ordinary_ir_available = not _contains_async_select(executable)
+    ir_program = lower(syntax_tree, semantic_model) if ordinary_ir_available else None
+    if ir_program is not None and not semantic_model.contains_dynamic:
         ir_program = optimize_ir(
             ir_program,
             context.optimization,
             preserve_memory_observability=preserve_memory_observability,
         )
-    assembly_program = generate_assembly(ir_program)
+    assembly_program = generate_assembly(ir_program) if ir_program is not None else None
     return CompilationResult(parsed.tokens, syntax_tree, semantic_model, ir_program, assembly_program, parsed.syntax, async_state_machines, async_ir)
 
 
@@ -244,9 +248,9 @@ def _compat_state_plans(executable: AsyncExecutableProgram) -> tuple[AsyncStateM
     for function in executable.functions:
         if not function.async_function:
             continue
-        await_actions = [action for action in function.actions if _is_await_action(action)]
+        await_actions = tuple(_iter_suspension_actions(function.actions))
         points = tuple(
-            AsyncSuspensionPoint(index, action.source_offset, action.callee or action.source_future or "Future", f"suspended_{index}", f"running_{index + 1}")
+            AsyncSuspensionPoint(index, action.source_offset, _suspension_callee(action), f"suspended_{index}", f"running_{index + 1}")
             for index, action in enumerate(await_actions)
         )
         states: list[str] = ["created", "running_0"]
@@ -258,7 +262,33 @@ def _compat_state_plans(executable: AsyncExecutableProgram) -> tuple[AsyncStateM
 
 
 def _is_await_action(action: AsyncAction) -> bool:
-    return action.kind in {AsyncActionKind.AWAIT_CALL, AsyncActionKind.AWAIT_FUTURE} or (action.kind is AsyncActionKind.DISCARD and (action.callee is not None or action.source_future is not None))
+    return action.kind in {AsyncActionKind.AWAIT_CALL, AsyncActionKind.AWAIT_FUTURE, AsyncActionKind.SELECT} or (action.kind is AsyncActionKind.DISCARD and (action.callee is not None or action.source_future is not None))
+
+
+def _suspension_callee(action: AsyncAction) -> str:
+    if action.kind is AsyncActionKind.SELECT:
+        return "select"
+    return action.callee or action.source_future or "Future"
+
+
+def _contains_async_select(executable: AsyncExecutableProgram) -> bool:
+    def contains(actions: tuple[AsyncAction, ...]) -> bool:
+        for action in actions:
+            if action.kind is AsyncActionKind.SELECT:
+                return True
+            if any(contains(arm.actions) for arm in action.select_arms):
+                return True
+        return False
+
+    return any(contains(function.actions) for function in executable.functions)
+
+
+def _iter_suspension_actions(actions: tuple[AsyncAction, ...]):
+    for action in actions:
+        if _is_await_action(action):
+            yield action
+        for arm in action.select_arms:
+            yield from _iter_suspension_actions(arm.actions)
 
 
 def _combined_module_syntax(parsed_sources) -> AsyncLanguageSyntax:

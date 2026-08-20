@@ -51,3 +51,26 @@ def test_auto_event_releases_one_waiter_and_rejects_waiter_overflow() -> None:
     assert event.wait(3).value_or(False) is False
     assert event.set().is_ok
     assert event.drain_wakeups() == (3,)
+
+
+def test_async_mutex_and_event_keep_wake_grants_until_the_owner_polls() -> None:
+    mutex = BoundedMutex()
+    first = mutex.acquire_async(1)
+    guard = first.poll().value
+    assert guard is not None
+    waiter = mutex.acquire_async(2)
+    assert waiter.poll().kind.value == "pending"
+    assert guard.release().is_ok
+    assert waiter.poll().kind.value == "ready"
+    promoted = waiter.poll()
+    assert promoted.kind.value == "failed"
+
+    event = BoundedEvent(auto_reset=True)
+    waiting = event.wait_async(4)
+    assert waiting.poll().kind.value == "pending"
+    assert event.set().is_ok
+    assert waiting.poll().value is True
+    cancelled = event.wait_async(5)
+    assert cancelled.poll().kind.value == "pending"
+    assert cancelled.cancel().is_ok
+    assert event.cancel_wait(5).error_or(None).code is SyncErrorCode.INVALID_STATE

@@ -6,6 +6,7 @@ from collections import deque
 from dataclasses import dataclass
 from enum import Enum
 
+from .async_core import AsyncErrorCode, AsyncFuture, complete, fail, pending
 from .results import Result
 
 
@@ -79,10 +80,46 @@ class BoundedMutex:
         self._waiters.append(task_id)
         return Result.ok(None)
 
+    def acquire_async(self, task_id: int) -> AsyncFuture[MutexGuard]:
+        """Return a resumable, ownership-aware mutex acquisition future."""
+
+        error = _task_id(task_id)
+        if error is not None:
+            return AsyncFuture(lambda _frame: fail(AsyncErrorCode.INVALID_STATE, "acquire", error.detail))
+        registered = False
+
+        def step(_frame):
+            nonlocal registered
+            if task_id in self._granted and self._owner == task_id:
+                self._granted.remove(task_id)
+                return complete(MutexGuard(self, task_id))
+            if self._owner is None:
+                self._owner = task_id
+                return complete(MutexGuard(self, task_id))
+            if self._owner == task_id:
+                return fail(AsyncErrorCode.INVALID_STATE, "acquire", "task already owns the mutex")
+            if task_id not in self._waiters and task_id not in self._granted:
+                if len(self._waiters) >= self.max_waiters:
+                    return fail(AsyncErrorCode.FRAME_LIMIT, "acquire", "mutex waiter limit exceeded")
+                self._waiters.append(task_id)
+                registered = True
+            if task_id in self._waiters or registered:
+                return pending()
+            return fail(AsyncErrorCode.INVALID_STATE, "acquire", "mutex acquisition is unavailable")
+
+        return AsyncFuture(step, cancel_hook=lambda: self.cancel_wait(task_id))
+
     def cancel_wait(self, task_id: int) -> Result[None, SyncError]:
         error = _task_id(task_id)
         if error is not None:
             return Result.err(error)
+        if task_id in self._granted:
+            self._granted.remove(task_id)
+            if self._owner == task_id:
+                self._owner = None
+                self._promote_next()
+            self._wakeups = deque(item for item in self._wakeups if item != task_id)
+            return Result.ok(None)
         if task_id not in self._waiters:
             return Result.err(SyncError(SyncErrorCode.INVALID_STATE, "cancel_wait", "task is not waiting"))
         self._waiters.remove(task_id)
@@ -100,12 +137,18 @@ class BoundedMutex:
             return Result.err(SyncError(SyncErrorCode.OWNERSHIP, "release", "task does not own the mutex"))
         guard._released = True
         self._owner = None
-        if self._waiters:
+        self._promote_next()
+        return Result.ok(None)
+
+    def _promote_next(self) -> None:
+        if self._owner is not None:
+            return
+        while self._waiters:
             next_task = self._waiters.popleft()
             self._owner = next_task
             self._granted.add(next_task)
             self._wakeups.append(next_task)
-        return Result.ok(None)
+            return
 
 
 class BoundedEvent:
@@ -120,6 +163,7 @@ class BoundedEvent:
         self.auto_reset = auto_reset
         self._set = False
         self._waiters: deque[int] = deque()
+        self._granted: set[int] = set()
         self._wakeups: deque[int] = deque()
 
     @property
@@ -134,6 +178,9 @@ class BoundedEvent:
         error = _task_id(task_id)
         if error is not None:
             return Result.err(error)
+        if task_id in self._granted:
+            self._granted.remove(task_id)
+            return Result.ok(True)
         if self._set:
             if self.auto_reset:
                 self._set = False
@@ -145,15 +192,48 @@ class BoundedEvent:
         self._waiters.append(task_id)
         return Result.ok(False)
 
+    def wait_async(self, task_id: int) -> AsyncFuture[bool]:
+        """Return a resumable event wait whose wake grant cannot be lost."""
+
+        error = _task_id(task_id)
+        if error is not None:
+            return AsyncFuture(lambda _frame: fail(AsyncErrorCode.INVALID_STATE, "wait", error.detail))
+        registered = False
+
+        def step(_frame):
+            nonlocal registered
+            if task_id in self._granted:
+                self._granted.remove(task_id)
+                return complete(True)
+            if self._set and not self.auto_reset:
+                return complete(True)
+            if self._set and self.auto_reset:
+                self._set = False
+                return complete(True)
+            if task_id not in self._waiters:
+                if len(self._waiters) >= self.max_waiters:
+                    return fail(AsyncErrorCode.FRAME_LIMIT, "wait", "event waiter limit exceeded")
+                self._waiters.append(task_id)
+                registered = True
+            if task_id in self._waiters or registered:
+                return pending()
+            return fail(AsyncErrorCode.INVALID_STATE, "wait", "event wait is unavailable")
+
+        return AsyncFuture(step, cancel_hook=lambda: self.cancel_wait(task_id))
+
     def set(self) -> Result[None, SyncError]:
         self._set = True
         if self.auto_reset:
             if self._waiters:
-                self._wakeups.append(self._waiters.popleft())
+                task_id = self._waiters.popleft()
+                self._granted.add(task_id)
+                self._wakeups.append(task_id)
                 self._set = False
             return Result.ok(None)
         while self._waiters:
-            self._wakeups.append(self._waiters.popleft())
+            task_id = self._waiters.popleft()
+            self._granted.add(task_id)
+            self._wakeups.append(task_id)
         return Result.ok(None)
 
     def clear(self) -> Result[None, SyncError]:
@@ -164,6 +244,10 @@ class BoundedEvent:
         error = _task_id(task_id)
         if error is not None:
             return Result.err(error)
+        if task_id in self._granted:
+            self._granted.remove(task_id)
+            self._wakeups = deque(item for item in self._wakeups if item != task_id)
+            return Result.ok(None)
         if task_id not in self._waiters:
             return Result.err(SyncError(SyncErrorCode.INVALID_STATE, "cancel_wait", "task is not waiting"))
         self._waiters.remove(task_id)

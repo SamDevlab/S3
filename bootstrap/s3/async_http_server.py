@@ -7,6 +7,7 @@ from enum import Enum
 import ipaddress
 import socket
 import time
+from collections.abc import Iterable, Iterator
 from typing import Callable
 
 from .async_http import HTTPLimits
@@ -41,7 +42,23 @@ class HTTPRequest:
     target: str
     version: str
     headers: tuple[tuple[str, str], ...]
-    body: bytes
+    body_chunks: tuple[bytes, ...] = ()
+
+    @property
+    def body(self) -> bytes:
+        """Compatibility view; streaming consumers should use body_chunks."""
+        return b"".join(self.body_chunks)
+
+    @property
+    def body_bytes_received(self) -> int:
+        return sum(len(chunk) for chunk in self.body_chunks)
+
+    @property
+    def body_complete(self) -> bool:
+        return True
+
+    def iter_body(self) -> Iterator[bytes]:
+        return iter(self.body_chunks)
 
     def header(self, name: str) -> str | None:
         lowered = name.lower()
@@ -56,9 +73,12 @@ class HTTPServerResponse:
     status: int
     reason: str
     headers: tuple[tuple[str, str], ...]
-    body: bytes = b""
+    body: bytes | Iterable[bytes] = b""
+    content_length: int | None = None
 
     def encode(self, limits: HTTPLimits | None = None) -> Result[bytes, HTTPServerError]:
+        if not isinstance(self.body, bytes):
+            return Result.err(HTTPServerError(HTTPServerErrorCode.INVALID_ARGUMENT, "response", "streaming body requires open_stream"))
         limits = limits or HTTPLimits()
         if isinstance(self.status, bool) or not isinstance(self.status, int) or not 100 <= self.status <= 599:
             return Result.err(HTTPServerError(HTTPServerErrorCode.INVALID_ARGUMENT, "response", "status is outside 100..599"))
@@ -88,6 +108,104 @@ class HTTPServerResponse:
             return Result.err(HTTPServerError(HTTPServerErrorCode.HEADER_LIMIT, "response", "response headers exceed limit"))
         return Result.ok(header_bytes + b"\r\n\r\n" + self.body)
 
+    def open_stream(self, limits: HTTPLimits | None = None) -> Result[_HTTPResponseStream, HTTPServerError]:
+        limits = limits or HTTPLimits()
+        effective_length = len(self.body) if isinstance(self.body, bytes) and self.content_length is None else self.content_length
+        checked = _response_header(self.status, self.reason, self.headers, effective_length, limits)
+        if isinstance(checked, HTTPServerError):
+            return Result.err(checked)
+        if isinstance(self.body, bytes):
+            source: Iterable[bytes] = () if not self.body else (self.body,)
+        elif callable(self.body):
+            try:
+                source = self.body()
+            except Exception as error:
+                return Result.err(HTTPServerError(HTTPServerErrorCode.HANDLER, "response", f"response body factory failed: {error}"))
+        else:
+            source = self.body
+        try:
+            iterator = iter(source)
+        except TypeError:
+            return Result.err(HTTPServerError(HTTPServerErrorCode.INVALID_ARGUMENT, "response", "streaming body is not iterable"))
+        return Result.ok(_HTTPResponseStream(checked, iterator, limits, effective_length))
+
+
+class _HTTPResponseStream:
+    def __init__(self, header: bytes, body: Iterator[bytes], limits: HTTPLimits, content_length: int | None) -> None:
+        self._header = header
+        self._body = body
+        self._limits = limits
+        self._content_length = content_length
+        self._sent_header = False
+        self._body_bytes = 0
+        self._closed = False
+
+    def next_chunk(self) -> Result[bytes | None, HTTPServerError]:
+        if self._closed:
+            return Result.ok(None)
+        if not self._sent_header:
+            self._sent_header = True
+            return Result.ok(self._header)
+        try:
+            chunk = next(self._body)
+        except StopIteration:
+            self._closed = True
+            if self._content_length is not None and self._body_bytes != self._content_length:
+                return Result.err(HTTPServerError(HTTPServerErrorCode.FRAMING, "response", "stream body length does not match Content-Length"))
+            return Result.ok(None)
+        except Exception as error:
+            self._closed = True
+            return Result.err(HTTPServerError(HTTPServerErrorCode.HANDLER, "response", f"stream body failed: {error}"))
+        if not isinstance(chunk, bytes) or not chunk:
+            self._closed = True
+            return Result.err(HTTPServerError(HTTPServerErrorCode.MALFORMED, "response", "stream body chunks must be non-empty bytes"))
+        self._body_bytes += len(chunk)
+        if self._body_bytes > self._limits.max_body_bytes:
+            self._closed = True
+            return Result.err(HTTPServerError(HTTPServerErrorCode.BODY_LIMIT, "response", "stream response body exceeds limit"))
+        if self._content_length is not None and self._body_bytes > self._content_length:
+            self._closed = True
+            return Result.err(HTTPServerError(HTTPServerErrorCode.FRAMING, "response", "stream body exceeds Content-Length"))
+        return Result.ok(chunk)
+
+
+def _response_header(
+    status: int,
+    reason: str,
+    headers: tuple[tuple[str, str], ...],
+    content_length: int | None,
+    limits: HTTPLimits,
+) -> bytes | HTTPServerError:
+    if isinstance(status, bool) or not isinstance(status, int) or not 100 <= status <= 599:
+        return HTTPServerError(HTTPServerErrorCode.INVALID_ARGUMENT, "response", "status is outside 100..599")
+    if not isinstance(reason, str) or not reason.isascii() or "\r" in reason or "\n" in reason:
+        return HTTPServerError(HTTPServerErrorCode.INVALID_ARGUMENT, "response", "reason is not safe ASCII text")
+    if content_length is not None and (isinstance(content_length, bool) or not isinstance(content_length, int) or not 0 <= content_length <= limits.max_body_bytes):
+        return HTTPServerError(HTTPServerErrorCode.BODY_LIMIT, "response", "content length is outside the body budget")
+    if len(headers) > limits.max_headers:
+        return HTTPServerError(HTTPServerErrorCode.HEADER_LIMIT, "response", "response header count exceeds limit")
+    normalized: list[tuple[str, str]] = []
+    names: set[str] = set()
+    for key, value in headers:
+        if not _valid_header_name(key) or not isinstance(value, str) or not value.isascii() or "\r" in value or "\n" in value or "\x00" in value:
+            return HTTPServerError(HTTPServerErrorCode.MALFORMED, "response", "response header is invalid")
+        lowered = key.lower()
+        if lowered in names or lowered in {"content-length", "transfer-encoding", "connection"}:
+            return HTTPServerError(HTTPServerErrorCode.FRAMING, "response", "duplicate or reserved response framing header")
+        names.add(lowered)
+        normalized.append((key, value.strip()))
+    lines = [f"HTTP/1.1 {status} {reason}".encode("ascii")]
+    lines.extend(f"{key}: {value}".encode("ascii") for key, value in normalized)
+    if content_length is not None:
+        lines.append(f"Content-Length: {content_length}".encode("ascii"))
+    lines.append(b"Connection: close")
+    if any(len(line) > limits.max_header_line_bytes for line in lines):
+        return HTTPServerError(HTTPServerErrorCode.HEADER_LIMIT, "response", "response header line exceeds limit")
+    header_bytes = b"\r\n".join(lines) + b"\r\n\r\n"
+    if len(header_bytes) > limits.max_header_bytes:
+        return HTTPServerError(HTTPServerErrorCode.HEADER_LIMIT, "response", "response headers exceed limit")
+    return header_bytes
+
 
 class IncrementalHTTPRequestParser:
     """Incremental request parser with bounded frame and body storage."""
@@ -99,6 +217,8 @@ class IncrementalHTTPRequestParser:
         self.max_frames = max_frames
         self._buffer = bytearray()
         self._head: tuple[str, str, str, tuple[tuple[str, str], ...], int] | None = None
+        self._body_chunks: list[bytes] = []
+        self._body_received = 0
 
     def feed(self, data: bytes) -> Result[tuple[HTTPRequest, ...], HTTPServerError]:
         if not isinstance(data, bytes):
@@ -122,19 +242,38 @@ class IncrementalHTTPRequestParser:
                 self._head = parsed
             assert self._head is not None
             method, target, version, headers, length = self._head
-            if len(self._buffer) < length:
+            remaining = length - self._body_received
+            if remaining:
+                take = min(remaining, len(self._buffer))
+                if take:
+                    self._body_chunks.append(bytes(self._buffer[:take]))
+                    del self._buffer[:take]
+                    self._body_received += take
+            if self._body_received < length:
                 break
-            body = bytes(self._buffer[:length])
-            del self._buffer[:length]
-            requests.append(HTTPRequest(method, target, version, headers, body))
+            requests.append(HTTPRequest(method, target, version, headers, tuple(self._body_chunks)))
             self._head = None
+            self._body_chunks = []
+            self._body_received = 0
         if self._head is None and self._buffer and len(requests) >= self.max_frames:
             return Result.err(HTTPServerError(HTTPServerErrorCode.QUEUE_LIMIT, "feed", "request frame queue limit exceeded"))
         return Result.ok(tuple(requests))
 
     @property
     def buffered_bytes(self) -> int:
-        return len(self._buffer) + (0 if self._head is None else self._head[4])
+        return len(self._buffer) + (0 if self._head is None else self._head[4] - self._body_received)
+
+    @property
+    def body_bytes_received(self) -> int:
+        return self._body_received
+
+    @property
+    def body_complete(self) -> bool:
+        return self._head is None or self._body_received == self._head[4]
+
+    @property
+    def body_chunks(self) -> tuple[bytes, ...]:
+        return tuple(self._body_chunks)
 
 
 @dataclass(slots=True)
@@ -215,6 +354,7 @@ class LoopbackHTTPServer:
         self._listener: socket.socket | None = None
         self._address: tuple[str, int] | None = None
         self._active_connections = 0
+        self._accepting = False
 
     @property
     def address(self) -> tuple[str, int] | None:
@@ -247,7 +387,10 @@ class LoopbackHTTPServer:
         listener = self._listener
         if listener is None:
             return Result.err(HTTPServerError(HTTPServerErrorCode.CLOSED, "serve_once", "server is not started"))
+        if self._active_connections >= self.max_connections or self._accepting:
+            return Result.err(HTTPServerError(HTTPServerErrorCode.CONNECTION_LIMIT, "accept", "live connection limit exceeded"))
         deadline = time.monotonic() + self.limits.max_timeout_seconds
+        self._accepting = True
         try:
             remaining = _remaining_seconds(deadline)
             if remaining <= 0:
@@ -258,6 +401,8 @@ class LoopbackHTTPServer:
             return Result.err(HTTPServerError(HTTPServerErrorCode.TIMEOUT, "accept", "request deadline expired"))
         except OSError as error:
             return Result.err(HTTPServerError(HTTPServerErrorCode.TRANSPORT, "accept", f"loopback accept failed: {error}"))
+        finally:
+            self._accepting = False
 
         self._active_connections += 1
         try:
@@ -288,25 +433,32 @@ class LoopbackHTTPServer:
                     return Result.err(HTTPServerError(HTTPServerErrorCode.HANDLER, "handler", f"request handler failed: {error}"))
                 if not isinstance(response, HTTPServerResponse):
                     return Result.err(HTTPServerError(HTTPServerErrorCode.HANDLER, "handler", "request handler returned an invalid response"))
-                encoded = response.encode(self.limits)
-                if encoded.is_err:
-                    return Result.err(encoded.error_or(None))
-                payload = encoded.value_or(b"")
-                offset = 0
-                while offset < len(payload):
-                    remaining = _remaining_seconds(deadline)
-                    if remaining <= 0:
-                        return Result.err(HTTPServerError(HTTPServerErrorCode.TIMEOUT, "send", "response deadline expired"))
-                    connection.settimeout(remaining)
-                    try:
-                        sent = connection.send(payload[offset : offset + self.max_chunk_bytes])
-                    except socket.timeout:
-                        return Result.err(HTTPServerError(HTTPServerErrorCode.TIMEOUT, "send", "response deadline expired"))
-                    except OSError as error:
-                        return Result.err(HTTPServerError(HTTPServerErrorCode.TRANSPORT, "send", f"loopback send failed: {error}"))
-                    if sent <= 0:
-                        return Result.err(HTTPServerError(HTTPServerErrorCode.TRANSPORT, "send", "loopback send made no progress"))
-                    offset += sent
+                stream = response.open_stream(self.limits)
+                if stream.is_err:
+                    return Result.err(stream.error_or(None))
+                encoder = stream.value_or(None)
+                while True:
+                    next_chunk = encoder.next_chunk()
+                    if next_chunk.is_err:
+                        return Result.err(next_chunk.error_or(None))
+                    payload = next_chunk.value_or(None)
+                    if payload is None:
+                        break
+                    offset = 0
+                    while offset < len(payload):
+                        remaining = _remaining_seconds(deadline)
+                        if remaining <= 0:
+                            return Result.err(HTTPServerError(HTTPServerErrorCode.TIMEOUT, "send", "response deadline expired"))
+                        connection.settimeout(remaining)
+                        try:
+                            sent = connection.send(payload[offset : offset + self.max_chunk_bytes])
+                        except socket.timeout:
+                            return Result.err(HTTPServerError(HTTPServerErrorCode.TIMEOUT, "send", "response deadline expired"))
+                        except OSError as error:
+                            return Result.err(HTTPServerError(HTTPServerErrorCode.TRANSPORT, "send", f"loopback send failed: {error}"))
+                        if sent <= 0:
+                            return Result.err(HTTPServerError(HTTPServerErrorCode.TRANSPORT, "send", "loopback send made no progress"))
+                        offset += sent
                 return Result.ok(None)
         finally:
             self._active_connections -= 1
@@ -334,7 +486,7 @@ def _parse_request_head(
     if not lines or len(lines[0].split(b" ")) != 3:
         return HTTPServerError(HTTPServerErrorCode.MALFORMED, "parse", "request line is malformed")
     method_raw, target_raw, version_raw = lines[0].split(b" ")
-    if not method_raw or not all(chr(item).isalpha() for item in method_raw):
+    if not method_raw or not _valid_token_bytes(method_raw):
         return HTTPServerError(HTTPServerErrorCode.MALFORMED, "parse", "request method is invalid")
     if version_raw != b"HTTP/1.1" or not target_raw or b"\r" in target_raw or b"\n" in target_raw:
         return HTTPServerError(HTTPServerErrorCode.MALFORMED, "parse", "request target or version is invalid")
@@ -375,7 +527,19 @@ def _parse_request_head(
 
 
 def _valid_header_name(name: str) -> bool:
-    return bool(name) and all(character.isalnum() or character == "-" for character in name)
+    token = "!#$%&'*+-.^_`|~"
+    return bool(name) and name.isascii() and all(
+        ("A" <= character <= "Z")
+        or ("a" <= character <= "z")
+        or ("0" <= character <= "9")
+        or character in token
+        for character in name
+    )
+
+
+def _valid_token_bytes(value: bytes) -> bool:
+    token = b"!#$%&'*+-.^_`|~"
+    return all(65 <= byte <= 90 or 97 <= byte <= 122 or 48 <= byte <= 57 or byte in token for byte in value)
 
 
 def _remaining_seconds(deadline: float) -> float:

@@ -6,6 +6,7 @@ from bootstrap.s3.async_http import HTTPLimits
 from bootstrap.s3.async_http_server import (
     HTTPServerErrorCode,
     HTTPServerResponse,
+    IncrementalHTTPRequestParser,
     LoopbackHTTPServer,
     StreamingHTTPServer,
 )
@@ -38,6 +39,20 @@ def test_server_rejects_smuggling_and_oversize_frames() -> None:
     assert server.open("body").is_ok
     oversized = b"POST / HTTP/1.1\r\nContent-Length: 5\r\n\r\n"
     assert server.receive("body", oversized).error_or(None).code is HTTPServerErrorCode.BODY_LIMIT
+
+
+def test_request_and_response_streams_preserve_chunk_boundaries_and_accounting() -> None:
+    parser = IncrementalHTTPRequestParser()
+    assert parser.feed(b"POST / HTTP/1.1\r\nContent-Length: 5\r\n\r\nhe").value_or(()) == ()
+    assert parser.body_bytes_received == 2
+    parsed = parser.feed(b"llo").value_or(())
+    assert parsed[0].body_chunks == (b"he", b"llo")
+    response = HTTPServerResponse(200, "OK", (), (b"ab", b"c"), content_length=3)
+    stream = response.open_stream().value_or(None)
+    assert stream.next_chunk().value_or(None).startswith(b"HTTP/1.1 200 OK")
+    assert stream.next_chunk().value_or(None) == b"ab"
+    assert stream.next_chunk().value_or(None) == b"c"
+    assert stream.next_chunk().value_or(b"bad") is None
 
 
 def test_response_header_policy_and_connection_budget_are_bounded() -> None:

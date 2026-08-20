@@ -192,16 +192,51 @@ class _OwnedIRFuture:
     type_arguments: tuple[str, ...] = ()
     consumed: bool = False
     dropped: bool = False
+    frame: AsyncIRFrameRuntime | None = None
 
     def resolve(self, program: AsyncIRProgram) -> AsyncIRPoll:
+        result = self.poll(program)
+        if result.kind is not AsyncIRPollKind.PENDING:
+            self.consume()
+        return result
+
+    def poll(self, program: AsyncIRProgram) -> AsyncIRPoll:
         if self.consumed or self.dropped:
             return AsyncIRPoll(AsyncIRPollKind.FAILED, "failed", error="Future was already moved, consumed, or dropped")
+        function = program.ir_function(self.callee)
+        if function is None:
+            # Non-async support functions have no resumable suspension point.
+            # Their bounded evaluator remains the only valid execution path.
+            return execute_async_program(program, self.callee, arguments=self.arguments, max_polls=1)
+        self.frame, result = execute_async_ir(
+            function,
+            frame=self.frame,
+            program=program,
+            arguments=self.arguments if self.frame is None else (),
+        )
+        return result
+
+    def consume(self) -> None:
+        if self.consumed or self.dropped:
+            raise AsyncIRVerificationError("Future was already moved, consumed, or dropped")
         self.consumed = True
-        return execute_async_program(program, self.callee, arguments=self.arguments)
 
     def drop(self) -> None:
-        if not self.consumed:
-            self.dropped = True
+        if self.consumed or self.dropped:
+            return
+        if self.frame is not None and not self.frame.consumed:
+            self.frame.drop_all()
+            self.frame.consumed = True
+            self.frame.state = "cancelled"
+            self.frame.block = self.frame.function.frame.cancelled_block
+        self.dropped = True
+
+
+@dataclass(slots=True)
+class _SelectCandidate:
+    arm: object
+    future: _OwnedIRFuture
+    source_name: str | None
 
 
 @dataclass(slots=True)
@@ -217,6 +252,8 @@ class AsyncIRFrameRuntime:
     action_queue: list[AsyncAction] = field(default_factory=list)
     action_index: int = 0
     pending_action_index: int | None = None
+    pending_future: _OwnedIRFuture | None = None
+    select_candidates: list[_SelectCandidate] | None = None
     parameters_bound: bool = False
     suspension_index: int = 0
 
@@ -254,6 +291,13 @@ class AsyncIRFrameRuntime:
         for future in tuple(self.futures.values()):
             future.drop()
         self.futures.clear()
+        if self.pending_future is not None:
+            self.pending_future.drop()
+            self.pending_future = None
+        if self.select_candidates is not None:
+            for candidate in self.select_candidates:
+                candidate.future.drop()
+            self.select_candidates = None
 
     def _slot(self, index: int) -> _RuntimeSlot:
         if index < 0 or index >= len(self.slots):
@@ -617,53 +661,68 @@ def _resolve_await(action: AsyncAction, runtime: AsyncIRFrameRuntime, program: A
     if action.kind is AsyncActionKind.SELECT:
         return _resolve_select(action, runtime, program)
     if action.callee is not None:
-        args = tuple(_eval_expression(item, runtime, program) for item in action.arguments)
-        return execute_async_program(program, action.callee, arguments=args)
+        if runtime.pending_future is None:
+            args = tuple(_eval_expression(item, runtime, program) for item in action.arguments)
+            runtime.pending_future = _OwnedIRFuture(action.callee, args)
+        result = runtime.pending_future.poll(program)
+        if result.kind is not AsyncIRPollKind.PENDING:
+            runtime.pending_future.consume()
+            runtime.pending_future = None
+        return result
     if action.source_future is not None:
-        future = runtime.futures.pop(action.source_future, None)
+        future = runtime.futures.get(action.source_future)
         if future is None:
             return AsyncIRPoll(AsyncIRPollKind.FAILED, "failed", error=f"Future {action.source_future!r} is not live")
-        return future.resolve(program)
+        result = future.poll(program)
+        if result.kind is not AsyncIRPollKind.PENDING:
+            runtime.futures.pop(action.source_future, None)
+            future.consume()
+        return result
     return AsyncIRPoll(AsyncIRPollKind.FAILED, "failed", error="await action has no owned source")
 
 
 def _resolve_select(action: AsyncAction, runtime: AsyncIRFrameRuntime, program: AsyncIRProgram) -> AsyncIRPoll:
-    candidates: list[tuple[object, _OwnedIRFuture, str | None]] = []
-    for arm in action.select_arms:
-        if arm.source_future is not None:
-            future = runtime.futures.get(arm.source_future)
-            if future is None:
-                return AsyncIRPoll(AsyncIRPollKind.FAILED, "failed", error=f"Future {arm.source_future!r} is not live")
-            candidates.append((arm, future, arm.source_future))
-            continue
-        if arm.callee is None:
-            return AsyncIRPoll(AsyncIRPollKind.FAILED, "failed", error="select arm has no async operation")
-        args = tuple(_eval_expression(item, runtime, program) for item in arm.arguments)
-        candidates.append((arm, _OwnedIRFuture(arm.callee, args), None))
+    if runtime.select_candidates is None:
+        candidates: list[_SelectCandidate] = []
+        for arm in action.select_arms:
+            if arm.source_future is not None:
+                future = runtime.futures.get(arm.source_future)
+                if future is None:
+                    return AsyncIRPoll(AsyncIRPollKind.FAILED, "failed", error=f"Future {arm.source_future!r} is not live")
+                candidates.append(_SelectCandidate(arm, future, arm.source_future))
+                continue
+            if arm.callee is None:
+                return AsyncIRPoll(AsyncIRPollKind.FAILED, "failed", error="select arm has no async operation")
+            args = tuple(_eval_expression(item, runtime, program) for item in arm.arguments)
+            candidates.append(_SelectCandidate(arm, _OwnedIRFuture(arm.callee, args), None))
+        runtime.select_candidates = candidates
 
-    for arm, future, source_name in candidates:
-        result = future.resolve(program)
+    candidates = runtime.select_candidates
+    assert candidates is not None
+    for candidate in candidates:
+        result = candidate.future.poll(program)
         if result.kind is AsyncIRPollKind.READY:
-            for _, other, other_name in candidates:
-                if other is not future:
-                    other.drop()
-                if other_name is not None:
-                    runtime.futures.pop(other_name, None)
-            if source_name is not None:
-                runtime.futures.pop(source_name, None)
-            return AsyncIRPoll(AsyncIRPollKind.READY, "ready", value=arm)
+            candidate.future.consume()
+            for other in candidates:
+                if other is not candidate:
+                    other.future.drop()
+                if other.source_name is not None:
+                    runtime.futures.pop(other.source_name, None)
+            runtime.select_candidates = None
+            return AsyncIRPoll(AsyncIRPollKind.READY, "ready", value=candidate.arm)
         if result.kind is AsyncIRPollKind.FAILED:
-            for _, other, other_name in candidates:
-                if other is not future:
-                    other.drop()
-                if other_name is not None:
-                    runtime.futures.pop(other_name, None)
+            candidate.future.consume()
+            for other in candidates:
+                if other is not candidate:
+                    other.future.drop()
+                if other.source_name is not None:
+                    runtime.futures.pop(other.source_name, None)
+            runtime.select_candidates = None
             return AsyncIRPoll(AsyncIRPollKind.FAILED, "failed", error=result.error or "select operation failed")
 
-    # A poll that is still pending is preserved as a wait state.  The hosted
-    # executable futures currently resolve to READY/FAILED, but retaining this
-    # state makes the IR fail closed when a future provider is extended.
-    return AsyncIRPoll(AsyncIRPollKind.PENDING, "suspended_0")
+    # A pending round keeps every child frame alive. The next parent poll
+    # resumes each candidate once, preserving bounded work and ownership.
+    return AsyncIRPoll(AsyncIRPollKind.PENDING, f"suspended_{runtime.suspension_index}")
 
 
 def _execute_support_function(program: AsyncIRProgram, model: AsyncExecutableFunction, arguments: tuple[object, ...]) -> AsyncIRPoll:

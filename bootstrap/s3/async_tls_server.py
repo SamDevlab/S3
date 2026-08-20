@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+import time
 from typing import Protocol
 
 from .async_core import AsyncFuture, AsyncFrame, complete, fail, pending
@@ -60,6 +61,7 @@ class AsyncTlsServerConfig:
     private_key: str
     max_connections: int = 32
     max_read_write: int = 65_536
+    max_timeout_seconds: float = 30.0
 
     def __post_init__(self) -> None:
         if not isinstance(self.certificate, str) or not self.certificate or "\x00" in self.certificate:
@@ -69,6 +71,8 @@ class AsyncTlsServerConfig:
         values = (self.max_connections, self.max_read_write)
         if any(isinstance(value, bool) or not isinstance(value, int) or value <= 0 for value in values):
             raise ValueError("TLS server limits must be positive integers")
+        if isinstance(self.max_timeout_seconds, bool) or not isinstance(self.max_timeout_seconds, (int, float)) or not 0 < self.max_timeout_seconds <= 300:
+            raise ValueError("TLS server timeout must be within (0, 300]")
 
 
 @dataclass(slots=True)
@@ -100,7 +104,11 @@ class AsyncTlsServer:
         return len(self._connections)
 
     def accept(self, connection: object) -> AsyncFuture[AsyncTlsServerConnection]:
+        deadline = time.monotonic() + float(self.config.max_timeout_seconds)
+
         def step(frame: AsyncFrame):
+            if time.monotonic() >= deadline:
+                return fail(AsyncTlsServerErrorCode.TIMEOUT, "accept", "TLS handshake deadline expired")
             if len(self._connections) >= self.config.max_connections:
                 return fail(AsyncTlsServerErrorCode.CONNECTION_LIMIT, "accept", "TLS server connection limit exceeded")
             if "tls-server-connection" not in frame.slots:
@@ -122,6 +130,8 @@ class AsyncTlsServer:
             self._connections[handle.identifier] = handle
             return complete(handle)
 
+        # The connection is frame-owned; AsyncFrame.cancel/fail performs the
+        # single provider close for this handshake attempt.
         return AsyncFuture(step)
 
     def read(self, connection: AsyncTlsServerConnection, amount: int) -> AsyncFuture[bytes]:
@@ -129,14 +139,14 @@ class AsyncTlsServer:
         if checked is not None or isinstance(amount, bool) or not isinstance(amount, int) or not 0 < amount <= self.config.max_read_write:
             error = checked or AsyncTlsServerError(AsyncTlsServerErrorCode.IO, "read", "read amount exceeds TLS server limit")
             return AsyncFuture(lambda _frame: fail(error.code, error.operation, error.detail))
-        return self._io_future("read", lambda: self.provider.read(connection.resource, amount))
+        return self._io_future("read", lambda: self.provider.read(connection.resource, amount), connection)
 
     def write(self, connection: AsyncTlsServerConnection, data: bytes) -> AsyncFuture[int]:
         checked = self._check(connection, "write")
         if checked is not None or not isinstance(data, bytes) or not 0 < len(data) <= self.config.max_read_write:
             error = checked or AsyncTlsServerError(AsyncTlsServerErrorCode.IO, "write", "write data exceeds TLS server limit")
             return AsyncFuture(lambda _frame: fail(error.code, error.operation, error.detail))
-        return self._io_future("write", lambda: self.provider.write(connection.resource, data))
+        return self._io_future("write", lambda: self.provider.write(connection.resource, data), connection)
 
     def close(self, connection: AsyncTlsServerConnection) -> Result[None, AsyncTlsServerError]:
         current = self._connections.get(connection.identifier)
@@ -147,18 +157,29 @@ class AsyncTlsServer:
         self.provider.close(current.resource)
         return Result.ok(None)
 
-    def _io_future(self, operation: str, call):
+    def _io_future(self, operation: str, call, connection: AsyncTlsServerConnection):
+        deadline = time.monotonic() + float(self.config.max_timeout_seconds)
+
         def step(_frame: AsyncFrame):
-            outcome = call()
+            if time.monotonic() >= deadline:
+                self.close(connection)
+                return fail(AsyncTlsServerErrorCode.TIMEOUT, operation, "TLS I/O deadline expired")
+            try:
+                outcome = call()
+            except Exception as error:
+                self.close(connection)
+                return fail(AsyncTlsServerErrorCode.IO, operation, f"TLS provider I/O failed: {type(error).__name__}")
             if isinstance(outcome, (ServerWantRead, ServerWantWrite)):
                 return pending()
             if isinstance(outcome, ServerFailure):
+                self.close(connection)
                 return fail(outcome.error.code, operation, outcome.error.detail)
             if isinstance(outcome, ServerReady):
                 return complete(outcome.value)
+            self.close(connection)
             return fail(AsyncTlsServerErrorCode.IO, operation, "provider returned invalid TLS I/O outcome")
 
-        return AsyncFuture(step)
+        return AsyncFuture(step, cancel_hook=lambda: self.close(connection))
 
     def _check(self, connection: AsyncTlsServerConnection, operation: str) -> AsyncTlsServerError | None:
         if not isinstance(connection, AsyncTlsServerConnection) or connection.server is not self or connection.closed or connection.identifier not in self._connections:

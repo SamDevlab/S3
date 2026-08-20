@@ -30,6 +30,8 @@ def test_select_is_first_class_in_async_ir_and_preserves_source_order() -> None:
     )
     compilation = compile_source(source)
     assert compilation.async_ir is not None
+    assert compilation.ir is None
+    assert compilation.assembly is None
     model = compilation.async_ir.executable("main")
     function = compilation.async_ir.ir_function("main")
     assert model is not None and function is not None
@@ -45,6 +47,8 @@ def test_select_is_first_class_in_async_ir_and_preserves_source_order() -> None:
         "failed",
         "cancelled",
     )
+    plan = next(item for item in compilation.async_state_machines if item.function_name == "main")
+    assert plan.suspension_points[0].callee == "select"
     frame, pending = execute_async_ir(function, program=compilation.async_ir)
     assert pending.kind is AsyncIRPollKind.PENDING
     _, ready = execute_async_ir(function, frame=frame, program=compilation.async_ir)
@@ -71,6 +75,8 @@ def test_select_can_resume_through_a_nested_bounded_await() -> None:
     function = compilation.async_ir.ir_function("main")
     assert function is not None
     assert "suspended_1" in function.frame.states
+    plan = next(item for item in compilation.async_state_machines if item.function_name == "main")
+    assert tuple(point.callee for point in plan.suspension_points) == ("select", "payload")
     frame, first = execute_async_ir(function, program=compilation.async_ir)
     assert first.kind is AsyncIRPollKind.PENDING
     frame, second = execute_async_ir(function, frame=frame, program=compilation.async_ir)
