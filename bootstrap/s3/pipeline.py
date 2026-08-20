@@ -135,7 +135,10 @@ def compile_sources(
     semantic_model = analyze(syntax_tree)
     ir_program = lower(syntax_tree, semantic_model)
     if not semantic_model.contains_dynamic:
-        ir_program = optimize_ir(ir_program, context.optimization)
+        ir_program = optimize_ir(
+            ir_program,
+            context.optimization,
+        )
     assembly_program = generate_assembly(ir_program)
     executable = specialize_async_executable(async_preparation.executable)
     return CompilationResult(
@@ -150,7 +153,12 @@ def compile_sources(
     )
 
 
-def _compile_source_with_context(source: str, context: CompilationContext) -> CompilationResult:
+def _compile_source_with_context(
+    source: str,
+    context: CompilationContext,
+    *,
+    preserve_memory_observability: bool = False,
+) -> CompilationResult:
     parsed = parse_async_language_source(source, mode=context.mode)
     validate_async_language_semantics(parsed)
     executable = specialize_async_executable(lower_async_language_program(parsed))
@@ -160,7 +168,11 @@ def _compile_source_with_context(source: str, context: CompilationContext) -> Co
     semantic_model = analyze(syntax_tree)
     ir_program = lower(syntax_tree, semantic_model)
     if not semantic_model.contains_dynamic:
-        ir_program = optimize_ir(ir_program, context.optimization)
+        ir_program = optimize_ir(
+            ir_program,
+            context.optimization,
+            preserve_memory_observability=preserve_memory_observability,
+        )
     assembly_program = generate_assembly(ir_program)
     return CompilationResult(parsed.tokens, syntax_tree, semantic_model, ir_program, assembly_program, parsed.syntax, async_state_machines, async_ir)
 
@@ -174,7 +186,14 @@ def run_source_with_buffer_capture(
     max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
     mode: SyntaxMode = SyntaxMode.V0_6,
 ) -> tuple[int, list[dict[int, list[int | None]]]]:
-    compilation = compile_source(source, optimization, mode=mode)
+    compilation = _compile_source_with_context(
+        source,
+        CompilationContext(
+            optimization=optimization,
+            mode=mode,
+        ),
+        preserve_memory_observability=True,
+    )
     async_value = _run_async_entry(compilation, entry, max_instructions=max_instructions)
     if async_value is not None:
         return async_value, []

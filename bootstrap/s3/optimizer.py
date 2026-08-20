@@ -277,7 +277,11 @@ def _eliminate_dead_pure_instructions(function: IRFunction) -> IRFunction:
     )
 
 
-def _run_ssa_optimizations(function: IRFunction) -> IRFunction:
+def _run_ssa_optimizations(
+    function: IRFunction,
+    *,
+    preserve_memory_observability: bool = False,
+) -> IRFunction:
     if (
         function_has_memory_effects(function)
         and function_has_alias_observable_memory(function)
@@ -287,7 +291,8 @@ def _run_ssa_optimizations(function: IRFunction) -> IRFunction:
     from .ssa_opt import run_fixpoint_pipeline
 
     ssa_fn = SSABuilder.build_function(function)
-    ssa_fn, _telemetry = run_fixpoint_pipeline(ssa_fn)
+    disabled_passes = {"global_dse"} if preserve_memory_observability else set()
+    ssa_fn, _telemetry = run_fixpoint_pipeline(ssa_fn, disabled_passes=disabled_passes)
     optimized = ssa_fn.to_ir()
     if _has_undefined_register_use(optimized):
         return function
@@ -317,20 +322,38 @@ _O1_PASSES = (
 )
 
 
-def _o1_passes() -> tuple[_FunctionPass, ...]:
-    return _O1_PASSES
+def _o1_passes(*, preserve_memory_observability: bool = False) -> tuple[_FunctionPass, ...]:
+    if not preserve_memory_observability:
+        return _O1_PASSES
+    return (
+        _O1_PASSES[0],
+        _O1_PASSES[1],
+        _FunctionPass(
+            "ssa-optimizations-preserve-memory",
+            lambda function: _run_ssa_optimizations(
+                function,
+                preserve_memory_observability=True,
+            ),
+        ),
+        _O1_PASSES[3],
+        _O1_PASSES[4],
+    )
 
 
 def optimize_ir(
     module: IRModule,
     level: OptimizationLevel | str = OptimizationLevel.O0,
+    *,
+    preserve_memory_observability: bool = False,
 ) -> IRModule:
     selected = OptimizationLevel.parse(level)
     verify_ir(module)
     analyze_initialization(module)
     if selected is OptimizationLevel.O0:
         return module
-    optimized = _PassManager(_O1_PASSES).run(module)
+    optimized = _PassManager(
+        _o1_passes(preserve_memory_observability=preserve_memory_observability)
+    ).run(module)
     verify_ir(optimized)
     analyze_initialization(optimized)
     return optimized

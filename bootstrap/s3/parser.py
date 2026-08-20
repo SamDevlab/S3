@@ -60,7 +60,7 @@ class Parser:
 
     def _parse_foreign_function(self) -> ast.ForeignFunctionDeclaration:
         start = self._consume(TokenKind.FN, "expected 'fn' after 'foreign'")
-        name = self._consume(TokenKind.IDENTIFIER, "expected foreign function name")
+        name = self._consume_identifier("expected foreign function name")
         self._consume(TokenKind.LEFT_PAREN, "expected '(' after foreign function name")
         parameters = self._parse_parameters()
         self._consume(TokenKind.RIGHT_PAREN, "expected ')' after parameters")
@@ -112,7 +112,7 @@ class Parser:
 
     def _parse_function(self, *, exported: bool = False) -> ast.FunctionDeclaration:
         start = self._consume(TokenKind.FN, "expected 'fn'")
-        name = self._consume(TokenKind.IDENTIFIER, "expected function name")
+        name = self._consume_identifier("expected function name")
         type_parameters = self._parse_type_parameters()
         prior_type_parameters = self._active_type_parameters
         self._active_type_parameters = {item.name for item in type_parameters}
@@ -417,7 +417,8 @@ class Parser:
                 return self._parse_return_v0_6(self._previous())
             if self._match(TokenKind.MATCH):
                 return self._parse_match_v0_6(self._previous())
-            if self._match(TokenKind.SELECT):
+            if self._check(TokenKind.SELECT) and self._next_kind() is TokenKind.COLON:
+                self._advance()
                 return self._parse_select_v0_6(self._previous())
             if self._match(TokenKind.WHILE):
                 return self._parse_while_v0_6(self._previous())
@@ -427,7 +428,7 @@ class Parser:
                 return self._parse_discard_v0_6(self._previous())
             if self._check(TokenKind.MUT):
                 return self._parse_variable_declaration_v0_6()
-            if self._check(TokenKind.IDENTIFIER):
+            if self._check(TokenKind.IDENTIFIER) or self._check(TokenKind.SELECT) or self._check(TokenKind.CASE):
                 next_token = self.tokens[self.current + 1] if self.current + 1 < len(self.tokens) else None
                 if next_token and next_token.kind is TokenKind.COLON:
                     return self._parse_variable_declaration_v0_6()
@@ -1061,7 +1062,8 @@ class Parser:
         if self._match(TokenKind.STRING_LITERAL):
             token = self._previous()
             return ast.StringLiteral(token.text[1:-1], token.location)
-        if self._match(TokenKind.IDENTIFIER):
+        if self._check(TokenKind.IDENTIFIER) or self._check(TokenKind.SELECT) or self._check(TokenKind.CASE):
+            self._advance()
             token = self._previous()
             return ast.Identifier(token.text, token.location)
         if self._match(TokenKind.LEFT_PAREN):
@@ -1200,6 +1202,18 @@ class Parser:
         found = self._peek()
         suffix = "end of file" if found.kind is TokenKind.EOF else repr(found.text)
         raise ParseError(f"{message}; found {suffix}", found.location)
+
+    def _consume_identifier(self, message: str) -> Token:
+        if self._check(TokenKind.IDENTIFIER) or self._check(TokenKind.SELECT) or self._check(TokenKind.CASE):
+            return self._advance()
+        found = self._peek()
+        suffix = "end of file" if found.kind is TokenKind.EOF else repr(found.text)
+        raise ParseError(f"{message}; found {suffix}", found.location)
+
+    def _next_kind(self) -> TokenKind:
+        if self.current + 1 >= len(self.tokens):
+            return TokenKind.EOF
+        return self.tokens[self.current + 1].kind
 
     def _consume_statement_newline(self, message: str) -> None:
         if self._previous().kind == TokenKind.DEDENT or self._check(TokenKind.DEDENT) or self._check(TokenKind.EOF):
