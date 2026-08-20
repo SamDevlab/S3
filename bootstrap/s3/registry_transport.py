@@ -13,7 +13,7 @@ from .async_http import BoundedHTTPClient
 
 
 _DIGEST = re.compile(r"^[0-9a-f]{64}$")
-_HOST = re.compile(r"^[A-Za-z0-9.-]+$")
+_HOST_LABEL = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
 
 
 class RegistryTransportErrorCode:
@@ -31,8 +31,19 @@ class RegistryOrigin:
     authority: str
 
     def __post_init__(self) -> None:
-        if not isinstance(self.authority, str) or not self.authority or _HOST.fullmatch(self.authority) is None or self.authority.startswith(".") or self.authority.endswith("."):
+        if not isinstance(self.authority, str) or not self.authority:
             raise ValueError("registry authority must be a canonical host name")
+        try:
+            self.authority.encode("ascii")
+        except UnicodeEncodeError as error:
+            raise ValueError("registry authority must be ASCII in V1") from error
+        canonical = self.authority.lower()
+        if canonical.endswith(".") or len(canonical) > 253:
+            raise ValueError("registry authority must be a canonical host name")
+        labels = canonical.split(".")
+        if not labels or any(_HOST_LABEL.fullmatch(label) is None for label in labels):
+            raise ValueError("registry authority must be a canonical host name")
+        object.__setattr__(self, "authority", canonical)
 
     @property
     def base_uri(self) -> str:
