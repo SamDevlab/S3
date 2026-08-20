@@ -31,6 +31,8 @@ class TokenKind(Enum):
     RETURN = auto()
     SWITCH = auto()
     MATCH = auto()
+    SELECT = auto()
+    CASE = auto()
     WHILE = auto()
     BREAK = auto()
     CONTINUE = auto()
@@ -300,6 +302,10 @@ class Lexer:
         if self.mode == SyntaxMode.V0_6:
             if text == "match":
                 kind = TokenKind.MATCH
+            elif text == "select":
+                kind = TokenKind.SELECT
+            elif text == "case":
+                kind = TokenKind.CASE
             elif text == "break":
                 kind = TokenKind.BREAK
             elif text == "continue":

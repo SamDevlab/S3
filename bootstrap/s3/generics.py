@@ -426,6 +426,18 @@ def _statement(statement: ast.Statement, substitutions, specialize):
                 for case in statement.cases
             ),
         )
+    if isinstance(statement, ast.SelectStatement):
+        return replace(
+            statement,
+            arms=tuple(
+                replace(
+                    arm,
+                    operation=_expression(arm.operation, substitutions, specialize),
+                    body=_block(arm.body, substitutions, specialize),
+                )
+                for arm in statement.arms
+            ),
+        )
     if isinstance(statement, ast.WhileStatement):
         return replace(
             statement,

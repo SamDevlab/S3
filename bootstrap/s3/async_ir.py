@@ -214,6 +214,7 @@ class AsyncIRFrameRuntime:
     drop_log: list[int] = field(default_factory=list)
     bindings: dict[str, object] = field(default_factory=dict)
     futures: dict[str, _OwnedIRFuture] = field(default_factory=dict)
+    action_queue: list[AsyncAction] = field(default_factory=list)
     action_index: int = 0
     pending_action_index: int | None = None
     parameters_bound: bool = False
@@ -370,7 +371,7 @@ def lower_executable_async_ir(executable: AsyncExecutableProgram) -> AsyncIRProg
             support.append(model)
             continue
         slots = tuple(AsyncIRSlot(index, name) for index, name in enumerate(model.frame_slots))
-        await_actions = [action for action in model.actions if _is_await_action(action)]
+        await_actions = list(_iter_await_actions(model.actions))
         states: list[str] = ["created", "running_0"]
         for index in range(len(await_actions)):
             states.extend((f"suspended_{index}", f"running_{index + 1}"))
@@ -534,27 +535,39 @@ def _execute_executable(
             else:
                 runtime.bindings[name] = value
         runtime.parameters_bound = True
+        runtime.action_queue = list(model.actions)
         runtime.state = "running_0"
         runtime.block = "running_0"
 
     if runtime.pending_action_index is not None:
-        action = model.actions[runtime.pending_action_index]
+        action = runtime.action_queue[runtime.pending_action_index]
         resolved = _resolve_await(action, runtime, program)
         if resolved.kind in {AsyncIRPollKind.FAILED, AsyncIRPollKind.CANCELLED}:
             return _finish(runtime, resolved.kind, resolved.state, error=resolved.error)
+        if resolved.kind is AsyncIRPollKind.PENDING:
+            return runtime, resolved
         value = resolved.value
+        action_index = runtime.pending_action_index
         runtime.pending_action_index = None
-        runtime.action_index += 1
         runtime.suspension_index += 1
         runtime.state = f"running_{runtime.suspension_index}"
         runtime.block = runtime.state
-        if action.target is not None:
+        if action.kind is AsyncActionKind.SELECT:
+            selected = value
+            if selected is None or not hasattr(selected, "actions"):
+                return _finish(runtime, AsyncIRPollKind.FAILED, "failed", error="select resolved without a selected arm")
+            runtime.action_queue[action_index:action_index + 1] = list(selected.actions)
+            if not selected.actions:
+                runtime.action_index += 1
+        else:
+            runtime.action_index += 1
+        if action.kind is not AsyncActionKind.SELECT and action.target is not None:
             runtime.bindings[action.target] = value
-        if action.return_after:
+        if action.kind is not AsyncActionKind.SELECT and action.return_after:
             return _finish(runtime, AsyncIRPollKind.READY, "completed", value=value)
 
-    while runtime.action_index < len(model.actions):
-        action = model.actions[runtime.action_index]
+    while runtime.action_index < len(runtime.action_queue):
+        action = runtime.action_queue[runtime.action_index]
         try:
             if action.kind is AsyncActionKind.ASSIGN:
                 runtime.bindings[_required(action.target, "assignment target")] = _eval_expression(action.expression, runtime, program)
@@ -601,6 +614,8 @@ def _execute_executable(
 
 
 def _resolve_await(action: AsyncAction, runtime: AsyncIRFrameRuntime, program: AsyncIRProgram) -> AsyncIRPoll:
+    if action.kind is AsyncActionKind.SELECT:
+        return _resolve_select(action, runtime, program)
     if action.callee is not None:
         args = tuple(_eval_expression(item, runtime, program) for item in action.arguments)
         return execute_async_program(program, action.callee, arguments=args)
@@ -610,6 +625,45 @@ def _resolve_await(action: AsyncAction, runtime: AsyncIRFrameRuntime, program: A
             return AsyncIRPoll(AsyncIRPollKind.FAILED, "failed", error=f"Future {action.source_future!r} is not live")
         return future.resolve(program)
     return AsyncIRPoll(AsyncIRPollKind.FAILED, "failed", error="await action has no owned source")
+
+
+def _resolve_select(action: AsyncAction, runtime: AsyncIRFrameRuntime, program: AsyncIRProgram) -> AsyncIRPoll:
+    candidates: list[tuple[object, _OwnedIRFuture, str | None]] = []
+    for arm in action.select_arms:
+        if arm.source_future is not None:
+            future = runtime.futures.get(arm.source_future)
+            if future is None:
+                return AsyncIRPoll(AsyncIRPollKind.FAILED, "failed", error=f"Future {arm.source_future!r} is not live")
+            candidates.append((arm, future, arm.source_future))
+            continue
+        if arm.callee is None:
+            return AsyncIRPoll(AsyncIRPollKind.FAILED, "failed", error="select arm has no async operation")
+        args = tuple(_eval_expression(item, runtime, program) for item in arm.arguments)
+        candidates.append((arm, _OwnedIRFuture(arm.callee, args), None))
+
+    for arm, future, source_name in candidates:
+        result = future.resolve(program)
+        if result.kind is AsyncIRPollKind.READY:
+            for _, other, other_name in candidates:
+                if other is not future:
+                    other.drop()
+                if other_name is not None:
+                    runtime.futures.pop(other_name, None)
+            if source_name is not None:
+                runtime.futures.pop(source_name, None)
+            return AsyncIRPoll(AsyncIRPollKind.READY, "ready", value=arm)
+        if result.kind is AsyncIRPollKind.FAILED:
+            for _, other, other_name in candidates:
+                if other is not future:
+                    other.drop()
+                if other_name is not None:
+                    runtime.futures.pop(other_name, None)
+            return AsyncIRPoll(AsyncIRPollKind.FAILED, "failed", error=result.error or "select operation failed")
+
+    # A poll that is still pending is preserved as a wait state.  The hosted
+    # executable futures currently resolve to READY/FAILED, but retaining this
+    # state makes the IR fail closed when a future provider is extended.
+    return AsyncIRPoll(AsyncIRPollKind.PENDING, "suspended_0")
 
 
 def _execute_support_function(program: AsyncIRProgram, model: AsyncExecutableFunction, arguments: tuple[object, ...]) -> AsyncIRPoll:
@@ -740,9 +794,18 @@ def _binary(operator: str | None, left: object, right: object) -> object:
 
 
 def _is_await_action(action: AsyncAction) -> bool:
-    return action.kind in {AsyncActionKind.AWAIT_CALL, AsyncActionKind.AWAIT_FUTURE} or (
+    return action.kind in {AsyncActionKind.AWAIT_CALL, AsyncActionKind.AWAIT_FUTURE, AsyncActionKind.SELECT} or (
         action.kind is AsyncActionKind.DISCARD and (action.callee is not None or action.source_future is not None)
     )
+
+
+def _iter_await_actions(actions: tuple[AsyncAction, ...] | list[AsyncAction]):
+    for action in actions:
+        if _is_await_action(action):
+            yield action
+        if action.select_arms:
+            for arm in action.select_arms:
+                yield from _iter_await_actions(arm.actions)
 
 
 def _finish(
@@ -782,6 +845,17 @@ def _action_to_dict(action: AsyncAction) -> dict[str, object]:
         result["expression"] = _expression_to_dict(action.expression)
     if action.arguments:
         result["arguments"] = [_expression_to_dict(item) for item in action.arguments]
+    if action.select_arms:
+        result["select_arms"] = [
+            {
+                **({"callee": arm.callee} if arm.callee is not None else {}),
+                **({"source_future": arm.source_future} if arm.source_future is not None else {}),
+                "source_offset": arm.source_offset,
+                **({"arguments": [_expression_to_dict(item) for item in arm.arguments]} if arm.arguments else {}),
+                "actions": [_action_to_dict(item) for item in arm.actions],
+            }
+            for arm in action.select_arms
+        ]
     return result
 
 

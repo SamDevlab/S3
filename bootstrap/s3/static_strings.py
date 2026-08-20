@@ -222,6 +222,10 @@ def collect_static_string_literals(
                 visit_expression(statement.expression)
                 for case in statement.cases:
                     visit_block(case.body)
+            elif isinstance(statement, ast.SelectStatement):
+                for arm in statement.arms:
+                    visit_expression(arm.operation)
+                    visit_block(arm.body)
             elif isinstance(statement, ast.WhileStatement):
                 visit_block(statement.body)
             elif isinstance(statement, ast.ForStatement):

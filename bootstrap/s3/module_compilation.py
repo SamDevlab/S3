@@ -613,6 +613,18 @@ def _rewrite_statement(
                 for case in statement.cases
             ),
         )
+    if isinstance(statement, ast.SelectStatement):
+        return replace(
+            statement,
+            arms=tuple(
+                replace(
+                    arm,
+                    operation=_rewrite_expression(arm.operation, context),
+                    body=_rewrite_block(arm.body, context),
+                )
+                for arm in statement.arms
+            ),
+        )
     if isinstance(statement, ast.WhileStatement):
         return replace(
             statement,

@@ -6,6 +6,7 @@ from collections.abc import Callable
 from dataclasses import replace
 
 from . import ast
+from .async_limits import MAX_SELECT_ARITY
 from .diagnostics import DiagnosticCode, ParseError, SourceLocation
 from .lexer import SyntaxMode, Token, TokenKind, tokenize
 
@@ -416,6 +417,8 @@ class Parser:
                 return self._parse_return_v0_6(self._previous())
             if self._match(TokenKind.MATCH):
                 return self._parse_match_v0_6(self._previous())
+            if self._match(TokenKind.SELECT):
+                return self._parse_select_v0_6(self._previous())
             if self._match(TokenKind.WHILE):
                 return self._parse_while_v0_6(self._previous())
             if self._match(TokenKind.FOR):
@@ -548,6 +551,32 @@ class Parser:
 
         self._consume(TokenKind.DEDENT, "expected dedent after match block")
         return ast.SwitchStatement(expression, tuple(cases), start.location)
+
+    def _parse_select_v0_6(self, start: Token) -> ast.SelectStatement:
+        self._consume(TokenKind.COLON, "expected ':' after select")
+        self._consume(TokenKind.NEWLINE, "expected newline after ':'")
+        self._consume(TokenKind.INDENT, "expected indented select block")
+
+        arms: list[ast.SelectArm] = []
+        while not self._check(TokenKind.DEDENT) and not self._check(TokenKind.EOF):
+            if len(arms) >= MAX_SELECT_ARITY:
+                raise ParseError(
+                    f"select supports at most {MAX_SELECT_ARITY} arms",
+                    self._peek().location,
+                    diagnostic_code=DiagnosticCode.PARSE_INVALID_MATCH_ARM,
+                )
+            arm_start = self._consume(TokenKind.CASE, "expected 'case' in select")
+            operation = self._parse_expression()
+            self._consume(TokenKind.COLON, "expected ':' after select operation")
+            self._consume(TokenKind.NEWLINE, "expected newline after ':'")
+            self._consume(TokenKind.INDENT, "expected indented select arm")
+            body = self._parse_block_v0_6()
+            arms.append(ast.SelectArm(operation, body, arm_start.location))
+
+        if not arms:
+            raise ParseError("expected at least one select arm", self._peek().location)
+        self._consume(TokenKind.DEDENT, "expected dedent after select block")
+        return ast.SelectStatement(tuple(arms), start.location)
 
     def _parse_while_v0_6(self, start: Token) -> ast.WhileStatement:
         condition = self._parse_expression()
