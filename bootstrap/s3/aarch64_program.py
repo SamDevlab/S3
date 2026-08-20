@@ -1,18 +1,19 @@
 """Deterministic S3 Assembly -> AArch64 program lowering for M1.88/M1.89.
 
-The lowerer covers the complete public S3 Assembly opcode enum.  Primitive
+The lowerer covers the complete public S3 Assembly opcode enum. Primitive
 integer/control-flow operations are emitted directly where the contract is
 small; operations whose runtime representation is shared with existing native
-backends are lowered to explicit target runtime helper calls.  Native linker
+backends are lowered to explicit target runtime helper calls. Native linker
 and execution certification remain separate platform evidence.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+import struct
 from typing import Iterable
 
-from .assembly import AssemblyFunction, AssemblyInstruction, AssemblyOpcode, AssemblyProgram
+from .assembly import AssemblyFunction, AssemblyInstruction, AssemblyOpcode, AssemblyProgram, AssemblyType
 from .backends.aarch64 import AARCH64_ELF_MACHINE, AArch64Backend
 from .backends.macos_arm64 import MachOBackend
 
@@ -79,10 +80,22 @@ class AArch64ProgramLowerer:
         lines.extend(self._emit("stp x29, x30, [sp, #-16]!", "mov x29, sp"))
         if frame_bytes:
             lines.extend(self._emit(f"sub sp, sp, #{frame_bytes}"))
-        for parameter_index, parameter in enumerate(function.parameters):
-            if parameter_index >= 8:
-                raise AArch64ProgramError("AAPCS64 V1 supports at most eight register parameters")
-            lines.extend(self._emit(f"str x{parameter_index}, [x29, #-{_slot_offset(parameter.register)}]"))
+
+        integer_index = 0
+        floating_index = 0
+        for parameter in function.parameters:
+            if parameter.type is AssemblyType.F64:
+                if floating_index >= 8:
+                    raise AArch64ProgramError("AAPCS64 V1 supports at most eight floating register parameters")
+                machine = f"d{floating_index}"
+                floating_index += 1
+            else:
+                if integer_index >= 8:
+                    raise AArch64ProgramError("AAPCS64 V1 supports at most eight integer register parameters")
+                machine = f"x{integer_index}"
+                integer_index += 1
+            lines.extend(self._emit(self._store(parameter.register, machine)))
+
         for block in function.blocks:
             lines.append(f"{self._local_label(function.name, block.label)}:")
             for instruction in block.instructions:
@@ -93,11 +106,16 @@ class AArch64ProgramLowerer:
         op = instruction.opcode
         regs = instruction.registers
         if op is AssemblyOpcode.TCONST:
-            return self._emit(f"mov x9, #{int(instruction.immediate or 0)}", self._store(regs[0], "x9"))
+            if function.type_of(regs[0]) is AssemblyType.F64:
+                value = float(instruction.immediate or 0.0)
+                bits = struct.unpack("<Q", struct.pack("<d", value))[0]
+                return self._emit(*self._mov_u64("x9", bits), "fmov d9, x9", self._store(regs[0], "d9"))
+            return self._emit(*self._mov_u64("x9", int(instruction.immediate or 0)), self._store(regs[0], "x9"))
         if op is AssemblyOpcode.TMOV:
-            return self._emit(self._load(regs[1], "x9"), self._store(regs[0], "x9"))
+            machine = "d9" if function.type_of(regs[0]) is AssemblyType.F64 else "x9"
+            return self._emit(self._load(regs[1], machine), self._store(regs[0], machine))
         if op is AssemblyOpcode.TCONST_STR:
-            return self._helper(instruction, "__s3_const_str", extra_immediate=0)
+            return self._helper(function, instruction, "__s3_const_str", extra_immediate=0)
         if op in {
             AssemblyOpcode.TINV,
             AssemblyOpcode.TADD,
@@ -110,40 +128,46 @@ class AArch64ProgramLowerer:
             AssemblyOpcode.TMAX,
             AssemblyOpcode.TCMP,
         }:
-            return self._helper(instruction, f"__s3_{op.value.lower()}")
+            return self._helper(function, instruction, f"__s3_{op.value.lower()}")
         if op is AssemblyOpcode.TCALL:
             arguments = instruction.argument_registers
             results = instruction.result_registers
-            if len(arguments) > 8 or len(results) > 8:
-                raise AArch64ProgramError("AAPCS64 V1 call/result width exceeds eight registers")
             lines: list[str] = []
-            for index, register in enumerate(arguments):
-                lines.extend(self._emit(self._load(register, f"x{index}")))
+            for register, machine in self._abi_registers(function, arguments):
+                lines.extend(self._emit(self._load(register, machine)))
             callee = self._symbol(instruction.callee or "")
             lines.extend(self._emit(f"bl {callee}"))
-            for index, register in enumerate(results):
-                lines.extend(self._emit(self._store(register, f"x{index}")))
+            for register, machine in self._abi_registers(function, results):
+                lines.extend(self._emit(self._store(register, machine)))
             return lines
         if op is AssemblyOpcode.TLOAD:
-            return self._helper(instruction, "__s3_tload", extra_immediate=instruction.memory)
+            return self._helper(function, instruction, "__s3_tload", extra_immediate=instruction.memory)
         if op is AssemblyOpcode.TSTORE:
-            return self._helper(instruction, "__s3_tstore", extra_immediate=instruction.memory, result_count=0)
+            return self._helper(function, instruction, "__s3_tstore", extra_immediate=instruction.memory, result_count=0)
         if op is AssemblyOpcode.TADDR:
-            return self._helper(instruction, "__s3_taddr", extra_immediate=instruction.memory)
+            return self._helper(function, instruction, "__s3_taddr", extra_immediate=instruction.memory)
         if op is AssemblyOpcode.TREFLOAD:
-            return self._helper(instruction, "__s3_trefload")
+            return self._helper(function, instruction, "__s3_trefload")
         if op is AssemblyOpcode.TREFSTORE:
-            return self._helper(instruction, "__s3_trefstore", result_count=0)
+            return self._helper(function, instruction, "__s3_trefstore", result_count=0)
         if op is AssemblyOpcode.TSLEN:
-            return self._helper(instruction, "__s3_tslen")
+            return self._helper(function, instruction, "__s3_tslen")
         if op is AssemblyOpcode.TSLOAD:
-            return self._helper(instruction, "__s3_tsload")
+            return self._helper(function, instruction, "__s3_tsload")
         if op is AssemblyOpcode.TSSTORE:
-            return self._helper(instruction, "__s3_tsstore", result_count=0)
+            return self._helper(function, instruction, "__s3_tsstore", result_count=0)
         if op is AssemblyOpcode.TJMP:
             return self._emit(f"b {self._local_label(function.name, instruction.labels[0])}")
         if op is AssemblyOpcode.TBR3:
             negative, zero, positive = instruction.labels
+            if function.type_of(regs[0]) is AssemblyType.F64:
+                return self._emit(
+                    self._load(regs[0], "d9"),
+                    "fcmp d9, #0.0",
+                    f"b.mi {self._local_label(function.name, negative)}",
+                    f"b.eq {self._local_label(function.name, zero)}",
+                    f"b {self._local_label(function.name, positive)}",
+                )
             return self._emit(
                 self._load(regs[0], "x9"),
                 "cmp x9, #0",
@@ -152,11 +176,9 @@ class AArch64ProgramLowerer:
                 f"b {self._local_label(function.name, positive)}",
             )
         if op is AssemblyOpcode.TRET:
-            if len(regs) > 8:
-                raise AArch64ProgramError("AAPCS64 V1 return width exceeds eight registers")
             lines: list[str] = []
-            for index, register in enumerate(regs):
-                lines.extend(self._emit(self._load(register, f"x{index}")))
+            for register, machine in self._abi_registers(function, regs):
+                lines.extend(self._emit(self._load(register, machine)))
             if frame_bytes:
                 lines.extend(self._emit(f"add sp, sp, #{frame_bytes}"))
             lines.extend(self._emit("ldp x29, x30, [sp], #16", "ret"))
@@ -165,6 +187,7 @@ class AArch64ProgramLowerer:
 
     def _helper(
         self,
+        function: AssemblyFunction,
         instruction: AssemblyInstruction,
         symbol: str,
         *,
@@ -175,22 +198,58 @@ class AArch64ProgramLowerer:
         inputs = instruction.argument_registers if instruction.opcode is AssemblyOpcode.TCALL else instruction.registers[1:]
         if instruction.opcode in {AssemblyOpcode.TSTORE, AssemblyOpcode.TREFSTORE, AssemblyOpcode.TSSTORE}:
             inputs = instruction.registers
-        if len(inputs) > 7:
-            raise AArch64ProgramError("runtime helper input width exceeds bounded ABI")
         lines: list[str] = []
-        for index, register in enumerate(inputs):
-            lines.extend(self._emit(self._load(register, f"x{index}")))
-        next_arg = len(inputs)
-        if instruction.immediate is not None and next_arg < 8:
-            lines.extend(self._emit(f"mov x{next_arg}, #{int(instruction.immediate)}"))
-            next_arg += 1
-        if extra_immediate is not None and next_arg < 8:
-            lines.extend(self._emit(f"mov x{next_arg}, #{int(extra_immediate)}"))
+        abi_inputs = self._abi_registers(function, inputs)
+        for register, machine in abi_inputs:
+            lines.extend(self._emit(self._load(register, machine)))
+
+        integer_index = sum(machine.startswith("x") for _register, machine in abi_inputs)
+        if instruction.immediate is not None:
+            if integer_index >= 8:
+                raise AArch64ProgramError("runtime helper integer argument width exceeds bounded ABI")
+            lines.extend(self._emit(*self._mov_u64(f"x{integer_index}", int(instruction.immediate))))
+            integer_index += 1
+        if extra_immediate is not None:
+            if integer_index >= 8:
+                raise AArch64ProgramError("runtime helper integer argument width exceeds bounded ABI")
+            lines.extend(self._emit(*self._mov_u64(f"x{integer_index}", int(extra_immediate))))
+
         lines.extend(self._emit(f"bl {self._symbol(symbol)}"))
         count = 1 if result_count is None else result_count
-        if count and instruction.registers:
-            lines.extend(self._emit(self._store(instruction.registers[0], "x0")))
+        if count:
+            results = instruction.registers[:count]
+            for register, machine in self._abi_registers(function, results):
+                lines.extend(self._emit(self._store(register, machine)))
         return lines
+
+    def _abi_registers(self, function: AssemblyFunction, registers: Iterable[int]) -> tuple[tuple[int, str], ...]:
+        integer_index = 0
+        floating_index = 0
+        result: list[tuple[int, str]] = []
+        for register in registers:
+            type_name = function.type_of(register)
+            if type_name is None:
+                raise AArch64ProgramError(f"virtual register r{register} has no Assembly type")
+            if type_name is AssemblyType.F64:
+                if floating_index >= 8:
+                    raise AArch64ProgramError("AAPCS64 V1 floating register width exceeds eight registers")
+                result.append((register, f"d{floating_index}"))
+                floating_index += 1
+            else:
+                if integer_index >= 8:
+                    raise AArch64ProgramError("AAPCS64 V1 integer register width exceeds eight registers")
+                result.append((register, f"x{integer_index}"))
+                integer_index += 1
+        return tuple(result)
+
+    def _mov_u64(self, register: str, value: int) -> tuple[str, ...]:
+        encoded = int(value) & 0xFFFFFFFFFFFFFFFF
+        chunks = tuple((encoded >> shift) & 0xFFFF for shift in (0, 16, 32, 48))
+        instructions = [f"movz {register}, #{chunks[0]}"]
+        for index, chunk in enumerate(chunks[1:], start=1):
+            if chunk:
+                instructions.append(f"movk {register}, #{chunk}, lsl #{index * 16}")
+        return tuple(instructions)
 
     def _emit(self, *instructions: str) -> list[str]:
         self._instruction_count += len(instructions)
