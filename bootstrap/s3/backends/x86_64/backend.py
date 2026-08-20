@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from ...assembly import AssemblyProgram, AssemblyType
 from ...assembly_verifier import AssemblyVerifier
+from ...codegen_optimization import eliminate_redundant_noop_moves
 from ...emulator import DEFAULT_MAX_FRAMES, DEFAULT_MAX_INSTRUCTIONS, DEFAULT_MAX_MEMORY_TRITS
 from .diagnostics import NativeBackendError
 from .emitter import X8664Emitter
@@ -36,6 +37,11 @@ class X8664Backend:
             program,
             entry="main",
         )
+        program, _optimization = eliminate_redundant_noop_moves(program)
+        AssemblyVerifier(max_memory_trits=self.max_memory_trits).validate(
+            program,
+            entry="main",
+        )
         main = next(function for function in program.functions if function.name == "main")
         if main.return_type is AssemblyType.STRING:
             raise NativeBackendError(
@@ -62,6 +68,7 @@ class X8664Backend:
         ).emit()
 
     def _generate_ffi(self, program: AssemblyProgram) -> str:
+        program, _optimization = eliminate_redundant_noop_moves(program)
         return X8664Emitter(
             program,
             max_frames=self.max_frames,
