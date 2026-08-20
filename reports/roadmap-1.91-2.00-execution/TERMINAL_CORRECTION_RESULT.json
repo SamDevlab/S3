@@ -63,6 +63,10 @@
       {"name": "with_self_moves", "before": 14, "after": 14, "removed_self_moves": 2},
       {"name": "without_self_moves", "before": 14, "after": 14, "removed_self_moves": 0}
     ],
+    "timing_medians_ns": {
+      "with_self_moves": {"off": 8788500, "on": 7287200},
+      "without_self_moves": {"off": 8338800, "on": 7775200}
+    },
     "native_execution": "DEFERRED_BY_ENVIRONMENT",
     "native_off_artifact": "NOT_EMITTED_BY_BACKEND_PRECONDITION"
   },

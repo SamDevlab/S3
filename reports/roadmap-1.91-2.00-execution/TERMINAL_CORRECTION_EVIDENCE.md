@@ -61,5 +61,9 @@ without self-moves removed zero. Hosted-emulator timings were recorded with
 two warmups, seven repetitions, and 25 loops per sample. Native execution is
 deferred because this host is Windows without a Linux x86-64 toolchain.
 
+Final hosted-emulator medians: self-move workload 8,788,500 ns OFF and
+7,287,200 ns ON; no-self-move workload 8,338,800 ns OFF and 7,775,200 ns ON.
+These are characterization values only.
+
 Historical T4 evidence remains unchanged: three runs total, no additional run.
 No publication action was performed.

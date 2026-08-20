@@ -121,6 +121,11 @@ equivalent before and after the pass; the first removed two `TMOV rN, rN`
 instructions and the second removed none. Native execution remains
 environment-deferred on this Windows host.
 
+The final hosted-emulator medians were 8,788,500 ns OFF versus 7,287,200 ns
+ON for the self-move workload, and 8,338,800 ns OFF versus 7,775,200 ns ON for
+the workload without self-moves. These values are recorded for
+characterization only and are not a native performance claim.
+
 ## Publication Boundary
 
 ```text
