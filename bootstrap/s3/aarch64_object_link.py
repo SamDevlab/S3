@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import re
 import struct
-from typing import Iterable
+from collections.abc import Iterable, Mapping
 
 from .aarch64_toolchain import AArch64NativeBuildPlan, AArch64Relocation
 from .backends.aarch64 import AARCH64_ELF_MACHINE, ELF64_CLASS, ELF_LITTLE_ENDIAN
@@ -91,19 +91,59 @@ class AArch64ObjectLinker:
         validate_object_artifact(artifact, max_object_bytes=self.max_object_bytes, max_symbols=self.max_symbols, max_relocations=self.max_relocations)
         return artifact
 
-    def link(self, artifact: AArch64ObjectArtifact, *, resolved_symbols: Iterable[str] = ()) -> AArch64LinkedArtifact:
+    def link(
+        self,
+        artifact: AArch64ObjectArtifact,
+        *,
+        resolved_symbols: Mapping[str, int] | Iterable[str] = (),
+    ) -> AArch64LinkedArtifact:
         validate_object_artifact(artifact, max_object_bytes=self.max_object_bytes, max_symbols=self.max_symbols, max_relocations=self.max_relocations)
-        supplied = tuple(sorted(set(resolved_symbols)))
+        if isinstance(resolved_symbols, Mapping):
+            addresses = dict(resolved_symbols)
+        else:
+            names = tuple(sorted(set(resolved_symbols)))
+            if names:
+                raise AArch64ObjectLinkError("linked AArch64 symbols require absolute addresses")
+            addresses = {}
+        supplied = tuple(sorted(addresses))
         if any(not _SYMBOL.fullmatch(symbol) for symbol in supplied):
             raise AArch64ObjectLinkError("resolved symbol name is invalid")
+        if any(isinstance(address, bool) or not isinstance(address, int) or not 0 <= address < (1 << 64) for address in addresses.values()):
+            raise AArch64ObjectLinkError("resolved AArch64 symbol address is invalid")
         undefined = {symbol.name for symbol in artifact.symbols if not symbol.defined}
         if not undefined.issubset(supplied):
             missing = ", ".join(sorted(undefined - set(supplied)))
             raise AArch64ObjectLinkError(f"unresolved AArch64 symbols: {missing}")
         entry = next(symbol for symbol in artifact.symbols if symbol.name == artifact.entry_symbol)
-        entrypoint = 0x1000 + entry.offset
+        text_base = 0x1000
+        entrypoint = text_base + entry.offset
+        symbol_addresses = {
+            symbol.name: text_base + symbol.offset
+            for symbol in artifact.symbols
+            if symbol.defined
+        }
+        symbol_addresses.update(addresses)
+        text = bytearray(_extract_section(artifact.bytes, ".text"))
+        line_offsets = _text_line_offsets(artifact.text)
+        for relocation in artifact.relocations:
+            target = symbol_addresses.get(relocation.symbol)
+            if target is None:
+                raise AArch64ObjectLinkError(f"unresolved AArch64 symbols: {relocation.symbol}")
+            byte_offset = line_offsets.get(relocation.offset)
+            if byte_offset is None:
+                raise AArch64ObjectLinkError("AArch64 CALL26 relocation line is invalid")
+            _patch_call26(text, byte_offset, target, text_base)
+        linked_symbols = tuple(
+            AArch64ObjectSymbol(
+                symbol.name,
+                symbol.defined,
+                symbol.section,
+                symbol_addresses.get(symbol.name, symbol.offset),
+            )
+            for symbol in artifact.symbols
+        )
         resolved = tuple(sorted(set(supplied) | {symbol.name for symbol in artifact.symbols if symbol.defined}))
-        linked_bytes = _build_elf(_extract_section(artifact.bytes, ".text"), artifact.symbols, (), {}, file_type=2, entrypoint=entrypoint)
+        linked_bytes = _build_elf(bytes(text), linked_symbols, (), {}, file_type=2, entrypoint=entrypoint)
         linked = AArch64LinkedArtifact(artifact.target, "ELF64-EXEC-AARCH64", artifact.entry_symbol, entrypoint, resolved, artifact.relocations, linked_bytes)
         validate_linked_artifact(linked, max_object_bytes=self.max_object_bytes)
         return linked
@@ -181,30 +221,170 @@ def _validate_relocation(relocation: AArch64Relocation) -> None:
 
 
 def _machine_text(plan: AArch64NativeBuildPlan) -> tuple[bytes, dict[str, int], dict[int, int]]:
-    nop = 0xD503201F
-    call = 0x94000000
     data = bytearray()
     function_offsets: dict[str, int] = {}
     line_offsets: dict[int, int] = {}
+    labels: dict[str, int] = {}
+    instructions: list[tuple[int, int, str]] = []
     for line_index, raw in enumerate(plan.assembly_text.splitlines()):
         text = raw.strip()
         if not text or text == ".text" or text.startswith(".globl "):
             continue
         if text.endswith(":"):
             name = text[:-1]
+            if not _SYMBOL.fullmatch(name) or name in labels:
+                raise AArch64ObjectLinkError("AArch64 assembly contains an invalid or duplicate label")
+            labels[name] = len(data)
             if name in plan.defined_symbols:
                 function_offsets[name] = len(data)
             continue
         line_offsets[line_index] = len(data)
-        data.extend(struct.pack("<I", call if text.startswith("bl ") else nop))
+        instructions.append((line_index, len(data), text))
+        data.extend(b"\0\0\0\0")
     if not data:
         raise AArch64ObjectLinkError("AArch64 plan has no encodable text")
+    for _line_index, offset, text in instructions:
+        data[offset : offset + 4] = struct.pack("<I", _encode_instruction(text, offset, labels))
     relocation_offsets: dict[int, int] = {}
     for relocation in plan.relocations:
         if relocation.offset not in line_offsets:
             raise AArch64ObjectLinkError("AArch64 relocation does not identify a text instruction")
         relocation_offsets[relocation.offset] = line_offsets[relocation.offset]
     return bytes(data), function_offsets, relocation_offsets
+
+
+def _text_line_offsets(assembly_text: str) -> dict[int, int]:
+    offsets: dict[int, int] = {}
+    cursor = 0
+    for line_index, raw in enumerate(assembly_text.splitlines()):
+        text = raw.strip()
+        if text and text != ".text" and not text.startswith(".globl ") and not text.endswith(":"):
+            offsets[line_index] = cursor
+            cursor += 4
+    return offsets
+
+
+def _encode_instruction(text: str, offset: int, labels: Mapping[str, int]) -> int:
+    if text == "nop":
+        return 0xD503201F
+    if text == "ret":
+        return 0xD65F03C0
+    match = re.fullmatch(r"mov (x(\d+)), (x(\d+)|sp)", text)
+    if match:
+        destination = _register(match.group(2))
+        source = 31 if match.group(3) == "sp" else _register(match.group(3)[1:])
+        if match.group(3) == "sp":
+            return _add_sub_immediate(True, destination, 31, 0)
+        return 0xAA000000 | (source << 16) | (31 << 5) | destination
+    match = re.fullmatch(r"mov([zk]) x(\d+), #(\d+)(?:, lsl #(0|16|32|48))?", text)
+    if match:
+        opcode = 0xD2800000 if match.group(1) == "z" else 0xF2800000
+        destination = _register(match.group(2))
+        immediate = int(match.group(3))
+        shift = int(match.group(4) or 0)
+        if immediate > 0xFFFF:
+            raise AArch64ObjectLinkError("AArch64 move immediate exceeds 16 bits")
+        return opcode | ((shift // 16) << 21) | (immediate << 5) | destination
+    match = re.fullmatch(r"fmov d(\d+), x(\d+)", text)
+    if match:
+        return 0x9E670000 | (_register(match.group(2)) << 5) | _register(match.group(1))
+    match = re.fullmatch(r"fmov x(\d+), d(\d+)", text)
+    if match:
+        return 0x9E660000 | (_register(match.group(2)) << 5) | _register(match.group(1))
+    match = re.fullmatch(r"(add|sub) (x\d+|sp), (x\d+|sp), #(\d+)", text)
+    if match:
+        destination = 31 if match.group(2) == "sp" else _register(match.group(2)[1:])
+        source = 31 if match.group(3) == "sp" else _register(match.group(3)[1:])
+        return _add_sub_immediate(match.group(1) == "add", destination, source, int(match.group(4)))
+    match = re.fullmatch(r"(ldr|str) ([xd])(\d+), \[(x\d+|sp), #(-?\d+)\]", text)
+    if match:
+        return _load_store(match.group(1), match.group(2), match.group(3), match.group(4), int(match.group(5)))
+    match = re.fullmatch(r"stp x(\d+), x(\d+), \[(sp|x\d+), #(-?\d+)\]!", text)
+    if match:
+        base = 31 if match.group(3) == "sp" else _register(match.group(3)[1:])
+        immediate = int(match.group(4))
+        if immediate % 8 or not -512 <= immediate <= 504:
+            raise AArch64ObjectLinkError("AArch64 pair offset is invalid")
+        imm7 = immediate // 8
+        if not -64 <= imm7 <= 63:
+            raise AArch64ObjectLinkError("AArch64 pair offset exceeds encoding")
+        return 0xA9800000 | ((imm7 & 0x7F) << 15) | (_register(match.group(2)) << 10) | (base << 5) | _register(match.group(1))
+    match = re.fullmatch(r"ldp x(\d+), x(\d+), \[(sp|x\d+)\], #(-?\d+)", text)
+    if match:
+        base = 31 if match.group(3) == "sp" else _register(match.group(3)[1:])
+        immediate = int(match.group(4))
+        if immediate % 8 or not -512 <= immediate <= 504:
+            raise AArch64ObjectLinkError("AArch64 pair offset is invalid")
+        imm7 = immediate // 8
+        if not -64 <= imm7 <= 63:
+            raise AArch64ObjectLinkError("AArch64 pair offset exceeds encoding")
+        return 0xA8C00000 | ((imm7 & 0x7F) << 15) | (_register(match.group(2)) << 10) | (base << 5) | _register(match.group(1))
+    match = re.fullmatch(r"cmp x(\d+), #(\d+)", text)
+    if match:
+        return 0xF1000000 | (int(match.group(2)) << 10) | (_register(match.group(1)) << 5) | 31
+    match = re.fullmatch(r"fcmp d(\d+), #0\.0", text)
+    if match:
+        return 0x1E202008 | (_register(match.group(1)) << 5)
+    match = re.fullmatch(r"fcmp d(\d+), d(\d+)", text)
+    if match:
+        return 0x1E602000 | (_register(match.group(2)) << 16) | (_register(match.group(1)) << 5)
+    match = re.fullmatch(r"b(?:\.(mi|eq|lt))? ([A-Za-z_.$][A-Za-z0-9_.$]*)", text)
+    if match:
+        target = labels.get(match.group(2))
+        if target is None:
+            raise AArch64ObjectLinkError(f"AArch64 branch target is undefined: {match.group(2)}")
+        delta = target - offset
+        if delta % 4:
+            raise AArch64ObjectLinkError("AArch64 branch target is unaligned")
+        if match.group(1) is None:
+            immediate = delta // 4
+            if not -(1 << 25) <= immediate < (1 << 25):
+                raise AArch64ObjectLinkError("AArch64 branch target is out of range")
+            return 0x14000000 | (immediate & 0x03FFFFFF)
+        immediate = delta // 4
+        if not -(1 << 18) <= immediate < (1 << 18):
+            raise AArch64ObjectLinkError("AArch64 conditional branch target is out of range")
+        condition = {"eq": 0, "mi": 4, "lt": 11}[match.group(1)]
+        return 0x54000000 | ((immediate & 0x7FFFF) << 5) | condition
+    match = re.fullmatch(r"bl ([A-Za-z_.$][A-Za-z0-9_.$]*)", text)
+    if match:
+        return 0x94000000
+    raise AArch64ObjectLinkError(f"unsupported AArch64 instruction: {text}")
+
+
+def _register(value: str) -> int:
+    number = int(value)
+    if not 0 <= number <= 30:
+        raise AArch64ObjectLinkError("AArch64 register is outside the supported range")
+    return number
+
+
+def _add_sub_immediate(add: bool, destination: int, source: int, immediate: int) -> int:
+    if not 0 <= immediate <= 4095:
+        raise AArch64ObjectLinkError("AArch64 immediate arithmetic exceeds the supported range")
+    return (0x91000000 if add else 0xD1000000) | (immediate << 10) | (source << 5) | destination
+
+
+def _load_store(operation: str, kind: str, register: str, base: str, immediate: int) -> int:
+    if not -256 <= immediate <= 255:
+        raise AArch64ObjectLinkError("AArch64 load/store offset exceeds the supported range")
+    base_register = 31 if base == "sp" else _register(base[1:])
+    value_register = _register(register)
+    if kind == "x":
+        opcode = 0xF8400000 if operation == "ldr" else 0xF8000000
+    else:
+        opcode = 0xFC400000 if operation == "ldr" else 0xFC000000
+    return opcode | ((immediate & 0x1FF) << 12) | (base_register << 5) | value_register
+
+
+def _patch_call26(text: bytearray, offset: int, target: int, text_base: int) -> None:
+    if offset < 0 or offset + 4 > len(text) or offset % 4:
+        raise AArch64ObjectLinkError("AArch64 CALL26 relocation offset is invalid")
+    delta = target - (text_base + offset)
+    if delta % 4 or not -(1 << 27) <= delta < (1 << 27):
+        raise AArch64ObjectLinkError("AArch64 CALL26 relocation target is out of range")
+    instruction = 0x94000000 | ((delta // 4) & 0x03FFFFFF)
+    text[offset : offset + 4] = struct.pack("<I", instruction)
 
 
 def _align(value: int, alignment: int) -> int:

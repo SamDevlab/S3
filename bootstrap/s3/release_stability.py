@@ -34,6 +34,8 @@ class ReleaseStabilityEvidence:
     provenance_status: str
     native_deferred_targets: tuple[str, ...]
     status: str
+    provenance_policy_status: str = "POLICY_PASS"
+    provenance_signature_status: str = "DEFERRED_BY_ENVIRONMENT"
 
     @property
     def json(self) -> str:
@@ -46,6 +48,8 @@ class ReleaseStabilityEvidence:
                 "native_deferred_targets": list(self.native_deferred_targets),
                 "provenance_verified": self.provenance_verified,
                 "provenance_provider": self.provenance_provider,
+                "provenance_policy_status": self.provenance_policy_status,
+                "provenance_signature_status": self.provenance_signature_status,
                 "provenance_status": self.provenance_status,
                 "reproducible": self.reproducible,
                 "status": self.status,
@@ -96,6 +100,13 @@ def evaluate_release_stability(
         raise ReleaseStabilityError("repeated release bundle is not byte-identical")
     if provenance.digest != candidate.bundle.sha256 or provenance.version != candidate.version or provenance.name != "s3-toolchain-release-candidate":
         raise ReleaseStabilityError("provenance envelope is not bound to this candidate")
+    policy = signature_service.validate_policy(provenance, candidate.bundle.data)
+    if policy.is_err:
+        error = policy.error_or(None)
+        raise ReleaseStabilityError(f"release provenance policy failed: {error.detail if error is not None else 'unknown policy error'}")
+    provenance_metadata = dict(provenance.provenance)
+    if provenance_metadata.get("compiler_commit") != candidate.compiler_commit:
+        raise ReleaseStabilityError("release provenance compiler commit is not bound to this candidate")
     if not signature_service.provider_is_vetted:
         raise ReleaseStabilityError("release provenance provider is not vetted")
     if not signature_service.provider_is_available:
@@ -122,4 +133,6 @@ def evaluate_release_stability(
         provenance_status,
         deferred,
         status,
+        "POLICY_PASS",
+        provenance_status,
     )

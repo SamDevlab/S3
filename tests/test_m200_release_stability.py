@@ -18,7 +18,7 @@ from bootstrap.s3.release_stability import ReleaseStabilityError, evaluate_relea
 
 
 LICENSE = "Apache License\nVersion 2.0, January 2004\n"
-COMMIT = "a" * 64
+COMMIT = "0123456789abcdef0123456789abcdef01234567"
 
 
 class _FixtureVerifier:
@@ -105,12 +105,72 @@ def test_release_stability_rejects_unbound_provenance() -> None:
         )
 
 
+def test_release_stability_validates_policy_before_provider_availability() -> None:
+    candidate = _build_candidate()
+    provenance = _provenance(candidate)
+    unknown_key = type(provenance)(
+        provenance.name,
+        provenance.version,
+        provenance.digest,
+        provenance.publisher,
+        "unknown-key",
+        provenance.signature,
+        provenance.provenance,
+        provenance.source,
+    )
+    with pytest.raises(ReleaseStabilityError, match="policy failed"):
+        evaluate_release_stability(
+            candidate,
+            repeat_bundle_sha256=candidate.bundle.sha256,
+            provenance=unknown_key,
+            signature_service=_service(),
+            compatibility_scope=("linux-aarch64", "linux-x86_64", "macos-arm64"),
+        )
+
+
+def test_release_stability_requires_provenance_commit_binding() -> None:
+    candidate = _build_candidate()
+    provenance = _provenance(candidate)
+    broken = type(provenance)(
+        provenance.name,
+        provenance.version,
+        provenance.digest,
+        provenance.publisher,
+        provenance.key_id,
+        provenance.signature,
+        (("compiler_commit", "f" * 40),),
+        provenance.source,
+    )
+    with pytest.raises(ReleaseStabilityError, match="compiler commit"):
+        evaluate_release_stability(
+            candidate,
+            repeat_bundle_sha256=candidate.bundle.sha256,
+            provenance=broken,
+            signature_service=_service(),
+            compatibility_scope=("linux-aarch64", "linux-x86_64", "macos-arm64"),
+        )
+
+
 def test_release_stability_rejects_incomplete_target_matrix() -> None:
     candidate = _build_candidate()
     incomplete = type(candidate)(candidate.version, candidate.compiler_commit, candidate.bundle, candidate.certificates[:2])
     with pytest.raises(ReleaseStabilityError, match="exact release target matrix"):
         evaluate_release_stability(
             incomplete,
+            repeat_bundle_sha256=candidate.bundle.sha256,
+            provenance=_provenance(candidate),
+            signature_service=_service(),
+            compatibility_scope=("linux-aarch64", "linux-x86_64", "macos-arm64"),
+        )
+
+
+@pytest.mark.parametrize("commit", ("a" * 39, "a" * 41, "A" * 40, "g" * 40))
+def test_release_stability_rejects_noncanonical_git_commit_width_or_characters(commit: str) -> None:
+    candidate = _build_candidate()
+    broken = type(candidate)(candidate.version, commit, candidate.bundle, candidate.certificates)
+    with pytest.raises(ReleaseStabilityError, match="exact lowercase Git"):
+        evaluate_release_stability(
+            broken,
             repeat_bundle_sha256=candidate.bundle.sha256,
             provenance=_provenance(candidate),
             signature_service=_service(),

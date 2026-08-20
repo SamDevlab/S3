@@ -6,10 +6,10 @@ from collections import OrderedDict
 from dataclasses import dataclass
 import hashlib
 import json
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
 
-from .registry_security import canonical_https_origin, read_bounded_bytes
+from .registry_security import BoundedReadError, canonical_https_origin, read_bounded_bytes
 
 
 class RegistryV2Error(ValueError):
@@ -18,6 +18,7 @@ class RegistryV2Error(ValueError):
 
 _DIGEST = re.compile(r"^[0-9a-f]{64}$")
 _VERSION = re.compile(r"^(0|[1-9][0-9]*)(?:\.(0|[1-9][0-9]*))?(?:\.(0|[1-9][0-9]*))?$")
+_MAX_VERSION_COMPONENT_DIGITS = 18
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,7 +58,23 @@ class RegistryV2Lock:
 class RegistryV2Entry:
     lock: RegistryV2Lock
     object_name: str
-    dependencies: tuple[RegistryV2Lock, ...] = ()
+    dependencies: tuple[RegistryV2Dependency, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class RegistryV2Dependency:
+    """A dependency constraint with an optional post-resolution digest pin."""
+
+    name: str
+    version_constraint: str
+    integrity_sha256: str | None = None
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.name, str) or not self.name:
+            raise RegistryV2Error("registry v2 dependency name is invalid")
+        _validate_constraint(self.version_constraint)
+        if self.integrity_sha256 is not None and _DIGEST.fullmatch(self.integrity_sha256) is None:
+            raise RegistryV2Error("registry v2 dependency integrity pin is invalid")
 
 
 @dataclass(frozen=True, slots=True)
@@ -116,8 +133,18 @@ class RegistryV2Client:
             active.add(identity)
             selected[entry.lock.name] = entry
             ordered.append(entry.lock)
-            for dependency in sorted(entry.dependencies, key=lambda item: (item.name, item.version, item.sha256)):
-                visit(self._entry(dependency.name, dependency.version, dependency.sha256), depth + 1)
+            for dependency in sorted(
+                entry.dependencies,
+                key=lambda item: (item.name, item.version_constraint, item.integrity_sha256 or ""),
+            ):
+                visit(
+                    self._entry(
+                        dependency.name,
+                        dependency.version_constraint,
+                        dependency.integrity_sha256,
+                    ),
+                    depth + 1,
+                )
             active.remove(identity)
 
         visit(root, 0)
@@ -134,11 +161,11 @@ class RegistryV2Client:
             self._cache.move_to_end(lock.sha256)
             return cached
         entry = self._entry(lock.name, lock.version, lock.sha256)
-        path = self.root / entry.object_name
+        path = _safe_object_path(self.root, entry.object_name)
         try:
             body = read_bounded_bytes(path, self.limits.max_cache_bytes, label="registry v2 object")
-        except ValueError as error:
-            raise RegistryV2Error(str(error)) from error
+        except BoundedReadError as error:
+            raise RegistryV2Error(f"registry v2 object {error.code}: {error}") from error
         if hashlib.sha256(body).hexdigest() != lock.sha256:
             raise RegistryV2Error("registry v2 object digest mismatch")
         if len(body) > self.limits.max_cache_bytes:
@@ -161,6 +188,7 @@ class RegistryV2Client:
     def _entry(self, name: str, version: str, digest: str | None) -> RegistryV2Entry:
         if not isinstance(name, str) or not name or not isinstance(version, str) or not version:
             raise RegistryV2Error("registry v2 package constraint is invalid")
+        _validate_constraint(version)
         matches = tuple(
             item
             for item in self._entries
@@ -186,6 +214,8 @@ class RegistryV2Client:
             raw = json.loads(raw_bytes.decode("utf-8"))
         except RegistryV2Error:
             raise
+        except BoundedReadError as error:
+            raise RegistryV2Error(f"registry v2 index {error.code}: {error}") from error
         except (OSError, UnicodeError, json.JSONDecodeError) as error:
             raise RegistryV2Error("registry v2 index cannot be read") from error
         if not isinstance(raw, dict) or raw.get("format") != "s3.registry.index.v2" or _canonical_origin(str(raw.get("origin", ""))) != self.expected_origin:
@@ -204,16 +234,24 @@ class RegistryV2Client:
                 raise RegistryV2Error("duplicate registry v2 package identity")
             seen.add(identity)
             object_name = str(item.get("object", ""))
-            if not object_name or Path(object_name).is_absolute() or ".." in PurePosixPath(object_name.replace("\\", "/")).parts:
-                raise RegistryV2Error("registry v2 object path is unsafe")
+            _validate_object_name(object_name)
             raw_dependencies = item.get("dependencies", [])
             if not isinstance(raw_dependencies, list) or len(raw_dependencies) > self.limits.max_packages:
                 raise RegistryV2Error("registry v2 dependency list is invalid")
-            dependencies: list[RegistryV2Lock] = []
+            dependencies: list[RegistryV2Dependency] = []
             for dependency in raw_dependencies:
                 if not isinstance(dependency, dict):
                     raise RegistryV2Error("registry v2 dependency must be an object")
-                dependencies.append(RegistryV2Lock(str(dependency.get("name", "")), str(dependency.get("version", "")), str(dependency.get("sha256", ""))))
+                integrity = dependency.get("sha256")
+                if integrity is not None and not isinstance(integrity, str):
+                    raise RegistryV2Error("registry v2 dependency integrity pin is invalid")
+                dependencies.append(
+                    RegistryV2Dependency(
+                        str(dependency.get("name", "")),
+                        str(dependency.get("version", "")),
+                        integrity,
+                    )
+                )
             entries.append(RegistryV2Entry(lock, object_name, tuple(dependencies)))
         return tuple(sorted(entries, key=lambda item: (item.lock.name, item.lock.version, item.lock.sha256)))
 
@@ -229,23 +267,97 @@ def _parse_version(value: str) -> _SemVer:
     match = _VERSION.fullmatch(value)
     if match is None:
         raise RegistryV2Error(f"invalid semantic version or constraint: {value!r}")
+    if any(item is not None and len(item) > _MAX_VERSION_COMPONENT_DIGITS for item in match.groups()):
+        raise RegistryV2Error("semantic version component exceeds the bounded width")
     numbers = [int(item) if item is not None else 0 for item in match.groups()]
     return _SemVer(*numbers)
 
 
-def _constraint_matches(version: str, constraint: str) -> bool:
+def _wildcard_bounds(raw: str, *, caret: bool) -> tuple[_SemVer, _SemVer] | None:
+    parts = raw.split(".")
+    if not any(part in {"x", "X", "*"} for part in parts):
+        return None
+    if len(parts) > 3 or any(part in {"x", "X", "*"} for part in parts[:-1]) or parts[-1] not in {"x", "X", "*"}:
+        raise RegistryV2Error("wildcard version constraint is invalid")
+    if any(not part.isdigit() for part in parts[:-1]):
+        raise RegistryV2Error("wildcard version component is invalid")
+    numeric = [int(part) for part in parts[:-1]]
+    if any(len(part) > _MAX_VERSION_COMPONENT_DIGITS or (len(part) > 1 and part.startswith("0")) for part in parts[:-1]):
+        raise RegistryV2Error("wildcard version component is invalid")
+    major = numeric[0] if numeric else 0
+    minor = numeric[1] if len(numeric) > 1 else 0
+    base = _SemVer(major, minor, 0)
+    if caret:
+        if len(parts) == 1 or (len(parts) == 2 and major == 0):
+            upper = _SemVer(major + 1 if major else 1, 0, 0)
+        elif major:
+            upper = _SemVer(major + 1, 0, 0)
+        else:
+            upper = _SemVer(0, minor + 1, 0)
+    elif len(parts) == 1:
+        upper = _SemVer(major + 1, 0, 0)
+    else:
+        upper = _SemVer(major, minor + 1, 0)
+    return base, upper
+
+
+def _caret_bounds(raw: str) -> tuple[_SemVer, _SemVer]:
+    wildcard = _wildcard_bounds(raw, caret=True)
+    if wildcard is not None:
+        return wildcard
+    base = _parse_version(raw)
+    if base.major:
+        upper = _SemVer(base.major + 1, 0, 0)
+    elif base.minor:
+        upper = _SemVer(0, base.minor + 1, 0)
+    else:
+        upper = _SemVer(0, 0, base.patch + 1)
+    return base, upper
+
+
+def _tilde_bounds(raw: str) -> tuple[_SemVer, _SemVer]:
+    wildcard = _wildcard_bounds(raw, caret=False)
+    if wildcard is not None:
+        return wildcard
+    base = _parse_version(raw)
+    return base, _SemVer(base.major, base.minor + 1, 0)
+
+
+def _validate_constraint(constraint: str) -> None:
     if not isinstance(constraint, str) or not constraint or any(character.isspace() for character in constraint):
         raise RegistryV2Error("registry version constraint is invalid")
+    if constraint in {"*", "x", "X"}:
+        return
+    if constraint.startswith("^") or constraint.startswith("~"):
+        (_caret_bounds if constraint.startswith("^") else _tilde_bounds)(constraint[1:])
+        return
+    if constraint.startswith((">", "<")) or "," in constraint:
+        for part in constraint.split(","):
+            if len(part) < 2 or (part[:2] not in {">=", "<=", "=="} and part[0] not in "><"):
+                raise RegistryV2Error("registry version comparator is invalid")
+            operator = part[:2] if part[:2] in {">=", "<=", "=="} else part[0]
+            _parse_version(part[len(operator):])
+        return
+    if constraint.endswith((".*", ".x", ".X")):
+        prefix = constraint.rsplit(".", 1)[0]
+        parts = prefix.split(".")
+        if len(parts) not in {1, 2} or any(not item.isdigit() or (len(item) > 1 and item.startswith("0")) for item in parts):
+            raise RegistryV2Error("registry wildcard constraint is invalid")
+        return
+    _parse_version(constraint)
+
+
+def _constraint_matches(version: str, constraint: str) -> bool:
+    _validate_constraint(constraint)
     candidate = _parse_version(version)
     if constraint in {"*", "x", "X"}:
         return True
     if constraint.startswith("^"):
-        base = _parse_version(constraint[1:])
-        upper = _SemVer(base.major + 1, 0, 0) if base.major else _SemVer(0, base.minor + 1, 0)
+        base, upper = _caret_bounds(constraint[1:])
         return base <= candidate < upper
     if constraint.startswith("~"):
-        base = _parse_version(constraint[1:])
-        return base <= candidate < _SemVer(base.major, base.minor + 1, 0)
+        base, upper = _tilde_bounds(constraint[1:])
+        return base <= candidate < upper
     if constraint.startswith((">", "<")) or "," in constraint:
         for part in constraint.split(","):
             if len(part) < 2 or part[:2] not in {">=", "<=", "=="} and part[0] not in "><":
@@ -270,3 +382,31 @@ def _constraint_matches(version: str, constraint: str) -> bool:
             raise RegistryV2Error("registry wildcard constraint is invalid")
         return candidate.major == int(parts[0]) and (len(parts) == 1 or candidate.minor == int(parts[1]))
     return candidate == _parse_version(constraint)
+
+
+def _validate_object_name(object_name: str) -> None:
+    if not isinstance(object_name, str) or not object_name or "\x00" in object_name or "\\" in object_name:
+        raise RegistryV2Error("registry v2 object path is unsafe")
+    raw_parts = object_name.split("/")
+    if any(part in {"", ".", ".."} for part in raw_parts):
+        raise RegistryV2Error("registry v2 object path is unsafe")
+    posix = PurePosixPath(object_name)
+    windows = PureWindowsPath(object_name)
+    if (
+        posix.is_absolute()
+        or windows.is_absolute()
+        or windows.drive
+        or any(part in {"", ".", ".."} for part in posix.parts)
+    ):
+        raise RegistryV2Error("registry v2 object path is unsafe")
+
+
+def _safe_object_path(root: Path, object_name: str) -> Path:
+    _validate_object_name(object_name)
+    root_resolved = Path(root).resolve()
+    candidate = (root_resolved / PurePosixPath(object_name)).resolve()
+    try:
+        candidate.relative_to(root_resolved)
+    except ValueError as error:
+        raise RegistryV2Error("registry v2 object path escapes registry root") from error
+    return candidate

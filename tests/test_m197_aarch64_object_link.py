@@ -35,7 +35,8 @@ def test_link_requires_explicit_resolution_of_runtime_symbols() -> None:
     if undefined:
         with pytest.raises(AArch64ObjectLinkError, match="unresolved"):
             linker.link(artifact)
-    linked = linker.link(artifact, resolved_symbols=undefined)
+    resolved = {name: 0x2000 + index * 0x100 for index, name in enumerate(undefined)}
+    linked = linker.link(artifact, resolved_symbols=resolved)
     assert linked.structural_valid
     assert linked.bytes[16:18] == (2).to_bytes(2, "little")
     assert int.from_bytes(linked.bytes[24:32], "little") == linked.entrypoint
@@ -70,4 +71,23 @@ def test_object_link_contract_rejects_non_linux_target() -> None:
         plan.entry_symbol,
     )
     with pytest.raises(AArch64ObjectLinkError, match="linux-aarch64"):
+        AArch64ObjectLinker().build_object(broken)
+
+
+def test_object_encoder_emits_real_non_nop_text_and_rejects_unknown_instructions() -> None:
+    plan = _plan()
+    artifact = AArch64ObjectLinker().build_object(plan)
+    text = artifact.bytes
+    assert b"\xfd{\xbf\xa9" in text
+    broken = type(plan)(
+        plan.target,
+        ".text\n.globl main\nmain:\n    totally_unknown x0\n    ret\n",
+        plan.container_header,
+        (),
+        (),
+        plan.abi,
+        ("main",),
+        "main",
+    )
+    with pytest.raises(AArch64ObjectLinkError, match="unsupported"):
         AArch64ObjectLinker().build_object(broken)

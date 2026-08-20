@@ -10,6 +10,12 @@ from urllib.parse import urlsplit
 _HOST_LABEL = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
 
 
+class BoundedReadError(ValueError):
+    def __init__(self, code: str, detail: str) -> None:
+        super().__init__(detail)
+        self.code = code
+
+
 def canonical_https_origin(origin: str) -> str:
     if not isinstance(origin, str) or not origin or any(character.isspace() or ord(character) < 32 for character in origin):
         raise ValueError("registry origin contains whitespace or control characters")
@@ -37,12 +43,12 @@ def canonical_https_origin(origin: str) -> str:
 
 def read_bounded_bytes(path: Path, limit: int, *, label: str) -> bytes:
     if isinstance(limit, bool) or not isinstance(limit, int) or limit <= 0:
-        raise ValueError(f"{label} byte limit must be positive")
+        raise BoundedReadError("CONFIG", f"{label} byte limit must be positive")
     try:
         with Path(path).open("rb") as stream:
             body = stream.read(limit + 1)
     except OSError as error:
-        raise ValueError(f"{label} cannot be read") from error
+        raise BoundedReadError("IO", f"{label} cannot be read") from error
     if len(body) > limit:
-        raise ValueError(f"{label} exceeds byte limit")
+        raise BoundedReadError("LIMIT", f"{label} exceeds byte limit")
     return body
