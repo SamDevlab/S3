@@ -131,9 +131,18 @@ class LocalReleaseCandidateBuilder:
 
 def _builtin_structural_validators() -> dict[str, StructuralValidator]:
     return {
+        "linux-x86_64": _validate_linux_x86_64,
         "linux-aarch64": _validate_linux_aarch64,
         "macos-arm64": _validate_macos_arm64,
     }
+
+
+def _validate_linux_x86_64(artifact: bytes) -> bool:
+    return (
+        len(artifact) > 0
+        and artifact.startswith(b".intel_syntax noprefix\n")
+        and b"s3_main:" in artifact
+    )
 
 
 def _validate_linux_aarch64(artifact: bytes) -> bool:
