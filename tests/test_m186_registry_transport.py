@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import hashlib
 
+import pytest
+
 from bootstrap.s3.async_http import BoundedHTTPClient
-from bootstrap.s3.registry_transport import BoundedVerifiedCache, HTTPSContentAddressedRegistry
+from bootstrap.s3.registry_transport import BoundedVerifiedCache, HTTPSContentAddressedRegistry, RegistryOrigin
 
 
 class HTTPSFixtureTransport:
@@ -44,6 +46,22 @@ def test_https_registry_verifies_digest_and_caches_only_verified_bytes() -> None
     second = registry.fetch(digest).await_once().value_or(None)
     assert second.body == body and second.from_cache is True
     assert len(transport.calls) == 1
+
+
+def test_registry_origin_is_canonicalized_before_identity_and_transport() -> None:
+    body = b"canonical-object"
+    digest = hashlib.sha256(body).hexdigest()
+    transport = HTTPSFixtureTransport()
+    transport.add("registry.fixture", f"/objects/{digest}", _response(body))
+    registry = HTTPSContentAddressedRegistry(BoundedHTTPClient(transport), authority="REGISTRY.FIXTURE")
+    result = registry.fetch(digest).await_once().value_or(None)
+    assert registry.origin.authority == "registry.fixture"
+    assert result.immutable_identity == f"https://registry.fixture/objects/{digest}"
+    assert transport.calls[0][1] == "registry.fixture"
+
+    for invalid in ("registry..fixture", "-registry.fixture", "registry-.fixture", "registry.fixture.", "régistry.fixture"):
+        with pytest.raises(ValueError):
+            RegistryOrigin(invalid)
 
 
 def test_registry_rejects_digest_mismatches_and_non_success_status() -> None:
