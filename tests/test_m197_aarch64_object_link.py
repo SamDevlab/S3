@@ -40,6 +40,8 @@ def test_link_requires_explicit_resolution_of_runtime_symbols() -> None:
     assert linked.structural_valid
     assert linked.bytes[16:18] == (2).to_bytes(2, "little")
     assert int.from_bytes(linked.bytes[24:32], "little") == linked.entrypoint
+    with pytest.raises(AArch64ObjectLinkError, match="override"):
+        linker.link(artifact, resolved_symbols={"main": 0x2000, **resolved})
 
 
 def test_object_link_contract_rejects_unsupported_relocation() -> None:

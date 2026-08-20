@@ -76,9 +76,22 @@ def test_request_reader_pulls_progressively_and_enforces_buffer_window() -> None
     assert tuple(request.iter_body()) == (b"abc", b"de")
     assert request.body_complete is True
 
+    late_puller = IncrementalHTTPRequestParser(limits=HTTPLimits(max_body_bytes=8, max_buffered_body_bytes=2))
+    late_request = late_puller.feed(b"POST / HTTP/1.1\r\nContent-Length: 1\r\n\r\n").value_or(())[0]
+    late_puller.set_body_puller(lambda _amount: Result.ok(b"x"))
+    assert tuple(late_request.iter_body()) == (b"x",)
+
+    premature = IncrementalHTTPRequestParser(limits=HTTPLimits(max_body_bytes=8))
+    premature_request = premature.feed(b"POST / HTTP/1.1\r\nContent-Length: 2\r\n\r\na").value_or(())[0]
+    assert premature.mark_eof().is_ok
+    assert premature_request.body_reader.read_chunk().value_or(None) == b"a"
+    assert premature_request.body_reader.read_chunk().error_or(None).code is HTTPServerErrorCode.MALFORMED
+
     bounded = IncrementalHTTPRequestParser(limits=HTTPLimits(max_body_bytes=8, max_buffered_body_bytes=2))
     rejected = bounded.feed(b"POST / HTTP/1.1\r\nContent-Length: 3\r\n\r\nabc")
     assert rejected.error_or(None).code is HTTPServerErrorCode.QUEUE_LIMIT
+    assert bounded.body_reader is not None
+    assert bounded.body_reader.read_chunk(0).error_or(None).code is HTTPServerErrorCode.INVALID_ARGUMENT
 
 
 def test_response_header_policy_and_connection_budget_are_bounded() -> None:

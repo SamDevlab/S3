@@ -111,6 +111,13 @@ class AArch64ObjectLinker:
         if any(isinstance(address, bool) or not isinstance(address, int) or not 0 <= address < (1 << 64) for address in addresses.values()):
             raise AArch64ObjectLinkError("resolved AArch64 symbol address is invalid")
         undefined = {symbol.name for symbol in artifact.symbols if not symbol.defined}
+        defined = {symbol.name for symbol in artifact.symbols if symbol.defined}
+        overridden = defined & set(supplied)
+        if overridden:
+            raise AArch64ObjectLinkError("resolved symbols cannot override object-defined addresses")
+        unknown = set(supplied) - undefined - defined
+        if unknown:
+            raise AArch64ObjectLinkError("resolved symbol is not present in the object")
         if not undefined.issubset(supplied):
             missing = ", ".join(sorted(undefined - set(supplied)))
             raise AArch64ObjectLinkError(f"unresolved AArch64 symbols: {missing}")
@@ -321,7 +328,10 @@ def _encode_instruction(text: str, offset: int, labels: Mapping[str, int]) -> in
         return 0xA8C00000 | ((imm7 & 0x7F) << 15) | (_register(match.group(2)) << 10) | (base << 5) | _register(match.group(1))
     match = re.fullmatch(r"cmp x(\d+), #(\d+)", text)
     if match:
-        return 0xF1000000 | (int(match.group(2)) << 10) | (_register(match.group(1)) << 5) | 31
+        immediate = int(match.group(2))
+        if immediate > 4095:
+            raise AArch64ObjectLinkError("AArch64 compare immediate exceeds the supported range")
+        return 0xF1000000 | (immediate << 10) | (_register(match.group(1)) << 5) | 31
     match = re.fullmatch(r"fcmp d(\d+), #0\.0", text)
     if match:
         return 0x1E202008 | (_register(match.group(1)) << 5)

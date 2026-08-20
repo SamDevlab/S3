@@ -224,7 +224,10 @@ class AsyncTlsServer:
             return Result.ok(None)
         current.closed = True
         self._connections.pop(connection.identifier, None)
-        self.provider.close(current.resource)
+        try:
+            self.provider.close(current.resource)
+        except Exception as error:
+            return Result.err(AsyncTlsServerError(AsyncTlsServerErrorCode.IO, "close", f"TLS provider close failed: {type(error).__name__}"))
         return Result.ok(None)
 
     def _io_future(self, operation: str, call, connection: AsyncTlsServerConnection):

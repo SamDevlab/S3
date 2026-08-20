@@ -59,6 +59,7 @@ class HTTPBodyReader:
         self._received = 0
         self._consumed = 0
         self._ended = content_length == 0
+        self._peer_closed = False
 
     @property
     def content_length(self) -> int:
@@ -80,6 +81,16 @@ class HTTPBodyReader:
     def buffered_bytes(self) -> int:
         return len(self._buffer)
 
+    def set_puller(self, pull: Callable[[int], Result[bytes | None, HTTPServerError]]) -> None:
+        if not callable(pull):
+            raise TypeError("body puller must be callable")
+        self._pull = pull
+
+    def mark_eof(self) -> Result[None, HTTPServerError]:
+        if not self.body_complete:
+            self._peer_closed = True
+        return Result.ok(None)
+
     def feed_bytes(self, data: bytes) -> Result[None, HTTPServerError]:
         if not isinstance(data, bytes):
             return Result.err(HTTPServerError(HTTPServerErrorCode.INVALID_ARGUMENT, "body", "body input must be bytes"))
@@ -95,7 +106,7 @@ class HTTPBodyReader:
         return Result.ok(None)
 
     def read_chunk(self, max_bytes: int | None = None) -> Result[bytes | None, HTTPServerError]:
-        limit = max_bytes or self._limits.max_buffered_body_bytes
+        limit = self._limits.max_buffered_body_bytes if max_bytes is None else max_bytes
         if isinstance(limit, bool) or not isinstance(limit, int) or limit <= 0:
             return Result.err(HTTPServerError(HTTPServerErrorCode.INVALID_ARGUMENT, "body", "body read size must be positive"))
         if self._buffer:
@@ -107,6 +118,8 @@ class HTTPBodyReader:
         if self.body_complete:
             self._ended = True
             return Result.ok(None)
+        if self._peer_closed:
+            return Result.err(HTTPServerError(HTTPServerErrorCode.MALFORMED, "body", "peer closed before Content-Length body completion"))
         if self._pull is None:
             return Result.err(HTTPServerError(HTTPServerErrorCode.BODY_PENDING, "body", "body needs more transport data"))
         pulled = self._pull(min(limit, self._limits.max_buffered_body_bytes))
@@ -342,6 +355,13 @@ class IncrementalHTTPRequestParser:
         if not callable(pull):
             raise TypeError("body puller must be callable")
         self._body_puller = pull
+        if self._body_reader is not None:
+            self._body_reader.set_puller(pull)
+
+    def mark_eof(self) -> Result[None, HTTPServerError]:
+        if self._body_reader is None:
+            return Result.ok(None)
+        return self._body_reader.mark_eof()
 
     def feed(self, data: bytes) -> Result[tuple[HTTPRequest, ...], HTTPServerError]:
         if not isinstance(data, bytes):
