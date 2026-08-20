@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import time
+from collections.abc import Iterable
 
+import bootstrap.s3.async_tls_server as async_tls_server_module
 from bootstrap.s3.async_core import PollKind
 from bootstrap.s3.async_tls_server import (
     AsyncTlsServer,
@@ -35,6 +36,23 @@ class FixtureTlsServerProvider:
 class PendingTlsServerProvider(FixtureTlsServerProvider):
     def handshake(self, connection, certificate, private_key):
         return ServerWantRead()
+
+
+class StepClock:
+    def __init__(self, values: Iterable[float]) -> None:
+        self._values = iter(values)
+        self._last = 0.0
+
+    def monotonic(self) -> float:
+        try:
+            self._last = next(self._values)
+        except StopIteration:
+            pass
+        return self._last
+
+
+def _use_clock(monkeypatch, *values: float) -> None:
+    monkeypatch.setattr(async_tls_server_module.time, "monotonic", StepClock(values).monotonic)
 
 
 def test_tls_server_handshake_read_write_and_cleanup_are_explicit() -> None:
@@ -97,11 +115,46 @@ def test_tls_accept_cancellation_before_first_poll_closes_unowned_resource() -> 
     assert len(provider.closed) == 1
 
 
-def test_tls_handshake_timeout_releases_reserved_budget() -> None:
+def test_tls_handshake_timeout_before_first_poll_releases_reserved_budget(monkeypatch) -> None:
+    _use_clock(monkeypatch, 100.000, 100.002, 110.000, 110.0005)
     provider = PendingTlsServerProvider()
     server = AsyncTlsServer(provider, AsyncTlsServerConfig("fixture-cert", "fixture-key", max_connections=1, max_timeout_seconds=0.001))
     future = server.accept(object())
-    time.sleep(0.01)
     assert future.poll().kind is PollKind.FAILED
     assert server.active_resources == 0
+    assert server.active_connections == 0
     assert len(provider.closed) == 1
+
+    replacement = server.accept(object())
+    assert replacement.poll().kind is PollKind.PENDING
+    assert replacement.cancel().is_ok
+    assert server.active_resources == 0
+
+
+def test_tls_handshake_timeout_after_frame_ownership_closes_once(monkeypatch) -> None:
+    _use_clock(monkeypatch, 200.000, 200.0005, 200.002)
+    provider = PendingTlsServerProvider()
+    server = AsyncTlsServer(provider, AsyncTlsServerConfig("fixture-cert", "fixture-key", max_connections=1, max_timeout_seconds=0.001))
+    connection = object()
+    future = server.accept(connection)
+
+    assert future.poll().kind is PollKind.PENDING
+    assert server.active_resources == 1
+    assert server.active_connections == 0
+
+    assert future.poll().kind is PollKind.FAILED
+    assert server.active_resources == 0
+    assert server.active_connections == 0
+    assert provider.closed.count(connection) == 1
+
+
+def test_tls_handshake_deadline_not_yet_expired_remains_pending(monkeypatch) -> None:
+    _use_clock(monkeypatch, 300.000, 300.0005)
+    provider = PendingTlsServerProvider()
+    server = AsyncTlsServer(provider, AsyncTlsServerConfig("fixture-cert", "fixture-key", max_connections=1, max_timeout_seconds=0.001))
+    future = server.accept(object())
+
+    assert future.poll().kind is PollKind.PENDING
+    assert server.active_resources == 1
+    assert future.cancel().is_ok
+    assert server.active_resources == 0
