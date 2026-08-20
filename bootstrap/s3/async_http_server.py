@@ -56,6 +56,7 @@ class HTTPBodyReader:
         self._limits = limits
         self._pull = pull
         self._buffer = bytearray()
+        self._peak_buffered_bytes = 0
         self._received = 0
         self._consumed = 0
         self._ended = content_length == 0
@@ -81,6 +82,10 @@ class HTTPBodyReader:
     def buffered_bytes(self) -> int:
         return len(self._buffer)
 
+    @property
+    def peak_buffered_bytes(self) -> int:
+        return self._peak_buffered_bytes
+
     def set_puller(self, pull: Callable[[int], Result[bytes | None, HTTPServerError]]) -> None:
         if not callable(pull):
             raise TypeError("body puller must be callable")
@@ -102,6 +107,7 @@ class HTTPBodyReader:
         if len(self._buffer) + len(data) > self._limits.max_buffered_body_bytes:
             return Result.err(HTTPServerError(HTTPServerErrorCode.QUEUE_LIMIT, "body", "body buffer window exceeded; consumer backpressure required"))
         self._buffer.extend(data)
+        self._peak_buffered_bytes = max(self._peak_buffered_bytes, len(self._buffer))
         self._received += len(data)
         return Result.ok(None)
 
@@ -571,12 +577,8 @@ class LoopbackHTTPServer:
                         return Result.err(HTTPServerError(HTTPServerErrorCode.TIMEOUT, "receive", "request deadline expired"))
                     connection.settimeout(remaining)
                     try:
-                        chunk = connection.recv(
-                            min(
-                                self.max_chunk_bytes,
-                                self.limits.max_header_bytes + self.limits.max_buffered_body_bytes,
-                            )
-                        )
+                        # Keep body bytes in the kernel until the bounded reader pulls them.
+                        chunk = connection.recv(1)
                     except socket.timeout:
                         return Result.err(HTTPServerError(HTTPServerErrorCode.TIMEOUT, "receive", "request deadline expired"))
                     except OSError as error:

@@ -137,6 +137,53 @@ def test_loopback_server_executes_real_tcp_request_and_closes_deterministically(
     assert server.active_connections == 0
 
 
+def test_loopback_body_backpressure_survives_coalesced_headers_and_body() -> None:
+    limits = HTTPLimits(max_body_bytes=3, max_buffered_body_bytes=2, max_timeout_seconds=2)
+    server = LoopbackHTTPServer(limits=limits, max_chunk_bytes=3)
+    started = server.start()
+    assert started.is_ok
+    host, port = started.value_or(("", 0))
+    client = socket.create_connection((host, port), timeout=2)
+    observed: dict[str, object] = {}
+    try:
+        client.sendall(b"POST /bounded HTTP/1.1\r\nContent-Length: 3\r\n\r\nabc")
+
+        def handle(request):
+            reader = request.body_reader
+            assert reader is not None
+            chunks: list[bytes] = []
+            maximum_retained = reader.buffered_bytes
+            while True:
+                result = reader.read_chunk()
+                assert result.is_ok
+                maximum_retained = max(maximum_retained, reader.buffered_bytes)
+                chunk = result.value_or(None)
+                if chunk is None:
+                    break
+                chunks.append(chunk)
+                assert reader.buffered_bytes <= limits.max_buffered_body_bytes
+            observed["body"] = b"".join(chunks)
+            observed["maximum_retained"] = max(maximum_retained, reader.peak_buffered_bytes)
+            return HTTPServerResponse(200, "OK", (), b"ok")
+
+        served = server.serve_once(handle)
+        assert served.is_ok
+        client.settimeout(2)
+        response = bytearray()
+        while True:
+            chunk = client.recv(64)
+            if not chunk:
+                break
+            response.extend(chunk)
+        assert b"HTTP/1.1 200 OK" in response
+        assert response.endswith(b"ok")
+        assert observed["body"] == b"abc"
+        assert 0 < observed["maximum_retained"] <= limits.max_buffered_body_bytes
+    finally:
+        client.close()
+        assert server.close().is_ok
+
+
 def test_loopback_server_enforces_one_global_request_deadline() -> None:
     server = LoopbackHTTPServer(limits=HTTPLimits(max_timeout_seconds=0.05))
     started = server.start()
