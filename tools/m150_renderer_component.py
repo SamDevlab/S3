@@ -8,8 +8,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from bootstrap.s3.emulator import Emulator
-from bootstrap.s3.pipeline import compile_source, run_source_with_buffer_capture
+from bootstrap.s3.compilation_context import CompilationContext
+from bootstrap.s3.pipeline import CompilationResult, _compile_source_with_context, compile_source
 from bootstrap.s3.optimizer import OptimizationLevel
+from bootstrap.s3.backends.registry import create_builtin_backend_registry
 from tools.s3_renderer_contract import FIXTURE_METADATA, _git_blob_bytes, flatten_capture
 
 
@@ -54,10 +56,32 @@ def component_identity() -> dict[str, str]:
     }
 
 
-def _run(entry: str, optimization: OptimizationLevel) -> ComponentRun:
+def _run(
+    entry: str,
+    optimization: OptimizationLevel,
+    compilation_cache: dict[tuple[str, str, str, str, str], CompilationResult],
+) -> ComponentRun:
     metadata = FIXTURE_METADATA[ENTRY_METADATA[entry]]
     source = COMPONENT_SOURCE.read_text(encoding="utf-8")
-    compilation = compile_source(source, optimization)
+    preserve_memory_observability = optimization is OptimizationLevel.O0
+    cache_key = (
+        hashlib.sha256(source.encode("utf-8")).hexdigest(),
+        optimization.value,
+        "hosted-emulator",
+        "assembly-renderer-component-v1",
+        f"preserve_memory_observability={preserve_memory_observability}",
+    )
+    compilation = compilation_cache.get(cache_key)
+    if compilation is None:
+        if preserve_memory_observability:
+            compilation = _compile_source_with_context(
+                source,
+                CompilationContext(optimization=optimization),
+                preserve_memory_observability=True,
+            )
+        else:
+            compilation = compile_source(source, optimization)
+        compilation_cache[cache_key] = compilation
     entry_function = next(
         function for function in compilation.assembly.functions if function.name == entry
     )
@@ -66,13 +90,18 @@ def _run(entry: str, optimization: OptimizationLevel) -> ComponentRun:
         raise AssertionError(
             f"{entry} allocated {allocated_cells} cells, above the "
             f"{COMPONENT_MEMORY_LIMIT_BYTES}-byte component budget"
-        )
+    )
     if optimization is OptimizationLevel.O0:
-        result, captures = run_source_with_buffer_capture(
-            source,
-            entry=entry,
-            optimization=optimization,
+        provider = create_builtin_backend_registry().get_hosted_execution(
+            "hosted-emulator"
+        )
+        captures: list[dict[int, list[int | None]]] = []
+        result = provider.execute(
+            compilation.assembly,
+            entry,
             max_instructions=metadata.max_instructions,
+            max_memory_trits=3**8,
+            capture_memory=captures,
         )
         if result != 0:
             raise AssertionError(f"{entry} returned {result}")
@@ -108,11 +137,12 @@ def check_component() -> dict[str, object]:
     """Run the hosted O0/O1 and Python-oracle gate for all bounded entries."""
 
     results: list[dict[str, object]] = []
+    compilation_cache: dict[tuple[str, str, str, str, str], CompilationResult] = {}
     for entry in ENTRY_METADATA:
         metadata = FIXTURE_METADATA[ENTRY_METADATA[entry]]
         reference = _git_blob_bytes(metadata.golden_path)
-        o0 = _run(entry, OptimizationLevel.O0)
-        o1 = _run(entry, OptimizationLevel.O1)
+        o0 = _run(entry, OptimizationLevel.O0, compilation_cache)
+        o1 = _run(entry, OptimizationLevel.O1, compilation_cache)
         if o0.output != reference:
             raise AssertionError(f"{entry} differs from the Python renderer oracle")
         if o1.return_value != 0:
