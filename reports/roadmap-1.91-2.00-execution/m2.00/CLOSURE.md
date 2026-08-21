@@ -1,13 +1,19 @@
 # M2.00 Closure Checkpoint
 
-Status: `BLOCKED_BY_FINAL_T4_TIMEOUT_POLICY`
+Status: `BLOCKED_BY_UNSTABLE_DEFAULT_TIMEOUT_RESIDUAL`
 
-The release-candidate stability gate has zero failed files after the TLS test
-correction: 344 of 369 selected files passed and 25 reached the Windows
-per-file orchestrator timeout. Twenty-three are verified historical timeout
-files and two remain new relative to that historical set. The campaign
-contract does not authorize release promotion with that mixed timeout set.
+The runner now has explicit finite timeout classes and the final policy T4
+has zero failed files and zero unclassified timeout files. It nevertheless
+returned `TIMEOUT` because 17 selected files exceeded their applied budgets.
+Sixteen are explicitly assigned heavy renderer workloads at 300 seconds.
+The remaining `tests/test_external_jsmn_s3.py` timed out at the default
+60-second class.
 
-The M1.94 TLS functional blocker is closed by deterministic test evidence.
-No public release, tag, merge, or M2.01 implementation is authorized while
-the final T4 timeout policy blocker remains.
+Three post-T4 fresh-process diagnostics for that residual produced two
+non-terminal Windows process-abort exits (`-1073741510`) and one successful
+run at 130.917 seconds. This is `HOST_SCHEDULING_VARIANCE`, not a verified
+bounded pass and not a functional assertion failure. No additional T4 was
+run, so the release gate remains blocked rather than treating the timeout as
+PASS.
+
+No public release, tag, merge, or M2.01 implementation was performed.
