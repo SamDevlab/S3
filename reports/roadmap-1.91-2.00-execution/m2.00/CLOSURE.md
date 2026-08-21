@@ -1,24 +1,32 @@
 # M2.00 Closure Checkpoint
 
-Status: `BLOCKED_PENDING_FINAL_T4_REAUTHORIZATION`
+Status: `BLOCKED_FINAL_T4_TIMEOUT`
 
-The post-reboot evidence resolved the residual JSMN classification. Five
-fresh runs passed below 60 seconds, followed by 10/10 margin repetitions with
-maximum `38.640 s`, nearest-rank p95 `38.640 s`, and coefficient of variation
-`0.0935`. All 15 controls passed, and no orphan child process was detected.
+The post-reboot JSMN stability evidence was healthy: 5/5 initial runs and
+10/10 margin runs passed, with maximum `38.640s` and no abnormal exit,
+timeout, or orphan. The explicit default 60-second policy therefore remains
+sound for JSMN.
 
-The correct classification is:
+The one authorized final T4 at
+`a651e9b3551f218af1c27bb908e0692880afc4da` produced:
 
 ```text
-PRE_REBOOT_CLASSIFICATION=HOST_SCHEDULING_VARIANCE
-POST_REBOOT_CLASSIFICATION=PRE_REBOOT_HOST_STATE_CONTAMINATION
-JSMN_DEFAULT_60S_MARGIN=HEALTHY
+SELECTED=369
+PASS=365
+FAIL=0
+TIMEOUT=4
+UNCLASSIFIED_TIMEOUT=0
+EXIT=1
 ```
 
-The final policy T4 from the previous prompt remains a truthful historical
-`TIMEOUT` result (`352 passed`, `0 failed`, `17 timeout`, exit 1). This prompt
-did not run T4, so M2.00 is not yet promoted. Another final T4 is eligible
-for a human decision.
+The four timeout rows are all explicitly `HEAVY_RENDERER=300s`:
 
-No production, benchmark, historical T4, merge, tag, release, or M2.01
-implementation was changed or started.
+```text
+tests/test_assembly_renderer_candidate_readiness.py
+tests/test_compare_assembly_renderer.py
+tests/test_m150_renderer_component.py
+tests/test_s3_renderer_sign_text.py
+```
+
+M2.00 remains blocked because timeout is not PASS. No further T4, benchmark,
+merge, tag, release, or M2.01 implementation was performed.

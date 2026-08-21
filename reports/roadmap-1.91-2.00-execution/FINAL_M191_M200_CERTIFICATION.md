@@ -1,68 +1,72 @@
 # M1.91-M2.00 Final Certification Checkpoint
 
-This is a post-reboot stability checkpoint, not a final T4 certification.
-Historical T4 evidence remains unchanged. No production code, benchmark,
-merge, tag, release, or M2.01 implementation was changed or started.
+This report records the one human-authorized final T4 after post-reboot JSMN
+stability evidence. The candidate was not promoted because the final T4
+returned four explicit timeouts. No production code, benchmark, merge, tag,
+release, or M2.01 implementation was changed or started.
 
 ```text
 REPOSITORY=SamDevlab/S3
 WORKTREE=C:\Users\samue\Downloads\S3-m191-m200-autonomous-20260819
 BRANCH=feature/m191-m200-autonomous-20260819
-HEAD=cff4da02c6f135c44dd0b8c75795361aac0ebcfc
-REMOTE_HEAD=cff4da02c6f135c44dd0b8c75795361aac0ebcfc
-WORKTREE_CLEAN=YES
+HEAD=a651e9b3551f218af1c27bb908e0692880afc4da
+ORIGIN_MAIN=a9e430551f2ee77aa2ef229daf9e967333e83e2c
 ```
 
-## Host and isolated evidence
+## Final T4
 
 ```text
-LAST_BOOT=2026-08-21T04:52:45.5000000-03:00
-HOST_UPTIME_AT_SNAPSHOT=00:20:00
-PYTHON=3.11.9
-WINDOWS=Microsoft Windows 11 Home 10.0.26200 Build 26200
-LOGICAL_CPUS=8
-FREE_MEMORY_KB=1452168
-PROCESS_COUNT=274
-HYPERVISOR_PRESENT=False
+T4_RUNS_THIS_PROMPT=1
+FINAL_T4_START=2026-08-21T05:42:08.6894598-03:00
+FINAL_T4_END=2026-08-21T07:02:13.1286556-03:00
+FINAL_T4_HEAD=a651e9b3551f218af1c27bb908e0692880afc4da
+SELECTED=369
+PASS=365
+FAIL=0
+TIMEOUT=4
+UNCLASSIFIED_TIMEOUT=0
+EXIT=1
 ```
 
-Five fresh JSMN processes all passed below 60 seconds. The required 10-run
-margin sequence then produced:
+The four timeout rows all used the explicit `HEAVY_RENDERER=300s` policy:
 
 ```text
-JSMN_10X_PASS=10/10
-JSMN_10X_TIMEOUT=0
-JSMN_10X_ABNORMAL_EXIT=0
-JSMN_10X_ORPHAN=0
-JSMN_10X_MEDIAN=31.575
-JSMN_10X_P95=38.640
-JSMN_10X_P95_METHOD=NEAREST_RANK
-JSMN_10X_MAX=38.640
-JSMN_10X_CV=0.0935
-CONTROL_PASS=15/15
-JSMN_DEFAULT_60S_MARGIN=HEALTHY
+tests/test_assembly_renderer_candidate_readiness.py
+tests/test_compare_assembly_renderer.py
+tests/test_m150_renderer_component.py
+tests/test_s3_renderer_sign_text.py
 ```
 
-The lifecycle audit found no child process, native compiler, linker,
-temporary executable, or external JSMN build. The classification is
-`PRE_REBOOT_HOST_STATE_CONTAMINATION`.
+The raw transcript is
+`T4-final-post-reboot-20260821-054208.txt`. The timeout rows were not rerun.
 
-## Release boundary
-
-The prior policy T4 remains `352 passed`, `0 failed`, `17 timeout`, exit 1.
-No T4 was run in this prompt. Therefore:
+## Milestone and release boundary
 
 ```text
-M2.00=BLOCKED_PENDING_FINAL_T4_REAUTHORIZATION
-NEXT_T4_ELIGIBLE=YES
-T4_RUNS_THIS_PROMPT=0
-BENCHMARK_RUNS=0
-S3_PRODUCTION_CHANGE=NO
-RUNNER_CHANGE=NO
-BLOCKER=1_PENDING_FINAL_T4
+M1.91=PASS
+M1.92=PASS
+M1.93=PASS
+M1.94=PASS_WITH_PROVIDER_DEFERRED
+M1.95=PASS
+M1.96=PASS_WITH_PROVIDER_DEFERRED
+M1.97=PASS_STRUCTURAL_LINK_NATIVE_DEFERRED
+M1.98=PASS_STRUCTURAL_NATIVE_DEFERRED
+M1.99=PASS_FOCUSED_AND_BENCHMARKED
+M2.00=BLOCKED_FINAL_T4_TIMEOUT
+
+BLOCKER=1
+HIGH=0
+MEDIUM=0
+LOW=0
 READY_FOR_PR=NO
-READY_FOR_MERGE=NO
+READY_FOR_MERGE_REVIEW=NO
+```
+
+```text
+BENCHMARK_RERUN=NO
 MERGE=NO
+AUTO_MERGE=NO
+FORCE_PUSH=NO
 TAG=NO
 RELEASE=NO
 M2.01_STARTED=NO
