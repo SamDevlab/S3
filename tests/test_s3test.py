@@ -7,7 +7,9 @@ import pytest
 
 from tools.s3test import (
     ImpactMap,
+    S3TestOrchestratorError,
     StateStore,
+    T4TimeoutClass,
     execute_profile,
     execution_fingerprint,
     render_plan,
@@ -117,8 +119,84 @@ def test_failure_state_persists_output_and_status(tmp_path: Path) -> None:
 
 def test_plan_exposes_all_required_explainability_fields() -> None:
     plan = render_plan(IMPACT.select(["bootstrap/s3/dynamic.py"]), ["bootstrap/s3/dynamic.py"])
-    for field in ("CHANGED_FILE=", "SELECTED_TEST=", "REASON=", "TIER=", "NATIVE_REQUIRED=", "TIMEOUT="):
+    for field in ("CHANGED_FILE=", "SELECTED_TEST=", "REASON=", "TIER=", "NATIVE_REQUIRED=", "TIMEOUT_CLASS=", "TIMEOUT="):
         assert field in plan
+
+
+def test_default_timeout_policy_is_sixty_seconds() -> None:
+    policy = IMPACT.timeout_policy_for("tests/test_cli.py", 60)
+    assert policy.timeout_class is T4TimeoutClass.DEFAULT
+    assert policy.seconds == 60
+
+
+def test_explicit_heavy_timeout_policy_is_bounded() -> None:
+    policy = IMPACT.timeout_policy_for("tests/test_decimal_functions.py", 60)
+    assert policy.timeout_class is T4TimeoutClass.HEAVY_SELF_HOSTING
+    assert policy.seconds == 180
+
+
+def test_unknown_timeout_class_fails_closed(tmp_path: Path) -> None:
+    manifest = {
+        "schema": "s3.test-impact.v1",
+        "version": 1,
+        "default": {"tests": [], "milestones": ["global"], "shards": [], "native_required": False, "environment_requirements": [], "global_impact": False},
+        "timeout_policy": {"classes": {"DEFAULT": {"seconds": 60}, "UNKNOWN": {"seconds": 90}}, "assignments": {}},
+        "rules": [],
+    }
+    path = tmp_path / "impact.json"
+    path.write_text(json.dumps(manifest), encoding="utf-8")
+    with pytest.raises(S3TestOrchestratorError, match="unknown timeout class"):
+        ImpactMap.load(path)
+
+
+def test_timeout_status_is_preserved_and_not_promoted(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    selection = (IMPACT.select(["tests/test_decimal_functions.py"])[0],)
+    monkeypatch.setattr("tools.s3test._profile_selection", lambda *args: (selection, (selection[0].test,)))
+    monkeypatch.setattr("tools.s3test._git", lambda root, *args, check=True: "HEAD\n" if args[:2] == ("rev-parse", "HEAD") else "")
+    monkeypatch.setattr("tools.s3test.run_pytest_file", lambda root, test, timeout: {"status": "TIMEOUT", "output": "", "returncode": None})
+    report = execute_profile(tmp_path, IMPACT, "affected", None, None, 60, StateStore(tmp_path))
+    assert report["summary"]["status"] == "TIMEOUT"
+    assert report["tests"][0]["status"] == "TIMEOUT"
+
+
+def test_report_records_applied_timeout_policy(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    selection = (IMPACT.select(["tests/test_decimal_functions.py"])[0],)
+    monkeypatch.setattr("tools.s3test._profile_selection", lambda *args: (selection, (selection[0].test,)))
+    monkeypatch.setattr("tools.s3test._git", lambda root, *args, check=True: "HEAD\n" if args[:2] == ("rev-parse", "HEAD") else "")
+    monkeypatch.setattr("tools.s3test.run_pytest_file", lambda root, test, timeout: {"status": "PASS", "output": "", "returncode": 0})
+    report = execute_profile(tmp_path, IMPACT, "affected", None, None, 60, StateStore(tmp_path))
+    assert report["tests"][0]["timeout_class"] == "HEAVY_SELF_HOSTING"
+    assert report["tests"][0]["timeout_seconds"] == 180
+
+
+def test_windows_timeout_terminates_process_tree(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[list[str]] = []
+    monkeypatch.setattr("tools.s3test.subprocess.run", lambda arguments, **kwargs: calls.append(arguments))
+    process = type("Process", (), {"pid": 1234})()
+    import tools.s3test as s3test_module
+    monkeypatch.setattr(s3test_module.os, "name", "nt")
+    s3test_module._terminate(process)
+    assert calls == [["taskkill", "/PID", "1234", "/T", "/F"]]
+
+
+def test_timeout_policy_selection_is_deterministic() -> None:
+    files = ["tests/test_self_hosting_opcode_classifier.py", "tests/test_cli.py", "tests/test_decimal_functions.py"]
+    first = [(path, IMPACT.timeout_policy_for(path, 60)) for path in files]
+    second = [(path, IMPACT.timeout_policy_for(path, 60)) for path in files]
+    assert first == second
+
+
+def test_timeout_policy_does_not_change_selection_tiers() -> None:
+    selected = IMPACT.select(["tests/test_decimal_functions.py"])
+    assert [item.test for item in selected] == ["tests/test_decimal_functions.py"]
+    assert selected[0].tiers == ("T1",)
+
+
+def test_fingerprint_includes_timeout_policy_metadata(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr("tools.s3test._git", lambda root, *args, check=True: "HEAD\n" if args[:2] == ("rev-parse", "HEAD") else "")
+    first = execution_fingerprint(tmp_path, [], manifest_version=1, timeout_policy_fingerprint="policy-a")
+    second = execution_fingerprint(tmp_path, [], manifest_version=1, timeout_policy_fingerprint="policy-b")
+    assert first != second
 
 
 def test_resume_cache_requires_exact_fingerprint(tmp_path: Path) -> None:
@@ -130,7 +208,12 @@ def test_resume_cache_requires_exact_fingerprint(tmp_path: Path) -> None:
 def test_resume_reuses_persisted_failed_selection(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     store = StateStore(tmp_path)
     monkeypatch.setattr("tools.s3test._git", lambda root, *args, check=True: "HEAD\n" if args[:2] == ("rev-parse", "HEAD") else "")
-    fingerprint = execution_fingerprint(tmp_path, ["tests/test_a.py"], manifest_version=1)
+    fingerprint = execution_fingerprint(
+        tmp_path,
+        ["tests/test_a.py"],
+        manifest_version=1,
+        timeout_policy_fingerprint=IMPACT.timeout_policy_fingerprint,
+    )
     store.save({
         "fingerprint": fingerprint,
         "profile": "affected",
