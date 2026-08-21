@@ -31,8 +31,9 @@ def run_ssa_licm(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
     dom_tree = DominatorTree.build(cfg)
 
     back_edges: List[Tuple[str, str]] = []
-    for node_name, node in cfg.nodes.items():
-        for succ in node.successors:
+    for node_name in sorted(cfg.nodes):
+        node = cfg.nodes[node_name]
+        for succ in sorted(node.successors):
             if dom_tree.dominates(succ, node_name):
                 back_edges.append((node_name, succ))
 
@@ -48,7 +49,7 @@ def run_ssa_licm(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
         while worklist:
             curr = worklist.pop()
             if curr in cfg.nodes:
-                for pred in cfg.nodes[curr].predecessors:
+                for pred in sorted(cfg.nodes[curr].predecessors, reverse=True):
                     if pred not in loop_blocks:
                         loop_blocks.add(pred)
                         worklist.append(pred)
@@ -88,9 +89,11 @@ def run_ssa_licm(ssa_fn: SSAFunction) -> Tuple[SSAFunction, int]:
         if not hoistable_insts:
             continue
 
-        pre_header_candidates = [
-            p for p in cfg.nodes[head_name].predecessors if p not in loop_blocks
-        ] if head_name in cfg.nodes else []
+        pre_header_candidates = sorted(
+            p
+            for p in cfg.nodes[head_name].predecessors
+            if p not in loop_blocks
+        ) if head_name in cfg.nodes else []
 
         target_pre_header = pre_header_candidates[0] if pre_header_candidates else ssa_fn.blocks[0].name
 
