@@ -1,124 +1,90 @@
 # T4 Failure Triage
 
-Historical raw T4 transcripts remain unchanged. The policy T4 was run once
-after the bounded timeout-class runner change; no fourth T4 was run.
+Historical T4 transcripts remain unchanged. No T4 was run in this prompt.
 
-## Runner and policy
-
-```text
-RUNNER_COMMIT=1712f76
-POLICY_DOCUMENT_COMMIT=efab5bf
-DEFAULT_TIMEOUT=60
-PARALLELISM=1
-PROCESS_MODEL=SERIAL_PYTEST_SUBPROCESS_PER_FILE
-TIMEOUT_SEMANTICS=WHOLE_FILE_WALL_CLOCK
-CHILD_TREE_CLEANUP=taskkill /PID /T /F
-```
-
-The manifest declares `DEFAULT=60`, `HEAVY_SELF_HOSTING=180`, and
-`HEAVY_RENDERER=300`. The result schema records the selected class and
-seconds; unknown classes fail closed.
-
-## Required timeout diagnostics
+## Provenance and host
 
 ```text
-DECIMAL_CHANGED_IN_M191_M200=NO
-DECIMAL_RUNS_SECONDS=116.604,101.277,108.882
-DECIMAL_MEDIAN_SECONDS=108.882
-DECIMAL_RESULT=STABLE_SLOW_TEST_EXCEEDS_T4_FILE_BUDGET
-
-OPCODE_CLASSIFIER_CHANGED_IN_M191_M200=NO
-OPCODE_RUNS_SECONDS=99.557,87.832,83.417
-OPCODE_MEDIAN_SECONDS=87.832
-OPCODE_RESULT=STABLE_SLOW_TEST_EXCEEDS_T4_FILE_BUDGET
+HEAD=cff4da02c6f135c44dd0b8c75795361aac0ebcfc
+BRANCH=feature/m191-m200-autonomous-20260819
+WORKTREE_CLEAN=YES
+LAST_BOOT=2026-08-21T04:52:45.5000000-03:00
+HOST_UPTIME_AT_SNAPSHOT=00:20:00
+PYTHON=3.11.9
+WINDOWS=Microsoft Windows 11 Home 10.0.26200 Build 26200
+LOGICAL_CPUS=8
+FREE_MEMORY_KB=1452168
+PROCESS_COUNT=274
+HYPERVISOR_PRESENT=False
 ```
 
-The two diagnostic groups were 3/3 pytest PASS under a 300-second watchdog.
-They were assigned to `HEAVY_SELF_HOSTING=180` before the policy T4.
+## Post-reboot JSMN characterization
 
-Control runs were:
+Each run used a separate Python process with a 300-second watchdog and was
+immediately followed by a separate `tests/test_ternary.py` control process.
+The five-run raw capture is
+`T4-timeout-policy-post-reboot-jsmn-20260821-052241.txt`.
 
 ```text
-tests/test_compare_assembly_renderer.py=WATCHDOG_300S
-tests/test_m150_renderer_component.py=WATCHDOG_300S
-tests/test_s3_renderer_generic_text.py=175.666S_EXIT_0
+RUNS_SECONDS=43.749,35.661,30.623,36.608,36.673
+EXIT_CODES=0,0,0,0,0
+PYTEST_RESULT=5/5 runs reported 18 passed
+TIMEOUT_COUNT=0
+ABNORMAL_EXIT_COUNT=0
+CONTROL_RUNS_SECONDS=4.424,4.402,4.405,4.385,5.451
+CONTROL_PASS_COUNT=5
+ORPHAN_PROCESS_DETECTED=NO
 ```
 
-## Final policy T4
+The five-run maximum was below 45 seconds, so the 10-run margin capture
+`T4-timeout-policy-post-reboot-jsmn-10x-20260821-052715.txt` was required and
+completed:
 
 ```text
-NEW_T4_RUNS=1
-FINAL_T4_HEAD=efab5bf6a0d790f167004a15696f4bc4e62c87dc
-FINAL_T4_SELECTED_FILES=369
-FINAL_T4_PASS_FILES=352
-FINAL_T4_FAIL_FILES=0
-FINAL_T4_TIMEOUT_FILES=17
-FINAL_T4_UNCLASSIFIED_TIMEOUT_FILES=0
-FINAL_T4_EXIT=1
-FINAL_T4_STATUS=TIMEOUT
-FINAL_T4_REPORT=T4-timeout-policy-20260820-214407.txt
-ADDITIONAL_T4_RUNS=0
+RUNS_SECONDS=37.737,38.640,30.544,30.565,31.600,31.550,29.592,30.588,35.626,32.556
+EXIT_CODES=0,0,0,0,0,0,0,0,0,0
+PYTEST_RESULT=10/10 runs reported 18 passed
+TIMEOUT_COUNT=0
+ABNORMAL_EXIT_COUNT=0
+CONTROL_RUNS_SECONDS=5.448,4.402,4.388,4.406,4.372,4.407,4.426,4.422,4.364,5.540
+CONTROL_PASS_COUNT=10
+ORPHAN_PROCESS_DETECTED=NO
+MEDIAN_SECONDS=31.575
+P95_SECONDS=38.640
+P95_METHOD=NEAREST_RANK
+MAX_SECONDS=38.640
+COEFFICIENT_OF_VARIATION=0.0935
+JSMN_DEFAULT_60S_MARGIN=HEALTHY
 ```
 
-Timeout class distribution:
+## Lifecycle audit
+
+The exact path is `_run_s3` -> `compile_source` for IR inspection, then
+`run_source_with_buffer_capture`, which compiles again and invokes the hosted
+Assembly Emulator. The 17 `_run_s3` test cases therefore perform 34
+in-memory compile passes; the source-contract test performs no execution.
+There are no subprocess, native toolchain, linker, temporary executable, or
+external JSMN build calls in this test path.
 
 ```text
-HEAVY_RENDERER_300S=16
-HEAVY_SELF_HOSTING_180S=0
-DEFAULT_60S=1
+JSMN_CHILD_PROCESS_COUNT_ESTIMATE=0
+JSMN_NATIVE_BUILD_COUNT=0
+JSMN_TEMP_ARTIFACT_MODEL=NONE
+JSMN_PROCESS_CLEANUP_MODEL=NOT_APPLICABLE; NO_CHILDREN
+ORPHAN_PROCESS_DETECTED=NO
+ROOT_VARIANCE_PHASE=NOT_APPLICABLE_POST_REBOOT
 ```
 
-The timeout files are:
+## Classification and next gate
 
 ```text
-tests/test_assembly_program_text_adapter.py
-tests/test_assembly_renderer_candidate_readiness.py
-tests/test_assembly_text_renderer.py
-tests/test_compare_assembly_renderer.py
-tests/test_external_jsmn_s3.py
-tests/test_m150_renderer_component.py
-tests/test_s3_renderer_bootstrap_spike.py
-tests/test_s3_renderer_contract.py
-tests/test_s3_renderer_event_stream.py
-tests/test_s3_renderer_event_writer.py
-tests/test_s3_renderer_generic_sign.py
-tests/test_s3_renderer_line_blueprints.py
-tests/test_s3_renderer_line_encodings.py
-tests/test_s3_renderer_line_sequences.py
-tests/test_s3_renderer_sign_text.py
-tests/test_s3_renderer_simple_call_text.py
-tests/test_s3_renderer_text_segments.py
+PRE_REBOOT_CLASSIFICATION=HOST_SCHEDULING_VARIANCE
+POST_REBOOT_CLASSIFICATION=PRE_REBOOT_HOST_STATE_CONTAMINATION
+RUNNER_CHANGE=NO
+S3_PRODUCTION_CHANGE=NO
+NEXT_T4_ELIGIBLE=YES
+T4_RUNS_THIS_PROMPT=0
 ```
 
-## Residual JSMN diagnosis
-
-The residual `tests/test_external_jsmn_s3.py` was not changed in this
-campaign. Three fresh 300-second-watchdog processes were run after the
-policy T4:
-
-```text
-RUN_1_SECONDS=7.237
-RUN_1_EXIT=-1073741510
-RUN_1_PYTEST_RESULT=NO_TERMINAL_RESULT
-RUN_2_SECONDS=26.190
-RUN_2_EXIT=-1073741510
-RUN_2_PYTEST_RESULT=NO_TERMINAL_RESULT
-RUN_3_SECONDS=130.917
-RUN_3_EXIT=0
-RUN_3_PYTEST_RESULT=18 passed
-WATCHDOG_TIMEOUT=NO
-CLASSIFICATION=HOST_SCHEDULING_VARIANCE
-```
-
-The two process exits are Windows `0xC000013A`, not pytest failures. Their
-presence prevents a stable bounded-pass conclusion. The one successful run
-also exceeds the applied 60-second T4 budget. The residual remains a release
-blocker; it was not reassigned or hidden after the final T4.
-
-```text
-T4_TRIAGE_PASS_IN_ISOLATION=NO_RELEASE_PROMOTION
-T4_TRIAGE_PREEXISTING_TIMEOUT=16_EXPLICIT_HEAVY_RENDERER
-T4_TRIAGE_ENVIRONMENT_DEFERRED=1_EXTERNAL_JSMN
-T4_TRIAGE_REPRODUCIBLE_FAILURE=0
-T4_TRIAGE_UNRESOLVED=1_TIMEOUT_RESIDUAL
-```
+Eligibility is not execution: a human decision is required before another
+final T4.

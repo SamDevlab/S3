@@ -1,124 +1,98 @@
 # M2.00 T4 Timeout Policy
 
-## Decision
+## Policy
 
-The two originally new timeout files were characterized in three fresh
-processes each before the policy T4. Both completed successfully in every
-run, with medians above the default 60-second per-file budget. They are
-bounded slow workloads, not functional regressions or 300-second hangs.
-
-```text
-DECIMAL_RUNS_SECONDS=116.604,101.277,108.882
-DECIMAL_MEDIAN_SECONDS=108.882
-DECIMAL_MAX_SECONDS=116.604
-DECIMAL_CLASS=STABLE_SLOW_TEST_EXCEEDS_T4_FILE_BUDGET
-
-OPCODE_RUNS_SECONDS=99.557,87.832,83.417
-OPCODE_MEDIAN_SECONDS=87.832
-OPCODE_MAX_SECONDS=99.557
-OPCODE_CLASS=STABLE_SLOW_TEST_EXCEEDS_T4_FILE_BUDGET
-```
-
-The one-run control group was:
-
-```text
-tests/test_compare_assembly_renderer.py=WATCHDOG_300S
-tests/test_m150_renderer_component.py=WATCHDOG_300S
-tests/test_s3_renderer_generic_text.py=175.666S_EXIT_0
-```
-
-The controls establish that the default budget is below the runtime of
-heavy renderer workloads on this Windows host. The two 300-second watchdog
-terminations were diagnostic-child cleanup, not T4 results.
-
-## Declarative classes
-
-The policy is stored in `tests/test-impact.json` and interpreted by
-`tools/s3test.py`:
+The runner policy remains explicit and finite:
 
 ```text
 DEFAULT=60S
 HEAVY_SELF_HOSTING=180S
 HEAVY_RENDERER=300S
-```
-
-The classes are finite and assigned by explicit test-path metadata. The
-runner has no filename-pattern fallback, previous-result lookup, unlimited
-class, or automatic conversion of timeout to PASS. Unknown classes fail
-closed at manifest load. The applied class and seconds are present in every
-selected result, and the timeout-policy fingerprint participates in resume
-eligibility.
-
-The two characterized files are assigned to `HEAVY_SELF_HOSTING`; the
-recurring renderer/toolchain files are assigned to `HEAVY_RENDERER`.
-
-## Runner semantics
-
-Files run serially. A class value is a wall-clock budget for the complete
-pytest-file subprocess. Stdout and stderr are captured through
-`communicate()`. Windows timeout cleanup uses `taskkill /PID /T /F`, so the
-child process tree is terminated. A timeout remains `TIMEOUT` in the raw
-report and is never a test PASS.
-
-```text
-RUNNER_CHANGE=YES
-RUNNER_COMMIT=1712f76
-DEFAULT_T4_FILE_TIMEOUT=60
 T4_PARALLELISM=1
 PROCESS_MODEL=ONE_PYTEST_SUBPROCESS_PER_FILE
-TIMEOUT_KILL_MODEL=WINDOWS_TASKKILL_FORCE
-CHILD_PROCESS_TREE_HANDLING=YES
-OUTPUT_CAPTURE_MODEL=COMBINED_STDOUT_STDERR_PIPE
-POLICY=EXPLICIT_BOUNDED_HEAVY_TIMEOUT_CLASSES
+TIMEOUT_SEMANTICS=WHOLE_FILE_WALL_CLOCK
 UNKNOWN_CLASS=FAIL_CLOSED
 ```
 
-## Final policy T4
+The timeout class and applied seconds are recorded for every selected file.
+Timeout is never converted to PASS. No filename pattern, prior result, or
+unlimited class is used.
 
-The one permitted policy T4 ran at
-`efab5bf6a0d790f167004a15696f4bc4e62c87dc`. It applied an explicit class to
-every timeout, but it still returned a timeout status:
+## Pre-reboot evidence
+
+The decimal and opcode classifier files were unchanged in M1.91-M2.00 and
+both were stable slow workloads under the pre-reboot diagnostic. The final
+policy T4 at `efab5bf6a0d790f167004a15696f4bc4e62c87dc` selected 369 files,
+passed 352, failed 0, timed out 17, and exited 1. Sixteen timeout rows used
+`HEAVY_RENDERER=300`; one, `tests/test_external_jsmn_s3.py`, used
+`DEFAULT=60`. The raw T4 remains unchanged at
+`T4-timeout-policy-20260820-214407.txt`.
+
+## Post-reboot JSMN evidence
+
+The only residual was retested after the Windows reboot. Five fresh
+processes, each followed immediately by a fresh `tests/test_ternary.py`
+control, all passed:
 
 ```text
-SELECTED=369
-PASS=352
-FAIL=0
-TIMEOUT=17
-T4_EXIT=1
-HEAVY_RENDERER_TIMEOUTS=16
-HEAVY_SELF_HOSTING_TIMEOUTS=0
-DEFAULT_TIMEOUTS=1
-UNCLASSIFIED_TIMEOUTS=0
+JSMN_5X_SECONDS=43.749,35.661,30.623,36.608,36.673
+JSMN_5X_EXIT_CODES=0,0,0,0,0
+JSMN_5X_TIMEOUTS=0
+JSMN_5X_CONTROLS=5/5_PASS
 ```
 
-The 16 renderer timeouts were at the explicit 300-second class. The decimal
-and opcode files passed at the explicit 180-second class. The remaining
-timeout was `tests/test_external_jsmn_s3.py` at the declared `DEFAULT=60`
-class.
-
-That residual was characterized after the policy T4 in three fresh
-processes, without another T4:
+Because all five were below 60 seconds and the maximum was below 45 seconds,
+the required 10-run margin sequence was executed:
 
 ```text
-EXTERNAL_JSMN_RUNS_SECONDS=7.237,26.190,130.917
-EXTERNAL_JSMN_EXIT_CODES=-1073741510,-1073741510,0
-EXTERNAL_JSMN_PYTEST_RESULT=two non-terminal process aborts; one PASS
-EXTERNAL_JSMN_WATCHDOG=NO
-EXTERNAL_JSMN_CLASS=HOST_SCHEDULING_VARIANCE
+JSMN_10X_SECONDS=37.737,38.640,30.544,30.565,31.600,31.550,29.592,30.588,35.626,32.556
+JSMN_10X_PASS=10/10
+JSMN_10X_TIMEOUT=0
+JSMN_10X_ABNORMAL_EXIT=0
+JSMN_10X_ORPHAN=0
+JSMN_10X_MEDIAN=31.575
+JSMN_10X_P95=38.640
+JSMN_10X_P95_METHOD=NEAREST_RANK
+JSMN_10X_MAX=38.640
+JSMN_10X_CV=0.0935
+JSMN_10X_CONTROLS=10/10_PASS
+JSMN_DEFAULT_60S_MARGIN=HEALTHY
 ```
 
-The two `0xC000013A` exits are not pytest assertion failures, but they also
-do not establish a stable bounded PASS. The 130.917-second pass exceeds the
-default budget. This is therefore retained as an unresolved environment /
-orchestration residual, not promoted to a heavy class after the final T4.
+This establishes `PRE_REBOOT_HOST_STATE_CONTAMINATION`. The residual is not
+normally over 60 seconds and must not be promoted to a heavy class.
 
-The raw policy T4 is preserved at
-`T4-timeout-policy-20260820-214407.txt`. The JSMN diagnostic capture is
-preserved outside the repository at
-`%TEMP%\\s3-m200-external-jsmn-diagnostic-final-20260820-235715`.
+## Lifecycle audit
+
+`tests/test_external_jsmn_s3.py` calls `compile_source` once and
+`run_source_with_buffer_capture` once per `_run_s3` invocation. There are 17
+such invocations across the parameterized cases, so 34 in-memory compiler
+passes in total. The latter function compiles once more and executes the
+hosted Assembly Emulator with memory capture. The test itself launches no
+child process, no native compiler, no linker, and no external JSMN build.
 
 ```text
-T4_RESULT_PRESERVED=YES
-T4_STATUS=TIMEOUT
-RELEASE_TIMEOUT_POLICY=DECLARED_CLASSES_REQUIRED_BUT_UNSTABLE_DEFAULT_RESIDUAL_NOT_ACCEPTED
+JSMN_CHILD_PROCESS_COUNT_ESTIMATE=0
+JSMN_NATIVE_BUILD_COUNT=0
+JSMN_TEMP_ARTIFACT_MODEL=NONE
+JSMN_PROCESS_CLEANUP_MODEL=NO_TEST_CHILDREN; PYTEST_PROCESS_EXITS_NORMALLY
+ORPHAN_PROCESS_DETECTED=NO
+ROOT_VARIANCE_PHASE=NOT_APPLICABLE_POST_REBOOT
+```
+
+The process snapshots before and after every run contained no `python.exe`,
+compiler, linker, or generated executable belonging to a completed test.
+The remaining snapshot entries were Windows SearchHost and the diagnostic
+PowerShell wrapper itself.
+
+## Gate boundary
+
+No T4 was run in this prompt. The evidence makes another final T4 eligible,
+but does not perform it:
+
+```text
+RUNNER_CHANGE=NO
+S3_PRODUCTION_CHANGE=NO
+NEXT_T4_ELIGIBLE=YES
+T4_RUNS_THIS_PROMPT=0
 ```

@@ -1,89 +1,50 @@
 # M1.91-M2.00 Terminal Correction Evidence
 
-## TLS blocker closure
+The source and benchmark candidates are unchanged by this post-reboot
+stability campaign. No production compiler or runner change was made.
+
+## Post-reboot JSMN evidence
 
 ```text
-ORIGINAL_FAILURE_REPRODUCED=YES
-CLASSIFICATION=TEST_CLOCK_NONDETERMINISM
-TLS_PRODUCTION_CHANGE=NO
-TLS_TEST_CHANGE=YES
-TLS_TEST_CORRECTION=DETERMINISTIC_CLOCK
-RESOURCE_RELEASE=PASS
-EXACTLY_ONCE_CLOSE=PASS
-CONNECTION_BUDGET_RELEASE=PASS
-TLS_REPEAT_20X=20/20 PASS
+HEAD=cff4da02c6f135c44dd0b8c75795361aac0ebcfc
+POST_REBOOT_CLASSIFICATION=PRE_REBOOT_HOST_STATE_CONTAMINATION
+JSMN_5X_PASS=5/5
+JSMN_5X_TIMEOUT=0
+JSMN_5X_ABNORMAL_EXIT=0
+JSMN_10X_PASS=10/10
+JSMN_10X_TIMEOUT=0
+JSMN_10X_ABNORMAL_EXIT=0
+JSMN_10X_ORPHAN=0
+JSMN_10X_MEDIAN=31.575
+JSMN_10X_P95=38.640
+JSMN_10X_MAX=38.640
+JSMN_10X_CV=0.0935
+JSMN_DEFAULT_60S_MARGIN=HEALTHY
+CONTROL_PASS=15/15
 ```
 
-## Gates before the policy T4
+The exact test path is hosted and in-memory: 17 `_run_s3` invocations, 34
+compile passes, no child process, no native build, no temporary executable,
+and no orphan. This accounts for the pre-reboot timeout as host state rather
+than a test lifecycle defect.
+
+## Gate boundary
 
 ```text
-COMPILEALL=PASS
-M1.93_FOCUSED=8 passed
-TLS_SERVER=7 passed
-HTTP_ADJACENT=49 passed
-ASYNC_OWNERSHIP=PASS
-RUNNER_FOCUSED=24 passed
-T2=59 passed
-T3=84 passed
-SMART_AFFECTED=1 passed
-DIFF_CHECK=PASS
+T4_RUNS_THIS_PROMPT=0
+NEXT_T4_ELIGIBLE=YES
+BENCHMARK_RUNS=0
+S3_PRODUCTION_CHANGE=NO
+RUNNER_CHANGE=NO
 ```
 
-The runner-only change was validated by 24 focused `s3test` tests, 59 T2
-tests, and 84 T3 tests. No compiler production code changed.
-
-## M1.99 benchmark boundary
-
-The benchmark was not rerun. Its pinned evidence remains:
+The prior final T4 remains unchanged and remains `TIMEOUT` until a separate
+human-authorized final T4 is executed. No claim of T4 PASS is made here.
 
 ```text
-BENCHMARK_HEAD=c13f159bb19f13cac9e83e523b6e392baae71738
-BENCH_TIMING_CLASS=CHARACTERIZATION_ONLY
-NATIVE_COMPARATIVE_VALID=NO
-NATIVE_SPEEDUP_CLAIM=NO
-BENCHMARK_RERUN=NO
-```
-
-## Final T4 truth
-
-```text
-NEW_T4_RUNS=1
-FINAL_T4_HEAD=efab5bf6a0d790f167004a15696f4bc4e62c87dc
-FINAL_T4_SELECTED_FILES=369
-FINAL_T4_PASS_FILES=352
-FINAL_T4_FAIL_FILES=0
-FINAL_T4_TIMEOUT_FILES=17
-FINAL_T4_UNCLASSIFIED_TIMEOUT_FILES=0
-FINAL_T4_EXIT=1
-FINAL_T4_STATUS=TIMEOUT
-ADDITIONAL_T4_RUNS=0
-```
-
-Every timeout had a declared finite class in the report. Sixteen were
-`HEAVY_RENDERER=300`; one was `DEFAULT=60`. The latter was independently
-diagnosed after the T4 with two Windows process aborts and one 130.917-second
-pass, classified `HOST_SCHEDULING_VARIANCE`. A declared class is not the same
-as a successful test, so the residual remains a blocker.
-
-## Candidate boundary
-
-```text
-FINAL_TESTED_RUNNER_HEAD=efab5bf6a0d790f167004a15696f4bc4e62c87dc
-FINAL_CANDIDATE_HEAD=DOCUMENTATION_COMMIT_AFTER_EVIDENCE_WRITE
-SOURCE_CHANGED_AFTER_FINAL_GATES=NO
-PRODUCTION_COMPILER_CHANGE=NO
-BLOCKER=1
-HIGH=0
-MEDIUM=0
-LOW=0
+BLOCKER=1_PENDING_FINAL_T4
 READY_FOR_PR=NO
 READY_FOR_MERGE=NO
-```
-
-```text
-S3_PR=184
-BENCH_PR=6
-PUSH=YES
 MERGE=NO
 AUTO_MERGE=NO
 FORCE_PUSH=NO

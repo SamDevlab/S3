@@ -1,128 +1,73 @@
 {
-  "campaign": "M1.91-M2.00 terminal timeout policy closure",
+  "campaign": "M2.00 post-reboot JSMN stability checkpoint",
   "branch": "feature/m191-m200-autonomous-20260819",
-  "final_tested_runner_head": "efab5bf6a0d790f167004a15696f4bc4e62c87dc",
-  "final_candidate_head": null,
-  "final_candidate_head_note": "Documentation commit is created after evidence write; the tested runner HEAD remains unchanged.",
-  "source_changed_after_final_gates": false,
-  "production_compiler_change": false,
-  "historical_t4_untouched": true,
-  "tls_blocker_triage": {
-    "original_failure_reproduced": true,
-    "classification": "TEST_CLOCK_NONDETERMINISM",
-    "production_change": false,
-    "test_change": true,
-    "test_correction": "DETERMINISTIC_CLOCK",
-    "resource_release": "PASS",
-    "exactly_once_close": "PASS",
-    "connection_budget_release": "PASS",
-    "repeatability": "20/20 PASS"
+  "head": "cff4da02c6f135c44dd0b8c75795361aac0ebcfc",
+  "remote_head": "cff4da02c6f135c44dd0b8c75795361aac0ebcfc",
+  "worktree_clean": true,
+  "production_change": false,
+  "runner_change": false,
+  "benchmark_runs": 0,
+  "host": {
+    "last_boot": "2026-08-21T04:52:45.5000000-03:00",
+    "uptime_at_snapshot": "00:20:00",
+    "python": "3.11.9",
+    "windows": "Microsoft Windows 11 Home 10.0.26200 Build 26200",
+    "logical_cpus": 8,
+    "free_memory_kb": 1452168,
+    "process_count": 274,
+    "hypervisor_present": false
   },
-  "gates": {
-    "compileall": "PASS",
-    "m1_93_focused": "8 passed",
-    "tls_server": "7 passed",
-    "http_adjacent": "49 passed",
-    "async_ownership": "PASS",
-    "runner_focused": "24 passed",
-    "t2": "59 passed",
-    "t3": "84 passed",
-    "smart_affected": "1 passed",
-    "diff_check": "PASS"
+  "post_reboot_jsmn": {
+    "five_run_seconds": [43.749, 35.661, 30.623, 36.608, 36.673],
+    "five_run_exit_codes": [0, 0, 0, 0, 0],
+    "five_run_timeout_count": 0,
+    "five_run_abnormal_exit_count": 0,
+    "ten_run_seconds": [37.737, 38.640, 30.544, 30.565, 31.600, 31.550, 29.592, 30.588, 35.626, 32.556],
+    "ten_run_exit_codes": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    "ten_run_pass_count": 10,
+    "ten_run_timeout_count": 0,
+    "ten_run_abnormal_exit_count": 0,
+    "ten_run_orphan_count": 0,
+    "median_seconds": 31.575,
+    "p95_seconds": 38.640,
+    "p95_method": "NEAREST_RANK",
+    "max_seconds": 38.640,
+    "coefficient_of_variation": 0.0935,
+    "default_60s_margin": "HEALTHY",
+    "classification": "PRE_REBOOT_HOST_STATE_CONTAMINATION"
   },
-  "timeout_policy": {
-    "runner_commit": "1712f76",
-    "default_seconds": 60,
-    "parallelism": 1,
-    "classes": {
-      "DEFAULT": 60,
-      "HEAVY_SELF_HOSTING": 180,
-      "HEAVY_RENDERER": 300
-    },
-    "unknown_class": "FAIL_CLOSED",
-    "timeout_result_preserved": true
+  "controls": {
+    "test": "tests/test_ternary.py",
+    "runs": 15,
+    "pass_count": 15,
+    "timeout_count": 0,
+    "exit_codes": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
   },
-  "timeout_diagnostics": {
-    "decimal": {
-      "changed_in_m191_m200": false,
-      "runs_seconds": [116.604, 101.277, 108.882],
-      "median_seconds": 108.882,
-      "result": "STABLE_SLOW_TEST_EXCEEDS_T4_FILE_BUDGET"
-    },
-    "opcode_classifier": {
-      "changed_in_m191_m200": false,
-      "runs_seconds": [99.557, 87.832, 83.417],
-      "median_seconds": 87.832,
-      "result": "STABLE_SLOW_TEST_EXCEEDS_T4_FILE_BUDGET"
-    },
-    "controls": {
-      "tests/test_compare_assembly_renderer.py": "WATCHDOG_300S",
-      "tests/test_m150_renderer_component.py": "WATCHDOG_300S",
-      "tests/test_s3_renderer_generic_text.py": "175.666S_EXIT_0"
-    },
-    "external_jsmn": {
-      "runs_seconds": [7.237, 26.190, 130.917],
-      "exit_codes": [-1073741510, -1073741510, 0],
-      "pytest_result": "two non-terminal process aborts; one PASS",
-      "watchdog": false,
-      "classification": "HOST_SCHEDULING_VARIANCE",
-      "release_accepted": false
-    }
+  "process_audit": {
+    "child_process_count_estimate": 0,
+    "native_build_count": 0,
+    "temporary_artifact_model": "NONE",
+    "process_cleanup_model": "NO_TEST_CHILDREN; PYTEST_PROCESS_EXITS_NORMALLY",
+    "orphan_process_detected": false,
+    "root_variance_phase": "NOT_APPLICABLE_POST_REBOOT"
   },
-  "global_t4": {
+  "prior_final_t4": {
     "head": "efab5bf6a0d790f167004a15696f4bc4e62c87dc",
     "selected_files": 369,
     "passed_files": 352,
     "failed_files": 0,
     "timeout_files": 17,
-    "unclassified_timeout_files": 0,
-    "timeout_class_distribution": {
-      "HEAVY_RENDERER_300S": 16,
-      "HEAVY_SELF_HOSTING_180S": 0,
-      "DEFAULT_60S": 1
-    },
     "exit": 1,
-    "rerun": false,
-    "report": "T4-timeout-policy-20260820-214407.txt",
-    "status": "TIMEOUT"
+    "unchanged": true
   },
-  "benchmark": {
-    "head": "c13f159bb19f13cac9e83e523b6e392baae71738",
-    "timing_class": "CHARACTERIZATION_ONLY",
-    "native_comparative_valid": false,
-    "native_speedup_claim": "NO",
-    "rerun": false
-  },
-  "milestones": {
-    "M1.91": "PASS",
-    "M1.92": "PASS",
-    "M1.93": "PASS",
-    "M1.94": "PASS_WITH_PROVIDER_DEFERRED",
-    "M1.95": "PASS",
-    "M1.96": "PASS_WITH_PROVIDER_DEFERRED",
-    "M1.97": "PASS_STRUCTURAL_LINK_NATIVE_DEFERRED",
-    "M1.98": "PASS_STRUCTURAL_NATIVE_DEFERRED",
-    "M1.99": "PASS_FOCUSED_AND_BENCHMARKED",
-    "M2.00": "BLOCKED_BY_UNSTABLE_DEFAULT_TIMEOUT_RESIDUAL"
-  },
-  "findings": {
-    "blockers": 1,
-    "high": 0,
-    "medium": 0,
-    "low": 0
-  },
-  "publication": {
-    "s3_pr": 184,
-    "benchmark_pr": 6,
-    "push": "YES",
+  "gate": {
+    "next_t4_eligible": true,
+    "t4_runs_this_prompt": 0,
+    "human_decision_required_before_t4": true,
     "merge": "NO",
-    "auto_merge": "NO",
-    "force_push": "NO",
     "tag": "NO",
     "release": "NO",
-    "m2_01_started": "NO",
-    "ready_for_pr": "NO",
-    "ready_for_merge": "NO"
+    "m2_01_started": "NO"
   },
-  "status": "BLOCKED_FINAL_T4_TIMEOUT_POLICY"
+  "status": "BLOCKED_PENDING_FINAL_T4_REAUTHORIZATION"
 }

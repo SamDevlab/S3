@@ -1,19 +1,24 @@
 # M2.00 Closure Checkpoint
 
-Status: `BLOCKED_BY_UNSTABLE_DEFAULT_TIMEOUT_RESIDUAL`
+Status: `BLOCKED_PENDING_FINAL_T4_REAUTHORIZATION`
 
-The runner now has explicit finite timeout classes and the final policy T4
-has zero failed files and zero unclassified timeout files. It nevertheless
-returned `TIMEOUT` because 17 selected files exceeded their applied budgets.
-Sixteen are explicitly assigned heavy renderer workloads at 300 seconds.
-The remaining `tests/test_external_jsmn_s3.py` timed out at the default
-60-second class.
+The post-reboot evidence resolved the residual JSMN classification. Five
+fresh runs passed below 60 seconds, followed by 10/10 margin repetitions with
+maximum `38.640 s`, nearest-rank p95 `38.640 s`, and coefficient of variation
+`0.0935`. All 15 controls passed, and no orphan child process was detected.
 
-Three post-T4 fresh-process diagnostics for that residual produced two
-non-terminal Windows process-abort exits (`-1073741510`) and one successful
-run at 130.917 seconds. This is `HOST_SCHEDULING_VARIANCE`, not a verified
-bounded pass and not a functional assertion failure. No additional T4 was
-run, so the release gate remains blocked rather than treating the timeout as
-PASS.
+The correct classification is:
 
-No public release, tag, merge, or M2.01 implementation was performed.
+```text
+PRE_REBOOT_CLASSIFICATION=HOST_SCHEDULING_VARIANCE
+POST_REBOOT_CLASSIFICATION=PRE_REBOOT_HOST_STATE_CONTAMINATION
+JSMN_DEFAULT_60S_MARGIN=HEALTHY
+```
+
+The final policy T4 from the previous prompt remains a truthful historical
+`TIMEOUT` result (`352 passed`, `0 failed`, `17 timeout`, exit 1). This prompt
+did not run T4, so M2.00 is not yet promoted. Another final T4 is eligible
+for a human decision.
+
+No production, benchmark, historical T4, merge, tag, release, or M2.01
+implementation was changed or started.
