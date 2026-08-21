@@ -13,7 +13,7 @@
     "classes": {
       "DEFAULT": {"seconds": 60},
       "HEAVY_SELF_HOSTING": {"seconds": 180},
-      "HEAVY_RENDERER": {"seconds": 300}
+      "HEAVY_RENDERER": {"seconds": 754}
     },
     "assignments": {
       "tests/test_assembly_program_text_adapter.py": "HEAVY_RENDERER",

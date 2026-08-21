@@ -135,6 +135,12 @@ def test_explicit_heavy_timeout_policy_is_bounded() -> None:
     assert policy.seconds == 180
 
 
+def test_renderer_timeout_policy_uses_shared_evidence_budget() -> None:
+    policy = IMPACT.timeout_policy_for("tests/test_s3_renderer_sign_text.py", 60)
+    assert policy.timeout_class is T4TimeoutClass.HEAVY_RENDERER
+    assert policy.seconds == 754
+
+
 def test_unknown_timeout_class_fails_closed(tmp_path: Path) -> None:
     manifest = {
         "schema": "s3.test-impact.v1",
@@ -150,13 +156,19 @@ def test_unknown_timeout_class_fails_closed(tmp_path: Path) -> None:
 
 
 def test_timeout_status_is_preserved_and_not_promoted(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    selection = (IMPACT.select(["tests/test_decimal_functions.py"])[0],)
+    selection = (IMPACT.select(["tests/test_s3_renderer_sign_text.py"])[0],)
     monkeypatch.setattr("tools.s3test._profile_selection", lambda *args: (selection, (selection[0].test,)))
     monkeypatch.setattr("tools.s3test._git", lambda root, *args, check=True: "HEAD\n" if args[:2] == ("rev-parse", "HEAD") else "")
     monkeypatch.setattr("tools.s3test.run_pytest_file", lambda root, test, timeout: {"status": "TIMEOUT", "output": "", "returncode": None})
     report = execute_profile(tmp_path, IMPACT, "affected", None, None, 60, StateStore(tmp_path))
     assert report["summary"]["status"] == "TIMEOUT"
+    assert report["summary"]["selected"] == 1
+    assert report["summary"]["passed"] == 0
+    assert report["summary"]["failed"] == 0
+    assert report["summary"]["timed_out"] == 1
     assert report["tests"][0]["status"] == "TIMEOUT"
+    assert report["tests"][0]["timeout_class"] == "HEAVY_RENDERER"
+    assert report["tests"][0]["timeout_seconds"] == 754
 
 
 def test_report_records_applied_timeout_policy(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
