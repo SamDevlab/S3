@@ -1,33 +1,16 @@
 {
-  "campaign": "M2.00 post-reboot JSMN stability checkpoint",
+  "campaign": "M2.00 authorized final T4",
   "branch": "feature/m191-m200-autonomous-20260819",
-  "head": "cff4da02c6f135c44dd0b8c75795361aac0ebcfc",
-  "remote_head": "cff4da02c6f135c44dd0b8c75795361aac0ebcfc",
-  "worktree_clean": true,
+  "head": "a651e9b3551f218af1c27bb908e0692880afc4da",
+  "origin_main": "a9e430551f2ee77aa2ef229daf9e967333e83e2c",
+  "worktree_clean_before_t4": true,
+  "local_remote_aligned_before_t4": true,
+  "source_test_runner_mutation_before_t4": false,
   "production_change": false,
   "runner_change": false,
-  "benchmark_runs": 0,
-  "host": {
-    "last_boot": "2026-08-21T04:52:45.5000000-03:00",
-    "uptime_at_snapshot": "00:20:00",
-    "python": "3.11.9",
-    "windows": "Microsoft Windows 11 Home 10.0.26200 Build 26200",
-    "logical_cpus": 8,
-    "free_memory_kb": 1452168,
-    "process_count": 274,
-    "hypervisor_present": false
-  },
   "post_reboot_jsmn": {
-    "five_run_seconds": [43.749, 35.661, 30.623, 36.608, 36.673],
-    "five_run_exit_codes": [0, 0, 0, 0, 0],
-    "five_run_timeout_count": 0,
-    "five_run_abnormal_exit_count": 0,
-    "ten_run_seconds": [37.737, 38.640, 30.544, 30.565, 31.600, 31.550, 29.592, 30.588, 35.626, 32.556],
-    "ten_run_exit_codes": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    "ten_run_pass_count": 10,
-    "ten_run_timeout_count": 0,
-    "ten_run_abnormal_exit_count": 0,
-    "ten_run_orphan_count": 0,
+    "five_run_pass": "5/5",
+    "ten_run_pass": "10/10",
     "median_seconds": 31.575,
     "p95_seconds": 38.640,
     "p95_method": "NEAREST_RANK",
@@ -36,38 +19,42 @@
     "default_60s_margin": "HEALTHY",
     "classification": "PRE_REBOOT_HOST_STATE_CONTAMINATION"
   },
-  "controls": {
-    "test": "tests/test_ternary.py",
-    "runs": 15,
-    "pass_count": 15,
-    "timeout_count": 0,
-    "exit_codes": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-  },
-  "process_audit": {
-    "child_process_count_estimate": 0,
-    "native_build_count": 0,
-    "temporary_artifact_model": "NONE",
-    "process_cleanup_model": "NO_TEST_CHILDREN; PYTEST_PROCESS_EXITS_NORMALLY",
-    "orphan_process_detected": false,
-    "root_variance_phase": "NOT_APPLICABLE_POST_REBOOT"
-  },
-  "prior_final_t4": {
-    "head": "efab5bf6a0d790f167004a15696f4bc4e62c87dc",
-    "selected_files": 369,
-    "passed_files": 352,
-    "failed_files": 0,
-    "timeout_files": 17,
+  "global_t4": {
+    "runs_this_prompt": 1,
+    "start": "2026-08-21T05:42:08.6894598-03:00",
+    "end": "2026-08-21T07:02:13.1286556-03:00",
+    "head": "a651e9b3551f218af1c27bb908e0692880afc4da",
+    "selected": 369,
+    "pass": 365,
+    "fail": 0,
+    "timeout": 4,
+    "unclassified_timeout": 0,
     "exit": 1,
-    "unchanged": true
+    "status": "TIMEOUT",
+    "raw_transcript": "T4-final-post-reboot-20260821-054208.txt",
+    "timeouts": [
+      {"path": "tests/test_assembly_renderer_candidate_readiness.py", "timeout_class": "HEAVY_RENDERER", "applied_timeout_seconds": 300},
+      {"path": "tests/test_compare_assembly_renderer.py", "timeout_class": "HEAVY_RENDERER", "applied_timeout_seconds": 300},
+      {"path": "tests/test_m150_renderer_component.py", "timeout_class": "HEAVY_RENDERER", "applied_timeout_seconds": 300},
+      {"path": "tests/test_s3_renderer_sign_text.py", "timeout_class": "HEAVY_RENDERER", "applied_timeout_seconds": 300}
+    ]
   },
-  "gate": {
-    "next_t4_eligible": true,
-    "t4_runs_this_prompt": 0,
-    "human_decision_required_before_t4": true,
+  "benchmark_rerun": false,
+  "publication": {
     "merge": "NO",
+    "auto_merge": "NO",
+    "force_push": "NO",
     "tag": "NO",
     "release": "NO",
     "m2_01_started": "NO"
   },
-  "status": "BLOCKED_PENDING_FINAL_T4_REAUTHORIZATION"
+  "findings": {
+    "blockers": 1,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "ready_for_pr": "NO",
+    "ready_for_merge_review": "NO"
+  },
+  "status": "BLOCKED_FINAL_T4_TIMEOUT"
 }
