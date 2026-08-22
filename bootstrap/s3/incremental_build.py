@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping
@@ -12,6 +13,124 @@ from .build_graph import BuildGraph, BuildGraphError
 
 class IncrementalBuildError(ValueError):
     """Raised when persisted incremental state is malformed."""
+
+
+def _digest(payload: object) -> str:
+    encoded = json.dumps(payload, ensure_ascii=True, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+@dataclass(frozen=True, slots=True)
+class IncrementalProvenance:
+    """Immutable inputs that make a cache entry semantically reusable."""
+
+    compiler: str
+    target: str
+    backend: str
+    optimization: str
+    language_config: str = "default"
+    package_lock: str = "none"
+
+    def __post_init__(self) -> None:
+        values = (self.compiler, self.target, self.backend, self.optimization, self.language_config, self.package_lock)
+        if any(not isinstance(value, str) or not value.strip() for value in values):
+            raise IncrementalBuildError("incremental provenance fields must be non-empty strings")
+
+    @property
+    def payload(self) -> dict[str, str]:
+        return {
+            "compiler": self.compiler,
+            "target": self.target,
+            "backend": self.backend,
+            "optimization": self.optimization,
+            "language_config": self.language_config,
+            "package_lock": self.package_lock,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class IncrementalArtifact:
+    """A fail-closed cache envelope; the payload is never trusted by itself."""
+
+    identity: str
+    provenance: IncrementalProvenance
+    output_digest: str
+    semantic_digest: str
+    assembly_digest: str
+    program_result: str
+
+    @classmethod
+    def create(
+        cls,
+        graph: BuildGraph,
+        provenance: IncrementalProvenance,
+        *,
+        semantic_digest: str,
+        assembly_digest: str,
+        program_result: str,
+    ) -> "IncrementalArtifact":
+        for name, value in (("semantic_digest", semantic_digest), ("assembly_digest", assembly_digest), ("program_result", program_result)):
+            if not isinstance(value, str) or not value:
+                raise IncrementalBuildError(f"{name} must be non-empty")
+        identity = _digest({"graph": graph.artifact_identity, "provenance": provenance.payload})
+        output_digest = _digest({"semantic": semantic_digest, "assembly": assembly_digest, "result": program_result})
+        return cls(identity, provenance, output_digest, semantic_digest, assembly_digest, program_result)
+
+    @property
+    def payload(self) -> dict[str, object]:
+        return {
+            "format": "s3.incremental-artifact.v2",
+            "identity": self.identity,
+            "provenance": self.provenance.payload,
+            "output_digest": self.output_digest,
+            "semantic_digest": self.semantic_digest,
+            "assembly_digest": self.assembly_digest,
+            "program_result": self.program_result,
+        }
+
+    @property
+    def text(self) -> str:
+        return json.dumps(self.payload, ensure_ascii=True, indent=2, sort_keys=True) + "\n"
+
+    def write(self, path: str | Path) -> None:
+        Path(path).write_text(self.text, encoding="utf-8", newline="\n")
+
+
+def load_incremental_artifact(path: str | Path) -> IncrementalArtifact:
+    try:
+        payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        raise IncrementalBuildError(f"could not read incremental artifact {path}") from error
+    if not isinstance(payload, dict) or payload.get("format") != "s3.incremental-artifact.v2":
+        raise IncrementalBuildError("unsupported incremental artifact format")
+    raw_provenance = payload.get("provenance")
+    if not isinstance(raw_provenance, dict):
+        raise IncrementalBuildError("incremental artifact provenance is missing")
+    try:
+        provenance = IncrementalProvenance(**raw_provenance)
+        artifact = IncrementalArtifact(
+            str(payload["identity"]),
+            provenance,
+            str(payload["output_digest"]),
+            str(payload["semantic_digest"]),
+            str(payload["assembly_digest"]),
+            str(payload["program_result"]),
+        )
+    except (KeyError, TypeError, ValueError) as error:
+        raise IncrementalBuildError("malformed incremental artifact") from error
+    if any(not value for value in (artifact.identity, artifact.output_digest, artifact.semantic_digest, artifact.assembly_digest)):
+        raise IncrementalBuildError("incremental artifact contains an empty identity")
+    expected_output = _digest({"semantic": artifact.semantic_digest, "assembly": artifact.assembly_digest, "result": artifact.program_result})
+    if artifact.output_digest != expected_output:
+        raise IncrementalBuildError("incremental artifact output digest mismatch")
+    return artifact
+
+
+def artifact_matches(artifact: IncrementalArtifact, graph: BuildGraph, provenance: IncrementalProvenance) -> bool:
+    """Return HIT only for exact graph and provenance identity."""
+
+    expected = _digest({"graph": graph.artifact_identity, "provenance": provenance.payload})
+    return artifact.identity == expected and artifact.provenance == provenance
 
 
 @dataclass(frozen=True, slots=True)
