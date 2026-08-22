@@ -9,6 +9,11 @@ from ...assembly_verifier import AssemblyVerifier
 from ...emulator import DEFAULT_MAX_FRAMES, DEFAULT_MAX_INSTRUCTIONS, DEFAULT_MAX_MEMORY_TRITS
 from .diagnostics import NativeBackendError
 from .emitter import X8664Emitter
+from .experimental_policy import (
+    ExperimentalNativePolicyMode,
+    parse_experimental_native_policy_mode,
+    resolve_experimental_policies,
+)
 from .policy import BASELINE_NATIVE_POLICY, NativePolicy
 
 NATIVE_MAX_INSTRUCTIONS = (1 << 64) - 1
@@ -27,6 +32,17 @@ class X8664Backend:
         default=BASELINE_NATIVE_POLICY,
         kw_only=True,
     )
+    experimental_mode: ExperimentalNativePolicyMode | str | None = field(
+        default=None,
+        kw_only=True,
+    )
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "experimental_mode",
+            parse_experimental_native_policy_mode(self.experimental_mode),
+        )
 
     def generate(self, program: AssemblyProgram) -> str:
         if isinstance(self.max_instructions, bool) or not isinstance(self.max_instructions, int):
@@ -60,12 +76,27 @@ class X8664Backend:
             raise NativeBackendError(
                 "native entry function 'main' must return one result cell"
             )
+        policy_by_function = None
+        if self.experimental_mode is not ExperimentalNativePolicyMode.OFF:
+            if self.native_policy != BASELINE_NATIVE_POLICY:
+                raise NativeBackendError(
+                    "experimental policy modes require the canonical baseline policy"
+                )
+            selections = resolve_experimental_policies(
+                {function.name: function for function in program.functions},
+                self.experimental_mode,
+            )
+            policy_by_function = {
+                name: selection.policy
+                for name, selection in selections.items()
+            }
         return X8664Emitter(
             program,
             max_frames=self.max_frames,
             max_instructions=self.max_instructions,
             register_allocation=self.register_allocation,
             native_policy=self.native_policy,
+            native_policy_by_function=policy_by_function,
         ).emit()
 
     def _generate_ffi(self, program: AssemblyProgram) -> str:

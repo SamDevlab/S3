@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import struct
 from dataclasses import dataclass
+from typing import Mapping
 
 from ...assembly import (
     AssemblyFunction,
@@ -117,13 +118,18 @@ class X8664Emitter:
         max_instructions: int,
         register_allocation: bool = False,
         native_policy: NativePolicy = BASELINE_NATIVE_POLICY,
+        native_policy_by_function: Mapping[str, NativePolicy] | None = None,
     ):
         self.program = program
         self.max_frames = max_frames
         self.max_instructions = max_instructions
         self.register_allocation = register_allocation
-        self.native_policy = native_policy
-        self.native_policy.validate()
+        self._base_native_policy = native_policy
+        self._base_native_policy.validate()
+        self.native_policy_by_function = dict(native_policy_by_function or {})
+        for policy in self.native_policy_by_function.values():
+            policy.validate()
+        self.native_policy = self._base_native_policy
         self.failure_sites: list[FailureSite] = []
         self.current_function: AssemblyFunction | None = None
         self.current_block: str | None = None
@@ -157,6 +163,10 @@ class X8664Emitter:
     def _emit_function(self, function: AssemblyFunction) -> list[str]:
         if function.external:
             return []
+        self.native_policy = self.native_policy_by_function.get(
+            function.name,
+            self._base_native_policy,
+        )
         self._safe_register_reads = proven_initialized_register_reads(function)
         self._current_instruction_sites = {
             id(instruction): (block.label, index)
