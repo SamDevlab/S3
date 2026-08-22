@@ -1,0 +1,20 @@
+{
+  "campaign": "S3-X8664-TMOV-REGISTER-RESIDENCE-CORRECTNESS-FORENSIC-REPAIR-20260822",
+  "repository": "SamDevlab/S3",
+  "canonical_base_sha": "9b39c7070d7bfa23d709c2128eb0b0bbef164177",
+  "rc1_tag": "v1.0.0-rc1",
+  "pr190_head_at_start": "161a3d91ef6a46586503d90f6c58c75d47b79964",
+  "v22_source_lock": "04d94a5368106c1f476ac8856a1a313eedea7b37",
+  "fix_branch": "fix/x86-64-tmov-residence-20260822",
+  "fix_source_lock": "ec48d05928939538587a003a56e1c673e0a0474a",
+  "source_changes_after_lock": "NO",
+  "linux_runner": "Linux x86-64",
+  "s3_benchmarks_mutated": "NO",
+  "native_timing_used": "NO",
+  "t4": "NOT_RUN",
+  "full_suite": "NOT_RUN",
+  "main_direct_push": "NO",
+  "pr190_merged": "NO",
+  "reboot": "NO",
+  "shutdown": "NO"
+}

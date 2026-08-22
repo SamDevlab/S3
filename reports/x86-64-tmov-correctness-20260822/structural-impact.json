@@ -1,0 +1,13 @@
+{
+  "corpus": "V2.2 A01-A26 excluding static-reference A12",
+  "total_cases": 25,
+  "unchanged_cases": 24,
+  "changed_cases": 1,
+  "affected_tmov_cases_changed": 1,
+  "changed_case_ids": ["A07"],
+  "a07_line_delta": 2,
+  "a07_mov_delta": 2,
+  "unrelated_cases_changed": 0,
+  "native_timing": "NOT_RUN",
+  "performance_claim": "NONE"
+}

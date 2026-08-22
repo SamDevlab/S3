@@ -1,0 +1,11 @@
+{
+  "selected": "A_CONSERVATIVE_MATERIALIZATION",
+  "tmov_lowering": "read source, write destination for every non-self TMOV",
+  "alias_state_removed": true,
+  "self_move_preserved": true,
+  "cfg_aliases_carried": false,
+  "physical_residence_independent": true,
+  "instruction_limit_semantics_preserved": true,
+  "performance_claim": "NONE",
+  "structural_classification": "CORRECTNESS_REPAIR_STRUCTURAL_COST"
+}
