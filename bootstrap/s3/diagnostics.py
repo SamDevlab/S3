@@ -10,6 +10,7 @@ from typing import Any, Mapping
 
 DIAGNOSTIC_SCHEMA = "s3-diagnostic"
 DIAGNOSTIC_SCHEMA_VERSION = "1.0.0"
+DIAGNOSTIC_LIST_SCHEMA = "s3-diagnostic-list"
 
 
 class DiagnosticSeverity(str, Enum):
@@ -374,6 +375,71 @@ class Diagnostic:
             )
             + "\n"
         )
+
+
+@dataclass(frozen=True, slots=True)
+class DiagnosticCollection:
+    """Stable, bounded presentation of compiler diagnostics."""
+
+    diagnostics: tuple[Diagnostic, ...]
+    max_items: int = 256
+
+    def __post_init__(self) -> None:
+        if isinstance(self.max_items, bool) or not isinstance(self.max_items, int) or self.max_items <= 0:
+            raise ValueError("diagnostic max_items must be a positive integer")
+        if not isinstance(self.diagnostics, tuple) or any(not isinstance(item, Diagnostic) for item in self.diagnostics):
+            raise TypeError("diagnostics must be a tuple of Diagnostic values")
+        if len(self.diagnostics) > self.max_items:
+            raise ValueError("diagnostic collection exceeds its bounded capacity")
+        ordered = tuple(sorted(self.diagnostics, key=_diagnostic_sort_key))
+        if ordered != self.diagnostics:
+            raise ValueError("diagnostics must be in canonical order")
+
+    @classmethod
+    def from_iterable(cls, diagnostics: object, *, max_items: int = 256) -> "DiagnosticCollection":
+        if isinstance(diagnostics, (str, bytes)):
+            raise TypeError("diagnostics must be an iterable of Diagnostic values")
+        try:
+            values = tuple(diagnostics)  # type: ignore[arg-type]
+        except TypeError as error:
+            raise TypeError("diagnostics must be iterable") from error
+        if any(not isinstance(item, Diagnostic) for item in values):
+            raise TypeError("diagnostics must contain only Diagnostic values")
+        return cls(tuple(sorted(values, key=_diagnostic_sort_key)), max_items)
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "schema": DIAGNOSTIC_LIST_SCHEMA,
+            "schema_version": DIAGNOSTIC_SCHEMA_VERSION,
+            "diagnostics": [item.to_dict() for item in self.diagnostics],
+        }
+
+    def to_json(self) -> str:
+        return json.dumps(self.to_dict(), ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n"
+
+    def to_text(self) -> str:
+        lines: list[str] = []
+        for item in self.diagnostics:
+            location = ""
+            if item.source is not None and item.source.line is not None:
+                column = item.source.column or 1
+                location = f":{item.source.line}:{column}"
+            prefix = f"{item.file}{location}: " if item.file else ""
+            lines.append(f"{prefix}{item.code.value}: {item.message}")
+            lines.extend(f"  note: {note}" for note in item.notes)
+        return "\n".join(lines) + ("\n" if lines else "")
+
+
+def _diagnostic_sort_key(item: Diagnostic) -> tuple[object, ...]:
+    source = item.source
+    return (
+        item.file or "",
+        source.line if source is not None and source.line is not None else 0,
+        source.column if source is not None and source.column is not None else 0,
+        item.phase.value,
+        item.code.value,
+        item.message,
+    )
 
 
 class S3Error(Exception):
