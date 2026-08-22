@@ -66,6 +66,10 @@ class PGOProfileIdentity:
     workload_identity: str
     profile_digest: str
 
+    def __post_init__(self) -> None:
+        if any(not isinstance(value, str) or not value for value in (self.source_identity, self.compiler_sha, self.target, self.workload_identity, self.profile_digest)):
+            raise BuildProfileError("PGO profile identity fields must be non-empty")
+
     @classmethod
     def create(cls, *, source_identity: str, compiler_sha: str, target: str, workload_identity: str, profile_data: bytes) -> "PGOProfileIdentity":
         if not isinstance(profile_data, bytes) or not profile_data:

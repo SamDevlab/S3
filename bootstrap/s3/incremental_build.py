@@ -106,15 +106,18 @@ def load_incremental_artifact(path: str | Path) -> IncrementalArtifact:
     raw_provenance = payload.get("provenance")
     if not isinstance(raw_provenance, dict):
         raise IncrementalBuildError("incremental artifact provenance is missing")
+    required = ("identity", "output_digest", "semantic_digest", "assembly_digest", "program_result")
+    if any(not isinstance(payload.get(name), str) or not payload.get(name) for name in required):
+        raise IncrementalBuildError("incremental artifact fields must be non-empty strings")
     try:
         provenance = IncrementalProvenance(**raw_provenance)
         artifact = IncrementalArtifact(
-            str(payload["identity"]),
+            payload["identity"],
             provenance,
-            str(payload["output_digest"]),
-            str(payload["semantic_digest"]),
-            str(payload["assembly_digest"]),
-            str(payload["program_result"]),
+            payload["output_digest"],
+            payload["semantic_digest"],
+            payload["assembly_digest"],
+            payload["program_result"],
         )
     except (KeyError, TypeError, ValueError) as error:
         raise IncrementalBuildError("malformed incremental artifact") from error

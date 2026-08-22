@@ -70,7 +70,12 @@ class BoundedAsyncTelemetry:
             raise TypeError("telemetry kind must be an AsyncEventKind")
         if not self.enabled:
             return
-        normalized = tuple(sorted((str(key), str(value)) for key, value in (detail or {}).items()))
+        if detail is not None and not isinstance(detail, Mapping):
+            raise TypeError("telemetry detail must be a mapping")
+        raw_detail = detail or {}
+        if any(not isinstance(key, str) or not isinstance(value, str) for key, value in raw_detail.items()):
+            raise TypeError("telemetry detail must contain strings")
+        normalized = tuple(sorted(raw_detail.items()))
         with self._lock:
             event = AsyncEvent(self._sequence, kind, task_id, resource, normalized)
             self._sequence += 1
