@@ -1,0 +1,50 @@
+{
+  "milestone": "M2.00",
+  "m2_00_base_sha": "2316300f7f6c119004009b713849cae1c101d1a5",
+  "m2_00_pr": 185,
+  "m2_00_implementation_status": "READY_FOR_CERTIFICATION",
+  "m2_00_certification": "DEFERRED_BY_EXECUTION_ENVIRONMENT",
+  "m2_00_functional_regression_proven": false,
+  "m2_00_t4_terminal_result": "NOT_AVAILABLE",
+  "m2_00_merged": false,
+  "m2_00_waiver": false,
+  "m2_00_t4_reruns_this_campaign": 0,
+  "last_authoritative_completed_t4": {
+    "selected": 369,
+    "passed": 368,
+    "failed": 0,
+    "timeout": 1,
+    "exit": 1,
+    "timeout_test": "tests/test_s3_renderer_sign_text.py",
+    "timeout_class": "HEAVY_RENDERER",
+    "timeout_seconds": 754
+  },
+  "bounded_reproduction": {
+    "selected": 6,
+    "passed": 6,
+    "failed": 0,
+    "timeout": 0,
+    "status": "PASS"
+  },
+  "later_attempts": [
+    {
+      "kind": "interactive_full_t4",
+      "result": "EXTERNALLY_ABORTED_NO_TERMINAL_EVIDENCE"
+    },
+    {
+      "kind": "durable_full_t4",
+      "result": "EXTERNALLY_ABORTED_NO_TERMINAL_EVIDENCE"
+    }
+  ],
+  "reason": "Repeated long-running certification attempts could not reliably produce a terminal result on the available host. This is not equivalent to PASS and is not evidence of a production failure.",
+  "preintegration_baseline": true,
+  "canonical_main_lineage": false,
+  "return_conditions": [
+    "authoritative terminal T4 for the exact candidate SHA",
+    "selected greater than zero",
+    "zero failures",
+    "zero timeouts",
+    "zero unclassified timeouts",
+    "exit code zero"
+  ]
+}
