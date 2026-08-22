@@ -1,0 +1,13 @@
+{
+  "milestone": "M2.35",
+  "status": "PARTIAL",
+  "signed_index": "PASS",
+  "trust_root": "PASS",
+  "content_hash": "PASS",
+  "tamper_rejection": "PASS",
+  "cache_security": "PASS",
+  "offline_cache": "PASS_FOR_EXISTING_CONTRACT",
+  "resolution_reproducibility": "PASS",
+  "vetted_ed25519_runtime": "DEFERRED_BY_ENVIRONMENT",
+  "source_head": "5e6221a"
+}

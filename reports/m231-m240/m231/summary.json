@@ -1,0 +1,10 @@
+{
+  "milestone": "M2.31",
+  "status": "PASS",
+  "public_surface_inventory": "PASS",
+  "experimental_boundaries": "PASS",
+  "unintentional_public_api_review": "PASS",
+  "breaking_corrections": [],
+  "stable_core": ["language.syntax", "language.type-and-ownership", "module.import-resolution", "package.manifest-and-lockfile", "diagnostics.codes-and-spans", "cli.check-test-build", "build.profile-identities"],
+  "source_head": "ba40468"
+}

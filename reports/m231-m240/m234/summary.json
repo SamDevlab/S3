@@ -1,0 +1,11 @@
+{
+  "milestone": "M2.34",
+  "status": "DEFERRED_BY_ENVIRONMENT",
+  "tls_provider": "OpenSSL 3.0.13 30 Jan 2024",
+  "tls_available": true,
+  "ed25519_provider": "unavailable",
+  "ed25519_available": false,
+  "custom_cryptography": false,
+  "focused_provider_gate": "PASS",
+  "source_head": "5e6221a"
+}

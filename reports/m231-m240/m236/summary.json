@@ -1,0 +1,12 @@
+{
+  "milestone": "M2.36",
+  "status": "PARTIAL",
+  "diagnostics": "PASS_FOR_AFFECTED_CONTRACTS",
+  "lsp": "PASS_FOR_UNIQUE_OPEN_DOCUMENT_SYMBOLS",
+  "formatter": "PASS_FOR_EXISTING_CONTRACT",
+  "docs": "PASS_FOR_EXISTING_CONTRACT",
+  "test_framework": "PASS_FOR_EXISTING_CONTRACT",
+  "build_profiles": "PASS_FOR_EXISTING_CONTRACT",
+  "multi_file_project_semantics": "EXPERIMENTAL",
+  "source_head": "73d7748"
+}

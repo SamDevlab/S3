@@ -1,0 +1,12 @@
+{
+  "campaign": "M2.31-M2.40",
+  "status": "PASS_WITH_DOCUMENTED_DEFERMENTS",
+  "critical": 0,
+  "high": 0,
+  "medium_unresolved_release_blockers": 0,
+  "low": "environment and capability deferments",
+  "corrective_finding": "NUL-at-line-start lexer loop fixed in e202bc9",
+  "unresolved_critical": 0,
+  "unresolved_high": 0,
+  "t4": "NOT_RUN_BEFORE_M2.40"
+}

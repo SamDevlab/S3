@@ -1,0 +1,10 @@
+{
+  "milestone": "M2.33",
+  "status": "DEFERRED_BY_ENVIRONMENT",
+  "linux_x86_64": "DEFERRED_BY_ENVIRONMENT",
+  "linux_aarch64": "STRUCTURAL_ONLY",
+  "macos_arm64": "DEFERRED_BY_ENVIRONMENT",
+  "aarch64_execution_type": "UNAVAILABLE",
+  "cross_target_parity": "PASS_FOR_CLASSIFICATION_CONTRACT",
+  "source_head": "e759bd6"
+}

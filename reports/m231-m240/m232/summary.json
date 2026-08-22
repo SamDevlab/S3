@@ -1,0 +1,12 @@
+{
+  "milestone": "M2.32",
+  "status": "PARTIAL",
+  "linux_x86_64_conformance": "DEFERRED_BY_ENVIRONMENT",
+  "hosted_native_differential": "PASS",
+  "o0": "DEFERRED_BY_ENVIRONMENT",
+  "o1": "DEFERRED_BY_ENVIRONMENT",
+  "sysv_abi": "DEFERRED_BY_ENVIRONMENT",
+  "stress_corpus": "PARTIAL",
+  "known_native_mismatch": false,
+  "source_head": "e759bd6"
+}
