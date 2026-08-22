@@ -287,6 +287,51 @@ def test_tmov_f64_value_copy_is_defined_by_emulator() -> None:
     assert Emulator().execute(program) == 1.5
 
 
+def test_tmov_f64_native_source_redefined(tmp_path: Path) -> None:
+    program = _program(
+        (),
+        (
+            (0, AssemblyType.F64),
+            (1, AssemblyType.F64),
+            (2, AssemblyType.TRIT),
+            (3, AssemblyType.TRYTE),
+        ),
+        blocks=(
+            AssemblyBlock(
+                "entry",
+                (
+                    _const(0, 1.5),
+                    _move(1, 0),
+                    _const(0, 2.5),
+                    AssemblyInstruction(AssemblyOpcode.TCMP, (2, 1, 0)),
+                    AssemblyInstruction(
+                        AssemblyOpcode.TBR3,
+                        (2,),
+                        labels=("negative", "neutral", "positive"),
+                    ),
+                ),
+            ),
+            AssemblyBlock("negative", (_const(3, 1), _ret(3))),
+            AssemblyBlock("neutral", (_const(3, 0), _ret(3))),
+            AssemblyBlock("positive", (_const(3, -1), _ret(3))),
+        ),
+    )
+    assert Emulator().execute(program) == 1
+    if platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"}:
+        pytest.skip("requires Linux x86-64")
+    toolchain = NativeToolchain.detect()
+    for register_allocation in (False, True):
+        assembly = X8664Backend(register_allocation=register_allocation).generate(program)
+        executable = toolchain.build(
+            assembly,
+            tmp_path / f"f64-source-redefined-{register_allocation}",
+        )
+        completed = toolchain.run(executable)
+        assert completed.returncode == 0
+        assert completed.stderr == ""
+        assert completed.stdout == "program returned: 1\n"
+
+
 def test_tmov_uninitialized_source_is_rejected() -> None:
     program = _program((_move(1, 0), _ret(1)), ((0, AssemblyType.TRYTE), (1, AssemblyType.TRYTE)))
     with pytest.raises(EmulatorError, match="uninitialized"):
