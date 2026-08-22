@@ -26,6 +26,7 @@ from .runtime import render_runtime
 from .allocation import AllocationPlan, analyze_allocation
 from .liveness import analyze_liveness
 from .residence import analyze_cross_block_residence
+from .policy import BASELINE_NATIVE_POLICY, NativePolicy
 from .register_init_safety import proven_initialized_register_reads
 
 
@@ -115,11 +116,14 @@ class X8664Emitter:
         max_frames: int,
         max_instructions: int,
         register_allocation: bool = False,
+        native_policy: NativePolicy = BASELINE_NATIVE_POLICY,
     ):
         self.program = program
         self.max_frames = max_frames
         self.max_instructions = max_instructions
         self.register_allocation = register_allocation
+        self.native_policy = native_policy
+        self.native_policy.validate()
         self.failure_sites: list[FailureSite] = []
         self.current_function: AssemblyFunction | None = None
         self.current_block: str | None = None
@@ -163,11 +167,11 @@ class X8664Emitter:
             else frozenset()
         )
         if self.register_allocation:
-            plan = analyze_allocation(function)
+            plan = analyze_allocation(function, self.native_policy)
             self.current_plan = plan
             layout = layout_frame(function, plan.used_physical_registers)
         else:
-            plan = analyze_cross_block_residence(function)
+            plan = analyze_cross_block_residence(function, self.native_policy)
             self.current_plan = plan if plan.used_physical_registers else None
             layout = layout_frame(function, plan.used_physical_registers)
         self._physical_residence_active = self.current_plan is not None

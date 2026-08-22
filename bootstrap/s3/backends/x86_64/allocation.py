@@ -6,10 +6,9 @@ from dataclasses import dataclass
 from ...assembly import AssemblyFunction
 from .liveness import analyze_liveness
 from .registers import (
-    CALLER_SAVED_ALLOCATABLE_REGISTERS,
-    CALLEE_SAVED_ALLOCATABLE_REGISTERS,
     FULL_ALLOCATABLE_REGISTERS,
 )
+from .policy import BASELINE_NATIVE_POLICY, NativePolicy
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,8 +37,12 @@ class AllocationPlan:
         return self.call_survivors.get(id(instruction), frozenset())
 
 
-def analyze_allocation(function: AssemblyFunction) -> AllocationPlan:
+def analyze_allocation(
+    function: AssemblyFunction,
+    policy: NativePolicy = BASELINE_NATIVE_POLICY,
+) -> AllocationPlan:
     """Perform deterministic physical register allocation on an AssemblyFunction."""
+    policy.validate()
     # 1. Run liveness analysis
     liveness = analyze_liveness(function)
 
@@ -120,9 +123,9 @@ def analyze_allocation(function: AssemblyFunction) -> AllocationPlan:
         }
 
         physical_pool = (
-            (*CALLEE_SAVED_ALLOCATABLE_REGISTERS, *CALLER_SAVED_ALLOCATABLE_REGISTERS)
+            policy.call_register_order
             if node in call_crossing
-            else (*CALLER_SAVED_ALLOCATABLE_REGISTERS, *CALLEE_SAVED_ALLOCATABLE_REGISTERS)
+            else policy.register_order
         )
         # Select the first available physical register in the call-aware pool
         chosen_phys = None

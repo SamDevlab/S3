@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from ...assembly import AssemblyProgram, AssemblyType
 from ...assembly_verifier import AssemblyVerifier
 from ...emulator import DEFAULT_MAX_FRAMES, DEFAULT_MAX_INSTRUCTIONS, DEFAULT_MAX_MEMORY_TRITS
 from .diagnostics import NativeBackendError
 from .emitter import X8664Emitter
+from .policy import BASELINE_NATIVE_POLICY, NativePolicy
 
 NATIVE_MAX_INSTRUCTIONS = (1 << 64) - 1
 
@@ -22,6 +23,10 @@ class X8664Backend:
     # explicit False mode remains available for stack-backed diagnostics and
     # conservative compatibility probes.
     register_allocation: bool = True
+    native_policy: NativePolicy = field(
+        default=BASELINE_NATIVE_POLICY,
+        kw_only=True,
+    )
 
     def generate(self, program: AssemblyProgram) -> str:
         if isinstance(self.max_instructions, bool) or not isinstance(self.max_instructions, int):
@@ -32,6 +37,7 @@ class X8664Backend:
             raise NativeBackendError("max_instructions must be at least 1")
         if self.max_instructions > NATIVE_MAX_INSTRUCTIONS:
             raise NativeBackendError(f"max_instructions exceeds physical 64-bit limit of {NATIVE_MAX_INSTRUCTIONS}")
+        self.native_policy.validate()
         AssemblyVerifier(max_memory_trits=self.max_memory_trits).validate(
             program,
             entry="main",
@@ -59,6 +65,7 @@ class X8664Backend:
             max_frames=self.max_frames,
             max_instructions=self.max_instructions,
             register_allocation=self.register_allocation,
+            native_policy=self.native_policy,
         ).emit()
 
     def _generate_ffi(self, program: AssemblyProgram) -> str:
@@ -67,6 +74,7 @@ class X8664Backend:
             max_frames=self.max_frames,
             max_instructions=self.max_instructions,
             register_allocation=self.register_allocation,
+            native_policy=self.native_policy,
         ).emit()
 
 
