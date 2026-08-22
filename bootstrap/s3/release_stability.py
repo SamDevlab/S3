@@ -13,7 +13,10 @@ from .release_candidate import CertificateStatus, ReleaseCandidate
 
 RELEASE_TARGETS = ("linux-aarch64", "linux-x86_64", "macos-arm64")
 _COMMIT = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
-_VERSION = re.compile(r"^2\.0\.0-rc[0-9]+$")
+# M1.90 used the historical 2.0.0-rc label.  The canonical S3 1.0 RC uses
+# 1.0.0-rc; retaining both forms keeps old evidence readable without allowing
+# arbitrary release versions through the stability gate.
+_VERSION = re.compile(r"^(?:1|2)\.0\.0-rc[0-9]+$")
 
 
 class ReleaseStabilityError(ValueError):
@@ -73,7 +76,7 @@ def evaluate_release_stability(
     if not isinstance(candidate, ReleaseCandidate):
         raise ReleaseStabilityError("release stability requires a ReleaseCandidate")
     if _VERSION.fullmatch(candidate.version) is None:
-        raise ReleaseStabilityError("candidate version must be an S3 2.0.0 release candidate")
+        raise ReleaseStabilityError("candidate version must be an S3 1.0.0 or historical 2.0.0 release candidate")
     if _COMMIT.fullmatch(candidate.compiler_commit) is None:
         raise ReleaseStabilityError("candidate compiler commit must be an exact lowercase Git SHA-1 or SHA-256")
     if tuple(sorted(compatibility_scope)) != tuple(sorted(RELEASE_TARGETS)):

@@ -58,7 +58,14 @@ class JsonRpcTransport:
             if b":" not in line:
                 raise LspTransportError("malformed JSON-RPC header")
             key, value = line.split(b":", 1)
-            fields[key.decode("ascii").strip().lower()] = value.decode("ascii").strip()
+            try:
+                normalized_key = key.decode("ascii").strip().lower()
+                decoded_value = value.decode("ascii").strip()
+            except UnicodeDecodeError as error:
+                raise LspTransportError("JSON-RPC headers must be ASCII") from error
+            if normalized_key in fields:
+                raise LspTransportError("duplicate JSON-RPC header")
+            fields[normalized_key] = decoded_value
         try:
             length = int(fields["content-length"])
         except (KeyError, ValueError) as error:
@@ -116,6 +123,11 @@ class JsonRpcTransport:
             return self.server.initialize()
         if method == "initialized":
             return None
+        if method == "$/cancelRequest":
+            request_id = params.get("id")
+            if isinstance(request_id, bool) or not isinstance(request_id, (int, str)):
+                raise LspTransportError("cancelRequest id must be an integer or string")
+            return None
         if method == "shutdown":
             return None
         if method == "exit":
@@ -147,6 +159,11 @@ class JsonRpcTransport:
             if not isinstance(new_name, str):
                 raise LspTransportError("rename requires newName")
             return self.server.rename(_uri(params), _position(params), new_name)
+        if method == "workspace/symbol":
+            query = params.get("query", "")
+            if not isinstance(query, str):
+                raise LspTransportError("workspace/symbol query must be a string")
+            return self.server.workspace_symbols(query)
         raise LspTransportError(f"method not found: {method}")
 
 

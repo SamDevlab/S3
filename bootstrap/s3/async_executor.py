@@ -90,6 +90,10 @@ class DeterministicReactor:
         self._registrations[key] = registration
         return Result.ok(registration)
 
+    @property
+    def registration_count(self) -> int:
+        return len(self._registrations)
+
     def signal(self, key: str) -> Result[None, ExecutorError]:
         if key not in self._registrations:
             return Result.err(ExecutorError(ExecutorErrorCode.UNKNOWN_REGISTRATION, "signal", "reactor key is unknown"))
@@ -119,6 +123,19 @@ class RunReport:
     idle: bool
 
 
+@dataclass(frozen=True, slots=True)
+class ExecutorSnapshot:
+    """Bounded deterministic resource observation for async soak tests."""
+
+    closed: bool
+    live_tasks: int
+    queued_wakeups: int
+    ready_items: int
+    timers: int
+    reactor_registrations: int
+    task_states: tuple[tuple[str, int], ...]
+
+
 class AsyncExecutor:
     """Single-thread cooperative executor with bounded wake and timer state."""
 
@@ -141,6 +158,34 @@ class AsyncExecutor:
     @property
     def queued_wakeups(self) -> int:
         return len(self._queued)
+
+    def snapshot(self) -> ExecutorSnapshot:
+        states: dict[str, int] = {}
+        for future in self._tasks.values():
+            states[future.state.value] = states.get(future.state.value, 0) + 1
+        return ExecutorSnapshot(
+            self._closed,
+            len(self._tasks),
+            len(self._queued),
+            len(self._ready),
+            len(self._timers),
+            self.reactor.registration_count,
+            tuple(sorted(states.items())),
+        )
+
+    def reap_completed(self) -> tuple[int, ...]:
+        """Release terminal task records after their result was observed."""
+
+        terminal = {AsyncState.COMPLETED, AsyncState.FAILED, AsyncState.CANCELLED}
+        removed = tuple(sorted(task_id for task_id, future in self._tasks.items() if future.state in terminal))
+        for task_id in removed:
+            self._tasks.pop(task_id, None)
+            self._queued.discard(task_id)
+            self._ready = deque(item for item in self._ready if item != task_id)
+        for identifier, timer in tuple(self._timers.items()):
+            if timer.task_id in removed:
+                self._timers.pop(identifier, None)
+        return removed
 
     def spawn(self, future: AsyncFuture[object]) -> Result[int, ExecutorError]:
         if self._closed:

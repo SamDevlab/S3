@@ -1,0 +1,16 @@
+{
+  "milestone": "M2.39",
+  "status": "PASS",
+  "fuzz_targets": ["lexer", "parser", "http2", "hpack", "lsp-json-rpc-framing", "package-manifest"],
+  "fuzz_cases": "bounded deterministic corpus",
+  "crashes": 0,
+  "hangs": 0,
+  "nondeterminism": 0,
+  "security_critical": 0,
+  "security_high": 0,
+  "security_medium": 0,
+  "unresolved_critical": 0,
+  "unresolved_high": 0,
+  "correction": "NUL at lexer indentation start now fails closed instead of looping",
+  "source_head": "e202bc9"
+}

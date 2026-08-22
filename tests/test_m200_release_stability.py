@@ -26,7 +26,7 @@ class _FixtureVerifier:
         return True
 
 
-def _build_candidate():
+def _build_candidate(version: str = "2.0.0-rc1"):
     source = "fn main() -> i64:\n    return 7\n"
     compilation = compile_source(source)
     registry = create_cross_platform_backend_registry()
@@ -38,7 +38,7 @@ def _build_candidate():
         for target in ("linux-aarch64", "linux-x86_64", "macos-arm64")
     }
     candidate = LocalReleaseCandidateBuilder().build(
-        version="2.0.0-rc1",
+        version=version,
         compiler_commit=COMMIT,
         source_files={"bootstrap/s3/compiler.py": source.encode()},
         target_artifacts={"linux-aarch64": linux, "linux-x86_64": x86, "macos-arm64": macos},
@@ -173,6 +173,27 @@ def test_release_stability_rejects_noncanonical_git_commit_width_or_characters(c
             broken,
             repeat_bundle_sha256=candidate.bundle.sha256,
             provenance=_provenance(candidate),
+            signature_service=_service(),
+            compatibility_scope=("linux-aarch64", "linux-x86_64", "macos-arm64"),
+        )
+
+
+def test_release_stability_accepts_the_canonical_s3_one_point_zero_rc_label() -> None:
+    candidate = _build_candidate("1.0.0-rc1")
+    provenance = type(_provenance(candidate))(
+        "s3-toolchain-release-candidate",
+        candidate.version,
+        candidate.bundle.sha256,
+        "SamDevlab",
+        "release-key",
+        b"fixture-signature",
+        (("compiler_commit", candidate.compiler_commit), ("campaign", "m231-m240")),
+    )
+    with pytest.raises(ReleaseStabilityError, match="not vetted"):
+        evaluate_release_stability(
+            candidate,
+            repeat_bundle_sha256=candidate.bundle.sha256,
+            provenance=provenance,
             signature_service=_service(),
             compatibility_scope=("linux-aarch64", "linux-x86_64", "macos-arm64"),
         )

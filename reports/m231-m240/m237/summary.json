@@ -1,0 +1,15 @@
+{
+  "milestone": "M2.37",
+  "status": "PARTIAL",
+  "async_soak": "PASS_FOR_BOUNDED_32_CYCLE",
+  "executor": "PASS",
+  "cancellation": "PASS_FOR_EXISTING_CONTRACT",
+  "channels": "PASS_FOR_EXISTING_CONTRACT",
+  "timers": "PASS",
+  "network": "PASS_FOR_EXISTING_FIXTURES",
+  "http1": "PASS_FOR_EXISTING_FIXTURES",
+  "http2": "PASS_FOR_EXISTING_CONTRACT",
+  "tls_soak": "DEFERRED_BY_ENVIRONMENT",
+  "resource_stability": "PASS_FOR_BOUNDED_CYCLES",
+  "source_head": "39aa289"
+}

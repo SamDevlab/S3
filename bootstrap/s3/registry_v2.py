@@ -10,6 +10,7 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
 
 from .registry_security import BoundedReadError, canonical_https_origin, read_bounded_bytes
+from .signed_registry_index import VerifiedRegistryIndex
 
 
 class RegistryV2Error(ValueError):
@@ -101,6 +102,32 @@ class RegistryV2Client:
         self._cache: OrderedDict[str, bytes] = OrderedDict()
         self._cache_bytes = 0
         self._resolution_cache: OrderedDict[tuple[str, str], RegistryV2Resolution] = OrderedDict()
+
+    @classmethod
+    def from_verified_index(
+        cls,
+        root: Path,
+        verified_index: VerifiedRegistryIndex,
+        *,
+        limits: RegistryV2Limits | None = None,
+    ) -> "RegistryV2Client":
+        """Create a resolver from an index authenticated by signed-index trust.
+
+        The unsigned ``index.json`` file is deliberately not read by this path.
+        Callers must obtain ``verified_index`` from ``SignedRegistryIndexTrust``.
+        """
+
+        if not isinstance(verified_index, VerifiedRegistryIndex):
+            raise RegistryV2Error("registry v2 requires a verified signed index")
+        client = cls.__new__(cls)
+        client.root = Path(root)
+        client.expected_origin = _canonical_origin(verified_index.envelope.origin)
+        client.limits = limits or RegistryV2Limits()
+        client._entries = client._parse_index(verified_index.document)
+        client._cache = OrderedDict()
+        client._cache_bytes = 0
+        client._resolution_cache = OrderedDict()
+        return client
 
     @property
     def read_only(self) -> bool:
@@ -218,6 +245,9 @@ class RegistryV2Client:
             raise RegistryV2Error(f"registry v2 index {error.code}: {error}") from error
         except (OSError, UnicodeError, json.JSONDecodeError) as error:
             raise RegistryV2Error("registry v2 index cannot be read") from error
+        return self._parse_index(raw)
+
+    def _parse_index(self, raw: object) -> tuple[RegistryV2Entry, ...]:
         if not isinstance(raw, dict) or raw.get("format") != "s3.registry.index.v2" or _canonical_origin(str(raw.get("origin", ""))) != self.expected_origin:
             raise RegistryV2Error("registry v2 index format or origin is invalid")
         packages = raw.get("packages")

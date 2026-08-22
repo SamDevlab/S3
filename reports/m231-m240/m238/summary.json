@@ -1,0 +1,13 @@
+{
+  "milestone": "M2.38",
+  "status": "CHARACTERIZATION_ONLY",
+  "benchmark_pr": 11,
+  "benchmark_commit": "ecab204",
+  "benchmark_sha_at_measurement": "7875801a03f758158e0d0685709f02f8b8f3cd15",
+  "candidate_s3_sha_at_measurement": "39aa289b3de16c3832ef331085265b0e458707a3",
+  "p1": "PASS_CORRECTNESS_NATIVE_TIMING_DEFERRED",
+  "p2_p18": "DEFERRED",
+  "benchmark_correctness": "PASS",
+  "timing_class": "CHARACTERIZATION_ONLY",
+  "native_speedup_claim": "NO"
+}

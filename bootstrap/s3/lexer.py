@@ -215,7 +215,7 @@ class Lexer:
         current_pos, current_line, current_col = self.position, self.line, self.column
 
         c = self._peek()
-        if c in "\r\n\0" or c == "#":
+        if c in "\r\n" or c == "#":
             if c == "#":
                 self._skip_comment_v0_6()
             if not self._at_end and self._peek() in "\r\n":
