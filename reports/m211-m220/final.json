@@ -1,7 +1,7 @@
 {
   "campaign": "M2.11-M2.20",
   "final_tested_sha": "73e73f0a5546e1c20fffdf90c95895650d684a2c",
-  "publication_head": "3c3f9cbd25b08bf60db4347c2546fd46ef61b541",
+  "publication_head": "feec8c3833c87da073c2f4740d7a2fa5f1157aa3",
   "stacked_on_pr": 186,
   "stacked_on_m200": true,
   "status": "PARTIAL_PREINTEGRATION",
