@@ -1,0 +1,11 @@
+{
+  "checkout": "C:\\Users\\samue\\Downloads\\S3\\S3-Benchmarks",
+  "head": "f4162fbd99f6aa40b43916984116a442ce16f42b",
+  "p7_p8_p9_executed": false,
+  "p7_p8_p9_executed_against_experiment": false,
+  "pr_12": "OPEN_DRAFT_NOT_MERGED",
+  "read_only": true,
+  "reason": "No benchmark checkout mutation or network execution is part of this bounded search.",
+  "repository": "SamDevlab/S3-Benchmarks",
+  "status": "DEFERRED_READ_ONLY_CONSTRAINT"
+}

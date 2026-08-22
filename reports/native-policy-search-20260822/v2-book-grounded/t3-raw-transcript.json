@@ -1,0 +1,797 @@
+{
+  "comparison_count": 96,
+  "comparisons": [
+    {
+      "assembly_sha256": "0093be089fc28865367839b31c37110503c08375edd95134dfd521365860b973",
+      "expected": -1,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_67491d8f6521e946",
+      "workload": "branch"
+    },
+    {
+      "assembly_sha256": "0093be089fc28865367839b31c37110503c08375edd95134dfd521365860b973",
+      "expected": -1,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_67491d8f6521e946",
+      "workload": "branch"
+    },
+    {
+      "assembly_sha256": "a648337a9b353361c3a18ccc2ca7f8fbb19346d30af101ac2c3c7aa0ad1066a6",
+      "expected": 15,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_67491d8f6521e946",
+      "workload": "call"
+    },
+    {
+      "assembly_sha256": "a648337a9b353361c3a18ccc2ca7f8fbb19346d30af101ac2c3c7aa0ad1066a6",
+      "expected": 15,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_67491d8f6521e946",
+      "workload": "call"
+    },
+    {
+      "assembly_sha256": "fec500b60fe45ecf58fbf1392203bf9f0e47c6b08755c58e840486328973e63c",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_67491d8f6521e946",
+      "workload": "loop"
+    },
+    {
+      "assembly_sha256": "f0251d4c78ad5b8a698a56f66b250bd38e2b97a17d82cefd2989ce4fb14ee220",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_67491d8f6521e946",
+      "workload": "loop"
+    },
+    {
+      "assembly_sha256": "15915bf17e34a06fd535cdd2076afd0661e260a7da91343ddc6ef6d307850278",
+      "expected": 13,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_67491d8f6521e946",
+      "workload": "memory"
+    },
+    {
+      "assembly_sha256": "d56bd513d699daa8241bfcaa83bd55a29c26be72a9d747a8f84068bb1a6c1efa",
+      "expected": 13,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_67491d8f6521e946",
+      "workload": "memory"
+    },
+    {
+      "assembly_sha256": "94777a8b40b738d1cc71f34a347d4595283fe7e1525a89a289d56647914e8471",
+      "expected": 12,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_67491d8f6521e946",
+      "workload": "pressure"
+    },
+    {
+      "assembly_sha256": "c97d9b284bb1f310b39a0bb10a640c188903dd9c25a150f4a9a10807572f8b12",
+      "expected": 12,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_67491d8f6521e946",
+      "workload": "pressure"
+    },
+    {
+      "assembly_sha256": "969928beb07d1baeee5e11b778df2d449e705acb1a842e0ed1da5ac219f18ec6",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_67491d8f6521e946",
+      "workload": "scalar"
+    },
+    {
+      "assembly_sha256": "969928beb07d1baeee5e11b778df2d449e705acb1a842e0ed1da5ac219f18ec6",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_67491d8f6521e946",
+      "workload": "scalar"
+    },
+    {
+      "assembly_sha256": "0093be089fc28865367839b31c37110503c08375edd95134dfd521365860b973",
+      "expected": -1,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_0ba2d6baa36a46fb",
+      "workload": "branch"
+    },
+    {
+      "assembly_sha256": "0093be089fc28865367839b31c37110503c08375edd95134dfd521365860b973",
+      "expected": -1,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_0ba2d6baa36a46fb",
+      "workload": "branch"
+    },
+    {
+      "assembly_sha256": "a648337a9b353361c3a18ccc2ca7f8fbb19346d30af101ac2c3c7aa0ad1066a6",
+      "expected": 15,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_0ba2d6baa36a46fb",
+      "workload": "call"
+    },
+    {
+      "assembly_sha256": "a648337a9b353361c3a18ccc2ca7f8fbb19346d30af101ac2c3c7aa0ad1066a6",
+      "expected": 15,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_0ba2d6baa36a46fb",
+      "workload": "call"
+    },
+    {
+      "assembly_sha256": "1daf22c22b578bac1f2e98fe054f7b4c297e00cca1b961d4f801cc41f7c755b1",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_0ba2d6baa36a46fb",
+      "workload": "loop"
+    },
+    {
+      "assembly_sha256": "133ffd5886026d0c4e678e0824a0e7474cfa937f16d97e632ff89924b22193d0",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_0ba2d6baa36a46fb",
+      "workload": "loop"
+    },
+    {
+      "assembly_sha256": "28f218aab054ffaa5887b727bdc2df9587bab4f39e9448f3ff3eb0c7dae64e1a",
+      "expected": 13,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_0ba2d6baa36a46fb",
+      "workload": "memory"
+    },
+    {
+      "assembly_sha256": "b80222106fb3fa42b533cb03d902b8db991a6c18e21afc947d07b5a4db054a50",
+      "expected": 13,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_0ba2d6baa36a46fb",
+      "workload": "memory"
+    },
+    {
+      "assembly_sha256": "94777a8b40b738d1cc71f34a347d4595283fe7e1525a89a289d56647914e8471",
+      "expected": 12,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_0ba2d6baa36a46fb",
+      "workload": "pressure"
+    },
+    {
+      "assembly_sha256": "c97d9b284bb1f310b39a0bb10a640c188903dd9c25a150f4a9a10807572f8b12",
+      "expected": 12,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_0ba2d6baa36a46fb",
+      "workload": "pressure"
+    },
+    {
+      "assembly_sha256": "969928beb07d1baeee5e11b778df2d449e705acb1a842e0ed1da5ac219f18ec6",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_0ba2d6baa36a46fb",
+      "workload": "scalar"
+    },
+    {
+      "assembly_sha256": "969928beb07d1baeee5e11b778df2d449e705acb1a842e0ed1da5ac219f18ec6",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_0ba2d6baa36a46fb",
+      "workload": "scalar"
+    },
+    {
+      "assembly_sha256": "0093be089fc28865367839b31c37110503c08375edd95134dfd521365860b973",
+      "expected": -1,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_077171a9b68c8814",
+      "workload": "branch"
+    },
+    {
+      "assembly_sha256": "0093be089fc28865367839b31c37110503c08375edd95134dfd521365860b973",
+      "expected": -1,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_077171a9b68c8814",
+      "workload": "branch"
+    },
+    {
+      "assembly_sha256": "a648337a9b353361c3a18ccc2ca7f8fbb19346d30af101ac2c3c7aa0ad1066a6",
+      "expected": 15,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_077171a9b68c8814",
+      "workload": "call"
+    },
+    {
+      "assembly_sha256": "a648337a9b353361c3a18ccc2ca7f8fbb19346d30af101ac2c3c7aa0ad1066a6",
+      "expected": 15,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_077171a9b68c8814",
+      "workload": "call"
+    },
+    {
+      "assembly_sha256": "1daf22c22b578bac1f2e98fe054f7b4c297e00cca1b961d4f801cc41f7c755b1",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_077171a9b68c8814",
+      "workload": "loop"
+    },
+    {
+      "assembly_sha256": "133ffd5886026d0c4e678e0824a0e7474cfa937f16d97e632ff89924b22193d0",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_077171a9b68c8814",
+      "workload": "loop"
+    },
+    {
+      "assembly_sha256": "28f218aab054ffaa5887b727bdc2df9587bab4f39e9448f3ff3eb0c7dae64e1a",
+      "expected": 13,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_077171a9b68c8814",
+      "workload": "memory"
+    },
+    {
+      "assembly_sha256": "b80222106fb3fa42b533cb03d902b8db991a6c18e21afc947d07b5a4db054a50",
+      "expected": 13,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_077171a9b68c8814",
+      "workload": "memory"
+    },
+    {
+      "assembly_sha256": "94777a8b40b738d1cc71f34a347d4595283fe7e1525a89a289d56647914e8471",
+      "expected": 12,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_077171a9b68c8814",
+      "workload": "pressure"
+    },
+    {
+      "assembly_sha256": "c97d9b284bb1f310b39a0bb10a640c188903dd9c25a150f4a9a10807572f8b12",
+      "expected": 12,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_077171a9b68c8814",
+      "workload": "pressure"
+    },
+    {
+      "assembly_sha256": "969928beb07d1baeee5e11b778df2d449e705acb1a842e0ed1da5ac219f18ec6",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_077171a9b68c8814",
+      "workload": "scalar"
+    },
+    {
+      "assembly_sha256": "969928beb07d1baeee5e11b778df2d449e705acb1a842e0ed1da5ac219f18ec6",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_077171a9b68c8814",
+      "workload": "scalar"
+    },
+    {
+      "assembly_sha256": "0093be089fc28865367839b31c37110503c08375edd95134dfd521365860b973",
+      "expected": -1,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_a4630b67db9c08a7",
+      "workload": "branch"
+    },
+    {
+      "assembly_sha256": "0093be089fc28865367839b31c37110503c08375edd95134dfd521365860b973",
+      "expected": -1,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_a4630b67db9c08a7",
+      "workload": "branch"
+    },
+    {
+      "assembly_sha256": "a648337a9b353361c3a18ccc2ca7f8fbb19346d30af101ac2c3c7aa0ad1066a6",
+      "expected": 15,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_a4630b67db9c08a7",
+      "workload": "call"
+    },
+    {
+      "assembly_sha256": "a648337a9b353361c3a18ccc2ca7f8fbb19346d30af101ac2c3c7aa0ad1066a6",
+      "expected": 15,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_a4630b67db9c08a7",
+      "workload": "call"
+    },
+    {
+      "assembly_sha256": "1daf22c22b578bac1f2e98fe054f7b4c297e00cca1b961d4f801cc41f7c755b1",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_a4630b67db9c08a7",
+      "workload": "loop"
+    },
+    {
+      "assembly_sha256": "133ffd5886026d0c4e678e0824a0e7474cfa937f16d97e632ff89924b22193d0",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_a4630b67db9c08a7",
+      "workload": "loop"
+    },
+    {
+      "assembly_sha256": "28f218aab054ffaa5887b727bdc2df9587bab4f39e9448f3ff3eb0c7dae64e1a",
+      "expected": 13,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_a4630b67db9c08a7",
+      "workload": "memory"
+    },
+    {
+      "assembly_sha256": "b80222106fb3fa42b533cb03d902b8db991a6c18e21afc947d07b5a4db054a50",
+      "expected": 13,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_a4630b67db9c08a7",
+      "workload": "memory"
+    },
+    {
+      "assembly_sha256": "94777a8b40b738d1cc71f34a347d4595283fe7e1525a89a289d56647914e8471",
+      "expected": 12,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_a4630b67db9c08a7",
+      "workload": "pressure"
+    },
+    {
+      "assembly_sha256": "c97d9b284bb1f310b39a0bb10a640c188903dd9c25a150f4a9a10807572f8b12",
+      "expected": 12,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_a4630b67db9c08a7",
+      "workload": "pressure"
+    },
+    {
+      "assembly_sha256": "969928beb07d1baeee5e11b778df2d449e705acb1a842e0ed1da5ac219f18ec6",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_a4630b67db9c08a7",
+      "workload": "scalar"
+    },
+    {
+      "assembly_sha256": "969928beb07d1baeee5e11b778df2d449e705acb1a842e0ed1da5ac219f18ec6",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_a4630b67db9c08a7",
+      "workload": "scalar"
+    },
+    {
+      "assembly_sha256": "0093be089fc28865367839b31c37110503c08375edd95134dfd521365860b973",
+      "expected": -1,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_b4e09618cbf1d2a0",
+      "workload": "branch"
+    },
+    {
+      "assembly_sha256": "0093be089fc28865367839b31c37110503c08375edd95134dfd521365860b973",
+      "expected": -1,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_b4e09618cbf1d2a0",
+      "workload": "branch"
+    },
+    {
+      "assembly_sha256": "a648337a9b353361c3a18ccc2ca7f8fbb19346d30af101ac2c3c7aa0ad1066a6",
+      "expected": 15,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_b4e09618cbf1d2a0",
+      "workload": "call"
+    },
+    {
+      "assembly_sha256": "a648337a9b353361c3a18ccc2ca7f8fbb19346d30af101ac2c3c7aa0ad1066a6",
+      "expected": 15,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_b4e09618cbf1d2a0",
+      "workload": "call"
+    },
+    {
+      "assembly_sha256": "1daf22c22b578bac1f2e98fe054f7b4c297e00cca1b961d4f801cc41f7c755b1",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_b4e09618cbf1d2a0",
+      "workload": "loop"
+    },
+    {
+      "assembly_sha256": "133ffd5886026d0c4e678e0824a0e7474cfa937f16d97e632ff89924b22193d0",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_b4e09618cbf1d2a0",
+      "workload": "loop"
+    },
+    {
+      "assembly_sha256": "28f218aab054ffaa5887b727bdc2df9587bab4f39e9448f3ff3eb0c7dae64e1a",
+      "expected": 13,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_b4e09618cbf1d2a0",
+      "workload": "memory"
+    },
+    {
+      "assembly_sha256": "b80222106fb3fa42b533cb03d902b8db991a6c18e21afc947d07b5a4db054a50",
+      "expected": 13,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_b4e09618cbf1d2a0",
+      "workload": "memory"
+    },
+    {
+      "assembly_sha256": "94777a8b40b738d1cc71f34a347d4595283fe7e1525a89a289d56647914e8471",
+      "expected": 12,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_b4e09618cbf1d2a0",
+      "workload": "pressure"
+    },
+    {
+      "assembly_sha256": "c97d9b284bb1f310b39a0bb10a640c188903dd9c25a150f4a9a10807572f8b12",
+      "expected": 12,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_b4e09618cbf1d2a0",
+      "workload": "pressure"
+    },
+    {
+      "assembly_sha256": "969928beb07d1baeee5e11b778df2d449e705acb1a842e0ed1da5ac219f18ec6",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_b4e09618cbf1d2a0",
+      "workload": "scalar"
+    },
+    {
+      "assembly_sha256": "969928beb07d1baeee5e11b778df2d449e705acb1a842e0ed1da5ac219f18ec6",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_b4e09618cbf1d2a0",
+      "workload": "scalar"
+    },
+    {
+      "assembly_sha256": "0093be089fc28865367839b31c37110503c08375edd95134dfd521365860b973",
+      "expected": -1,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_2fc90a4d8dfd8ec4",
+      "workload": "branch"
+    },
+    {
+      "assembly_sha256": "0093be089fc28865367839b31c37110503c08375edd95134dfd521365860b973",
+      "expected": -1,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_2fc90a4d8dfd8ec4",
+      "workload": "branch"
+    },
+    {
+      "assembly_sha256": "a648337a9b353361c3a18ccc2ca7f8fbb19346d30af101ac2c3c7aa0ad1066a6",
+      "expected": 15,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_2fc90a4d8dfd8ec4",
+      "workload": "call"
+    },
+    {
+      "assembly_sha256": "a648337a9b353361c3a18ccc2ca7f8fbb19346d30af101ac2c3c7aa0ad1066a6",
+      "expected": 15,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_2fc90a4d8dfd8ec4",
+      "workload": "call"
+    },
+    {
+      "assembly_sha256": "1daf22c22b578bac1f2e98fe054f7b4c297e00cca1b961d4f801cc41f7c755b1",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_2fc90a4d8dfd8ec4",
+      "workload": "loop"
+    },
+    {
+      "assembly_sha256": "133ffd5886026d0c4e678e0824a0e7474cfa937f16d97e632ff89924b22193d0",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_2fc90a4d8dfd8ec4",
+      "workload": "loop"
+    },
+    {
+      "assembly_sha256": "28f218aab054ffaa5887b727bdc2df9587bab4f39e9448f3ff3eb0c7dae64e1a",
+      "expected": 13,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_2fc90a4d8dfd8ec4",
+      "workload": "memory"
+    },
+    {
+      "assembly_sha256": "b80222106fb3fa42b533cb03d902b8db991a6c18e21afc947d07b5a4db054a50",
+      "expected": 13,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_2fc90a4d8dfd8ec4",
+      "workload": "memory"
+    },
+    {
+      "assembly_sha256": "94777a8b40b738d1cc71f34a347d4595283fe7e1525a89a289d56647914e8471",
+      "expected": 12,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_2fc90a4d8dfd8ec4",
+      "workload": "pressure"
+    },
+    {
+      "assembly_sha256": "c97d9b284bb1f310b39a0bb10a640c188903dd9c25a150f4a9a10807572f8b12",
+      "expected": 12,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_2fc90a4d8dfd8ec4",
+      "workload": "pressure"
+    },
+    {
+      "assembly_sha256": "969928beb07d1baeee5e11b778df2d449e705acb1a842e0ed1da5ac219f18ec6",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_2fc90a4d8dfd8ec4",
+      "workload": "scalar"
+    },
+    {
+      "assembly_sha256": "969928beb07d1baeee5e11b778df2d449e705acb1a842e0ed1da5ac219f18ec6",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_2fc90a4d8dfd8ec4",
+      "workload": "scalar"
+    },
+    {
+      "assembly_sha256": "0093be089fc28865367839b31c37110503c08375edd95134dfd521365860b973",
+      "expected": -1,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_8ccb6a07b2136167",
+      "workload": "branch"
+    },
+    {
+      "assembly_sha256": "0093be089fc28865367839b31c37110503c08375edd95134dfd521365860b973",
+      "expected": -1,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_8ccb6a07b2136167",
+      "workload": "branch"
+    },
+    {
+      "assembly_sha256": "a648337a9b353361c3a18ccc2ca7f8fbb19346d30af101ac2c3c7aa0ad1066a6",
+      "expected": 15,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_8ccb6a07b2136167",
+      "workload": "call"
+    },
+    {
+      "assembly_sha256": "a648337a9b353361c3a18ccc2ca7f8fbb19346d30af101ac2c3c7aa0ad1066a6",
+      "expected": 15,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_8ccb6a07b2136167",
+      "workload": "call"
+    },
+    {
+      "assembly_sha256": "1daf22c22b578bac1f2e98fe054f7b4c297e00cca1b961d4f801cc41f7c755b1",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_8ccb6a07b2136167",
+      "workload": "loop"
+    },
+    {
+      "assembly_sha256": "133ffd5886026d0c4e678e0824a0e7474cfa937f16d97e632ff89924b22193d0",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_8ccb6a07b2136167",
+      "workload": "loop"
+    },
+    {
+      "assembly_sha256": "28f218aab054ffaa5887b727bdc2df9587bab4f39e9448f3ff3eb0c7dae64e1a",
+      "expected": 13,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_8ccb6a07b2136167",
+      "workload": "memory"
+    },
+    {
+      "assembly_sha256": "b80222106fb3fa42b533cb03d902b8db991a6c18e21afc947d07b5a4db054a50",
+      "expected": 13,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_8ccb6a07b2136167",
+      "workload": "memory"
+    },
+    {
+      "assembly_sha256": "94777a8b40b738d1cc71f34a347d4595283fe7e1525a89a289d56647914e8471",
+      "expected": 12,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_8ccb6a07b2136167",
+      "workload": "pressure"
+    },
+    {
+      "assembly_sha256": "c97d9b284bb1f310b39a0bb10a640c188903dd9c25a150f4a9a10807572f8b12",
+      "expected": 12,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_8ccb6a07b2136167",
+      "workload": "pressure"
+    },
+    {
+      "assembly_sha256": "969928beb07d1baeee5e11b778df2d449e705acb1a842e0ed1da5ac219f18ec6",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_8ccb6a07b2136167",
+      "workload": "scalar"
+    },
+    {
+      "assembly_sha256": "969928beb07d1baeee5e11b778df2d449e705acb1a842e0ed1da5ac219f18ec6",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_8ccb6a07b2136167",
+      "workload": "scalar"
+    },
+    {
+      "assembly_sha256": "0093be089fc28865367839b31c37110503c08375edd95134dfd521365860b973",
+      "expected": -1,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_c29150d8daa342c4",
+      "workload": "branch"
+    },
+    {
+      "assembly_sha256": "0093be089fc28865367839b31c37110503c08375edd95134dfd521365860b973",
+      "expected": -1,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_c29150d8daa342c4",
+      "workload": "branch"
+    },
+    {
+      "assembly_sha256": "a648337a9b353361c3a18ccc2ca7f8fbb19346d30af101ac2c3c7aa0ad1066a6",
+      "expected": 15,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_c29150d8daa342c4",
+      "workload": "call"
+    },
+    {
+      "assembly_sha256": "a648337a9b353361c3a18ccc2ca7f8fbb19346d30af101ac2c3c7aa0ad1066a6",
+      "expected": 15,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_c29150d8daa342c4",
+      "workload": "call"
+    },
+    {
+      "assembly_sha256": "1daf22c22b578bac1f2e98fe054f7b4c297e00cca1b961d4f801cc41f7c755b1",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_c29150d8daa342c4",
+      "workload": "loop"
+    },
+    {
+      "assembly_sha256": "133ffd5886026d0c4e678e0824a0e7474cfa937f16d97e632ff89924b22193d0",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_c29150d8daa342c4",
+      "workload": "loop"
+    },
+    {
+      "assembly_sha256": "28f218aab054ffaa5887b727bdc2df9587bab4f39e9448f3ff3eb0c7dae64e1a",
+      "expected": 13,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_c29150d8daa342c4",
+      "workload": "memory"
+    },
+    {
+      "assembly_sha256": "b80222106fb3fa42b533cb03d902b8db991a6c18e21afc947d07b5a4db054a50",
+      "expected": 13,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_c29150d8daa342c4",
+      "workload": "memory"
+    },
+    {
+      "assembly_sha256": "94777a8b40b738d1cc71f34a347d4595283fe7e1525a89a289d56647914e8471",
+      "expected": 12,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_c29150d8daa342c4",
+      "workload": "pressure"
+    },
+    {
+      "assembly_sha256": "c97d9b284bb1f310b39a0bb10a640c188903dd9c25a150f4a9a10807572f8b12",
+      "expected": 12,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_c29150d8daa342c4",
+      "workload": "pressure"
+    },
+    {
+      "assembly_sha256": "969928beb07d1baeee5e11b778df2d449e705acb1a842e0ed1da5ac219f18ec6",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O0",
+      "policy_id": "V2_c29150d8daa342c4",
+      "workload": "scalar"
+    },
+    {
+      "assembly_sha256": "969928beb07d1baeee5e11b778df2d449e705acb1a842e0ed1da5ac219f18ec6",
+      "expected": 6,
+      "native": "PASS",
+      "optimization": "O1",
+      "policy_id": "V2_c29150d8daa342c4",
+      "workload": "scalar"
+    }
+  ],
+  "head": "d74760e0f177978a3566318c7b50cff4c98f1fb6",
+  "optimization_levels": [
+    "O0",
+    "O1"
+  ],
+  "selected_policy_ids": [
+    "V2_67491d8f6521e946",
+    "V2_0ba2d6baa36a46fb",
+    "V2_077171a9b68c8814",
+    "V2_a4630b67db9c08a7",
+    "V2_b4e09618cbf1d2a0",
+    "V2_2fc90a4d8dfd8ec4",
+    "V2_8ccb6a07b2136167",
+    "V2_c29150d8daa342c4"
+  ],
+  "status": "PASS",
+  "workloads": [
+    "branch",
+    "call",
+    "loop",
+    "memory",
+    "pressure",
+    "scalar"
+  ]
+}

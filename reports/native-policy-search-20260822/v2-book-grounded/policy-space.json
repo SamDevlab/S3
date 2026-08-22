@@ -1,0 +1,57 @@
+{
+  "activated": {
+    "compact_indexed_memory": "ACTIVATED_COMPACT_EA",
+    "const_rematerialization": "ACTIVATED_CONST_ONLY",
+    "loop_boundary_live_range_split": "ACTIVATED_CONSERVATIVE_LOOP_BOUNDARY",
+    "pressure_aware_scalar_replacement": "ACTIVATED_CONSERVATIVE_MEM2REG",
+    "region_aware_spill": "ACTIVATED_BLOCK_REGION_SPILL"
+  },
+  "fields": [
+    "name",
+    "register_order",
+    "call_register_order",
+    "call_residence",
+    "residence_scope",
+    "spill_policy",
+    "spill_cost_parameters",
+    "rematerialization",
+    "live_range_split",
+    "move_coalescing",
+    "indexed_memory_policy",
+    "scalar_promotion",
+    "load_forwarding",
+    "writeback_policy"
+  ],
+  "spill_cost_parameters": [
+    [
+      "use_count",
+      4
+    ],
+    [
+      "loop_depth",
+      8
+    ],
+    [
+      "interference_degree",
+      2
+    ],
+    [
+      "call_crossing",
+      6
+    ],
+    [
+      "rematerializable",
+      -5
+    ],
+    [
+      "live_range_length",
+      1
+    ]
+  ],
+  "unsupported_future_genes": [
+    "pressure_region",
+    "base_pinning",
+    "index_pinning",
+    "base_plus_index"
+  ]
+}

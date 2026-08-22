@@ -1,0 +1,6 @@
+{
+  "classification": "MODELED_MICROARCHITECTURE_EVIDENCE_ONLY",
+  "llvm_mca": "DEFERRED_BY_ENVIRONMENT",
+  "native_speedup_claim": "NO",
+  "uica": "DEFERRED_BY_ENVIRONMENT"
+}
