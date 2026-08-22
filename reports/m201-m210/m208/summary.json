@@ -1,0 +1,21 @@
+{
+  "milestone": "M2.08",
+  "base_sha": "905edbe8b726c5ce360bbf1afc63283267fda543",
+  "final_sha": "905edbe8b726c5ce360bbf1afc63283267fda543",
+  "files_changed": [],
+  "production_change": false,
+  "test_change": false,
+  "linux_x86_install": "PARTIAL",
+  "reproducibility": "PASS_CONTRACT",
+  "linux_aarch64_install": "DEFERRED_BY_ENVIRONMENT",
+  "macos_arm64_install": "DEFERRED_BY_ENVIRONMENT",
+  "install_smoke": "PASS_HOSTED_CONTRACT",
+  "t1": "PASS",
+  "t2": "PASS_FOCUSED_INSTALL_SUBSYSTEM",
+  "t3": "NOT_RUN",
+  "t4": "NOT_RUN",
+  "benchmarks": "NOT_RUN",
+  "deferments": ["Required non-Windows target environments unavailable"],
+  "blockers": ["environment"],
+  "status": "PARTIAL"
+}
