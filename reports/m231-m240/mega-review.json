@@ -8,5 +8,13 @@
   "corrective_finding": "NUL-at-line-start lexer loop fixed in e202bc9",
   "unresolved_critical": 0,
   "unresolved_high": 0,
-  "t4": "NOT_RUN_BEFORE_M2.40"
+  "t4": "PASS",
+  "t4_head": "a779776c55a38e2b31a9448f97ee7885729a75be",
+  "t4_selected": 390,
+  "t4_passed": 390,
+  "t4_failed": 0,
+  "t4_timed_out": 0,
+  "t4_exit": 0,
+  "s3_1_0_rc_candidate": "YES",
+  "s3_1_0_released": "NO"
 }

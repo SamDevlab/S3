@@ -31,7 +31,8 @@ toolchain tests pass afterward.
 - External benchmark P2-P18 workloads are not present in the benchmark
   repository. P1 correctness and M1.99 hosted characterization are recorded
   without a native speedup claim.
-- Full-lineage T4 is intentionally not run before M2.40.
+- The single authorized full-lineage T4 was run after M2.40 source gates and
+  passed at candidate head `a779776c55a38e2b31a9448f97ee7885729a75be`.
 
 ## Gate
 
@@ -40,3 +41,5 @@ toolchain tests pass afterward.
 `UNRESOLVED_HIGH=0`
 
 `MEGA_REVIEW=PASS_WITH_DOCUMENTED_DEFERMENTS`
+
+`FULL_LINEAGE_T4=PASS`
