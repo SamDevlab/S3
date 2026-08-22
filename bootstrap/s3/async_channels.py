@@ -9,6 +9,7 @@ from typing import Generic, TypeVar
 
 from .async_core import AsyncFuture, AsyncFrame, complete, fail, pending
 from .results import Result
+from .async_limits import MAX_SELECT_ARITY
 
 
 T = TypeVar("T")
@@ -197,8 +198,8 @@ class SelectResult(Generic[T]):
 def select(receivers: tuple[Receiver[T], ...]) -> Result[SelectResult[T], ChannelError]:
     """Select the lowest-index ready receiver; never probes unordered state."""
 
-    if not receivers:
-        return Result.err(ChannelError(ChannelErrorCode.INVALID, "select", "select requires at least one receiver"))
+    if not receivers or len(receivers) > MAX_SELECT_ARITY:
+        return Result.err(ChannelError(ChannelErrorCode.INVALID, "select", f"select requires between 1 and {MAX_SELECT_ARITY} receivers"))
     closed = True
     for index, receiver in enumerate(receivers):
         result = receiver.recv()

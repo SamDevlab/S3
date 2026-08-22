@@ -12,6 +12,7 @@ import signal
 import subprocess
 import sys
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -23,6 +24,18 @@ DEFAULT_STATE_DIR = ".s3-test-state"
 STATUS_PASS = "PASS"
 STATUS_FAIL = "FAIL"
 STATUS_TIMEOUT = "TIMEOUT"
+
+
+class T4TimeoutClass(str, Enum):
+    DEFAULT = "DEFAULT"
+    HEAVY_SELF_HOSTING = "HEAVY_SELF_HOSTING"
+    HEAVY_RENDERER = "HEAVY_RENDERER"
+
+
+@dataclass(frozen=True, slots=True)
+class TimeoutPolicy:
+    timeout_class: T4TimeoutClass
+    seconds: int
 
 
 class S3TestOrchestratorError(ValueError):
@@ -95,6 +108,61 @@ class ImpactMap:
             self._rule_from_data(str(raw.get("pattern", "")), raw)
             for raw in raw_rules
         )
+        raw_timeout_policy = data.get("timeout_policy", {})
+        if not isinstance(raw_timeout_policy, Mapping):
+            raise S3TestOrchestratorError("timeout_policy must be an object")
+        raw_classes = raw_timeout_policy.get("classes", {
+            T4TimeoutClass.DEFAULT.value: {"seconds": DEFAULT_TIMEOUT_SECONDS},
+        })
+        raw_assignments = raw_timeout_policy.get("assignments", {})
+        if not isinstance(raw_classes, Mapping) or not isinstance(raw_assignments, Mapping):
+            raise S3TestOrchestratorError("timeout_policy classes and assignments must be objects")
+        self._timeout_policies: dict[T4TimeoutClass, int] = {}
+        for raw_name, raw_config in raw_classes.items():
+            try:
+                timeout_class = T4TimeoutClass(str(raw_name))
+            except ValueError as error:
+                raise S3TestOrchestratorError(f"unknown timeout class {raw_name!r}") from error
+            if not isinstance(raw_config, Mapping):
+                raise S3TestOrchestratorError(f"timeout class {raw_name!r} must be an object")
+            seconds = raw_config.get("seconds")
+            if isinstance(seconds, bool) or not isinstance(seconds, int) or seconds < 1:
+                raise S3TestOrchestratorError(f"timeout class {raw_name!r} requires positive seconds")
+            self._timeout_policies[timeout_class] = seconds
+        if T4TimeoutClass.DEFAULT not in self._timeout_policies:
+            raise S3TestOrchestratorError("timeout_policy must define DEFAULT")
+        self._timeout_assignments: dict[str, T4TimeoutClass] = {}
+        for raw_test, raw_name in raw_assignments.items():
+            try:
+                timeout_class = T4TimeoutClass(str(raw_name))
+            except ValueError as error:
+                raise S3TestOrchestratorError(f"unknown timeout class {raw_name!r}") from error
+            if timeout_class not in self._timeout_policies:
+                raise S3TestOrchestratorError(f"timeout class {raw_name!r} has no configured budget")
+            self._timeout_assignments[_normalize_path(str(raw_test))] = timeout_class
+        self.timeout_policy_fingerprint = hashlib.sha256(
+            json.dumps(
+                {
+                    "classes": {
+                        timeout_class.value: seconds
+                        for timeout_class, seconds in sorted(
+                            self._timeout_policies.items(), key=lambda item: item[0].value
+                        )
+                    },
+                    "assignments": {
+                        test: timeout_class.value
+                        for test, timeout_class in sorted(self._timeout_assignments.items())
+                    },
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+
+    def timeout_policy_for(self, test: str, default_seconds: int) -> TimeoutPolicy:
+        timeout_class = self._timeout_assignments.get(_normalize_path(test), T4TimeoutClass.DEFAULT)
+        seconds = default_seconds if timeout_class is T4TimeoutClass.DEFAULT else self._timeout_policies[timeout_class]
+        return TimeoutPolicy(timeout_class, seconds)
 
     @classmethod
     def load(cls, path: str | Path) -> "ImpactMap":
@@ -245,6 +313,7 @@ def execution_fingerprint(
     *,
     manifest_version: int,
     runner_version: str = RUNNER_VERSION,
+    timeout_policy_fingerprint: str = "",
 ) -> str:
     head = _git(root, "rev-parse", "HEAD").strip()
     payload = {
@@ -255,6 +324,7 @@ def execution_fingerprint(
         "selected_tests": sorted(selected_tests),
         "impact_manifest_version": manifest_version,
         "runner_version": runner_version,
+        "timeout_policy_fingerprint": timeout_policy_fingerprint,
     }
     return hashlib.sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
@@ -373,16 +443,26 @@ def _profile_selection(
     return selected, tuple(item.test for item in selected)
 
 
-def render_plan(selections: Sequence[Selection], changed: Sequence[str]) -> str:
+def render_plan(
+    selections: Sequence[Selection],
+    changed: Sequence[str],
+    *,
+    timeout_policies: Mapping[str, TimeoutPolicy] | None = None,
+) -> str:
     lines = ["S3 SMART TEST PLAN", *[f"CHANGED_FILE={item}" for item in changed]]
     for selection in selections:
+        timeout_policy = (timeout_policies or {}).get(
+            selection.test,
+            TimeoutPolicy(T4TimeoutClass.DEFAULT, DEFAULT_TIMEOUT_SECONDS),
+        )
         lines.extend(
             [
                 f"SELECTED_TEST={selection.test}",
                 f"REASON={' ; '.join(selection.reasons)}",
                 f"TIER={','.join(selection.tiers)}",
                 f"NATIVE_REQUIRED={'YES' if selection.native_required else 'NO'}",
-                f"TIMEOUT={DEFAULT_TIMEOUT_SECONDS}s",
+                f"TIMEOUT_CLASS={timeout_policy.timeout_class.value}",
+                f"TIMEOUT={timeout_policy.seconds}s",
             ]
         )
     if not selections:
@@ -408,7 +488,12 @@ def execute_profile(
             for item in previous.get("tests", [])
             if isinstance(item, Mapping) and isinstance(item.get("test"), str)
         )
-        fingerprint = execution_fingerprint(root, saved_tests, manifest_version=impact.version)
+        fingerprint = execution_fingerprint(
+            root,
+            saved_tests,
+            manifest_version=impact.version,
+            timeout_policy_fingerprint=impact.timeout_policy_fingerprint,
+        )
         if previous.get("fingerprint") != fingerprint:
             raise S3TestOrchestratorError("saved state fingerprint is stale; refusing cache reuse")
         pending = {
@@ -424,10 +509,16 @@ def execute_profile(
         tests = tuple(item.test for item in selections)
     else:
         selections, tests = _profile_selection(root, impact, profile, argument, base)
-        fingerprint = execution_fingerprint(root, tests, manifest_version=impact.version)
+        fingerprint = execution_fingerprint(
+            root,
+            tests,
+            manifest_version=impact.version,
+            timeout_policy_fingerprint=impact.timeout_policy_fingerprint,
+        )
     reports=[]
     for selection in selections:
-        result = run_pytest_file(root, selection.test, timeout_seconds)
+        timeout_policy = impact.timeout_policy_for(selection.test, timeout_seconds)
+        result = run_pytest_file(root, selection.test, timeout_policy.seconds)
         reports.append({
             "test": selection.test,
             "status": result["status"],
@@ -437,6 +528,8 @@ def execute_profile(
             "environment_requirements": list(selection.environment_requirements),
             "output": result["output"],
             "returncode": result["returncode"],
+            "timeout_class": timeout_policy.timeout_class.value,
+            "timeout_seconds": timeout_policy.seconds,
         })
     statuses=[item["status"] for item in reports]
     overall=STATUS_TIMEOUT if STATUS_TIMEOUT in statuses else STATUS_FAIL if STATUS_FAIL in statuses else STATUS_PASS
@@ -489,7 +582,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise S3TestOrchestratorError("timeout must be positive")
     if args.profile == "plan":
         selections, _ = _profile_selection(root, impact, "affected", None, args.base)
-        print(render_plan(selections, changed_files(root, args.base)), end="")
+        timeout_policies = {
+            item.test: impact.timeout_policy_for(item.test, args.timeout)
+            for item in selections
+        }
+        print(render_plan(selections, changed_files(root, args.base), timeout_policies=timeout_policies), end="")
         return 0
     if args.profile == "resume":
         report = execute_profile(root, impact, "resume", None, args.base, args.timeout, state)
@@ -498,12 +595,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.format == "json":
         print(json.dumps(report, indent=2, sort_keys=True))
     else:
+        timeout_policies = {
+            item["test"]: TimeoutPolicy(T4TimeoutClass(item["timeout_class"]), int(item["timeout_seconds"]))
+            for item in report["tests"]
+        }
         print(render_plan(
             tuple(
                 Selection(item["test"], (item["reason"],), tuple(item["tiers"]), item["native_required"], tuple(item["environment_requirements"]), (), ()
                 ) for item in report["tests"]
             ),
             (),
+            timeout_policies=timeout_policies,
         ), end="")
         print(json.dumps(report["summary"], indent=2, sort_keys=True))
     return 0 if report["summary"]["status"] == STATUS_PASS else 1

@@ -80,7 +80,8 @@ def build_shared_library(
     from .pipeline import compile_source
 
     result = compile_source(source)
-    assembly = generate_ffi_assembly(result.assembly)
+    _, ordinary_assembly = result.require_ordinary_artifacts()
+    assembly = generate_ffi_assembly(ordinary_assembly)
     return NativeToolchain.detect().build_shared(
         assembly,
         output,

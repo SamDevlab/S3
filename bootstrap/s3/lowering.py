@@ -383,6 +383,12 @@ class FunctionLowerer:
         if isinstance(statement, ast.SwitchStatement):
             self._lower_switch(statement)
             return
+        if isinstance(statement, ast.SelectStatement):
+            # Async source is executed by async_ir.  The ordinary IR remains
+            # materializable for pipeline consumers by projecting the first
+            # arm; it is never the semantic execution path for select.
+            self._lower_block(statement.arms[0].body, create_scope=True)
+            return
         if isinstance(statement, ast.WhileStatement):
             self._lower_while(statement)
             return

@@ -1,0 +1,123 @@
+FULL_SUITE_HEAD=aa14b36b6f82e0a20652aaeb61c1458d697da693
+FULL_SUITE_START=2026-08-20T07:18:28.6266185-03:00
+...ssss................................................................. [  2%]
+........................................................................ [  4%]
+........................................................................ [  6%]
+........................................................................ [  9%]
+......................................................................................... [ 12%]
+..........................s...........s................................. [ 14%]
+.................................................ss................F.... [ 16%]
+..sss................................................................... [ 19%]
+................................................................sssssss. [ 21%]
+........................................................................ [ 23%]
+........................................................................ [ 26%]
+........................................................................ [ 28%]
+........................................................................ [ 30%]
+........................................................................ [ 33%]
+...............s........................................................ [ 35%]
+........................................................................ [ 37%]
+.........................................sssssssssssssssssssssssssssssss [ 39%]
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss.....sss [ 42%]
+ss...sss...sss.s....ssss.s..............ssssssssssssssssssssssss........ [ 44%]
+............................s....s.s......................s............. [ 46%]
+.......................................s................................ [ 49%]
+........................................................................ [ 51%]
+........................................................................ [ 53%]
+...........................................................ssssssss..... [ 56%]
+...............sssssssssssssssss..............sssss..........s.......... [ 58%]
+........................................................................ [ 60%]
+........................................................................ [ 63%]
+........................................................................ [ 65%]
+........................................................................ [ 67%]
+.................................................................. [ 69%]
+......................................................................................................................................... [ 74%]
+...................................................................ss... [ 76%]
+........................................................................ [ 78%]
+........................................................................ [ 81%]
+......................F................................................. [ 83%]
+........................................................................ [ 85%]
+........................................................................ [ 88%]
+........................................................................ [ 90%]
+.................................................................s...... [ 92%]
+..................................................s..................... [ 95%]
+........................................................................ [ 97%]
+........................................................................ [ 99%]
+.....                                                                    [100%]
+================================== FAILURES ===================================
+____ test_s3_jsmn_representative_fixture_is_stable_across_optimization[O1] ____
+
+optimization = 'O1'
+
+    @pytest.mark.parametrize("optimization", ["O0", "O1"])
+    def test_s3_jsmn_representative_fixture_is_stable_across_optimization(optimization: str) -> None:
+        text = '{"a":[1,{"b":"x"}],"c":false}'
+        expected_status, expected_tokens = _reference_jsmn(text.encode("ascii"))
+>       actual_status, actual_tokens = _run_s3(text, optimization)
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_external_jsmn_s3.py:246: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_external_jsmn_s3.py:186: in _run_s3
+    tokens = [
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+.0 = <range_iterator object at 0x0000029006C92470>
+
+    tokens = [
+>       Token(int(types[i]), int(starts[i]), int(ends[i]), int(sizes[i]))
+                             ^^^^^^^^^^^^^^
+        for i in range(result)
+    ]
+E   TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+
+tests\test_external_jsmn_s3.py:187: TypeError
+________ test_lowering_match_expression_can_select_static_string_value ________
+
+    def test_lowering_match_expression_can_select_static_string_value() -> None:
+>       module = _lower(
+            "fn select(selector: trit) -> string:\n"
+            "    return match selector:\n"
+            '        -1: "negative"\n'
+            '        0: "zero"\n'
+            '        1: "positive"\n'
+            "fn main() -> tryte:\n"
+            '    value: string = select(0)\n'
+            "    return 0\n"
+        )
+
+tests\test_s3_static_text_lowering.py:88: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_s3_static_text_lowering.py:12: in _lower
+    program = parse(source, mode=SyntaxMode.V0_6)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bootstrap\s3\parser.py:1235: in parse
+    return parse_tokens(tokenize(source, mode=mode), mode=mode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bootstrap\s3\parser.py:1231: in parse_tokens
+    return Parser(tokens, mode).parse_program()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bootstrap\s3\parser.py:48: in parse_program
+    functions.append(self._parse_function(exported=exported))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bootstrap\s3\parser.py:115: in _parse_function
+    name = self._consume(TokenKind.IDENTIFIER, "expected function name")
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <bootstrap.s3.parser.Parser object at 0x0000029006A62FD0>
+kind = <TokenKind.IDENTIFIER: 29>, message = 'expected function name'
+
+    def _consume(self, kind: TokenKind, message: str) -> Token:
+        if self._check(kind):
+            return self._advance()
+        found = self._peek()
+        suffix = "end of file" if found.kind is TokenKind.EOF else repr(found.text)
+>       raise ParseError(f"{message}; found {suffix}", found.location)
+E       bootstrap.s3.diagnostics.ParseError: 1:4: parse error: expected function name; found 'select'
+
+bootstrap\s3\parser.py:1202: ParseError
+=========================== short test summary info ===========================
+FAILED tests/test_external_jsmn_s3.py::test_s3_jsmn_representative_fixture_is_stable_across_optimization[O1]
+FAILED tests/test_s3_static_text_lowering.py::test_lowering_match_expression_can_select_static_string_value
+FULL_SUITE_END=2026-08-20T08:19:34.0446420-03:00
+FULL_SUITE_EXIT=1

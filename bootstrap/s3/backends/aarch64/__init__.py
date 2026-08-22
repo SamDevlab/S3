@@ -8,6 +8,8 @@ from .backend import (
     AArch64Backend,
     AArch64BackendError,
     AArch64ElfHeader,
+    ELF64_CLASS,
+    ELF_LITTLE_ENDIAN,
     ExecutionCertification,
 )
 
@@ -19,5 +21,7 @@ __all__ = [
     "AArch64Backend",
     "AArch64BackendError",
     "AArch64ElfHeader",
+    "ELF64_CLASS",
+    "ELF_LITTLE_ENDIAN",
     "ExecutionCertification",
 ]

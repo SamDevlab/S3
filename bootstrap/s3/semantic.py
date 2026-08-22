@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 from . import ast
+from .async_limits import MAX_SELECT_ARITY
 from .large_index import SliceBounds
 from .diagnostics import DiagnosticCode, SemanticError, SourceLocation
 from .static_text import StaticTextDecodeError, decode_static_text
@@ -1126,6 +1127,8 @@ class SemanticAnalyzer:
             return BlockFlow(definitely_returns=False, terminates=False)
         if isinstance(statement, ast.SwitchStatement):
             return self._analyze_switch(statement)
+        if isinstance(statement, ast.SelectStatement):
+            return self._analyze_select(statement)
         if isinstance(statement, ast.WhileStatement):
             return self._analyze_while(statement)
         if isinstance(statement, ast.ForStatement):
@@ -1313,6 +1316,27 @@ class SemanticAnalyzer:
         return BlockFlow(
             terminates=all(flow.terminates for flow in case_flows),
             definitely_returns=all(flow.definitely_returns for flow in case_flows),
+        )
+
+    def _analyze_select(self, statement: ast.SelectStatement) -> BlockFlow:
+        if not 1 <= len(statement.arms) <= MAX_SELECT_ARITY:
+            raise SemanticError(
+                f"select requires between 1 and {MAX_SELECT_ARITY} arms",
+                statement.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+            )
+        for arm in statement.arms:
+            self._analyze_expression(arm.operation, None)
+        flows = self._analyze_owned_branches(
+            tuple(
+                lambda arm=arm: self._analyze_block(arm.body, create_scope=True)
+                for arm in statement.arms
+            ),
+            statement.location,
+        )
+        return BlockFlow(
+            terminates=all(flow.terminates for flow in flows),
+            definitely_returns=all(flow.definitely_returns for flow in flows),
         )
 
     def _analyze_enum_switch(

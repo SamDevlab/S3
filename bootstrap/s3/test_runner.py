@@ -234,12 +234,14 @@ def _hosted_worker(
     try:
         compilation = _compile_test_sources(sources, optimization, entry)
         if compilation.semantic_model.contains_references or compilation.semantic_model.contains_dynamic:
-            value = execute_ir(compilation.ir, entry, optimization)
+            ir, _ = compilation.require_ordinary_artifacts()
+            value = execute_ir(ir, entry, optimization)
         else:
+            _, assembly = compilation.require_ordinary_artifacts()
             value = Emulator(
                 max_frames=max_frames,
                 max_instructions=max_instructions,
-            ).execute(compilation.assembly, entry)
+            ).execute(assembly, entry)
         if not isinstance(value, int):
             raise TestRunnerError("test entry must return one integer result")
         result_queue.put(_outcome("PASS", value=value))
@@ -322,7 +324,8 @@ class S3TestRunner:
     def _run_native(self, case: S3TestCase, sources: dict[str, str]) -> dict[str, object]:
         try:
             compilation = _compile_test_sources(sources, self.manifest.optimization, case.entry)
-            native = generate_native_assembly(compilation.assembly)
+            _, assembly = compilation.require_ordinary_artifacts()
+            native = generate_native_assembly(assembly)
             toolchain = NativeToolchain.detect()
         except NativePlatformError:
             return _outcome("SKIP", reason="native toolchain unavailable")

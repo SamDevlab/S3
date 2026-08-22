@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from . import ast
 from .async_language import ParsedAsyncLanguageSource
+from .async_limits import MAX_SELECT_ARITY
 from .diagnostics import DiagnosticCode, SemanticError
 
 
@@ -115,6 +116,33 @@ def _validate_linear_block(
                 references,
                 allow_unawaited_async=False,
             )
+        elif isinstance(statement, ast.SelectStatement):
+            if not 1 <= len(statement.arms) <= MAX_SELECT_ARITY:
+                raise SemanticError(
+                    f"select requires between 1 and {MAX_SELECT_ARITY} arms",
+                    statement.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+                )
+            for arm in statement.arms:
+                _validate_expression(
+                    arm.operation,
+                    function_name,
+                    function_is_async,
+                    async_names,
+                    await_offsets,
+                    future_names,
+                    set(references),
+                    allow_unawaited_async=False,
+                )
+                _validate_linear_block(
+                    arm.body,
+                    function_name=function_name,
+                    function_is_async=function_is_async,
+                    async_names=async_names,
+                    await_offsets=await_offsets,
+                    future_names=set(future_names),
+                    live_references=set(references),
+                )
         elif isinstance(statement, ast.SwitchStatement):
             _validate_expression(statement.expression, function_name, function_is_async, async_names, await_offsets, future_names, references, False)
             for case in statement.cases:

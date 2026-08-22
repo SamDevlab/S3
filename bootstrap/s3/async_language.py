@@ -19,6 +19,7 @@ from enum import Enum
 from hashlib import sha256
 
 from . import ast
+from .async_limits import MAX_SELECT_ARITY, MAX_SELECT_DEPTH
 from .diagnostics import DiagnosticCode, ParseError, SemanticError, SourceLocation
 from .lexer import SyntaxMode, Token, TokenKind, tokenize
 from .module_graph import ModuleId, normalize_logical_path
@@ -96,8 +97,18 @@ class AsyncActionKind(Enum):
     FUTURE_MOVE = "future_move"
     AWAIT_CALL = "await_call"
     AWAIT_FUTURE = "await_future"
+    SELECT = "select"
     RETURN = "return"
     DISCARD = "discard"
+
+
+@dataclass(frozen=True, slots=True)
+class AsyncSelectArm:
+    callee: str | None = None
+    arguments: tuple[AsyncExpression, ...] = ()
+    source_future: str | None = None
+    actions: tuple[AsyncAction, ...] = ()
+    source_offset: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -111,6 +122,7 @@ class AsyncAction:
     return_after: bool = False
     type_arguments: tuple[str, ...] = ()
     source_offset: int = 0
+    select_arms: tuple[AsyncSelectArm, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -292,11 +304,7 @@ def lower_async_language_program(
             call_map=mapped_calls,
         )
         internal_name = mapped_names.get(function.name, function.name)
-        frame_slots = tuple(parameter.name for parameter in function.parameters) + tuple(
-            statement.name
-            for statement in function.body.statements
-            if isinstance(statement, ast.VariableDeclaration)
-        )
+        frame_slots = tuple(parameter.name for parameter in function.parameters) + _frame_local_names(function.body)
         executable.append(
             AsyncExecutableFunction(
                 internal_name,
@@ -377,12 +385,16 @@ def _lower_block_actions(
     future_names: set[str],
     observed_awaits: set[int],
     call_map: Mapping[str, str],
+    block: ast.Block | None = None,
+    future_state: dict[str, str] | None = None,
+    select_depth: int = 0,
 ) -> tuple[AsyncAction, ...]:
     actions: list[AsyncAction] = []
-    future_state: dict[str, str] = {
+    state = future_state if future_state is not None else {
         parameter.name: "live" for parameter in function.parameters if parameter.name in future_names
     }
-    for statement in function.body.statements:
+    current_block = function.body if block is None else block
+    for statement in current_block.statements:
         if isinstance(statement, ast.VariableDeclaration):
             expression = _single_initializer(statement.initializer, statement.location)
             marker = await_by_offset.get(expression.location.offset)
@@ -390,8 +402,8 @@ def _lower_block_actions(
                 if marker is not None:
                     raise SemanticError("Future<T> binding cannot store an already-awaited value", marker.keyword_location)
                 if isinstance(expression, ast.CallExpression) and expression.simple_function_name in async_names:
-                    arguments = _compile_call_arguments(expression, future_state, future_names, async_names)
-                    future_state[statement.name] = "live"
+                    arguments = _compile_call_arguments(expression, state, future_names, async_names)
+                    state[statement.name] = "live"
                     actions.append(
                         AsyncAction(
                             AsyncActionKind.FUTURE_CREATE,
@@ -404,9 +416,9 @@ def _lower_block_actions(
                     )
                     continue
                 if isinstance(expression, ast.Identifier) and expression.name in future_names:
-                    _require_future_live(expression.name, future_state, expression.location)
-                    future_state[expression.name] = "moved"
-                    future_state[statement.name] = "live"
+                    _require_future_live(expression.name, state, expression.location)
+                    state[expression.name] = "moved"
+                    state[statement.name] = "live"
                     actions.append(
                         AsyncAction(
                             AsyncActionKind.FUTURE_MOVE,
@@ -419,13 +431,13 @@ def _lower_block_actions(
                 raise SemanticError("Future<T> must be created from an async call or moved from another Future", statement.location)
             if marker is not None:
                 observed_awaits.add(expression.location.offset)
-                actions.append(_await_action(expression, marker, statement.name, False, future_state, future_names, async_names, call_map))
+                actions.append(_await_action(expression, marker, statement.name, False, state, future_names, async_names, call_map))
             else:
                 actions.append(
                     AsyncAction(
                         AsyncActionKind.ASSIGN,
                         target=statement.name,
-                        expression=_compile_expression(expression, future_state, future_names, async_names),
+                        expression=_compile_expression(expression, state, future_names, async_names),
                         source_offset=statement.location.offset,
                     )
                 )
@@ -436,41 +448,167 @@ def _lower_block_actions(
             target = statement.target.name
             marker = await_by_offset.get(expression.location.offset)
             if target in future_names:
-                if future_state.get(target) == "live":
+                if state.get(target) == "live":
                     raise SemanticError("cannot overwrite a live move-only Future", statement.location)
                 if not isinstance(expression, ast.Identifier) or expression.name not in future_names:
                     raise SemanticError("Future assignment requires an ownership move", statement.location)
-                _require_future_live(expression.name, future_state, expression.location)
-                future_state[expression.name] = "moved"
-                future_state[target] = "live"
+                _require_future_live(expression.name, state, expression.location)
+                state[expression.name] = "moved"
+                state[target] = "live"
                 actions.append(AsyncAction(AsyncActionKind.FUTURE_MOVE, target=target, source_future=expression.name, source_offset=statement.location.offset))
             elif marker is not None:
                 observed_awaits.add(expression.location.offset)
-                actions.append(_await_action(expression, marker, target, False, future_state, future_names, async_names, call_map))
+                actions.append(_await_action(expression, marker, target, False, state, future_names, async_names, call_map))
             else:
-                actions.append(AsyncAction(AsyncActionKind.ASSIGN, target=target, expression=_compile_expression(expression, future_state, future_names, async_names), source_offset=statement.location.offset))
+                actions.append(AsyncAction(AsyncActionKind.ASSIGN, target=target, expression=_compile_expression(expression, state, future_names, async_names), source_offset=statement.location.offset))
         elif isinstance(statement, ast.ReturnStatement):
             expression = statement.expression
             marker = await_by_offset.get(expression.location.offset)
             if marker is not None:
                 observed_awaits.add(expression.location.offset)
-                actions.append(_await_action(expression, marker, None, True, future_state, future_names, async_names, call_map))
+                actions.append(_await_action(expression, marker, None, True, state, future_names, async_names, call_map))
             else:
-                actions.append(AsyncAction(AsyncActionKind.RETURN, expression=_compile_expression(expression, future_state, future_names, async_names), source_offset=statement.location.offset))
+                actions.append(AsyncAction(AsyncActionKind.RETURN, expression=_compile_expression(expression, state, future_names, async_names), source_offset=statement.location.offset))
         elif isinstance(statement, ast.DiscardStatement):
             expression = statement.expression
             marker = await_by_offset.get(expression.location.offset)
             if marker is not None:
                 observed_awaits.add(expression.location.offset)
-                actions.append(_await_action(expression, marker, None, False, future_state, future_names, async_names, call_map, discard=True))
+                actions.append(_await_action(expression, marker, None, False, state, future_names, async_names, call_map, discard=True))
             else:
-                actions.append(AsyncAction(AsyncActionKind.DISCARD, expression=_compile_expression(expression, future_state, future_names, async_names), source_offset=statement.location.offset))
+                actions.append(AsyncAction(AsyncActionKind.DISCARD, expression=_compile_expression(expression, state, future_names, async_names), source_offset=statement.location.offset))
+        elif isinstance(statement, ast.SelectStatement):
+            actions.append(
+                _select_action(
+                    function,
+                    statement,
+                    async_names=async_names,
+                    await_by_offset=await_by_offset,
+                    future_names=future_names,
+                    future_state=state,
+                    observed_awaits=observed_awaits,
+                    call_map=call_map,
+                    select_depth=select_depth,
+                )
+            )
         else:
             raise SemanticError("unsupported statement in executable async IR", statement.location, diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_PROGRAM)
 
     # A live Future may be dropped at function exit; moved/consumed owners are
     # not dropped again.  Runtime frame cleanup enforces exactly-once ownership.
     return tuple(actions)
+
+
+def _select_action(
+    function: ast.FunctionDeclaration,
+    statement: ast.SelectStatement,
+    *,
+    async_names: frozenset[str],
+    await_by_offset: dict[int, AsyncAwaitMarker],
+    future_names: set[str],
+    future_state: dict[str, str],
+    observed_awaits: set[int],
+    call_map: Mapping[str, str],
+    select_depth: int,
+) -> AsyncAction:
+    if not 1 <= len(statement.arms) <= MAX_SELECT_ARITY:
+        raise SemanticError(f"select requires between 1 and {MAX_SELECT_ARITY} arms", statement.location)
+    if select_depth >= MAX_SELECT_DEPTH:
+        raise SemanticError(f"select nesting exceeds bounded depth {MAX_SELECT_DEPTH}", statement.location)
+
+    baseline = dict(future_state)
+    selected_future_names: set[str] = set()
+    arm_models: list[AsyncSelectArm] = []
+    branch_states: list[dict[str, str]] = []
+    for arm in statement.arms:
+        branch_state = dict(baseline)
+        marker = await_by_offset.get(arm.operation.location.offset)
+        if marker is None:
+            raise SemanticError("select operation must be explicitly awaited", arm.operation.location)
+        observed_awaits.add(arm.operation.location.offset)
+        callee, arguments, source_future = _select_operation(
+            arm.operation,
+            marker,
+            async_names=async_names,
+            future_names=future_names,
+            future_state=branch_state,
+            call_map=call_map,
+        )
+        if source_future is not None:
+            if source_future in selected_future_names:
+                raise SemanticError(
+                    f"Future '{source_future}' cannot appear in multiple select arms",
+                    arm.operation.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+                )
+            selected_future_names.add(source_future)
+        body_actions = _lower_block_actions(
+            function,
+            async_names=async_names,
+            await_by_offset=await_by_offset,
+            future_names=future_names,
+            observed_awaits=observed_awaits,
+            call_map=call_map,
+            block=arm.body,
+            future_state=branch_state,
+            select_depth=select_depth + 1,
+        )
+        branch_states.append(branch_state)
+        arm_models.append(
+            AsyncSelectArm(
+                callee=callee,
+                arguments=arguments,
+                source_future=source_future,
+                actions=body_actions,
+                source_offset=arm.location.offset,
+            )
+        )
+
+    # Every candidate is consumed by the select decision.  This makes an
+    # unselected Future unavailable after the join and prevents double-polling.
+    for branch_state in branch_states:
+        for name in selected_future_names:
+            if branch_state.get(name) == "live":
+                branch_state[name] = "consumed"
+    first_state = branch_states[0]
+    if any(state != first_state for state in branch_states[1:]):
+        raise SemanticError(
+            "owned-value state differs between select arms; reinitialize or consume every branch consistently",
+            statement.location,
+            diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
+        )
+    future_state.clear()
+    future_state.update(first_state)
+    return AsyncAction(
+        AsyncActionKind.SELECT,
+        select_arms=tuple(arm_models),
+        source_offset=statement.location.offset,
+    )
+
+
+def _select_operation(
+    expression: ast.Expression,
+    marker: AsyncAwaitMarker,
+    *,
+    async_names: frozenset[str],
+    future_names: set[str],
+    future_state: dict[str, str],
+    call_map: Mapping[str, str],
+) -> tuple[str | None, tuple[AsyncExpression, ...], str | None]:
+    if isinstance(expression, ast.CallExpression):
+        callee = expression.simple_function_name
+        if callee is None or callee not in async_names:
+            raise SemanticError(f"await target '{marker.expression_name}' is not an async function", marker.keyword_location)
+        before = dict(future_state)
+        arguments = _compile_call_arguments(expression, future_state, future_names, async_names)
+        if future_state != before:
+            raise SemanticError("select operation arguments cannot move a Future owner", expression.location)
+        return call_map.get(callee, callee), arguments, None
+    if isinstance(expression, ast.Identifier) and expression.name in future_names:
+        _require_future_live(expression.name, future_state, expression.location)
+        future_state[expression.name] = "consumed"
+        return None, (), expression.name
+    raise SemanticError("select requires direct async calls or owned Future variables", marker.keyword_location)
 
 
 def _await_action(
@@ -580,7 +718,35 @@ def _single_initializer(initializer: ast.Initializer, location: SourceLocation) 
 
 
 def _future_declarations(block: ast.Block, known: set[str]) -> set[str]:
-    return {statement.name for statement in block.statements if isinstance(statement, ast.VariableDeclaration) and statement.name in known}
+    result: set[str] = set()
+    for statement in block.statements:
+        if isinstance(statement, ast.VariableDeclaration) and statement.name in known:
+            result.add(statement.name)
+        elif isinstance(statement, ast.SelectStatement):
+            for arm in statement.arms:
+                result.update(_future_declarations(arm.body, known))
+        elif isinstance(statement, (ast.SwitchStatement,)):
+            for case in statement.cases:
+                result.update(_future_declarations(case.body, known))
+        elif isinstance(statement, (ast.WhileStatement, ast.ForStatement)):
+            result.update(_future_declarations(statement.body, known))
+    return result
+
+
+def _frame_local_names(block: ast.Block) -> tuple[str, ...]:
+    names: list[str] = []
+    for statement in block.statements:
+        if isinstance(statement, ast.VariableDeclaration):
+            names.append(statement.name)
+        elif isinstance(statement, ast.SelectStatement):
+            for arm in statement.arms:
+                names.extend(_frame_local_names(arm.body))
+        elif isinstance(statement, ast.SwitchStatement):
+            for case in statement.cases:
+                names.extend(_frame_local_names(case.body))
+        elif isinstance(statement, (ast.WhileStatement, ast.ForStatement)):
+            names.extend(_frame_local_names(statement.body))
+    return tuple(names)
 
 
 def _contains_control_flow(block: ast.Block) -> bool:
@@ -596,6 +762,13 @@ def _block_has_await(block: ast.Block, await_by_offset: Mapping[int, AsyncAwaitM
             expressions = (statement.value,)
         elif isinstance(statement, (ast.ReturnStatement, ast.DiscardStatement)):
             expressions = (statement.expression,)
+        elif isinstance(statement, ast.SelectStatement):
+            if any(
+                _tree_contains_offset(arm.operation, await_by_offset)
+                or _block_has_await(arm.body, await_by_offset)
+                for arm in statement.arms
+            ):
+                return True
         if any(_tree_contains_offset(expression, await_by_offset) for expression in expressions):
             return True
     return False

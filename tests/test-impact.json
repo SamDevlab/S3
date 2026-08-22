@@ -9,6 +9,40 @@
     "environment_requirements": [],
     "global_impact": false
   },
+  "timeout_policy": {
+    "classes": {
+      "DEFAULT": {"seconds": 60},
+      "HEAVY_SELF_HOSTING": {"seconds": 180},
+      "HEAVY_RENDERER": {"seconds": 754}
+    },
+    "assignments": {
+      "tests/test_assembly_program_text_adapter.py": "HEAVY_RENDERER",
+      "tests/test_assembly_renderer_candidate_readiness.py": "HEAVY_RENDERER",
+      "tests/test_assembly_text_renderer.py": "HEAVY_RENDERER",
+      "tests/test_assembly_tokenizer.py": "HEAVY_RENDERER",
+      "tests/test_compare_assembly_renderer.py": "HEAVY_RENDERER",
+      "tests/test_decimal_functions.py": "HEAVY_SELF_HOSTING",
+      "tests/test_m150_renderer_component.py": "HEAVY_RENDERER",
+      "tests/test_s3_program_check.py": "HEAVY_RENDERER",
+      "tests/test_s3_renderer_bootstrap_spike.py": "HEAVY_RENDERER",
+      "tests/test_s3_renderer_contract.py": "HEAVY_RENDERER",
+      "tests/test_s3_renderer_event_stream.py": "HEAVY_RENDERER",
+      "tests/test_s3_renderer_event_writer.py": "HEAVY_RENDERER",
+      "tests/test_s3_renderer_first_text.py": "HEAVY_RENDERER",
+      "tests/test_s3_renderer_generic_sign.py": "HEAVY_RENDERER",
+      "tests/test_s3_renderer_generic_simple_call.py": "HEAVY_RENDERER",
+      "tests/test_s3_renderer_generic_text.py": "HEAVY_RENDERER",
+      "tests/test_s3_renderer_line_blueprints.py": "HEAVY_RENDERER",
+      "tests/test_s3_renderer_line_encodings.py": "HEAVY_RENDERER",
+      "tests/test_s3_renderer_line_sequences.py": "HEAVY_RENDERER",
+      "tests/test_s3_renderer_output_buffer.py": "HEAVY_RENDERER",
+      "tests/test_s3_renderer_output_model.py": "HEAVY_RENDERER",
+      "tests/test_s3_renderer_sign_text.py": "HEAVY_RENDERER",
+      "tests/test_s3_renderer_simple_call_text.py": "HEAVY_RENDERER",
+      "tests/test_s3_renderer_text_segments.py": "HEAVY_RENDERER",
+      "tests/test_self_hosting_opcode_classifier.py": "HEAVY_SELF_HOSTING"
+    }
+  },
   "shards": {
     "compiler": ["tests/test_compiler.py", "tests/test_cli_source_syntax.py"],
     "m139-m140": ["tests/test_m139_dynamic_buffers.py", "tests/test_m140_ordered_collections.py"],

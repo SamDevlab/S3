@@ -353,6 +353,19 @@ class SwitchStatement:
 
 
 @dataclass(frozen=True, slots=True)
+class SelectArm:
+    operation: Expression
+    body: Block
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
+class SelectStatement:
+    arms: tuple[SelectArm, ...]
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
 class WhileStatement:
     condition: Expression
     body: Block
@@ -402,6 +415,7 @@ Statement: TypeAlias = (
     | DiscardStatement
     | ReturnStatement
     | SwitchStatement
+    | SelectStatement
     | WhileStatement
     | BreakStatement
     | ContinueStatement

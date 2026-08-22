@@ -47,8 +47,7 @@ class TestSignTextRenderer(unittest.TestCase):
         self.assertEqual(self.result, 0)
 
     def test_buffers_captured(self):
-        meta = FIXTURE_METADATA["sign"]
-        out = _capture_fixture_output(self.source, meta.buffer_count, meta.buffer_offset, meta.entry, meta.max_instructions, meta.expected_bytes)
+        out = self.output
         self.assertTrue(len(out) > 0)
 
     def test_output_byte_count(self):

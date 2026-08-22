@@ -203,11 +203,14 @@ Step = Callable[[AsyncFrame], Transition]
 class AsyncFuture(Generic[T]):
     """Move-only future driven by one deterministic transition callback."""
 
-    def __init__(self, step: Step[T], *, frame: AsyncFrame | None = None) -> None:
+    def __init__(self, step: Step[T], *, frame: AsyncFrame | None = None, cancel_hook: Callable[[], None] | None = None) -> None:
         if not callable(step):
             raise TypeError("async future step must be callable")
+        if cancel_hook is not None and not callable(cancel_hook):
+            raise TypeError("async future cancellation hook must be callable")
         self.frame = frame or AsyncFrame()
         self._step = step
+        self._cancel_hook = cancel_hook
         self._terminal_consumed = False
 
     @property
@@ -263,6 +266,14 @@ class AsyncFuture(Generic[T]):
             return Result.err(AsyncError(AsyncErrorCode.INVALID_STATE, "cancel", "running future cannot be cancelled re-entrantly"))
         if self.frame.state in {AsyncState.COMPLETED, AsyncState.FAILED, AsyncState.CANCELLED}:
             return Result.err(AsyncError(AsyncErrorCode.INVALID_STATE, "cancel", "future is already terminal"))
+        if self._cancel_hook is not None:
+            try:
+                self._cancel_hook()
+            except BaseException as error:
+                failure = AsyncError(AsyncErrorCode.CALLBACK_FAILURE, "cancel", type(error).__name__)
+                self.frame.fail(failure)
+                self._terminal_consumed = True
+                return Result.err(failure)
         self.frame.cancel()
         self._terminal_consumed = True
         return Result.ok(None)

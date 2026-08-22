@@ -1,0 +1,60 @@
+{
+  "campaign": "M2.00 authorized final T4",
+  "branch": "feature/m191-m200-autonomous-20260819",
+  "head": "a651e9b3551f218af1c27bb908e0692880afc4da",
+  "origin_main": "a9e430551f2ee77aa2ef229daf9e967333e83e2c",
+  "worktree_clean_before_t4": true,
+  "local_remote_aligned_before_t4": true,
+  "source_test_runner_mutation_before_t4": false,
+  "production_change": false,
+  "runner_change": false,
+  "post_reboot_jsmn": {
+    "five_run_pass": "5/5",
+    "ten_run_pass": "10/10",
+    "median_seconds": 31.575,
+    "p95_seconds": 38.640,
+    "p95_method": "NEAREST_RANK",
+    "max_seconds": 38.640,
+    "coefficient_of_variation": 0.0935,
+    "default_60s_margin": "HEALTHY",
+    "classification": "PRE_REBOOT_HOST_STATE_CONTAMINATION"
+  },
+  "global_t4": {
+    "runs_this_prompt": 1,
+    "start": "2026-08-21T05:42:08.6894598-03:00",
+    "end": "2026-08-21T07:02:13.1286556-03:00",
+    "head": "a651e9b3551f218af1c27bb908e0692880afc4da",
+    "selected": 369,
+    "pass": 365,
+    "fail": 0,
+    "timeout": 4,
+    "unclassified_timeout": 0,
+    "exit": 1,
+    "status": "TIMEOUT",
+    "raw_transcript": "T4-final-post-reboot-20260821-054208.txt",
+    "timeouts": [
+      {"path": "tests/test_assembly_renderer_candidate_readiness.py", "timeout_class": "HEAVY_RENDERER", "applied_timeout_seconds": 300},
+      {"path": "tests/test_compare_assembly_renderer.py", "timeout_class": "HEAVY_RENDERER", "applied_timeout_seconds": 300},
+      {"path": "tests/test_m150_renderer_component.py", "timeout_class": "HEAVY_RENDERER", "applied_timeout_seconds": 300},
+      {"path": "tests/test_s3_renderer_sign_text.py", "timeout_class": "HEAVY_RENDERER", "applied_timeout_seconds": 300}
+    ]
+  },
+  "benchmark_rerun": false,
+  "publication": {
+    "merge": "NO",
+    "auto_merge": "NO",
+    "force_push": "NO",
+    "tag": "NO",
+    "release": "NO",
+    "m2_01_started": "NO"
+  },
+  "findings": {
+    "blockers": 1,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "ready_for_pr": "NO",
+    "ready_for_merge_review": "NO"
+  },
+  "status": "BLOCKED_FINAL_T4_TIMEOUT"
+}
