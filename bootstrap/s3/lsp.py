@@ -148,6 +148,7 @@ class LanguageServer:
                 "completionProvider": {"triggerCharacters": ["."]},
                 "referencesProvider": True,
                 "renameProvider": True,
+                "workspaceSymbolProvider": True,
             },
             "serverInfo": {"name": "s3-language-server", "version": "1"},
         }
@@ -179,9 +180,10 @@ class LanguageServer:
     def hover(self, uri: str, position: Mapping[str, int]) -> dict[str, object] | None:
         document = self._document(uri)
         word = _word_at(document.text, position)
-        symbol = next((item for item in document.symbols if item.name == word), None)
-        if symbol is None:
+        resolved = self._resolve_symbol(uri, word)
+        if resolved is None:
             return None
+        declaration, symbol = resolved
         return {
             "contents": {"kind": "markdown", "value": f"```s3\n{symbol.detail}\n```"},
             "range": _range(symbol.location, length=len(symbol.name)),
@@ -190,10 +192,31 @@ class LanguageServer:
     def definition(self, uri: str, position: Mapping[str, int]) -> list[dict[str, object]]:
         document = self._document(uri)
         word = _word_at(document.text, position)
-        symbol = next((item for item in document.symbols if item.name == word), None)
-        if symbol is None:
+        resolved = self._resolve_symbol(uri, word)
+        if resolved is None:
             return []
-        return [{"uri": uri, "range": _range(symbol.location, length=len(symbol.name))}]
+        declaration, symbol = resolved
+        return [{"uri": declaration.uri, "range": _range(symbol.location, length=len(symbol.name))}]
+
+    def workspace_symbols(self, query: str = "") -> list[dict[str, object]]:
+        if not isinstance(query, str):
+            raise LspError("workspace symbol query must be a string")
+        result: list[dict[str, object]] = []
+        for uri in sorted(self._documents):
+            document = self._documents[uri]
+            for symbol in document.symbols:
+                if query.casefold() not in symbol.name.casefold():
+                    continue
+                result.append(
+                    {
+                        "name": symbol.name,
+                        "kind": symbol.kind,
+                        "uri": uri,
+                        "range": _range(symbol.location, length=len(symbol.name)),
+                        "containerName": uri,
+                    }
+                )
+        return result
 
     def document_symbols(self, uri: str) -> list[dict[str, object]]:
         document = self._document(uri)
@@ -222,11 +245,14 @@ class LanguageServer:
     def references(self, uri: str, position: Mapping[str, int]) -> list[dict[str, object]]:
         document = self._document(uri)
         word = _word_at(document.text, position)
-        if next((item for item in document.symbols if item.name == word), None) is None:
+        resolved = self._resolve_symbol(uri, word)
+        if resolved is None:
             return []
+        documents = self._documents_for_symbol(word or "", uri)
         return [
-            {"uri": uri, "range": _range(location, length=len(word or ""))}
-            for location in _identifier_locations(document.text, word or "")
+            {"uri": item_uri, "range": _range(location, length=len(word or ""))}
+            for item_uri in sorted(documents)
+            for location in _identifier_locations(documents[item_uri].text, word or "")
         ]
 
     def rename(
@@ -239,16 +265,21 @@ class LanguageServer:
             raise LspError("rename target must be an identifier")
         document = self._document(uri)
         word = _word_at(document.text, position)
-        if next((item for item in document.symbols if item.name == word), None) is None:
+        if self._resolve_symbol(uri, word) is None:
             raise LspError("rename target is not a known semantic symbol")
-        edits = [
-            {
-                "range": _range(location, length=len(word or "")),
-                "newText": new_name,
+        documents = self._documents_for_symbol(word or "", uri)
+        return {
+            "changes": {
+                item_uri: [
+                    {
+                        "range": _range(location, length=len(word or "")),
+                        "newText": new_name,
+                    }
+                    for location in _identifier_locations(documents[item_uri].text, word or "")
+                ]
+                for item_uri in sorted(documents)
             }
-            for location in _identifier_locations(document.text, word or "")
-        ]
-        return {"changes": {uri: edits}}
+        }
 
     def _set_document(self, uri: str, text: str, version: int) -> None:
         if not isinstance(uri, str) or not uri:
@@ -289,3 +320,33 @@ class LanguageServer:
             return self._documents[uri]
         except KeyError as error:
             raise LspError(f"document is not open: {uri}") from error
+
+    def _resolve_symbol(self, uri: str, name: str | None) -> tuple[_Document, _Symbol] | None:
+        if not name:
+            return None
+        document = self._document(uri)
+        local = next((item for item in document.symbols if item.name == name), None)
+        declarations = [
+            (candidate, symbol)
+            for candidate_uri in sorted(self._documents)
+            for candidate in (self._documents[candidate_uri],)
+            for symbol in candidate.symbols
+            if symbol.name == name
+        ]
+        if len(declarations) == 1:
+            return declarations[0]
+        if local is not None:
+            return document, local
+        return None
+
+    def _documents_for_symbol(self, name: str, uri: str) -> dict[str, _Document]:
+        declarations = [
+            (candidate_uri, document)
+            for candidate_uri in sorted(self._documents)
+            for document in (self._documents[candidate_uri],)
+            for symbol in document.symbols
+            if symbol.name == name
+        ]
+        if len(declarations) == 1:
+            return dict((candidate_uri, document) for candidate_uri, document in self._documents.items())
+        return {uri: self._document(uri)}
