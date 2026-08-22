@@ -11,7 +11,7 @@ Best global policy: M0_R0_BASELINE.
 Production candidate: NONE.
 Production policy changed: NO.
 Experiment branch: `experiment/native-policy-search-20260822`.
-Final tested source HEAD: `5e5a70c2a810e0d52a6a03c9625022f9e108df9c`.
+Final tested source HEAD: `31d6c48e60cd939c951e4ff37d7db753b353311b`.
 Source changed after final gates: NO.
 
 Structural ranking used discovery cases only; holdout cases were evaluated after
@@ -32,5 +32,6 @@ Unimplemented memory policies were disqualified before structural scoring.
 No native timing was used for selection. NATIVE_SPEEDUP_CLAIM=NO.
 T0/T1/T2 passed in the focused local gates. T3 passed in the Linux x86-64 VM:
 the five final structural finalists were checked against the Emulator at O0/O1
-over three small scalar/branch/call workloads, for 30 native comparisons.
+over three scalar/branch/call workloads, for 30 native comparisons. The search
+artifacts also matched byte-for-byte under PYTHONHASHSEED 0, 1, and 42.
 T4 and the full suite were not run.

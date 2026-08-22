@@ -112,7 +112,7 @@
     "reason": "No benchmark checkout mutation or network execution is part of this bounded search.",
     "repository": "SamDevlab/S3-Benchmarks"
   },
-  "experiment_head_at_search": "5e5a70c2a810e0d52a6a03c9625022f9e108df9c",
+  "experiment_head_at_search": "31d6c48e60cd939c951e4ff37d7db753b353311b",
   "notes": [
     "The baseline policy is represented explicitly and compared byte-for-byte before candidate scoring.",
     "The search changes policy plumbing only; unsupported memory strategies are fail-closed before scoring.",

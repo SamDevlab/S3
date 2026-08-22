@@ -29,4 +29,5 @@ Unimplemented memory policies were disqualified before structural scoring.
 No native timing was used for selection. NATIVE_SPEEDUP_CLAIM=NO.
 T0/T1/T2 passed in the focused local gates. T3 passed in the Linux x86-64 VM
 for five structural finalists at O0/O1 across three workloads (30 comparisons).
-T4 and the full suite were not run.
+The search artifacts matched under PYTHONHASHSEED 0, 1, and 42. T4 and the
+full suite were not run.
