@@ -127,8 +127,6 @@ class X8664Emitter:
         self.functions = {function.name: function for function in program.functions}
         self.current_plan: AllocationPlan | None = None
         self._physical_residence_active = False
-        self.local_aliases: dict[int, int] = {}
-        self.local_move_future_registers: set[int] = set()
         self._entry_live_registers: frozenset[int] = frozenset()
         self._safe_register_reads: frozenset[tuple[str, int, int]] = frozenset()
         self._current_instruction_sites: dict[int, tuple[str, int]] = {}
@@ -207,14 +205,7 @@ class X8664Emitter:
         lines.extend(self._initialize_metadata(function, layout))
         lines.append(f"    jmp {mangle_block(function.name, 'entry')}")
         function_liveness = analyze_liveness(function)
-        for block_index, block in enumerate(function.blocks):
-            self.local_aliases = {}
-            self.local_move_future_registers = {
-                register
-                for future_block in function.blocks[block_index + 1 :]
-                for future_instruction in future_block.instructions
-                for register in future_instruction.registers
-            }
+        for block in function.blocks:
             lines.append(f"{mangle_block(function.name, block.label)}:")
             instruction_index = 0
             while instruction_index < len(block.instructions):
@@ -484,7 +475,6 @@ class X8664Emitter:
             site is not None
             and (site[0], site[1], register) in self._safe_register_reads
         )
-        register = self._resolve_local_alias(register)
         slot = layout.register(register)
         if skip_initialization_check:
             phys = (
@@ -520,7 +510,6 @@ class X8664Emitter:
         site = self._current_instruction_sites.get(id(self.current_instruction))
         if site is not None and (site[0], site[1], register) in self._safe_register_reads:
             return []
-        register = self._resolve_local_alias(register)
         slot = layout.register(register)
         failure = self._instruction_failure(
             "uninitialized register",
@@ -549,7 +538,6 @@ class X8664Emitter:
 
     def _snapshot_register(self, layout: FrameLayout, register: int) -> list[str]:
         """Validate and snapshot a logical argument before ABI registers change."""
-        register = self._resolve_local_alias(register)
         slot = layout.register(register)
         failure = self._instruction_failure(
             "uninitialized register",
@@ -564,18 +552,12 @@ class X8664Emitter:
             lines.append(f"    mov qword ptr {_address(slot.value)}, {phys}")
         return lines
 
-    def _resolve_local_alias(self, register: int) -> int:
-        while register in self.local_aliases:
-            register = self.local_aliases[register]
-        return register
-
     def _load_snapshot(
         self,
         layout: FrameLayout,
         register: int,
         target: str,
     ) -> list[str]:
-        register = self._resolve_local_alias(register)
         slot = layout.register(register)
         return [f"    mov {target}, qword ptr {_address(slot.value)}"]
 
@@ -835,17 +817,7 @@ class X8664Emitter:
             destination, source = registers
             if destination == source:
                 return instrumentation + self._check_register_initialized(layout, source)
-            type_name = function.type_of(destination)
-            if (
-                type_name is not AssemblyType.REFERENCE
-                and destination not in self.local_move_future_registers
-            ):
-                while source in self.local_aliases:
-                    source = self.local_aliases[source]
-                self.local_aliases[destination] = source
-                return instrumentation + [
-                    *self._read_register(layout, source, "rax"),
-                ]
+            # TMOV copies a value version; do not alias a mutable logical register.
             return instrumentation + [
                 *self._read_register(layout, source, "rax"),
                 *self._write_register(layout, destination, "rax"),
