@@ -28,6 +28,7 @@ def run_project_tests(
         raise TestRunnerError("test name pattern must be text")
     manifests = discover_manifests(root)
     reports: list[dict[str, object]] = []
+    selected_manifests: list[Path] = []
     for manifest_path in manifests:
         manifest = S3TestManifest.load(manifest_path)
         if name_pattern is not None:
@@ -37,6 +38,7 @@ def run_project_tests(
             if not tests:
                 continue
             manifest = replace(manifest, tests=tests)
+        selected_manifests.append(manifest_path)
         reports.append(S3TestRunner(manifest).run(mode))
     if not reports:
         raise TestRunnerError("test discovery selected no tests")
@@ -64,7 +66,7 @@ def run_project_tests(
     return {
         "schema": "s3-project-test-report",
         "schema_version": "1",
-        "manifests": [str(path.relative_to(Path(root).resolve()).as_posix()) for path in manifests],
+        "manifests": [str(path.relative_to(Path(root).resolve()).as_posix()) for path in selected_manifests],
         "reports": reports,
         "summary": {
             "status": status,

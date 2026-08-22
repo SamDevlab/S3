@@ -6,6 +6,7 @@ import json
 from typing import Any
 
 from . import ast
+from .diagnostics import S3Error
 from .parser import parse
 from .pipeline import compile_source
 
@@ -94,7 +95,7 @@ def build_documentation(source: str, *, public_only: bool = True) -> dict[str, o
     try:
         compile_source(source)
         program = parse(source)
-    except Exception as error:
+    except S3Error as error:
         raise DocumentationError("source must pass compiler validation") from error
     return _program_payload(program, public_only=public_only)
 
