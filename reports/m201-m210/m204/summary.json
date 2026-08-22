@@ -1,0 +1,21 @@
+{
+  "milestone": "M2.04",
+  "base_sha": "4aadb56a17a11828760f5d424c2ea3d544ad74f3",
+  "final_sha": "4aadb56a17a11828760f5d424c2ea3d544ad74f3",
+  "files_changed": [],
+  "production_change": false,
+  "test_change": false,
+  "environment": "NOT_MACOS_ARM64",
+  "macho": "PASS_STRUCTURAL",
+  "abi": "PASS_STRUCTURAL",
+  "execute": "DEFERRED_BY_ENVIRONMENT",
+  "defer_reason": "Current host is Windows x64 and no macOS ARM64 environment is attached",
+  "t1": "PASS",
+  "t2": "PASS_STRUCTURAL",
+  "t3": "NOT_RUN",
+  "t4": "NOT_RUN",
+  "benchmarks": "NOT_RUN",
+  "deferments": ["macOS ARM64 execution unavailable on current host"],
+  "blockers": ["environment"],
+  "status": "STRUCTURAL_ONLY"
+}
