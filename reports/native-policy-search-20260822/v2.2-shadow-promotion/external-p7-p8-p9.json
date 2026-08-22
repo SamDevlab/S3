@@ -1,0 +1,12 @@
+{
+  "aggregate": "DEFERRED_BY_CONSTRAINT",
+  "benchmark_main_sha": "871e2015a2e2d15e202eb023f11a833304ba44e4",
+  "benchmark_pr12_base": "871e2015a2e2d15e202eb023f11a833304ba44e4",
+  "benchmark_pr12_head": "2cd992825882b345b2d76731683550da049de157",
+  "benchmark_pr12_state": "OPEN_DRAFT_UNMERGED",
+  "p7": "DEFERRED_BY_CONSTRAINT",
+  "p8": "DEFERRED_BY_CONSTRAINT",
+  "p9": "DEFERRED_BY_CONSTRAINT",
+  "reason": "read-only S3-Benchmarks constraint; no benchmark source, branch, PR, or timing mutation",
+  "timing_data_discarded_for_selection": true
+}

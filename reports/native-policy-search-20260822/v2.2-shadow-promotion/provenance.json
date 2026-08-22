@@ -1,0 +1,16 @@
+{
+  "base_sha": "9b39c7070d7bfa23d709c2128eb0b0bbef164177",
+  "benchmark_repository_read_only": true,
+  "branch": "experiment/native-policy-search-20260822",
+  "campaign": "S3-ABL-V2.2-SHADOW-PROMOTION-HARDENING-20260822",
+  "native_speedup_claim": "NO",
+  "native_timing_used": false,
+  "pr": 190,
+  "publication_head": "04d94a5368106c1f476ac8856a1a313eedea7b37",
+  "repository": "SamDevlab/S3",
+  "source_changes_after_lock": "NO",
+  "start_head": "4f690dc449333a8cb23c3023d51ce07cc7ab0ed7",
+  "v21_source_lock": "173796bab2ffbb9d202e465f850a6f4777587938",
+  "v22_source_lock": "04d94a5368106c1f476ac8856a1a313eedea7b37",
+  "v2_source_lock": "d74760e0f177978a3566318c7b50cff4c98f1fb6"
+}

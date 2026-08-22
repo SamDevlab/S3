@@ -1,0 +1,17 @@
+{
+  "baseline_only_records": 0,
+  "compact_ea_positive_records": 74,
+  "correctness_pass_records": 74,
+  "cs_positive_records": 74,
+  "duplicate_exact_records": 42,
+  "duplicate_feature_vectors": 52,
+  "feature_count": 25,
+  "feature_null_counts": {},
+  "hard_regression_records": 0,
+  "nonbaseline_pareto_records": 74,
+  "policy_variants_per_record": 4,
+  "readiness": "DATASET_FORMING",
+  "records": 80,
+  "records_are_path_free": true,
+  "scalar_positive_records": 74
+}
