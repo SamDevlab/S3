@@ -23,4 +23,5 @@ were unchanged; only A07 gained two lines and two `mov` instructions.
 No timing was run and no speedup claim is made. T4 and the full suite were not
 run. Compact EA canary remains disabled, although this correctness blocker is
 cleared for later review. PR #190 remains open, draft and untouched. The fix is
-ready for review in the separate canonical-main branch; nothing was merged.
+ready for review in Draft PR #191 on the separate canonical-main branch;
+nothing was merged.
