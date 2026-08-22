@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "compileall": "PASS",
+  "imports": "PASS",
+  "diff_check": "PASS",
+  "json_validation": "PASS",
+  "minimal_reproducer": "PASS",
+  "a07_exact": "PASS",
+  "deterministic_generation": "PASS",
+  "tmov_direct_units": "PASS",
+  "source_head": "d10532c0f2e2db07f1d342bd6c3dcc3c782199ae"
+}

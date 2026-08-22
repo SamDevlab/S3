@@ -1,0 +1,19 @@
+{
+  "scope_audit": "PASS",
+  "base_sha": "9b39c7070d7bfa23d709c2128eb0b0bbef164177",
+  "production_source_files": 1,
+  "production_source_paths": ["bootstrap/s3/backends/x86_64/emitter.py"],
+  "test_files": 1,
+  "test_paths": ["tests/test_x86_64_tmov_value_semantics.py"],
+  "report_files": 37,
+  "documentation_files": 0,
+  "unrelated_files": 0,
+  "source_fix": "remove unsafe mutable logical-register TMOV aliasing",
+  "test_extension": "T26_F64_NATIVE_SOURCE_REDEFINED",
+  "classification": {
+    "bootstrap/s3/backends/x86_64/emitter.py": "SOURCE_FIX",
+    "tests/test_x86_64_tmov_value_semantics.py": "REGRESSION_TEST",
+    "reports/x86-64-tmov-correctness-20260822/*": "REPORT"
+  },
+  "required_unrelated_files": 0
+}

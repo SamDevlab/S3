@@ -1,0 +1,12 @@
+{
+  "v22_source_lock": "04d94a5368106c1f476ac8856a1a313eedea7b37",
+  "fix_applied_disposable_combined_checkout": true,
+  "combined_a07": "PASS",
+  "combined_tmov_focused": "31/31 PASS",
+  "combined_v22_t3_recheck": "100/100 PASS",
+  "does_fix_unblock_pr190": "YES",
+  "pr190_touched": "NO",
+  "pr190_merged": "NO",
+  "fix_pr": 191,
+  "fix_pr_state": "OPEN_DRAFT_UNMERGED"
+}

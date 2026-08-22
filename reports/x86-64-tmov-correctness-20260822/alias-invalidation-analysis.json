@@ -1,0 +1,15 @@
+{
+  "alias_model": "d -> s maps a logical destination to a mutable logical source",
+  "events": [
+    {"event": "source redefined", "alias_still_valid": false, "current_behavior": "alias remains and later reads resolve to the new source value", "required_behavior": "materialize the moved value or invalidate the alias"},
+    {"event": "destination redefined", "alias_still_valid": false, "current_behavior": "mapping can remain in local_aliases", "required_behavior": "remove the old mapping before a new definition"},
+    {"event": "alias chain", "alias_still_valid": false, "current_behavior": "transitive resolution still reaches a mutable source", "required_behavior": "preserve value versions, not mutable register names"},
+    {"event": "basic-block boundary", "alias_still_valid": "not without proof", "current_behavior": "state reset per emitted block", "required_behavior": "do not carry aliases across CFG edges"},
+    {"event": "branch or join", "alias_still_valid": "not without proof", "current_behavior": "no value-version merge proof", "required_behavior": "materialize at the move"},
+    {"event": "loop backedge", "alias_still_valid": "not without proof", "current_behavior": "runtime re-entry can observe a redefined source", "required_behavior": "materialize at the move"},
+    {"event": "call", "alias_still_valid": "not without proof", "current_behavior": "no alias invalidation barrier", "required_behavior": "materialize around the call boundary"},
+    {"event": "spill or reload", "alias_still_valid": "not as a logical identity", "current_behavior": "alias bypasses destination residence metadata", "required_behavior": "write destination residence and initialization metadata"},
+    {"event": "physical residence change", "alias_still_valid": "not as a logical identity", "current_behavior": "alias follows the source logical register", "required_behavior": "keep source and destination independently addressable"}
+  ],
+  "conclusion": "TMOV alias elision has no local proof strong enough for the existing backend. Conservative materialization is sound."
+}

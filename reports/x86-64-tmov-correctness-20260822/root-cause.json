@@ -1,0 +1,20 @@
+{
+  "classification": "CANONICAL_MAIN_BUG",
+  "failing_opcode": "TMOV",
+  "failing_semantic_invariant": "TMOV copies the source value version at execution time",
+  "minimal_reproducer": "TCONST r0,5; TMOV r1,r0; TCONST r0,2; TRET r1",
+  "expected_result": 5,
+  "actual_result": 2,
+  "affected_base_sha": "9b39c7070d7bfa23d709c2128eb0b0bbef164177",
+  "first_known_affected_sha": "NOT_DETERMINED_BY_BOUNDED_HISTORY_PROBE",
+  "suspected_component": "bootstrap/s3/backends/x86_64/emitter.py local TMOV forwarding",
+  "confirmed_component": "bootstrap/s3/backends/x86_64/emitter.py local_aliases and _resolve_local_alias",
+  "old_behavior": "TMOV could record local_aliases[destination] = source and later resolve destination reads to the mutable source register",
+  "correct_behavior": "TMOV reads source and writes destination residence and initialization state",
+  "repair_strategy": "A_CONSERVATIVE_MATERIALIZATION",
+  "why_repair_is_sound": "It directly implements the value-copy contract and is independent of CFG, liveness, physical residence, spill, and call proofs",
+  "why_other_strategies_were_rejected": "The existing local def-use information does not prove value-version immutability; a new value-version or SSA redesign would be disproportionate",
+  "affected_types": ["TRIT", "TRYTE", "I64", "F64 emulator contract", "REFERENCE native contract"],
+  "affected_control_flow_shapes": ["same-block source redefinition", "alias chain", "branch", "join", "loop", "call boundary"],
+  "affected_residence_modes": ["canonical stack", "physical register residence"]
+}

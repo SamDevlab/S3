@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "v22_source_lock": "04d94a5368106c1f476ac8856a1a313eedea7b37",
+  "review_source_lock": "d10532c0f2e2db07f1d342bd6c3dcc3c782199ae",
+  "workloads": 25,
+  "workload_ids": ["A01", "A02", "A03", "A04", "A05", "A06", "A07", "A08", "A09", "A10", "A11", "A13", "A14", "A15", "A16", "A17", "A18", "A19", "A20", "A21", "A22", "A23", "A24", "A25", "A26"],
+  "policies": ["BASELINE", "COMPACT_EA", "SCALAR", "COMPACT_EA_SCALAR"],
+  "total": 100,
+  "passed": 100,
+  "failed": 0,
+  "timing_used": false,
+  "policy_search_rerun": false,
+  "data_source_mutated": false
+}

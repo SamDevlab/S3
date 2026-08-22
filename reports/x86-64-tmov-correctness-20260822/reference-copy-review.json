@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "case": "T23_REFERENCE",
+  "contract": "TMOV copies the reference value/address, not the pointee",
+  "native_coverage": true,
+  "target_remains_valid": true,
+  "source_register_redefinition_does_not_rebind_destination": true,
+  "covered_by": ["tests/test_x86_64_tmov_value_semantics.py", "tests/test_reference_native_lowering.py"]
+}

@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "straight_line": "PASS",
+  "branch": "PASS",
+  "diamond": "PASS",
+  "join": "PASS",
+  "loop": "PASS",
+  "backedge": "PASS",
+  "cross_block": "PASS",
+  "call_boundary": "PASS",
+  "alias_chain": "PASS",
+  "logical_alias_created": false,
+  "alias_invalidation_reasoning_required": false
+}
