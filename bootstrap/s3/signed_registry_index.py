@@ -8,7 +8,7 @@ import hashlib
 import json
 from typing import Mapping, Protocol
 
-from .package_signatures import PublicTrustStore, TrustedPublicKey
+from .package_signatures import CryptographyEd25519Verifier, PublicTrustStore, TrustedPublicKey
 from .registry_security import canonical_https_origin
 from .results import Result
 
@@ -84,6 +84,29 @@ class SignedRegistryIndexTrust:
     @property
     def highest_generation(self) -> int:
         return self._highest_generation
+
+    @property
+    def provider_is_vetted(self) -> bool:
+        return isinstance(self.verifier, CryptographyEd25519Verifier)
+
+    @property
+    def provider_is_available(self) -> bool:
+        if not self.provider_is_vetted:
+            return False
+        try:
+            from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey  # noqa: F401
+        except ImportError:
+            return False
+        return True
+
+    def verify_vetted(self, envelope: SignedIndexEnvelope) -> Result[VerifiedRegistryIndex, SignedIndexError]:
+        """Verify only with the vetted Ed25519 provider boundary."""
+
+        if not self.provider_is_vetted:
+            return Result.err(SignedIndexError(SignedIndexErrorCode.VERIFIER_FAILURE, "verify_vetted", "vetted Ed25519 provider is not configured"))
+        if not self.provider_is_available:
+            return Result.err(SignedIndexError(SignedIndexErrorCode.VERIFIER_FAILURE, "verify_vetted", "vetted Ed25519 provider is unavailable"))
+        return self.verify(envelope)
 
     def revoke(self, key_id: str) -> Result[None, SignedIndexError]:
         if not isinstance(key_id, str) or not key_id or len(key_id) > self.max_key_id_bytes or not key_id.isascii() or any(character.isspace() for character in key_id):
