@@ -6,6 +6,7 @@ import re
 from pathlib import Path
 from dataclasses import dataclass
 from enum import Enum
+from threading import Lock
 
 
 class FFIError(ValueError):
@@ -148,3 +149,60 @@ def validate_signature(signature: FFISignature) -> FFISignature:
     if not isinstance(signature, FFISignature):
         raise FFIError("expected FFISignature")
     return signature
+
+
+@dataclass(frozen=True, slots=True)
+class FFIHandle:
+    """Opaque, process-local handle; its integer is not a native pointer."""
+
+    value: int
+
+    def __post_init__(self) -> None:
+        if isinstance(self.value, bool) or not isinstance(self.value, int) or self.value <= 0:
+            raise FFIError("FFI handle must be a positive opaque integer")
+
+
+class FFIBufferRegistry:
+    """Bounded ownership registry for call-scoped FFI byte buffers."""
+
+    def __init__(self, *, max_buffers: int = 256, max_bytes: int = 1 << 20) -> None:
+        if any(isinstance(value, bool) or not isinstance(value, int) or value <= 0 for value in (max_buffers, max_bytes)):
+            raise ValueError("FFI buffer bounds must be positive integers")
+        self.max_buffers = max_buffers
+        self.max_bytes = max_bytes
+        self._buffers: dict[FFIHandle, bytearray] = {}
+        self._next = 1
+        self._lock = Lock()
+
+    def acquire(self, data: bytes | bytearray) -> FFIHandle:
+        if not isinstance(data, (bytes, bytearray)):
+            raise FFIError("FFI buffer data must be bytes")
+        if len(data) > self.max_bytes:
+            raise FFIError("FFI buffer exceeds bound")
+        with self._lock:
+            if len(self._buffers) >= self.max_buffers:
+                raise FFIError("FFI buffer count exceeds bound")
+            handle = FFIHandle(self._next)
+            self._next += 1
+            self._buffers[handle] = bytearray(data)
+            return handle
+
+    def view(self, handle: FFIHandle) -> bytes:
+        with self._lock:
+            try:
+                return bytes(self._buffers[handle])
+            except KeyError as error:
+                raise FFIError("FFI handle is closed or unknown") from error
+
+    def write(self, handle: FFIHandle, data: bytes | bytearray) -> None:
+        if not isinstance(data, (bytes, bytearray)) or len(data) > self.max_bytes:
+            raise FFIError("FFI buffer data exceeds bound")
+        with self._lock:
+            if handle not in self._buffers:
+                raise FFIError("FFI handle is closed or unknown")
+            self._buffers[handle] = bytearray(data)
+
+    def release(self, handle: FFIHandle) -> None:
+        with self._lock:
+            if self._buffers.pop(handle, None) is None:
+                raise FFIError("FFI handle is closed or unknown")

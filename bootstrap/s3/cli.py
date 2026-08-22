@@ -29,7 +29,9 @@ from .diagnostics import (
     diagnostic_from_exception,
 )
 from .emulator import DEFAULT_MAX_FRAMES, DEFAULT_MAX_INSTRUCTIONS, Emulator
+from .docs_generator import DocumentationError, render_json, render_markdown
 from .ffi import build_shared_library
+from .formatter import FormatterError, format_source
 from .ir_serialization import deserialize_ir, serialize_ir
 from .lexer import SyntaxMode
 from .optimizer import OptimizationLevel, instruction_count
@@ -196,6 +198,8 @@ def _parser() -> argparse.ArgumentParser:
         "build",
         "run-native",
         "ffi-build",
+        "format",
+        "docs",
     )
     for cmd in commands:
         p = subparsers.add_parser(cmd, parents=[parent])
@@ -206,6 +210,10 @@ def _parser() -> argparse.ArgumentParser:
                 default="summary",
                 help="inspection output to print (default: summary)",
             )
+        if cmd == "format":
+            p.add_argument("--write", action="store_true", help="write canonical source in place")
+        if cmd == "docs":
+            p.add_argument("--json", action="store_true", help="emit machine-readable documentation")
         if cmd in ("run", "native-asm", "build", "run-native"):
             p.add_argument(
                 "--max-instructions",
@@ -441,6 +449,17 @@ def main(argv: Sequence[str] | None = None) -> int:
                 args.report.write_text(rendered, encoding="utf-8", newline="\n")
             print(rendered, end="")
             return 1 if report["summary"]["status"] == "FAIL" else 2 if report["summary"]["status"] == "SKIP" else 0
+        if args.command == "format":
+            formatted = format_source(args.source.read_text(encoding="utf-8"))
+            if args.write:
+                args.source.write_text(formatted, encoding="utf-8", newline="\n")
+            else:
+                print(formatted, end="")
+            return 0
+        if args.command == "docs":
+            source = args.source.read_text(encoding="utf-8")
+            print((render_json if args.json else render_markdown)(source), end="")
+            return 0
         if args.max_frames < 1:
             raise NativeBackendError("--max-frames must be at least 1")
         source = args.source.read_text(encoding="utf-8")
@@ -608,6 +627,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         CodegenError,
         NativeBackendError,
         TestRunnerError,
+        DocumentationError,
+        FormatterError,
     ) as error:
         if args.debug:
             raise
