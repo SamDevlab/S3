@@ -299,7 +299,7 @@
   "pr": 190,
   "pr190_ready": "NO",
   "production_policy_changed": "NO",
-  "publication_head": "e59b63d5eaeacda85373bfe48eff3309bc18398e",
+  "publication_head": "c0010ffdc1090749de3856fc8757fa16f442778a",
   "qualification": {
     "coverage": "INSUFFICIENT_FOR_TARGET",
     "next": "V2.4_COMPACT_EA_CANARY_GENERALIZATION_AND_SOAK",
@@ -366,6 +366,8 @@
   "pr190_merged": "NO",
   "pr190_start_head": "6b734dd149c458a87e905dcf68d72eb416be3fb5",
   "source_changes_after_v23_lock": "NO",
+  "final_candidate_head": "c0010ffdc1090749de3856fc8757fa16f442778a",
+  "source_changed_after_final_gates": "NO",
   "experimental_modes": ["off", "shadow", "compact-ea-canary"],
   "default_mode": "OFF",
   "canary_implemented": "YES",

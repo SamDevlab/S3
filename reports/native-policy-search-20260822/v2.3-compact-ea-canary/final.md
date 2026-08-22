@@ -366,6 +366,8 @@
 ## Terminal Qualification Summary
 
 - `V23_SOURCE_LOCK`: `e59b63d5eaeacda85373bfe48eff3309bc18398e`
+- final candidate head: `c0010ffdc1090749de3856fc8757fa16f442778a`
+- source changed after final gates: NO
 - canonical main: `2245c9f75b07b063b6da5716a753d02c1fee5f95`
 - PR #190: OPEN, DRAFT, MERGEABLE, unmerged
 - modes: `off`, `shadow`, `compact-ea-canary`
