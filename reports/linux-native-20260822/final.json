@@ -1,0 +1,22 @@
+{
+  "source_sha": "6604b9d07c607579df9c5c0759d8f2a708ba72d1",
+  "guest": {
+    "os": "Ubuntu 26.04 LTS",
+    "kernel": "7.0.0-29-generic",
+    "architecture": "x86_64",
+    "python": "3.14.4",
+    "gcc": "15.2.0",
+    "clang": "21.1.8",
+    "ld": "2.46",
+    "nproc": 3,
+    "memory_mb": 8234
+  },
+  "checkout_clean": true,
+  "compileall": "PASS",
+  "hosted_native_matrix": "PASS",
+  "ffi_native": "PASS",
+  "hash_seed_determinism": "PASS",
+  "pytest": "NOT_AVAILABLE_NO_PYTEST",
+  "privileged_mutation": "NO",
+  "status": "PASS_WITH_PYTEST_ENVIRONMENT_LIMITATION"
+}

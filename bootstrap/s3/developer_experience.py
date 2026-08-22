@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from .diagnostics import S3Error
+from .formatter import FormatterError, format_source as _format_source
 from .project_container import ProjectContainerError, ProjectTooling
 
 
@@ -13,12 +14,10 @@ class DeveloperExperienceError(ValueError):
 
 
 def format_source(source: str) -> str:
-    """Apply the deliberately small, semantics-preserving S3 source policy."""
-
-    if not isinstance(source, str):
-        raise DeveloperExperienceError("source must be text")
-    lines = source.replace("\r\n", "\n").replace("\r", "\n").split("\n")
-    return "\n".join(line.rstrip(" \t") for line in lines).rstrip("\n") + "\n"
+    try:
+        return _format_source(source)
+    except FormatterError as error:
+        raise DeveloperExperienceError(str(error)) from error
 
 
 def format_diagnostic(error: S3Error, *, file: str | None = None) -> str:

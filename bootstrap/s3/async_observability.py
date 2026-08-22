@@ -87,3 +87,50 @@ class BoundedAsyncTelemetry:
     def snapshot(self) -> AsyncTelemetrySnapshot:
         with self._lock:
             return AsyncTelemetrySnapshot(self.enabled, self.capacity, tuple(self._events), self._dropped, tuple(sorted(self._counts.items())))
+
+
+@dataclass(frozen=True, slots=True)
+class ConcurrencyAssessment:
+    """Bounded observation; a cycle is reported, never treated as a proof of all deadlocks."""
+
+    waiting: tuple[tuple[int, int], ...]
+    cycle: tuple[int, ...]
+    status: str
+
+
+class ConcurrencyWaitGraph:
+    """Small explicit wait graph for deterministic deadlock diagnostics."""
+
+    def __init__(self, *, max_tasks: int = 256) -> None:
+        if isinstance(max_tasks, bool) or not isinstance(max_tasks, int) or max_tasks <= 0:
+            raise ValueError("max_tasks must be a positive integer")
+        self.max_tasks = max_tasks
+        self._waiting: dict[int, int] = {}
+
+    def wait(self, task_id: int, dependency_id: int) -> None:
+        for value, field in ((task_id, "task_id"), (dependency_id, "dependency_id")):
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"{field} must be a non-negative integer")
+        if task_id not in self._waiting and len(self._waiting) >= self.max_tasks:
+            raise ValueError("wait graph task limit exceeded")
+        self._waiting[task_id] = dependency_id
+
+    def notify(self, task_id: int) -> None:
+        self._waiting.pop(task_id, None)
+
+    def assess(self) -> ConcurrencyAssessment:
+        cycle: tuple[int, ...] = ()
+        for start in sorted(self._waiting):
+            path: list[int] = []
+            current = start
+            while current in self._waiting and current not in path:
+                path.append(current)
+                current = self._waiting[current]
+            if current in path:
+                cycle = tuple(path[path.index(current):])
+                break
+        return ConcurrencyAssessment(
+            tuple(sorted(self._waiting.items())),
+            cycle,
+            "cycle-detected" if cycle else "no-cycle-observed",
+        )
