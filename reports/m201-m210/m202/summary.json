@@ -1,0 +1,20 @@
+{
+  "milestone": "M2.02",
+  "base_sha": "8a044a28ca9f37c95697d7fa42c55f10ecf0b299",
+  "final_sha": "8a044a28ca9f37c95697d7fa42c55f10ecf0b299",
+  "files_changed": [],
+  "production_change": false,
+  "test_change": false,
+  "linux_x86_64_native_conformance": "DEFERRED_BY_ENVIRONMENT",
+  "differential_correctness": "PARTIAL",
+  "abi": "PASS_STRUCTURAL",
+  "determinism": "PASS_STRUCTURAL",
+  "t1": "PASS_FOCUSED_STRUCTURAL",
+  "t2": "PASS_FOCUSED_NATIVE_CONTRACTS",
+  "t3": "NOT_RUN",
+  "t4": "NOT_RUN",
+  "benchmarks": "NOT_RUN",
+  "deferments": ["Linux x86-64 execution unavailable: Windows host, no GCC, no WSL distribution"],
+  "blockers": ["environment"],
+  "status": "PARTIAL"
+}

@@ -1,0 +1,22 @@
+{
+  "milestone": "M2.05",
+  "base_sha": "26795e747f2355df8c09682ab8ca15881a796f63",
+  "final_sha": "26795e747f2355df8c09682ab8ca15881a796f63",
+  "files_changed": [],
+  "production_change": false,
+  "test_change": false,
+  "tls_client": "PASS_CONTRACT",
+  "tls_server": "PASS_CONTRACT",
+  "cert_validation": "PASS_CONTRACT",
+  "hostname_validation": "PASS_CONTRACT",
+  "cancellation": "PASS_CONTRACT",
+  "provider": "DEFERRED_BY_ENVIRONMENT",
+  "t1": "PASS_FOCUSED_CONTRACTS",
+  "t2": "PASS_FOCUSED_TLS_SUBSYSTEM",
+  "t3": "NOT_RUN",
+  "t4": "NOT_RUN",
+  "benchmarks": "NOT_RUN",
+  "deferments": ["cryptography vetted provider is unavailable"],
+  "blockers": ["environment"],
+  "status": "DEFERRED"
+}

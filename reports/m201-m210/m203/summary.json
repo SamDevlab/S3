@@ -1,0 +1,21 @@
+{
+  "milestone": "M2.03",
+  "base_sha": "ddda53e22227344b0cf154b5673387b904b68720",
+  "final_sha": "ddda53e22227344b0cf154b5673387b904b68720",
+  "files_changed": [],
+  "production_change": false,
+  "test_change": false,
+  "environment": "UNAVAILABLE",
+  "assemble": "PASS",
+  "link": "PASS_STRUCTURAL",
+  "execute": "DEFERRED_BY_ENVIRONMENT",
+  "defer_reason": "No real or emulated AArch64 execution environment was available",
+  "t1": "PASS",
+  "t2": "PASS_STRUCTURAL",
+  "t3": "NOT_RUN",
+  "t4": "NOT_RUN",
+  "benchmarks": "NOT_RUN",
+  "deferments": ["AArch64 execution unavailable on current host"],
+  "blockers": ["environment"],
+  "status": "DEFERRED_BY_ENVIRONMENT"
+}

@@ -1,0 +1,23 @@
+{
+  "milestone": "M2.06",
+  "base_sha": "8b56bdf30a5b55dfbd1225ef4adcfac60b84bfe1",
+  "final_sha": "8b56bdf30a5b55dfbd1225ef4adcfac60b84bfe1",
+  "files_changed": [],
+  "production_change": false,
+  "test_change": false,
+  "signed_index": "PASS_CONTRACT",
+  "ed25519": "DEFERRED_BY_ENVIRONMENT",
+  "content_hash": "PASS",
+  "tamper_rejection": "PASS_CONTRACT",
+  "trust_root": "PASS_CONTRACT",
+  "offline_cache": "PASS_CONTRACT",
+  "resolution_reproducibility": "PASS_CONTRACT",
+  "t1": "PASS_FOCUSED_CONTRACTS",
+  "t2": "PASS_FOCUSED_REGISTRY_SUBSYSTEM",
+  "t3": "NOT_RUN",
+  "t4": "NOT_RUN",
+  "benchmarks": "NOT_RUN",
+  "deferments": ["cryptography Ed25519 provider is unavailable"],
+  "blockers": ["environment"],
+  "status": "DEFERRED"
+}

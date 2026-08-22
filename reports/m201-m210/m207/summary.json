@@ -1,0 +1,23 @@
+{
+  "milestone": "M2.07",
+  "base_sha": "42531f18ce877159dbd2226ccdb0a6c9175cf129",
+  "final_sha": "42531f18ce877159dbd2226ccdb0a6c9175cf129",
+  "files_changed": [],
+  "production_change": false,
+  "test_change": false,
+  "executor": "PASS",
+  "cancellation": "PASS",
+  "timers": "PASS",
+  "channels": "PASS",
+  "network": "PASS",
+  "shutdown": "PASS",
+  "resource_stability": "PASS_BOUNDED_HOSTED",
+  "t1": "PASS",
+  "t2": "PASS_FOCUSED_ASYNC_SUBSYSTEM",
+  "t3": "NOT_RUN",
+  "t4": "NOT_RUN",
+  "benchmarks": "NOT_RUN",
+  "deferments": ["M2.00 certification deferred", "TLS provider handled by M2.05"],
+  "blockers": [],
+  "status": "PASS"
+}
