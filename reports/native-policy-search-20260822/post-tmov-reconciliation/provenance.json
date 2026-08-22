@@ -1,0 +1,23 @@
+{
+  "campaign": "S3-ABL-PR190-POST-TMOV-MAIN-RECONCILIATION-20260822",
+  "repository": "SamDevlab/S3",
+  "pr": 190,
+  "branch": "experiment/native-policy-search-20260822",
+  "canonical_main": "2245c9f75b07b063b6da5716a753d02c1fee5f95",
+  "historical_merge_base": "9b39c7070d7bfa23d709c2128eb0b0bbef164177",
+  "pre_reconciliation_pr_head": "161a3d91ef6a46586503d90f6c58c75d47b79964",
+  "reconciliation_method": "MERGE_MAIN_INTO_EXPERIMENT",
+  "reconciliation_merge": "66c507de323582efd42164082d3161c4a46f8a77",
+  "post_tmov_abl_source_lock": "934ad01b92ff263317233ccaeaf6de5204c16a07",
+  "source_changes_after_post_tmov_lock": "NO",
+  "timing_used": false,
+  "native_speedup_claim": "NO",
+  "t4": "NOT_RUN",
+  "full_suite": "NOT_RUN",
+  "production_candidate": "NONE",
+  "pr190_ready": "NO",
+  "pr190_merged": false,
+  "rc1_mutated": "NO",
+  "main_mutated": "NO",
+  "s3_benchmarks_mutated": "NO"
+}

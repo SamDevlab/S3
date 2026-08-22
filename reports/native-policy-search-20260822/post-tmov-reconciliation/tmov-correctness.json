@@ -1,0 +1,23 @@
+{
+  "canonical_tmov_fix_present": true,
+  "unsafe_alias_symbols_absent": [
+    "local_aliases",
+    "_resolve_local_alias",
+    "local_move_future_registers"
+  ],
+  "minimal_tmov_reproducer": {
+    "status": "PASS",
+    "native_modes": ["register_allocation_false", "register_allocation_true"],
+    "emulator_result": 5,
+    "native_result": 5
+  },
+  "exact_a07": {
+    "source_sha256": "03415c9cab5aee95055d2cfe8a3b4bcfe916748aef020411adba183d84af8c9d",
+    "status": "PASS",
+    "native_modes": ["register_allocation_false", "register_allocation_true"],
+    "emulator_result": 5,
+    "native_result": 5
+  },
+  "compact_ea_tmov_index_regression": "PASS",
+  "t3_policy_independent_a07_regression_cleared": true
+}

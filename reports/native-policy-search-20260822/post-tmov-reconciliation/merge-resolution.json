@@ -1,0 +1,16 @@
+{
+  "merge_commit": "66c507de323582efd42164082d3161c4a46f8a77",
+  "parents": [
+    "161a3d91ef6a46586503d90f6c58c75d47b79964",
+    "2245c9f75b07b063b6da5716a753d02c1fee5f95"
+  ],
+  "message": "merge: reconcile ABL research with canonical TMOV correctness fix",
+  "canonical_tmov_fix_survives_reconciliation": true,
+  "abl_features_preserved": true,
+  "unsafe_tmov_alias_present": false,
+  "conflict_markers_present": false,
+  "source_files_changed_by_merge": [
+    "bootstrap/s3/backends/x86_64/emitter.py"
+  ],
+  "historical_reports_preserved": true
+}

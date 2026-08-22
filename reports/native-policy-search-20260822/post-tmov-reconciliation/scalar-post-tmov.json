@@ -1,0 +1,14 @@
+{
+  "candidates": 10,
+  "promotions": 9,
+  "positive_promotions": 0,
+  "neutral_promotions": 9,
+  "negative_promotions": 0,
+  "loads_removed": 0,
+  "stores_removed": 9,
+  "writebacks_added": 0,
+  "new_spills": 0,
+  "new_reloads": 0,
+  "promotion_status": "CONTINUE_SHADOW_RESEARCH",
+  "scalar_canary_enabled": "NO"
+}

@@ -1,0 +1,11 @@
+{
+  "policy_decision_changed_cases": 0,
+  "governor_choice_drift": 0,
+  "compact_eligibility_drift": 0,
+  "scalar_eligibility_drift": 0,
+  "baseline_fallback_drift": 0,
+  "pareto_classification_drift": 0,
+  "changed_decisions": [],
+  "structural_metrics_recomputed": true,
+  "interpretation": "Canonical TMOV materialization changed the source baseline implementation, but did not change any V2.2 semantic policy decision on the 91-case corpus."
+}

@@ -1,0 +1,15 @@
+{
+  "status": "PASS",
+  "subsystems": [
+    "native_x86_64",
+    "native_x86_64_integration",
+    "register_allocation_integration",
+    "x86_64_liveness",
+    "memory_assembly_emulator",
+    "initialization_analysis",
+    "x86_64_native_policy"
+  ],
+  "failures": 0,
+  "timing_used": false,
+  "full_suite": false
+}

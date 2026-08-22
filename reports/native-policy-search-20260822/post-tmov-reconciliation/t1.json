@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "windows_focused": "30 passed, 29 skipped",
+  "linux_focused": "59 passed",
+  "tmov_semantics": "PASS",
+  "native_policy": "PASS",
+  "compact_ea": "PASS",
+  "scalar_replacement": "PASS",
+  "shadow_governor": "PASS",
+  "experimental_modes": "PASS",
+  "residence_allocation": "PASS"
+}

@@ -1,0 +1,16 @@
+{
+  "compact_ea_canary_eligible_post_tmov": "YES_RESEARCH_ONLY",
+  "compact_ea_canary_enabled": "NO",
+  "default_identity": "PASS",
+  "t0": "PASS",
+  "t1": "PASS",
+  "t2": "PASS",
+  "t3": "100/100",
+  "compact_hard_regressions": 0,
+  "determinism": "PASS",
+  "negative_safety_controls": "PASS",
+  "shadow_governor_harm": 0,
+  "policy_decision_drift": 0,
+  "production_policy_changed": "NO",
+  "next_recommended_action": "V23_COMPACT_EA_EXPERIMENTAL_CANARY_GATE"
+}
