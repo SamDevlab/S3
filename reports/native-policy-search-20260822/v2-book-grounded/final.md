@@ -9,3 +9,5 @@ Pareto frontier: V2_0ba2d6baa36a46fb, V2_077171a9b68c8814, V2_a4630b67db9c08a7, 
 Baseline dominated: YES. Native speedup claim: NO.
 
 Structural candidate: V2_14403bd31bfa3164; holdout correctness: PASS; T3 Linux x86-64 focused O0/O1: PASS (96 comparisons). No native timing or speed claim was made. External P7/P8/P9 remained deferred under the read-only benchmark-checkout constraint.
+
+Most frequently selected portfolio policy: V2_077171a9b68c8814 (19 of 31 function selections); baseline fallback remained explicit for 9 selections.

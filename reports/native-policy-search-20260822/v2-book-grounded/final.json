@@ -3,7 +3,7 @@
   "baseline_dominated": "YES",
   "baseline_policy_output_identical": true,
   "best_global_policy": "V2_14403bd31bfa3164",
-  "best_per_function_portfolio": "V2_67491d8f6521e946",
+  "best_per_function_portfolio": "V2_077171a9b68c8814",
   "branch": "experiment/native-policy-search-20260822",
   "campaign": "native-policy-search-20260822-v2-book-grounded",
   "campaign_source_lock": "d74760e0f177978a3566318c7b50cff4c98f1fb6",
