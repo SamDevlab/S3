@@ -124,6 +124,27 @@ def test_framework_rejects_incomplete_determinism_contracts() -> None:
         )
 
 
+def test_framework_rejects_duplicate_determinism_contracts() -> None:
+    experiment = _experiment()
+    broken = replace(
+        experiment.observation,
+        determinism_contracts=(
+            ("IR_DETERMINISM", "PASS"),
+            ("IR_DETERMINISM", "PASS"),
+            ("ASSEMBLY_PROGRAM_DETERMINISM", "PASS"),
+            ("ASSEMBLY_TEXT_DETERMINISM", "PASS"),
+            ("OBJECT_DETERMINISM", "NOT_APPLICABLE"),
+        ),
+    )
+    broken_experiment = replace(experiment, observation=broken)
+    with pytest.raises(OptimizationFrameworkError, match="must not contain duplicates"):
+        broken_experiment.validate(
+            expected_baseline_sha=BASELINE,
+            expected_candidate_sha=CANDIDATE,
+            expected_benchmark_sha=BENCHMARK,
+        )
+
+
 def test_native_comparative_requires_matched_paired_evidence() -> None:
     experiment = _experiment(native=True)
     validate_optimization_experiment(

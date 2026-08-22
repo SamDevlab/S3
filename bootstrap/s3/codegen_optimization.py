@@ -172,6 +172,9 @@ class OptimizationObservation:
             raise OptimizationFrameworkError("observation.provenance is invalid")
         if self.determinism not in {"PASS", "FAIL", "NOT_RUN"}:
             raise OptimizationFrameworkError("observation.determinism is invalid")
+        contract_names = [name for name, _status in self.determinism_contracts]
+        if len(contract_names) != len(set(contract_names)):
+            raise OptimizationFrameworkError("determinism contracts must not contain duplicates")
         contracts = dict(self.determinism_contracts)
         if set(contracts) != set(_DETERMINISM_CONTRACTS):
             raise OptimizationFrameworkError("determinism contracts must cover the exact five contracts")
