@@ -1,0 +1,16 @@
+MILESTONE=M2.16
+BASE_SHA=cf48086b62813ff632bd16b87373776d342bb4c4
+FINAL_SHA=4a21176a8da44a35bc10bc1d3f36b64b599d2eee
+FILES_CHANGED=bootstrap/s3/async_observability.py;tests/test_m216_async_observability.py
+PRODUCTION_FILES_CHANGED=bootstrap/s3/async_observability.py
+TEST_FILES_CHANGED=tests/test_m216_async_observability.py
+DOC_FILES_CHANGED=none
+T0=PASS
+T1=PASS
+T2=PASS_BOUNDED
+T3=PASS_BOUNDED
+T4=NOT_RUN
+DEFERMENTS=event IDs are diagnostic only and are not cross-process deterministic scheduling claims
+BLOCKERS=none
+STATUS=PASS
+COMMITS=4a21176a8da44a35bc10bc1d3f36b64b599d2eee

@@ -1,0 +1,23 @@
+{
+  "campaign": "M2.11-M2.20",
+  "final_tested_sha": "73e73f0a5546e1c20fffdf90c95895650d684a2c",
+  "publication_head": "TO_BE_SET_AFTER_DOCUMENTATION_COMMIT",
+  "stacked_on_pr": 186,
+  "stacked_on_m200": true,
+  "status": "PARTIAL_PREINTEGRATION",
+  "m2_00_certification": "DEFERRED_BY_EXECUTION_ENVIRONMENT",
+  "m2_00_merged": false,
+  "s3_1_0_readiness": "BLOCKED_BY_M2_00_CERTIFICATION",
+  "s3_1_0_declared": false,
+  "milestones": {"M2.11":"PARTIAL","M2.12":"PASS","M2.13":"PASS","M2.14":"PASS","M2.15":"PASS_FOUNDATION","M2.16":"PASS","M2.17":"FOUNDATION_PASS","M2.18":"PASS_STRUCTURAL_ONLY","M2.19":"PASS","M2.20":"PARTIAL_PREINTEGRATION"},
+  "t0": "PASS",
+  "t1": "PASS",
+  "t2": "PASS_BOUNDED",
+  "t3": "PASS_BOUNDED",
+  "t4": "NOT_RUN",
+  "full_suite_runs": 0,
+  "benchmark_runs": 0,
+  "compileall": "PASS",
+  "diff_check": "PASS",
+  "publication": {"push": "PENDING", "pr": "DRAFT", "merge": "NO", "tag": "NO", "release": "NO", "shutdown": "NO"}
+}
