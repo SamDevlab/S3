@@ -3,8 +3,18 @@
   "implementation_freeze": true,
   "M2.21-M2.30_reviewed": true,
   "M2.31-M2.35_started": false,
-  "full_suite": "NOT_RUN",
-  "T4": "NOT_RUN",
+  "full_suite": "T4_CANONICAL_PROFILE",
+  "T4": {
+    "status": "PASS",
+    "sha": "3fa7e47626e8d0a6d0a819229222dd7905765e95",
+    "selected": 384,
+    "passed": 384,
+    "failed": 0,
+    "timed_out": 0,
+    "exit": 0
+  },
+  "technical_readiness": "TECHNICALLY_READY_WITH_ENVIRONMENT_DEFERMENTS",
+  "ready_for_canonical_integration": true,
   "S3_1_0_RELEASED": "NO",
   "TAG": "NO",
   "RELEASE": "NO"

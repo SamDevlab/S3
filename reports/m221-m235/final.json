@@ -2,7 +2,8 @@
   "campaign": "M2.21-M2.35",
   "base_source": "3180983810b736a69575013a334fd6a183734ecd",
   "final_tested_source_head": "6604b9d07c607579df9c5c0759d8f2a708ba72d1",
-  "final_candidate_head": "6604b9d07c607579df9c5c0759d8f2a708ba72d1",
+  "final_candidate_head": "3fa7e47626e8d0a6d0a819229222dd7905765e95",
+  "t4_sha": "3fa7e47626e8d0a6d0a819229222dd7905765e95",
   "source_changed_after_final_gates": false,
   "branch": "feature/m221-m235-mega-hardening-20260822",
   "milestones": {
@@ -23,8 +24,18 @@
     "T1": "PASS",
     "T2": "PASS_WITH_3_EXPECTED_NATIVE_SKIPS",
     "T3": "PASS",
-    "windows_full_suite": "NOT_RUN",
-    "T4": "NOT_RUN",
+    "windows_full_suite_before_T4": "0_RUNS",
+    "T4": {
+      "status": "PASS",
+      "selected": 384,
+      "passed": 384,
+      "failed": 0,
+      "timed_out": 0,
+      "skipped_derived_from_pytest_output": 195,
+      "exit": 0,
+      "raw_transcript": "reports/t4-certification-20260822/t4-20260822-012629.raw.txt",
+      "raw_sha256": "28649e6889b8b79de3bfebc624222ff9a6e9fa251faefacf0b3d6f468073ef7b"
+    },
     "linux_compileall": "PASS",
     "linux_native_matrix": "PASS",
     "linux_ffi": "PASS",
@@ -37,6 +48,8 @@
     "medium": 0,
     "low": 0
   },
+  "historical_M2.00_standalone_T4": "DEFERRED_HISTORICAL",
+  "full_lineage_T4": "PASS",
   "publication": {
     "merge": "NO",
     "tag": "NO",

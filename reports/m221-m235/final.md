@@ -4,7 +4,8 @@
 
 - Base source: `3180983810b736a69575013a334fd6a183734ecd`
 - Final tested source: `6604b9d07c607579df9c5c0759d8f2a708ba72d1`
-- Final candidate: `6604b9d07c607579df9c5c0759d8f2a708ba72d1`
+- Final tested source: `6604b9d07c607579df9c5c0759d8f2a708ba72d1`
+- Final candidate at T4 freeze: `3fa7e47626e8d0a6d0a819229222dd7905765e95`
 - Source changed after final gates: `NO`
 - Implementation branch: `feature/m221-m235-mega-hardening-20260822`
 
@@ -56,8 +57,14 @@ no-general-raw-pointer invariants.
 - T1 direct: `PASS`
 - T2 subsystem: `PASS` with 3 expected native skips on Windows
 - T3 cross-subsystem: `PASS`
-- Windows full suite: `NOT_RUN`
-- T4: `NOT_RUN`
+- Windows full suite before T4: `0` runs
+- T4: `PASS` on `3fa7e47626e8d0a6d0a819229222dd7905765e95`
+  (`384 selected`, `384 passed`, `0 failed`, `0 timed_out`, `exit 0`).
+  The individual pytest reports contain `195` skipped cases; the runner
+  summary does not expose an aggregate skipped field.
+- T4 raw transcript: `reports/t4-certification-20260822/t4-20260822-012629.raw.txt`
+- T4 raw transcript SHA-256:
+  `28649e6889b8b79de3bfebc624222ff9a6e9fa251faefacf0b3d6f468073ef7b`
 - Linux compileall: `PASS`
 - Linux hosted/native matrix: `PASS`
 - Linux native FFI: `PASS`
@@ -66,7 +73,9 @@ no-general-raw-pointer invariants.
   package installation was attempted.
 
 No benchmark timing is treated as a native speedup claim. No PR was merged,
-tag was created, or release was published.
+tag was created, or release was published. M2.00's standalone historical T4
+remains deferred; the complete descendant candidate above passed the canonical
+full-lineage T4.
 
 ## Risk status
 

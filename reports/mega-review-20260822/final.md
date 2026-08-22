@@ -23,4 +23,6 @@ boundaries, not silently promoted capabilities.
 
 Windows T0-T3 and Linux compile/native/FFI/hash-seed evidence passed. The Linux
 guest lacks pytest; no package installation or privileged mutation was used.
-The full suite and T4 remain unexecuted at this checkpoint.
+The single authorized Windows full-lineage T4 subsequently passed on candidate
+`3fa7e47626e8d0a6d0a819229222dd7905765e95` with `384/384` selected test files
+passing, zero failures, zero timeouts, and exit `0`.
