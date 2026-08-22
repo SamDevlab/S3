@@ -30,8 +30,25 @@
     "V2_a9c18dbdf2dcad3a"
   ],
   "evaluations_to_final_frontier": 41,
-  "evaluations_to_first_baseline_dominator": null,
-  "evaluations_to_first_pareto_improvement": null,
+  "evaluations_to_first_baseline_dominator": 6,
+  "evaluations_to_first_pareto_improvement": 6,
+  "search_efficiency": {
+    "unique_candidates_generated": 41,
+    "unique_candidates_evaluated": 41,
+    "duplicates_rejected": 0,
+    "mutations_attempted": 24,
+    "recombinations_attempted": 8,
+    "pareto_frontier_changes": 18,
+    "family_survivors": {
+      "HYBRID": 22,
+      "INDEXED": 3,
+      "LIVE_RANGE": 4,
+      "MEMORY": 3,
+      "REGISTER": 3,
+      "REMATERIALIZATION": 3,
+      "SPILL": 3
+    }
+  },
   "existing_holdout_result": "PASS",
   "external_holdout_result": "DEFERRED_READ_ONLY_CONSTRAINT",
   "force_push": "NO",
@@ -62,6 +79,7 @@
   ],
   "pr_number": 190,
   "production_candidate": "NONE",
+  "status": "STRUCTURAL_RESEARCH_COMPLETE",
   "publication_head": "c29e66cb3a869f5a559cbce37872c8037184e144",
   "rc1_mutated": "NO",
   "rc1_sha": "9b39c7070d7bfa23d709c2128eb0b0bbef164177",
