@@ -7,7 +7,7 @@ import json
 import re
 import tomllib
 from dataclasses import dataclass
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 from typing import Mapping
 
 
@@ -98,7 +98,7 @@ def parse_package_manifest(path: str) -> PackageManifest:
     """Parse a package.toml manifest without consulting the network."""
 
     try:
-        raw = tomllib.loads(open(path, "rb").read().decode("utf-8"))
+        raw = tomllib.loads(Path(path).read_bytes().decode("utf-8"))
     except (OSError, UnicodeError, tomllib.TOMLDecodeError) as error:
         raise PackageDependencyError(f"could not parse package manifest {path}") from error
     package = raw.get("package")

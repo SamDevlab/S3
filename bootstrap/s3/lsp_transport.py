@@ -58,10 +58,14 @@ class JsonRpcTransport:
             if b":" not in line:
                 raise LspTransportError("malformed JSON-RPC header")
             key, value = line.split(b":", 1)
-            normalized_key = key.decode("ascii").strip().lower()
+            try:
+                normalized_key = key.decode("ascii").strip().lower()
+                decoded_value = value.decode("ascii").strip()
+            except UnicodeDecodeError as error:
+                raise LspTransportError("JSON-RPC headers must be ASCII") from error
             if normalized_key in fields:
                 raise LspTransportError("duplicate JSON-RPC header")
-            fields[normalized_key] = value.decode("ascii").strip()
+            fields[normalized_key] = decoded_value
         try:
             length = int(fields["content-length"])
         except (KeyError, ValueError) as error:
