@@ -7,8 +7,9 @@ import inspect
 import pytest
 
 from bootstrap.s3.assembly import parse_assembly
-from bootstrap.s3.backends.x86_64 import BASELINE_NATIVE_POLICY, X8664Backend, policy_with
+from bootstrap.s3.backends.x86_64 import X8664Backend
 from bootstrap.s3.backends.x86_64.allocation import analyze_allocation
+from bootstrap.s3.backends.x86_64.policy import BASELINE_NATIVE_POLICY, policy_with
 from bootstrap.s3.backends.x86_64.residence import analyze_cross_block_residence
 from bootstrap.s3.backends.x86_64.registers import (
     CALLER_SAVED_ALLOCATABLE_REGISTERS,

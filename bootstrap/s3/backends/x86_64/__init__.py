@@ -8,7 +8,6 @@ from .diagnostics import (
 )
 from .layout import CalleeSavedSlot, CallerSavedSpillSlot, FrameLayout, layout_frame
 from .toolchain import NativeToolchain
-from .policy import BASELINE_NATIVE_POLICY, NativePolicy, policy_with
 
 __all__ = [
     "CalleeSavedSlot",
@@ -18,12 +17,9 @@ __all__ = [
     "NativePlatformError",
     "NativeToolchain",
     "NativeToolchainError",
-    "BASELINE_NATIVE_POLICY",
-    "NativePolicy",
     "X8664Backend",
     "generate_native_assembly",
     "generate_ffi_assembly",
     "layout_frame",
-    "policy_with",
 ]
 

@@ -12,13 +12,9 @@ import subprocess
 from typing import Any
 
 from bootstrap.s3.assembly import AssemblyProgram, AssemblyType, parse_assembly
-from bootstrap.s3.backends.x86_64 import (
-    BASELINE_NATIVE_POLICY,
-    NativePolicy,
-    X8664Backend,
-    policy_with,
-)
+from bootstrap.s3.backends.x86_64 import X8664Backend
 from bootstrap.s3.backends.x86_64.liveness import analyze_liveness
+from bootstrap.s3.backends.x86_64.policy import BASELINE_NATIVE_POLICY, NativePolicy, policy_with
 from bootstrap.s3.emulator import Emulator
 
 BASELINE_SHA = "9b39c7070d7bfa23d709c2128eb0b0bbef164177"
