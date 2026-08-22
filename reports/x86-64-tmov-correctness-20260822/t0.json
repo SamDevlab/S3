@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "compileall": "PASS",
+  "imports": "PASS",
+  "minimal_unit": "PASS",
+  "tmov_semantic_unit": "PASS",
+  "deterministic_generation": "PASS",
+  "diff_check": "PASS"
+}

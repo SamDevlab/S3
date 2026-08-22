@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "selected": 74,
+  "passed": 74,
+  "failed": 0,
+  "skipped": 0,
+  "exit": 0,
+  "files": [
+    "tests/test_x86_64_tmov_value_semantics.py",
+    "tests/test_x86_64_register_allocation.py",
+    "tests/test_x86_64_liveness.py",
+    "tests/test_x86_64_cross_block_residence.py",
+    "tests/test_register_init_native_safety.py"
+  ],
+  "native_f64_t26": "PASS",
+  "import_root_verified": true
+}

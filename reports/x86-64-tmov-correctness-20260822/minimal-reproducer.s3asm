@@ -1,0 +1,9 @@
+.function main -> tryte
+    .register r0, tryte
+    .register r1, tryte
+.label entry
+    TCONST r0, 5
+    TMOV r1, r0
+    TCONST r0, 2
+    TRET r1
+.end

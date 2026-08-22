@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "host": "Linux x86-64",
+  "test_files": ["test_x86_64_tmov_value_semantics.py", "test_x86_64_register_allocation.py", "test_x86_64_liveness.py", "test_x86_64_cross_block_residence.py", "test_register_init_native_safety.py"],
+  "passed": 73,
+  "failed": 0,
+  "skipped": 0,
+  "exit": 0
+}

@@ -1,0 +1,19 @@
+{
+  "case_id": "A07",
+  "family": "scalar_replacement",
+  "source_sha256": "03415c9cab5aee95055d2cfe8a3b4bcfe916748aef020411adba183d84af8c9d",
+  "assembly_program_sha256": "fc546c2432e9f45237edd2eeb9a79aa2681b43c7c2c15f682852f41d157d0159",
+  "source_lock": "04d94a5368106c1f476ac8856a1a313eedea7b37",
+  "emulator_before": 5,
+  "native_before": 2,
+  "native_returncode_before": 0,
+  "native_stderr_before": "",
+  "reproduced_on_v22_source_lock": true,
+  "after_fix_emulator": 5,
+  "after_fix_native": 5,
+  "after_fix_native_returncode": 0,
+  "after_fix_native_stderr": "",
+  "after_fix": "PASS",
+  "affected_policies_before": ["BASELINE", "COMPACT_EA", "SCALAR", "COMPACT_EA_SCALAR"],
+  "affected_mechanism": "NONE_POLICY_INDEPENDENT"
+}

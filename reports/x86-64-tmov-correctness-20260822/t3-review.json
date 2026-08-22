@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "platform": "Linux x86-64",
+  "minimal_reproducer": {
+    "emulator": 5,
+    "native_register_allocation_false": 5,
+    "native_register_allocation_true": 5,
+    "status": "PASS"
+  },
+  "a07_exact": {
+    "source_sha256": "03415c9cab5aee95055d2cfe8a3b4bcfe916748aef020411adba183d84af8c9d",
+    "emulator": 5,
+    "native_register_allocation_false": 5,
+    "native_register_allocation_true": 5,
+    "status": "PASS"
+  },
+  "tmov_regression_matrix": "PASS",
+  "f64_native_t26": "PASS",
+  "timing_used": false
+}

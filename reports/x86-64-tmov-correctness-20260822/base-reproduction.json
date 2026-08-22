@@ -1,0 +1,12 @@
+{
+  "canonical_base_sha": "9b39c7070d7bfa23d709c2128eb0b0bbef164177",
+  "rc1_tag": "v1.0.0-rc1",
+  "a07_source_sha256": "03415c9cab5aee95055d2cfe8a3b4bcfe916748aef020411adba183d84af8c9d",
+  "emulator": 5,
+  "native": 2,
+  "native_returncode": 0,
+  "native_stderr": "",
+  "bug_reproduced_on_canonical_main": "YES",
+  "rc1_affected": "YES",
+  "origin_classification": "CANONICAL_MAIN_BUG"
+}

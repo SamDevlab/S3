@@ -1,0 +1,8 @@
+{
+  "recommended_merge_method": "MERGE_COMMIT",
+  "reason": "Recent main history uses pull-request merge commits, and preserving the separate source-lock, regression, and evidence commits keeps forensic provenance auditable.",
+  "recent_main_merge_commit_examples": ["9b39c707", "e23b092b", "0de1976c", "cdbe88ba", "e55c75c1"],
+  "merge_executed": false,
+  "squash_executed": false,
+  "rebase_executed": false
+}

@@ -1,0 +1,10 @@
+{
+  "source_sha256": "91a26165ec0b1687d270e8f46fed8af1c1621169629504114c8441992bb6947a",
+  "assembly_program_sha256": "449af5b478d3ef12c572df3ee54355ab5a66f941ee0d61ac48169f4beec9bb82",
+  "expected": 5,
+  "native_before": 2,
+  "native_after_fix": 5,
+  "emulator_before": 5,
+  "emulator_after_fix": 5,
+  "minimal_reproducer_found": "YES"
+}

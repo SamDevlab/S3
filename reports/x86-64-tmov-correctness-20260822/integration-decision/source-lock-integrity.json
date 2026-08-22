@@ -1,0 +1,18 @@
+{
+  "review_source_lock": "d10532c0f2e2db07f1d342bd6c3dcc3c782199ae",
+  "decision_head": "e72602b8860d480f9b0bec2f43f4ac6ebbf22333",
+  "review_lock_is_ancestor": true,
+  "post_lock_commits": [
+    {
+      "sha": "e72602b8860d480f9b0bec2f43f4ac6ebbf22333",
+      "subject": "docs: add PR191 TMOV review evidence",
+      "changed_scope": "reports-only"
+    }
+  ],
+  "post_lock_source_changed": "NO",
+  "post_lock_test_changed": "NO",
+  "post_lock_tools_changed": "NO",
+  "source_lock_integrity": "PASS",
+  "unsafe_tmov_alias_reintroduced": "NO",
+  "unsafe_alias_symbols_found_in_x86_64_backend": []
+}

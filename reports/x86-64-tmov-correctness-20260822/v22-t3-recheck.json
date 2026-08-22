@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "v22_source_lock": "04d94a5368106c1f476ac8856a1a313eedea7b37",
+  "fix_source_lock": "ec48d05928939538587a003a56e1c673e0a0474a",
+  "workloads": 25,
+  "policies": ["BASELINE", "COMPACT_EA", "SCALAR", "COMPACT_EA_SCALAR"],
+  "total": 100,
+  "passed": 100,
+  "failed": 0,
+  "timing_used": false,
+  "policy_search_rerun": false
+}

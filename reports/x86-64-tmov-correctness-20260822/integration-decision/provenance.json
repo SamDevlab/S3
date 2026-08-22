@@ -1,0 +1,18 @@
+{
+  "campaign": "S3-PR191-EXPLICIT-INTEGRATION-DECISION-GATE-20260822",
+  "repository": "SamDevlab/S3",
+  "decision_head_before_reports": "e72602b8860d480f9b0bec2f43f4ac6ebbf22333",
+  "main_sha": "9b39c7070d7bfa23d709c2128eb0b0bbef164177",
+  "pr191_head": "e72602b8860d480f9b0bec2f43f4ac6ebbf22333",
+  "pr191_review_source_lock": "d10532c0f2e2db07f1d342bd6c3dcc3c782199ae",
+  "historical_fix_source_lock": "ec48d05928939538587a003a56e1c673e0a0474a",
+  "v22_source_lock": "04d94a5368106c1f476ac8856a1a313eedea7b37",
+  "source_changes_after_review_lock": "NO",
+  "test_changes_after_review_lock": "NO",
+  "reports_only_after_review_lock": true,
+  "timing_used": false,
+  "t4": "NOT_RUN",
+  "full_suite": "NOT_RUN",
+  "merge_executed": false,
+  "shutdown": "NO"
+}

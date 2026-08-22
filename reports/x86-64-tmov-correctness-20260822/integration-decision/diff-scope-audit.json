@@ -1,0 +1,15 @@
+{
+  "scope_audit": "PASS",
+  "pr_diff_file_count": 39,
+  "production_source_files": 1,
+  "production_source_paths": ["bootstrap/s3/backends/x86_64/emitter.py"],
+  "test_files": 1,
+  "test_paths": ["tests/test_x86_64_tmov_value_semantics.py"],
+  "report_files": 37,
+  "doc_files": 0,
+  "other_files": 0,
+  "unrelated_production_files": 0,
+  "unrelated_test_files": 0,
+  "unexplained_files": 0,
+  "semantic_repair": "materialize every non-self TMOV; preserve self-move checks and accounting"
+}

@@ -1,0 +1,10 @@
+{
+  "expected_base_sha": "9b39c7070d7bfa23d709c2128eb0b0bbef164177",
+  "live_main_sha": "9b39c7070d7bfa23d709c2128eb0b0bbef164177",
+  "main_base_drift": "NO",
+  "commits_added_to_main": [],
+  "affected_files": [],
+  "overlap_with_pr191": [],
+  "classification": "NO_DRIFT",
+  "integration_impact": "NONE"
+}

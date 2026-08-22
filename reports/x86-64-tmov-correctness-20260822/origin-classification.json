@@ -1,0 +1,11 @@
+{
+  "classification": "CANONICAL_MAIN_BUG",
+  "bug_reproduced_on_v22_source_lock": true,
+  "bug_reproduced_on_canonical_main": true,
+  "pr190_experiment_regression": false,
+  "t3_harness_bug": false,
+  "corpus_oracle_bug": false,
+  "rc1_affected": true,
+  "first_known_affected_sha": "NOT_DETERMINED_BY_BOUNDED_HISTORY_PROBE",
+  "decision_basis": "The exact A07 and the minimal reproducer both disagree between emulator and native on canonical main/RC1 and on the V2.2 source lock."
+}
