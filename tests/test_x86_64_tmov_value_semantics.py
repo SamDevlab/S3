@@ -126,9 +126,10 @@ def _cfg_cases() -> tuple[tuple[str, AssemblyProgram, int], ...]:
             _program(
                 (), tryte,
                 blocks=(
-                    AssemblyBlock("entry", (_const(0, 5), _move(1, 0), _const(2, -1), AssemblyInstruction(AssemblyOpcode.TBR3, (2,), labels=("left", "join", "join")))),
+                    AssemblyBlock("entry", (_const(0, 5), _move(1, 0), _const(2, -1), AssemblyInstruction(AssemblyOpcode.TBR3, (2,), labels=("left", "join", "untouched")))),
                     AssemblyBlock("left", (_const(0, 2), AssemblyInstruction(AssemblyOpcode.TJMP, labels=("join",)))),
                     AssemblyBlock("join", (_ret(1),)),
+                    AssemblyBlock("untouched", (AssemblyInstruction(AssemblyOpcode.TJMP, labels=("join",)),)),
                 ),
             ),
             5,
@@ -151,9 +152,10 @@ def _cfg_cases() -> tuple[tuple[str, AssemblyProgram, int], ...]:
             _program(
                 (), tryte,
                 blocks=(
-                    AssemblyBlock("entry", (_const(0, 5), _const(2, -1), AssemblyInstruction(AssemblyOpcode.TBR3, (2,), labels=("left", "join", "join")))),
+                    AssemblyBlock("entry", (_const(0, 5), _const(2, -1), AssemblyInstruction(AssemblyOpcode.TBR3, (2,), labels=("left", "join", "untouched")))),
                     AssemblyBlock("left", (_move(1, 0), AssemblyInstruction(AssemblyOpcode.TJMP, labels=("join",)))),
                     AssemblyBlock("join", (_const(0, 2), _ret(1))),
+                    AssemblyBlock("untouched", (AssemblyInstruction(AssemblyOpcode.TJMP, labels=("join",)),)),
                 ),
             ),
             5,
@@ -164,9 +166,10 @@ def _cfg_cases() -> tuple[tuple[str, AssemblyProgram, int], ...]:
                 (), ((0, AssemblyType.TRIT), (1, AssemblyType.TRYTE), (3, AssemblyType.TRYTE)),
                 blocks=(
                     AssemblyBlock("entry", (_const(0, -1), _const(1, 5), AssemblyInstruction(AssemblyOpcode.TJMP, labels=("header",)))),
-                    AssemblyBlock("header", (AssemblyInstruction(AssemblyOpcode.TBR3, (0,), labels=("body", "exit", "exit")),)),
+                    AssemblyBlock("header", (AssemblyInstruction(AssemblyOpcode.TBR3, (0,), labels=("body", "exit", "done")),)),
                     AssemblyBlock("body", (_move(3, 1), _const(0, 0), AssemblyInstruction(AssemblyOpcode.TJMP, labels=("header",)))),
                     AssemblyBlock("exit", (_ret(3),)),
+                    AssemblyBlock("done", (_ret(3),)),
                 ),
             ),
             5,
@@ -177,9 +180,10 @@ def _cfg_cases() -> tuple[tuple[str, AssemblyProgram, int], ...]:
                 (), ((0, AssemblyType.TRIT), (1, AssemblyType.TRYTE), (3, AssemblyType.TRYTE)),
                 blocks=(
                     AssemblyBlock("entry", (_const(0, -1), _const(1, 7), AssemblyInstruction(AssemblyOpcode.TJMP, labels=("header",)))),
-                    AssemblyBlock("header", (AssemblyInstruction(AssemblyOpcode.TBR3, (0,), labels=("body", "exit", "exit")),)),
+                    AssemblyBlock("header", (AssemblyInstruction(AssemblyOpcode.TBR3, (0,), labels=("body", "exit", "done")),)),
                     AssemblyBlock("body", (_move(3, 1), _const(0, 0), AssemblyInstruction(AssemblyOpcode.TJMP, labels=("header",)))),
                     AssemblyBlock("exit", (_ret(3),)),
+                    AssemblyBlock("done", (_ret(3),)),
                 ),
             ),
             7,
