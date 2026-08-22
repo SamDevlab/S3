@@ -1,7 +1,7 @@
 {
   "milestone": "M2.11",
   "base_sha": "5ac71e82849994f60ef1b19d1f03c2123438cfdc",
-  "final_sha": "afa06bf74c582d59c79f273cf6a76c9af811b0b4",
+  "final_sha": "bb7f32937ebb0474d34f25c49add04042b5f5edf",
   "status": "PARTIAL",
   "dependency_graph_determinism": "PASS",
   "invalidation_correctness": "PASS",
@@ -14,5 +14,5 @@
   "t4": "NOT_RUN",
   "deferments": ["pipeline artifact reuse integration remains future work"],
   "blockers": [],
-  "commits": ["afa06bf74c582d59c79f273cf6a76c9af811b0b4"]
+  "commits": ["afa06bf74c582d59c79f273cf6a76c9af811b0b4", "bb7f32937ebb0474d34f25c49add04042b5f5edf"]
 }

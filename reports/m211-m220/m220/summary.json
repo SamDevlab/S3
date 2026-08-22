@@ -1,7 +1,7 @@
 {
   "milestone": "M2.20",
-  "base_sha": "73e73f0a5546e1c20fffdf90c95895650d684a2c",
-  "final_sha": "73e73f0a5546e1c20fffdf90c95895650d684a2c",
+  "base_sha": "bb7f32937ebb0474d34f25c49add04042b5f5edf",
+  "final_sha": "bb7f32937ebb0474d34f25c49add04042b5f5edf",
   "status": "PARTIAL_PREINTEGRATION",
   "milestones": {"M2.11":"PARTIAL","M2.12":"PASS","M2.13":"PASS","M2.14":"PASS","M2.15":"PASS_FOUNDATION","M2.16":"PASS","M2.17":"FOUNDATION_PASS","M2.18":"PASS_STRUCTURAL_ONLY","M2.19":"PASS"},
   "compiler_productivity": "PARTIAL",

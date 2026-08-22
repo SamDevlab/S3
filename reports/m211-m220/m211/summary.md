@@ -1,6 +1,6 @@
 MILESTONE=M2.11
 BASE_SHA=5ac71e82849994f60ef1b19d1f03c2123438cfdc
-FINAL_SHA=afa06bf74c582d59c79f273cf6a76c9af811b0b4
+FINAL_SHA=bb7f32937ebb0474d34f25c49add04042b5f5edf
 
 FILES_CHANGED=bootstrap/s3/incremental_build.py;tests/test_m211_incremental_compilation.py
 PRODUCTION_FILES_CHANGED=bootstrap/s3/incremental_build.py
@@ -16,4 +16,4 @@ T4=NOT_RUN
 DEFERMENTS=incremental artifact reuse is an explicit fail-closed envelope; compiler pipeline integration remains future work
 BLOCKERS=none
 STATUS=PARTIAL
-COMMITS=afa06bf74c582d59c79f273cf6a76c9af811b0b4
+COMMITS=afa06bf74c582d59c79f273cf6a76c9af811b0b4;bb7f32937ebb0474d34f25c49add04042b5f5edf
