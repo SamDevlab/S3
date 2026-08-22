@@ -19,12 +19,34 @@ _CALL_RESIDENCE = frozenset({
     "selective_live_across_call",
 })
 _RESIDENCE_SCOPE = frozenset({"single_definition_cross_block", "region"})
-_SPILL_POLICY = frozenset({"stack_on_exhaustion", "cost_weighted"})
+_SPILL_POLICY = frozenset({"stack_on_exhaustion", "cost_weighted", "region_aware"})
+_REMATERIALIZATION = frozenset({"disabled", "const_only"})
+_LIVE_RANGE_SPLIT = frozenset({"disabled", "loop_boundary"})
 _MOVE_POLICY = frozenset({"disabled", "safe_affinity"})
 _INDEXED_POLICY = frozenset({"canonical", "compact_ea", "base_pinning", "index_pinning", "base_plus_index"})
 _SCALAR_POLICY = frozenset({"disabled", "conservative_mem2reg", "read_cache", "writeback_island"})
 _FORWARDING_POLICY = frozenset({"disabled", "safe_frame_forwarding"})
 _WRITEBACK_POLICY = frozenset({"canonical", "boundary_flush"})
+
+SPILL_COST_KEYS = (
+    "use_count",
+    "loop_depth",
+    "interference_degree",
+    "call_crossing",
+    "rematerializable",
+    "live_range_length",
+)
+DEFAULT_SPILL_COST_PARAMETERS = tuple(
+    (key, value)
+    for key, value in (
+        ("use_count", 4),
+        ("loop_depth", 8),
+        ("interference_degree", 2),
+        ("call_crossing", 6),
+        ("rematerializable", -5),
+        ("live_range_length", 1),
+    )
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -42,6 +64,9 @@ class NativePolicy:
     call_residence: str
     residence_scope: str
     spill_policy: str
+    spill_cost_parameters: tuple[tuple[str, int], ...]
+    rematerialization: str
+    live_range_split: str
     move_coalescing: str
     indexed_memory_policy: str
     scalar_promotion: str
@@ -64,6 +89,18 @@ class NativePolicy:
             raise ValueError(f"unsupported residence scope: {self.residence_scope}")
         if self.spill_policy not in _SPILL_POLICY:
             raise ValueError(f"unsupported spill policy: {self.spill_policy}")
+        parameters = tuple(self.spill_cost_parameters)
+        if tuple(key for key, _ in parameters) != SPILL_COST_KEYS:
+            raise ValueError("spill_cost_parameters must use the canonical key order")
+        if any(
+            isinstance(value, bool) or not isinstance(value, int) or not -64 <= value <= 64
+            for _, value in parameters
+        ):
+            raise ValueError("spill cost parameters must be bounded integers")
+        if self.rematerialization not in _REMATERIALIZATION:
+            raise ValueError(f"unsupported rematerialization policy: {self.rematerialization}")
+        if self.live_range_split not in _LIVE_RANGE_SPLIT:
+            raise ValueError(f"unsupported live-range split policy: {self.live_range_split}")
         if self.move_coalescing not in _MOVE_POLICY:
             raise ValueError(f"unsupported move policy: {self.move_coalescing}")
         if self.indexed_memory_policy not in _INDEXED_POLICY:
@@ -83,6 +120,11 @@ class NativePolicy:
             "call_residence": self.call_residence,
             "residence_scope": self.residence_scope,
             "spill_policy": self.spill_policy,
+            "spill_cost_parameters": [
+                [key, value] for key, value in self.spill_cost_parameters
+            ],
+            "rematerialization": self.rematerialization,
+            "live_range_split": self.live_range_split,
             "move_coalescing": self.move_coalescing,
             "indexed_memory_policy": self.indexed_memory_policy,
             "scalar_promotion": self.scalar_promotion,
@@ -98,6 +140,9 @@ BASELINE_NATIVE_POLICY = NativePolicy(
     call_residence="whole_function_frame_fallback",
     residence_scope="single_definition_cross_block",
     spill_policy="stack_on_exhaustion",
+    spill_cost_parameters=DEFAULT_SPILL_COST_PARAMETERS,
+    rematerialization="disabled",
+    live_range_split="disabled",
     move_coalescing="disabled",
     indexed_memory_policy="canonical",
     scalar_promotion="disabled",
@@ -121,6 +166,12 @@ def policy_with(policy: NativePolicy = BASELINE_NATIVE_POLICY, **changes: object
         call_residence=str(values["call_residence"]),
         residence_scope=str(values["residence_scope"]),
         spill_policy=str(values["spill_policy"]),
+        spill_cost_parameters=tuple(
+            (str(key), int(value))
+            for key, value in values["spill_cost_parameters"]
+        ),
+        rematerialization=str(values["rematerialization"]),
+        live_range_split=str(values["live_range_split"]),
         move_coalescing=str(values["move_coalescing"]),
         indexed_memory_policy=str(values["indexed_memory_policy"]),
         scalar_promotion=str(values["scalar_promotion"]),

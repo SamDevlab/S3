@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from ...assembly import AssemblyFunction
-from .liveness import analyze_liveness
+from dataclasses import dataclass, field
+from ...assembly import AssemblyFunction, AssemblyOpcode, AssemblyType
+from .liveness import analyze_liveness, instruction_use_def
 from .registers import (
     FULL_ALLOCATABLE_REGISTERS,
 )
@@ -16,6 +16,11 @@ class AllocationPlan:
     allocations: dict[int, str | None]  # virtual register ID -> physical register name (or None)
     call_survivors: dict[int, frozenset[int]]
     address_taken: frozenset[int] = frozenset()
+    rematerializable_values: dict[int, int | float] = field(default_factory=dict)
+    spill_costs: dict[int, int] = field(default_factory=dict)
+    loop_split_saves: dict[int, tuple[int, ...]] = field(default_factory=dict)
+    loop_split_restores: dict[str, tuple[int, ...]] = field(default_factory=dict)
+    split_points: tuple[str, ...] = ()
 
     def physical_register(self, register: int) -> str | None:
         return self.allocations.get(register)
@@ -66,6 +71,12 @@ def analyze_allocation(
         )
     )
 
+    rematerializable_values = _find_rematerializable_constants(
+        function,
+        address_taken,
+        policy,
+    )
+
     # 3. Build interference graph
     # Node: virtual register ID (int)
     # Edge: interference
@@ -96,12 +107,10 @@ def analyze_allocation(
                 for la in inst_liveness.live_after:
                     add_edge(d, la)
 
-    # 4. Greedy Coloring
-    # Sort nodes by degree descending, then by node ID ascending for determinism
+    # 4. Greedy Coloring. The baseline retains its historical degree ordering;
+    # experimental spill policies use explicit, serialized cost coefficients.
     def get_degree(r: int) -> int:
         return len(interferences[r])
-
-    sorted_nodes = sorted(all_vregs, key=lambda r: (-get_degree(r), r))
 
     call_survivors = {
         id(inst_liveness.instruction): liveness.live_across_call(inst_liveness.instruction)
@@ -110,6 +119,41 @@ def analyze_allocation(
         if inst_liveness.instruction.opcode.value == "TCALL"
     }
     call_crossing = set().union(*call_survivors.values()) if call_survivors else set()
+    use_counts = {register: 0 for register in all_vregs}
+    definition_counts = {register: 0 for register in all_vregs}
+    live_range_lengths = {register: 0 for register in all_vregs}
+    loop_depths = {register: 0 for register in all_vregs}
+    for block_name, block_liveness in liveness.blocks.items():
+        block_loop_depth = _block_loop_depth(function, block_name)
+        for item in block_liveness.instructions:
+            for register in item.uses:
+                use_counts[register] += 1
+            for register in item.defs:
+                definition_counts[register] += 1
+            for register in item.live_before | item.live_after:
+                live_range_lengths[register] += 1
+                loop_depths[register] += block_loop_depth
+
+    coefficients = dict(policy.spill_cost_parameters)
+    spill_costs = {
+        register: (
+            coefficients["use_count"] * use_counts[register]
+            + coefficients["loop_depth"] * loop_depths[register]
+            + coefficients["interference_degree"] * get_degree(register)
+            + coefficients["call_crossing"] * int(register in call_crossing)
+            + coefficients["rematerializable"] * int(register in rematerializable_values)
+            + coefficients["live_range_length"] * live_range_lengths[register]
+        )
+        for register in all_vregs
+    }
+    if policy.spill_policy in {"cost_weighted", "region_aware"}:
+        sorted_nodes = sorted(
+            all_vregs,
+            key=lambda register: (-spill_costs[register], -get_degree(register), register),
+        )
+    else:
+        sorted_nodes = sorted(all_vregs, key=lambda r: (-get_degree(r), r))
+
     colors: dict[int, str | None] = {}
 
     for node in sorted_nodes:
@@ -136,9 +180,122 @@ def analyze_allocation(
 
         colors[node] = chosen_phys
 
+    loop_split_saves, loop_split_restores, split_points = _loop_boundary_split(
+        function,
+        liveness,
+        colors,
+        policy,
+    )
     assert set(color for color in colors.values() if color) <= set(FULL_ALLOCATABLE_REGISTERS)
     return AllocationPlan(
         allocations=colors,
         call_survivors=call_survivors,
         address_taken=address_taken,
+        rematerializable_values=rematerializable_values,
+        spill_costs=spill_costs,
+        loop_split_saves=loop_split_saves,
+        loop_split_restores=loop_split_restores,
+        split_points=split_points,
+    )
+
+
+def _find_rematerializable_constants(
+    function: AssemblyFunction,
+    address_taken: frozenset[int],
+    policy: NativePolicy,
+) -> dict[int, int | float]:
+    if policy.rematerialization != "const_only" or not function.blocks:
+        return {}
+    allowed = {AssemblyType.TRIT, AssemblyType.TRYTE, AssemblyType.I64, AssemblyType.F64}
+    entry = function.blocks[0]
+    definitions: dict[int, tuple[int, object]] = {}
+    definition_counts: dict[int, int] = {}
+    for block_index, block in enumerate(function.blocks):
+        for instruction_index, instruction in enumerate(block.instructions):
+            _, defs = instruction_use_def(instruction)
+            for register in defs:
+                definition_counts[register] = definition_counts.get(register, 0) + 1
+            if instruction.opcode is AssemblyOpcode.TCONST:
+                register = instruction.registers[0]
+                if instruction.immediate is not None:
+                    definitions[register] = (block_index, instruction)
+    result: dict[int, int | float] = {}
+    for register, (block_index, instruction) in definitions.items():
+        type_name = function.type_of(register)
+        if (
+            block_index != 0
+            or type_name not in allowed
+            or register in address_taken
+            or definition_counts.get(register) != 1
+            or instruction not in entry.instructions
+        ):
+            continue
+        position = entry.instructions.index(instruction)
+        if any(item.is_terminator for item in entry.instructions[:position]):
+            continue
+        result[register] = instruction.immediate
+    return result
+
+
+def _block_loop_depth(function: AssemblyFunction, block_name: str) -> int:
+    indices = {block.label: index for index, block in enumerate(function.blocks)}
+    depth = 0
+    for block in function.blocks:
+        if not block.instructions:
+            continue
+        terminator = block.instructions[-1]
+        if terminator.opcode not in {AssemblyOpcode.TJMP, AssemblyOpcode.TBR3}:
+            continue
+        if any(
+            target == block_name and indices.get(target, 0) <= indices[block.label]
+            for target in terminator.labels
+        ):
+            depth += 1
+    return min(depth, 4)
+
+
+def _loop_boundary_split(
+    function: AssemblyFunction,
+    liveness,
+    colors: dict[int, str | None],
+    policy: NativePolicy,
+) -> tuple[dict[int, tuple[int, ...]], dict[str, tuple[int, ...]], tuple[str, ...]]:
+    if policy.live_range_split != "loop_boundary":
+        return {}, {}, ()
+    indices = {block.label: index for index, block in enumerate(function.blocks)}
+    saves: dict[int, set[int]] = {}
+    restores: dict[str, set[int]] = {}
+    points: set[str] = set()
+    for block in function.blocks:
+        if not block.instructions:
+            continue
+        terminator = block.instructions[-1]
+        if terminator.opcode not in {AssemblyOpcode.TJMP, AssemblyOpcode.TBR3}:
+            continue
+        back_targets = tuple(
+            target
+            for target in terminator.labels
+            if target in indices and indices[target] <= indices[block.label]
+        )
+        if not back_targets:
+            continue
+        for target in back_targets:
+            carried = (
+                liveness.blocks[block.label].live_out
+                & liveness.blocks[target].live_in
+            )
+            carried = {
+                register
+                for register in carried
+                if colors.get(register) is not None
+            }
+            if not carried:
+                continue
+            saves.setdefault(id(terminator), set()).update(carried)
+            restores.setdefault(target, set()).update(carried)
+            points.add(f"{block.label}->{target}")
+    return (
+        {instruction_id: tuple(sorted(registers)) for instruction_id, registers in saves.items()},
+        {block: tuple(sorted(registers)) for block, registers in restores.items()},
+        tuple(sorted(points)),
     )

@@ -36,6 +36,11 @@ def analyze_cross_block_residence(
             allocations={register: None for register in full_plan.allocations},
             call_survivors={},
             address_taken=full_plan.address_taken,
+            rematerializable_values=full_plan.rematerializable_values,
+            spill_costs=full_plan.spill_costs,
+            loop_split_saves=full_plan.loop_split_saves,
+            loop_split_restores=full_plan.loop_split_restores,
+            split_points=full_plan.split_points,
         )
     defs_by_register: dict[int, set[str]] = {}
     uses_by_register: dict[int, set[str]] = {}
@@ -78,4 +83,9 @@ def analyze_cross_block_residence(
         allocations=selected,
         call_survivors=call_survivors,
         address_taken=full_plan.address_taken,
+        rematerializable_values=full_plan.rematerializable_values,
+        spill_costs=full_plan.spill_costs,
+        loop_split_saves=full_plan.loop_split_saves,
+        loop_split_restores=full_plan.loop_split_restores,
+        split_points=full_plan.split_points,
     )

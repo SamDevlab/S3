@@ -9,6 +9,10 @@ import pytest
 from bootstrap.s3.assembly import parse_assembly
 from bootstrap.s3.backends.x86_64 import X8664Backend
 from bootstrap.s3.backends.x86_64.allocation import analyze_allocation
+from bootstrap.s3.backends.x86_64.features import (
+    PerFunctionPolicyPortfolio,
+    extract_function_features,
+)
 from bootstrap.s3.backends.x86_64.policy import BASELINE_NATIVE_POLICY, policy_with
 from bootstrap.s3.backends.x86_64.residence import analyze_cross_block_residence
 from bootstrap.s3.backends.x86_64.registers import (
@@ -109,3 +113,33 @@ def test_invalid_register_permutation_fails_closed() -> None:
 def test_experimental_policy_is_keyword_only_on_backend_boundary() -> None:
     parameter = inspect.signature(X8664Backend).parameters["native_policy"]
     assert parameter.kind is inspect.Parameter.KEYWORD_ONLY
+
+
+def test_v2_policy_genome_is_complete_and_serializes_deterministically() -> None:
+    policy = policy_with(
+        name="v2_complete",
+        spill_policy="region_aware",
+        rematerialization="const_only",
+        live_range_split="loop_boundary",
+        indexed_memory_policy="compact_ea",
+        scalar_promotion="conservative_mem2reg",
+    )
+    first = policy.to_dict()
+    second = policy_with(**first).to_dict()
+    assert first == second
+    assert {
+        "spill_cost_parameters",
+        "rematerialization",
+        "live_range_split",
+    } <= set(first)
+
+
+def test_v2_feature_vector_and_portfolio_are_static_and_explicit() -> None:
+    function = _program().functions[1]
+    features = extract_function_features(function)
+    assert features.instruction_count > 0
+    assert features.block_count == 4
+    portfolio = PerFunctionPolicyPortfolio("baseline")
+    selected, reason = portfolio.select(function, {"baseline": BASELINE_NATIVE_POLICY})
+    assert selected == "baseline"
+    assert reason == "conservative_baseline_fallback"
