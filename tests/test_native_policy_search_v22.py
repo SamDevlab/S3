@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+import platform
+
+import pytest
+
 from bootstrap.s3.assembly import parse_assembly
+from bootstrap.s3.backends.x86_64 import NativeToolchain, X8664Backend
 from bootstrap.s3.backends.x86_64.experimental_policy import (
     ExperimentalNativePolicyMode,
     compact_ea_canary_eligible,
@@ -10,7 +15,7 @@ from bootstrap.s3.backends.x86_64.experimental_policy import (
     select_experimental_policy,
 )
 from bootstrap.s3.backends.x86_64.features import extract_function_features
-from bootstrap.s3.backends.x86_64 import X8664Backend
+from bootstrap.s3.emulator import Emulator
 from bootstrap.s3.backends.x86_64.policy import BASELINE_NATIVE_POLICY, policy_with
 from bootstrap.s3.backends.x86_64.shadow_governor import ShadowGovernor
 from tools.native_policy_search_v22 import POLICY_IDS, _policy_set, build_v22_corpus
@@ -48,6 +53,43 @@ def test_default_backend_and_explicit_off_keep_byte_identity() -> None:
 .end
 """)
     assert X8664Backend().generate(program) == X8664Backend(native_policy=BASELINE_NATIVE_POLICY).generate(program)
+
+
+def test_compact_ea_uses_live_logical_index_after_tmov_source_redefinition(tmp_path) -> None:
+    program = parse_assembly("""
+.function main -> tryte
+    .register r0, tryte
+    .register r1, tryte
+    .register r2, tryte
+    .memory m0, tryte, 2, mutable
+.label entry
+    TCONST r0, 0
+    TMOV r2, r0
+    TCONST r0, 1
+    TCONST r1, 7
+    TSTORE m0, r2, r1
+    TLOAD r1, m0, r2
+    TRET r1
+.end
+""")
+    assert Emulator().execute(program) == 7
+    if platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"}:
+        pytest.skip("requires Linux x86-64")
+    policy = policy_with(name="reconciliation_compact_ea", indexed_memory_policy="compact_ea")
+    toolchain = NativeToolchain.detect()
+    for register_allocation in (False, True):
+        assembly = X8664Backend(
+            register_allocation=register_allocation,
+            native_policy=policy,
+        ).generate(program)
+        executable = toolchain.build(
+            assembly,
+            tmp_path / f"compact-ea-tmov-index-{register_allocation}",
+        )
+        completed = toolchain.run(executable)
+        assert completed.returncode == 0
+        assert completed.stderr == ""
+        assert completed.stdout == "program returned: 7\n"
 
 
 def test_canary_rejects_reference_sensitive_function() -> None:
