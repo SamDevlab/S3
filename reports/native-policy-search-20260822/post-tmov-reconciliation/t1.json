@@ -1,5 +1,8 @@
 {
   "status": "PASS",
+  "selected": 59,
+  "passed": 59,
+  "failed": 0,
   "windows_focused": "30 passed, 29 skipped",
   "linux_focused": "59 passed",
   "tmov_semantics": "PASS",

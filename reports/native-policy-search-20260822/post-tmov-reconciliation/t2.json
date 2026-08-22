@@ -1,5 +1,8 @@
 {
   "status": "PASS",
+  "selected": 280,
+  "passed": 280,
+  "failed": 0,
   "subsystems": [
     "native_x86_64",
     "native_x86_64_integration",

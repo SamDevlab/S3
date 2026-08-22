@@ -17,6 +17,10 @@ the four frozen policies over A07 and R01-R24. T0, T1, and T2 passed. Default
 experimental-off output is byte-identical to canonical main on the
 representative A07, memory, branch, and call corpus.
 
+The focused T1 gate passed 59/59 Linux tests. The affected T2 subsystem gate
+passed 280/280 tests across native x86-64, integration, allocation/residence,
+liveness, memory, initialization, and policy contracts.
+
 Fresh post-TMOV Compact EA evidence is 107 indexed candidates, 91 eligible,
 91 applications, 16 safety rejections, 91 temporaries avoided, 91
 instructions removed, 91 MOVs removed, and zero hard regressions. Coverage
