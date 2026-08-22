@@ -140,6 +140,13 @@ class JsonRpcTransport:
             return self.server.hover(_uri(params), _position(params))
         if method == "textDocument/definition":
             return self.server.definition(_uri(params), _position(params))
+        if method == "textDocument/references":
+            return self.server.references(_uri(params), _position(params))
+        if method == "textDocument/rename":
+            new_name = params.get("newName")
+            if not isinstance(new_name, str):
+                raise LspTransportError("rename requires newName")
+            return self.server.rename(_uri(params), _position(params), new_name)
         raise LspTransportError(f"method not found: {method}")
 
 

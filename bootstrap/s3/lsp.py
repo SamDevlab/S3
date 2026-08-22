@@ -8,6 +8,7 @@ from typing import Mapping
 
 from . import ast
 from .diagnostics import S3Error, SourceLocation, diagnostic_from_exception
+from .lexer import TokenKind, tokenize
 from .parser import parse
 from .pipeline import compile_source
 
@@ -86,6 +87,16 @@ def _word_at(text: str, position: Mapping[str, int]) -> str | None:
     return None
 
 
+def _identifier_locations(text: str, name: str) -> tuple[SourceLocation, ...]:
+    """Use lexer identifiers so comments and string contents are not references."""
+
+    return tuple(
+        SourceLocation(token.position, token.line, token.column)
+        for token in tokenize(text)
+        if token.kind is TokenKind.IDENTIFIER and token.text == name
+    )
+
+
 def _symbols(program: ast.Program) -> tuple[_Symbol, ...]:
     result: list[_Symbol] = []
     for function in program.functions:
@@ -135,6 +146,8 @@ class LanguageServer:
                 "definitionProvider": True,
                 "documentSymbolProvider": True,
                 "completionProvider": {"triggerCharacters": ["."]},
+                "referencesProvider": True,
+                "renameProvider": True,
             },
             "serverInfo": {"name": "s3-language-server", "version": "1"},
         }
@@ -205,6 +218,37 @@ class LanguageServer:
             for symbol in document.symbols
             if symbol.name.startswith(prefix)
         ]
+
+    def references(self, uri: str, position: Mapping[str, int]) -> list[dict[str, object]]:
+        document = self._document(uri)
+        word = _word_at(document.text, position)
+        if next((item for item in document.symbols if item.name == word), None) is None:
+            return []
+        return [
+            {"uri": uri, "range": _range(location, length=len(word or ""))}
+            for location in _identifier_locations(document.text, word or "")
+        ]
+
+    def rename(
+        self,
+        uri: str,
+        position: Mapping[str, int],
+        new_name: str,
+    ) -> dict[str, object]:
+        if _WORD.fullmatch(new_name) is None:
+            raise LspError("rename target must be an identifier")
+        document = self._document(uri)
+        word = _word_at(document.text, position)
+        if next((item for item in document.symbols if item.name == word), None) is None:
+            raise LspError("rename target is not a known semantic symbol")
+        edits = [
+            {
+                "range": _range(location, length=len(word or "")),
+                "newText": new_name,
+            }
+            for location in _identifier_locations(document.text, word or "")
+        ]
+        return {"changes": {uri: edits}}
 
     def _set_document(self, uri: str, text: str, version: int) -> None:
         if not isinstance(uri, str) or not uri:
