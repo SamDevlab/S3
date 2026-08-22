@@ -161,7 +161,7 @@ def _cfg_cases() -> tuple[tuple[str, AssemblyProgram, int], ...]:
         (
             "T11_move_inside_loop",
             _program(
-                (), (*tryte, (3, AssemblyType.TRYTE)),
+                (), ((0, AssemblyType.TRIT), (1, AssemblyType.TRYTE), (3, AssemblyType.TRYTE)),
                 blocks=(
                     AssemblyBlock("entry", (_const(0, -1), _const(1, 5), AssemblyInstruction(AssemblyOpcode.TJMP, labels=("header",)))),
                     AssemblyBlock("header", (AssemblyInstruction(AssemblyOpcode.TBR3, (0,), labels=("body", "exit", "exit")),)),
@@ -174,7 +174,7 @@ def _cfg_cases() -> tuple[tuple[str, AssemblyProgram, int], ...]:
         (
             "T12_value_live_across_backedge",
             _program(
-                (), (*tryte, (3, AssemblyType.TRYTE)),
+                (), ((0, AssemblyType.TRIT), (1, AssemblyType.TRYTE), (3, AssemblyType.TRYTE)),
                 blocks=(
                     AssemblyBlock("entry", (_const(0, -1), _const(1, 7), AssemblyInstruction(AssemblyOpcode.TJMP, labels=("header",)))),
                     AssemblyBlock("header", (AssemblyInstruction(AssemblyOpcode.TBR3, (0,), labels=("body", "exit", "exit")),)),
@@ -208,18 +208,16 @@ def _call_case() -> AssemblyProgram:
 def _reference_case() -> AssemblyProgram:
     return _program(
         (
-            _const(2, 0),
+            _const(0, 0),
             _const(3, 9),
-            AssemblyInstruction(AssemblyOpcode.TADDR, (0,), memory=0, reference_target=AssemblyType.TRYTE, reference_mutable=True),
-            _move(1, 0),
-            AssemblyInstruction(AssemblyOpcode.TREFSTORE, (1, 3), reference_target=AssemblyType.TRYTE, reference_mutable=True),
-            AssemblyInstruction(AssemblyOpcode.TREFLOAD, (2, 1), reference_target=AssemblyType.TRYTE),
-            _ret(2),
+            AssemblyInstruction(AssemblyOpcode.TADDR, (1, 0), reference_target=AssemblyType.TRYTE, reference_mutable=True),
+            _move(2, 1),
+            AssemblyInstruction(AssemblyOpcode.TREFSTORE, (2, 3), reference_target=AssemblyType.TRYTE, reference_mutable=True),
+            AssemblyInstruction(AssemblyOpcode.TREFLOAD, (4, 2), reference_target=AssemblyType.TRYTE),
+            _ret(4),
         ),
-        ((0, AssemblyType.REFERENCE), (1, AssemblyType.REFERENCE), (2, AssemblyType.TRYTE), (3, AssemblyType.TRYTE)),
-        memory_objects=(AssemblyMemoryObject(0, AssemblyType.TRYTE, 1, True),),
-        reference_targets=((0, AssemblyType.TRYTE, True), (1, AssemblyType.TRYTE, True)),
-        reference_storage_sizes=((0, 8), (1, 8)),
+        ((0, AssemblyType.TRYTE), (1, AssemblyType.REFERENCE), (2, AssemblyType.REFERENCE), (3, AssemblyType.TRYTE), (4, AssemblyType.TRYTE)),
+        reference_targets=((1, AssemblyType.TRYTE, True), (2, AssemblyType.TRYTE, True)),
     )
 
 
@@ -248,14 +246,14 @@ def test_tmov_call_and_residence_modes(tmp_path: Path) -> None:
     if platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"}:
         pytest.skip("requires Linux x86-64")
     program = _call_case()
-    assert Emulator().execute(program) == 10
+    assert Emulator().execute(program) == 7
     toolchain = NativeToolchain.detect()
     for mode in (False, True):
         assembly = X8664Backend(register_allocation=mode).generate(program)
         executable = toolchain.build(assembly, tmp_path / f"call-{mode}")
         completed = toolchain.run(executable)
         assert completed.returncode == 0
-        assert completed.stdout == "program returned: 10\n"
+        assert completed.stdout == "program returned: 7\n"
 
 
 def test_tmov_trit_tryte_i64_and_reference_contracts(tmp_path: Path) -> None:
