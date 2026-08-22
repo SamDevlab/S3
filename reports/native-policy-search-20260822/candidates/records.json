@@ -1,0 +1,3159 @@
+[
+  {
+    "abi": "PASS",
+    "correctness": "PASS",
+    "determinism": "PASS",
+    "discovery_status": "PASS",
+    "disqualification_reason": null,
+    "external_holdout_status": "NOT_AVAILABLE_READ_ONLY",
+    "frame_ratio": 1.0,
+    "holdout_metrics": {
+      "address_recomputations": 371,
+      "branches": 1962,
+      "callee_save_traffic": 4,
+      "caller_save_traffic": 35,
+      "calls": 329,
+      "frame_bytes": 1872,
+      "instructions": 11325,
+      "leas": 371,
+      "loads": 16,
+      "memory_operands": 151,
+      "movs": 3610,
+      "pops": 486,
+      "pushes": 482,
+      "reloads": 16,
+      "self_movs": 0,
+      "spills": 104,
+      "spills_reload": 151,
+      "stack_loads": 16,
+      "stack_ops": 151,
+      "stack_stores": 104,
+      "stores": 104,
+      "text_bytes": 0,
+      "total_load_store": 120
+    },
+    "holdout_status": "PASS_SYNTHETIC_AND_EXISTING_REGRESSION",
+    "instruction_ratio": 1.0,
+    "memory_traffic_ratio": 1.0,
+    "metrics": {
+      "address_recomputations": 846,
+      "branches": 4397,
+      "callee_save_traffic": 13,
+      "caller_save_traffic": 70,
+      "calls": 726,
+      "frame_bytes": 4048,
+      "instructions": 25347,
+      "leas": 846,
+      "loads": 32,
+      "memory_operands": 329,
+      "movs": 8092,
+      "pops": 1080,
+      "pushes": 1066,
+      "reloads": 32,
+      "self_movs": 0,
+      "spills": 228,
+      "spills_reload": 329,
+      "stack_loads": 32,
+      "stack_ops": 329,
+      "stack_stores": 228,
+      "stores": 228,
+      "text_bytes": 0,
+      "total_load_store": 260
+    },
+    "outputs": [
+      {
+        "assembly_lines": 1535,
+        "assembly_sha256": "3f594c9d6c2623e7dd0248ed711fa941978b6fabee53d9249987a7cd59361607",
+        "case_id": "D01",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1634,
+        "assembly_sha256": "d6ec847438fd3c4da1ddfcbd0f215e70efd5d031c74cd05e8bdd65424958e8f5",
+        "case_id": "D02",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1719,
+        "assembly_sha256": "82c34673ba9bacf1772eff8508b74b92d78ad5b5094530ccc05af529e9ac93df",
+        "case_id": "D03",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1617,
+        "assembly_sha256": "6755b5a2bea561f9dae89207ab6f2b36be79a07bd13d7884a0a96078306a96d6",
+        "case_id": "D04",
+        "group": "discovery",
+        "oracle": 10
+      },
+      {
+        "assembly_lines": 1659,
+        "assembly_sha256": "d56905663f927f4bb73790fdd38f454e76b02470befedb9e47288962e8ececfc",
+        "case_id": "D05",
+        "group": "discovery",
+        "oracle": 8
+      },
+      {
+        "assembly_lines": 1922,
+        "assembly_sha256": "3744f7d4dc1267c2fa224b5cd5aa424bbf88cdf073141ac4c8d63bf2a09d35a6",
+        "case_id": "D06",
+        "group": "discovery",
+        "oracle": 55
+      },
+      {
+        "assembly_lines": 1535,
+        "assembly_sha256": "f5fa1a1e3883cc9fe2778b60fb60ea386a136840657ba86e39feb7094dd21be9",
+        "case_id": "D07",
+        "group": "discovery",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1637,
+        "assembly_sha256": "004b15f7eb2e02dc624c2574d5cc75c4625201c0558be79c4b748c394916949e",
+        "case_id": "D08",
+        "group": "discovery",
+        "oracle": 14
+      },
+      {
+        "assembly_lines": 1709,
+        "assembly_sha256": "8ce946f861f403b1276d185c538324c2975f5c9cdf3166b882053fbd379d0a8c",
+        "case_id": "D09",
+        "group": "discovery",
+        "oracle": 6
+      },
+      {
+        "assembly_lines": 1699,
+        "assembly_sha256": "c36710b2fc71f1728fa9cf07bd659df24319e61b70deba1bb3ac6d80711b1497",
+        "case_id": "D10",
+        "group": "discovery",
+        "oracle": 11
+      },
+      {
+        "assembly_lines": 1888,
+        "assembly_sha256": "94967dc908c69d8cee60e6bbe44f02a2728eb91b171b8c6704c5142cb064acf5",
+        "case_id": "D11",
+        "group": "discovery",
+        "oracle": 21
+      },
+      {
+        "assembly_lines": 1636,
+        "assembly_sha256": "11fefc96d2527a0ab744122074fd84f42b014a9bc3f181e9d5c3d95f27deac78",
+        "case_id": "D12",
+        "group": "discovery",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1648,
+        "assembly_sha256": "e3c847fa897db0b0be2d83ef877463c1bff348a5021b027939cc5ca18951d147",
+        "case_id": "D13",
+        "group": "discovery",
+        "oracle": 8
+      },
+      {
+        "assembly_lines": 1677,
+        "assembly_sha256": "495ff4e21f2493193bca6512be027c38dee0c6c4afa475c385da7988d0740cd0",
+        "case_id": "D14",
+        "group": "discovery",
+        "oracle": 9
+      },
+      {
+        "assembly_lines": 1723,
+        "assembly_sha256": "80b27ec65ff586e186a6c3c5a1497d67a9497013d4f6a28180d3b2fb2120a5ac",
+        "case_id": "D15",
+        "group": "discovery",
+        "oracle": 3
+      },
+      {
+        "assembly_lines": 1761,
+        "assembly_sha256": "7e17fe1127a8257cd6822a1e837080a0207fdd8eae94b348da3b43de92af6ce6",
+        "case_id": "D16",
+        "group": "discovery",
+        "oracle": 23
+      },
+      {
+        "assembly_lines": 1587,
+        "assembly_sha256": "91721da7c63cbaecd0134b6a0905bd1ccad277eb20e6f49a2d7c84f7b85bfc4d",
+        "case_id": "D17",
+        "group": "discovery",
+        "oracle": 3
+      },
+      {
+        "assembly_lines": 1565,
+        "assembly_sha256": "c0fe8405f89926804b5f7a089c5eadd658e1e2ce3e581289af3a64271c648965",
+        "case_id": "D18",
+        "group": "discovery",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1565,
+        "assembly_sha256": "8cf262ddcae648faa21f0c7980b6668afa1d9e447b9f2cd11f0c8e42e3059454",
+        "case_id": "D19",
+        "group": "discovery",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1761,
+        "assembly_sha256": "8bef7deee48c1295e38006e573bbb50f331b83ad726d6595bc27a70408e89fe1",
+        "case_id": "D20",
+        "group": "discovery",
+        "oracle": 26
+      },
+      {
+        "assembly_lines": 1665,
+        "assembly_sha256": "bae9c150d6a570b173c03b44194e848c1cd6879b74769b05990a9cdab8265079",
+        "case_id": "H01",
+        "group": "holdout",
+        "oracle": 5
+      },
+      {
+        "assembly_lines": 1711,
+        "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+        "case_id": "H02",
+        "group": "holdout",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1636,
+        "assembly_sha256": "3f2b00a8ed1e57a2c7789084141d4a8be3767fea86a5a2c661f22311ec6d403e",
+        "case_id": "H03",
+        "group": "holdout",
+        "oracle": 14
+      },
+      {
+        "assembly_lines": 1565,
+        "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+        "case_id": "H04",
+        "group": "holdout",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1709,
+        "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+        "case_id": "H05",
+        "group": "holdout",
+        "oracle": 32
+      },
+      {
+        "assembly_lines": 1739,
+        "assembly_sha256": "8864918e2367e9defe6d9cfdea875acf1885350c55f736d96061042de60669c7",
+        "case_id": "H06",
+        "group": "holdout",
+        "oracle": 17
+      },
+      {
+        "assembly_lines": 1664,
+        "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+        "case_id": "E01",
+        "group": "holdout-existing",
+        "oracle": 15
+      },
+      {
+        "assembly_lines": 1581,
+        "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+        "case_id": "E02",
+        "group": "holdout-existing",
+        "oracle": 6
+      },
+      {
+        "assembly_lines": 1709,
+        "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+        "case_id": "E03",
+        "group": "holdout-existing",
+        "oracle": -1
+      }
+    ],
+    "pareto": true,
+    "policy_config": {
+      "call_register_order": [
+        "rbx",
+        "r12",
+        "r13",
+        "r14",
+        "r15",
+        "rdi",
+        "rsi",
+        "rdx",
+        "rcx",
+        "r8",
+        "r9"
+      ],
+      "call_residence": "whole_function_frame_fallback",
+      "indexed_memory_policy": "canonical",
+      "load_forwarding": "disabled",
+      "move_coalescing": "disabled",
+      "name": "baseline",
+      "register_order": [
+        "rdi",
+        "rsi",
+        "rdx",
+        "rcx",
+        "r8",
+        "r9",
+        "rbx",
+        "r12",
+        "r13",
+        "r14",
+        "r15"
+      ],
+      "residence_scope": "single_definition_cross_block",
+      "scalar_promotion": "disabled",
+      "spill_policy": "stack_on_exhaustion",
+      "writeback_policy": "canonical"
+    },
+    "policy_id": "M0_R0_BASELINE",
+    "ratios": {
+      "address_recomputations": 1.0,
+      "frame_bytes": 1.0,
+      "instructions": 1.0,
+      "movs": 1.0,
+      "spills_reload": 1.0,
+      "stack_ops": 1.0,
+      "text_bytes": 1.0,
+      "total_load_store": 1.0
+    },
+    "stack_traffic_ratio": 1.0,
+    "stage": "A",
+    "text_size_ratio": 1.0
+  },
+  {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN",
+    "discovery_status": "DISQUALIFIED_UNSUPPORTED_STRATEGY",
+    "disqualification_reason": "compact indexed lowering is not wired",
+    "external_holdout_status": "NOT_RUN",
+    "holdout_status": "NOT_RUN",
+    "pareto": false,
+    "policy_config": null,
+    "policy_id": "M1_COMPACT_INDEXED_MEMORY",
+    "stage": "A"
+  },
+  {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN",
+    "discovery_status": "DISQUALIFIED_UNSUPPORTED_STRATEGY",
+    "disqualification_reason": "base pinning lowering is not wired",
+    "external_holdout_status": "NOT_RUN",
+    "holdout_status": "NOT_RUN",
+    "pareto": false,
+    "policy_config": null,
+    "policy_id": "M2_BASE_PINNING",
+    "stage": "A"
+  },
+  {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN",
+    "discovery_status": "DISQUALIFIED_UNSUPPORTED_STRATEGY",
+    "disqualification_reason": "index pinning lowering is not wired",
+    "external_holdout_status": "NOT_RUN",
+    "holdout_status": "NOT_RUN",
+    "pareto": false,
+    "policy_config": null,
+    "policy_id": "M3_INDEX_PINNING",
+    "stage": "A"
+  },
+  {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN",
+    "discovery_status": "DISQUALIFIED_UNSUPPORTED_STRATEGY",
+    "disqualification_reason": "base-plus-index lowering is not wired",
+    "external_holdout_status": "NOT_RUN",
+    "holdout_status": "NOT_RUN",
+    "pareto": false,
+    "policy_config": null,
+    "policy_id": "M4_BASE_PLUS_INDEX",
+    "stage": "A"
+  },
+  {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN",
+    "discovery_status": "DISQUALIFIED_UNSUPPORTED_STRATEGY",
+    "disqualification_reason": "scalar promotion is not wired",
+    "external_holdout_status": "NOT_RUN",
+    "holdout_status": "NOT_RUN",
+    "pareto": false,
+    "policy_config": null,
+    "policy_id": "M5_SCALAR_MEM2REG_CONSERVATIVE",
+    "stage": "A"
+  },
+  {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN",
+    "discovery_status": "DISQUALIFIED_UNSUPPORTED_STRATEGY",
+    "disqualification_reason": "load forwarding is not wired",
+    "external_holdout_status": "NOT_RUN",
+    "holdout_status": "NOT_RUN",
+    "pareto": false,
+    "policy_config": null,
+    "policy_id": "M6_LOAD_FORWARDING",
+    "stage": "A"
+  },
+  {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN",
+    "discovery_status": "DISQUALIFIED_UNSUPPORTED_STRATEGY",
+    "disqualification_reason": "read cache is not wired",
+    "external_holdout_status": "NOT_RUN",
+    "holdout_status": "NOT_RUN",
+    "pareto": false,
+    "policy_config": null,
+    "policy_id": "M7_REGISTER_READ_CACHE",
+    "stage": "A"
+  },
+  {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN",
+    "discovery_status": "DISQUALIFIED_UNSUPPORTED_STRATEGY",
+    "disqualification_reason": "writeback island is not wired",
+    "external_holdout_status": "NOT_RUN",
+    "holdout_status": "NOT_RUN",
+    "pareto": false,
+    "policy_config": null,
+    "policy_id": "M8_REGISTER_WRITEBACK_ISLAND",
+    "stage": "A"
+  },
+  {
+    "abi": "PASS",
+    "correctness": "PASS",
+    "determinism": "PASS",
+    "discovery_status": "PASS",
+    "disqualification_reason": null,
+    "external_holdout_status": "NOT_AVAILABLE_READ_ONLY",
+    "frame_ratio": 1.0,
+    "holdout_metrics": {
+      "address_recomputations": 371,
+      "branches": 1962,
+      "callee_save_traffic": 4,
+      "caller_save_traffic": 35,
+      "calls": 329,
+      "frame_bytes": 1872,
+      "instructions": 11325,
+      "leas": 371,
+      "loads": 16,
+      "memory_operands": 151,
+      "movs": 3610,
+      "pops": 486,
+      "pushes": 482,
+      "reloads": 16,
+      "self_movs": 0,
+      "spills": 104,
+      "spills_reload": 151,
+      "stack_loads": 16,
+      "stack_ops": 151,
+      "stack_stores": 104,
+      "stores": 104,
+      "text_bytes": 0,
+      "total_load_store": 120
+    },
+    "holdout_status": "PASS_SYNTHETIC_AND_EXISTING_REGRESSION",
+    "instruction_ratio": 1.0,
+    "memory_traffic_ratio": 1.0,
+    "metrics": {
+      "address_recomputations": 846,
+      "branches": 4397,
+      "callee_save_traffic": 13,
+      "caller_save_traffic": 70,
+      "calls": 726,
+      "frame_bytes": 4048,
+      "instructions": 25347,
+      "leas": 846,
+      "loads": 32,
+      "memory_operands": 329,
+      "movs": 8092,
+      "pops": 1080,
+      "pushes": 1066,
+      "reloads": 32,
+      "self_movs": 0,
+      "spills": 228,
+      "spills_reload": 329,
+      "stack_loads": 32,
+      "stack_ops": 329,
+      "stack_stores": 228,
+      "stores": 228,
+      "text_bytes": 0,
+      "total_load_store": 260
+    },
+    "outputs": [
+      {
+        "assembly_lines": 1535,
+        "assembly_sha256": "3f594c9d6c2623e7dd0248ed711fa941978b6fabee53d9249987a7cd59361607",
+        "case_id": "D01",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1634,
+        "assembly_sha256": "d6ec847438fd3c4da1ddfcbd0f215e70efd5d031c74cd05e8bdd65424958e8f5",
+        "case_id": "D02",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1719,
+        "assembly_sha256": "82c34673ba9bacf1772eff8508b74b92d78ad5b5094530ccc05af529e9ac93df",
+        "case_id": "D03",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1617,
+        "assembly_sha256": "6755b5a2bea561f9dae89207ab6f2b36be79a07bd13d7884a0a96078306a96d6",
+        "case_id": "D04",
+        "group": "discovery",
+        "oracle": 10
+      },
+      {
+        "assembly_lines": 1659,
+        "assembly_sha256": "d56905663f927f4bb73790fdd38f454e76b02470befedb9e47288962e8ececfc",
+        "case_id": "D05",
+        "group": "discovery",
+        "oracle": 8
+      },
+      {
+        "assembly_lines": 1922,
+        "assembly_sha256": "3744f7d4dc1267c2fa224b5cd5aa424bbf88cdf073141ac4c8d63bf2a09d35a6",
+        "case_id": "D06",
+        "group": "discovery",
+        "oracle": 55
+      },
+      {
+        "assembly_lines": 1535,
+        "assembly_sha256": "f5fa1a1e3883cc9fe2778b60fb60ea386a136840657ba86e39feb7094dd21be9",
+        "case_id": "D07",
+        "group": "discovery",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1637,
+        "assembly_sha256": "004b15f7eb2e02dc624c2574d5cc75c4625201c0558be79c4b748c394916949e",
+        "case_id": "D08",
+        "group": "discovery",
+        "oracle": 14
+      },
+      {
+        "assembly_lines": 1709,
+        "assembly_sha256": "8ce946f861f403b1276d185c538324c2975f5c9cdf3166b882053fbd379d0a8c",
+        "case_id": "D09",
+        "group": "discovery",
+        "oracle": 6
+      },
+      {
+        "assembly_lines": 1699,
+        "assembly_sha256": "c36710b2fc71f1728fa9cf07bd659df24319e61b70deba1bb3ac6d80711b1497",
+        "case_id": "D10",
+        "group": "discovery",
+        "oracle": 11
+      },
+      {
+        "assembly_lines": 1888,
+        "assembly_sha256": "94967dc908c69d8cee60e6bbe44f02a2728eb91b171b8c6704c5142cb064acf5",
+        "case_id": "D11",
+        "group": "discovery",
+        "oracle": 21
+      },
+      {
+        "assembly_lines": 1636,
+        "assembly_sha256": "11fefc96d2527a0ab744122074fd84f42b014a9bc3f181e9d5c3d95f27deac78",
+        "case_id": "D12",
+        "group": "discovery",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1648,
+        "assembly_sha256": "e3c847fa897db0b0be2d83ef877463c1bff348a5021b027939cc5ca18951d147",
+        "case_id": "D13",
+        "group": "discovery",
+        "oracle": 8
+      },
+      {
+        "assembly_lines": 1677,
+        "assembly_sha256": "495ff4e21f2493193bca6512be027c38dee0c6c4afa475c385da7988d0740cd0",
+        "case_id": "D14",
+        "group": "discovery",
+        "oracle": 9
+      },
+      {
+        "assembly_lines": 1723,
+        "assembly_sha256": "80b27ec65ff586e186a6c3c5a1497d67a9497013d4f6a28180d3b2fb2120a5ac",
+        "case_id": "D15",
+        "group": "discovery",
+        "oracle": 3
+      },
+      {
+        "assembly_lines": 1761,
+        "assembly_sha256": "7e17fe1127a8257cd6822a1e837080a0207fdd8eae94b348da3b43de92af6ce6",
+        "case_id": "D16",
+        "group": "discovery",
+        "oracle": 23
+      },
+      {
+        "assembly_lines": 1587,
+        "assembly_sha256": "91721da7c63cbaecd0134b6a0905bd1ccad277eb20e6f49a2d7c84f7b85bfc4d",
+        "case_id": "D17",
+        "group": "discovery",
+        "oracle": 3
+      },
+      {
+        "assembly_lines": 1565,
+        "assembly_sha256": "c0fe8405f89926804b5f7a089c5eadd658e1e2ce3e581289af3a64271c648965",
+        "case_id": "D18",
+        "group": "discovery",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1565,
+        "assembly_sha256": "8cf262ddcae648faa21f0c7980b6668afa1d9e447b9f2cd11f0c8e42e3059454",
+        "case_id": "D19",
+        "group": "discovery",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1761,
+        "assembly_sha256": "8bef7deee48c1295e38006e573bbb50f331b83ad726d6595bc27a70408e89fe1",
+        "case_id": "D20",
+        "group": "discovery",
+        "oracle": 26
+      },
+      {
+        "assembly_lines": 1665,
+        "assembly_sha256": "bae9c150d6a570b173c03b44194e848c1cd6879b74769b05990a9cdab8265079",
+        "case_id": "H01",
+        "group": "holdout",
+        "oracle": 5
+      },
+      {
+        "assembly_lines": 1711,
+        "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+        "case_id": "H02",
+        "group": "holdout",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1636,
+        "assembly_sha256": "3f2b00a8ed1e57a2c7789084141d4a8be3767fea86a5a2c661f22311ec6d403e",
+        "case_id": "H03",
+        "group": "holdout",
+        "oracle": 14
+      },
+      {
+        "assembly_lines": 1565,
+        "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+        "case_id": "H04",
+        "group": "holdout",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1709,
+        "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+        "case_id": "H05",
+        "group": "holdout",
+        "oracle": 32
+      },
+      {
+        "assembly_lines": 1739,
+        "assembly_sha256": "8864918e2367e9defe6d9cfdea875acf1885350c55f736d96061042de60669c7",
+        "case_id": "H06",
+        "group": "holdout",
+        "oracle": 17
+      },
+      {
+        "assembly_lines": 1664,
+        "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+        "case_id": "E01",
+        "group": "holdout-existing",
+        "oracle": 15
+      },
+      {
+        "assembly_lines": 1581,
+        "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+        "case_id": "E02",
+        "group": "holdout-existing",
+        "oracle": 6
+      },
+      {
+        "assembly_lines": 1709,
+        "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+        "case_id": "E03",
+        "group": "holdout-existing",
+        "oracle": -1
+      }
+    ],
+    "pareto": true,
+    "policy_config": {
+      "call_register_order": [
+        "rbx",
+        "r12",
+        "r13",
+        "r14",
+        "r15",
+        "rdi",
+        "rsi",
+        "rdx",
+        "rcx",
+        "r8",
+        "r9"
+      ],
+      "call_residence": "whole_function_frame_fallback",
+      "indexed_memory_policy": "canonical",
+      "load_forwarding": "disabled",
+      "move_coalescing": "disabled",
+      "name": "caller_first",
+      "register_order": [
+        "rdi",
+        "rsi",
+        "rdx",
+        "rcx",
+        "r8",
+        "r9",
+        "rbx",
+        "r12",
+        "r13",
+        "r14",
+        "r15"
+      ],
+      "residence_scope": "single_definition_cross_block",
+      "scalar_promotion": "disabled",
+      "spill_policy": "stack_on_exhaustion",
+      "writeback_policy": "canonical"
+    },
+    "policy_id": "R1_CALLER_FIRST",
+    "ratios": {
+      "address_recomputations": 1.0,
+      "frame_bytes": 1.0,
+      "instructions": 1.0,
+      "movs": 1.0,
+      "spills_reload": 1.0,
+      "stack_ops": 1.0,
+      "text_bytes": 1.0,
+      "total_load_store": 1.0
+    },
+    "stack_traffic_ratio": 1.0,
+    "stage": "A",
+    "text_size_ratio": 1.0
+  },
+  {
+    "abi": "PASS",
+    "correctness": "PASS",
+    "determinism": "PASS",
+    "discovery_status": "PASS",
+    "disqualification_reason": null,
+    "external_holdout_status": "NOT_AVAILABLE_READ_ONLY",
+    "frame_ratio": 1.0,
+    "holdout_metrics": {
+      "address_recomputations": 371,
+      "branches": 1962,
+      "callee_save_traffic": 67,
+      "caller_save_traffic": 23,
+      "calls": 329,
+      "frame_bytes": 1872,
+      "instructions": 11376,
+      "leas": 371,
+      "loads": 45,
+      "memory_operands": 202,
+      "movs": 3661,
+      "pops": 486,
+      "pushes": 482,
+      "reloads": 45,
+      "self_movs": 0,
+      "spills": 126,
+      "spills_reload": 202,
+      "stack_loads": 45,
+      "stack_ops": 202,
+      "stack_stores": 126,
+      "stores": 126,
+      "text_bytes": 0,
+      "total_load_store": 171
+    },
+    "holdout_status": "PASS_SYNTHETIC_AND_EXISTING_REGRESSION",
+    "instruction_ratio": 1.0041819544719297,
+    "memory_traffic_ratio": 1.4076923076923078,
+    "metrics": {
+      "address_recomputations": 846,
+      "branches": 4397,
+      "callee_save_traffic": 138,
+      "caller_save_traffic": 51,
+      "calls": 726,
+      "frame_bytes": 4048,
+      "instructions": 25453,
+      "leas": 846,
+      "loads": 89,
+      "memory_operands": 435,
+      "movs": 8198,
+      "pops": 1080,
+      "pushes": 1066,
+      "reloads": 89,
+      "self_movs": 0,
+      "spills": 277,
+      "spills_reload": 435,
+      "stack_loads": 89,
+      "stack_ops": 435,
+      "stack_stores": 277,
+      "stores": 277,
+      "text_bytes": 0,
+      "total_load_store": 366
+    },
+    "outputs": [
+      {
+        "assembly_lines": 1537,
+        "assembly_sha256": "97117404457509d801e4f7ce9226c248ce1eb7c244490729f002fd998aac2d0c",
+        "case_id": "D01",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1640,
+        "assembly_sha256": "f25c4abcf5a20060639e587cc0b541b3ca85d34235b20c2d5026ce02fa12eb9a",
+        "case_id": "D02",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1728,
+        "assembly_sha256": "f7be0b10d7a6a08372e30a1ce8fe576eb89042f361f57835415d1a7e4f4025e2",
+        "case_id": "D03",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1621,
+        "assembly_sha256": "0397857d445d7a5a1f648972497f9cd1aa12369b1b95a134cc38c17f0fff3ba5",
+        "case_id": "D04",
+        "group": "discovery",
+        "oracle": 10
+      },
+      {
+        "assembly_lines": 1665,
+        "assembly_sha256": "3eea073bd9ddb0de37c998f2d6f8e00e2dc5be17e4d41414d188d58a12e4e9c3",
+        "case_id": "D05",
+        "group": "discovery",
+        "oracle": 8
+      },
+      {
+        "assembly_lines": 1924,
+        "assembly_sha256": "2c57d7a302d6ed7e15d93f7fb37e1d4677cc8daed3c884fcb7c74448a39dd2b7",
+        "case_id": "D06",
+        "group": "discovery",
+        "oracle": 55
+      },
+      {
+        "assembly_lines": 1537,
+        "assembly_sha256": "b7b211bb7a90012df34d8ae8c78e1b01b1e743c7eb43d138080593c7970c04cd",
+        "case_id": "D07",
+        "group": "discovery",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1641,
+        "assembly_sha256": "067490a2a193c37a0a0dbffe145ccb789e4320bfae5751d09341d08494d6b011",
+        "case_id": "D08",
+        "group": "discovery",
+        "oracle": 14
+      },
+      {
+        "assembly_lines": 1715,
+        "assembly_sha256": "694b90b433543fe36befe9c0a48452dd0a33d897e36d8d1c3e607875828bcec7",
+        "case_id": "D09",
+        "group": "discovery",
+        "oracle": 6
+      },
+      {
+        "assembly_lines": 1703,
+        "assembly_sha256": "292c9388df29bdf83944426d69e53f7b231018f3035782f2dce27a7e4c24f15b",
+        "case_id": "D10",
+        "group": "discovery",
+        "oracle": 11
+      },
+      {
+        "assembly_lines": 1908,
+        "assembly_sha256": "853cc5482e17ff832c23fe160ffbd2937a5b6fa57de0523089610135466b6926",
+        "case_id": "D11",
+        "group": "discovery",
+        "oracle": 21
+      },
+      {
+        "assembly_lines": 1640,
+        "assembly_sha256": "3e76acc319addeb3a6a1dcb3351d1ed6db1db55c81da776589582961c5516218",
+        "case_id": "D12",
+        "group": "discovery",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1652,
+        "assembly_sha256": "9492597a0c8783b4740643b130ec6b723e56ba328744f427b2124a686310b2f7",
+        "case_id": "D13",
+        "group": "discovery",
+        "oracle": 8
+      },
+      {
+        "assembly_lines": 1681,
+        "assembly_sha256": "22164e4f1817a936ac79c5e741d918384a2bdb4bb6b38ad8d8e4debf5939c21c",
+        "case_id": "D14",
+        "group": "discovery",
+        "oracle": 9
+      },
+      {
+        "assembly_lines": 1732,
+        "assembly_sha256": "07099841cbbf5e83aa570954c52674711b98a151760e5df823fcb3fd8a42f5d9",
+        "case_id": "D15",
+        "group": "discovery",
+        "oracle": 3
+      },
+      {
+        "assembly_lines": 1767,
+        "assembly_sha256": "ebc1f3be21b41b267838079a505c65ee0b2c86a07e51a58ba71e4edd6874653b",
+        "case_id": "D16",
+        "group": "discovery",
+        "oracle": 23
+      },
+      {
+        "assembly_lines": 1591,
+        "assembly_sha256": "feb2590a28740454cf1fb13724b6effd31d3a05e813aab9d95dd9c3eb17dea74",
+        "case_id": "D17",
+        "group": "discovery",
+        "oracle": 3
+      },
+      {
+        "assembly_lines": 1567,
+        "assembly_sha256": "0919e1fd5dd5341299bfa7a96caefdd715120b8235adc57188c432040c679431",
+        "case_id": "D18",
+        "group": "discovery",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1567,
+        "assembly_sha256": "075e055a49055cdaf7ee6411b37791891d21a72acf08a1e5a9b305bc3cf1a8d4",
+        "case_id": "D19",
+        "group": "discovery",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1767,
+        "assembly_sha256": "aeeead47349c993958810d1a8cad2a29e04472ffbb926f35e73db3c275f5546e",
+        "case_id": "D20",
+        "group": "discovery",
+        "oracle": 26
+      },
+      {
+        "assembly_lines": 1674,
+        "assembly_sha256": "7feda29a302211fbcff0edf7d11cd2629d4d08255563082ce55175eaf8b3c959",
+        "case_id": "H01",
+        "group": "holdout",
+        "oracle": 5
+      },
+      {
+        "assembly_lines": 1715,
+        "assembly_sha256": "e9222853fb6598d45fcb62528acd2463b568f50cece972d9645032bd027166b4",
+        "case_id": "H02",
+        "group": "holdout",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1640,
+        "assembly_sha256": "def179660735b1540bbf644ec60d7aceed2c1f55317dbfe6700982869bd53e42",
+        "case_id": "H03",
+        "group": "holdout",
+        "oracle": 14
+      },
+      {
+        "assembly_lines": 1567,
+        "assembly_sha256": "9610e66a30d8c2f2e7a8a65a886bc088975dc1c4955d3b845b0a57f8b3708f4d",
+        "case_id": "H04",
+        "group": "holdout",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1715,
+        "assembly_sha256": "77cf995d2739929bb2ae1407a413a4e73f784d2bf8c461724a4ab80a64ab69c5",
+        "case_id": "H05",
+        "group": "holdout",
+        "oracle": 32
+      },
+      {
+        "assembly_lines": 1745,
+        "assembly_sha256": "c576406d2ffebb2ee62796e3b32aa86e492794bbbbf200d5ba17e0cf996989e2",
+        "case_id": "H06",
+        "group": "holdout",
+        "oracle": 17
+      },
+      {
+        "assembly_lines": 1672,
+        "assembly_sha256": "15b91dcedf62fbe26c7081adfcd6841ce98919063aae542d2e61af9e60fe2624",
+        "case_id": "E01",
+        "group": "holdout-existing",
+        "oracle": 15
+      },
+      {
+        "assembly_lines": 1583,
+        "assembly_sha256": "ca8b3caeffe5332975d79e72dd78b92e4e65a6715e11c6e96a088b780a2500b1",
+        "case_id": "E02",
+        "group": "holdout-existing",
+        "oracle": 6
+      },
+      {
+        "assembly_lines": 1719,
+        "assembly_sha256": "34689219c4e9b49a62a4065e4acecb1c32730cd5a3018e2f13d4ea43ef3b0e11",
+        "case_id": "E03",
+        "group": "holdout-existing",
+        "oracle": -1
+      }
+    ],
+    "pareto": false,
+    "policy_config": {
+      "call_register_order": [
+        "rbx",
+        "r12",
+        "r13",
+        "r14",
+        "r15",
+        "rdi",
+        "rsi",
+        "rdx",
+        "rcx",
+        "r8",
+        "r9"
+      ],
+      "call_residence": "whole_function_frame_fallback",
+      "indexed_memory_policy": "canonical",
+      "load_forwarding": "disabled",
+      "move_coalescing": "disabled",
+      "name": "callee_first",
+      "register_order": [
+        "rbx",
+        "r12",
+        "r13",
+        "r14",
+        "r15",
+        "rdi",
+        "rsi",
+        "rdx",
+        "rcx",
+        "r8",
+        "r9"
+      ],
+      "residence_scope": "single_definition_cross_block",
+      "scalar_promotion": "disabled",
+      "spill_policy": "stack_on_exhaustion",
+      "writeback_policy": "canonical"
+    },
+    "policy_id": "R2_CALLEE_FIRST",
+    "ratios": {
+      "address_recomputations": 1.0,
+      "frame_bytes": 1.0,
+      "instructions": 1.0041819544719297,
+      "movs": 1.0130993573900149,
+      "spills_reload": 1.3221884498480243,
+      "stack_ops": 1.3221884498480243,
+      "text_bytes": 1.0,
+      "total_load_store": 1.4076923076923078
+    },
+    "stack_traffic_ratio": 1.3221884498480243,
+    "stage": "A",
+    "text_size_ratio": 1.0
+  },
+  {
+    "abi": "PASS",
+    "correctness": "PASS",
+    "determinism": "PASS",
+    "discovery_status": "PASS",
+    "disqualification_reason": null,
+    "external_holdout_status": "NOT_AVAILABLE_READ_ONLY",
+    "frame_ratio": 1.0,
+    "holdout_metrics": {
+      "address_recomputations": 371,
+      "branches": 1962,
+      "callee_save_traffic": 19,
+      "caller_save_traffic": 35,
+      "calls": 329,
+      "frame_bytes": 1872,
+      "instructions": 11340,
+      "leas": 371,
+      "loads": 25,
+      "memory_operands": 166,
+      "movs": 3625,
+      "pops": 486,
+      "pushes": 482,
+      "reloads": 25,
+      "self_movs": 0,
+      "spills": 110,
+      "spills_reload": 166,
+      "stack_loads": 25,
+      "stack_ops": 166,
+      "stack_stores": 110,
+      "stores": 110,
+      "text_bytes": 0,
+      "total_load_store": 135
+    },
+    "holdout_status": "PASS_SYNTHETIC_AND_EXISTING_REGRESSION",
+    "instruction_ratio": 1.0015386436264646,
+    "memory_traffic_ratio": 1.15,
+    "metrics": {
+      "address_recomputations": 846,
+      "branches": 4397,
+      "callee_save_traffic": 55,
+      "caller_save_traffic": 67,
+      "calls": 726,
+      "frame_bytes": 4048,
+      "instructions": 25386,
+      "leas": 846,
+      "loads": 53,
+      "memory_operands": 368,
+      "movs": 8131,
+      "pops": 1080,
+      "pushes": 1066,
+      "reloads": 53,
+      "self_movs": 0,
+      "spills": 246,
+      "spills_reload": 368,
+      "stack_loads": 53,
+      "stack_ops": 368,
+      "stack_stores": 246,
+      "stores": 246,
+      "text_bytes": 0,
+      "total_load_store": 299
+    },
+    "outputs": [
+      {
+        "assembly_lines": 1535,
+        "assembly_sha256": "3f594c9d6c2623e7dd0248ed711fa941978b6fabee53d9249987a7cd59361607",
+        "case_id": "D01",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1637,
+        "assembly_sha256": "3a0eeea12874d26c09dc5a3370ad70e8c95bef46497cf37ab6521bc5318b4332",
+        "case_id": "D02",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1722,
+        "assembly_sha256": "d646c8c579f893e5f78d90b1fe20e741848789819eddae40ae3c67b775d1d97f",
+        "case_id": "D03",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1619,
+        "assembly_sha256": "58457253c22fe03d45bdacf4fe652c4b7801664f0b38d8fda047fc065f6806ce",
+        "case_id": "D04",
+        "group": "discovery",
+        "oracle": 10
+      },
+      {
+        "assembly_lines": 1661,
+        "assembly_sha256": "9ef038516c1e23b6486df8ca2253b48d37b87e50269a21890b79f5bea8ccd1e2",
+        "case_id": "D05",
+        "group": "discovery",
+        "oracle": 8
+      },
+      {
+        "assembly_lines": 1924,
+        "assembly_sha256": "5cfaf9961c1224a7eb014dbcc8711100df8f8d0381c457c835feb36853567025",
+        "case_id": "D06",
+        "group": "discovery",
+        "oracle": 55
+      },
+      {
+        "assembly_lines": 1535,
+        "assembly_sha256": "f5fa1a1e3883cc9fe2778b60fb60ea386a136840657ba86e39feb7094dd21be9",
+        "case_id": "D07",
+        "group": "discovery",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1637,
+        "assembly_sha256": "004b15f7eb2e02dc624c2574d5cc75c4625201c0558be79c4b748c394916949e",
+        "case_id": "D08",
+        "group": "discovery",
+        "oracle": 14
+      },
+      {
+        "assembly_lines": 1709,
+        "assembly_sha256": "8ce946f861f403b1276d185c538324c2975f5c9cdf3166b882053fbd379d0a8c",
+        "case_id": "D09",
+        "group": "discovery",
+        "oracle": 6
+      },
+      {
+        "assembly_lines": 1699,
+        "assembly_sha256": "fbe028aa20c6b5dcdd1028f434d436c5dd14a90a205980602ce5c889a630b83a",
+        "case_id": "D10",
+        "group": "discovery",
+        "oracle": 11
+      },
+      {
+        "assembly_lines": 1900,
+        "assembly_sha256": "373c892f50ff663f9294c96eb20fdf18fd0075678c8e8f219933474c870f62e7",
+        "case_id": "D11",
+        "group": "discovery",
+        "oracle": 21
+      },
+      {
+        "assembly_lines": 1638,
+        "assembly_sha256": "ffea2f48b703aba059f1b5ebb3ec2b5db99c6cf5efe42d0f321c77669fac2810",
+        "case_id": "D12",
+        "group": "discovery",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1650,
+        "assembly_sha256": "4015c56dd49e7ffd85dd0721f856075802273b07123da97da43254598de1a9bf",
+        "case_id": "D13",
+        "group": "discovery",
+        "oracle": 8
+      },
+      {
+        "assembly_lines": 1679,
+        "assembly_sha256": "39a85166d656bce0c6be767bccac88fc1449975b32b8089102f6cc291d795419",
+        "case_id": "D14",
+        "group": "discovery",
+        "oracle": 9
+      },
+      {
+        "assembly_lines": 1726,
+        "assembly_sha256": "d9fdf137f55d28070d38118cefe4922c125bfeb2d89173db5b7bcb3820d49344",
+        "case_id": "D15",
+        "group": "discovery",
+        "oracle": 3
+      },
+      {
+        "assembly_lines": 1763,
+        "assembly_sha256": "925565ac83f87b1aff32c5f90a5c932f31dcc8bd23a17125572bfd000aac3b54",
+        "case_id": "D16",
+        "group": "discovery",
+        "oracle": 23
+      },
+      {
+        "assembly_lines": 1589,
+        "assembly_sha256": "a39cdd52dd440ecbab60d4f9372251488adabde78d7e6cc09c53f8f82d6f5350",
+        "case_id": "D17",
+        "group": "discovery",
+        "oracle": 3
+      },
+      {
+        "assembly_lines": 1565,
+        "assembly_sha256": "c0fe8405f89926804b5f7a089c5eadd658e1e2ce3e581289af3a64271c648965",
+        "case_id": "D18",
+        "group": "discovery",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1565,
+        "assembly_sha256": "8cf262ddcae648faa21f0c7980b6668afa1d9e447b9f2cd11f0c8e42e3059454",
+        "case_id": "D19",
+        "group": "discovery",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1763,
+        "assembly_sha256": "10447c1edee0acd584dcff75c5c0c0e1982c91ea48c820d766c244d8cc510e35",
+        "case_id": "D20",
+        "group": "discovery",
+        "oracle": 26
+      },
+      {
+        "assembly_lines": 1668,
+        "assembly_sha256": "d753e0be3a13f8da623906677bd59d1351d01c7b96aa88c15cc6d7d486877522",
+        "case_id": "H01",
+        "group": "holdout",
+        "oracle": 5
+      },
+      {
+        "assembly_lines": 1711,
+        "assembly_sha256": "157a2222756cee47065f3ebb576926349a1af08adf6754bde6b693df8793b01a",
+        "case_id": "H02",
+        "group": "holdout",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1638,
+        "assembly_sha256": "c9fea646241f2bcd849516f1c7ddfdd5eb325701356e5a8033688a371249bb6f",
+        "case_id": "H03",
+        "group": "holdout",
+        "oracle": 14
+      },
+      {
+        "assembly_lines": 1565,
+        "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+        "case_id": "H04",
+        "group": "holdout",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1709,
+        "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+        "case_id": "H05",
+        "group": "holdout",
+        "oracle": 32
+      },
+      {
+        "assembly_lines": 1741,
+        "assembly_sha256": "48250fb9c9e6e722cf2b329600812180bfd58096db7f7e597fa04d8881ddc483",
+        "case_id": "H06",
+        "group": "holdout",
+        "oracle": 17
+      },
+      {
+        "assembly_lines": 1668,
+        "assembly_sha256": "62bef588685586aac2fc8e29cfb47875fa4980fb7726e817a99192e954beb6c1",
+        "case_id": "E01",
+        "group": "holdout-existing",
+        "oracle": 15
+      },
+      {
+        "assembly_lines": 1581,
+        "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+        "case_id": "E02",
+        "group": "holdout-existing",
+        "oracle": 6
+      },
+      {
+        "assembly_lines": 1713,
+        "assembly_sha256": "7d32ea32d58bd29c698fdfa5c12f4cc628e0268b99388d2a60c0443fef425348",
+        "case_id": "E03",
+        "group": "holdout-existing",
+        "oracle": -1
+      }
+    ],
+    "pareto": false,
+    "policy_config": {
+      "call_register_order": [
+        "rdi",
+        "rbx",
+        "rsi",
+        "r12",
+        "rdx",
+        "r13",
+        "rcx",
+        "r14",
+        "r8",
+        "r15",
+        "r9"
+      ],
+      "call_residence": "whole_function_frame_fallback",
+      "indexed_memory_policy": "canonical",
+      "load_forwarding": "disabled",
+      "move_coalescing": "disabled",
+      "name": "interleaved",
+      "register_order": [
+        "rdi",
+        "rbx",
+        "rsi",
+        "r12",
+        "rdx",
+        "r13",
+        "rcx",
+        "r14",
+        "r8",
+        "r15",
+        "r9"
+      ],
+      "residence_scope": "single_definition_cross_block",
+      "scalar_promotion": "disabled",
+      "spill_policy": "stack_on_exhaustion",
+      "writeback_policy": "canonical"
+    },
+    "policy_id": "R3_INTERLEAVED",
+    "ratios": {
+      "address_recomputations": 1.0,
+      "frame_bytes": 1.0,
+      "instructions": 1.0015386436264646,
+      "movs": 1.004819574888779,
+      "spills_reload": 1.1185410334346504,
+      "stack_ops": 1.1185410334346504,
+      "text_bytes": 1.0,
+      "total_load_store": 1.15
+    },
+    "stack_traffic_ratio": 1.1185410334346504,
+    "stage": "A",
+    "text_size_ratio": 1.0
+  },
+  {
+    "abi": "PASS",
+    "correctness": "PASS",
+    "determinism": "PASS",
+    "discovery_status": "PASS",
+    "disqualification_reason": null,
+    "external_holdout_status": "NOT_AVAILABLE_READ_ONLY",
+    "frame_ratio": 1.0,
+    "holdout_metrics": {
+      "address_recomputations": 371,
+      "branches": 1962,
+      "callee_save_traffic": 4,
+      "caller_save_traffic": 35,
+      "calls": 329,
+      "frame_bytes": 1872,
+      "instructions": 11325,
+      "leas": 371,
+      "loads": 16,
+      "memory_operands": 151,
+      "movs": 3610,
+      "pops": 486,
+      "pushes": 482,
+      "reloads": 16,
+      "self_movs": 0,
+      "spills": 104,
+      "spills_reload": 151,
+      "stack_loads": 16,
+      "stack_ops": 151,
+      "stack_stores": 104,
+      "stores": 104,
+      "text_bytes": 0,
+      "total_load_store": 120
+    },
+    "holdout_status": "PASS_SYNTHETIC_AND_EXISTING_REGRESSION",
+    "instruction_ratio": 1.0,
+    "memory_traffic_ratio": 1.0,
+    "metrics": {
+      "address_recomputations": 846,
+      "branches": 4397,
+      "callee_save_traffic": 13,
+      "caller_save_traffic": 70,
+      "calls": 726,
+      "frame_bytes": 4048,
+      "instructions": 25347,
+      "leas": 846,
+      "loads": 32,
+      "memory_operands": 329,
+      "movs": 8092,
+      "pops": 1080,
+      "pushes": 1066,
+      "reloads": 32,
+      "self_movs": 0,
+      "spills": 228,
+      "spills_reload": 329,
+      "stack_loads": 32,
+      "stack_ops": 329,
+      "stack_stores": 228,
+      "stores": 228,
+      "text_bytes": 0,
+      "total_load_store": 260
+    },
+    "outputs": [
+      {
+        "assembly_lines": 1535,
+        "assembly_sha256": "3f594c9d6c2623e7dd0248ed711fa941978b6fabee53d9249987a7cd59361607",
+        "case_id": "D01",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1634,
+        "assembly_sha256": "d6ec847438fd3c4da1ddfcbd0f215e70efd5d031c74cd05e8bdd65424958e8f5",
+        "case_id": "D02",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1719,
+        "assembly_sha256": "82c34673ba9bacf1772eff8508b74b92d78ad5b5094530ccc05af529e9ac93df",
+        "case_id": "D03",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1617,
+        "assembly_sha256": "6755b5a2bea561f9dae89207ab6f2b36be79a07bd13d7884a0a96078306a96d6",
+        "case_id": "D04",
+        "group": "discovery",
+        "oracle": 10
+      },
+      {
+        "assembly_lines": 1659,
+        "assembly_sha256": "d56905663f927f4bb73790fdd38f454e76b02470befedb9e47288962e8ececfc",
+        "case_id": "D05",
+        "group": "discovery",
+        "oracle": 8
+      },
+      {
+        "assembly_lines": 1922,
+        "assembly_sha256": "3744f7d4dc1267c2fa224b5cd5aa424bbf88cdf073141ac4c8d63bf2a09d35a6",
+        "case_id": "D06",
+        "group": "discovery",
+        "oracle": 55
+      },
+      {
+        "assembly_lines": 1535,
+        "assembly_sha256": "f5fa1a1e3883cc9fe2778b60fb60ea386a136840657ba86e39feb7094dd21be9",
+        "case_id": "D07",
+        "group": "discovery",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1637,
+        "assembly_sha256": "004b15f7eb2e02dc624c2574d5cc75c4625201c0558be79c4b748c394916949e",
+        "case_id": "D08",
+        "group": "discovery",
+        "oracle": 14
+      },
+      {
+        "assembly_lines": 1709,
+        "assembly_sha256": "8ce946f861f403b1276d185c538324c2975f5c9cdf3166b882053fbd379d0a8c",
+        "case_id": "D09",
+        "group": "discovery",
+        "oracle": 6
+      },
+      {
+        "assembly_lines": 1699,
+        "assembly_sha256": "c36710b2fc71f1728fa9cf07bd659df24319e61b70deba1bb3ac6d80711b1497",
+        "case_id": "D10",
+        "group": "discovery",
+        "oracle": 11
+      },
+      {
+        "assembly_lines": 1888,
+        "assembly_sha256": "94967dc908c69d8cee60e6bbe44f02a2728eb91b171b8c6704c5142cb064acf5",
+        "case_id": "D11",
+        "group": "discovery",
+        "oracle": 21
+      },
+      {
+        "assembly_lines": 1636,
+        "assembly_sha256": "11fefc96d2527a0ab744122074fd84f42b014a9bc3f181e9d5c3d95f27deac78",
+        "case_id": "D12",
+        "group": "discovery",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1648,
+        "assembly_sha256": "e3c847fa897db0b0be2d83ef877463c1bff348a5021b027939cc5ca18951d147",
+        "case_id": "D13",
+        "group": "discovery",
+        "oracle": 8
+      },
+      {
+        "assembly_lines": 1677,
+        "assembly_sha256": "495ff4e21f2493193bca6512be027c38dee0c6c4afa475c385da7988d0740cd0",
+        "case_id": "D14",
+        "group": "discovery",
+        "oracle": 9
+      },
+      {
+        "assembly_lines": 1723,
+        "assembly_sha256": "80b27ec65ff586e186a6c3c5a1497d67a9497013d4f6a28180d3b2fb2120a5ac",
+        "case_id": "D15",
+        "group": "discovery",
+        "oracle": 3
+      },
+      {
+        "assembly_lines": 1761,
+        "assembly_sha256": "7e17fe1127a8257cd6822a1e837080a0207fdd8eae94b348da3b43de92af6ce6",
+        "case_id": "D16",
+        "group": "discovery",
+        "oracle": 23
+      },
+      {
+        "assembly_lines": 1587,
+        "assembly_sha256": "91721da7c63cbaecd0134b6a0905bd1ccad277eb20e6f49a2d7c84f7b85bfc4d",
+        "case_id": "D17",
+        "group": "discovery",
+        "oracle": 3
+      },
+      {
+        "assembly_lines": 1565,
+        "assembly_sha256": "c0fe8405f89926804b5f7a089c5eadd658e1e2ce3e581289af3a64271c648965",
+        "case_id": "D18",
+        "group": "discovery",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1565,
+        "assembly_sha256": "8cf262ddcae648faa21f0c7980b6668afa1d9e447b9f2cd11f0c8e42e3059454",
+        "case_id": "D19",
+        "group": "discovery",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1761,
+        "assembly_sha256": "8bef7deee48c1295e38006e573bbb50f331b83ad726d6595bc27a70408e89fe1",
+        "case_id": "D20",
+        "group": "discovery",
+        "oracle": 26
+      },
+      {
+        "assembly_lines": 1665,
+        "assembly_sha256": "bae9c150d6a570b173c03b44194e848c1cd6879b74769b05990a9cdab8265079",
+        "case_id": "H01",
+        "group": "holdout",
+        "oracle": 5
+      },
+      {
+        "assembly_lines": 1711,
+        "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+        "case_id": "H02",
+        "group": "holdout",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1636,
+        "assembly_sha256": "3f2b00a8ed1e57a2c7789084141d4a8be3767fea86a5a2c661f22311ec6d403e",
+        "case_id": "H03",
+        "group": "holdout",
+        "oracle": 14
+      },
+      {
+        "assembly_lines": 1565,
+        "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+        "case_id": "H04",
+        "group": "holdout",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1709,
+        "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+        "case_id": "H05",
+        "group": "holdout",
+        "oracle": 32
+      },
+      {
+        "assembly_lines": 1739,
+        "assembly_sha256": "8864918e2367e9defe6d9cfdea875acf1885350c55f736d96061042de60669c7",
+        "case_id": "H06",
+        "group": "holdout",
+        "oracle": 17
+      },
+      {
+        "assembly_lines": 1664,
+        "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+        "case_id": "E01",
+        "group": "holdout-existing",
+        "oracle": 15
+      },
+      {
+        "assembly_lines": 1581,
+        "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+        "case_id": "E02",
+        "group": "holdout-existing",
+        "oracle": 6
+      },
+      {
+        "assembly_lines": 1709,
+        "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+        "case_id": "E03",
+        "group": "holdout-existing",
+        "oracle": -1
+      }
+    ],
+    "pareto": true,
+    "policy_config": {
+      "call_register_order": [
+        "rbx",
+        "r12",
+        "r13",
+        "r14",
+        "r15",
+        "rdi",
+        "rsi",
+        "rdx",
+        "rcx",
+        "r8",
+        "r9"
+      ],
+      "call_residence": "whole_function_frame_fallback",
+      "indexed_memory_policy": "canonical",
+      "load_forwarding": "disabled",
+      "move_coalescing": "disabled",
+      "name": "baseline",
+      "register_order": [
+        "rdi",
+        "rsi",
+        "rdx",
+        "rcx",
+        "r8",
+        "r9",
+        "rbx",
+        "r12",
+        "r13",
+        "r14",
+        "r15"
+      ],
+      "residence_scope": "single_definition_cross_block",
+      "scalar_promotion": "disabled",
+      "spill_policy": "stack_on_exhaustion",
+      "writeback_policy": "canonical"
+    },
+    "policy_id": "R4_SHORT_CALLER_LONG_CALLEE",
+    "ratios": {
+      "address_recomputations": 1.0,
+      "frame_bytes": 1.0,
+      "instructions": 1.0,
+      "movs": 1.0,
+      "spills_reload": 1.0,
+      "stack_ops": 1.0,
+      "text_bytes": 1.0,
+      "total_load_store": 1.0
+    },
+    "stack_traffic_ratio": 1.0,
+    "stage": "A",
+    "text_size_ratio": 1.0
+  },
+  {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN",
+    "discovery_status": "DISQUALIFIED_UNSUPPORTED_STRATEGY",
+    "disqualification_reason": "use-count weighting is not wired",
+    "external_holdout_status": "NOT_RUN",
+    "holdout_status": "NOT_RUN",
+    "pareto": false,
+    "policy_config": null,
+    "policy_id": "R5_USE_COUNT_WEIGHTED",
+    "stage": "A"
+  },
+  {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN",
+    "discovery_status": "DISQUALIFIED_UNSUPPORTED_STRATEGY",
+    "disqualification_reason": "loop weighting is not wired",
+    "external_holdout_status": "NOT_RUN",
+    "holdout_status": "NOT_RUN",
+    "pareto": false,
+    "policy_config": null,
+    "policy_id": "R6_LOOP_WEIGHTED",
+    "stage": "A"
+  },
+  {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN",
+    "discovery_status": "DISQUALIFIED_UNSUPPORTED_STRATEGY",
+    "disqualification_reason": "spill-cost weighting is not wired",
+    "external_holdout_status": "NOT_RUN",
+    "holdout_status": "NOT_RUN",
+    "pareto": false,
+    "policy_config": null,
+    "policy_id": "R7_SPILL_COST_WEIGHTED",
+    "stage": "A"
+  },
+  {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN",
+    "discovery_status": "DISQUALIFIED_UNSUPPORTED_STRATEGY",
+    "disqualification_reason": "move affinity is not wired",
+    "external_holdout_status": "NOT_RUN",
+    "holdout_status": "NOT_RUN",
+    "pareto": false,
+    "policy_config": null,
+    "policy_id": "R8_MOVE_AFFINITY",
+    "stage": "A"
+  },
+  {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN",
+    "discovery_status": "DISQUALIFIED_UNSUPPORTED_STRATEGY",
+    "disqualification_reason": "region residence is not wired",
+    "external_holdout_status": "NOT_RUN",
+    "holdout_status": "NOT_RUN",
+    "pareto": false,
+    "policy_config": null,
+    "policy_id": "R10_REGION_RESIDENCE",
+    "stage": "A"
+  },
+  {
+    "abi": "PASS",
+    "correctness": "PASS",
+    "determinism": "PASS",
+    "discovery_status": "PASS",
+    "disqualification_reason": null,
+    "external_holdout_status": "NOT_AVAILABLE_READ_ONLY",
+    "frame_ratio": 1.0,
+    "holdout_metrics": {
+      "address_recomputations": 371,
+      "branches": 1962,
+      "callee_save_traffic": 4,
+      "caller_save_traffic": 35,
+      "calls": 329,
+      "frame_bytes": 1872,
+      "instructions": 11325,
+      "leas": 371,
+      "loads": 16,
+      "memory_operands": 151,
+      "movs": 3610,
+      "pops": 486,
+      "pushes": 482,
+      "reloads": 16,
+      "self_movs": 0,
+      "spills": 104,
+      "spills_reload": 151,
+      "stack_loads": 16,
+      "stack_ops": 151,
+      "stack_stores": 104,
+      "stores": 104,
+      "text_bytes": 0,
+      "total_load_store": 120
+    },
+    "holdout_status": "PASS_SYNTHETIC_AND_EXISTING_REGRESSION",
+    "instruction_ratio": 1.0,
+    "memory_traffic_ratio": 1.0,
+    "metrics": {
+      "address_recomputations": 846,
+      "branches": 4397,
+      "callee_save_traffic": 13,
+      "caller_save_traffic": 70,
+      "calls": 726,
+      "frame_bytes": 4048,
+      "instructions": 25347,
+      "leas": 846,
+      "loads": 32,
+      "memory_operands": 329,
+      "movs": 8092,
+      "pops": 1080,
+      "pushes": 1066,
+      "reloads": 32,
+      "self_movs": 0,
+      "spills": 228,
+      "spills_reload": 329,
+      "stack_loads": 32,
+      "stack_ops": 329,
+      "stack_stores": 228,
+      "stores": 228,
+      "text_bytes": 0,
+      "total_load_store": 260
+    },
+    "outputs": [
+      {
+        "assembly_lines": 1535,
+        "assembly_sha256": "3f594c9d6c2623e7dd0248ed711fa941978b6fabee53d9249987a7cd59361607",
+        "case_id": "D01",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1634,
+        "assembly_sha256": "d6ec847438fd3c4da1ddfcbd0f215e70efd5d031c74cd05e8bdd65424958e8f5",
+        "case_id": "D02",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1719,
+        "assembly_sha256": "82c34673ba9bacf1772eff8508b74b92d78ad5b5094530ccc05af529e9ac93df",
+        "case_id": "D03",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1617,
+        "assembly_sha256": "6755b5a2bea561f9dae89207ab6f2b36be79a07bd13d7884a0a96078306a96d6",
+        "case_id": "D04",
+        "group": "discovery",
+        "oracle": 10
+      },
+      {
+        "assembly_lines": 1659,
+        "assembly_sha256": "d56905663f927f4bb73790fdd38f454e76b02470befedb9e47288962e8ececfc",
+        "case_id": "D05",
+        "group": "discovery",
+        "oracle": 8
+      },
+      {
+        "assembly_lines": 1922,
+        "assembly_sha256": "3744f7d4dc1267c2fa224b5cd5aa424bbf88cdf073141ac4c8d63bf2a09d35a6",
+        "case_id": "D06",
+        "group": "discovery",
+        "oracle": 55
+      },
+      {
+        "assembly_lines": 1535,
+        "assembly_sha256": "f5fa1a1e3883cc9fe2778b60fb60ea386a136840657ba86e39feb7094dd21be9",
+        "case_id": "D07",
+        "group": "discovery",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1637,
+        "assembly_sha256": "004b15f7eb2e02dc624c2574d5cc75c4625201c0558be79c4b748c394916949e",
+        "case_id": "D08",
+        "group": "discovery",
+        "oracle": 14
+      },
+      {
+        "assembly_lines": 1709,
+        "assembly_sha256": "8ce946f861f403b1276d185c538324c2975f5c9cdf3166b882053fbd379d0a8c",
+        "case_id": "D09",
+        "group": "discovery",
+        "oracle": 6
+      },
+      {
+        "assembly_lines": 1699,
+        "assembly_sha256": "c36710b2fc71f1728fa9cf07bd659df24319e61b70deba1bb3ac6d80711b1497",
+        "case_id": "D10",
+        "group": "discovery",
+        "oracle": 11
+      },
+      {
+        "assembly_lines": 1888,
+        "assembly_sha256": "94967dc908c69d8cee60e6bbe44f02a2728eb91b171b8c6704c5142cb064acf5",
+        "case_id": "D11",
+        "group": "discovery",
+        "oracle": 21
+      },
+      {
+        "assembly_lines": 1636,
+        "assembly_sha256": "11fefc96d2527a0ab744122074fd84f42b014a9bc3f181e9d5c3d95f27deac78",
+        "case_id": "D12",
+        "group": "discovery",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1648,
+        "assembly_sha256": "e3c847fa897db0b0be2d83ef877463c1bff348a5021b027939cc5ca18951d147",
+        "case_id": "D13",
+        "group": "discovery",
+        "oracle": 8
+      },
+      {
+        "assembly_lines": 1677,
+        "assembly_sha256": "495ff4e21f2493193bca6512be027c38dee0c6c4afa475c385da7988d0740cd0",
+        "case_id": "D14",
+        "group": "discovery",
+        "oracle": 9
+      },
+      {
+        "assembly_lines": 1723,
+        "assembly_sha256": "80b27ec65ff586e186a6c3c5a1497d67a9497013d4f6a28180d3b2fb2120a5ac",
+        "case_id": "D15",
+        "group": "discovery",
+        "oracle": 3
+      },
+      {
+        "assembly_lines": 1761,
+        "assembly_sha256": "7e17fe1127a8257cd6822a1e837080a0207fdd8eae94b348da3b43de92af6ce6",
+        "case_id": "D16",
+        "group": "discovery",
+        "oracle": 23
+      },
+      {
+        "assembly_lines": 1587,
+        "assembly_sha256": "91721da7c63cbaecd0134b6a0905bd1ccad277eb20e6f49a2d7c84f7b85bfc4d",
+        "case_id": "D17",
+        "group": "discovery",
+        "oracle": 3
+      },
+      {
+        "assembly_lines": 1565,
+        "assembly_sha256": "c0fe8405f89926804b5f7a089c5eadd658e1e2ce3e581289af3a64271c648965",
+        "case_id": "D18",
+        "group": "discovery",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1565,
+        "assembly_sha256": "8cf262ddcae648faa21f0c7980b6668afa1d9e447b9f2cd11f0c8e42e3059454",
+        "case_id": "D19",
+        "group": "discovery",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1761,
+        "assembly_sha256": "8bef7deee48c1295e38006e573bbb50f331b83ad726d6595bc27a70408e89fe1",
+        "case_id": "D20",
+        "group": "discovery",
+        "oracle": 26
+      },
+      {
+        "assembly_lines": 1665,
+        "assembly_sha256": "bae9c150d6a570b173c03b44194e848c1cd6879b74769b05990a9cdab8265079",
+        "case_id": "H01",
+        "group": "holdout",
+        "oracle": 5
+      },
+      {
+        "assembly_lines": 1711,
+        "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+        "case_id": "H02",
+        "group": "holdout",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1636,
+        "assembly_sha256": "3f2b00a8ed1e57a2c7789084141d4a8be3767fea86a5a2c661f22311ec6d403e",
+        "case_id": "H03",
+        "group": "holdout",
+        "oracle": 14
+      },
+      {
+        "assembly_lines": 1565,
+        "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+        "case_id": "H04",
+        "group": "holdout",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1709,
+        "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+        "case_id": "H05",
+        "group": "holdout",
+        "oracle": 32
+      },
+      {
+        "assembly_lines": 1739,
+        "assembly_sha256": "8864918e2367e9defe6d9cfdea875acf1885350c55f736d96061042de60669c7",
+        "case_id": "H06",
+        "group": "holdout",
+        "oracle": 17
+      },
+      {
+        "assembly_lines": 1664,
+        "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+        "case_id": "E01",
+        "group": "holdout-existing",
+        "oracle": 15
+      },
+      {
+        "assembly_lines": 1581,
+        "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+        "case_id": "E02",
+        "group": "holdout-existing",
+        "oracle": 6
+      },
+      {
+        "assembly_lines": 1709,
+        "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+        "case_id": "E03",
+        "group": "holdout-existing",
+        "oracle": -1
+      }
+    ],
+    "pareto": true,
+    "policy_config": {
+      "call_register_order": [
+        "rbx",
+        "r12",
+        "r13",
+        "r14",
+        "r15",
+        "rdi",
+        "rsi",
+        "rdx",
+        "rcx",
+        "r8",
+        "r9"
+      ],
+      "call_residence": "selective_live_across_call",
+      "indexed_memory_policy": "canonical",
+      "load_forwarding": "disabled",
+      "move_coalescing": "disabled",
+      "name": "selective_call_residence",
+      "register_order": [
+        "rdi",
+        "rsi",
+        "rdx",
+        "rcx",
+        "r8",
+        "r9",
+        "rbx",
+        "r12",
+        "r13",
+        "r14",
+        "r15"
+      ],
+      "residence_scope": "single_definition_cross_block",
+      "scalar_promotion": "disabled",
+      "spill_policy": "stack_on_exhaustion",
+      "writeback_policy": "canonical"
+    },
+    "policy_id": "R9_CALL_AWARE_SELECTIVE_RESIDENCE",
+    "ratios": {
+      "address_recomputations": 1.0,
+      "frame_bytes": 1.0,
+      "instructions": 1.0,
+      "movs": 1.0,
+      "spills_reload": 1.0,
+      "stack_ops": 1.0,
+      "text_bytes": 1.0,
+      "total_load_store": 1.0
+    },
+    "stack_traffic_ratio": 1.0,
+    "stage": "A",
+    "text_size_ratio": 1.0
+  },
+  {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN",
+    "discovery_status": "DISQUALIFIED_UNSUPPORTED_STRATEGY",
+    "disqualification_reason": "compact indexed lowering is not wired",
+    "external_holdout_status": "NOT_RUN",
+    "holdout_status": "NOT_RUN",
+    "pareto": false,
+    "policy_config": null,
+    "policy_id": "M1_R1",
+    "stage": "B"
+  },
+  {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN",
+    "discovery_status": "DISQUALIFIED_UNSUPPORTED_STRATEGY",
+    "disqualification_reason": "base pinning lowering is not wired",
+    "external_holdout_status": "NOT_RUN",
+    "holdout_status": "NOT_RUN",
+    "pareto": false,
+    "policy_config": null,
+    "policy_id": "M2_R4",
+    "stage": "B"
+  },
+  {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN",
+    "discovery_status": "DISQUALIFIED_UNSUPPORTED_STRATEGY",
+    "disqualification_reason": "index pinning and loop weighting are not wired",
+    "external_holdout_status": "NOT_RUN",
+    "holdout_status": "NOT_RUN",
+    "pareto": false,
+    "policy_config": null,
+    "policy_id": "M3_R6",
+    "stage": "B"
+  },
+  {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN",
+    "discovery_status": "DISQUALIFIED_UNSUPPORTED_STRATEGY",
+    "disqualification_reason": "base-plus-index lowering is not wired",
+    "external_holdout_status": "NOT_RUN",
+    "holdout_status": "NOT_RUN",
+    "pareto": false,
+    "policy_config": null,
+    "policy_id": "M4_R9",
+    "stage": "B"
+  },
+  {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN",
+    "discovery_status": "DISQUALIFIED_UNSUPPORTED_STRATEGY",
+    "disqualification_reason": "scalar promotion and spill weighting are not wired",
+    "external_holdout_status": "NOT_RUN",
+    "holdout_status": "NOT_RUN",
+    "pareto": false,
+    "policy_config": null,
+    "policy_id": "M5_R7",
+    "stage": "B"
+  },
+  {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN",
+    "discovery_status": "DISQUALIFIED_UNSUPPORTED_STRATEGY",
+    "disqualification_reason": "load forwarding and move affinity are not wired",
+    "external_holdout_status": "NOT_RUN",
+    "holdout_status": "NOT_RUN",
+    "pareto": false,
+    "policy_config": null,
+    "policy_id": "M6_R8",
+    "stage": "B"
+  },
+  {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN",
+    "discovery_status": "DISQUALIFIED_UNSUPPORTED_STRATEGY",
+    "disqualification_reason": "read cache is not wired",
+    "external_holdout_status": "NOT_RUN",
+    "holdout_status": "NOT_RUN",
+    "pareto": false,
+    "policy_config": null,
+    "policy_id": "M7_R9",
+    "stage": "B"
+  },
+  {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN",
+    "discovery_status": "DISQUALIFIED_UNSUPPORTED_STRATEGY",
+    "disqualification_reason": "writeback island and region residence are not wired",
+    "external_holdout_status": "NOT_RUN",
+    "holdout_status": "NOT_RUN",
+    "pareto": false,
+    "policy_config": null,
+    "policy_id": "M8_R10",
+    "stage": "B"
+  },
+  {
+    "abi": "PASS",
+    "correctness": "PASS",
+    "determinism": "PASS",
+    "discovery_status": "PASS",
+    "disqualification_reason": null,
+    "external_holdout_status": "NOT_AVAILABLE_READ_ONLY",
+    "frame_ratio": 1.0,
+    "holdout_metrics": {
+      "address_recomputations": 371,
+      "branches": 1962,
+      "callee_save_traffic": 4,
+      "caller_save_traffic": 35,
+      "calls": 329,
+      "frame_bytes": 1872,
+      "instructions": 11325,
+      "leas": 371,
+      "loads": 16,
+      "memory_operands": 151,
+      "movs": 3610,
+      "pops": 486,
+      "pushes": 482,
+      "reloads": 16,
+      "self_movs": 0,
+      "spills": 104,
+      "spills_reload": 151,
+      "stack_loads": 16,
+      "stack_ops": 151,
+      "stack_stores": 104,
+      "stores": 104,
+      "text_bytes": 0,
+      "total_load_store": 120
+    },
+    "holdout_status": "PASS_SYNTHETIC_AND_EXISTING_REGRESSION",
+    "instruction_ratio": 1.0,
+    "memory_traffic_ratio": 1.0,
+    "metrics": {
+      "address_recomputations": 846,
+      "branches": 4397,
+      "callee_save_traffic": 13,
+      "caller_save_traffic": 70,
+      "calls": 726,
+      "frame_bytes": 4048,
+      "instructions": 25347,
+      "leas": 846,
+      "loads": 32,
+      "memory_operands": 329,
+      "movs": 8092,
+      "pops": 1080,
+      "pushes": 1066,
+      "reloads": 32,
+      "self_movs": 0,
+      "spills": 228,
+      "spills_reload": 329,
+      "stack_loads": 32,
+      "stack_ops": 329,
+      "stack_stores": 228,
+      "stores": 228,
+      "text_bytes": 0,
+      "total_load_store": 260
+    },
+    "outputs": [
+      {
+        "assembly_lines": 1535,
+        "assembly_sha256": "3f594c9d6c2623e7dd0248ed711fa941978b6fabee53d9249987a7cd59361607",
+        "case_id": "D01",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1634,
+        "assembly_sha256": "d6ec847438fd3c4da1ddfcbd0f215e70efd5d031c74cd05e8bdd65424958e8f5",
+        "case_id": "D02",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1719,
+        "assembly_sha256": "82c34673ba9bacf1772eff8508b74b92d78ad5b5094530ccc05af529e9ac93df",
+        "case_id": "D03",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1617,
+        "assembly_sha256": "6755b5a2bea561f9dae89207ab6f2b36be79a07bd13d7884a0a96078306a96d6",
+        "case_id": "D04",
+        "group": "discovery",
+        "oracle": 10
+      },
+      {
+        "assembly_lines": 1659,
+        "assembly_sha256": "d56905663f927f4bb73790fdd38f454e76b02470befedb9e47288962e8ececfc",
+        "case_id": "D05",
+        "group": "discovery",
+        "oracle": 8
+      },
+      {
+        "assembly_lines": 1922,
+        "assembly_sha256": "3744f7d4dc1267c2fa224b5cd5aa424bbf88cdf073141ac4c8d63bf2a09d35a6",
+        "case_id": "D06",
+        "group": "discovery",
+        "oracle": 55
+      },
+      {
+        "assembly_lines": 1535,
+        "assembly_sha256": "f5fa1a1e3883cc9fe2778b60fb60ea386a136840657ba86e39feb7094dd21be9",
+        "case_id": "D07",
+        "group": "discovery",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1637,
+        "assembly_sha256": "004b15f7eb2e02dc624c2574d5cc75c4625201c0558be79c4b748c394916949e",
+        "case_id": "D08",
+        "group": "discovery",
+        "oracle": 14
+      },
+      {
+        "assembly_lines": 1709,
+        "assembly_sha256": "8ce946f861f403b1276d185c538324c2975f5c9cdf3166b882053fbd379d0a8c",
+        "case_id": "D09",
+        "group": "discovery",
+        "oracle": 6
+      },
+      {
+        "assembly_lines": 1699,
+        "assembly_sha256": "c36710b2fc71f1728fa9cf07bd659df24319e61b70deba1bb3ac6d80711b1497",
+        "case_id": "D10",
+        "group": "discovery",
+        "oracle": 11
+      },
+      {
+        "assembly_lines": 1888,
+        "assembly_sha256": "94967dc908c69d8cee60e6bbe44f02a2728eb91b171b8c6704c5142cb064acf5",
+        "case_id": "D11",
+        "group": "discovery",
+        "oracle": 21
+      },
+      {
+        "assembly_lines": 1636,
+        "assembly_sha256": "11fefc96d2527a0ab744122074fd84f42b014a9bc3f181e9d5c3d95f27deac78",
+        "case_id": "D12",
+        "group": "discovery",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1648,
+        "assembly_sha256": "e3c847fa897db0b0be2d83ef877463c1bff348a5021b027939cc5ca18951d147",
+        "case_id": "D13",
+        "group": "discovery",
+        "oracle": 8
+      },
+      {
+        "assembly_lines": 1677,
+        "assembly_sha256": "495ff4e21f2493193bca6512be027c38dee0c6c4afa475c385da7988d0740cd0",
+        "case_id": "D14",
+        "group": "discovery",
+        "oracle": 9
+      },
+      {
+        "assembly_lines": 1723,
+        "assembly_sha256": "80b27ec65ff586e186a6c3c5a1497d67a9497013d4f6a28180d3b2fb2120a5ac",
+        "case_id": "D15",
+        "group": "discovery",
+        "oracle": 3
+      },
+      {
+        "assembly_lines": 1761,
+        "assembly_sha256": "7e17fe1127a8257cd6822a1e837080a0207fdd8eae94b348da3b43de92af6ce6",
+        "case_id": "D16",
+        "group": "discovery",
+        "oracle": 23
+      },
+      {
+        "assembly_lines": 1587,
+        "assembly_sha256": "91721da7c63cbaecd0134b6a0905bd1ccad277eb20e6f49a2d7c84f7b85bfc4d",
+        "case_id": "D17",
+        "group": "discovery",
+        "oracle": 3
+      },
+      {
+        "assembly_lines": 1565,
+        "assembly_sha256": "c0fe8405f89926804b5f7a089c5eadd658e1e2ce3e581289af3a64271c648965",
+        "case_id": "D18",
+        "group": "discovery",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1565,
+        "assembly_sha256": "8cf262ddcae648faa21f0c7980b6668afa1d9e447b9f2cd11f0c8e42e3059454",
+        "case_id": "D19",
+        "group": "discovery",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1761,
+        "assembly_sha256": "8bef7deee48c1295e38006e573bbb50f331b83ad726d6595bc27a70408e89fe1",
+        "case_id": "D20",
+        "group": "discovery",
+        "oracle": 26
+      },
+      {
+        "assembly_lines": 1665,
+        "assembly_sha256": "bae9c150d6a570b173c03b44194e848c1cd6879b74769b05990a9cdab8265079",
+        "case_id": "H01",
+        "group": "holdout",
+        "oracle": 5
+      },
+      {
+        "assembly_lines": 1711,
+        "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+        "case_id": "H02",
+        "group": "holdout",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1636,
+        "assembly_sha256": "3f2b00a8ed1e57a2c7789084141d4a8be3767fea86a5a2c661f22311ec6d403e",
+        "case_id": "H03",
+        "group": "holdout",
+        "oracle": 14
+      },
+      {
+        "assembly_lines": 1565,
+        "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+        "case_id": "H04",
+        "group": "holdout",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1709,
+        "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+        "case_id": "H05",
+        "group": "holdout",
+        "oracle": 32
+      },
+      {
+        "assembly_lines": 1739,
+        "assembly_sha256": "8864918e2367e9defe6d9cfdea875acf1885350c55f736d96061042de60669c7",
+        "case_id": "H06",
+        "group": "holdout",
+        "oracle": 17
+      },
+      {
+        "assembly_lines": 1664,
+        "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+        "case_id": "E01",
+        "group": "holdout-existing",
+        "oracle": 15
+      },
+      {
+        "assembly_lines": 1581,
+        "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+        "case_id": "E02",
+        "group": "holdout-existing",
+        "oracle": 6
+      },
+      {
+        "assembly_lines": 1709,
+        "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+        "case_id": "E03",
+        "group": "holdout-existing",
+        "oracle": -1
+      }
+    ],
+    "pareto": true,
+    "policy_config": {
+      "call_register_order": [
+        "rbx",
+        "r12",
+        "r13",
+        "r14",
+        "r15",
+        "rdi",
+        "rsi",
+        "rdx",
+        "rcx",
+        "r8",
+        "r9"
+      ],
+      "call_residence": "selective_live_across_call",
+      "indexed_memory_policy": "canonical",
+      "load_forwarding": "disabled",
+      "move_coalescing": "disabled",
+      "name": "beam_caller_selective",
+      "register_order": [
+        "rdi",
+        "rsi",
+        "rdx",
+        "rcx",
+        "r8",
+        "r9",
+        "rbx",
+        "r12",
+        "r13",
+        "r14",
+        "r15"
+      ],
+      "residence_scope": "single_definition_cross_block",
+      "scalar_promotion": "disabled",
+      "spill_policy": "stack_on_exhaustion",
+      "writeback_policy": "canonical"
+    },
+    "policy_id": "BEAM_R1_R9",
+    "ratios": {
+      "address_recomputations": 1.0,
+      "frame_bytes": 1.0,
+      "instructions": 1.0,
+      "movs": 1.0,
+      "spills_reload": 1.0,
+      "stack_ops": 1.0,
+      "text_bytes": 1.0,
+      "total_load_store": 1.0
+    },
+    "stack_traffic_ratio": 1.0,
+    "stage": "C",
+    "text_size_ratio": 1.0
+  },
+  {
+    "abi": "PASS",
+    "correctness": "PASS",
+    "determinism": "PASS",
+    "discovery_status": "PASS",
+    "disqualification_reason": null,
+    "external_holdout_status": "NOT_AVAILABLE_READ_ONLY",
+    "frame_ratio": 1.0,
+    "holdout_metrics": {
+      "address_recomputations": 371,
+      "branches": 1962,
+      "callee_save_traffic": 67,
+      "caller_save_traffic": 23,
+      "calls": 329,
+      "frame_bytes": 1872,
+      "instructions": 11376,
+      "leas": 371,
+      "loads": 45,
+      "memory_operands": 202,
+      "movs": 3661,
+      "pops": 486,
+      "pushes": 482,
+      "reloads": 45,
+      "self_movs": 0,
+      "spills": 126,
+      "spills_reload": 202,
+      "stack_loads": 45,
+      "stack_ops": 202,
+      "stack_stores": 126,
+      "stores": 126,
+      "text_bytes": 0,
+      "total_load_store": 171
+    },
+    "holdout_status": "PASS_SYNTHETIC_AND_EXISTING_REGRESSION",
+    "instruction_ratio": 1.0041819544719297,
+    "memory_traffic_ratio": 1.4076923076923078,
+    "metrics": {
+      "address_recomputations": 846,
+      "branches": 4397,
+      "callee_save_traffic": 138,
+      "caller_save_traffic": 51,
+      "calls": 726,
+      "frame_bytes": 4048,
+      "instructions": 25453,
+      "leas": 846,
+      "loads": 89,
+      "memory_operands": 435,
+      "movs": 8198,
+      "pops": 1080,
+      "pushes": 1066,
+      "reloads": 89,
+      "self_movs": 0,
+      "spills": 277,
+      "spills_reload": 435,
+      "stack_loads": 89,
+      "stack_ops": 435,
+      "stack_stores": 277,
+      "stores": 277,
+      "text_bytes": 0,
+      "total_load_store": 366
+    },
+    "outputs": [
+      {
+        "assembly_lines": 1537,
+        "assembly_sha256": "97117404457509d801e4f7ce9226c248ce1eb7c244490729f002fd998aac2d0c",
+        "case_id": "D01",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1640,
+        "assembly_sha256": "f25c4abcf5a20060639e587cc0b541b3ca85d34235b20c2d5026ce02fa12eb9a",
+        "case_id": "D02",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1728,
+        "assembly_sha256": "f7be0b10d7a6a08372e30a1ce8fe576eb89042f361f57835415d1a7e4f4025e2",
+        "case_id": "D03",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1621,
+        "assembly_sha256": "0397857d445d7a5a1f648972497f9cd1aa12369b1b95a134cc38c17f0fff3ba5",
+        "case_id": "D04",
+        "group": "discovery",
+        "oracle": 10
+      },
+      {
+        "assembly_lines": 1665,
+        "assembly_sha256": "3eea073bd9ddb0de37c998f2d6f8e00e2dc5be17e4d41414d188d58a12e4e9c3",
+        "case_id": "D05",
+        "group": "discovery",
+        "oracle": 8
+      },
+      {
+        "assembly_lines": 1924,
+        "assembly_sha256": "2c57d7a302d6ed7e15d93f7fb37e1d4677cc8daed3c884fcb7c74448a39dd2b7",
+        "case_id": "D06",
+        "group": "discovery",
+        "oracle": 55
+      },
+      {
+        "assembly_lines": 1537,
+        "assembly_sha256": "b7b211bb7a90012df34d8ae8c78e1b01b1e743c7eb43d138080593c7970c04cd",
+        "case_id": "D07",
+        "group": "discovery",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1641,
+        "assembly_sha256": "067490a2a193c37a0a0dbffe145ccb789e4320bfae5751d09341d08494d6b011",
+        "case_id": "D08",
+        "group": "discovery",
+        "oracle": 14
+      },
+      {
+        "assembly_lines": 1715,
+        "assembly_sha256": "694b90b433543fe36befe9c0a48452dd0a33d897e36d8d1c3e607875828bcec7",
+        "case_id": "D09",
+        "group": "discovery",
+        "oracle": 6
+      },
+      {
+        "assembly_lines": 1703,
+        "assembly_sha256": "292c9388df29bdf83944426d69e53f7b231018f3035782f2dce27a7e4c24f15b",
+        "case_id": "D10",
+        "group": "discovery",
+        "oracle": 11
+      },
+      {
+        "assembly_lines": 1908,
+        "assembly_sha256": "853cc5482e17ff832c23fe160ffbd2937a5b6fa57de0523089610135466b6926",
+        "case_id": "D11",
+        "group": "discovery",
+        "oracle": 21
+      },
+      {
+        "assembly_lines": 1640,
+        "assembly_sha256": "3e76acc319addeb3a6a1dcb3351d1ed6db1db55c81da776589582961c5516218",
+        "case_id": "D12",
+        "group": "discovery",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1652,
+        "assembly_sha256": "9492597a0c8783b4740643b130ec6b723e56ba328744f427b2124a686310b2f7",
+        "case_id": "D13",
+        "group": "discovery",
+        "oracle": 8
+      },
+      {
+        "assembly_lines": 1681,
+        "assembly_sha256": "22164e4f1817a936ac79c5e741d918384a2bdb4bb6b38ad8d8e4debf5939c21c",
+        "case_id": "D14",
+        "group": "discovery",
+        "oracle": 9
+      },
+      {
+        "assembly_lines": 1732,
+        "assembly_sha256": "07099841cbbf5e83aa570954c52674711b98a151760e5df823fcb3fd8a42f5d9",
+        "case_id": "D15",
+        "group": "discovery",
+        "oracle": 3
+      },
+      {
+        "assembly_lines": 1767,
+        "assembly_sha256": "ebc1f3be21b41b267838079a505c65ee0b2c86a07e51a58ba71e4edd6874653b",
+        "case_id": "D16",
+        "group": "discovery",
+        "oracle": 23
+      },
+      {
+        "assembly_lines": 1591,
+        "assembly_sha256": "feb2590a28740454cf1fb13724b6effd31d3a05e813aab9d95dd9c3eb17dea74",
+        "case_id": "D17",
+        "group": "discovery",
+        "oracle": 3
+      },
+      {
+        "assembly_lines": 1567,
+        "assembly_sha256": "0919e1fd5dd5341299bfa7a96caefdd715120b8235adc57188c432040c679431",
+        "case_id": "D18",
+        "group": "discovery",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1567,
+        "assembly_sha256": "075e055a49055cdaf7ee6411b37791891d21a72acf08a1e5a9b305bc3cf1a8d4",
+        "case_id": "D19",
+        "group": "discovery",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1767,
+        "assembly_sha256": "aeeead47349c993958810d1a8cad2a29e04472ffbb926f35e73db3c275f5546e",
+        "case_id": "D20",
+        "group": "discovery",
+        "oracle": 26
+      },
+      {
+        "assembly_lines": 1674,
+        "assembly_sha256": "7feda29a302211fbcff0edf7d11cd2629d4d08255563082ce55175eaf8b3c959",
+        "case_id": "H01",
+        "group": "holdout",
+        "oracle": 5
+      },
+      {
+        "assembly_lines": 1715,
+        "assembly_sha256": "e9222853fb6598d45fcb62528acd2463b568f50cece972d9645032bd027166b4",
+        "case_id": "H02",
+        "group": "holdout",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1640,
+        "assembly_sha256": "def179660735b1540bbf644ec60d7aceed2c1f55317dbfe6700982869bd53e42",
+        "case_id": "H03",
+        "group": "holdout",
+        "oracle": 14
+      },
+      {
+        "assembly_lines": 1567,
+        "assembly_sha256": "9610e66a30d8c2f2e7a8a65a886bc088975dc1c4955d3b845b0a57f8b3708f4d",
+        "case_id": "H04",
+        "group": "holdout",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1715,
+        "assembly_sha256": "77cf995d2739929bb2ae1407a413a4e73f784d2bf8c461724a4ab80a64ab69c5",
+        "case_id": "H05",
+        "group": "holdout",
+        "oracle": 32
+      },
+      {
+        "assembly_lines": 1745,
+        "assembly_sha256": "c576406d2ffebb2ee62796e3b32aa86e492794bbbbf200d5ba17e0cf996989e2",
+        "case_id": "H06",
+        "group": "holdout",
+        "oracle": 17
+      },
+      {
+        "assembly_lines": 1672,
+        "assembly_sha256": "15b91dcedf62fbe26c7081adfcd6841ce98919063aae542d2e61af9e60fe2624",
+        "case_id": "E01",
+        "group": "holdout-existing",
+        "oracle": 15
+      },
+      {
+        "assembly_lines": 1583,
+        "assembly_sha256": "ca8b3caeffe5332975d79e72dd78b92e4e65a6715e11c6e96a088b780a2500b1",
+        "case_id": "E02",
+        "group": "holdout-existing",
+        "oracle": 6
+      },
+      {
+        "assembly_lines": 1719,
+        "assembly_sha256": "34689219c4e9b49a62a4065e4acecb1c32730cd5a3018e2f13d4ea43ef3b0e11",
+        "case_id": "E03",
+        "group": "holdout-existing",
+        "oracle": -1
+      }
+    ],
+    "pareto": false,
+    "policy_config": {
+      "call_register_order": [
+        "rbx",
+        "r12",
+        "r13",
+        "r14",
+        "r15",
+        "rdi",
+        "rsi",
+        "rdx",
+        "rcx",
+        "r8",
+        "r9"
+      ],
+      "call_residence": "selective_live_across_call",
+      "indexed_memory_policy": "canonical",
+      "load_forwarding": "disabled",
+      "move_coalescing": "disabled",
+      "name": "beam_callee_selective",
+      "register_order": [
+        "rbx",
+        "r12",
+        "r13",
+        "r14",
+        "r15",
+        "rdi",
+        "rsi",
+        "rdx",
+        "rcx",
+        "r8",
+        "r9"
+      ],
+      "residence_scope": "single_definition_cross_block",
+      "scalar_promotion": "disabled",
+      "spill_policy": "stack_on_exhaustion",
+      "writeback_policy": "canonical"
+    },
+    "policy_id": "BEAM_R2_R9",
+    "ratios": {
+      "address_recomputations": 1.0,
+      "frame_bytes": 1.0,
+      "instructions": 1.0041819544719297,
+      "movs": 1.0130993573900149,
+      "spills_reload": 1.3221884498480243,
+      "stack_ops": 1.3221884498480243,
+      "text_bytes": 1.0,
+      "total_load_store": 1.4076923076923078
+    },
+    "stack_traffic_ratio": 1.3221884498480243,
+    "stage": "C",
+    "text_size_ratio": 1.0
+  },
+  {
+    "abi": "PASS",
+    "correctness": "PASS",
+    "determinism": "PASS",
+    "discovery_status": "PASS",
+    "disqualification_reason": null,
+    "external_holdout_status": "NOT_AVAILABLE_READ_ONLY",
+    "frame_ratio": 1.0,
+    "holdout_metrics": {
+      "address_recomputations": 371,
+      "branches": 1962,
+      "callee_save_traffic": 19,
+      "caller_save_traffic": 35,
+      "calls": 329,
+      "frame_bytes": 1872,
+      "instructions": 11340,
+      "leas": 371,
+      "loads": 25,
+      "memory_operands": 166,
+      "movs": 3625,
+      "pops": 486,
+      "pushes": 482,
+      "reloads": 25,
+      "self_movs": 0,
+      "spills": 110,
+      "spills_reload": 166,
+      "stack_loads": 25,
+      "stack_ops": 166,
+      "stack_stores": 110,
+      "stores": 110,
+      "text_bytes": 0,
+      "total_load_store": 135
+    },
+    "holdout_status": "PASS_SYNTHETIC_AND_EXISTING_REGRESSION",
+    "instruction_ratio": 1.0015386436264646,
+    "memory_traffic_ratio": 1.15,
+    "metrics": {
+      "address_recomputations": 846,
+      "branches": 4397,
+      "callee_save_traffic": 55,
+      "caller_save_traffic": 67,
+      "calls": 726,
+      "frame_bytes": 4048,
+      "instructions": 25386,
+      "leas": 846,
+      "loads": 53,
+      "memory_operands": 368,
+      "movs": 8131,
+      "pops": 1080,
+      "pushes": 1066,
+      "reloads": 53,
+      "self_movs": 0,
+      "spills": 246,
+      "spills_reload": 368,
+      "stack_loads": 53,
+      "stack_ops": 368,
+      "stack_stores": 246,
+      "stores": 246,
+      "text_bytes": 0,
+      "total_load_store": 299
+    },
+    "outputs": [
+      {
+        "assembly_lines": 1535,
+        "assembly_sha256": "3f594c9d6c2623e7dd0248ed711fa941978b6fabee53d9249987a7cd59361607",
+        "case_id": "D01",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1637,
+        "assembly_sha256": "3a0eeea12874d26c09dc5a3370ad70e8c95bef46497cf37ab6521bc5318b4332",
+        "case_id": "D02",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1722,
+        "assembly_sha256": "d646c8c579f893e5f78d90b1fe20e741848789819eddae40ae3c67b775d1d97f",
+        "case_id": "D03",
+        "group": "discovery",
+        "oracle": 1
+      },
+      {
+        "assembly_lines": 1619,
+        "assembly_sha256": "58457253c22fe03d45bdacf4fe652c4b7801664f0b38d8fda047fc065f6806ce",
+        "case_id": "D04",
+        "group": "discovery",
+        "oracle": 10
+      },
+      {
+        "assembly_lines": 1661,
+        "assembly_sha256": "9ef038516c1e23b6486df8ca2253b48d37b87e50269a21890b79f5bea8ccd1e2",
+        "case_id": "D05",
+        "group": "discovery",
+        "oracle": 8
+      },
+      {
+        "assembly_lines": 1924,
+        "assembly_sha256": "5cfaf9961c1224a7eb014dbcc8711100df8f8d0381c457c835feb36853567025",
+        "case_id": "D06",
+        "group": "discovery",
+        "oracle": 55
+      },
+      {
+        "assembly_lines": 1535,
+        "assembly_sha256": "f5fa1a1e3883cc9fe2778b60fb60ea386a136840657ba86e39feb7094dd21be9",
+        "case_id": "D07",
+        "group": "discovery",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1637,
+        "assembly_sha256": "004b15f7eb2e02dc624c2574d5cc75c4625201c0558be79c4b748c394916949e",
+        "case_id": "D08",
+        "group": "discovery",
+        "oracle": 14
+      },
+      {
+        "assembly_lines": 1709,
+        "assembly_sha256": "8ce946f861f403b1276d185c538324c2975f5c9cdf3166b882053fbd379d0a8c",
+        "case_id": "D09",
+        "group": "discovery",
+        "oracle": 6
+      },
+      {
+        "assembly_lines": 1699,
+        "assembly_sha256": "fbe028aa20c6b5dcdd1028f434d436c5dd14a90a205980602ce5c889a630b83a",
+        "case_id": "D10",
+        "group": "discovery",
+        "oracle": 11
+      },
+      {
+        "assembly_lines": 1900,
+        "assembly_sha256": "373c892f50ff663f9294c96eb20fdf18fd0075678c8e8f219933474c870f62e7",
+        "case_id": "D11",
+        "group": "discovery",
+        "oracle": 21
+      },
+      {
+        "assembly_lines": 1638,
+        "assembly_sha256": "ffea2f48b703aba059f1b5ebb3ec2b5db99c6cf5efe42d0f321c77669fac2810",
+        "case_id": "D12",
+        "group": "discovery",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1650,
+        "assembly_sha256": "4015c56dd49e7ffd85dd0721f856075802273b07123da97da43254598de1a9bf",
+        "case_id": "D13",
+        "group": "discovery",
+        "oracle": 8
+      },
+      {
+        "assembly_lines": 1679,
+        "assembly_sha256": "39a85166d656bce0c6be767bccac88fc1449975b32b8089102f6cc291d795419",
+        "case_id": "D14",
+        "group": "discovery",
+        "oracle": 9
+      },
+      {
+        "assembly_lines": 1726,
+        "assembly_sha256": "d9fdf137f55d28070d38118cefe4922c125bfeb2d89173db5b7bcb3820d49344",
+        "case_id": "D15",
+        "group": "discovery",
+        "oracle": 3
+      },
+      {
+        "assembly_lines": 1763,
+        "assembly_sha256": "925565ac83f87b1aff32c5f90a5c932f31dcc8bd23a17125572bfd000aac3b54",
+        "case_id": "D16",
+        "group": "discovery",
+        "oracle": 23
+      },
+      {
+        "assembly_lines": 1589,
+        "assembly_sha256": "a39cdd52dd440ecbab60d4f9372251488adabde78d7e6cc09c53f8f82d6f5350",
+        "case_id": "D17",
+        "group": "discovery",
+        "oracle": 3
+      },
+      {
+        "assembly_lines": 1565,
+        "assembly_sha256": "c0fe8405f89926804b5f7a089c5eadd658e1e2ce3e581289af3a64271c648965",
+        "case_id": "D18",
+        "group": "discovery",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1565,
+        "assembly_sha256": "8cf262ddcae648faa21f0c7980b6668afa1d9e447b9f2cd11f0c8e42e3059454",
+        "case_id": "D19",
+        "group": "discovery",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1763,
+        "assembly_sha256": "10447c1edee0acd584dcff75c5c0c0e1982c91ea48c820d766c244d8cc510e35",
+        "case_id": "D20",
+        "group": "discovery",
+        "oracle": 26
+      },
+      {
+        "assembly_lines": 1668,
+        "assembly_sha256": "d753e0be3a13f8da623906677bd59d1351d01c7b96aa88c15cc6d7d486877522",
+        "case_id": "H01",
+        "group": "holdout",
+        "oracle": 5
+      },
+      {
+        "assembly_lines": 1711,
+        "assembly_sha256": "157a2222756cee47065f3ebb576926349a1af08adf6754bde6b693df8793b01a",
+        "case_id": "H02",
+        "group": "holdout",
+        "oracle": 7
+      },
+      {
+        "assembly_lines": 1638,
+        "assembly_sha256": "c9fea646241f2bcd849516f1c7ddfdd5eb325701356e5a8033688a371249bb6f",
+        "case_id": "H03",
+        "group": "holdout",
+        "oracle": 14
+      },
+      {
+        "assembly_lines": 1565,
+        "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+        "case_id": "H04",
+        "group": "holdout",
+        "oracle": "STATIC_REFERENCE_CONTRACT"
+      },
+      {
+        "assembly_lines": 1709,
+        "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+        "case_id": "H05",
+        "group": "holdout",
+        "oracle": 32
+      },
+      {
+        "assembly_lines": 1741,
+        "assembly_sha256": "48250fb9c9e6e722cf2b329600812180bfd58096db7f7e597fa04d8881ddc483",
+        "case_id": "H06",
+        "group": "holdout",
+        "oracle": 17
+      },
+      {
+        "assembly_lines": 1668,
+        "assembly_sha256": "62bef588685586aac2fc8e29cfb47875fa4980fb7726e817a99192e954beb6c1",
+        "case_id": "E01",
+        "group": "holdout-existing",
+        "oracle": 15
+      },
+      {
+        "assembly_lines": 1581,
+        "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+        "case_id": "E02",
+        "group": "holdout-existing",
+        "oracle": 6
+      },
+      {
+        "assembly_lines": 1713,
+        "assembly_sha256": "7d32ea32d58bd29c698fdfa5c12f4cc628e0268b99388d2a60c0443fef425348",
+        "case_id": "E03",
+        "group": "holdout-existing",
+        "oracle": -1
+      }
+    ],
+    "pareto": false,
+    "policy_config": {
+      "call_register_order": [
+        "rdi",
+        "rbx",
+        "rsi",
+        "r12",
+        "rdx",
+        "r13",
+        "rcx",
+        "r14",
+        "r8",
+        "r15",
+        "r9"
+      ],
+      "call_residence": "selective_live_across_call",
+      "indexed_memory_policy": "canonical",
+      "load_forwarding": "disabled",
+      "move_coalescing": "disabled",
+      "name": "beam_interleaved_selective",
+      "register_order": [
+        "rdi",
+        "rbx",
+        "rsi",
+        "r12",
+        "rdx",
+        "r13",
+        "rcx",
+        "r14",
+        "r8",
+        "r15",
+        "r9"
+      ],
+      "residence_scope": "single_definition_cross_block",
+      "scalar_promotion": "disabled",
+      "spill_policy": "stack_on_exhaustion",
+      "writeback_policy": "canonical"
+    },
+    "policy_id": "BEAM_R3_R9",
+    "ratios": {
+      "address_recomputations": 1.0,
+      "frame_bytes": 1.0,
+      "instructions": 1.0015386436264646,
+      "movs": 1.004819574888779,
+      "spills_reload": 1.1185410334346504,
+      "stack_ops": 1.1185410334346504,
+      "text_bytes": 1.0,
+      "total_load_store": 1.15
+    },
+    "stack_traffic_ratio": 1.1185410334346504,
+    "stage": "C",
+    "text_size_ratio": 1.0
+  },
+  {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN",
+    "discovery_status": "DISQUALIFIED_UNSUPPORTED_STRATEGY",
+    "disqualification_reason": "portfolio selector is research-only and not production-integrated",
+    "external_holdout_status": "NOT_RUN",
+    "holdout_status": "NOT_RUN",
+    "pareto": false,
+    "policy_config": null,
+    "policy_id": "DETERMINISTIC_POLICY_PORTFOLIO_V1",
+    "stage": "PORTFOLIO"
+  }
+]

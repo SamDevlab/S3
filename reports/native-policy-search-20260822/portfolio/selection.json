@@ -1,0 +1,646 @@
+{
+  "cases": [
+    {
+      "case_id": "D01",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 0,
+        "has_call": false,
+        "indexed_memory_operation_count": 0,
+        "live_across_call_count": 0,
+        "loop_count": 0,
+        "max_live_set": 1,
+        "max_loop_depth": 0,
+        "memory_operation_count": 0,
+        "number_of_calls": 0,
+        "virtual_register_count": 1
+      },
+      "group": "discovery",
+      "selected_policy": "R1_CALLER_FIRST"
+    },
+    {
+      "case_id": "D02",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 3,
+        "has_call": false,
+        "indexed_memory_operation_count": 0,
+        "live_across_call_count": 0,
+        "loop_count": 1,
+        "max_live_set": 2,
+        "max_loop_depth": 1,
+        "memory_operation_count": 0,
+        "number_of_calls": 0,
+        "virtual_register_count": 2
+      },
+      "group": "discovery",
+      "selected_policy": "R1_CALLER_FIRST"
+    },
+    {
+      "case_id": "D03",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 6,
+        "has_call": false,
+        "indexed_memory_operation_count": 0,
+        "live_across_call_count": 0,
+        "loop_count": 3,
+        "max_live_set": 3,
+        "max_loop_depth": 2,
+        "memory_operation_count": 0,
+        "number_of_calls": 0,
+        "virtual_register_count": 3
+      },
+      "group": "discovery",
+      "selected_policy": "R1_CALLER_FIRST"
+    },
+    {
+      "case_id": "D04",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 3,
+        "has_call": false,
+        "indexed_memory_operation_count": 0,
+        "live_across_call_count": 0,
+        "loop_count": 0,
+        "max_live_set": 2,
+        "max_loop_depth": 0,
+        "memory_operation_count": 0,
+        "number_of_calls": 0,
+        "virtual_register_count": 2
+      },
+      "group": "discovery",
+      "selected_policy": "R1_CALLER_FIRST"
+    },
+    {
+      "case_id": "D05",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 3,
+        "has_call": false,
+        "indexed_memory_operation_count": 0,
+        "live_across_call_count": 0,
+        "loop_count": 0,
+        "max_live_set": 3,
+        "max_loop_depth": 0,
+        "memory_operation_count": 0,
+        "number_of_calls": 0,
+        "virtual_register_count": 3
+      },
+      "group": "discovery",
+      "selected_policy": "R1_CALLER_FIRST"
+    },
+    {
+      "case_id": "D06",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 0,
+        "has_call": false,
+        "indexed_memory_operation_count": 0,
+        "live_across_call_count": 0,
+        "loop_count": 0,
+        "max_live_set": 11,
+        "max_loop_depth": 0,
+        "memory_operation_count": 0,
+        "number_of_calls": 0,
+        "virtual_register_count": 11
+      },
+      "group": "discovery",
+      "selected_policy": "R1_CALLER_FIRST"
+    },
+    {
+      "case_id": "D07",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 0,
+        "has_call": false,
+        "indexed_memory_operation_count": 0,
+        "live_across_call_count": 0,
+        "loop_count": 0,
+        "max_live_set": 1,
+        "max_loop_depth": 0,
+        "memory_operation_count": 0,
+        "number_of_calls": 0,
+        "virtual_register_count": 1
+      },
+      "group": "discovery",
+      "selected_policy": "R1_CALLER_FIRST"
+    },
+    {
+      "case_id": "D08",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 0,
+        "has_call": true,
+        "indexed_memory_operation_count": 0,
+        "live_across_call_count": 0,
+        "loop_count": 0,
+        "max_live_set": 2,
+        "max_loop_depth": 0,
+        "memory_operation_count": 0,
+        "number_of_calls": 1,
+        "virtual_register_count": 2
+      },
+      "group": "discovery",
+      "selected_policy": "M0_R0_BASELINE"
+    },
+    {
+      "case_id": "D09",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 0,
+        "has_call": true,
+        "indexed_memory_operation_count": 0,
+        "live_across_call_count": 0,
+        "loop_count": 0,
+        "max_live_set": 2,
+        "max_loop_depth": 0,
+        "memory_operation_count": 0,
+        "number_of_calls": 1,
+        "virtual_register_count": 2
+      },
+      "group": "discovery",
+      "selected_policy": "M0_R0_BASELINE"
+    },
+    {
+      "case_id": "D10",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 0,
+        "has_call": true,
+        "indexed_memory_operation_count": 0,
+        "live_across_call_count": 2,
+        "loop_count": 0,
+        "max_live_set": 3,
+        "max_loop_depth": 0,
+        "memory_operation_count": 0,
+        "number_of_calls": 1,
+        "virtual_register_count": 3
+      },
+      "group": "discovery",
+      "selected_policy": "R9_CALL_AWARE_SELECTIVE_RESIDENCE"
+    },
+    {
+      "case_id": "D11",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 0,
+        "has_call": true,
+        "indexed_memory_operation_count": 0,
+        "live_across_call_count": 0,
+        "loop_count": 0,
+        "max_live_set": 7,
+        "max_loop_depth": 0,
+        "memory_operation_count": 0,
+        "number_of_calls": 1,
+        "virtual_register_count": 7
+      },
+      "group": "discovery",
+      "selected_policy": "M0_R0_BASELINE"
+    },
+    {
+      "case_id": "D12",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 0,
+        "has_call": false,
+        "indexed_memory_operation_count": 2,
+        "live_across_call_count": 0,
+        "loop_count": 0,
+        "max_live_set": 2,
+        "max_loop_depth": 0,
+        "memory_operation_count": 2,
+        "number_of_calls": 0,
+        "virtual_register_count": 3
+      },
+      "group": "discovery",
+      "selected_policy": "R1_CALLER_FIRST"
+    },
+    {
+      "case_id": "D13",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 0,
+        "has_call": false,
+        "indexed_memory_operation_count": 2,
+        "live_across_call_count": 0,
+        "loop_count": 0,
+        "max_live_set": 2,
+        "max_loop_depth": 0,
+        "memory_operation_count": 2,
+        "number_of_calls": 0,
+        "virtual_register_count": 2
+      },
+      "group": "discovery",
+      "selected_policy": "R1_CALLER_FIRST"
+    },
+    {
+      "case_id": "D14",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 0,
+        "has_call": false,
+        "indexed_memory_operation_count": 2,
+        "live_across_call_count": 0,
+        "loop_count": 0,
+        "max_live_set": 3,
+        "max_loop_depth": 0,
+        "memory_operation_count": 2,
+        "number_of_calls": 0,
+        "virtual_register_count": 3
+      },
+      "group": "discovery",
+      "selected_policy": "R1_CALLER_FIRST"
+    },
+    {
+      "case_id": "D15",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 3,
+        "has_call": false,
+        "indexed_memory_operation_count": 2,
+        "live_across_call_count": 0,
+        "loop_count": 1,
+        "max_live_set": 3,
+        "max_loop_depth": 1,
+        "memory_operation_count": 2,
+        "number_of_calls": 0,
+        "virtual_register_count": 3
+      },
+      "group": "discovery",
+      "selected_policy": "R1_CALLER_FIRST"
+    },
+    {
+      "case_id": "D16",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 0,
+        "has_call": false,
+        "indexed_memory_operation_count": 4,
+        "live_across_call_count": 0,
+        "loop_count": 0,
+        "max_live_set": 3,
+        "max_loop_depth": 0,
+        "memory_operation_count": 4,
+        "number_of_calls": 0,
+        "virtual_register_count": 3
+      },
+      "group": "discovery",
+      "selected_policy": "R1_CALLER_FIRST"
+    },
+    {
+      "case_id": "D17",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 0,
+        "has_call": false,
+        "indexed_memory_operation_count": 0,
+        "live_across_call_count": 0,
+        "loop_count": 0,
+        "max_live_set": 2,
+        "max_loop_depth": 0,
+        "memory_operation_count": 0,
+        "number_of_calls": 0,
+        "virtual_register_count": 2
+      },
+      "group": "discovery",
+      "selected_policy": "R1_CALLER_FIRST"
+    },
+    {
+      "case_id": "D18",
+      "features": {
+        "address_taken_count": 1,
+        "branch_count": 0,
+        "has_call": false,
+        "indexed_memory_operation_count": 0,
+        "live_across_call_count": 0,
+        "loop_count": 0,
+        "max_live_set": 1,
+        "max_loop_depth": 0,
+        "memory_operation_count": 0,
+        "number_of_calls": 0,
+        "virtual_register_count": 2
+      },
+      "group": "discovery",
+      "selected_policy": "M0_R0_BASELINE"
+    },
+    {
+      "case_id": "D19",
+      "features": {
+        "address_taken_count": 1,
+        "branch_count": 0,
+        "has_call": false,
+        "indexed_memory_operation_count": 0,
+        "live_across_call_count": 0,
+        "loop_count": 0,
+        "max_live_set": 1,
+        "max_loop_depth": 0,
+        "memory_operation_count": 0,
+        "number_of_calls": 0,
+        "virtual_register_count": 2
+      },
+      "group": "discovery",
+      "selected_policy": "M0_R0_BASELINE"
+    },
+    {
+      "case_id": "D20",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 0,
+        "has_call": true,
+        "indexed_memory_operation_count": 2,
+        "live_across_call_count": 0,
+        "loop_count": 0,
+        "max_live_set": 2,
+        "max_loop_depth": 0,
+        "memory_operation_count": 2,
+        "number_of_calls": 1,
+        "virtual_register_count": 3
+      },
+      "group": "discovery",
+      "selected_policy": "M0_R0_BASELINE"
+    },
+    {
+      "case_id": "H01",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 3,
+        "has_call": false,
+        "indexed_memory_operation_count": 0,
+        "live_across_call_count": 0,
+        "loop_count": 1,
+        "max_live_set": 3,
+        "max_loop_depth": 1,
+        "memory_operation_count": 0,
+        "number_of_calls": 0,
+        "virtual_register_count": 3
+      },
+      "group": "holdout",
+      "selected_policy": "R1_CALLER_FIRST"
+    },
+    {
+      "case_id": "H02",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 0,
+        "has_call": true,
+        "indexed_memory_operation_count": 0,
+        "live_across_call_count": 2,
+        "loop_count": 0,
+        "max_live_set": 3,
+        "max_loop_depth": 0,
+        "memory_operation_count": 0,
+        "number_of_calls": 1,
+        "virtual_register_count": 4
+      },
+      "group": "holdout",
+      "selected_policy": "R9_CALL_AWARE_SELECTIVE_RESIDENCE"
+    },
+    {
+      "case_id": "H03",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 0,
+        "has_call": false,
+        "indexed_memory_operation_count": 2,
+        "live_across_call_count": 0,
+        "loop_count": 0,
+        "max_live_set": 2,
+        "max_loop_depth": 0,
+        "memory_operation_count": 2,
+        "number_of_calls": 0,
+        "virtual_register_count": 3
+      },
+      "group": "holdout",
+      "selected_policy": "R1_CALLER_FIRST"
+    },
+    {
+      "case_id": "H04",
+      "features": {
+        "address_taken_count": 1,
+        "branch_count": 0,
+        "has_call": false,
+        "indexed_memory_operation_count": 0,
+        "live_across_call_count": 0,
+        "loop_count": 0,
+        "max_live_set": 1,
+        "max_loop_depth": 0,
+        "memory_operation_count": 0,
+        "number_of_calls": 0,
+        "virtual_register_count": 2
+      },
+      "group": "holdout",
+      "selected_policy": "M0_R0_BASELINE"
+    },
+    {
+      "case_id": "H05",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 0,
+        "has_call": true,
+        "indexed_memory_operation_count": 0,
+        "live_across_call_count": 0,
+        "loop_count": 0,
+        "max_live_set": 2,
+        "max_loop_depth": 0,
+        "memory_operation_count": 0,
+        "number_of_calls": 1,
+        "virtual_register_count": 2
+      },
+      "group": "holdout",
+      "selected_policy": "M0_R0_BASELINE"
+    },
+    {
+      "case_id": "H06",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 3,
+        "has_call": false,
+        "indexed_memory_operation_count": 3,
+        "live_across_call_count": 0,
+        "loop_count": 0,
+        "max_live_set": 3,
+        "max_loop_depth": 0,
+        "memory_operation_count": 3,
+        "number_of_calls": 0,
+        "virtual_register_count": 3
+      },
+      "group": "holdout",
+      "selected_policy": "R1_CALLER_FIRST"
+    },
+    {
+      "case_id": "E01",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 0,
+        "has_call": true,
+        "indexed_memory_operation_count": 0,
+        "live_across_call_count": 0,
+        "loop_count": 0,
+        "max_live_set": 3,
+        "max_loop_depth": 0,
+        "memory_operation_count": 0,
+        "number_of_calls": 1,
+        "virtual_register_count": 3
+      },
+      "group": "holdout-existing",
+      "selected_policy": "M0_R0_BASELINE"
+    },
+    {
+      "case_id": "E02",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 0,
+        "has_call": false,
+        "indexed_memory_operation_count": 0,
+        "live_across_call_count": 0,
+        "loop_count": 0,
+        "max_live_set": 1,
+        "max_loop_depth": 0,
+        "memory_operation_count": 0,
+        "number_of_calls": 0,
+        "virtual_register_count": 5
+      },
+      "group": "holdout-existing",
+      "selected_policy": "R1_CALLER_FIRST"
+    },
+    {
+      "case_id": "E03",
+      "features": {
+        "address_taken_count": 0,
+        "branch_count": 0,
+        "has_call": true,
+        "indexed_memory_operation_count": 0,
+        "live_across_call_count": 0,
+        "loop_count": 0,
+        "max_live_set": 2,
+        "max_loop_depth": 0,
+        "memory_operation_count": 0,
+        "number_of_calls": 1,
+        "virtual_register_count": 2
+      },
+      "group": "holdout-existing",
+      "selected_policy": "M0_R0_BASELINE"
+    }
+  ],
+  "discovery_metrics": {
+    "address_recomputations": 846,
+    "branches": 4397,
+    "callee_save_traffic": 13,
+    "caller_save_traffic": 70,
+    "calls": 726,
+    "frame_bytes": 4048,
+    "instructions": 25347,
+    "leas": 846,
+    "loads": 32,
+    "memory_operands": 329,
+    "movs": 8092,
+    "pops": 1080,
+    "pushes": 1066,
+    "reloads": 32,
+    "self_movs": 0,
+    "spills": 228,
+    "spills_reload": 329,
+    "stack_loads": 32,
+    "stack_ops": 329,
+    "stack_stores": 228,
+    "stores": 228,
+    "text_bytes": 0,
+    "total_load_store": 260
+  },
+  "discovery_ratios": {
+    "address_recomputations": 1.0,
+    "frame_bytes": 1.0,
+    "instructions": 1.0,
+    "movs": 1.0,
+    "spills_reload": 1.0,
+    "stack_ops": 1.0,
+    "text_bytes": 1.0,
+    "total_load_store": 1.0
+  },
+  "forbidden_inputs": [
+    "source_filename",
+    "benchmark_name",
+    "fixture_name",
+    "semantic_identity"
+  ],
+  "holdout_metrics": {
+    "address_recomputations": 371,
+    "branches": 1962,
+    "callee_save_traffic": 4,
+    "caller_save_traffic": 35,
+    "calls": 329,
+    "frame_bytes": 1872,
+    "instructions": 11325,
+    "leas": 371,
+    "loads": 16,
+    "memory_operands": 151,
+    "movs": 3610,
+    "pops": 486,
+    "pushes": 482,
+    "reloads": 16,
+    "self_movs": 0,
+    "spills": 104,
+    "spills_reload": 151,
+    "stack_loads": 16,
+    "stack_ops": 151,
+    "stack_stores": 104,
+    "stores": 104,
+    "text_bytes": 0,
+    "total_load_store": 120
+  },
+  "leave_family_out": {
+    "calls": {
+      "remaining_case_count": 20,
+      "selected_policy_counts": {
+        "M0_R0_BASELINE": 3,
+        "R1_CALLER_FIRST": 17,
+        "R9_CALL_AWARE_SELECTIVE_RESIDENCE": 0
+      },
+      "selection_stable": true
+    },
+    "indexed_memory": {
+      "remaining_case_count": 21,
+      "selected_policy_counts": {
+        "M0_R0_BASELINE": 9,
+        "R1_CALLER_FIRST": 10,
+        "R9_CALL_AWARE_SELECTIVE_RESIDENCE": 2
+      },
+      "selection_stable": true
+    },
+    "loops": {
+      "remaining_case_count": 25,
+      "selected_policy_counts": {
+        "M0_R0_BASELINE": 10,
+        "R1_CALLER_FIRST": 13,
+        "R9_CALL_AWARE_SELECTIVE_RESIDENCE": 2
+      },
+      "selection_stable": true
+    },
+    "references": {
+      "remaining_case_count": 26,
+      "selected_policy_counts": {
+        "M0_R0_BASELINE": 7,
+        "R1_CALLER_FIRST": 17,
+        "R9_CALL_AWARE_SELECTIVE_RESIDENCE": 2
+      },
+      "selection_stable": true
+    }
+  },
+  "overfit": "NOT_PROVEN_EXTERNAL_HOLDOUT",
+  "rule_count": 5,
+  "selector_inputs": [
+    "has_call",
+    "number_of_calls",
+    "live_across_call_count",
+    "max_live_set",
+    "loop_count",
+    "max_loop_depth",
+    "memory_operation_count",
+    "indexed_memory_operation_count",
+    "address_taken_count",
+    "virtual_register_count",
+    "branch_count"
+  ],
+  "status": "RESEARCH_ONLY_NOT_PRODUCTION_INTEGRATED"
+}

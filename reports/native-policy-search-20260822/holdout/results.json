@@ -1,0 +1,250 @@
+{
+  "BEAM_R1_R9": {
+    "case_groups": {
+      "holdout": 6,
+      "holdout-existing": 3
+    },
+    "external_status": "NOT_AVAILABLE_READ_ONLY",
+    "status": "PASS_SYNTHETIC_AND_EXISTING_REGRESSION"
+  },
+  "BEAM_R2_R9": {
+    "case_groups": {
+      "holdout": 6,
+      "holdout-existing": 3
+    },
+    "external_status": "NOT_AVAILABLE_READ_ONLY",
+    "status": "PASS_SYNTHETIC_AND_EXISTING_REGRESSION"
+  },
+  "BEAM_R3_R9": {
+    "case_groups": {
+      "holdout": 6,
+      "holdout-existing": 3
+    },
+    "external_status": "NOT_AVAILABLE_READ_ONLY",
+    "status": "PASS_SYNTHETIC_AND_EXISTING_REGRESSION"
+  },
+  "DETERMINISTIC_POLICY_PORTFOLIO_V1": {
+    "case_groups": {
+      "holdout": 0,
+      "holdout-existing": 0
+    },
+    "external_status": "NOT_RUN",
+    "status": "NOT_RUN"
+  },
+  "M0_R0_BASELINE": {
+    "case_groups": {
+      "holdout": 6,
+      "holdout-existing": 3
+    },
+    "external_status": "NOT_AVAILABLE_READ_ONLY",
+    "status": "PASS_SYNTHETIC_AND_EXISTING_REGRESSION"
+  },
+  "M1_COMPACT_INDEXED_MEMORY": {
+    "case_groups": {
+      "holdout": 0,
+      "holdout-existing": 0
+    },
+    "external_status": "NOT_RUN",
+    "status": "NOT_RUN"
+  },
+  "M1_R1": {
+    "case_groups": {
+      "holdout": 0,
+      "holdout-existing": 0
+    },
+    "external_status": "NOT_RUN",
+    "status": "NOT_RUN"
+  },
+  "M2_BASE_PINNING": {
+    "case_groups": {
+      "holdout": 0,
+      "holdout-existing": 0
+    },
+    "external_status": "NOT_RUN",
+    "status": "NOT_RUN"
+  },
+  "M2_R4": {
+    "case_groups": {
+      "holdout": 0,
+      "holdout-existing": 0
+    },
+    "external_status": "NOT_RUN",
+    "status": "NOT_RUN"
+  },
+  "M3_INDEX_PINNING": {
+    "case_groups": {
+      "holdout": 0,
+      "holdout-existing": 0
+    },
+    "external_status": "NOT_RUN",
+    "status": "NOT_RUN"
+  },
+  "M3_R6": {
+    "case_groups": {
+      "holdout": 0,
+      "holdout-existing": 0
+    },
+    "external_status": "NOT_RUN",
+    "status": "NOT_RUN"
+  },
+  "M4_BASE_PLUS_INDEX": {
+    "case_groups": {
+      "holdout": 0,
+      "holdout-existing": 0
+    },
+    "external_status": "NOT_RUN",
+    "status": "NOT_RUN"
+  },
+  "M4_R9": {
+    "case_groups": {
+      "holdout": 0,
+      "holdout-existing": 0
+    },
+    "external_status": "NOT_RUN",
+    "status": "NOT_RUN"
+  },
+  "M5_R7": {
+    "case_groups": {
+      "holdout": 0,
+      "holdout-existing": 0
+    },
+    "external_status": "NOT_RUN",
+    "status": "NOT_RUN"
+  },
+  "M5_SCALAR_MEM2REG_CONSERVATIVE": {
+    "case_groups": {
+      "holdout": 0,
+      "holdout-existing": 0
+    },
+    "external_status": "NOT_RUN",
+    "status": "NOT_RUN"
+  },
+  "M6_LOAD_FORWARDING": {
+    "case_groups": {
+      "holdout": 0,
+      "holdout-existing": 0
+    },
+    "external_status": "NOT_RUN",
+    "status": "NOT_RUN"
+  },
+  "M6_R8": {
+    "case_groups": {
+      "holdout": 0,
+      "holdout-existing": 0
+    },
+    "external_status": "NOT_RUN",
+    "status": "NOT_RUN"
+  },
+  "M7_R9": {
+    "case_groups": {
+      "holdout": 0,
+      "holdout-existing": 0
+    },
+    "external_status": "NOT_RUN",
+    "status": "NOT_RUN"
+  },
+  "M7_REGISTER_READ_CACHE": {
+    "case_groups": {
+      "holdout": 0,
+      "holdout-existing": 0
+    },
+    "external_status": "NOT_RUN",
+    "status": "NOT_RUN"
+  },
+  "M8_R10": {
+    "case_groups": {
+      "holdout": 0,
+      "holdout-existing": 0
+    },
+    "external_status": "NOT_RUN",
+    "status": "NOT_RUN"
+  },
+  "M8_REGISTER_WRITEBACK_ISLAND": {
+    "case_groups": {
+      "holdout": 0,
+      "holdout-existing": 0
+    },
+    "external_status": "NOT_RUN",
+    "status": "NOT_RUN"
+  },
+  "R10_REGION_RESIDENCE": {
+    "case_groups": {
+      "holdout": 0,
+      "holdout-existing": 0
+    },
+    "external_status": "NOT_RUN",
+    "status": "NOT_RUN"
+  },
+  "R1_CALLER_FIRST": {
+    "case_groups": {
+      "holdout": 6,
+      "holdout-existing": 3
+    },
+    "external_status": "NOT_AVAILABLE_READ_ONLY",
+    "status": "PASS_SYNTHETIC_AND_EXISTING_REGRESSION"
+  },
+  "R2_CALLEE_FIRST": {
+    "case_groups": {
+      "holdout": 6,
+      "holdout-existing": 3
+    },
+    "external_status": "NOT_AVAILABLE_READ_ONLY",
+    "status": "PASS_SYNTHETIC_AND_EXISTING_REGRESSION"
+  },
+  "R3_INTERLEAVED": {
+    "case_groups": {
+      "holdout": 6,
+      "holdout-existing": 3
+    },
+    "external_status": "NOT_AVAILABLE_READ_ONLY",
+    "status": "PASS_SYNTHETIC_AND_EXISTING_REGRESSION"
+  },
+  "R4_SHORT_CALLER_LONG_CALLEE": {
+    "case_groups": {
+      "holdout": 6,
+      "holdout-existing": 3
+    },
+    "external_status": "NOT_AVAILABLE_READ_ONLY",
+    "status": "PASS_SYNTHETIC_AND_EXISTING_REGRESSION"
+  },
+  "R5_USE_COUNT_WEIGHTED": {
+    "case_groups": {
+      "holdout": 0,
+      "holdout-existing": 0
+    },
+    "external_status": "NOT_RUN",
+    "status": "NOT_RUN"
+  },
+  "R6_LOOP_WEIGHTED": {
+    "case_groups": {
+      "holdout": 0,
+      "holdout-existing": 0
+    },
+    "external_status": "NOT_RUN",
+    "status": "NOT_RUN"
+  },
+  "R7_SPILL_COST_WEIGHTED": {
+    "case_groups": {
+      "holdout": 0,
+      "holdout-existing": 0
+    },
+    "external_status": "NOT_RUN",
+    "status": "NOT_RUN"
+  },
+  "R8_MOVE_AFFINITY": {
+    "case_groups": {
+      "holdout": 0,
+      "holdout-existing": 0
+    },
+    "external_status": "NOT_RUN",
+    "status": "NOT_RUN"
+  },
+  "R9_CALL_AWARE_SELECTIVE_RESIDENCE": {
+    "case_groups": {
+      "holdout": 6,
+      "holdout-existing": 3
+    },
+    "external_status": "NOT_AVAILABLE_READ_ONLY",
+    "status": "PASS_SYNTHETIC_AND_EXISTING_REGRESSION"
+  }
+}
