@@ -1,0 +1,17 @@
+{
+  "benchmark_repository_head": "fd5f5b48f36a1c4805bfbc69590f220e70d65951",
+  "benchmark_branch": "benchmark/m235-mega-hardening-linux-20260822",
+  "tested_s3_head": "6604b9d07c607579df9c5c0759d8f2a708ba72d1",
+  "baseline_s3_sha": "2a5f7bdb0e0dfd03fcae5249cb76bff118a642b6",
+  "raw_transcript": "reports/benchmark-20260822/raw/m199-characterization-raw.txt",
+  "raw_transcript_sha256": "b93ddf26b0d3f42fd352025835ddf73f24550672b581f1bbc870437395813c8a",
+  "provenance_check": "PASS",
+  "correctness": "PASS",
+  "timing_class": "CHARACTERIZATION_ONLY",
+  "native_speedup_claim": "NO",
+  "native_comparative_valid": false,
+  "available_workloads": "M1.99_ONLY",
+  "P1-P18": "NOT_AVAILABLE_IN_CURRENT_HARNESS",
+  "exit": 0,
+  "status": "PASS_CHARACTERIZATION_ONLY"
+}

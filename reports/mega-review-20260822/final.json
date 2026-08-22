@@ -1,0 +1,17 @@
+{
+  "source_head": "6604b9d07c607579df9c5c0759d8f2a708ba72d1",
+  "base_head": "3180983810b736a69575013a334fd6a183734ecd",
+  "historical_M2.00_standalone_T4": "DEFERRED",
+  "findings": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "corrected": 1
+  },
+  "M2.31-M2.35": "NOT_STARTED_NO_CONCRETE_FINDING",
+  "source_change_after_final_gates": false,
+  "full_suite": "NOT_RUN",
+  "T4": "NOT_RUN",
+  "status": "IMPLEMENTATION_FREEZE"
+}

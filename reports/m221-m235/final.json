@@ -1,0 +1,45 @@
+{
+  "campaign": "M2.21-M2.35",
+  "base_source": "3180983810b736a69575013a334fd6a183734ecd",
+  "final_tested_source_head": "6604b9d07c607579df9c5c0759d8f2a708ba72d1",
+  "final_candidate_head": "6604b9d07c607579df9c5c0759d8f2a708ba72d1",
+  "source_changed_after_final_gates": false,
+  "branch": "feature/m221-m235-mega-hardening-20260822",
+  "milestones": {
+    "M2.21": "FOUNDATION_PASS",
+    "M2.22": "PARTIAL_PASS",
+    "M2.23": "PASS_CONSERVATIVE",
+    "M2.24": "PASS",
+    "M2.25": "PASS",
+    "M2.26": "NO_CHANGE_JUSTIFIED",
+    "M2.27": "FOUNDATION_PASS",
+    "M2.28": "FOUNDATION_PASS_STATIC_HPACK",
+    "M2.29": "PASS_BOUNDARY",
+    "M2.30": "PASS",
+    "M2.31-M2.35": "NOT_STARTED_NO_CONCRETE_FINDING"
+  },
+  "gates": {
+    "T0": "PASS",
+    "T1": "PASS",
+    "T2": "PASS_WITH_3_EXPECTED_NATIVE_SKIPS",
+    "T3": "PASS",
+    "windows_full_suite": "NOT_RUN",
+    "T4": "NOT_RUN",
+    "linux_compileall": "PASS",
+    "linux_native_matrix": "PASS",
+    "linux_ffi": "PASS",
+    "linux_hash_seed": "PASS",
+    "linux_pytest": "NOT_AVAILABLE_NO_PYTEST"
+  },
+  "findings": {
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0
+  },
+  "publication": {
+    "merge": "NO",
+    "tag": "NO",
+    "release": "NO"
+  }
+}
