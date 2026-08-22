@@ -1,0 +1,23 @@
+{
+  "milestone": "M2.01",
+  "base_sha": "2316300f7f6c119004009b713849cae1c101d1a5",
+  "final_sha": "ff973e060968f17f8edf37603f72fa254447aa58",
+  "files_changed": [
+    "bootstrap/s3/codegen_optimization.py",
+    "tests/test_m201_optimization_framework.py"
+  ],
+  "production_change": true,
+  "test_change": true,
+  "optimization_proof_framework": "PASS",
+  "provenance": "PASS",
+  "determinism": "PASS",
+  "promotion_rules": "PASS",
+  "t1": "4 passed",
+  "t2": "10 passed; 13 passed deterministic differential and robustness",
+  "t3": "48 passed, 8 skipped",
+  "t4": "NOT_RUN",
+  "benchmarks": "NOT_RUN",
+  "deferments": ["M2.00 certification deferred by execution environment"],
+  "blockers": [],
+  "status": "COMPLETE"
+}
