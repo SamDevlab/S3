@@ -1,0 +1,69 @@
+{
+  "default_equals_off": true,
+  "native_policy": {
+    "call_register_order": [
+      "rbx",
+      "r12",
+      "r13",
+      "r14",
+      "r15",
+      "rdi",
+      "rsi",
+      "rdx",
+      "rcx",
+      "r8",
+      "r9"
+    ],
+    "call_residence": "whole_function_frame_fallback",
+    "indexed_memory_policy": "canonical",
+    "live_range_split": "disabled",
+    "load_forwarding": "disabled",
+    "move_coalescing": "disabled",
+    "name": "baseline",
+    "register_order": [
+      "rdi",
+      "rsi",
+      "rdx",
+      "rcx",
+      "r8",
+      "r9",
+      "rbx",
+      "r12",
+      "r13",
+      "r14",
+      "r15"
+    ],
+    "rematerialization": "disabled",
+    "residence_scope": "single_definition_cross_block",
+    "scalar_promotion": "disabled",
+    "spill_cost_parameters": [
+      [
+        "use_count",
+        4
+      ],
+      [
+        "loop_depth",
+        8
+      ],
+      [
+        "interference_degree",
+        2
+      ],
+      [
+        "call_crossing",
+        6
+      ],
+      [
+        "rematerializable",
+        -5
+      ],
+      [
+        "live_range_length",
+        1
+      ]
+    ],
+    "spill_policy": "stack_on_exhaustion",
+    "writeback_policy": "canonical"
+  },
+  "status": "PASS"
+}

@@ -1,0 +1,29 @@
+{
+  "decision_inputs": "static AssemblyFunction features only",
+  "fallback": "FAIL_CLOSED_TO_BASELINE",
+  "forbidden_identity_inputs": [
+    "benchmark_name",
+    "case_id",
+    "path",
+    "filename",
+    "expected_output",
+    "source_fingerprint",
+    "timing",
+    "host",
+    "randomness",
+    "object_id",
+    "timestamp"
+  ],
+  "invariants": [
+    "index_once",
+    "bounds_initialization",
+    "mutability",
+    "reference_safety",
+    "address_provenance",
+    "side_effects",
+    "TMOV",
+    "ABI",
+    "failure_behavior",
+    "instruction_limit"
+  ]
+}

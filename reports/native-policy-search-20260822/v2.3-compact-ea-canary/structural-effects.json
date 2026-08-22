@@ -1,0 +1,42 @@
+{
+  "baseline_metrics": {
+    "branches": 18208,
+    "frame_bytes": 17088,
+    "instructions": 104693,
+    "leas": 3722,
+    "loads": 96,
+    "movs": 33489,
+    "spills_reload": 1434,
+    "stack_ops": 1434,
+    "stores": 1015,
+    "text_bytes": 3213977,
+    "total_load_store": 1111
+  },
+  "canary_metrics": {
+    "branches": 18208,
+    "frame_bytes": 17088,
+    "instructions": 104602,
+    "leas": 3722,
+    "loads": 96,
+    "movs": 33398,
+    "spills_reload": 1434,
+    "stack_ops": 1434,
+    "stores": 1015,
+    "text_bytes": 3212430,
+    "total_load_store": 1111
+  },
+  "canary_minus_off": {
+    "branches": 0,
+    "frame_bytes": 0,
+    "instructions": -91,
+    "leas": 0,
+    "loads": 0,
+    "movs": -91,
+    "spills_reload": 0,
+    "stack_ops": 0,
+    "stores": 0,
+    "text_bytes": -1547,
+    "total_load_store": 0
+  },
+  "timing": "NOT_RUN"
+}

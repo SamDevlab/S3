@@ -1,0 +1,639 @@
+{
+  "cases": [
+    "A07",
+    "R01",
+    "R02",
+    "R03",
+    "R04",
+    "R05",
+    "R06",
+    "R07",
+    "R08",
+    "R09",
+    "R10",
+    "R11",
+    "R12",
+    "R13",
+    "R14",
+    "R15",
+    "R16",
+    "R17",
+    "R18",
+    "R19",
+    "R20",
+    "R21",
+    "R22",
+    "R23",
+    "R24"
+  ],
+  "comparison_count": 75,
+  "modes": [
+    "off",
+    "shadow",
+    "compact-ea-canary"
+  ],
+  "rows": [
+    {
+      "case_id": "A07",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 5\n"
+    },
+    {
+      "case_id": "A07",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 5\n"
+    },
+    {
+      "case_id": "A07",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 5\n"
+    },
+    {
+      "case_id": "R01",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 14\n"
+    },
+    {
+      "case_id": "R01",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 14\n"
+    },
+    {
+      "case_id": "R01",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 14\n"
+    },
+    {
+      "case_id": "R02",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 18\n"
+    },
+    {
+      "case_id": "R02",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 18\n"
+    },
+    {
+      "case_id": "R02",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 18\n"
+    },
+    {
+      "case_id": "R03",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 11\n"
+    },
+    {
+      "case_id": "R03",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 11\n"
+    },
+    {
+      "case_id": "R03",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 11\n"
+    },
+    {
+      "case_id": "R04",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 26\n"
+    },
+    {
+      "case_id": "R04",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 26\n"
+    },
+    {
+      "case_id": "R04",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 26\n"
+    },
+    {
+      "case_id": "R05",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 30\n"
+    },
+    {
+      "case_id": "R05",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 30\n"
+    },
+    {
+      "case_id": "R05",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 30\n"
+    },
+    {
+      "case_id": "R06",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 17\n"
+    },
+    {
+      "case_id": "R06",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 17\n"
+    },
+    {
+      "case_id": "R06",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 17\n"
+    },
+    {
+      "case_id": "R07",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 19\n"
+    },
+    {
+      "case_id": "R07",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 19\n"
+    },
+    {
+      "case_id": "R07",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 19\n"
+    },
+    {
+      "case_id": "R08",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 42\n"
+    },
+    {
+      "case_id": "R08",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 42\n"
+    },
+    {
+      "case_id": "R08",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 42\n"
+    },
+    {
+      "case_id": "R09",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 7\n"
+    },
+    {
+      "case_id": "R09",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 7\n"
+    },
+    {
+      "case_id": "R09",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 7\n"
+    },
+    {
+      "case_id": "R10",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 10\n"
+    },
+    {
+      "case_id": "R10",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 10\n"
+    },
+    {
+      "case_id": "R10",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 10\n"
+    },
+    {
+      "case_id": "R11",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 13\n"
+    },
+    {
+      "case_id": "R11",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 13\n"
+    },
+    {
+      "case_id": "R11",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 13\n"
+    },
+    {
+      "case_id": "R12",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 16\n"
+    },
+    {
+      "case_id": "R12",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 16\n"
+    },
+    {
+      "case_id": "R12",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 16\n"
+    },
+    {
+      "case_id": "R13",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 19\n"
+    },
+    {
+      "case_id": "R13",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 19\n"
+    },
+    {
+      "case_id": "R13",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 19\n"
+    },
+    {
+      "case_id": "R14",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 22\n"
+    },
+    {
+      "case_id": "R14",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 22\n"
+    },
+    {
+      "case_id": "R14",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 22\n"
+    },
+    {
+      "case_id": "R15",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 25\n"
+    },
+    {
+      "case_id": "R15",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 25\n"
+    },
+    {
+      "case_id": "R15",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 25\n"
+    },
+    {
+      "case_id": "R16",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 28\n"
+    },
+    {
+      "case_id": "R16",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 28\n"
+    },
+    {
+      "case_id": "R16",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 28\n"
+    },
+    {
+      "case_id": "R17",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 44\n"
+    },
+    {
+      "case_id": "R17",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 44\n"
+    },
+    {
+      "case_id": "R17",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 44\n"
+    },
+    {
+      "case_id": "R18",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 48\n"
+    },
+    {
+      "case_id": "R18",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 48\n"
+    },
+    {
+      "case_id": "R18",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 48\n"
+    },
+    {
+      "case_id": "R19",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 52\n"
+    },
+    {
+      "case_id": "R19",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 52\n"
+    },
+    {
+      "case_id": "R19",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 52\n"
+    },
+    {
+      "case_id": "R20",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 56\n"
+    },
+    {
+      "case_id": "R20",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 56\n"
+    },
+    {
+      "case_id": "R20",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 56\n"
+    },
+    {
+      "case_id": "R21",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 32\n"
+    },
+    {
+      "case_id": "R21",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 32\n"
+    },
+    {
+      "case_id": "R21",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 32\n"
+    },
+    {
+      "case_id": "R22",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 34\n"
+    },
+    {
+      "case_id": "R22",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 34\n"
+    },
+    {
+      "case_id": "R22",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 34\n"
+    },
+    {
+      "case_id": "R23",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 36\n"
+    },
+    {
+      "case_id": "R23",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 36\n"
+    },
+    {
+      "case_id": "R23",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 36\n"
+    },
+    {
+      "case_id": "R24",
+      "mode": "off",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 38\n"
+    },
+    {
+      "case_id": "R24",
+      "mode": "shadow",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 38\n"
+    },
+    {
+      "case_id": "R24",
+      "mode": "compact-ea-canary",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr": "",
+      "stdout": "program returned: 38\n"
+    }
+  ],
+  "status": "PASS",
+  "timing_used": false
+}

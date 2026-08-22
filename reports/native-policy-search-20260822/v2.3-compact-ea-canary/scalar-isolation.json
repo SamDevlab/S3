@@ -1,0 +1,6 @@
+{
+  "canary_policy": "indexed_memory_policy=compact_ea only",
+  "other_scalar_genes": "baseline",
+  "scalar_promotion": "disabled",
+  "status": "PASS"
+}

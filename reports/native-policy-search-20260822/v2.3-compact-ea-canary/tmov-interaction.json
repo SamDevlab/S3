@@ -1,0 +1,7 @@
+{
+  "contract": "canary uses live logical index and preserves TMOV semantics",
+  "residence_matrix_comparisons": 4,
+  "residence_matrix_failures": 0,
+  "status": "PASS",
+  "timing": "NOT_RUN"
+}

@@ -1,0 +1,12 @@
+{
+  "canary_applied_functions": 37,
+  "canary_compact_ea_applications": 91,
+  "canary_encoding_rejections": 0,
+  "canary_fallbacks": 54,
+  "canary_requests": 91,
+  "canary_safety_rejections": 54,
+  "indexed_candidates": 107,
+  "no_fabrication": true,
+  "status": "INSUFFICIENT_FOR_TARGET",
+  "target": 100
+}

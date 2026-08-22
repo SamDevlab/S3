@@ -1,0 +1,8 @@
+{
+  "comparison_count": 0,
+  "failure_count": 0,
+  "status": "PASS_NOT_REQUIRED",
+  "reason": "The four-policy historical V2.2 implementation path was not changed; V2.3 focused regression and default identity gates passed.",
+  "timing": "NOT_RUN",
+  "v22_source_lock": "04d94a5368106c1f476ac8856a1a313eedea7b37"
+}

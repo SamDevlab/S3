@@ -1,0 +1,478 @@
+{
+  "benchmarks": "NOT_RUN",
+  "branch": "experiment/native-policy-search-20260822",
+  "campaign": "S3-ABL-V2.3-COMPACT-EA-EXPERIMENTAL-CANARY-GATE-20260822",
+  "coverage": {
+    "canary_applied_functions": 37,
+    "canary_compact_ea_applications": 91,
+    "canary_requests": 91,
+    "canary_safety_rejections": 54,
+    "indexed_candidates": 107,
+    "no_fabrication": true,
+    "status": "INSUFFICIENT_FOR_TARGET",
+    "target": 100
+  },
+  "hard_regressions": 0,
+  "modes": {
+    "canary": "explicit_opt_in",
+    "default": "off",
+    "shadow_identity": true
+  },
+  "negative_controls": {
+    "controls": [
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "c5c99f545856cd161e2de74c29264ef9a79eac56431e581788a9bb8c101967a5",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "cd1ca7828b6e8d5d2bd48bf183df2cd0e803effee0841a7f3d141e9d68d581d2",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "d1791856c85a59992b6ca1ac8c78e2c1bbe255b56828a0eb22885c9ead627968",
+        "reason": "canary_safety_fallback:calls_or_cross_call_liveness_present"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "8b028d8ada6da5c953b33f7584379f381bb45ae219812305e0abbe6c03387597",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "cb37c917f9f8bc19606dd1200e0ebe279781d2b481e285cf76154e40f3ccf6d8",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "f10205e4080012d7920d09da60cc3ce8402eecd551b16614357dab0ab99b6635",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "8c2deadf0b366f05d524052d095f4af7ec5972872371322d79689f7ed15e4629",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "58faf82defe5a873b59b7f546a68263d8a56dd3848219f4efa78d07f39cbd917",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "aceeafdd6e438069f88e51089399eab9da6036a41276bc338cb01747dfd1d5b1",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "e40d488584927fe47268c1521f53328cfd90475fb8b3debb6f584eac67ccde3b",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "9a5c79ebd113751f4010bc3c7ea32499420d82acfb41525ae2604b739ec41227",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "8c2deadf0b366f05d524052d095f4af7ec5972872371322d79689f7ed15e4629",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "ae773760465223ce30ad73cff98d2b1b1dd7c7d851c4867504a7bb950e29a6cc",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "cd1ca7828b6e8d5d2bd48bf183df2cd0e803effee0841a7f3d141e9d68d581d2",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "56d62fc583637d7d9dcad84a22d1734a697ff75f4cdffde48d07cae387a708eb",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "cacafbd008cd84bb23c1caa047c5b2914090ca6008754b657bab40695067c605",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "cb37c917f9f8bc19606dd1200e0ebe279781d2b481e285cf76154e40f3ccf6d8",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "6298ce38bd7be81fb9668ac0f7f7ec6582f3bc1a36fa2807c2d8dbc70fe5b299",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "d1791856c85a59992b6ca1ac8c78e2c1bbe255b56828a0eb22885c9ead627968",
+        "reason": "canary_safety_fallback:calls_or_cross_call_liveness_present"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "ae773760465223ce30ad73cff98d2b1b1dd7c7d851c4867504a7bb950e29a6cc",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "9a5c79ebd113751f4010bc3c7ea32499420d82acfb41525ae2604b739ec41227",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "8c2deadf0b366f05d524052d095f4af7ec5972872371322d79689f7ed15e4629",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "60f28f2cf3a4a9da63c4467120ec83987565746dde90367853426990969252cc",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "ae773760465223ce30ad73cff98d2b1b1dd7c7d851c4867504a7bb950e29a6cc",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "cb37c917f9f8bc19606dd1200e0ebe279781d2b481e285cf76154e40f3ccf6d8",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "56d62fc583637d7d9dcad84a22d1734a697ff75f4cdffde48d07cae387a708eb",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "aceeafdd6e438069f88e51089399eab9da6036a41276bc338cb01747dfd1d5b1",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "aceeafdd6e438069f88e51089399eab9da6036a41276bc338cb01747dfd1d5b1",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "58faf82defe5a873b59b7f546a68263d8a56dd3848219f4efa78d07f39cbd917",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "f10205e4080012d7920d09da60cc3ce8402eecd551b16614357dab0ab99b6635",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "aceeafdd6e438069f88e51089399eab9da6036a41276bc338cb01747dfd1d5b1",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "8b028d8ada6da5c953b33f7584379f381bb45ae219812305e0abbe6c03387597",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "8b028d8ada6da5c953b33f7584379f381bb45ae219812305e0abbe6c03387597",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "8b028d8ada6da5c953b33f7584379f381bb45ae219812305e0abbe6c03387597",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "d1791856c85a59992b6ca1ac8c78e2c1bbe255b56828a0eb22885c9ead627968",
+        "reason": "canary_safety_fallback:calls_or_cross_call_liveness_present"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "d1791856c85a59992b6ca1ac8c78e2c1bbe255b56828a0eb22885c9ead627968",
+        "reason": "canary_safety_fallback:calls_or_cross_call_liveness_present"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "e40d488584927fe47268c1521f53328cfd90475fb8b3debb6f584eac67ccde3b",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "aceeafdd6e438069f88e51089399eab9da6036a41276bc338cb01747dfd1d5b1",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "56d62fc583637d7d9dcad84a22d1734a697ff75f4cdffde48d07cae387a708eb",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "56d62fc583637d7d9dcad84a22d1734a697ff75f4cdffde48d07cae387a708eb",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "8b028d8ada6da5c953b33f7584379f381bb45ae219812305e0abbe6c03387597",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "8b028d8ada6da5c953b33f7584379f381bb45ae219812305e0abbe6c03387597",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "cacafbd008cd84bb23c1caa047c5b2914090ca6008754b657bab40695067c605",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "d1791856c85a59992b6ca1ac8c78e2c1bbe255b56828a0eb22885c9ead627968",
+        "reason": "canary_safety_fallback:calls_or_cross_call_liveness_present"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "d1791856c85a59992b6ca1ac8c78e2c1bbe255b56828a0eb22885c9ead627968",
+        "reason": "canary_safety_fallback:calls_or_cross_call_liveness_present"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "d1791856c85a59992b6ca1ac8c78e2c1bbe255b56828a0eb22885c9ead627968",
+        "reason": "canary_safety_fallback:calls_or_cross_call_liveness_present"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "b2799ea6338b20cb3e9701d01278d74c5cf4c380271ae7ee335a4ffdfb272711",
+        "reason": "canary_safety_fallback:calls_or_cross_call_liveness_present"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "8b028d8ada6da5c953b33f7584379f381bb45ae219812305e0abbe6c03387597",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "8b028d8ada6da5c953b33f7584379f381bb45ae219812305e0abbe6c03387597",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "8b028d8ada6da5c953b33f7584379f381bb45ae219812305e0abbe6c03387597",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "8b028d8ada6da5c953b33f7584379f381bb45ae219812305e0abbe6c03387597",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "777601916e1ddbb276f45a09439bb163c1f2e9da300ee4cfde5c5ec33427e373",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "749c9b5edb640efa45075697dfbfd9b657c12388c845aa5240c7e5092bda60f6",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      },
+      {
+        "fallback_identity": true,
+        "function_fingerprint": "aceeafdd6e438069f88e51089399eab9da6036a41276bc338cb01747dfd1d5b1",
+        "reason": "canary_safety_fallback:no_indexed_memory_operations"
+      }
+    ],
+    "fallback_count": 54,
+    "fallback_identity": true,
+    "status": "PASS"
+  },
+  "next_recommended_action": "V2.4_COMPACT_EA_CANARY_GENERALIZATION_AND_SOAK",
+  "pr": 190,
+  "pr190_ready": "NO",
+  "production_policy_changed": "NO",
+  "publication_head": "e59b63d5eaeacda85373bfe48eff3309bc18398e",
+  "qualification": {
+    "coverage": "INSUFFICIENT_FOR_TARGET",
+    "next": "V2.4_COMPACT_EA_CANARY_GENERALIZATION_AND_SOAK",
+    "qualification": "YES_RESEARCH_ONLY",
+    "t0": "PASS",
+    "t1": "PASS",
+    "t2": "PASS",
+    "t3": "PASS"
+  },
+  "schema": "s3.native-policy-search.v23.compact-ea-canary",
+  "structural_effects": {
+    "baseline_metrics": {
+      "branches": 18208,
+      "frame_bytes": 17088,
+      "instructions": 104693,
+      "leas": 3722,
+      "loads": 96,
+      "movs": 33489,
+      "spills_reload": 1434,
+      "stack_ops": 1434,
+      "stores": 1015,
+      "text_bytes": 3213977,
+      "total_load_store": 1111
+    },
+    "canary_metrics": {
+      "branches": 18208,
+      "frame_bytes": 17088,
+      "instructions": 104602,
+      "leas": 3722,
+      "loads": 96,
+      "movs": 33398,
+      "spills_reload": 1434,
+      "stack_ops": 1434,
+      "stores": 1015,
+      "text_bytes": 3212430,
+      "total_load_store": 1111
+    },
+    "canary_minus_off": {
+      "branches": 0,
+      "frame_bytes": 0,
+      "instructions": -91,
+      "leas": 0,
+      "loads": 0,
+      "movs": -91,
+      "spills_reload": 0,
+      "stack_ops": 0,
+      "stores": 0,
+      "text_bytes": -1547,
+      "total_load_store": 0
+    },
+    "timing": "NOT_RUN"
+  },
+  "t0": "PASS",
+  "t1": "PASS",
+  "t2": "PASS",
+  "t3": "PASS",
+  "timing": "NOT_RUN",
+  "v23_source_lock": "e59b63d5eaeacda85373bfe48eff3309bc18398e",
+  "status": "V23_COMPACT_EA_CANARY_QUALIFIED_RESEARCH_ONLY",
+  "canonical_main_sha": "2245c9f75b07b063b6da5716a753d02c1fee5f95",
+  "pr190_state": "OPEN",
+  "pr190_draft": "YES",
+  "pr190_mergeable": "MERGEABLE",
+  "pr190_merged": "NO",
+  "pr190_start_head": "6b734dd149c458a87e905dcf68d72eb416be3fb5",
+  "source_changes_after_v23_lock": "NO",
+  "experimental_modes": ["off", "shadow", "compact-ea-canary"],
+  "default_mode": "OFF",
+  "canary_implemented": "YES",
+  "canary_explicit_mode_available": "YES",
+  "canary_requires_explicit_opt_in": "YES",
+  "canary_default_enabled": "NO",
+  "canary_production_enabled": "NO",
+  "canary_active_genes": "COMPACT_INDEXED_MEMORY_ONLY",
+  "scalar_promotion_active_in_canary": "NO",
+  "off_vs_main_cases": 4,
+  "off_vs_main_identical": 4,
+  "off_vs_main_different": 0,
+  "off_equals_canonical_main": "YES",
+  "shadow_output_cases": 91,
+  "shadow_output_changed_cases": 0,
+  "shadow_output_equals_off": "YES",
+  "shadow_mutates_codegen": "NO",
+  "canary_requests": 91,
+  "canary_applied_functions": 37,
+  "canary_fallbacks": 54,
+  "canary_safety_rejections": 54,
+  "canary_encoding_rejections": 0,
+  "unsafe_canary_applications": 0,
+  "compact_ea_indexed_candidates": 107,
+  "compact_ea_eligible": 91,
+  "compact_ea_applications": 91,
+  "compact_ea_temp_registers_avoided": 91,
+  "compact_ea_instruction_delta": -91,
+  "compact_ea_mov_delta": -91,
+  "compact_ea_load_store_delta": 0,
+  "compact_ea_stack_op_delta": 0,
+  "compact_ea_spills_reload_delta": 0,
+  "compact_ea_frame_delta": 0,
+  "compact_ea_hard_regressions": 0,
+  "canary_harm_count": 0,
+  "coverage_target": 100,
+  "coverage_status": "INSUFFICIENT_FOR_TARGET",
+  "index_evaluated_once": "PASS",
+  "bounds_semantics": "PASS",
+  "initialization_semantics": "PASS",
+  "mutability_semantics": "PASS",
+  "reference_semantics": "PASS",
+  "address_provenance": "PASS",
+  "side_effect_order": "PASS",
+  "tmov_compact_interaction": "PASS",
+  "abi_preserved": "PASS",
+  "instruction_limit_semantics": "PASS",
+  "negative_controls": "PASS",
+  "canary_residence_matrix": "PASS",
+  "compact_canary_gene_isolation": "PASS",
+  "holdout": "PASS",
+  "canary_rule_frozen_before_holdout": "YES",
+  "lofo_arrays": "PASS",
+  "lofo_calls": "PASS",
+  "lofo_loops": "PASS",
+  "lofo_pressure": "PASS",
+  "lofo_branch": "PASS",
+  "lofo_mixed_realistic": "PASS",
+  "shadow_governor_total_decisions": 91,
+  "shadow_governor_nonbaseline": 37,
+  "shadow_governor_fallbacks": 54,
+  "shadow_governor_dominated": 0,
+  "shadow_governor_harm": 0,
+  "governor_recommends_compact": 37,
+  "governor_canary_agreements": 37,
+  "governor_false_positives": 0,
+  "governor_false_negatives": 0,
+  "safe_precision": 1.0,
+  "opportunities_taken": 91,
+  "opportunities_missed": 16,
+  "t1_selected": 7,
+  "t1_pass": 7,
+  "t1_fail": 0,
+  "t1_skip": 0,
+  "t2_selected": 47,
+  "t2_pass": 18,
+  "t2_fail": 0,
+  "t2_skip": 29,
+  "t3_total_comparisons": 75,
+  "t3_off_pass": 25,
+  "t3_shadow_pass": 25,
+  "t3_canary_pass": 25,
+  "t3_fail": 0,
+  "v22_regression_recheck_total": 0,
+  "v22_regression_recheck_pass": 0,
+  "v22_regression_recheck_fail": 0,
+  "pythonhashseed_0": "13aa69bc0ae0de93d78db9f3fbeab5ec2208902cae378ba625b2385bfd21211f",
+  "pythonhashseed_1": "13aa69bc0ae0de93d78db9f3fbeab5ec2208902cae378ba625b2385bfd21211f",
+  "pythonhashseed_42": "13aa69bc0ae0de93d78db9f3fbeab5ec2208902cae378ba625b2385bfd21211f",
+  "canary_deterministic": "PASS",
+  "external_p7": "DEFERRED_READ_ONLY",
+  "external_p8": "DEFERRED_READ_ONLY",
+  "external_p9": "DEFERRED_READ_ONLY",
+  "ml_dataset_records": 0,
+  "ml_training_readiness": "DATASET_FORMING",
+  "ml_training_executed": "NO",
+  "t4": "NOT_RUN",
+  "full_suite": "NOT_RUN",
+  "native_timing_used": "NO",
+  "native_speedup_claim": "NO",
+  "main_mutated": "NO",
+  "rc1_tag_mutated": "NO",
+  "s3_benchmarks_mutated": "NO",
+  "benchmark_pr12_mutated": "NO",
+  "force_push": "NO",
+  "rebase_used": "NO",
+  "pr190_branch_deleted": "NO",
+  "reboot": "NO",
+  "shutdown": "NO"
+}
