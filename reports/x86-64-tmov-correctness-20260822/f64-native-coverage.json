@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "case": "T26_F64_NATIVE_SOURCE_REDEFINED",
+  "source_semantics": "r0=1.5; TMOV r1,r0; r0=2.5; compare r1 with r0",
+  "observable_return_type": "tryte",
+  "expected_emulator": 1,
+  "native_register_allocation_false": 1,
+  "native_register_allocation_true": 1,
+  "native_return_code": 0,
+  "native_stderr": "",
+  "defer_reason": "NONE",
+  "timing_used": false
+}

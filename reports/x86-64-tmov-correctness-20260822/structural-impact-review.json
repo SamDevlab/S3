@@ -1,0 +1,13 @@
+{
+  "classification": "CORRECTNESS_REPAIR_STRUCTURAL_COST",
+  "structural_cases": 25,
+  "structural_unchanged": 24,
+  "structural_changed": 1,
+  "unrelated_changed": 0,
+  "changed_cases": ["A07"],
+  "a07_line_delta": 2,
+  "a07_mov_delta": 2,
+  "a07_instruction_delta": 2,
+  "timing_used": false,
+  "speedup_claim": "NO"
+}

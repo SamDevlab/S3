@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "register_allocation_false": "PASS",
+  "register_allocation_true": "PASS",
+  "stack_to_stack": "PASS",
+  "physical_to_stack": "PASS",
+  "stack_to_physical": "PASS",
+  "physical_to_physical": "PASS",
+  "caller_saved": "PASS",
+  "callee_saved": "PASS",
+  "physical_register_names_special_cased": false
+}

@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "uninitialized_source_rejected": true,
+  "initialized_source_copies": true,
+  "destination_becomes_initialized": true,
+  "previously_initialized_destination_overwritten": true,
+  "self_move_initialized_validated": true,
+  "self_move_uninitialized_rejected": true,
+  "instruction_accounting_preserved": true
+}
