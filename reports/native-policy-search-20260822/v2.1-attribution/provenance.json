@@ -1,0 +1,21 @@
+{
+  "base_sha": "9b39c7070d7bfa23d709c2128eb0b0bbef164177",
+  "benchmark_repository_read_only": true,
+  "branch": "experiment/native-policy-search-20260822",
+  "campaign_start_head": "fca8bb753c838905928981c2adca1471586609e4",
+  "current_head": "173796bab2ffbb9d202e465f850a6f4777587938",
+  "full_suite": "NOT_RUN",
+  "main_mutated": "NO",
+  "native_speedup_claim": "NO",
+  "pr": 190,
+  "rc1_mutated": "NO",
+  "repository": "SamDevlab/S3",
+  "source_changes_after_lock": "NO",
+  "t3": "PASS_LINUX_X86_64_FOCUSED",
+  "t3_comparisons": 96,
+  "t3_head": "173796bab2ffbb9d202e465f850a6f4777587938",
+  "t4": "NOT_RUN",
+  "timing_used": false,
+  "v21_source_lock": "173796bab2ffbb9d202e465f850a6f4777587938",
+  "v2_source_lock": "d74760e0f177978a3566318c7b50cff4c98f1fb6"
+}

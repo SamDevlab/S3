@@ -1,0 +1,1695 @@
+{
+  "comparison_policy": {
+    "call_register_order": [
+      "rbx",
+      "r12",
+      "r13",
+      "r14",
+      "r15",
+      "rdi",
+      "rsi",
+      "rdx",
+      "rcx",
+      "r8",
+      "r9"
+    ],
+    "call_residence": "whole_function_frame_fallback",
+    "indexed_memory_policy": "canonical",
+    "live_range_split": "loop_boundary",
+    "load_forwarding": "disabled",
+    "move_coalescing": "disabled",
+    "name": "v21_live_range_split_cost",
+    "register_order": [
+      "rdi",
+      "rsi",
+      "rdx",
+      "rcx",
+      "r8",
+      "r9",
+      "rbx",
+      "r12",
+      "r13",
+      "r14",
+      "r15"
+    ],
+    "rematerialization": "disabled",
+    "residence_scope": "single_definition_cross_block",
+    "scalar_promotion": "disabled",
+    "spill_cost_parameters": [
+      [
+        "use_count",
+        4
+      ],
+      [
+        "loop_depth",
+        8
+      ],
+      [
+        "interference_degree",
+        2
+      ],
+      [
+        "call_crossing",
+        6
+      ],
+      [
+        "rematerializable",
+        -5
+      ],
+      [
+        "live_range_length",
+        1
+      ]
+    ],
+    "spill_policy": "region_aware",
+    "writeback_policy": "canonical"
+  },
+  "counts": {
+    "APPLY": 6,
+    "BORDERLINE": 42,
+    "SPLIT_REJECTED_BY_COST": 12
+  },
+  "rows": [
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A01",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "indexed_memory",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A02",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "indexed_memory",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A03",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "indexed_memory",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 30,
+        "spills_reload_delta": 12,
+        "split_points": [
+          "body->header"
+        ]
+      },
+      "address_taken": false,
+      "case_id": "A04",
+      "decision": "SPLIT_REJECTED_BY_COST",
+      "decision_correct": true,
+      "family": "indexed_memory",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 6,
+        "estimated_benefit": 0,
+        "estimated_cost": 18,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 3,
+        "save_restore_added": 6,
+        "stores_added": 3
+      },
+      "split_points": [
+        "body->header"
+      ]
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A05",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "indexed_memory",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A06",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "indexed_memory",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A07",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "scalar_replacement",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A08",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "scalar_replacement",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A09",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "scalar_replacement",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A10",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "scalar_replacement",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A11",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "scalar_replacement",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": true,
+      "case_id": "A12",
+      "decision": "APPLY",
+      "decision_correct": true,
+      "family": "scalar_replacement",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 2,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 1,
+        "expected_spills_avoided": 1,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A13",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "register_pressure",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A14",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "register_pressure",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 71,
+        "spills_reload_delta": 26,
+        "split_points": [
+          "inner_body->inner",
+          "inner_done->outer",
+          "outer_step->outer"
+        ]
+      },
+      "address_taken": false,
+      "case_id": "A15",
+      "decision": "SPLIT_REJECTED_BY_COST",
+      "decision_correct": true,
+      "family": "register_pressure",
+      "nested_loop_or_call_context": true,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 16,
+        "estimated_benefit": 0,
+        "estimated_cost": 48,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 8,
+        "save_restore_added": 16,
+        "stores_added": 8
+      },
+      "split_points": [
+        "inner_body->inner",
+        "inner_done->outer",
+        "outer_step->outer"
+      ]
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A16",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "register_pressure",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A17",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "register_pressure",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A18",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "register_pressure",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 20,
+        "spills_reload_delta": 8,
+        "split_points": [
+          "body->header"
+        ]
+      },
+      "address_taken": false,
+      "case_id": "A19",
+      "decision": "SPLIT_REJECTED_BY_COST",
+      "decision_correct": true,
+      "family": "localized_pressure",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 4,
+        "estimated_benefit": 0,
+        "estimated_cost": 12,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 2,
+        "save_restore_added": 4,
+        "stores_added": 2
+      },
+      "split_points": [
+        "body->header"
+      ]
+    },
+    {
+      "actual": {
+        "instructions_delta": 71,
+        "spills_reload_delta": 26,
+        "split_points": [
+          "inner_body->inner",
+          "inner_done->outer",
+          "outer_step->outer"
+        ]
+      },
+      "address_taken": false,
+      "case_id": "A20",
+      "decision": "SPLIT_REJECTED_BY_COST",
+      "decision_correct": true,
+      "family": "localized_pressure",
+      "nested_loop_or_call_context": true,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 16,
+        "estimated_benefit": 0,
+        "estimated_cost": 48,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 8,
+        "save_restore_added": 16,
+        "stores_added": 8
+      },
+      "split_points": [
+        "inner_body->inner",
+        "inner_done->outer",
+        "outer_step->outer"
+      ]
+    },
+    {
+      "actual": {
+        "instructions_delta": 30,
+        "spills_reload_delta": 12,
+        "split_points": [
+          "body->header"
+        ]
+      },
+      "address_taken": false,
+      "case_id": "A21",
+      "decision": "SPLIT_REJECTED_BY_COST",
+      "decision_correct": true,
+      "family": "localized_pressure",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 6,
+        "estimated_benefit": 0,
+        "estimated_cost": 18,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 3,
+        "save_restore_added": 6,
+        "stores_added": 3
+      },
+      "split_points": [
+        "body->header"
+      ]
+    },
+    {
+      "actual": {
+        "instructions_delta": 30,
+        "spills_reload_delta": 12,
+        "split_points": [
+          "body->loop"
+        ]
+      },
+      "address_taken": false,
+      "case_id": "A22",
+      "decision": "SPLIT_REJECTED_BY_COST",
+      "decision_correct": true,
+      "family": "localized_pressure",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 6,
+        "estimated_benefit": 0,
+        "estimated_cost": 18,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 3,
+        "save_restore_added": 6,
+        "stores_added": 3
+      },
+      "split_points": [
+        "body->loop"
+      ]
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A23",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "localized_pressure",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A24",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "localized_pressure",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A25",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "constant_rematerialization",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A26",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "constant_rematerialization",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A27",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "constant_rematerialization",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A28",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "constant_rematerialization",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A29",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "constant_rematerialization",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 30,
+        "spills_reload_delta": 12,
+        "split_points": [
+          "body->loop"
+        ]
+      },
+      "address_taken": false,
+      "case_id": "A30",
+      "decision": "SPLIT_REJECTED_BY_COST",
+      "decision_correct": true,
+      "family": "constant_rematerialization",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 6,
+        "estimated_benefit": 0,
+        "estimated_cost": 18,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 3,
+        "save_restore_added": 6,
+        "stores_added": 3
+      },
+      "split_points": [
+        "body->loop"
+      ]
+    },
+    {
+      "actual": {
+        "instructions_delta": 20,
+        "spills_reload_delta": 8,
+        "split_points": [
+          "body->header"
+        ]
+      },
+      "address_taken": false,
+      "case_id": "A31",
+      "decision": "SPLIT_REJECTED_BY_COST",
+      "decision_correct": true,
+      "family": "loop_live_range",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 4,
+        "estimated_benefit": 0,
+        "estimated_cost": 12,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 2,
+        "save_restore_added": 4,
+        "stores_added": 2
+      },
+      "split_points": [
+        "body->header"
+      ]
+    },
+    {
+      "actual": {
+        "instructions_delta": 71,
+        "spills_reload_delta": 26,
+        "split_points": [
+          "inner_body->inner",
+          "inner_done->outer",
+          "outer_step->outer"
+        ]
+      },
+      "address_taken": false,
+      "case_id": "A32",
+      "decision": "SPLIT_REJECTED_BY_COST",
+      "decision_correct": true,
+      "family": "loop_live_range",
+      "nested_loop_or_call_context": true,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 16,
+        "estimated_benefit": 0,
+        "estimated_cost": 48,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 8,
+        "save_restore_added": 16,
+        "stores_added": 8
+      },
+      "split_points": [
+        "inner_body->inner",
+        "inner_done->outer",
+        "outer_step->outer"
+      ]
+    },
+    {
+      "actual": {
+        "instructions_delta": 30,
+        "spills_reload_delta": 12,
+        "split_points": [
+          "body->header"
+        ]
+      },
+      "address_taken": false,
+      "case_id": "A33",
+      "decision": "SPLIT_REJECTED_BY_COST",
+      "decision_correct": true,
+      "family": "loop_live_range",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 6,
+        "estimated_benefit": 0,
+        "estimated_cost": 18,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 3,
+        "save_restore_added": 6,
+        "stores_added": 3
+      },
+      "split_points": [
+        "body->header"
+      ]
+    },
+    {
+      "actual": {
+        "instructions_delta": 20,
+        "spills_reload_delta": 8,
+        "split_points": [
+          "body->header"
+        ]
+      },
+      "address_taken": false,
+      "case_id": "A34",
+      "decision": "SPLIT_REJECTED_BY_COST",
+      "decision_correct": true,
+      "family": "loop_live_range",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 4,
+        "estimated_benefit": 0,
+        "estimated_cost": 12,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 2,
+        "save_restore_added": 4,
+        "stores_added": 2
+      },
+      "split_points": [
+        "body->header"
+      ]
+    },
+    {
+      "actual": {
+        "instructions_delta": 30,
+        "spills_reload_delta": 12,
+        "split_points": [
+          "body->loop"
+        ]
+      },
+      "address_taken": false,
+      "case_id": "A35",
+      "decision": "SPLIT_REJECTED_BY_COST",
+      "decision_correct": true,
+      "family": "loop_live_range",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 6,
+        "estimated_benefit": 0,
+        "estimated_cost": 18,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 3,
+        "save_restore_added": 6,
+        "stores_added": 3
+      },
+      "split_points": [
+        "body->loop"
+      ]
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A36",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "loop_live_range",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A37",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "calls_abi",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A38",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "calls_abi",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A39",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "calls_abi",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A40",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "calls_abi",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A41",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "calls_abi",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A42",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "calls_abi",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": true,
+      "case_id": "A43",
+      "decision": "APPLY",
+      "decision_correct": true,
+      "family": "references_aliasing",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 2,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 1,
+        "expected_spills_avoided": 1,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": true,
+      "case_id": "A44",
+      "decision": "APPLY",
+      "decision_correct": true,
+      "family": "references_aliasing",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 2,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 1,
+        "expected_spills_avoided": 1,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": true,
+      "case_id": "A45",
+      "decision": "APPLY",
+      "decision_correct": true,
+      "family": "references_aliasing",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 2,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 1,
+        "expected_spills_avoided": 1,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A46",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "references_aliasing",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A47",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "references_aliasing",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A48",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "references_aliasing",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A49",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "mixed_realistic",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A50",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "mixed_realistic",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A51",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "mixed_realistic",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A52",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "mixed_realistic",
+      "nested_loop_or_call_context": false,
+      "polarity": "positive",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A53",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "mixed_realistic",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A54",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "mixed_realistic",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A55",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "negative_control",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A56",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "negative_control",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": true,
+      "case_id": "A57",
+      "decision": "APPLY",
+      "decision_correct": true,
+      "family": "negative_control",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 2,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 1,
+        "expected_spills_avoided": 1,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": true,
+      "case_id": "A58",
+      "decision": "APPLY",
+      "decision_correct": true,
+      "family": "negative_control",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 2,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 1,
+        "expected_spills_avoided": 1,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A59",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "negative_control",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    },
+    {
+      "actual": {
+        "instructions_delta": 0,
+        "spills_reload_delta": 0,
+        "split_points": []
+      },
+      "address_taken": false,
+      "case_id": "A60",
+      "decision": "BORDERLINE",
+      "decision_correct": true,
+      "family": "negative_control",
+      "nested_loop_or_call_context": false,
+      "polarity": "negative",
+      "prediction": {
+        "copies_added": 0,
+        "estimated_benefit": 0,
+        "estimated_cost": 0,
+        "expected_reloads_avoided": 0,
+        "expected_spills_avoided": 0,
+        "extra_address_materialization": 0,
+        "loads_added": 0,
+        "save_restore_added": 0,
+        "stores_added": 0
+      },
+      "split_points": []
+    }
+  ],
+  "rule": "estimated_benefit > estimated_cost => APPLY; otherwise reject or borderline"
+}

@@ -1,0 +1,10 @@
+{
+  "core_artifacts_equal_across_hash_seeds": true,
+  "pythonhashseed": {
+    "0": "006e49fc7e3c408d90ee6c49623c52e094e16357efdf43c199a83c0ce55306a6",
+    "1": "006e49fc7e3c408d90ee6c49623c52e094e16357efdf43c199a83c0ce55306a6",
+    "42": "006e49fc7e3c408d90ee6c49623c52e094e16357efdf43c199a83c0ce55306a6"
+  },
+  "status": "PASS",
+  "timing_used": false
+}

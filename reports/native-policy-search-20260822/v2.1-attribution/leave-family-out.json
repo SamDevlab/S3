@@ -1,0 +1,82 @@
+{
+  "calls_abi": {
+    "evaluated_cases": 6,
+    "fails_closed": true,
+    "generalizes": true,
+    "harm_count": 0,
+    "pareto_rate": 1.0,
+    "training_excluded_family": "calls_abi"
+  },
+  "constant_rematerialization": {
+    "evaluated_cases": 6,
+    "fails_closed": true,
+    "generalizes": true,
+    "harm_count": 0,
+    "pareto_rate": 0.8333333333333334,
+    "training_excluded_family": "constant_rematerialization"
+  },
+  "indexed_memory": {
+    "evaluated_cases": 6,
+    "fails_closed": true,
+    "generalizes": true,
+    "harm_count": 0,
+    "pareto_rate": 1.0,
+    "training_excluded_family": "indexed_memory"
+  },
+  "localized_pressure": {
+    "evaluated_cases": 6,
+    "fails_closed": true,
+    "generalizes": true,
+    "harm_count": 0,
+    "pareto_rate": 1.0,
+    "training_excluded_family": "localized_pressure"
+  },
+  "loop_live_range": {
+    "evaluated_cases": 6,
+    "fails_closed": true,
+    "generalizes": true,
+    "harm_count": 0,
+    "pareto_rate": 1.0,
+    "training_excluded_family": "loop_live_range"
+  },
+  "mixed_realistic": {
+    "evaluated_cases": 6,
+    "fails_closed": true,
+    "generalizes": true,
+    "harm_count": 0,
+    "pareto_rate": 0.8333333333333334,
+    "training_excluded_family": "mixed_realistic"
+  },
+  "negative_control": {
+    "evaluated_cases": 6,
+    "fails_closed": true,
+    "generalizes": true,
+    "harm_count": 0,
+    "pareto_rate": 1.0,
+    "training_excluded_family": "negative_control"
+  },
+  "references_aliasing": {
+    "evaluated_cases": 6,
+    "fails_closed": true,
+    "generalizes": true,
+    "harm_count": 0,
+    "pareto_rate": 0.8333333333333334,
+    "training_excluded_family": "references_aliasing"
+  },
+  "register_pressure": {
+    "evaluated_cases": 6,
+    "fails_closed": true,
+    "generalizes": true,
+    "harm_count": 0,
+    "pareto_rate": 1.0,
+    "training_excluded_family": "register_pressure"
+  },
+  "scalar_replacement": {
+    "evaluated_cases": 6,
+    "fails_closed": true,
+    "generalizes": true,
+    "harm_count": 0,
+    "pareto_rate": 0.8333333333333334,
+    "training_excluded_family": "scalar_replacement"
+  }
+}
