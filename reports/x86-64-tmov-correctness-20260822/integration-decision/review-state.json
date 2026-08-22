@@ -1,0 +1,10 @@
+{
+  "reviews_total": 0,
+  "issue_comments_total": 0,
+  "requested_reviewers": 0,
+  "unresolved_correctness_concerns": 0,
+  "unresolved_scope_concerns": 0,
+  "request_changes_active": "NO",
+  "review_state": "NO_REVIEW_COMMENTS_OR_REQUESTED_CHANGES",
+  "no_approval_fabricated": true
+}

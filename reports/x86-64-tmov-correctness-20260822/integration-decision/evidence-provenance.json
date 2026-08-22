@@ -1,0 +1,15 @@
+{
+  "status": "PASS",
+  "review_source_lock": "d10532c0f2e2db07f1d342bd6c3dcc3c782199ae",
+  "records": [
+    {"gate": "T0", "source_sha": "d10532c0f2e2db07f1d342bd6c3dcc3c782199ae", "result": "PASS", "test_count": "bounded sanity and report validation", "host": "Windows local plus Linux source checkout", "timing_used": false},
+    {"gate": "T1", "source_sha": "d10532c0f2e2db07f1d342bd6c3dcc3c782199ae", "result": "PASS", "test_count": 74, "host": "Linux x86-64", "timing_used": false},
+    {"gate": "T2", "source_sha": "d10532c0f2e2db07f1d342bd6c3dcc3c782199ae", "result": "PASS", "test_count": 220, "host": "Linux x86-64", "timing_used": false},
+    {"gate": "T3_MINIMAL", "source_sha": "d10532c0f2e2db07f1d342bd6c3dcc3c782199ae", "result": "PASS", "test_count": "emulator plus native register allocation false/true", "host": "Linux x86-64", "timing_used": false},
+    {"gate": "T3_A07", "source_sha": "03415c9cab5aee95055d2cfe8a3b4bcfe916748aef020411adba183d84af8c9d source; repair lock d10532c", "result": "PASS", "test_count": "exact source plus native false/true", "host": "Linux x86-64", "timing_used": false},
+    {"gate": "T26_F64", "source_sha": "d10532c0f2e2db07f1d342bd6c3dcc3c782199ae", "result": "PASS", "test_count": 1, "host": "Linux x86-64", "timing_used": false},
+    {"gate": "V22_T3", "source_sha": "04d94a5368106c1f476ac8856a1a313eedea7b37 plus PR191 emitter patch", "result": "100/100", "test_count": 100, "host": "Linux x86-64 disposable combined checkout", "timing_used": false}
+  ],
+  "source_changes_after_review_lock": "NO",
+  "evidence_provenance": "PASS"
+}

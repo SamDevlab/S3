@@ -1,0 +1,25 @@
+{
+  "live_main_sha": "9b39c7070d7bfa23d709c2128eb0b0bbef164177",
+  "pr191": {
+    "number": 191,
+    "head": "e72602b8860d480f9b0bec2f43f4ac6ebbf22333",
+    "base": "9b39c7070d7bfa23d709c2128eb0b0bbef164177",
+    "state": "OPEN",
+    "draft": true,
+    "mergeable": "MERGEABLE",
+    "merged": false,
+    "branch": "fix/x86-64-tmov-residence-20260822"
+  },
+  "pr190": {
+    "number": 190,
+    "head": "161a3d91ef6a46586503d90f6c58c75d47b79964",
+    "base": "9b39c7070d7bfa23d709c2128eb0b0bbef164177",
+    "state": "OPEN",
+    "draft": true,
+    "mergeable": "MERGEABLE",
+    "merged": false,
+    "branch": "experiment/native-policy-search-20260822"
+  },
+  "worktree_clean": true,
+  "remote_alignment": true
+}

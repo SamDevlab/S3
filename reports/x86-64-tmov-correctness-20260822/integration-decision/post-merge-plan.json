@@ -1,0 +1,18 @@
+{
+  "status": "PLAN_ONLY",
+  "steps": [
+    "capture the factual PR191 merge SHA",
+    "verify main contains the repair",
+    "verify PR191 is merged",
+    "run the minimal reproducer from main",
+    "run exact A07 from main",
+    "run narrow TMOV smoke",
+    "set POST_TMOV_FIX_BASELINE to the merge SHA",
+    "do not run T4 automatically",
+    "keep v1.0.0-rc1 immutable",
+    "reconcile PR190 in a separate campaign"
+  ],
+  "executed": false,
+  "rc1_mutated": false,
+  "pr190_touched": false
+}
