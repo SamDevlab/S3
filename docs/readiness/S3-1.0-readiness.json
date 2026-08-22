@@ -1,0 +1,27 @@
+{
+  "candidate_sha": "2316300f7f6c119004009b713849cae1c101d1a5",
+  "m2_00_certification": "DEFERRED_BY_EXECUTION_ENVIRONMENT",
+  "m2_00_merged": false,
+  "milestones": {
+    "M2.01": "COMPLETE",
+    "M2.02": "PARTIAL",
+    "M2.03": "DEFERRED_BY_ENVIRONMENT",
+    "M2.04": "STRUCTURAL_ONLY",
+    "M2.05": "DEFERRED",
+    "M2.06": "DEFERRED",
+    "M2.07": "PASS_BOUNDED_HOSTED",
+    "M2.08": "PARTIAL",
+    "M2.09": "DEFERRED"
+  },
+  "compiler_determinism": "PASS_COVERED_CONTRACTS",
+  "native_codegen": "PARTIAL",
+  "async_runtime": "PASS_BOUNDED_HOSTED",
+  "tls": "DEFERRED",
+  "package_security": "DEFERRED",
+  "reproducibility": "PARTIAL",
+  "portability": "DEFERRED",
+  "performance_evidence": "DEFERRED",
+  "s3_1_0_readiness": "BLOCKED_BY_M2_00_CERTIFICATION",
+  "s3_1_0_declared": false,
+  "release": false
+}

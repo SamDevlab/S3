@@ -1,0 +1,42 @@
+{
+  "milestone": "M2.10",
+  "base_sha": "3c9c2f0502cf70649b2070c1ee9b0d41b435f58a",
+  "final_sha": "b3fcb03ccccd54e1c91d330397bbb2c4c23215f7",
+  "files_changed": [
+    "docs/readiness/S3-1.0-readiness.md",
+    "docs/readiness/S3-1.0-readiness.json",
+    "reports/m201-m210/*"
+  ],
+  "production_change": false,
+  "test_change": false,
+  "status": "BLOCKED_BY_M2_00_CERTIFICATION",
+  "milestones": {
+    "M2.01": "COMPLETE",
+    "M2.02": "PARTIAL",
+    "M2.03": "DEFERRED_BY_ENVIRONMENT",
+    "M2.04": "STRUCTURAL_ONLY",
+    "M2.05": "DEFERRED",
+    "M2.06": "DEFERRED",
+    "M2.07": "PASS_BOUNDED_HOSTED",
+    "M2.08": "PARTIAL",
+    "M2.09": "DEFERRED"
+  },
+  "compiler_determinism": "PASS_COVERED_CONTRACTS",
+  "native_codegen": "PARTIAL",
+  "async_runtime": "PASS_BOUNDED_HOSTED",
+  "tls": "DEFERRED",
+  "package_security": "DEFERRED",
+  "reproducibility": "PARTIAL",
+  "portability": "DEFERRED",
+  "performance_evidence": "DEFERRED",
+  "m2_00_certification": "DEFERRED_BY_EXECUTION_ENVIRONMENT",
+  "s3_1_0_readiness": "BLOCKED_BY_M2_00_CERTIFICATION",
+  "t0": "PASS",
+  "t1": "PASS",
+  "t2": "PASS",
+  "t3": "PASS_BOUNDED_MATRIX",
+  "t4": "NOT_RUN",
+  "full_suite_runs": 0,
+  "benchmarks": "NOT_RUN",
+  "blockers": ["M2.00 certification", "unavailable native/provider environments"]
+}
