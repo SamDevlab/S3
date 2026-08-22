@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Mapping
 
 from . import ast
-from .diagnostics import S3Error, SourceLocation
+from .diagnostics import S3Error, SourceLocation, diagnostic_from_exception
 from .parser import parse
 from .pipeline import compile_source
 
@@ -160,6 +160,9 @@ class LanguageServer:
         self._set_document(uri, text, version)
         return self._publish(uri)
 
+    def did_close(self, uri: str) -> None:
+        self._documents.pop(uri, None)
+
     def hover(self, uri: str, position: Mapping[str, int]) -> dict[str, object] | None:
         document = self._document(uri)
         word = _word_at(document.text, position)
@@ -208,6 +211,9 @@ class LanguageServer:
             raise LspError("document uri must be non-empty")
         if isinstance(version, bool) or not isinstance(version, int):
             raise LspError("document version must be an integer")
+        current = self._documents.get(uri)
+        if current is not None and version <= current.version:
+            raise LspError("document version must increase monotonically")
         try:
             program = parse(text)
             symbols = _symbols(program)
@@ -222,12 +228,14 @@ class LanguageServer:
             compile_source(document.text)
         except S3Error as error:
             location = error.location or SourceLocation(0, 1, 1)
+            diagnostic = diagnostic_from_exception(error, file=uri)
             diagnostics.append(
                 {
                     "range": _range(location),
                     "severity": 1,
+                    "code": diagnostic.code.value,
                     "source": "s3",
-                    "message": str(error),
+                    "message": diagnostic.message,
                 }
             )
         return {"uri": uri, "version": document.version, "diagnostics": diagnostics}

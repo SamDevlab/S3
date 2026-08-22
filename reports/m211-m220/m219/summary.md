@@ -1,0 +1,16 @@
+MILESTONE=M2.19
+BASE_SHA=4ef79faa462034744a56c7dcab9df6ac9524e7a9
+FINAL_SHA=bb7f32937ebb0474d34f25c49add04042b5f5edf
+FILES_CHANGED=bootstrap/s3/build_profiles.py;tests/test_m219_build_profiles.py
+PRODUCTION_FILES_CHANGED=bootstrap/s3/build_profiles.py
+TEST_FILES_CHANGED=tests/test_m219_build_profiles.py
+DOC_FILES_CHANGED=none
+T0=PASS
+T1=PASS
+T2=PASS_BOUNDED
+T3=NOT_REQUIRED
+T4=NOT_RUN
+DEFERMENTS=PGO_STATUS=FRAMEWORK_ONLY; no benchmark or native speedup claim
+BLOCKERS=none
+STATUS=PASS
+COMMITS=73e73f0a5546e1c20fffdf90c95895650d684a2c;bb7f32937ebb0474d34f25c49add04042b5f5edf
