@@ -2,7 +2,7 @@
 
 ## Result
 
-The bounded V2.2 campaign used source lock `04d94a5368106c1f476ac8856a1a313eedea7b37` and compared only `BASELINE`, `COMPACT_EA`, `SCALAR`, and `COMPACT_EA_SCALAR`. The default backend remained byte-identical and the modes remain internal, experimental, and opt-in.
+The bounded V2.2 campaign used source lock `04d94a5368106c1f476ac8856a1a313eedea7b37` and report publication commit `b92224541e6d2da7f605dbf62e485fc4f9420c03`. It compared only `BASELINE`, `COMPACT_EA`, `SCALAR`, and `COMPACT_EA_SCALAR`. The default backend remained byte-identical and the modes remain internal, experimental, and opt-in.
 
 Compact EA generalized across 91 corpus cases and 107 indexed candidates. The observed result was 91 applications, 91 avoided temporaries, 91 removed instructions, 91 removed moves, zero hard regressions, and 16 safety rejections. The desired 100-application target was not reached, so coverage is honestly classified as `INSUFFICIENT_FOR_TARGET`; no synthetic repetitions were added.
 
