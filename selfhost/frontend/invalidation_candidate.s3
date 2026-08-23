@@ -1,0 +1,147 @@
+fn add_mod(left: tryte, amount: tryte) -> tryte:
+    mut result: tryte = left
+    match result <=> 301 - amount:
+        -1:
+            result += amount
+        0:
+            result = result - (301 - amount)
+        1:
+            result = result - (301 - amount)
+    return result
+
+fn mix(checksum: tryte, kind: tryte, value: tryte) -> tryte:
+    mut result: tryte = checksum
+    mut rounds: tryte = 0
+    while rounds < 5:
+        result = add_mod(result, result)
+        rounds += 1
+    result = add_mod(result, kind)
+    result = add_mod(result, value)
+    return result
+
+fn contains_value(
+    values: tryte[8],
+    count: tryte,
+    target: tryte
+) -> trit:
+    mut index: tryte = 0
+    while index < count:
+        match values[index] == target:
+            -1:
+                return -1
+            0:
+                index += 1
+            1:
+                index += 1
+    return 0
+
+fn reaches_changed(
+    current: tryte,
+    depth: tryte,
+    edge_from: tryte[16],
+    edge_to: tryte[16],
+    edge_count: tryte,
+    changed_ids: tryte[8],
+    changed_count: tryte
+) -> trit:
+    match contains_value(changed_ids, changed_count, current):
+        -1:
+            return -1
+        0:
+            match depth <=> 0:
+                -1:
+                    return 0
+                0:
+                    return 0
+                1:
+                    mut edge_index: tryte = 0
+                    while edge_index < edge_count:
+                        match edge_from[edge_index] == current:
+                            -1:
+                                match reaches_changed(edge_to[edge_index], depth - 1, edge_from, edge_to, edge_count, changed_ids, changed_count):
+                                    -1:
+                                        return -1
+                                    0:
+                                        edge_index += 1
+                                    1:
+                                        edge_index += 1
+                            0:
+                                edge_index += 1
+                            1:
+                                edge_index += 1
+                    return 0
+        1:
+            return 0
+
+fn count_is_nonempty_bounded(value: tryte, maximum: tryte) -> trit:
+    match value <=> 0:
+        -1:
+            return 0
+        0:
+            return 0
+        1:
+            match value <=> maximum:
+                -1:
+                    return -1
+                0:
+                    return 0
+                1:
+                    return 0
+
+fn count_is_bounded(value: tryte, maximum: tryte) -> trit:
+    match value <=> maximum:
+        -1:
+            return -1
+        0:
+            return 0
+        1:
+            return 0
+
+fn incremental_invalidation_fingerprint(
+    module_ids: tryte[8],
+    edge_from: tryte[16],
+    edge_to: tryte[16],
+    changed_ids: tryte[8],
+    module_count: tryte,
+    edge_count: tryte,
+    changed_count: tryte
+) -> tryte:
+    match count_is_nonempty_bounded(module_count, 8):
+        -1:
+            match count_is_bounded(edge_count, 16):
+                -1:
+                    match count_is_nonempty_bounded(changed_count, 8):
+                        -1:
+                            mut changed_index: tryte = 0
+                            while changed_index < changed_count:
+                                match contains_value(module_ids, module_count, changed_ids[changed_index]):
+                                    -1:
+                                        changed_index += 1
+                                    0:
+                                        return -1
+                                    1:
+                                        return -1
+                            mut checksum: tryte = 0
+                            mut module_index: tryte = 0
+                            while module_index < module_count:
+                                match reaches_changed(module_ids[module_index], module_count, edge_from, edge_to, edge_count, changed_ids, changed_count):
+                                    -1:
+                                        checksum = mix(checksum, 110, module_ids[module_index])
+                                        module_index += 1
+                                    0:
+                                        module_index += 1
+                                    1:
+                                        module_index += 1
+                            return checksum
+                        0:
+                            return -1
+                        1:
+                            return -1
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            return -1
+        1:
+            return -1
