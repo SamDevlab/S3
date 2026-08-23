@@ -90,6 +90,18 @@
     "m267": ["tests/test_m267_incremental_invalidation.py"],
     "m268": ["tests/test_m268_assembly_frontend_closure.py"],
     "m269": ["tests/test_m269_frontend_canary.py"],
+    "m270": ["tests/test_m270_frontend_self_hosting_checkpoint.py"],
+    "m261-m269-level-c": [
+      "tests/test_m261_lexer_candidate.py",
+      "tests/test_m262_parser_candidate.py",
+      "tests/test_m263_canonical_ast_candidate.py",
+      "tests/test_m264_module_candidate.py",
+      "tests/test_m265_diagnostic_candidate.py",
+      "tests/test_m266_workspace_candidate.py",
+      "tests/test_m267_incremental_invalidation.py",
+      "tests/test_m268_assembly_frontend_closure.py",
+      "tests/test_m269_frontend_canary.py"
+    ],
     "m241-m259-level-c": [
       "tests/test_m241_workspace_semantic_graph.py",
       "tests/test_m242_lsp_project_intelligence.py",
@@ -1180,6 +1192,42 @@
       "tests": ["tests/test_m268_assembly_frontend_closure.py"],
       "milestones": ["m268", "assembly", "self-hosting"],
       "shards": ["m268"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/assembly_frontend_canary.py",
+      "tests": ["tests/test_m269_frontend_canary.py"],
+      "milestones": ["m269", "canary", "self-hosting"],
+      "shards": ["m269"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m269_frontend_canary.py",
+      "tests": ["tests/test_m269_frontend_canary.py"],
+      "milestones": ["m269", "canary", "self-hosting"],
+      "shards": ["m269"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tools/s3test.py",
+      "tests": ["tests/test_m270_frontend_self_hosting_checkpoint.py"],
+      "milestones": ["m270", "level-c", "self-hosting"],
+      "shards": ["m270"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m270_frontend_self_hosting_checkpoint.py",
+      "tests": ["tests/test_m270_frontend_self_hosting_checkpoint.py"],
+      "milestones": ["m270", "level-c", "self-hosting"],
+      "shards": ["m270"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
