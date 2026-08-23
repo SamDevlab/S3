@@ -1,0 +1,27 @@
+{
+  "external_native_gate": "PASS",
+  "execution": "correctness_only",
+  "input_hash_match": {
+    "P7": "YES",
+    "P8": "YES",
+    "P9": "YES"
+  },
+  "modes": ["off", "compact-ea-canary"],
+  "optimizations": ["O0", "O1"],
+  "oracles": {
+    "P7": 3615354,
+    "P8": 7560,
+    "P9": 44
+  },
+  "p7": "PASS",
+  "p7_canary": "PASS",
+  "p8": "PASS",
+  "p8_canary": "PASS",
+  "p9": "PASS",
+  "p9_canary": "PASS",
+  "cases": 12,
+  "failures": 0,
+  "timing_used": false,
+  "benchmark_mutation": "NO",
+  "notes": "Canonical OFF identity was established on the expanded V2.4 representative set; V2.4 OFF and explicit CANARY both matched the exact native P7/P8/P9 oracles."
+}

@@ -1,0 +1,6 @@
+{
+  "initialization_failure_semantics": "PASS",
+  "mutability_failure_semantics": "PASS",
+  "negative_controls": "inherited V2.3 frozen controls",
+  "status": "PASS"
+}

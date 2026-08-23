@@ -1,0 +1,51 @@
+{
+  "arrays": {
+    "evaluated_cases": 15,
+    "generalization": "PASS",
+    "harm_count": 0,
+    "non_dominated_rate": 0.9333333333333333,
+    "training_excluded_family": "arrays"
+  },
+  "branch": {
+    "evaluated_cases": 6,
+    "generalization": "PASS",
+    "harm_count": 0,
+    "non_dominated_rate": 1.0,
+    "training_excluded_family": "branch"
+  },
+  "calls": {
+    "evaluated_cases": 10,
+    "generalization": "PASS",
+    "harm_count": 0,
+    "non_dominated_rate": 0.7,
+    "training_excluded_family": "calls"
+  },
+  "loops": {
+    "evaluated_cases": 9,
+    "generalization": "PASS",
+    "harm_count": 0,
+    "non_dominated_rate": 1.0,
+    "training_excluded_family": "loops"
+  },
+  "mixed_realistic": {
+    "evaluated_cases": 14,
+    "generalization": "PASS",
+    "harm_count": 0,
+    "non_dominated_rate": 0.6428571428571429,
+    "training_excluded_family": "mixed_realistic"
+  },
+  "pressure": {
+    "evaluated_cases": 12,
+    "generalization": "PASS",
+    "harm_count": 0,
+    "non_dominated_rate": 1.0,
+    "training_excluded_family": "pressure"
+  },
+  "scalar": {
+    "evaluated_cases": 15,
+    "generalization": "PASS",
+    "harm_count": 0,
+    "non_dominated_rate": 0.8,
+    "training_excluded_family": "scalar"
+  }
+}

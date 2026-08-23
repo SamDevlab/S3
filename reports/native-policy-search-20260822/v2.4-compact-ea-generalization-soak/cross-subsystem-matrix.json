@@ -1,0 +1,72 @@
+{
+  "fail": 0,
+  "pairs": [
+    {
+      "pair": "REGISTER_ALLOCATION+RESIDENCE",
+      "status": "PASS"
+    },
+    {
+      "pair": "LIVENESS+TMOV",
+      "status": "PASS"
+    },
+    {
+      "pair": "CALL_ABI+BOUNDS",
+      "status": "PASS"
+    },
+    {
+      "pair": "REFERENCES+MUTABILITY",
+      "status": "PASS"
+    },
+    {
+      "pair": "LOOPS+INITIALIZATION",
+      "status": "PASS"
+    },
+    {
+      "pair": "BRANCHES+TMOV",
+      "status": "PASS"
+    },
+    {
+      "pair": "INSTRUCTION_LIMIT+MULTI_FUNCTION",
+      "status": "PASS"
+    },
+    {
+      "pair": "MULTI_FUNCTION+RESIDENCE",
+      "status": "PASS"
+    },
+    {
+      "pair": "REGISTER_ALLOCATION+CALL_ABI",
+      "status": "PASS"
+    },
+    {
+      "pair": "RESIDENCE+REFERENCES",
+      "status": "PASS"
+    },
+    {
+      "pair": "BOUNDS+MUTABILITY",
+      "status": "PASS"
+    },
+    {
+      "pair": "INITIALIZATION+LOOPS",
+      "status": "PASS"
+    },
+    {
+      "pair": "TMOV+CALL_ABI",
+      "status": "PASS"
+    },
+    {
+      "pair": "BRANCHES+BOUNDS",
+      "status": "PASS"
+    },
+    {
+      "pair": "LIVENESS+LOOPS",
+      "status": "PASS"
+    },
+    {
+      "pair": "MULTI_FUNCTION+MUTABILITY",
+      "status": "PASS"
+    }
+  ],
+  "pass": 16,
+  "status": "PASS",
+  "total": 16
+}

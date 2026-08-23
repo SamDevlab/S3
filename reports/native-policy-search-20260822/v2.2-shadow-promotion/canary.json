@@ -1,0 +1,19 @@
+{
+  "canary_compact_ea_applications": 91,
+  "canary_functions_eligible": 37,
+  "canary_functions_fallback": 54,
+  "canary_functions_optimized": 91,
+  "canary_functions_seen": 45,
+  "canary_indexed_candidates": 107,
+  "default_backend_identity": "PASS",
+  "default_mode": "off",
+  "explicit_off_byte_identity": "PASS",
+  "modes": [
+    "off",
+    "shadow",
+    "compact-ea-canary"
+  ],
+  "off_byte_identity": "PASS",
+  "qualification": "NO_T3_CORRECTNESS_FAILURE",
+  "t3": "FAIL_LINUX_X86_64_CORRECTNESS"
+}

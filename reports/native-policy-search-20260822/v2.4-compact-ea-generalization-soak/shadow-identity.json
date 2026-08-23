@@ -1,0 +1,419 @@
+{
+  "changed_cases": 0,
+  "output_cases": 103,
+  "rows": [
+    {
+      "case_id": "A01",
+      "identical": true
+    },
+    {
+      "case_id": "A02",
+      "identical": true
+    },
+    {
+      "case_id": "A03",
+      "identical": true
+    },
+    {
+      "case_id": "A04",
+      "identical": true
+    },
+    {
+      "case_id": "A05",
+      "identical": true
+    },
+    {
+      "case_id": "A06",
+      "identical": true
+    },
+    {
+      "case_id": "A07",
+      "identical": true
+    },
+    {
+      "case_id": "A08",
+      "identical": true
+    },
+    {
+      "case_id": "A09",
+      "identical": true
+    },
+    {
+      "case_id": "A10",
+      "identical": true
+    },
+    {
+      "case_id": "A11",
+      "identical": true
+    },
+    {
+      "case_id": "A12",
+      "identical": true
+    },
+    {
+      "case_id": "A13",
+      "identical": true
+    },
+    {
+      "case_id": "A14",
+      "identical": true
+    },
+    {
+      "case_id": "A15",
+      "identical": true
+    },
+    {
+      "case_id": "A16",
+      "identical": true
+    },
+    {
+      "case_id": "A17",
+      "identical": true
+    },
+    {
+      "case_id": "A18",
+      "identical": true
+    },
+    {
+      "case_id": "A19",
+      "identical": true
+    },
+    {
+      "case_id": "A20",
+      "identical": true
+    },
+    {
+      "case_id": "A21",
+      "identical": true
+    },
+    {
+      "case_id": "A22",
+      "identical": true
+    },
+    {
+      "case_id": "A23",
+      "identical": true
+    },
+    {
+      "case_id": "A24",
+      "identical": true
+    },
+    {
+      "case_id": "A25",
+      "identical": true
+    },
+    {
+      "case_id": "A26",
+      "identical": true
+    },
+    {
+      "case_id": "A27",
+      "identical": true
+    },
+    {
+      "case_id": "A28",
+      "identical": true
+    },
+    {
+      "case_id": "A29",
+      "identical": true
+    },
+    {
+      "case_id": "A30",
+      "identical": true
+    },
+    {
+      "case_id": "A31",
+      "identical": true
+    },
+    {
+      "case_id": "A32",
+      "identical": true
+    },
+    {
+      "case_id": "A33",
+      "identical": true
+    },
+    {
+      "case_id": "A34",
+      "identical": true
+    },
+    {
+      "case_id": "A35",
+      "identical": true
+    },
+    {
+      "case_id": "A36",
+      "identical": true
+    },
+    {
+      "case_id": "A37",
+      "identical": true
+    },
+    {
+      "case_id": "A38",
+      "identical": true
+    },
+    {
+      "case_id": "A39",
+      "identical": true
+    },
+    {
+      "case_id": "A40",
+      "identical": true
+    },
+    {
+      "case_id": "A41",
+      "identical": true
+    },
+    {
+      "case_id": "A42",
+      "identical": true
+    },
+    {
+      "case_id": "A43",
+      "identical": true
+    },
+    {
+      "case_id": "A44",
+      "identical": true
+    },
+    {
+      "case_id": "A45",
+      "identical": true
+    },
+    {
+      "case_id": "A46",
+      "identical": true
+    },
+    {
+      "case_id": "A47",
+      "identical": true
+    },
+    {
+      "case_id": "A48",
+      "identical": true
+    },
+    {
+      "case_id": "A49",
+      "identical": true
+    },
+    {
+      "case_id": "A50",
+      "identical": true
+    },
+    {
+      "case_id": "A51",
+      "identical": true
+    },
+    {
+      "case_id": "A52",
+      "identical": true
+    },
+    {
+      "case_id": "A53",
+      "identical": true
+    },
+    {
+      "case_id": "A54",
+      "identical": true
+    },
+    {
+      "case_id": "A55",
+      "identical": true
+    },
+    {
+      "case_id": "A56",
+      "identical": true
+    },
+    {
+      "case_id": "A57",
+      "identical": true
+    },
+    {
+      "case_id": "A58",
+      "identical": true
+    },
+    {
+      "case_id": "A59",
+      "identical": true
+    },
+    {
+      "case_id": "A60",
+      "identical": true
+    },
+    {
+      "case_id": "R01",
+      "identical": true
+    },
+    {
+      "case_id": "R02",
+      "identical": true
+    },
+    {
+      "case_id": "R03",
+      "identical": true
+    },
+    {
+      "case_id": "R04",
+      "identical": true
+    },
+    {
+      "case_id": "R05",
+      "identical": true
+    },
+    {
+      "case_id": "R06",
+      "identical": true
+    },
+    {
+      "case_id": "R07",
+      "identical": true
+    },
+    {
+      "case_id": "R08",
+      "identical": true
+    },
+    {
+      "case_id": "R09",
+      "identical": true
+    },
+    {
+      "case_id": "R10",
+      "identical": true
+    },
+    {
+      "case_id": "R11",
+      "identical": true
+    },
+    {
+      "case_id": "R12",
+      "identical": true
+    },
+    {
+      "case_id": "R13",
+      "identical": true
+    },
+    {
+      "case_id": "R14",
+      "identical": true
+    },
+    {
+      "case_id": "R15",
+      "identical": true
+    },
+    {
+      "case_id": "R16",
+      "identical": true
+    },
+    {
+      "case_id": "R17",
+      "identical": true
+    },
+    {
+      "case_id": "R18",
+      "identical": true
+    },
+    {
+      "case_id": "R19",
+      "identical": true
+    },
+    {
+      "case_id": "R20",
+      "identical": true
+    },
+    {
+      "case_id": "R21",
+      "identical": true
+    },
+    {
+      "case_id": "R22",
+      "identical": true
+    },
+    {
+      "case_id": "R23",
+      "identical": true
+    },
+    {
+      "case_id": "R24",
+      "identical": true
+    },
+    {
+      "case_id": "R25",
+      "identical": true
+    },
+    {
+      "case_id": "R26",
+      "identical": true
+    },
+    {
+      "case_id": "R27",
+      "identical": true
+    },
+    {
+      "case_id": "R28",
+      "identical": true
+    },
+    {
+      "case_id": "E01",
+      "identical": true
+    },
+    {
+      "case_id": "E02",
+      "identical": true
+    },
+    {
+      "case_id": "E03",
+      "identical": true
+    },
+    {
+      "case_id": "V24-01",
+      "identical": true
+    },
+    {
+      "case_id": "V24-02",
+      "identical": true
+    },
+    {
+      "case_id": "V24-03",
+      "identical": true
+    },
+    {
+      "case_id": "V24-04",
+      "identical": true
+    },
+    {
+      "case_id": "V24-05",
+      "identical": true
+    },
+    {
+      "case_id": "V24-06",
+      "identical": true
+    },
+    {
+      "case_id": "V24-07",
+      "identical": true
+    },
+    {
+      "case_id": "V24-08",
+      "identical": true
+    },
+    {
+      "case_id": "V24-09",
+      "identical": true
+    },
+    {
+      "case_id": "V24-10",
+      "identical": true
+    },
+    {
+      "case_id": "V24-11",
+      "identical": true
+    },
+    {
+      "case_id": "V24-12",
+      "identical": true
+    }
+  ],
+  "status": "PASS"
+}

@@ -1,0 +1,12 @@
+{
+  "cases": [
+    "V24-09",
+    "R25",
+    "R26",
+    "R27",
+    "R28"
+  ],
+  "fallback_acceptable": true,
+  "status": "PASS",
+  "unsafe_apply": 0
+}

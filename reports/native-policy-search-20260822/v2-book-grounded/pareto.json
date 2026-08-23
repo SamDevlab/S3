@@ -1,0 +1,676 @@
+{
+  "frontier": [
+    {
+      "label": "COMPACT_INDEXED_MEMORY",
+      "metrics": {
+        "address_recomputations": 1085,
+        "branches": 5538,
+        "callee_save_traffic": 21,
+        "caller_save_traffic": 120,
+        "calls": 906,
+        "frame_bytes": 5120,
+        "instructions": 31886,
+        "leas": 1085,
+        "loads": 36,
+        "memory_operands": 419,
+        "movs": 10178,
+        "pops": 1350,
+        "pushes": 1331,
+        "reloads": 36,
+        "self_movs": 0,
+        "spills": 300,
+        "spills_reload": 419,
+        "stack_loads": 36,
+        "stack_ops": 419,
+        "stack_stores": 300,
+        "stores": 300,
+        "text_bytes": 0,
+        "total_load_store": 336
+      },
+      "normalized_to_baseline": {
+        "frame_bytes": {
+          "baseline": 5120,
+          "ratio": 1.0,
+          "raw": 5120
+        },
+        "instructions": {
+          "baseline": 31907,
+          "ratio": 0.9993418372144044,
+          "raw": 31886
+        },
+        "spills_reload": {
+          "baseline": 419,
+          "ratio": 1.0,
+          "raw": 419
+        },
+        "stack_ops": {
+          "baseline": 419,
+          "ratio": 1.0,
+          "raw": 419
+        },
+        "total_load_store": {
+          "baseline": 336,
+          "ratio": 1.0,
+          "raw": 336
+        }
+      },
+      "policy_id": "V2_0ba2d6baa36a46fb"
+    },
+    {
+      "label": "CONST_REMATERIALIZATION+COMPACT_INDEXED_MEMORY",
+      "metrics": {
+        "address_recomputations": 1085,
+        "branches": 5538,
+        "callee_save_traffic": 21,
+        "caller_save_traffic": 120,
+        "calls": 906,
+        "frame_bytes": 5120,
+        "instructions": 31886,
+        "leas": 1085,
+        "loads": 36,
+        "memory_operands": 419,
+        "movs": 10178,
+        "pops": 1350,
+        "pushes": 1331,
+        "reloads": 36,
+        "self_movs": 0,
+        "spills": 300,
+        "spills_reload": 419,
+        "stack_loads": 36,
+        "stack_ops": 419,
+        "stack_stores": 300,
+        "stores": 300,
+        "text_bytes": 0,
+        "total_load_store": 336
+      },
+      "normalized_to_baseline": {
+        "frame_bytes": {
+          "baseline": 5120,
+          "ratio": 1.0,
+          "raw": 5120
+        },
+        "instructions": {
+          "baseline": 31907,
+          "ratio": 0.9993418372144044,
+          "raw": 31886
+        },
+        "spills_reload": {
+          "baseline": 419,
+          "ratio": 1.0,
+          "raw": 419
+        },
+        "stack_ops": {
+          "baseline": 419,
+          "ratio": 1.0,
+          "raw": 419
+        },
+        "total_load_store": {
+          "baseline": 336,
+          "ratio": 1.0,
+          "raw": 336
+        }
+      },
+      "policy_id": "V2_077171a9b68c8814"
+    },
+    {
+      "label": "REGION_AWARE_SPILL+COMPACT_INDEXED_MEMORY",
+      "metrics": {
+        "address_recomputations": 1085,
+        "branches": 5538,
+        "callee_save_traffic": 21,
+        "caller_save_traffic": 120,
+        "calls": 906,
+        "frame_bytes": 5120,
+        "instructions": 31886,
+        "leas": 1085,
+        "loads": 36,
+        "memory_operands": 419,
+        "movs": 10178,
+        "pops": 1350,
+        "pushes": 1331,
+        "reloads": 36,
+        "self_movs": 0,
+        "spills": 300,
+        "spills_reload": 419,
+        "stack_loads": 36,
+        "stack_ops": 419,
+        "stack_stores": 300,
+        "stores": 300,
+        "text_bytes": 0,
+        "total_load_store": 336
+      },
+      "normalized_to_baseline": {
+        "frame_bytes": {
+          "baseline": 5120,
+          "ratio": 1.0,
+          "raw": 5120
+        },
+        "instructions": {
+          "baseline": 31907,
+          "ratio": 0.9993418372144044,
+          "raw": 31886
+        },
+        "spills_reload": {
+          "baseline": 419,
+          "ratio": 1.0,
+          "raw": 419
+        },
+        "stack_ops": {
+          "baseline": 419,
+          "ratio": 1.0,
+          "raw": 419
+        },
+        "total_load_store": {
+          "baseline": 336,
+          "ratio": 1.0,
+          "raw": 336
+        }
+      },
+      "policy_id": "V2_a4630b67db9c08a7"
+    },
+    {
+      "label": "PRESSURE_AWARE_SCALAR_REPLACEMENT+COMPACT_INDEXED_MEMORY",
+      "metrics": {
+        "address_recomputations": 1086,
+        "branches": 5540,
+        "callee_save_traffic": 21,
+        "caller_save_traffic": 118,
+        "calls": 906,
+        "frame_bytes": 5120,
+        "instructions": 31891,
+        "leas": 1086,
+        "loads": 36,
+        "memory_operands": 418,
+        "movs": 10178,
+        "pops": 1350,
+        "pushes": 1331,
+        "reloads": 36,
+        "self_movs": 0,
+        "spills": 299,
+        "spills_reload": 418,
+        "stack_loads": 36,
+        "stack_ops": 418,
+        "stack_stores": 299,
+        "stores": 299,
+        "text_bytes": 0,
+        "total_load_store": 335
+      },
+      "normalized_to_baseline": {
+        "frame_bytes": {
+          "baseline": 5120,
+          "ratio": 1.0,
+          "raw": 5120
+        },
+        "instructions": {
+          "baseline": 31907,
+          "ratio": 0.9994985426395462,
+          "raw": 31891
+        },
+        "spills_reload": {
+          "baseline": 419,
+          "ratio": 0.9976133651551312,
+          "raw": 418
+        },
+        "stack_ops": {
+          "baseline": 419,
+          "ratio": 0.9976133651551312,
+          "raw": 418
+        },
+        "total_load_store": {
+          "baseline": 336,
+          "ratio": 0.9970238095238095,
+          "raw": 335
+        }
+      },
+      "policy_id": "V2_b4e09618cbf1d2a0"
+    },
+    {
+      "label": "MUTATION_4_PRESSURE_AWARE_SCALAR_REPLACEMENT",
+      "metrics": {
+        "address_recomputations": 1086,
+        "branches": 5540,
+        "callee_save_traffic": 21,
+        "caller_save_traffic": 118,
+        "calls": 906,
+        "frame_bytes": 5120,
+        "instructions": 31891,
+        "leas": 1086,
+        "loads": 36,
+        "memory_operands": 418,
+        "movs": 10178,
+        "pops": 1350,
+        "pushes": 1331,
+        "reloads": 36,
+        "self_movs": 0,
+        "spills": 299,
+        "spills_reload": 418,
+        "stack_loads": 36,
+        "stack_ops": 418,
+        "stack_stores": 299,
+        "stores": 299,
+        "text_bytes": 0,
+        "total_load_store": 335
+      },
+      "normalized_to_baseline": {
+        "frame_bytes": {
+          "baseline": 5120,
+          "ratio": 1.0,
+          "raw": 5120
+        },
+        "instructions": {
+          "baseline": 31907,
+          "ratio": 0.9994985426395462,
+          "raw": 31891
+        },
+        "spills_reload": {
+          "baseline": 419,
+          "ratio": 0.9976133651551312,
+          "raw": 418
+        },
+        "stack_ops": {
+          "baseline": 419,
+          "ratio": 0.9976133651551312,
+          "raw": 418
+        },
+        "total_load_store": {
+          "baseline": 336,
+          "ratio": 0.9970238095238095,
+          "raw": 335
+        }
+      },
+      "policy_id": "V2_2fc90a4d8dfd8ec4"
+    },
+    {
+      "label": "MUTATION_6_PRESSURE_AWARE_SCALAR_REPLACEMENT+COMPACT_INDEXED_MEMORY",
+      "metrics": {
+        "address_recomputations": 1086,
+        "branches": 5540,
+        "callee_save_traffic": 21,
+        "caller_save_traffic": 118,
+        "calls": 906,
+        "frame_bytes": 5120,
+        "instructions": 31891,
+        "leas": 1086,
+        "loads": 36,
+        "memory_operands": 418,
+        "movs": 10178,
+        "pops": 1350,
+        "pushes": 1331,
+        "reloads": 36,
+        "self_movs": 0,
+        "spills": 299,
+        "spills_reload": 418,
+        "stack_loads": 36,
+        "stack_ops": 418,
+        "stack_stores": 299,
+        "stores": 299,
+        "text_bytes": 0,
+        "total_load_store": 335
+      },
+      "normalized_to_baseline": {
+        "frame_bytes": {
+          "baseline": 5120,
+          "ratio": 1.0,
+          "raw": 5120
+        },
+        "instructions": {
+          "baseline": 31907,
+          "ratio": 0.9994985426395462,
+          "raw": 31891
+        },
+        "spills_reload": {
+          "baseline": 419,
+          "ratio": 0.9976133651551312,
+          "raw": 418
+        },
+        "stack_ops": {
+          "baseline": 419,
+          "ratio": 0.9976133651551312,
+          "raw": 418
+        },
+        "total_load_store": {
+          "baseline": 336,
+          "ratio": 0.9970238095238095,
+          "raw": 335
+        }
+      },
+      "policy_id": "V2_8ccb6a07b2136167"
+    },
+    {
+      "label": "MUTATION_10_CONST_REMATERIALIZATION",
+      "metrics": {
+        "address_recomputations": 1085,
+        "branches": 5538,
+        "callee_save_traffic": 21,
+        "caller_save_traffic": 120,
+        "calls": 906,
+        "frame_bytes": 5120,
+        "instructions": 31886,
+        "leas": 1085,
+        "loads": 36,
+        "memory_operands": 419,
+        "movs": 10178,
+        "pops": 1350,
+        "pushes": 1331,
+        "reloads": 36,
+        "self_movs": 0,
+        "spills": 300,
+        "spills_reload": 419,
+        "stack_loads": 36,
+        "stack_ops": 419,
+        "stack_stores": 300,
+        "stores": 300,
+        "text_bytes": 0,
+        "total_load_store": 336
+      },
+      "normalized_to_baseline": {
+        "frame_bytes": {
+          "baseline": 5120,
+          "ratio": 1.0,
+          "raw": 5120
+        },
+        "instructions": {
+          "baseline": 31907,
+          "ratio": 0.9993418372144044,
+          "raw": 31886
+        },
+        "spills_reload": {
+          "baseline": 419,
+          "ratio": 1.0,
+          "raw": 419
+        },
+        "stack_ops": {
+          "baseline": 419,
+          "ratio": 1.0,
+          "raw": 419
+        },
+        "total_load_store": {
+          "baseline": 336,
+          "ratio": 1.0,
+          "raw": 336
+        }
+      },
+      "policy_id": "V2_c29150d8daa342c4"
+    },
+    {
+      "label": "MUTATION_13_COMPACT_INDEXED_MEMORY",
+      "metrics": {
+        "address_recomputations": 1085,
+        "branches": 5538,
+        "callee_save_traffic": 21,
+        "caller_save_traffic": 120,
+        "calls": 906,
+        "frame_bytes": 5120,
+        "instructions": 31886,
+        "leas": 1085,
+        "loads": 36,
+        "memory_operands": 419,
+        "movs": 10178,
+        "pops": 1350,
+        "pushes": 1331,
+        "reloads": 36,
+        "self_movs": 0,
+        "spills": 300,
+        "spills_reload": 419,
+        "stack_loads": 36,
+        "stack_ops": 419,
+        "stack_stores": 300,
+        "stores": 300,
+        "text_bytes": 0,
+        "total_load_store": 336
+      },
+      "normalized_to_baseline": {
+        "frame_bytes": {
+          "baseline": 5120,
+          "ratio": 1.0,
+          "raw": 5120
+        },
+        "instructions": {
+          "baseline": 31907,
+          "ratio": 0.9993418372144044,
+          "raw": 31886
+        },
+        "spills_reload": {
+          "baseline": 419,
+          "ratio": 1.0,
+          "raw": 419
+        },
+        "stack_ops": {
+          "baseline": 419,
+          "ratio": 1.0,
+          "raw": 419
+        },
+        "total_load_store": {
+          "baseline": 336,
+          "ratio": 1.0,
+          "raw": 336
+        }
+      },
+      "policy_id": "V2_a182516d87d8a4e7"
+    },
+    {
+      "label": "RECOMBINATION_14_PRESSURE_AWARE_SCALAR_REPLACEMENT+COMPACT_INDEXED_MEMORY+LOOP_BOUNDARY_LIVE_RANGE_SPLIT",
+      "metrics": {
+        "address_recomputations": 1086,
+        "branches": 5540,
+        "callee_save_traffic": 21,
+        "caller_save_traffic": 118,
+        "calls": 906,
+        "frame_bytes": 5120,
+        "instructions": 31891,
+        "leas": 1086,
+        "loads": 36,
+        "memory_operands": 418,
+        "movs": 10178,
+        "pops": 1350,
+        "pushes": 1331,
+        "reloads": 36,
+        "self_movs": 0,
+        "spills": 299,
+        "spills_reload": 418,
+        "stack_loads": 36,
+        "stack_ops": 418,
+        "stack_stores": 299,
+        "stores": 299,
+        "text_bytes": 0,
+        "total_load_store": 335
+      },
+      "normalized_to_baseline": {
+        "frame_bytes": {
+          "baseline": 5120,
+          "ratio": 1.0,
+          "raw": 5120
+        },
+        "instructions": {
+          "baseline": 31907,
+          "ratio": 0.9994985426395462,
+          "raw": 31891
+        },
+        "spills_reload": {
+          "baseline": 419,
+          "ratio": 0.9976133651551312,
+          "raw": 418
+        },
+        "stack_ops": {
+          "baseline": 419,
+          "ratio": 0.9976133651551312,
+          "raw": 418
+        },
+        "total_load_store": {
+          "baseline": 336,
+          "ratio": 0.9970238095238095,
+          "raw": 335
+        }
+      },
+      "policy_id": "V2_a9c18dbdf2dcad3a"
+    },
+    {
+      "label": "MUTATION_16_BASELINE",
+      "metrics": {
+        "address_recomputations": 1085,
+        "branches": 5538,
+        "callee_save_traffic": 21,
+        "caller_save_traffic": 120,
+        "calls": 906,
+        "frame_bytes": 5120,
+        "instructions": 31886,
+        "leas": 1085,
+        "loads": 36,
+        "memory_operands": 419,
+        "movs": 10178,
+        "pops": 1350,
+        "pushes": 1331,
+        "reloads": 36,
+        "self_movs": 0,
+        "spills": 300,
+        "spills_reload": 419,
+        "stack_loads": 36,
+        "stack_ops": 419,
+        "stack_stores": 300,
+        "stores": 300,
+        "text_bytes": 0,
+        "total_load_store": 336
+      },
+      "normalized_to_baseline": {
+        "frame_bytes": {
+          "baseline": 5120,
+          "ratio": 1.0,
+          "raw": 5120
+        },
+        "instructions": {
+          "baseline": 31907,
+          "ratio": 0.9993418372144044,
+          "raw": 31886
+        },
+        "spills_reload": {
+          "baseline": 419,
+          "ratio": 1.0,
+          "raw": 419
+        },
+        "stack_ops": {
+          "baseline": 419,
+          "ratio": 1.0,
+          "raw": 419
+        },
+        "total_load_store": {
+          "baseline": 336,
+          "ratio": 1.0,
+          "raw": 336
+        }
+      },
+      "policy_id": "V2_f26a8b48c61594e2"
+    },
+    {
+      "label": "MUTATION_21_COMPACT_INDEXED_MEMORY",
+      "metrics": {
+        "address_recomputations": 1086,
+        "branches": 5540,
+        "callee_save_traffic": 21,
+        "caller_save_traffic": 118,
+        "calls": 906,
+        "frame_bytes": 5120,
+        "instructions": 31891,
+        "leas": 1086,
+        "loads": 36,
+        "memory_operands": 418,
+        "movs": 10178,
+        "pops": 1350,
+        "pushes": 1331,
+        "reloads": 36,
+        "self_movs": 0,
+        "spills": 299,
+        "spills_reload": 418,
+        "stack_loads": 36,
+        "stack_ops": 418,
+        "stack_stores": 299,
+        "stores": 299,
+        "text_bytes": 0,
+        "total_load_store": 335
+      },
+      "normalized_to_baseline": {
+        "frame_bytes": {
+          "baseline": 5120,
+          "ratio": 1.0,
+          "raw": 5120
+        },
+        "instructions": {
+          "baseline": 31907,
+          "ratio": 0.9994985426395462,
+          "raw": 31891
+        },
+        "spills_reload": {
+          "baseline": 419,
+          "ratio": 0.9976133651551312,
+          "raw": 418
+        },
+        "stack_ops": {
+          "baseline": 419,
+          "ratio": 0.9976133651551312,
+          "raw": 418
+        },
+        "total_load_store": {
+          "baseline": 336,
+          "ratio": 0.9970238095238095,
+          "raw": 335
+        }
+      },
+      "policy_id": "V2_14403bd31bfa3164"
+    },
+    {
+      "label": "RECOMBINATION_23_REGION_AWARE_SPILL+PRESSURE_AWARE_SCALAR_REPLACEMENT+PRESSURE_AWARE_SCALAR_REPLACEMENT+COMPACT_INDEXED_MEMORY",
+      "metrics": {
+        "address_recomputations": 1086,
+        "branches": 5540,
+        "callee_save_traffic": 21,
+        "caller_save_traffic": 118,
+        "calls": 906,
+        "frame_bytes": 5120,
+        "instructions": 31891,
+        "leas": 1086,
+        "loads": 36,
+        "memory_operands": 418,
+        "movs": 10178,
+        "pops": 1350,
+        "pushes": 1331,
+        "reloads": 36,
+        "self_movs": 0,
+        "spills": 299,
+        "spills_reload": 418,
+        "stack_loads": 36,
+        "stack_ops": 418,
+        "stack_stores": 299,
+        "stores": 299,
+        "text_bytes": 0,
+        "total_load_store": 335
+      },
+      "normalized_to_baseline": {
+        "frame_bytes": {
+          "baseline": 5120,
+          "ratio": 1.0,
+          "raw": 5120
+        },
+        "instructions": {
+          "baseline": 31907,
+          "ratio": 0.9994985426395462,
+          "raw": 31891
+        },
+        "spills_reload": {
+          "baseline": 419,
+          "ratio": 0.9976133651551312,
+          "raw": 418
+        },
+        "stack_ops": {
+          "baseline": 419,
+          "ratio": 0.9976133651551312,
+          "raw": 418
+        },
+        "total_load_store": {
+          "baseline": 336,
+          "ratio": 0.9970238095238095,
+          "raw": 335
+        }
+      },
+      "policy_id": "V2_b7006ce9bd37a653"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "comparison": "static function-local decision only",
+  "governor_autonomous_activation": false,
+  "official_mode": "compact-ea-canary",
+  "shadow_mode": "shadow",
+  "total_decisions": 91,
+  "nonbaseline_recommendations": 37,
+  "baseline_fallbacks": 54,
+  "dominated": 0,
+  "harm": 0,
+  "governor_recommends_compact": 37,
+  "canary_safe_apply": 37,
+  "agreements": 37,
+  "false_positives": 0,
+  "false_negatives": 0,
+  "status": "PASS",
+  "source": "V2.2 post-TMOV governor observation; no autonomous canary activation"
+}

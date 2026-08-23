@@ -1,0 +1,109 @@
+{
+  "cases": [
+    {
+      "case_id": "V24-01",
+      "distinguishing_dimension": "multi-index and multi-memory",
+      "expected_oracle": "safe_apply",
+      "family": "multi_index",
+      "semantic_purpose": "two independent arrays and indices",
+      "why_not_duplicate": "not a register-renaming or constant-only variant"
+    },
+    {
+      "case_id": "V24-02",
+      "distinguishing_dimension": "index update across loop",
+      "expected_oracle": "safe_apply",
+      "family": "loop_carried_index",
+      "semantic_purpose": "loop-carried index",
+      "why_not_duplicate": "loop-carried liveness is absent from the simple straight-line cases"
+    },
+    {
+      "case_id": "V24-03",
+      "distinguishing_dimension": "diamond-selected index at join",
+      "expected_oracle": "safe_apply",
+      "family": "branch_selected_index",
+      "semantic_purpose": "branch-selected index",
+      "why_not_duplicate": "control-flow-selected index is a distinct dataflow shape"
+    },
+    {
+      "case_id": "V24-04",
+      "distinguishing_dimension": "call barrier around access",
+      "expected_oracle": "fallback",
+      "family": "call_adjacent",
+      "semantic_purpose": "call-adjacent indexed access",
+      "why_not_duplicate": "call liveness is a distinct negative safety dimension"
+    },
+    {
+      "case_id": "V24-05",
+      "distinguishing_dimension": "multiple live scalar values",
+      "expected_oracle": "safe_apply",
+      "family": "register_pressure",
+      "semantic_purpose": "register pressure around indexed sites",
+      "why_not_duplicate": "pressure differs semantically from register numbering"
+    },
+    {
+      "case_id": "V24-06",
+      "distinguishing_dimension": "read-modify-write across two sites",
+      "expected_oracle": "safe_apply",
+      "family": "mixed_load_store",
+      "semantic_purpose": "mixed indexed load/store",
+      "why_not_duplicate": "load/store ordering is distinct from repeated loads"
+    },
+    {
+      "case_id": "V24-07",
+      "distinguishing_dimension": "snapshot then source redefinition",
+      "expected_oracle": "safe_apply",
+      "family": "tmov_interaction",
+      "semantic_purpose": "TMOV index interaction",
+      "why_not_duplicate": "TMOV source mutation is a correctness sentinel"
+    },
+    {
+      "case_id": "V24-08",
+      "distinguishing_dimension": "nested control flow with indexed sites",
+      "expected_oracle": "safe_apply",
+      "family": "nested_loop",
+      "semantic_purpose": "nested loops",
+      "why_not_duplicate": "nested loop structure is distinct from one loop"
+    },
+    {
+      "case_id": "V24-09",
+      "distinguishing_dimension": "address-taken value near access",
+      "expected_oracle": "fallback",
+      "family": "reference_safety",
+      "semantic_purpose": "reference safety",
+      "why_not_duplicate": "alias-sensitive fallback is not a positive case"
+    },
+    {
+      "case_id": "V24-10",
+      "distinguishing_dimension": "independent memory objects",
+      "expected_oracle": "safe_apply",
+      "family": "multi_memory",
+      "semantic_purpose": "multi-memory transfer",
+      "why_not_duplicate": "two-object transfer differs from one-object access"
+    },
+    {
+      "case_id": "V24-11",
+      "distinguishing_dimension": "branch-selected write before join read",
+      "expected_oracle": "safe_apply",
+      "family": "branch_store_load",
+      "semantic_purpose": "branch store/load",
+      "why_not_duplicate": "store-side branch behavior differs from index selection"
+    },
+    {
+      "case_id": "V24-12",
+      "distinguishing_dimension": "TMOV plus branch plus two memories",
+      "expected_oracle": "safe_apply",
+      "family": "mixed_realistic",
+      "semantic_purpose": "mixed realistic",
+      "why_not_duplicate": "combined interaction is held out and not a parameter variant"
+    }
+  ],
+  "duplicate_or_low_information_cases_count": 0,
+  "filtering_rules": [
+    "constant-only variants rejected",
+    "register-renaming variants rejected",
+    "variable-renaming variants rejected",
+    "array-length-only variants rejected",
+    "case-order-only variants rejected"
+  ],
+  "status": "PASS"
+}

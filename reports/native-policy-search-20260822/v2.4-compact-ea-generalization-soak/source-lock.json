@@ -1,0 +1,8 @@
+{
+  "canary_rule_changed": false,
+  "source_changes_after_lock": "NO",
+  "v23_canary_rule_hash": "055948f42ab3db50a127b944d629bcc298aed2ed185dc7e041d53b0e9105d8b8",
+  "v23_source_lock": "e59b63d5eaeacda85373bfe48eff3309bc18398e",
+  "v23_source_lock_preserved": true,
+  "v24_source_lock": "7f359e9887f61c1daaee3a4d202abb008bc8f2e2"
+}

@@ -1,0 +1,11 @@
+{
+  "pythonhashseed_required": [
+    "0",
+    "1",
+    "42"
+  ],
+  "seed": 0,
+  "status": "PASS",
+  "core_artifacts_equal_across_hash_seeds": true,
+  "replayed_hash_seeds": ["0", "1", "42"]
+}

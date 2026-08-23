@@ -1,0 +1,10 @@
+{
+  "case_ids": [
+    "V24-07",
+    "V24-12",
+    "A07"
+  ],
+  "regressions": 0,
+  "soak_passes": 3,
+  "status": "PASS"
+}

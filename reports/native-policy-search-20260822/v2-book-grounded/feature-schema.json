@@ -1,0 +1,36 @@
+{
+  "fields": [
+    "instruction_count",
+    "block_count",
+    "edge_count",
+    "loop_count",
+    "max_loop_depth",
+    "branch_count",
+    "virtual_register_count",
+    "max_live",
+    "mean_live",
+    "interference_edges",
+    "register_pressure_peak",
+    "call_count",
+    "live_across_call_count",
+    "call_argument_pressure",
+    "memory_loads",
+    "memory_stores",
+    "indexed_memory_ops",
+    "address_recomputations",
+    "mutable_scalar_candidates",
+    "address_taken_values",
+    "reference_ops",
+    "rematerializable_value_count",
+    "estimated_spill_pressure",
+    "existing_spills",
+    "existing_reloads"
+  ],
+  "forbidden_inputs": [
+    "wall_clock",
+    "machine_runtime_state",
+    "filesystem_timestamp",
+    "object_identity"
+  ],
+  "type": "FunctionFeatureVector"
+}

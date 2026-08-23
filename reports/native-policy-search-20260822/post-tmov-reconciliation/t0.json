@@ -1,0 +1,11 @@
+{
+  "status": "PASS",
+  "compileall": "PASS",
+  "imports": "PASS",
+  "mode_parsing": "PASS",
+  "default_off_identity": "PASS",
+  "tmov_minimal_and_a07": "PASS",
+  "deterministic_generation": "PASS",
+  "diff_check": "PASS",
+  "json_report_sanity": "PASS"
+}

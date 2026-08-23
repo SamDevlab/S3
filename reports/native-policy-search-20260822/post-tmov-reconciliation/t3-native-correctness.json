@@ -1,0 +1,43 @@
+{
+  "status": "PASS",
+  "host": "Linux x86-64",
+  "source_lock": "934ad01b92ff263317233ccaeaf6de5204c16a07",
+  "comparison_count": 100,
+  "pass_count": 100,
+  "failure_count": 0,
+  "policies": [
+    "BASELINE",
+    "COMPACT_EA",
+    "SCALAR",
+    "COMPACT_EA_SCALAR"
+  ],
+  "selected_cases": [
+    "A07",
+    "R01",
+    "R02",
+    "R03",
+    "R04",
+    "R05",
+    "R06",
+    "R07",
+    "R08",
+    "R09",
+    "R10",
+    "R11",
+    "R12",
+    "R13",
+    "R14",
+    "R15",
+    "R16",
+    "R17",
+    "R18",
+    "R19",
+    "R20",
+    "R21",
+    "R22",
+    "R23",
+    "R24"
+  ],
+  "selection_rule": "A07 plus R01-R24 from the frozen V2.2 corpus; 25 numeric-oracle cases times four policies.",
+  "timing_used_for_selection": false
+}

@@ -1,0 +1,7 @@
+{
+  "default_identity": "PASS",
+  "fallback_identity": "PASS",
+  "hard_regressions": "PASS",
+  "shadow_identity": "PASS",
+  "status": "PASS"
+}

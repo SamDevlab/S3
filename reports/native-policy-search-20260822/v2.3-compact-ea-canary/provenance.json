@@ -1,0 +1,16 @@
+{
+  "benchmark_repository_mutated": "NO",
+  "branch": "experiment/native-policy-search-20260822",
+  "campaign": "S3-ABL-V2.3-COMPACT-EA-EXPERIMENTAL-CANARY-GATE-20260822",
+  "main_sha": "2245c9f75b07b063b6da5716a753d02c1fee5f95",
+  "native_speedup_claim": "NO",
+  "post_tmov_source_lock": "934ad01b92ff263317233ccaeaf6de5204c16a07",
+  "pr": 190,
+  "publication_head": "c0010ffdc1090749de3856fc8757fa16f442778a",
+  "final_candidate_head": "c0010ffdc1090749de3856fc8757fa16f442778a",
+  "repository": "SamDevlab/S3",
+  "source_changes_after_lock": "NO",
+  "timing_used": false,
+  "v22_source_lock": "04d94a5368106c1f476ac8856a1a313eedea7b37",
+  "v23_source_lock": "e59b63d5eaeacda85373bfe48eff3309bc18398e"
+}

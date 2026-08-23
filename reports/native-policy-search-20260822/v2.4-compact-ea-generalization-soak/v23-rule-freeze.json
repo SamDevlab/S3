@@ -1,0 +1,11 @@
+{
+  "active_genes": "COMPACT_INDEXED_MEMORY_ONLY",
+  "canary_rule_changes_allowed": false,
+  "default": "off",
+  "modes": [
+    "off",
+    "shadow",
+    "compact-ea-canary"
+  ],
+  "rule_hash": "055948f42ab3db50a127b944d629bcc298aed2ed185dc7e041d53b0e9105d8b8"
+}

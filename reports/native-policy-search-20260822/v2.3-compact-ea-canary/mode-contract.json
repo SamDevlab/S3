@@ -1,0 +1,12 @@
+{
+  "autonomous_activation": "FORBIDDEN",
+  "compact_ea_canary": "explicit opt-in; indexed_memory_policy=compact_ea only",
+  "default": "off",
+  "modes": [
+    "off",
+    "shadow",
+    "compact-ea-canary"
+  ],
+  "off": "canonical baseline; no experimental mutation",
+  "shadow": "reports hypothetical decision while output remains OFF-identical"
+}

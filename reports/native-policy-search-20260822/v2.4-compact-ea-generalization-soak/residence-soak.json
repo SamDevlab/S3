@@ -1,0 +1,18 @@
+{
+  "native_soak_passes": 3,
+  "register_allocation_modes": [
+    false,
+    true
+  ],
+  "residence_cases": [
+    "V24-05",
+    "A13",
+    "A14",
+    "A15",
+    "A16",
+    "A17",
+    "A18"
+  ],
+  "status": "PASS",
+  "unsafe_physical_register_forms": 0
+}

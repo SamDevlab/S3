@@ -1,0 +1,188 @@
+{
+  "records": [
+    {
+      "active_genes": [
+        "COMPACT_INDEXED_MEMORY",
+        "CONST_REMATERIALIZATION"
+      ],
+      "active_genes_derived_from": "policy_config_only",
+      "canonical_genome_label": "COMPACT_INDEXED_MEMORY+CONST_REMATERIALIZATION",
+      "historical_label": "CONST_REMATERIALIZATION+COMPACT_INDEXED_MEMORY",
+      "inactive_genes": [
+        "CALL_REGISTER_ORDER",
+        "CALL_RESIDENCE",
+        "LOAD_FORWARDING",
+        "LOOP_BOUNDARY_LIVE_RANGE_SPLIT",
+        "MOVE_COALESCING",
+        "PRESSURE_AWARE_SCALAR_REPLACEMENT",
+        "REGION_AWARE_SPILL",
+        "RESIDENCE_SCOPE",
+        "WRITEBACK_POLICY"
+      ],
+      "operator": "compatible_two_gene_mutation",
+      "parent_ids": [
+        "V2_c0fd2cd6ec9e39dc",
+        "V2_0ba2d6baa36a46fb"
+      ],
+      "policy_config": {
+        "call_register_order": [
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9"
+        ],
+        "call_residence": "whole_function_frame_fallback",
+        "indexed_memory_policy": "compact_ea",
+        "live_range_split": "disabled",
+        "load_forwarding": "disabled",
+        "move_coalescing": "disabled",
+        "name": "pair_const_rematerialization_compact_indexed_memory",
+        "register_order": [
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9",
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15"
+        ],
+        "rematerialization": "const_only",
+        "residence_scope": "single_definition_cross_block",
+        "scalar_promotion": "disabled",
+        "spill_cost_parameters": [
+          [
+            "use_count",
+            4
+          ],
+          [
+            "loop_depth",
+            8
+          ],
+          [
+            "interference_degree",
+            2
+          ],
+          [
+            "call_crossing",
+            6
+          ],
+          [
+            "rematerializable",
+            -5
+          ],
+          [
+            "live_range_length",
+            1
+          ]
+        ],
+        "spill_policy": "stack_on_exhaustion",
+        "writeback_policy": "canonical"
+      },
+      "policy_id": "V2_077171a9b68c8814",
+      "stage": "B"
+    },
+    {
+      "active_genes": [
+        "COMPACT_INDEXED_MEMORY",
+        "PRESSURE_AWARE_SCALAR_REPLACEMENT"
+      ],
+      "active_genes_derived_from": "policy_config_only",
+      "canonical_genome_label": "COMPACT_INDEXED_MEMORY+PRESSURE_AWARE_SCALAR_REPLACEMENT",
+      "historical_label": "MUTATION_21_COMPACT_INDEXED_MEMORY",
+      "inactive_genes": [
+        "CALL_REGISTER_ORDER",
+        "CALL_RESIDENCE",
+        "CONST_REMATERIALIZATION",
+        "LOAD_FORWARDING",
+        "LOOP_BOUNDARY_LIVE_RANGE_SPLIT",
+        "MOVE_COALESCING",
+        "REGION_AWARE_SPILL",
+        "RESIDENCE_SCOPE",
+        "WRITEBACK_POLICY"
+      ],
+      "operator": "single_gene_mutation",
+      "parent_ids": [
+        "V2_0ba2d6baa36a46fb"
+      ],
+      "policy_config": {
+        "call_register_order": [
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9"
+        ],
+        "call_residence": "whole_function_frame_fallback",
+        "indexed_memory_policy": "compact_ea",
+        "live_range_split": "disabled",
+        "load_forwarding": "disabled",
+        "move_coalescing": "disabled",
+        "name": "mutation_21_compact_indexed_memory",
+        "register_order": [
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9",
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15"
+        ],
+        "rematerialization": "disabled",
+        "residence_scope": "single_definition_cross_block",
+        "scalar_promotion": "conservative_mem2reg",
+        "spill_cost_parameters": [
+          [
+            "use_count",
+            4
+          ],
+          [
+            "loop_depth",
+            8
+          ],
+          [
+            "interference_degree",
+            2
+          ],
+          [
+            "call_crossing",
+            6
+          ],
+          [
+            "rematerializable",
+            -5
+          ],
+          [
+            "live_range_length",
+            1
+          ]
+        ],
+        "spill_policy": "stack_on_exhaustion",
+        "writeback_policy": "canonical"
+      },
+      "policy_id": "V2_14403bd31bfa3164",
+      "stage": "D"
+    }
+  ],
+  "status": "PASS"
+}

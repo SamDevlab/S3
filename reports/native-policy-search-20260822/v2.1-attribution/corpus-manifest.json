@@ -1,0 +1,453 @@
+{
+  "case_count": 60,
+  "categories": {
+    "calls_abi": [
+      "A37",
+      "A38",
+      "A39",
+      "A40",
+      "A41",
+      "A42"
+    ],
+    "constant_rematerialization": [
+      "A25",
+      "A26",
+      "A27",
+      "A28",
+      "A29",
+      "A30"
+    ],
+    "indexed_memory": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A06"
+    ],
+    "localized_pressure": [
+      "A19",
+      "A20",
+      "A21",
+      "A22",
+      "A23",
+      "A24"
+    ],
+    "loop_live_range": [
+      "A31",
+      "A32",
+      "A33",
+      "A34",
+      "A35",
+      "A36"
+    ],
+    "mixed_realistic": [
+      "A49",
+      "A50",
+      "A51",
+      "A52",
+      "A53",
+      "A54"
+    ],
+    "negative_control": [
+      "A55",
+      "A56",
+      "A57",
+      "A58",
+      "A59",
+      "A60"
+    ],
+    "references_aliasing": [
+      "A43",
+      "A44",
+      "A45",
+      "A46",
+      "A47",
+      "A48"
+    ],
+    "register_pressure": [
+      "A13",
+      "A14",
+      "A15",
+      "A16",
+      "A17",
+      "A18"
+    ],
+    "scalar_replacement": [
+      "A07",
+      "A08",
+      "A09",
+      "A10",
+      "A11",
+      "A12"
+    ]
+  },
+  "corpus": "ATTRIBUTION_CORPUS_V21",
+  "generic_no_benchmark_hacking": true,
+  "polarity_counts": {
+    "negative": 28,
+    "positive": 32
+  },
+  "source_hashes": [
+    {
+      "case_id": "A01",
+      "family": "indexed_memory",
+      "polarity": "positive",
+      "source_sha256": "92f84cdf963ea4c24b616bf9a6bb313a64ffb74ad84b167e5003f757341a220d"
+    },
+    {
+      "case_id": "A02",
+      "family": "indexed_memory",
+      "polarity": "positive",
+      "source_sha256": "06d6c3da2b0a6939780eb9aacc1397964992e40ff0a579746c80d482c85b690e"
+    },
+    {
+      "case_id": "A03",
+      "family": "indexed_memory",
+      "polarity": "positive",
+      "source_sha256": "a3eaddfc97586e3fa1b36869c6b1177f34770725f1c4166064434ec657147abe"
+    },
+    {
+      "case_id": "A04",
+      "family": "indexed_memory",
+      "polarity": "positive",
+      "source_sha256": "76cbc916c0ef13278b3ba2e0e87db6d3e56f1dba2611b2ba8a9688e64c4e5c4f"
+    },
+    {
+      "case_id": "A05",
+      "family": "indexed_memory",
+      "polarity": "negative",
+      "source_sha256": "6436584e1f491398a85117f855c61eec850d4b4836f4e9c9003636b7d10a4002"
+    },
+    {
+      "case_id": "A06",
+      "family": "indexed_memory",
+      "polarity": "negative",
+      "source_sha256": "a96078b237a8da270e0ad9f8bc3127aed7d021d0f263a331df0b75440222b217"
+    },
+    {
+      "case_id": "A07",
+      "family": "scalar_replacement",
+      "polarity": "positive",
+      "source_sha256": "03415c9cab5aee95055d2cfe8a3b4bcfe916748aef020411adba183d84af8c9d"
+    },
+    {
+      "case_id": "A08",
+      "family": "scalar_replacement",
+      "polarity": "positive",
+      "source_sha256": "8542ec0166e493b9cf7d47f1d910fcc65a0188c4c76a4b3f36c3cba698fc900b"
+    },
+    {
+      "case_id": "A09",
+      "family": "scalar_replacement",
+      "polarity": "positive",
+      "source_sha256": "5e5176e3c3dfc76f75104d52ca1eaa1619eacc3fae5940a04ef7d645756a087b"
+    },
+    {
+      "case_id": "A10",
+      "family": "scalar_replacement",
+      "polarity": "positive",
+      "source_sha256": "fef7cd04ef8a2546d1a5b74f1740f20c5c15e50373da5ecc1ae904c484fb5bd5"
+    },
+    {
+      "case_id": "A11",
+      "family": "scalar_replacement",
+      "polarity": "negative",
+      "source_sha256": "68578231bffc20543f6a68a311a61bc53cffa40940456ab615d9d4a4b84be7c6"
+    },
+    {
+      "case_id": "A12",
+      "family": "scalar_replacement",
+      "polarity": "negative",
+      "source_sha256": "ac4a78b88991f9668f1c8e10a50a8f369e505215b6d20a429b87bc840d2a5b3d"
+    },
+    {
+      "case_id": "A13",
+      "family": "register_pressure",
+      "polarity": "positive",
+      "source_sha256": "8cc83d2221f8380184252280e8b941f163b1b0516af801d4c72c51b911fa1fa7"
+    },
+    {
+      "case_id": "A14",
+      "family": "register_pressure",
+      "polarity": "positive",
+      "source_sha256": "b5348a1433822da57bd6008a804b2963041c9f00dc04f952748a6f31a6df0777"
+    },
+    {
+      "case_id": "A15",
+      "family": "register_pressure",
+      "polarity": "positive",
+      "source_sha256": "7bcc02dfdffc731c66d748c18c7700616ca6d88f1b1339c0b316f81e4b4f03b7"
+    },
+    {
+      "case_id": "A16",
+      "family": "register_pressure",
+      "polarity": "positive",
+      "source_sha256": "063b71780c4617e69c71e073977861eb2789c220aadb69558bf92095d1f3cb05"
+    },
+    {
+      "case_id": "A17",
+      "family": "register_pressure",
+      "polarity": "negative",
+      "source_sha256": "3ce730b7bb059506b21806d2d19475db1dad78d69e1afa7506e7e397105a1111"
+    },
+    {
+      "case_id": "A18",
+      "family": "register_pressure",
+      "polarity": "negative",
+      "source_sha256": "93eac4be5d1481edc6bd429489d96d60f20607b6947b0916c1e183d784c5bc75"
+    },
+    {
+      "case_id": "A19",
+      "family": "localized_pressure",
+      "polarity": "positive",
+      "source_sha256": "0362cab3995ebd0993769a58a6881889776e6b32f37442ec2306e4559a8ac598"
+    },
+    {
+      "case_id": "A20",
+      "family": "localized_pressure",
+      "polarity": "positive",
+      "source_sha256": "7bcc02dfdffc731c66d748c18c7700616ca6d88f1b1339c0b316f81e4b4f03b7"
+    },
+    {
+      "case_id": "A21",
+      "family": "localized_pressure",
+      "polarity": "positive",
+      "source_sha256": "76cbc916c0ef13278b3ba2e0e87db6d3e56f1dba2611b2ba8a9688e64c4e5c4f"
+    },
+    {
+      "case_id": "A22",
+      "family": "localized_pressure",
+      "polarity": "positive",
+      "source_sha256": "76553181505fa818430389a4b9b8445edbde1173cc8cd6a7099b4307a72ba6d5"
+    },
+    {
+      "case_id": "A23",
+      "family": "localized_pressure",
+      "polarity": "negative",
+      "source_sha256": "5e5176e3c3dfc76f75104d52ca1eaa1619eacc3fae5940a04ef7d645756a087b"
+    },
+    {
+      "case_id": "A24",
+      "family": "localized_pressure",
+      "polarity": "negative",
+      "source_sha256": "fef7cd04ef8a2546d1a5b74f1740f20c5c15e50373da5ecc1ae904c484fb5bd5"
+    },
+    {
+      "case_id": "A25",
+      "family": "constant_rematerialization",
+      "polarity": "positive",
+      "source_sha256": "8683f809259317d8d3cfc04bc3a6f68a7917b3ae18a08bd57a08bf696b0a6010"
+    },
+    {
+      "case_id": "A26",
+      "family": "constant_rematerialization",
+      "polarity": "positive",
+      "source_sha256": "d7a5c77fec1693c380b23cf0bcd798e90336e7017149d7b2bb781cf907703fa7"
+    },
+    {
+      "case_id": "A27",
+      "family": "constant_rematerialization",
+      "polarity": "positive",
+      "source_sha256": "6732286fe7c801f05569fe735fc0e707b138f33c1be1f22c86fb16daacb586e4"
+    },
+    {
+      "case_id": "A28",
+      "family": "constant_rematerialization",
+      "polarity": "positive",
+      "source_sha256": "5eb32c5ac0c4e5bbde9c227ebe3fdf7dd9c20e773d72d98c4d923a180b5e9213"
+    },
+    {
+      "case_id": "A29",
+      "family": "constant_rematerialization",
+      "polarity": "negative",
+      "source_sha256": "68578231bffc20543f6a68a311a61bc53cffa40940456ab615d9d4a4b84be7c6"
+    },
+    {
+      "case_id": "A30",
+      "family": "constant_rematerialization",
+      "polarity": "negative",
+      "source_sha256": "76553181505fa818430389a4b9b8445edbde1173cc8cd6a7099b4307a72ba6d5"
+    },
+    {
+      "case_id": "A31",
+      "family": "loop_live_range",
+      "polarity": "positive",
+      "source_sha256": "0362cab3995ebd0993769a58a6881889776e6b32f37442ec2306e4559a8ac598"
+    },
+    {
+      "case_id": "A32",
+      "family": "loop_live_range",
+      "polarity": "positive",
+      "source_sha256": "7bcc02dfdffc731c66d748c18c7700616ca6d88f1b1339c0b316f81e4b4f03b7"
+    },
+    {
+      "case_id": "A33",
+      "family": "loop_live_range",
+      "polarity": "positive",
+      "source_sha256": "76cbc916c0ef13278b3ba2e0e87db6d3e56f1dba2611b2ba8a9688e64c4e5c4f"
+    },
+    {
+      "case_id": "A34",
+      "family": "loop_live_range",
+      "polarity": "positive",
+      "source_sha256": "a2ab6dc104667378a97bc535987af1922dffd5cc36c44b2b8e9c763ef785b3cb"
+    },
+    {
+      "case_id": "A35",
+      "family": "loop_live_range",
+      "polarity": "negative",
+      "source_sha256": "76553181505fa818430389a4b9b8445edbde1173cc8cd6a7099b4307a72ba6d5"
+    },
+    {
+      "case_id": "A36",
+      "family": "loop_live_range",
+      "polarity": "negative",
+      "source_sha256": "5d8ff7e750037ce5ce31b614b89c268d8b98bde137ea3e2ab0e634113bd494d5"
+    },
+    {
+      "case_id": "A37",
+      "family": "calls_abi",
+      "polarity": "positive",
+      "source_sha256": "8683f809259317d8d3cfc04bc3a6f68a7917b3ae18a08bd57a08bf696b0a6010"
+    },
+    {
+      "case_id": "A38",
+      "family": "calls_abi",
+      "polarity": "positive",
+      "source_sha256": "24d4d3dfb92e19de25aa97509797f65a8c1727ae2894369ffe86208373df1a5f"
+    },
+    {
+      "case_id": "A39",
+      "family": "calls_abi",
+      "polarity": "positive",
+      "source_sha256": "3ce730b7bb059506b21806d2d19475db1dad78d69e1afa7506e7e397105a1111"
+    },
+    {
+      "case_id": "A40",
+      "family": "calls_abi",
+      "polarity": "positive",
+      "source_sha256": "063b71780c4617e69c71e073977861eb2789c220aadb69558bf92095d1f3cb05"
+    },
+    {
+      "case_id": "A41",
+      "family": "calls_abi",
+      "polarity": "negative",
+      "source_sha256": "b5348a1433822da57bd6008a804b2963041c9f00dc04f952748a6f31a6df0777"
+    },
+    {
+      "case_id": "A42",
+      "family": "calls_abi",
+      "polarity": "negative",
+      "source_sha256": "5745ba0e3f7177d27288f62e3a312d053fa0efd0f82c86fe18f790e2a347f4a9"
+    },
+    {
+      "case_id": "A43",
+      "family": "references_aliasing",
+      "polarity": "negative",
+      "source_sha256": "ac4a78b88991f9668f1c8e10a50a8f369e505215b6d20a429b87bc840d2a5b3d"
+    },
+    {
+      "case_id": "A44",
+      "family": "references_aliasing",
+      "polarity": "negative",
+      "source_sha256": "c778b2084acc2167d02de6b2d1bc40069c2e9cdf29a9f82e56488b5baa0df118"
+    },
+    {
+      "case_id": "A45",
+      "family": "references_aliasing",
+      "polarity": "negative",
+      "source_sha256": "c344e7bdd0e859f5bc04d420f5908b42138aa5e55d4f611653146a765103fc32"
+    },
+    {
+      "case_id": "A46",
+      "family": "references_aliasing",
+      "polarity": "negative",
+      "source_sha256": "68578231bffc20543f6a68a311a61bc53cffa40940456ab615d9d4a4b84be7c6"
+    },
+    {
+      "case_id": "A47",
+      "family": "references_aliasing",
+      "polarity": "negative",
+      "source_sha256": "6436584e1f491398a85117f855c61eec850d4b4836f4e9c9003636b7d10a4002"
+    },
+    {
+      "case_id": "A48",
+      "family": "references_aliasing",
+      "polarity": "negative",
+      "source_sha256": "5e5176e3c3dfc76f75104d52ca1eaa1619eacc3fae5940a04ef7d645756a087b"
+    },
+    {
+      "case_id": "A49",
+      "family": "mixed_realistic",
+      "polarity": "positive",
+      "source_sha256": "68578231bffc20543f6a68a311a61bc53cffa40940456ab615d9d4a4b84be7c6"
+    },
+    {
+      "case_id": "A50",
+      "family": "mixed_realistic",
+      "polarity": "positive",
+      "source_sha256": "93eac4be5d1481edc6bd429489d96d60f20607b6947b0916c1e183d784c5bc75"
+    },
+    {
+      "case_id": "A51",
+      "family": "mixed_realistic",
+      "polarity": "positive",
+      "source_sha256": "5745ba0e3f7177d27288f62e3a312d053fa0efd0f82c86fe18f790e2a347f4a9"
+    },
+    {
+      "case_id": "A52",
+      "family": "mixed_realistic",
+      "polarity": "positive",
+      "source_sha256": "5e5176e3c3dfc76f75104d52ca1eaa1619eacc3fae5940a04ef7d645756a087b"
+    },
+    {
+      "case_id": "A53",
+      "family": "mixed_realistic",
+      "polarity": "negative",
+      "source_sha256": "6436584e1f491398a85117f855c61eec850d4b4836f4e9c9003636b7d10a4002"
+    },
+    {
+      "case_id": "A54",
+      "family": "mixed_realistic",
+      "polarity": "negative",
+      "source_sha256": "a3eaddfc97586e3fa1b36869c6b1177f34770725f1c4166064434ec657147abe"
+    },
+    {
+      "case_id": "A55",
+      "family": "negative_control",
+      "polarity": "negative",
+      "source_sha256": "8683f809259317d8d3cfc04bc3a6f68a7917b3ae18a08bd57a08bf696b0a6010"
+    },
+    {
+      "case_id": "A56",
+      "family": "negative_control",
+      "polarity": "negative",
+      "source_sha256": "8683f809259317d8d3cfc04bc3a6f68a7917b3ae18a08bd57a08bf696b0a6010"
+    },
+    {
+      "case_id": "A57",
+      "family": "negative_control",
+      "polarity": "negative",
+      "source_sha256": "c344e7bdd0e859f5bc04d420f5908b42138aa5e55d4f611653146a765103fc32"
+    },
+    {
+      "case_id": "A58",
+      "family": "negative_control",
+      "polarity": "negative",
+      "source_sha256": "ac4a78b88991f9668f1c8e10a50a8f369e505215b6d20a429b87bc840d2a5b3d"
+    },
+    {
+      "case_id": "A59",
+      "family": "negative_control",
+      "polarity": "negative",
+      "source_sha256": "d7a5c77fec1693c380b23cf0bcd798e90336e7017149d7b2bb781cf907703fa7"
+    },
+    {
+      "case_id": "A60",
+      "family": "negative_control",
+      "polarity": "negative",
+      "source_sha256": "a96078b237a8da270e0ad9f8bc3127aed7d021d0f263a331df0b75440222b217"
+    }
+  ]
+}

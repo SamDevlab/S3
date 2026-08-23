@@ -1,0 +1,19 @@
+{
+  "head": "d74760e0f177978a3566318c7b50cff4c98f1fb6",
+  "status": "PASS_LINUX_X86_64_FOCUSED",
+  "selected_policy_ids": [
+    "V2_67491d8f6521e946",
+    "V2_0ba2d6baa36a46fb",
+    "V2_077171a9b68c8814",
+    "V2_a4630b67db9c08a7",
+    "V2_b4e09618cbf1d2a0",
+    "V2_2fc90a4d8dfd8ec4",
+    "V2_8ccb6a07b2136167",
+    "V2_c29150d8daa342c4"
+  ],
+  "comparison_count": 96,
+  "optimization_levels": ["O0", "O1"],
+  "workloads": ["branch", "call", "loop", "memory", "pressure", "scalar"],
+  "timing_used_for_selection": false,
+  "raw_transcript": "t3-raw-transcript.json"
+}

@@ -1,0 +1,14 @@
+{
+  "post_tmov_compact_indexed_candidates": 107,
+  "post_tmov_compact_eligible": 91,
+  "post_tmov_compact_applications": 91,
+  "post_tmov_compact_safety_rejections": 16,
+  "post_tmov_compact_temp_avoided": 91,
+  "post_tmov_compact_instruction_delta": 91,
+  "post_tmov_compact_mov_delta": 91,
+  "post_tmov_compact_hard_regressions": 0,
+  "coverage_cases": 91,
+  "coverage_status": "INSUFFICIENT_FOR_TARGET",
+  "historical_counts_recomputed": true,
+  "correctness_gate": "PASS"
+}

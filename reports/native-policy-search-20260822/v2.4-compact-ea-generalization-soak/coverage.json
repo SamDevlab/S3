@@ -1,0 +1,11 @@
+{
+  "counting_unit": "UNIQUE_SEMANTIC_SITE",
+  "indexed_sites_applied": 122,
+  "indexed_sites_discovered": 142,
+  "indexed_sites_eligible": 122,
+  "indexed_sites_encoding_rejected": 0,
+  "indexed_sites_safety_rejected": 20,
+  "soak_repetitions_excluded": true,
+  "status": "TARGET_MET",
+  "target": 100
+}

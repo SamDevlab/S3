@@ -1,0 +1,16 @@
+{
+  "status": "SHADOW_GOVERNOR_HARDENED_RESEARCH_ONLY",
+  "total_decisions": 91,
+  "nonbaseline_decisions": 37,
+  "baseline_fallbacks": 54,
+  "pareto_decisions": 73,
+  "dominated_decisions": 0,
+  "harm_count": 0,
+  "harm_rate": 0.0,
+  "non_dominated_rate": 1.0,
+  "opportunity_count": 81,
+  "opportunity_taken": 37,
+  "opportunity_missed": 44,
+  "forbidden_identity_inputs": true,
+  "qualified_post_tmov": true
+}

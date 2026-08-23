@@ -1,0 +1,7 @@
+{
+  "benchmark_mutation": "NO",
+  "p7": "DEFERRED_READ_ONLY",
+  "p8": "DEFERRED_READ_ONLY",
+  "p9": "DEFERRED_READ_ONLY",
+  "timing": "NOT_RUN"
+}

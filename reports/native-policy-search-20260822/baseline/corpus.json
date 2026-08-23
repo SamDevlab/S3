@@ -1,0 +1,205 @@
+[
+  {
+    "case_id": "D01",
+    "family": "scalar_straight_line",
+    "group": "discovery",
+    "oracle": 1,
+    "source_sha256": "71c990e7b79a672ac7199798bb32eee97caeb6bb89440518b98efee7ed61a6a1"
+  },
+  {
+    "case_id": "D02",
+    "family": "scalar_loop",
+    "group": "discovery",
+    "oracle": 1,
+    "source_sha256": "0362cab3995ebd0993769a58a6881889776e6b32f37442ec2306e4559a8ac598"
+  },
+  {
+    "case_id": "D03",
+    "family": "nested_loop",
+    "group": "discovery",
+    "oracle": 1,
+    "source_sha256": "7bcc02dfdffc731c66d748c18c7700616ca6d88f1b1339c0b316f81e4b4f03b7"
+  },
+  {
+    "case_id": "D04",
+    "family": "branch_diamond",
+    "group": "discovery",
+    "oracle": 10,
+    "source_sha256": "d7a5c77fec1693c380b23cf0bcd798e90336e7017149d7b2bb781cf907703fa7"
+  },
+  {
+    "case_id": "D05",
+    "family": "branch_join",
+    "group": "discovery",
+    "oracle": 8,
+    "source_sha256": "fef7cd04ef8a2546d1a5b74f1740f20c5c15e50373da5ecc1ae904c484fb5bd5"
+  },
+  {
+    "case_id": "D06",
+    "family": "high_register_pressure",
+    "group": "discovery",
+    "oracle": 55,
+    "source_sha256": "1af6fc8f2469e8f69024a71425f0d28efa862db36f565d5b578ed7cfb50b2b3b"
+  },
+  {
+    "case_id": "D07",
+    "family": "leaf_call_free",
+    "group": "discovery",
+    "oracle": 7,
+    "source_sha256": "40255bce74927237ada1702a55e2ba5f2a9f83d9fea5bbe37be354404bce183a"
+  },
+  {
+    "case_id": "D08",
+    "family": "single_call",
+    "group": "discovery",
+    "oracle": 14,
+    "source_sha256": "24d4d3dfb92e19de25aa97509797f65a8c1727ae2894369ffe86208373df1a5f"
+  },
+  {
+    "case_id": "D09",
+    "family": "nested_calls",
+    "group": "discovery",
+    "oracle": 6,
+    "source_sha256": "3ce730b7bb059506b21806d2d19475db1dad78d69e1afa7506e7e397105a1111"
+  },
+  {
+    "case_id": "D10",
+    "family": "live_across_call",
+    "group": "discovery",
+    "oracle": 11,
+    "source_sha256": "063b71780c4617e69c71e073977861eb2789c220aadb69558bf92095d1f3cb05"
+  },
+  {
+    "case_id": "D11",
+    "family": "many_call_arguments",
+    "group": "discovery",
+    "oracle": 21,
+    "source_sha256": "b5348a1433822da57bd6008a804b2963041c9f00dc04f952748a6f31a6df0777"
+  },
+  {
+    "case_id": "D12",
+    "family": "array_sequential_read",
+    "group": "discovery",
+    "oracle": 7,
+    "source_sha256": "92f84cdf963ea4c24b616bf9a6bb313a64ffb74ad84b167e5003f757341a220d"
+  },
+  {
+    "case_id": "D13",
+    "family": "array_sequential_write",
+    "group": "discovery",
+    "oracle": 8,
+    "source_sha256": "06d6c3da2b0a6939780eb9aacc1397964992e40ff0a579746c80d482c85b690e"
+  },
+  {
+    "case_id": "D14",
+    "family": "indexed_read_write",
+    "group": "discovery",
+    "oracle": 9,
+    "source_sha256": "a3eaddfc97586e3fa1b36869c6b1177f34770725f1c4166064434ec657147abe"
+  },
+  {
+    "case_id": "D15",
+    "family": "hot_induction_index",
+    "group": "discovery",
+    "oracle": 3,
+    "source_sha256": "76cbc916c0ef13278b3ba2e0e87db6d3e56f1dba2611b2ba8a9688e64c4e5c4f"
+  },
+  {
+    "case_id": "D16",
+    "family": "record_field_access",
+    "group": "discovery",
+    "oracle": 23,
+    "source_sha256": "6436584e1f491398a85117f855c61eec850d4b4836f4e9c9003636b7d10a4002"
+  },
+  {
+    "case_id": "D17",
+    "family": "mutable_scalar",
+    "group": "discovery",
+    "oracle": 3,
+    "source_sha256": "19fc0ae1bfb406ff1a9704de1beceb55a422da42c4bd7dde9c9c75460cc989b8"
+  },
+  {
+    "case_id": "D18",
+    "family": "address_taken_scalar",
+    "group": "discovery",
+    "oracle": "STATIC_REFERENCE_CONTRACT",
+    "source_sha256": "ac4a78b88991f9668f1c8e10a50a8f369e505215b6d20a429b87bc840d2a5b3d"
+  },
+  {
+    "case_id": "D19",
+    "family": "reference_reborrow",
+    "group": "discovery",
+    "oracle": "STATIC_REFERENCE_CONTRACT",
+    "source_sha256": "c778b2084acc2167d02de6b2d1bc40069c2e9cdf29a9f82e56488b5baa0df118"
+  },
+  {
+    "case_id": "D20",
+    "family": "mixed_memory_calls",
+    "group": "discovery",
+    "oracle": 26,
+    "source_sha256": "68578231bffc20543f6a68a311a61bc53cffa40940456ab615d9d4a4b84be7c6"
+  },
+  {
+    "case_id": "H01",
+    "family": "holdout_loop_join",
+    "group": "holdout",
+    "oracle": 5,
+    "source_sha256": "76553181505fa818430389a4b9b8445edbde1173cc8cd6a7099b4307a72ba6d5"
+  },
+  {
+    "case_id": "H02",
+    "family": "holdout_call_pressure",
+    "group": "holdout",
+    "oracle": 7,
+    "source_sha256": "93eac4be5d1481edc6bd429489d96d60f20607b6947b0916c1e183d784c5bc75"
+  },
+  {
+    "case_id": "H03",
+    "family": "holdout_indexed_memory",
+    "group": "holdout",
+    "oracle": 14,
+    "source_sha256": "a96078b237a8da270e0ad9f8bc3127aed7d021d0f263a331df0b75440222b217"
+  },
+  {
+    "case_id": "H04",
+    "family": "holdout_address_taken",
+    "group": "holdout",
+    "oracle": "STATIC_REFERENCE_CONTRACT",
+    "source_sha256": "c344e7bdd0e859f5bc04d420f5908b42138aa5e55d4f611653146a765103fc32"
+  },
+  {
+    "case_id": "H05",
+    "family": "holdout_nested_call",
+    "group": "holdout",
+    "oracle": 32,
+    "source_sha256": "5745ba0e3f7177d27288f62e3a312d053fa0efd0f82c86fe18f790e2a347f4a9"
+  },
+  {
+    "case_id": "H06",
+    "family": "holdout_branch_memory",
+    "group": "holdout",
+    "oracle": 17,
+    "source_sha256": "5e5176e3c3dfc76f75104d52ca1eaa1619eacc3fae5940a04ef7d645756a087b"
+  },
+  {
+    "case_id": "E01",
+    "family": "existing_simple_call",
+    "group": "holdout-existing",
+    "oracle": 15,
+    "source_sha256": "a5cd6a06c66b44f328ce3d0c1368b4acf35a980f5d2040b051f903126f02552b"
+  },
+  {
+    "case_id": "E02",
+    "family": "existing_first",
+    "group": "holdout-existing",
+    "oracle": 6,
+    "source_sha256": "31a70bf2e3b61ba920b0ca680702d287f7db9a4caa6ed2241cbfdba998a69316"
+  },
+  {
+    "case_id": "E03",
+    "family": "existing_sign",
+    "group": "holdout-existing",
+    "oracle": -1,
+    "source_sha256": "3a6d74bfafbd620372c23e5055376bd8d1269ec0cc3f60c7a412a3dde4e6e44b"
+  }
+]

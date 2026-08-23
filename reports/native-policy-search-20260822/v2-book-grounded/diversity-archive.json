@@ -1,0 +1,33 @@
+{
+  "families": {
+    "HYBRID": [
+      "V2_8ccb6a07b2136167",
+      "V2_a9c18dbdf2dcad3a"
+    ],
+    "INDEXED": [
+      "V2_14403bd31bfa3164",
+      "V2_0ba2d6baa36a46fb"
+    ],
+    "LIVE_RANGE": [
+      "V2_f1ad0bed504b5fb0",
+      "V2_4d7128db47cc5570"
+    ],
+    "MEMORY": [
+      "V2_2fc90a4d8dfd8ec4",
+      "V2_99ed0b63e0c088ff"
+    ],
+    "REGISTER": [
+      "V2_f26a8b48c61594e2",
+      "V2_3f88223c21446b87"
+    ],
+    "REMATERIALIZATION": [
+      "V2_c29150d8daa342c4",
+      "V2_c0fd2cd6ec9e39dc"
+    ],
+    "SPILL": [
+      "V2_488df20345214f7e",
+      "V2_5325718696406d64"
+    ]
+  },
+  "members_are_not_automatically_pareto": true
+}

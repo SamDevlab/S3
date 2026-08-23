@@ -1,0 +1,3880 @@
+{
+  "discovery_frozen": true,
+  "records": [
+    {
+      "abi": "PASS",
+      "correctness": "PASS",
+      "determinism": "PASS",
+      "family": "HYBRID",
+      "holdout_group_frozen": true,
+      "label": "CONST_REMATERIALIZATION+COMPACT_INDEXED_MEMORY",
+      "mechanism_metrics": {
+        "address_recomputations_after": 0,
+        "address_recomputations_before": 5,
+        "alias_safety_rejections": 0,
+        "block_region_spill": 0,
+        "compact_ea_applied": 5,
+        "copies_added": 0,
+        "indexed_candidates": 5,
+        "lea_after": 0,
+        "lea_before": 5,
+        "live_ranges_split": 0,
+        "loads_added": 0,
+        "loads_removed": 0,
+        "max_live_after": 21,
+        "max_live_before": 21,
+        "pressure_rejections": 0,
+        "region_spill_candidates": 40,
+        "reloads_avoided_by_remat": 0,
+        "remat_instructions_added": 0,
+        "rematerializable_values": 16,
+        "rematerializations": 0,
+        "scalar_candidates": 0,
+        "scalar_promoted": 0,
+        "spill_ops_avoided": 0,
+        "split_points": 0,
+        "stores_added": 0,
+        "stores_removed": 0,
+        "temporary_registers_avoided": 5,
+        "writebacks_added": 0
+      },
+      "metrics": {
+        "address_recomputations": 371,
+        "branches": 1962,
+        "callee_save_traffic": 4,
+        "caller_save_traffic": 45,
+        "calls": 329,
+        "frame_bytes": 1872,
+        "instructions": 11320,
+        "leas": 371,
+        "loads": 16,
+        "memory_operands": 151,
+        "movs": 3605,
+        "pops": 486,
+        "pushes": 482,
+        "reloads": 16,
+        "self_movs": 0,
+        "spills": 104,
+        "spills_reload": 151,
+        "stack_loads": 16,
+        "stack_ops": 151,
+        "stack_stores": 104,
+        "stores": 104,
+        "text_bytes": 0,
+        "total_load_store": 120
+      },
+      "operator": "compatible_two_gene_mutation",
+      "outputs": [
+        {
+          "assembly_lines": 1665,
+          "assembly_sha256": "bae9c150d6a570b173c03b44194e848c1cd6879b74769b05990a9cdab8265079",
+          "case_id": "H01",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1711,
+          "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+          "case_id": "H02",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1634,
+          "assembly_sha256": "a04fad0fb1a8db16022947f1fde59e701d2700c2b79c9265a391715a9b2132b5",
+          "case_id": "H03",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1565,
+          "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+          "case_id": "H04",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+          "case_id": "H05",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1736,
+          "assembly_sha256": "53845478f598e9ed1af226596b80336a705078b5664bd9644267cda8255865d5",
+          "case_id": "H06",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1664,
+          "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+          "case_id": "E01",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1581,
+          "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+          "case_id": "E02",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+          "case_id": "E03",
+          "group": "holdout-existing"
+        }
+      ],
+      "parent_ids": [
+        "V2_c0fd2cd6ec9e39dc",
+        "V2_0ba2d6baa36a46fb"
+      ],
+      "performance_evaluation": "ALLOWED_AFTER_CORRECTNESS",
+      "policy_config": {
+        "call_register_order": [
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9"
+        ],
+        "call_residence": "whole_function_frame_fallback",
+        "indexed_memory_policy": "compact_ea",
+        "live_range_split": "disabled",
+        "load_forwarding": "disabled",
+        "move_coalescing": "disabled",
+        "name": "pair_const_rematerialization_compact_indexed_memory",
+        "register_order": [
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9",
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15"
+        ],
+        "rematerialization": "const_only",
+        "residence_scope": "single_definition_cross_block",
+        "scalar_promotion": "disabled",
+        "spill_cost_parameters": [
+          [
+            "use_count",
+            4
+          ],
+          [
+            "loop_depth",
+            8
+          ],
+          [
+            "interference_degree",
+            2
+          ],
+          [
+            "call_crossing",
+            6
+          ],
+          [
+            "rematerializable",
+            -5
+          ],
+          [
+            "live_range_length",
+            1
+          ]
+        ],
+        "spill_policy": "stack_on_exhaustion",
+        "writeback_policy": "canonical"
+      },
+      "policy_id": "V2_077171a9b68c8814",
+      "stage": "B",
+      "status": "SUPPORTED_PASS",
+      "supported": true,
+      "unsupported_reason": null
+    },
+    {
+      "abi": "PASS",
+      "correctness": "PASS",
+      "determinism": "PASS",
+      "family": "INDEXED",
+      "holdout_group_frozen": true,
+      "label": "COMPACT_INDEXED_MEMORY",
+      "mechanism_metrics": {
+        "address_recomputations_after": 0,
+        "address_recomputations_before": 5,
+        "alias_safety_rejections": 0,
+        "block_region_spill": 0,
+        "compact_ea_applied": 5,
+        "copies_added": 0,
+        "indexed_candidates": 5,
+        "lea_after": 0,
+        "lea_before": 5,
+        "live_ranges_split": 0,
+        "loads_added": 0,
+        "loads_removed": 0,
+        "max_live_after": 21,
+        "max_live_before": 21,
+        "pressure_rejections": 0,
+        "region_spill_candidates": 40,
+        "reloads_avoided_by_remat": 0,
+        "remat_instructions_added": 0,
+        "rematerializable_values": 0,
+        "rematerializations": 0,
+        "scalar_candidates": 0,
+        "scalar_promoted": 0,
+        "spill_ops_avoided": 0,
+        "split_points": 0,
+        "stores_added": 0,
+        "stores_removed": 0,
+        "temporary_registers_avoided": 5,
+        "writebacks_added": 0
+      },
+      "metrics": {
+        "address_recomputations": 371,
+        "branches": 1962,
+        "callee_save_traffic": 4,
+        "caller_save_traffic": 45,
+        "calls": 329,
+        "frame_bytes": 1872,
+        "instructions": 11320,
+        "leas": 371,
+        "loads": 16,
+        "memory_operands": 151,
+        "movs": 3605,
+        "pops": 486,
+        "pushes": 482,
+        "reloads": 16,
+        "self_movs": 0,
+        "spills": 104,
+        "spills_reload": 151,
+        "stack_loads": 16,
+        "stack_ops": 151,
+        "stack_stores": 104,
+        "stores": 104,
+        "text_bytes": 0,
+        "total_load_store": 120
+      },
+      "operator": "seed",
+      "outputs": [
+        {
+          "assembly_lines": 1665,
+          "assembly_sha256": "bae9c150d6a570b173c03b44194e848c1cd6879b74769b05990a9cdab8265079",
+          "case_id": "H01",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1711,
+          "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+          "case_id": "H02",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1634,
+          "assembly_sha256": "a04fad0fb1a8db16022947f1fde59e701d2700c2b79c9265a391715a9b2132b5",
+          "case_id": "H03",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1565,
+          "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+          "case_id": "H04",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+          "case_id": "H05",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1736,
+          "assembly_sha256": "53845478f598e9ed1af226596b80336a705078b5664bd9644267cda8255865d5",
+          "case_id": "H06",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1664,
+          "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+          "case_id": "E01",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1581,
+          "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+          "case_id": "E02",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+          "case_id": "E03",
+          "group": "holdout-existing"
+        }
+      ],
+      "parent_ids": [],
+      "performance_evaluation": "ALLOWED_AFTER_CORRECTNESS",
+      "policy_config": {
+        "call_register_order": [
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9"
+        ],
+        "call_residence": "whole_function_frame_fallback",
+        "indexed_memory_policy": "compact_ea",
+        "live_range_split": "disabled",
+        "load_forwarding": "disabled",
+        "move_coalescing": "disabled",
+        "name": "compact_indexed_memory",
+        "register_order": [
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9",
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15"
+        ],
+        "rematerialization": "disabled",
+        "residence_scope": "single_definition_cross_block",
+        "scalar_promotion": "disabled",
+        "spill_cost_parameters": [
+          [
+            "use_count",
+            4
+          ],
+          [
+            "loop_depth",
+            8
+          ],
+          [
+            "interference_degree",
+            2
+          ],
+          [
+            "call_crossing",
+            6
+          ],
+          [
+            "rematerializable",
+            -5
+          ],
+          [
+            "live_range_length",
+            1
+          ]
+        ],
+        "spill_policy": "stack_on_exhaustion",
+        "writeback_policy": "canonical"
+      },
+      "policy_id": "V2_0ba2d6baa36a46fb",
+      "stage": "A",
+      "status": "SUPPORTED_PASS",
+      "supported": true,
+      "unsupported_reason": null
+    },
+    {
+      "abi": "PASS",
+      "correctness": "PASS",
+      "determinism": "PASS",
+      "family": "INDEXED",
+      "holdout_group_frozen": true,
+      "label": "MUTATION_21_COMPACT_INDEXED_MEMORY",
+      "mechanism_metrics": {
+        "address_recomputations_after": 0,
+        "address_recomputations_before": 5,
+        "alias_safety_rejections": 0,
+        "block_region_spill": 0,
+        "compact_ea_applied": 5,
+        "copies_added": 0,
+        "indexed_candidates": 5,
+        "lea_after": 0,
+        "lea_before": 5,
+        "live_ranges_split": 0,
+        "loads_added": 0,
+        "loads_removed": 0,
+        "max_live_after": 21,
+        "max_live_before": 21,
+        "pressure_rejections": 0,
+        "region_spill_candidates": 40,
+        "reloads_avoided_by_remat": 0,
+        "remat_instructions_added": 0,
+        "rematerializable_values": 0,
+        "rematerializations": 0,
+        "scalar_candidates": 0,
+        "scalar_promoted": 0,
+        "spill_ops_avoided": 0,
+        "split_points": 0,
+        "stores_added": 0,
+        "stores_removed": 0,
+        "temporary_registers_avoided": 5,
+        "writebacks_added": 0
+      },
+      "metrics": {
+        "address_recomputations": 371,
+        "branches": 1962,
+        "callee_save_traffic": 4,
+        "caller_save_traffic": 45,
+        "calls": 329,
+        "frame_bytes": 1872,
+        "instructions": 11320,
+        "leas": 371,
+        "loads": 16,
+        "memory_operands": 151,
+        "movs": 3605,
+        "pops": 486,
+        "pushes": 482,
+        "reloads": 16,
+        "self_movs": 0,
+        "spills": 104,
+        "spills_reload": 151,
+        "stack_loads": 16,
+        "stack_ops": 151,
+        "stack_stores": 104,
+        "stores": 104,
+        "text_bytes": 0,
+        "total_load_store": 120
+      },
+      "operator": "single_gene_mutation",
+      "outputs": [
+        {
+          "assembly_lines": 1665,
+          "assembly_sha256": "bae9c150d6a570b173c03b44194e848c1cd6879b74769b05990a9cdab8265079",
+          "case_id": "H01",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1711,
+          "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+          "case_id": "H02",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1634,
+          "assembly_sha256": "a04fad0fb1a8db16022947f1fde59e701d2700c2b79c9265a391715a9b2132b5",
+          "case_id": "H03",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1565,
+          "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+          "case_id": "H04",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+          "case_id": "H05",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1736,
+          "assembly_sha256": "53845478f598e9ed1af226596b80336a705078b5664bd9644267cda8255865d5",
+          "case_id": "H06",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1664,
+          "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+          "case_id": "E01",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1581,
+          "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+          "case_id": "E02",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+          "case_id": "E03",
+          "group": "holdout-existing"
+        }
+      ],
+      "parent_ids": [
+        "V2_0ba2d6baa36a46fb"
+      ],
+      "performance_evaluation": "ALLOWED_AFTER_CORRECTNESS",
+      "policy_config": {
+        "call_register_order": [
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9"
+        ],
+        "call_residence": "whole_function_frame_fallback",
+        "indexed_memory_policy": "compact_ea",
+        "live_range_split": "disabled",
+        "load_forwarding": "disabled",
+        "move_coalescing": "disabled",
+        "name": "mutation_21_compact_indexed_memory",
+        "register_order": [
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9",
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15"
+        ],
+        "rematerialization": "disabled",
+        "residence_scope": "single_definition_cross_block",
+        "scalar_promotion": "conservative_mem2reg",
+        "spill_cost_parameters": [
+          [
+            "use_count",
+            4
+          ],
+          [
+            "loop_depth",
+            8
+          ],
+          [
+            "interference_degree",
+            2
+          ],
+          [
+            "call_crossing",
+            6
+          ],
+          [
+            "rematerializable",
+            -5
+          ],
+          [
+            "live_range_length",
+            1
+          ]
+        ],
+        "spill_policy": "stack_on_exhaustion",
+        "writeback_policy": "canonical"
+      },
+      "policy_id": "V2_14403bd31bfa3164",
+      "stage": "D",
+      "status": "SUPPORTED_PASS",
+      "supported": true,
+      "unsupported_reason": null
+    },
+    {
+      "abi": "PASS",
+      "correctness": "PASS",
+      "determinism": "PASS",
+      "family": "MEMORY",
+      "holdout_group_frozen": true,
+      "label": "MUTATION_4_PRESSURE_AWARE_SCALAR_REPLACEMENT",
+      "mechanism_metrics": {
+        "address_recomputations_after": 0,
+        "address_recomputations_before": 5,
+        "alias_safety_rejections": 0,
+        "block_region_spill": 0,
+        "compact_ea_applied": 5,
+        "copies_added": 0,
+        "indexed_candidates": 5,
+        "lea_after": 0,
+        "lea_before": 5,
+        "live_ranges_split": 0,
+        "loads_added": 0,
+        "loads_removed": 0,
+        "max_live_after": 21,
+        "max_live_before": 21,
+        "pressure_rejections": 0,
+        "region_spill_candidates": 40,
+        "reloads_avoided_by_remat": 0,
+        "remat_instructions_added": 0,
+        "rematerializable_values": 0,
+        "rematerializations": 0,
+        "scalar_candidates": 0,
+        "scalar_promoted": 0,
+        "spill_ops_avoided": 0,
+        "split_points": 0,
+        "stores_added": 0,
+        "stores_removed": 0,
+        "temporary_registers_avoided": 5,
+        "writebacks_added": 0
+      },
+      "metrics": {
+        "address_recomputations": 371,
+        "branches": 1962,
+        "callee_save_traffic": 4,
+        "caller_save_traffic": 45,
+        "calls": 329,
+        "frame_bytes": 1872,
+        "instructions": 11320,
+        "leas": 371,
+        "loads": 16,
+        "memory_operands": 151,
+        "movs": 3605,
+        "pops": 486,
+        "pushes": 482,
+        "reloads": 16,
+        "self_movs": 0,
+        "spills": 104,
+        "spills_reload": 151,
+        "stack_loads": 16,
+        "stack_ops": 151,
+        "stack_stores": 104,
+        "stores": 104,
+        "text_bytes": 0,
+        "total_load_store": 120
+      },
+      "operator": "single_gene_mutation",
+      "outputs": [
+        {
+          "assembly_lines": 1665,
+          "assembly_sha256": "bae9c150d6a570b173c03b44194e848c1cd6879b74769b05990a9cdab8265079",
+          "case_id": "H01",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1711,
+          "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+          "case_id": "H02",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1634,
+          "assembly_sha256": "a04fad0fb1a8db16022947f1fde59e701d2700c2b79c9265a391715a9b2132b5",
+          "case_id": "H03",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1565,
+          "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+          "case_id": "H04",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+          "case_id": "H05",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1736,
+          "assembly_sha256": "53845478f598e9ed1af226596b80336a705078b5664bd9644267cda8255865d5",
+          "case_id": "H06",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1664,
+          "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+          "case_id": "E01",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1581,
+          "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+          "case_id": "E02",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+          "case_id": "E03",
+          "group": "holdout-existing"
+        }
+      ],
+      "parent_ids": [
+        "V2_c814ac0d2168db6a"
+      ],
+      "performance_evaluation": "ALLOWED_AFTER_CORRECTNESS",
+      "policy_config": {
+        "call_register_order": [
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9"
+        ],
+        "call_residence": "whole_function_frame_fallback",
+        "indexed_memory_policy": "compact_ea",
+        "live_range_split": "disabled",
+        "load_forwarding": "disabled",
+        "move_coalescing": "disabled",
+        "name": "mutation_4_pressure_aware_scalar_replacement",
+        "register_order": [
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9",
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15"
+        ],
+        "rematerialization": "disabled",
+        "residence_scope": "single_definition_cross_block",
+        "scalar_promotion": "conservative_mem2reg",
+        "spill_cost_parameters": [
+          [
+            "use_count",
+            4
+          ],
+          [
+            "loop_depth",
+            8
+          ],
+          [
+            "interference_degree",
+            2
+          ],
+          [
+            "call_crossing",
+            6
+          ],
+          [
+            "rematerializable",
+            -5
+          ],
+          [
+            "live_range_length",
+            1
+          ]
+        ],
+        "spill_policy": "stack_on_exhaustion",
+        "writeback_policy": "canonical"
+      },
+      "policy_id": "V2_2fc90a4d8dfd8ec4",
+      "stage": "D",
+      "status": "SUPPORTED_PASS",
+      "supported": true,
+      "unsupported_reason": null
+    },
+    {
+      "abi": "PASS",
+      "correctness": "PASS",
+      "determinism": "PASS",
+      "family": "REGISTER",
+      "holdout_group_frozen": true,
+      "label": "MUTATION_0_BASELINE",
+      "mechanism_metrics": {
+        "address_recomputations_after": 5,
+        "address_recomputations_before": 5,
+        "alias_safety_rejections": 0,
+        "block_region_spill": 0,
+        "compact_ea_applied": 0,
+        "copies_added": 0,
+        "indexed_candidates": 5,
+        "lea_after": 5,
+        "lea_before": 5,
+        "live_ranges_split": 0,
+        "loads_added": 0,
+        "loads_removed": 0,
+        "max_live_after": 21,
+        "max_live_before": 21,
+        "pressure_rejections": 0,
+        "region_spill_candidates": 40,
+        "reloads_avoided_by_remat": 0,
+        "remat_instructions_added": 0,
+        "rematerializable_values": 16,
+        "rematerializations": 0,
+        "scalar_candidates": 0,
+        "scalar_promoted": 0,
+        "spill_ops_avoided": 0,
+        "split_points": 0,
+        "stores_added": 0,
+        "stores_removed": 0,
+        "temporary_registers_avoided": 0,
+        "writebacks_added": 0
+      },
+      "metrics": {
+        "address_recomputations": 371,
+        "branches": 1962,
+        "callee_save_traffic": 4,
+        "caller_save_traffic": 35,
+        "calls": 329,
+        "frame_bytes": 1872,
+        "instructions": 11325,
+        "leas": 371,
+        "loads": 16,
+        "memory_operands": 151,
+        "movs": 3610,
+        "pops": 486,
+        "pushes": 482,
+        "reloads": 16,
+        "self_movs": 0,
+        "spills": 104,
+        "spills_reload": 151,
+        "stack_loads": 16,
+        "stack_ops": 151,
+        "stack_stores": 104,
+        "stores": 104,
+        "text_bytes": 0,
+        "total_load_store": 120
+      },
+      "operator": "single_gene_mutation",
+      "outputs": [
+        {
+          "assembly_lines": 1665,
+          "assembly_sha256": "bae9c150d6a570b173c03b44194e848c1cd6879b74769b05990a9cdab8265079",
+          "case_id": "H01",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1711,
+          "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+          "case_id": "H02",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1636,
+          "assembly_sha256": "3f2b00a8ed1e57a2c7789084141d4a8be3767fea86a5a2c661f22311ec6d403e",
+          "case_id": "H03",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1565,
+          "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+          "case_id": "H04",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+          "case_id": "H05",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1739,
+          "assembly_sha256": "8864918e2367e9defe6d9cfdea875acf1885350c55f736d96061042de60669c7",
+          "case_id": "H06",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1664,
+          "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+          "case_id": "E01",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1581,
+          "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+          "case_id": "E02",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+          "case_id": "E03",
+          "group": "holdout-existing"
+        }
+      ],
+      "parent_ids": [
+        "V2_67491d8f6521e946"
+      ],
+      "performance_evaluation": "ALLOWED_AFTER_CORRECTNESS",
+      "policy_config": {
+        "call_register_order": [
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9"
+        ],
+        "call_residence": "whole_function_frame_fallback",
+        "indexed_memory_policy": "canonical",
+        "live_range_split": "disabled",
+        "load_forwarding": "disabled",
+        "move_coalescing": "disabled",
+        "name": "mutation_0_baseline",
+        "register_order": [
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9",
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15"
+        ],
+        "rematerialization": "const_only",
+        "residence_scope": "single_definition_cross_block",
+        "scalar_promotion": "disabled",
+        "spill_cost_parameters": [
+          [
+            "use_count",
+            4
+          ],
+          [
+            "loop_depth",
+            8
+          ],
+          [
+            "interference_degree",
+            2
+          ],
+          [
+            "call_crossing",
+            6
+          ],
+          [
+            "rematerializable",
+            -5
+          ],
+          [
+            "live_range_length",
+            1
+          ]
+        ],
+        "spill_policy": "stack_on_exhaustion",
+        "writeback_policy": "canonical"
+      },
+      "policy_id": "V2_3f88223c21446b87",
+      "stage": "D",
+      "status": "SUPPORTED_PASS",
+      "supported": true,
+      "unsupported_reason": null
+    },
+    {
+      "abi": "PASS",
+      "correctness": "PASS",
+      "determinism": "PASS",
+      "family": "SPILL",
+      "holdout_group_frozen": true,
+      "label": "MUTATION_9_REGION_AWARE_SPILL",
+      "mechanism_metrics": {
+        "address_recomputations_after": 5,
+        "address_recomputations_before": 5,
+        "alias_safety_rejections": 0,
+        "block_region_spill": 14,
+        "compact_ea_applied": 0,
+        "copies_added": 0,
+        "indexed_candidates": 5,
+        "lea_after": 5,
+        "lea_before": 5,
+        "live_ranges_split": 0,
+        "loads_added": 0,
+        "loads_removed": 0,
+        "max_live_after": 21,
+        "max_live_before": 21,
+        "pressure_rejections": 0,
+        "region_spill_candidates": 40,
+        "reloads_avoided_by_remat": 0,
+        "remat_instructions_added": 0,
+        "rematerializable_values": 0,
+        "rematerializations": 0,
+        "scalar_candidates": 0,
+        "scalar_promoted": 0,
+        "spill_ops_avoided": 0,
+        "split_points": 0,
+        "stores_added": 0,
+        "stores_removed": 0,
+        "temporary_registers_avoided": 0,
+        "writebacks_added": 0
+      },
+      "metrics": {
+        "address_recomputations": 371,
+        "branches": 1962,
+        "callee_save_traffic": 4,
+        "caller_save_traffic": 35,
+        "calls": 329,
+        "frame_bytes": 1872,
+        "instructions": 11325,
+        "leas": 371,
+        "loads": 16,
+        "memory_operands": 151,
+        "movs": 3610,
+        "pops": 486,
+        "pushes": 482,
+        "reloads": 16,
+        "self_movs": 0,
+        "spills": 104,
+        "spills_reload": 151,
+        "stack_loads": 16,
+        "stack_ops": 151,
+        "stack_stores": 104,
+        "stores": 104,
+        "text_bytes": 0,
+        "total_load_store": 120
+      },
+      "operator": "single_gene_mutation",
+      "outputs": [
+        {
+          "assembly_lines": 1665,
+          "assembly_sha256": "d50209f7fb5e7d0a905317acb7e698e8f617b17360986c3af3170a8edda1661c",
+          "case_id": "H01",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1711,
+          "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+          "case_id": "H02",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1636,
+          "assembly_sha256": "3f2b00a8ed1e57a2c7789084141d4a8be3767fea86a5a2c661f22311ec6d403e",
+          "case_id": "H03",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1565,
+          "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+          "case_id": "H04",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+          "case_id": "H05",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1739,
+          "assembly_sha256": "5f6f226c6278176ad5a96740c321239fbc2614280c58692cb51520208e6287bc",
+          "case_id": "H06",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1664,
+          "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+          "case_id": "E01",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1581,
+          "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+          "case_id": "E02",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+          "case_id": "E03",
+          "group": "holdout-existing"
+        }
+      ],
+      "parent_ids": [
+        "V2_5325718696406d64"
+      ],
+      "performance_evaluation": "ALLOWED_AFTER_CORRECTNESS",
+      "policy_config": {
+        "call_register_order": [
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9"
+        ],
+        "call_residence": "whole_function_frame_fallback",
+        "indexed_memory_policy": "canonical",
+        "live_range_split": "disabled",
+        "load_forwarding": "disabled",
+        "move_coalescing": "disabled",
+        "name": "mutation_9_region_aware_spill",
+        "register_order": [
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9",
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15"
+        ],
+        "rematerialization": "disabled",
+        "residence_scope": "single_definition_cross_block",
+        "scalar_promotion": "conservative_mem2reg",
+        "spill_cost_parameters": [
+          [
+            "use_count",
+            4
+          ],
+          [
+            "loop_depth",
+            8
+          ],
+          [
+            "interference_degree",
+            2
+          ],
+          [
+            "call_crossing",
+            6
+          ],
+          [
+            "rematerializable",
+            -5
+          ],
+          [
+            "live_range_length",
+            1
+          ]
+        ],
+        "spill_policy": "region_aware",
+        "writeback_policy": "canonical"
+      },
+      "policy_id": "V2_488df20345214f7e",
+      "stage": "D",
+      "status": "SUPPORTED_PASS",
+      "supported": true,
+      "unsupported_reason": null
+    },
+    {
+      "abi": "PASS",
+      "correctness": "PASS",
+      "determinism": "PASS",
+      "family": "LIVE_RANGE",
+      "holdout_group_frozen": true,
+      "label": "LOOP_BOUNDARY_LIVE_RANGE_SPLIT",
+      "mechanism_metrics": {
+        "address_recomputations_after": 5,
+        "address_recomputations_before": 5,
+        "alias_safety_rejections": 0,
+        "block_region_spill": 0,
+        "compact_ea_applied": 0,
+        "copies_added": 6,
+        "indexed_candidates": 5,
+        "lea_after": 5,
+        "lea_before": 5,
+        "live_ranges_split": 1,
+        "loads_added": 3,
+        "loads_removed": 0,
+        "max_live_after": 21,
+        "max_live_before": 21,
+        "pressure_rejections": 0,
+        "region_spill_candidates": 40,
+        "reloads_avoided_by_remat": 0,
+        "remat_instructions_added": 0,
+        "rematerializable_values": 0,
+        "rematerializations": 0,
+        "scalar_candidates": 0,
+        "scalar_promoted": 0,
+        "spill_ops_avoided": 0,
+        "split_points": 1,
+        "stores_added": 3,
+        "stores_removed": 0,
+        "temporary_registers_avoided": 0,
+        "writebacks_added": 0
+      },
+      "metrics": {
+        "address_recomputations": 374,
+        "branches": 1971,
+        "callee_save_traffic": 4,
+        "caller_save_traffic": 41,
+        "calls": 329,
+        "frame_bytes": 1872,
+        "instructions": 11355,
+        "leas": 374,
+        "loads": 19,
+        "memory_operands": 163,
+        "movs": 3619,
+        "pops": 486,
+        "pushes": 482,
+        "reloads": 19,
+        "self_movs": 0,
+        "spills": 107,
+        "spills_reload": 163,
+        "stack_loads": 19,
+        "stack_ops": 163,
+        "stack_stores": 107,
+        "stores": 107,
+        "text_bytes": 0,
+        "total_load_store": 126
+      },
+      "operator": "seed",
+      "outputs": [
+        {
+          "assembly_lines": 1704,
+          "assembly_sha256": "167b5e054bfdf348f8565567a36f81e8ea53084e0da2f868417e1073563d4d0a",
+          "case_id": "H01",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1711,
+          "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+          "case_id": "H02",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1636,
+          "assembly_sha256": "3f2b00a8ed1e57a2c7789084141d4a8be3767fea86a5a2c661f22311ec6d403e",
+          "case_id": "H03",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1565,
+          "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+          "case_id": "H04",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+          "case_id": "H05",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1739,
+          "assembly_sha256": "8864918e2367e9defe6d9cfdea875acf1885350c55f736d96061042de60669c7",
+          "case_id": "H06",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1664,
+          "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+          "case_id": "E01",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1581,
+          "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+          "case_id": "E02",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+          "case_id": "E03",
+          "group": "holdout-existing"
+        }
+      ],
+      "parent_ids": [],
+      "performance_evaluation": "ALLOWED_AFTER_CORRECTNESS",
+      "policy_config": {
+        "call_register_order": [
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9"
+        ],
+        "call_residence": "whole_function_frame_fallback",
+        "indexed_memory_policy": "canonical",
+        "live_range_split": "loop_boundary",
+        "load_forwarding": "disabled",
+        "move_coalescing": "disabled",
+        "name": "loop_boundary_split",
+        "register_order": [
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9",
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15"
+        ],
+        "rematerialization": "disabled",
+        "residence_scope": "single_definition_cross_block",
+        "scalar_promotion": "disabled",
+        "spill_cost_parameters": [
+          [
+            "use_count",
+            4
+          ],
+          [
+            "loop_depth",
+            8
+          ],
+          [
+            "interference_degree",
+            2
+          ],
+          [
+            "call_crossing",
+            6
+          ],
+          [
+            "rematerializable",
+            -5
+          ],
+          [
+            "live_range_length",
+            1
+          ]
+        ],
+        "spill_policy": "stack_on_exhaustion",
+        "writeback_policy": "canonical"
+      },
+      "policy_id": "V2_4d7128db47cc5570",
+      "stage": "A",
+      "status": "SUPPORTED_PASS",
+      "supported": true,
+      "unsupported_reason": null
+    },
+    {
+      "abi": "PASS",
+      "correctness": "PASS",
+      "determinism": "PASS",
+      "family": "SPILL",
+      "holdout_group_frozen": true,
+      "label": "REGION_AWARE_SPILL",
+      "mechanism_metrics": {
+        "address_recomputations_after": 5,
+        "address_recomputations_before": 5,
+        "alias_safety_rejections": 0,
+        "block_region_spill": 14,
+        "compact_ea_applied": 0,
+        "copies_added": 0,
+        "indexed_candidates": 5,
+        "lea_after": 5,
+        "lea_before": 5,
+        "live_ranges_split": 0,
+        "loads_added": 0,
+        "loads_removed": 0,
+        "max_live_after": 21,
+        "max_live_before": 21,
+        "pressure_rejections": 0,
+        "region_spill_candidates": 40,
+        "reloads_avoided_by_remat": 0,
+        "remat_instructions_added": 0,
+        "rematerializable_values": 0,
+        "rematerializations": 0,
+        "scalar_candidates": 0,
+        "scalar_promoted": 0,
+        "spill_ops_avoided": 0,
+        "split_points": 0,
+        "stores_added": 0,
+        "stores_removed": 0,
+        "temporary_registers_avoided": 0,
+        "writebacks_added": 0
+      },
+      "metrics": {
+        "address_recomputations": 371,
+        "branches": 1962,
+        "callee_save_traffic": 4,
+        "caller_save_traffic": 35,
+        "calls": 329,
+        "frame_bytes": 1872,
+        "instructions": 11325,
+        "leas": 371,
+        "loads": 16,
+        "memory_operands": 151,
+        "movs": 3610,
+        "pops": 486,
+        "pushes": 482,
+        "reloads": 16,
+        "self_movs": 0,
+        "spills": 104,
+        "spills_reload": 151,
+        "stack_loads": 16,
+        "stack_ops": 151,
+        "stack_stores": 104,
+        "stores": 104,
+        "text_bytes": 0,
+        "total_load_store": 120
+      },
+      "operator": "seed",
+      "outputs": [
+        {
+          "assembly_lines": 1665,
+          "assembly_sha256": "d50209f7fb5e7d0a905317acb7e698e8f617b17360986c3af3170a8edda1661c",
+          "case_id": "H01",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1711,
+          "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+          "case_id": "H02",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1636,
+          "assembly_sha256": "3f2b00a8ed1e57a2c7789084141d4a8be3767fea86a5a2c661f22311ec6d403e",
+          "case_id": "H03",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1565,
+          "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+          "case_id": "H04",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+          "case_id": "H05",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1739,
+          "assembly_sha256": "5f6f226c6278176ad5a96740c321239fbc2614280c58692cb51520208e6287bc",
+          "case_id": "H06",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1664,
+          "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+          "case_id": "E01",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1581,
+          "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+          "case_id": "E02",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+          "case_id": "E03",
+          "group": "holdout-existing"
+        }
+      ],
+      "parent_ids": [],
+      "performance_evaluation": "ALLOWED_AFTER_CORRECTNESS",
+      "policy_config": {
+        "call_register_order": [
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9"
+        ],
+        "call_residence": "whole_function_frame_fallback",
+        "indexed_memory_policy": "canonical",
+        "live_range_split": "disabled",
+        "load_forwarding": "disabled",
+        "move_coalescing": "disabled",
+        "name": "region_aware_spill",
+        "register_order": [
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9",
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15"
+        ],
+        "rematerialization": "disabled",
+        "residence_scope": "single_definition_cross_block",
+        "scalar_promotion": "disabled",
+        "spill_cost_parameters": [
+          [
+            "use_count",
+            4
+          ],
+          [
+            "loop_depth",
+            8
+          ],
+          [
+            "interference_degree",
+            2
+          ],
+          [
+            "call_crossing",
+            6
+          ],
+          [
+            "rematerializable",
+            -5
+          ],
+          [
+            "live_range_length",
+            1
+          ]
+        ],
+        "spill_policy": "region_aware",
+        "writeback_policy": "canonical"
+      },
+      "policy_id": "V2_5325718696406d64",
+      "stage": "A",
+      "status": "SUPPORTED_PASS",
+      "supported": true,
+      "unsupported_reason": null
+    },
+    {
+      "abi": "PASS",
+      "correctness": "PASS",
+      "determinism": "PASS",
+      "family": "REGISTER",
+      "holdout_group_frozen": true,
+      "label": "BASELINE",
+      "mechanism_metrics": {
+        "address_recomputations_after": 5,
+        "address_recomputations_before": 5,
+        "alias_safety_rejections": 0,
+        "block_region_spill": 0,
+        "compact_ea_applied": 0,
+        "copies_added": 0,
+        "indexed_candidates": 5,
+        "lea_after": 5,
+        "lea_before": 5,
+        "live_ranges_split": 0,
+        "loads_added": 0,
+        "loads_removed": 0,
+        "max_live_after": 21,
+        "max_live_before": 21,
+        "pressure_rejections": 0,
+        "region_spill_candidates": 40,
+        "reloads_avoided_by_remat": 0,
+        "remat_instructions_added": 0,
+        "rematerializable_values": 0,
+        "rematerializations": 0,
+        "scalar_candidates": 0,
+        "scalar_promoted": 0,
+        "spill_ops_avoided": 0,
+        "split_points": 0,
+        "stores_added": 0,
+        "stores_removed": 0,
+        "temporary_registers_avoided": 0,
+        "writebacks_added": 0
+      },
+      "metrics": {
+        "address_recomputations": 371,
+        "branches": 1962,
+        "callee_save_traffic": 4,
+        "caller_save_traffic": 35,
+        "calls": 329,
+        "frame_bytes": 1872,
+        "instructions": 11325,
+        "leas": 371,
+        "loads": 16,
+        "memory_operands": 151,
+        "movs": 3610,
+        "pops": 486,
+        "pushes": 482,
+        "reloads": 16,
+        "self_movs": 0,
+        "spills": 104,
+        "spills_reload": 151,
+        "stack_loads": 16,
+        "stack_ops": 151,
+        "stack_stores": 104,
+        "stores": 104,
+        "text_bytes": 0,
+        "total_load_store": 120
+      },
+      "operator": "seed",
+      "outputs": [
+        {
+          "assembly_lines": 1665,
+          "assembly_sha256": "bae9c150d6a570b173c03b44194e848c1cd6879b74769b05990a9cdab8265079",
+          "case_id": "H01",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1711,
+          "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+          "case_id": "H02",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1636,
+          "assembly_sha256": "3f2b00a8ed1e57a2c7789084141d4a8be3767fea86a5a2c661f22311ec6d403e",
+          "case_id": "H03",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1565,
+          "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+          "case_id": "H04",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+          "case_id": "H05",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1739,
+          "assembly_sha256": "8864918e2367e9defe6d9cfdea875acf1885350c55f736d96061042de60669c7",
+          "case_id": "H06",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1664,
+          "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+          "case_id": "E01",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1581,
+          "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+          "case_id": "E02",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+          "case_id": "E03",
+          "group": "holdout-existing"
+        }
+      ],
+      "parent_ids": [],
+      "performance_evaluation": "ALLOWED_AFTER_CORRECTNESS",
+      "policy_config": {
+        "call_register_order": [
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9"
+        ],
+        "call_residence": "whole_function_frame_fallback",
+        "indexed_memory_policy": "canonical",
+        "live_range_split": "disabled",
+        "load_forwarding": "disabled",
+        "move_coalescing": "disabled",
+        "name": "baseline",
+        "register_order": [
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9",
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15"
+        ],
+        "rematerialization": "disabled",
+        "residence_scope": "single_definition_cross_block",
+        "scalar_promotion": "disabled",
+        "spill_cost_parameters": [
+          [
+            "use_count",
+            4
+          ],
+          [
+            "loop_depth",
+            8
+          ],
+          [
+            "interference_degree",
+            2
+          ],
+          [
+            "call_crossing",
+            6
+          ],
+          [
+            "rematerializable",
+            -5
+          ],
+          [
+            "live_range_length",
+            1
+          ]
+        ],
+        "spill_policy": "stack_on_exhaustion",
+        "writeback_policy": "canonical"
+      },
+      "policy_id": "V2_67491d8f6521e946",
+      "stage": "A",
+      "status": "SUPPORTED_PASS",
+      "supported": true,
+      "unsupported_reason": null
+    },
+    {
+      "abi": "PASS",
+      "correctness": "PASS",
+      "determinism": "PASS",
+      "family": "HYBRID",
+      "holdout_group_frozen": true,
+      "label": "MUTATION_6_PRESSURE_AWARE_SCALAR_REPLACEMENT+COMPACT_INDEXED_MEMORY",
+      "mechanism_metrics": {
+        "address_recomputations_after": 0,
+        "address_recomputations_before": 5,
+        "alias_safety_rejections": 0,
+        "block_region_spill": 0,
+        "compact_ea_applied": 5,
+        "copies_added": 0,
+        "indexed_candidates": 5,
+        "lea_after": 0,
+        "lea_before": 5,
+        "live_ranges_split": 0,
+        "loads_added": 0,
+        "loads_removed": 0,
+        "max_live_after": 21,
+        "max_live_before": 21,
+        "pressure_rejections": 0,
+        "region_spill_candidates": 40,
+        "reloads_avoided_by_remat": 0,
+        "remat_instructions_added": 0,
+        "rematerializable_values": 16,
+        "rematerializations": 0,
+        "scalar_candidates": 0,
+        "scalar_promoted": 0,
+        "spill_ops_avoided": 0,
+        "split_points": 0,
+        "stores_added": 0,
+        "stores_removed": 0,
+        "temporary_registers_avoided": 5,
+        "writebacks_added": 0
+      },
+      "metrics": {
+        "address_recomputations": 371,
+        "branches": 1962,
+        "callee_save_traffic": 4,
+        "caller_save_traffic": 45,
+        "calls": 329,
+        "frame_bytes": 1872,
+        "instructions": 11320,
+        "leas": 371,
+        "loads": 16,
+        "memory_operands": 151,
+        "movs": 3605,
+        "pops": 486,
+        "pushes": 482,
+        "reloads": 16,
+        "self_movs": 0,
+        "spills": 104,
+        "spills_reload": 151,
+        "stack_loads": 16,
+        "stack_ops": 151,
+        "stack_stores": 104,
+        "stores": 104,
+        "text_bytes": 0,
+        "total_load_store": 120
+      },
+      "operator": "single_gene_mutation",
+      "outputs": [
+        {
+          "assembly_lines": 1665,
+          "assembly_sha256": "bae9c150d6a570b173c03b44194e848c1cd6879b74769b05990a9cdab8265079",
+          "case_id": "H01",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1711,
+          "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+          "case_id": "H02",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1634,
+          "assembly_sha256": "a04fad0fb1a8db16022947f1fde59e701d2700c2b79c9265a391715a9b2132b5",
+          "case_id": "H03",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1565,
+          "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+          "case_id": "H04",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+          "case_id": "H05",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1736,
+          "assembly_sha256": "53845478f598e9ed1af226596b80336a705078b5664bd9644267cda8255865d5",
+          "case_id": "H06",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1664,
+          "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+          "case_id": "E01",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1581,
+          "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+          "case_id": "E02",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+          "case_id": "E03",
+          "group": "holdout-existing"
+        }
+      ],
+      "parent_ids": [
+        "V2_b4e09618cbf1d2a0"
+      ],
+      "performance_evaluation": "ALLOWED_AFTER_CORRECTNESS",
+      "policy_config": {
+        "call_register_order": [
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9"
+        ],
+        "call_residence": "whole_function_frame_fallback",
+        "indexed_memory_policy": "compact_ea",
+        "live_range_split": "disabled",
+        "load_forwarding": "disabled",
+        "move_coalescing": "disabled",
+        "name": "mutation_6_pressure_aware_scalar_replacement_compact_indexed_memory",
+        "register_order": [
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9",
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15"
+        ],
+        "rematerialization": "const_only",
+        "residence_scope": "single_definition_cross_block",
+        "scalar_promotion": "conservative_mem2reg",
+        "spill_cost_parameters": [
+          [
+            "use_count",
+            4
+          ],
+          [
+            "loop_depth",
+            8
+          ],
+          [
+            "interference_degree",
+            2
+          ],
+          [
+            "call_crossing",
+            6
+          ],
+          [
+            "rematerializable",
+            -5
+          ],
+          [
+            "live_range_length",
+            1
+          ]
+        ],
+        "spill_policy": "stack_on_exhaustion",
+        "writeback_policy": "canonical"
+      },
+      "policy_id": "V2_8ccb6a07b2136167",
+      "stage": "D",
+      "status": "SUPPORTED_PASS",
+      "supported": true,
+      "unsupported_reason": null
+    },
+    {
+      "abi": "PASS",
+      "correctness": "PASS",
+      "determinism": "PASS",
+      "family": "MEMORY",
+      "holdout_group_frozen": true,
+      "label": "MUTATION_12_PRESSURE_AWARE_SCALAR_REPLACEMENT",
+      "mechanism_metrics": {
+        "address_recomputations_after": 5,
+        "address_recomputations_before": 5,
+        "alias_safety_rejections": 0,
+        "block_region_spill": 0,
+        "compact_ea_applied": 0,
+        "copies_added": 0,
+        "indexed_candidates": 5,
+        "lea_after": 5,
+        "lea_before": 5,
+        "live_ranges_split": 0,
+        "loads_added": 0,
+        "loads_removed": 0,
+        "max_live_after": 21,
+        "max_live_before": 21,
+        "pressure_rejections": 0,
+        "region_spill_candidates": 40,
+        "reloads_avoided_by_remat": 0,
+        "remat_instructions_added": 0,
+        "rematerializable_values": 16,
+        "rematerializations": 0,
+        "scalar_candidates": 0,
+        "scalar_promoted": 0,
+        "spill_ops_avoided": 0,
+        "split_points": 0,
+        "stores_added": 0,
+        "stores_removed": 0,
+        "temporary_registers_avoided": 0,
+        "writebacks_added": 0
+      },
+      "metrics": {
+        "address_recomputations": 371,
+        "branches": 1962,
+        "callee_save_traffic": 4,
+        "caller_save_traffic": 35,
+        "calls": 329,
+        "frame_bytes": 1872,
+        "instructions": 11325,
+        "leas": 371,
+        "loads": 16,
+        "memory_operands": 151,
+        "movs": 3610,
+        "pops": 486,
+        "pushes": 482,
+        "reloads": 16,
+        "self_movs": 0,
+        "spills": 104,
+        "spills_reload": 151,
+        "stack_loads": 16,
+        "stack_ops": 151,
+        "stack_stores": 104,
+        "stores": 104,
+        "text_bytes": 0,
+        "total_load_store": 120
+      },
+      "operator": "single_gene_mutation",
+      "outputs": [
+        {
+          "assembly_lines": 1665,
+          "assembly_sha256": "bae9c150d6a570b173c03b44194e848c1cd6879b74769b05990a9cdab8265079",
+          "case_id": "H01",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1711,
+          "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+          "case_id": "H02",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1636,
+          "assembly_sha256": "3f2b00a8ed1e57a2c7789084141d4a8be3767fea86a5a2c661f22311ec6d403e",
+          "case_id": "H03",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1565,
+          "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+          "case_id": "H04",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+          "case_id": "H05",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1739,
+          "assembly_sha256": "8864918e2367e9defe6d9cfdea875acf1885350c55f736d96061042de60669c7",
+          "case_id": "H06",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1664,
+          "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+          "case_id": "E01",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1581,
+          "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+          "case_id": "E02",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+          "case_id": "E03",
+          "group": "holdout-existing"
+        }
+      ],
+      "parent_ids": [
+        "V2_c814ac0d2168db6a"
+      ],
+      "performance_evaluation": "ALLOWED_AFTER_CORRECTNESS",
+      "policy_config": {
+        "call_register_order": [
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9"
+        ],
+        "call_residence": "whole_function_frame_fallback",
+        "indexed_memory_policy": "canonical",
+        "live_range_split": "disabled",
+        "load_forwarding": "disabled",
+        "move_coalescing": "disabled",
+        "name": "mutation_12_pressure_aware_scalar_replacement",
+        "register_order": [
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9",
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15"
+        ],
+        "rematerialization": "const_only",
+        "residence_scope": "single_definition_cross_block",
+        "scalar_promotion": "conservative_mem2reg",
+        "spill_cost_parameters": [
+          [
+            "use_count",
+            4
+          ],
+          [
+            "loop_depth",
+            8
+          ],
+          [
+            "interference_degree",
+            2
+          ],
+          [
+            "call_crossing",
+            6
+          ],
+          [
+            "rematerializable",
+            -5
+          ],
+          [
+            "live_range_length",
+            1
+          ]
+        ],
+        "spill_policy": "stack_on_exhaustion",
+        "writeback_policy": "canonical"
+      },
+      "policy_id": "V2_99ed0b63e0c088ff",
+      "stage": "D",
+      "status": "SUPPORTED_PASS",
+      "supported": true,
+      "unsupported_reason": null
+    },
+    {
+      "abi": "PASS",
+      "correctness": "PASS",
+      "determinism": "PASS",
+      "family": "INDEXED",
+      "holdout_group_frozen": true,
+      "label": "MUTATION_13_COMPACT_INDEXED_MEMORY",
+      "mechanism_metrics": {
+        "address_recomputations_after": 0,
+        "address_recomputations_before": 5,
+        "alias_safety_rejections": 0,
+        "block_region_spill": 14,
+        "compact_ea_applied": 5,
+        "copies_added": 0,
+        "indexed_candidates": 5,
+        "lea_after": 0,
+        "lea_before": 5,
+        "live_ranges_split": 0,
+        "loads_added": 0,
+        "loads_removed": 0,
+        "max_live_after": 21,
+        "max_live_before": 21,
+        "pressure_rejections": 0,
+        "region_spill_candidates": 40,
+        "reloads_avoided_by_remat": 0,
+        "remat_instructions_added": 0,
+        "rematerializable_values": 0,
+        "rematerializations": 0,
+        "scalar_candidates": 0,
+        "scalar_promoted": 0,
+        "spill_ops_avoided": 0,
+        "split_points": 0,
+        "stores_added": 0,
+        "stores_removed": 0,
+        "temporary_registers_avoided": 5,
+        "writebacks_added": 0
+      },
+      "metrics": {
+        "address_recomputations": 371,
+        "branches": 1962,
+        "callee_save_traffic": 4,
+        "caller_save_traffic": 45,
+        "calls": 329,
+        "frame_bytes": 1872,
+        "instructions": 11320,
+        "leas": 371,
+        "loads": 16,
+        "memory_operands": 151,
+        "movs": 3605,
+        "pops": 486,
+        "pushes": 482,
+        "reloads": 16,
+        "self_movs": 0,
+        "spills": 104,
+        "spills_reload": 151,
+        "stack_loads": 16,
+        "stack_ops": 151,
+        "stack_stores": 104,
+        "stores": 104,
+        "text_bytes": 0,
+        "total_load_store": 120
+      },
+      "operator": "single_gene_mutation",
+      "outputs": [
+        {
+          "assembly_lines": 1665,
+          "assembly_sha256": "d50209f7fb5e7d0a905317acb7e698e8f617b17360986c3af3170a8edda1661c",
+          "case_id": "H01",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1711,
+          "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+          "case_id": "H02",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1634,
+          "assembly_sha256": "a04fad0fb1a8db16022947f1fde59e701d2700c2b79c9265a391715a9b2132b5",
+          "case_id": "H03",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1565,
+          "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+          "case_id": "H04",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+          "case_id": "H05",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1736,
+          "assembly_sha256": "95dde55473a77f4bc867832122ed720b7716d334fc04d4dda568e843fb47ae4d",
+          "case_id": "H06",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1664,
+          "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+          "case_id": "E01",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1581,
+          "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+          "case_id": "E02",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+          "case_id": "E03",
+          "group": "holdout-existing"
+        }
+      ],
+      "parent_ids": [
+        "V2_0ba2d6baa36a46fb"
+      ],
+      "performance_evaluation": "ALLOWED_AFTER_CORRECTNESS",
+      "policy_config": {
+        "call_register_order": [
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9"
+        ],
+        "call_residence": "whole_function_frame_fallback",
+        "indexed_memory_policy": "compact_ea",
+        "live_range_split": "disabled",
+        "load_forwarding": "disabled",
+        "move_coalescing": "disabled",
+        "name": "mutation_13_compact_indexed_memory",
+        "register_order": [
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9",
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15"
+        ],
+        "rematerialization": "disabled",
+        "residence_scope": "single_definition_cross_block",
+        "scalar_promotion": "disabled",
+        "spill_cost_parameters": [
+          [
+            "use_count",
+            4
+          ],
+          [
+            "loop_depth",
+            8
+          ],
+          [
+            "interference_degree",
+            2
+          ],
+          [
+            "call_crossing",
+            6
+          ],
+          [
+            "rematerializable",
+            -5
+          ],
+          [
+            "live_range_length",
+            1
+          ]
+        ],
+        "spill_policy": "region_aware",
+        "writeback_policy": "canonical"
+      },
+      "policy_id": "V2_a182516d87d8a4e7",
+      "stage": "D",
+      "status": "SUPPORTED_PASS",
+      "supported": true,
+      "unsupported_reason": null
+    },
+    {
+      "abi": "PASS",
+      "correctness": "PASS",
+      "determinism": "PASS",
+      "family": "HYBRID",
+      "holdout_group_frozen": true,
+      "label": "REGION_AWARE_SPILL+COMPACT_INDEXED_MEMORY",
+      "mechanism_metrics": {
+        "address_recomputations_after": 0,
+        "address_recomputations_before": 5,
+        "alias_safety_rejections": 0,
+        "block_region_spill": 14,
+        "compact_ea_applied": 5,
+        "copies_added": 0,
+        "indexed_candidates": 5,
+        "lea_after": 0,
+        "lea_before": 5,
+        "live_ranges_split": 0,
+        "loads_added": 0,
+        "loads_removed": 0,
+        "max_live_after": 21,
+        "max_live_before": 21,
+        "pressure_rejections": 0,
+        "region_spill_candidates": 40,
+        "reloads_avoided_by_remat": 0,
+        "remat_instructions_added": 0,
+        "rematerializable_values": 0,
+        "rematerializations": 0,
+        "scalar_candidates": 0,
+        "scalar_promoted": 0,
+        "spill_ops_avoided": 0,
+        "split_points": 0,
+        "stores_added": 0,
+        "stores_removed": 0,
+        "temporary_registers_avoided": 5,
+        "writebacks_added": 0
+      },
+      "metrics": {
+        "address_recomputations": 371,
+        "branches": 1962,
+        "callee_save_traffic": 4,
+        "caller_save_traffic": 45,
+        "calls": 329,
+        "frame_bytes": 1872,
+        "instructions": 11320,
+        "leas": 371,
+        "loads": 16,
+        "memory_operands": 151,
+        "movs": 3605,
+        "pops": 486,
+        "pushes": 482,
+        "reloads": 16,
+        "self_movs": 0,
+        "spills": 104,
+        "spills_reload": 151,
+        "stack_loads": 16,
+        "stack_ops": 151,
+        "stack_stores": 104,
+        "stores": 104,
+        "text_bytes": 0,
+        "total_load_store": 120
+      },
+      "operator": "compatible_two_gene_mutation",
+      "outputs": [
+        {
+          "assembly_lines": 1665,
+          "assembly_sha256": "d50209f7fb5e7d0a905317acb7e698e8f617b17360986c3af3170a8edda1661c",
+          "case_id": "H01",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1711,
+          "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+          "case_id": "H02",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1634,
+          "assembly_sha256": "a04fad0fb1a8db16022947f1fde59e701d2700c2b79c9265a391715a9b2132b5",
+          "case_id": "H03",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1565,
+          "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+          "case_id": "H04",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+          "case_id": "H05",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1736,
+          "assembly_sha256": "95dde55473a77f4bc867832122ed720b7716d334fc04d4dda568e843fb47ae4d",
+          "case_id": "H06",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1664,
+          "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+          "case_id": "E01",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1581,
+          "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+          "case_id": "E02",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+          "case_id": "E03",
+          "group": "holdout-existing"
+        }
+      ],
+      "parent_ids": [
+        "V2_5325718696406d64",
+        "V2_0ba2d6baa36a46fb"
+      ],
+      "performance_evaluation": "ALLOWED_AFTER_CORRECTNESS",
+      "policy_config": {
+        "call_register_order": [
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9"
+        ],
+        "call_residence": "whole_function_frame_fallback",
+        "indexed_memory_policy": "compact_ea",
+        "live_range_split": "disabled",
+        "load_forwarding": "disabled",
+        "move_coalescing": "disabled",
+        "name": "pair_region_aware_spill_compact_indexed_memory",
+        "register_order": [
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9",
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15"
+        ],
+        "rematerialization": "disabled",
+        "residence_scope": "single_definition_cross_block",
+        "scalar_promotion": "disabled",
+        "spill_cost_parameters": [
+          [
+            "use_count",
+            4
+          ],
+          [
+            "loop_depth",
+            8
+          ],
+          [
+            "interference_degree",
+            2
+          ],
+          [
+            "call_crossing",
+            6
+          ],
+          [
+            "rematerializable",
+            -5
+          ],
+          [
+            "live_range_length",
+            1
+          ]
+        ],
+        "spill_policy": "region_aware",
+        "writeback_policy": "canonical"
+      },
+      "policy_id": "V2_a4630b67db9c08a7",
+      "stage": "B",
+      "status": "SUPPORTED_PASS",
+      "supported": true,
+      "unsupported_reason": null
+    },
+    {
+      "abi": "PASS",
+      "correctness": "PASS",
+      "determinism": "PASS",
+      "family": "HYBRID",
+      "holdout_group_frozen": true,
+      "label": "RECOMBINATION_14_PRESSURE_AWARE_SCALAR_REPLACEMENT+COMPACT_INDEXED_MEMORY+LOOP_BOUNDARY_LIVE_RANGE_SPLIT",
+      "mechanism_metrics": {
+        "address_recomputations_after": 0,
+        "address_recomputations_before": 5,
+        "alias_safety_rejections": 0,
+        "block_region_spill": 0,
+        "compact_ea_applied": 5,
+        "copies_added": 0,
+        "indexed_candidates": 5,
+        "lea_after": 0,
+        "lea_before": 5,
+        "live_ranges_split": 0,
+        "loads_added": 0,
+        "loads_removed": 0,
+        "max_live_after": 21,
+        "max_live_before": 21,
+        "pressure_rejections": 0,
+        "region_spill_candidates": 40,
+        "reloads_avoided_by_remat": 0,
+        "remat_instructions_added": 0,
+        "rematerializable_values": 0,
+        "rematerializations": 0,
+        "scalar_candidates": 0,
+        "scalar_promoted": 0,
+        "spill_ops_avoided": 0,
+        "split_points": 0,
+        "stores_added": 0,
+        "stores_removed": 0,
+        "temporary_registers_avoided": 5,
+        "writebacks_added": 0
+      },
+      "metrics": {
+        "address_recomputations": 371,
+        "branches": 1962,
+        "callee_save_traffic": 4,
+        "caller_save_traffic": 45,
+        "calls": 329,
+        "frame_bytes": 1872,
+        "instructions": 11320,
+        "leas": 371,
+        "loads": 16,
+        "memory_operands": 151,
+        "movs": 3605,
+        "pops": 486,
+        "pushes": 482,
+        "reloads": 16,
+        "self_movs": 0,
+        "spills": 104,
+        "spills_reload": 151,
+        "stack_loads": 16,
+        "stack_ops": 151,
+        "stack_stores": 104,
+        "stores": 104,
+        "text_bytes": 0,
+        "total_load_store": 120
+      },
+      "operator": "parent_recombination",
+      "outputs": [
+        {
+          "assembly_lines": 1665,
+          "assembly_sha256": "bae9c150d6a570b173c03b44194e848c1cd6879b74769b05990a9cdab8265079",
+          "case_id": "H01",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1711,
+          "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+          "case_id": "H02",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1634,
+          "assembly_sha256": "a04fad0fb1a8db16022947f1fde59e701d2700c2b79c9265a391715a9b2132b5",
+          "case_id": "H03",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1565,
+          "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+          "case_id": "H04",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+          "case_id": "H05",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1736,
+          "assembly_sha256": "53845478f598e9ed1af226596b80336a705078b5664bd9644267cda8255865d5",
+          "case_id": "H06",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1664,
+          "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+          "case_id": "E01",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1581,
+          "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+          "case_id": "E02",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+          "case_id": "E03",
+          "group": "holdout-existing"
+        }
+      ],
+      "parent_ids": [
+        "V2_b4e09618cbf1d2a0",
+        "V2_4d7128db47cc5570"
+      ],
+      "performance_evaluation": "ALLOWED_AFTER_CORRECTNESS",
+      "policy_config": {
+        "call_register_order": [
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9"
+        ],
+        "call_residence": "whole_function_frame_fallback",
+        "indexed_memory_policy": "compact_ea",
+        "live_range_split": "disabled",
+        "load_forwarding": "disabled",
+        "move_coalescing": "disabled",
+        "name": "recombine_14_pressure_aware_scalar_replacement_compact_indexed_memory_loop_boundary_live_range_split",
+        "register_order": [
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9",
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15"
+        ],
+        "rematerialization": "disabled",
+        "residence_scope": "single_definition_cross_block",
+        "scalar_promotion": "conservative_mem2reg",
+        "spill_cost_parameters": [
+          [
+            "use_count",
+            4
+          ],
+          [
+            "loop_depth",
+            8
+          ],
+          [
+            "interference_degree",
+            2
+          ],
+          [
+            "call_crossing",
+            6
+          ],
+          [
+            "rematerializable",
+            -5
+          ],
+          [
+            "live_range_length",
+            1
+          ]
+        ],
+        "spill_policy": "stack_on_exhaustion",
+        "writeback_policy": "canonical"
+      },
+      "policy_id": "V2_a9c18dbdf2dcad3a",
+      "stage": "D",
+      "status": "SUPPORTED_PASS",
+      "supported": true,
+      "unsupported_reason": null
+    },
+    {
+      "abi": "PASS",
+      "correctness": "PASS",
+      "determinism": "PASS",
+      "family": "HYBRID",
+      "holdout_group_frozen": true,
+      "label": "PRESSURE_AWARE_SCALAR_REPLACEMENT+COMPACT_INDEXED_MEMORY",
+      "mechanism_metrics": {
+        "address_recomputations_after": 0,
+        "address_recomputations_before": 5,
+        "alias_safety_rejections": 0,
+        "block_region_spill": 0,
+        "compact_ea_applied": 5,
+        "copies_added": 0,
+        "indexed_candidates": 5,
+        "lea_after": 0,
+        "lea_before": 5,
+        "live_ranges_split": 0,
+        "loads_added": 0,
+        "loads_removed": 0,
+        "max_live_after": 21,
+        "max_live_before": 21,
+        "pressure_rejections": 0,
+        "region_spill_candidates": 40,
+        "reloads_avoided_by_remat": 0,
+        "remat_instructions_added": 0,
+        "rematerializable_values": 0,
+        "rematerializations": 0,
+        "scalar_candidates": 0,
+        "scalar_promoted": 0,
+        "spill_ops_avoided": 0,
+        "split_points": 0,
+        "stores_added": 0,
+        "stores_removed": 0,
+        "temporary_registers_avoided": 5,
+        "writebacks_added": 0
+      },
+      "metrics": {
+        "address_recomputations": 371,
+        "branches": 1962,
+        "callee_save_traffic": 4,
+        "caller_save_traffic": 45,
+        "calls": 329,
+        "frame_bytes": 1872,
+        "instructions": 11320,
+        "leas": 371,
+        "loads": 16,
+        "memory_operands": 151,
+        "movs": 3605,
+        "pops": 486,
+        "pushes": 482,
+        "reloads": 16,
+        "self_movs": 0,
+        "spills": 104,
+        "spills_reload": 151,
+        "stack_loads": 16,
+        "stack_ops": 151,
+        "stack_stores": 104,
+        "stores": 104,
+        "text_bytes": 0,
+        "total_load_store": 120
+      },
+      "operator": "compatible_two_gene_mutation",
+      "outputs": [
+        {
+          "assembly_lines": 1665,
+          "assembly_sha256": "bae9c150d6a570b173c03b44194e848c1cd6879b74769b05990a9cdab8265079",
+          "case_id": "H01",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1711,
+          "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+          "case_id": "H02",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1634,
+          "assembly_sha256": "a04fad0fb1a8db16022947f1fde59e701d2700c2b79c9265a391715a9b2132b5",
+          "case_id": "H03",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1565,
+          "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+          "case_id": "H04",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+          "case_id": "H05",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1736,
+          "assembly_sha256": "53845478f598e9ed1af226596b80336a705078b5664bd9644267cda8255865d5",
+          "case_id": "H06",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1664,
+          "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+          "case_id": "E01",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1581,
+          "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+          "case_id": "E02",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+          "case_id": "E03",
+          "group": "holdout-existing"
+        }
+      ],
+      "parent_ids": [
+        "V2_c814ac0d2168db6a",
+        "V2_0ba2d6baa36a46fb"
+      ],
+      "performance_evaluation": "ALLOWED_AFTER_CORRECTNESS",
+      "policy_config": {
+        "call_register_order": [
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9"
+        ],
+        "call_residence": "whole_function_frame_fallback",
+        "indexed_memory_policy": "compact_ea",
+        "live_range_split": "disabled",
+        "load_forwarding": "disabled",
+        "move_coalescing": "disabled",
+        "name": "pair_pressure_aware_scalar_replacement_compact_indexed_memory",
+        "register_order": [
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9",
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15"
+        ],
+        "rematerialization": "disabled",
+        "residence_scope": "single_definition_cross_block",
+        "scalar_promotion": "conservative_mem2reg",
+        "spill_cost_parameters": [
+          [
+            "use_count",
+            4
+          ],
+          [
+            "loop_depth",
+            8
+          ],
+          [
+            "interference_degree",
+            2
+          ],
+          [
+            "call_crossing",
+            6
+          ],
+          [
+            "rematerializable",
+            -5
+          ],
+          [
+            "live_range_length",
+            1
+          ]
+        ],
+        "spill_policy": "stack_on_exhaustion",
+        "writeback_policy": "canonical"
+      },
+      "policy_id": "V2_b4e09618cbf1d2a0",
+      "stage": "B",
+      "status": "SUPPORTED_PASS",
+      "supported": true,
+      "unsupported_reason": null
+    },
+    {
+      "abi": "PASS",
+      "correctness": "PASS",
+      "determinism": "PASS",
+      "family": "HYBRID",
+      "holdout_group_frozen": true,
+      "label": "RECOMBINATION_23_REGION_AWARE_SPILL+PRESSURE_AWARE_SCALAR_REPLACEMENT+PRESSURE_AWARE_SCALAR_REPLACEMENT+COMPACT_INDEXED_MEMORY",
+      "mechanism_metrics": {
+        "address_recomputations_after": 0,
+        "address_recomputations_before": 5,
+        "alias_safety_rejections": 0,
+        "block_region_spill": 0,
+        "compact_ea_applied": 5,
+        "copies_added": 0,
+        "indexed_candidates": 5,
+        "lea_after": 0,
+        "lea_before": 5,
+        "live_ranges_split": 0,
+        "loads_added": 0,
+        "loads_removed": 0,
+        "max_live_after": 21,
+        "max_live_before": 21,
+        "pressure_rejections": 0,
+        "region_spill_candidates": 40,
+        "reloads_avoided_by_remat": 0,
+        "remat_instructions_added": 0,
+        "rematerializable_values": 0,
+        "rematerializations": 0,
+        "scalar_candidates": 0,
+        "scalar_promoted": 0,
+        "spill_ops_avoided": 0,
+        "split_points": 0,
+        "stores_added": 0,
+        "stores_removed": 0,
+        "temporary_registers_avoided": 5,
+        "writebacks_added": 0
+      },
+      "metrics": {
+        "address_recomputations": 371,
+        "branches": 1962,
+        "callee_save_traffic": 4,
+        "caller_save_traffic": 45,
+        "calls": 329,
+        "frame_bytes": 1872,
+        "instructions": 11320,
+        "leas": 371,
+        "loads": 16,
+        "memory_operands": 151,
+        "movs": 3605,
+        "pops": 486,
+        "pushes": 482,
+        "reloads": 16,
+        "self_movs": 0,
+        "spills": 104,
+        "spills_reload": 151,
+        "stack_loads": 16,
+        "stack_ops": 151,
+        "stack_stores": 104,
+        "stores": 104,
+        "text_bytes": 0,
+        "total_load_store": 120
+      },
+      "operator": "parent_recombination",
+      "outputs": [
+        {
+          "assembly_lines": 1665,
+          "assembly_sha256": "bae9c150d6a570b173c03b44194e848c1cd6879b74769b05990a9cdab8265079",
+          "case_id": "H01",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1711,
+          "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+          "case_id": "H02",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1634,
+          "assembly_sha256": "a04fad0fb1a8db16022947f1fde59e701d2700c2b79c9265a391715a9b2132b5",
+          "case_id": "H03",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1565,
+          "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+          "case_id": "H04",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+          "case_id": "H05",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1736,
+          "assembly_sha256": "53845478f598e9ed1af226596b80336a705078b5664bd9644267cda8255865d5",
+          "case_id": "H06",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1664,
+          "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+          "case_id": "E01",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1581,
+          "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+          "case_id": "E02",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+          "case_id": "E03",
+          "group": "holdout-existing"
+        }
+      ],
+      "parent_ids": [
+        "V2_f60b223b64bd0650",
+        "V2_b4e09618cbf1d2a0"
+      ],
+      "performance_evaluation": "ALLOWED_AFTER_CORRECTNESS",
+      "policy_config": {
+        "call_register_order": [
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9"
+        ],
+        "call_residence": "whole_function_frame_fallback",
+        "indexed_memory_policy": "compact_ea",
+        "live_range_split": "disabled",
+        "load_forwarding": "disabled",
+        "move_coalescing": "disabled",
+        "name": "recombine_23_region_aware_spill_pressure_aware_scalar_replacement_pressure_aware_scalar_replacement_compact_indexed_memory",
+        "register_order": [
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9",
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15"
+        ],
+        "rematerialization": "disabled",
+        "residence_scope": "single_definition_cross_block",
+        "scalar_promotion": "conservative_mem2reg",
+        "spill_cost_parameters": [
+          [
+            "use_count",
+            4
+          ],
+          [
+            "loop_depth",
+            8
+          ],
+          [
+            "interference_degree",
+            2
+          ],
+          [
+            "call_crossing",
+            6
+          ],
+          [
+            "rematerializable",
+            -5
+          ],
+          [
+            "live_range_length",
+            1
+          ]
+        ],
+        "spill_policy": "stack_on_exhaustion",
+        "writeback_policy": "canonical"
+      },
+      "policy_id": "V2_b7006ce9bd37a653",
+      "stage": "D",
+      "status": "SUPPORTED_PASS",
+      "supported": true,
+      "unsupported_reason": null
+    },
+    {
+      "abi": "PASS",
+      "correctness": "PASS",
+      "determinism": "PASS",
+      "family": "REMATERIALIZATION",
+      "holdout_group_frozen": true,
+      "label": "CONST_REMATERIALIZATION",
+      "mechanism_metrics": {
+        "address_recomputations_after": 5,
+        "address_recomputations_before": 5,
+        "alias_safety_rejections": 0,
+        "block_region_spill": 0,
+        "compact_ea_applied": 0,
+        "copies_added": 0,
+        "indexed_candidates": 5,
+        "lea_after": 5,
+        "lea_before": 5,
+        "live_ranges_split": 0,
+        "loads_added": 0,
+        "loads_removed": 0,
+        "max_live_after": 21,
+        "max_live_before": 21,
+        "pressure_rejections": 0,
+        "region_spill_candidates": 40,
+        "reloads_avoided_by_remat": 0,
+        "remat_instructions_added": 0,
+        "rematerializable_values": 16,
+        "rematerializations": 0,
+        "scalar_candidates": 0,
+        "scalar_promoted": 0,
+        "spill_ops_avoided": 0,
+        "split_points": 0,
+        "stores_added": 0,
+        "stores_removed": 0,
+        "temporary_registers_avoided": 0,
+        "writebacks_added": 0
+      },
+      "metrics": {
+        "address_recomputations": 371,
+        "branches": 1962,
+        "callee_save_traffic": 4,
+        "caller_save_traffic": 35,
+        "calls": 329,
+        "frame_bytes": 1872,
+        "instructions": 11325,
+        "leas": 371,
+        "loads": 16,
+        "memory_operands": 151,
+        "movs": 3610,
+        "pops": 486,
+        "pushes": 482,
+        "reloads": 16,
+        "self_movs": 0,
+        "spills": 104,
+        "spills_reload": 151,
+        "stack_loads": 16,
+        "stack_ops": 151,
+        "stack_stores": 104,
+        "stores": 104,
+        "text_bytes": 0,
+        "total_load_store": 120
+      },
+      "operator": "seed",
+      "outputs": [
+        {
+          "assembly_lines": 1665,
+          "assembly_sha256": "bae9c150d6a570b173c03b44194e848c1cd6879b74769b05990a9cdab8265079",
+          "case_id": "H01",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1711,
+          "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+          "case_id": "H02",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1636,
+          "assembly_sha256": "3f2b00a8ed1e57a2c7789084141d4a8be3767fea86a5a2c661f22311ec6d403e",
+          "case_id": "H03",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1565,
+          "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+          "case_id": "H04",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+          "case_id": "H05",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1739,
+          "assembly_sha256": "8864918e2367e9defe6d9cfdea875acf1885350c55f736d96061042de60669c7",
+          "case_id": "H06",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1664,
+          "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+          "case_id": "E01",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1581,
+          "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+          "case_id": "E02",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+          "case_id": "E03",
+          "group": "holdout-existing"
+        }
+      ],
+      "parent_ids": [],
+      "performance_evaluation": "ALLOWED_AFTER_CORRECTNESS",
+      "policy_config": {
+        "call_register_order": [
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9"
+        ],
+        "call_residence": "whole_function_frame_fallback",
+        "indexed_memory_policy": "canonical",
+        "live_range_split": "disabled",
+        "load_forwarding": "disabled",
+        "move_coalescing": "disabled",
+        "name": "const_rematerialization",
+        "register_order": [
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9",
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15"
+        ],
+        "rematerialization": "const_only",
+        "residence_scope": "single_definition_cross_block",
+        "scalar_promotion": "disabled",
+        "spill_cost_parameters": [
+          [
+            "use_count",
+            4
+          ],
+          [
+            "loop_depth",
+            8
+          ],
+          [
+            "interference_degree",
+            2
+          ],
+          [
+            "call_crossing",
+            6
+          ],
+          [
+            "rematerializable",
+            -5
+          ],
+          [
+            "live_range_length",
+            1
+          ]
+        ],
+        "spill_policy": "stack_on_exhaustion",
+        "writeback_policy": "canonical"
+      },
+      "policy_id": "V2_c0fd2cd6ec9e39dc",
+      "stage": "A",
+      "status": "SUPPORTED_PASS",
+      "supported": true,
+      "unsupported_reason": null
+    },
+    {
+      "abi": "PASS",
+      "correctness": "PASS",
+      "determinism": "PASS",
+      "family": "REMATERIALIZATION",
+      "holdout_group_frozen": true,
+      "label": "MUTATION_10_CONST_REMATERIALIZATION",
+      "mechanism_metrics": {
+        "address_recomputations_after": 0,
+        "address_recomputations_before": 5,
+        "alias_safety_rejections": 0,
+        "block_region_spill": 0,
+        "compact_ea_applied": 5,
+        "copies_added": 0,
+        "indexed_candidates": 5,
+        "lea_after": 0,
+        "lea_before": 5,
+        "live_ranges_split": 0,
+        "loads_added": 0,
+        "loads_removed": 0,
+        "max_live_after": 21,
+        "max_live_before": 21,
+        "pressure_rejections": 0,
+        "region_spill_candidates": 40,
+        "reloads_avoided_by_remat": 0,
+        "remat_instructions_added": 0,
+        "rematerializable_values": 16,
+        "rematerializations": 0,
+        "scalar_candidates": 0,
+        "scalar_promoted": 0,
+        "spill_ops_avoided": 0,
+        "split_points": 0,
+        "stores_added": 0,
+        "stores_removed": 0,
+        "temporary_registers_avoided": 5,
+        "writebacks_added": 0
+      },
+      "metrics": {
+        "address_recomputations": 371,
+        "branches": 1962,
+        "callee_save_traffic": 4,
+        "caller_save_traffic": 45,
+        "calls": 329,
+        "frame_bytes": 1872,
+        "instructions": 11320,
+        "leas": 371,
+        "loads": 16,
+        "memory_operands": 151,
+        "movs": 3605,
+        "pops": 486,
+        "pushes": 482,
+        "reloads": 16,
+        "self_movs": 0,
+        "spills": 104,
+        "spills_reload": 151,
+        "stack_loads": 16,
+        "stack_ops": 151,
+        "stack_stores": 104,
+        "stores": 104,
+        "text_bytes": 0,
+        "total_load_store": 120
+      },
+      "operator": "single_gene_mutation",
+      "outputs": [
+        {
+          "assembly_lines": 1665,
+          "assembly_sha256": "bae9c150d6a570b173c03b44194e848c1cd6879b74769b05990a9cdab8265079",
+          "case_id": "H01",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1711,
+          "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+          "case_id": "H02",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1634,
+          "assembly_sha256": "a04fad0fb1a8db16022947f1fde59e701d2700c2b79c9265a391715a9b2132b5",
+          "case_id": "H03",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1565,
+          "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+          "case_id": "H04",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+          "case_id": "H05",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1736,
+          "assembly_sha256": "53845478f598e9ed1af226596b80336a705078b5664bd9644267cda8255865d5",
+          "case_id": "H06",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1664,
+          "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+          "case_id": "E01",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1581,
+          "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+          "case_id": "E02",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+          "case_id": "E03",
+          "group": "holdout-existing"
+        }
+      ],
+      "parent_ids": [
+        "V2_c0fd2cd6ec9e39dc"
+      ],
+      "performance_evaluation": "ALLOWED_AFTER_CORRECTNESS",
+      "policy_config": {
+        "call_register_order": [
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9"
+        ],
+        "call_residence": "whole_function_frame_fallback",
+        "indexed_memory_policy": "compact_ea",
+        "live_range_split": "disabled",
+        "load_forwarding": "disabled",
+        "move_coalescing": "disabled",
+        "name": "mutation_10_const_rematerialization",
+        "register_order": [
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9",
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15"
+        ],
+        "rematerialization": "const_only",
+        "residence_scope": "single_definition_cross_block",
+        "scalar_promotion": "disabled",
+        "spill_cost_parameters": [
+          [
+            "use_count",
+            4
+          ],
+          [
+            "loop_depth",
+            8
+          ],
+          [
+            "interference_degree",
+            2
+          ],
+          [
+            "call_crossing",
+            6
+          ],
+          [
+            "rematerializable",
+            -5
+          ],
+          [
+            "live_range_length",
+            1
+          ]
+        ],
+        "spill_policy": "stack_on_exhaustion",
+        "writeback_policy": "canonical"
+      },
+      "policy_id": "V2_c29150d8daa342c4",
+      "stage": "D",
+      "status": "SUPPORTED_PASS",
+      "supported": true,
+      "unsupported_reason": null
+    },
+    {
+      "abi": "PASS",
+      "correctness": "PASS",
+      "determinism": "PASS",
+      "family": "LIVE_RANGE",
+      "holdout_group_frozen": true,
+      "label": "MUTATION_3_LOOP_BOUNDARY_LIVE_RANGE_SPLIT",
+      "mechanism_metrics": {
+        "address_recomputations_after": 5,
+        "address_recomputations_before": 5,
+        "alias_safety_rejections": 0,
+        "block_region_spill": 0,
+        "compact_ea_applied": 0,
+        "copies_added": 6,
+        "indexed_candidates": 5,
+        "lea_after": 5,
+        "lea_before": 5,
+        "live_ranges_split": 1,
+        "loads_added": 3,
+        "loads_removed": 0,
+        "max_live_after": 21,
+        "max_live_before": 21,
+        "pressure_rejections": 0,
+        "region_spill_candidates": 40,
+        "reloads_avoided_by_remat": 0,
+        "remat_instructions_added": 0,
+        "rematerializable_values": 0,
+        "rematerializations": 0,
+        "scalar_candidates": 0,
+        "scalar_promoted": 0,
+        "spill_ops_avoided": 0,
+        "split_points": 1,
+        "stores_added": 3,
+        "stores_removed": 0,
+        "temporary_registers_avoided": 0,
+        "writebacks_added": 0
+      },
+      "metrics": {
+        "address_recomputations": 374,
+        "branches": 1971,
+        "callee_save_traffic": 4,
+        "caller_save_traffic": 41,
+        "calls": 329,
+        "frame_bytes": 1872,
+        "instructions": 11355,
+        "leas": 374,
+        "loads": 19,
+        "memory_operands": 163,
+        "movs": 3619,
+        "pops": 486,
+        "pushes": 482,
+        "reloads": 19,
+        "self_movs": 0,
+        "spills": 107,
+        "spills_reload": 163,
+        "stack_loads": 19,
+        "stack_ops": 163,
+        "stack_stores": 107,
+        "stores": 107,
+        "text_bytes": 0,
+        "total_load_store": 126
+      },
+      "operator": "single_gene_mutation",
+      "outputs": [
+        {
+          "assembly_lines": 1704,
+          "assembly_sha256": "167b5e054bfdf348f8565567a36f81e8ea53084e0da2f868417e1073563d4d0a",
+          "case_id": "H01",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1711,
+          "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+          "case_id": "H02",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1636,
+          "assembly_sha256": "3f2b00a8ed1e57a2c7789084141d4a8be3767fea86a5a2c661f22311ec6d403e",
+          "case_id": "H03",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1565,
+          "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+          "case_id": "H04",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+          "case_id": "H05",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1739,
+          "assembly_sha256": "8864918e2367e9defe6d9cfdea875acf1885350c55f736d96061042de60669c7",
+          "case_id": "H06",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1664,
+          "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+          "case_id": "E01",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1581,
+          "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+          "case_id": "E02",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+          "case_id": "E03",
+          "group": "holdout-existing"
+        }
+      ],
+      "parent_ids": [
+        "V2_4d7128db47cc5570"
+      ],
+      "performance_evaluation": "ALLOWED_AFTER_CORRECTNESS",
+      "policy_config": {
+        "call_register_order": [
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9"
+        ],
+        "call_residence": "whole_function_frame_fallback",
+        "indexed_memory_policy": "canonical",
+        "live_range_split": "loop_boundary",
+        "load_forwarding": "disabled",
+        "move_coalescing": "disabled",
+        "name": "mutation_3_loop_boundary_live_range_split",
+        "register_order": [
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9",
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15"
+        ],
+        "rematerialization": "disabled",
+        "residence_scope": "single_definition_cross_block",
+        "scalar_promotion": "conservative_mem2reg",
+        "spill_cost_parameters": [
+          [
+            "use_count",
+            4
+          ],
+          [
+            "loop_depth",
+            8
+          ],
+          [
+            "interference_degree",
+            2
+          ],
+          [
+            "call_crossing",
+            6
+          ],
+          [
+            "rematerializable",
+            -5
+          ],
+          [
+            "live_range_length",
+            1
+          ]
+        ],
+        "spill_policy": "stack_on_exhaustion",
+        "writeback_policy": "canonical"
+      },
+      "policy_id": "V2_f1ad0bed504b5fb0",
+      "stage": "D",
+      "status": "SUPPORTED_PASS",
+      "supported": true,
+      "unsupported_reason": null
+    },
+    {
+      "abi": "PASS",
+      "correctness": "PASS",
+      "determinism": "PASS",
+      "family": "REGISTER",
+      "holdout_group_frozen": true,
+      "label": "MUTATION_16_BASELINE",
+      "mechanism_metrics": {
+        "address_recomputations_after": 0,
+        "address_recomputations_before": 5,
+        "alias_safety_rejections": 0,
+        "block_region_spill": 0,
+        "compact_ea_applied": 5,
+        "copies_added": 0,
+        "indexed_candidates": 5,
+        "lea_after": 0,
+        "lea_before": 5,
+        "live_ranges_split": 0,
+        "loads_added": 0,
+        "loads_removed": 0,
+        "max_live_after": 21,
+        "max_live_before": 21,
+        "pressure_rejections": 0,
+        "region_spill_candidates": 40,
+        "reloads_avoided_by_remat": 0,
+        "remat_instructions_added": 0,
+        "rematerializable_values": 0,
+        "rematerializations": 0,
+        "scalar_candidates": 0,
+        "scalar_promoted": 0,
+        "spill_ops_avoided": 0,
+        "split_points": 0,
+        "stores_added": 0,
+        "stores_removed": 0,
+        "temporary_registers_avoided": 5,
+        "writebacks_added": 0
+      },
+      "metrics": {
+        "address_recomputations": 371,
+        "branches": 1962,
+        "callee_save_traffic": 4,
+        "caller_save_traffic": 45,
+        "calls": 329,
+        "frame_bytes": 1872,
+        "instructions": 11320,
+        "leas": 371,
+        "loads": 16,
+        "memory_operands": 151,
+        "movs": 3605,
+        "pops": 486,
+        "pushes": 482,
+        "reloads": 16,
+        "self_movs": 0,
+        "spills": 104,
+        "spills_reload": 151,
+        "stack_loads": 16,
+        "stack_ops": 151,
+        "stack_stores": 104,
+        "stores": 104,
+        "text_bytes": 0,
+        "total_load_store": 120
+      },
+      "operator": "single_gene_mutation",
+      "outputs": [
+        {
+          "assembly_lines": 1665,
+          "assembly_sha256": "bae9c150d6a570b173c03b44194e848c1cd6879b74769b05990a9cdab8265079",
+          "case_id": "H01",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1711,
+          "assembly_sha256": "79d830ef6741a585e6d31fc0e9cd04dbfec7bddd5ecaf6dbb6a99e4380458121",
+          "case_id": "H02",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1634,
+          "assembly_sha256": "a04fad0fb1a8db16022947f1fde59e701d2700c2b79c9265a391715a9b2132b5",
+          "case_id": "H03",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1565,
+          "assembly_sha256": "54d8d2ce7ca06c3b36ce8a3defd5569f1788bb473833fef18b51c13694d5d4ca",
+          "case_id": "H04",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "eca41838f26c100ea51ccfee93019185ec21e29213bfe3a731007f6a3cdb7215",
+          "case_id": "H05",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1736,
+          "assembly_sha256": "53845478f598e9ed1af226596b80336a705078b5664bd9644267cda8255865d5",
+          "case_id": "H06",
+          "group": "holdout"
+        },
+        {
+          "assembly_lines": 1664,
+          "assembly_sha256": "491d91b381ddb6ac67d02761709aa82496f79dae3b6ebb44a6bebc2ca05b2266",
+          "case_id": "E01",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1581,
+          "assembly_sha256": "fa9df462138032c61d340e3e3647cfd486226a43fb7aece4b3326bee60c1157a",
+          "case_id": "E02",
+          "group": "holdout-existing"
+        },
+        {
+          "assembly_lines": 1709,
+          "assembly_sha256": "d16110f52656fe33d5ffd7a96096d95e721959bce2524564a299e09e73ceb35c",
+          "case_id": "E03",
+          "group": "holdout-existing"
+        }
+      ],
+      "parent_ids": [
+        "V2_67491d8f6521e946"
+      ],
+      "performance_evaluation": "ALLOWED_AFTER_CORRECTNESS",
+      "policy_config": {
+        "call_register_order": [
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15",
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9"
+        ],
+        "call_residence": "whole_function_frame_fallback",
+        "indexed_memory_policy": "compact_ea",
+        "live_range_split": "disabled",
+        "load_forwarding": "disabled",
+        "move_coalescing": "disabled",
+        "name": "mutation_16_baseline",
+        "register_order": [
+          "rdi",
+          "rsi",
+          "rdx",
+          "rcx",
+          "r8",
+          "r9",
+          "rbx",
+          "r12",
+          "r13",
+          "r14",
+          "r15"
+        ],
+        "rematerialization": "disabled",
+        "residence_scope": "single_definition_cross_block",
+        "scalar_promotion": "disabled",
+        "spill_cost_parameters": [
+          [
+            "use_count",
+            4
+          ],
+          [
+            "loop_depth",
+            8
+          ],
+          [
+            "interference_degree",
+            2
+          ],
+          [
+            "call_crossing",
+            6
+          ],
+          [
+            "rematerializable",
+            -5
+          ],
+          [
+            "live_range_length",
+            1
+          ]
+        ],
+        "spill_policy": "stack_on_exhaustion",
+        "writeback_policy": "canonical"
+      },
+      "policy_id": "V2_f26a8b48c61594e2",
+      "stage": "D",
+      "status": "SUPPORTED_PASS",
+      "supported": true,
+      "unsupported_reason": null
+    }
+  ]
+}

@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import struct
 from dataclasses import dataclass
+from typing import Mapping
 
 from ...assembly import (
     AssemblyFunction,
@@ -26,6 +27,7 @@ from .runtime import render_runtime
 from .allocation import AllocationPlan, analyze_allocation
 from .liveness import analyze_liveness
 from .residence import analyze_cross_block_residence
+from .policy import BASELINE_NATIVE_POLICY, NativePolicy
 from .register_init_safety import proven_initialized_register_reads
 
 
@@ -115,11 +117,19 @@ class X8664Emitter:
         max_frames: int,
         max_instructions: int,
         register_allocation: bool = False,
+        native_policy: NativePolicy = BASELINE_NATIVE_POLICY,
+        native_policy_by_function: Mapping[str, NativePolicy] | None = None,
     ):
         self.program = program
         self.max_frames = max_frames
         self.max_instructions = max_instructions
         self.register_allocation = register_allocation
+        self._base_native_policy = native_policy
+        self._base_native_policy.validate()
+        self.native_policy_by_function = dict(native_policy_by_function or {})
+        for policy in self.native_policy_by_function.values():
+            policy.validate()
+        self.native_policy = self._base_native_policy
         self.failure_sites: list[FailureSite] = []
         self.current_function: AssemblyFunction | None = None
         self.current_block: str | None = None
@@ -130,6 +140,10 @@ class X8664Emitter:
         self._entry_live_registers: frozenset[int] = frozenset()
         self._safe_register_reads: frozenset[tuple[str, int, int]] = frozenset()
         self._current_instruction_sites: dict[int, tuple[str, int]] = {}
+        self._scalar_promoted_stores: set[int] = set()
+        self._scalar_promoted_loads: dict[int, int] = {}
+        self._scalar_memory_sources: dict[int, int] = {}
+        self._split_restore_serial = 0
 
     def emit(self) -> str:
         lines = [
@@ -149,6 +163,10 @@ class X8664Emitter:
     def _emit_function(self, function: AssemblyFunction) -> list[str]:
         if function.external:
             return []
+        self.native_policy = self.native_policy_by_function.get(
+            function.name,
+            self._base_native_policy,
+        )
         self._safe_register_reads = proven_initialized_register_reads(function)
         self._current_instruction_sites = {
             id(instruction): (block.label, index)
@@ -161,14 +179,18 @@ class X8664Emitter:
             else frozenset()
         )
         if self.register_allocation:
-            plan = analyze_allocation(function)
+            plan = analyze_allocation(function, self.native_policy)
             self.current_plan = plan
             layout = layout_frame(function, plan.used_physical_registers)
         else:
-            plan = analyze_cross_block_residence(function)
+            plan = analyze_cross_block_residence(function, self.native_policy)
             self.current_plan = plan if plan.used_physical_registers else None
             layout = layout_frame(function, plan.used_physical_registers)
         self._physical_residence_active = self.current_plan is not None
+        (
+            self._scalar_promoted_stores,
+            self._scalar_promoted_loads,
+        ) = self._find_scalar_promotions(function)
         symbol = function_symbol(function)
         frame_failure = self._new_failure_site(
             category="frame limit",
@@ -207,6 +229,7 @@ class X8664Emitter:
         function_liveness = analyze_liveness(function)
         for block in function.blocks:
             lines.append(f"{mangle_block(function.name, block.label)}:")
+            lines.extend(self._loop_boundary_restore(layout, block.label))
             instruction_index = 0
             while instruction_index < len(block.instructions):
                 if self._can_fuse_tcmp_tbr3(
@@ -308,6 +331,7 @@ class X8664Emitter:
         # native compare. The first instruction has already validated and
         # loaded both operands, and the second check may clobber flags.
         lines.extend(self._instruction_instrumentation(function, block_name, branch))
+        lines.extend(self._loop_boundary_save(layout, branch))
         source_type = function.type_of(left)
         if source_type is AssemblyType.F64:
             lines.extend(
@@ -487,6 +511,23 @@ class X8664Emitter:
             if phys != target:
                 return [f"    mov {target}, {phys}"]
             return []
+        if (
+            self.current_plan is not None
+            and register in self.current_plan.rematerializable_values
+            and self.current_plan.physical_register(register) is None
+        ):
+            failure = self._instruction_failure(
+                "uninitialized register",
+                detail=f"register r{register} is uninitialized\n",
+            )
+            lines = [
+                f"    cmp byte ptr {_address(slot.initialized)}, 0",
+                f"    je {failure}",
+            ]
+            lines.append(
+                self._rematerialize_instruction(register, target)
+            )
+            return lines
         failure = self._instruction_failure(
             "uninitialized register",
             detail=f"register r{register} is uninitialized\n",
@@ -501,6 +542,124 @@ class X8664Emitter:
         elif phys != target:
             lines.append(f"    mov {target}, {phys}")
         return lines
+
+    def _rematerialize_instruction(self, register: int, target: str) -> str:
+        assert self.current_plan is not None
+        assert self.current_function is not None
+        immediate = self.current_plan.rematerializable_values[register]
+        if self.current_function.type_of(register) is AssemblyType.F64:
+            immediate = _f64_bits(float(immediate))
+            return f"    movabs {target}, {immediate}"
+        if -0x80000000 <= int(immediate) <= 0x7FFFFFFF:
+            return f"    mov {target}, {immediate}"
+        return f"    movabs {target}, {immediate}"
+
+    def _find_scalar_promotions(
+        self,
+        function: AssemblyFunction,
+    ) -> tuple[set[int], dict[int, int]]:
+        if self.native_policy.scalar_promotion != "conservative_mem2reg":
+            return set(), {}
+        memories = {memory.index: memory for memory in function.memory_objects}
+        if any(
+            instruction.opcode in {
+                AssemblyOpcode.TCALL,
+                AssemblyOpcode.TADDR,
+                AssemblyOpcode.TREFLOAD,
+                AssemblyOpcode.TREFSTORE,
+            }
+            for instruction in function.instructions
+        ):
+            return set(), {}
+        memory_use_counts: dict[int, int] = {}
+        for instruction in function.instructions:
+            if instruction.opcode in {AssemblyOpcode.TLOAD, AssemblyOpcode.TSTORE}:
+                assert instruction.memory is not None
+                memory_use_counts[instruction.memory] = (
+                    memory_use_counts.get(instruction.memory, 0) + 1
+                )
+        stores: set[int] = set()
+        loads: dict[int, int] = {}
+        for block in function.blocks:
+            for index, store in enumerate(block.instructions[:-1]):
+                load = block.instructions[index + 1]
+                if store.opcode is not AssemblyOpcode.TSTORE or load.opcode is not AssemblyOpcode.TLOAD:
+                    continue
+                if store.memory is None or load.memory != store.memory:
+                    continue
+                memory = memories.get(store.memory)
+                if memory is None or not memory.mutable or memory.length != 1:
+                    continue
+                if memory_use_counts.get(memory.index) != 2:
+                    continue
+                store_index, source = store.registers
+                destination, load_index = load.registers
+                if store_index != load_index:
+                    continue
+                if function.type_of(source) is not memory.element_type:
+                    continue
+                if function.type_of(destination) is not memory.element_type:
+                    continue
+                stores.add(id(store))
+                loads[id(load)] = source
+        return stores, loads
+
+    def _loop_boundary_save(
+        self,
+        layout: FrameLayout,
+        instruction: AssemblyInstruction,
+    ) -> list[str]:
+        if self.current_plan is None:
+            return []
+        registers = self.current_plan.loop_split_saves.get(id(instruction), ())
+        lines: list[str] = []
+        for register in registers:
+            physical = self.current_plan.physical_register(register)
+            if physical is None:
+                continue
+            lines.extend(self._check_register_initialized(layout, register))
+            lines.append(
+                f"    mov qword ptr {_address(layout.register(register).value)}, {physical}"
+            )
+        return lines
+
+    def _loop_boundary_restore(
+        self,
+        layout: FrameLayout,
+        block_name: str,
+    ) -> list[str]:
+        if self.current_plan is None:
+            return []
+        registers = self.current_plan.loop_split_restores.get(block_name, ())
+        lines: list[str] = []
+        for register in registers:
+            physical = self.current_plan.physical_register(register)
+            if physical is None:
+                continue
+            label = f".L__s3_split_restore_skip_{self._split_restore_serial}"
+            self._split_restore_serial += 1
+            slot = layout.register(register)
+            lines.extend(
+                (
+                    f"    cmp byte ptr {_address(slot.initialized)}, 0",
+                    f"    je {label}",
+                    f"    mov {physical}, qword ptr {_address(slot.value)}",
+                    f"{label}:",
+                )
+            )
+        return lines
+
+    def _memory_index_target(self, register: int, fallback: str) -> str:
+        if (
+            self.native_policy.indexed_memory_policy != "compact_ea"
+            or not self._physical_residence_active
+            or self.current_plan is None
+        ):
+            return fallback
+        physical = self.current_plan.physical_register(register)
+        if physical is None or physical in {"rax", "r10", "r11"}:
+            return fallback
+        return physical
 
     def _check_register_initialized(
         self,
@@ -663,6 +822,15 @@ class X8664Emitter:
                 if type_name is AssemblyType.F64
                 else instruction.immediate
             )
+            if (
+                self.current_plan is not None
+                and registers[0] in self.current_plan.rematerializable_values
+                and self.current_plan.physical_register(registers[0]) is None
+            ):
+                slot = layout.register(registers[0])
+                return instrumentation + [
+                    f"    mov byte ptr {_address(slot.initialized)}, 1"
+                ]
             if (
                 type_name is not AssemblyType.F64
                 and -0x80000000 <= int(immediate) <= 0x7FFFFFFF
@@ -1036,7 +1204,7 @@ class X8664Emitter:
                 *self._write_register(layout, registers[0], "rax"),
             ]
         if opcode is AssemblyOpcode.TJMP:
-            return instrumentation + [
+            return instrumentation + self._loop_boundary_save(layout, instruction) + [
                 f"    jmp {mangle_block(function.name, instruction.labels[0])}"
             ]
         if opcode is AssemblyOpcode.TBR3:
@@ -1052,6 +1220,7 @@ class X8664Emitter:
             )
             return instrumentation + [
                 *self._read_register(layout, registers[0], "rax"),
+            ] + self._loop_boundary_save(layout, instruction) + [
                 "    cmp rax, -1",
                 f"    je {negative}",
                 "    cmp rax, 0",
@@ -1422,12 +1591,26 @@ class X8664Emitter:
         destination, index_register = instruction.registers
         assert instruction.memory is not None
         memory = layout.memory(instruction.memory)
+        index_target = self._memory_index_target(index_register, "r10")
         uninitialized = self._instruction_failure(
             "uninitialized memory",
             detail_prefix="index ",
             detail_suffix=f" is uninitialized in m{memory.index}\n",
-            value_register="r10",
+            value_register=index_target,
         )
+        promoted_source = self._scalar_promoted_loads.get(id(instruction))
+        if promoted_source is not None and memory.index in self._scalar_memory_sources:
+            return [
+                *self._read_register(layout, index_register, index_target),
+                *self._memory_bounds(memory, index_target),
+                (
+                    f"    cmp byte ptr "
+                    f"{_address(memory.initialized, index=index_target)}, 0"
+                ),
+                f"    je {uninitialized}",
+                *self._read_register(layout, promoted_source, "rax"),
+                *self._write_register(layout, destination, "rax"),
+            ]
         if memory.element_size == 8:
             load = "mov rax, qword ptr"
         elif memory.element_size == 1:
@@ -1435,16 +1618,16 @@ class X8664Emitter:
         else:
             load = "movsx rax, word ptr"
         return [
-            *self._read_register(layout, index_register, "r10"),
-            *self._memory_bounds(memory, "r10"),
+            *self._read_register(layout, index_register, index_target),
+            *self._memory_bounds(memory, index_target),
             (
                 f"    cmp byte ptr "
-                f"{_address(memory.initialized, index='r10')}, 0"
+                f"{_address(memory.initialized, index=index_target)}, 0"
             ),
             f"    je {uninitialized}",
             (
                 f"    {load} "
-                f"{_address(memory.data, index='r10', scale=memory.element_size)}"
+                f"{_address(memory.data, index=index_target, scale=memory.element_size)}"
             ),
             *self._write_register(layout, destination, "rax"),
         ]
@@ -1457,15 +1640,16 @@ class X8664Emitter:
         index_register, source_register = instruction.registers
         assert instruction.memory is not None
         memory = layout.memory(instruction.memory)
+        index_target = self._memory_index_target(index_register, "rax")
         lines = [
-            *self._read_register(layout, index_register, "rax"),
+            *self._read_register(layout, index_register, index_target),
             *self._read_register(layout, source_register, "r10"),
-            *self._memory_bounds(memory, "rax"),
+            *self._memory_bounds(memory, index_target),
         ]
         if memory.element_type in {AssemblyType.TRIT, AssemblyType.TRYTE}:
             overflow = self._overflow_failure(memory.element_type, "r10")
             lines.extend(self._range_check(memory.element_type, "r10", overflow))
-        init_address = _address(memory.initialized, index="rax")
+        init_address = _address(memory.initialized, index=index_target)
         if not memory.mutable:
             immutable = self._instruction_failure(
                 "immutable memory",
@@ -1483,7 +1667,7 @@ class X8664Emitter:
             )
         data_address = _address(
             memory.data,
-            index="rax",
+            index=index_target,
             scale=memory.element_size,
         )
         if memory.element_size == 8:
@@ -1495,12 +1679,16 @@ class X8664Emitter:
         else:
             source = "r10w"
             size = "word"
-        lines.extend(
-            (
-                f"    mov {size} ptr {data_address}, {source}",
-                f"    mov byte ptr {init_address}, 1",
+        if id(instruction) in self._scalar_promoted_stores:
+            self._scalar_memory_sources[memory.index] = source_register
+            lines.append(f"    mov byte ptr {init_address}, 1")
+        else:
+            lines.extend(
+                (
+                    f"    mov {size} ptr {data_address}, {source}",
+                    f"    mov byte ptr {init_address}, 1",
+                )
             )
-        )
         return lines
 
     def _overflow_failure(

@@ -1,0 +1,7 @@
+{
+  "baseline_dominated_attribution": true,
+  "baseline_dominated_holdout": true,
+  "best_global_policy_attribution": "V21_22e7512c33b0e8fd",
+  "best_global_policy_holdout": "V21_5155e2478b21c3b8",
+  "best_shadow_portfolio": "BASELINE"
+}

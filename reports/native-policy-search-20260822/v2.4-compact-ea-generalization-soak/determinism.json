@@ -1,0 +1,13 @@
+{
+  "pythonhashseed": {
+    "0": "f9c9acb77f4c1cac2b2e5fc08ff6b048a691b13d7791f2718e9f82338d5f8e51",
+    "1": "f9c9acb77f4c1cac2b2e5fc08ff6b048a691b13d7791f2718e9f82338d5f8e51",
+    "42": "f9c9acb77f4c1cac2b2e5fc08ff6b048a691b13d7791f2718e9f82338d5f8e51"
+  },
+  "soak_fingerprints": [
+    "f9c9acb77f4c1cac2b2e5fc08ff6b048a691b13d7791f2718e9f82338d5f8e51",
+    "f9c9acb77f4c1cac2b2e5fc08ff6b048a691b13d7791f2718e9f82338d5f8e51",
+    "f9c9acb77f4c1cac2b2e5fc08ff6b048a691b13d7791f2718e9f82338d5f8e51"
+  ],
+  "status": "PASS"
+}

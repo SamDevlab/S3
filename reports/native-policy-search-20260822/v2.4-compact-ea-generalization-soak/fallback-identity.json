@@ -1,0 +1,287 @@
+{
+  "fallback_cases": 56,
+  "output_mismatches": 0,
+  "rows": [
+    {
+      "case_id": "A07",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A10",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A11",
+      "identical": true,
+      "reason": "canary_safety_fallback:calls_or_cross_call_liveness_present"
+    },
+    {
+      "case_id": "A12",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A13",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A14",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A15",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A16",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A17",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A18",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A19",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A20",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A22",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A24",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A25",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A26",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A27",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A28",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A29",
+      "identical": true,
+      "reason": "canary_safety_fallback:calls_or_cross_call_liveness_present"
+    },
+    {
+      "case_id": "A30",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A31",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A32",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A34",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A35",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A36",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A37",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A38",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A39",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A40",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A41",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A42",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A43",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A44",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A45",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A46",
+      "identical": true,
+      "reason": "canary_safety_fallback:calls_or_cross_call_liveness_present"
+    },
+    {
+      "case_id": "A49",
+      "identical": true,
+      "reason": "canary_safety_fallback:calls_or_cross_call_liveness_present"
+    },
+    {
+      "case_id": "A50",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A51",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A55",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A56",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A57",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A58",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "A59",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "R17",
+      "identical": true,
+      "reason": "canary_safety_fallback:calls_or_cross_call_liveness_present"
+    },
+    {
+      "case_id": "R18",
+      "identical": true,
+      "reason": "canary_safety_fallback:calls_or_cross_call_liveness_present"
+    },
+    {
+      "case_id": "R19",
+      "identical": true,
+      "reason": "canary_safety_fallback:calls_or_cross_call_liveness_present"
+    },
+    {
+      "case_id": "R20",
+      "identical": true,
+      "reason": "canary_safety_fallback:calls_or_cross_call_liveness_present"
+    },
+    {
+      "case_id": "R25",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "R26",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "R27",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "R28",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "E01",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "E02",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "E03",
+      "identical": true,
+      "reason": "canary_safety_fallback:no_indexed_memory_operations"
+    },
+    {
+      "case_id": "V24-04",
+      "identical": true,
+      "reason": "canary_safety_fallback:calls_or_cross_call_liveness_present"
+    },
+    {
+      "case_id": "V24-09",
+      "identical": true,
+      "reason": "canary_safety_fallback:reference_operations_present"
+    }
+  ],
+  "status": "PASS"
+}

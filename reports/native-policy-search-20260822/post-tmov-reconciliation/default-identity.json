@@ -1,0 +1,13 @@
+{
+  "post_tmov_canonical_baseline": "2245c9f75b07b063b6da5716a753d02c1fee5f95",
+  "experimental_mode": "OFF",
+  "default_post_tmov_byte_identical": "YES",
+  "experiment_off_equals_post_tmov_main": "YES",
+  "cases": {
+    "A07": "f373695af319a489ec6350919edcb1d92c621445f84d5c728453fb74aa88cafd",
+    "memory": "8ece4b2e70f8f76180b7983edce2f5a121ccf21e89640b31c8bf37e8f4717f88",
+    "branch": "d7168f739a9fe2d7dfdbed1625b63ede23179dcd6318ee458735bfaa8fcec40d",
+    "call": "22c82186fc3eb11f9db2d0aefbb4bfec47f0e2ebcac9cfc7e197be7ad44450d1"
+  },
+  "old_buggy_baseline_identity_required": false
+}

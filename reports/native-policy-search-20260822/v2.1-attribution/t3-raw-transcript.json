@@ -1,0 +1,991 @@
+{
+  "comparison_count": 96,
+  "head": "173796bab2ffbb9d202e465f850a6f4777587938",
+  "optimization_levels": [
+    "O0",
+    "O1"
+  ],
+  "platform": "Linux x86-64",
+  "policies": [
+    "BASELINE",
+    "V21_11bb2431432a6a71",
+    "V21_22e7512c33b0e8fd",
+    "V21_5155e2478b21c3b8",
+    "V21_7af057738f7665f2",
+    "V21_976276341f8b3396",
+    "V21_9aa5538969a0d35e",
+    "V21_c7a69ae12e3b966d"
+  ],
+  "records": [
+    {
+      "expected": 6,
+      "optimization": "O0",
+      "policy_id": "BASELINE",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "scalar"
+    },
+    {
+      "expected": 6,
+      "optimization": "O1",
+      "policy_id": "BASELINE",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "scalar"
+    },
+    {
+      "expected": 1,
+      "optimization": "O0",
+      "policy_id": "BASELINE",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "branch"
+    },
+    {
+      "expected": 1,
+      "optimization": "O1",
+      "policy_id": "BASELINE",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "branch"
+    },
+    {
+      "expected": 10,
+      "optimization": "O0",
+      "policy_id": "BASELINE",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "call"
+    },
+    {
+      "expected": 10,
+      "optimization": "O1",
+      "policy_id": "BASELINE",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "call"
+    },
+    {
+      "expected": 6,
+      "optimization": "O0",
+      "policy_id": "BASELINE",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "indexed"
+    },
+    {
+      "expected": 6,
+      "optimization": "O1",
+      "policy_id": "BASELINE",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "indexed"
+    },
+    {
+      "expected": 7,
+      "optimization": "O0",
+      "policy_id": "BASELINE",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mutable"
+    },
+    {
+      "expected": 7,
+      "optimization": "O1",
+      "policy_id": "BASELINE",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mutable"
+    },
+    {
+      "expected": 3,
+      "optimization": "O0",
+      "policy_id": "BASELINE",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mixed"
+    },
+    {
+      "expected": 3,
+      "optimization": "O1",
+      "policy_id": "BASELINE",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mixed"
+    },
+    {
+      "expected": 6,
+      "optimization": "O0",
+      "policy_id": "V21_11bb2431432a6a71",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "scalar"
+    },
+    {
+      "expected": 6,
+      "optimization": "O1",
+      "policy_id": "V21_11bb2431432a6a71",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "scalar"
+    },
+    {
+      "expected": 1,
+      "optimization": "O0",
+      "policy_id": "V21_11bb2431432a6a71",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "branch"
+    },
+    {
+      "expected": 1,
+      "optimization": "O1",
+      "policy_id": "V21_11bb2431432a6a71",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "branch"
+    },
+    {
+      "expected": 10,
+      "optimization": "O0",
+      "policy_id": "V21_11bb2431432a6a71",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "call"
+    },
+    {
+      "expected": 10,
+      "optimization": "O1",
+      "policy_id": "V21_11bb2431432a6a71",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "call"
+    },
+    {
+      "expected": 6,
+      "optimization": "O0",
+      "policy_id": "V21_11bb2431432a6a71",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "indexed"
+    },
+    {
+      "expected": 6,
+      "optimization": "O1",
+      "policy_id": "V21_11bb2431432a6a71",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "indexed"
+    },
+    {
+      "expected": 7,
+      "optimization": "O0",
+      "policy_id": "V21_11bb2431432a6a71",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mutable"
+    },
+    {
+      "expected": 7,
+      "optimization": "O1",
+      "policy_id": "V21_11bb2431432a6a71",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mutable"
+    },
+    {
+      "expected": 3,
+      "optimization": "O0",
+      "policy_id": "V21_11bb2431432a6a71",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mixed"
+    },
+    {
+      "expected": 3,
+      "optimization": "O1",
+      "policy_id": "V21_11bb2431432a6a71",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mixed"
+    },
+    {
+      "expected": 6,
+      "optimization": "O0",
+      "policy_id": "V21_7af057738f7665f2",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "scalar"
+    },
+    {
+      "expected": 6,
+      "optimization": "O1",
+      "policy_id": "V21_7af057738f7665f2",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "scalar"
+    },
+    {
+      "expected": 1,
+      "optimization": "O0",
+      "policy_id": "V21_7af057738f7665f2",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "branch"
+    },
+    {
+      "expected": 1,
+      "optimization": "O1",
+      "policy_id": "V21_7af057738f7665f2",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "branch"
+    },
+    {
+      "expected": 10,
+      "optimization": "O0",
+      "policy_id": "V21_7af057738f7665f2",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "call"
+    },
+    {
+      "expected": 10,
+      "optimization": "O1",
+      "policy_id": "V21_7af057738f7665f2",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "call"
+    },
+    {
+      "expected": 6,
+      "optimization": "O0",
+      "policy_id": "V21_7af057738f7665f2",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "indexed"
+    },
+    {
+      "expected": 6,
+      "optimization": "O1",
+      "policy_id": "V21_7af057738f7665f2",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "indexed"
+    },
+    {
+      "expected": 7,
+      "optimization": "O0",
+      "policy_id": "V21_7af057738f7665f2",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mutable"
+    },
+    {
+      "expected": 7,
+      "optimization": "O1",
+      "policy_id": "V21_7af057738f7665f2",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mutable"
+    },
+    {
+      "expected": 3,
+      "optimization": "O0",
+      "policy_id": "V21_7af057738f7665f2",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mixed"
+    },
+    {
+      "expected": 3,
+      "optimization": "O1",
+      "policy_id": "V21_7af057738f7665f2",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mixed"
+    },
+    {
+      "expected": 6,
+      "optimization": "O0",
+      "policy_id": "V21_9aa5538969a0d35e",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "scalar"
+    },
+    {
+      "expected": 6,
+      "optimization": "O1",
+      "policy_id": "V21_9aa5538969a0d35e",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "scalar"
+    },
+    {
+      "expected": 1,
+      "optimization": "O0",
+      "policy_id": "V21_9aa5538969a0d35e",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "branch"
+    },
+    {
+      "expected": 1,
+      "optimization": "O1",
+      "policy_id": "V21_9aa5538969a0d35e",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "branch"
+    },
+    {
+      "expected": 10,
+      "optimization": "O0",
+      "policy_id": "V21_9aa5538969a0d35e",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "call"
+    },
+    {
+      "expected": 10,
+      "optimization": "O1",
+      "policy_id": "V21_9aa5538969a0d35e",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "call"
+    },
+    {
+      "expected": 6,
+      "optimization": "O0",
+      "policy_id": "V21_9aa5538969a0d35e",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "indexed"
+    },
+    {
+      "expected": 6,
+      "optimization": "O1",
+      "policy_id": "V21_9aa5538969a0d35e",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "indexed"
+    },
+    {
+      "expected": 7,
+      "optimization": "O0",
+      "policy_id": "V21_9aa5538969a0d35e",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mutable"
+    },
+    {
+      "expected": 7,
+      "optimization": "O1",
+      "policy_id": "V21_9aa5538969a0d35e",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mutable"
+    },
+    {
+      "expected": 3,
+      "optimization": "O0",
+      "policy_id": "V21_9aa5538969a0d35e",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mixed"
+    },
+    {
+      "expected": 3,
+      "optimization": "O1",
+      "policy_id": "V21_9aa5538969a0d35e",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mixed"
+    },
+    {
+      "expected": 6,
+      "optimization": "O0",
+      "policy_id": "V21_5155e2478b21c3b8",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "scalar"
+    },
+    {
+      "expected": 6,
+      "optimization": "O1",
+      "policy_id": "V21_5155e2478b21c3b8",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "scalar"
+    },
+    {
+      "expected": 1,
+      "optimization": "O0",
+      "policy_id": "V21_5155e2478b21c3b8",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "branch"
+    },
+    {
+      "expected": 1,
+      "optimization": "O1",
+      "policy_id": "V21_5155e2478b21c3b8",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "branch"
+    },
+    {
+      "expected": 10,
+      "optimization": "O0",
+      "policy_id": "V21_5155e2478b21c3b8",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "call"
+    },
+    {
+      "expected": 10,
+      "optimization": "O1",
+      "policy_id": "V21_5155e2478b21c3b8",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "call"
+    },
+    {
+      "expected": 6,
+      "optimization": "O0",
+      "policy_id": "V21_5155e2478b21c3b8",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "indexed"
+    },
+    {
+      "expected": 6,
+      "optimization": "O1",
+      "policy_id": "V21_5155e2478b21c3b8",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "indexed"
+    },
+    {
+      "expected": 7,
+      "optimization": "O0",
+      "policy_id": "V21_5155e2478b21c3b8",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mutable"
+    },
+    {
+      "expected": 7,
+      "optimization": "O1",
+      "policy_id": "V21_5155e2478b21c3b8",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mutable"
+    },
+    {
+      "expected": 3,
+      "optimization": "O0",
+      "policy_id": "V21_5155e2478b21c3b8",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mixed"
+    },
+    {
+      "expected": 3,
+      "optimization": "O1",
+      "policy_id": "V21_5155e2478b21c3b8",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mixed"
+    },
+    {
+      "expected": 6,
+      "optimization": "O0",
+      "policy_id": "V21_976276341f8b3396",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "scalar"
+    },
+    {
+      "expected": 6,
+      "optimization": "O1",
+      "policy_id": "V21_976276341f8b3396",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "scalar"
+    },
+    {
+      "expected": 1,
+      "optimization": "O0",
+      "policy_id": "V21_976276341f8b3396",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "branch"
+    },
+    {
+      "expected": 1,
+      "optimization": "O1",
+      "policy_id": "V21_976276341f8b3396",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "branch"
+    },
+    {
+      "expected": 10,
+      "optimization": "O0",
+      "policy_id": "V21_976276341f8b3396",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "call"
+    },
+    {
+      "expected": 10,
+      "optimization": "O1",
+      "policy_id": "V21_976276341f8b3396",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "call"
+    },
+    {
+      "expected": 6,
+      "optimization": "O0",
+      "policy_id": "V21_976276341f8b3396",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "indexed"
+    },
+    {
+      "expected": 6,
+      "optimization": "O1",
+      "policy_id": "V21_976276341f8b3396",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "indexed"
+    },
+    {
+      "expected": 7,
+      "optimization": "O0",
+      "policy_id": "V21_976276341f8b3396",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mutable"
+    },
+    {
+      "expected": 7,
+      "optimization": "O1",
+      "policy_id": "V21_976276341f8b3396",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mutable"
+    },
+    {
+      "expected": 3,
+      "optimization": "O0",
+      "policy_id": "V21_976276341f8b3396",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mixed"
+    },
+    {
+      "expected": 3,
+      "optimization": "O1",
+      "policy_id": "V21_976276341f8b3396",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mixed"
+    },
+    {
+      "expected": 6,
+      "optimization": "O0",
+      "policy_id": "V21_22e7512c33b0e8fd",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "scalar"
+    },
+    {
+      "expected": 6,
+      "optimization": "O1",
+      "policy_id": "V21_22e7512c33b0e8fd",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "scalar"
+    },
+    {
+      "expected": 1,
+      "optimization": "O0",
+      "policy_id": "V21_22e7512c33b0e8fd",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "branch"
+    },
+    {
+      "expected": 1,
+      "optimization": "O1",
+      "policy_id": "V21_22e7512c33b0e8fd",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "branch"
+    },
+    {
+      "expected": 10,
+      "optimization": "O0",
+      "policy_id": "V21_22e7512c33b0e8fd",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "call"
+    },
+    {
+      "expected": 10,
+      "optimization": "O1",
+      "policy_id": "V21_22e7512c33b0e8fd",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "call"
+    },
+    {
+      "expected": 6,
+      "optimization": "O0",
+      "policy_id": "V21_22e7512c33b0e8fd",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "indexed"
+    },
+    {
+      "expected": 6,
+      "optimization": "O1",
+      "policy_id": "V21_22e7512c33b0e8fd",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "indexed"
+    },
+    {
+      "expected": 7,
+      "optimization": "O0",
+      "policy_id": "V21_22e7512c33b0e8fd",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mutable"
+    },
+    {
+      "expected": 7,
+      "optimization": "O1",
+      "policy_id": "V21_22e7512c33b0e8fd",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mutable"
+    },
+    {
+      "expected": 3,
+      "optimization": "O0",
+      "policy_id": "V21_22e7512c33b0e8fd",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mixed"
+    },
+    {
+      "expected": 3,
+      "optimization": "O1",
+      "policy_id": "V21_22e7512c33b0e8fd",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mixed"
+    },
+    {
+      "expected": 6,
+      "optimization": "O0",
+      "policy_id": "V21_c7a69ae12e3b966d",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "scalar"
+    },
+    {
+      "expected": 6,
+      "optimization": "O1",
+      "policy_id": "V21_c7a69ae12e3b966d",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "scalar"
+    },
+    {
+      "expected": 1,
+      "optimization": "O0",
+      "policy_id": "V21_c7a69ae12e3b966d",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "branch"
+    },
+    {
+      "expected": 1,
+      "optimization": "O1",
+      "policy_id": "V21_c7a69ae12e3b966d",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "branch"
+    },
+    {
+      "expected": 10,
+      "optimization": "O0",
+      "policy_id": "V21_c7a69ae12e3b966d",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "call"
+    },
+    {
+      "expected": 10,
+      "optimization": "O1",
+      "policy_id": "V21_c7a69ae12e3b966d",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "call"
+    },
+    {
+      "expected": 6,
+      "optimization": "O0",
+      "policy_id": "V21_c7a69ae12e3b966d",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "indexed"
+    },
+    {
+      "expected": 6,
+      "optimization": "O1",
+      "policy_id": "V21_c7a69ae12e3b966d",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "indexed"
+    },
+    {
+      "expected": 7,
+      "optimization": "O0",
+      "policy_id": "V21_c7a69ae12e3b966d",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mutable"
+    },
+    {
+      "expected": 7,
+      "optimization": "O1",
+      "policy_id": "V21_c7a69ae12e3b966d",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mutable"
+    },
+    {
+      "expected": 3,
+      "optimization": "O0",
+      "policy_id": "V21_c7a69ae12e3b966d",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mixed"
+    },
+    {
+      "expected": 3,
+      "optimization": "O1",
+      "policy_id": "V21_c7a69ae12e3b966d",
+      "returncode": 0,
+      "status": "PASS",
+      "stderr_empty": true,
+      "stdout_match": true,
+      "workload": "mixed"
+    }
+  ],
+  "status": "PASS",
+  "timing_used_for_selection": false,
+  "workloads": [
+    "scalar",
+    "branch",
+    "call",
+    "indexed",
+    "mutable",
+    "mixed"
+  ]
+}

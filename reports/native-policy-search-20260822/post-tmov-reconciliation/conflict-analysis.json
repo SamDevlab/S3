@@ -1,0 +1,15 @@
+{
+  "method": "DRY_CONFLICT_ANALYSIS_THEN_NORMAL_MERGE",
+  "conflict_count": 1,
+  "unrelated_conflicts": 0,
+  "conflicts": [
+    {
+      "file": "bootstrap/s3/backends/x86_64/emitter.py",
+      "classification": "TMOV_CANONICAL_FIX_PLUS_ABL_EXPERIMENTAL_MECHANISM",
+      "main_change": "Canonical TMOV lowering reads the source value and materializes the destination.",
+      "pr190_change": "ABL policy, residence, Compact EA and scalar mechanisms surrounding emitter state.",
+      "semantic_overlap": "The old mutable local TMOV alias state overlapped the experimental physical-residence path.",
+      "resolution": "Retain main's canonical TMOV behavior and PR190's policy mechanisms; remove the unsafe alias state and use the current allocation plan for indexed memory targets."
+    }
+  ]
+}

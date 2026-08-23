@@ -1,0 +1,152 @@
+{
+  "base_sha": "9b39c7070d7bfa23d709c2128eb0b0bbef164177",
+  "benchmark_pr12_mutated": "NO",
+  "branch": "experiment/native-policy-search-20260822",
+  "campaign": "S3-ABL-V2.2-SHADOW-PROMOTION-HARDENING-20260822",
+  "compact_ea": {
+    "address_recomputations_removed": 0,
+    "applications": 91,
+    "coverage_cases": 91,
+    "coverage_status": "INSUFFICIENT_FOR_TARGET",
+    "eligible": 91,
+    "encoding_rejections": 0,
+    "hard_regressions": 0,
+    "indexed_candidates": 107,
+    "instructions_removed": 91,
+    "leas_removed": 0,
+    "movs_removed": 91,
+    "safety_rejections": 16,
+    "temporary_registers_avoided": 91,
+    "canary_eligible": "NO_T3_CORRECTNESS_FAILURE"
+  },
+  "default_backend_identity": "PASS",
+  "external_holdout": {
+    "aggregate": "DEFERRED_BY_CONSTRAINT",
+    "benchmark_main_sha": "871e2015a2e2d15e202eb023f11a833304ba44e4",
+    "benchmark_pr12_base": "871e2015a2e2d15e202eb023f11a833304ba44e4",
+    "benchmark_pr12_head": "2cd992825882b345b2d76731683550da049de157",
+    "benchmark_pr12_state": "OPEN_DRAFT_UNMERGED",
+    "p7": "DEFERRED_BY_CONSTRAINT",
+    "p8": "DEFERRED_BY_CONSTRAINT",
+    "p9": "DEFERRED_BY_CONSTRAINT",
+    "reason": "read-only S3-Benchmarks constraint; no benchmark source, branch, PR, or timing mutation",
+    "timing_data_discarded_for_selection": true
+  },
+  "full_suite": "NOT_RUN",
+  "leave_family_out": {
+    "arrays": {
+      "evaluated_cases": 15,
+      "generalization": "PASS",
+      "harm_count": 0,
+      "non_dominated_rate": 0.9333333333333333,
+      "training_excluded_family": "arrays"
+    },
+    "branch": {
+      "evaluated_cases": 6,
+      "generalization": "PASS",
+      "harm_count": 0,
+      "non_dominated_rate": 1.0,
+      "training_excluded_family": "branch"
+    },
+    "calls": {
+      "evaluated_cases": 10,
+      "generalization": "PASS",
+      "harm_count": 0,
+      "non_dominated_rate": 0.7,
+      "training_excluded_family": "calls"
+    },
+    "loops": {
+      "evaluated_cases": 9,
+      "generalization": "PASS",
+      "harm_count": 0,
+      "non_dominated_rate": 1.0,
+      "training_excluded_family": "loops"
+    },
+    "mixed_realistic": {
+      "evaluated_cases": 14,
+      "generalization": "PASS",
+      "harm_count": 0,
+      "non_dominated_rate": 0.6428571428571429,
+      "training_excluded_family": "mixed_realistic"
+    },
+    "pressure": {
+      "evaluated_cases": 12,
+      "generalization": "PASS",
+      "harm_count": 0,
+      "non_dominated_rate": 1.0,
+      "training_excluded_family": "pressure"
+    },
+    "scalar": {
+      "evaluated_cases": 15,
+      "generalization": "PASS",
+      "harm_count": 0,
+      "non_dominated_rate": 0.8,
+      "training_excluded_family": "scalar"
+    }
+  },
+  "llvm_mca": "DEFERRED_BY_ENVIRONMENT",
+  "main_mutated": "NO",
+  "ml_dataset": {
+    "feature_count": 25,
+    "nonbaseline_pareto_records": 74,
+    "readiness": "DATASET_FORMING",
+    "records": 80
+  },
+  "native_speedup_claim": "NO",
+  "native_timing_used": false,
+  "next_recommended_action": "STOP_PROMOTION_CORRECTNESS_OR_GENERALIZATION_BLOCKER",
+  "pr": 190,
+  "pr190_merged": false,
+  "pr190_ready": "NO",
+  "production_candidate": "NONE",
+  "production_policy_changed": "NO",
+  "publication_head": "b92224541e6d2da7f605dbf62e485fc4f9420c03",
+  "rc1_mutated": "NO",
+  "reboot": "NO",
+  "repository": "SamDevlab/S3",
+  "s3_benchmarks_mutated": "NO",
+  "scalar_replacement": {
+    "candidates": 10,
+    "loads_removed": 0,
+    "negative_promotions": 0,
+    "neutral_promotions": 9,
+    "new_reloads": 0,
+    "new_spills": 0,
+    "positive_promotions": 0,
+    "pressure_rejections": 0,
+    "promotion_status": "CONTINUE_SHADOW_RESEARCH",
+    "promotions": 9,
+    "safety_rejections": 1,
+    "stores_removed": 9,
+    "writebacks_added": 0
+  },
+  "schema": "s3.native-policy-search.final.v22-shadow-promotion",
+  "shadow_governor": {
+    "baseline_fallbacks": 54,
+    "dominated_decisions": 0,
+    "harm_count": 0,
+    "harm_rate": 0.0,
+    "non_dominated_rate": 1.0,
+    "nonbaseline_decisions": 37,
+    "opportunity_count": 81,
+    "opportunity_missed": 44,
+    "opportunity_taken": 37,
+    "pareto_decisions": 73,
+    "status": "SHADOW_GOVERNOR_RESEARCH_ONLY",
+    "total_decisions": 91
+  },
+  "shutdown": "NO",
+  "source_changes_after_lock": "NO",
+  "start_head": "4f690dc449333a8cb23c3023d51ce07cc7ab0ed7",
+  "t0": "PASS",
+  "t1": "PASS",
+  "t2": "PASS",
+  "t3": "FAIL_LINUX_X86_64_CORRECTNESS",
+  "t3_comparisons": 100,
+  "t4": "NOT_RUN",
+  "uica": "DEFERRED_BY_ENVIRONMENT",
+  "v21_source_lock": "173796bab2ffbb9d202e465f850a6f4777587938",
+  "v22_source_lock": "04d94a5368106c1f476ac8856a1a313eedea7b37",
+  "v2_source_lock": "d74760e0f177978a3566318c7b50cff4c98f1fb6",
+  "t3_failure_classification": "PREEXISTING_NATIVE_TMOV_REGISTER_RESIDENCE_CORRECTNESS_BLOCKER"
+}

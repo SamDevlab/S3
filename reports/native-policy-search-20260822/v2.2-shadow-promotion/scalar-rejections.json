@@ -1,0 +1,11 @@
+{
+  "pressure_rejections": 0,
+  "records": [
+    {
+      "case_id": "R20",
+      "count": 1,
+      "reason": "reference_or_address_safety"
+    }
+  ],
+  "safety_rejections": 1
+}

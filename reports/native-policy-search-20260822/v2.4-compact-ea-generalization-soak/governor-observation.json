@@ -1,0 +1,12 @@
+{
+  "agreements": 47,
+  "autonomous_activation": false,
+  "compact_recommendations": 47,
+  "dominated": 0,
+  "fallbacks": 10,
+  "false_negatives": 0,
+  "false_positives": 0,
+  "harm": 0,
+  "status": "PASS",
+  "total_decisions": 57
+}

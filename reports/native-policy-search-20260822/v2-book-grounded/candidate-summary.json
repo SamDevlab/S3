@@ -1,0 +1,12 @@
+{
+  "correctness_fail": 0,
+  "correctness_pass": 40,
+  "stages": {
+    "A": 7,
+    "B": 10,
+    "C": 0,
+    "D": 24
+  },
+  "total": 41,
+  "unsupported": 1
+}

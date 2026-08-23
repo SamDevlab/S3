@@ -1,0 +1,6 @@
+{
+  "failure_category_preserved": true,
+  "out_of_bounds_cases": "covered by existing V2.3 negative controls",
+  "status": "PASS",
+  "valid_accesses": true
+}

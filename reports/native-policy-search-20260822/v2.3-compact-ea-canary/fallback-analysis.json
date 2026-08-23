@@ -1,0 +1,8 @@
+{
+  "fallback_count": 54,
+  "identity": true,
+  "reasons": [
+    "canary_safety_fallback:calls_or_cross_call_liveness_present",
+    "canary_safety_fallback:no_indexed_memory_operations"
+  ]
+}

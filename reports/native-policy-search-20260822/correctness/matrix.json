@@ -1,0 +1,157 @@
+{
+  "BEAM_R1_R9": {
+    "abi": "PASS",
+    "correctness": "PASS",
+    "determinism": "PASS"
+  },
+  "BEAM_R2_R9": {
+    "abi": "PASS",
+    "correctness": "PASS",
+    "determinism": "PASS"
+  },
+  "BEAM_R3_R9": {
+    "abi": "PASS",
+    "correctness": "PASS",
+    "determinism": "PASS"
+  },
+  "DETERMINISTIC_POLICY_PORTFOLIO_V1": {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN"
+  },
+  "M0_R0_BASELINE": {
+    "abi": "PASS",
+    "correctness": "PASS",
+    "determinism": "PASS"
+  },
+  "M1_COMPACT_INDEXED_MEMORY": {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN"
+  },
+  "M1_R1": {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN"
+  },
+  "M2_BASE_PINNING": {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN"
+  },
+  "M2_R4": {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN"
+  },
+  "M3_INDEX_PINNING": {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN"
+  },
+  "M3_R6": {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN"
+  },
+  "M4_BASE_PLUS_INDEX": {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN"
+  },
+  "M4_R9": {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN"
+  },
+  "M5_R7": {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN"
+  },
+  "M5_SCALAR_MEM2REG_CONSERVATIVE": {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN"
+  },
+  "M6_LOAD_FORWARDING": {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN"
+  },
+  "M6_R8": {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN"
+  },
+  "M7_R9": {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN"
+  },
+  "M7_REGISTER_READ_CACHE": {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN"
+  },
+  "M8_R10": {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN"
+  },
+  "M8_REGISTER_WRITEBACK_ISLAND": {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN"
+  },
+  "R10_REGION_RESIDENCE": {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN"
+  },
+  "R1_CALLER_FIRST": {
+    "abi": "PASS",
+    "correctness": "PASS",
+    "determinism": "PASS"
+  },
+  "R2_CALLEE_FIRST": {
+    "abi": "PASS",
+    "correctness": "PASS",
+    "determinism": "PASS"
+  },
+  "R3_INTERLEAVED": {
+    "abi": "PASS",
+    "correctness": "PASS",
+    "determinism": "PASS"
+  },
+  "R4_SHORT_CALLER_LONG_CALLEE": {
+    "abi": "PASS",
+    "correctness": "PASS",
+    "determinism": "PASS"
+  },
+  "R5_USE_COUNT_WEIGHTED": {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN"
+  },
+  "R6_LOOP_WEIGHTED": {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN"
+  },
+  "R7_SPILL_COST_WEIGHTED": {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN"
+  },
+  "R8_MOVE_AFFINITY": {
+    "abi": "NOT_RUN",
+    "correctness": "DISQUALIFIED_CORRECTNESS",
+    "determinism": "NOT_RUN"
+  },
+  "R9_CALL_AWARE_SELECTIVE_RESIDENCE": {
+    "abi": "PASS",
+    "correctness": "PASS",
+    "determinism": "PASS"
+  }
+}

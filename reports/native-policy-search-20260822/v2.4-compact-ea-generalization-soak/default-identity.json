@@ -1,0 +1,80 @@
+{
+  "off_vs_main_cases": 12,
+  "off_vs_main_different": 0,
+  "off_vs_main_identical": 12,
+  "rows": [
+    {
+      "case_id": "V24-01",
+      "identical": true,
+      "main_sha256": "7f5480d8707c13d5d11bee8331de10390fb71863c6707c45bf2a009f6b9a7d45",
+      "off_sha256": "7f5480d8707c13d5d11bee8331de10390fb71863c6707c45bf2a009f6b9a7d45"
+    },
+    {
+      "case_id": "V24-02",
+      "identical": true,
+      "main_sha256": "6b70808554eb6a945f9a9f8a164f2808ab1f09869d98866c851d415176b9c26a",
+      "off_sha256": "6b70808554eb6a945f9a9f8a164f2808ab1f09869d98866c851d415176b9c26a"
+    },
+    {
+      "case_id": "V24-03",
+      "identical": true,
+      "main_sha256": "a4b64a577246c5e6e92b0f555676ce6db06ea16b9ca2fd7ee2f02af26034a28d",
+      "off_sha256": "a4b64a577246c5e6e92b0f555676ce6db06ea16b9ca2fd7ee2f02af26034a28d"
+    },
+    {
+      "case_id": "V24-04",
+      "identical": true,
+      "main_sha256": "9426ee893f210dad16e0ba640b9df0348d28914894c5d397f0212825dba54eee",
+      "off_sha256": "9426ee893f210dad16e0ba640b9df0348d28914894c5d397f0212825dba54eee"
+    },
+    {
+      "case_id": "V24-05",
+      "identical": true,
+      "main_sha256": "35f5f805584a172ad57919c33279a6ede749716a8c92c158dbc6ab5b30b0d25c",
+      "off_sha256": "35f5f805584a172ad57919c33279a6ede749716a8c92c158dbc6ab5b30b0d25c"
+    },
+    {
+      "case_id": "V24-06",
+      "identical": true,
+      "main_sha256": "9fb1d928580564957116d3b97a4d6d8e1ac47a43e4dbb31894ffd6a3b62fc7f5",
+      "off_sha256": "9fb1d928580564957116d3b97a4d6d8e1ac47a43e4dbb31894ffd6a3b62fc7f5"
+    },
+    {
+      "case_id": "V24-07",
+      "identical": true,
+      "main_sha256": "8614a06df9e4a239b9f26e37bc3db677bbea76bccd260764b3a8e469d99f1de8",
+      "off_sha256": "8614a06df9e4a239b9f26e37bc3db677bbea76bccd260764b3a8e469d99f1de8"
+    },
+    {
+      "case_id": "V24-08",
+      "identical": true,
+      "main_sha256": "76a26ed72c21a8bba52c73b4eb98b2fb340d15e640a4ea887967313c0939675c",
+      "off_sha256": "76a26ed72c21a8bba52c73b4eb98b2fb340d15e640a4ea887967313c0939675c"
+    },
+    {
+      "case_id": "V24-09",
+      "identical": true,
+      "main_sha256": null,
+      "off_sha256": null
+    },
+    {
+      "case_id": "V24-10",
+      "identical": true,
+      "main_sha256": "ad1eb49719c1e673afa27826e8ce27fd4b75c17110be1ac69d7030dafc69cf32",
+      "off_sha256": "ad1eb49719c1e673afa27826e8ce27fd4b75c17110be1ac69d7030dafc69cf32"
+    },
+    {
+      "case_id": "V24-11",
+      "identical": true,
+      "main_sha256": "8a317e02c5e02386ae069db574eb128bee1b6559c3c7e54438a399c538440032",
+      "off_sha256": "8a317e02c5e02386ae069db574eb128bee1b6559c3c7e54438a399c538440032"
+    },
+    {
+      "case_id": "V24-12",
+      "identical": true,
+      "main_sha256": "1918f20268f490b19b2a3a37f8a707e0b4cf77da9c6f3d7d77ac21dcc2eeaadb",
+      "off_sha256": "1918f20268f490b19b2a3a37f8a707e0b4cf77da9c6f3d7d77ac21dcc2eeaadb"
+    }
+  ],
+  "status": "PASS"
+}

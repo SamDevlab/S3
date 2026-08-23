@@ -1,0 +1,11 @@
+{
+  "post_tmov_abl_source_lock": "934ad01b92ff263317233ccaeaf6de5204c16a07",
+  "source_changes_after_post_tmov_lock": "NO",
+  "source_test_changes_before_lock": [
+    "bootstrap/s3/backends/x86_64/emitter.py",
+    "tests/test_native_policy_search_v22.py"
+  ],
+  "merge_resolution_commit": "66c507de323582efd42164082d3161c4a46f8a77",
+  "historical_locks_reused": false,
+  "reports_created_after_lock": true
+}

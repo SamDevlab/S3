@@ -1,0 +1,275 @@
+{
+  "mode_order_dependence": false,
+  "orders": [
+    [
+      "off",
+      "shadow",
+      "compact-ea-canary"
+    ],
+    [
+      "compact-ea-canary",
+      "off",
+      "shadow"
+    ],
+    [
+      "shadow",
+      "compact-ea-canary",
+      "off"
+    ]
+  ],
+  "rows": [
+    {
+      "case_id": "V24-01",
+      "order_independent": true,
+      "orders": [
+        {
+          "compact-ea-canary": "2c5ec7b248852cff50dc91ef6cfa140ade1a4455c9c091f46a77138004efed69",
+          "off": "7f5480d8707c13d5d11bee8331de10390fb71863c6707c45bf2a009f6b9a7d45",
+          "shadow": "7f5480d8707c13d5d11bee8331de10390fb71863c6707c45bf2a009f6b9a7d45"
+        },
+        {
+          "compact-ea-canary": "2c5ec7b248852cff50dc91ef6cfa140ade1a4455c9c091f46a77138004efed69",
+          "off": "7f5480d8707c13d5d11bee8331de10390fb71863c6707c45bf2a009f6b9a7d45",
+          "shadow": "7f5480d8707c13d5d11bee8331de10390fb71863c6707c45bf2a009f6b9a7d45"
+        },
+        {
+          "compact-ea-canary": "2c5ec7b248852cff50dc91ef6cfa140ade1a4455c9c091f46a77138004efed69",
+          "off": "7f5480d8707c13d5d11bee8331de10390fb71863c6707c45bf2a009f6b9a7d45",
+          "shadow": "7f5480d8707c13d5d11bee8331de10390fb71863c6707c45bf2a009f6b9a7d45"
+        }
+      ]
+    },
+    {
+      "case_id": "V24-02",
+      "order_independent": true,
+      "orders": [
+        {
+          "compact-ea-canary": "a0087177d57b2cfb29ed4c93bebfcd380a5fab12a779193e963ae51563e8ed5c",
+          "off": "6b70808554eb6a945f9a9f8a164f2808ab1f09869d98866c851d415176b9c26a",
+          "shadow": "6b70808554eb6a945f9a9f8a164f2808ab1f09869d98866c851d415176b9c26a"
+        },
+        {
+          "compact-ea-canary": "a0087177d57b2cfb29ed4c93bebfcd380a5fab12a779193e963ae51563e8ed5c",
+          "off": "6b70808554eb6a945f9a9f8a164f2808ab1f09869d98866c851d415176b9c26a",
+          "shadow": "6b70808554eb6a945f9a9f8a164f2808ab1f09869d98866c851d415176b9c26a"
+        },
+        {
+          "compact-ea-canary": "a0087177d57b2cfb29ed4c93bebfcd380a5fab12a779193e963ae51563e8ed5c",
+          "off": "6b70808554eb6a945f9a9f8a164f2808ab1f09869d98866c851d415176b9c26a",
+          "shadow": "6b70808554eb6a945f9a9f8a164f2808ab1f09869d98866c851d415176b9c26a"
+        }
+      ]
+    },
+    {
+      "case_id": "V24-03",
+      "order_independent": true,
+      "orders": [
+        {
+          "compact-ea-canary": "2c87dc1c7e664e90ceb32b7d7125985d424cef63c8f70e2ce0c1426d7ae544a1",
+          "off": "a4b64a577246c5e6e92b0f555676ce6db06ea16b9ca2fd7ee2f02af26034a28d",
+          "shadow": "a4b64a577246c5e6e92b0f555676ce6db06ea16b9ca2fd7ee2f02af26034a28d"
+        },
+        {
+          "compact-ea-canary": "2c87dc1c7e664e90ceb32b7d7125985d424cef63c8f70e2ce0c1426d7ae544a1",
+          "off": "a4b64a577246c5e6e92b0f555676ce6db06ea16b9ca2fd7ee2f02af26034a28d",
+          "shadow": "a4b64a577246c5e6e92b0f555676ce6db06ea16b9ca2fd7ee2f02af26034a28d"
+        },
+        {
+          "compact-ea-canary": "2c87dc1c7e664e90ceb32b7d7125985d424cef63c8f70e2ce0c1426d7ae544a1",
+          "off": "a4b64a577246c5e6e92b0f555676ce6db06ea16b9ca2fd7ee2f02af26034a28d",
+          "shadow": "a4b64a577246c5e6e92b0f555676ce6db06ea16b9ca2fd7ee2f02af26034a28d"
+        }
+      ]
+    },
+    {
+      "case_id": "V24-04",
+      "order_independent": true,
+      "orders": [
+        {
+          "compact-ea-canary": "9426ee893f210dad16e0ba640b9df0348d28914894c5d397f0212825dba54eee",
+          "off": "9426ee893f210dad16e0ba640b9df0348d28914894c5d397f0212825dba54eee",
+          "shadow": "9426ee893f210dad16e0ba640b9df0348d28914894c5d397f0212825dba54eee"
+        },
+        {
+          "compact-ea-canary": "9426ee893f210dad16e0ba640b9df0348d28914894c5d397f0212825dba54eee",
+          "off": "9426ee893f210dad16e0ba640b9df0348d28914894c5d397f0212825dba54eee",
+          "shadow": "9426ee893f210dad16e0ba640b9df0348d28914894c5d397f0212825dba54eee"
+        },
+        {
+          "compact-ea-canary": "9426ee893f210dad16e0ba640b9df0348d28914894c5d397f0212825dba54eee",
+          "off": "9426ee893f210dad16e0ba640b9df0348d28914894c5d397f0212825dba54eee",
+          "shadow": "9426ee893f210dad16e0ba640b9df0348d28914894c5d397f0212825dba54eee"
+        }
+      ]
+    },
+    {
+      "case_id": "V24-05",
+      "order_independent": true,
+      "orders": [
+        {
+          "compact-ea-canary": "b85220bf84377f0b61213824b896134afeefc8d5ca3120900d126855cf04dff2",
+          "off": "35f5f805584a172ad57919c33279a6ede749716a8c92c158dbc6ab5b30b0d25c",
+          "shadow": "35f5f805584a172ad57919c33279a6ede749716a8c92c158dbc6ab5b30b0d25c"
+        },
+        {
+          "compact-ea-canary": "b85220bf84377f0b61213824b896134afeefc8d5ca3120900d126855cf04dff2",
+          "off": "35f5f805584a172ad57919c33279a6ede749716a8c92c158dbc6ab5b30b0d25c",
+          "shadow": "35f5f805584a172ad57919c33279a6ede749716a8c92c158dbc6ab5b30b0d25c"
+        },
+        {
+          "compact-ea-canary": "b85220bf84377f0b61213824b896134afeefc8d5ca3120900d126855cf04dff2",
+          "off": "35f5f805584a172ad57919c33279a6ede749716a8c92c158dbc6ab5b30b0d25c",
+          "shadow": "35f5f805584a172ad57919c33279a6ede749716a8c92c158dbc6ab5b30b0d25c"
+        }
+      ]
+    },
+    {
+      "case_id": "V24-06",
+      "order_independent": true,
+      "orders": [
+        {
+          "compact-ea-canary": "823617b755befa1eb7bfadb31e245197413521a6dd9ae679cb95a72fb1c55851",
+          "off": "9fb1d928580564957116d3b97a4d6d8e1ac47a43e4dbb31894ffd6a3b62fc7f5",
+          "shadow": "9fb1d928580564957116d3b97a4d6d8e1ac47a43e4dbb31894ffd6a3b62fc7f5"
+        },
+        {
+          "compact-ea-canary": "823617b755befa1eb7bfadb31e245197413521a6dd9ae679cb95a72fb1c55851",
+          "off": "9fb1d928580564957116d3b97a4d6d8e1ac47a43e4dbb31894ffd6a3b62fc7f5",
+          "shadow": "9fb1d928580564957116d3b97a4d6d8e1ac47a43e4dbb31894ffd6a3b62fc7f5"
+        },
+        {
+          "compact-ea-canary": "823617b755befa1eb7bfadb31e245197413521a6dd9ae679cb95a72fb1c55851",
+          "off": "9fb1d928580564957116d3b97a4d6d8e1ac47a43e4dbb31894ffd6a3b62fc7f5",
+          "shadow": "9fb1d928580564957116d3b97a4d6d8e1ac47a43e4dbb31894ffd6a3b62fc7f5"
+        }
+      ]
+    },
+    {
+      "case_id": "V24-07",
+      "order_independent": true,
+      "orders": [
+        {
+          "compact-ea-canary": "55838be409e19368525e30b6aa2c7fbbe779cf1ffac0218d647bf290584a1791",
+          "off": "8614a06df9e4a239b9f26e37bc3db677bbea76bccd260764b3a8e469d99f1de8",
+          "shadow": "8614a06df9e4a239b9f26e37bc3db677bbea76bccd260764b3a8e469d99f1de8"
+        },
+        {
+          "compact-ea-canary": "55838be409e19368525e30b6aa2c7fbbe779cf1ffac0218d647bf290584a1791",
+          "off": "8614a06df9e4a239b9f26e37bc3db677bbea76bccd260764b3a8e469d99f1de8",
+          "shadow": "8614a06df9e4a239b9f26e37bc3db677bbea76bccd260764b3a8e469d99f1de8"
+        },
+        {
+          "compact-ea-canary": "55838be409e19368525e30b6aa2c7fbbe779cf1ffac0218d647bf290584a1791",
+          "off": "8614a06df9e4a239b9f26e37bc3db677bbea76bccd260764b3a8e469d99f1de8",
+          "shadow": "8614a06df9e4a239b9f26e37bc3db677bbea76bccd260764b3a8e469d99f1de8"
+        }
+      ]
+    },
+    {
+      "case_id": "V24-08",
+      "order_independent": true,
+      "orders": [
+        {
+          "compact-ea-canary": "71829c8875fbd88b9e10fc780e092082171d182694c109e3128b3adecd914d1b",
+          "off": "76a26ed72c21a8bba52c73b4eb98b2fb340d15e640a4ea887967313c0939675c",
+          "shadow": "76a26ed72c21a8bba52c73b4eb98b2fb340d15e640a4ea887967313c0939675c"
+        },
+        {
+          "compact-ea-canary": "71829c8875fbd88b9e10fc780e092082171d182694c109e3128b3adecd914d1b",
+          "off": "76a26ed72c21a8bba52c73b4eb98b2fb340d15e640a4ea887967313c0939675c",
+          "shadow": "76a26ed72c21a8bba52c73b4eb98b2fb340d15e640a4ea887967313c0939675c"
+        },
+        {
+          "compact-ea-canary": "71829c8875fbd88b9e10fc780e092082171d182694c109e3128b3adecd914d1b",
+          "off": "76a26ed72c21a8bba52c73b4eb98b2fb340d15e640a4ea887967313c0939675c",
+          "shadow": "76a26ed72c21a8bba52c73b4eb98b2fb340d15e640a4ea887967313c0939675c"
+        }
+      ]
+    },
+    {
+      "case_id": "V24-09",
+      "order_independent": true,
+      "orders": [
+        {
+          "compact-ea-canary": null,
+          "off": null,
+          "shadow": null
+        },
+        {
+          "compact-ea-canary": null,
+          "off": null,
+          "shadow": null
+        },
+        {
+          "compact-ea-canary": null,
+          "off": null,
+          "shadow": null
+        }
+      ]
+    },
+    {
+      "case_id": "V24-10",
+      "order_independent": true,
+      "orders": [
+        {
+          "compact-ea-canary": "daa5c6874b0ab8afff26b0ab36ac1c730c767158500907f2cf41048b4e814319",
+          "off": "ad1eb49719c1e673afa27826e8ce27fd4b75c17110be1ac69d7030dafc69cf32",
+          "shadow": "ad1eb49719c1e673afa27826e8ce27fd4b75c17110be1ac69d7030dafc69cf32"
+        },
+        {
+          "compact-ea-canary": "daa5c6874b0ab8afff26b0ab36ac1c730c767158500907f2cf41048b4e814319",
+          "off": "ad1eb49719c1e673afa27826e8ce27fd4b75c17110be1ac69d7030dafc69cf32",
+          "shadow": "ad1eb49719c1e673afa27826e8ce27fd4b75c17110be1ac69d7030dafc69cf32"
+        },
+        {
+          "compact-ea-canary": "daa5c6874b0ab8afff26b0ab36ac1c730c767158500907f2cf41048b4e814319",
+          "off": "ad1eb49719c1e673afa27826e8ce27fd4b75c17110be1ac69d7030dafc69cf32",
+          "shadow": "ad1eb49719c1e673afa27826e8ce27fd4b75c17110be1ac69d7030dafc69cf32"
+        }
+      ]
+    },
+    {
+      "case_id": "V24-11",
+      "order_independent": true,
+      "orders": [
+        {
+          "compact-ea-canary": "04752432506c96d2198aa296c4200cb930b07731f85fd27ad540d37641979890",
+          "off": "8a317e02c5e02386ae069db574eb128bee1b6559c3c7e54438a399c538440032",
+          "shadow": "8a317e02c5e02386ae069db574eb128bee1b6559c3c7e54438a399c538440032"
+        },
+        {
+          "compact-ea-canary": "04752432506c96d2198aa296c4200cb930b07731f85fd27ad540d37641979890",
+          "off": "8a317e02c5e02386ae069db574eb128bee1b6559c3c7e54438a399c538440032",
+          "shadow": "8a317e02c5e02386ae069db574eb128bee1b6559c3c7e54438a399c538440032"
+        },
+        {
+          "compact-ea-canary": "04752432506c96d2198aa296c4200cb930b07731f85fd27ad540d37641979890",
+          "off": "8a317e02c5e02386ae069db574eb128bee1b6559c3c7e54438a399c538440032",
+          "shadow": "8a317e02c5e02386ae069db574eb128bee1b6559c3c7e54438a399c538440032"
+        }
+      ]
+    },
+    {
+      "case_id": "V24-12",
+      "order_independent": true,
+      "orders": [
+        {
+          "compact-ea-canary": "d698061fa3b2a04e839d5a30adab3206ae6c2fd1ca05098d053553eaf1e324fc",
+          "off": "1918f20268f490b19b2a3a37f8a707e0b4cf77da9c6f3d7d77ac21dcc2eeaadb",
+          "shadow": "1918f20268f490b19b2a3a37f8a707e0b4cf77da9c6f3d7d77ac21dcc2eeaadb"
+        },
+        {
+          "compact-ea-canary": "d698061fa3b2a04e839d5a30adab3206ae6c2fd1ca05098d053553eaf1e324fc",
+          "off": "1918f20268f490b19b2a3a37f8a707e0b4cf77da9c6f3d7d77ac21dcc2eeaadb",
+          "shadow": "1918f20268f490b19b2a3a37f8a707e0b4cf77da9c6f3d7d77ac21dcc2eeaadb"
+        },
+        {
+          "compact-ea-canary": "d698061fa3b2a04e839d5a30adab3206ae6c2fd1ca05098d053553eaf1e324fc",
+          "off": "1918f20268f490b19b2a3a37f8a707e0b4cf77da9c6f3d7d77ac21dcc2eeaadb",
+          "shadow": "1918f20268f490b19b2a3a37f8a707e0b4cf77da9c6f3d7d77ac21dcc2eeaadb"
+        }
+      ]
+    }
+  ],
+  "status": "PASS"
+}

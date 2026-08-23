@@ -1,0 +1,27 @@
+{
+  "host": "Linux x86-64",
+  "source_lock": "04d94a5368106c1f476ac8856a1a313eedea7b37",
+  "comparison_count": 100,
+  "pass_count": 96,
+  "failure_count": 4,
+  "timing_used_for_selection": false,
+  "failures": [
+    {
+      "case_id": "A07",
+      "policy_ids": [
+        "BASELINE",
+        "COMPACT_EA",
+        "SCALAR",
+        "COMPACT_EA_SCALAR"
+      ],
+      "emulator_result": 5,
+      "native_result": 2,
+      "returncode": 0,
+      "stderr": ""
+    }
+  ],
+  "failure_multiplicity": 4,
+  "failure_classification": "PREEXISTING_NATIVE_TMOV_REGISTER_RESIDENCE_CORRECTNESS_BLOCKER",
+  "affected_mechanism": "NONE_POLICY_INDEPENDENT",
+  "rerun_individual_failures": false
+}

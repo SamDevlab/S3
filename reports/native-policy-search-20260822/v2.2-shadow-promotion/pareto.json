@@ -1,0 +1,423 @@
+{
+  "cases": {
+    "A01": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "A02": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "A03": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "A04": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "A05": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "A06": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "A07": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A08": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "A09": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "A10": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A11": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "A12": [],
+    "A13": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A14": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A15": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A16": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A17": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A18": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A19": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A20": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A21": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "A22": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A23": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "A24": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A25": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A26": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A27": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A28": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A29": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "A30": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A31": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A32": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A33": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "A34": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A35": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A36": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A37": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A38": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A39": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A40": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A41": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A42": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A43": [],
+    "A44": [],
+    "A45": [],
+    "A46": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "A47": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "A48": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "A49": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "A50": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A51": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A52": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "A53": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "A54": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "A55": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A56": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A57": [],
+    "A58": [],
+    "A59": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "A60": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "E01": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "E02": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "E03": [
+      "BASELINE",
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR",
+      "SCALAR"
+    ],
+    "R01": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R02": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R03": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R04": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R05": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R06": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R07": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R08": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R09": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R10": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R11": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R12": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R13": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R14": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R15": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R16": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R17": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R18": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R19": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R20": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R21": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R22": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R23": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R24": [
+      "COMPACT_EA",
+      "COMPACT_EA_SCALAR"
+    ],
+    "R25": [],
+    "R26": [],
+    "R27": [],
+    "R28": []
+  },
+  "policy_ids": [
+    "BASELINE",
+    "COMPACT_EA",
+    "SCALAR",
+    "COMPACT_EA_SCALAR"
+  ],
+  "primary_metrics": [
+    "instructions",
+    "total_load_store",
+    "stack_ops",
+    "spills_reload",
+    "frame_bytes"
+  ]
+}

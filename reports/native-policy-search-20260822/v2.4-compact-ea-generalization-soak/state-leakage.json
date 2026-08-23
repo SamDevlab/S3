@@ -1,0 +1,126 @@
+{
+  "cross_mode_state_leakage": "NO",
+  "cross_program_state_leakage": "NO",
+  "rows": [
+    {
+      "canary_applied": true,
+      "canary_then_off_identical": true,
+      "case_id": "V24-01",
+      "off_selection_after_canary": {
+        "applied": false,
+        "policy_id": "baseline",
+        "reason": "mode_off"
+      }
+    },
+    {
+      "canary_applied": true,
+      "canary_then_off_identical": true,
+      "case_id": "V24-02",
+      "off_selection_after_canary": {
+        "applied": false,
+        "policy_id": "baseline",
+        "reason": "mode_off"
+      }
+    },
+    {
+      "canary_applied": true,
+      "canary_then_off_identical": true,
+      "case_id": "V24-03",
+      "off_selection_after_canary": {
+        "applied": false,
+        "policy_id": "baseline",
+        "reason": "mode_off"
+      }
+    },
+    {
+      "canary_applied": false,
+      "canary_then_off_identical": true,
+      "case_id": "V24-04",
+      "off_selection_after_canary": {
+        "applied": false,
+        "policy_id": "baseline",
+        "reason": "mode_off"
+      }
+    },
+    {
+      "canary_applied": true,
+      "canary_then_off_identical": true,
+      "case_id": "V24-05",
+      "off_selection_after_canary": {
+        "applied": false,
+        "policy_id": "baseline",
+        "reason": "mode_off"
+      }
+    },
+    {
+      "canary_applied": true,
+      "canary_then_off_identical": true,
+      "case_id": "V24-06",
+      "off_selection_after_canary": {
+        "applied": false,
+        "policy_id": "baseline",
+        "reason": "mode_off"
+      }
+    },
+    {
+      "canary_applied": true,
+      "canary_then_off_identical": true,
+      "case_id": "V24-07",
+      "off_selection_after_canary": {
+        "applied": false,
+        "policy_id": "baseline",
+        "reason": "mode_off"
+      }
+    },
+    {
+      "canary_applied": true,
+      "canary_then_off_identical": true,
+      "case_id": "V24-08",
+      "off_selection_after_canary": {
+        "applied": false,
+        "policy_id": "baseline",
+        "reason": "mode_off"
+      }
+    },
+    {
+      "canary_applied": false,
+      "canary_then_off_identical": true,
+      "case_id": "V24-09",
+      "off_selection_after_canary": {
+        "applied": false,
+        "policy_id": "baseline",
+        "reason": "mode_off"
+      }
+    },
+    {
+      "canary_applied": true,
+      "canary_then_off_identical": true,
+      "case_id": "V24-10",
+      "off_selection_after_canary": {
+        "applied": false,
+        "policy_id": "baseline",
+        "reason": "mode_off"
+      }
+    },
+    {
+      "canary_applied": true,
+      "canary_then_off_identical": true,
+      "case_id": "V24-11",
+      "off_selection_after_canary": {
+        "applied": false,
+        "policy_id": "baseline",
+        "reason": "mode_off"
+      }
+    },
+    {
+      "canary_applied": true,
+      "canary_then_off_identical": true,
+      "case_id": "V24-12",
+      "off_selection_after_canary": {
+        "applied": false,
+        "policy_id": "baseline",
+        "reason": "mode_off"
+      }
+    }
+  ]
+}
