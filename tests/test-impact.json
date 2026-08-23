@@ -68,6 +68,7 @@
     ],
     "m247": ["tests/test_s3bench_repeatability.py"],
     "m248": ["tests/test_m248_experiment_promotion.py"],
+    "m249": ["tests/test_m249_cross_target_evidence.py"],
     "compiler": ["tests/test_compiler.py", "tests/test_cli_source_syntax.py"],
     "m139-m140": ["tests/test_m139_dynamic_buffers.py", "tests/test_m140_ordered_collections.py"],
     "m151": [
@@ -669,6 +670,24 @@
       "tests": ["tests/test_m248_experiment_promotion.py"],
       "milestones": ["m248", "promotion", "experimental"],
       "shards": ["m248"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/cross_target_evidence.py",
+      "tests": ["tests/test_m249_cross_target_evidence.py"],
+      "milestones": ["m249", "cross-target", "evidence"],
+      "shards": ["m249"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m249_cross_target_evidence.py",
+      "tests": ["tests/test_m249_cross_target_evidence.py"],
+      "milestones": ["m249", "cross-target", "evidence"],
+      "shards": ["m249"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false

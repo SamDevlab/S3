@@ -1,0 +1,38 @@
+{
+  "milestone": "M2.49",
+  "name": "cross-target-execution-evidence-harness",
+  "base_sha": "13536c8de3b39d92af3370094ba2fa08c88e18f7",
+  "source_head": "b47598475a9f1b869a5b0087d6e50a1b510ec045",
+  "status": "COMPLETE",
+  "targets": [
+    "linux-x86-64",
+    "linux-aarch64",
+    "macos-arm64"
+  ],
+  "classifications": [
+    "NATIVE",
+    "EMULATED",
+    "STRUCTURAL_ONLY",
+    "DEFERRED"
+  ],
+  "focused_tests_selected": 50,
+  "focused_tests_passed": 25,
+  "focused_tests_skipped": 25,
+  "focused_failures": 0,
+  "focused_timeouts": 0,
+  "compileall": "PASS",
+  "diff_check": "PASS",
+  "t2_selected": 1,
+  "t2_passed": 1,
+  "t2_failed": 0,
+  "t2_timed_out": 0,
+  "t3_selected": 1,
+  "t3_passed": 1,
+  "t3_failed": 0,
+  "t3_timed_out": 0,
+  "native_execution_performed": false,
+  "benchmark": "NOT_RUN",
+  "t4": "NOT_RUN",
+  "performance_claim": "NONE",
+  "structural_output_is_native": false
+}
