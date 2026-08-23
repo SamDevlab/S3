@@ -69,6 +69,18 @@
     "m247": ["tests/test_s3bench_repeatability.py"],
     "m248": ["tests/test_m248_experiment_promotion.py"],
     "m249": ["tests/test_m249_cross_target_evidence.py"],
+    "m241-m249-level-c": [
+      "tests/test_m241_workspace_semantic_graph.py",
+      "tests/test_m242_lsp_project_intelligence.py",
+      "tests/test_m243_linux_native_conformance.py",
+      "tests/test_m244_http2_dynamic_hpack.py",
+      "tests/test_m245_signed_registry.py",
+      "tests/test_m246_async_network_soak.py",
+      "tests/test_s3bench_repeatability.py",
+      "tests/test_m248_experiment_promotion.py",
+      "tests/test_m249_cross_target_evidence.py"
+    ],
+    "m250": ["tests/test_m250_integration_checkpoint.py"],
     "compiler": ["tests/test_compiler.py", "tests/test_cli_source_syntax.py"],
     "m139-m140": ["tests/test_m139_dynamic_buffers.py", "tests/test_m140_ordered_collections.py"],
     "m151": [
@@ -688,6 +700,27 @@
       "tests": ["tests/test_m249_cross_target_evidence.py"],
       "milestones": ["m249", "cross-target", "evidence"],
       "shards": ["m249"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tools/s3test.py",
+      "tests": [
+        "tests/test_m250_integration_checkpoint.py",
+        "tests/test_s3test.py"
+      ],
+      "milestones": ["m250", "tooling"],
+      "shards": ["m250", "compiler"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m250_integration_checkpoint.py",
+      "tests": ["tests/test_m250_integration_checkpoint.py"],
+      "milestones": ["m250"],
+      "shards": ["m250"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
