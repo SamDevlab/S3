@@ -262,6 +262,114 @@ class DiagnosticSource:
         }
 
 
+class DiagnosticMessageLimitError(ValueError):
+    """Raised when structured diagnostic text exceeds its explicit bound."""
+
+
+class DiagnosticMessageBuilder:
+    """Build bounded UTF-8 diagnostic messages and notes deterministically."""
+
+    def __init__(
+        self,
+        *,
+        max_message_bytes: int = 4096,
+        max_notes: int = 16,
+        max_note_bytes: int = 1024,
+    ) -> None:
+        for name, value in (
+            ("max_message_bytes", max_message_bytes),
+            ("max_notes", max_notes),
+            ("max_note_bytes", max_note_bytes),
+        ):
+            if isinstance(value, bool) or not isinstance(value, int):
+                raise TypeError(f"{name} must be an integer")
+            if value <= 0:
+                raise ValueError(f"{name} must be positive")
+        self.max_message_bytes = max_message_bytes
+        self.max_notes = max_notes
+        self.max_note_bytes = max_note_bytes
+        self._message_parts: list[str] = []
+        self._message_bytes = 0
+        self._notes: list[str] = []
+
+    @property
+    def message_bytes(self) -> int:
+        return self._message_bytes
+
+    @property
+    def notes(self) -> tuple[str, ...]:
+        return tuple(self._notes)
+
+    def append(self, text: str) -> "DiagnosticMessageBuilder":
+        self._require_text(text, "message")
+        encoded = len(text.encode("utf-8"))
+        if self._message_bytes + encoded > self.max_message_bytes:
+            raise DiagnosticMessageLimitError("diagnostic message byte limit reached")
+        self._message_parts.append(text)
+        self._message_bytes += encoded
+        return self
+
+    def add_note(self, note: str) -> "DiagnosticMessageBuilder":
+        self._require_text(note, "note")
+        if not note:
+            raise ValueError("diagnostic note must not be empty")
+        if len(self._notes) >= self.max_notes:
+            raise DiagnosticMessageLimitError("diagnostic note count limit reached")
+        if len(note.encode("utf-8")) > self.max_note_bytes:
+            raise DiagnosticMessageLimitError("diagnostic note byte limit reached")
+        self._notes.append(note)
+        return self
+
+    def render(self) -> str:
+        return "".join(self._message_parts)
+
+    def build(
+        self,
+        *,
+        severity: DiagnosticSeverity,
+        category: DiagnosticCategory,
+        phase: DiagnosticPhase,
+        code: DiagnosticCode,
+        file: str | None = None,
+        source: DiagnosticSource | None = None,
+        function: str | None = None,
+        block: str | None = None,
+        opcode: str | None = None,
+        memory: str | None = None,
+        index: int | None = None,
+        value: int | None = None,
+        lower_bound: int | None = None,
+        upper_bound: int | None = None,
+        limit: int | None = None,
+        exit_code: int | None = None,
+    ) -> "Diagnostic":
+        return Diagnostic(
+            severity,
+            category,
+            phase,
+            code,
+            self.render(),
+            file=file,
+            source=source,
+            function=function,
+            block=block,
+            opcode=opcode,
+            memory=memory,
+            index=index,
+            value=value,
+            lower_bound=lower_bound,
+            upper_bound=upper_bound,
+            limit=limit,
+            exit_code=exit_code,
+            notes=tuple(self._notes),
+        )
+
+    @staticmethod
+    def _require_text(value: object, kind: str) -> None:
+        if not isinstance(value, str):
+            raise TypeError(f"diagnostic {kind} must be a string")
+
+
 @dataclass(frozen=True, slots=True)
 class Diagnostic:
     severity: DiagnosticSeverity

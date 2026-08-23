@@ -1,0 +1,31 @@
+{
+  "milestone": "M2.56",
+  "name": "structured-diagnostics-runtime",
+  "base_sha": "420668dece7a44aa984df99f77a6114c5fe355e7",
+  "source_head": "a2bf7b19aa461ef786e0a9020f9a6c1697e6168a",
+  "status": "COMPLETE",
+  "capabilities": [
+    "bounded-utf8-message-construction",
+    "bounded-diagnostic-notes",
+    "deterministic-typed-diagnostic-build"
+  ],
+  "focused_tests_selected": 22,
+  "focused_tests_passed": 22,
+  "focused_tests_skipped": 0,
+  "focused_failures": 0,
+  "focused_timeouts": 0,
+  "compileall": "PASS",
+  "diff_check": "PASS",
+  "t2_selected": 3,
+  "t2_passed": 3,
+  "t2_failed": 0,
+  "t2_timed_out": 0,
+  "t3_selected": 1,
+  "t3_passed": 1,
+  "t3_failed": 0,
+  "t3_timed_out": 0,
+  "benchmark": "NOT_RUN",
+  "t4": "NOT_RUN",
+  "performance_claim": "NONE",
+  "native_descriptor_abi": "NOT_IN_SCOPE"
+}

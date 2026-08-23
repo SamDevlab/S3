@@ -74,6 +74,7 @@
     "m253": ["tests/test_m253_arena_memory.py"],
     "m254": ["tests/test_m254_recursive_substrate.py"],
     "m255": ["tests/test_m255_source_manager.py"],
+    "m256": ["tests/test_m256_structured_diagnostics.py"],
     "m241-m249-level-c": [
       "tests/test_m241_workspace_semantic_graph.py",
       "tests/test_m242_lsp_project_intelligence.py",
@@ -824,6 +825,28 @@
       "tests": ["tests/test_m255_source_manager.py"],
       "milestones": ["m255", "source-manager", "spans"],
       "shards": ["m255"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/diagnostics.py",
+      "tests": [
+        "tests/test_diagnostics.py",
+        "tests/test_m212_diagnostics_v2.py",
+        "tests/test_m256_structured_diagnostics.py"
+      ],
+      "milestones": ["m212", "m256", "diagnostics"],
+      "shards": ["m256"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m256_structured_diagnostics.py",
+      "tests": ["tests/test_m256_structured_diagnostics.py"],
+      "milestones": ["m256", "diagnostics"],
+      "shards": ["m256"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
