@@ -75,6 +75,7 @@
     "m254": ["tests/test_m254_recursive_substrate.py"],
     "m255": ["tests/test_m255_source_manager.py"],
     "m256": ["tests/test_m256_structured_diagnostics.py"],
+    "m257": ["tests/test_m257_canonical_serialization.py"],
     "m241-m249-level-c": [
       "tests/test_m241_workspace_semantic_graph.py",
       "tests/test_m242_lsp_project_intelligence.py",
@@ -847,6 +848,24 @@
       "tests": ["tests/test_m256_structured_diagnostics.py"],
       "milestones": ["m256", "diagnostics"],
       "shards": ["m256"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/canonical_serialization.py",
+      "tests": ["tests/test_m257_canonical_serialization.py"],
+      "milestones": ["m257", "serialization", "debug"],
+      "shards": ["m257"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m257_canonical_serialization.py",
+      "tests": ["tests/test_m257_canonical_serialization.py"],
+      "milestones": ["m257", "serialization", "debug"],
+      "shards": ["m257"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
