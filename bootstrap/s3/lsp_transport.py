@@ -39,6 +39,7 @@ class JsonRpcTransport:
         self.max_message_bytes = max_message_bytes
         self.server = LanguageServer()
         self.stopped = False
+        self._cancelled: set[int | str] = set()
 
     def read_message(self, stream: BinaryIO) -> dict[str, object] | None:
         header = bytearray()
@@ -91,6 +92,17 @@ class JsonRpcTransport:
         params = request.get("params", {})
         if not isinstance(method, str) or not method:
             return JsonRpcResponse(identifier, error={"code": -32600, "message": "invalid request"})
+        if (
+            "id" in request
+            and isinstance(identifier, (int, str))
+            and not isinstance(identifier, bool)
+            and identifier in self._cancelled
+        ):
+            self._cancelled.remove(identifier)
+            return JsonRpcResponse(
+                identifier,
+                error={"code": -32800, "message": "request cancelled"},
+            )
         try:
             result = self._dispatch_method(method, params)
         except (LspError, LspTransportError, KeyError, TypeError, ValueError) as error:
@@ -127,6 +139,7 @@ class JsonRpcTransport:
             request_id = params.get("id")
             if isinstance(request_id, bool) or not isinstance(request_id, (int, str)):
                 raise LspTransportError("cancelRequest id must be an integer or string")
+            self._cancelled.add(request_id)
             return None
         if method == "shutdown":
             return None

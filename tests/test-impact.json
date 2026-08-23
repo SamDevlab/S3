@@ -503,11 +503,37 @@
       "pattern": "bootstrap/s3/lsp.py",
       "tests": [
         "tests/test_m158_lsp.py",
+        "tests/test_m242_lsp_project_intelligence.py",
         "tests/test_compiler.py",
         "tests/test_lexer_parser.py"
       ],
-      "milestones": ["m158", "tooling"],
+      "milestones": ["m158", "m242", "tooling"],
       "shards": ["m158", "compiler"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/lsp_transport.py",
+      "tests": [
+        "tests/test_m213_lsp_transport.py",
+        "tests/test_m236_tooling_stability.py",
+        "tests/test_m242_lsp_project_intelligence.py"
+      ],
+      "milestones": ["m213", "m236", "m242", "tooling"],
+      "shards": ["compiler"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/workspace_semantic.py",
+      "tests": [
+        "tests/test_m241_workspace_semantic_graph.py",
+        "tests/test_m242_lsp_project_intelligence.py"
+      ],
+      "milestones": ["m241", "m242", "semantic"],
+      "shards": ["compiler"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false

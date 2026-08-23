@@ -444,6 +444,13 @@ class WorkspaceSemanticGraph:
                 return unit
         raise WorkspaceSemanticError(f"unknown workspace module '{identity}'")
 
+    def module_for_path(self, logical_path: str) -> ModuleId:
+        path = normalize_logical_path(logical_path)
+        for document in self.documents:
+            if document.logical_path == path:
+                return document.module
+        raise WorkspaceSemanticError(f"unknown workspace document '{path}'")
+
     def symbol(
         self,
         module: ModuleId | str,

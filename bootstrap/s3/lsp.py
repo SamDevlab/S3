@@ -5,12 +5,18 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from typing import Mapping
+from urllib.parse import unquote, urlparse
 
 from . import ast
 from .diagnostics import S3Error, SourceLocation, diagnostic_from_exception
 from .lexer import TokenKind, tokenize
 from .parser import parse
 from .pipeline import compile_source
+from .workspace_semantic import (
+    SemanticSymbol,
+    WorkspaceSemanticError,
+    WorkspaceSemanticIndex,
+)
 
 
 class LspError(ValueError):
@@ -28,6 +34,7 @@ class _Symbol:
 @dataclass(slots=True)
 class _Document:
     uri: str
+    logical_path: str
     text: str
     version: int
     symbols: tuple[_Symbol, ...] = ()
@@ -97,6 +104,22 @@ def _identifier_locations(text: str, name: str) -> tuple[SourceLocation, ...]:
     )
 
 
+def _logical_path(uri: str) -> str:
+    parsed = urlparse(uri)
+    if parsed.scheme == "file":
+        path = unquote(parsed.path).lstrip("/")
+        if parsed.netloc:
+            path = f"{parsed.netloc}/{path}"
+    else:
+        path = unquote(uri)
+    if len(path) >= 2 and path[1] == ":":
+        path = path[2:].lstrip("/")
+    path = path.replace("\\", "/")
+    if not path:
+        raise LspError("document uri must identify a logical path")
+    return path
+
+
 def _symbols(program: ast.Program) -> tuple[_Symbol, ...]:
     result: list[_Symbol] = []
     for function in program.functions:
@@ -137,6 +160,8 @@ class LanguageServer:
 
     def __init__(self) -> None:
         self._documents: dict[str, _Document] = {}
+        self._semantic_index = WorkspaceSemanticIndex()
+        self._workspace_errors: dict[str, str] = {}
 
     def initialize(self) -> dict[str, object]:
         return {
@@ -175,7 +200,27 @@ class LanguageServer:
         return self._publish(uri)
 
     def did_close(self, uri: str) -> None:
-        self._documents.pop(uri, None)
+        document = self._documents.pop(uri, None)
+        self._workspace_errors.pop(uri, None)
+        if document is None:
+            return
+        try:
+            self._semantic_index.graph.module_for_path(document.logical_path)
+            self._semantic_index.close_document(document.logical_path)
+        except WorkspaceSemanticError:
+            # Rebuild from the remaining valid documents if the closed document
+            # was rejected by the last candidate snapshot.
+            self._semantic_index = WorkspaceSemanticIndex()
+            for remaining in sorted(
+                self._documents.values(), key=lambda item: item.logical_path
+            ):
+                try:
+                    self._semantic_index.open_document(
+                        remaining.logical_path,
+                        remaining.text,
+                    )
+                except WorkspaceSemanticError:
+                    break
 
     def hover(self, uri: str, position: Mapping[str, int]) -> dict[str, object] | None:
         document = self._document(uri)
@@ -248,11 +293,12 @@ class LanguageServer:
         resolved = self._resolve_symbol(uri, word)
         if resolved is None:
             return []
-        documents = self._documents_for_symbol(word or "", uri)
+        documents = self._reference_documents(word or "", uri)
         return [
-            {"uri": item_uri, "range": _range(location, length=len(word or ""))}
+            {"uri": item_uri, "range": _range(location, length=len(name))}
             for item_uri in sorted(documents)
-            for location in _identifier_locations(documents[item_uri].text, word or "")
+            for name in documents[item_uri]
+            for location in _identifier_locations(self._documents[item_uri].text, name)
         ]
 
     def rename(
@@ -267,15 +313,16 @@ class LanguageServer:
         word = _word_at(document.text, position)
         if self._resolve_symbol(uri, word) is None:
             raise LspError("rename target is not a known semantic symbol")
-        documents = self._documents_for_symbol(word or "", uri)
+        documents = self._reference_documents(word or "", uri)
         return {
             "changes": {
                 item_uri: [
                     {
-                        "range": _range(location, length=len(word or "")),
+                        "range": _range(location, length=len(name)),
                         "newText": new_name,
                     }
-                    for location in _identifier_locations(documents[item_uri].text, word or "")
+                    for name in documents[item_uri]
+                    for location in _identifier_locations(self._documents[item_uri].text, name)
                 ]
                 for item_uri in sorted(documents)
             }
@@ -294,11 +341,28 @@ class LanguageServer:
             symbols = _symbols(program)
         except S3Error:
             symbols = ()
-        self._documents[uri] = _Document(uri, text, version, symbols)
+        logical_path = _logical_path(uri)
+        try:
+            self._semantic_index.open_document(logical_path, text)
+            self._workspace_errors.pop(uri, None)
+        except WorkspaceSemanticError as error:
+            self._workspace_errors[uri] = str(error)
+        self._documents[uri] = _Document(uri, logical_path, text, version, symbols)
 
     def _publish(self, uri: str) -> dict[str, object]:
         document = self._document(uri)
         diagnostics: list[dict[str, object]] = []
+        workspace_error = self._workspace_errors.get(uri)
+        if workspace_error is not None:
+            diagnostics.append(
+                {
+                    "range": _range(SourceLocation(0, 1, 1)),
+                    "severity": 1,
+                    "code": "S3E_SEMANTIC_INVALID_PROGRAM",
+                    "source": "s3",
+                    "message": workspace_error,
+                }
+            )
         try:
             compile_source(document.text)
         except S3Error as error:
@@ -325,6 +389,23 @@ class LanguageServer:
         if not name:
             return None
         document = self._document(uri)
+        semantic = self._semantic_symbol(uri, name)
+        if semantic is not None:
+            for candidate in self._documents.values():
+                if candidate.logical_path != semantic.logical_path:
+                    continue
+                symbol = next(
+                    (item for item in candidate.symbols if item.name == semantic.name),
+                    None,
+                )
+                if symbol is not None:
+                    return candidate, symbol
+            return None
+        try:
+            if not self._semantic_index.graph.complete:
+                return None
+        except WorkspaceSemanticError:
+            pass
         local = next((item for item in document.symbols if item.name == name), None)
         declarations = [
             (candidate, symbol)
@@ -338,6 +419,52 @@ class LanguageServer:
         if local is not None:
             return document, local
         return None
+
+    def _semantic_symbol(self, uri: str, name: str) -> SemanticSymbol | None:
+        try:
+            graph = self._semantic_index.graph
+            module = graph.module_for_path(self._document(uri).logical_path)
+            return graph.resolve(module, name)
+        except WorkspaceSemanticError:
+            return None
+
+    def _reference_documents(self, name: str, uri: str) -> dict[str, tuple[str, ...]]:
+        semantic = self._semantic_symbol(uri, name)
+        if semantic is not None:
+            try:
+                graph = self._semantic_index.graph
+            except WorkspaceSemanticError:
+                graph = None
+            if graph is not None:
+                result: dict[str, tuple[str, ...]] = {}
+                for candidate in self._documents.values():
+                    names: set[str] = set()
+                    if candidate.logical_path == semantic.logical_path:
+                        names.add(semantic.name)
+                    try:
+                        module = graph.module_for_path(candidate.logical_path)
+                    except WorkspaceSemanticError:
+                        continue
+                    unit = graph.module(module)
+                    for symbol in unit.symbols:
+                        try:
+                            resolved = graph.resolve(module, symbol.name)
+                        except WorkspaceSemanticError:
+                            continue
+                        if resolved.identity == semantic.identity:
+                            names.add(symbol.name)
+                    for edge in unit.imports:
+                        try:
+                            resolved = graph.resolve(module, edge.local_name)
+                        except WorkspaceSemanticError:
+                            continue
+                        if resolved.identity == semantic.identity:
+                            names.add(edge.local_name)
+                    if names:
+                        result[candidate.uri] = tuple(sorted(names))
+                return result
+        documents = self._documents_for_symbol(name, uri)
+        return {item_uri: (name,) for item_uri in documents}
 
     def _documents_for_symbol(self, name: str, uri: str) -> dict[str, _Document]:
         declarations = [
