@@ -114,6 +114,10 @@ class DeterministicReactor:
         self._ready.discard(registration.key)
         return Result.ok(None)
 
+    def close_all(self) -> None:
+        self._registrations.clear()
+        self._ready.clear()
+
 
 @dataclass(frozen=True, slots=True)
 class RunReport:
@@ -185,6 +189,9 @@ class AsyncExecutor:
         for identifier, timer in tuple(self._timers.items()):
             if timer.task_id in removed:
                 self._timers.pop(identifier, None)
+        for registration in tuple(self.reactor._registrations.values()):
+            if registration.task_id in removed:
+                self.reactor.close(registration)
         return removed
 
     def spawn(self, future: AsyncFuture[object]) -> Result[int, ExecutorError]:
@@ -275,6 +282,7 @@ class AsyncExecutor:
         self._ready.clear()
         self._queued.clear()
         self._timers.clear()
+        self.reactor.close_all()
         self._closed = True
         return Result.ok(None)
 

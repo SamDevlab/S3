@@ -54,6 +54,18 @@
       "tests/test_m196_signed_registry_index.py",
       "tests/test_m245_signed_registry.py"
     ],
+    "m246": [
+      "tests/test_m173_executor_reactor_timers.py",
+      "tests/test_m175_async_tls.py",
+      "tests/test_m176_async_channels.py",
+      "tests/test_m185_async_http.py",
+      "tests/test_m186_registry_transport.py",
+      "tests/test_m193_http_server.py",
+      "tests/test_m194_tls_server.py",
+      "tests/test_m217_http2.py",
+      "tests/test_m237_async_network_soak.py",
+      "tests/test_m246_async_network_soak.py"
+    ],
     "compiler": ["tests/test_compiler.py", "tests/test_cli_source_syntax.py"],
     "m139-m140": ["tests/test_m139_dynamic_buffers.py", "tests/test_m140_ordered_collections.py"],
     "m151": [
@@ -597,6 +609,28 @@
       "tests": ["tests/test_m245_signed_registry.py"],
       "milestones": ["m245"],
       "shards": ["m245"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/async_executor.py",
+      "tests": [
+        "tests/test_m173_executor_reactor_timers.py",
+        "tests/test_m237_async_network_soak.py",
+        "tests/test_m246_async_network_soak.py"
+      ],
+      "milestones": ["m173", "m237", "m246", "async", "network"],
+      "shards": ["m246"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m246_async_network_soak.py",
+      "tests": ["tests/test_m246_async_network_soak.py"],
+      "milestones": ["m246"],
+      "shards": ["m246"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
