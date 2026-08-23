@@ -82,6 +82,7 @@
     "m261": ["tests/test_m261_lexer_candidate.py"],
     "m262": ["tests/test_m262_parser_candidate.py"],
     "m263": ["tests/test_m263_canonical_ast_candidate.py"],
+    "m264": ["tests/test_m264_module_candidate.py"],
     "m241-m259-level-c": [
       "tests/test_m241_workspace_semantic_graph.py",
       "tests/test_m242_lsp_project_intelligence.py",
@@ -1019,6 +1020,33 @@
       "tests": ["tests/test_m263_canonical_ast_candidate.py"],
       "milestones": ["m263", "ast", "self-hosting"],
       "shards": ["m263"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/module_candidate.py",
+      "tests": ["tests/test_m264_module_candidate.py"],
+      "milestones": ["m264", "modules", "imports", "self-hosting"],
+      "shards": ["m264"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "selfhost/frontend/module_candidate.s3",
+      "tests": ["tests/test_m264_module_candidate.py"],
+      "milestones": ["m264", "modules", "imports", "self-hosting"],
+      "shards": ["m264"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m264_module_candidate.py",
+      "tests": ["tests/test_m264_module_candidate.py"],
+      "milestones": ["m264", "modules", "imports", "self-hosting"],
+      "shards": ["m264"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
