@@ -67,6 +67,7 @@
       "tests/test_m246_async_network_soak.py"
     ],
     "m247": ["tests/test_s3bench_repeatability.py"],
+    "m248": ["tests/test_m248_experiment_promotion.py"],
     "compiler": ["tests/test_compiler.py", "tests/test_cli_source_syntax.py"],
     "m139-m140": ["tests/test_m139_dynamic_buffers.py", "tests/test_m140_ordered_collections.py"],
     "m151": [
@@ -650,6 +651,24 @@
       "tests": ["tests/test_s3bench_repeatability.py"],
       "milestones": ["m247", "benchmark"],
       "shards": ["m247"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/experiment_promotion.py",
+      "tests": ["tests/test_m248_experiment_promotion.py"],
+      "milestones": ["m248", "promotion", "experimental"],
+      "shards": ["m248"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m248_experiment_promotion.py",
+      "tests": ["tests/test_m248_experiment_promotion.py"],
+      "milestones": ["m248", "promotion", "experimental"],
+      "shards": ["m248"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
