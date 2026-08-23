@@ -24,6 +24,7 @@
       "tests/test_compare_assembly_renderer.py": "HEAVY_RENDERER",
       "tests/test_decimal_functions.py": "HEAVY_SELF_HOSTING",
       "tests/test_m268_assembly_frontend_closure.py": "HEAVY_SELF_HOSTING",
+      "tests/test_m269_frontend_canary.py": "HEAVY_SELF_HOSTING",
       "tests/test_m150_renderer_component.py": "HEAVY_RENDERER",
       "tests/test_s3_program_check.py": "HEAVY_RENDERER",
       "tests/test_s3_renderer_bootstrap_spike.py": "HEAVY_RENDERER",
@@ -88,6 +89,7 @@
     "m266": ["tests/test_m266_workspace_candidate.py"],
     "m267": ["tests/test_m267_incremental_invalidation.py"],
     "m268": ["tests/test_m268_assembly_frontend_closure.py"],
+    "m269": ["tests/test_m269_frontend_canary.py"],
     "m241-m259-level-c": [
       "tests/test_m241_workspace_semantic_graph.py",
       "tests/test_m242_lsp_project_intelligence.py",
