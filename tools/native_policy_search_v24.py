@@ -418,7 +418,7 @@ def _rule_hash() -> str:
     for path in paths:
         digest.update(path.relative_to(_ROOT).as_posix().encode("utf-8"))
         digest.update(b"\0")
-        digest.update(path.read_bytes())
+        digest.update(path.read_bytes().replace(b"\r\n", b"\n"))
         digest.update(b"\0")
     return digest.hexdigest()
 
