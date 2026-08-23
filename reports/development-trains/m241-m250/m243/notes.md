@@ -26,15 +26,17 @@ no performance claim.
 
 ## TEST_EVIDENCE
 
-The authoritative Linux result is recorded after running the focused file on
-the pinned source checkout. Windows hosts skip this Linux-only contract by
-design.
+The authoritative Linux result was recorded on source lock
+`d15dd94cf0617687b0a5fc9997247ca2c74a604f`.
 
 - compileall: PASS
-- focused native conformance: pending remote Linux run
-- T2 milestone: pending remote Linux run
-- T3 M2.43 shard: pending remote Linux run
+- focused native conformance: 25 passed, exit 0
+- T2 milestone: 1 selected, 1 passed, exit 0
+- T3 M2.43 shard: 1 selected, 1 passed, exit 0
 - diff check: PASS
+
+The Windows checkout skipped all 25 Linux-only cases by platform policy; it
+did not count as native evidence.
 
 ## BENCHMARK_RELEVANCE
 
