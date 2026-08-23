@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import struct
 from dataclasses import dataclass
+from typing import Mapping
 
 from ...assembly import (
     AssemblyFunction,
@@ -115,11 +116,13 @@ class X8664Emitter:
         max_frames: int,
         max_instructions: int,
         register_allocation: bool = False,
+        compact_ea_by_function: Mapping[str, bool] | None = None,
     ):
         self.program = program
         self.max_frames = max_frames
         self.max_instructions = max_instructions
         self.register_allocation = register_allocation
+        self.compact_ea_by_function = dict(compact_ea_by_function or {})
         self.failure_sites: list[FailureSite] = []
         self.current_function: AssemblyFunction | None = None
         self.current_block: str | None = None
@@ -130,6 +133,7 @@ class X8664Emitter:
         self._entry_live_registers: frozenset[int] = frozenset()
         self._safe_register_reads: frozenset[tuple[str, int, int]] = frozenset()
         self._current_instruction_sites: dict[int, tuple[str, int]] = {}
+        self._compact_ea_active = False
 
     def emit(self) -> str:
         lines = [
@@ -149,6 +153,7 @@ class X8664Emitter:
     def _emit_function(self, function: AssemblyFunction) -> list[str]:
         if function.external:
             return []
+        self._compact_ea_active = self.compact_ea_by_function.get(function.name, False)
         self._safe_register_reads = proven_initialized_register_reads(function)
         self._current_instruction_sites = {
             id(instruction): (block.label, index)
@@ -1414,6 +1419,16 @@ class X8664Emitter:
             f"    jae {failure}",
         ]
 
+    def _memory_index_target(self, register: int, fallback: str) -> str:
+        if not self._compact_ea_active or not self._physical_residence_active:
+            return fallback
+        if self.current_plan is None:
+            return fallback
+        physical = self.current_plan.physical_register(register)
+        if physical is None or physical in {"rax", "r10", "r11"}:
+            return fallback
+        return physical
+
     def _emit_load(
         self,
         layout: FrameLayout,
@@ -1422,11 +1437,12 @@ class X8664Emitter:
         destination, index_register = instruction.registers
         assert instruction.memory is not None
         memory = layout.memory(instruction.memory)
+        index_target = self._memory_index_target(index_register, "r10")
         uninitialized = self._instruction_failure(
             "uninitialized memory",
             detail_prefix="index ",
             detail_suffix=f" is uninitialized in m{memory.index}\n",
-            value_register="r10",
+            value_register=index_target,
         )
         if memory.element_size == 8:
             load = "mov rax, qword ptr"
@@ -1435,16 +1451,16 @@ class X8664Emitter:
         else:
             load = "movsx rax, word ptr"
         return [
-            *self._read_register(layout, index_register, "r10"),
-            *self._memory_bounds(memory, "r10"),
+            *self._read_register(layout, index_register, index_target),
+            *self._memory_bounds(memory, index_target),
             (
                 f"    cmp byte ptr "
-                f"{_address(memory.initialized, index='r10')}, 0"
+                f"{_address(memory.initialized, index=index_target)}, 0"
             ),
             f"    je {uninitialized}",
             (
                 f"    {load} "
-                f"{_address(memory.data, index='r10', scale=memory.element_size)}"
+                f"{_address(memory.data, index=index_target, scale=memory.element_size)}"
             ),
             *self._write_register(layout, destination, "rax"),
         ]
@@ -1457,15 +1473,16 @@ class X8664Emitter:
         index_register, source_register = instruction.registers
         assert instruction.memory is not None
         memory = layout.memory(instruction.memory)
+        index_target = self._memory_index_target(index_register, "rax")
         lines = [
-            *self._read_register(layout, index_register, "rax"),
+            *self._read_register(layout, index_register, index_target),
             *self._read_register(layout, source_register, "r10"),
-            *self._memory_bounds(memory, "rax"),
+            *self._memory_bounds(memory, index_target),
         ]
         if memory.element_type in {AssemblyType.TRIT, AssemblyType.TRYTE}:
             overflow = self._overflow_failure(memory.element_type, "r10")
             lines.extend(self._range_check(memory.element_type, "r10", overflow))
-        init_address = _address(memory.initialized, index="rax")
+        init_address = _address(memory.initialized, index=index_target)
         if not memory.mutable:
             immutable = self._instruction_failure(
                 "immutable memory",
@@ -1483,7 +1500,7 @@ class X8664Emitter:
             )
         data_address = _address(
             memory.data,
-            index="rax",
+            index=index_target,
             scale=memory.element_size,
         )
         if memory.element_size == 8:
