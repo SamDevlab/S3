@@ -1,0 +1,30 @@
+{
+  "milestone": "M2.44",
+  "name": "http2-dynamic-hpack",
+  "base_sha": "c7cf72861b3bf42cf049eab340a93892f68503d4",
+  "status": "COMPLETE",
+  "capabilities": [
+    "dynamic-table-state",
+    "incremental-indexing",
+    "dynamic-name-lookup",
+    "table-size-update-and-eviction",
+    "literal-without-indexing",
+    "never-indexed-fields",
+    "bounded-rfc7541-huffman-decoding",
+    "atomic-header-block-state"
+  ],
+  "focused_tests": 21,
+  "focused_failures": 0,
+  "compileall": "PASS",
+  "impact_json": "PASS",
+  "diff_check": "PASS",
+  "t2_selected": 4,
+  "t2_passed": 4,
+  "t2_exit": 0,
+  "t3_selected": 1,
+  "t3_passed": 1,
+  "t3_exit": 0,
+  "benchmark": "NOT_APPLICABLE",
+  "t4": "NOT_RUN",
+  "production_networking": "DEFERRED"
+}

@@ -1,10 +1,12 @@
-"""Bounded HTTP/2 framing, static HPACK decoding and connection state."""
+"""Bounded HTTP/2 framing, HPACK decoding and connection state."""
 
 from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
 from enum import Enum, IntEnum
+
+from .hpack_huffman import HuffmanError, decode_huffman
 
 
 class Http2Error(ValueError):
@@ -32,10 +34,10 @@ PREFACE = b"PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 
 
 class HPACKError(Http2Error):
-    """Raised when a bounded HPACK block is malformed or uses deferred features."""
+    """Raised when a bounded HPACK block is malformed or exceeds its contract."""
 
 
-# RFC 7541 Appendix A. Dynamic table entries and Huffman literals stay deferred.
+# RFC 7541 Appendix A. Dynamic state is bounded by HPACKDecoder.
 _STATIC_TABLE = (
     (":authority", ""), (":method", "GET"), (":method", "POST"),
     (":path", "/"), (":path", "/index.html"), (":scheme", "http"),
@@ -82,57 +84,213 @@ def _hpack_integer(data: bytes, offset: int, prefix_bits: int) -> tuple[int, int
 def _hpack_string(data: bytes, offset: int, *, max_string_bytes: int) -> tuple[str, int]:
     if offset >= len(data):
         raise HPACKError("HPACK string is truncated")
-    if data[offset] & 0x80:
-        raise HPACKError("HPACK Huffman literals are deferred")
+    huffman = bool(data[offset] & 0x80)
     length, offset = _hpack_integer(data, offset, 7)
     if length > max_string_bytes or offset + length > len(data):
         raise HPACKError("HPACK string exceeds bound")
+    encoded = data[offset:offset + length]
+    if huffman:
+        try:
+            encoded = decode_huffman(encoded, max_output_bytes=max_string_bytes)
+        except HuffmanError as error:
+            raise HPACKError(str(error)) from error
     try:
-        return data[offset:offset + length].decode("utf-8"), offset + length
+        return encoded.decode("utf-8"), offset + length
     except UnicodeDecodeError as error:
         raise HPACKError("HPACK string is not UTF-8") from error
+
+
+def _entry_size(entry: tuple[str, str]) -> int:
+    name, value = entry
+    return 32 + len(name.encode("utf-8")) + len(value.encode("utf-8"))
+
+
+def _evict_dynamic_table(
+    table: list[tuple[str, str]],
+    size: int,
+    limit: int,
+) -> int:
+    while size > limit and table:
+        size -= _entry_size(table.pop())
+    return size
+
+
+def _add_dynamic_entry(
+    table: list[tuple[str, str]],
+    size: int,
+    entry: tuple[str, str],
+    limit: int,
+) -> int:
+    entry_size = _entry_size(entry)
+    if entry_size > limit:
+        table.clear()
+        return 0
+    table.insert(0, entry)
+    return _evict_dynamic_table(table, size + entry_size, limit)
+
+
+class HPACKDecoder:
+    """Bounded stateful HPACK decoder with RFC 7541 dynamic table semantics."""
+
+    def __init__(self, *, max_dynamic_table_bytes: int = 4096) -> None:
+        if (
+            isinstance(max_dynamic_table_bytes, bool)
+            or not isinstance(max_dynamic_table_bytes, int)
+            or max_dynamic_table_bytes < 0
+        ):
+            raise ValueError("HPACK dynamic table bound must be non-negative")
+        self.max_dynamic_table_bytes = max_dynamic_table_bytes
+        self._table_limit = max_dynamic_table_bytes
+        self._dynamic_table: tuple[tuple[str, str], ...] = ()
+        self._dynamic_size = 0
+
+    @property
+    def dynamic_table(self) -> tuple[tuple[str, str], ...]:
+        return self._dynamic_table
+
+    @property
+    def dynamic_table_size(self) -> int:
+        return self._dynamic_size
+
+    @property
+    def table_size_limit(self) -> int:
+        return self._table_limit
+
+    def set_max_table_size(self, size: int) -> None:
+        if isinstance(size, bool) or not isinstance(size, int) or size < 0:
+            raise ValueError("HPACK table size must be non-negative")
+        if size > self.max_dynamic_table_bytes:
+            raise HPACKError("HPACK table size exceeds configured bound")
+        table = list(self._dynamic_table)
+        self._dynamic_size = _evict_dynamic_table(table, self._dynamic_size, size)
+        self._dynamic_table = tuple(table)
+        self._table_limit = size
+
+    def _lookup(
+        self,
+        index: int,
+        table: list[tuple[str, str]],
+    ) -> tuple[str, str]:
+        if index < 1:
+            raise HPACKError("HPACK index must be positive")
+        if index <= len(_STATIC_TABLE):
+            return _STATIC_TABLE[index - 1]
+        dynamic_index = index - len(_STATIC_TABLE) - 1
+        if dynamic_index >= len(table):
+            raise HPACKError("dynamic HPACK index is out of range")
+        return table[dynamic_index]
+
+    def _lookup_name(
+        self,
+        index: int,
+        table: list[tuple[str, str]],
+    ) -> str:
+        return self._lookup(index, table)[0]
+
+    def decode(
+        self,
+        block: bytes,
+        *,
+        max_headers: int = 128,
+        max_header_bytes: int = 16_384,
+    ) -> tuple[tuple[str, str], ...]:
+        if not isinstance(block, bytes):
+            raise TypeError("HPACK block must be bytes")
+        if (
+            isinstance(max_headers, bool)
+            or not isinstance(max_headers, int)
+            or max_headers <= 0
+            or isinstance(max_header_bytes, bool)
+            or not isinstance(max_header_bytes, int)
+            or max_header_bytes <= 0
+        ):
+            raise ValueError("HPACK bounds must be positive")
+
+        offset = 0
+        result: list[tuple[str, str]] = []
+        retained = 0
+        table = list(self._dynamic_table)
+        dynamic_size = self._dynamic_size
+        table_limit = self._table_limit
+        saw_header = False
+        while offset < len(block):
+            first = block[offset]
+            if first & 0x80:
+                index, offset = _hpack_integer(block, offset, 7)
+                header = self._lookup(index, table)
+                saw_header = True
+            elif first & 0x40:
+                index, offset = _hpack_integer(block, offset, 6)
+                if index:
+                    name = self._lookup_name(index, table)
+                else:
+                    name, offset = _hpack_string(
+                        block,
+                        offset,
+                        max_string_bytes=max_header_bytes,
+                    )
+                value, offset = _hpack_string(
+                    block,
+                    offset,
+                    max_string_bytes=max_header_bytes,
+                )
+                header = (name, value)
+                dynamic_size = _add_dynamic_entry(table, dynamic_size, header, table_limit)
+                saw_header = True
+            elif first & 0x20:
+                if saw_header:
+                    raise HPACKError("HPACK table size update must precede headers")
+                new_limit, offset = _hpack_integer(block, offset, 5)
+                if new_limit > self.max_dynamic_table_bytes:
+                    raise HPACKError("HPACK table size exceeds configured bound")
+                table_limit = new_limit
+                dynamic_size = _evict_dynamic_table(table, dynamic_size, table_limit)
+                continue
+            else:
+                index, offset = _hpack_integer(block, offset, 4)
+                if index:
+                    name = self._lookup_name(index, table)
+                else:
+                    name, offset = _hpack_string(
+                        block,
+                        offset,
+                        max_string_bytes=max_header_bytes,
+                    )
+                value, offset = _hpack_string(
+                    block,
+                    offset,
+                    max_string_bytes=max_header_bytes,
+                )
+                header = (name, value)
+                saw_header = True
+
+            retained += len(header[0].encode("utf-8")) + len(header[1].encode("utf-8"))
+            if len(result) >= max_headers or retained > max_header_bytes:
+                raise HPACKError("decoded headers exceed bound")
+            result.append(header)
+
+        self._dynamic_table = tuple(table)
+        self._dynamic_size = dynamic_size
+        self._table_limit = table_limit
+        return tuple(result)
 
 
 def decode_hpack(
     block: bytes,
     *,
+    decoder: HPACKDecoder | None = None,
+    max_dynamic_table_bytes: int = 4096,
     max_headers: int = 128,
     max_header_bytes: int = 16_384,
 ) -> tuple[tuple[str, str], ...]:
-    """Decode static/indexed and literal-without-indexing fields only."""
+    """Decode one HPACK block, optionally retaining dynamic state."""
 
-    if not isinstance(block, bytes):
-        raise TypeError("HPACK block must be bytes")
-    if max_headers <= 0 or max_header_bytes <= 0:
-        raise ValueError("HPACK bounds must be positive")
-    offset = 0
-    result: list[tuple[str, str]] = []
-    retained = 0
-    while offset < len(block):
-        first = block[offset]
-        if first & 0x80:
-            index, offset = _hpack_integer(block, offset, 7)
-            if not 1 <= index <= len(_STATIC_TABLE):
-                raise HPACKError("dynamic HPACK index is unsupported")
-            name, value = _STATIC_TABLE[index - 1]
-        elif first & 0x40:
-            raise HPACKError("HPACK incremental indexing is deferred")
-        elif first & 0x20:
-            raise HPACKError("HPACK dynamic table size update is deferred")
-        else:
-            index, offset = _hpack_integer(block, offset, 4)
-            if index:
-                if index > len(_STATIC_TABLE):
-                    raise HPACKError("dynamic HPACK name index is unsupported")
-                name = _STATIC_TABLE[index - 1][0]
-            else:
-                name, offset = _hpack_string(block, offset, max_string_bytes=max_header_bytes)
-            value, offset = _hpack_string(block, offset, max_string_bytes=max_header_bytes)
-        retained += len(name.encode("utf-8")) + len(value.encode("utf-8"))
-        if len(result) >= max_headers or retained > max_header_bytes:
-            raise HPACKError("decoded headers exceed bound")
-        result.append((name, value))
-    return tuple(result)
+    active = decoder or HPACKDecoder(max_dynamic_table_bytes=max_dynamic_table_bytes)
+    return active.decode(
+        block,
+        max_headers=max_headers,
+        max_header_bytes=max_header_bytes,
+    )
 
 
 @dataclass(frozen=True, slots=True)

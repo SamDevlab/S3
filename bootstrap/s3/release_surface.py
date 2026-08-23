@@ -123,7 +123,7 @@ def default_release_surface() -> ReleaseSurfaceInventory:
         PublicSurface("package.manifest-and-lockfile", "packages", "manifest and lock identities are deterministic and revision-bound", "high", SurfaceStability.STABLE_FOR_1_0),
         PublicSurface("native.aarch64-runtime", "backend", "AArch64 artifact generation is structural unless native evidence exists", "high", SurfaceStability.DEFERRED),
         PublicSurface("native.macos-arm64-runtime", "backend", "macOS ARM64 artifact generation is structural unless macOS evidence exists", "high", SurfaceStability.DEFERRED),
-        PublicSurface("http2.dynamic-hpack", "network", "dynamic-table, incremental-indexing, and Huffman paths remain deferred", "high", SurfaceStability.DEFERRED),
+        PublicSurface("http2.dynamic-hpack", "network", "bounded dynamic-table, incremental-indexing, and Huffman decoding; production networking remains deferred", "high", SurfaceStability.DEFERRED),
     )
     inventory = ReleaseSurfaceInventory("1.0-rc", tuple(sorted(surfaces, key=lambda item: item.name)))
     validate_release_surface(inventory)

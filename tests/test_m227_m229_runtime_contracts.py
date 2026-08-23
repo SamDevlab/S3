@@ -18,14 +18,15 @@ def test_concurrency_wait_graph_reports_only_observed_cycles() -> None:
     assert graph.assess().status == "no-cycle-observed"
 
 
-def test_hpack_static_fields_are_bounded_and_dynamic_features_fail_closed() -> None:
+def test_hpack_static_fields_are_bounded_and_malformed_dynamic_fields_fail_closed() -> None:
     assert decode_hpack(bytes((0x82, 0x84))) == ((":method", "GET"), (":path", "/"))
     # Literal without indexing: 0000 0000, length 3, "foo", length 3, "bar".
     assert decode_hpack(b"\x00\x03foo\x03bar") == (("foo", "bar"),)
-    with pytest.raises(HPACKError, match="dynamic table"):
-        decode_hpack(b"\x20")
+    assert decode_hpack(b"\x20") == ()
+    with pytest.raises(HPACKError, match="dynamic HPACK index"):
+        decode_hpack(b"\xbe")
     with pytest.raises(HPACKError, match="Huffman"):
-        decode_hpack(b"\x00\x83abc")
+        decode_hpack(b"\x00\x81\xff\x01a")
 
 
 def test_ffi_handles_are_bounded_and_release_is_explicit() -> None:
