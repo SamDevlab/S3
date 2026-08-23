@@ -57,6 +57,16 @@ def test_empty_table_returns_missing_without_error() -> None:
     assert candidate_symbol_lookup([], 7) == 0
 
 
+def test_full_bounded_table_can_lookup_last_slot_exactly() -> None:
+    entries = [(index + 10, (index % 4) + 1) for index in range(8)]
+    query = entries[-1][0]
+    expected = 8 * 8 + entries[-1][1]
+    evidence = run_symbol_table_differential(entries, query)
+    assert evidence.reference_result == expected
+    assert evidence.candidate_result == expected
+    assert evidence.match is True
+
+
 def test_duplicate_symbol_ids_fail_closed_in_both_paths() -> None:
     entries = [(11, 1), (11, 2)]
     with pytest.raises(SymbolTableCandidateError, match="duplicate"):
