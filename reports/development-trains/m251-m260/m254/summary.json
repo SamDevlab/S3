@@ -1,0 +1,32 @@
+{
+  "milestone": "M2.54",
+  "name": "recursive-compiler-data-substrate",
+  "base_sha": "e52e8486e5ddfec7fbf4320a3f7948673279faee",
+  "source_head": "609b4c0f4fac6f00e91d7b1c266463619476f163",
+  "status": "COMPLETE",
+  "capabilities": [
+    "bounded-node-storage",
+    "bounded-edge-storage",
+    "cycle-aware-iterative-walk",
+    "deterministic-nested-order"
+  ],
+  "focused_tests_selected": 9,
+  "focused_tests_passed": 9,
+  "focused_tests_skipped": 0,
+  "focused_failures": 0,
+  "focused_timeouts": 0,
+  "compileall": "PASS",
+  "diff_check": "PASS",
+  "t2_selected": 1,
+  "t2_passed": 1,
+  "t2_failed": 0,
+  "t2_timed_out": 0,
+  "t3_selected": 1,
+  "t3_passed": 1,
+  "t3_failed": 0,
+  "t3_timed_out": 0,
+  "benchmark": "NOT_RUN",
+  "t4": "NOT_RUN",
+  "performance_claim": "NONE",
+  "native_descriptor_abi": "NOT_IN_SCOPE"
+}
