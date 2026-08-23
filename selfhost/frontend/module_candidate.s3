@@ -1,0 +1,98 @@
+fn add_mod(left: tryte, amount: tryte) -> tryte:
+    mut result: tryte = left
+    match result <=> 301 - amount:
+        -1:
+            result += amount
+        0:
+            result = result - (301 - amount)
+        1:
+            result = result - (301 - amount)
+    return result
+
+fn mix(checksum: tryte, kind: tryte, symbol: tryte) -> tryte:
+    mut result: tryte = checksum
+    mut rounds: tryte = 0
+    while rounds < 5:
+        result = add_mod(result, result)
+        rounds += 1
+    result = add_mod(result, kind)
+    result = add_mod(result, symbol)
+    return result
+
+fn module_import_fingerprint(
+    kinds: tryte[16],
+    symbols: tryte[16],
+    length: tryte
+) -> tryte:
+    match length == 4:
+        -1:
+            match kinds[0] == 1:
+                -1:
+                    match kinds[1] == 29:
+                        -1:
+                            match kinds[2] == 61:
+                                -1:
+                                    match kinds[3] == 64:
+                                        -1:
+                                            mut checksum: tryte = 0
+                                            checksum = mix(checksum, 101, symbols[1])
+                                            return checksum
+                                        0:
+                                            return -1
+                                        1:
+                                            return -1
+                                0:
+                                    return -1
+                                1:
+                                    return -1
+                        0:
+                            return -1
+                        1:
+                            return -1
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            match kinds[0] == 2:
+                -1:
+                    match kinds[1] == 29:
+                        -1:
+                            match kinds[2] == 3:
+                                -1:
+                                    match kinds[3] == 29:
+                                        -1:
+                                            match kinds[4] == 61:
+                                                -1:
+                                                    match kinds[5] == 64:
+                                                        -1:
+                                                            mut checksum: tryte = 0
+                                                            checksum = mix(checksum, 102, symbols[1])
+                                                            checksum = mix(checksum, 29, symbols[3])
+                                                            return checksum
+                                                        0:
+                                                            return -1
+                                                        1:
+                                                            return -1
+                                                0:
+                                                    return -1
+                                                1:
+                                                    return -1
+                                        0:
+                                            return -1
+                                        1:
+                                            return -1
+                                0:
+                                    return -1
+                                1:
+                                    return -1
+                        0:
+                            return -1
+                        1:
+                            return -1
+                0:
+                    return -1
+                1:
+                    return -1
+        1:
+            return -1
