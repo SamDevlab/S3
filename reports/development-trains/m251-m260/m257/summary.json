@@ -1,0 +1,31 @@
+{
+  "milestone": "M2.57",
+  "name": "canonical-compiler-serialization-foundation",
+  "base_sha": "f286f7bd1b4a48b91d462b25bed91a38188dd7f4",
+  "source_head": "d479a278e181d4c27c3a26893539d57d849a7dd2",
+  "status": "COMPLETE",
+  "capabilities": [
+    "canonical-json-debug-values",
+    "versioned-debug-envelope",
+    "bounded-utf8-serialization"
+  ],
+  "focused_tests_selected": 26,
+  "focused_tests_passed": 26,
+  "focused_tests_skipped": 0,
+  "focused_failures": 0,
+  "focused_timeouts": 0,
+  "compileall": "PASS",
+  "diff_check": "PASS",
+  "t2_selected": 1,
+  "t2_passed": 1,
+  "t2_failed": 0,
+  "t2_timed_out": 0,
+  "t3_selected": 1,
+  "t3_passed": 1,
+  "t3_failed": 0,
+  "t3_timed_out": 0,
+  "benchmark": "NOT_RUN",
+  "t4": "NOT_RUN",
+  "performance_claim": "NONE",
+  "native_descriptor_abi": "NOT_IN_SCOPE"
+}
