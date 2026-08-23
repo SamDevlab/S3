@@ -91,6 +91,7 @@
     "m268": ["tests/test_m268_assembly_frontend_closure.py"],
     "m269": ["tests/test_m269_frontend_canary.py"],
     "m270": ["tests/test_m270_frontend_self_hosting_checkpoint.py"],
+    "m271": ["tests/test_m271_symbol_table_candidate.py"],
     "m261-m269-level-c": [
       "tests/test_m261_lexer_candidate.py",
       "tests/test_m262_parser_candidate.py",
@@ -1228,6 +1229,33 @@
       "tests": ["tests/test_m270_frontend_self_hosting_checkpoint.py"],
       "milestones": ["m270", "level-c", "self-hosting"],
       "shards": ["m270"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/symbol_table_candidate.py",
+      "tests": ["tests/test_m271_symbol_table_candidate.py"],
+      "milestones": ["m271", "symbol-table", "self-hosting"],
+      "shards": ["m271"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "selfhost/semantic/symbol_table_candidate.s3",
+      "tests": ["tests/test_m271_symbol_table_candidate.py"],
+      "milestones": ["m271", "symbol-table", "self-hosting"],
+      "shards": ["m271"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m271_symbol_table_candidate.py",
+      "tests": ["tests/test_m271_symbol_table_candidate.py"],
+      "milestones": ["m271", "symbol-table", "self-hosting"],
+      "shards": ["m271"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false

@@ -32,7 +32,11 @@ fn duplicate_symbol_id(
     return 0
 
 fn encoded_symbol_slot(index: tryte, kind: tryte) -> tryte:
-    return (index + 1) * 8 + kind
+    mut slot: tryte = index + 1
+    slot += slot
+    slot += slot
+    slot += slot
+    return slot + kind
 
 fn symbol_table_lookup(
     symbol_ids: tryte[8],
