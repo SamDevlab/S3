@@ -1,0 +1,32 @@
+{
+  "milestone": "M2.55",
+  "name": "source-manager-canonical-spans",
+  "base_sha": "5b90d248bc52c447bf1f127f54486e5698bbfa8a",
+  "source_head": "d63a2d56a81e6e88ae2702a868d58fcd28dd652d",
+  "status": "COMPLETE",
+  "capabilities": [
+    "stable-multi-file-source-ids",
+    "canonical-half-open-spans",
+    "unicode-crlf-line-mapping",
+    "bounded-source-storage"
+  ],
+  "focused_tests_selected": 15,
+  "focused_tests_passed": 15,
+  "focused_tests_skipped": 0,
+  "focused_failures": 0,
+  "focused_timeouts": 0,
+  "compileall": "PASS",
+  "diff_check": "PASS",
+  "t2_selected": 1,
+  "t2_passed": 1,
+  "t2_failed": 0,
+  "t2_timed_out": 0,
+  "t3_selected": 1,
+  "t3_passed": 1,
+  "t3_failed": 0,
+  "t3_timed_out": 0,
+  "benchmark": "NOT_RUN",
+  "t4": "NOT_RUN",
+  "performance_claim": "NONE",
+  "native_descriptor_abi": "NOT_IN_SCOPE"
+}
