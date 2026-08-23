@@ -66,6 +66,7 @@
       "tests/test_m237_async_network_soak.py",
       "tests/test_m246_async_network_soak.py"
     ],
+    "m247": ["tests/test_s3bench_repeatability.py"],
     "compiler": ["tests/test_compiler.py", "tests/test_cli_source_syntax.py"],
     "m139-m140": ["tests/test_m139_dynamic_buffers.py", "tests/test_m140_ordered_collections.py"],
     "m151": [
@@ -631,6 +632,24 @@
       "tests": ["tests/test_m246_async_network_soak.py"],
       "milestones": ["m246"],
       "shards": ["m246"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "benchmarks/s3bench/repeatability.py",
+      "tests": ["tests/test_s3bench_repeatability.py"],
+      "milestones": ["m247", "benchmark"],
+      "shards": ["m247"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_s3bench_repeatability.py",
+      "tests": ["tests/test_s3bench_repeatability.py"],
+      "milestones": ["m247", "benchmark"],
+      "shards": ["m247"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false

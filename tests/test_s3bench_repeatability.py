@@ -194,8 +194,16 @@ def test_comparison_without_result_fails(tmp_path):
 
 
 def test_incomplete_runs_fail(tmp_path):
-    with pytest.raises(RepeatabilityError, match="expected 3 runs"):
+    with pytest.raises(RepeatabilityError, match="invalid run layout"):
         analyze_root(_write_fixture(tmp_path, runs=2))
+
+
+def test_missing_run_number_fails_closed(tmp_path):
+    root = _write_fixture(tmp_path)
+    benchmark = root / "benchmarks" / "bench-a"
+    (benchmark / "run-3").rename(benchmark / "run-4")
+    with pytest.raises(RepeatabilityError, match="invalid run layout"):
+        analyze_root(root)
 
 
 def test_checksum_divergence_fails(tmp_path):
@@ -267,7 +275,7 @@ def test_unexpected_benchmark_directory_fails(tmp_path):
     root = _write_fixture(tmp_path)
     unexpected = root / "benchmarks" / "unexpected" / "run-1"
     unexpected.mkdir(parents=True)
-    with pytest.raises(RepeatabilityError, match="expected 3 runs"):
+    with pytest.raises(RepeatabilityError, match="invalid run layout"):
         analyze_root(root)
 
 
@@ -306,6 +314,26 @@ def test_ids_diverging_between_runs_fail(tmp_path):
     rows[1] = [_row(benchmark="other-benchmark")]
     with pytest.raises(RepeatabilityError, match="benchmark IDs differ"):
         analyze_root(_write_fixture(tmp_path, rows_by_run=rows, benchmark_dir="safe-storage-name"))
+
+
+def test_duplicate_benchmark_identity_across_storage_directories_fails(tmp_path):
+    root = _write_fixture(tmp_path, benchmark_dir="first-storage")
+    second = _write_fixture(tmp_path / "second", benchmark_dir="second-storage")
+    second_benchmarks = second / "benchmarks" / "second-storage"
+    destination = root / "benchmarks" / "second-storage"
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination_dir = destination
+    for source in second_benchmarks.iterdir():
+        if source.is_dir():
+            target = destination_dir / source.name
+            target.mkdir(parents=True)
+            for document in source.iterdir():
+                target.joinpath(document.name).write_bytes(document.read_bytes())
+        else:
+            destination_dir.mkdir(parents=True, exist_ok=True)
+            destination_dir.joinpath(source.name).write_bytes(source.read_bytes())
+    with pytest.raises(RepeatabilityError, match="duplicate benchmark_id"):
+        analyze_root(root)
 
 
 def test_result_and_comparison_ids_differ_fail(tmp_path):
