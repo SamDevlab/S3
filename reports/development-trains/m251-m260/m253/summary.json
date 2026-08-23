@@ -1,0 +1,32 @@
+{
+  "milestone": "M2.53",
+  "name": "arena-region-memory-foundation",
+  "base_sha": "fa5c6ba316fdfb62074e1b5a34c3aba6c3a9874f",
+  "source_head": "576e769a60d95e5a1b36c15e52d62d4b9bbf8993",
+  "status": "COMPLETE",
+  "capabilities": [
+    "fixed-capacity-arena",
+    "aligned-monotonic-allocation",
+    "explicit-mark-rewind",
+    "rewound-handle-invalidation"
+  ],
+  "focused_tests_selected": 23,
+  "focused_tests_passed": 22,
+  "focused_tests_skipped": 1,
+  "focused_failures": 0,
+  "focused_timeouts": 0,
+  "compileall": "PASS",
+  "diff_check": "PASS",
+  "t2_selected": 1,
+  "t2_passed": 1,
+  "t2_failed": 0,
+  "t2_timed_out": 0,
+  "t3_selected": 1,
+  "t3_passed": 1,
+  "t3_failed": 0,
+  "t3_timed_out": 0,
+  "benchmark": "NOT_RUN",
+  "t4": "NOT_RUN",
+  "performance_claim": "NONE",
+  "native_descriptor_abi": "NOT_IN_SCOPE"
+}
