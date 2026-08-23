@@ -71,6 +71,7 @@
     "m249": ["tests/test_m249_cross_target_evidence.py"],
     "m251": ["tests/test_m251_dynamic_text.py"],
     "m252": ["tests/test_m252_deterministic_collections.py"],
+    "m253": ["tests/test_m253_arena_memory.py"],
     "m241-m249-level-c": [
       "tests/test_m241_workspace_semantic_graph.py",
       "tests/test_m242_lsp_project_intelligence.py",
@@ -767,6 +768,24 @@
       "tests": ["tests/test_m252_deterministic_collections.py"],
       "milestones": ["m252", "collections"],
       "shards": ["m252"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/arena.py",
+      "tests": ["tests/test_m253_arena_memory.py"],
+      "milestones": ["m253", "arena", "memory"],
+      "shards": ["m253"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m253_arena_memory.py",
+      "tests": ["tests/test_m253_arena_memory.py"],
+      "milestones": ["m253", "arena", "memory"],
+      "shards": ["m253"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
