@@ -1,0 +1,21 @@
+{
+  "milestone": "M2.42",
+  "name": "lsp-project-intelligence",
+  "base_sha": "628fea623469a15810bd39fc17ee076f390e0105",
+  "status": "IMPLEMENTED",
+  "capabilities": [
+    "cross-file-definition",
+    "cross-file-references",
+    "alias-aware-rename",
+    "workspace-symbols",
+    "stale-document-rejection",
+    "ambiguous-import-fail-closed",
+    "request-cancellation"
+  ],
+  "focused_tests": 22,
+  "focused_failures": 0,
+  "compileall": "PASS",
+  "diff_check": "PASS",
+  "benchmark": "NOT_APPLICABLE",
+  "t4": "NOT_RUN"
+}
