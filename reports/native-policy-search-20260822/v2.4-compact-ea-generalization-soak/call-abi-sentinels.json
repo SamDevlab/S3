@@ -1,0 +1,11 @@
+{
+  "case_ids": [
+    "V24-04",
+    "R17",
+    "R18",
+    "R19",
+    "R20"
+  ],
+  "status": "PASS",
+  "unsafe_applications": 0
+}

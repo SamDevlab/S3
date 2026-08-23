@@ -1,0 +1,15 @@
+{
+  "branch": "experiment/native-policy-search-20260822",
+  "campaign": "S3-ABL-V2.4-COMPACT-EA-CANARY-GENERALIZATION-AND-SOAK-20260822",
+  "canonical_main_sha": "2245c9f75b07b063b6da5716a753d02c1fee5f95",
+  "native_speedup_claim": "NO",
+  "pr": 190,
+  "pr190_start_head": "018f303b501e6fb93cb9800cc43369b0082a8482",
+  "production_changed": "NO",
+  "repository": "SamDevlab/S3",
+  "source_changes_after_lock": "NO",
+  "timing_used": false,
+  "v23_rule_hash": "055948f42ab3db50a127b944d629bcc298aed2ed185dc7e041d53b0e9105d8b8",
+  "v23_source_lock": "e59b63d5eaeacda85373bfe48eff3309bc18398e",
+  "v24_source_lock": "7f359e9887f61c1daaee3a4d202abb008bc8f2e2"
+}

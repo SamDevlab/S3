@@ -1,0 +1,14 @@
+{
+  "coverage": "TARGET_MET",
+  "determinism": "PASS",
+  "hardened_research_only": true,
+  "holdout": "PASS",
+  "lofo": "PASS",
+  "next": "V25_COMPACT_EA_MINIMAL_INTEGRATION_AND_EXTERNAL_VALIDATION_DECISION",
+  "soak": "PASS",
+  "status": "V24_COMPACT_EA_CANARY_HARDENED_RESEARCH_ONLY",
+  "t0": "PASS",
+  "t1": "PASS",
+  "t2": "PASS",
+  "t3": "PASS"
+}

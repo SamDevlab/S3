@@ -1,0 +1,1978 @@
+{
+  "applied_case_count": 47,
+  "canary_minus_off": {
+    "branches": 0,
+    "calls": 0,
+    "frame_bytes": 0,
+    "instructions": -122,
+    "leas": 0,
+    "loads": 0,
+    "movs": -122,
+    "spills_reload": 0,
+    "stack_ops": 0,
+    "stores": 0,
+    "text_bytes": -2074,
+    "total_load_store": 0
+  },
+  "fallback_case_count": 56,
+  "per_case": [
+    {
+      "applied": true,
+      "case_id": "A01",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "A02",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "A03",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "A04",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "A05",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -4,
+        "leas": 0,
+        "loads": 0,
+        "movs": -4,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -68,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "A06",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A07",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "A08",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "A09",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -3,
+        "leas": 0,
+        "loads": 0,
+        "movs": -3,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -51,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A10",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A11",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A12",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A13",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A14",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A15",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A16",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A17",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A18",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A19",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A20",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "A21",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A22",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "A23",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -3,
+        "leas": 0,
+        "loads": 0,
+        "movs": -3,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -51,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A24",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A25",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A26",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A27",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A28",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A29",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A30",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A31",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A32",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "A33",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A34",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A35",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A36",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A37",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A38",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A39",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A40",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A41",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A42",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A43",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A44",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A45",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A46",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "A47",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -4,
+        "leas": 0,
+        "loads": 0,
+        "movs": -4,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -68,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "A48",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -3,
+        "leas": 0,
+        "loads": 0,
+        "movs": -3,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -51,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A49",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A50",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A51",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "A52",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -3,
+        "leas": 0,
+        "loads": 0,
+        "movs": -3,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -51,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "A53",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -4,
+        "leas": 0,
+        "loads": 0,
+        "movs": -4,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -68,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "A54",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A55",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A56",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A57",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A58",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "A59",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "A60",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "R01",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "R02",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "R03",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "R04",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -4,
+        "leas": 0,
+        "loads": 0,
+        "movs": -4,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -68,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "R05",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "R06",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -3,
+        "leas": 0,
+        "loads": 0,
+        "movs": -3,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -51,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "R07",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "R08",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "R09",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "R10",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "R11",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "R12",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "R13",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "R14",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "R15",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "R16",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "R17",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "R18",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "R19",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "R20",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "R21",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -3,
+        "leas": 0,
+        "loads": 0,
+        "movs": -3,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -51,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "R22",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -3,
+        "leas": 0,
+        "loads": 0,
+        "movs": -3,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -51,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "R23",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -3,
+        "leas": 0,
+        "loads": 0,
+        "movs": -3,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -51,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "R24",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -3,
+        "leas": 0,
+        "loads": 0,
+        "movs": -3,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -51,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "R25",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "R26",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "R27",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "R28",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "E01",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "E02",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "E03",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "V24-01",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -4,
+        "leas": 0,
+        "loads": 0,
+        "movs": -4,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -68,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "V24-02",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "V24-03",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "V24-04",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "V24-05",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -3,
+        "leas": 0,
+        "loads": 0,
+        "movs": -3,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -51,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "V24-06",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -4,
+        "leas": 0,
+        "loads": 0,
+        "movs": -4,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -68,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "V24-07",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "V24-08",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -2,
+        "leas": 0,
+        "loads": 0,
+        "movs": -2,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -34,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": false,
+      "case_id": "V24-09",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": 0,
+        "leas": 0,
+        "loads": 0,
+        "movs": 0,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": 0,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "V24-10",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -4,
+        "leas": 0,
+        "loads": 0,
+        "movs": -4,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -68,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "V24-11",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -3,
+        "leas": 0,
+        "loads": 0,
+        "movs": -3,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -51,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    },
+    {
+      "applied": true,
+      "case_id": "V24-12",
+      "delta": {
+        "branches": 0,
+        "calls": 0,
+        "frame_bytes": 0,
+        "instructions": -5,
+        "leas": 0,
+        "loads": 0,
+        "movs": -5,
+        "spills_reload": 0,
+        "stack_ops": 0,
+        "stores": 0,
+        "text_bytes": -85,
+        "total_load_store": 0
+      },
+      "hard_regression": false
+    }
+  ],
+  "timing": "NOT_RUN"
+}

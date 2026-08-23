@@ -1,0 +1,15 @@
+{
+  "returncode": 0,
+  "selected_tests": [
+    "tests/test_native_policy_search_v22.py",
+    "tests/test_native_policy_search_v23.py",
+    "tests/test_x86_64_native_policy.py",
+    "tests/test_native_backend_routing.py",
+    "tests/test_backend_registry.py"
+  ],
+  "skips": "reported by pytest output; no unexpected skip classification was emitted",
+  "status": "PASS",
+  "stderr": "",
+  "stdout": "...........................................                              [100%]\n",
+  "unexpected_skips": 0
+}

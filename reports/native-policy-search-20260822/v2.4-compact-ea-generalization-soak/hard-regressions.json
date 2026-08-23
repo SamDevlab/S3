@@ -1,0 +1,11 @@
+{
+  "count": 0,
+  "status": "PASS",
+  "thresholds": {
+    "frame_bytes": 1.05,
+    "instructions": 1.03,
+    "spills_reload": 1.05,
+    "stack_ops": 1.05,
+    "total_load_store": 1.05
+  }
+}
