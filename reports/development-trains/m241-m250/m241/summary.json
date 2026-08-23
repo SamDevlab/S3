@@ -1,0 +1,20 @@
+{
+  "milestone": "M2.41",
+  "name": "workspace-semantic-graph",
+  "base_sha": "db5f4bf10e2066f52bf144d23e6f7db56154e298",
+  "source_lock": "PENDING_PR_MERGE",
+  "status": "IMPLEMENTED",
+  "capabilities": [
+    "cross-file-symbols",
+    "imports",
+    "duplicate-and-conflict-rejection",
+    "nominal-type-identities",
+    "incremental-dependent-invalidation",
+    "open-order-independent-snapshots"
+  ],
+  "focused_tests": 36,
+  "focused_failures": 0,
+  "compileall": "PASS",
+  "benchmark": "NOT_APPLICABLE",
+  "t4": "NOT_RUN"
+}
