@@ -129,6 +129,18 @@ def test_default_timeout_policy_is_sixty_seconds() -> None:
     assert policy.seconds == 60
 
 
+def test_native_integration_timeout_policy_is_scoped_and_bounded() -> None:
+    policy = IMPACT.timeout_policy_for("tests/test_native_x86_64_integration.py", 60)
+    assert policy.timeout_class is T4TimeoutClass.HEAVY_NATIVE_INTEGRATION
+    assert policy.seconds == 300
+
+
+def test_ordinary_files_keep_the_default_timeout() -> None:
+    policy = IMPACT.timeout_policy_for("tests/test_compiler.py", 60)
+    assert policy.timeout_class is T4TimeoutClass.DEFAULT
+    assert policy.seconds == 60
+
+
 def test_explicit_heavy_timeout_policy_is_bounded() -> None:
     policy = IMPACT.timeout_policy_for("tests/test_decimal_functions.py", 60)
     assert policy.timeout_class is T4TimeoutClass.HEAVY_SELF_HOSTING

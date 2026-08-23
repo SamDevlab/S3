@@ -13,7 +13,8 @@
     "classes": {
       "DEFAULT": {"seconds": 60},
       "HEAVY_SELF_HOSTING": {"seconds": 180},
-      "HEAVY_RENDERER": {"seconds": 754}
+      "HEAVY_RENDERER": {"seconds": 754},
+      "HEAVY_NATIVE_INTEGRATION": {"seconds": 300}
     },
     "assignments": {
       "tests/test_assembly_program_text_adapter.py": "HEAVY_RENDERER",
@@ -40,6 +41,7 @@
       "tests/test_s3_renderer_sign_text.py": "HEAVY_RENDERER",
       "tests/test_s3_renderer_simple_call_text.py": "HEAVY_RENDERER",
       "tests/test_s3_renderer_text_segments.py": "HEAVY_RENDERER",
+      "tests/test_native_x86_64_integration.py": "HEAVY_NATIVE_INTEGRATION",
       "tests/test_self_hosting_opcode_classifier.py": "HEAVY_SELF_HOSTING"
     }
   },

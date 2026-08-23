@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from bootstrap.s3.assembly import AssemblyType
 from bootstrap.s3.pipeline import compile_source
 from bootstrap.s3.targets import (
@@ -79,8 +81,36 @@ def test_backend_plan_covers_compiled_functions_without_claiming_pe_codegen() ->
     assert plan.codegen_status == "STRUCTURAL_ONLY_TOOLCHAIN_DEFERRED"
 
 
-def test_windows_toolchain_probe_is_fail_closed() -> None:
+def _mock_windows_probe(monkeypatch: pytest.MonkeyPatch, host: str, tools: set[str]) -> None:
+    monkeypatch.setattr("bootstrap.s3.windows_x86_64.platform.system", lambda: host)
+    monkeypatch.setattr(
+        "bootstrap.s3.windows_x86_64.shutil.which",
+        lambda name: f"/fake/{name}" if name in tools else None,
+    )
+
+
+def test_windows_toolchain_probe_is_fail_closed(monkeypatch: pytest.MonkeyPatch) -> None:
+    _mock_windows_probe(monkeypatch, "Linux", {"clang-cl", "lld-link"})
     probe = probe_windows_toolchain()
     assert probe.available is False
     assert "compiler" in probe.missing
     assert "linker" in probe.missing
+
+
+def test_linux_generic_tool_names_do_not_claim_windows_availability(monkeypatch: pytest.MonkeyPatch) -> None:
+    _mock_windows_probe(monkeypatch, "Linux", {"clang", "link"})
+    assert probe_windows_toolchain().available is False
+
+
+def test_windows_missing_compiler_remains_unavailable(monkeypatch: pytest.MonkeyPatch) -> None:
+    _mock_windows_probe(monkeypatch, "Windows", {"lld-link"})
+    probe = probe_windows_toolchain()
+    assert probe.available is False
+    assert "compiler" in probe.missing
+
+
+def test_windows_compiler_and_linker_are_sufficient_without_assembler(monkeypatch: pytest.MonkeyPatch) -> None:
+    _mock_windows_probe(monkeypatch, "Windows", {"clang-cl", "lld-link"})
+    probe = probe_windows_toolchain()
+    assert probe.available is True
+    assert probe.missing == ("assembler",)
