@@ -1,0 +1,25 @@
+{
+  "milestone": "M2.43",
+  "name": "linux-x86-64-native-conformance-closure",
+  "base_sha": "efc1e15fae0f37d127c7d53cf1870df49b4f43a5",
+  "source_lock": "d15dd94cf0617687b0a5fc9997247ca2c74a604f",
+  "status": "COMPLETE",
+  "capabilities": [
+    "o0-o1-parity",
+    "sysv-calls-and-returns",
+    "stack-and-recursion",
+    "reference-and-memory",
+    "tmov-coverage",
+    "compact-ea-off"
+  ],
+  "focused_tests": 25,
+  "focused_failures": 0,
+  "compileall": "PASS",
+  "diff_check": "PASS",
+  "t2": "PASS",
+  "t3": "PASS",
+  "linux_platform": "Linux x86-64",
+  "linux_python": "3.14.4",
+  "benchmark": "NOT_APPLICABLE",
+  "t4": "NOT_RUN"
+}
