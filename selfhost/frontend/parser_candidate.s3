@@ -1,0 +1,144 @@
+fn is_type_kind(kind: tryte) -> trit:
+    match kind == 25:
+        -1:
+            return -1
+        0:
+            match kind == 26:
+                -1:
+                    return -1
+                0:
+                    match kind == 27:
+                        -1:
+                            return -1
+                        0:
+                            match kind == 28:
+                                -1:
+                                    return -1
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        1:
+                            return 0
+                1:
+                    return 0
+        1:
+            return 0
+
+fn is_literal_kind(kind: tryte) -> trit:
+    match kind == 30:
+        -1:
+            return -1
+        0:
+            match kind == 31:
+                -1:
+                    return -1
+                0:
+                    match kind == 32:
+                        -1:
+                            return -1
+                        0:
+                            return 0
+                        1:
+                            return 0
+                1:
+                    return 0
+        1:
+            return 0
+
+fn add_mod(left: tryte, amount: tryte) -> tryte:
+    mut result: tryte = left
+    match result <=> 301 - amount:
+        -1:
+            result += amount
+        0:
+            result = result - (301 - amount)
+        1:
+            result = result - (301 - amount)
+    return result
+
+fn mix(checksum: tryte, kind: tryte, width: tryte) -> tryte:
+    mut result: tryte = checksum
+    mut rounds: tryte = 0
+    while rounds < 5:
+        result = add_mod(result, result)
+        rounds += 1
+    result = add_mod(result, kind)
+    result = add_mod(result, width)
+    return result
+
+fn parser_fingerprint(
+    kinds: tryte[64],
+    widths: tryte[64],
+    length: tryte
+) -> tryte:
+    mut expected: tryte[14] = [
+        9,
+        29,
+        51,
+        52,
+        33,
+        0,
+        57,
+        61,
+        62,
+        10,
+        -1,
+        61,
+        63,
+        64
+    ]
+    mut index: tryte = 0
+    mut state: tryte = 0
+    mut valid: tryte = 1
+    while index < length:
+        match state <=> 14:
+            -1:
+                mut accepted: trit = 0
+                match state == 5:
+                    -1:
+                        accepted = is_type_kind(kinds[index])
+                    0:
+                        match state == 10:
+                            -1:
+                                accepted = is_literal_kind(kinds[index])
+                            0:
+                                accepted = kinds[index] == expected[state]
+                            1:
+                                accepted = kinds[index] == expected[state]
+                    1:
+                        accepted = kinds[index] == expected[state]
+                match accepted:
+                    -1:
+                        index += 1
+                        state += 1
+                    0:
+                        valid = 0
+                        index = length
+                    1:
+                        valid = 0
+                        index = length
+            0:
+                valid = 0
+                index = length
+            1:
+                valid = 0
+                index = length
+    match valid == 1:
+        -1:
+            match state == 14:
+                -1:
+                    mut checksum: tryte = 0
+                    mut cursor: tryte = 0
+                    while cursor < length:
+                        checksum = mix(checksum, kinds[cursor], widths[cursor])
+                        cursor += 1
+                    return checksum
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            return -1
+        1:
+            return -1
