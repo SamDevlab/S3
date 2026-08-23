@@ -140,7 +140,7 @@ Linux x86-64 T3 passed 42 programs and 126 comparisons, with 0 failures. The exa
   "t2_expected_optional_skips": 0,
   "t2_expected_platform_skips": 0,
   "t2_fail": 0,
-  "t2_pass": 1,
+  "t2_pass": 5,
   "t2_selected": 5,
   "t2_skip": 0,
   "t2_unexpected_skips": 0,

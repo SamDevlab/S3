@@ -7,6 +7,10 @@
     "tests/test_native_backend_routing.py",
     "tests/test_backend_registry.py"
   ],
+  "selected_test_modules": 5,
+  "passed_test_modules": 5,
+  "failed_test_modules": 0,
+  "skipped_test_modules": 0,
   "skips": "reported by pytest output; no unexpected skip classification was emitted",
   "status": "PASS",
   "stderr": "",
