@@ -69,6 +69,7 @@
     "m247": ["tests/test_s3bench_repeatability.py"],
     "m248": ["tests/test_m248_experiment_promotion.py"],
     "m249": ["tests/test_m249_cross_target_evidence.py"],
+    "m251": ["tests/test_m251_dynamic_text.py"],
     "m241-m249-level-c": [
       "tests/test_m241_workspace_semantic_graph.py",
       "tests/test_m242_lsp_project_intelligence.py",
@@ -721,6 +722,28 @@
       "tests": ["tests/test_m250_integration_checkpoint.py"],
       "milestones": ["m250"],
       "shards": ["m250"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/dynamic.py",
+      "tests": [
+        "tests/test_dynamic.py",
+        "tests/test_m139_dynamic_buffers.py",
+        "tests/test_m251_dynamic_text.py"
+      ],
+      "milestones": ["m139", "m251", "dynamic-text"],
+      "shards": ["m139-m140", "m251"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m251_dynamic_text.py",
+      "tests": ["tests/test_m251_dynamic_text.py"],
+      "milestones": ["m251", "dynamic-text"],
+      "shards": ["m251"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false

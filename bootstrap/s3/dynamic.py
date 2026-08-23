@@ -542,7 +542,7 @@ class DynamicText:
         if _bytes is None:
             if not isinstance(value, str):
                 raise TypeError("dynamic text requires a string")
-            data = value.encode("utf-8")
+            data = _encode_utf8(value)
         else:
             data = bytes(_bytes)
             _decode_utf8(data)
@@ -583,16 +583,23 @@ class DynamicText:
         if isinstance(value, str):
             self.append_static(value)
             return
+        if not isinstance(value, DynamicText):
+            raise DynamicError("dynamic text append requires text or a string")
         self.append_static(value.to_string())
 
     def append_static(self, value: str) -> None:
         if not isinstance(value, str):
             raise TypeError("dynamic text append requires a string")
-        data = value.encode("utf-8")
+        data = _encode_utf8(value)
         if len(data) > self.capacity - self.length:
             raise BufferFullError("text buffer has no reserved capacity")
         for byte in data:
             self._bytes.push(byte)
+
+    def move(self) -> "DynamicText":
+        replacement = object.__new__(type(self))
+        replacement._bytes = self._bytes.move()
+        return replacement
 
     def clone(self) -> "DynamicText":
         return DynamicText(_bytes=self._bytes.to_bytes(), allocator=self._bytes.allocator)
@@ -608,6 +615,8 @@ class DynamicText:
         return DynamicText(_bytes=data[start:end], allocator=self._bytes.allocator)
 
     def find(self, needle: "DynamicText") -> int:
+        if not isinstance(needle, DynamicText):
+            raise DynamicError("text find requires a text needle")
         return self._bytes.to_bytes().find(needle._bytes.to_bytes())
 
     def to_string(self) -> str:
@@ -1458,6 +1467,13 @@ def _decode_utf8(data: bytes) -> str:
         return data.decode("utf-8")
     except UnicodeDecodeError as error:
         raise TextEncodingError("invalid UTF-8") from error
+
+
+def _encode_utf8(value: str) -> bytes:
+    try:
+        return value.encode("utf-8")
+    except UnicodeEncodeError as error:
+        raise TextEncodingError("text contains invalid Unicode") from error
 
 
 def _is_utf8_boundary(data: bytes, position: int) -> bool:
