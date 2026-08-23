@@ -1,0 +1,79 @@
+fn add_mod(left: tryte, amount: tryte) -> tryte:
+    mut result: tryte = left
+    match result <=> 301 - amount:
+        -1:
+            result += amount
+        0:
+            result = result - (301 - amount)
+        1:
+            result = result - (301 - amount)
+    return result
+
+fn mix(checksum: tryte, kind: tryte, value: tryte) -> tryte:
+    mut result: tryte = checksum
+    mut rounds: tryte = 0
+    while rounds < 5:
+        result = add_mod(result, result)
+        rounds += 1
+    result = add_mod(result, kind)
+    result = add_mod(result, value)
+    return result
+
+fn contains_value(
+    values: tryte[8],
+    count: tryte,
+    target: tryte
+) -> trit:
+    mut index: tryte = 0
+    while index < count:
+        match values[index] == target:
+            -1:
+                return -1
+            0:
+                index += 1
+            1:
+                index += 1
+    return 0
+
+fn workspace_graph_fingerprint(
+    module_ids: tryte[8],
+    edge_from: tryte[16],
+    edge_to: tryte[16],
+    module_count: tryte,
+    edge_count: tryte
+) -> tryte:
+    match module_count <=> 0:
+        -1:
+            return -1
+        0:
+            return -1
+        1:
+            match module_count <=> 8:
+                -1:
+                    mut checksum: tryte = 0
+                    mut index: tryte = 0
+                    while index < module_count:
+                        checksum = mix(checksum, 100, module_ids[index])
+                        index += 1
+                    mut edge_index: tryte = 0
+                    while edge_index < edge_count:
+                        match contains_value(module_ids, module_count, edge_from[edge_index]):
+                            -1:
+                                match contains_value(module_ids, module_count, edge_to[edge_index]):
+                                    -1:
+                                        checksum = mix(checksum, 102, edge_from[edge_index])
+                                        checksum = mix(checksum, 103, edge_to[edge_index])
+                                        edge_index += 1
+                                    0:
+                                        return -1
+                                    1:
+                                        return -1
+                            0:
+                                return -1
+                            1:
+                                return -1
+                    return checksum
+                0:
+                    return -1
+                1:
+                    return -1
