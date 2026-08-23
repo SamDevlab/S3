@@ -101,7 +101,10 @@ ROOT/
 `benchmark-id.txt` contains the canonical `benchmark_id`. The directory name
 is only a safe storage name and is never used as the benchmark identity. If
 the marker is absent, the analyzer derives the ID from the documents and
-requires it to remain identical across all runs.
+requires it to remain identical across all runs. For the default three-run
+profile, storage must contain exactly `run-1`, `run-2`, and `run-3`; missing,
+renumbered, unexpected, or duplicated benchmark storage directories are
+rejected rather than silently ignored.
 
 Report publication is transactional until both output files are installed.
 Pre-commit failures restore previous destinations. If restoration itself

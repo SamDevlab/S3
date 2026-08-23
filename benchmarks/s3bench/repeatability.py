@@ -346,15 +346,28 @@ def _load_runs(root: Path, expected_runs: int) -> list[_Run]:
     if not benchmark_dirs:
         raise RepeatabilityError("benchmark root contains no benchmark directories")
     runs: list[_Run] = []
+    benchmark_locations: dict[str, str] = {}
+    expected_run_names = {f"run-{index}" for index in range(1, expected_runs + 1)}
     for benchmark_dir in benchmark_dirs:
         marker_path = benchmark_dir / "benchmark-id.txt"
         expected_id = _read_benchmark_marker(marker_path) if marker_path.exists() else None
         directory_ids: set[str] = set()
-        run_dirs = sorted(path for path in benchmark_dir.iterdir() if path.is_dir() and path.name.startswith("run-"))
-        if len(run_dirs) != expected_runs:
+        child_dirs = sorted(path for path in benchmark_dir.iterdir() if path.is_dir())
+        run_dirs = [path for path in child_dirs if path.name.startswith("run-")]
+        actual_run_names = {path.name for path in run_dirs}
+        unexpected_dirs = sorted(
+            path.name for path in child_dirs if path.name not in expected_run_names
+        )
+        if unexpected_dirs or actual_run_names != expected_run_names:
+            missing_runs = sorted(expected_run_names - actual_run_names)
+            unexpected_runs = sorted(actual_run_names - expected_run_names)
             raise RepeatabilityError(
-                f"{benchmark_dir.name}: expected {expected_runs} runs, got {len(run_dirs)}"
+                f"{benchmark_dir.name}: invalid run layout; "
+                f"missing_runs={missing_runs!r}, "
+                f"unexpected_runs={unexpected_runs!r}, "
+                f"unexpected_directories={unexpected_dirs!r}"
             )
+        run_dirs.sort(key=lambda path: int(path.name.removeprefix("run-")))
         for run_dir in run_dirs:
             results_path = run_dir / "results.json"
             stdout_path = run_dir / "results.stdout"
@@ -386,6 +399,12 @@ def _load_runs(root: Path, expected_runs: int) -> list[_Run]:
                 raise RepeatabilityError(
                     f"benchmark-id.txt disagrees with content in {run_dir}: "
                     f"expected {expected_id!r}, got {document_id!r}"
+                )
+            previous_location = benchmark_locations.setdefault(document_id, benchmark_dir.name)
+            if previous_location != benchmark_dir.name:
+                raise RepeatabilityError(
+                    f"duplicate benchmark_id {document_id!r} in storage directories "
+                    f"{previous_location!r} and {benchmark_dir.name!r}"
                 )
             directory_ids.add(document_id)
             runs.append(_Run(benchmark_dir.name, run_dir.name, document))
