@@ -127,6 +127,15 @@ A serialização:
 
 O mesmo diagnóstico produz os mesmos bytes.
 
+## Construção limitada
+
+Componentes que montam mensagens incrementalmente podem usar
+`DiagnosticMessageBuilder`. O builder mede bytes UTF-8, aplica limites
+explícitos para a mensagem e notas e falha antes de acrescentar um fragmento
+que excederia esses limites. Ele então produz o mesmo `Diagnostic` tipado e
+serializável; não há truncamento silencioso nem dependência de parsing da
+mensagem.
+
 ## Categorias e códigos
 
 Categorias hospedadas com uso atual:
