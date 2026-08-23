@@ -1,0 +1,31 @@
+{
+  "milestone": "M2.50",
+  "name": "product-toolchain-integration-checkpoint",
+  "base_sha": "9e69f20185b5374cc288ed02a455a995fc0c5fb0",
+  "source_head": "b59674ffee7dff8e92c3aedaaa02b18dc644612a",
+  "status": "COMPLETE",
+  "integrated_milestones": [
+    "M2.41",
+    "M2.42",
+    "M2.43",
+    "M2.44",
+    "M2.45",
+    "M2.46",
+    "M2.47",
+    "M2.48",
+    "M2.49"
+  ],
+  "level_c_profile": "PASS",
+  "level_c_selected": 9,
+  "level_c_passed": 9,
+  "level_c_failed": 0,
+  "level_c_timed_out": 0,
+  "level_c_inner_skipped": 28,
+  "focused_profile_tests_passed": 29,
+  "compileall": "PASS",
+  "diff_check": "PASS",
+  "benchmark": "NOT_RUN",
+  "t4": "NOT_RUN",
+  "performance_claim": "NONE",
+  "m2_51_started": false
+}
