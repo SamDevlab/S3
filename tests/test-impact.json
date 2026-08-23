@@ -79,6 +79,7 @@
     "m258": ["tests/test_m258_differential_harness.py"],
     "m259": ["tests/test_m259_candidate_promotion.py"],
     "m260": ["tests/test_m260_integration_checkpoint.py"],
+    "m261": ["tests/test_m261_lexer_candidate.py"],
     "m241-m259-level-c": [
       "tests/test_m241_workspace_semantic_graph.py",
       "tests/test_m242_lsp_project_intelligence.py",
@@ -935,6 +936,33 @@
       "tests": ["tests/test_m260_integration_checkpoint.py"],
       "milestones": ["m260", "integration", "level-c"],
       "shards": ["m260"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/lexer_candidate.py",
+      "tests": ["tests/test_m261_lexer_candidate.py"],
+      "milestones": ["m261", "lexer", "self-hosting"],
+      "shards": ["m261"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "selfhost/frontend/lexer_candidate.s3",
+      "tests": ["tests/test_m261_lexer_candidate.py"],
+      "milestones": ["m261", "lexer", "self-hosting"],
+      "shards": ["m261"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m261_lexer_candidate.py",
+      "tests": ["tests/test_m261_lexer_candidate.py"],
+      "milestones": ["m261", "lexer", "self-hosting"],
+      "shards": ["m261"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
