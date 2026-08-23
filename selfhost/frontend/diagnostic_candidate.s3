@@ -1,0 +1,81 @@
+fn diagnostic_category(code: tryte) -> tryte:
+    match code <=> 1:
+        -1:
+            return 0
+        0:
+            return 1
+        1:
+            match code <=> 5:
+                -1:
+                    return 1
+                0:
+                    return 1
+                1:
+                    match code == 6:
+                        -1:
+                            return 2
+                        0:
+                            return 0
+                        1:
+                            return 0
+
+fn recovery_action(code: tryte) -> tryte:
+    match code == 1:
+        -1:
+            return 1
+        0:
+            match code == 2:
+                -1:
+                    return 2
+                0:
+                    match code == 3:
+                        -1:
+                            return 3
+                        0:
+                            match code == 4:
+                                -1:
+                                    return 4
+                                0:
+                                    match code == 5:
+                                        -1:
+                                            return 4
+                                        0:
+                                            match code == 6:
+                                                -1:
+                                                    return 5
+                                                0:
+                                                    return 0
+                                                1:
+                                                    return 0
+                                        1:
+                                            return 0
+                                1:
+                                    return 0
+                        1:
+                            return 0
+                1:
+                    return 0
+        1:
+            return 0
+
+fn diagnostic_recovery_contract(code: tryte) -> tryte:
+    mut category: tryte = diagnostic_category(code)
+    mut action: tryte = recovery_action(code)
+    match category <=> 0:
+        -1:
+            return -1
+        0:
+            return -1
+        1:
+            match action <=> 0:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    mut scaled: tryte = category
+                    mut rounds: tryte = 0
+                    while rounds < 5:
+                        scaled += scaled
+                        rounds += 1
+                    return scaled + action
