@@ -25,11 +25,12 @@ def native_toolchain() -> NativeToolchain:
 
 def _reference_source() -> str:
     return """fn update(value: &mut tryte) -> tryte:
-    *value = *value + 30
-    return *value
+    *value = 40
+    return 40
 fn main() -> tryte:
     mut value: tryte = 10
-    return update(&mut value)
+    updated: tryte = update(&mut value)
+    return value
 """
 
 
