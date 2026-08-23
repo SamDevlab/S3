@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import platform
 import shutil
 from typing import Sequence
 
@@ -163,6 +164,8 @@ class WindowsToolchainProbe:
 
 
 def probe_windows_toolchain() -> WindowsToolchainProbe:
+    if platform.system() != "Windows":
+        return WindowsToolchainProbe(None, None, None)
     compiler = next((shutil.which(name) for name in ("clang-cl", "clang") if shutil.which(name)), None)
     linker = next((shutil.which(name) for name in ("lld-link", "link") if shutil.which(name)), None)
     assembler = next((shutil.which(name) for name in ("ml64", "llvm-mc") if shutil.which(name)), None)

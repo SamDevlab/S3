@@ -30,6 +30,7 @@ class T4TimeoutClass(str, Enum):
     DEFAULT = "DEFAULT"
     HEAVY_SELF_HOSTING = "HEAVY_SELF_HOSTING"
     HEAVY_RENDERER = "HEAVY_RENDERER"
+    HEAVY_NATIVE_INTEGRATION = "HEAVY_NATIVE_INTEGRATION"
 
 
 @dataclass(frozen=True, slots=True)
