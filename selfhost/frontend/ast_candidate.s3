@@ -1,0 +1,135 @@
+fn is_type_kind(kind: tryte) -> trit:
+    match kind == 25:
+        -1:
+            return -1
+        0:
+            match kind == 26:
+                -1:
+                    return -1
+                0:
+                    match kind == 27:
+                        -1:
+                            return -1
+                        0:
+                            match kind == 28:
+                                -1:
+                                    return -1
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        1:
+                            return 0
+                1:
+                    return 0
+        1:
+            return 0
+
+fn is_literal_kind(kind: tryte) -> trit:
+    match kind == 30:
+        -1:
+            return -1
+        0:
+            match kind == 31:
+                -1:
+                    return -1
+                0:
+                    match kind == 32:
+                        -1:
+                            return -1
+                        0:
+                            return 0
+                        1:
+                            return 0
+                1:
+                    return 0
+        1:
+            return 0
+
+fn add_mod(left: tryte, amount: tryte) -> tryte:
+    mut result: tryte = left
+    match result <=> 301 - amount:
+        -1:
+            result += amount
+        0:
+            result = result - (301 - amount)
+        1:
+            result = result - (301 - amount)
+    return result
+
+fn mix(checksum: tryte, kind: tryte, value: tryte) -> tryte:
+    mut result: tryte = checksum
+    mut rounds: tryte = 0
+    while rounds < 5:
+        result = add_mod(result, result)
+        rounds += 1
+    result = add_mod(result, kind)
+    result = add_mod(result, value)
+    return result
+
+fn canonical_ast_fingerprint(
+    kinds: tryte[64],
+    widths: tryte[64],
+    symbols: tryte[64],
+    length: tryte
+) -> tryte:
+    mut expected: tryte[14] = [
+        9,
+        29,
+        51,
+        52,
+        33,
+        0,
+        57,
+        61,
+        62,
+        10,
+        -1,
+        61,
+        63,
+        64
+    ]
+    match length == 14:
+        -1:
+            mut index: tryte = 0
+            mut valid: tryte = 1
+            while index < 14:
+                mut accepted: trit = 0
+                match index == 5:
+                    -1:
+                        accepted = is_type_kind(kinds[index])
+                    0:
+                        match index == 10:
+                            -1:
+                                accepted = is_literal_kind(kinds[index])
+                            0:
+                                accepted = kinds[index] == expected[index]
+                            1:
+                                accepted = kinds[index] == expected[index]
+                    1:
+                        accepted = kinds[index] == expected[index]
+                match accepted:
+                    -1:
+                        index += 1
+                    0:
+                        valid = 0
+                        index = 14
+                    1:
+                        valid = 0
+                        index = 14
+            match valid == 1:
+                -1:
+                    mut checksum: tryte = 0
+                    checksum = mix(checksum, 100, 1)
+                    checksum = mix(checksum, kinds[1], symbols[1])
+                    checksum = mix(checksum, kinds[5], kinds[5])
+                    checksum = mix(checksum, kinds[10], symbols[10])
+                    return checksum
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            return -1
+        1:
+            return -1
