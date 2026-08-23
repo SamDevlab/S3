@@ -1,0 +1,20 @@
+{
+  "milestone": "M2.43",
+  "name": "linux-x86-64-native-conformance-closure",
+  "base_sha": "efc1e15fae0f37d127c7d53cf1870df49b4f43a5",
+  "status": "IMPLEMENTED",
+  "capabilities": [
+    "o0-o1-parity",
+    "sysv-calls-and-returns",
+    "stack-and-recursion",
+    "reference-and-memory",
+    "tmov-coverage",
+    "compact-ea-off"
+  ],
+  "focused_tests": "PENDING_REMOTE_LINUX",
+  "focused_failures": "PENDING_REMOTE_LINUX",
+  "compileall": "PENDING",
+  "diff_check": "PENDING",
+  "benchmark": "NOT_APPLICABLE",
+  "t4": "NOT_RUN"
+}

@@ -46,6 +46,7 @@
     }
   },
   "shards": {
+    "m243": ["tests/test_m243_linux_native_conformance.py"],
     "compiler": ["tests/test_compiler.py", "tests/test_cli_source_syntax.py"],
     "m139-m140": ["tests/test_m139_dynamic_buffers.py", "tests/test_m140_ordered_collections.py"],
     "m151": [
@@ -536,6 +537,15 @@
       "shards": ["compiler"],
       "native_required": false,
       "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m243_linux_native_conformance.py",
+      "tests": ["tests/test_m243_linux_native_conformance.py"],
+      "milestones": ["m243"],
+      "shards": ["m243"],
+      "native_required": true,
+      "environment_requirements": ["native-x86_64"],
       "global_impact": false
     },
     {
