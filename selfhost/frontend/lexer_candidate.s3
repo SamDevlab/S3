@@ -1,0 +1,598 @@
+fn is_space(unit: tryte) -> trit:
+    match unit == 9:
+        -1:
+            return -1
+        0:
+            match unit == 10:
+                -1:
+                    return -1
+                0:
+                    match unit == 13:
+                        -1:
+                            return -1
+                        0:
+                            match unit == 32:
+                                -1:
+                                    return -1
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        1:
+                            return -1
+                1:
+                    return -1
+        1:
+            return -1
+
+fn is_digit(unit: tryte) -> trit:
+    match unit <=> 48:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match unit <=> 57:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn is_lower(unit: tryte) -> trit:
+    match unit <=> 97:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match unit <=> 122:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn is_upper(unit: tryte) -> trit:
+    match unit <=> 65:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match unit <=> 90:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn is_identifier_start(unit: tryte) -> trit:
+    match is_lower(unit):
+        -1:
+            return -1
+        0:
+            match is_upper(unit):
+                -1:
+                    return -1
+                0:
+                    match unit == 95:
+                        -1:
+                            return -1
+                        0:
+                            return 0
+                        1:
+                            return -1
+                1:
+                    return -1
+        1:
+            return -1
+
+fn is_identifier_continue(unit: tryte) -> trit:
+    match is_identifier_start(unit):
+        -1:
+            return -1
+        0:
+            return is_digit(unit)
+        1:
+            return is_digit(unit)
+
+fn is_line_end(unit: tryte) -> trit:
+    match unit == 10:
+        -1:
+            return -1
+        0:
+            match unit == 13:
+                -1:
+                    return -1
+                0:
+                    return 0
+                1:
+                    return 0
+        1:
+            return 0
+
+fn add_mod(left: tryte, amount: tryte) -> tryte:
+    mut result: tryte = left
+    match result <=> 301 - amount:
+        -1:
+            result += amount
+        0:
+            result = result - (301 - amount)
+        1:
+            result = result - (301 - amount)
+    return result
+
+fn mix(checksum: tryte, kind: tryte, width: tryte) -> tryte:
+    mut result: tryte = checksum
+    mut rounds: tryte = 0
+    while rounds < 5:
+        result = add_mod(result, result)
+        rounds += 1
+    result = add_mod(result, kind)
+    result = add_mod(result, width)
+    return result
+
+fn two(input: tryte[96], start: tryte, length: tryte, left: tryte, right: tryte) -> trit:
+    match start + 1 <=> length:
+        -1:
+            match input[start] == left:
+                -1:
+                    return input[start + 1] == right
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+
+fn decimal_marker(input: tryte[96], start: tryte, length: tryte) -> trit:
+    match start + 1 <=> length:
+        -1:
+            match input[start] == 46:
+                -1:
+                    return is_digit(input[start + 1])
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+
+fn keyword_kind(input: tryte[96], start: tryte, end: tryte) -> tryte:
+    mut width: tryte = end - start
+    match width <=> 2:
+        -1:
+            return 29
+        0:
+            match input[start] == 102:
+                -1:
+                    match input[start + 1] == 110:
+                        -1:
+                            return 9
+                        0:
+                            return 29
+                        1:
+                            return 29
+                0:
+                    return 29
+                1:
+                    return 29
+        1:
+            discard 0
+    match width <=> 3:
+        -1:
+            return 29
+        0:
+            match input[start] == 109:
+                -1:
+                    match input[start + 1] == 117:
+                        -1:
+                            match input[start + 2] == 116:
+                                -1:
+                                    return 24
+                                0:
+                                    return 29
+                                1:
+                                    return 29
+                        0:
+                            return 29
+                        1:
+                            return 29
+                0:
+                    return 29
+                1:
+                    return 29
+        1:
+            discard 0
+    match width <=> 4:
+        -1:
+            return 29
+        0:
+            match input[start] == 116:
+                -1:
+                    match input[start + 1] == 114:
+                        -1:
+                            match input[start + 2] == 105:
+                                -1:
+                                    match input[start + 3] == 116:
+                                        -1:
+                                            return 25
+                                        0:
+                                            return 29
+                                        1:
+                                            return 29
+                                0:
+                                    return 29
+                                1:
+                                    return 29
+                        0:
+                            return 29
+                        1:
+                            return 29
+                0:
+                    return 29
+                1:
+                    return 29
+        1:
+            discard 0
+    match width <=> 5:
+        -1:
+            return 29
+        0:
+            match input[start] == 116:
+                -1:
+                    match input[start + 1] == 114:
+                        -1:
+                            match input[start + 2] == 121:
+                                -1:
+                                    match input[start + 3] == 116:
+                                        -1:
+                                            match input[start + 4] == 101:
+                                                -1:
+                                                    return 26
+                                                0:
+                                                    return 29
+                                                1:
+                                                    return 29
+                                        0:
+                                            return 29
+                                        1:
+                                            return 29
+                                0:
+                                    return 29
+                                1:
+                                    return 29
+                        0:
+                            return 29
+                        1:
+                            return 29
+                0:
+                    return 29
+                1:
+                    return 29
+        1:
+            discard 0
+    match width <=> 6:
+        -1:
+            return 29
+        0:
+            match input[start] == 114:
+                -1:
+                    match input[start + 1] == 101:
+                        -1:
+                            match input[start + 2] == 116:
+                                -1:
+                                    match input[start + 3] == 117:
+                                        -1:
+                                            match input[start + 4] == 114:
+                                                -1:
+                                                    match input[start + 5] == 110:
+                                                        -1:
+                                                            return 10
+                                                        0:
+                                                            return 29
+                                                        1:
+                                                            return 29
+                                                0:
+                                                    return 29
+                                                1:
+                                                    return 29
+                                        0:
+                                            return 29
+                                        1:
+                                            return 29
+                                0:
+                                    return 29
+                                1:
+                                    return 29
+                        0:
+                            return 29
+                        1:
+                            return 29
+                0:
+                    return 29
+                1:
+                    return 29
+        1:
+            discard 0
+    return 29
+
+fn math_kind(unit: tryte) -> tryte:
+    match unit == 126:
+        -1:
+            return 41
+        0:
+            match unit == 38:
+                -1:
+                    return 42
+                0:
+                    match unit == 124:
+                        -1:
+                            return 43
+                        0:
+                            match unit == 43:
+                                -1:
+                                    return 44
+                                0:
+                                    match unit == 45:
+                                        -1:
+                                            return 45
+                                        0:
+                                            match unit == 42:
+                                                -1:
+                                                    return 46
+                                                0:
+                                                    match unit == 47:
+                                                        -1:
+                                                            return 47
+                                                        0:
+                                                            match unit == 61:
+                                                                -1:
+                                                                    return 50
+                                                                0:
+                                                                    return 0
+                                                                1:
+                                                                    return 0
+                                                        1:
+                                                            return 0
+                                                1:
+                                                    return 0
+                                        1:
+                                            return 0
+                                1:
+                                    return 0
+                        1:
+                            return 0
+                1:
+                    return 0
+        1:
+            return 0
+
+fn delimiter_kind(unit: tryte) -> tryte:
+    match unit == 40:
+        -1:
+            return 51
+        0:
+            match unit == 41:
+                -1:
+                    return 52
+                0:
+                    match unit == 123:
+                        -1:
+                            return 53
+                        0:
+                            match unit == 125:
+                                -1:
+                                    return 54
+                                0:
+                                    match unit == 91:
+                                        -1:
+                                            return 55
+                                        0:
+                                            match unit == 93:
+                                                -1:
+                                                    return 56
+                                                0:
+                                                    return 0
+                                                1:
+                                                    return 0
+                                        1:
+                                            return 0
+                                1:
+                                    return 0
+                        1:
+                            return 0
+                1:
+                    return 0
+        1:
+            return 0
+
+fn separator_kind(unit: tryte) -> tryte:
+    match unit == 58:
+        -1:
+            return 57
+        0:
+            match unit == 59:
+                -1:
+                    return 58
+                0:
+                    match unit == 44:
+                        -1:
+                            return 59
+                        0:
+                            match unit == 46:
+                                -1:
+                                    return 60
+                                0:
+                                    return 0
+                                1:
+                                    return 0
+                        1:
+                            return 0
+                1:
+                    return 0
+        1:
+            return 0
+
+fn single_kind(unit: tryte) -> tryte:
+    mut result: tryte = math_kind(unit)
+    match result <=> 0:
+        -1:
+            return result
+        0:
+            result = delimiter_kind(unit)
+            match result <=> 0:
+                -1:
+                    return result
+                0:
+                    return separator_kind(unit)
+                1:
+                    return result
+        1:
+            return result
+
+fn lexer_fingerprint(input: tryte[96], length: tryte) -> tryte:
+    mut index: tryte = 0
+    mut checksum: tryte = 0
+    while index < length:
+        match is_space(input[index]):
+            -1:
+                index += 1
+            0:
+                match two(input, index, length, 47, 47):
+                    -1:
+                        index += 2
+                        mut comment: tryte = 1
+                        while comment == 1:
+                            match index <=> length:
+                                -1:
+                                    match is_line_end(input[index]):
+                                        -1:
+                                            comment = 0
+                                        0:
+                                            index += 1
+                                        1:
+                                            index += 1
+                                0:
+                                    comment = 0
+                                1:
+                                    comment = 0
+                    0:
+                        match is_identifier_start(input[index]):
+                            -1:
+                                mut start: tryte = index
+                                index += 1
+                                mut scanning: tryte = 1
+                                while scanning == 1:
+                                    match index <=> length:
+                                        -1:
+                                            match is_identifier_continue(input[index]):
+                                                -1:
+                                                    index += 1
+                                                0:
+                                                    scanning = 0
+                                                1:
+                                                    scanning = 0
+                                        0:
+                                            scanning = 0
+                                        1:
+                                            scanning = 0
+                                checksum = mix(checksum, keyword_kind(input, start, index), index - start)
+                            0:
+                                match is_digit(input[index]):
+                                    -1:
+                                        mut number_start: tryte = index
+                                        index += 1
+                                        mut number_scanning: tryte = 1
+                                        while number_scanning == 1:
+                                            match index <=> length:
+                                                -1:
+                                                    match is_digit(input[index]):
+                                                        -1:
+                                                            index += 1
+                                                        0:
+                                                            number_scanning = 0
+                                                        1:
+                                                            number_scanning = 0
+                                                0:
+                                                    number_scanning = 0
+                                                1:
+                                                    number_scanning = 0
+                                        mut number_kind: tryte = 30
+                                        match decimal_marker(input, index, length):
+                                            -1:
+                                                number_kind = 31
+                                                index += 2
+                                                mut fraction_scanning: tryte = 1
+                                                while fraction_scanning == 1:
+                                                    match index <=> length:
+                                                        -1:
+                                                            match is_digit(input[index]):
+                                                                -1:
+                                                                    index += 1
+                                                                0:
+                                                                    fraction_scanning = 0
+                                                                1:
+                                                                    fraction_scanning = 0
+                                                        0:
+                                                            fraction_scanning = 0
+                                                        1:
+                                                            fraction_scanning = 0
+                                            0:
+                                                discard 0
+                                            1:
+                                                discard 0
+                                        checksum = mix(checksum, number_kind, index - number_start)
+                                    0:
+                                        mut operator_kind: tryte = single_kind(input[index])
+                                        mut operator_width: tryte = 1
+                                        match two(input, index, length, 45, 62):
+                                            -1:
+                                                operator_kind = 33
+                                                operator_width = 2
+                                                index += 2
+                                            0:
+                                                match two(input, index, length, 60, 61):
+                                                    -1:
+                                                        operator_kind = 38
+                                                        operator_width = 2
+                                                        index += 2
+                                                    0:
+                                                        match two(input, index, length, 62, 61):
+                                                            -1:
+                                                                operator_kind = 40
+                                                                operator_width = 2
+                                                                index += 2
+                                                            0:
+                                                                index += 1
+                                                            1:
+                                                                index += 1
+                                                    1:
+                                                        index += 1
+                                            1:
+                                                index += 1
+                                        match operator_kind <=> 0:
+                                            -1:
+                                                return -1
+                                            0:
+                                                return -1
+                                            1:
+                                                checksum = mix(checksum, operator_kind, operator_width)
+                                    1:
+                                        return -1
+                            1:
+                                return -1
+                    1:
+                        return -1
+            1:
+                return -1
+    checksum = mix(checksum, 64, 0)
+    return checksum
