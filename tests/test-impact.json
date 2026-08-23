@@ -70,6 +70,7 @@
     "m248": ["tests/test_m248_experiment_promotion.py"],
     "m249": ["tests/test_m249_cross_target_evidence.py"],
     "m251": ["tests/test_m251_dynamic_text.py"],
+    "m252": ["tests/test_m252_deterministic_collections.py"],
     "m241-m249-level-c": [
       "tests/test_m241_workspace_semantic_graph.py",
       "tests/test_m242_lsp_project_intelligence.py",
@@ -744,6 +745,28 @@
       "tests": ["tests/test_m251_dynamic_text.py"],
       "milestones": ["m251", "dynamic-text"],
       "shards": ["m251"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/dynamic.py",
+      "tests": [
+        "tests/test_m140_ordered_collections.py",
+        "tests/test_m141_ordered_maps_sets.py",
+        "tests/test_m252_deterministic_collections.py"
+      ],
+      "milestones": ["m140", "m141", "m252", "collections"],
+      "shards": ["m139-m140", "m252"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m252_deterministic_collections.py",
+      "tests": ["tests/test_m252_deterministic_collections.py"],
+      "milestones": ["m252", "collections"],
+      "shards": ["m252"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false

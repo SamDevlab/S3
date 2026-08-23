@@ -898,10 +898,12 @@ class DynamicMap:
         self._storage[self._length] = (0, 0)
 
     def key_at(self, index: int) -> int:
+        self._require_live()
         _validate_vector_index(index, self._length)
         return self._storage[index][0]
 
     def value_at(self, index: int) -> int:
+        self._require_live()
         _validate_vector_index(index, self._length)
         return self._storage[index][1]
 

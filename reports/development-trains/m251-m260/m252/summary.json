@@ -1,0 +1,31 @@
+{
+  "milestone": "M2.52",
+  "name": "deterministic-collections",
+  "base_sha": "39240df4cc51f54e6c1b358c8a241ddaf7b4d13e",
+  "source_head": "3be16005c14ef6eabd3d5934302dc4f68060291a",
+  "status": "COMPLETE",
+  "capabilities": [
+    "deterministic-map-replay",
+    "deterministic-set-replay",
+    "moved-map-index-rejection"
+  ],
+  "focused_tests_selected": 31,
+  "focused_tests_passed": 31,
+  "focused_tests_skipped": 0,
+  "focused_failures": 0,
+  "focused_timeouts": 0,
+  "compileall": "PASS",
+  "diff_check": "PASS",
+  "t2_selected": 3,
+  "t2_passed": 3,
+  "t2_failed": 0,
+  "t2_timed_out": 0,
+  "t3_selected": 1,
+  "t3_passed": 1,
+  "t3_failed": 0,
+  "t3_timed_out": 0,
+  "benchmark": "NOT_RUN",
+  "t4": "NOT_RUN",
+  "performance_claim": "NONE",
+  "native_descriptor_abi": "NOT_IN_SCOPE"
+}
