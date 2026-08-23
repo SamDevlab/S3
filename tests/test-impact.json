@@ -77,6 +77,7 @@
     "m256": ["tests/test_m256_structured_diagnostics.py"],
     "m257": ["tests/test_m257_canonical_serialization.py"],
     "m258": ["tests/test_m258_differential_harness.py"],
+    "m259": ["tests/test_m259_candidate_promotion.py"],
     "m241-m249-level-c": [
       "tests/test_m241_workspace_semantic_graph.py",
       "tests/test_m242_lsp_project_intelligence.py",
@@ -885,6 +886,24 @@
       "tests": ["tests/test_m258_differential_harness.py"],
       "milestones": ["m258", "differential", "self-hosting"],
       "shards": ["m258"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/promotion_integration.py",
+      "tests": ["tests/test_m259_candidate_promotion.py"],
+      "milestones": ["m259", "promotion", "self-hosting"],
+      "shards": ["m259"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m259_candidate_promotion.py",
+      "tests": ["tests/test_m259_candidate_promotion.py"],
+      "milestones": ["m259", "promotion", "self-hosting"],
+      "shards": ["m259"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false

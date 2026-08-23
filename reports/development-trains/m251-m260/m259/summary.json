@@ -1,0 +1,32 @@
+{
+  "milestone": "M2.59",
+  "name": "candidate-promotion-integration",
+  "base_sha": "fff8ce2ee70216e9496bd648068ccbf3e2765aa6",
+  "source_head": "0c44a2e0c1feaa3c0025ed6d31719fc26ad81bb8",
+  "status": "COMPLETE",
+  "capabilities": [
+    "canonical-candidate-metadata",
+    "provenance-source-binding",
+    "differential-correctness-gate",
+    "shared-fail-closed-promotion"
+  ],
+  "focused_tests_selected": 59,
+  "focused_tests_passed": 59,
+  "focused_tests_skipped": 0,
+  "focused_failures": 0,
+  "focused_timeouts": 0,
+  "compileall": "PASS",
+  "diff_check": "PASS",
+  "t2_selected": 1,
+  "t2_passed": 1,
+  "t2_failed": 0,
+  "t2_timed_out": 0,
+  "t3_selected": 1,
+  "t3_passed": 1,
+  "t3_failed": 0,
+  "t3_timed_out": 0,
+  "benchmark": "NOT_RUN",
+  "t4": "NOT_RUN",
+  "performance_claim": "NONE",
+  "native_descriptor_abi": "NOT_IN_SCOPE"
+}
