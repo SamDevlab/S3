@@ -1,0 +1,45 @@
+module selfhost.frontend.assembly_frontend_closure
+
+from bounded_text_types import BoundedText
+from selfhost.assembly.assembly_frontend import analyze_bounded_assembly
+from selfhost.assembly.frontend_types import AssemblyFrontendResult
+from selfhost.assembly.frontend_types import AssemblyFrontendSummary
+
+fn add_mod(left: tryte, amount: tryte) -> tryte:
+    mut result: tryte = left
+    match result <=> 301 - amount:
+        -1:
+            result += amount
+        0:
+            result = result - (301 - amount)
+        1:
+            result = result - (301 - amount)
+    return result
+
+fn mix_value(checksum: tryte, value: tryte) -> tryte:
+    mut result: tryte = checksum
+    result = add_mod(result, result)
+    result = add_mod(result, result)
+    result = add_mod(result, result)
+    result = add_mod(result, result)
+    result = add_mod(result, result)
+    return add_mod(result, value)
+
+fn summary_fingerprint(summary: AssemblyFrontendSummary) -> tryte:
+    mut checksum: tryte = 0
+    checksum = mix_value(checksum, summary.version)
+    checksum = mix_value(checksum, summary.function_count)
+    checksum = mix_value(checksum, summary.declaration_count)
+    checksum = mix_value(checksum, summary.block_count)
+    checksum = mix_value(checksum, summary.call_count)
+    checksum = mix_value(checksum, summary.return_count)
+    checksum = mix_value(checksum, summary.max_result_width)
+    checksum = mix_value(checksum, summary.ended)
+    return checksum
+
+export fn assembly_frontend_fingerprint(text: BoundedText) -> tryte:
+    match analyze_bounded_assembly(text):
+        AssemblyFrontendResult.Summary(summary):
+            return summary_fingerprint(summary)
+        AssemblyFrontendResult.Error(error):
+            return -1

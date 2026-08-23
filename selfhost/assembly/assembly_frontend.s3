@@ -8,25 +8,21 @@ from selfhost.assembly.frontend_types import AssemblyFrontendSummary
 from selfhost.assembly.parser_types import AssemblyParserResult
 from selfhost.assembly.parser_types import AssemblyParserState
 
+fn scan_frontend(text: BoundedText, input_state: AssemblyParserState, ended: tryte) -> AssemblyFrontendResult:
+    result: AssemblyParserResult = next_assembly_parser_event(text, input_state)
+    match result:
+        AssemblyParserResult.Event(event, state):
+            match event.kind <=> 7:
+                0:
+                    return scan_frontend(text, state, 1)
+                -1:
+                    return scan_frontend(text, state, ended)
+                1:
+                    return scan_frontend(text, state, ended)
+        AssemblyParserResult.End(state):
+            return AssemblyFrontendResult.Summary(summary=AssemblyFrontendSummary(version=state.version, function_count=state.function_count, declaration_count=state.declaration_count, block_count=state.block_count, call_count=state.call_count, return_count=state.return_count, max_result_width=state.max_result_width, ended=ended))
+        AssemblyParserResult.Error(error, state):
+            return AssemblyFrontendResult.Error(error=error)
+
 export fn analyze_bounded_assembly(text: BoundedText) -> AssemblyFrontendResult:
-    mut state: AssemblyParserState = initial_assembly_parser_state()
-    mut ended: tryte = 0
-    mut keep_scanning: tryte = 1
-    while keep_scanning == 1:
-        result: AssemblyParserResult = next_assembly_parser_event(text, state)
-        match result:
-            AssemblyParserResult.Event(event, next_state):
-                state = next_state
-                match event.kind <=> 7:
-                    0:
-                        ended = 1
-                    -1:
-                        discard 0
-                    1:
-                        discard 0
-            AssemblyParserResult.End(end_state):
-                state = end_state
-                keep_scanning = 0
-            AssemblyParserResult.Error(error, error_state):
-                return AssemblyFrontendResult.Error(error=error)
-    return AssemblyFrontendResult.Summary(summary=AssemblyFrontendSummary(version=state.version, function_count=state.function_count, declaration_count=state.declaration_count, block_count=state.block_count, call_count=state.call_count, return_count=state.return_count, max_result_width=state.max_result_width, ended=ended))
+    return scan_frontend(text, initial_assembly_parser_state(), 0)
