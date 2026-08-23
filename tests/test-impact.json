@@ -48,6 +48,12 @@
   "shards": {
     "m243": ["tests/test_m243_linux_native_conformance.py"],
     "m244": ["tests/test_m244_http2_dynamic_hpack.py"],
+    "m245": [
+      "tests/test_m187_package_signatures.py",
+      "tests/test_m195_registry_v2.py",
+      "tests/test_m196_signed_registry_index.py",
+      "tests/test_m245_signed_registry.py"
+    ],
     "compiler": ["tests/test_compiler.py", "tests/test_cli_source_syntax.py"],
     "m139-m140": ["tests/test_m139_dynamic_buffers.py", "tests/test_m140_ordered_collections.py"],
     "m151": [
@@ -568,6 +574,29 @@
       "tests": ["tests/test_m244_http2_dynamic_hpack.py"],
       "milestones": ["m244"],
       "shards": ["m244"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/signed_registry_client.py",
+      "tests": [
+        "tests/test_m187_package_signatures.py",
+        "tests/test_m195_registry_v2.py",
+        "tests/test_m196_signed_registry_index.py",
+        "tests/test_m245_signed_registry.py"
+      ],
+      "milestones": ["m187", "m195", "m196", "m245", "registry", "security"],
+      "shards": ["m245"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m245_signed_registry.py",
+      "tests": ["tests/test_m245_signed_registry.py"],
+      "milestones": ["m245"],
+      "shards": ["m245"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
