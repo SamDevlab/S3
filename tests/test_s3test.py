@@ -30,6 +30,8 @@ def test_dynamic_selection_is_stable_and_explainable() -> None:
         "tests/test_m141_ordered_maps_sets.py",
         "tests/test_m162_borrowed_views.py",
         "tests/test_m163_deterministic_iteration.py",
+        "tests/test_m251_dynamic_text.py",
+        "tests/test_m252_deterministic_collections.py",
         "tests/test_s3_slice_capability.py",
     ]
     plan = render_plan(selected, ["bootstrap/s3/dynamic.py"])
