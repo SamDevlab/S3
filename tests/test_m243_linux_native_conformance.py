@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from bootstrap.s3.backends.x86_64 import NativeToolchain, X8664Backend
-from bootstrap.s3.emulator import Emulator
+from bootstrap.s3.ir_emulator import execute_ir
 from bootstrap.s3.pipeline import compile_source
 
 
@@ -24,12 +24,12 @@ def native_toolchain() -> NativeToolchain:
 
 
 def _reference_source() -> str:
-    return """fn update(values: &mut tryte[3]) -> tryte:
-    values[1] = values[0] + values[2]
-    return values[1]
+    return """fn update(value: &mut tryte) -> tryte:
+    *value = *value + 30
+    return *value
 fn main() -> tryte:
-    mut values: tryte[3] = [10, 20, 30]
-    return update(&mut values)
+    mut value: tryte = 10
+    return update(&mut value)
 """
 
 
@@ -84,8 +84,9 @@ def test_linux_native_o0_o1_conformance_matrix(
     native_toolchain: NativeToolchain,
     tmp_path: Path,
 ) -> None:
-    program = compile_source(source, optimization).assembly
-    assert Emulator().execute(program) == expected
+    compilation = compile_source(source, optimization)
+    assert execute_ir(compilation.ir) == expected
+    program = compilation.assembly
     assembly = X8664Backend(
         register_allocation=register_allocation,
         experimental_mode="off",
