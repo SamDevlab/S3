@@ -73,6 +73,7 @@
     "m252": ["tests/test_m252_deterministic_collections.py"],
     "m253": ["tests/test_m253_arena_memory.py"],
     "m254": ["tests/test_m254_recursive_substrate.py"],
+    "m255": ["tests/test_m255_source_manager.py"],
     "m241-m249-level-c": [
       "tests/test_m241_workspace_semantic_graph.py",
       "tests/test_m242_lsp_project_intelligence.py",
@@ -805,6 +806,24 @@
       "tests": ["tests/test_m254_recursive_substrate.py"],
       "milestones": ["m254", "recursive", "compiler-data"],
       "shards": ["m254"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/source_manager.py",
+      "tests": ["tests/test_m255_source_manager.py"],
+      "milestones": ["m255", "source-manager", "spans"],
+      "shards": ["m255"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m255_source_manager.py",
+      "tests": ["tests/test_m255_source_manager.py"],
+      "milestones": ["m255", "source-manager", "spans"],
+      "shards": ["m255"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
