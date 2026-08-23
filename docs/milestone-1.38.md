@@ -22,3 +22,8 @@ deterministic build context, `docker build`, `docker run`, an S3 application
 running in the container, foreign-helper integration, and native non-Docker
 regression. GPU capability is declaration/passthrough only; this milestone does
 not implement a GPU backend.
+
+M1.38 remains the supported Docker CLI compatibility integration. The future
+container boundary is documented in `docs/container-backend-architecture.md`:
+`DockerCliBackend` preserves this provider, while `S3OciBackend` is an
+experimental contract-only path and is not yet functional or the default.

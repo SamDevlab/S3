@@ -92,6 +92,11 @@
     "m269": ["tests/test_m269_frontend_canary.py"],
     "m270": ["tests/test_m270_frontend_self_hosting_checkpoint.py"],
     "m271": ["tests/test_m271_symbol_table_candidate.py"],
+    "container-backend-prework": [
+      "tests/test_container_backend_contract.py",
+      "tests/test_s3_docker.py",
+      "tests/test_project_container.py"
+    ],
     "m261-m269-level-c": [
       "tests/test_m261_lexer_candidate.py",
       "tests/test_m262_parser_candidate.py",
@@ -1345,6 +1350,41 @@
       "tests": ["tests/test_project_container.py", "tests/test_m145_build_graph.py"],
       "milestones": ["m145", "build"],
       "shards": ["m145-m146"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/container_backend.py",
+      "tests": [
+        "tests/test_container_backend_contract.py",
+        "tests/test_s3_docker.py",
+        "tests/test_project_container.py"
+      ],
+      "milestones": ["container", "m138"],
+      "shards": ["container-backend-prework"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/s3_docker.py",
+      "tests": [
+        "tests/test_s3_docker.py",
+        "tests/test_project_container.py",
+        "tests/test_container_backend_contract.py"
+      ],
+      "milestones": ["container", "m138"],
+      "shards": ["container-backend-prework"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/cli.py",
+      "tests": ["tests/test_cli.py", "tests/test_container_backend_contract.py"],
+      "milestones": ["container", "tooling"],
+      "shards": ["container-backend-prework", "compiler"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
