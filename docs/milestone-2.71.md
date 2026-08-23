@@ -39,7 +39,8 @@ milestones.
 - T2 focused contract: PASS (11 passed).
 - T3 `m271` shard: PASS (11 passed).
 - Impact metadata is present in `tests/test-impact.json`.
-- Natural CI is pending after repository Actions were re-enabled; no CI PASS
-  is claimed until the workflow reports a terminal success.
+- Natural CI was dispatched after repository Actions were re-enabled, but every
+  job was rejected before startup by the account billing/spending-limit gate.
+  This is an external CI blocker; no CI PASS is claimed.
 - The Python compiler remains the default path and this candidate is not
   promoted.

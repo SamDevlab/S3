@@ -61,8 +61,10 @@ None recorded yet.
 - `git diff --check`: PASS.
 - CI was initially not observable because repository Actions permissions were
   disabled (`enabled=false`) despite the workflow and path filters covering
-  this PR. Actions were enabled before the candidate push; the natural CI
-  result is still pending and is not claimed as PASS here.
+  this PR. Actions were enabled before the candidate push. The resulting
+  natural checks were not started: GitHub annotated every job with an account
+  billing/spending-limit failure. This is an external CI blocker, not a test
+  result, and is not claimed as PASS.
 
 ## BENCHMARK_RELEVANCE
 
@@ -94,4 +96,4 @@ lookup result by comparing exact scalar lookup encodings.
 
 ## STATUS
 
-QUALIFIED_LOCAL_PENDING_NATURAL_CI
+QUALIFIED_LOCAL_BLOCKED_EXTERNAL_CI_BILLING
