@@ -80,7 +80,7 @@ def test_stage1_source_is_s3_logic_not_a_python_or_candidate_wrapper() -> None:
     assert "scan_token" in source
     assert "token_kind" in source
     assert "ir_opcode" in source
-    assert "ir_value: i64[32]" in source
+    assert "ir_value: i64[64]" in source
     assert "emit_ir_return" in source
     assert "foreign fn s3_stage1_read_byte" in source
     assert "foreign fn s3_stage1_write_byte" in source
@@ -106,7 +106,7 @@ def test_stage1_emitter_consumes_verified_ir_records() -> None:
 
 def test_stage0_compiles_real_stage1_source_and_preserves_io_calls() -> None:
     result = compile_source(SOURCE_PATH.read_text(encoding="utf-8"))
-    assembly = generate_native_assembly(result.assembly)
+    assembly = generate_native_assembly(result.assembly, max_memory_trits=65536)
     assert ".globl s3_main" in assembly
     assert "call s3_stage1_source_length" in assembly
     assert "call s3_stage1_read_byte" in assembly
@@ -185,4 +185,37 @@ def test_stage1_self_compile_attempt_reaches_emitter_boundary(tmp_path: Path) ->
     result = _run_stage1(executable, SOURCE_PATH.read_bytes())
     assert result.returncode == 2
     assert result.stdout == b""
-    assert result.stderr == b"S3_STAGE1_EMITTER_BLOCKED\n"
+    lines = result.stderr.splitlines()
+    assert lines[-1] == b"S3_STAGE1_EMITTER_BLOCKED"
+    assert lines[0].startswith(b"S3_STAGE1_AUDIT ")
+    audit_values = lines[0].split()[1:]
+    assert len(audit_values) == 26
+    assert all(value.lstrip(b"-").isdigit() for value in audit_values)
+    assert tuple(map(int, audit_values)) == (
+        30,
+        5,
+        64,
+        23,
+        75,
+        366,
+        103,
+        94,
+        6,
+        4,
+        155,
+        92,
+        0,
+        409,
+        25,
+        5,
+        64,
+        23,
+        25,
+        1212,
+        926,
+        363,
+        3,
+        104,
+        6,
+        103,
+    )

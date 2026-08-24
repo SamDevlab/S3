@@ -1,0 +1,56 @@
+[
+  {
+    "name": "two_functions_same_body",
+    "source": "fn a(value: tryte) -> tryte:\n    return value\n\nfn main() -> tryte:\n    return 0\n",
+    "markers": ["fn a", "fn main", "return"],
+    "categories": ["functions", "parameters", "returns"]
+  },
+  {
+    "name": "foreign_call",
+    "source": "foreign fn host(value: i64) -> i64\nfn main() -> tryte:\n    discard host(1)\n    return 0\n",
+    "markers": ["foreign fn", "discard host", "host(1)"],
+    "categories": ["foreign", "calls", "discards"]
+  },
+  {
+    "name": "mutable_assignment",
+    "source": "fn main() -> tryte:\n    mut value: tryte = 1\n    value = 2\n    return value\n",
+    "markers": ["mut value", "value = 2"],
+    "categories": ["locals", "assignments"]
+  },
+  {
+    "name": "arithmetic",
+    "source": "fn main() -> tryte:\n    mut value: tryte = 1 + 2\n    return value\n",
+    "markers": ["1 + 2"],
+    "categories": ["assignments", "binops"]
+  },
+  {
+    "name": "comparison",
+    "source": "fn main() -> tryte:\n    match 1 == 1:\n        -1:\n            return 1\n        0:\n            return 0\n        1:\n            return -1\n",
+    "markers": ["match", "=="],
+    "categories": ["matches", "comparisons", "returns"]
+  },
+  {
+    "name": "while_loop",
+    "source": "fn main() -> tryte:\n    mut value: tryte = 0\n    while value < 1:\n        value = value + 1\n    return value\n",
+    "markers": ["while", "value < 1", "value + 1"],
+    "categories": ["locals", "loops", "binops"]
+  },
+  {
+    "name": "break",
+    "source": "fn main() -> tryte:\n    while 1:\n        break\n    return 0\n",
+    "markers": ["while", "break"],
+    "categories": ["loops", "breaks"]
+  },
+  {
+    "name": "casts_as_calls",
+    "source": "fn main() -> tryte:\n    mut value: tryte = to_tryte(to_i64(7))\n    return value\n",
+    "markers": ["to_tryte(to_i64(7))"],
+    "categories": ["calls", "values"]
+  },
+  {
+    "name": "multiple_returns",
+    "source": "fn helper(value: tryte) -> tryte:\n    match value == 0:\n        -1:\n            return 1\n        0:\n            return 0\n        1:\n            return -1\n\nfn main() -> tryte:\n    return helper(0)\n",
+    "markers": ["return 1", "return 0", "return -1"],
+    "categories": ["returns", "control_flow"]
+  }
+]

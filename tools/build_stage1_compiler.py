@@ -16,6 +16,8 @@ from bootstrap.s3.pipeline import compile_source
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SOURCE = ROOT / "selfhost" / "compiler" / "s3c_stage1.s3"
 DEFAULT_HOST_IO = ROOT / "selfhost" / "compiler" / "stage1_host_io.c"
+STAGE1_MAX_MEMORY_TRITS = 65536
+STAGE1_MAX_INSTRUCTIONS = 100_000_000
 
 
 class Stage1BuildError(RuntimeError):
@@ -44,7 +46,7 @@ def build_stage1(
     source: Path = DEFAULT_SOURCE,
     host_io: Path = DEFAULT_HOST_IO,
     assembly_output: Path | None = None,
-    max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
+    max_instructions: int = STAGE1_MAX_INSTRUCTIONS,
 ) -> Path:
     """Compile S3 source with Stage0 and link a freestanding Linux process."""
 
@@ -62,6 +64,7 @@ def build_stage1(
     output.parent.mkdir(parents=True, exist_ok=True)
     assembly = generate_native_assembly(
         compile_source(source.read_text(encoding="utf-8")).assembly,
+        max_memory_trits=STAGE1_MAX_MEMORY_TRITS,
         max_instructions=max_instructions,
     )
     assembly_path = (assembly_output or output.with_suffix(".s")).resolve()
@@ -114,7 +117,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--source", type=Path, default=DEFAULT_SOURCE)
     parser.add_argument("--host-io", type=Path, default=DEFAULT_HOST_IO)
     parser.add_argument("--assembly", type=Path)
-    parser.add_argument("--max-instructions", type=int, default=DEFAULT_MAX_INSTRUCTIONS)
+    parser.add_argument("--max-instructions", type=int, default=STAGE1_MAX_INSTRUCTIONS)
     args = parser.parse_args(argv)
     try:
         built = build_stage1(
