@@ -96,6 +96,7 @@
     "m273": ["tests/test_m273_scalar_type_checking.py"],
     "m274": ["tests/test_m274_place_reference_candidate.py"],
     "m275": ["tests/test_m275_function_call_candidate.py"],
+    "m276": ["tests/test_m276_fixed_layout_candidate.py"],
     "container-backend-prework": [
       "tests/test_container_backend_contract.py",
       "tests/test_s3_docker.py",
