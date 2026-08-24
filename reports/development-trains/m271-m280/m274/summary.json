@@ -1,0 +1,25 @@
+{
+  "milestone": "M2.74",
+  "name": "bounded-self-hosted-place-and-reference-checks",
+  "base_branch": "integration/m271-m280-20260823",
+  "status": "IMPLEMENTED_PENDING_QUALIFICATION",
+  "candidate_source": "selfhost/semantic/place_reference_candidate.s3",
+  "reference": "bootstrap.s3.place_reference_candidate.reference_place_operation",
+  "place_kinds": {
+    "value": 1,
+    "shared_ref": 2,
+    "mutable_ref": 3
+  },
+  "focused_tests": "PASS_16_TESTS_PYTHON_3_11",
+  "compileall": "NOT_RUN",
+  "diff_check": "NOT_RUN",
+  "impact_metadata": "PENDING",
+  "smart_affected": "NOT_RUN",
+  "smart_shard": "NOT_RUN",
+  "benchmark": "NOT_RUN",
+  "t4": "NOT_RUN",
+  "performance_claim": "NONE",
+  "production_promotion": "NO",
+  "full_self_hosting_claim": "NO",
+  "next_milestone": "M2.75_AFTER_M2.74_QUALIFICATION"
+}
