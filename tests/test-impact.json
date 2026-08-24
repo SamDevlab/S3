@@ -102,6 +102,7 @@
     "m279": ["tests/test_m279_semantic_canary.py"],
     "m280": ["tests/test_m280_semantic_self_hosting_checkpoint.py"],
     "m281": ["tests/test_m281_canonical_ir_data_model.py"],
+    "m282": ["tests/test_m282_expression_lowering_candidate.py"],
     "container-backend-prework": [
       "tests/test_container_backend_contract.py",
       "tests/test_s3_docker.py",
@@ -130,6 +131,7 @@
       "tests/test_m279_semantic_canary.py"
     ],
     "m281": ["tests/test_m281_canonical_ir_data_model.py"],
+    "m282": ["tests/test_m282_expression_lowering_candidate.py"],
     "m241-m259-level-c": [
       "tests/test_m241_workspace_semantic_graph.py",
       "tests/test_m242_lsp_project_intelligence.py",
@@ -1601,6 +1603,33 @@
       "tests": ["tests/test_m281_canonical_ir_data_model.py"],
       "milestones": ["m281", "canonical-ir", "self-hosting"],
       "shards": ["m281"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/expression_lowering_candidate.py",
+      "tests": ["tests/test_m282_expression_lowering_candidate.py"],
+      "milestones": ["m282", "expression-lowering", "self-hosting"],
+      "shards": ["m282"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "selfhost/lowering/expression_lowering_candidate.s3",
+      "tests": ["tests/test_m282_expression_lowering_candidate.py"],
+      "milestones": ["m282", "expression-lowering", "self-hosting"],
+      "shards": ["m282"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m282_expression_lowering_candidate.py",
+      "tests": ["tests/test_m282_expression_lowering_candidate.py"],
+      "milestones": ["m282", "expression-lowering", "self-hosting"],
+      "shards": ["m282"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false

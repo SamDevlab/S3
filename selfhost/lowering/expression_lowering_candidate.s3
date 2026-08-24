@@ -1,0 +1,191 @@
+fn add_mod(left: tryte, right: tryte) -> tryte:
+    mut result: tryte = left
+    match right <=> 0:
+        -1:
+            mut threshold: tryte = -364 - right
+            match left <=> threshold:
+                -1:
+                    result = left - threshold
+                    result += 364
+                    result += 1
+                0:
+                    result = left + right
+                1:
+                    result = left + right
+        0:
+            return result
+        1:
+            mut threshold: tryte = 364 - right
+            match left <=> threshold:
+                -1:
+                    result = left + right
+                0:
+                    result = left + right
+                1:
+                    result = left - threshold
+                    result = result - 364
+                    result = result - 1
+    return result
+
+fn fold_identity(value: tryte) -> tryte:
+    mut result: tryte = value
+    while result < 0:
+        result += 181
+    while result > 180:
+        result = result - 181
+    return result
+
+fn mix(checksum: tryte, value: tryte) -> tryte:
+    return fold_identity(add_mod(checksum, value))
+
+fn valid_range(value: tryte, lower: tryte, upper: tryte) -> trit:
+    match value <=> lower:
+        -1:
+            return 0
+        0:
+            match value <=> upper:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+        1:
+            match value <=> upper:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn opcode_for_kind(kind: tryte) -> tryte:
+    match kind == 1:
+        -1:
+            return 1
+        0:
+            match kind == 2:
+                -1:
+                    return 5
+                0:
+                    match kind == 3:
+                        -1:
+                            return 6
+                        0:
+                            match kind == 4:
+                                -1:
+                                    return 7
+                                0:
+                                    return 201
+                                1:
+                                    return 201
+                        1:
+                            return 201
+                1:
+                    return 201
+        1:
+            return 201
+
+fn child_is_prior(child: tryte, node: tryte) -> trit:
+    match child < node:
+        -1:
+            return -1
+        0:
+            return 0
+        1:
+            return 0
+
+fn lower_expression(
+    kinds: tryte[3],
+    values: tryte[3],
+    left: tryte[3],
+    right: tryte[3],
+    node_count: tryte,
+    root: tryte
+) -> tryte:
+    match valid_range(node_count, 1, 3):
+        -1:
+            discard 0
+        0:
+            return 201
+        1:
+            return 201
+    match valid_range(root, 0, 2):
+        -1:
+            discard 0
+        0:
+            return 201
+        1:
+            return 201
+    match root < node_count:
+        -1:
+            discard 0
+        0:
+            return 201
+        1:
+            return 201
+    mut checksum: tryte = fold_identity(1)
+    checksum = mix(checksum, 0)
+    checksum = mix(checksum, 2)
+    checksum = mix(checksum, node_count)
+    mut register: tryte = 0
+    while register < node_count:
+        checksum = mix(checksum, 2)
+        register += 1
+    checksum = mix(checksum, 1)
+    checksum = mix(checksum, 0)
+    checksum = mix(checksum, node_count + 1)
+    mut node: tryte = 0
+    while node < node_count:
+        mut opcode: tryte = opcode_for_kind(kinds[node])
+        match opcode <=> 201:
+            -1:
+                discard 0
+            0:
+                return 202
+            1:
+                return 202
+        match valid_range(values[node], -364, 364):
+            -1:
+                discard 0
+            0:
+                return 202
+            1:
+                return 202
+        checksum = mix(checksum, opcode)
+        checksum = mix(checksum, node + 1)
+        match kinds[node] == 1:
+            -1:
+                checksum = mix(checksum, 0)
+                checksum = mix(checksum, 1)
+                checksum = mix(checksum, values[node])
+            0:
+                match child_is_prior(left[node], node):
+                    -1:
+                        discard 0
+                    0:
+                        return 203
+                    1:
+                        return 203
+                match child_is_prior(right[node], node):
+                    -1:
+                        discard 0
+                    0:
+                        return 203
+                    1:
+                        return 203
+                checksum = mix(checksum, 2)
+                checksum = mix(checksum, left[node])
+                checksum = mix(checksum, right[node])
+                checksum = mix(checksum, 0)
+            1:
+                return 202
+        checksum = mix(checksum, 0)
+        node += 1
+    checksum = mix(checksum, 23)
+    checksum = mix(checksum, 0)
+    checksum = mix(checksum, 1)
+    checksum = mix(checksum, root)
+    checksum = mix(checksum, 0)
+    checksum = mix(checksum, 0)
+    return checksum
