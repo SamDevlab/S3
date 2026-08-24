@@ -1,0 +1,27 @@
+{
+  "milestone": "M2.77",
+  "name": "bounded-control-flow-and-return-path-analysis",
+  "base_branch": "integration/m271-m280-20260823",
+  "status": "IMPLEMENTATION_GATES_PENDING",
+  "candidate_source": "selfhost/semantic/control_flow_candidate.s3",
+  "reference": "bootstrap.s3.control_flow_candidate.reference_control_flow",
+  "bounds": {
+    "max_statements": 8
+  },
+  "flow_classes": ["fallthrough", "returns", "terminates"],
+  "focused_tests": "PASS_11_TESTS_PYTHON_3_11",
+  "compileall": "PENDING",
+  "diff_check": "PENDING",
+  "impact_metadata": "PENDING",
+  "smart_affected": "PENDING",
+  "smart_shard": "PENDING",
+  "benchmark": "NOT_RUN",
+  "t4": "NOT_RUN",
+  "performance_claim": "NONE",
+  "production_promotion": "NO",
+  "full_self_hosting_claim": "NO",
+  "final_tested_source_head": "PENDING",
+  "final_candidate_head": "DOCUMENTATION_UPDATE_PENDING",
+  "source_changed_after_final_gates": false,
+  "next_milestone": "M2.78_AFTER_M2.77_INTEGRATION"
+}

@@ -97,6 +97,7 @@
     "m274": ["tests/test_m274_place_reference_candidate.py"],
     "m275": ["tests/test_m275_function_call_candidate.py"],
     "m276": ["tests/test_m276_fixed_layout_candidate.py"],
+    "m277": ["tests/test_m277_control_flow_candidate.py"],
     "container-backend-prework": [
       "tests/test_container_backend_contract.py",
       "tests/test_s3_docker.py",
@@ -1476,6 +1477,33 @@
       "tests": ["tests/test_m275_function_call_candidate.py"],
       "milestones": ["m275", "functions", "calls", "self-hosting"],
       "shards": ["m275"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/control_flow_candidate.py",
+      "tests": ["tests/test_m277_control_flow_candidate.py"],
+      "milestones": ["m277", "control-flow", "returns", "self-hosting"],
+      "shards": ["m277"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "selfhost/semantic/control_flow_candidate.s3",
+      "tests": ["tests/test_m277_control_flow_candidate.py"],
+      "milestones": ["m277", "control-flow", "returns", "self-hosting"],
+      "shards": ["m277"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m277_control_flow_candidate.py",
+      "tests": ["tests/test_m277_control_flow_candidate.py"],
+      "milestones": ["m277", "control-flow", "returns", "self-hosting"],
+      "shards": ["m277"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
