@@ -95,6 +95,7 @@
     "m272": ["tests/test_m272_name_resolution_candidate.py"],
     "m273": ["tests/test_m273_scalar_type_checking.py"],
     "m274": ["tests/test_m274_place_reference_candidate.py"],
+    "m275": ["tests/test_m275_function_call_candidate.py"],
     "container-backend-prework": [
       "tests/test_container_backend_contract.py",
       "tests/test_s3_docker.py",
@@ -1447,6 +1448,33 @@
       ],
       "milestones": ["container", "m138"],
       "shards": ["container-backend-prework"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/function_call_candidate.py",
+      "tests": ["tests/test_m275_function_call_candidate.py"],
+      "milestones": ["m275", "functions", "calls", "self-hosting"],
+      "shards": ["m275"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "selfhost/semantic/function_call_candidate.s3",
+      "tests": ["tests/test_m275_function_call_candidate.py"],
+      "milestones": ["m275", "functions", "calls", "self-hosting"],
+      "shards": ["m275"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m275_function_call_candidate.py",
+      "tests": ["tests/test_m275_function_call_candidate.py"],
+      "milestones": ["m275", "functions", "calls", "self-hosting"],
+      "shards": ["m275"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false

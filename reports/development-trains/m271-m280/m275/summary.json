@@ -1,0 +1,27 @@
+{
+  "milestone": "M2.75",
+  "name": "bounded-self-hosted-function-signatures-and-calls",
+  "base_branch": "integration/m271-m280-20260823",
+  "status": "IMPLEMENTED_PENDING_QUALIFICATION",
+  "candidate_source": "selfhost/semantic/function_call_candidate.s3",
+  "reference": "bootstrap.s3.function_call_candidate.reference_function_call",
+  "bounds": {
+    "max_functions": 8,
+    "max_parameters": 8
+  },
+  "focused_tests": "PASS_12_TESTS_PYTHON_3_11",
+  "compileall": "NOT_RUN",
+  "diff_check": "NOT_RUN",
+  "impact_metadata": "NOT_RUN",
+  "smart_affected": "NOT_RUN",
+  "smart_shard": "NOT_RUN",
+  "benchmark": "NOT_RUN",
+  "t4": "NOT_RUN",
+  "performance_claim": "NONE",
+  "production_promotion": "NO",
+  "full_self_hosting_claim": "NO",
+  "final_tested_source_head": "QUALIFICATION_PENDING",
+  "final_candidate_head": "DOCUMENTATION_UPDATE_PENDING",
+  "source_changed_after_final_gates": false,
+  "next_milestone": "M2.76_AFTER_M2.75_INTEGRATION"
+}

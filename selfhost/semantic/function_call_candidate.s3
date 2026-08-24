@@ -1,0 +1,211 @@
+fn valid_scalar_type(type_id: tryte) -> trit:
+    match type_id <=> 1:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match type_id <=> 4:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn valid_parameter_count(count: tryte) -> trit:
+    match count <=> 0:
+        -1:
+            return 0
+        0:
+            discard 0
+        1:
+            discard 0
+    match count <=> 8:
+        -1:
+            return -1
+        0:
+            return -1
+        1:
+            return 0
+
+fn valid_signature(
+    parameter_types: tryte[64],
+    base: tryte,
+    parameter_count: tryte,
+    return_type: tryte
+) -> trit:
+    match valid_parameter_count(parameter_count):
+        -1:
+            discard 0
+        0:
+            return 0
+        1:
+            return 0
+    match valid_scalar_type(return_type):
+        -1:
+            discard 0
+        0:
+            return 0
+        1:
+            return 0
+    mut index: tryte = 0
+    while index < parameter_count:
+        match valid_scalar_type(parameter_types[base + index]):
+            -1:
+                discard 0
+            0:
+                return 0
+            1:
+                return 0
+        index += 1
+    return -1
+
+fn duplicate_function_id(function_ids: tryte[8], function_count: tryte) -> trit:
+    mut left: tryte = 0
+    while left < function_count:
+        mut right: tryte = left + 1
+        while right < function_count:
+            match function_ids[left] == function_ids[right]:
+                -1:
+                    return 0
+                0:
+                    discard 0
+                1:
+                    discard 0
+            right += 1
+        left += 1
+    return -1
+
+fn valid_declarations(
+    function_ids: tryte[8],
+    parameter_counts: tryte[8],
+    return_types: tryte[8],
+    parameter_types: tryte[64],
+    function_count: tryte
+) -> trit:
+    match function_count <=> 0:
+        -1:
+            return 0
+        0:
+            discard 0
+        1:
+            match function_count <=> 8:
+                -1:
+                    discard 0
+                0:
+                    discard 0
+                1:
+                    return 0
+    match duplicate_function_id(function_ids, function_count):
+        -1:
+            discard 0
+        0:
+            return 0
+        1:
+            return 0
+    mut index: tryte = 0
+    mut base: tryte = 0
+    while index < function_count:
+        match valid_signature(
+            parameter_types,
+            base,
+            parameter_counts[index],
+            return_types[index]
+        ):
+            -1:
+                discard 0
+            0:
+                return 0
+            1:
+                return 0
+        index += 1
+        base += 8
+    return -1
+
+fn valid_arguments(argument_types: tryte[8], argument_count: tryte) -> trit:
+    match valid_parameter_count(argument_count):
+        -1:
+            discard 0
+        0:
+            return 0
+        1:
+            return 0
+    mut index: tryte = 0
+    while index < argument_count:
+        match valid_scalar_type(argument_types[index]):
+            -1:
+                discard 0
+            0:
+                return 0
+            1:
+                return 0
+        index += 1
+    return -1
+
+fn accepted(return_type: tryte) -> tryte:
+    return 100 + return_type
+
+fn rejected(reason: tryte) -> tryte:
+    return 200 + reason
+
+fn check_function_call(
+    function_ids: tryte[8],
+    parameter_counts: tryte[8],
+    return_types: tryte[8],
+    parameter_types: tryte[64],
+    function_count: tryte,
+    query_id: tryte,
+    argument_types: tryte[8],
+    argument_count: tryte
+) -> tryte:
+    match valid_declarations(
+        function_ids,
+        parameter_counts,
+        return_types,
+        parameter_types,
+        function_count
+    ):
+        -1:
+            discard 0
+        0:
+            return rejected(2)
+        1:
+            return rejected(2)
+    match valid_arguments(argument_types, argument_count):
+        -1:
+            discard 0
+        0:
+            return rejected(2)
+        1:
+            return rejected(2)
+
+    mut index: tryte = 0
+    mut base: tryte = 0
+    while index < function_count:
+        match function_ids[index] == query_id:
+            -1:
+                match argument_count == parameter_counts[index]:
+                    -1:
+                        mut argument: tryte = 0
+                        while argument < argument_count:
+                            match argument_types[argument] == parameter_types[base + argument]:
+                                -1:
+                                    discard 0
+                                0:
+                                    return rejected(6)
+                                1:
+                                    return rejected(6)
+                            argument += 1
+                        return accepted(return_types[index])
+                    0:
+                        return rejected(5)
+                    1:
+                        return rejected(5)
+            0:
+                discard 0
+            1:
+                discard 0
+        index += 1
+        base += 8
+    return rejected(4)
