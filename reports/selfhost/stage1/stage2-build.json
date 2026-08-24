@@ -1,13 +1,13 @@
 {
-  "schema": "s3.selfhost.stage2-build.v1",
+  "schema": "s3.selfhost.stage2-build.v2",
   "status": "NOT_ATTEMPTED",
-  "reason": "SELF_EMIT failed because the verified Stage1 IR loses compiler function bodies and control flow",
-  "first_self_compile_blocker": "IR_SHAPE_LOSSY",
+  "reason": "Stage2 was intentionally not started after the verified IR closure; general Assembly emission is the next bounded unit",
+  "first_self_compile_blocker": "EMITTER_CAPABILITY",
   "stage2_artifact": null,
   "stage2_sha256": null,
   "stage2_size": null,
   "stage2_format": null,
-  "pythonless_stage1_to_stage2": "NOT_ATTEMPTED",
+  "pythonless_stage1_to_stage2": "NOT_STARTED_THIS_ROUND",
   "stage2_trivial_compile": "NOT_ATTEMPTED",
   "stage2_trivial_native_execution": "NOT_ATTEMPTED",
   "stage2_to_stage3": "NOT_STARTED"

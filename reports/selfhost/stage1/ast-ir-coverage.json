@@ -1,0 +1,24 @@
+{
+  "schema": "s3.selfhost.stage1-ast-ir-coverage.v2",
+  "source_head": "2d7385c6813395239bc68b6b2858da12a693b160",
+  "scope": "bounded bootstrap structural event IR",
+  "categories": {
+    "functions": {"source_or_ast_count": 30, "ir_representation_count": 30, "coverage": 1.0, "status": "PASS"},
+    "foreign_functions": {"source_or_ast_count": 5, "ir_representation_count": 5, "coverage": 1.0, "status": "PASS"},
+    "calls": {"source_or_ast_count": 366, "ir_representation_count": 366, "coverage": 1.0, "status": "PASS"},
+    "returns": {"source_or_ast_count": 103, "ir_representation_count": 103, "coverage": 1.0, "status": "PASS"},
+    "whiles": {"source_or_ast_count": 6, "ir_representation_count": 6, "coverage": 1.0, "status": "PASS"},
+    "matches": {"source_or_ast_count": 94, "ir_representation_count": 282, "coverage": 1.0, "status": "PASS_1_TO_3_BLOCK_LOWERING"},
+    "breaks": {"source_or_ast_count": 4, "ir_representation_count": 4, "coverage": 1.0, "status": "PASS_BRANCH_CATEGORY"},
+    "locals": {"source_or_ast_count": 23, "ir_representation_count": 23, "coverage": 1.0, "status": "PASS_OWNER_COUNT_WITH_DECLARED_FIELD_LIMIT"},
+    "assignments": {"source_or_ast_count": 75, "ir_representation_count": 75, "coverage": 1.0, "status": "PASS_EVENT_CATEGORY"},
+    "binops": {"source_or_ast_count": 155, "ir_representation_count": 155, "coverage": 1.0, "status": "PASS_EVENT_CATEGORY"},
+    "comparisons": {"source_or_ast_count": 92, "ir_representation_count": 92, "coverage": 1.0, "status": "PASS_EVENT_CATEGORY"},
+    "casts": {"source_or_ast_count": 0, "ir_representation_count": 0, "coverage": 1.0, "status": "PASS_EMPTY_SOURCE_CATEGORY"},
+    "discards": {"source_or_ast_count": 409, "ir_representation_count": 409, "coverage": 1.0, "status": "PASS_EVENT_CATEGORY"},
+    "values": {"source_or_ast_count": 926, "ir_representation_count": 926, "coverage": 1.0, "status": "PASS_DETERMINISTIC_VALUE_LANES"}
+  },
+  "type_preservation": "BOUNDED_RETURN_AND_EVENT_TYPES; parameter/local field-by-field tables remain deferred",
+  "canonical_digest": "NOT_EXPOSED_BY_STAGE1_PROCESS",
+  "overall_status": "PASS_LOSSLESS_BOOTSTRAP_SUBSET_WITH_DECLARED_LIMITS"
+}

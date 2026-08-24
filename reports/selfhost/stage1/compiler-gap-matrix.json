@@ -1,20 +1,19 @@
 {
-  "schema": "s3.selfhost.compiler-gap.v2",
-  "source_head": "c66318e17c043d7935d3c7c067326e50718ba982",
+  "schema": "s3.selfhost.compiler-gap.v3",
+  "source_head": "2d7385c6813395239bc68b6b2858da12a693b160",
   "pipeline": [
-    {"stage": "source_bytes", "exists": true, "s3_authored": false, "full_data_flow": true, "status": "PASS", "blocker": "host_read_boundary_is_linux_native_only"},
+    {"stage": "source_bytes", "exists": true, "s3_authored": false, "full_data_flow": true, "status": "PASS", "blocker": "linux_native_host_boundary"},
     {"stage": "lexer", "exists": true, "s3_authored": true, "full_data_flow": true, "status": "PASS", "blocker": "bounded_token_capacity"},
-    {"stage": "parser", "exists": true, "s3_authored": true, "full_data_flow": true, "status": "PASS", "blocker": "bounded_function_and_return_subset"},
-    {"stage": "name_resolution", "exists": true, "s3_authored": true, "full_data_flow": true, "status": "BOUNDED", "blocker": "hash_and_length_table_only"},
-    {"stage": "type_semantic", "exists": true, "s3_authored": true, "full_data_flow": true, "status": "PASS", "blocker": "return_type_subset_only"},
-    {"stage": "canonical_ir", "exists": true, "s3_authored": true, "full_data_flow": true, "status": "BOUNDED", "blocker": "return_opcode_records_only"},
-    {"stage": "lowering", "exists": true, "s3_authored": true, "full_data_flow": true, "status": "BOUNDED", "blocker": "simple_return_ir_only"},
-    {"stage": "verifier", "exists": true, "s3_authored": true, "full_data_flow": true, "status": "PASS", "blocker": "opcode_and_type_checks_only"},
-    {"stage": "assembly_emission", "exists": true, "s3_authored": true, "full_data_flow": true, "status": "BLOCKED_FOR_GENERAL_IR", "blocker": "general_expression_and_statement_emitter_missing"},
-    {"stage": "output", "exists": true, "s3_authored": false, "full_data_flow": true, "status": "PASS", "blocker": "host_byte_write_boundary"}
+    {"stage": "parser", "exists": true, "s3_authored": true, "full_data_flow": true, "status": "PASS_BOUNDED", "blocker": "bounded_bootstrap_subset"},
+    {"stage": "semantic", "exists": true, "s3_authored": true, "full_data_flow": true, "status": "PASS_BOUNDED", "blocker": "independent_parameter_local_type_tables_deferred"},
+    {"stage": "canonical_ir", "exists": true, "s3_authored": true, "full_data_flow": true, "status": "PASS_LOSSLESS_BOOTSTRAP_SUBSET", "blocker": "canonical_digest_and_general_ast_shape_deferred"},
+    {"stage": "lowering", "exists": true, "s3_authored": true, "full_data_flow": true, "status": "PASS_BOUNDED", "blocker": "general_emitter_consumption"},
+    {"stage": "verifier", "exists": true, "s3_authored": true, "full_data_flow": true, "status": "PASS_LOSSLESS_BOOTSTRAP_SUBSET", "blocker": "general_typed_ir_invariants_deferred"},
+    {"stage": "assembly_emission", "exists": true, "s3_authored": true, "full_data_flow": true, "status": "BLOCKED_FOR_GENERAL_IR", "blocker": "general_emitter_capability"},
+    {"stage": "output", "exists": true, "s3_authored": false, "full_data_flow": true, "status": "PASS_SUPPORTED_SUBSET", "blocker": "emitter_boundary"}
   ],
-  "largest_real_gap": "lossless_function_block_operand_call_and_control_flow_ir",
-  "stage1_self_compile_blocker": "IR_SHAPE_LOSSY",
-  "stage2_started": false,
+  "largest_real_gap": "general Assembly emission over verified structural IR",
+  "stage1_self_compile_blocker": "EMITTER_CAPABILITY",
+  "stage1_to_stage2": "NOT_STARTED_THIS_ROUND",
   "stage3_started": false
 }

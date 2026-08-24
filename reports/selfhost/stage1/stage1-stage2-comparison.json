@@ -1,10 +1,11 @@
 {
-  "schema": "s3.selfhost.stage1-stage2-comparison.v1",
+  "schema": "s3.selfhost.stage1-stage2-comparison.v2",
   "status": "NOT_ATTEMPTED",
-  "stage1_to_stage2": "BLOCKED",
-  "stage1_behavior": "PASS_FOR_SIMPLE_CORPUS",
+  "stage1_to_stage2": "NOT_STARTED_THIS_ROUND",
+  "stage1_behavior": "PASS_SUPPORTED_NATIVE_SUBSET",
   "stage2_behavior": null,
   "corpus_equivalence": "NOT_AVAILABLE",
-  "reason": "no Stage2 artifact was produced after the IR audit",
+  "reason": "lossless bootstrap IR closure stopped at the general-emitter boundary as requested",
+  "first_self_compile_blocker": "EMITTER_CAPABILITY",
   "stage2_to_stage3": "NOT_STARTED"
 }

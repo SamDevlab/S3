@@ -1,0 +1,71 @@
+{
+  "schema": "s3.selfhost.stage1-self-source-ir-audit.v2",
+  "source_head": "2d7385c6813395239bc68b6b2858da12a693b160",
+  "input": "selfhost/compiler/s3c_stage1.s3",
+  "source_sha256": "88b988b0b91536ef7252f4dc18e2e534bf8241de0dd9941600f2d2c2ec373b3b",
+  "source_bytes": 140128,
+  "execution": "Stage1 Linux x86-64 process reached lex/parse/semantic/IR/verify before the general-emitter boundary",
+  "functions": {
+    "source_definitions": 30,
+    "local_definitions": 25,
+    "foreign_declarations": 5,
+    "ir_function_records": 30,
+    "identity": "retained by deterministic name start/length and local/foreign flags"
+  },
+  "parameters": 64,
+  "locals": 23,
+  "blocks": 325,
+  "instructions": 1212,
+  "values": 926,
+  "calls": {
+    "total": 366,
+    "internal": 363,
+    "foreign": 3,
+    "argument_pool": "bounded start/count lanes with two argument banks",
+    "max_observed_arity": 2
+  },
+  "control_flow": {
+    "branches": 104,
+    "loops": 6,
+    "match_events": 94,
+    "break_events": 4,
+    "targets": "explicit target_a/target_b lanes with verifier range checks"
+  },
+  "returns": 103,
+  "event_ledger": {
+    "representation": "deterministic bounded semantic event records with opcode, owner, operand and source offset",
+    "event_count": 1212,
+    "opcode_counts": "not independently serialized by the Stage1 audit; event_count and category reconciliation are authoritative"
+  },
+  "capacities": {
+    "max_functions": 64,
+    "max_parameters": 365,
+    "max_locals": 365,
+    "max_blocks": 365,
+    "max_instructions": 1460,
+    "max_values": 1460,
+    "max_call_args": 1460,
+    "overflow_policy": "fail closed with S3_STAGE1_ERROR"
+  },
+  "reconciliation": {
+    "functions": "30 source records -> 30 function records; foreign bodies excluded",
+    "calls": "366 source call events -> 363 internal + 3 foreign call records",
+    "returns": "103 source return events -> 103 IR return events",
+    "whiles": "6 source while events -> 6 loop records",
+    "matches": "94 source match events -> 282 structured control blocks",
+    "breaks": "4 source break events -> branch-category events",
+    "operands": "event operand and source offset lanes retained"
+  },
+  "status": "PASS_LOSSLESS_BOOTSTRAP_SUBSET",
+  "scope": "bounded structural event IR for the bootstrap source; this is not a general S3 AST/IR claim",
+  "known_limits": [
+    "Parameter/local type and mutability are counted and semantically checked by the current seed but are not yet independent field-by-field IR tables.",
+    "The Stage1 process does not expose a canonical IR byte serializer in this round.",
+    "General Assembly emission remains blocked on this IR schema."
+  ],
+  "historical_v1": {
+    "path": "reports/selfhost/stage1/self-source-ir-audit.json",
+    "status": "preserved",
+    "former_shape": "one OP_RETURN record per function"
+  }
+}
