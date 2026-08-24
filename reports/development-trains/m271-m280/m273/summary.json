@@ -1,0 +1,26 @@
+{
+  "milestone": "M2.73",
+  "name": "bounded-self-hosted-scalar-type-checking-candidate",
+  "base_branch": "integration/m271-m280-20260823",
+  "status": "IMPLEMENTED_PENDING_QUALIFICATION",
+  "candidate_source": "selfhost/semantic/scalar_type_checking_candidate.s3",
+  "reference": "bootstrap.s3.scalar_type_checking_candidate.reference_scalar_type_check",
+  "scalar_type_ids": {
+    "trit": 1,
+    "tryte": 2,
+    "i64": 3,
+    "f64": 4
+  },
+  "focused_tests": "PASS_16_TESTS_PYTHON_3_11",
+  "compileall": "NOT_RUN",
+  "diff_check": "NOT_RUN",
+  "impact_metadata": "PENDING",
+  "smart_affected": "NOT_RUN",
+  "smart_shard": "NOT_RUN",
+  "benchmark": "NOT_RUN",
+  "t4": "NOT_RUN",
+  "performance_claim": "NONE",
+  "production_promotion": "NO",
+  "full_self_hosting_claim": "NO",
+  "next_milestone": "M2.74_AFTER_M2.73_QUALIFICATION"
+}
