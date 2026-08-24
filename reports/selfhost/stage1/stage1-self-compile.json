@@ -1,0 +1,10 @@
+{
+  "schema": "s3.selfhost.stage1-self-compile.v1",
+  "status": "UNVERIFIED_NATIVE_EXECUTION",
+  "stage1_to_stage2": "NOT_ATTEMPTED_NATIVE",
+  "first_self_compile_blocker": "PARSER_CAPABILITY",
+  "reason": "the seed grammar cannot consume its own foreign declarations, helper functions, match blocks, loops, and emitter body",
+  "stage2_artifact": null,
+  "stage2_sha256": null,
+  "stage3_started": false
+}

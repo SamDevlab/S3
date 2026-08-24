@@ -1,0 +1,439 @@
+{
+  "schema": "s3.selfhost.component-audit.v1",
+  "assessment_rule": "candidate files are not promoted merely because they return a stable identity",
+  "components": [
+    {
+      "component": "selfhost/compiler/s3c_stage1.s3",
+      "role": "canonical Stage1 compiler seed",
+      "input": "bounded source bytes through explicit host read functions",
+      "output": "GNU Intel assembly bytes through explicit host write functions",
+      "real_transformation_or_summary": "real bounded grammar validation, signed numeric parsing, range validation, and assembly emission",
+      "reusable_in_compiler": true,
+      "blocker": "subset supports only one main tryte-return grammar"
+    },
+    {
+      "component": "selfhost/assembly/assembly_tokenizer.s3",
+      "role": "bounded Assembly tokenizer",
+      "input": "BoundedText and cursor",
+      "output": "AssemblyTokenResult",
+      "real_transformation_or_summary": "real token classification and cursor advancement with bounded structured errors",
+      "reusable_in_compiler": true,
+      "blocker": "fixed text/event scope; not a general S3 token store"
+    },
+    {
+      "component": "selfhost/assembly/assembly_parser.s3",
+      "role": "bounded Assembly parser kernel",
+      "input": "BoundedText and parser state",
+      "output": "AssemblyParserEvent or structured error",
+      "real_transformation_or_summary": "real phase-driven parsing of a bounded Assembly subset",
+      "reusable_in_compiler": true,
+      "blocker": "events and counters are not a canonical AssemblyProgram AST"
+    },
+    {
+      "component": "selfhost/assembly/assembly_frontend.s3",
+      "role": "bounded Assembly frontend composition",
+      "input": "BoundedText",
+      "output": "AssemblyFrontendResult",
+      "real_transformation_or_summary": "composes tokenizer and parser while retaining a bounded summary result",
+      "reusable_in_compiler": false,
+      "blocker": "summary-oriented result"
+    },
+    {
+      "component": "selfhost/assembly/assembly_emission_candidate.s3",
+      "role": "Assembly emission candidate",
+      "input": "identity scalars",
+      "output": "folded identity scalar",
+      "real_transformation_or_summary": "differential identity arithmetic, not assembly bytes",
+      "reusable_in_compiler": false,
+      "blocker": "no instruction or output storage"
+    },
+    {
+      "component": "selfhost/assembly/assembly_verification_closure.s3",
+      "role": "Assembly verification closure candidate",
+      "input": "identity and verification flag scalars",
+      "output": "identity/status scalar",
+      "real_transformation_or_summary": "contract arithmetic and status composition",
+      "reusable_in_compiler": false,
+      "blocker": "does not verify an AssemblyProgram"
+    },
+    {
+      "component": "selfhost/assembly/frontend_types.s3",
+      "role": "Assembly frontend result types",
+      "input": "none",
+      "output": "type anchor scalar",
+      "real_transformation_or_summary": "declares bounded records/enums used by the Assembly kernel",
+      "reusable_in_compiler": true,
+      "blocker": "fixed bounded layouts"
+    },
+    {
+      "component": "selfhost/assembly/parser_types.s3",
+      "role": "Assembly parser result types",
+      "input": "none",
+      "output": "type anchor scalar",
+      "real_transformation_or_summary": "declares parser events and errors",
+      "reusable_in_compiler": true,
+      "blocker": "event model is not general AST storage"
+    },
+    {
+      "component": "selfhost/assembly/tokenizer_types.s3",
+      "role": "Assembly tokenizer result types",
+      "input": "none",
+      "output": "type anchor scalar",
+      "real_transformation_or_summary": "declares bounded token/error result layouts",
+      "reusable_in_compiler": true,
+      "blocker": "fixed bounded layouts"
+    },
+    {
+      "component": "selfhost/assembly/opcode_classifier.s3",
+      "role": "opcode classifier",
+      "input": "opcode IDs and operand counts",
+      "output": "classification/status scalars",
+      "real_transformation_or_summary": "real opcode family and arity validation",
+      "reusable_in_compiler": true,
+      "blocker": "does not consume or emit instruction records"
+    },
+    {
+      "component": "selfhost/assembly/opcode_ids.s3",
+      "role": "opcode constants",
+      "input": "none",
+      "output": "opcode ID scalars",
+      "real_transformation_or_summary": "constant declarations",
+      "reusable_in_compiler": true,
+      "blocker": "no instruction storage"
+    },
+    {
+      "component": "selfhost/bootstrap/bootstrap_admission_candidate.s3",
+      "role": "bootstrap admission candidate",
+      "input": "identity scalars",
+      "output": "admission identity",
+      "real_transformation_or_summary": "bounded identity composition",
+      "reusable_in_compiler": false,
+      "blocker": "admission summary only"
+    },
+    {
+      "component": "selfhost/bootstrap/bootstrap_promotion_readiness_candidate.s3",
+      "role": "bootstrap promotion candidate",
+      "input": "identity scalars",
+      "output": "readiness identity",
+      "real_transformation_or_summary": "bounded readiness composition",
+      "reusable_in_compiler": false,
+      "blocker": "readiness summary only"
+    },
+    {
+      "component": "selfhost/bootstrap/bootstrap_reproducibility_candidate.s3",
+      "role": "bootstrap reproducibility candidate",
+      "input": "identity scalars",
+      "output": "reproducibility identity",
+      "real_transformation_or_summary": "bounded identity sealing",
+      "reusable_in_compiler": false,
+      "blocker": "no artifact production"
+    },
+    {
+      "component": "selfhost/diagnostics/diagnostic_classifier.s3",
+      "role": "diagnostic classification candidate",
+      "input": "category and phase IDs",
+      "output": "classification scalars",
+      "real_transformation_or_summary": "real bounded category/family/channel classification",
+      "reusable_in_compiler": true,
+      "blocker": "does not create source-backed diagnostic text"
+    },
+    {
+      "component": "selfhost/driver/bounded_compiler_driver_candidate.s3",
+      "role": "bounded driver candidate",
+      "input": "component identities",
+      "output": "composed plan identity",
+      "real_transformation_or_summary": "bounded composition arithmetic",
+      "reusable_in_compiler": false,
+      "blocker": "does not load source or invoke stages"
+    },
+    {
+      "component": "selfhost/driver/driver_artifact_handoff_candidate.s3",
+      "role": "driver artifact handoff candidate",
+      "input": "component identities",
+      "output": "handoff identity",
+      "real_transformation_or_summary": "bounded handoff composition",
+      "reusable_in_compiler": false,
+      "blocker": "does not produce an artifact"
+    },
+    {
+      "component": "selfhost/driver/source_workspace_boundary_candidate.s3",
+      "role": "source workspace boundary candidate",
+      "input": "source checksum and workspace scalars",
+      "output": "workspace plan identity",
+      "real_transformation_or_summary": "bounded workspace identity composition",
+      "reusable_in_compiler": false,
+      "blocker": "does not read a workspace"
+    },
+    {
+      "component": "selfhost/frontend/lexer_candidate.s3",
+      "role": "bounded S3 lexer candidate",
+      "input": "fixed tryte array and length",
+      "output": "lexer fingerprint scalar",
+      "real_transformation_or_summary": "real character classification and bounded scan folded into a fingerprint",
+      "reusable_in_compiler": true,
+      "blocker": "token records are not retained"
+    },
+    {
+      "component": "selfhost/frontend/parser_candidate.s3",
+      "role": "bounded parser candidate",
+      "input": "fixed token-like array and count",
+      "output": "parser fingerprint scalar",
+      "real_transformation_or_summary": "real bounded kind/order checks folded into a fingerprint",
+      "reusable_in_compiler": false,
+      "blocker": "no AST output"
+    },
+    {
+      "component": "selfhost/frontend/ast_candidate.s3",
+      "role": "AST candidate",
+      "input": "bounded node fields",
+      "output": "AST fingerprint scalar",
+      "real_transformation_or_summary": "bounded node-kind/value validation",
+      "reusable_in_compiler": false,
+      "blocker": "no retained AST graph"
+    },
+    {
+      "component": "selfhost/frontend/module_candidate.s3",
+      "role": "module candidate",
+      "input": "module/import scalars",
+      "output": "module fingerprint scalar",
+      "real_transformation_or_summary": "bounded module/import validation",
+      "reusable_in_compiler": false,
+      "blocker": "no module source loading"
+    },
+    {
+      "component": "selfhost/frontend/diagnostic_candidate.s3",
+      "role": "diagnostic recovery candidate",
+      "input": "diagnostic code scalar",
+      "output": "category/action scalar",
+      "real_transformation_or_summary": "bounded diagnostic action classification",
+      "reusable_in_compiler": true,
+      "blocker": "no source-backed diagnostic object"
+    },
+    {
+      "component": "selfhost/frontend/invalidation_candidate.s3",
+      "role": "incremental invalidation candidate",
+      "input": "bounded node/change arrays",
+      "output": "invalidation fingerprint scalar",
+      "real_transformation_or_summary": "real bounded reachability/change checks",
+      "reusable_in_compiler": false,
+      "blocker": "no compiler graph integration"
+    },
+    {
+      "component": "selfhost/frontend/workspace_candidate.s3",
+      "role": "workspace graph candidate",
+      "input": "bounded graph arrays",
+      "output": "workspace fingerprint scalar",
+      "real_transformation_or_summary": "bounded edge and node checks",
+      "reusable_in_compiler": false,
+      "blocker": "no source manager or graph storage"
+    },
+    {
+      "component": "selfhost/frontend/assembly_frontend_closure.s3",
+      "role": "Assembly frontend closure candidate",
+      "input": "AssemblyFrontendResult",
+      "output": "fingerprint scalar",
+      "real_transformation_or_summary": "folds bounded frontend summary into an identity",
+      "reusable_in_compiler": false,
+      "blocker": "summary closure"
+    },
+    {
+      "component": "selfhost/ir/canonical_ir_data_model_candidate.s3",
+      "role": "canonical IR data model candidate",
+      "input": "bounded IR scalar fields",
+      "output": "IR identity scalar",
+      "real_transformation_or_summary": "real range/shape validation folded into identity",
+      "reusable_in_compiler": true,
+      "blocker": "no instruction/function/block arrays"
+    },
+    {
+      "component": "selfhost/ir/composed_ir_closure_candidate.s3",
+      "role": "IR composition candidate",
+      "input": "expression/call identities",
+      "output": "composed identity scalar",
+      "real_transformation_or_summary": "bounded identity composition",
+      "reusable_in_compiler": false,
+      "blocker": "does not compose IR values"
+    },
+    {
+      "component": "selfhost/semantic/name_resolution_candidate.s3",
+      "role": "name resolution candidate",
+      "input": "bounded declarations/scope scalars",
+      "output": "resolved slot scalar",
+      "real_transformation_or_summary": "bounded visibility and slot arithmetic",
+      "reusable_in_compiler": true,
+      "blocker": "no symbol records or source names"
+    },
+    {
+      "component": "selfhost/semantic/symbol_table_candidate.s3",
+      "role": "symbol table candidate",
+      "input": "bounded symbol IDs and kinds",
+      "output": "lookup slot scalar",
+      "real_transformation_or_summary": "bounded duplicate and slot checks",
+      "reusable_in_compiler": true,
+      "blocker": "no name storage"
+    },
+    {
+      "component": "selfhost/semantic/scalar_type_checking_candidate.s3",
+      "role": "scalar type checking candidate",
+      "input": "type IDs",
+      "output": "accepted/rejected scalar",
+      "real_transformation_or_summary": "real scalar compatibility checks",
+      "reusable_in_compiler": true,
+      "blocker": "no typed expression graph"
+    },
+    {
+      "component": "selfhost/semantic/place_reference_candidate.s3",
+      "role": "place/reference candidate",
+      "input": "type/place/flag scalars",
+      "output": "accepted/rejected scalar",
+      "real_transformation_or_summary": "bounded reference operation checks",
+      "reusable_in_compiler": false,
+      "blocker": "no ownership graph"
+    },
+    {
+      "component": "selfhost/semantic/function_call_candidate.s3",
+      "role": "function call semantic candidate",
+      "input": "bounded signatures and argument arrays",
+      "output": "accepted/rejected call result",
+      "real_transformation_or_summary": "real signature/arity/type checks",
+      "reusable_in_compiler": true,
+      "blocker": "no function declaration storage"
+    },
+    {
+      "component": "selfhost/semantic/fixed_layout_candidate.s3",
+      "role": "fixed layout candidate",
+      "input": "bounded field/variant arrays",
+      "output": "layout summary/identity",
+      "real_transformation_or_summary": "real fixed-layout validation",
+      "reusable_in_compiler": true,
+      "blocker": "summary is not a retained layout table"
+    },
+    {
+      "component": "selfhost/semantic/control_flow_candidate.s3",
+      "role": "control-flow candidate",
+      "input": "bounded statement/branch scalars",
+      "output": "flow status scalar",
+      "real_transformation_or_summary": "bounded return-path/control-flow checks",
+      "reusable_in_compiler": true,
+      "blocker": "no CFG storage"
+    },
+    {
+      "component": "selfhost/semantic/semantic_closure_candidate.s3",
+      "role": "semantic closure candidate",
+      "input": "bounded semantic identities",
+      "output": "closure identity",
+      "real_transformation_or_summary": "bounded semantic identity composition",
+      "reusable_in_compiler": false,
+      "blocker": "closure summary only"
+    },
+    {
+      "component": "selfhost/lowering/expression_lowering_candidate.s3",
+      "role": "expression lowering candidate",
+      "input": "bounded node/opcode scalars",
+      "output": "opcode/identity scalar",
+      "real_transformation_or_summary": "real bounded child-order/opcode validation",
+      "reusable_in_compiler": false,
+      "blocker": "no IR instruction output"
+    },
+    {
+      "component": "selfhost/lowering/call_aggregate_lowering_candidate.s3",
+      "role": "aggregate call lowering candidate",
+      "input": "bounded call/layout scalars",
+      "output": "lowering identity",
+      "real_transformation_or_summary": "bounded result-width and aggregate checks",
+      "reusable_in_compiler": false,
+      "blocker": "no call IR"
+    },
+    {
+      "component": "selfhost/lowering/lowering_checkpoint_candidate.s3",
+      "role": "lowering checkpoint candidate",
+      "input": "component identities",
+      "output": "checkpoint identity",
+      "real_transformation_or_summary": "bounded identity composition",
+      "reusable_in_compiler": false,
+      "blocker": "checkpoint summary only"
+    },
+    {
+      "component": "selfhost/lowering/composed_lowering_closure_candidate.s3",
+      "role": "lowering closure candidate",
+      "input": "lowering identity",
+      "output": "closure identity",
+      "real_transformation_or_summary": "bounded composition arithmetic",
+      "reusable_in_compiler": false,
+      "blocker": "does not lower an IR program"
+    },
+    {
+      "component": "selfhost/verifier/canonical_ir_verifier_candidate.s3",
+      "role": "linear IR verifier candidate",
+      "input": "bounded opcode/operand arrays",
+      "output": "valid/invalid scalar",
+      "real_transformation_or_summary": "real linear terminator/range validation",
+      "reusable_in_compiler": true,
+      "blocker": "no multi-block CFG verifier"
+    },
+    {
+      "component": "selfhost/native/native_emission_boundary_candidate.s3",
+      "role": "native emission boundary candidate",
+      "input": "Assembly identity and target ID",
+      "output": "native plan identity",
+      "real_transformation_or_summary": "bounded target/boundary classification",
+      "reusable_in_compiler": false,
+      "blocker": "does not emit native bytes"
+    },
+    {
+      "component": "selfhost/layout/discriminant_validator.s3",
+      "role": "enum discriminant validator",
+      "input": "variant/discriminant/payload scalars",
+      "output": "layout/status scalars",
+      "real_transformation_or_summary": "real bounded enum layout validation",
+      "reusable_in_compiler": true,
+      "blocker": "no declaration layout table"
+    },
+    {
+      "component": "selfhost/results/result_width_classifier.s3",
+      "role": "result width classifier",
+      "input": "width scalar",
+      "output": "structured WidthResult",
+      "real_transformation_or_summary": "real width classification with structured result",
+      "reusable_in_compiler": true,
+      "blocker": "bounded width only"
+    },
+    {
+      "component": "selfhost/results/call_result_cell_planner.s3",
+      "role": "call result cell planner",
+      "input": "width scalar",
+      "output": "structured PlanResult",
+      "real_transformation_or_summary": "real bounded cell planning",
+      "reusable_in_compiler": true,
+      "blocker": "no call IR or register storage"
+    },
+    {
+      "component": "selfhost/results/assembly_header_classifier.s3",
+      "role": "Assembly header classifier",
+      "input": "version scalars",
+      "output": "structured HeaderResult",
+      "real_transformation_or_summary": "real header version classification",
+      "reusable_in_compiler": true,
+      "blocker": "header only"
+    },
+    {
+      "component": "selfhost/text/bounded_text_types.s3",
+      "role": "bounded text result types",
+      "input": "none",
+      "output": "structured bounded text types",
+      "real_transformation_or_summary": "declares fixed text/cursor/span/error layouts",
+      "reusable_in_compiler": true,
+      "blocker": "fixed capacity and no filesystem input"
+    },
+    {
+      "component": "selfhost/text/bounded_text_primitives.s3",
+      "role": "bounded text primitives",
+      "input": "bounded text arrays and cursors",
+      "output": "structured read/compare/error results",
+      "real_transformation_or_summary": "real bounded ASCII reads, peeks, spans, and prefix checks",
+      "reusable_in_compiler": true,
+      "blocker": "bounded text only; no source manager"
+    }
+  ],
+  "compiler_seed_conclusion": "only selfhost/compiler/s3c_stage1.s3 currently forms a process-producing compiler path"
+}

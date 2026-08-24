@@ -1,0 +1,97 @@
+{
+  "schema": "s3.selfhost.compiler-gap.v1",
+  "pipeline": [
+    {
+      "stage": "source_bytes",
+      "exists": true,
+      "s3_authored": false,
+      "full_data_flow": true,
+      "only_summary": false,
+      "can_be_composed": true,
+      "blocker": "host_read_boundary_is_linux_native_only"
+    },
+    {
+      "stage": "lexer",
+      "exists": true,
+      "s3_authored": true,
+      "full_data_flow": false,
+      "only_summary": false,
+      "can_be_composed": false,
+      "blocker": "stage1_uses_direct_bounded_character_scanning_without_token_storage"
+    },
+    {
+      "stage": "parser",
+      "exists": true,
+      "s3_authored": true,
+      "full_data_flow": false,
+      "only_summary": false,
+      "can_be_composed": false,
+      "blocker": "micro_grammar_parser_has_no_ast_or_general_declaration_support"
+    },
+    {
+      "stage": "name_resolution",
+      "exists": false,
+      "s3_authored": false,
+      "full_data_flow": false,
+      "only_summary": false,
+      "can_be_composed": false,
+      "blocker": "no_symbol_table_in_stage1_subset"
+    },
+    {
+      "stage": "type_semantic",
+      "exists": true,
+      "s3_authored": true,
+      "full_data_flow": false,
+      "only_summary": false,
+      "can_be_composed": false,
+      "blocker": "semantic_scope_is_return_value_shape_and_tryte_range_only"
+    },
+    {
+      "stage": "canonical_ir",
+      "exists": false,
+      "s3_authored": false,
+      "full_data_flow": false,
+      "only_summary": false,
+      "can_be_composed": false,
+      "blocker": "no_s3_owned_ir_records_or_instruction_storage"
+    },
+    {
+      "stage": "lowering",
+      "exists": true,
+      "s3_authored": true,
+      "full_data_flow": true,
+      "only_summary": false,
+      "can_be_composed": false,
+      "blocker": "direct_micro_grammar_emission_is_not_general_ir_lowering"
+    },
+    {
+      "stage": "verifier",
+      "exists": false,
+      "s3_authored": false,
+      "full_data_flow": false,
+      "only_summary": false,
+      "can_be_composed": false,
+      "blocker": "emitted_micro_assembly_has_no_stage1_ir_verifier"
+    },
+    {
+      "stage": "assembly_emission",
+      "exists": true,
+      "s3_authored": true,
+      "full_data_flow": true,
+      "only_summary": false,
+      "can_be_composed": true,
+      "blocker": "emitter_is_fixed_to_one_native_entry_shape"
+    },
+    {
+      "stage": "output",
+      "exists": true,
+      "s3_authored": false,
+      "full_data_flow": true,
+      "only_summary": false,
+      "can_be_composed": true,
+      "blocker": "output_is_host_byte_write_boundary"
+    }
+  ],
+  "largest_real_gap": "missing_composable_token_ast_semantic_ir_pipeline",
+  "stage1_self_compile_blocker": "PARSER_CAPABILITY"
+}

@@ -1,0 +1,13 @@
+{
+  "schema": "s3.selfhost.stage1-corpus.v1",
+  "status": "UNVERIFIED_NATIVE_EXECUTION",
+  "cases": [
+    {"source": "fn main() -> tryte: return 0", "expected": "assembly_and_native_exit_0"},
+    {"source": "fn main() -> tryte: return 7", "expected": "assembly_and_native_exit_7"},
+    {"source": "fn main() -> tryte: return 8", "expected": "assembly_and_native_exit_8"},
+    {"source": "fn main() -> tryte: return 180", "expected": "assembly_and_native_exit_180"},
+    {"source": "fn main() -> tryte: return -1", "expected": "assembly_and_native_exit_255"}
+  ],
+  "native_test_result": "SKIPPED_ON_WINDOWS",
+  "determinism_contract": "same input must produce byte-identical assembly"
+}
