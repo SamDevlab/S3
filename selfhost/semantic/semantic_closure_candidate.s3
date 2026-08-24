@@ -1,0 +1,149 @@
+fn fold_identity(value: tryte) -> tryte:
+    mut result: tryte = value
+    while result < 0:
+        result += 181
+    while result > 180:
+        result = result - 181
+    return result
+
+fn check_semantic_closure(
+    symbol_ids: tryte[8],
+    symbol_kinds: tryte[8],
+    symbol_count: tryte,
+    symbol_query: tryte,
+    name_ids: tryte[8],
+    name_kinds: tryte[8],
+    name_scopes: tryte[8],
+    name_count: tryte,
+    scope_parents: tryte[8],
+    scope_count: tryte,
+    name_query: tryte,
+    name_query_scope: tryte,
+    scalar_operation: tryte,
+    scalar_left_type: tryte,
+    scalar_right_type: tryte,
+    scalar_target_type: tryte,
+    place_operation: tryte,
+    place_type: tryte,
+    place_kind: tryte,
+    place_readable: tryte,
+    place_writable: tryte,
+    place_addressable: tryte,
+    place_initialized: tryte,
+    function_ids: tryte[8],
+    function_parameter_counts: tryte[8],
+    function_return_types: tryte[8],
+    function_parameter_types: tryte[64],
+    function_count: tryte,
+    function_query: tryte,
+    argument_types: tryte[8],
+    argument_count: tryte,
+    record_types: tryte[8],
+    record_count: tryte,
+    enum_payload_types: tryte[64],
+    enum_payload_counts: tryte[8],
+    enum_variant_count: tryte,
+    flow_kinds: tryte[8],
+    flow_left: tryte[8],
+    flow_right: tryte[8],
+    flow_count: tryte,
+    flow_requires_return: tryte
+) -> tryte:
+    mut checksum: tryte = 0
+    mut result: tryte = m271_symbol_table_lookup(
+        symbol_ids, symbol_kinds, symbol_count, symbol_query
+    )
+    match result <=> 0:
+        -1:
+            return 201
+        0:
+            checksum = m276_add_mod(checksum, result)
+        1:
+            checksum = m276_add_mod(checksum, result)
+
+    result = m272_resolve_visible_symbol(
+        name_ids, name_kinds, name_scopes, scope_parents,
+        name_count, scope_count, name_query, name_query_scope
+    )
+    match result <=> 0:
+        -1:
+            return 202
+        0:
+            checksum = m276_add_mod(checksum, result)
+        1:
+            checksum = m276_add_mod(checksum, result)
+
+    result = m273_check_scalar_type(
+        scalar_operation, scalar_left_type, scalar_right_type, scalar_target_type
+    )
+    match result <=> 200:
+        -1:
+            checksum = m276_add_mod(checksum, result)
+        0:
+            return 203
+        1:
+            return 203
+
+    result = m274_check_place_operation(
+        place_operation, place_type, place_kind, place_readable,
+        place_writable, place_addressable, place_initialized
+    )
+    match result <=> 200:
+        -1:
+            checksum = m276_add_mod(checksum, result)
+        0:
+            return 204
+        1:
+            return 204
+
+    result = m275_check_function_call(
+        function_ids, function_parameter_counts, function_return_types,
+        function_parameter_types, function_count, function_query,
+        argument_types, argument_count
+    )
+    match result <=> 200:
+        -1:
+            checksum = m276_add_mod(checksum, result)
+        0:
+            return 205
+        1:
+            return 205
+
+    result = m276_record_layout_summary(record_types, record_count)
+    match result <=> 200:
+        -1:
+            checksum = m276_add_mod(checksum, result)
+        0:
+            return 206
+        1:
+            return 206
+    result = m276_enum_layout_summary(
+        enum_payload_types, enum_payload_counts, enum_variant_count
+    )
+    match result <=> 200:
+        -1:
+            checksum = m276_add_mod(checksum, result)
+        0:
+            return 206
+        1:
+            return 206
+    result = m276_record_layout_identity(record_types, record_count, 17)
+    checksum = m276_add_mod(checksum, result)
+    result = m276_record_layout_identity(record_types, record_count, 53)
+    checksum = m276_add_mod(checksum, result)
+    result = m276_enum_layout_identity(enum_payload_types, enum_payload_counts, enum_variant_count, 37)
+    checksum = m276_add_mod(checksum, result)
+    result = m276_enum_layout_identity(enum_payload_types, enum_payload_counts, enum_variant_count, 71)
+    checksum = m276_add_mod(checksum, result)
+
+    result = m277_check_control_flow(
+        flow_kinds, flow_left, flow_right, flow_count, flow_requires_return
+    )
+    match result <=> 200:
+        -1:
+            checksum = m276_add_mod(checksum, result)
+        0:
+            return 207
+        1:
+            return 207
+    return fold_identity(checksum)
