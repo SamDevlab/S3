@@ -48,6 +48,7 @@
     }
   },
   "shards": {
+    "m285": ["tests/test_m285_control_flow_candidate.py"],
     "m281": ["tests/test_m281_m283_exact_contracts.py"],
     "m282": ["tests/test_m281_m283_exact_contracts.py"],
     "m283": ["tests/test_m281_m283_exact_contracts.py"],

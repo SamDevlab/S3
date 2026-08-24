@@ -23,9 +23,10 @@ Call and aggregate-result lowering — HISTORICAL, COMPLETE. This preserves PR
 
 ## REVISED_M284_M290
 
-M2.84 control-flow plus remaining aggregate-lowering closure; M2.85
-ownership/reference lowering; M2.86 S3 IR verifier; M2.87 canonical IR
-serialization; M2.88 composed lowering closure; M2.89 lowering canary; M2.90
-IR/lowering checkpoint.
+M2.84 S3 IR verifier candidate — COMPLETE_BOUNDED; M2.85 control-flow plus
+remaining aggregate-lowering closure — NEXT; M2.86 ownership/reference
+lowering — PENDING; M2.87 canonical IR serialization — PENDING; M2.88
+composed lowering plus verifier closure — PENDING; M2.89 lowering canary —
+PENDING; M2.90 IR/lowering checkpoint — PENDING.
 
 NO_REQUIRED_GATE_DROPPED=YES
