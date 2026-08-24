@@ -107,6 +107,7 @@
     "m284": ["tests/test_m284_ir_verifier_candidate.py"],
     "m285": ["tests/test_m285_composed_ir_closure_candidate.py"],
     "m286": ["tests/test_m286_ir_verifier_canary.py"],
+    "m287": ["tests/test_m287_lowering_checkpoint_candidate.py"],
     "container-backend-prework": [
       "tests/test_container_backend_contract.py",
       "tests/test_s3_docker.py",
@@ -140,6 +141,7 @@
     "m284": ["tests/test_m284_ir_verifier_candidate.py"],
     "m285": ["tests/test_m285_composed_ir_closure_candidate.py"],
     "m286": ["tests/test_m286_ir_verifier_canary.py"],
+    "m287": ["tests/test_m287_lowering_checkpoint_candidate.py"],
     "m241-m259-level-c": [
       "tests/test_m241_workspace_semantic_graph.py",
       "tests/test_m242_lsp_project_intelligence.py",
@@ -1737,6 +1739,33 @@
       "tests": ["tests/test_m286_ir_verifier_canary.py"],
       "milestones": ["m286", "ir-canary", "self-hosting"],
       "shards": ["m286"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/lowering_checkpoint_candidate.py",
+      "tests": ["tests/test_m287_lowering_checkpoint_candidate.py"],
+      "milestones": ["m287", "lowering", "self-hosting"],
+      "shards": ["m287"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "selfhost/lowering/lowering_checkpoint_candidate.s3",
+      "tests": ["tests/test_m287_lowering_checkpoint_candidate.py"],
+      "milestones": ["m287", "lowering", "self-hosting"],
+      "shards": ["m287"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m287_lowering_checkpoint_candidate.py",
+      "tests": ["tests/test_m287_lowering_checkpoint_candidate.py"],
+      "milestones": ["m287", "lowering", "self-hosting"],
+      "shards": ["m287"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
