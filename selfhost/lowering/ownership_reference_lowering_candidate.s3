@@ -1,3 +1,189 @@
-# M2.86 bounded lane candidate contract; harness supplies operation lanes.
-fn ownership_lane() -> tryte:
+# M2.86 bounded ownership/reference candidate with static S3 validation and lane entrypoints.
+fn valid_range(value: tryte, lower: tryte, upper: tryte) -> trit:
+    match value <=> lower:
+        -1:
+            return 0
+        0:
+            match value <=> upper:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+        1:
+            match value <=> upper:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn ownership_validate(place_init: tryte[8], place_mutable: tryte[8], ref_places: tryte[8], ref_kinds: tryte[8], opcodes: tryte[32], op_places: tryte[32], op_refs: tryte[32], place_count: tryte, ref_count: tryte, op_count: tryte) -> tryte:
+    mut init: tryte[8] = place_init
+    match valid_range(place_count, 0, 8):
+        0:
+            return 201
+        1:
+            return 201
+        -1:
+            discard 0
+    match valid_range(ref_count, 0, 8):
+        0:
+            return 201
+        1:
+            return 201
+        -1:
+            discard 0
+    match valid_range(op_count, 0, 32):
+        0:
+            return 201
+        1:
+            return 201
+        -1:
+            discard 0
+    mut r: tryte = 0
+    while r < ref_count:
+        match valid_range(ref_kinds[r], 1, 2):
+            0:
+                return 204
+            1:
+                return 204
+            -1:
+                discard 0
+        match valid_range(ref_places[r], 0, 7):
+            0:
+                return 203
+            1:
+                return 203
+            -1:
+                discard 0
+        r += 1
+    mut op: tryte = 0
+    mut moved: tryte[8] = [0,0,0,0,0,0,0,0]
+    mut last_move: tryte = 0
+    while op < op_count:
+        match valid_range(opcodes[op], 1, 7):
+            0:
+                return 213
+            1:
+                return 213
+            -1:
+                discard 0
+        mut p: tryte = op_places[op]
+        match opcodes[op] <=> 1:
+            0:
+                match last_move <=> 1:
+                    0:
+                        return 210
+                    -1:
+                        discard 0
+                    1:
+                        discard 0
+            -1:
+                discard 0
+            1:
+                discard 0
+        match valid_range(p, 0, 7):
+            0:
+                return 203
+            1:
+                return 203
+            -1:
+                discard 0
+        match opcodes[op] <=> 1:
+            0:
+                match init[p] <=> 1:
+                    -1:
+                        return 206
+                    0:
+                        discard 0
+                    1:
+                        discard 0
+            -1:
+                discard 0
+            1:
+                discard 0
+        match opcodes[op] <=> 2:
+            0:
+                init[p] = 1
+            -1:
+                discard 0
+            1:
+                discard 0
+        match opcodes[op] <=> 4:
+            0:
+                match place_mutable[p] <=> 1:
+                    -1:
+                        return 207
+                    0:
+                        discard 0
+                    1:
+                        discard 0
+            -1:
+                discard 0
+            1:
+                discard 0
+        match opcodes[op] <=> 6:
+            0:
+                match ref_kinds[op_refs[op]] <=> 1:
+                    0:
+                        return 209
+                    -1:
+                        discard 0
+                    1:
+                        discard 0
+            -1:
+                discard 0
+            1:
+                discard 0
+        match opcodes[op] <=> 7:
+            0:
+                match moved[p] <=> 1:
+                    0:
+                        return 211
+                    -1:
+                        discard 0
+                    1:
+                        discard 0
+                match init[p] <=> 1:
+                        -1:
+                            return 206
+                        0:
+                            discard 0
+                        1:
+                            discard 0
+                moved[p] = 1
+                last_move = 1
+            -1:
+                discard 0
+            1:
+                discard 0
+        op += 1
     return 0
+
+fn ownership_lane(lane: tryte, place_init: tryte[8], place_mutable: tryte[8], ref_places: tryte[8], ref_kinds: tryte[8], opcodes: tryte[32], op_places: tryte[32], op_refs: tryte[32], place_count: tryte, ref_count: tryte, op_count: tryte) -> tryte:
+    match lane <=> 0:
+        0:
+            return ownership_validate(place_init,place_mutable,ref_places,ref_kinds,opcodes,op_places,op_refs,place_count,ref_count,op_count)
+        -1:
+            return 202
+        1:
+            discard 0
+    mut index: tryte = lane - 1
+    match index <=> place_count:
+        -1:
+            return place_init[index]
+        0:
+            return 0
+        1:
+            index = index - place_count
+    match index <=> ref_count:
+        -1:
+            return ref_kinds[index]
+        0:
+            return 0
+        1:
+            index = index - ref_count
+    return opcodes[index]

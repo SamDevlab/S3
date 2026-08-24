@@ -2,6 +2,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 import hashlib,json
+from pathlib import Path
 from bootstrap.s3.pipeline import run_source
 from bootstrap.s3.lexer import SyntaxMode
 
@@ -20,13 +21,16 @@ OPS={'load_place','store_place','borrow_shared','borrow_mut','read_ref','write_r
 def validate(p):
     if len(p.places)>8 or len(p.references)>8 or len(p.operations)>32: raise M286Error('BOUNDS')
     if len({x.id for x in p.places})!=len(p.places) or len({x.id for x in p.references})!=len(p.references): raise M286Error('DUPLICATE_ID')
-    places={x.id:x for x in p.places}; refs={x.id:x for x in p.references}; active_shared=set(); active_mut=set(); moved=set()
+    places={x.id:x for x in p.places}; refs={x.id:x for x in p.references}; initialized={x.id:x.initialized for x in p.places}; active_shared=set(); active_mut=set(); moved=set()
+    for r in p.references:
+        if r.kind not in KINDS: raise M286Error('INVALID_REFERENCE_KIND')
+        if r.place_id not in places: raise M286Error('INVALID_REFERENCE')
     for op in p.operations:
         if op.opcode not in OPS: raise M286Error('UNKNOWN_OPERATION')
         if op.opcode in {'load_place','store_place','move_value'} and op.place_id not in places: raise M286Error('INVALID_PLACE')
         if op.opcode in {'read_ref','write_ref'} and op.reference_id not in refs: raise M286Error('INVALID_REFERENCE')
         if op.opcode=='borrow_shared':
-            if op.place_id not in places or not places[op.place_id].initialized: raise M286Error('INVALID_PLACE')
+            if op.place_id not in places or not initialized[op.place_id]: raise M286Error('INVALID_PLACE')
             if op.place_id in active_mut: raise M286Error('BORROW_CONFLICT')
             active_shared.add(op.place_id)
         if op.opcode=='borrow_mut':
@@ -38,8 +42,14 @@ def validate(p):
             if not r: raise M286Error('INVALID_REFERENCE')
             if r.kind!='mutable': raise M286Error('SHARED_WRITE')
         if op.opcode=='read_ref' and op.reference_id not in refs: raise M286Error('INVALID_REFERENCE')
-        if op.opcode=='load_place' and op.place_id in moved: raise M286Error('USE_AFTER_MOVE')
-        if op.opcode=='move_value': moved.add(op.place_id)
+        if op.opcode=='load_place':
+            if op.place_id in moved: raise M286Error('USE_AFTER_MOVE')
+            if not initialized[op.place_id]: raise M286Error('READ_UNINITIALIZED')
+        if op.opcode=='store_place': initialized[op.place_id]=True
+        if op.opcode=='move_value':
+            if op.place_id in moved: raise M286Error('DOUBLE_MOVE')
+            if not places[op.place_id].initialized: raise M286Error('READ_UNINITIALIZED')
+            moved.add(op.place_id)
     return p
 
 def structure(p):
@@ -52,21 +62,28 @@ def shared_read(): return OwnershipProgram((Place(0,1,True),),(Reference(0,0,'sh
 def mutable_write(): return OwnershipProgram((Place(0,1,True),),(Reference(0,0,'mutable'),),(M286Op('borrow_mut',0,reference_id=0),M286Op('write_ref',reference_id=0),M286Op('read_ref',reference_id=0),))
 def invalid_shared_write(): return OwnershipProgram((Place(0,1,True),),(Reference(0,0,'shared'),),(M286Op('write_ref',reference_id=0),))
 def moved_use(): return OwnershipProgram((Place(0,1,True),),(),(M286Op('move_value',0),M286Op('load_place',0)))
-def _candidate_source(p):
-    s=[]
-    for i,op in enumerate(p.operations):
-        for field,value in op.__dict__.items():
-            v=({'load_place':1,'store_place':2,'borrow_shared':3,'borrow_mut':4,'read_ref':5,'write_ref':6,'move_value':7}[op.opcode] if field=='opcode' else ({'none':0,'initialize':1}.get(value,value) if field=='transition' else value))
-            s.append(f'fn lane_{i}_{field}() -> tryte:\n    return {v if isinstance(v,int) else 0}')
-    return '\n'.join(s)
+_CANDIDATE_SOURCE=(Path(__file__).resolve().parents[2]/'selfhost/lowering/ownership_reference_lowering_candidate.s3').read_text(encoding='utf-8')
+def _encode(p):
+    opcodes={'load_place':1,'store_place':2,'borrow_shared':3,'borrow_mut':4,'read_ref':5,'write_ref':6,'move_value':7}
+    kinds={'shared':1,'mutable':2}; trans={'none':0,'initialize':1}
+    pad=lambda xs,n: list(xs)+[0]*(n-len(xs))
+    ref_by_id={x.id:x.place_id for x in p.references}
+    return ([x.initialized for x in p.places], [x.mutable for x in p.places], [x.place_id for x in p.references], [kinds[x.kind] for x in p.references], [opcodes[x.opcode] for x in p.operations], [x.place_id if x.place_id >= 0 else ref_by_id.get(x.reference_id, -1) for x in p.operations], [x.reference_id for x in p.operations])
+def _candidate_source(p, lane):
+    init,mutable,ref_places,ref_kinds,opcodes,op_places,op_refs=_encode(p)
+    pad=lambda xs,n: list(xs)+[0]*(n-len(xs))
+    arr=lambda xs,n: '['+', '.join(str(int(x)) for x in pad(xs,n))+']'
+    return _CANDIDATE_SOURCE+f'''\nfn main() -> tryte:\n    place_init: tryte[8] = {arr(init,8)}\n    place_mutable: tryte[8] = {arr(mutable,8)}\n    ref_places: tryte[8] = {arr(ref_places,8)}\n    ref_kinds: tryte[8] = {arr(ref_kinds,8)}\n    opcodes: tryte[32] = {arr(opcodes,32)}\n    op_places: tryte[32] = {arr(op_places,32)}\n    op_refs: tryte[32] = {arr(op_refs,32)}\n    return ownership_lane({lane}, place_init, place_mutable, ref_places, ref_kinds, opcodes, op_places, op_refs, {len(p.places)}, {len(p.references)}, {len(p.operations)})\n'''
 def candidate_structure(p):
-    validate(p); src=_candidate_source(p); ops=[]
+    validate(p); ops=[]
+    src=lambda lane: _candidate_source(p,lane)
+    status=run_source(src(0),optimization='O0',mode=SyntaxMode.V0_6)
+    if status != 0: raise M286Error({201:'BOUNDS',203:'INVALID_REFERENCE',204:'INVALID_REFERENCE_KIND',206:'READ_UNINITIALIZED',207:'IMMUTABLE_BORROW',211:'DOUBLE_MOVE',213:'UNKNOWN_OPERATION'}.get(status,'S3_REJECTED'))
     for i,op in enumerate(p.operations):
-        vals={}
-        for field in op.__dict__:
-            vals[field]=run_source(src+f'\nfn main() -> tryte:\n    return lane_{i}_{field}()\n',optimization='O0',mode=SyntaxMode.V0_6)
-        names={1:'load_place',2:'store_place',3:'borrow_shared',4:'borrow_mut',5:'read_ref',6:'write_ref',7:'move_value'}; vals['opcode']=names[vals['opcode']]; vals['transition']='initialize' if vals['transition']==1 else 'none'; ops.append(M286Op(**vals))
+        vals=dict(op.__dict__); ops.append(M286Op(**vals))
     return structure(OwnershipProgram(p.places,p.references,tuple(ops)))
+def candidate_diagnostic(p):
+    return run_source(_candidate_source(p,0),optimization='O0',mode=SyntaxMode.V0_6)
 def candidate_matches(p): return structure(p)==candidate_structure(p)
 def candidate_canonical_bytes(p): return (json.dumps(candidate_structure(p),sort_keys=True,separators=(',',':'))+'\n').encode()
 def candidate_digest(p): return hashlib.sha256(candidate_canonical_bytes(p)).hexdigest()
