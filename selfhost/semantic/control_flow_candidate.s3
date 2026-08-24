@@ -1,0 +1,173 @@
+fn valid_flow_code(flow: tryte) -> trit:
+    match flow <=> 0:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match flow <=> 2:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn valid_statement_kind(kind: tryte) -> trit:
+    match kind <=> 0:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match kind <=> 4:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn combine_branches(left: tryte, right: tryte) -> tryte:
+    mut result: tryte = 102
+    match valid_flow_code(left):
+        -1:
+            match valid_flow_code(right):
+                -1:
+                    match left == 0:
+                        -1:
+                            result = 100
+                        0:
+                            match right == 0:
+                                -1:
+                                    result = 100
+                                0:
+                                    match left == 1:
+                                        -1:
+                                            match right == 1:
+                                                -1:
+                                                    result = 101
+                                                0:
+                                                    result = 102
+                                                1:
+                                                    result = 102
+                                        0:
+                                            result = 102
+                                        1:
+                                            match right == 1:
+                                                -1:
+                                                    result = 102
+                                                0:
+                                                    result = 102
+                                                1:
+                                                    result = 101
+                                1:
+                                    result = 102
+                        1:
+                            result = 102
+                0:
+                    result = 203
+                1:
+                    result = 203
+        0:
+            result = 203
+        1:
+            result = 203
+    return result
+
+fn check_control_flow(
+    statement_kinds: tryte[8],
+    branch_left: tryte[8],
+    branch_right: tryte[8],
+    statement_count: tryte,
+    requires_return: tryte
+) -> tryte:
+    match statement_count <=> 0:
+        -1:
+            return 203
+        0:
+            discard 0
+        1:
+            match statement_count <=> 8:
+                -1:
+                    discard 0
+                0:
+                    discard 0
+                1:
+                    return 203
+    match requires_return <=> 0:
+        -1:
+            return 203
+        0:
+            discard 0
+        1:
+            match requires_return <=> 1:
+                -1:
+                    return 203
+                0:
+                    discard 0
+                1:
+                    return 203
+    mut flow: tryte = 0
+    mut index: tryte = 0
+    while index < statement_count:
+        match flow == 0:
+            -1:
+                match valid_statement_kind(statement_kinds[index]):
+                    -1:
+                        discard 0
+                    0:
+                        return 203
+                    1:
+                        return 203
+                match statement_kinds[index] <=> 0:
+                    -1:
+                        return 203
+                    0:
+                        flow = 0
+                    1:
+                        match statement_kinds[index] <=> 1:
+                            -1:
+                                return 203
+                            0:
+                                flow = 1
+                            1:
+                                match statement_kinds[index] <=> 2:
+                                    -1:
+                                        return 203
+                                    0:
+                                        flow = 2
+                                    1:
+                                        match statement_kinds[index] <=> 3:
+                                            -1:
+                                                return 203
+                                            0:
+                                                flow = combine_branches(branch_left[index], branch_right[index]) - 100
+                                            1:
+                                                match statement_kinds[index] <=> 4:
+                                                    -1:
+                                                        return 203
+                                                    0:
+                                                        flow = 2
+                                                    1:
+                                                        return 203
+            0:
+                return 202
+            1:
+                return 202
+        index += 1
+    mut result: tryte = 203
+    match requires_return == 1:
+        -1:
+            match flow == 1:
+                -1:
+                    result = 101
+                0:
+                    result = 201
+                1:
+                    result = 201
+        0:
+            result = 100 + flow
+        1:
+            result = 100 + flow
+    return result
