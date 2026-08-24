@@ -97,6 +97,7 @@ def build_stage1(
             compiler,
             "-nostdlib",
             "-no-pie",
+            "-s",
             "-Wl,--build-id=none",
             str(stage1_object),
             str(host_object),
