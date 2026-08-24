@@ -10,6 +10,14 @@ provided, leaving ownership/aliasing rules open for a future semantic type
 system. Existing classical trits are not qutrits; qutrit/qudit are extension
 points only.
 
+Measurement is a single structured instruction with one explicit classical
+destination. The classical register is explicit when supplied, otherwise its
+size is deterministically `max(destination) + 1`; duplicate destinations and
+out-of-range destinations fail closed. V1 barriers are global-only. The QIR
+identifier is the normative `base_profile`; its current contract is static
+circuits with terminal measurements, with no adaptive instruction after a
+measurement.
+
 The experimental OpenQASM 3.1 emitter supports the V1 gate set and fails closed
 through capability validation. QIR is currently a contract only: Base Profile
 is modeled, but no fake LLVM/QIR is emitted. Providers are protocols with no
