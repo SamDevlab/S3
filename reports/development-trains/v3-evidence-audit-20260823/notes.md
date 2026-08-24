@@ -12,3 +12,6 @@ M2.78 modulo-181 identity is bounded experimental evidence only and is not
 acceptable for M3.00 canonical equivalence. M2.81–M2.83 retain legacy
 identities for telemetry, while exact bounded structural observables and
 SHA-256 canonical bytes are the corrected evidence path.
+
+M278_IDENTITY_MOD181=BOUNDED_EXPERIMENTAL_EVIDENCE_ONLY
+M278_IDENTITY_ACCEPTABLE_FOR_M300=NO
