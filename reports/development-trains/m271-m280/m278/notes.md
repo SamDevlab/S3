@@ -28,12 +28,16 @@ semantic stage.
 
 ## TEST_EVIDENCE
 
-- Focused M2.78 contract: PASS, 6 tests on Python 3.11.
-- Compileall, impact metadata, T1 and T3 remain pending until the candidate
-  is committed.
+- Focused M2.78 contract: PASS, 6 tests on Python 3.11, 3.12 and 3.13.
+- Combined M2.77 and M2.78 regression: PASS, 17 tests on all three runtimes.
+- `python -m compileall -q bootstrap/s3 tools`: PASS.
+- `git diff --check`: PASS.
+- T1 affected profile: PASS, 2 selected, 2 passed, 0 failed, 0 timed out.
+- T3 `m278` shard: PASS, 1 selected, 1 passed, 0 failed, 0 timed out.
+- Final tested source head: `9347f57cd4d8123b1be9a272000ec328615719b2`.
 - Benchmark: NOT RUN.
 - Global T4: NOT RUN; reserved for M3.00.
 
 ## STATUS
 
-IMPLEMENTATION_GATES_PENDING
+QUALIFIED_LOCAL
