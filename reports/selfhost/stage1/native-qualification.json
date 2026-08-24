@@ -2,7 +2,7 @@
   "schema": "s3.selfhost.stage1-native-qualification.v2",
   "source_head": "2d7385c6813395239bc68b6b2858da12a693b160",
   "source_sha256": "88b988b0b91536ef7252f4dc18e2e534bf8241de0dd9941600f2d2c2ec373b3b",
-  "candidate_head": "0b9cbe2491c7e6c3b8453f15c624e8291d2b4a75",
+  "candidate_head": "eaf3ec0b7415b408f3b7c041244db5cfe7739b1e",
   "environment": {"host_alias": "s3-vm", "os": "Linux", "architecture": "x86-64", "compiler": "/usr/bin/cc", "docker_required": false},
   "build": {"stage0_to_stage1": "PASS", "artifact_sha256": "41f4ac5dd17d042bb3f448f9c9878e6e52aae1ccf8d6ba793205e1a3b9121c7e", "assembly_sha256": "512044229ba5a4035c1d862ee167839e96e95a029556e01a6d97b26871d03be0", "artifact_size": 17519136, "determinism": "PASS_TWO_IDENTICAL_BUILDS", "elf": "ELF64 x86-64 static executable without PT_INTERP", "max_instructions": 100000000},
   "trivial_compile": {"source": "fn main() -> tryte: return 7", "compiler_rc": 0, "native_exit": 7},
