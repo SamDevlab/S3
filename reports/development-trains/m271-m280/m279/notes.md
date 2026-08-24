@@ -23,12 +23,16 @@ mismatches return a visible reference fallback with a stable reason.
 
 ## TEST_EVIDENCE
 
-- Focused M2.79 contract: PASS, 5 tests on Python 3.11.
-- Compileall, impact metadata, T1 and T3 remain pending until the candidate
-  is committed.
+- Focused M2.79 contract: PASS, 5 tests on Python 3.11, 3.12 and 3.13.
+- Regression against the composed M2.78 candidate: PASS in all three runtimes.
+- `python -m compileall -q bootstrap/s3 tools`: PASS.
+- `git diff --check`: PASS.
+- T1 affected profile: PASS, 2 selected, 2 passed, 0 failed, 0 timed out.
+- T3 `m279` shard: PASS, 1 selected, 1 passed, 0 failed, 0 timed out.
+- Final tested source head: `e5d017c8e15960922119258ee8b73445a06eaffb`.
 - Benchmark: NOT RUN.
 - Global T4: NOT RUN; reserved for M3.00.
 
 ## STATUS
 
-IMPLEMENTATION_GATES_PENDING
+QUALIFIED_LOCAL
