@@ -119,6 +119,7 @@
     "m296": ["tests/test_m296_driver_artifact_handoff.py"],
     "m297": ["tests/test_m297_bootstrap_admission.py"],
     "m298": ["tests/test_m298_bootstrap_reproducibility.py"],
+    "m299": ["tests/test_m299_bootstrap_promotion_readiness.py"],
     "container-backend-prework": [
       "tests/test_container_backend_contract.py",
       "tests/test_s3_docker.py",
@@ -164,6 +165,7 @@
     "m296": ["tests/test_m296_driver_artifact_handoff.py"],
     "m297": ["tests/test_m297_bootstrap_admission.py"],
     "m298": ["tests/test_m298_bootstrap_reproducibility.py"],
+    "m299": ["tests/test_m299_bootstrap_promotion_readiness.py"],
     "m241-m259-level-c": [
       "tests/test_m241_workspace_semantic_graph.py",
       "tests/test_m242_lsp_project_intelligence.py",
@@ -2067,6 +2069,33 @@
       "tests": ["tests/test_m298_bootstrap_reproducibility.py"],
       "milestones": ["m298", "bootstrap", "reproducibility", "self-hosting"],
       "shards": ["m298"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/bootstrap_promotion_readiness.py",
+      "tests": ["tests/test_m299_bootstrap_promotion_readiness.py"],
+      "milestones": ["m299", "bootstrap", "promotion", "self-hosting"],
+      "shards": ["m299"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "selfhost/bootstrap/bootstrap_promotion_readiness_candidate.s3",
+      "tests": ["tests/test_m299_bootstrap_promotion_readiness.py"],
+      "milestones": ["m299", "bootstrap", "promotion", "self-hosting"],
+      "shards": ["m299"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m299_bootstrap_promotion_readiness.py",
+      "tests": ["tests/test_m299_bootstrap_promotion_readiness.py"],
+      "milestones": ["m299", "bootstrap", "promotion", "self-hosting"],
+      "shards": ["m299"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
