@@ -1,0 +1,204 @@
+fn valid_symbol_kind(kind: tryte) -> trit:
+    match kind <=> 1:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match kind <=> 4:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn valid_scope_tree(
+    scope_parents: tryte[8],
+    scope_count: tryte
+) -> trit:
+    match scope_count <=> 1:
+        -1:
+            return 0
+        0:
+            discard 0
+        1:
+            match scope_count <=> 8:
+                -1:
+                    discard 0
+                0:
+                    discard 0
+                1:
+                    return 0
+
+    match scope_parents[0] == -1:
+        -1:
+            discard 0
+        0:
+            return 0
+        1:
+            return 0
+
+    mut scope_id: tryte = 1
+    while scope_id < scope_count:
+        mut parent: tryte = scope_parents[scope_id]
+        match parent <=> 0:
+            -1:
+                return 0
+            0:
+                discard 0
+            1:
+                discard 0
+        match parent <=> scope_id:
+            -1:
+                discard 0
+            0:
+                return 0
+            1:
+                return 0
+        scope_id += 1
+    return -1
+
+fn valid_declarations(
+    symbol_ids: tryte[8],
+    kinds: tryte[8],
+    declaration_scopes: tryte[8],
+    symbol_count: tryte,
+    scope_count: tryte
+) -> trit:
+    match symbol_count <=> 0:
+        -1:
+            return 0
+        0:
+            discard 0
+        1:
+            match symbol_count <=> 8:
+                -1:
+                    discard 0
+                0:
+                    discard 0
+                1:
+                    return 0
+
+    mut index: tryte = 0
+    while index < symbol_count:
+        match valid_symbol_kind(kinds[index]):
+            -1:
+                discard 0
+            0:
+                return 0
+            1:
+                return 0
+        match declaration_scopes[index] <=> 0:
+            -1:
+                return 0
+            0:
+                discard 0
+            1:
+                discard 0
+        match declaration_scopes[index] <=> scope_count:
+            -1:
+                discard 0
+            0:
+                return 0
+            1:
+                return 0
+
+        mut right: tryte = index + 1
+        while right < symbol_count:
+            match declaration_scopes[index] == declaration_scopes[right]:
+                -1:
+                    match symbol_ids[index] == symbol_ids[right]:
+                        -1:
+                            return 0
+                        0:
+                            discard 0
+                        1:
+                            discard 0
+                0:
+                    discard 0
+                1:
+                    discard 0
+            right += 1
+        index += 1
+    return -1
+
+fn encoded_symbol_slot(index: tryte, kind: tryte) -> tryte:
+    return index + index + index + index + index + index + index + index + 8 + kind
+
+fn resolve_visible_symbol(
+    symbol_ids: tryte[8],
+    kinds: tryte[8],
+    declaration_scopes: tryte[8],
+    scope_parents: tryte[8],
+    symbol_count: tryte,
+    scope_count: tryte,
+    query_symbol: tryte,
+    query_scope: tryte
+) -> tryte:
+    match valid_scope_tree(scope_parents, scope_count):
+        -1:
+            discard 0
+        0:
+            return -1
+        1:
+            return -1
+
+    match valid_declarations(
+        symbol_ids,
+        kinds,
+        declaration_scopes,
+        symbol_count,
+        scope_count
+    ):
+        -1:
+            discard 0
+        0:
+            return -1
+        1:
+            return -1
+
+    match query_scope <=> 0:
+        -1:
+            return -1
+        0:
+            discard 0
+        1:
+            discard 0
+    match query_scope <=> scope_count:
+        -1:
+            discard 0
+        0:
+            return -1
+        1:
+            return -1
+
+    mut current_scope: tryte = query_scope
+    mut depth: tryte = 0
+    while depth < 8:
+        mut index: tryte = 0
+        while index < symbol_count:
+            match declaration_scopes[index] == current_scope:
+                -1:
+                    match symbol_ids[index] == query_symbol:
+                        -1:
+                            return encoded_symbol_slot(index, kinds[index])
+                        0:
+                            discard 0
+                        1:
+                            discard 0
+                0:
+                    discard 0
+                1:
+                    discard 0
+            index += 1
+
+        match current_scope == 0:
+            -1:
+                return 0
+            0:
+                current_scope = scope_parents[current_scope]
+            1:
+                current_scope = scope_parents[current_scope]
+        depth += 1
+    return -1
