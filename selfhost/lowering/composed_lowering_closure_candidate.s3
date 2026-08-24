@@ -1,0 +1,39 @@
+fn add_mod(left: tryte, right: tryte) -> tryte:
+    mut result: tryte = left
+    match right <=> 0:
+        -1:
+            mut threshold: tryte = -364 - right
+            match left <=> threshold:
+                -1:
+                    result = left - threshold
+                    result += 364
+                    result += 1
+                0:
+                    result = left + right
+                1:
+                    result = left + right
+        0:
+            return result
+        1:
+            mut threshold: tryte = 364 - right
+            match left <=> threshold:
+                -1:
+                    result = left + right
+                0:
+                    result = left + right
+                1:
+                    result = left - threshold
+                    result = result - 364
+                    result = result - 1
+    return result
+
+fn fold_identity(value: tryte) -> tryte:
+    mut result: tryte = value
+    while result < 0:
+        result += 181
+    while result > 180:
+        result = result - 181
+    return result
+
+fn compose_lowering(checkpoint_identity: tryte) -> tryte:
+    return fold_identity(add_mod(checkpoint_identity, 288))
