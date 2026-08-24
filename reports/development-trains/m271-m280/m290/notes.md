@@ -14,12 +14,15 @@ claim that the compiler is fully self-hosted.
 
 ## TEST_EVIDENCE
 
-- Focused M2.90 contract: pending.
-- Combined checkpoint proof: pending.
-- `compileall`: pending.
-- `git diff --check`: pending.
-- T1 affected profile: pending.
-- T3 `m290` shard: pending.
+- Focused M2.90 contract: PASS, 3 tests on Python 3.11, 3.12 and 3.13.
+- Combined checkpoint proof: PASS.
+- `compileall`: PASS.
+- `git diff --check`: PASS.
+- Impact metadata: PASS.
+- T1 affected profile against `cf43cbe94eac1675e1554c8fbafd68fab4e28ff4`:
+  PASS, 2 selected, 2 passed, 0 failed, 0 timed out.
+- T3 `m290` shard: PASS, 1 selected, 1 passed, 0 failed, 0 timed out.
+- Final tested source head: `3c90f453e67b3a7f300ed57713db32e14ef3fd62`.
 - Benchmark: NOT RUN.
 - Global T4: NOT RUN; reserved for M3.00.
 
