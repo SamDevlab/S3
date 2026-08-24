@@ -1,0 +1,146 @@
+fn valid_range(value: tryte, lower: tryte, upper: tryte) -> trit:
+    match value <=> lower:
+        -1:
+            return 0
+        0:
+            match value <=> upper:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+        1:
+            match value <=> upper:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn is_terminator(opcode: tryte) -> trit:
+    match opcode == 23:
+        -1:
+            return -1
+        0:
+            match opcode == 24:
+                -1:
+                    return -1
+                0:
+                    match opcode == 25:
+                        -1:
+                            return -1
+                        0:
+                            return 0
+                        1:
+                            return 0
+                1:
+                    return -1
+        1:
+            return -1
+
+fn verify_linear_ir(
+    opcodes: tryte[4],
+    results: tryte[4],
+    operand_counts: tryte[4],
+    operands: tryte[16],
+    register_count: tryte,
+    instruction_count: tryte
+) -> tryte:
+    match valid_range(register_count, 1, 8):
+        -1:
+            discard 0
+        0:
+            return 201
+        1:
+            return 201
+    match valid_range(instruction_count, 1, 4):
+        -1:
+            discard 0
+        0:
+            return 201
+        1:
+            return 201
+    mut defined: tryte[8] = [-1, -1, -1, -1, -1, -1, -1, -1]
+    mut instruction: tryte = 0
+    mut operand_base: tryte = 0
+    while instruction < instruction_count:
+        match valid_range(opcodes[instruction], 1, 25):
+            -1:
+                discard 0
+            0:
+                return 202
+            1:
+                return 202
+        match valid_range(results[instruction], 0, 8):
+            -1:
+                discard 0
+            0:
+                return 203
+            1:
+                return 203
+        match valid_range(operand_counts[instruction], 0, 4):
+            -1:
+                discard 0
+            0:
+                return 204
+            1:
+                return 204
+        match is_terminator(opcodes[instruction]):
+            -1:
+                match instruction < instruction_count - 1:
+                    -1:
+                        return 205
+                    0:
+                        discard 0
+                    1:
+                        discard 0
+            0:
+                discard 0
+            1:
+                return 202
+        mut operand: tryte = 0
+        while operand < operand_counts[instruction]:
+            match valid_range(operands[operand_base + operand], 0, 7):
+                -1:
+                    match operands[operand_base + operand] < register_count:
+                        -1:
+                            match defined[operands[operand_base + operand]] == 1:
+                                -1:
+                                    discard 0
+                                0:
+                                    return 204
+                                1:
+                                    return 204
+                        0:
+                            return 204
+                        1:
+                            return 204
+                0:
+                    return 204
+                1:
+                    return 204
+            operand += 1
+        match results[instruction] == 0:
+            -1:
+                discard 0
+            0:
+                match defined[results[instruction] - 1] == 1:
+                    -1:
+                        return 203
+                    0:
+                        defined[results[instruction] - 1] = 1
+                    1:
+                        defined[results[instruction] - 1] = 1
+            1:
+                return 203
+        instruction += 1
+        operand_base += 4
+    match is_terminator(opcodes[instruction_count - 1]):
+        -1:
+            return 0
+        0:
+            return 205
+        1:
+            return 202

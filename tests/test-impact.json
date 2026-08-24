@@ -104,6 +104,7 @@
     "m281": ["tests/test_m281_canonical_ir_data_model.py"],
     "m282": ["tests/test_m282_expression_lowering_candidate.py"],
     "m283": ["tests/test_m283_call_aggregate_lowering_candidate.py"],
+    "m284": ["tests/test_m284_ir_verifier_candidate.py"],
     "container-backend-prework": [
       "tests/test_container_backend_contract.py",
       "tests/test_s3_docker.py",
@@ -134,6 +135,7 @@
     "m281": ["tests/test_m281_canonical_ir_data_model.py"],
     "m282": ["tests/test_m282_expression_lowering_candidate.py"],
     "m283": ["tests/test_m283_call_aggregate_lowering_candidate.py"],
+    "m284": ["tests/test_m284_ir_verifier_candidate.py"],
     "m241-m259-level-c": [
       "tests/test_m241_workspace_semantic_graph.py",
       "tests/test_m242_lsp_project_intelligence.py",
@@ -1659,6 +1661,33 @@
       "tests": ["tests/test_m283_call_aggregate_lowering_candidate.py"],
       "milestones": ["m283", "call-lowering", "aggregate-lowering", "self-hosting"],
       "shards": ["m283"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/canonical_ir_verifier_candidate.py",
+      "tests": ["tests/test_m284_ir_verifier_candidate.py"],
+      "milestones": ["m284", "ir-verifier", "self-hosting"],
+      "shards": ["m284"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "selfhost/verifier/canonical_ir_verifier_candidate.s3",
+      "tests": ["tests/test_m284_ir_verifier_candidate.py"],
+      "milestones": ["m284", "ir-verifier", "self-hosting"],
+      "shards": ["m284"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m284_ir_verifier_candidate.py",
+      "tests": ["tests/test_m284_ir_verifier_candidate.py"],
+      "milestones": ["m284", "ir-verifier", "self-hosting"],
+      "shards": ["m284"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
