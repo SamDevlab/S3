@@ -31,3 +31,16 @@ milestones.
 - Lookup comparison is exact scalar equality, not a modulo fingerprint.
 - Python remains the reference/default compiler path.
 - No native, benchmark, performance, promotion, or global T4 claim is made.
+
+## Qualification Status
+
+- T0 compileall: PASS.
+- T1 affected smart gate: PASS (4 selected, 4 passed, 0 failed, 0 timed out).
+- T2 focused contract: PASS (11 passed).
+- T3 `m271` shard: PASS (11 passed).
+- Impact metadata is present in `tests/test-impact.json`.
+- Natural CI was dispatched after repository Actions were re-enabled, but every
+  job was rejected before startup by the account billing/spending-limit gate.
+  This is an external CI blocker; no CI PASS is claimed.
+- The Python compiler remains the default path and this candidate is not
+  promoted.

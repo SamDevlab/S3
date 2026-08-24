@@ -29,6 +29,9 @@ collection semantics.
 - Added focused tests for present/missing lookup, insertion order, empty tables,
   duplicate rejection, kind rejection, and capacity bounds.
 - Avoided modulo fingerprints for the observable lookup result.
+- Replaced the unsupported tryte multiplication in the slot encoder with three
+  checked additions, preserving the exact `(slot, kind)` encoding accepted by
+  the S3 semantic subset.
 
 ## ALTERNATIVES_CONSIDERED
 
@@ -47,9 +50,21 @@ None recorded yet.
 
 ## TEST_EVIDENCE
 
-GitHub-hosted CI is the available execution environment for this remote-only
-implementation. Local T0/T1/T2/T3 evidence is not claimed until CI or a later
-hosted/local qualification run reports it.
+- T0 `python -m compileall -q bootstrap/s3 tools`: PASS.
+- T1 affected smart gate: PASS, 4 selected tests, 4 passed, 0 failed, and 0
+  timeouts. The run also selected the existing broad compiler/source-syntax
+  tests because historical untracked `scratch/` artifacts matched their
+  mappings; those artifacts were not staged or modified.
+- T2 focused `tests/test_m271_symbol_table_candidate.py`: PASS, 11 passed.
+- T3 `python tools/s3test.py shard m271 --format json --timeout 180`: PASS,
+  one selected file, 11 passed, 0 failed, and 0 timeouts.
+- `git diff --check`: PASS.
+- CI was initially not observable because repository Actions permissions were
+  disabled (`enabled=false`) despite the workflow and path filters covering
+  this PR. Actions were enabled before the candidate push. The resulting
+  natural checks were not started: GitHub annotated every job with an account
+  billing/spending-limit failure. This is an external CI blocker, not a test
+  result, and is not claimed as PASS.
 
 ## BENCHMARK_RELEVANCE
 
@@ -81,4 +96,4 @@ lookup result by comparing exact scalar lookup encodings.
 
 ## STATUS
 
-IMPLEMENTED_PENDING_GITHUB_CI_AND_IMPACT_METADATA
+QUALIFIED_LOCAL_BLOCKED_EXTERNAL_CI_BILLING

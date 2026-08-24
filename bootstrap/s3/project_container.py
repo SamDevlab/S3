@@ -157,6 +157,12 @@ class ProjectTooling:
             "external_executables": self.manifest.external_executables,
         }
 
+    def source_files(self) -> dict[str, str]:
+        """Return project sources in deterministic logical-path order."""
+
+        self.check()
+        return dict(sorted(self._sources().items()))
+
     def docker_context(
         self,
         provider,
@@ -174,7 +180,7 @@ class ProjectTooling:
         self.check()
         entrypoint = ("s3", "run", f"/app/{self.manifest.entrypoint}.s3")
         return provider.project_build_context(
-            self._sources(),
+            self.source_files(),
             image=image,
             entrypoint=entrypoint,
             foreign_helpers=foreign_helpers,

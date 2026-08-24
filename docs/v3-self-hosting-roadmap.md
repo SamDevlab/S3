@@ -265,3 +265,13 @@ M300_T4=PASS
 
 Until then the strongest valid claim is the narrowest qualified candidate or
 checkpoint reached by the train.
+
+## Container Backend Preparation
+
+Container support is orthogonal to the M2.71-M3.00 compiler self-hosting
+critical path. M1.38 Docker CLI build/run/inspect and interoperability remain
+supported. The S3 OCI backend is a later, explicit provider line: its current
+implementation contains only deterministic plan, descriptor, configuration,
+manifest, layout, and export-boundary contracts. It is not a functional
+default until its own S3 container-core, OCI-build, and Docker interoperability
+gates pass. See `docs/container-backend-architecture.md`.
