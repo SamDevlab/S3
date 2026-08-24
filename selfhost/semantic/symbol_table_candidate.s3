@@ -1,0 +1,84 @@
+fn valid_symbol_kind(kind: tryte) -> trit:
+    match kind <=> 1:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match kind <=> 4:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn duplicate_symbol_id(
+    symbol_ids: tryte[8],
+    count: tryte
+) -> trit:
+    mut left: tryte = 0
+    while left < count:
+        mut right: tryte = left + 1
+        while right < count:
+            match symbol_ids[left] == symbol_ids[right]:
+                -1:
+                    return -1
+                0:
+                    right += 1
+                1:
+                    right += 1
+        left += 1
+    return 0
+
+fn encoded_symbol_slot(index: tryte, kind: tryte) -> tryte:
+    mut slot: tryte = index + 1
+    slot += slot
+    slot += slot
+    slot += slot
+    return slot + kind
+
+fn symbol_table_lookup(
+    symbol_ids: tryte[8],
+    kinds: tryte[8],
+    count: tryte,
+    query: tryte
+) -> tryte:
+    match count <=> 0:
+        -1:
+            return -1
+        0:
+            discard 0
+        1:
+            match count <=> 8:
+                -1:
+                    discard 0
+                0:
+                    discard 0
+                1:
+                    return -1
+
+    match duplicate_symbol_id(symbol_ids, count):
+        -1:
+            return -1
+        0:
+            discard 0
+        1:
+            return -1
+
+    mut index: tryte = 0
+    while index < count:
+        match valid_symbol_kind(kinds[index]):
+            -1:
+                match symbol_ids[index] == query:
+                    -1:
+                        return encoded_symbol_slot(index, kinds[index])
+                    0:
+                        index += 1
+                    1:
+                        index += 1
+            0:
+                return -1
+            1:
+                return -1
+    return 0

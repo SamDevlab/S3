@@ -19,6 +19,12 @@ from .backends.x86_64 import (
     generate_native_assembly,
 )
 from .codegen import CodegenError
+from .container_backend import (
+    ContainerBackendError,
+    DockerCliBackend,
+    S3OciBackend,
+    select_container_backend,
+)
 from .diagnostics import (
     Diagnostic,
     DiagnosticCategory,
@@ -37,7 +43,7 @@ from .lexer import SyntaxMode
 from .optimizer import OptimizationLevel, instruction_count
 from .pipeline import CompilationResult, compile_source
 from .project_container import ProjectTooling
-from .s3_docker import DockerProvider, DockerSpec
+from .s3_docker import DockerSpec
 from .targets import BUILTIN_TARGETS
 from .test_runner import TestRunnerError, render_test_report, run_test_manifest
 
@@ -183,6 +189,12 @@ def _parser() -> argparse.ArgumentParser:
         action_parser = container_actions.add_parser(action)
         action_parser.add_argument("root", type=Path, help="project root containing s3.toml")
         action_parser.add_argument("--image", required=True, help="Docker image reference")
+        action_parser.add_argument(
+            "--backend",
+            choices=("s3", "docker", "auto"),
+            default="docker",
+            help="container backend (default: docker)",
+        )
 
     commands = (
         "tokens",
@@ -418,20 +430,35 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         if args.command == "container":
             tooling = ProjectTooling(args.root)
-            provider = DockerProvider()
+            backend, selection = select_container_backend(args.backend)
             if args.container_action == "inspect":
-                print(json.dumps(tooling.inspect(), indent=2, sort_keys=True))
+                payload = tooling.inspect()
+                payload.update(selection.evidence())
+                print(json.dumps(payload, indent=2, sort_keys=True))
                 return 0
             if args.container_action == "plan":
-                spec = DockerSpec(args.image, ("s3", "run", f"/app/{tooling.manifest.entrypoint}.s3"))
-                print(json.dumps(provider.plan(spec), indent=2, sort_keys=True))
+                if isinstance(backend, S3OciBackend):
+                    payload = backend.plan(tooling, args.image)
+                else:
+                    spec = DockerSpec(
+                        args.image,
+                        ("s3", "run", f"/app/{tooling.manifest.entrypoint}.s3"),
+                    )
+                    payload = backend.plan(spec)
+                payload.update(selection.evidence())
+                print(json.dumps(payload, indent=2, sort_keys=True))
                 return 0
-            context, owner = tooling.docker_context(provider, image=args.image)
+            if not isinstance(backend, DockerCliBackend):
+                backend.build() if args.container_action == "build" else backend.run()
+                return 1
+            print(f"CONTAINER_BACKEND={selection.backend}")
+            print(f"FALLBACK_REASON={selection.fallback_reason or 'none'}")
+            context, owner = tooling.docker_context(backend, image=args.image)
             try:
                 if args.container_action == "build":
-                    result = provider.build(context, args.image)
+                    result = backend.build(context, args.image)
                 else:
-                    result = provider.run(
+                    result = backend.run(
                         DockerSpec(args.image, ("s3", "run", f"/app/{tooling.manifest.entrypoint}.s3"))
                     )
                 if result.stdout:
@@ -626,6 +653,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         AssemblyError,
         CodegenError,
         NativeBackendError,
+        ContainerBackendError,
         TestRunnerError,
         DocumentationError,
         FormatterError,
