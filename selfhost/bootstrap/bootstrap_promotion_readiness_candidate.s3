@@ -1,0 +1,28 @@
+fn add_mod(left: tryte, amount: tryte) -> tryte:
+    mut result: tryte = left
+    match result <=> 301 - amount:
+        -1:
+            result += amount
+        0:
+            result = result - (301 - amount)
+        1:
+            result = result - (301 - amount)
+    return result
+
+fn fold_identity(value: tryte) -> tryte:
+    mut result: tryte = value
+    while result < 0:
+        result += 181
+    while result > 180:
+        result = result - 181
+    return result
+
+fn assess_promotion_readiness(
+    seal_identity: tryte,
+    admission_identity: tryte,
+    target_id: tryte
+) -> tryte:
+    mut result: tryte = add_mod(seal_identity, admission_identity)
+    result = add_mod(result, target_id)
+    result = add_mod(result, 299)
+    return fold_identity(result)
