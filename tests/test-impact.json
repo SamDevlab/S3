@@ -114,6 +114,7 @@
     "m291": ["tests/test_m291_assembly_emission_candidate.py"],
     "m292": ["tests/test_m292_assembly_verification_closure.py"],
     "m293": ["tests/test_m293_native_emission_boundary.py"],
+    "m294": ["tests/test_m294_source_workspace_boundary.py"],
     "container-backend-prework": [
       "tests/test_container_backend_contract.py",
       "tests/test_s3_docker.py",
@@ -154,6 +155,7 @@
     "m291": ["tests/test_m291_assembly_emission_candidate.py"],
     "m292": ["tests/test_m292_assembly_verification_closure.py"],
     "m293": ["tests/test_m293_native_emission_boundary.py"],
+    "m294": ["tests/test_m294_source_workspace_boundary.py"],
     "m241-m259-level-c": [
       "tests/test_m241_workspace_semantic_graph.py",
       "tests/test_m242_lsp_project_intelligence.py",
@@ -1922,6 +1924,33 @@
       "tests": ["tests/test_m293_native_emission_boundary.py"],
       "milestones": ["m293", "native", "emission", "self-hosting"],
       "shards": ["m293"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/source_workspace_boundary.py",
+      "tests": ["tests/test_m294_source_workspace_boundary.py"],
+      "milestones": ["m294", "source", "workspace", "self-hosting"],
+      "shards": ["m294"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "selfhost/driver/source_workspace_boundary_candidate.s3",
+      "tests": ["tests/test_m294_source_workspace_boundary.py"],
+      "milestones": ["m294", "source", "workspace", "self-hosting"],
+      "shards": ["m294"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m294_source_workspace_boundary.py",
+      "tests": ["tests/test_m294_source_workspace_boundary.py"],
+      "milestones": ["m294", "source", "workspace", "self-hosting"],
+      "shards": ["m294"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false

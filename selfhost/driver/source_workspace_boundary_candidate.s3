@@ -1,0 +1,56 @@
+fn add_mod(left: tryte, amount: tryte) -> tryte:
+    mut result: tryte = left
+    match result <=> 301 - amount:
+        -1:
+            result += amount
+        0:
+            result = result - (301 - amount)
+        1:
+            result = result - (301 - amount)
+    return result
+
+fn fold_identity(value: tryte) -> tryte:
+    mut result: tryte = value
+    while result < 0:
+        result += 181
+    while result > 180:
+        result = result - 181
+    return result
+
+fn prepare_workspace_plan(
+    path_ids: tryte[8],
+    digest_ids: tryte[8],
+    path_lengths: tryte[8],
+    count: tryte
+) -> tryte:
+    match count <=> 0:
+        -1:
+            return -1
+        0:
+            return -1
+        1:
+            match count <=> 8:
+                -1:
+                    mut checksum: tryte = 0
+                    mut index: tryte = 0
+                    while index < count:
+                        checksum = add_mod(checksum, path_ids[index])
+                        checksum = add_mod(checksum, digest_ids[index])
+                        checksum = add_mod(checksum, path_lengths[index])
+                        checksum = add_mod(checksum, index + 1)
+                        index += 1
+                    checksum = add_mod(checksum, 294)
+                    return fold_identity(checksum)
+                0:
+                    mut checksum: tryte = 0
+                    mut index: tryte = 0
+                    while index < count:
+                        checksum = add_mod(checksum, path_ids[index])
+                        checksum = add_mod(checksum, digest_ids[index])
+                        checksum = add_mod(checksum, path_lengths[index])
+                        checksum = add_mod(checksum, index + 1)
+                        index += 1
+                    checksum = add_mod(checksum, 294)
+                    return fold_identity(checksum)
+                1:
+                    return -1
