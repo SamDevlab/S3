@@ -1,0 +1,28 @@
+{
+  "milestone": "M2.76",
+  "name": "bounded-self-hosted-record-enum-fixed-layouts",
+  "base_branch": "integration/m271-m280-20260823",
+  "status": "IMPLEMENTED_PENDING_QUALIFICATION",
+  "candidate_source": "selfhost/semantic/fixed_layout_candidate.s3",
+  "reference": "bootstrap.s3.fixed_layout_candidate.record_layout_reference and enum_layout_reference",
+  "bounds": {
+    "max_record_fields": 8,
+    "max_enum_variants": 8,
+    "max_variant_payload_fields": 8
+  },
+  "focused_tests": "PASS_8_TESTS_PYTHON_3_11",
+  "compileall": "NOT_RUN",
+  "diff_check": "NOT_RUN",
+  "impact_metadata": "NOT_RUN",
+  "smart_affected": "NOT_RUN",
+  "smart_shard": "NOT_RUN",
+  "benchmark": "NOT_RUN",
+  "t4": "NOT_RUN",
+  "performance_claim": "NONE",
+  "production_promotion": "NO",
+  "full_self_hosting_claim": "NO",
+  "final_tested_source_head": "QUALIFICATION_PENDING",
+  "final_candidate_head": "DOCUMENTATION_UPDATE_PENDING",
+  "source_changed_after_final_gates": false,
+  "next_milestone": "M2.77_AFTER_M2.76_INTEGRATION"
+}

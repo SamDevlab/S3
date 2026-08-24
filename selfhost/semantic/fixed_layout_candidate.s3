@@ -1,0 +1,218 @@
+fn valid_scalar_type(type_id: tryte) -> trit:
+    match type_id <=> 1:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match type_id <=> 4:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn valid_field_count(count: tryte) -> trit:
+    match count <=> 0:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match count <=> 8:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn valid_variant_count(count: tryte) -> trit:
+    match count <=> 1:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match count <=> 8:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn valid_payload_table(
+    payload_types: tryte[64],
+    payload_counts: tryte[8],
+    variant_count: tryte
+) -> trit:
+    match valid_variant_count(variant_count):
+        -1:
+            discard 0
+        0:
+            return 0
+        1:
+            discard 0
+    mut variant: tryte = 0
+    mut base: tryte = 0
+    while variant < variant_count:
+        match valid_field_count(payload_counts[variant]):
+            -1:
+                discard 0
+            0:
+                return 0
+            1:
+                return 0
+        mut payload: tryte = 0
+        while payload < payload_counts[variant]:
+            match valid_scalar_type(payload_types[base + payload]):
+                -1:
+                    discard 0
+                0:
+                    return 0
+                1:
+                    return 0
+            payload += 1
+        base += 8
+        variant += 1
+    return -1
+
+fn add_mod(left: tryte, right: tryte) -> tryte:
+    mut result: tryte = left
+    match right <=> 0:
+        -1:
+            mut threshold: tryte = -364 - right
+            match left <=> threshold:
+                -1:
+                    result = left - threshold
+                    result += 364
+                    result += 1
+                0:
+                    result = left + right
+                1:
+                    result = left + right
+        0:
+            return result
+        1:
+            mut threshold: tryte = 364 - right
+            match left <=> threshold:
+                -1:
+                    result = left + right
+                0:
+                    result = left + right
+                1:
+                    result = left - threshold
+                    result = result - 364
+                    result = result - 1
+    return result
+
+fn mix(checksum: tryte, position: tryte, value: tryte) -> tryte:
+    mut result: tryte = checksum
+    mut round: tryte = 0
+    while round < 5:
+        result = add_mod(result, result)
+        round += 1
+    result = add_mod(result, position)
+    result = add_mod(result, value)
+    return result
+
+fn valid_record_layout(field_types: tryte[8], field_count: tryte) -> trit:
+    match valid_field_count(field_count):
+        -1:
+            discard 0
+        0:
+            return 0
+        1:
+            return 0
+    mut field: tryte = 0
+    while field < field_count:
+        match valid_scalar_type(field_types[field]):
+            -1:
+                discard 0
+            0:
+                return 0
+            1:
+                return 0
+        field += 1
+    return -1
+
+fn record_layout_summary(field_types: tryte[8], field_count: tryte) -> tryte:
+    match valid_record_layout(field_types, field_count):
+        -1:
+            return field_count
+        0:
+            return 201
+        1:
+            return 201
+
+fn record_layout_identity(
+    field_types: tryte[8],
+    field_count: tryte,
+    seed: tryte
+) -> tryte:
+    match valid_record_layout(field_types, field_count):
+        -1:
+            discard 0
+        0:
+            return 201
+        1:
+            return 201
+    mut checksum: tryte = add_mod(seed, field_count)
+    mut field: tryte = 0
+    while field < field_count:
+        checksum = mix(checksum, field + 1, field_types[field])
+        field += 1
+    return checksum
+
+fn enum_layout_summary(
+    payload_types: tryte[64],
+    payload_counts: tryte[8],
+    variant_count: tryte
+) -> tryte:
+    match valid_payload_table(payload_types, payload_counts, variant_count):
+        -1:
+            discard 0
+        0:
+            return 203
+        1:
+            return 203
+    mut largest_payload: tryte = 0
+    mut variant: tryte = 0
+    while variant < variant_count:
+        match payload_counts[variant] <=> largest_payload:
+            -1:
+                discard 0
+            0:
+                discard 0
+            1:
+                largest_payload = payload_counts[variant]
+        variant += 1
+    return 1 + largest_payload
+
+fn enum_layout_identity(
+    payload_types: tryte[64],
+    payload_counts: tryte[8],
+    variant_count: tryte,
+    seed: tryte
+) -> tryte:
+    match valid_payload_table(payload_types, payload_counts, variant_count):
+        -1:
+            discard 0
+        0:
+            return 203
+        1:
+            return 203
+    mut checksum: tryte = add_mod(seed, variant_count)
+    mut variant: tryte = 0
+    mut base: tryte = 0
+    while variant < variant_count:
+        checksum = mix(checksum, variant + 1, payload_counts[variant])
+        mut payload: tryte = 0
+        while payload < payload_counts[variant]:
+            checksum = mix(checksum, 20 + variant + payload, payload_types[base + payload])
+            payload += 1
+        base += 8
+        variant += 1
+    return checksum
