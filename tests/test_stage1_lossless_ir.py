@@ -52,6 +52,8 @@ def test_stage1_ir_retains_identity_calls_operands_and_control_markers() -> None
         "ir_call_args_1",
         "ir_block_function",
         "ir_block_terminator",
+        "ir_block_target_a",
+        "ir_block_target_b",
         "ir_value_records_0",
         "ir_ast_event_operand",
         "ir_ast_event_offset",

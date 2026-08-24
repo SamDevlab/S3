@@ -106,7 +106,7 @@ def test_stage1_emitter_consumes_verified_ir_records() -> None:
 
 def test_stage0_compiles_real_stage1_source_and_preserves_io_calls() -> None:
     result = compile_source(SOURCE_PATH.read_text(encoding="utf-8"))
-    assembly = generate_native_assembly(result.assembly, max_memory_trits=65536)
+    assembly = generate_native_assembly(result.assembly, max_memory_trits=131072)
     assert ".globl s3_main" in assembly
     assert "call s3_stage1_source_length" in assembly
     assert "call s3_stage1_read_byte" in assembly
@@ -210,7 +210,7 @@ def test_stage1_self_compile_attempt_reaches_emitter_boundary(tmp_path: Path) ->
         5,
         64,
         23,
-        25,
+        325,
         1212,
         926,
         363,

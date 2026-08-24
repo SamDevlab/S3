@@ -16,7 +16,7 @@ from bootstrap.s3.pipeline import compile_source
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SOURCE = ROOT / "selfhost" / "compiler" / "s3c_stage1.s3"
 DEFAULT_HOST_IO = ROOT / "selfhost" / "compiler" / "stage1_host_io.c"
-STAGE1_MAX_MEMORY_TRITS = 65536
+STAGE1_MAX_MEMORY_TRITS = 131072
 STAGE1_MAX_INSTRUCTIONS = 100_000_000
 
 
