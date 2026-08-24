@@ -100,6 +100,7 @@
     "m277": ["tests/test_m277_control_flow_candidate.py"],
     "m278": ["tests/test_m278_semantic_closure_candidate.py"],
     "m279": ["tests/test_m279_semantic_canary.py"],
+    "m280": ["tests/test_m280_semantic_self_hosting_checkpoint.py"],
     "container-backend-prework": [
       "tests/test_container_backend_contract.py",
       "tests/test_s3_docker.py",
@@ -115,6 +116,17 @@
       "tests/test_m267_incremental_invalidation.py",
       "tests/test_m268_assembly_frontend_closure.py",
       "tests/test_m269_frontend_canary.py"
+    ],
+    "m271-m279-level-c": [
+      "tests/test_m271_symbol_table_candidate.py",
+      "tests/test_m272_name_resolution_candidate.py",
+      "tests/test_m273_scalar_type_checking.py",
+      "tests/test_m274_place_reference_candidate.py",
+      "tests/test_m275_function_call_candidate.py",
+      "tests/test_m276_fixed_layout_candidate.py",
+      "tests/test_m277_control_flow_candidate.py",
+      "tests/test_m278_semantic_closure_candidate.py",
+      "tests/test_m279_semantic_canary.py"
     ],
     "m241-m259-level-c": [
       "tests/test_m241_workspace_semantic_graph.py",
@@ -1551,6 +1563,29 @@
       "tests": ["tests/test_m279_semantic_canary.py"],
       "milestones": ["m279", "semantic-canary", "promotion", "self-hosting"],
       "shards": ["m279"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m280_semantic_self_hosting_checkpoint.py",
+      "tests": ["tests/test_m280_semantic_self_hosting_checkpoint.py"],
+      "milestones": ["m280", "semantic-checkpoint", "self-hosting"],
+      "shards": ["m280"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tools/s3test.py",
+      "tests": [
+        "tests/test_m270_frontend_self_hosting_checkpoint.py",
+        "tests/test_m260_integration_checkpoint.py",
+        "tests/test_m280_semantic_self_hosting_checkpoint.py",
+        "tests/test_s3test.py"
+      ],
+      "milestones": ["m280", "smart-testing", "self-hosting"],
+      "shards": ["m280"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
