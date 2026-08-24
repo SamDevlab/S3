@@ -1,0 +1,3 @@
+# M2.86 bounded lane candidate contract; harness supplies operation lanes.
+fn ownership_lane() -> tryte:
+    return 0
