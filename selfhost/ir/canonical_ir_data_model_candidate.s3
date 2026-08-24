@@ -1,0 +1,214 @@
+fn add_mod(left: tryte, right: tryte) -> tryte:
+    mut result: tryte = left
+    match right <=> 0:
+        -1:
+            mut threshold: tryte = -364 - right
+            match left <=> threshold:
+                -1:
+                    result = left - threshold
+                    result += 364
+                    result += 1
+                0:
+                    result = left + right
+                1:
+                    result = left + right
+        0:
+            return result
+        1:
+            mut threshold: tryte = 364 - right
+            match left <=> threshold:
+                -1:
+                    result = left + right
+                0:
+                    result = left + right
+                1:
+                    result = left - threshold
+                    result = result - 364
+                    result = result - 1
+    return result
+
+fn fold_identity(value: tryte) -> tryte:
+    mut result: tryte = value
+    while result < 0:
+        result += 181
+    while result > 180:
+        result = result - 181
+    return result
+
+fn mix(checksum: tryte, value: tryte) -> tryte:
+    return fold_identity(add_mod(checksum, value))
+
+fn valid_range(value: tryte, lower: tryte, upper: tryte) -> trit:
+    match value <=> lower:
+        -1:
+            return 0
+        0:
+            match value <=> upper:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+        1:
+            match value <=> upper:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn canonical_ir_model(
+    function_names: tryte[2],
+    return_types: tryte[2],
+    register_counts: tryte[2],
+    register_types: tryte[16],
+    block_counts: tryte[2],
+    block_names: tryte[4],
+    instruction_counts: tryte[4],
+    opcodes: tryte[16],
+    results: tryte[16],
+    operand_counts: tryte[16],
+    operands: tryte[64],
+    immediate_present: tryte[16],
+    immediates: tryte[16],
+    target_counts: tryte[16],
+    targets: tryte[32],
+    function_count: tryte
+) -> tryte:
+    match valid_range(function_count, 1, 2):
+        -1:
+            discard 0
+        0:
+            return 201
+        1:
+            return 201
+    mut checksum: tryte = fold_identity(function_count)
+    mut function: tryte = 0
+    mut register_base: tryte = 0
+    mut block_base: tryte = 0
+    mut instruction_base: tryte = 0
+    mut operand_base: tryte = 0
+    mut target_base: tryte = 0
+    while function < function_count:
+        match valid_range(return_types[function], 1, 9):
+            -1:
+                discard 0
+            0:
+                return 202
+            1:
+                return 202
+        match valid_range(register_counts[function], 0, 8):
+            -1:
+                discard 0
+            0:
+                return 202
+            1:
+                return 202
+        checksum = mix(checksum, function_names[function])
+        checksum = mix(checksum, return_types[function])
+        checksum = mix(checksum, register_counts[function])
+        mut register: tryte = 0
+        while register < register_counts[function]:
+            match valid_range(register_types[register_base + register], 1, 9):
+                -1:
+                    checksum = mix(checksum, register_types[register_base + register])
+                0:
+                    return 202
+                1:
+                    return 202
+            register += 1
+        register_base += 8
+        match valid_range(block_counts[function], 1, 2):
+            -1:
+                discard 0
+            0:
+                return 203
+            1:
+                return 203
+        checksum = mix(checksum, block_counts[function])
+        mut block: tryte = 0
+        while block < block_counts[function]:
+            mut block_slot: tryte = block_base + block
+            match valid_range(instruction_counts[block_slot], 0, 4):
+                -1:
+                    discard 0
+                0:
+                    return 204
+                1:
+                    return 204
+            checksum = mix(checksum, block_names[block_slot])
+            checksum = mix(checksum, instruction_counts[block_slot])
+            mut instruction: tryte = 0
+            while instruction < instruction_counts[block_slot]:
+                mut instruction_slot: tryte = instruction_base + instruction
+                match valid_range(opcodes[instruction_slot], 1, 25):
+                    -1:
+                        discard 0
+                    0:
+                        return 204
+                    1:
+                        return 204
+                match valid_range(results[instruction_slot], 0, 8):
+                    -1:
+                        discard 0
+                    0:
+                        return 204
+                    1:
+                        return 204
+                match valid_range(operand_counts[instruction_slot], 0, 4):
+                    -1:
+                        discard 0
+                    0:
+                        return 205
+                    1:
+                        return 205
+                match valid_range(immediate_present[instruction_slot], 0, 1):
+                    -1:
+                        discard 0
+                    0:
+                        return 204
+                    1:
+                        return 204
+                match valid_range(target_counts[instruction_slot], 0, 2):
+                    -1:
+                        discard 0
+                    0:
+                        return 206
+                    1:
+                        return 206
+                checksum = mix(checksum, opcodes[instruction_slot])
+                checksum = mix(checksum, results[instruction_slot])
+                checksum = mix(checksum, operand_counts[instruction_slot])
+                mut operand: tryte = 0
+                while operand < operand_counts[instruction_slot]:
+                    match valid_range(operands[operand_base + operand], 0, 7):
+                        -1:
+                            checksum = mix(checksum, operands[operand_base + operand])
+                        0:
+                            return 205
+                        1:
+                            return 205
+                    operand += 1
+                checksum = mix(checksum, immediate_present[instruction_slot])
+                match immediate_present[instruction_slot] == 1:
+                    -1:
+                        checksum = mix(checksum, immediates[instruction_slot])
+                    0:
+                        discard 0
+                    1:
+                        checksum = mix(checksum, immediates[instruction_slot])
+                checksum = mix(checksum, target_counts[instruction_slot])
+                mut target: tryte = 0
+                while target < target_counts[instruction_slot]:
+                    checksum = mix(checksum, targets[target_base + target])
+                    target += 1
+                instruction += 1
+                operand_base += 4
+                target_base += 2
+            block += 1
+            instruction_base += 4
+        block_base += 2
+        function += 1
+    return checksum
