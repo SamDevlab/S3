@@ -25,14 +25,17 @@ rejection code.
 
 ## TEST_EVIDENCE
 
-- Focused M2.74 contract: PASS, 16 tests on Python 3.11.
-- compileall: pending final qualification.
-- diff check: pending final qualification.
-- T1 affected profile: pending final qualification.
-- T3 `m274` shard: pending final qualification.
+- Focused M2.74 contract: PASS, 16 tests on Python 3.11, 3.12 and 3.13.
+- `python -m compileall -q bootstrap/s3 tools`: PASS.
+- `git diff --check`: PASS.
+- T1 affected profile: PASS, 2 selected, 2 passed, 0 failed, 0 timed out.
+- T3 `m274` shard: PASS, 1 selected, 1 passed, 0 failed, 0 timed out.
+- Final tested source head: `500de047f16771172f99433f7a18d54a0b1f572c`.
+- Documentation may receive a later candidate commit; source gates remain tied
+  to the final tested source head.
 - Benchmark: NOT RUN.
 - Global T4: NOT RUN; reserved for M3.00.
 
 ## STATUS
 
-IMPLEMENTED_PENDING_QUALIFICATION
+QUALIFIED_LOCAL
