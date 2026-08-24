@@ -7,9 +7,9 @@
       "role": "canonical Stage1 compiler seed",
       "input": "bounded source bytes through explicit host read functions",
       "output": "GNU Intel assembly bytes through explicit host write functions",
-      "real_transformation_or_summary": "real bounded grammar validation, signed numeric parsing, range validation, and assembly emission",
+      "real_transformation_or_summary": "real bounded token scan, function-table parsing, return-type semantics, return IR verification, signed numeric parsing, and simple assembly emission",
       "reusable_in_compiler": true,
-      "blocker": "subset supports only one main tryte-return grammar"
+      "blocker": "general IR assembly emission is not implemented; self-source stops at the explicit emitter boundary"
     },
     {
       "component": "selfhost/assembly/assembly_tokenizer.s3",
@@ -169,9 +169,9 @@
       "role": "bounded S3 lexer candidate",
       "input": "fixed tryte array and length",
       "output": "lexer fingerprint scalar",
-      "real_transformation_or_summary": "real character classification and bounded scan folded into a fingerprint",
+      "real_transformation_or_summary": "historical candidate only; the canonical Stage1 source now retains token records",
       "reusable_in_compiler": true,
-      "blocker": "token records are not retained"
+      "blocker": "not the canonical compiler path"
     },
     {
       "component": "selfhost/frontend/parser_candidate.s3",

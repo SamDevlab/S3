@@ -1,0 +1,35 @@
+{
+  "schema": "s3.selfhost.bootstrap-subset.v2",
+  "source_head": "c66318e17c043d7935d3c7c067326e50718ba982",
+  "source_limit_bytes": 65536,
+  "bounded_storage": {"tokens": 16, "functions": 32, "ir_records": 32},
+  "supported_stage1_subset": [
+    "foreign scalar declarations",
+    "function declarations",
+    "identifier and decimal tokens",
+    "newline and punctuation tokens",
+    "bounded function-name table",
+    "return-type semantic validation",
+    "duplicate function-name rejection",
+    "bounded return IR records",
+    "opcode and type verification",
+    "one-main signed decimal tryte return assembly emission"
+  ],
+  "pipeline_status": {
+    "source": "PASS",
+    "lex": "PASS",
+    "parse": "PASS",
+    "semantic": "PASS",
+    "ir": "PASS",
+    "verify": "PASS",
+    "emit_simple_return": "PASS",
+    "emit_general_ir": "BLOCKED"
+  },
+  "unsupported_or_deferred": [
+    "general expression and statement lowering",
+    "multi-function assembly emission",
+    "Stage1-to-Stage2 native artifact generation"
+  ],
+  "stage2_started": false,
+  "full_self_hosting": false
+}

@@ -1,13 +1,15 @@
 {
-  "schema": "s3.selfhost.stage1-corpus.v1",
-  "status": "UNVERIFIED_NATIVE_EXECUTION",
+  "schema": "s3.selfhost.stage1-corpus.v2",
+  "final_tested_source_head": "c66318e17c043d7935d3c7c067326e50718ba982",
+  "status": "PASS",
+  "native_host": "Linux x86-64 via s3-vm",
   "cases": [
-    {"source": "fn main() -> tryte: return 0", "expected": "assembly_and_native_exit_0"},
-    {"source": "fn main() -> tryte: return 7", "expected": "assembly_and_native_exit_7"},
-    {"source": "fn main() -> tryte: return 8", "expected": "assembly_and_native_exit_8"},
-    {"source": "fn main() -> tryte: return 180", "expected": "assembly_and_native_exit_180"},
-    {"source": "fn main() -> tryte: return -1", "expected": "assembly_and_native_exit_255"}
+    {"source": "fn main() -> tryte: return 0", "compiler_rc": 0, "native_exit": 0, "assembly_sha256": "7311729bd8024e135ab2151b3b600d35d3bf6b384f218d2f4f04c33dd9c6ac76"},
+    {"source": "fn main() -> tryte: return 7", "compiler_rc": 0, "native_exit": 7, "assembly_sha256": "08351c71924bca7f46c13373d300a299c0cad63fd55ffdc3a21848a46e839134"},
+    {"source": "fn main() -> tryte: return 8", "compiler_rc": 0, "native_exit": 8, "assembly_sha256": "5bbe5591a87f6667de2c3acdaa5a24ed9bf624eca99a86ca56df7e0a7246e2f1"},
+    {"source": "fn main() -> tryte: return 180", "compiler_rc": 0, "native_exit": 180, "assembly_sha256": "0e97771b3f1ddb682a6ad0937e26ef1c694172552f0d721cf2f642758af41eb2"},
+    {"source": "fn main() -> tryte: return -1", "compiler_rc": 0, "native_exit": 255, "assembly_sha256": "6336f76f938b7b1155403a5068d040fcb7e325c7186f98b4cee58359f2320bb5"}
   ],
-  "native_test_result": "SKIPPED_ON_WINDOWS",
-  "determinism_contract": "same input must produce byte-identical assembly"
+  "invalid_source": {"compiler_rc": 1, "stdout_bytes": 0, "stderr": "S3_STAGE1_ERROR\\n"},
+  "determinism": {"source": "fn main() -> tryte: return 7", "runs": 2, "byte_identical": true, "sha256": "08351c71924bca7f46c13373d300a299c0cad63fd55ffdc3a21848a46e839134"}
 }

@@ -1,0 +1,36 @@
+{
+  "schema": "s3.selfhost.stage1-self-source-feature-audit.v1",
+  "source_head": "c66318e17c043d7935d3c7c067326e50718ba982",
+  "measurement": "Python-only lexical inventory for evidence; not compiler logic",
+  "source_bytes": 45893,
+  "observed_counts": {
+    "foreign_declarations": 5,
+    "function_definitions": 21,
+    "i64_type_mentions": 63,
+    "tryte_type_mentions": 28,
+    "trit_type_mentions": 23,
+    "fixed_array_declarations_or_literals": 24,
+    "while_mentions": 11,
+    "match_mentions": 144,
+    "break_mentions": 4,
+    "assignment_like_lines": 102,
+    "call_like_tokens": 378
+  },
+  "pipeline_features": {
+    "token_kind_start_end_value_arrays": "PRESENT",
+    "bounded_function_tables": "PRESENT",
+    "return_type_semantics": "PRESENT",
+    "duplicate_name_semantics": "PRESENT",
+    "bounded_return_ir": "PRESENT",
+    "opcode_and_type_verifier": "PRESENT",
+    "simple_return_emitter": "PRESENT",
+    "general_ir_emitter": "ABSENT_AND_REPORTED_BLOCKED"
+  },
+  "unsupported_or_not_generalized": [
+    "general expression AST lowering",
+    "general statement AST lowering",
+    "multi-function code emission",
+    "Stage1-to-Stage2 native self-compilation"
+  ],
+  "audit_status": "PASS_WITH_EXPLICIT_EMITTER_GAP"
+}

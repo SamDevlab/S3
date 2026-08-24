@@ -1,0 +1,42 @@
+{
+  "schema": "s3.selfhost.stage1-native-qualification.v1",
+  "source_head": "c66318e17c043d7935d3c7c067326e50718ba982",
+  "candidate_head": "8c1b660dd4d247554f5b886f26c7739230a21bca",
+  "environment": {
+    "host_alias": "s3-vm",
+    "os": "Linux",
+    "architecture": "x86-64",
+    "compiler": "/usr/bin/cc",
+    "python": "3.14.4",
+    "wsl_available": false,
+    "docker_required": false
+  },
+  "build": {
+    "stage0_to_stage1": "PASS",
+    "artifact_sha256": "8c2321442ff79d2d4e36a85a994f35584da96636b6a85ce1cc9b873d0902bbff",
+    "assembly_sha256": "1b805ae39be909973da704fb1e9e3296551e18d515226dcb1a76766970d25a72",
+    "artifact_size": 2020680,
+    "elf": "ELF64 x86-64 static executable without PT_INTERP",
+    "max_instructions": 100000000
+  },
+  "trivial_compile": {"source": "fn main() -> tryte: return 7", "compiler_rc": 0, "native_exit": 7},
+  "input_sensitivity": {
+    "status": "PASS",
+    "native_exits": {"0": 0, "7": 7, "8": 8, "180": 180, "-1": 255},
+    "distinct_assembly_outputs": 5
+  },
+  "negative_diagnostic": {"status": "PASS", "compiler_rc": 1, "stderr": "S3_STAGE1_ERROR\\n"},
+  "determinism": {"status": "PASS", "runs": 2, "assembly_sha256": "08351c71924bca7f46c13373d300a299c0cad63fd55ffdc3a21848a46e839134"},
+  "self_source": {
+    "lex": "PASS",
+    "parse": "PASS",
+    "semantic": "PASS",
+    "ir": "PASS",
+    "verify": "PASS",
+    "emit": "BLOCKED",
+    "compiler_rc": 2,
+    "stderr": "S3_STAGE1_EMITTER_BLOCKED\\n"
+  },
+  "native_qualification": "PASS_WITH_EMITTER_BOUNDARY",
+  "full_self_hosting": "NO"
+}

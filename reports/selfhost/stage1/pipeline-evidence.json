@@ -1,0 +1,28 @@
+{
+  "schema": "s3.selfhost.stage1-pipeline-evidence.v1",
+  "source_head": "c66318e17c043d7935d3c7c067326e50718ba982",
+  "candidate_head": "8c1b660dd4d247554f5b886f26c7739230a21bca",
+  "source_to_output": [
+    {"phase": "source_bytes", "status": "PASS", "evidence": "bounded 65536-byte host buffer"},
+    {"phase": "lex", "status": "PASS", "evidence": "scan_token plus token_kind/start/end/value arrays"},
+    {"phase": "parse", "status": "PASS", "evidence": "bounded function table and token-driven grammar"},
+    {"phase": "semantic", "status": "PASS", "evidence": "return type validation and duplicate-name rejection"},
+    {"phase": "ir", "status": "PASS", "evidence": "bounded opcode/type/i64 value records"},
+    {"phase": "verify", "status": "PASS", "evidence": "opcode and return-type verifier"},
+    {"phase": "emit_simple_return", "status": "PASS", "evidence": "real assembly for signed decimal tryte-return corpus"},
+    {"phase": "emit_general_ir", "status": "BLOCKED", "evidence": "S3_STAGE1_EMITTER_BLOCKED"},
+    {"phase": "link_and_native_execution", "status": "PASS_FOR_SIMPLE_CORPUS", "evidence": "Linux x86-64 static ELF and native exits"}
+  ],
+  "self_source_result": {
+    "lex": "PASS",
+    "parse": "PASS",
+    "semantic": "PASS",
+    "ir": "PASS",
+    "verify": "PASS",
+    "emit": "BLOCKED",
+    "stage2": "NOT_ATTEMPTED"
+  },
+  "python_role": "Stage0 build and test orchestration only",
+  "stage3_started": false,
+  "full_self_hosting": false
+}

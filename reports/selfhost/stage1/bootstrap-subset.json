@@ -1,8 +1,11 @@
 {
-  "schema": "s3.selfhost.bootstrap-subset.v1",
-  "max_source_bytes": 16384,
+  "schema": "s3.selfhost.bootstrap-subset.v2",
+  "max_source_bytes": 65536,
+  "token_capacity": 16,
+  "function_capacity": 32,
   "max_numeric_value": 180,
   "features": [
+    {"feature": "foreign_scalar_declarations", "stage1_support": true, "required_by_compiler_source": true},
     {"feature": "functions", "stage1_support": true, "required_by_compiler_source": true},
     {"feature": "calls", "stage1_support": true, "required_by_compiler_source": true},
     {"feature": "locals", "stage1_support": true, "required_by_compiler_source": true},
@@ -11,14 +14,20 @@
     {"feature": "match", "stage1_support": true, "required_by_compiler_source": true},
     {"feature": "tryte", "stage1_support": true, "required_by_compiler_source": true},
     {"feature": "i64", "stage1_support": true, "required_by_compiler_source": true},
-    {"feature": "foreign_scalar_calls", "stage1_support": true, "required_by_compiler_source": true},
-    {"feature": "fixed_arrays", "stage1_support": false, "required_by_compiler_source": false},
+    {"feature": "fixed_arrays", "stage1_support": true, "required_by_compiler_source": true},
     {"feature": "records", "stage1_support": false, "required_by_compiler_source": false},
     {"feature": "enums", "stage1_support": false, "required_by_compiler_source": false},
     {"feature": "references", "stage1_support": false, "required_by_compiler_source": false},
     {"feature": "modules", "stage1_support": false, "required_by_compiler_source": false},
-    {"feature": "dynamic_text", "stage1_support": false, "required_by_compiler_source": false},
-    {"feature": "canonical_ir_records", "stage1_support": false, "required_by_compiler_source": false}
+    {"feature": "dynamic_text", "stage1_support": false, "required_by_compiler_source": false}
   ],
-  "bootstrap_subset_manifest": "one main function with a signed decimal tryte return"
+  "pipeline": {
+    "lexer": "PASS",
+    "parser": "PASS",
+    "semantic": "PASS",
+    "ir": "PASS",
+    "verifier": "PASS",
+    "general_emitter": "BLOCKED"
+  },
+  "bootstrap_subset_manifest": "bounded tokenized functions with a one-main signed decimal tryte-return emitter"
 }
