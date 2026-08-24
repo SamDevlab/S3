@@ -2,13 +2,15 @@
 
 Experimental bounded lowering for scalar fixed-layout places, shared/mutable
 references, initialization, reads/writes, and move invalidation. The S3
-candidate is observed through exact scalar lanes; Python is reference,
-harness, and orchestrator only. Heap ownership and full aggregate ownership
+candidate is currently observed through real S3 diagnostics and partial
+scalar computation; complete place/reference/operation/state lane
+reconstruction remains pending. Python is reference, harness, and
+orchestrator only for the eventual exact proof. Heap ownership and full aggregate ownership
 are out of scope. Aggregate scope is ordered scalar result/reference
-propagation only, with M2.83 call-plan reuse.
+propagation only; M2.83 reuse is not yet claimed.
 
 Shared writes, mutable borrows of immutable places, invalid references,
-borrow conflicts, uninitialized reads, and use-after-move fail closed with
-stable diagnostics. `M284_REAL_INTEROP=PASS_LINEAR_SUBSET`; multi-block
-verifier interop remains deferred to M2.88. M2.85 control-flow composition is
-accounted for structurally; no new frontend syntax is added.
+borrow conflicts, uninitialized reads, and use-after-move have S3-observed
+diagnostic coverage in the bounded subset. Exact positive differential,
+complete state lanes, direct M2.84 mapping, and full M2.85 ownership join
+semantics remain deferred. No new frontend syntax is added.
