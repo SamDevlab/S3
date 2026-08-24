@@ -1,0 +1,5 @@
+# M2.85 bounded S3 candidate contract.
+# The harness supplies bounded lane arrays and invokes one observable lane per
+# query. No modulo identity is part of this contract.
+fn lowered_block_count() -> tryte:
+    return 0
