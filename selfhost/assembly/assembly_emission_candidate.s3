@@ -1,0 +1,59 @@
+fn add_mod(left: tryte, right: tryte) -> tryte:
+    mut result: tryte = left
+    match right <=> 0:
+        -1:
+            mut threshold: tryte = -364 - right
+            match left <=> threshold:
+                -1:
+                    result = left - threshold
+                    result += 364
+                    result += 1
+                0:
+                    result = left + right
+                1:
+                    result = left + right
+        0:
+            return result
+        1:
+            mut threshold: tryte = 364 - right
+            match left <=> threshold:
+                -1:
+                    result = left + right
+                0:
+                    result = left + right
+                1:
+                    result = left - threshold
+                    result = result - 364
+                    result = result - 1
+    return result
+
+fn fold_identity(value: tryte) -> tryte:
+    mut result: tryte = value
+    while result < 0:
+        result += 181
+    while result > 180:
+        result = result - 181
+    return result
+
+fn emit_linear_assembly(
+    name_id: tryte,
+    return_type_id: tryte,
+    opcodes: tryte[4],
+    results: tryte[4],
+    operand0: tryte[4],
+    operand1: tryte[4],
+    immediates: tryte[4],
+    instruction_count: tryte
+) -> tryte:
+    mut result: tryte = name_id
+    result = add_mod(result, return_type_id)
+    result = add_mod(result, instruction_count)
+    mut index: tryte = 0
+    while index < instruction_count:
+        result = add_mod(result, opcodes[index])
+        result = add_mod(result, results[index])
+        result = add_mod(result, operand0[index])
+        result = add_mod(result, operand1[index])
+        result = add_mod(result, immediates[index])
+        index += 1
+    return fold_identity(result)
