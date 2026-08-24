@@ -1,0 +1,28 @@
+{
+  "actual_bootstrap_execution": "FAIL",
+  "artifact_provenance": "FAIL_CLOSED",
+  "benchmark": "NOT_RUN_UNTIL_STAGE_ARTIFACTS_EXIST",
+  "blockers": [
+    "NO_EXECUTABLE_S3_COMPILER_ARTIFACT_OR_CANONICAL_S3_COMPILER_SOURCE"
+  ],
+  "certification_fail_closed_tests": "PASS",
+  "docker_support_preserved": "YES",
+  "evidence_self_consistency": "PASS",
+  "first_blocking_gate": "STAGE0_TO_STAGE1",
+  "full_self_hosting": "NO",
+  "last_successful_stage": "STAGE0_REFERENCE_ONLY",
+  "next_required_fix": "Implement and qualify an actual Stage0-produced S3 compiler artifact before Stage1->Stage2.",
+  "same_canonical_compiler_sources": "NOT_REACHED",
+  "schema": "s3.actual-bootstrap-certification.v1",
+  "source_manifest_sha256": "aebc6f536c8bc44e861cd09f8bc5fceadf5ad26739763d7007179d48a465d4b4",
+  "t0": "PASS_2_SELECTED_2_PASSED",
+  "t1": "PASS_3_SELECTED_3_PASSED",
+  "t2": "PASS_9_SELECTED_9_PASSED",
+  "t3": "PASS_19_SELECTED_19_PASSED",
+  "t4": "PASS_453_SELECTED_453_PASSED",
+  "t4_exit": 0,
+  "t4_timed_out": 0,
+  "t4_head": "b9c8fdd8b27802d3a10df20f7ae19c04e2895e62",
+  "t4_transcript": "t4-official-raw.txt",
+  "official_gate_transcript": "official-gates-raw.txt"
+}

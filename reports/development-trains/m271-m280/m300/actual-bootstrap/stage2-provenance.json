@@ -1,0 +1,23 @@
+{
+  "allowed_host_tools": [],
+  "bootstrap_present": null,
+  "command_argv": [],
+  "compiler_artifact": null,
+  "compiler_sha256": null,
+  "exit_code": null,
+  "failure_reason": "STAGE1_UNAVAILABLE",
+  "observed_child_processes": [],
+  "output_artifact": null,
+  "output_sha256": null,
+  "output_size": null,
+  "python_in_path": null,
+  "pythonhome_present": null,
+  "pythonpath_present": null,
+  "schema": "s3.actual-bootstrap-certification.v1",
+  "source_manifest_sha256": "aebc6f536c8bc44e861cd09f8bc5fceadf5ad26739763d7007179d48a465d4b4",
+  "stage": "stage2",
+  "status": "FAIL",
+  "stderr_sha256": null,
+  "stdout_sha256": null,
+  "working_directory_sanitized": true
+}

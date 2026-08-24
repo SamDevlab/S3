@@ -1,0 +1,8 @@
+{
+  "bootstrap_present_after_stage1": "NOT_APPLICABLE_STAGE1_UNAVAILABLE",
+  "python_compiler_delegation_after_stage1": "NOT_APPLICABLE_STAGE1_UNAVAILABLE",
+  "python_reference_compiler": "PRESENT_AND_DOCUMENTED",
+  "schema": "s3.actual-bootstrap-certification.v1",
+  "source_tree_escape": "NOT_APPLICABLE_STAGE1_UNAVAILABLE",
+  "static_audit": "PASS_NO_STAGE_EXECUTION_TO_AUDIT"
+}

@@ -1,0 +1,7 @@
+{
+  "corpus_cases_total": 33,
+  "equivalence": "NOT_APPLICABLE_NO_STAGE_ARTIFACTS",
+  "schema": "s3.actual-bootstrap-certification.v1",
+  "stage2_corpus_pass": "0/0",
+  "stage3_corpus_pass": "0/0"
+}

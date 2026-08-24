@@ -1,0 +1,562 @@
+PROFILE=sanity START=2026-08-24T01:46:38.1132937-03:00
+{
+  "argument": null,
+  "base": null,
+  "environment_blocks": [],
+  "fingerprint": "312abdc15e105ef33a7a4efb9d00c0984343e0e6defca270ea859fdcefd73cd6",
+  "head": "b9c8fdd8b27802d3a10df20f7ae19c04e2895e62",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "profile": "sanity",
+  "python": "3.11.9",
+  "resume_eligible": true,
+  "runner_version": "s3test.v1",
+  "schema": "s3.smart-test-report",
+  "schema_version": "s3.smart-test-report.v1",
+  "summary": {
+    "failed": 0,
+    "passed": 2,
+    "selected": 2,
+    "status": "PASS",
+    "timed_out": 0
+  },
+  "tests": [
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......                                                                  [100%]\n",
+      "reason": "T0 sanity profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m146_test_runner.py",
+      "tiers": [
+        "T0"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...............................                                          [100%]\n",
+      "reason": "T0 sanity profile",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_cli_source_syntax.py",
+      "tiers": [
+        "T0"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    }
+  ]
+}
+PROFILE=sanity EXIT=0 END=2026-08-24T01:46:59.5829560-03:00
+PROFILE=affected START=2026-08-24T01:46:59.5847942-03:00
+{
+  "argument": null,
+  "base": null,
+  "environment_blocks": [],
+  "fingerprint": "932fc4dace275b2a9cf6a4655580fac7a188988bc184a38cabe0fb23bdfbd319",
+  "head": "b9c8fdd8b27802d3a10df20f7ae19c04e2895e62",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "profile": "affected",
+  "python": "3.11.9",
+  "resume_eligible": true,
+  "runner_version": "s3test.v1",
+  "schema": "s3.smart-test-report",
+  "schema_version": "s3.smart-test-report.v1",
+  "summary": {
+    "failed": 0,
+    "passed": 3,
+    "selected": 3,
+    "status": "PASS",
+    "timed_out": 0
+  },
+  "tests": [
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "changed test file: tests/test_actual_bootstrap_certification.py",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_actual_bootstrap_certification.py",
+      "tiers": [
+        "T1"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...............................                                          [100%]\n",
+      "reason": "direct impact mapping: tools/certify_actual_bootstrap.py -> tests/test_cli_source_syntax.py",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_cli_source_syntax.py",
+      "tiers": [
+        "T1"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "............                                                             [100%]\n",
+      "reason": "direct impact mapping: tools/certify_actual_bootstrap.py -> tests/test_compiler.py",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_compiler.py",
+      "tiers": [
+        "T1"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    }
+  ]
+}
+PROFILE=affected EXIT=0 END=2026-08-24T01:47:19.6943757-03:00
+PROFILE=level-c START=2026-08-24T01:47:19.6971998-03:00
+{
+  "argument": null,
+  "base": null,
+  "environment_blocks": [],
+  "fingerprint": "b2d4008628c743056b49158d61faa252031829d9b3c0bbada8c0902e65e70b1c",
+  "head": "b9c8fdd8b27802d3a10df20f7ae19c04e2895e62",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "profile": "level-c",
+  "python": "3.11.9",
+  "resume_eligible": true,
+  "runner_version": "s3test.v1",
+  "schema": "s3.smart-test-report",
+  "schema_version": "s3.smart-test-report.v1",
+  "summary": {
+    "failed": 0,
+    "passed": 9,
+    "selected": 9,
+    "status": "PASS",
+    "timed_out": 0
+  },
+  "tests": [
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "M2.41-M2.49 Level-C integration checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m241_workspace_semantic_graph.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "M2.41-M2.49 Level-C integration checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m242_lsp_project_intelligence.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "sssssssssssssssssssssssss                                                [100%]\n",
+      "reason": "M2.41-M2.49 Level-C integration checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m243_linux_native_conformance.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".........                                                                [100%]\n",
+      "reason": "M2.41-M2.49 Level-C integration checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m244_http2_dynamic_hpack.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..sss                                                                    [100%]\n",
+      "reason": "M2.41-M2.49 Level-C integration checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m245_signed_registry.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "M2.41-M2.49 Level-C integration checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m246_async_network_soak.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".........                                                                [100%]\n",
+      "reason": "M2.41-M2.49 Level-C integration checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m248_experiment_promotion.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "........                                                                 [100%]\n",
+      "reason": "M2.41-M2.49 Level-C integration checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m249_cross_target_evidence.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".........................................                                [100%]\n",
+      "reason": "M2.41-M2.49 Level-C integration checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3bench_repeatability.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    }
+  ]
+}
+PROFILE=level-c EXIT=0 END=2026-08-24T01:47:29.4146418-03:00
+PROFILE=level-c-full START=2026-08-24T01:47:29.4165080-03:00
+{
+  "argument": null,
+  "base": null,
+  "environment_blocks": [],
+  "fingerprint": "5333adf123cfc16b4b29c0d78c91c4c3196509066a5224a3f6b4e57085d7d18a",
+  "head": "b9c8fdd8b27802d3a10df20f7ae19c04e2895e62",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "profile": "level-c-full",
+  "python": "3.11.9",
+  "resume_eligible": true,
+  "runner_version": "s3test.v1",
+  "schema": "s3.smart-test-report",
+  "schema_version": "s3.smart-test-report.v1",
+  "summary": {
+    "failed": 0,
+    "passed": 19,
+    "selected": 19,
+    "status": "PASS",
+    "timed_out": 0
+  },
+  "tests": [
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "M2.41-M2.59 Level-C full-cycle checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m241_workspace_semantic_graph.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "M2.41-M2.59 Level-C full-cycle checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m242_lsp_project_intelligence.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "sssssssssssssssssssssssss                                                [100%]\n",
+      "reason": "M2.41-M2.59 Level-C full-cycle checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m243_linux_native_conformance.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".........                                                                [100%]\n",
+      "reason": "M2.41-M2.59 Level-C full-cycle checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m244_http2_dynamic_hpack.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..sss                                                                    [100%]\n",
+      "reason": "M2.41-M2.59 Level-C full-cycle checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m245_signed_registry.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "M2.41-M2.59 Level-C full-cycle checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m246_async_network_soak.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".........                                                                [100%]\n",
+      "reason": "M2.41-M2.59 Level-C full-cycle checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m248_experiment_promotion.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "........                                                                 [100%]\n",
+      "reason": "M2.41-M2.59 Level-C full-cycle checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m249_cross_target_evidence.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "..                                                                       [100%]\n",
+      "reason": "M2.41-M2.59 Level-C full-cycle checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m250_integration_checkpoint.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "M2.41-M2.59 Level-C full-cycle checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m251_dynamic_text.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "...                                                                      [100%]\n",
+      "reason": "M2.41-M2.59 Level-C full-cycle checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m252_deterministic_collections.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "M2.41-M2.59 Level-C full-cycle checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m253_arena_memory.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "M2.41-M2.59 Level-C full-cycle checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m254_recursive_substrate.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".....                                                                    [100%]\n",
+      "reason": "M2.41-M2.59 Level-C full-cycle checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m255_source_manager.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "M2.41-M2.59 Level-C full-cycle checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m256_structured_diagnostics.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "M2.41-M2.59 Level-C full-cycle checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m257_canonical_serialization.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": "....                                                                     [100%]\n",
+      "reason": "M2.41-M2.59 Level-C full-cycle checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m258_differential_harness.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".......                                                                  [100%]\n",
+      "reason": "M2.41-M2.59 Level-C full-cycle checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_m259_candidate_promotion.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    },
+    {
+      "environment_requirements": [],
+      "native_required": false,
+      "output": ".........................................                                [100%]\n",
+      "reason": "M2.41-M2.59 Level-C full-cycle checkpoint",
+      "returncode": 0,
+      "status": "PASS",
+      "test": "tests/test_s3bench_repeatability.py",
+      "tiers": [
+        "LEVEL-C"
+      ],
+      "timeout_class": "DEFAULT",
+      "timeout_seconds": 60
+    }
+  ]
+}
+PROFILE=level-c-full EXIT=0 END=2026-08-24T01:47:48.1699693-03:00

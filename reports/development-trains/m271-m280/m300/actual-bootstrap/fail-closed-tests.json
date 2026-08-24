@@ -1,0 +1,9 @@
+{
+  "artifact_tamper_detection": "PASS",
+  "missing_artifact_fail_closed": "PASS",
+  "python_injection_detection": "PASS",
+  "source_manifest_sha256": "aebc6f536c8bc44e861cd09f8bc5fceadf5ad26739763d7007179d48a465d4b4",
+  "source_tamper_detection": "PASS",
+  "status": "PASS",
+  "wrong_sha_fail_closed": "PASS"
+}

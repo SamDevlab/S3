@@ -1,0 +1,6 @@
+{
+  "reason": "Stage1->Stage2 cannot begin on this repository state",
+  "schema": "s3.actual-bootstrap-certification.v1",
+  "stage2_stage3_exact_bytes_equal": false,
+  "status": "NOT_APPLICABLE_NO_STAGE_ARTIFACTS"
+}
