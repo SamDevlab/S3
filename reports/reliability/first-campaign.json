@@ -1,0 +1,1813 @@
+{
+  "campaign_id": "reliability-first-20260823",
+  "case_count": 200,
+  "counts": {
+    "PASS": 200
+  },
+  "generator_version": "reliability-valid-v1",
+  "results": [
+    {
+      "actual": 140,
+      "classification": "PASS",
+      "expected": 140,
+      "mode": "valid",
+      "seed": 1,
+      "signature": "",
+      "source_sha": "61e1ad5c40cce4268c3af09424c48180cfa28eab2e2907e85e32cbf8da6a8d2f"
+    },
+    {
+      "actual": -156,
+      "classification": "PASS",
+      "expected": -156,
+      "mode": "valid",
+      "seed": 2,
+      "signature": "",
+      "source_sha": "b24c9c757402b0be9a14380cfe0ae405cb8102620586c7a56e24341c14b31aac"
+    },
+    {
+      "actual": 90,
+      "classification": "PASS",
+      "expected": 90,
+      "mode": "valid",
+      "seed": 3,
+      "signature": "",
+      "source_sha": "9819f4f52782c62dfa143492e34bb64f3dfea4e8ad8b62cef0d55ca85f3d07b8"
+    },
+    {
+      "actual": -97,
+      "classification": "PASS",
+      "expected": -97,
+      "mode": "valid",
+      "seed": 4,
+      "signature": "",
+      "source_sha": "fccc0e15b716cec27b74b2cd16e736dd6dfb731dd9caeacd94ff336a154ccd63"
+    },
+    {
+      "actual": 80,
+      "classification": "PASS",
+      "expected": 80,
+      "mode": "valid",
+      "seed": 5,
+      "signature": "",
+      "source_sha": "6dbd49cad954067c1bbea12eaef4a229e3739001fa7f4a92ca87c7bd2b3d8930"
+    },
+    {
+      "actual": 119,
+      "classification": "PASS",
+      "expected": 119,
+      "mode": "valid",
+      "seed": 6,
+      "signature": "",
+      "source_sha": "0dabd288c5c70934a942d56dd0e2585776c762a42138996e654839d677d21b3b"
+    },
+    {
+      "actual": -61,
+      "classification": "PASS",
+      "expected": -61,
+      "mode": "valid",
+      "seed": 7,
+      "signature": "",
+      "source_sha": "06b7eacfe844485e25e97f3ac40fa18bc9ed6e40488fac215588d34f09743d0e"
+    },
+    {
+      "actual": -10,
+      "classification": "PASS",
+      "expected": -10,
+      "mode": "valid",
+      "seed": 8,
+      "signature": "",
+      "source_sha": "6e0e5a3d92e0018a1bc90ca3c2ec9bc9cbc72ea15b9f34a80c449be3723094ea"
+    },
+    {
+      "actual": 51,
+      "classification": "PASS",
+      "expected": 51,
+      "mode": "valid",
+      "seed": 9,
+      "signature": "",
+      "source_sha": "0e75f3175d31190c650b7b80c7fba37f1b26c5889d711f9898907c8fb66e1646"
+    },
+    {
+      "actual": 32,
+      "classification": "PASS",
+      "expected": 32,
+      "mode": "valid",
+      "seed": 10,
+      "signature": "",
+      "source_sha": "2b47f8f8abce9dcde2f90d33f4bf1b352c1d95a67a84320f05ac7edcbb7da497"
+    },
+    {
+      "actual": 142,
+      "classification": "PASS",
+      "expected": 142,
+      "mode": "valid",
+      "seed": 11,
+      "signature": "",
+      "source_sha": "e549c331004496b52ff1cdaf5d92e08d30bd5788ad349f8f54e53c4570dde3e6"
+    },
+    {
+      "actual": 36,
+      "classification": "PASS",
+      "expected": 36,
+      "mode": "valid",
+      "seed": 12,
+      "signature": "",
+      "source_sha": "2065546c3c8b194d92ea23c7aae0c818d6ed4d301963cc92dc0715342a0d98c6"
+    },
+    {
+      "actual": 49,
+      "classification": "PASS",
+      "expected": 49,
+      "mode": "valid",
+      "seed": 13,
+      "signature": "",
+      "source_sha": "eb0711cf4f4dafb30aad12eb9bdb29648e3cc20a762c5445eed74676d992a85e"
+    },
+    {
+      "actual": 136,
+      "classification": "PASS",
+      "expected": 136,
+      "mode": "valid",
+      "seed": 14,
+      "signature": "",
+      "source_sha": "244657bef9837e521c9af3e584ed22b2b281801386b108633cabfdea4ba859c6"
+    },
+    {
+      "actual": -65,
+      "classification": "PASS",
+      "expected": -65,
+      "mode": "valid",
+      "seed": 15,
+      "signature": "",
+      "source_sha": "2e1f0472e33f16a02bd5ae49839457b163d0832fd88aa9f3b6928861c835182b"
+    },
+    {
+      "actual": 43,
+      "classification": "PASS",
+      "expected": 43,
+      "mode": "valid",
+      "seed": 16,
+      "signature": "",
+      "source_sha": "75a9186736ef15ad420e3c5fdcb75a3b2a128aa2bce1124e4cbcf33e6a736a0f"
+    },
+    {
+      "actual": -30,
+      "classification": "PASS",
+      "expected": -30,
+      "mode": "valid",
+      "seed": 17,
+      "signature": "",
+      "source_sha": "688011dc3c01d7464d688efcfdfc62088719eccf515c4eb8e16e102cbc7f41e9"
+    },
+    {
+      "actual": 0,
+      "classification": "PASS",
+      "expected": 0,
+      "mode": "valid",
+      "seed": 18,
+      "signature": "",
+      "source_sha": "4642a755be2577946cbe89f205f239607fffedfb49723b6eab26d09988607908"
+    },
+    {
+      "actual": 133,
+      "classification": "PASS",
+      "expected": 133,
+      "mode": "valid",
+      "seed": 19,
+      "signature": "",
+      "source_sha": "e9ed9004b5d386b77bc473d9eee5b515977397d193e61d701a5a1ee778b419c7"
+    },
+    {
+      "actual": 38,
+      "classification": "PASS",
+      "expected": 38,
+      "mode": "valid",
+      "seed": 20,
+      "signature": "",
+      "source_sha": "a63c8930815e9065b97bcbae96faeb7231029345a2ad1599daa791b0e4abb644"
+    },
+    {
+      "actual": 83,
+      "classification": "PASS",
+      "expected": 83,
+      "mode": "valid",
+      "seed": 21,
+      "signature": "",
+      "source_sha": "19a33ffb7f8bca9f592add658317966bfb732021125075cf332b15933d0fb923"
+    },
+    {
+      "actual": -132,
+      "classification": "PASS",
+      "expected": -132,
+      "mode": "valid",
+      "seed": 22,
+      "signature": "",
+      "source_sha": "1607d682382b21295a49e9fefe2d9fdefcc88774e7fe4c55cffb4de7514a26c0"
+    },
+    {
+      "actual": -175,
+      "classification": "PASS",
+      "expected": -175,
+      "mode": "valid",
+      "seed": 23,
+      "signature": "",
+      "source_sha": "dcb9d0c73b399888ecb17de458542bb059400a5b6948bd57b3e5169f29d4cca2"
+    },
+    {
+      "actual": -5,
+      "classification": "PASS",
+      "expected": -5,
+      "mode": "valid",
+      "seed": 24,
+      "signature": "",
+      "source_sha": "29bfdd0b6bf940a3c6377700c2909bf057caf6538cb19dbdcd42250b74cafaff"
+    },
+    {
+      "actual": -1,
+      "classification": "PASS",
+      "expected": -1,
+      "mode": "valid",
+      "seed": 25,
+      "signature": "",
+      "source_sha": "72bf0db2265245c9702f466826318d40be5c78981376f7d06295ee804cdce577"
+    },
+    {
+      "actual": 20,
+      "classification": "PASS",
+      "expected": 20,
+      "mode": "valid",
+      "seed": 26,
+      "signature": "",
+      "source_sha": "3101437c582be7b1ccb42c4b1b158901ead3a703f35466f0aef7d617a4d71033"
+    },
+    {
+      "actual": 49,
+      "classification": "PASS",
+      "expected": 49,
+      "mode": "valid",
+      "seed": 27,
+      "signature": "",
+      "source_sha": "395fdf6828aa567304cc5d51b43c755319d6992c4c4f70e28e8c6ad6d3170b22"
+    },
+    {
+      "actual": 23,
+      "classification": "PASS",
+      "expected": 23,
+      "mode": "valid",
+      "seed": 28,
+      "signature": "",
+      "source_sha": "2e4d30151f83569dc83d86df9a7fe8c342739447b41505d5ed188d913b9211c4"
+    },
+    {
+      "actual": 41,
+      "classification": "PASS",
+      "expected": 41,
+      "mode": "valid",
+      "seed": 29,
+      "signature": "",
+      "source_sha": "38d2f4876bc8e1d8857e10a2e24a6f9dc5e35c311b618e285f4ee97c4334be84"
+    },
+    {
+      "actual": -37,
+      "classification": "PASS",
+      "expected": -37,
+      "mode": "valid",
+      "seed": 30,
+      "signature": "",
+      "source_sha": "b9cef45da63ef04190138710817cb41e10e3c814992777d4f90bac9aea713ed0"
+    },
+    {
+      "actual": -52,
+      "classification": "PASS",
+      "expected": -52,
+      "mode": "valid",
+      "seed": 31,
+      "signature": "",
+      "source_sha": "5e3c43cc9aa2a10e4a7561735c8f0c85574026cf546575ad17507fa54f4d9c1d"
+    },
+    {
+      "actual": -109,
+      "classification": "PASS",
+      "expected": -109,
+      "mode": "valid",
+      "seed": 32,
+      "signature": "",
+      "source_sha": "714a5e035358c3da6f09f9057a2c61d30dc3966e9839e3e8d82d584f098c46cd"
+    },
+    {
+      "actual": 20,
+      "classification": "PASS",
+      "expected": 20,
+      "mode": "valid",
+      "seed": 33,
+      "signature": "",
+      "source_sha": "5dfaf5bb66e335c992289a7ee39d9635a4246aeba8311913053423b3fe7c31cb"
+    },
+    {
+      "actual": -44,
+      "classification": "PASS",
+      "expected": -44,
+      "mode": "valid",
+      "seed": 34,
+      "signature": "",
+      "source_sha": "8e1085faf0ee22e3908482d8d46cae0d7d15ad1bec9046560ff804719a824403"
+    },
+    {
+      "actual": 25,
+      "classification": "PASS",
+      "expected": 25,
+      "mode": "valid",
+      "seed": 35,
+      "signature": "",
+      "source_sha": "d26537e3690e29abe57dfc56275f381e8719d0a302b8767c987b1859d1b9d837"
+    },
+    {
+      "actual": -181,
+      "classification": "PASS",
+      "expected": -181,
+      "mode": "valid",
+      "seed": 36,
+      "signature": "",
+      "source_sha": "ea3374bed7c37a7d4c487cebe3cbfd3e7e679a322c1ebb8c215eabed1edf1fbf"
+    },
+    {
+      "actual": 128,
+      "classification": "PASS",
+      "expected": 128,
+      "mode": "valid",
+      "seed": 37,
+      "signature": "",
+      "source_sha": "edc22ccb3b56fb4088d6a3c41e32a46d757ab3b6188b3ef7903d36f3a452409e"
+    },
+    {
+      "actual": 102,
+      "classification": "PASS",
+      "expected": 102,
+      "mode": "valid",
+      "seed": 38,
+      "signature": "",
+      "source_sha": "a9e51601fd02b81d8e336b5de074f622519833af189456377a7faa3237590b37"
+    },
+    {
+      "actual": -36,
+      "classification": "PASS",
+      "expected": -36,
+      "mode": "valid",
+      "seed": 39,
+      "signature": "",
+      "source_sha": "95e970d62a4103cf39e7c0b5a363f5d1c5b2fb5e3bf3e48f4beca802fde71de7"
+    },
+    {
+      "actual": 82,
+      "classification": "PASS",
+      "expected": 82,
+      "mode": "valid",
+      "seed": 40,
+      "signature": "",
+      "source_sha": "549d9427440a053903050da4f87dfc27b7872b29140ca021179f4ba570c80b37"
+    },
+    {
+      "actual": -56,
+      "classification": "PASS",
+      "expected": -56,
+      "mode": "valid",
+      "seed": 41,
+      "signature": "",
+      "source_sha": "22362b7c0e9d3bf8ed1613435dbf3c59d3bd3fe4c41fd747ca604098fb0bdb8b"
+    },
+    {
+      "actual": -5,
+      "classification": "PASS",
+      "expected": -5,
+      "mode": "valid",
+      "seed": 42,
+      "signature": "",
+      "source_sha": "31f555fe13d50a783751989da7fc21863b3d79e06003dece56020e9f2219e1b8"
+    },
+    {
+      "actual": 51,
+      "classification": "PASS",
+      "expected": 51,
+      "mode": "valid",
+      "seed": 43,
+      "signature": "",
+      "source_sha": "d46356268e035f47e6bf4112a9d3c04b834827219df13e12fb03bf1669b6273b"
+    },
+    {
+      "actual": 71,
+      "classification": "PASS",
+      "expected": 71,
+      "mode": "valid",
+      "seed": 44,
+      "signature": "",
+      "source_sha": "949285fbfcfadf0c45d68c98c9b23d645fd700a508f14298f8cb52106dce94f7"
+    },
+    {
+      "actual": 30,
+      "classification": "PASS",
+      "expected": 30,
+      "mode": "valid",
+      "seed": 45,
+      "signature": "",
+      "source_sha": "2730930a147645db8135ba80176ad09df32f9bbe27829445c02de968776c0ed9"
+    },
+    {
+      "actual": -88,
+      "classification": "PASS",
+      "expected": -88,
+      "mode": "valid",
+      "seed": 46,
+      "signature": "",
+      "source_sha": "64e81c0c73879335b1b1d3c9f98d446d2cbff8c32167d738e96dc6156dfff317"
+    },
+    {
+      "actual": -74,
+      "classification": "PASS",
+      "expected": -74,
+      "mode": "valid",
+      "seed": 47,
+      "signature": "",
+      "source_sha": "912820c4324087925ac22fd6550b74e7689b791fd2292ccb4f44a6517b2d8618"
+    },
+    {
+      "actual": -25,
+      "classification": "PASS",
+      "expected": -25,
+      "mode": "valid",
+      "seed": 48,
+      "signature": "",
+      "source_sha": "af0c4689f029f02d039a2fc2f98220d943e7ae114ff2b180290640307c880cfd"
+    },
+    {
+      "actual": -7,
+      "classification": "PASS",
+      "expected": -7,
+      "mode": "valid",
+      "seed": 49,
+      "signature": "",
+      "source_sha": "afec5d2f7be84dc81a295fbd2d6e8ec70bcdfaad1ee6542373e54a93ee89797d"
+    },
+    {
+      "actual": -39,
+      "classification": "PASS",
+      "expected": -39,
+      "mode": "valid",
+      "seed": 50,
+      "signature": "",
+      "source_sha": "ff215d86564b8e050bcfabe25771988ca31cd936bffd3d5a7610f7ba8ff88d35"
+    },
+    {
+      "actual": 69,
+      "classification": "PASS",
+      "expected": 69,
+      "mode": "valid",
+      "seed": 51,
+      "signature": "",
+      "source_sha": "92fcd38cbb9838ad7883a8c1b620111531a94d2a762397cb0cb3de0a1917eef7"
+    },
+    {
+      "actual": -2,
+      "classification": "PASS",
+      "expected": -2,
+      "mode": "valid",
+      "seed": 52,
+      "signature": "",
+      "source_sha": "01d688a370108316a26838a23b160da9a3897e984739e22bb667a47ab0e1fd51"
+    },
+    {
+      "actual": 44,
+      "classification": "PASS",
+      "expected": 44,
+      "mode": "valid",
+      "seed": 53,
+      "signature": "",
+      "source_sha": "693a0a74153a07a4fdd7d0e44dc8b577dcca7aff541374ed1d1c1eb5fecdc747"
+    },
+    {
+      "actual": 54,
+      "classification": "PASS",
+      "expected": 54,
+      "mode": "valid",
+      "seed": 54,
+      "signature": "",
+      "source_sha": "43970cfeb507bd79e388e5c3dde8bb7d70a8201eebdbd51027dd13943eed6655"
+    },
+    {
+      "actual": -112,
+      "classification": "PASS",
+      "expected": -112,
+      "mode": "valid",
+      "seed": 55,
+      "signature": "",
+      "source_sha": "4da1ab2a95b384bc56e2d53cc5b62f7ef7439f07f17eab07b014be907db3d8d1"
+    },
+    {
+      "actual": 88,
+      "classification": "PASS",
+      "expected": 88,
+      "mode": "valid",
+      "seed": 56,
+      "signature": "",
+      "source_sha": "cddcec601c3de78817c1af769f5f6d9d30755375b01fed34c80e0f208fb38b66"
+    },
+    {
+      "actual": 44,
+      "classification": "PASS",
+      "expected": 44,
+      "mode": "valid",
+      "seed": 57,
+      "signature": "",
+      "source_sha": "929d007ffd64194ce18309abd548ca485b97d7ad561fe6fab997b81849b922b9"
+    },
+    {
+      "actual": 41,
+      "classification": "PASS",
+      "expected": 41,
+      "mode": "valid",
+      "seed": 58,
+      "signature": "",
+      "source_sha": "c5aaa7823cd498be975a3631c9ce2c6de8b1738e2d0bae27e3cf845988a859f2"
+    },
+    {
+      "actual": -13,
+      "classification": "PASS",
+      "expected": -13,
+      "mode": "valid",
+      "seed": 59,
+      "signature": "",
+      "source_sha": "a870ed58cd675b21bfccefab06f89ec9d0e35736dd93fbc98082a794db99054a"
+    },
+    {
+      "actual": 19,
+      "classification": "PASS",
+      "expected": 19,
+      "mode": "valid",
+      "seed": 60,
+      "signature": "",
+      "source_sha": "99a42532d0e69d9dd40ad4633ad9a31bcb0fbc2288105783f3fe83b1c5bdc716"
+    },
+    {
+      "actual": -12,
+      "classification": "PASS",
+      "expected": -12,
+      "mode": "valid",
+      "seed": 61,
+      "signature": "",
+      "source_sha": "3f9567f6cf4235f2af02b601e3c93202ece5577d3aa6122de1035ac8bbdd242b"
+    },
+    {
+      "actual": -124,
+      "classification": "PASS",
+      "expected": -124,
+      "mode": "valid",
+      "seed": 62,
+      "signature": "",
+      "source_sha": "065f9892e72829b712be36375707c14f598f8cd98fb07b42e054b7a23bef1a6a"
+    },
+    {
+      "actual": -12,
+      "classification": "PASS",
+      "expected": -12,
+      "mode": "valid",
+      "seed": 63,
+      "signature": "",
+      "source_sha": "74294d68597bbd86f563dffa3eda3b36416fadf1602fb475f7f12fc935e15c55"
+    },
+    {
+      "actual": -8,
+      "classification": "PASS",
+      "expected": -8,
+      "mode": "valid",
+      "seed": 64,
+      "signature": "",
+      "source_sha": "1c922f313e8b50b959c88b52e39ec9ecb9cae474413413a7e3d8955767f8a37b"
+    },
+    {
+      "actual": -54,
+      "classification": "PASS",
+      "expected": -54,
+      "mode": "valid",
+      "seed": 65,
+      "signature": "",
+      "source_sha": "fd8640f4456fb2b55eb03b58d1972f4c1b7c267a68dcac9e8009e23b7546e543"
+    },
+    {
+      "actual": -10,
+      "classification": "PASS",
+      "expected": -10,
+      "mode": "valid",
+      "seed": 66,
+      "signature": "",
+      "source_sha": "ebe724866bfde8f647b89dfb39f0716a669824096d99174679d855fabebfab66"
+    },
+    {
+      "actual": 25,
+      "classification": "PASS",
+      "expected": 25,
+      "mode": "valid",
+      "seed": 67,
+      "signature": "",
+      "source_sha": "3bf41fe22aa72a2977a1896e174d2e95c1b38e55f247bd1a47be5970a3023499"
+    },
+    {
+      "actual": 167,
+      "classification": "PASS",
+      "expected": 167,
+      "mode": "valid",
+      "seed": 68,
+      "signature": "",
+      "source_sha": "373979d45fd09d762d42ca5f79a762f870e56d43ef7339fe6485d0b4784b7a3d"
+    },
+    {
+      "actual": -134,
+      "classification": "PASS",
+      "expected": -134,
+      "mode": "valid",
+      "seed": 69,
+      "signature": "",
+      "source_sha": "eb7d3a820ede58ff6ace6f84b09346810cfb32cc4e55056b4e39101324e4ad37"
+    },
+    {
+      "actual": 54,
+      "classification": "PASS",
+      "expected": 54,
+      "mode": "valid",
+      "seed": 70,
+      "signature": "",
+      "source_sha": "cf6212a513f9606fd1d22c60e6433121f464f490fdc224fa980cf9ca8aa687e2"
+    },
+    {
+      "actual": 88,
+      "classification": "PASS",
+      "expected": 88,
+      "mode": "valid",
+      "seed": 71,
+      "signature": "",
+      "source_sha": "ca64485cd9bcdd8bcb8a21811eb47aec9e79229a780867c49ea708de53c074ac"
+    },
+    {
+      "actual": 152,
+      "classification": "PASS",
+      "expected": 152,
+      "mode": "valid",
+      "seed": 72,
+      "signature": "",
+      "source_sha": "e8b4d518e8982b76e985af06617380e2b672aa7f403a0a6776b291dd34efc17a"
+    },
+    {
+      "actual": -41,
+      "classification": "PASS",
+      "expected": -41,
+      "mode": "valid",
+      "seed": 73,
+      "signature": "",
+      "source_sha": "f85d9fba922575a5cb124b14b1191b0121690ee1e15d12dd69bdf6a5be6f37b4"
+    },
+    {
+      "actual": -89,
+      "classification": "PASS",
+      "expected": -89,
+      "mode": "valid",
+      "seed": 74,
+      "signature": "",
+      "source_sha": "2f09b0d7b388efdb7718a9b82ce0fcbc764ada9717c9919bcd2291da967f40cf"
+    },
+    {
+      "actual": 60,
+      "classification": "PASS",
+      "expected": 60,
+      "mode": "valid",
+      "seed": 75,
+      "signature": "",
+      "source_sha": "a1fa1ee0844ce0fb34117f0393286f72c4807a87c406c13d86368a47b5fa5a44"
+    },
+    {
+      "actual": 17,
+      "classification": "PASS",
+      "expected": 17,
+      "mode": "valid",
+      "seed": 76,
+      "signature": "",
+      "source_sha": "29b1a1b273e6b4bee2c8bc5042a8975a86adb732d9564ab63f5e5e97f64e1bc8"
+    },
+    {
+      "actual": -67,
+      "classification": "PASS",
+      "expected": -67,
+      "mode": "valid",
+      "seed": 77,
+      "signature": "",
+      "source_sha": "b538c96e51c8a1721a2a0637b5b0dc87c2d339b36688a170b1dfdd3ab3fc20e0"
+    },
+    {
+      "actual": -100,
+      "classification": "PASS",
+      "expected": -100,
+      "mode": "valid",
+      "seed": 78,
+      "signature": "",
+      "source_sha": "95ce26c8081e37a457df631ec201d518463c65e62ec9827960f9d0c8b760eb8b"
+    },
+    {
+      "actual": 1,
+      "classification": "PASS",
+      "expected": 1,
+      "mode": "valid",
+      "seed": 79,
+      "signature": "",
+      "source_sha": "ee11b3b3c52384bb6d638ca220c6bbdb01e84e81f4a78a59b79438fd1745c490"
+    },
+    {
+      "actual": 38,
+      "classification": "PASS",
+      "expected": 38,
+      "mode": "valid",
+      "seed": 80,
+      "signature": "",
+      "source_sha": "2862bf0bc8682cc6b849a0767e82178a82b507cfacf392f5fd863c22a3dfe25d"
+    },
+    {
+      "actual": 28,
+      "classification": "PASS",
+      "expected": 28,
+      "mode": "valid",
+      "seed": 81,
+      "signature": "",
+      "source_sha": "ec957f4b1e4d26aece8c0fa74beaea89a383b2c8bb8c449e417a76d027341c84"
+    },
+    {
+      "actual": 121,
+      "classification": "PASS",
+      "expected": 121,
+      "mode": "valid",
+      "seed": 82,
+      "signature": "",
+      "source_sha": "92539c701e20866e08f7b0d785a391d611cec88470511188c3d05f4350fed51c"
+    },
+    {
+      "actual": -61,
+      "classification": "PASS",
+      "expected": -61,
+      "mode": "valid",
+      "seed": 83,
+      "signature": "",
+      "source_sha": "5c9f9d82280a75fb15d1ce02960a261ab8dc13a6d1f00032c0de9535f2c0f85b"
+    },
+    {
+      "actual": 7,
+      "classification": "PASS",
+      "expected": 7,
+      "mode": "valid",
+      "seed": 84,
+      "signature": "",
+      "source_sha": "8300263bce02fdbf7597239c6578b21521d55012b616e2340712e9de3d94ae3f"
+    },
+    {
+      "actual": 136,
+      "classification": "PASS",
+      "expected": 136,
+      "mode": "valid",
+      "seed": 85,
+      "signature": "",
+      "source_sha": "ce7c3ff6ead69de9bc9d86d41a1d7fd53cc7e40f872b53b3c6f5da976a0414d7"
+    },
+    {
+      "actual": 23,
+      "classification": "PASS",
+      "expected": 23,
+      "mode": "valid",
+      "seed": 86,
+      "signature": "",
+      "source_sha": "6b8525eff9c676f7684b02e99733ae4dd453ca36205c097d001b897d09200644"
+    },
+    {
+      "actual": 36,
+      "classification": "PASS",
+      "expected": 36,
+      "mode": "valid",
+      "seed": 87,
+      "signature": "",
+      "source_sha": "712d3ee3b8f9ade355a003f83f85da2764e67a01b5010a5738df3acc291fa191"
+    },
+    {
+      "actual": -67,
+      "classification": "PASS",
+      "expected": -67,
+      "mode": "valid",
+      "seed": 88,
+      "signature": "",
+      "source_sha": "f786cab4c54cecebfb9eb986172e13d01b69d0f2c6441fb973c9ed487d082ea9"
+    },
+    {
+      "actual": 151,
+      "classification": "PASS",
+      "expected": 151,
+      "mode": "valid",
+      "seed": 89,
+      "signature": "",
+      "source_sha": "1437bc641098c08adca6cf46f12caff214167f2b0d9786dc8e5afd0127035767"
+    },
+    {
+      "actual": 5,
+      "classification": "PASS",
+      "expected": 5,
+      "mode": "valid",
+      "seed": 90,
+      "signature": "",
+      "source_sha": "2267ab87f6c86371246c9d9200b00c4d61a317aabf23bcf9ad9be1c8e30b51e1"
+    },
+    {
+      "actual": -5,
+      "classification": "PASS",
+      "expected": -5,
+      "mode": "valid",
+      "seed": 91,
+      "signature": "",
+      "source_sha": "cce234d4d00a88b45bfe24db68edcc69447293a17cfc18539fbccda5e2872ef2"
+    },
+    {
+      "actual": 76,
+      "classification": "PASS",
+      "expected": 76,
+      "mode": "valid",
+      "seed": 92,
+      "signature": "",
+      "source_sha": "7ca45da5af9fc2865d7fd8952856996f23c76c3f545bc1aeadcc8ea0828df9d4"
+    },
+    {
+      "actual": 129,
+      "classification": "PASS",
+      "expected": 129,
+      "mode": "valid",
+      "seed": 93,
+      "signature": "",
+      "source_sha": "2ced81f64ec754ed66de4c7067df1113866dde9a03f1e751cd356fb6e81257da"
+    },
+    {
+      "actual": -98,
+      "classification": "PASS",
+      "expected": -98,
+      "mode": "valid",
+      "seed": 94,
+      "signature": "",
+      "source_sha": "7123547fae0b455c9a3b758478caa6cb4501e5202623c4a9f48c1ea19d8fa18d"
+    },
+    {
+      "actual": -67,
+      "classification": "PASS",
+      "expected": -67,
+      "mode": "valid",
+      "seed": 95,
+      "signature": "",
+      "source_sha": "8fc15112b5c6ae8a5c333cf3b8956fa6f22230759d013796d1c1c297e30d3827"
+    },
+    {
+      "actual": 52,
+      "classification": "PASS",
+      "expected": 52,
+      "mode": "valid",
+      "seed": 96,
+      "signature": "",
+      "source_sha": "044b7e454ae548ff975122c79c03471fe4ba6e93d5f8c3573e9a11fa4935edab"
+    },
+    {
+      "actual": 4,
+      "classification": "PASS",
+      "expected": 4,
+      "mode": "valid",
+      "seed": 97,
+      "signature": "",
+      "source_sha": "0c449411e1f8bf04db5b3c212f91f5a082c8624d04c4ecd6cbdcaa37e1456c94"
+    },
+    {
+      "actual": -42,
+      "classification": "PASS",
+      "expected": -42,
+      "mode": "valid",
+      "seed": 98,
+      "signature": "",
+      "source_sha": "d19eae8b87c639bfde0a0759a55ca9712f12f53dc05e55bc338ca33ea97eb2be"
+    },
+    {
+      "actual": -52,
+      "classification": "PASS",
+      "expected": -52,
+      "mode": "valid",
+      "seed": 99,
+      "signature": "",
+      "source_sha": "2cceb38ef5553b6f61ea975ee0319cd5dd72d129bce5c71b6db0b82679682a99"
+    },
+    {
+      "actual": 33,
+      "classification": "PASS",
+      "expected": 33,
+      "mode": "valid",
+      "seed": 100,
+      "signature": "",
+      "source_sha": "24fc6a39aa875346133d725c7d251f4398375a2617606b191cd567ce8322bb08"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100001,
+      "signature": "SemanticError:2:19: semantic error: dereference operand must be a reference",
+      "source_sha": "80f9a9977cff320794973b7a4ca3b9d447d7a19084406e2aa2194a96391ec288"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100002,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "fad0abc730258ab606bdc3be5c16a5c417f5262d9c9c94fc70535a2d5ef0f789"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100003,
+      "signature": "SemanticError:2:19: semantic error: dereference operand must be a reference",
+      "source_sha": "c5e1cecebb21bc517d7d1b1836671d228a921bcff538991bbd888005a379d113"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100004,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100005,
+      "signature": "SemanticError:2:18: semantic error: dereference operand must be a reference",
+      "source_sha": "fdaeccec4aaf8d07d47e249eb7323462391a6cfb9ce70613c7e19079cec25e7c"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100006,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100007,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100008,
+      "signature": "ParseError:1:10: parse error: expected parameter name; found '->'",
+      "source_sha": "fc1a4729b89e2a852ec2d271b04b1703c76a17b61402eb7ca865720b85058682"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100009,
+      "signature": "ParseError:1:10: parse error: expected parameter name; found '->'",
+      "source_sha": "e296a80fa801b51cbed1f1d626c38e7a5e8d41413c4a5d0c536874dd7d96cf24"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100010,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "41563fd6ae7ffb6a177e5a03d3f19adc601d762d6a1bdcb7f8e621f07b23584c"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100011,
+      "signature": "SemanticError:2:19: semantic error: dereference operand must be a reference",
+      "source_sha": "c1b2f6c4bbd0abf91b84d1eb02034057c06c50379fc901d372d73669d4e1d059"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100012,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100013,
+      "signature": "ParseError:1:10: parse error: expected parameter name; found '->'",
+      "source_sha": "bd1913d629e09065f3beb844685b30cfa1c42f710e270a808e688eaee8cb372b"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100014,
+      "signature": "ParseError:1:10: parse error: expected parameter name; found '->'",
+      "source_sha": "b0f91a9491b098666215caebf44a2bd9a81bc3d4a88acf2d487180e6644f8553"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100015,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "4f618f43a7b1894aa884184521054e5eb8b6016bce91cbc24e6d75c1a538b20b"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100016,
+      "signature": "SemanticError:2:19: semantic error: dereference operand must be a reference",
+      "source_sha": "7be98916598b7791e2ef47e448d1cbfee59c695603c174abd86ee47eeacc4fe1"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100017,
+      "signature": "ParseError:1:10: parse error: expected parameter name; found '->'",
+      "source_sha": "dd371aabb0076dc66c4d030178509b272e1efc7287daf292b989613b968f8855"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100018,
+      "signature": "ParseError:1:10: parse error: expected parameter name; found '->'",
+      "source_sha": "b0f91a9491b098666215caebf44a2bd9a81bc3d4a88acf2d487180e6644f8553"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100019,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100020,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100021,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100022,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "11330bee4dcb3ff7c92e07fa1fdc3bfbb5785885fd624ee5c162fb0458bfadea"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100023,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100024,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100025,
+      "signature": "SemanticError:2:18: semantic error: dereference operand must be a reference",
+      "source_sha": "2a389fe3214d7ab095965ce99837b12e066628174ec008ddb3ddaae6478957db"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100026,
+      "signature": "SemanticError:2:18: semantic error: dereference operand must be a reference",
+      "source_sha": "6e081b6ed3c02b208ba558e232bdc454824cdeb51fde4f5232b842a8597c001b"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100027,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100028,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "41563fd6ae7ffb6a177e5a03d3f19adc601d762d6a1bdcb7f8e621f07b23584c"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100029,
+      "signature": "ParseError:1:10: parse error: expected parameter name; found '->'",
+      "source_sha": "cca7d534b6cd6c55a2c97f7c1376309baf75eca44de05c650ee250faceb669c9"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100030,
+      "signature": "ParseError:1:10: parse error: expected parameter name; found '->'",
+      "source_sha": "3f3abcb0a6b2b6ab08e263afe959db0ef3a0937ca41ad9d4ac8ef78601dfc115"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100031,
+      "signature": "SemanticError:2:19: semantic error: dereference operand must be a reference",
+      "source_sha": "9887258e367ff46f77b124d114277a5e8001efe2aa321d4a3946032cead1918d"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100032,
+      "signature": "ParseError:1:10: parse error: expected parameter name; found '->'",
+      "source_sha": "b0f91a9491b098666215caebf44a2bd9a81bc3d4a88acf2d487180e6644f8553"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100033,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100034,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "49e01f00434479fd1a53646eb524b70fce656ab5c5218cc808e0a8a62d4198e1"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100035,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "36841dd31d6f8fe95460d8a55cad9dae9397e987a60ab37e766dfd9a31ed46bf"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100036,
+      "signature": "SemanticError:2:18: semantic error: dereference operand must be a reference",
+      "source_sha": "7edf736252e8e9bf226ff810d03d35509b2adb19ad8e90cbd96969c6127171b3"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100037,
+      "signature": "SemanticError:2:19: semantic error: dereference operand must be a reference",
+      "source_sha": "308ce36b488f4c4f00d4b3a6c20bf94d8feccc7d7a1906be659d98a851f6511f"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100038,
+      "signature": "SemanticError:2:19: semantic error: dereference operand must be a reference",
+      "source_sha": "94021720d22a927d80c63724a9c8e95149cfa8fd41bdd33711da9816bc640ee9"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100039,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "a45fb91f716f9e6bd2cd6cf369f9d8bd07d9159f7f404d6ca8ec3763d2bdd100"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100040,
+      "signature": "ParseError:1:10: parse error: expected parameter name; found '->'",
+      "source_sha": "79418fd2081a4d62b004cb7730ee35696f9584bdc935459b64033f71937790b2"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100041,
+      "signature": "ParseError:1:10: parse error: expected parameter name; found '->'",
+      "source_sha": "b0f91a9491b098666215caebf44a2bd9a81bc3d4a88acf2d487180e6644f8553"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100042,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100043,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "ce0b24ad6eed6455418a055541c58980fbc5e73dc256c984e195b7ba3e1e8941"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100044,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100045,
+      "signature": "SemanticError:2:18: semantic error: dereference operand must be a reference",
+      "source_sha": "20959c54a6bbcca309a8ef36f13e05ff559f1ec12040e6964b26b49160341bbf"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100046,
+      "signature": "SemanticError:2:19: semantic error: dereference operand must be a reference",
+      "source_sha": "6dd70602680ebfb5f407f834f7fbe3a3630de260c49814a849ed03b6fe6cfa0e"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100047,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "5f10ec856b8d8490a96b3080a23c1ce5fb4c6caad6631f9ea3531a7dc569c505"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100048,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "41563fd6ae7ffb6a177e5a03d3f19adc601d762d6a1bdcb7f8e621f07b23584c"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100049,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "b9405a6115c1a0ff122020c88c4120dbec80d48fcca430ef4c188f15c7db6bcc"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100050,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100051,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100052,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100053,
+      "signature": "SemanticError:2:19: semantic error: dereference operand must be a reference",
+      "source_sha": "92149f40fad857df7103466a02c2aa48bfeb83261f370fc477b6846e99b07b4b"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100054,
+      "signature": "SemanticError:2:19: semantic error: dereference operand must be a reference",
+      "source_sha": "4453976ebca6152f834e787cd74acab26626af54593e7866654b44afb358955b"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100055,
+      "signature": "ParseError:1:10: parse error: expected parameter name; found '->'",
+      "source_sha": "e296a80fa801b51cbed1f1d626c38e7a5e8d41413c4a5d0c536874dd7d96cf24"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100056,
+      "signature": "SemanticError:2:18: semantic error: dereference operand must be a reference",
+      "source_sha": "6614297e089200a0dbf7643764063aff8b63596c8b930d5d15aa43876e0e0b31"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100057,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "6244a9c642abb0d14666d9b863e9ca622926f31ef68fab66b8b0dd35451f13cc"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100058,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100059,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100060,
+      "signature": "SemanticError:2:18: semantic error: dereference operand must be a reference",
+      "source_sha": "0848e178d7e08b760ad7a9684af4c66b23f20e1837e9b167bd56229f3a7672f2"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100061,
+      "signature": "ParseError:1:10: parse error: expected parameter name; found '->'",
+      "source_sha": "6b2539b739f160077bebdbcea98ff958888fa67784599b79bbb4ec4cb0cbc4b1"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100062,
+      "signature": "ParseError:1:10: parse error: expected parameter name; found '->'",
+      "source_sha": "063017822482a607a1dee8769d7ba1d0b28628ce5f89668f3d8d71683e28fb29"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100063,
+      "signature": "SemanticError:2:18: semantic error: dereference operand must be a reference",
+      "source_sha": "7de78840029e53f1887135f722c073e1f3f4ef19b8e73d0363e1ae4d32a2cfb2"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100064,
+      "signature": "ParseError:1:10: parse error: expected parameter name; found '->'",
+      "source_sha": "063017822482a607a1dee8769d7ba1d0b28628ce5f89668f3d8d71683e28fb29"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100065,
+      "signature": "SemanticError:2:19: semantic error: dereference operand must be a reference",
+      "source_sha": "ebabed271e7bf3c8a42123c8ed8cd09b3a80e706c80518e404217475a7341d2d"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100066,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100067,
+      "signature": "SemanticError:2:18: semantic error: dereference operand must be a reference",
+      "source_sha": "281b70542b25e1a47188cd2efd9aeb85892853ce96479ac4243c8f7f90f7f04a"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100068,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100069,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "a3a1468b41825d2f6a8af70948f929419a9cddfc693c2b5196da846c804a1cbf"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100070,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100071,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "761232965afcf48caa42d9ac4ad65e33429b62f449631fefec8f98e8d99bbd20"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100072,
+      "signature": "SemanticError:2:19: semantic error: dereference operand must be a reference",
+      "source_sha": "82f5544f276841fd79ad01ba7092d4b7a905806686ffe3fd1a7244d9d00a8dbd"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100073,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100074,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "5f10ec856b8d8490a96b3080a23c1ce5fb4c6caad6631f9ea3531a7dc569c505"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100075,
+      "signature": "ParseError:1:10: parse error: expected parameter name; found '->'",
+      "source_sha": "f72f2b1596bd74f9eaf65675297f03e4ee3efb416424612a9460e94f9a961573"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100076,
+      "signature": "ParseError:1:10: parse error: expected parameter name; found '->'",
+      "source_sha": "79418fd2081a4d62b004cb7730ee35696f9584bdc935459b64033f71937790b2"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100077,
+      "signature": "SemanticError:2:18: semantic error: dereference operand must be a reference",
+      "source_sha": "eed52693008119c274721aa2ad140b31d9dc4e84fb98b6b814498567f1a60e9d"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100078,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "4f618f43a7b1894aa884184521054e5eb8b6016bce91cbc24e6d75c1a538b20b"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100079,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "fd0f3582166130996f914d8086d5c1ea7c05b9d889d068c0315c71844279b141"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100080,
+      "signature": "ParseError:1:10: parse error: expected parameter name; found '->'",
+      "source_sha": "dd371aabb0076dc66c4d030178509b272e1efc7287daf292b989613b968f8855"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100081,
+      "signature": "SemanticError:2:18: semantic error: dereference operand must be a reference",
+      "source_sha": "f4a8ef6365178dd0f4e09437bb158af97e0958c8eaed8c2b6dc90eb74b3df2cd"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100082,
+      "signature": "SemanticError:2:18: semantic error: dereference operand must be a reference",
+      "source_sha": "b42effc2ef29afb308eec07c9e173ebcd90f26e3cfd8ccc823426bd30644fdd9"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100083,
+      "signature": "ParseError:1:10: parse error: expected parameter name; found '->'",
+      "source_sha": "b2835e642c25ff7b2687f380554419fc3a1723fb866ad621287f65814e0f2c65"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100084,
+      "signature": "ParseError:1:10: parse error: expected parameter name; found '->'",
+      "source_sha": "dd371aabb0076dc66c4d030178509b272e1efc7287daf292b989613b968f8855"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100085,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "41563fd6ae7ffb6a177e5a03d3f19adc601d762d6a1bdcb7f8e621f07b23584c"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100086,
+      "signature": "SemanticError:2:18: semantic error: dereference operand must be a reference",
+      "source_sha": "a8fc08bfa83c281d85b6dcd966cdd2ee2edf36e4140f3002b7e518e48d8cd38d"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100087,
+      "signature": "SemanticError:2:18: semantic error: dereference operand must be a reference",
+      "source_sha": "03ea280bf59ffda4ebe8d7c21e37e329675dcda9c8f4c302c55ed1573a2f203f"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100088,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "af7345281bfb1ae368b76a5dbf11fc6aa14431e8e2c7b8b54216b5af57e923f4"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100089,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100090,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100091,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "a3a1468b41825d2f6a8af70948f929419a9cddfc693c2b5196da846c804a1cbf"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100092,
+      "signature": "SemanticError:2:19: semantic error: dereference operand must be a reference",
+      "source_sha": "b603fe0565bfae9cdf9acd93b2da03dded0401cedfe89fc3667748ecae4d6c03"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100093,
+      "signature": "ParseError:1:10: parse error: expected parameter name; found '->'",
+      "source_sha": "6b2539b739f160077bebdbcea98ff958888fa67784599b79bbb4ec4cb0cbc4b1"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100094,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "4f618f43a7b1894aa884184521054e5eb8b6016bce91cbc24e6d75c1a538b20b"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100095,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "761232965afcf48caa42d9ac4ad65e33429b62f449631fefec8f98e8d99bbd20"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100096,
+      "signature": "SemanticError:2:18: semantic error: dereference operand must be a reference",
+      "source_sha": "cacd68114226d46f68d759f91255715109d848aea676c520e9c9b38739462452"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100097,
+      "signature": "SemanticError:2:18: semantic error: dereference operand must be a reference",
+      "source_sha": "fdb8870cf015d47f72d19e6ae39e21d92d219173a390b15a52c2e1804ca717b5"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100098,
+      "signature": "ParseError:3:1: parse error: expected 'fn'; found 'this'",
+      "source_sha": "41563fd6ae7ffb6a177e5a03d3f19adc601d762d6a1bdcb7f8e621f07b23584c"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100099,
+      "signature": "ParseError:2:13: parse error: expected expression",
+      "source_sha": "87c678c280cc0e8496fef66be43f872a2d08f6194bb443877e3efe58b962e2f0"
+    },
+    {
+      "actual": null,
+      "classification": "PASS",
+      "expected": null,
+      "mode": "malformed",
+      "seed": 100100,
+      "signature": "SemanticError:2:18: semantic error: dereference operand must be a reference",
+      "source_sha": "8fda7213d536ea4de367a917eebffeb296e02c0d42942b624efd58d72b5709c5"
+    }
+  ],
+  "schema": "s3.reliability.report.v1",
+  "seed_start": 1,
+  "source_sha": "unknown-at-harness-level"
+}
