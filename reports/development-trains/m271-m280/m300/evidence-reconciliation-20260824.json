@@ -1,0 +1,40 @@
+{
+  "schema": "s3.m300.evidence-reconciliation.v1",
+  "purpose": "Replace stale publication placeholder metadata without rewriting historical qualification results.",
+  "historical_checkpoint": {
+    "milestone": "M3.00",
+    "pr": 266,
+    "candidate_head": "39d086bd641ae097931899baa6f27beed233b7c8",
+    "integration_merge_head": "b9c8fdd8b27802d3a10df20f7ae19c04e2895e62",
+    "final_tested_source_head": "a9a828afeec8cae487ac9711ffca5011526fd973",
+    "bounded_checkpoint": "QUALIFIED_LOCAL",
+    "full_self_hosting_claim": false,
+    "production_promotion": false,
+    "t4_at_bounded_checkpoint": "NOT_RUN"
+  },
+  "correction": {
+    "field": "final_candidate_head",
+    "old_value": "DOCUMENTATION_UPDATE_PENDING",
+    "new_value": "39d086bd641ae097931899baa6f27beed233b7c8",
+    "classification": "METADATA_ONLY",
+    "historical_test_results_changed": false,
+    "compiler_source_changed": false
+  },
+  "post_checkpoint_context": {
+    "actual_bootstrap_certification_pr": 267,
+    "actual_bootstrap_t4": "PASS_453_SELECTED_453_PASSED",
+    "stage1_seed_pr": 268,
+    "stage0_to_stage1": "PASS_LINUX_X86_64",
+    "stage1_to_stage2": "BLOCKED",
+    "stage3": "NOT_STARTED",
+    "full_self_hosting": false
+  },
+  "ownership_reference_reclassification": {
+    "pr": 259,
+    "superseded_as_milestone": true,
+    "preserved_as_research_debt": true,
+    "blocks_m3": false,
+    "blocks_stage1_stage2": false
+  },
+  "status": "PASS_ADDITIVE_RECONCILIATION"
+}
