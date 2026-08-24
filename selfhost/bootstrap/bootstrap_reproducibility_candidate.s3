@@ -1,0 +1,37 @@
+fn add_mod(left: tryte, amount: tryte) -> tryte:
+    mut result: tryte = left
+    match result <=> 301 - amount:
+        -1:
+            result += amount
+        0:
+            result = result - (301 - amount)
+        1:
+            result = result - (301 - amount)
+    return result
+
+fn fold_identity(value: tryte) -> tryte:
+    mut result: tryte = value
+    while result < 0:
+        result += 181
+    while result > 180:
+        result = result - 181
+    return result
+
+fn seal_bootstrap(
+    artifact_identity: tryte,
+    assembly_identity: tryte,
+    admission_identity: tryte,
+    target_id: tryte
+) -> tryte:
+    mut first: tryte = add_mod(artifact_identity, assembly_identity)
+    first = add_mod(first, target_id)
+    first = add_mod(first, admission_identity)
+    first = fold_identity(first)
+    mut second: tryte = add_mod(artifact_identity, assembly_identity)
+    second = add_mod(second, target_id)
+    second = add_mod(second, admission_identity)
+    second = fold_identity(second)
+    mut result: tryte = add_mod(admission_identity, first)
+    result = add_mod(result, second)
+    result = add_mod(result, 298)
+    return fold_identity(result)
