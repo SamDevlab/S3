@@ -26,10 +26,17 @@ observable without claiming a cryptographic identity.
 ## TEST_EVIDENCE
 
 - Focused M2.76 contract: PASS, 8 tests on Python 3.11.
-- Compileall, diff check, smart affected and shard qualification: pending.
+- Focused M2.76 contract: PASS, 8 tests on Python 3.11, 3.12 and 3.13.
+- `python -m compileall -q bootstrap/s3 tools`: PASS.
+- `git diff --check`: PASS.
+- T1 affected profile: PASS, 4 selected, 4 passed, 0 failed, 0 timed out.
+- T3 `m276` shard: PASS, 1 selected, 1 passed, 0 failed, 0 timed out.
+- Final tested source head: `95e3dae41596c6d2a2335e354acca17ca99e0cb1`.
+- Documentation may receive a later candidate commit; source gates remain tied
+  to the final tested source head.
 - Benchmark: NOT RUN.
 - Global T4: NOT RUN; reserved for M3.00.
 
 ## STATUS
 
-IMPLEMENTED_PENDING_QUALIFICATION
+QUALIFIED_LOCAL
