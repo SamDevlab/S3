@@ -1,0 +1,469 @@
+foreign fn s3_stage1_source_length() -> i64
+foreign fn s3_stage1_read_byte(index: i64) -> tryte
+foreign fn s3_stage1_write_byte(value: tryte) -> tryte
+foreign fn s3_stage1_write_error_byte(value: tryte) -> tryte
+foreign fn s3_stage1_exit(status: i64) -> i64
+
+fn read_at(index: i64) -> tryte:
+    return s3_stage1_read_byte(index)
+
+fn write_byte(value: tryte) -> tryte:
+    return s3_stage1_write_byte(value)
+
+fn write_error_byte(value: tryte) -> tryte:
+    return s3_stage1_write_error_byte(value)
+
+fn merge_check(current: trit, next: trit) -> trit:
+    match current:
+        -1:
+            return next
+        0:
+            return 0
+        1:
+            return 0
+
+fn byte_is(index: i64, expected: tryte) -> trit:
+    match read_at(index) == expected:
+        -1:
+            return -1
+        0:
+            return 0
+        1:
+            return 0
+
+fn pair_is(start: i64, left: tryte, right: tryte) -> trit:
+    mut result: trit = byte_is(start, left)
+    match result:
+        -1:
+            return byte_is(start + 1, right)
+        0:
+            return 0
+        1:
+            return 0
+
+fn word4_is(start: i64, a: tryte, b: tryte, c: tryte, d: tryte) -> trit:
+    mut result: trit = pair_is(start, a, b)
+    result = merge_check(result, pair_is(start + 2, c, d))
+    return result
+
+fn word5_is(start: i64, a: tryte, b: tryte, c: tryte, d: tryte, e: tryte) -> trit:
+    mut result: trit = word4_is(start, a, b, c, d)
+    result = merge_check(result, byte_is(start + 4, e))
+    return result
+
+fn word6_is(start: i64, a: tryte, b: tryte, c: tryte, d: tryte, e: tryte, f: tryte) -> trit:
+    mut result: trit = word5_is(start, a, b, c, d, e)
+    result = merge_check(result, byte_is(start + 5, f))
+    return result
+
+fn prefix_is_valid() -> trit:
+    mut result: trit = -1
+    result = merge_check(result, pair_is(0, 102, 110))
+    result = merge_check(result, byte_is(2, 32))
+    result = merge_check(result, word4_is(3, 109, 97, 105, 110))
+    result = merge_check(result, pair_is(7, 40, 41))
+    result = merge_check(result, pair_is(10, 45, 62))
+    result = merge_check(result, byte_is(12, 32))
+    result = merge_check(result, word5_is(13, 116, 114, 121, 116, 101))
+    result = merge_check(result, byte_is(18, 58))
+    result = merge_check(result, byte_is(19, 10))
+    result = merge_check(result, word4_is(20, 32, 32, 32, 32))
+    result = merge_check(result, word6_is(24, 114, 101, 116, 117, 114, 110))
+    result = merge_check(result, byte_is(30, 32))
+    return result
+
+fn is_digit(unit: tryte) -> trit:
+    match unit <=> 48:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match unit <=> 57:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn number_tail_is_valid(position: i64, length: i64) -> trit:
+    match position == length:
+        -1:
+            return -1
+        0:
+            match read_at(position) == 10:
+                -1:
+                    match position + 1 == length:
+                        -1:
+                            return -1
+                        0:
+                            return 0
+                        1:
+                            return 0
+                0:
+                    return 0
+                1:
+                    return 0
+        1:
+            return 0
+
+fn source_is_valid(length: i64) -> trit:
+    mut result: trit = prefix_is_valid()
+    mut position: i64 = 31
+    match read_at(position) == 45:
+        -1:
+            position += 1
+        0:
+            discard 0
+        1:
+            discard 0
+    mut digits: i64 = 0
+    while position < length:
+        mut unit: tryte = read_at(position)
+        match is_digit(unit):
+            -1:
+                digits += 1
+                position += 1
+            0:
+                break
+            1:
+                break
+    result = merge_check(result, digits > 0)
+    result = merge_check(result, number_tail_is_valid(position, length))
+    return result
+
+fn parsed_number(length: i64) -> i64:
+    mut position: i64 = 31
+    mut sign: i64 = 1
+    match read_at(position) == 45:
+        -1:
+            sign = -1
+            position += 1
+        0:
+            discard 0
+        1:
+            discard 0
+    mut value: i64 = 0
+    while position < length:
+        mut unit: tryte = read_at(position)
+        match is_digit(unit):
+            -1:
+                value = value * 10 + (to_i64(unit) - 48)
+                position += 1
+            0:
+                break
+            1:
+                break
+    return value * sign
+
+fn decimal_digit(number: i64, divisor: i64) -> tryte:
+    mut quotient: i64 = number / divisor
+    mut ascii: i64 = quotient + 48
+    return to_tryte(ascii)
+
+fn remainder_digit(number: i64, divisor: i64) -> tryte:
+    mut quotient: i64 = number / divisor
+    mut remainder: i64 = number - quotient * divisor
+    mut ascii: i64 = remainder + 48
+    return to_tryte(ascii)
+
+fn emit_decimal(value: i64) -> trit:
+    mut number: i64 = value
+    match number < 0:
+        -1:
+            discard write_byte(45)
+            number = 0 - number
+        0:
+            discard 0
+        1:
+            discard 0
+    match number <=> 10:
+        -1:
+            discard write_byte(to_tryte(number + 48))
+        0:
+            discard write_byte(49)
+            discard write_byte(48)
+        1:
+            match number <=> 100:
+                -1:
+                    discard write_byte(decimal_digit(number, 10))
+                    discard write_byte(remainder_digit(number, 10))
+                0:
+                    discard write_byte(49)
+                    discard write_byte(48)
+                    discard write_byte(48)
+                1:
+                    discard write_byte(decimal_digit(number, 100))
+                    discard write_byte(remainder_digit(number, 10))
+    return -1
+
+fn emit_assembly(value: i64) -> trit:
+    discard write_byte(46)
+    discard write_byte(105)
+    discard write_byte(110)
+    discard write_byte(116)
+    discard write_byte(101)
+    discard write_byte(108)
+    discard write_byte(95)
+    discard write_byte(115)
+    discard write_byte(121)
+    discard write_byte(110)
+    discard write_byte(116)
+    discard write_byte(97)
+    discard write_byte(120)
+    discard write_byte(32)
+    discard write_byte(110)
+    discard write_byte(111)
+    discard write_byte(112)
+    discard write_byte(114)
+    discard write_byte(101)
+    discard write_byte(102)
+    discard write_byte(105)
+    discard write_byte(120)
+    discard write_byte(10)
+    discard write_byte(46)
+    discard write_byte(115)
+    discard write_byte(101)
+    discard write_byte(99)
+    discard write_byte(116)
+    discard write_byte(105)
+    discard write_byte(111)
+    discard write_byte(110)
+    discard write_byte(32)
+    discard write_byte(46)
+    discard write_byte(116)
+    discard write_byte(101)
+    discard write_byte(120)
+    discard write_byte(116)
+    discard write_byte(10)
+    discard write_byte(46)
+    discard write_byte(103)
+    discard write_byte(108)
+    discard write_byte(111)
+    discard write_byte(98)
+    discard write_byte(108)
+    discard write_byte(32)
+    discard write_byte(95)
+    discard write_byte(115)
+    discard write_byte(116)
+    discard write_byte(97)
+    discard write_byte(114)
+    discard write_byte(116)
+    discard write_byte(10)
+    discard write_byte(46)
+    discard write_byte(116)
+    discard write_byte(121)
+    discard write_byte(112)
+    discard write_byte(101)
+    discard write_byte(32)
+    discard write_byte(95)
+    discard write_byte(115)
+    discard write_byte(116)
+    discard write_byte(97)
+    discard write_byte(114)
+    discard write_byte(116)
+    discard write_byte(44)
+    discard write_byte(32)
+    discard write_byte(64)
+    discard write_byte(102)
+    discard write_byte(117)
+    discard write_byte(110)
+    discard write_byte(99)
+    discard write_byte(116)
+    discard write_byte(105)
+    discard write_byte(111)
+    discard write_byte(110)
+    discard write_byte(10)
+    discard write_byte(95)
+    discard write_byte(115)
+    discard write_byte(116)
+    discard write_byte(97)
+    discard write_byte(114)
+    discard write_byte(116)
+    discard write_byte(58)
+    discard write_byte(10)
+    discard write_byte(32)
+    discard write_byte(32)
+    discard write_byte(32)
+    discard write_byte(32)
+    discard write_byte(109)
+    discard write_byte(111)
+    discard write_byte(118)
+    discard write_byte(32)
+    discard write_byte(101)
+    discard write_byte(97)
+    discard write_byte(120)
+    discard write_byte(44)
+    discard write_byte(32)
+    discard write_byte(54)
+    discard write_byte(48)
+    discard write_byte(10)
+    discard write_byte(32)
+    discard write_byte(32)
+    discard write_byte(32)
+    discard write_byte(32)
+    discard write_byte(109)
+    discard write_byte(111)
+    discard write_byte(118)
+    discard write_byte(32)
+    discard write_byte(101)
+    discard write_byte(100)
+    discard write_byte(105)
+    discard write_byte(44)
+    discard write_byte(32)
+    discard emit_decimal(value)
+    discard write_byte(10)
+    discard write_byte(32)
+    discard write_byte(32)
+    discard write_byte(32)
+    discard write_byte(32)
+    discard write_byte(115)
+    discard write_byte(121)
+    discard write_byte(115)
+    discard write_byte(99)
+    discard write_byte(97)
+    discard write_byte(108)
+    discard write_byte(108)
+    discard write_byte(10)
+    discard write_byte(32)
+    discard write_byte(32)
+    discard write_byte(32)
+    discard write_byte(32)
+    discard write_byte(117)
+    discard write_byte(100)
+    discard write_byte(50)
+    discard write_byte(10)
+    discard write_byte(46)
+    discard write_byte(115)
+    discard write_byte(105)
+    discard write_byte(122)
+    discard write_byte(101)
+    discard write_byte(32)
+    discard write_byte(95)
+    discard write_byte(115)
+    discard write_byte(116)
+    discard write_byte(97)
+    discard write_byte(114)
+    discard write_byte(116)
+    discard write_byte(44)
+    discard write_byte(32)
+    discard write_byte(46)
+    discard write_byte(45)
+    discard write_byte(95)
+    discard write_byte(115)
+    discard write_byte(116)
+    discard write_byte(97)
+    discard write_byte(114)
+    discard write_byte(116)
+    discard write_byte(10)
+    discard write_byte(46)
+    discard write_byte(115)
+    discard write_byte(101)
+    discard write_byte(99)
+    discard write_byte(116)
+    discard write_byte(105)
+    discard write_byte(111)
+    discard write_byte(110)
+    discard write_byte(32)
+    discard write_byte(46)
+    discard write_byte(110)
+    discard write_byte(111)
+    discard write_byte(116)
+    discard write_byte(101)
+    discard write_byte(46)
+    discard write_byte(71)
+    discard write_byte(78)
+    discard write_byte(85)
+    discard write_byte(45)
+    discard write_byte(83)
+    discard write_byte(116)
+    discard write_byte(97)
+    discard write_byte(99)
+    discard write_byte(107)
+    discard write_byte(44)
+    discard write_byte(34)
+    discard write_byte(34)
+    discard write_byte(44)
+    discard write_byte(64)
+    discard write_byte(112)
+    discard write_byte(114)
+    discard write_byte(111)
+    discard write_byte(103)
+    discard write_byte(98)
+    discard write_byte(105)
+    discard write_byte(116)
+    discard write_byte(10)
+    return -1
+
+fn emit_error() -> trit:
+    discard write_error_byte(83)
+    discard write_error_byte(51)
+    discard write_error_byte(95)
+    discard write_error_byte(83)
+    discard write_error_byte(84)
+    discard write_error_byte(65)
+    discard write_error_byte(71)
+    discard write_error_byte(69)
+    discard write_error_byte(49)
+    discard write_error_byte(95)
+    discard write_error_byte(69)
+    discard write_error_byte(82)
+    discard write_error_byte(82)
+    discard write_error_byte(79)
+    discard write_error_byte(82)
+    discard write_error_byte(10)
+    return -1
+
+fn main() -> tryte:
+    mut length: i64 = s3_stage1_source_length()
+    mut valid: trit = -1
+    match length < 32:
+        -1:
+            valid = 0
+        0:
+            discard 0
+        1:
+            discard 0
+    match length > 16384:
+        -1:
+            valid = 0
+        0:
+            discard 0
+        1:
+            discard 0
+    valid = merge_check(valid, source_is_valid(length))
+    match valid:
+        -1:
+            mut value: i64 = parsed_number(length)
+            match value < -180:
+                -1:
+                    valid = 0
+                0:
+                    discard 0
+                1:
+                    discard 0
+            match value > 180:
+                -1:
+                    discard 0
+                0:
+                    discard 0
+                1:
+                    valid = 0
+            match valid:
+                -1:
+                    discard emit_assembly(value)
+                    discard s3_stage1_exit(0)
+                0:
+                    discard emit_error()
+                    discard s3_stage1_exit(1)
+                1:
+                    discard emit_error()
+                    discard s3_stage1_exit(1)
+        0:
+            discard emit_error()
+            discard s3_stage1_exit(1)
+        1:
+            discard emit_error()
+            discard s3_stage1_exit(1)
+    return 1
