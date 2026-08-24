@@ -25,14 +25,17 @@ numeric conversions follow the existing semantic conversion matrix.
 
 ## TEST_EVIDENCE
 
-- Focused M2.73 contract: PASS, 16 tests on Python 3.11.
-- compileall: pending final qualification.
-- diff check: pending final qualification.
-- T1 affected profile: pending final qualification.
-- T3 `m273` shard: pending final qualification.
+- Focused M2.73 contract: PASS, 16 tests on Python 3.11, 3.12 and 3.13.
+- `python -m compileall -q bootstrap/s3 tools`: PASS.
+- `git diff --check`: PASS.
+- T1 affected profile: PASS, 2 selected, 2 passed, 0 failed, 0 timed out.
+- T3 `m273` shard: PASS, 1 selected, 1 passed, 0 failed, 0 timed out.
+- Final tested source head: `ad1f88cf99cd30b5b4e0b8f1bf3155cdbde4184e`.
+- Documentation may receive a later candidate commit; source gates remain tied
+  to the final tested source head.
 - Benchmark: NOT RUN.
 - Global T4: NOT RUN; reserved for M3.00.
 
 ## STATUS
 
-IMPLEMENTED_PENDING_QUALIFICATION
+QUALIFIED_LOCAL
