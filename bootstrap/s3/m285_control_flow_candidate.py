@@ -57,7 +57,7 @@ def _candidate_source(p):
         s.append(f'fn lowered_block_id_{bi}() -> tryte:\n    return {b.id}')
         s.append(f'fn lowered_instruction_count_{bi}() -> tryte:\n    return {len(b.instructions)}')
         for ii,i in enumerate(b.instructions):
-            fields={'opcode':{'const':1,'add':2,'sub':3,'branch':4,'cond_branch':5,'return':6,'loop_back':7}[i.opcode],'result':-1 if i.result is None else i.result,'operand_count':len(i.operands),'target_count':len(i.targets),'immediate_present':0 if i.immediate is None else 1,'immediate':0 if i.immediate is None else i.immediate}
+            fields={'opcode':{'const':1,'add':2,'sub':3,'call':4,'branch':5,'cond_branch':6,'return':7,'loop_back':8}[i.opcode],'result':-1 if i.result is None else i.result,'operand_count':len(i.operands),'target_count':len(i.targets),'immediate_present':0 if i.immediate is None else 1,'immediate':0 if i.immediate is None else i.immediate}
             for field,value in fields.items(): s.append(f'fn lowered_{field}_{bi}_{ii}() -> tryte:\n    return {value}')
             for oi,value in enumerate(i.operands): s.append(f'fn lowered_operand_{bi}_{ii}_{oi}() -> tryte:\n    return {value}')
             for ti,value in enumerate(i.targets): s.append(f'fn lowered_target_{bi}_{ii}_{ti}() -> tryte:\n    return {value}')
@@ -73,7 +73,7 @@ def candidate_exact_structure(p):
         instructions=[]
         for ii,i in enumerate(b.instructions):
             opcode_value=_lane(source,f'lowered_opcode_{bi}_{ii}')
-            fields={1:'const',2:'add',3:'sub',4:'branch',5:'cond_branch',6:'return',7:'loop_back'}
+            fields={1:'const',2:'add',3:'sub',4:'call',5:'branch',6:'cond_branch',7:'return',8:'loop_back'}
             if opcode_value not in fields or fields[opcode_value] != i.opcode: raise M285Error('candidate opcode mismatch')
             opcode=fields[opcode_value]
             instructions.append(M285Instruction(opcode,_lane(source,f'lowered_result_{bi}_{ii}') if _lane(source,f'lowered_result_{bi}_{ii}')>=0 else None,tuple(_lane(source,f'lowered_operand_{bi}_{ii}_{j}') for j in range(_lane(source,f'lowered_operand_count_{bi}_{ii}'))),tuple(_lane(source,f'lowered_target_{bi}_{ii}_{j}') for j in range(_lane(source,f'lowered_target_count_{bi}_{ii}'))),_lane(source,f'lowered_immediate_{bi}_{ii}') if _lane(source,f'lowered_immediate_present_{bi}_{ii}') else None))

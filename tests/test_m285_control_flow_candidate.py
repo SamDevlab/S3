@@ -26,7 +26,7 @@ def test_real_m284_linear_interop_and_cfg_limit():
     assert all(len(f().blocks)>1 for f in (if_fixture,nested_branch_fixture,bounded_loop_fixture))
 
 def test_m283_aggregate_plan_is_consumed_by_m285():
-    plan, lowered=aggregate_call_fixture(); assert plan.callee_id==lowered.blocks[0].instructions[0].immediate; assert verifier_interop(lowered)
+    plan, lowered=aggregate_call_fixture(); assert plan.callee_id==lowered.blocks[0].instructions[0].immediate; assert verifier_interop(lowered); assert candidate_matches_reference(lowered)
 
 def test_semantic_change_changes_sha256():
     a=if_fixture(); b=M285Program(a.blocks[:-1]+(M285Block(3,(M285Instruction('return',operands=(0,)),)),),a.register_count)
