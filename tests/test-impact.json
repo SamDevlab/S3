@@ -99,6 +99,7 @@
     "m276": ["tests/test_m276_fixed_layout_candidate.py"],
     "m277": ["tests/test_m277_control_flow_candidate.py"],
     "m278": ["tests/test_m278_semantic_closure_candidate.py"],
+    "m279": ["tests/test_m279_semantic_canary.py"],
     "container-backend-prework": [
       "tests/test_container_backend_contract.py",
       "tests/test_s3_docker.py",
@@ -1532,6 +1533,24 @@
       "tests": ["tests/test_m278_semantic_closure_candidate.py"],
       "milestones": ["m278", "semantic-closure", "self-hosting"],
       "shards": ["m278"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/semantic_canary.py",
+      "tests": ["tests/test_m279_semantic_canary.py"],
+      "milestones": ["m279", "semantic-canary", "promotion", "self-hosting"],
+      "shards": ["m279"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m279_semantic_canary.py",
+      "tests": ["tests/test_m279_semantic_canary.py"],
+      "milestones": ["m279", "semantic-canary", "promotion", "self-hosting"],
+      "shards": ["m279"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
