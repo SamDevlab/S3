@@ -26,14 +26,18 @@ bounded inputs.
 
 ## TEST_EVIDENCE
 
-- Focused M2.77 contract: PASS, 11 tests on Python 3.11.
-- The first focused attempt was interrupted externally; the terminal retry
-  passed after correcting S3 control-flow dispatch and return-path handling.
-- Compileall, impact metadata, T1 and T3 remain pending until the candidate
-  is committed.
+- Focused M2.77 contract: PASS, 11 tests on Python 3.11, 3.12 and 3.13.
+- The initial candidate run exposed S3 semantic reachability and dispatch
+  defects; the bounded candidate was corrected and the focused contract then
+  passed without changing production compiler paths.
+- `python -m compileall -q bootstrap/s3 tools`: PASS.
+- `git diff --check`: PASS.
+- T1 affected profile: PASS, 2 selected, 2 passed, 0 failed, 0 timed out.
+- T3 `m277` shard: PASS, 1 selected, 1 passed, 0 failed, 0 timed out.
+- Final tested source head: `d7e39caff0e8287b694028c2ac7c66798d27f269`.
 - Benchmark: NOT RUN.
 - Global T4: NOT RUN; reserved for M3.00.
 
 ## STATUS
 
-IMPLEMENTATION_GATES_PENDING
+QUALIFIED_LOCAL
