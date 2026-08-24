@@ -105,6 +105,7 @@
     "m282": ["tests/test_m282_expression_lowering_candidate.py"],
     "m283": ["tests/test_m283_call_aggregate_lowering_candidate.py"],
     "m284": ["tests/test_m284_ir_verifier_candidate.py"],
+    "m285": ["tests/test_m285_composed_ir_closure_candidate.py"],
     "container-backend-prework": [
       "tests/test_container_backend_contract.py",
       "tests/test_s3_docker.py",
@@ -136,6 +137,7 @@
     "m282": ["tests/test_m282_expression_lowering_candidate.py"],
     "m283": ["tests/test_m283_call_aggregate_lowering_candidate.py"],
     "m284": ["tests/test_m284_ir_verifier_candidate.py"],
+    "m285": ["tests/test_m285_composed_ir_closure_candidate.py"],
     "m241-m259-level-c": [
       "tests/test_m241_workspace_semantic_graph.py",
       "tests/test_m242_lsp_project_intelligence.py",
@@ -1688,6 +1690,33 @@
       "tests": ["tests/test_m284_ir_verifier_candidate.py"],
       "milestones": ["m284", "ir-verifier", "self-hosting"],
       "shards": ["m284"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/composed_ir_closure_candidate.py",
+      "tests": ["tests/test_m285_composed_ir_closure_candidate.py"],
+      "milestones": ["m285", "ir-closure", "self-hosting"],
+      "shards": ["m285"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "selfhost/ir/composed_ir_closure_candidate.s3",
+      "tests": ["tests/test_m285_composed_ir_closure_candidate.py"],
+      "milestones": ["m285", "ir-closure", "self-hosting"],
+      "shards": ["m285"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m285_composed_ir_closure_candidate.py",
+      "tests": ["tests/test_m285_composed_ir_closure_candidate.py"],
+      "milestones": ["m285", "ir-closure", "self-hosting"],
+      "shards": ["m285"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
