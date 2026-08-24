@@ -24,11 +24,17 @@ declarations and malformed inputs are rejected deterministically.
 
 ## TEST_EVIDENCE
 
-- Focused M2.75 contract: PASS, 12 tests on Python 3.11.
-- Compileall, diff check, smart affected and shard qualification: pending.
+- Focused M2.75 contract: PASS, 12 tests on Python 3.11, 3.12 and 3.13.
+- `python -m compileall -q bootstrap/s3 tools`: PASS.
+- `git diff --check`: PASS.
+- T1 affected profile: PASS, 2 selected, 2 passed, 0 failed, 0 timed out.
+- T3 `m275` shard: PASS, 1 selected, 1 passed, 0 failed, 0 timed out.
+- Final tested source head: `2a8aaf6861a02b4e434550ae0ab22b1c077d50aa`.
+- Documentation may receive a later candidate commit; source gates remain tied
+  to the final tested source head.
 - Benchmark: NOT RUN.
 - Global T4: NOT RUN; reserved for M3.00.
 
 ## STATUS
 
-IMPLEMENTED_PENDING_QUALIFICATION
+QUALIFIED_LOCAL
