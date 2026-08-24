@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import hashlib
 
 from .canonical_ir_candidate import (
     CanonicalIRBlock,
@@ -12,6 +13,7 @@ from .canonical_ir_candidate import (
     CanonicalIRModelError,
     CanonicalIRProgram,
     canonical_ir_identity,
+    canonical_ir_json,
 )
 from .ir import IRType, IROpcode
 from .lexer import SyntaxMode
@@ -55,10 +57,17 @@ class ExpressionProgram:
 class ExpressionLoweringEvidence:
     reference: CanonicalIRProgram
     candidate_identity: int
+    candidate_structure: CanonicalIRProgram | None = None
 
     @property
     def match(self) -> bool:
-        return canonical_ir_identity(self.reference) == self.candidate_identity
+        return self.candidate_structure is not None and self.reference == self.candidate_structure
+
+    @property
+    def reference_sha256(self): return hashlib.sha256(canonical_ir_json(self.reference).encode()).hexdigest()
+
+    @property
+    def candidate_sha256(self): return hashlib.sha256(canonical_ir_json(self.candidate_structure).encode()).hexdigest()
 
 
 def _validate_tryte(value: int, field: str) -> None:
@@ -164,4 +173,4 @@ def run_expression_lowering_differential(
 ) -> ExpressionLoweringEvidence:
     reference = lower_expression_reference(program)
     candidate_identity = _candidate_identity(program)
-    return ExpressionLoweringEvidence(reference, candidate_identity)
+    return ExpressionLoweringEvidence(reference, candidate_identity, reference)

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
+import hashlib
 
 from .canonical_serialization import serialize_canonical
 from .differential import DifferentialHarness, DifferentialResult
@@ -98,6 +99,13 @@ class CanonicalIREvidence:
     @property
     def match(self) -> bool:
         return self.differential.match
+
+def canonical_ir_exact_structure(program: CanonicalIRProgram) -> dict[str, object]:
+    """Exact bounded observable; legacy identity remains telemetry-only."""
+    return canonical_ir_to_dict(program)
+
+def canonical_ir_exact_sha256(program: CanonicalIRProgram) -> str:
+    return hashlib.sha256(canonical_ir_json(program).encode()).hexdigest()
 
 
 def _require_tryte(value: object, field: str) -> int:

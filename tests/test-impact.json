@@ -48,6 +48,9 @@
     }
   },
   "shards": {
+    "m281": ["tests/test_m281_m283_exact_contracts.py"],
+    "m282": ["tests/test_m281_m283_exact_contracts.py"],
+    "m283": ["tests/test_m281_m283_exact_contracts.py"],
     "m243": ["tests/test_m243_linux_native_conformance.py"],
     "m244": ["tests/test_m244_http2_dynamic_hpack.py"],
     "m245": [

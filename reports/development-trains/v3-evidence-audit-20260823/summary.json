@@ -1,0 +1,13 @@
+{
+  "schema": "s3.v3-evidence-audit.v1",
+  "canonical_train": "integration/m281-m290-20260823",
+  "m280_checkpoint": "aefbedc0a523bfe5c4cba72afdbd39a18f04f9a4",
+  "misrouted_history_preserved": true,
+  "entries": [
+    {"milestone":"M2.78","historical_summary":"reports/development-trains/m271-m280/m278/summary.json","final_tested_source_head":"NOT_RECORDED_IN_SUMMARY","documentation_head":"NOT_RECORDED","feature_head":"NOT_RECORDED","integration_merge_head":"20d54d9","canonical_train":"integration/m271-m280-20260823","original_final_candidate_head":"DOCUMENTATION_UPDATE_PENDING","resolved_provenance_status":"AUDITED; HISTORICAL_SUMMARY_PRESERVED"},
+    {"milestone":"M2.80","historical_summary":"reports/development-trains/m271-m280/m280/summary.json","final_tested_source_head":"NOT_RECORDED_IN_SUMMARY","documentation_head":"NOT_RECORDED","feature_head":"NOT_RECORDED","integration_merge_head":"20d54d9","canonical_train":"integration/m271-m280-20260823","original_final_candidate_head":"DOCUMENTATION_UPDATE_PENDING","resolved_provenance_status":"AUDITED; HISTORICAL_SUMMARY_PRESERVED"},
+    {"milestone":"M2.81","historical_summary":"reports/development-trains/m271-m280/m281/summary.json","final_tested_source_head":"cb699aa8d2fdadb8c1e55ed8be8509f04822df30","documentation_head":"7434681e7f51b4b0cd6a4fa728a9b7b01fdcd8fb","feature_head":"cb699aa","integration_merge_head":"b6fb807","canonical_train":"integration/m281-m290-20260823","original_final_candidate_head":"DOCUMENTATION_UPDATE_PENDING","resolved_provenance_status":"EXACT_HARDENING_ADDED"},
+    {"milestone":"M2.82","historical_summary":"reports/development-trains/m271-m280/m282/summary.json","final_tested_source_head":"8083a259e742ecbc052127cd747a17897ad20095","documentation_head":"78bdf3f898d6ae7255a90586bbf66b140af4892d","feature_head":"8083a25","integration_merge_head":"e374128","canonical_train":"integration/m281-m290-20260823","original_final_candidate_head":"DOCUMENTATION_UPDATE_PENDING","resolved_provenance_status":"EXACT_HARDENING_ADDED"},
+    {"milestone":"M2.83","historical_summary":"reports/development-trains/m271-m280/m283/summary.json","final_tested_source_head":"4a88ffae1d2974ede5d6486d80f4b98b782732ab","documentation_head":"38b7db3c9d35e752e6d7b5240c7f3c2137a93efe","feature_head":"4a88ffa","integration_merge_head":"a4405c6","canonical_train":"integration/m281-m290-20260823","original_final_candidate_head":"DOCUMENTATION_UPDATE_PENDING","resolved_provenance_status":"EXACT_HARDENING_ADDED"}
+  ]
+}

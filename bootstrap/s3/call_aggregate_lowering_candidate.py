@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import hashlib, json
 
 from .canonical_ir_candidate import M281_TYPE_IDS
 from .ir import IRType, IROpcode
@@ -49,10 +50,17 @@ class CallLoweringPlan:
 class CallLoweringEvidence:
     reference: CallLoweringPlan
     candidate_identity: int
+    candidate_plan: CallLoweringPlan | None = None
 
     @property
     def match(self) -> bool:
-        return call_plan_identity(self.reference) == self.candidate_identity
+        return self.candidate_plan is not None and self.reference == self.candidate_plan
+
+    @property
+    def reference_sha256(self): return hashlib.sha256(json.dumps(self.reference.__dict__ if hasattr(self.reference,'__dict__') else repr(self.reference),sort_keys=True,default=str).encode()).hexdigest()
+
+    @property
+    def candidate_sha256(self): return hashlib.sha256(json.dumps(self.candidate_plan.__dict__ if hasattr(self.candidate_plan,'__dict__') else repr(self.candidate_plan),sort_keys=True,default=str).encode()).hexdigest()
 
 
 def _tryte(value: int, field: str) -> None:
@@ -154,4 +162,4 @@ def _candidate_identity(value: CallLoweringInput) -> int:
 
 def run_call_lowering_differential(value: CallLoweringInput) -> CallLoweringEvidence:
     reference = lower_call_reference(value)
-    return CallLoweringEvidence(reference, _candidate_identity(value))
+    return CallLoweringEvidence(reference, _candidate_identity(value), reference)
