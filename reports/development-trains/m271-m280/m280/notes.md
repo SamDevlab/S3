@@ -22,12 +22,19 @@ Python remains the default reference path with visible fallback.
 
 ## TEST_EVIDENCE
 
-- Focused checkpoint contract: PASS, 3 tests on Python 3.11.
-- Level-C, compileall, impact metadata, T1 and T3 remain pending until the
-  checkpoint is committed.
+- Focused checkpoint contract: PASS, 3 tests on Python 3.11, 3.12 and 3.13.
+- Level-C `level-c-semantic`: PASS, 9 selected, 9 passed, 0 failed, 0 timed
+  out, covering M2.71 through M2.79 in order.
+- `compileall`: PASS.
+- `git diff --check`: PASS.
+- Impact metadata: PASS.
+- T1 affected profile against `109364b9fb2ea8f9611266827ddd20b0cb61d97c`:
+  PASS, 5 selected, 5 passed, 0 failed, 0 timed out.
+- T3 `m280` shard: PASS, 1 selected, 1 passed, 0 failed, 0 timed out.
+- Final tested source head: `c1dc581da85c5cabb0e21ede1f06c662f70096ba`.
 - Benchmark: NOT RUN.
 - Global T4: NOT RUN; reserved for M3.00.
 
 ## STATUS
 
-CHECKPOINT_GATES_PENDING
+QUALIFIED_LOCAL
