@@ -120,6 +120,28 @@
     "m297": ["tests/test_m297_bootstrap_admission.py"],
     "m298": ["tests/test_m298_bootstrap_reproducibility.py"],
     "m299": ["tests/test_m299_bootstrap_promotion_readiness.py"],
+    "m300": ["tests/test_m300_final_self_hosting_checkpoint.py"],
+    "m281-m299-bootstrap": [
+      "tests/test_m281_canonical_ir_data_model.py",
+      "tests/test_m282_expression_lowering_candidate.py",
+      "tests/test_m283_call_aggregate_lowering_candidate.py",
+      "tests/test_m284_ir_verifier_candidate.py",
+      "tests/test_m285_composed_ir_closure_candidate.py",
+      "tests/test_m286_ir_verifier_canary.py",
+      "tests/test_m287_lowering_checkpoint_candidate.py",
+      "tests/test_m288_composed_lowering_closure_candidate.py",
+      "tests/test_m289_lowering_canary.py",
+      "tests/test_m290_ir_lowering_checkpoint.py",
+      "tests/test_m291_assembly_emission_candidate.py",
+      "tests/test_m292_assembly_verification_closure.py",
+      "tests/test_m293_native_emission_boundary.py",
+      "tests/test_m294_source_workspace_boundary.py",
+      "tests/test_m295_bounded_compiler_driver.py",
+      "tests/test_m296_driver_artifact_handoff.py",
+      "tests/test_m297_bootstrap_admission.py",
+      "tests/test_m298_bootstrap_reproducibility.py",
+      "tests/test_m299_bootstrap_promotion_readiness.py"
+    ],
     "container-backend-prework": [
       "tests/test_container_backend_contract.py",
       "tests/test_s3_docker.py",
@@ -2096,6 +2118,24 @@
       "tests": ["tests/test_m299_bootstrap_promotion_readiness.py"],
       "milestones": ["m299", "bootstrap", "promotion", "self-hosting"],
       "shards": ["m299"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tools/s3test.py",
+      "tests": ["tests/test_m300_final_self_hosting_checkpoint.py"],
+      "milestones": ["m300", "bootstrap", "self-hosting"],
+      "shards": ["m300", "m281-m299-bootstrap"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m300_final_self_hosting_checkpoint.py",
+      "tests": ["tests/test_m300_final_self_hosting_checkpoint.py"],
+      "milestones": ["m300", "bootstrap", "self-hosting"],
+      "shards": ["m300"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
