@@ -94,6 +94,7 @@
     "m271": ["tests/test_m271_symbol_table_candidate.py"],
     "m272": ["tests/test_m272_name_resolution_candidate.py"],
     "m273": ["tests/test_m273_scalar_type_checking.py"],
+    "m274": ["tests/test_m274_place_reference_candidate.py"],
     "container-backend-prework": [
       "tests/test_container_backend_contract.py",
       "tests/test_s3_docker.py",
@@ -1317,6 +1318,33 @@
       "tests": ["tests/test_m273_scalar_type_checking.py"],
       "milestones": ["m273", "scalar-types", "self-hosting"],
       "shards": ["m273"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/place_reference_candidate.py",
+      "tests": ["tests/test_m274_place_reference_candidate.py"],
+      "milestones": ["m274", "places", "references", "self-hosting"],
+      "shards": ["m274"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "selfhost/semantic/place_reference_candidate.s3",
+      "tests": ["tests/test_m274_place_reference_candidate.py"],
+      "milestones": ["m274", "places", "references", "self-hosting"],
+      "shards": ["m274"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m274_place_reference_candidate.py",
+      "tests": ["tests/test_m274_place_reference_candidate.py"],
+      "milestones": ["m274", "places", "references", "self-hosting"],
+      "shards": ["m274"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false

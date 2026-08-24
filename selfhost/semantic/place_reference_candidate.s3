@@ -1,0 +1,249 @@
+fn valid_scalar_type(type_id: tryte) -> trit:
+    match type_id <=> 1:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match type_id <=> 4:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn valid_place_kind(kind: tryte) -> trit:
+    match kind <=> 1:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            match kind <=> 3:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn flag_set(flag: tryte) -> trit:
+    match flag <=> 1:
+        -1:
+            return 0
+        0:
+            return -1
+        1:
+            return 0
+
+fn is_reference(kind: tryte) -> trit:
+    match kind <=> 1:
+        -1:
+            return 0
+        0:
+            return 0
+        1:
+            return -1
+
+fn accepted(type_id: tryte, kind: tryte) -> tryte:
+    match kind <=> 1:
+        -1:
+            return 100 + type_id
+        0:
+            return 100 + type_id
+        1:
+            match kind <=> 2:
+                -1:
+                    return 110 + type_id
+                0:
+                    return 110 + type_id
+                1:
+                    return 120 + type_id
+
+fn rejected(reason: tryte) -> tryte:
+    return 200 + reason
+
+fn check_place_operation(
+    operation: tryte,
+    type_id: tryte,
+    place_kind: tryte,
+    readable: tryte,
+    writable: tryte,
+    addressable: tryte,
+    initialized: tryte
+) -> tryte:
+    match valid_scalar_type(type_id):
+        -1:
+            discard 0
+        0:
+            return rejected(2)
+        1:
+            return rejected(2)
+    match valid_place_kind(place_kind):
+        -1:
+            discard 0
+        0:
+            return rejected(1)
+        1:
+            return rejected(1)
+
+    match operation <=> 1:
+        -1:
+            return rejected(1)
+        0:
+            match flag_set(initialized):
+                -1:
+                    match flag_set(readable):
+                        -1:
+                            return accepted(type_id, 1)
+                        0:
+                            return rejected(3)
+                        1:
+                            return rejected(3)
+                0:
+                    return rejected(3)
+                1:
+                    return rejected(3)
+        1:
+            discard 0
+
+    match operation <=> 2:
+        -1:
+            discard 0
+        0:
+            match flag_set(writable):
+                -1:
+                    return accepted(type_id, 1)
+                0:
+                    return rejected(4)
+                1:
+                    return rejected(4)
+        1:
+            discard 0
+
+    match operation <=> 3:
+        -1:
+            discard 0
+        0:
+            match flag_set(addressable):
+                -1:
+                    return accepted(type_id, 2)
+                0:
+                    return rejected(5)
+                1:
+                    return rejected(5)
+        1:
+            discard 0
+
+    match operation <=> 4:
+        -1:
+            discard 0
+        0:
+            match flag_set(addressable):
+                -1:
+                    match flag_set(writable):
+                        -1:
+                            return accepted(type_id, 3)
+                        0:
+                            return rejected(6)
+                        1:
+                            return rejected(6)
+                0:
+                    return rejected(5)
+                1:
+                    return rejected(5)
+        1:
+            discard 0
+
+    match operation <=> 5:
+        -1:
+            discard 0
+        0:
+            match is_reference(place_kind):
+                -1:
+                    match flag_set(initialized):
+                        -1:
+                            match flag_set(readable):
+                                -1:
+                                    return accepted(type_id, 1)
+                                0:
+                                    return rejected(3)
+                                1:
+                                    return rejected(3)
+                        0:
+                            return rejected(3)
+                        1:
+                            return rejected(3)
+                0:
+                    return rejected(7)
+                1:
+                    return rejected(7)
+        1:
+            discard 0
+
+    match operation <=> 6:
+        -1:
+            discard 0
+        0:
+            match place_kind <=> 3:
+                -1:
+                    return rejected(8)
+                0:
+                    match flag_set(writable):
+                        -1:
+                            return accepted(type_id, 1)
+                        0:
+                            return rejected(4)
+                        1:
+                            return rejected(4)
+                1:
+                    return rejected(8)
+        1:
+            discard 0
+
+    match operation <=> 7:
+        -1:
+            discard 0
+        0:
+            match is_reference(place_kind):
+                -1:
+                    match flag_set(initialized):
+                        -1:
+                            match flag_set(readable):
+                                -1:
+                                    return accepted(type_id, 2)
+                                0:
+                                    return rejected(3)
+                                1:
+                                    return rejected(3)
+                        0:
+                            return rejected(3)
+                        1:
+                            return rejected(3)
+                0:
+                    return rejected(7)
+                1:
+                    return rejected(7)
+        1:
+            discard 0
+
+    match operation <=> 8:
+        -1:
+            return rejected(1)
+        0:
+            match place_kind <=> 3:
+                -1:
+                    return rejected(8)
+                0:
+                    match flag_set(writable):
+                        -1:
+                            return accepted(type_id, 3)
+                        0:
+                            return rejected(4)
+                        1:
+                            return rejected(4)
+                1:
+                    return rejected(8)
+        1:
+            return rejected(1)
