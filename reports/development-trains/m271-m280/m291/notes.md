@@ -13,13 +13,16 @@ reproduces its deterministic identity. Production emission remains unchanged.
 
 ## TEST_EVIDENCE
 
-- Focused M2.91 contract: pending.
-- Emission differential proof: pending.
-- Assembly reparse: pending.
-- `compileall`: pending.
-- `git diff --check`: pending.
-- T1 affected profile: pending.
-- T3 `m291` shard: pending.
+- Focused M2.91 contract: PASS, 4 tests on Python 3.11, 3.12 and 3.13.
+- Emission differential proof: PASS.
+- Assembly reparse: PASS.
+- `compileall`: PASS.
+- `git diff --check`: PASS.
+- Impact metadata: PASS.
+- T1 affected profile against `3c049e92575874b7f06bc10ac0fb3d0ba4861277`:
+  PASS, 2 selected, 2 passed, 0 failed, 0 timed out.
+- T3 `m291` shard: PASS, 1 selected, 1 passed, 0 failed, 0 timed out.
+- Final tested source head: `cffc79613632484b4f93c0d2d7bcbc00af7a93d8`.
 - Benchmark: NOT RUN.
 - Global T4: NOT RUN; reserved for M3.00.
 
