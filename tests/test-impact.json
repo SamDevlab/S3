@@ -109,6 +109,7 @@
     "m286": ["tests/test_m286_ir_verifier_canary.py"],
     "m287": ["tests/test_m287_lowering_checkpoint_candidate.py"],
     "m288": ["tests/test_m288_composed_lowering_closure_candidate.py"],
+    "m289": ["tests/test_m289_lowering_canary.py"],
     "container-backend-prework": [
       "tests/test_container_backend_contract.py",
       "tests/test_s3_docker.py",
@@ -144,6 +145,7 @@
     "m286": ["tests/test_m286_ir_verifier_canary.py"],
     "m287": ["tests/test_m287_lowering_checkpoint_candidate.py"],
     "m288": ["tests/test_m288_composed_lowering_closure_candidate.py"],
+    "m289": ["tests/test_m289_lowering_canary.py"],
     "m241-m259-level-c": [
       "tests/test_m241_workspace_semantic_graph.py",
       "tests/test_m242_lsp_project_intelligence.py",
@@ -1795,6 +1797,24 @@
       "tests": ["tests/test_m288_composed_lowering_closure_candidate.py"],
       "milestones": ["m288", "lowering", "closure", "self-hosting"],
       "shards": ["m288"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/lowering_canary.py",
+      "tests": ["tests/test_m289_lowering_canary.py"],
+      "milestones": ["m289", "lowering", "canary", "self-hosting"],
+      "shards": ["m289"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m289_lowering_canary.py",
+      "tests": ["tests/test_m289_lowering_canary.py"],
+      "milestones": ["m289", "lowering", "canary", "self-hosting"],
+      "shards": ["m289"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
