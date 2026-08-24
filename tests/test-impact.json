@@ -101,6 +101,7 @@
     "m278": ["tests/test_m278_semantic_closure_candidate.py"],
     "m279": ["tests/test_m279_semantic_canary.py"],
     "m280": ["tests/test_m280_semantic_self_hosting_checkpoint.py"],
+    "m281": ["tests/test_m281_canonical_ir_data_model.py"],
     "container-backend-prework": [
       "tests/test_container_backend_contract.py",
       "tests/test_s3_docker.py",
@@ -128,6 +129,7 @@
       "tests/test_m278_semantic_closure_candidate.py",
       "tests/test_m279_semantic_canary.py"
     ],
+    "m281": ["tests/test_m281_canonical_ir_data_model.py"],
     "m241-m259-level-c": [
       "tests/test_m241_workspace_semantic_graph.py",
       "tests/test_m242_lsp_project_intelligence.py",
@@ -1572,6 +1574,33 @@
       "tests": ["tests/test_m280_semantic_self_hosting_checkpoint.py"],
       "milestones": ["m280", "semantic-checkpoint", "self-hosting"],
       "shards": ["m280"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "bootstrap/s3/canonical_ir_candidate.py",
+      "tests": ["tests/test_m281_canonical_ir_data_model.py"],
+      "milestones": ["m281", "canonical-ir", "self-hosting"],
+      "shards": ["m281"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "selfhost/ir/canonical_ir_data_model_candidate.s3",
+      "tests": ["tests/test_m281_canonical_ir_data_model.py"],
+      "milestones": ["m281", "canonical-ir", "self-hosting"],
+      "shards": ["m281"],
+      "native_required": false,
+      "environment_requirements": [],
+      "global_impact": false
+    },
+    {
+      "pattern": "tests/test_m281_canonical_ir_data_model.py",
+      "tests": ["tests/test_m281_canonical_ir_data_model.py"],
+      "milestones": ["m281", "canonical-ir", "self-hosting"],
+      "shards": ["m281"],
       "native_required": false,
       "environment_requirements": [],
       "global_impact": false
