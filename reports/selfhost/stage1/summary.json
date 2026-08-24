@@ -35,8 +35,10 @@
   "diff_check": "PASS",
   "benchmark": "NOT_RUN",
   "performance_claim": "NONE",
-  "pr": null,
-  "pr_state": "NOT_OPENED",
+  "pr": 268,
+  "pr_state": "DRAFT",
+  "branch": "feature/actual-stage1-compiler-seed-20260824",
+  "base": "integration/m271-m280-20260823",
   "full_self_hosting": "NO",
   "next": "QUALIFY_LINUX_STAGE1_THEN_ADD_TOKEN_AST_IR_PIPELINE"
 }
