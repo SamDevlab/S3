@@ -38,6 +38,9 @@ M2.72 does not claim source-text identifier interning, workspace import
 resolution, overload resolution, type checking, lowering, native self-hosting,
 production promotion, performance improvement, or full compiler self-hosting.
 
-Because the current remote environment has not reported a qualifying CI run,
-this milestone remains an **implementation candidate** until the normal T0/T1/
-T2/T3 and impact gates are available. Missing evidence is not a PASS.
+The local T0/T1/T2/T3 and impact gates pass on Python 3.11, 3.12 and 3.13.
+The current GitHub Actions run is externally blocked before job steps by the
+repository billing/spending-limit condition; that state is not treated as a
+local test result or silently converted into a PASS. M2.72 remains a
+**locally qualified candidate** until the integration decision records that
+external limitation.

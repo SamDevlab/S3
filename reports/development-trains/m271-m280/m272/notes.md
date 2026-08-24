@@ -29,11 +29,14 @@ the observable differential result.
 
 ## TEST_EVIDENCE
 
-Remote implementation only at this checkpoint.
-
-- local T0/T1/T2/T3: NOT RUN
-- GitHub CI: NOT YET OBSERVED
-- impact metadata: PENDING
+- local focused contract: PASS, 11 tests on Python 3.11, 3.12 and 3.13
+- compileall: PASS
+- diff check: PASS
+- impact metadata: PASS
+- local T1 affected profile: PASS
+- local T3 `m272` shard: PASS
+- GitHub CI: blocked before job steps by the repository billing/spending-limit
+  condition; this is recorded as an external gate state, not a local PASS
 - benchmark: NOT RUN
 - global T4: NOT RUN
 
@@ -50,4 +53,4 @@ No missing evidence is classified as PASS.
 
 ## STATUS
 
-IMPLEMENTED_PENDING_QUALIFICATION
+QUALIFIED_LOCAL

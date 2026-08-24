@@ -124,7 +124,7 @@ fn valid_declarations(
     return -1
 
 fn encoded_symbol_slot(index: tryte, kind: tryte) -> tryte:
-    return (index + 1) * 8 + kind
+    return index + index + index + index + index + index + index + index + 8 + kind
 
 fn resolve_visible_symbol(
     symbol_ids: tryte[8],
