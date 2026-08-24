@@ -630,8 +630,11 @@ fn emit_decimal(value: i64) -> trit:
                     discard write_byte(48)
                     discard write_byte(48)
                 1:
-                    discard write_byte(decimal_digit(number, 100))
-                    discard write_byte(remainder_digit(number, 10))
+                    mut hundreds: i64 = number / 100
+                    mut remainder: i64 = number - hundreds * 100
+                    discard write_byte(to_tryte(hundreds + 48))
+                    discard write_byte(decimal_digit(remainder, 10))
+                    discard write_byte(remainder_digit(remainder, 10))
     return -1
 
 fn emit_assembly(value: i64) -> trit:
@@ -921,7 +924,7 @@ fn main() -> tryte:
     mut function_statements: tryte[32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     mut ir_opcode: tryte[32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     mut ir_type: tryte[32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    mut ir_value: tryte[32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut ir_value: i64[32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     mut cursor: i64 = 0
     mut token_count: i64 = 0
     mut lexer_ok: trit = -1
@@ -1198,13 +1201,13 @@ fn main() -> tryte:
             while ir_index < function_count:
                 ir_opcode[ir_index] = 1
                 ir_type[ir_index] = function_types[ir_index]
-                ir_value[ir_index] = function_statements[ir_index]
+                ir_value[ir_index] = to_i64(function_statements[ir_index])
                 ir_index += 1
             match function_count == 1:
                 -1:
                     match simple_number_seen == -1:
                         -1:
-                            ir_value[0] = to_tryte(simple_value)
+                            ir_value[0] = simple_value
                         0:
                             discard 0
                         1:
@@ -1300,10 +1303,10 @@ fn main() -> tryte:
                                     discard emit_error()
                                     discard s3_stage1_exit(1)
                                 0:
-                                    discard emit_ir_return(ir_opcode[0], ir_type[0], to_i64(ir_value[0]))
+                                    discard emit_ir_return(ir_opcode[0], ir_type[0], ir_value[0])
                                     discard s3_stage1_exit(0)
                                 1:
-                                    discard emit_ir_return(ir_opcode[0], ir_type[0], to_i64(ir_value[0]))
+                                    discard emit_ir_return(ir_opcode[0], ir_type[0], ir_value[0])
                                     discard s3_stage1_exit(0)
                         1:
                             match simple_value > 180:
@@ -1311,10 +1314,10 @@ fn main() -> tryte:
                                     discard emit_error()
                                     discard s3_stage1_exit(1)
                                 0:
-                                    discard emit_ir_return(ir_opcode[0], ir_type[0], to_i64(ir_value[0]))
+                                    discard emit_ir_return(ir_opcode[0], ir_type[0], ir_value[0])
                                     discard s3_stage1_exit(0)
                                 1:
-                                    discard emit_ir_return(ir_opcode[0], ir_type[0], to_i64(ir_value[0]))
+                                    discard emit_ir_return(ir_opcode[0], ir_type[0], ir_value[0])
                                     discard s3_stage1_exit(0)
                 0:
                     match function_count > 1:
