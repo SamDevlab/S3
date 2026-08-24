@@ -27,10 +27,12 @@ host read bytes
 ```
 
 The canonical self-source was qualified on Linux x86-64 through lexing,
-parsing, semantic analysis, IR construction, and verification. It then returns
-`S3_STAGE1_EMITTER_BLOCKED` because the general emitter for the compiler's own
-functions and statements is not implemented in this bounded Stage1. That is
-the first real self-compilation blocker; Stage2 was not attempted.
+parsing, semantic analysis, IR construction, and verification. The IR audit
+shows that it contains only one `OP_RETURN` record per parsed function, with no
+function identity, body instructions, operands, calls, or CFG blocks. The
+verified input is therefore insufficient for a general emitter to reconstruct
+the compiler source. Stage1 returns `S3_STAGE1_EMITTER_BLOCKED`; the precise
+blocker is `IR_SHAPE_LOSSY`, and Stage2 was not attempted.
 
 The supported executable subset is:
 

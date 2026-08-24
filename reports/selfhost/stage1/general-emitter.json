@@ -1,0 +1,25 @@
+{
+  "schema": "s3.selfhost.stage1-general-emitter.v1",
+  "source_head": "c66318e17c043d7935d3c7c067326e50718ba982",
+  "candidate_head_before_report_commit": "597697382c1fea8ceb291b26935e80f84fbc942f",
+  "status": "PARTIAL_FAIL",
+  "input_contract": "verified IR records only",
+  "implemented_opcode": {"OP_RETURN": "simple one-main return emission"},
+  "unsupported_required_shape": [
+    "function identity and symbols",
+    "function parameters and locals",
+    "basic blocks and deterministic labels",
+    "branch targets and loop exits",
+    "arithmetic/comparison/conversion operands",
+    "internal and foreign call records",
+    "body instruction ordering"
+  ],
+  "raw_source_emission": false,
+  "source_pattern_matching_in_emitter": false,
+  "embedded_stage2_assembly": false,
+  "stage1_self_source_emission": "FAIL",
+  "diagnostic": "S3_STAGE1_EMITTER_BLOCKED\\n",
+  "blocker": "IR_SHAPE_LOSSY",
+  "next_single_fix": "preserve function, block, operand, call, and control-flow records in verified Stage1 IR before general emission",
+  "stage1_to_stage2": "BLOCKED"
+}

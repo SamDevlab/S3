@@ -1,7 +1,7 @@
 {
   "schema": "s3.selfhost.stage1-native-qualification.v1",
   "source_head": "c66318e17c043d7935d3c7c067326e50718ba982",
-  "candidate_head": "8c1b660dd4d247554f5b886f26c7739230a21bca",
+  "candidate_head": "597697382c1fea8ceb291b26935e80f84fbc942f",
   "environment": {
     "host_alias": "s3-vm",
     "os": "Linux",
@@ -33,10 +33,11 @@
     "semantic": "PASS",
     "ir": "PASS",
     "verify": "PASS",
-    "emit": "BLOCKED",
+    "emit": "FAIL",
+    "first_blocker": "IR_SHAPE_LOSSY",
     "compiler_rc": 2,
     "stderr": "S3_STAGE1_EMITTER_BLOCKED\\n"
   },
-  "native_qualification": "PASS_WITH_EMITTER_BOUNDARY",
+  "native_qualification": "PASS_WITH_IR_SHAPE_BOUNDARY",
   "full_self_hosting": "NO"
 }

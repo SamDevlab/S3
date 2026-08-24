@@ -97,6 +97,13 @@ def test_stage1_source_exposes_bounded_compiler_pipeline() -> None:
         assert marker in source
 
 
+def test_stage1_emitter_consumes_verified_ir_records() -> None:
+    source = SOURCE_PATH.read_text(encoding="utf-8")
+    assert "emit_ir_return(ir_opcode[0], ir_type[0], ir_value[0])" in source
+    assert "emit_assembly(simple_value)" not in source
+    assert "emit_ir_return(simple_value" not in source
+
+
 def test_stage0_compiles_real_stage1_source_and_preserves_io_calls() -> None:
     result = compile_source(SOURCE_PATH.read_text(encoding="utf-8"))
     assembly = generate_native_assembly(result.assembly)

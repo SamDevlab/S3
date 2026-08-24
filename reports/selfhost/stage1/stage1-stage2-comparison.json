@@ -1,0 +1,10 @@
+{
+  "schema": "s3.selfhost.stage1-stage2-comparison.v1",
+  "status": "NOT_ATTEMPTED",
+  "stage1_to_stage2": "BLOCKED",
+  "stage1_behavior": "PASS_FOR_SIMPLE_CORPUS",
+  "stage2_behavior": null,
+  "corpus_equivalence": "NOT_AVAILABLE",
+  "reason": "no Stage2 artifact was produced after the IR audit",
+  "stage2_to_stage3": "NOT_STARTED"
+}

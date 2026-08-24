@@ -1,0 +1,32 @@
+{
+  "schema": "s3.selfhost.stage1-self-source-ir-audit.v1",
+  "source_head": "c66318e17c043d7935d3c7c067326e50718ba982",
+  "input": "selfhost/compiler/s3c_stage1.s3",
+  "execution": "Stage1 Linux x86-64 process reached lex/parse/semantic/IR/verify before emitter boundary",
+  "functions": {
+    "source_local_definitions": 21,
+    "foreign_declarations": 5,
+    "ir_function_records": 26
+  },
+  "blocks": 0,
+  "instructions": 26,
+  "opcode_counts": {"OP_RETURN": 26},
+  "type_counts": {"TRIT": 11, "TRYTE": 9, "I64": 6},
+  "foreign_calls": 0,
+  "internal_calls": 0,
+  "branches": 0,
+  "loops": 0,
+  "ir_record_shape": {
+    "opcode": "constant 1",
+    "type": "function return type",
+    "value": "statement counter, or simple literal for one-function input",
+    "function_identity": "not retained in IR",
+    "body": "not retained in IR",
+    "control_flow": "not retained in IR",
+    "operands": "not retained in IR"
+  },
+  "audit_result": "PASS_IR_AUDIT_EXPOSES_LOSSY_SHAPE",
+  "emitter_consequence": "the verified IR cannot represent the self-source compiler body",
+  "first_self_compile_blocker": "IR_SHAPE_LOSSY",
+  "stage2_started": false
+}

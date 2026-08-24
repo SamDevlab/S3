@@ -13,8 +13,8 @@
     {"stage": "assembly_emission", "exists": true, "s3_authored": true, "full_data_flow": true, "status": "BLOCKED_FOR_GENERAL_IR", "blocker": "general_expression_and_statement_emitter_missing"},
     {"stage": "output", "exists": true, "s3_authored": false, "full_data_flow": true, "status": "PASS", "blocker": "host_byte_write_boundary"}
   ],
-  "largest_real_gap": "general_ir_to_assembly_emission",
-  "stage1_self_compile_blocker": "EMITTER_CAPABILITY",
+  "largest_real_gap": "lossless_function_block_operand_call_and_control_flow_ir",
+  "stage1_self_compile_blocker": "IR_SHAPE_LOSSY",
   "stage2_started": false,
   "stage3_started": false
 }
