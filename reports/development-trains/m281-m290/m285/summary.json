@@ -1,0 +1,21 @@
+{
+  "milestone":"M2.85",
+  "name":"control-flow-aggregate-closure",
+  "base_branch":"integration/m281-m290-20260823",
+  "status":"QUALIFIED_LOCAL",
+  "control_flow":"PASS_BOUNDED",
+  "aggregate_requirements":"M2.83 call/aggregate plan reused; remaining bounded branch result closure represented",
+  "implemented":["branch lowering","conditional lowering","bounded loops","returns","deterministic block/register IDs","exact structural output","M2.84 verifier interop"],
+  "deferred":["full CFG dominance","unbounded loops","full aggregate compiler subset"],
+  "exact_structural_differential":"PASS",
+  "verifier_interop":"PASS",
+  "python":"3.11,3.12,3.13",
+  "t1":"PASS",
+  "t3":"PASS",
+  "compileall":"PASS",
+  "diff_check":"PASS",
+  "t4":"NOT_RUN",
+  "benchmark":"NOT_RUN",
+  "performance_claim":"NONE",
+  "production_promotion":"NO"
+}
