@@ -1,0 +1,122 @@
+fn add_mod(left: tryte, right: tryte) -> tryte:
+    mut result: tryte = left
+    match right <=> 0:
+        -1:
+            mut threshold: tryte = -364 - right
+            match left <=> threshold:
+                -1:
+                    result = left - threshold
+                    result += 364
+                    result += 1
+                0:
+                    result = left + right
+                1:
+                    result = left + right
+        0:
+            return result
+        1:
+            mut threshold: tryte = 364 - right
+            match left <=> threshold:
+                -1:
+                    result = left + right
+                0:
+                    result = left + right
+                1:
+                    result = left - threshold
+                    result = result - 364
+                    result = result - 1
+    return result
+
+fn fold_identity(value: tryte) -> tryte:
+    mut result: tryte = value
+    while result < 0:
+        result += 181
+    while result > 180:
+        result = result - 181
+    return result
+
+fn mix(checksum: tryte, value: tryte) -> tryte:
+    return fold_identity(add_mod(checksum, value))
+
+fn valid_range(value: tryte, lower: tryte, upper: tryte) -> trit:
+    match value <=> lower:
+        -1:
+            return 0
+        0:
+            match value <=> upper:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+        1:
+            match value <=> upper:
+                -1:
+                    return -1
+                0:
+                    return -1
+                1:
+                    return 0
+
+fn lower_call(
+    argument_types: tryte[4],
+    argument_registers: tryte[4],
+    argument_count: tryte,
+    result_types: tryte[4],
+    result_count: tryte,
+    callee_id: tryte
+) -> tryte:
+    match valid_range(argument_count, 0, 4):
+        -1:
+            discard 0
+        0:
+            return 201
+        1:
+            return 201
+    match valid_range(result_count, 0, 4):
+        -1:
+            discard 0
+        0:
+            return 201
+        1:
+            return 201
+    mut checksum: tryte = 0
+    checksum = mix(checksum, 23)
+    checksum = mix(checksum, callee_id)
+    checksum = mix(checksum, argument_count)
+    mut argument: tryte = 0
+    while argument < argument_count:
+        match valid_range(argument_types[argument], 1, 9):
+            -1:
+                discard 0
+            0:
+                return 202
+            1:
+                return 202
+        match valid_range(argument_registers[argument], 0, 7):
+            -1:
+                discard 0
+            0:
+                return 203
+            1:
+                return 203
+        checksum = mix(checksum, argument_registers[argument])
+        checksum = mix(checksum, argument_types[argument])
+        argument += 1
+    checksum = mix(checksum, result_count)
+    mut result: tryte = 0
+    mut result_register: tryte = argument_count
+    while result < result_count:
+        match valid_range(result_types[result], 1, 9):
+            -1:
+                discard 0
+            0:
+                return 202
+            1:
+                return 202
+        checksum = mix(checksum, result_register)
+        checksum = mix(checksum, result_types[result])
+        result += 1
+        result_register += 1
+    return checksum
