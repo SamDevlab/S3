@@ -504,6 +504,22 @@ def _profile_selection(
             )
             for test in tests
         ), tests
+    if profile == "level-c-bootstrap":
+        tests = impact.shard_tests("m281-m299-bootstrap")
+        if not tests:
+            raise S3TestOrchestratorError("level-c bootstrap shard is empty")
+        return tuple(
+            Selection(
+                test,
+                ("M2.81-M2.99 bootstrap Level-C checkpoint",),
+                ("LEVEL-C",),
+                False,
+                (),
+                ("m300",),
+                ("m281-m299-bootstrap",),
+            )
+            for test in tests
+        ), tests
     selected = impact.select(changed_files(root, base), all_tests=all_tests)
     return selected, tuple(item.test for item in selected)
 
@@ -626,7 +642,7 @@ def execute_profile(
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("profile", choices=("plan", "sanity", "affected", "milestone", "shard", "level-c", "level-c-full", "level-c-frontend", "level-c-semantic", "resume", "full"))
+    parser.add_argument("profile", choices=("plan", "sanity", "affected", "milestone", "shard", "level-c", "level-c-full", "level-c-frontend", "level-c-semantic", "level-c-bootstrap", "resume", "full"))
     parser.add_argument("argument", nargs="?")
     parser.add_argument("--root", type=Path, default=Path.cwd())
     parser.add_argument("--base")
