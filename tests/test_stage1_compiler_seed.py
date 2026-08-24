@@ -74,8 +74,26 @@ def test_stage1_source_is_s3_logic_not_a_python_or_candidate_wrapper() -> None:
     assert "candidate" not in source
     assert "checksum" not in source
     assert "fingerprint" not in source
+    assert "prefix_is_valid" not in source
+    assert "source_is_valid" not in source
+    assert "parsed_number" not in source
+    assert "scan_token" in source
+    assert "token_kind" in source
+    assert "ir_opcode" in source
+    assert "emit_ir_return" in source
     assert "foreign fn s3_stage1_read_byte" in source
     assert "foreign fn s3_stage1_write_byte" in source
+
+
+def test_stage1_source_exposes_bounded_compiler_pipeline() -> None:
+    source = SOURCE_PATH.read_text(encoding="utf-8")
+    for marker in (
+        "function_names:",
+        "function_types:",
+        "valid_type_name",
+        "emit_blocked",
+    ):
+        assert marker in source
 
 
 def test_stage0_compiles_real_stage1_source_and_preserves_io_calls() -> None:
@@ -154,9 +172,9 @@ def test_stage1_rejects_invalid_source_with_real_diagnostic(tmp_path: Path) -> N
 
 
 @pytest.mark.skipif(not LINUX_NATIVE, reason="requires Linux x86-64 native execution")
-def test_stage1_self_compile_attempt_fails_closed_at_parser_subset(tmp_path: Path) -> None:
+def test_stage1_self_compile_attempt_reaches_emitter_boundary(tmp_path: Path) -> None:
     executable = build_stage1(tmp_path / "s3c-stage1")
     result = _run_stage1(executable, SOURCE_PATH.read_bytes())
-    assert result.returncode == 1
+    assert result.returncode == 2
     assert result.stdout == b""
-    assert result.stderr == b"S3_STAGE1_ERROR\n"
+    assert result.stderr == b"S3_STAGE1_EMITTER_BLOCKED\n"

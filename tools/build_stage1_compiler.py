@@ -9,6 +9,7 @@ import subprocess
 from pathlib import Path
 
 from bootstrap.s3.backends.x86_64 import generate_native_assembly
+from bootstrap.s3.emulator import DEFAULT_MAX_INSTRUCTIONS
 from bootstrap.s3.pipeline import compile_source
 
 
@@ -43,6 +44,7 @@ def build_stage1(
     source: Path = DEFAULT_SOURCE,
     host_io: Path = DEFAULT_HOST_IO,
     assembly_output: Path | None = None,
+    max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
 ) -> Path:
     """Compile S3 source with Stage0 and link a freestanding Linux process."""
 
@@ -58,7 +60,10 @@ def build_stage1(
     host_io = host_io.resolve()
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
-    assembly = generate_native_assembly(compile_source(source.read_text(encoding="utf-8")).assembly)
+    assembly = generate_native_assembly(
+        compile_source(source.read_text(encoding="utf-8")).assembly,
+        max_instructions=max_instructions,
+    )
     assembly_path = (assembly_output or output.with_suffix(".s")).resolve()
     assembly_path.parent.mkdir(parents=True, exist_ok=True)
     assembly_path.write_text(assembly, encoding="utf-8", newline="\n")
@@ -109,6 +114,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--source", type=Path, default=DEFAULT_SOURCE)
     parser.add_argument("--host-io", type=Path, default=DEFAULT_HOST_IO)
     parser.add_argument("--assembly", type=Path)
+    parser.add_argument("--max-instructions", type=int, default=DEFAULT_MAX_INSTRUCTIONS)
     args = parser.parse_args(argv)
     try:
         built = build_stage1(
@@ -116,6 +122,7 @@ def main(argv: list[str] | None = None) -> int:
             source=args.source,
             host_io=args.host_io,
             assembly_output=args.assembly,
+            max_instructions=args.max_instructions,
         )
     except Stage1BuildError as error:
         parser.exit(1, f"stage1 build failed: {error}\n")

@@ -1,6 +1,6 @@
 #include <stdint.h>
 
-enum { STAGE1_MAX_SOURCE_BYTES = 16384 };
+enum { STAGE1_MAX_SOURCE_BYTES = 65536 };
 
 static unsigned char stage1_source[STAGE1_MAX_SOURCE_BYTES];
 static int64_t stage1_source_length = -1;
