@@ -80,6 +80,7 @@ def test_stage1_source_is_s3_logic_not_a_python_or_candidate_wrapper() -> None:
     assert "scan_token" in source
     assert "token_kind" in source
     assert "ir_opcode" in source
+    assert "ir_value: i64[32]" in source
     assert "emit_ir_return" in source
     assert "foreign fn s3_stage1_read_byte" in source
     assert "foreign fn s3_stage1_write_byte" in source
