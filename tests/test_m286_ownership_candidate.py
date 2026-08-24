@@ -21,6 +21,10 @@ def test_reference_shape_rejects_invalid_kind_and_target():
     with pytest.raises(M286Error) as e: validate(OwnershipProgram((Place(0,1,True),),(Reference(0,2,'shared'),),()))
     assert e.value.code=='INVALID_REFERENCE'
 
+def test_ids_must_use_contiguous_canonical_slots():
+    with pytest.raises(M286Error) as e: validate(OwnershipProgram((Place(1,1,True),),(),()))
+    assert e.value.code=='NON_CANONICAL_ID_LAYOUT'
+
 def test_initialization_and_move_rules():
     with pytest.raises(M286Error) as e: validate(OwnershipProgram((Place(0,1,True,False),),(),(M286Op('load_place',0),)))
     assert e.value.code=='READ_UNINITIALIZED'

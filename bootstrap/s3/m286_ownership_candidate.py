@@ -21,6 +21,7 @@ OPS={'load_place','store_place','borrow_shared','borrow_mut','read_ref','write_r
 def validate(p):
     if len(p.places)>8 or len(p.references)>8 or len(p.operations)>32: raise M286Error('BOUNDS')
     if len({x.id for x in p.places})!=len(p.places) or len({x.id for x in p.references})!=len(p.references): raise M286Error('DUPLICATE_ID')
+    if tuple(x.id for x in p.places)!=tuple(range(len(p.places))) or tuple(x.id for x in p.references)!=tuple(range(len(p.references))): raise M286Error('NON_CANONICAL_ID_LAYOUT')
     places={x.id:x for x in p.places}; refs={x.id:x for x in p.references}; initialized={x.id:x.initialized for x in p.places}; active_shared=set(); active_mut=set(); moved=set()
     for r in p.references:
         if r.kind not in KINDS: raise M286Error('INVALID_REFERENCE_KIND')
