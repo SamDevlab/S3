@@ -1,5 +1,5 @@
 {
-  "schema": "s3.selfhost.codegen-ir-v2-preflight.v1",
+  "schema": "s3.selfhost.codegen-ir-v2-preflight.v2",
   "pr": 268,
   "source_head": "2b9a391dc1376d34cd13a946a16d92693d389898",
   "source_sha256": "20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341",
@@ -36,16 +36,36 @@
       "finding": "Only 74 call records remain at the native baseline. Avoid unnecessary helper calls during the structural IR-v2 patch."
     }
   ],
+  "compaction_candidate": {
+    "id": "DROP_REDUNDANT_DISCARD_KEYWORD_EVENT",
+    "status": "PROJECTION_ONLY_NATIVE_REMEASUREMENT_REQUIRED",
+    "native_baseline_events": 1460,
+    "native_baseline_discard_events": 699,
+    "projected_events": 761,
+    "projected_headroom_in_existing_event_banks": 699,
+    "rule": "Do not serialize the aggregate discard-keyword event into the codegen/event stream when the actual side-effecting call/store remains represented independently.",
+    "safety_constraints": [
+      "Never drop a call because its result is discarded.",
+      "Never drop a store because its result is discarded.",
+      "Never infer side effects from source text in the emitter.",
+      "The builder must retain the real side-effecting instruction and only remove the redundant aggregate discard marker.",
+      "The projected 761 count is not a PASS until measured by the real Stage1 path on Linux x86-64."
+    ]
+  },
   "required_next_checkpoint": {
     "id": "CAPACITY_PREFLIGHT",
+    "preferred_strategy": "COMPACT_REDUNDANT_EVENTS_BEFORE_PHYSICAL_POOL_EXPANSION",
     "requirements": [
       "Preserve the closed 736/746 call-argument evidence as the historical baseline.",
-      "Add only the minimum bounded storage needed to make an IR-v2 implementation itself representable.",
+      "Prefer removing redundant structural events over adding large speculative banks.",
+      "Add bounded storage only if the compacted native source still requires it.",
       "Keep all overflow behavior fail-closed.",
+      "Avoid new helper functions with parameters while parameter capacity remains exactly full.",
+      "Avoid unnecessary helper calls while call/call-argument headroom remains low.",
       "Run focused non-native tests before Linux qualification.",
       "Remeasure every changed count on native Linux x86-64 before declaring the capacity checkpoint PASS.",
       "Do not start the general emitter, SELF_EMIT, or Stage2 until IR-v2 construction and verification pass."
     ]
   },
-  "status": "BLOCKED_PENDING_BOUNDED_CAPACITY_PREFLIGHT"
+  "status": "BLOCKED_PENDING_COMPACTION_FIRST_CAPACITY_PREFLIGHT"
 }
