@@ -1,5 +1,5 @@
 {
-  "schema": "s3.selfhost.stage1-summary.v10",
+  "schema": "s3.selfhost.stage1-summary.v11",
   "final_tested_source_head": "2b9a391dc1376d34cd13a946a16d92693d389898",
   "source_changed_after_last_native_gates": false,
   "test_logic_changed_after_last_t4": true,
@@ -22,6 +22,7 @@
     "local_functions": 29,
     "parameters": 64,
     "locals": 23,
+    "locals_status": "HISTORICAL_NATIVE_VALUE_REQUIRES_FRESH_PARAMETER_CANDIDATE_LEXICAL_RECONCILIATION_BEFORE_CAPACITY_SELECTION",
     "blocks": 305,
     "instructions": 1460,
     "values": 1213,
@@ -45,7 +46,7 @@
     "status": "PASS_AT_LAST_NATIVE_SOURCE_GATE"
   },
   "codegen_ir_v2_contract": "reports/selfhost/stage1/codegen-ir-v2-contract.json",
-  "codegen_ir_v2_status": "CANDIDATE_TOOLING_STORAGE_BLOCK_AND_LOCAL_DESIGN_PREPARED_NATIVE_QUALIFICATION_PENDING",
+  "codegen_ir_v2_status": "COMPACTION_PARAMETER_AND_LOCAL_CANDIDATE_TOOLING_PREPARED_NATIVE_CHAIN_PENDING",
   "compaction_candidate": {
     "transform": "DROP_REDUNDANT_DISCARD_KEYWORD_EVENT",
     "canonical_source_mutated": false,
@@ -78,33 +79,66 @@
     "used_value_ids": "[0,parameter_count)",
     "status": "PREPARED_NOT_NATIVE_QUALIFIED"
   },
-  "local_metadata_design": {
-    "audit": "tools/audit_stage1_codegen_ir_v2_local_metadata.py",
-    "tests": "tests/test_stage1_codegen_ir_v2_local_metadata.py",
-    "source_transform": "NOT_IMPLEMENTED",
-    "physical_candidate": "ONE_PACKED_I64_64_LANE_IF_EXACT_CANDIDATE_PREFLIGHT_FITS",
+  "local_metadata_candidate": {
+    "design_audit": "tools/audit_stage1_codegen_ir_v2_local_metadata.py",
+    "transformer": "tools/patch_stage1_codegen_ir_v2_locals.py",
+    "exact_preflight": "tools/preflight_stage1_codegen_ir_v2_locals.py",
+    "tests": [
+      "tests/test_stage1_codegen_ir_v2_local_metadata.py",
+      "tests/test_stage1_codegen_ir_v2_locals.py"
+    ],
+    "canonical_source_mutated": false,
+    "native_parameter_report_required": true,
+    "parameter_source_sha_rebuild_required": true,
+    "native_and_stage1_lexical_count_reconciliation_required": true,
+    "historical_local_count_23_is_capacity_authority": false,
+    "capacity_selection": "EXACT_CANDIDATE_SELF_SOURCE_LOCAL_RECORD_COUNT_IF_LE_365_ELSE_ROUTE_BANKED_DESIGN",
+    "physical_candidate": "ONE_BOUNDED_I64_LANE_SELECTED_FROM_EXACT_REQUIRED_COUNT",
     "packed_fields": [
       "owner_function_id",
       "name_identity",
       "type_id",
       "mutability",
-      "frame_slot",
+      "storage_kind",
+      "local_ordinal",
+      "fixed_extent",
       "semantic_value_id"
     ],
+    "storage_kinds": [
+      "SCALAR",
+      "FIXED_ARRAY"
+    ],
+    "fixed_array_shape_preserved": true,
+    "physical_frame_offset": "DEFERRED_TO_EMITTER",
     "parameter_semantic_domain": "[0,64)",
-    "local_semantic_domain": "[64,64+local_count)",
-    "bounded_lane_worst_case": "[64,128)",
-    "frame_slot_strategy": "SCALAR_CURRENT_FUNCTION_COUNTER_RESET_ON_FUNCTION_ACTIVATION",
-    "local_ir_v2_design_possible": "PENDING_NATIVE_PARAMETER_REPORT",
+    "local_value_id_rule": "64 + global_local_record_index",
+    "static_preflight_projects_from": "FRESH_NATIVE_PARAMETER_COUNTS_PLUS_EXACT_STAGE1_LEXICAL_CANDIDATE_DELTA",
+    "projected_capacities": [
+      "events",
+      "values",
+      "blocks",
+      "calls",
+      "local_records"
+    ],
+    "local_native_qualification": "NOT_RUN",
     "local_ir_v2_start_allowed": false,
-    "start_rule": "Concrete local candidate must exist and exact numeric/match/while/mut/function delta must fit the native parameter baseline before source-transform authorization.",
-    "status": "STATIC_DESIGN_AUDIT_PREPARED_NATIVE_AND_CANDIDATE_PREFLIGHT_PENDING"
+    "canonical_commit_allowed": false,
+    "status": "REPORT_GATED_TRANSFORM_AND_EXACT_PREFLIGHT_PREPARED_NATIVE_PARAMETER_EVIDENCE_PENDING"
+  },
+  "local_preflight_fail_closed_routes": {
+    "native_lexical_mismatch": "RECONCILE_NATIVE_LOCAL_VALUE_EVENT_CALL_COUNTS_BEFORE_LOCAL_IR_V2",
+    "local_records_over_365": "DESIGN_BANKED_LOCAL_RECORD_STORAGE_FROM_EXACT_REQUIRED_COUNT",
+    "blocks_over_legacy_capacity": "PACKED_730_BLOCK_CAPACITY_CANDIDATE",
+    "values_over_capacity": "QUALIFY_ZERO_INIT_OR_VALUE_NAMESPACE_CAPACITY_REDUCTION",
+    "events_over_capacity": "QUALIFY_ADDITIONAL_EVENT_COMPACTION",
+    "calls_over_capacity": "EXTEND_CALL_CAPACITY_FROM_MEASURED_LOCAL_CANDIDATE_REQUIREMENT",
+    "all_static_local_guards_pass": "NATIVE_LOCAL_METADATA_CANDIDATE"
   },
   "value_namespace_plan": {
     "parameter_domain": "[0,64)",
     "parameters_used": "[0,parameter_count)",
-    "local_domain": "[64,64+local_count)",
-    "dynamic_value_ids": "monotonic after 64+local_count",
+    "local_value_id_rule": "64 + global_local_record_index",
+    "dynamic_value_ids": "DEFER_UNTIL_EXPLICIT_NAMESPACE_REBUILD",
     "legacy_value_stream": "STRUCTURAL_NUMERIC_TOKEN_STREAM_NOT_FINAL_SEMANTIC_NAMESPACE",
     "legacy_collision": true,
     "migration_required": true,
@@ -165,14 +199,6 @@
     "important_native_gate": "EVENT_TO_IR_V2_INSTRUCTION_MAPPING_AND_IN_PLACE_REWRITE_REQUIRE_NEW_NATIVE_IR_V2_VERIFIER",
     "status": "STATIC_PLAN_PREPARED_NATIVE_SEMANTIC_QUALIFICATION_PENDING"
   },
-  "array_initializer_audit": {
-    "tool": "tools/audit_stage1_array_initializers.py",
-    "report": "reports/selfhost/stage1/codegen-ir-v2-array-initializer-audit.json",
-    "purpose": "quantify repeated fixed-array zero initializer payload before semantic value compaction",
-    "zero_count_is_value_headroom": false,
-    "aggregate_zero_init_candidate_requires_native_pass": true,
-    "status": "STATIC_AUDIT_PREPARED_NOT_NATIVE_EVIDENCE"
-  },
   "static_preflight": {
     "runner": "tools/preflight_stage1_codegen_ir_v2_static.py",
     "canonical_storage_report": "reports/selfhost/stage1/codegen-ir-v2-storage-reuse-audit.json",
@@ -180,26 +206,24 @@
     "block_report": "reports/selfhost/stage1/codegen-ir-v2-block-capacity-audit.json",
     "array_report": "reports/selfhost/stage1/codegen-ir-v2-array-initializer-audit.json",
     "aggregate_report": "reports/selfhost/stage1/codegen-ir-v2-static-preflight.json",
-    "exact_parameter_candidate_chain": [
-      "DROP_REDUNDANT_DISCARD_KEYWORD_EVENT",
-      "ADD_PACKED_PARAMETER_IR_V2"
-    ],
     "qualification": "STATIC_ONLY_NEVER_NATIVE_EVIDENCE"
   },
   "native_candidate_chain": {
     "runner": "tools/qualify_stage1_codegen_ir_v2_chain.py",
+    "schema": "s3.selfhost.codegen-ir-v2-native-chain.v8",
     "tooling_tests_run_before_native": true,
     "chain_self_tests_included": true,
+    "local_candidate_tests_included": true,
     "static_preflight_run_before_native": true,
     "capacity_report": "reports/selfhost/stage1/codegen-ir-v2-capacity-native-candidate.json",
     "parameter_report": "reports/selfhost/stage1/codegen-ir-v2-parameters-native-candidate.json",
     "next_phase_budget_report": "reports/selfhost/stage1/codegen-ir-v2-next-phase-budget.json",
+    "local_preflight_report": "reports/selfhost/stage1/codegen-ir-v2-locals-static-preflight.json",
     "chain_report": "reports/selfhost/stage1/codegen-ir-v2-native-chain.json",
     "canonical_source_mutated": false,
-    "best_case_chain_status": "PASS_THROUGH_PARAMETER_CANDIDATE",
-    "best_case_next_if_legacy_blocks_fit_concrete_design": "READY_FOR_LOCAL_IR_V2_CANDIDATE_PREFLIGHT",
-    "local_ir_v2_start_allowed_at_chain_end": false,
-    "alternate_next_if_native_block_headroom_too_small": "PACKED_730_BLOCK_CAPACITY_CANDIDATE",
+    "best_case_native_chain_status": "PASS_THROUGH_PARAMETER_CANDIDATE",
+    "local_preflight_auto_runs_on_full_parameter_provenance": true,
+    "local_preflight_is_native_local_pass": false,
     "home_runbook": "reports/selfhost/stage1/HOME_NATIVE_CAPACITY_CHECK.txt"
   },
   "capacity_risk_last_native_source_gate": {
@@ -227,7 +251,7 @@
   "compileall": "PENDING_AFTER_NEW_TOOLING",
   "json_validation": "PENDING_AFTER_NEW_TOOLING",
   "diff_check": "PENDING_AFTER_NEW_TOOLING",
-  "github_actions": "BLOCKED_EXTERNAL_WORKFLOW_JOBS_EXPOSE_NO_STEPS; NOT_CLASSIFIED_AS_CODE_FAILURE",
+  "github_actions": "NO_CURRENT_HEAD_STATUS; DO_NOT_CLASSIFY_TOOLING_AS_PASS",
   "historical_t4": {
     "status": "BLOCKED_TIMEOUT",
     "tested_head": "d8089a65fe43201e65dd6d0245a629d3c68eeae2",
@@ -251,6 +275,6 @@
   "stage2_started": false,
   "stage3_started": false,
   "full_self_hosting": false,
-  "current_gate": "TOOLING_TESTS_THEN_DUAL_STORAGE_STATIC_PREFLIGHT_THEN_NATIVE_COMPACTION_AND_PARAMETER_CHAIN",
-  "next_if_chain_passes": "REVIEW_NATIVE_REPORTS; IF BLOCK_HEADROOM_TOO_SMALL_PREPARE_730_BLOCK_NATIVE_CANDIDATE; OTHERWISE_PREPARE_CONCRETE_LOCAL_METADATA_CANDIDATE_AND_EXACT_CONTROL_DELTA_PREFLIGHT; DO_NOT_SET_LOCAL_START_ALLOWED_FROM_HEADROOM_ALONE"
+  "current_gate": "TOOLING_TESTS_THEN_STATIC_PREFLIGHT_THEN_NATIVE_COMPACTION_PARAMETER_THEN_EXACT_LOCAL_PREFLIGHT_ROUTING",
+  "next_if_chain_passes": "FOLLOW_LOCAL_NEXT_FROM_EXACT_REPORT; DO_NOT_PROMOTE_LOCAL_SOURCE OR CLAIM_NATIVE_LOCAL_PASS FROM STATIC_PREFLIGHT"
 }
