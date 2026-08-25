@@ -12,23 +12,36 @@ git pull --ff-only
 python3 tools/qualify_stage1_codegen_ir_v2_chain.py
 
 The chain performs, in order:
-1. compaction-only native Stage1 candidate;
-2. validation of the compaction report;
-3. packed parameter IR-v2 static preflight;
-4. packed parameter IR-v2 native Stage1 candidate;
-5. fail-closed verifier/bounded-capacity checks.
+1. static physical-storage reuse audit;
+2. static fixed-array initializer audit;
+3. compaction-only native Stage1 candidate;
+4. validation of the compaction report;
+5. packed parameter IR-v2 static preflight;
+6. packed parameter IR-v2 native Stage1 candidate;
+7. fail-closed verifier/bounded-capacity checks;
+8. native-driven next-phase budget for locals/value IDs.
 
 Expected best-case output:
+STATIC_PREFLIGHT=PASS
+STORAGE_REUSE=STATIC_STORAGE_AUDIT_PASS
+ARRAY_INITIALIZERS=STATIC_ARRAY_INITIALIZER_AUDIT_PASS
+ZERO_INITIALIZER_ITEMS=<measured static source count>
 CAPACITY_GATE=PASS
 PARAMETER_GATE=PASS
+NEXT_PHASE_BUDGET=READY_FOR_LOCAL_IR_V2_DESIGN
+LOCAL_IR_V2_START_ALLOWED=True
 CHAIN_STATUS=PASS_THROUGH_PARAMETER_CANDIDATE
 CANONICAL_SOURCE_MUTATED=False
 STAGE2=NOT_STARTED
 STAGE3=NOT_STARTED
 
 Reports written:
+reports/selfhost/stage1/codegen-ir-v2-storage-reuse-audit.json
+reports/selfhost/stage1/codegen-ir-v2-array-initializer-audit.json
+reports/selfhost/stage1/codegen-ir-v2-static-preflight.json
 reports/selfhost/stage1/codegen-ir-v2-capacity-native-candidate.json
 reports/selfhost/stage1/codegen-ir-v2-parameters-native-candidate.json
+reports/selfhost/stage1/codegen-ir-v2-next-phase-budget.json
 reports/selfhost/stage1/codegen-ir-v2-native-chain.json
 
 Important:
@@ -36,10 +49,20 @@ Important:
 - Do NOT run T4.
 - Do NOT run Stage2 or Stage3.
 - Do NOT run benchmarks.
-- Do NOT run either promoter with --in-place yet.
+- Do NOT run a promoter with --in-place yet.
 - Preserve all JSON reports and send the final console output/report for review.
 
-Compaction qualification is fail-closed and now models its intentional source deltas:
+Storage-reuse strategy prepared before native qualification:
+- reuse the four existing 365-slot AST/event banks as a candidate physical IR-v2 instruction stream instead of adding four new large arrays;
+- reuse the four existing 365-slot value banks for the later unified value namespace;
+- keep existing block target arrays and repack ir_block_terminator with kind/condition/return IDs;
+- link call result IDs through the IR-v2 instruction record instead of adding a 730-entry call-result array;
+- mixed-radix instruction record was selected specifically so owner/block/opcode/operandA/operandB/result/aux IDs fit inside signed i64;
+- aux is an ID/reference only, not an arbitrary raw i64 payload.
+
+The initializer audit only quantifies source structure. A large count of all-zero initializer items is NOT automatically value-pool headroom. Any aggregate zero-init transform still requires a native Stage1 candidate proving identical behavior and reduced semantic value usage.
+
+Compaction qualification is fail-closed and models its intentional source deltas:
 - 2 assignment statements removed from the self-source;
 - 1 numeric literal removed;
 - parameter/call/discard/control structure invariants remain checked;
@@ -47,9 +70,12 @@ Compaction qualification is fail-closed and now models its intentional source de
 
 The prepared parameter phase uses ONE packed i64[64] lane instead of five separate arrays, encoding:
 owner_function_id + name_identity + type_id + abi_index + value_id.
-This avoids adding at least 320 initializer literals to a source whose native value baseline was already 1213/1460.
 
-The parameter candidate also has a static preflight for values/blocks/functions and a native verifier. Even a native parameter PASS remains candidate-only until the reports are reviewed.
+If the parameter candidate passes, the next-phase planner reserves:
+parameters = [0, parameter_count)
+locals = [parameter_count, parameter_count + local_count)
+first dynamic instruction/constant/result value ID = parameter_count + local_count
+and computes headroom from the ACTUAL native parameter-candidate audit.
 
 Current canonical source remains unchanged:
 sha256=20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341
