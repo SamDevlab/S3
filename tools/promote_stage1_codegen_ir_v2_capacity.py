@@ -1,7 +1,7 @@
 """Promote the qualified compaction-first IR-v2 capacity candidate.
 
-This tool is intentionally fail-closed.  It never treats static projections as
-native evidence.  It validates the Linux x86-64 candidate report against the
+This tool is intentionally fail-closed. It never treats static projections as
+native evidence. It validates the Linux x86-64 candidate report against the
 current canonical source, deterministically rebuilds the candidate with the
 same S3-source transform, and only rewrites the canonical source/manifest when
 --in-place is explicitly requested.
@@ -18,6 +18,10 @@ from typing import Any
 from tools.patch_stage1_codegen_ir_v2_capacity import (
     BASELINE_SOURCE_SHA256,
     transform,
+)
+from tools.qualify_stage1_codegen_ir_v2_capacity import (
+    EXPECTED_COMPACTED_ASSIGNMENTS,
+    EXPECTED_COMPACTED_VALUES,
 )
 
 
@@ -97,10 +101,24 @@ def validate_native_report(
     )
     _require(baseline.get("native_events") == 1460, "unexpected native event baseline")
     _require(baseline.get("native_discard_events") == 699, "unexpected discard baseline")
+    _require(baseline.get("native_values") == 1213, "unexpected native value baseline")
+    _require(baseline.get("native_assignments") == 75, "unexpected native assignment baseline")
     _require(baseline.get("event_capacity") == 1460, "unexpected event capacity")
     _require(baseline.get("parameter_capacity") == 64, "unexpected parameter capacity")
     _require(baseline.get("call_capacity") == 730, "unexpected call capacity")
     _require(baseline.get("call_argument_capacity") == 746, "unexpected call-argument capacity")
+
+    expected_delta = report.get("expected_source_delta") or {}
+    _require(expected_delta.get("removed_assignments") == 2, "unexpected compaction assignment delta")
+    _require(expected_delta.get("removed_numeric_literals") == 1, "unexpected compaction value delta")
+    _require(
+        expected_delta.get("expected_ir_value_count") == EXPECTED_COMPACTED_VALUES,
+        "unexpected compacted value expectation",
+    )
+    _require(
+        expected_delta.get("expected_ast_assignment_count") == EXPECTED_COMPACTED_ASSIGNMENTS,
+        "unexpected compacted assignment expectation",
+    )
 
     contract_tests = report.get("contract_tests") or {}
     _require(contract_tests.get("status") == "PASS", "contract/capacity tests did not pass")
@@ -148,7 +166,14 @@ def validate_native_report(
     _require(actual_discards == 699, "discard audit count changed during compaction")
     _require(audit.get("parameter_count") == 64, "parameter count changed during compaction")
     _require(audit.get("ast_call_count") == 656, "call count changed during compaction")
-    _require(audit.get("ir_value_count") == 1213, "value count changed during compaction")
+    _require(
+        audit.get("ir_value_count") == EXPECTED_COMPACTED_VALUES,
+        "value count does not match the intentional compaction delta",
+    )
+    _require(
+        audit.get("ast_assignment_count") == EXPECTED_COMPACTED_ASSIGNMENTS,
+        "assignment count does not match the intentional compaction delta",
+    )
     _require(audit.get("ir_block_count") == 305, "block count changed during compaction")
 
     audit_invariants = report.get("audit_invariants") or {}
@@ -156,7 +181,8 @@ def validate_native_report(
         "discard_count_preserved",
         "parameter_count_preserved",
         "call_count_preserved",
-        "value_count_preserved",
+        "value_count_expected_delta",
+        "assignment_count_expected_delta",
         "block_count_preserved",
     }
     _require(expected_invariants <= set(audit_invariants), "native audit invariant fields are incomplete")
