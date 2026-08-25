@@ -72,16 +72,44 @@ def test_terminator_mixed_radix_boundary_round_trip() -> None:
     assert unpack_terminator(record) == fields
 
 
-def test_current_source_exposes_reusable_bounded_banks() -> None:
+def test_current_source_exposes_reusable_bounded_banks_and_lifetime() -> None:
     result = audit(SOURCE.read_text(encoding="utf-8"))
     assert result["status"] == "STATIC_STORAGE_AUDIT_PASS"
     assert result["guards"]["event_bank_layout"] is True
     assert result["guards"]["value_bank_layout"] is True
+    assert result["guards"]["call_table_layout"] is True
     assert result["guards"]["call_argument_layout"] is True
     assert result["guards"]["block_layout"] is True
+    assert result["guards"]["event_bank_safe_overwrite_frontier"] is True
+    assert result["event_bank_lifetime"]["event_bank_refs_after_frontier"] == 0
+    assert result["event_bank_lifetime"]["frontier"] == (
+        "AFTER_LEGACY_EVENT_VERIFIER_BEFORE_REMAINING_VERIFIER_AND_PIPELINE_DECISION"
+    )
     assert result["structural_markers"]["event_count_drives_instruction_count"] is True
     assert result["storage_decision"]["new_four_bank_instruction_arrays"] == "NOT_SELECTED"
     assert result["storage_decision"]["new_call_result_array"] == "NOT_SELECTED"
+
+
+def test_storage_audit_fails_if_event_bank_is_read_after_overwrite_frontier() -> None:
+    source = SOURCE.read_text(encoding="utf-8")
+    mutated = source + "\nfn forbidden_late_event_read() -> i64:\n    return ir_ast_event_records_0[0]\n"
+    result = audit(mutated)
+    assert result["status"] == "STATIC_STORAGE_AUDIT_FAIL"
+    assert result["event_bank_lifetime"]["event_bank_refs_after_frontier"] > 0
+    assert result["guards"]["event_bank_safe_overwrite_frontier"] is False
+
+
+def test_storage_audit_fails_if_second_call_bank_layout_drifts() -> None:
+    source = SOURCE.read_text(encoding="utf-8")
+    mutated = source.replace(
+        "mut ir_call_flags_1: tryte[365]",
+        "mut ir_call_flags_1: tryte[364]",
+        1,
+    )
+    assert mutated != source
+    result = audit(mutated)
+    assert result["status"] == "STATIC_STORAGE_AUDIT_FAIL"
+    assert result["guards"]["call_table_layout"] is False
 
 
 def test_aux_domain_is_id_sized_not_arbitrary_i64() -> None:
