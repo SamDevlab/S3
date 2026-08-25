@@ -1463,6 +1463,7 @@ fn main() -> tryte:
     mut instruction_slot: i64 = 0
     mut active_call_index: i64[16] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     mut active_call_seen: trit[16] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut ir_call_args_2: i64[16] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     mut function_count: i64 = 0
     mut foreign_count: i64 = 0
     mut current_function: i64 = -1
@@ -1822,38 +1823,86 @@ fn main() -> tryte:
                                                         ir_call_callee_1[call_slot] = to_tryte(previous_value)
                                                 match call_bank == 0:
                                                     -1:
-                                                        match ir_call_arg_pool_count < 365:
-                                                            -1:
-                                                                ir_call_arg_start[call_slot] = to_tryte(ir_call_arg_pool_count)
-                                                                ir_call_arg_start_bank[call_slot] = 0
-                                                            0:
-                                                                ir_call_arg_start[call_slot] = to_tryte(ir_call_arg_pool_count - 365)
-                                                                ir_call_arg_start_bank[call_slot] = 1
-                                                            1:
-                                                                ir_call_arg_start[call_slot] = to_tryte(ir_call_arg_pool_count - 365)
-                                                                ir_call_arg_start_bank[call_slot] = 1
+                                                         match ir_call_arg_pool_count < 365:
+                                                             -1:
+                                                                 ir_call_arg_start[call_slot] = to_tryte(ir_call_arg_pool_count)
+                                                                 ir_call_arg_start_bank[call_slot] = 0
+                                                             0:
+                                                                 match ir_call_arg_pool_count < 730:
+                                                                     -1:
+                                                                         ir_call_arg_start[call_slot] = to_tryte(ir_call_arg_pool_count - 365)
+                                                                         ir_call_arg_start_bank[call_slot] = 1
+                                                                     0:
+                                                                         ir_call_arg_start[call_slot] = to_tryte(ir_call_arg_pool_count - 730)
+                                                                         ir_call_arg_start_bank[call_slot] = 2
+                                                                     1:
+                                                                         ir_call_arg_start[call_slot] = to_tryte(ir_call_arg_pool_count - 730)
+                                                                         ir_call_arg_start_bank[call_slot] = 2
+                                                             1:
+                                                                 match ir_call_arg_pool_count < 730:
+                                                                     -1:
+                                                                         ir_call_arg_start[call_slot] = to_tryte(ir_call_arg_pool_count - 365)
+                                                                         ir_call_arg_start_bank[call_slot] = 1
+                                                                     0:
+                                                                         ir_call_arg_start[call_slot] = to_tryte(ir_call_arg_pool_count - 730)
+                                                                         ir_call_arg_start_bank[call_slot] = 2
+                                                                     1:
+                                                                         ir_call_arg_start[call_slot] = to_tryte(ir_call_arg_pool_count - 730)
+                                                                         ir_call_arg_start_bank[call_slot] = 2
                                                     0:
-                                                        match ir_call_arg_pool_count < 365:
-                                                            -1:
-                                                                ir_call_arg_start_1[call_slot] = to_tryte(ir_call_arg_pool_count)
-                                                                ir_call_arg_start_bank_1[call_slot] = 0
-                                                            0:
-                                                                ir_call_arg_start_1[call_slot] = to_tryte(ir_call_arg_pool_count - 365)
-                                                                ir_call_arg_start_bank_1[call_slot] = 1
-                                                            1:
-                                                                ir_call_arg_start_1[call_slot] = to_tryte(ir_call_arg_pool_count - 365)
-                                                                ir_call_arg_start_bank_1[call_slot] = 1
+                                                         match ir_call_arg_pool_count < 365:
+                                                             -1:
+                                                                 ir_call_arg_start_1[call_slot] = to_tryte(ir_call_arg_pool_count)
+                                                                 ir_call_arg_start_bank_1[call_slot] = 0
+                                                             0:
+                                                                 match ir_call_arg_pool_count < 730:
+                                                                     -1:
+                                                                         ir_call_arg_start_1[call_slot] = to_tryte(ir_call_arg_pool_count - 365)
+                                                                         ir_call_arg_start_bank_1[call_slot] = 1
+                                                                     0:
+                                                                         ir_call_arg_start_1[call_slot] = to_tryte(ir_call_arg_pool_count - 730)
+                                                                         ir_call_arg_start_bank_1[call_slot] = 2
+                                                                     1:
+                                                                         ir_call_arg_start_1[call_slot] = to_tryte(ir_call_arg_pool_count - 730)
+                                                                         ir_call_arg_start_bank_1[call_slot] = 2
+                                                             1:
+                                                                 match ir_call_arg_pool_count < 730:
+                                                                     -1:
+                                                                         ir_call_arg_start_1[call_slot] = to_tryte(ir_call_arg_pool_count - 365)
+                                                                         ir_call_arg_start_bank_1[call_slot] = 1
+                                                                     0:
+                                                                         ir_call_arg_start_1[call_slot] = to_tryte(ir_call_arg_pool_count - 730)
+                                                                         ir_call_arg_start_bank_1[call_slot] = 2
+                                                                     1:
+                                                                         ir_call_arg_start_1[call_slot] = to_tryte(ir_call_arg_pool_count - 730)
+                                                                         ir_call_arg_start_bank_1[call_slot] = 2
                                                     1:
-                                                        match ir_call_arg_pool_count < 365:
-                                                            -1:
-                                                                ir_call_arg_start_1[call_slot] = to_tryte(ir_call_arg_pool_count)
-                                                                ir_call_arg_start_bank_1[call_slot] = 0
-                                                            0:
-                                                                ir_call_arg_start_1[call_slot] = to_tryte(ir_call_arg_pool_count - 365)
-                                                                ir_call_arg_start_bank_1[call_slot] = 1
-                                                            1:
-                                                                ir_call_arg_start_1[call_slot] = to_tryte(ir_call_arg_pool_count - 365)
-                                                                ir_call_arg_start_bank_1[call_slot] = 1
+                                                         match ir_call_arg_pool_count < 365:
+                                                             -1:
+                                                                 ir_call_arg_start_1[call_slot] = to_tryte(ir_call_arg_pool_count)
+                                                                 ir_call_arg_start_bank_1[call_slot] = 0
+                                                             0:
+                                                                 match ir_call_arg_pool_count < 730:
+                                                                     -1:
+                                                                         ir_call_arg_start_1[call_slot] = to_tryte(ir_call_arg_pool_count - 365)
+                                                                         ir_call_arg_start_bank_1[call_slot] = 1
+                                                                     0:
+                                                                         ir_call_arg_start_1[call_slot] = to_tryte(ir_call_arg_pool_count - 730)
+                                                                         ir_call_arg_start_bank_1[call_slot] = 2
+                                                                     1:
+                                                                         ir_call_arg_start_1[call_slot] = to_tryte(ir_call_arg_pool_count - 730)
+                                                                         ir_call_arg_start_bank_1[call_slot] = 2
+                                                             1:
+                                                                 match ir_call_arg_pool_count < 730:
+                                                                     -1:
+                                                                         ir_call_arg_start_1[call_slot] = to_tryte(ir_call_arg_pool_count - 365)
+                                                                         ir_call_arg_start_bank_1[call_slot] = 1
+                                                                     0:
+                                                                         ir_call_arg_start_1[call_slot] = to_tryte(ir_call_arg_pool_count - 730)
+                                                                         ir_call_arg_start_bank_1[call_slot] = 2
+                                                                     1:
+                                                                         ir_call_arg_start_1[call_slot] = to_tryte(ir_call_arg_pool_count - 730)
+                                                                         ir_call_arg_start_bank_1[call_slot] = 2
                                                 match call_bank == 0:
                                                     -1:
                                                         ir_call_arg_count[call_slot] = 0
@@ -2166,7 +2215,7 @@ fn main() -> tryte:
                         active_call_local_slot = active_call_id - 365
                     1:
                         active_call_local_slot = active_call_id - 365
-                match ir_call_arg_pool_count < 729:
+                match ir_call_arg_pool_count < 746:
                     -1:
                         discard 0
                     0:
@@ -2177,15 +2226,27 @@ fn main() -> tryte:
                         ir_capacity_ok = 0
                 match argument_possible == -1:
                     -1:
-                        match ir_call_arg_pool_count < 730:
+                        match ir_call_arg_pool_count < 746:
                             -1:
                                 match ir_call_arg_pool_count < 365:
                                     -1:
                                         ir_call_args_0[to_tryte(ir_call_arg_pool_count)] = argument_value
                                     0:
-                                        ir_call_args_1[to_tryte(ir_call_arg_pool_count - 365)] = argument_value
+                                        match ir_call_arg_pool_count < 730:
+                                            -1:
+                                                ir_call_args_1[to_tryte(ir_call_arg_pool_count - 365)] = argument_value
+                                            0:
+                                                ir_call_args_2[to_tryte(ir_call_arg_pool_count - 730)] = argument_value
+                                            1:
+                                                ir_call_args_2[to_tryte(ir_call_arg_pool_count - 730)] = argument_value
                                     1:
-                                        ir_call_args_1[to_tryte(ir_call_arg_pool_count - 365)] = argument_value
+                                        match ir_call_arg_pool_count < 730:
+                                            -1:
+                                                ir_call_args_1[to_tryte(ir_call_arg_pool_count - 365)] = argument_value
+                                            0:
+                                                ir_call_args_2[to_tryte(ir_call_arg_pool_count - 730)] = argument_value
+                                            1:
+                                                ir_call_args_2[to_tryte(ir_call_arg_pool_count - 730)] = argument_value
                             0:
                                 ir_capacity_ok = 0
                             1:
@@ -2784,13 +2845,99 @@ fn main() -> tryte:
                     verifier_ok = 0
                 1:
                     discard 0
-            match ir_call_arg_pool_count < 731:
+            match ir_call_arg_pool_count < 747:
                 -1:
                     discard 0
                 0:
                     verifier_ok = 0
                 1:
                     discard 0
+            mut call_verify_index: i64 = 0
+            while call_verify_index < ir_call_count:
+                mut call_verify_bank: i64 = call_verify_index / 365
+                mut call_verify_slot: i64 = call_verify_index - call_verify_bank * 365
+                mut call_verify_start: i64 = 0
+                mut call_verify_start_bank: i64 = 0
+                mut call_verify_count: i64 = 0
+                mut call_verify_absolute_start: i64 = 0
+                match call_verify_bank < 2:
+                    -1:
+                        match call_verify_bank == 0:
+                            -1:
+                                call_verify_start = to_i64(ir_call_arg_start[call_verify_slot])
+                                call_verify_start_bank = to_i64(ir_call_arg_start_bank[call_verify_slot])
+                                call_verify_count = ir_call_arg_count[call_verify_slot]
+                            0:
+                                call_verify_start = to_i64(ir_call_arg_start_1[call_verify_slot])
+                                call_verify_start_bank = to_i64(ir_call_arg_start_bank_1[call_verify_slot])
+                                call_verify_count = ir_call_arg_count_1[call_verify_slot]
+                            1:
+                                call_verify_start = to_i64(ir_call_arg_start_1[call_verify_slot])
+                                call_verify_start_bank = to_i64(ir_call_arg_start_bank_1[call_verify_slot])
+                                call_verify_count = ir_call_arg_count_1[call_verify_slot]
+                    0:
+                        verifier_ok = 0
+                    1:
+                        verifier_ok = 0
+                match call_verify_start_bank >= 0:
+                    -1:
+                        match call_verify_start_bank < 3:
+                            -1:
+                                match call_verify_start >= 0:
+                                    -1:
+                                        match call_verify_start_bank == 2:
+                                            -1:
+                                                match call_verify_start < 16:
+                                                    -1:
+                                                        discard 0
+                                                    0:
+                                                        verifier_ok = 0
+                                                    1:
+                                                        discard 0
+                                            0:
+                                                match call_verify_start < 365:
+                                                    -1:
+                                                        discard 0
+                                                    0:
+                                                        verifier_ok = 0
+                                                    1:
+                                                        discard 0
+                                            1:
+                                                match call_verify_start < 365:
+                                                    -1:
+                                                        discard 0
+                                                    0:
+                                                        verifier_ok = 0
+                                                    1:
+                                                        discard 0
+                                    0:
+                                        verifier_ok = 0
+                                    1:
+                                        verifier_ok = 0
+                            0:
+                                verifier_ok = 0
+                            1:
+                                verifier_ok = 0
+                    0:
+                        verifier_ok = 0
+                    1:
+                        verifier_ok = 0
+                match call_verify_count >= 0:
+                    -1:
+                        discard 0
+                    0:
+                        verifier_ok = 0
+                    1:
+                        verifier_ok = 0
+                call_verify_absolute_start = call_verify_start_bank * 365 + call_verify_start
+                match call_verify_absolute_start + call_verify_count <= 746:
+                    -1:
+                        discard 0
+                    0:
+                        verifier_ok = 0
+                    1:
+                        discard 0
+                call_verify_index += 1
             mut event_verify_index: i64 = 0
             while event_verify_index < ir_ast_event_count:
                 mut event_verify_bank: i64 = event_verify_index / 365

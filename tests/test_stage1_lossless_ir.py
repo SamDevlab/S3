@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from bootstrap.s3.pipeline import compile_source
 
 
@@ -62,6 +64,26 @@ def test_stage1_ir_retains_identity_calls_operands_and_control_markers() -> None
         assert marker in source
     assert "ir_ast_event_opcode = 16" in source
     assert "S3_STAGE1_EMITTER_BLOCKED" not in source
+
+
+@pytest.mark.parametrize(
+    ("pool_index", "storable"),
+    ((745, True), (746, False), (747, False)),
+)
+def test_stage1_call_argument_pool_capacity_boundaries(
+    pool_index: int, storable: bool
+) -> None:
+    source = SOURCE_PATH.read_text(encoding="utf-8")
+    selected_capacity = 746
+
+    assert (pool_index < selected_capacity) is storable
+    assert "ir_call_args_0: i64[365]" in source
+    assert "ir_call_args_1: i64[365]" in source
+    assert "ir_call_args_2: i64[16]" in source
+    assert "ir_call_arg_pool_count < 746" in source
+    assert "ir_call_arg_pool_count < 747" in source
+    assert "call_verify_start_bank" in source
+    assert "call_verify_absolute_start + call_verify_count <= 746" in source
 
 
 def test_fixture_categories_cover_required_lossless_ir_shapes() -> None:

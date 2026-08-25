@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "campaign": "PR-268",
+  "measurement": "native Stage1 call argument pool audit",
+  "status": "PASS_MEASUREMENT_BLOCKED_BY_POOL",
+  "platform": "Linux x86-64",
+  "input": {
+    "description": "exact pre-instrumentation Stage1 source snapshot",
+    "sha256": "1ad04849dc80edeae6e0d1327677f0b79b0ef604180952adf45075dff7f78a1",
+    "size_bytes": 156257
+  },
+  "instrumented_source": {
+    "sha256": "3d4b448aa605cbf26a3a5c038c8b405fc3ae709f65cc99e5570a2da5adfb6437",
+    "size_bytes": 163336
+  },
+  "build": {
+    "platform": "Linux x86-64",
+    "status": "PASS",
+    "executable_sha256": "be5261d2caed248801feeed3a185c26108af5b97b01a056705add85b6899bedb",
+    "executable_size_bytes": 18213448,
+    "assembly_sha256": "1182ccb5c9ced34d498fa8abfe8b8a775a8321c9fe99bd10b13274e7a8761063",
+    "assembly_size_bytes": 46964509
+  },
+  "runtime": {
+    "exit_code": 2,
+    "total_calls": 656,
+    "total_call_arguments": 736,
+    "max_call_arity": 4,
+    "arity_distribution": {
+      "0": 1,
+      "1": 617,
+      "2": 15,
+      "3": 3,
+      "4_plus": 20
+    },
+    "current_bank_count": 2,
+    "current_bank_sizes": [365, 365],
+    "current_physical_capacity": 730,
+    "effective_capacity_before_fix": 729,
+    "pool_used_before_failure": 729,
+    "first_argument_index_that_cannot_be_stored": 729,
+    "marker": "S3_STAGE1_CALL_ARGS 736 4 1 617 15 3 20 729 729 729",
+    "raw_transcript": "reports/selfhost/stage1/call-argument-pool-audit.native-linux-x86_64.txt"
+  },
+  "decision_basis": {
+    "required_capacity": 736,
+    "selected_capacity": 746,
+    "headroom": 10,
+    "selected_bank_count": 3,
+    "selected_bank_sizes": [365, 365, 16],
+    "selection_policy": "exact native runtime requirement plus bounded 16-slot extension",
+    "arbitrary_large_pool_expansion": false
+  }
+}

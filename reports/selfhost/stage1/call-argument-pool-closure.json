@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "checkpoint": "A",
+  "pr": 268,
+  "status": "POOL_CLOSED_EMITTER_BLOCKED",
+  "pool": {
+    "previous_effective_capacity": 729,
+    "previous_physical_capacity": 730,
+    "required_capacity": 736,
+    "selected_capacity": 746,
+    "headroom": 10,
+    "bank_count": 3,
+    "bank_sizes": [365, 365, 16],
+    "storage": "ir_call_args_0, ir_call_args_1, ir_call_args_2",
+    "start_metadata": ["arg_start_bank", "arg_start_slot", "arg_count"],
+    "verifier_absolute_bound": 746
+  },
+  "runtime_measurement": {
+    "total_calls": 656,
+    "total_call_arguments": 736,
+    "max_call_arity": 4,
+    "arity_distribution": {"0": 1, "1": 617, "2": 15, "3": 3, "4_plus": 20},
+    "instrumented_post_fix_source_sha256": "70c3ab742bc2930a23c69c0837c84b208a64b31793e03a397029a78b1007e946",
+    "instrumented_post_fix_executable_sha256": "49989db71f5fdb827668fd615c27312868d56fd3d2a8ff00c1477d753dd584ea",
+    "instrumented_marker": "S3_STAGE1_CALL_ARGS 736 4 1 617 15 3 20 736 729 -1",
+    "pool_used": 736,
+    "first_unstorable_call_arg_index": -1,
+    "pool_gate": "PASS"
+  },
+  "clean_source_gate": {
+    "source_sha256": "20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341",
+    "source_size_bytes": 166984,
+    "executable_sha256": "77808a70c4582bd08df2e260f73576a1cb61ed093f16d9d96c184f177097e174",
+    "assembly_sha256": "c0163bcef52cf7e8cadcf676749762ca0597cb2c9517bd03c158576cc213434b",
+    "canonical_self_source_exit_code": 2,
+    "canonical_stdout_bytes": 0,
+    "canonical_stderr_marker": "S3_STAGE1_EMITTER_BLOCKED",
+    "self_emit": "BLOCKED"
+  },
+  "ir_preservation": {
+    "function_identity": "PASS",
+    "operands": "PASS",
+    "calls": "PASS",
+    "call_arguments": "PASS",
+    "cfg": "PASS",
+    "values": "PASS",
+    "types": "PASS"
+  },
+  "remaining_blocker": {
+    "id": "GENERAL_EMITTER_CAPABILITY_GAP",
+    "stage": "general emitter",
+    "reason": "the current IR records bounded events and call metadata, but the emitter supports only literal-return multi-function output and does not yet lower preserved parameters, locals, expressions, calls, or control flow",
+    "stage1_to_stage2": "BLOCKED_NOT_STARTED",
+    "stage3": "NOT_STARTED"
+  },
+  "evidence": {
+    "pool_audit": "reports/selfhost/stage1/call-argument-pool-audit.json",
+    "pool_raw_transcript": "reports/selfhost/stage1/call-argument-pool-audit.native-linux-x86_64.txt",
+    "platform": "Linux x86-64 guest"
+  }
+}
