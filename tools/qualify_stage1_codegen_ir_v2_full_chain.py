@@ -40,6 +40,15 @@ DEFAULT_REPORT = (
 EXTRA_GUARD_TESTS = (
     "tests/test_stage1_codegen_ir_v2_call_arguments.py",
     "tests/test_stage1_codegen_ir_v2_local_qualifier.py",
+    "tests/test_stage1_codegen_ir_v2_full_chain.py",
+)
+
+_EXPECTED_RUNTIME_ERRORS = (
+    LocalNativeQualificationError,
+    OSError,
+    RuntimeError,
+    ValueError,
+    subprocess.SubprocessError,
 )
 
 
@@ -95,32 +104,44 @@ def run_full_chain(
     )
     guard_tests_pass = guard_tests.get("status") == "PASS" or not run_guard_tests
 
-    canonical_source = SOURCE.read_text(encoding="utf-8")
-    call_argument_guard = audit_call_arguments(
-        canonical_source=canonical_source,
-        closure=_load_closure(CLOSURE),
-    )
-    call_argument_guard_pass = (
-        call_argument_guard.get("status") == "PASS_STATIC_CALL_ARGUMENT_MODEL"
+    call_argument_guard: dict[str, object] | None = None
+    call_argument_error: str | None = None
+    if guard_tests_pass:
+        try:
+            canonical_source = SOURCE.read_text(encoding="utf-8")
+            call_argument_guard = audit_call_arguments(
+                canonical_source=canonical_source,
+                closure=_load_closure(CLOSURE),
+            )
+        except (OSError, RuntimeError, ValueError, json.JSONDecodeError) as error:
+            call_argument_error = str(error)
+
+    call_argument_guard_pass = bool(
+        isinstance(call_argument_guard, dict)
+        and call_argument_guard.get("status") == "PASS_STATIC_CALL_ARGUMENT_MODEL"
         and call_argument_guard.get("parameter_candidate", {}).get(
             "safe_under_current_call_and_argument_capacities"
         ) is True
     )
 
     base_result: dict[str, object] | None = None
+    base_error: str | None = None
     local_native: dict[str, object] | None = None
     local_error: str | None = None
 
     if guard_tests_pass and call_argument_guard_pass:
-        base_result = base_chain.run_chain(
-            capacity_report_path=base_chain.DEFAULT_CAPACITY_REPORT,
-            parameter_report_path=base_chain.DEFAULT_PARAMETER_REPORT,
-            next_phase_report_path=base_chain.DEFAULT_NEXT_PHASE_REPORT,
-            local_preflight_report_path=base_chain.DEFAULT_LOCAL_PREFLIGHT_REPORT,
-            static_preflight_report_path=base_chain.DEFAULT_STATIC_PREFLIGHT_REPORT,
-            chain_report_path=base_chain_report_path,
-            run_tooling_tests=True,
-        )
+        try:
+            base_result = base_chain.run_chain(
+                capacity_report_path=base_chain.DEFAULT_CAPACITY_REPORT,
+                parameter_report_path=base_chain.DEFAULT_PARAMETER_REPORT,
+                next_phase_report_path=base_chain.DEFAULT_NEXT_PHASE_REPORT,
+                local_preflight_report_path=base_chain.DEFAULT_LOCAL_PREFLIGHT_REPORT,
+                static_preflight_report_path=base_chain.DEFAULT_STATIC_PREFLIGHT_REPORT,
+                chain_report_path=base_chain_report_path,
+                run_tooling_tests=True,
+            )
+        except _EXPECTED_RUNTIME_ERRORS as error:
+            base_error = str(error)
 
     base_pass = bool(
         base_result is not None
@@ -144,7 +165,7 @@ def run_full_chain(
                 static_preflight_report_path=base_chain.DEFAULT_LOCAL_PREFLIGHT_REPORT,
                 report_path=local_native_report_path,
             )
-        except (LocalNativeQualificationError, OSError, ValueError) as error:
+        except _EXPECTED_RUNTIME_ERRORS as error:
             local_error = str(error)
 
     local_native_pass = bool(
@@ -156,9 +177,19 @@ def run_full_chain(
     if not guard_tests_pass:
         status = "BLOCKED_AT_IR_V2_GUARD_TESTS"
         next_gate = "REPAIR_IR_V2_GUARD_TOOLING"
+    elif call_argument_error is not None:
+        status = "BLOCKED_AT_CALL_ARGUMENT_PREFLIGHT_ERROR"
+        next_gate = "REPAIR_CALL_ARGUMENT_PREFLIGHT_OR_CLOSURE_INPUT"
     elif not call_argument_guard_pass:
         status = "BLOCKED_AT_PARAMETER_CALL_ARGUMENT_PREFLIGHT"
-        next_gate = str(call_argument_guard.get("next"))
+        next_gate = (
+            str(call_argument_guard.get("next"))
+            if isinstance(call_argument_guard, dict)
+            else "REVIEW_CALL_ARGUMENT_PREFLIGHT"
+        )
+    elif base_error is not None:
+        status = "BLOCKED_AT_BASE_PARAMETER_CHAIN_ERROR"
+        next_gate = "REPAIR_BASE_PARAMETER_CHAIN_OR_ENVIRONMENT"
     elif not base_pass:
         status = "BLOCKED_IN_BASE_PARAMETER_CHAIN"
         next_gate = (
@@ -184,11 +215,13 @@ def run_full_chain(
         next_gate = "UNIFIED_VALUE_NAMESPACE_CANDIDATE_PREFLIGHT"
 
     result: dict[str, object] = {
-        "schema": "s3.selfhost.codegen-ir-v2-full-candidate-chain.v1",
+        "schema": "s3.selfhost.codegen-ir-v2-full-candidate-chain.v2",
         "canonical_source_mutated": False,
         "guard_tests": guard_tests,
         "call_argument_guard": call_argument_guard,
+        "call_argument_error": call_argument_error,
         "base_chain": base_result,
+        "base_chain_error": base_error,
         "local_native": local_native,
         "local_native_error": local_error,
         "status": status,
@@ -222,16 +255,26 @@ def main(argv: list[str] | None = None) -> int:
     )
     print(f"REPORT={args.report.resolve()}")
     print(f"GUARD_TESTS={result['guard_tests']['status']}")
-    call_model = result["call_argument_guard"]["canonical"]["model"]
-    parameter_model = result["call_argument_guard"]["parameter_candidate"]["model"]
-    print(f"CANONICAL_CALL_ARGUMENTS={call_model['total_call_arguments']}")
-    print(f"PARAMETER_CALL_ARGUMENTS={parameter_model['total_call_arguments']}")
-    print(f"PARAMETER_CALL_ARGUMENT_HEADROOM={parameter_model['call_argument_headroom']}")
+    call_guard = result.get("call_argument_guard")
+    if isinstance(call_guard, dict):
+        call_model = call_guard["canonical"]["model"]
+        parameter_model = call_guard["parameter_candidate"]["model"]
+        print(f"CANONICAL_CALL_ARGUMENTS={call_model['total_call_arguments']}")
+        print(f"PARAMETER_CALL_ARGUMENTS={parameter_model['total_call_arguments']}")
+        print(f"PARAMETER_CALL_ARGUMENT_HEADROOM={parameter_model['call_argument_headroom']}")
+    else:
+        print("CANONICAL_CALL_ARGUMENTS=NOT_AVAILABLE")
+        print("PARAMETER_CALL_ARGUMENTS=NOT_AVAILABLE")
+        print("PARAMETER_CALL_ARGUMENT_HEADROOM=NOT_AVAILABLE")
+    if result.get("call_argument_error"):
+        print(f"CALL_ARGUMENT_ERROR={result['call_argument_error']}")
     base = result.get("base_chain")
     print(
         "BASE_CHAIN_STATUS="
         + (str(base.get("chain_status")) if isinstance(base, dict) else "NOT_RUN")
     )
+    if result.get("base_chain_error"):
+        print(f"BASE_CHAIN_ERROR={result['base_chain_error']}")
     local_preflight = base.get("local_candidate_preflight", {}) if isinstance(base, dict) else {}
     print(f"LOCAL_STATIC_PREFLIGHT={local_preflight.get('status', 'NOT_RUN')}")
     print(f"LOCAL_NATIVE_QUALIFICATION_ALLOWED={local_preflight.get('native_qualification_allowed', False)}")
