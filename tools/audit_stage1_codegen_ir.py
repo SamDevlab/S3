@@ -129,7 +129,7 @@ def audit(source_path: Path, contract_path: Path) -> dict[str, object]:
             if not missing
             else "BLOCKED_MISSING_CODEGEN_IR_V2_LANES"
         ),
-        "native_linux_qualification_required": true if False else True,
+        "native_linux_qualification_required": True,
         "self_emit_claimed": False,
         "stage2_claimed": False
     }
