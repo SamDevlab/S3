@@ -149,6 +149,12 @@ def test_explicit_heavy_timeout_policy_is_bounded() -> None:
     assert policy.seconds == 180
 
 
+def test_stage1_compiler_seed_uses_heavy_self_hosting_timeout_policy() -> None:
+    policy = IMPACT.timeout_policy_for("tests/test_stage1_compiler_seed.py", 60)
+    assert policy.timeout_class is T4TimeoutClass.HEAVY_SELF_HOSTING
+    assert policy.seconds == 180
+
+
 def test_renderer_timeout_policy_uses_shared_evidence_budget() -> None:
     policy = IMPACT.timeout_policy_for("tests/test_s3_renderer_sign_text.py", 60)
     assert policy.timeout_class is T4TimeoutClass.HEAVY_RENDERER

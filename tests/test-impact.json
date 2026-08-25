@@ -23,6 +23,7 @@
       "tests/test_assembly_tokenizer.py": "HEAVY_RENDERER",
       "tests/test_compare_assembly_renderer.py": "HEAVY_RENDERER",
       "tests/test_decimal_functions.py": "HEAVY_SELF_HOSTING",
+      "tests/test_stage1_compiler_seed.py": "HEAVY_SELF_HOSTING",
       "tests/test_m268_assembly_frontend_closure.py": "HEAVY_SELF_HOSTING",
       "tests/test_m269_frontend_canary.py": "HEAVY_SELF_HOSTING",
       "tests/test_m150_renderer_component.py": "HEAVY_RENDERER",
