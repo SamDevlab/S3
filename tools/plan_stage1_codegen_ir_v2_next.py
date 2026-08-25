@@ -13,6 +13,13 @@ Important namespace rules:
   stream, not the final semantic def/use namespace. Parameter/local IDs remain
   logical reservations until a separately qualified namespace rebuild migrates
   or replaces that legacy stream.
+
+Important block rule:
+- the legacy verifier requires ``ir_block_count < 365``;
+- each newly represented match/while currently adds three synthetic blocks;
+- direct local-metadata work under the legacy pool is allowed only when at least
+  one additional control event can still fit. Otherwise the next gate is the
+  prepared packed 730-block capacity candidate.
 """
 
 from __future__ import annotations
@@ -36,6 +43,8 @@ DEFAULT_REPORT = (
 EVENT_CAPACITY = 1460
 VALUE_CAPACITY = 1460
 BLOCK_CAPACITY = 365
+STRICT_BLOCK_MAX_PASS = BLOCK_CAPACITY - 1
+BLOCKS_PER_STRUCTURAL_CONTROL = 3
 CALL_CAPACITY = 730
 CALL_ARGUMENT_CAPACITY = 746
 PARAMETER_VALUE_ID_DOMAIN_CAPACITY = 64
@@ -65,13 +74,15 @@ def _int(audit: dict[str, Any], key: str) -> int:
 
 def build_plan(parameter_report: dict[str, Any] | None) -> dict[str, Any]:
     base: dict[str, Any] = {
-        "schema": "s3.selfhost.codegen-ir-v2-next-phase-budget.v3",
+        "schema": "s3.selfhost.codegen-ir-v2-next-phase-budget.v4",
         "canonical_source_mutated": False,
         "native_evidence": parameter_report is not None,
         "capacities": {
             "events": EVENT_CAPACITY,
             "values": VALUE_CAPACITY,
             "blocks": BLOCK_CAPACITY,
+            "strict_block_max_pass": STRICT_BLOCK_MAX_PASS,
+            "blocks_per_structural_control": BLOCKS_PER_STRUCTURAL_CONTROL,
             "calls": CALL_CAPACITY,
             "call_arguments": CALL_ARGUMENT_CAPACITY,
             "parameter_value_id_domain": PARAMETER_VALUE_ID_DOMAIN_CAPACITY,
@@ -85,7 +96,9 @@ def build_plan(parameter_report: dict[str, Any] | None) -> dict[str, Any]:
     if parameter_report is None:
         base.update({
             "status": "WAITING_FOR_NATIVE_PARAMETER_REPORT",
+            "local_ir_v2_design_possible": False,
             "local_ir_v2_start_allowed": False,
+            "block_capacity_expansion_required_before_local_metadata": False,
             "unified_value_namespace_start_allowed": False,
             "reason": "Post-parameter native counts are required before selecting the next bounded source transform.",
         })
@@ -118,9 +131,6 @@ def build_plan(parameter_report: dict[str, Any] | None) -> dict[str, Any]:
     local_end = local_first + locals_count
     first_dynamic = local_end
 
-    # These IDs are planned semantic IDs. They do NOT yet coexist safely with
-    # the legacy structural numeric-token value stream, which currently also
-    # occupies [0, values). A later qualified rebuild must migrate/rewrite it.
     legacy_value_start = 0
     legacy_value_end = values
     symbol_overlap = max(
@@ -130,7 +140,12 @@ def build_plan(parameter_report: dict[str, Any] | None) -> dict[str, Any]:
     conservative_combined_required = values + local_end
     conservative_combined_fits = conservative_combined_required <= VALUE_CAPACITY
 
-    guards = {
+    strict_remaining_block_slots = STRICT_BLOCK_MAX_PASS - blocks
+    legacy_additional_control_budget = max(
+        0, strict_remaining_block_slots // BLOCKS_PER_STRUCTURAL_CONTROL
+    )
+
+    design_guards = {
         "parameter_count_fits_fixed_value_id_domain": (
             parameters <= PARAMETER_VALUE_ID_DOMAIN_CAPACITY
         ),
@@ -138,10 +153,16 @@ def build_plan(parameter_report: dict[str, Any] | None) -> dict[str, Any]:
         "planned_symbol_id_domain_fits_value_pool": local_end <= VALUE_CAPACITY,
         "event_headroom_positive": events < EVENT_CAPACITY,
         "legacy_value_headroom_positive": values < VALUE_CAPACITY,
-        "block_headroom_positive": blocks < BLOCK_CAPACITY,
+        "block_count_currently_below_legacy_limit": blocks < BLOCK_CAPACITY,
         "call_headroom_positive": calls < CALL_CAPACITY,
     }
-    local_start_allowed = all(guards.values())
+    local_design_possible = all(design_guards.values())
+    direct_legacy_block_pool_allowed = bool(
+        local_design_possible and legacy_additional_control_budget >= 1
+    )
+    block_expansion_required = bool(
+        local_design_possible and not direct_legacy_block_pool_allowed
+    )
 
     namespace_transition = {
         "legacy_structural_value_stream": {
@@ -171,13 +192,25 @@ def build_plan(parameter_report: dict[str, Any] | None) -> dict[str, Any]:
         "static_zero_counts_are_not_native_headroom": True,
     }
 
+    if not local_design_possible:
+        status = "BLOCKED_BY_NATIVE_CAPACITY"
+        next_gate = "CAPACITY_REDESIGN_BEFORE_LOCAL_IR_V2"
+    elif block_expansion_required:
+        status = "READY_FOR_BLOCK_CAPACITY_EXPANSION_BEFORE_LOCAL_IR_V2"
+        next_gate = "PACKED_730_BLOCK_CAPACITY_CANDIDATE"
+    else:
+        status = "READY_FOR_LOCAL_IR_V2_DESIGN"
+        next_gate = "LOCAL_IDENTITY_TYPE_MUTABILITY_FRAME_SLOT_CANDIDATE"
+
     base.update({
-        "status": "READY_FOR_LOCAL_IR_V2_DESIGN" if local_start_allowed else "BLOCKED_BY_NATIVE_CAPACITY",
+        "status": status,
         "native_parameter_audit": audit,
         "headroom": {
             "events": EVENT_CAPACITY - events,
             "legacy_values": VALUE_CAPACITY - values,
-            "blocks": BLOCK_CAPACITY - blocks,
+            "blocks_physical": BLOCK_CAPACITY - blocks,
+            "blocks_strict_pass": strict_remaining_block_slots,
+            "legacy_additional_structural_control_budget": legacy_additional_control_budget,
             "calls": CALL_CAPACITY - calls,
             "local_records": LOCAL_RECORD_CAPACITY - locals_count,
             "conservative_values_after_symbol_reservation": (
@@ -206,19 +239,23 @@ def build_plan(parameter_report: dict[str, Any] | None) -> dict[str, Any]:
             "collision_free_with_legacy_value_stream": symbol_overlap == 0,
         },
         "namespace_transition": namespace_transition,
-        "guards": guards,
-        "local_ir_v2_start_allowed": local_start_allowed,
-        # This stays false even if the conservative combined count fits: a
-        # concrete transform/verifier has not yet rebuilt the namespace.
+        "guards": design_guards,
+        "local_ir_v2_design_possible": local_design_possible,
+        "local_ir_v2_start_allowed": direct_legacy_block_pool_allowed,
+        "block_capacity_expansion_required_before_local_metadata": block_expansion_required,
+        "block_capacity_route": {
+            "legacy_capacity": BLOCK_CAPACITY,
+            "strict_max_pass": STRICT_BLOCK_MAX_PASS,
+            "native_blocks_used": blocks,
+            "additional_control_budget": legacy_additional_control_budget,
+            "candidate_capacity": 730,
+            "prepared_static_audit": "tools/audit_stage1_codegen_ir_v2_block_capacity.py",
+        },
         "unified_value_namespace_start_allowed": False,
-        "next": (
-            "LOCAL_IDENTITY_TYPE_MUTABILITY_FRAME_SLOT_CANDIDATE"
-            if local_start_allowed
-            else "CAPACITY_REDESIGN_BEFORE_LOCAL_IR_V2"
-        ),
+        "next": next_gate,
         "after_local_candidate": (
             "QUALIFY_VALUE_NAMESPACE_REBUILD_WITH_EXPLICIT_LEGACY_MIGRATION"
-            if local_start_allowed
+            if local_design_possible
             else "NOT_APPLICABLE"
         ),
     })
@@ -255,19 +292,23 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"REPORT={destination}")
     print(f"STATUS={report['status']}")
+    print(f"LOCAL_IR_V2_DESIGN_POSSIBLE={report['local_ir_v2_design_possible']}")
     print(f"LOCAL_IR_V2_START_ALLOWED={report['local_ir_v2_start_allowed']}")
+    print(f"BLOCK_CAPACITY_EXPANSION_REQUIRED={report['block_capacity_expansion_required_before_local_metadata']}")
     print(f"UNIFIED_VALUE_NAMESPACE_START_ALLOWED={report['unified_value_namespace_start_allowed']}")
     if "headroom" in report:
         print(f"EVENT_HEADROOM={report['headroom']['events']}")
         print(f"LEGACY_VALUE_HEADROOM={report['headroom']['legacy_values']}")
-        print(f"BLOCK_HEADROOM={report['headroom']['blocks']}")
+        print(f"BLOCK_STRICT_HEADROOM={report['headroom']['blocks_strict_pass']}")
+        print(f"LEGACY_CONTROL_BUDGET={report['headroom']['legacy_additional_structural_control_budget']}")
         print(f"LOCAL_RECORD_HEADROOM={report['headroom']['local_records']}")
         print(f"FIRST_DYNAMIC_VALUE_ID={report['value_id_reservations']['first_instruction_constant_or_result_id']}")
         print(f"LEGACY_VALUE_ID_OVERLAP={report['namespace_transition']['overlap_count']}")
         print(f"VALUE_NAMESPACE_MIGRATION_REQUIRED={report['namespace_transition']['migration_required']}")
         print(f"CONSERVATIVE_COMBINED_VALUE_SLOTS={report['namespace_transition']['conservative_no_compaction_required_slots']}")
+    print(f"NEXT={report.get('next')}")
     print("CANONICAL_SOURCE_MUTATED=False")
-    return 0 if report["local_ir_v2_start_allowed"] else 2
+    return 0 if report["local_ir_v2_design_possible"] else 2
 
 
 if __name__ == "__main__":
