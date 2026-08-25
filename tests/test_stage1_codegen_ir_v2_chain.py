@@ -141,7 +141,7 @@ def test_chain_stops_before_parameter_when_capacity_fails(
     assert result["canonical_source_mutated"] is False
 
 
-def test_chain_parameter_pass_produces_direct_local_budget_when_blocks_allow_it(
+def test_chain_parameter_pass_requires_concrete_local_control_preflight_when_blocks_allow_design(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
@@ -152,11 +152,12 @@ def test_chain_parameter_pass_produces_direct_local_budget_when_blocks_allow_it(
     assert result["chain_status"] == "PASS_THROUGH_PARAMETER_CANDIDATE"
     assert result["static_preflight"]["status"] == "PASS"
     assert result["static_preflight"]["block_capacity_design"] == "STATIC_BLOCK_CAPACITY_DESIGN_PASS"
-    assert result["next_phase_budget"]["status"] == "READY_FOR_LOCAL_IR_V2_DESIGN"
+    assert result["next_phase_budget"]["status"] == "READY_FOR_LOCAL_IR_V2_CANDIDATE_PREFLIGHT"
     assert result["next_phase_budget"]["local_ir_v2_design_possible"] is True
-    assert result["next_phase_budget"]["local_ir_v2_start_allowed"] is True
+    assert result["next_phase_budget"]["local_ir_v2_start_allowed"] is False
+    assert result["next_phase_budget"]["local_candidate_control_preflight_required"] is True
     assert result["next_phase_budget"]["block_capacity_expansion_required"] is False
-    assert result["next_phase_budget"]["next"] == "LOCAL_IDENTITY_TYPE_MUTABILITY_FRAME_SLOT_CANDIDATE"
+    assert result["next_phase_budget"]["next"] == "PREPARE_LOCAL_METADATA_CANDIDATE_AND_PROJECT_EXACT_CONTROL_DELTA"
     next_report = json.loads((tmp_path / "next.json").read_text(encoding="utf-8"))
     assert next_report["value_id_reservations"]["parameter_domain"]["end_exclusive"] == 64
     assert next_report["value_id_reservations"]["local_storage"]["start"] == 64
@@ -177,6 +178,7 @@ def test_chain_parameter_pass_routes_to_730_blocks_when_native_headroom_is_too_s
     assert result["chain_status"] == "PASS_THROUGH_PARAMETER_CANDIDATE"
     assert result["next_phase_budget"]["local_ir_v2_design_possible"] is True
     assert result["next_phase_budget"]["local_ir_v2_start_allowed"] is False
+    assert result["next_phase_budget"]["local_candidate_control_preflight_required"] is False
     assert result["next_phase_budget"]["block_capacity_expansion_required"] is True
     assert result["next_phase_budget"]["next"] == "PACKED_730_BLOCK_CAPACITY_CANDIDATE"
 
