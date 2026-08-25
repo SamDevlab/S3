@@ -2,8 +2,12 @@
 
 This audit intentionally does not qualify compiler behavior. It checks that the
 canonical Stage1 source still exposes the bounded physical banks assumed by the
-IR-v2 storage-reuse plan and proves the proposed mixed-radix encodings fit in a
-signed i64. Native Stage1 qualification remains mandatory for semantic PASS.
+IR-v2 storage-reuse plan, proves the proposed mixed-radix encodings fit in a
+signed i64, verifies the existing call-table layout, and identifies a safe
+lifetime frontier after which the legacy event banks are no longer read.
+
+A static PASS is only permission to attempt a native candidate. Native Stage1
+qualification remains mandatory for semantic PASS.
 """
 
 from __future__ import annotations
@@ -40,6 +44,7 @@ _ARRAY_DECL = re.compile(
     r"(?m)^\s*mut\s+(?P<name>[A-Za-z0-9_]+):\s*"
     r"(?P<type>i64|tryte|trit)\[(?P<size>\d+)\]\s*=\s*\["
 )
+_EVENT_BANK_REF = re.compile(r"\bir_ast_event_records_[0-3]\b")
 
 
 def instruction_record_limit() -> int:
@@ -152,6 +157,85 @@ def _numbered_banks(
     return result
 
 
+def _call_table_specs(
+    declarations: dict[str, tuple[str, int]],
+) -> dict[str, tuple[str, int] | None]:
+    fields: dict[str, tuple[str, int]] = {
+        "ir_call_callee": ("tryte", CALL_BANK_SIZE),
+        "ir_call_arg_start": ("tryte", CALL_BANK_SIZE),
+        "ir_call_arg_start_bank": ("tryte", CALL_BANK_SIZE),
+        "ir_call_arg_count": ("i64", CALL_BANK_SIZE),
+        "ir_call_flags": ("tryte", CALL_BANK_SIZE),
+        "ir_call_callee_1": ("tryte", CALL_BANK_SIZE),
+        "ir_call_arg_start_1": ("tryte", CALL_BANK_SIZE),
+        "ir_call_arg_start_bank_1": ("tryte", CALL_BANK_SIZE),
+        "ir_call_arg_count_1": ("i64", CALL_BANK_SIZE),
+        "ir_call_flags_1": ("tryte", CALL_BANK_SIZE),
+    }
+    return {name: declarations.get(name) for name in fields}
+
+
+def _call_table_layout_pass(
+    declarations: dict[str, tuple[str, int]],
+) -> bool:
+    expected: dict[str, tuple[str, int]] = {
+        "ir_call_callee": ("tryte", CALL_BANK_SIZE),
+        "ir_call_arg_start": ("tryte", CALL_BANK_SIZE),
+        "ir_call_arg_start_bank": ("tryte", CALL_BANK_SIZE),
+        "ir_call_arg_count": ("i64", CALL_BANK_SIZE),
+        "ir_call_flags": ("tryte", CALL_BANK_SIZE),
+        "ir_call_callee_1": ("tryte", CALL_BANK_SIZE),
+        "ir_call_arg_start_1": ("tryte", CALL_BANK_SIZE),
+        "ir_call_arg_start_bank_1": ("tryte", CALL_BANK_SIZE),
+        "ir_call_arg_count_1": ("i64", CALL_BANK_SIZE),
+        "ir_call_flags_1": ("tryte", CALL_BANK_SIZE),
+    }
+    return all(declarations.get(name) == spec for name, spec in expected.items())
+
+
+def _event_lifetime(source: str) -> dict[str, object]:
+    writer = source.find("match ir_ast_event_count < 1460:")
+    control_scan = source.find("mut control_scan_index: i64 = 0")
+    legacy_event_verifier = source.find("mut event_verify_index: i64 = 0")
+    post_event_verifier = (
+        source.find("mut verify_index: i64 = 0", legacy_event_verifier)
+        if legacy_event_verifier >= 0
+        else -1
+    )
+    ordered = (
+        writer >= 0
+        and control_scan > writer
+        and legacy_event_verifier > control_scan
+        and post_event_verifier > legacy_event_verifier
+    )
+    refs_after_frontier = (
+        _EVENT_BANK_REF.findall(source[post_event_verifier:])
+        if post_event_verifier >= 0
+        else []
+    )
+    return {
+        "writer_anchor_found": writer >= 0,
+        "control_scan_anchor_found": control_scan >= 0,
+        "legacy_event_verifier_anchor_found": legacy_event_verifier >= 0,
+        "post_event_verifier_anchor_found": post_event_verifier >= 0,
+        "anchors_ordered": ordered,
+        "event_bank_refs_after_frontier": len(refs_after_frontier),
+        "safe_overwrite_frontier_proven": bool(ordered and not refs_after_frontier),
+        "frontier": (
+            "AFTER_LEGACY_EVENT_VERIFIER_BEFORE_REMAINING_VERIFIER_AND_PIPELINE_DECISION"
+            if ordered and not refs_after_frontier
+            else "NOT_PROVEN"
+        ),
+        "required_v2_sequence": [
+            "preserve legacy event records through control lowering",
+            "preserve legacy event records through legacy event verifier",
+            "rewrite event banks in place as IR-v2 instructions only after the proven frontier",
+            "run a new IR-v2 verifier over rewritten instruction/value/block/call records",
+            "allow general emitter only after IR-v2 verifier PASS",
+        ],
+    }
+
+
 def audit(source: str) -> dict[str, object]:
     declarations = _declarations(source)
     event_banks = _numbered_banks(declarations, "ir_ast_event_records_")
@@ -162,6 +246,7 @@ def audit(source: str) -> dict[str, object]:
         name: declarations.get(name)
         for name in ("ir_call_args_0", "ir_call_args_1", "ir_call_args_2")
     }
+    call_table_specs = _call_table_specs(declarations)
     block_fields = {
         name: declarations.get(name)
         for name in (
@@ -187,6 +272,7 @@ def audit(source: str) -> dict[str, object]:
     ) == CALL_ARG_BANK_SIZES and all(
         spec is not None and spec[0] == "i64" for spec in call_arg_specs.values()
     )
+    call_table_layout_pass = _call_table_layout_pass(declarations)
     block_layout_pass = all(
         spec == ("i64", BLOCK_CAPACITY) for spec in block_fields.values()
     )
@@ -222,6 +308,7 @@ def audit(source: str) -> dict[str, object]:
         VALUE_ID_RADIX - 1,
     )
 
+    event_lifetime = _event_lifetime(source)
     structural_markers = {
         "event_count_drives_instruction_count": "ir_instruction_count = ir_ast_event_count" in source,
         "events_currently_pack_owner_operand_offset": (
@@ -238,6 +325,7 @@ def audit(source: str) -> dict[str, object]:
     guards = {
         "event_bank_layout": event_layout_pass,
         "value_bank_layout": value_layout_pass,
+        "call_table_layout": call_table_layout_pass,
         "call_argument_layout": call_arg_layout_pass,
         "block_layout": block_layout_pass,
         "instruction_record_fits_signed_i64": instruction_limit <= SIGNED_I64_MAX,
@@ -247,10 +335,13 @@ def audit(source: str) -> dict[str, object]:
         "event_instruction_cardinality_marker": structural_markers[
             "event_count_drives_instruction_count"
         ],
+        "event_bank_safe_overwrite_frontier": bool(
+            event_lifetime["safe_overwrite_frontier_proven"]
+        ),
     }
 
     return {
-        "schema": "s3.selfhost.codegen-ir-v2-storage-reuse-audit.v1",
+        "schema": "s3.selfhost.codegen-ir-v2-storage-reuse-audit.v2",
         "status": "STATIC_STORAGE_AUDIT_PASS" if all(guards.values()) else "STATIC_STORAGE_AUDIT_FAIL",
         "native_evidence": False,
         "canonical_source_mutated": False,
@@ -259,6 +350,10 @@ def audit(source: str) -> dict[str, object]:
             "value_banks": {str(k): list(v) for k, v in sorted(value_banks.items())},
             "instruction_banks_observed": {
                 str(k): list(v) for k, v in sorted(instruction_banks.items())
+            },
+            "call_table": {
+                name: list(spec) if spec is not None else None
+                for name, spec in call_table_specs.items()
             },
             "call_argument_banks": {
                 name: list(spec) if spec is not None else None
@@ -294,16 +389,17 @@ def audit(source: str) -> dict[str, object]:
             },
             "targets_reused_from_existing_block_arrays": True,
         },
+        "event_bank_lifetime": event_lifetime,
         "structural_markers": structural_markers,
         "guards": guards,
         "storage_decision": {
             "new_four_bank_instruction_arrays": "NOT_SELECTED",
             "new_call_result_array": "NOT_SELECTED",
             "new_terminator_condition_array": "NOT_SELECTED",
-            "event_banks_as_instruction_storage": "CANDIDATE_REQUIRES_NATIVE_ONE_TO_ONE_OPCODE_QUALIFICATION",
-            "value_banks_as_unified_value_storage": "CANDIDATE_LITERAL_PAYLOAD_AUDIT_PENDING",
+            "event_banks_as_instruction_storage": "CANDIDATE_AFTER_PROVEN_OVERWRITE_FRONTIER_AND_REQUIRES_NATIVE_IR_V2_VERIFIER",
+            "value_banks_as_unified_value_storage": "CANDIDATE_REQUIRES_NAMESPACE_REBUILD_AND_LITERAL_PAYLOAD_QUALIFICATION",
         },
-        "qualification_rule": "Static PASS only proves layout/encoding feasibility. Native Stage1 candidate execution must prove semantics before source promotion.",
+        "qualification_rule": "Static PASS only proves layout/encoding/lifetime feasibility. Native Stage1 candidate execution plus an IR-v2 verifier must prove semantics before source promotion.",
     }
 
 
@@ -320,6 +416,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"STATUS={result['status']}")
     print(f"INSTRUCTION_RECORD_MAX={result['instruction_record']['max_encoded']}")
     print(f"TERMINATOR_RECORD_MAX={result['terminator_record']['max_encoded']}")
+    print(f"CALL_TABLE_LAYOUT={result['guards']['call_table_layout']}")
+    print(f"EVENT_OVERWRITE_FRONTIER={result['event_bank_lifetime']['frontier']}")
     print("NATIVE_EVIDENCE=False")
     return 0 if result["status"] == "STATIC_STORAGE_AUDIT_PASS" else 2
 
