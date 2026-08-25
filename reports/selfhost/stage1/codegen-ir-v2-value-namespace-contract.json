@@ -37,36 +37,18 @@
   },
   "packed_header": {
     "word_type": "signed i64 non-negative header",
-    "fields": [
-      "kind",
-      "owner_function_id_or_global",
-      "type_id",
-      "payload_or_reference"
-    ],
-    "domains": {
-      "kind": 8,
-      "owner": 65,
-      "type": 366,
-      "payload_or_reference": 1461
-    },
-    "maximum_encoded": 278309879,
+    "fields": ["kind", "owner_function_id_or_global", "type_id", "payload_or_reference"],
+    "domains": {"kind": 8, "owner": 65, "type": 366, "payload_or_reference": 1461},
+    "maximum_encoded": 278057519,
     "signed_i64_max": 9223372036854775807,
     "fits_signed_i64": true
   },
   "constant_representation": {
-    "interning_key": [
-      "type_id",
-      "literal_value"
-    ],
+    "interning_key": ["type_id", "literal_value"],
     "owner": "GLOBAL_IMMUTABLE",
     "deduplicate_repeated_literals": true,
     "reason": "Repeated immutable constants, especially fixed-array zero initializers, must not consume one semantic value record per lexical occurrence.",
-    "inline_range": {
-      "min": -730,
-      "max": 730,
-      "encoding": "literal + 730",
-      "physical_slots": 1
-    },
+    "inline_range": {"min": -730, "max": 730, "encoding": "literal + 730", "physical_slots": 1},
     "wide_literal": {
       "physical_slots": 2,
       "header_kind": "TYPED_CONSTANT_WIDE",
