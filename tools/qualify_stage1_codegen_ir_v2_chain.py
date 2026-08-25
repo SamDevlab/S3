@@ -1,10 +1,11 @@
 """Run prepared Stage1 IR-v2 candidate gates in fail-closed sequence.
 
 The chain is read-only with respect to the canonical compiler source. It first
-runs focused IR-v2 tooling tests and static storage/block/initializer preflight,
-then qualifies compaction capacity, then (only on PASS) the packed parameter
-lane. If parameters pass, it computes the next gate directly from native
-headroom: either local metadata or the packed 730-block capacity candidate.
+runs focused IR-v2 tooling tests (including its own orchestration tests) and
+static storage/block/initializer preflight, then qualifies compaction capacity,
+then (only on PASS) the packed parameter lane. If parameters pass, it computes
+the next gate directly from native headroom: either a concrete local-candidate
+control-delta preflight or the packed 730-block capacity candidate.
 It never promotes source, starts Stage2/Stage3, or claims self-hosting.
 """
 
@@ -51,6 +52,7 @@ TOOLING_TEST_FILES = (
     "tests/test_stage1_codegen_ir_v2_block_capacity.py",
     "tests/test_stage1_array_initializer_audit.py",
     "tests/test_stage1_codegen_ir_v2_static_preflight.py",
+    "tests/test_stage1_codegen_ir_v2_chain.py",
 )
 
 
@@ -158,7 +160,7 @@ def run_chain(
         else {}
     )
     result = {
-        "schema": "s3.selfhost.codegen-ir-v2-native-chain.v5",
+        "schema": "s3.selfhost.codegen-ir-v2-native-chain.v6",
         "canonical_source_mutated": False,
         "tooling_tests": tooling_tests,
         "static_preflight": {
@@ -202,6 +204,9 @@ def run_chain(
             "status": next_phase["status"],
             "local_ir_v2_design_possible": next_phase.get("local_ir_v2_design_possible", False),
             "local_ir_v2_start_allowed": next_phase["local_ir_v2_start_allowed"],
+            "local_candidate_control_preflight_required": next_phase.get(
+                "local_candidate_control_preflight_required", False
+            ),
             "block_capacity_expansion_required": next_phase.get(
                 "block_capacity_expansion_required_before_local_metadata", False
             ),
@@ -257,6 +262,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"NEXT_PHASE_BUDGET={result['next_phase_budget']['status']}")
     print(f"LOCAL_IR_V2_DESIGN_POSSIBLE={result['next_phase_budget']['local_ir_v2_design_possible']}")
     print(f"LOCAL_IR_V2_START_ALLOWED={result['next_phase_budget']['local_ir_v2_start_allowed']}")
+    print(f"LOCAL_CANDIDATE_CONTROL_PREFLIGHT_REQUIRED={result['next_phase_budget']['local_candidate_control_preflight_required']}")
     print(f"BLOCK_CAPACITY_EXPANSION_REQUIRED={result['next_phase_budget']['block_capacity_expansion_required']}")
     print(f"UNIFIED_VALUE_NAMESPACE_START_ALLOWED={result['next_phase_budget']['unified_value_namespace_start_allowed']}")
     print(f"NEXT={result['next_phase_budget']['next']}")
