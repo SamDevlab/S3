@@ -12,39 +12,65 @@ git pull --ff-only
 python3 tools/qualify_stage1_codegen_ir_v2_chain.py
 
 The chain performs, in order:
-1. focused IR-v2 tooling/unit tests;
-2. static physical-storage reuse audit;
-3. static fixed-array initializer audit;
-4. compaction-only native Stage1 candidate;
-5. validation of the compaction report;
-6. packed parameter IR-v2 static preflight;
-7. packed parameter IR-v2 native Stage1 candidate;
-8. fail-closed verifier/bounded-capacity checks;
-9. native-driven next-phase budget for locals/value IDs.
+1. focused IR-v2 tooling/unit tests, including the chain's own control-flow tests;
+2. static physical-storage reuse audit on the canonical source;
+3. static physical-storage reuse audit on the exact compaction+parameter candidate;
+4. static packed 730-block design audit;
+5. static fixed-array initializer audit;
+6. compaction-only native Stage1 candidate;
+7. validation of the compaction report;
+8. packed parameter IR-v2 static preflight;
+9. packed parameter IR-v2 native Stage1 candidate;
+10. fail-closed verifier/bounded-capacity checks;
+11. native-driven next-phase budget for locals/value IDs/blocks.
 
-Expected best-case output:
+Expected best-case output when the legacy block pool still has design headroom:
 TOOLING_TESTS=PASS
 STATIC_PREFLIGHT=PASS
 STORAGE_REUSE=STATIC_STORAGE_AUDIT_PASS
+EVENT_OVERWRITE_FRONTIER=AFTER_LEGACY_EVENT_VERIFIER_BEFORE_REMAINING_VERIFIER_AND_PIPELINE_DECISION
+BLOCK_CAPACITY_DESIGN=STATIC_BLOCK_CAPACITY_DESIGN_PASS
 ARRAY_INITIALIZERS=STATIC_ARRAY_INITIALIZER_AUDIT_PASS
 ZERO_INITIALIZER_ITEMS=<measured static source count>
 CAPACITY_GATE=PASS
 PARAMETER_GATE=PASS
-NEXT_PHASE_BUDGET=READY_FOR_LOCAL_IR_V2_DESIGN
-LOCAL_IR_V2_START_ALLOWED=True
+NEXT_PHASE_BUDGET=READY_FOR_LOCAL_IR_V2_CANDIDATE_PREFLIGHT
+LOCAL_IR_V2_DESIGN_POSSIBLE=True
+LOCAL_IR_V2_START_ALLOWED=False
+LOCAL_CANDIDATE_CONTROL_PREFLIGHT_REQUIRED=True
+BLOCK_CAPACITY_EXPANSION_REQUIRED=False
+NEXT=PREPARE_LOCAL_METADATA_CANDIDATE_AND_PROJECT_EXACT_CONTROL_DELTA
 CHAIN_STATUS=PASS_THROUGH_PARAMETER_CANDIDATE
 CANONICAL_SOURCE_MUTATED=False
 STAGE2=NOT_STARTED
 STAGE3=NOT_STARTED
 
-Reports written:
+IMPORTANT: LOCAL_IR_V2_START_ALLOWED=False is EXPECTED in this best-case result.
+It is not a regression. Native parameter headroom proves only that a local
+representation is worth designing; it does not prove that the not-yet-built
+local source transform fits the legacy block pool. The concrete local candidate
+must first have its exact source/control delta measured against this native
+parameter baseline.
+
+If native parameter block headroom cannot fit even one additional structural
+control event, the correct next gate is instead:
+NEXT=PACKED_730_BLOCK_CAPACITY_CANDIDATE
+BLOCK_CAPACITY_EXPANSION_REQUIRED=True
+
+Reports written/prepared:
 reports/selfhost/stage1/codegen-ir-v2-storage-reuse-audit.json
+reports/selfhost/stage1/codegen-ir-v2-parameter-candidate-storage-reuse-audit.json
+reports/selfhost/stage1/codegen-ir-v2-block-capacity-audit.json
 reports/selfhost/stage1/codegen-ir-v2-array-initializer-audit.json
 reports/selfhost/stage1/codegen-ir-v2-static-preflight.json
 reports/selfhost/stage1/codegen-ir-v2-capacity-native-candidate.json
 reports/selfhost/stage1/codegen-ir-v2-parameters-native-candidate.json
 reports/selfhost/stage1/codegen-ir-v2-next-phase-budget.json
 reports/selfhost/stage1/codegen-ir-v2-native-chain.json
+
+Additional local-metadata design audit prepared but NOT a native PASS:
+tools/audit_stage1_codegen_ir_v2_local_metadata.py
+tests/test_stage1_codegen_ir_v2_local_metadata.py
 
 Important:
 - The chain NEVER promotes or rewrites the canonical s3c_stage1.s3.
@@ -54,16 +80,23 @@ Important:
 - Do NOT run a promoter with --in-place yet.
 - Preserve all JSON reports and send the final console output/report for review.
 
-Storage-reuse strategy prepared before native qualification:
-- reuse the four existing 365-slot AST/event banks as a candidate physical IR-v2 instruction stream instead of adding four new large arrays;
-- reuse the four existing 365-slot value banks for the later unified value namespace;
-- keep existing block target arrays and repack ir_block_terminator with kind/condition/return IDs;
-- link call result IDs through the IR-v2 instruction record instead of adding a 730-entry call-result array;
-- mixed-radix instruction record encodes owner/block/opcode/operandA/operandB/result/aux IDs inside signed i64;
+Storage/block strategy prepared before native qualification:
+- reuse the four existing 365-slot AST/event banks as candidate physical IR-v2 instruction storage only after the legacy event verifier;
+- audit that same storage assumption on the exact compaction+parameter candidate before native work;
+- reuse the four existing 365-slot value banks only after an explicit semantic namespace rebuild;
+- candidate block capacity is 730 by reusing two existing i64[365] block arrays as packed block banks;
+- packed block owns function owner, terminator kind, target A/B, condition value ID and return value ID;
+- instruction record is OWNERLESS: block/opcode/operandA/operandB/result/aux IDs;
+- instruction owner is derived via block_id -> packed block owner;
+- ownerless instruction max at 730 blocks is 213156320415447743, within signed i64;
+- the rejected ownerful layout would require 13855160827004103359 and exceeds signed i64;
 - aux is an ID/reference only, not an arbitrary raw i64 payload;
-- event -> IR-v2 instruction mapping must be proven one-to-one before any in-place rewrite is promoted.
+- event -> IR-v2 instruction mapping/in-place rewrite still requires a new native IR-v2 verifier.
 
-The initializer audit only quantifies source structure. A large count of all-zero initializer items is NOT automatically value-pool headroom. Any aggregate zero-init transform still requires a native Stage1 candidate proving identical behavior and reduced semantic value usage.
+The initializer audit only quantifies source structure. A large count of all-zero
+initializer items is NOT automatically value-pool headroom. Any aggregate
+zero-init transform still requires a native Stage1 candidate proving identical
+behavior and reduced semantic value usage.
 
 Compaction qualification is fail-closed and models its intentional source deltas:
 - 2 assignment statements removed from the self-source;
@@ -72,20 +105,33 @@ Compaction qualification is fail-closed and models its intentional source deltas
 - expected compacted assignments: 73;
 - static projections are never substituted for native measurements.
 
-The prepared parameter phase uses ONE packed i64[64] lane instead of five separate arrays, encoding:
+The prepared parameter phase uses ONE packed i64[64] lane instead of five
+separate arrays, encoding:
 owner_function_id + name_identity + type_id + abi_index + value_id.
 
-If the parameter candidate passes, the next-phase planner reserves:
-parameters = [0, parameter_count)
-locals = [parameter_count, parameter_count + local_count)
-first dynamic instruction/constant/result value ID = parameter_count + local_count
-and computes headroom from the ACTUAL native parameter-candidate audit.
+Semantic value-ID plan is intentionally separate from the legacy structural
+numeric-token stream:
+parameter fixed domain = [0,64)
+parameter IDs actually used = [0,parameter_count)
+local IDs = [64,64+local_count)
+first dynamic instruction/constant/result ID = 64 + local_count
+
+The current legacy ir_value_records overlap these planned semantic IDs. They
+must be rebuilt/rebased under a separately qualified namespace transform; they
+must never be silently reinterpreted as collision-free semantic IDs.
+
+Current local behavior in Stage1 is only structural: keyword identity 87 (`mut`)
+increments local_count and produces event opcode 6. Name/type/owner/frame/value
+metadata is not yet retained. The local design audit proposes one packed i64[64]
+lane and a scalar current-function frame-slot counter, but LOCAL_TRANSFORM remains
+NOT_IMPLEMENTED until the exact candidate preflight exists.
 
 Current canonical source remains unchanged:
 sha256=20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341
 bytes=166984
 
 FULL_SELF_HOSTING=NO
-SELF_EMIT=BLOCKED_IR_V2_INCOMPLETE
+GENERAL_EMITTER=BLOCKED_IR_V2_INCOMPLETE
+SELF_EMIT=NOT_STARTED
 STAGE2=NOT_STARTED
 STAGE3=NOT_STARTED
