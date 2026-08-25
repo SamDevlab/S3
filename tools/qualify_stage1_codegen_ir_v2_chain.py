@@ -1,16 +1,19 @@
 """Run prepared Stage1 IR-v2 candidate gates in fail-closed sequence.
 
 The chain is read-only with respect to the canonical compiler source. It first
-runs static storage/initializer preflight, then qualifies compaction capacity,
-then (only on PASS) the packed parameter lane. If parameters pass, it computes
-the next-phase local/value budget directly from that native audit. It never
-promotes source, starts Stage2/Stage3, or claims self-hosting.
+runs the focused IR-v2 tooling tests and static storage/initializer preflight,
+then qualifies compaction capacity, then (only on PASS) the packed parameter
+lane. If parameters pass, it computes the next-phase local/value budget from
+that native audit. It never promotes source, starts Stage2/Stage3, or claims
+self-hosting.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import shutil
+import subprocess
 from pathlib import Path
 
 from tools.plan_stage1_codegen_ir_v2_next import (
@@ -39,6 +42,15 @@ DEFAULT_CHAIN_REPORT = (
     / "stage1"
     / "codegen-ir-v2-native-chain.json"
 )
+TOOLING_TEST_FILES = (
+    "tests/test_stage1_codegen_ir_contract.py",
+    "tests/test_stage1_codegen_ir_capacity_tools.py",
+    "tests/test_stage1_codegen_ir_v2_parameters.py",
+    "tests/test_stage1_codegen_ir_v2_next_plan.py",
+    "tests/test_stage1_codegen_ir_v2_storage_reuse.py",
+    "tests/test_stage1_array_initializer_audit.py",
+    "tests/test_stage1_codegen_ir_v2_static_preflight.py",
+)
 
 
 def _write(path: Path, value: dict[str, object]) -> None:
@@ -51,6 +63,30 @@ def _write(path: Path, value: dict[str, object]) -> None:
     )
 
 
+def _run_tooling_tests() -> dict[str, object]:
+    completed = subprocess.run(
+        [
+            shutil.which("python3") or "python3",
+            "-m",
+            "pytest",
+            "-q",
+            *TOOLING_TEST_FILES,
+        ],
+        cwd=str(ROOT),
+        capture_output=True,
+        text=True,
+        check=False,
+        shell=False,
+    )
+    return {
+        "status": "PASS" if completed.returncode == 0 else "FAIL",
+        "returncode": completed.returncode,
+        "files": list(TOOLING_TEST_FILES),
+        "stdout": completed.stdout,
+        "stderr": completed.stderr,
+    }
+
+
 def run_chain(
     *,
     capacity_report_path: Path,
@@ -58,12 +94,25 @@ def run_chain(
     next_phase_report_path: Path,
     chain_report_path: Path,
     static_preflight_report_path: Path = DEFAULT_STATIC_PREFLIGHT_REPORT,
+    run_tooling_tests: bool = True,
 ) -> dict[str, object]:
-    static_preflight = run_static_preflight(report_path=static_preflight_report_path)
-    static_pass = static_preflight.get("native_chain_allowed") is True
+    tooling_tests = (
+        _run_tooling_tests()
+        if run_tooling_tests
+        else {"status": "SKIPPED_BY_TEST_HARNESS", "returncode": None, "files": list(TOOLING_TEST_FILES)}
+    )
+    tooling_pass = tooling_tests.get("status") == "PASS" or not run_tooling_tests
+
+    static_preflight: dict[str, object] | None = None
+    if tooling_pass:
+        static_preflight = run_static_preflight(report_path=static_preflight_report_path)
+    static_pass = bool(
+        static_preflight is not None
+        and static_preflight.get("native_chain_allowed") is True
+    )
 
     capacity: dict[str, object] | None = None
-    if static_pass:
+    if tooling_pass and static_pass:
         capacity = qualify_capacity(
             report_path=capacity_report_path,
             run_contract_tests=True,
@@ -91,7 +140,9 @@ def run_chain(
     next_phase = build_next_phase_plan(parameter if parameter_pass else None)
     _write(next_phase_report_path, next_phase)
 
-    if not static_pass:
+    if not tooling_pass:
+        chain_status = "BLOCKED_AT_TOOLING_TESTS"
+    elif not static_pass:
         chain_status = "BLOCKED_AT_STATIC_PREFLIGHT"
     elif not capacity_pass:
         chain_status = "BLOCKED_AT_CAPACITY_CANDIDATE"
@@ -101,14 +152,27 @@ def run_chain(
         chain_status = "PASS_THROUGH_PARAMETER_CANDIDATE"
 
     result = {
-        "schema": "s3.selfhost.codegen-ir-v2-native-chain.v3",
+        "schema": "s3.selfhost.codegen-ir-v2-native-chain.v4",
         "canonical_source_mutated": False,
+        "tooling_tests": tooling_tests,
         "static_preflight": {
-            "status": "PASS" if static_pass else "FAIL",
+            "status": "PASS" if static_pass else "FAIL" if static_preflight is not None else "NOT_RUN",
             "report": str(static_preflight_report_path.resolve()),
-            "storage_reuse": static_preflight.get("storage_reuse_audit", {}).get("status"),
-            "array_initializers": static_preflight.get("array_initializer_audit", {}).get("status"),
-            "zero_initializer_items": static_preflight.get("array_initializer_audit", {}).get("zero_initializer_items"),
+            "storage_reuse": (
+                static_preflight.get("storage_reuse_audit", {}).get("status")
+                if static_preflight is not None
+                else None
+            ),
+            "array_initializers": (
+                static_preflight.get("array_initializer_audit", {}).get("status")
+                if static_preflight is not None
+                else None
+            ),
+            "zero_initializer_items": (
+                static_preflight.get("array_initializer_audit", {}).get("zero_initializer_items")
+                if static_preflight is not None
+                else None
+            ),
         },
         "capacity_gate": {
             "status": "PASS" if capacity_pass else "FAIL" if capacity is not None else "NOT_RUN",
@@ -154,8 +218,10 @@ def main(argv: list[str] | None = None) -> int:
         parameter_report_path=args.parameter_report,
         next_phase_report_path=args.next_phase_report,
         chain_report_path=args.chain_report,
+        run_tooling_tests=True,
     )
     print(f"CHAIN_REPORT={args.chain_report.resolve()}")
+    print(f"TOOLING_TESTS={result['tooling_tests']['status']}")
     print(f"STATIC_PREFLIGHT={result['static_preflight']['status']}")
     print(f"STORAGE_REUSE={result['static_preflight']['storage_reuse']}")
     print(f"ARRAY_INITIALIZERS={result['static_preflight']['array_initializers']}")
