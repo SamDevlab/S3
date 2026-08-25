@@ -1,9 +1,8 @@
 """Static audit for the Stage1 codegen-complete IR contract.
 
-This tool is deliberately not a compiler gate by itself. It checks that the
-S3-authored Stage1 source exposes the structural lanes required by the IR-v2
-contract and reports storage-bank pressure. Native Linux execution remains the
-authoritative qualification for counts and self-emission.
+This tool is deliberately not a compiler gate by itself. Contract-owned source
+markers keep the audit synchronized with representation decisions while native
+Linux execution remains authoritative for implementation counts and behavior.
 """
 
 from __future__ import annotations
@@ -18,30 +17,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SOURCE = ROOT / "selfhost" / "compiler" / "s3c_stage1.s3"
 DEFAULT_CONTRACT = ROOT / "reports" / "selfhost" / "stage1" / "codegen-ir-v2-contract.json"
-
-
-REQUIRED_MARKERS = {
-    "parameter_name_identity": "ir_param_name",
-    "parameter_type": "ir_param_type",
-    "parameter_owner": "ir_param_function",
-    "parameter_value_id": "ir_param_value_id",
-    "parameter_abi_index": "ir_param_abi_index",
-    "local_name_identity": "ir_local_name",
-    "local_type": "ir_local_type",
-    "local_owner": "ir_local_function",
-    "local_mutability": "ir_local_mutability",
-    "local_value_id": "ir_local_value_id",
-    "local_frame_slot": "ir_local_frame_slot",
-    "instruction_operand_a": "ir_instruction_operand_a",
-    "instruction_operand_b": "ir_instruction_operand_b",
-    "instruction_result": "ir_instruction_result",
-    "instruction_block": "ir_instruction_block",
-    "call_instruction": "ir_call_instruction",
-    "call_result": "ir_call_result",
-    "terminator_condition": "ir_block_condition_value",
-    "terminator_return": "ir_block_return_value",
-}
-
 
 ARRAY_DECLARATION = re.compile(
     r"\bmut\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*):\s*"
@@ -68,20 +43,38 @@ def _bank_summary(source: str, prefix: str) -> dict[str, object]:
     }
 
 
+def _contract_markers(contract: dict[str, object]) -> dict[str, str]:
+    raw = contract.get("required_source_markers")
+    if not isinstance(raw, dict) or not raw:
+        raise ValueError("IR-v2 contract must define non-empty required_source_markers")
+    markers: dict[str, str] = {}
+    for name, marker in raw.items():
+        if not isinstance(name, str) or not name:
+            raise ValueError("IR-v2 marker names must be non-empty strings")
+        if not isinstance(marker, str) or not marker:
+            raise ValueError(f"IR-v2 marker {name} must be a non-empty string")
+        markers[name] = marker
+    return markers
+
+
 def audit(source_path: Path, contract_path: Path) -> dict[str, object]:
     source_bytes = source_path.read_bytes()
     source = source_bytes.decode("utf-8")
-    contract = json.loads(contract_path.read_text(encoding="utf-8"))
+    contract_value = json.loads(contract_path.read_text(encoding="utf-8"))
+    if not isinstance(contract_value, dict):
+        raise ValueError("IR-v2 contract must be a JSON object")
+    contract = contract_value
 
-    required = {
-        name: marker in source for name, marker in REQUIRED_MARKERS.items()
-    }
+    markers = _contract_markers(contract)
+    required = {name: marker in source for name, marker in markers.items()}
     missing = [name for name, present in required.items() if not present]
 
     storage = {
         "ast_event_records": _bank_summary(source, "ir_ast_event_records"),
         "instruction_records": _bank_summary(source, "ir_instruction_records"),
         "value_records": _bank_summary(source, "ir_value_records"),
+        "parameter_records": _bank_summary(source, "ir_parameter_records"),
+        "local_records": _bank_summary(source, "ir_local_records"),
         "call_records": {
             "callee": _bank_summary(source, "ir_call_callee"),
             "argument_count": _bank_summary(source, "ir_call_arg_count"),
@@ -89,29 +82,24 @@ def audit(source_path: Path, contract_path: Path) -> dict[str, object]:
         "call_argument_records": _bank_summary(source, "ir_call_args"),
     }
 
-    observed = contract["observed_self_source"]
+    observed = contract.get("observed_self_source")
+    if not isinstance(observed, dict):
+        raise ValueError("IR-v2 contract observed_self_source is missing")
     event_capacity = int(storage["ast_event_records"]["total_slots"])
     observed_events = int(observed["instructions_or_events"])
     observed_discards = int(observed["discards"])
     event_headroom = event_capacity - observed_events
-
-    # Projection only: the current structural event stream records the `discard`
-    # keyword as an event in addition to separately preserved calls. Dropping the
-    # aggregate discard-keyword event while retaining the side-effecting call/store
-    # instruction is the first compaction candidate. Native execution must prove
-    # the actual post-change count before this can become a capacity PASS.
     projected_events_without_discard_keyword = observed_events - observed_discards
-    projected_headroom_without_discard_keyword = (
-        event_capacity - projected_events_without_discard_keyword
-    )
+    projected_headroom_without_discard_keyword = event_capacity - projected_events_without_discard_keyword
 
     return {
-        "schema": "s3.selfhost.codegen-ir-v2-static-audit.v2",
+        "schema": "s3.selfhost.codegen-ir-v2-static-audit.v3",
         "source": str(source_path.relative_to(ROOT)),
         "source_bytes": len(source_bytes),
         "source_sha256": hashlib.sha256(source_bytes).hexdigest(),
         "contract": str(contract_path.relative_to(ROOT)),
-        "contract_schema": contract["schema"],
+        "contract_schema": contract.get("schema"),
+        "contract_owned_markers": markers,
         "required_lane_markers": required,
         "missing_required_lane_markers": missing,
         "storage": storage,
@@ -129,22 +117,21 @@ def audit(source_path: Path, contract_path: Path) -> dict[str, object]:
                     "Calls/stores remain explicit instructions; only the redundant "
                     "aggregate discard-keyword event is a compaction candidate."
                 ),
-                "status": "PROJECTION_ONLY_NATIVE_REMEASUREMENT_REQUIRED",
+                "status": "PROJECTION_ONLY_NATIVE_REMEASUREMENT_REQUIRED"
             },
             "note": (
-                "All counts outside the projection are from the last native source gate. "
-                "Any source change requires a new native Linux measurement before a "
-                "capacity gate can pass."
-            ),
+                "Baseline counts are historical native evidence. Any source change "
+                "requires a new native Linux measurement before implementation PASS."
+            )
         },
         "static_status": (
-            "IR_V2_MARKERS_PRESENT_NATIVE_QUALIFICATION_REQUIRED"
+            "IR_V2_CONTRACT_MARKERS_PRESENT_NATIVE_QUALIFICATION_REQUIRED"
             if not missing
             else "BLOCKED_MISSING_CODEGEN_IR_V2_LANES"
         ),
-        "native_linux_qualification_required": True,
+        "native_linux_qualification_required": true if False else True,
         "self_emit_claimed": False,
-        "stage2_claimed": False,
+        "stage2_claimed": False
     }
 
 
