@@ -1,8 +1,8 @@
 """Static audit for the Stage1 codegen-complete IR contract.
 
-This tool is deliberately not a compiler gate by itself.  It checks that the
+This tool is deliberately not a compiler gate by itself. It checks that the
 S3-authored Stage1 source exposes the structural lanes required by the IR-v2
-contract and reports storage-bank pressure.  Native Linux execution remains the
+contract and reports storage-bank pressure. Native Linux execution remains the
 authoritative qualification for counts and self-emission.
 """
 
@@ -92,10 +92,21 @@ def audit(source_path: Path, contract_path: Path) -> dict[str, object]:
     observed = contract["observed_self_source"]
     event_capacity = int(storage["ast_event_records"]["total_slots"])
     observed_events = int(observed["instructions_or_events"])
+    observed_discards = int(observed["discards"])
     event_headroom = event_capacity - observed_events
 
+    # Projection only: the current structural event stream records the `discard`
+    # keyword as an event in addition to separately preserved calls. Dropping the
+    # aggregate discard-keyword event while retaining the side-effecting call/store
+    # instruction is the first compaction candidate. Native execution must prove
+    # the actual post-change count before this can become a capacity PASS.
+    projected_events_without_discard_keyword = observed_events - observed_discards
+    projected_headroom_without_discard_keyword = (
+        event_capacity - projected_events_without_discard_keyword
+    )
+
     return {
-        "schema": "s3.selfhost.codegen-ir-v2-static-audit.v1",
+        "schema": "s3.selfhost.codegen-ir-v2-static-audit.v2",
         "source": str(source_path.relative_to(ROOT)),
         "source_bytes": len(source_bytes),
         "source_sha256": hashlib.sha256(source_bytes).hexdigest(),
@@ -106,12 +117,24 @@ def audit(source_path: Path, contract_path: Path) -> dict[str, object]:
         "storage": storage,
         "capacity_observation": {
             "native_baseline_events": observed_events,
+            "native_baseline_discard_events": observed_discards,
             "static_event_slots": event_capacity,
             "static_event_headroom_against_native_baseline": event_headroom,
             "preflight_required": event_headroom <= 0,
+            "compaction_projection": {
+                "strategy": "DO_NOT_SERIALIZE_AGGREGATE_DISCARD_KEYWORD_EVENT",
+                "projected_events": projected_events_without_discard_keyword,
+                "projected_headroom": projected_headroom_without_discard_keyword,
+                "side_effect_rule": (
+                    "Calls/stores remain explicit instructions; only the redundant "
+                    "aggregate discard-keyword event is a compaction candidate."
+                ),
+                "status": "PROJECTION_ONLY_NATIVE_REMEASUREMENT_REQUIRED",
+            },
             "note": (
-                "This comparison uses the last native count only. Any source change "
-                "requires a new native Linux measurement before a capacity gate can pass."
+                "All counts outside the projection are from the last native source gate. "
+                "Any source change requires a new native Linux measurement before a "
+                "capacity gate can pass."
             ),
         },
         "static_status": (
