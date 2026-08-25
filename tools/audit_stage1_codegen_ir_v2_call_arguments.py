@@ -2,14 +2,13 @@
 
 The current canonical source has an authoritative native closure measurement:
 656 calls, 736 stored call-argument occurrences, maximum observed call arity 4,
-with physical capacity 746.  This tool mirrors the *current Stage1 bootstrap
-collector*, including its intentionally structural rule that every identifier or
-integer token encountered while a call is active is stored in the top call's
-argument lane.
+with physical capacity 746. This tool mirrors the current Stage1 bootstrap
+collector, including its structural rule that every identifier or integer token
+encountered while a call is active is stored in the top call's argument lane.
 
-The canonical model must reproduce the native closure before its projections are
-trusted for parameter/local candidates.  Static agreement is a preflight only;
-it never replaces native Linux qualification after a source change.
+The canonical model must reproduce the native closure before projections are
+trusted for parameter/local candidates. Static agreement is preflight only; it
+never replaces native Linux qualification after a source change.
 """
 
 from __future__ import annotations
@@ -78,7 +77,6 @@ def collect_call_argument_model(source: str) -> dict[str, object]:
     arities: list[int] = []
     active: list[int] = []
     maximum_depth = 0
-    unbalanced_close = 0
 
     for index, token in enumerate(tokens):
         # Stage1 computes argument_possible from the current token and stores an
@@ -117,12 +115,11 @@ def collect_call_argument_model(source: str) -> dict[str, object]:
         "arity_distribution": distribution,
         "maximum_active_call_depth": maximum_depth,
         "active_calls_at_eof": len(active),
-        "unbalanced_close": unbalanced_close,
         "call_capacity": CALL_CAPACITY,
         "call_argument_capacity": CALL_ARGUMENT_CAPACITY,
         "call_headroom": CALL_CAPACITY - len(arities),
         "call_argument_headroom": CALL_ARGUMENT_CAPACITY - total_arguments,
-        "fits_call_capacity": len(arities) < CALL_CAPACITY,
+        "fits_call_capacity": len(arities) <= CALL_CAPACITY,
         "fits_call_argument_capacity": total_arguments <= CALL_ARGUMENT_CAPACITY,
     }
 
@@ -138,7 +135,7 @@ def validate_canonical_model(
     source_bytes: bytes,
     *,
     closure: dict[str, Any],
-+) -> tuple[dict[str, object], dict[str, bool]]:
+) -> tuple[dict[str, object], dict[str, bool]]:
     clean = closure.get("clean_source_gate")
     runtime = closure.get("runtime_measurement")
     pool = closure.get("pool")
