@@ -159,8 +159,13 @@ def run_chain(
         if static_preflight is not None
         else {}
     )
+    parameter_storage_preflight = (
+        static_preflight.get("parameter_candidate_storage_reuse_audit", {})
+        if static_preflight is not None
+        else {}
+    )
     result = {
-        "schema": "s3.selfhost.codegen-ir-v2-native-chain.v6",
+        "schema": "s3.selfhost.codegen-ir-v2-native-chain.v7",
         "canonical_source_mutated": False,
         "tooling_tests": tooling_tests,
         "static_preflight": {
@@ -175,6 +180,10 @@ def run_chain(
                 static_preflight.get("storage_reuse_audit", {}).get("event_overwrite_frontier")
                 if static_preflight is not None
                 else None
+            ),
+            "parameter_candidate_storage_reuse": parameter_storage_preflight.get("status"),
+            "parameter_candidate_event_overwrite_frontier": parameter_storage_preflight.get(
+                "event_overwrite_frontier"
             ),
             "block_capacity_design": block_preflight.get("status"),
             "projected_parameter_blocks": block_preflight.get("projected_parameter_blocks"),
@@ -252,6 +261,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"STATIC_PREFLIGHT={result['static_preflight']['status']}")
     print(f"STORAGE_REUSE={result['static_preflight']['storage_reuse']}")
     print(f"EVENT_OVERWRITE_FRONTIER={result['static_preflight']['event_overwrite_frontier']}")
+    print(f"PARAMETER_CANDIDATE_STORAGE_REUSE={result['static_preflight']['parameter_candidate_storage_reuse']}")
+    print(f"PARAMETER_CANDIDATE_EVENT_OVERWRITE_FRONTIER={result['static_preflight']['parameter_candidate_event_overwrite_frontier']}")
     print(f"BLOCK_CAPACITY_DESIGN={result['static_preflight']['block_capacity_design']}")
     print(f"PROJECTED_PARAMETER_BLOCKS={result['static_preflight']['projected_parameter_blocks']}")
     print(f"STATIC_STRICT_CONTROL_BUDGET={result['static_preflight']['static_strict_control_budget']}")
