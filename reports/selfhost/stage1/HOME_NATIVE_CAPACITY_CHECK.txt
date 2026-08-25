@@ -1,0 +1,39 @@
+S3 PR #268 — HOME NATIVE CAPACITY CHECK
+
+Branch:
+feature/actual-stage1-compiler-seed-20260824
+
+Purpose:
+Qualify the compaction-first IR-v2 capacity candidate on real Linux x86-64 without mutating the canonical compiler source.
+
+Run only after pulling the latest branch:
+
+git pull --ff-only
+python3 tools/qualify_stage1_codegen_ir_v2_capacity.py
+
+Expected success indicators:
+CONTRACT_TESTS=PASS
+AUDIT_INVARIANTS=PASS
+EVENT_HEADROOM=PASS
+CAPACITY_CANDIDATE=PASS_NATIVE_CANDIDATE
+CANONICAL_COMMIT_ALLOWED=True
+
+The command writes:
+reports/selfhost/stage1/codegen-ir-v2-capacity-native-candidate.json
+
+Do NOT run T4.
+Do NOT run Stage2 or Stage3.
+Do NOT run benchmarks.
+Do NOT run the promoter with --in-place yet.
+
+After the command finishes, preserve the JSON and send its output/report for review. The promoter is already implemented and defaults to validation-only. It requires complete Linux x86-64 evidence, contract/capacity test PASS, invariant preservation, deterministic candidate SHA, real event headroom, and the expected fail-closed emitter boundary. Its --in-place path uses temporary files, rollback, and post-write verification for the canonical source+manifest pair.
+
+If --skip-contract-tests is used for diagnosis, CANONICAL_COMMIT_ALLOWED must remain False and promotion is blocked.
+
+Current canonical source remains unchanged:
+sha256=20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341
+bytes=166984
+
+FULL_SELF_HOSTING=NO
+STAGE2=NOT_STARTED
+STAGE3=NOT_STARTED
