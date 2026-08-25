@@ -1,10 +1,14 @@
 """Plan the next Stage1 codegen-IR-v2 phase from native parameter evidence.
 
-This tool never mutates the canonical compiler.  It consumes the parameter
-candidate report when available and computes bounded headroom plus deterministic
-parameter/local value-ID reservations.  Without native parameter evidence it
-returns WAITING_FOR_NATIVE_PARAMETER_REPORT rather than substituting static
-projections for execution evidence.
+This tool never mutates the canonical compiler. It consumes a native parameter
+candidate report and computes bounded headroom plus the *planned* symbol/value
+ID domains for the local-metadata and later unified-value phases.
+
+Important: the current ``ir_value_records`` stream is a legacy structural
+numeric-token stream, not the final semantic def/use namespace. Parameter/local
+value IDs therefore remain logical reservations until a separately qualified
+namespace rebuild migrates/replaces the legacy value stream. The planner must
+never label those overlapping domains collision-free.
 """
 
 from __future__ import annotations
@@ -49,14 +53,14 @@ def _load(path: Path) -> dict[str, Any]:
 
 def _int(audit: dict[str, Any], key: str) -> int:
     value = audit.get(key)
-    if not isinstance(value, int) or value < 0:
+    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
         raise PlanError(f"missing or invalid native audit field: {key}")
     return value
 
 
 def build_plan(parameter_report: dict[str, Any] | None) -> dict[str, Any]:
     base: dict[str, Any] = {
-        "schema": "s3.selfhost.codegen-ir-v2-next-phase-budget.v1",
+        "schema": "s3.selfhost.codegen-ir-v2-next-phase-budget.v2",
         "canonical_source_mutated": False,
         "native_evidence": parameter_report is not None,
         "capacities": {
@@ -76,6 +80,7 @@ def build_plan(parameter_report: dict[str, Any] | None) -> dict[str, Any]:
         base.update({
             "status": "WAITING_FOR_NATIVE_PARAMETER_REPORT",
             "local_ir_v2_start_allowed": False,
+            "unified_value_namespace_start_allowed": False,
             "reason": "Post-parameter native counts are required before selecting the next bounded source transform.",
         })
         return base
@@ -106,38 +111,94 @@ def build_plan(parameter_report: dict[str, Any] | None) -> dict[str, Any]:
     local_end = local_first + locals_count
     first_dynamic = local_end
 
+    # These IDs are planned semantic IDs. They do NOT yet coexist safely with
+    # the legacy structural numeric-token value stream, which currently also
+    # occupies [0, values). A later qualified rebuild must migrate/rewrite it.
+    legacy_value_start = 0
+    legacy_value_end = values
+    symbol_overlap = max(
+        0,
+        min(local_end, legacy_value_end) - max(parameter_first, legacy_value_start),
+    )
+    conservative_combined_required = values + local_end
+    conservative_combined_fits = conservative_combined_required <= VALUE_CAPACITY
+
     guards = {
         "parameter_count_fits_reserved_domain": parameters <= LOCAL_RECORD_CAPACITY,
         "local_count_fits_packed_lane": locals_count <= LOCAL_RECORD_CAPACITY,
-        "storage_value_reservation_fits_value_pool": local_end < VALUE_CAPACITY,
+        "planned_symbol_id_domain_fits_value_pool": local_end <= VALUE_CAPACITY,
         "event_headroom_positive": events < EVENT_CAPACITY,
-        "value_headroom_positive": values < VALUE_CAPACITY,
+        "legacy_value_headroom_positive": values < VALUE_CAPACITY,
         "block_headroom_positive": blocks < BLOCK_CAPACITY,
         "call_headroom_positive": calls < CALL_CAPACITY,
     }
+    local_start_allowed = all(guards.values())
+
+    namespace_transition = {
+        "legacy_structural_value_stream": {
+            "start": legacy_value_start,
+            "end_exclusive": legacy_value_end,
+            "count": values,
+            "status": "LEGACY_NUMERIC_TOKEN_STREAM_NOT_FINAL_DEF_USE_NAMESPACE",
+        },
+        "planned_symbol_value_domain": {
+            "start": parameter_first,
+            "end_exclusive": local_end,
+            "count": local_end,
+        },
+        "overlap_count": symbol_overlap,
+        "legacy_and_planned_domains_currently_overlap": symbol_overlap > 0,
+        "migration_required": symbol_overlap > 0,
+        "allowed_migration": (
+            "REBUILD_OR_REBASE_LEGACY_VALUE_RECORDS_UNDER_SEPARATELY_QUALIFIED_TRANSFORM"
+        ),
+        "forbidden_interpretation": (
+            "DO_NOT_TREAT_PARAMETER_OR_LOCAL_VALUE_IDS_AS_ALREADY_COLLISION_FREE_WITH_LEGACY_IR_VALUE_RECORDS"
+        ),
+        "conservative_no_compaction_required_slots": conservative_combined_required,
+        "conservative_no_compaction_fits_value_capacity": conservative_combined_fits,
+        "value_compaction_required_before_unified_rebuild": not conservative_combined_fits,
+        "aggregate_zero_init_may_reduce_required_slots": True,
+        "static_zero_counts_are_not_native_headroom": True,
+    }
 
     base.update({
-        "status": "READY_FOR_LOCAL_IR_V2_DESIGN" if all(guards.values()) else "BLOCKED_BY_NATIVE_CAPACITY",
+        "status": "READY_FOR_LOCAL_IR_V2_DESIGN" if local_start_allowed else "BLOCKED_BY_NATIVE_CAPACITY",
         "native_parameter_audit": audit,
         "headroom": {
             "events": EVENT_CAPACITY - events,
-            "values": VALUE_CAPACITY - values,
+            "legacy_values": VALUE_CAPACITY - values,
             "blocks": BLOCK_CAPACITY - blocks,
             "calls": CALL_CAPACITY - calls,
             "local_records": LOCAL_RECORD_CAPACITY - locals_count,
+            "conservative_values_after_symbol_reservation": (
+                VALUE_CAPACITY - conservative_combined_required
+            ),
         },
         "value_id_reservations": {
+            "status": "LOGICAL_RESERVATION_PENDING_NAMESPACE_REBUILD",
             "parameters": {"start": parameter_first, "end_exclusive": parameter_end},
             "local_storage": {"start": local_first, "end_exclusive": local_end},
             "first_instruction_constant_or_result_id": first_dynamic,
-            "collision_free": parameter_end <= local_first and local_end <= VALUE_CAPACITY,
+            "parameter_and_local_ranges_nonoverlapping": parameter_end <= local_first,
+            "planned_symbol_domain_fits": local_end <= VALUE_CAPACITY,
+            "collision_free_with_legacy_value_stream": symbol_overlap == 0,
         },
+        "namespace_transition": namespace_transition,
         "guards": guards,
-        "local_ir_v2_start_allowed": all(guards.values()),
+        "local_ir_v2_start_allowed": local_start_allowed,
+        # This stays false even if the conservative combined count fits: a
+        # concrete transform/verifier has not yet rebuilt the namespace.
+        "unified_value_namespace_start_allowed": False,
         "next": (
             "LOCAL_IDENTITY_TYPE_MUTABILITY_FRAME_SLOT_CANDIDATE"
-            if all(guards.values())
+            if local_start_allowed
             else "CAPACITY_REDESIGN_BEFORE_LOCAL_IR_V2"
+        ),
+        "after_local_candidate": (
+            "QUALIFY_VALUE_NAMESPACE_REBUILD_WITH_EXPLICIT_LEGACY_MIGRATION"
+            if local_start_allowed
+            else "NOT_APPLICABLE"
         ),
     })
     return base
@@ -174,12 +235,16 @@ def main(argv: list[str] | None = None) -> int:
     print(f"REPORT={destination}")
     print(f"STATUS={report['status']}")
     print(f"LOCAL_IR_V2_START_ALLOWED={report['local_ir_v2_start_allowed']}")
+    print(f"UNIFIED_VALUE_NAMESPACE_START_ALLOWED={report['unified_value_namespace_start_allowed']}")
     if "headroom" in report:
         print(f"EVENT_HEADROOM={report['headroom']['events']}")
-        print(f"VALUE_HEADROOM={report['headroom']['values']}")
+        print(f"LEGACY_VALUE_HEADROOM={report['headroom']['legacy_values']}")
         print(f"BLOCK_HEADROOM={report['headroom']['blocks']}")
         print(f"LOCAL_RECORD_HEADROOM={report['headroom']['local_records']}")
         print(f"FIRST_DYNAMIC_VALUE_ID={report['value_id_reservations']['first_instruction_constant_or_result_id']}")
+        print(f"LEGACY_VALUE_ID_OVERLAP={report['namespace_transition']['overlap_count']}")
+        print(f"VALUE_NAMESPACE_MIGRATION_REQUIRED={report['namespace_transition']['migration_required']}")
+        print(f"CONSERVATIVE_COMBINED_VALUE_SLOTS={report['namespace_transition']['conservative_no_compaction_required_slots']}")
     print("CANONICAL_SOURCE_MUTATED=False")
     return 0 if report["local_ir_v2_start_allowed"] else 2
 
