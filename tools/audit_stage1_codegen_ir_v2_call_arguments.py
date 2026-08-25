@@ -87,7 +87,8 @@ def collect_call_argument_model(source: str) -> dict[str, object]:
             arities[active[-1]] += 1
 
         if token.kind == 4 and token.value == 1:
-            if not _is_function_signature_open(tokens, index):
+            previous_is_identifier = index > 0 and tokens[index - 1].kind == 1
+            if previous_is_identifier and not _is_function_signature_open(tokens, index):
                 call_id = len(arities)
                 arities.append(0)
                 active.append(call_id)
@@ -97,7 +98,9 @@ def collect_call_argument_model(source: str) -> dict[str, object]:
         if token.kind == 4 and token.value == 2:
             if active:
                 active.pop()
-            # A function-signature ')' has no active call; that is not an error.
+            # This intentionally mirrors the current bootstrap collector: any
+            # ')' closes one active call level, even when an inner grouping '('
+            # did not itself open a call level.
             continue
 
     total_arguments = sum(arities)
