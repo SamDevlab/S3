@@ -18,7 +18,7 @@ CONTRACT = ROOT / "reports" / "selfhost" / "stage1" / "codegen-ir-v2-contract.js
 
 def test_codegen_ir_v2_contract_records_closed_pool_and_real_baseline() -> None:
     contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
-    assert contract["schema"] == "s3.selfhost.codegen-ir-v2-contract.v1"
+    assert contract["schema"] == "s3.selfhost.codegen-ir-v2-contract.v2"
     assert contract["closed_prerequisite"]["status"] == "RESOLVED"
     assert contract["closed_prerequisite"]["required"] == 736
     assert contract["closed_prerequisite"]["capacity"] == 746
@@ -31,31 +31,56 @@ def test_codegen_ir_v2_contract_records_closed_pool_and_real_baseline() -> None:
     assert observed["discards"] == 699
 
 
-def test_codegen_ir_v2_contract_requires_real_def_use_and_terminators() -> None:
+def test_codegen_ir_v2_contract_requires_current_packed_def_use_shape() -> None:
     contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
     instruction = set(contract["required_lanes"]["instruction"])
-    terminator = set(contract["required_lanes"]["terminator"])
+    terminator = set(contract["required_lanes"]["block_terminator"])
     parameter = set(contract["required_lanes"]["parameter"])
     local = set(contract["required_lanes"]["local"])
+    call = set(contract["required_lanes"]["call"])
 
-    assert {"operand_a_value_id", "operand_b_value_id", "result_value_id"} <= instruction
-    assert {"condition_value_id_or_none", "return_value_id_or_none"} <= terminator
+    assert {"operand_a_value_id_or_none", "operand_b_value_id_or_none", "result_value_id_or_none"} <= instruction
+    assert "owner_function_id" not in instruction
+    assert {"condition_value_id_or_none", "return_value_id_or_none", "owner_function_id"} <= terminator
     assert {"name_identity", "type_id", "value_id", "abi_index"} <= parameter
-    assert {"name_identity", "type_id", "mutability", "value_id", "frame_slot"} <= local
+    assert {
+        "name_identity",
+        "type_id",
+        "mutability",
+        "storage_kind",
+        "local_ordinal",
+        "fixed_extent",
+        "value_id",
+    } <= local
+    assert "result_value_id_or_no_result" not in call
+    assert contract["representation_rules"]["instruction_owner"].startswith("Do not duplicate")
+    assert contract["representation_rules"]["call_result"].startswith("Do not add")
+
+
+def test_contract_owns_source_markers_instead_of_auditor_hardcoding() -> None:
+    contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
+    markers = contract["required_source_markers"]
+    assert markers["parameter_packed_metadata"] == "ir_parameter_records"
+    assert markers["local_packed_metadata"] == "ir_local_records"
+    assert markers["semantic_value_namespace"] == "ir_semantic_value"
+    assert markers["instruction_v2_pack"] == "pack_ir_v2_instruction"
+    assert markers["packed_block_v2"] == "pack_ir_v2_block"
 
 
 def test_static_audit_fails_closed_on_current_pre_v2_source() -> None:
     result = audit(SOURCE, CONTRACT)
     assert result["static_status"] == "BLOCKED_MISSING_CODEGEN_IR_V2_LANES"
+    assert result["contract_schema"] == "s3.selfhost.codegen-ir-v2-contract.v2"
     assert result["native_linux_qualification_required"] is True
     assert result["self_emit_claimed"] is False
     assert result["stage2_claimed"] is False
 
     missing = set(result["missing_required_lane_markers"])
-    assert "parameter_value_id" in missing
-    assert "instruction_result" in missing
-    assert "call_result" in missing
-    assert "terminator_condition" in missing
+    assert "parameter_packed_metadata" in missing
+    assert "local_packed_metadata" in missing
+    assert "semantic_value_namespace" in missing
+    assert "instruction_v2_pack" in missing
+    assert "terminator_condition_linkage" in missing
 
 
 def test_static_audit_detects_zero_event_headroom_at_native_baseline() -> None:
