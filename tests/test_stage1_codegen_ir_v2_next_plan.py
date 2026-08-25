@@ -27,6 +27,7 @@ def test_missing_native_parameter_report_stays_fail_closed() -> None:
     plan = build_plan(None)
     assert plan["status"] == "WAITING_FOR_NATIVE_PARAMETER_REPORT"
     assert plan["native_evidence"] is False
+    assert plan["local_ir_v2_design_possible"] is False
     assert plan["local_ir_v2_start_allowed"] is False
     assert plan["unified_value_namespace_start_allowed"] is False
 
@@ -34,7 +35,9 @@ def test_missing_native_parameter_report_stays_fail_closed() -> None:
 def test_good_native_parameter_report_reserves_logical_symbol_ranges_but_requires_migration() -> None:
     plan = build_plan(_parameter_report())
     assert plan["status"] == "READY_FOR_LOCAL_IR_V2_DESIGN"
+    assert plan["local_ir_v2_design_possible"] is True
     assert plan["local_ir_v2_start_allowed"] is True
+    assert plan["block_capacity_expansion_required_before_local_metadata"] is False
     assert plan["unified_value_namespace_start_allowed"] is False
 
     ranges = plan["value_id_reservations"]
@@ -52,17 +55,37 @@ def test_good_native_parameter_report_reserves_logical_symbol_ranges_but_require
     assert transition["legacy_structural_value_stream"]["end_exclusive"] == 1300
     assert transition["planned_symbol_value_domain"]["end_exclusive"] == 87
     assert transition["overlap_count"] == 87
-    assert transition["legacy_and_planned_domains_currently_overlap"] is True
     assert transition["migration_required"] is True
     assert transition["conservative_no_compaction_required_slots"] == 1387
     assert transition["conservative_no_compaction_fits_value_capacity"] is True
-    assert transition["value_compaction_required_before_unified_rebuild"] is False
 
     assert plan["headroom"]["events"] == 560
     assert plan["headroom"]["legacy_values"] == 160
     assert plan["headroom"]["conservative_values_after_symbol_reservation"] == 73
-    assert plan["headroom"]["blocks"] == 45
+    assert plan["headroom"]["blocks_physical"] == 45
+    assert plan["headroom"]["blocks_strict_pass"] == 44
+    assert plan["headroom"]["legacy_additional_structural_control_budget"] == 14
     assert plan["headroom"]["local_records"] == 41
+
+
+def test_near_full_legacy_block_pool_routes_to_730_block_candidate() -> None:
+    plan = build_plan(_parameter_report(ir_block_count=362))
+    assert plan["local_ir_v2_design_possible"] is True
+    assert plan["headroom"]["blocks_strict_pass"] == 2
+    assert plan["headroom"]["legacy_additional_structural_control_budget"] == 0
+    assert plan["local_ir_v2_start_allowed"] is False
+    assert plan["block_capacity_expansion_required_before_local_metadata"] is True
+    assert plan["status"] == "READY_FOR_BLOCK_CAPACITY_EXPANSION_BEFORE_LOCAL_IR_V2"
+    assert plan["next"] == "PACKED_730_BLOCK_CAPACITY_CANDIDATE"
+    assert plan["block_capacity_route"]["candidate_capacity"] == 730
+
+
+def test_one_additional_control_event_is_enough_to_keep_direct_local_route_open() -> None:
+    plan = build_plan(_parameter_report(ir_block_count=361))
+    assert plan["headroom"]["blocks_strict_pass"] == 3
+    assert plan["headroom"]["legacy_additional_structural_control_budget"] == 1
+    assert plan["local_ir_v2_start_allowed"] is True
+    assert plan["block_capacity_expansion_required_before_local_metadata"] is False
 
 
 def test_locals_start_after_fixed_parameter_domain_even_when_few_parameters_are_used() -> None:
@@ -77,9 +100,8 @@ def test_locals_start_after_fixed_parameter_domain_even_when_few_parameters_are_
 
 def test_conservative_value_overflow_does_not_fake_unified_namespace_readiness() -> None:
     plan = build_plan(_parameter_report(ir_value_count=1400))
-    # Local metadata may still be designed/qualified as a separate packed lane.
+    assert plan["local_ir_v2_design_possible"] is True
     assert plan["local_ir_v2_start_allowed"] is True
-    # But unified values remain blocked until a real migration/compaction transform.
     assert plan["unified_value_namespace_start_allowed"] is False
     transition = plan["namespace_transition"]
     assert transition["conservative_no_compaction_required_slots"] == 1487
@@ -87,23 +109,24 @@ def test_conservative_value_overflow_does_not_fake_unified_namespace_readiness()
     assert transition["value_compaction_required_before_unified_rebuild"] is True
 
 
-def test_native_capacity_exhaustion_blocks_local_phase() -> None:
+def test_native_capacity_exhaustion_blocks_local_design() -> None:
     plan = build_plan(_parameter_report(ir_block_count=365))
     assert plan["status"] == "BLOCKED_BY_NATIVE_CAPACITY"
-    assert plan["guards"]["block_headroom_positive"] is False
+    assert plan["guards"]["block_count_currently_below_legacy_limit"] is False
+    assert plan["local_ir_v2_design_possible"] is False
     assert plan["local_ir_v2_start_allowed"] is False
 
 
 def test_too_many_locals_blocks_packed_lane() -> None:
     plan = build_plan(_parameter_report(local_count=65))
     assert plan["guards"]["local_count_fits_packed_lane"] is False
-    assert plan["local_ir_v2_start_allowed"] is False
+    assert plan["local_ir_v2_design_possible"] is False
 
 
 def test_too_many_parameters_blocks_fixed_parameter_domain() -> None:
     plan = build_plan(_parameter_report(parameter_count=65))
     assert plan["guards"]["parameter_count_fits_fixed_value_id_domain"] is False
-    assert plan["local_ir_v2_start_allowed"] is False
+    assert plan["local_ir_v2_design_possible"] is False
 
 
 def test_non_pass_parameter_report_is_rejected() -> None:
