@@ -2,8 +2,10 @@
 
 ## Candidate
 
-- `HEAD=2b9a391dc1376d34cd13a946a16d92693d389898`
 - `FINAL_TESTED_SOURCE_HEAD=2b9a391dc1376d34cd13a946a16d92693d389898`
+- `T4_TESTED_HEAD=d8089a65fe43201e65dd6d0245a629d3c68eeae2`
+- `SOURCE_CHANGED_AFTER_T4=NO`
+- `T4_RERUN_REQUIRED=NO`
 - canonical source: `selfhost/compiler/s3c_stage1.s3`
 - source bytes: `166984`
 - source SHA-256: `20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341`
@@ -22,7 +24,7 @@ POOL_HEADROOM=10
 IR_CALL_ARGUMENT_POOL_CAPACITY=PASS
 ```
 
-The native Linux x86-64 post-fix marker measured 656 calls, 736 arguments,
+Native Linux x86-64 post-fix evidence measured 656 calls, 736 arguments,
 maximum arity 4, and first unstorable argument index `-1`. The closure evidence
 is in `call-argument-pool-closure.json`.
 
@@ -54,11 +56,10 @@ LOOP_EMISSION=BLOCKED_EMITTER_LOOP
 RETURN_EMISSION=PASS_LITERAL_FIXTURE_ONLY
 ```
 
-The supported multi-function literal-return fixture still emits deterministic
-native Linux x86-64 assembly and links successfully. The canonical self-source
-was executed from the clean post-fix build and returned exit code `2` with
-`S3_STAGE1_EMITTER_BLOCKED`; it produced no assembly. This is a fail-closed
-result, not a fabricated partial assembly.
+The supported multi-function literal-return fixture emits deterministic native
+Linux x86-64 assembly and links successfully. The canonical self-source was
+executed from the clean post-fix build and returned exit code `2` with
+`S3_STAGE1_EMITTER_BLOCKED`; it produced no assembly.
 
 ```text
 SELF_EMIT=BLOCKED
@@ -70,17 +71,41 @@ BENCHMARK=NOT_RUN
 PERFORMANCE_CLAIM=NONE
 ```
 
-## Validation before final T4
+## Validation
 
 - focused IR/general-emitter/smart-runner tests: `37 passed, 1 skipped`
 - `python -m compileall bootstrap tests tools`: PASS
-- JSON validation: PASS after this report update
-- `git diff --check`: PASS after this report update
+- JSON validation: PASS
+- `git diff --check`: PASS
 - Linux x86-64 supported-subset native fixtures: PASS
 
-The prior T4 transcript remains preserved and is not overwritten or staged.
-A new single T4 is required only after this source candidate is frozen; it is
-not used to reclassify the emitter blocker.
+## Final T4
+
+The final T4 was executed exactly once after the source candidate was frozen.
+The raw transcript is `t4-final-20260825-103341.raw.txt`.
+
+```text
+T4_START=2026-08-25T10:33:41.4971731-03:00
+T4_END=2026-08-25T12:02:10.2415276-03:00
+T4_SELECTED=455
+T4_PASS=454
+T4_FAIL=0
+T4_TIMEOUT=1
+T4_UNCLASSIFIED_TIMEOUT=0
+T4_EXIT=1
+```
+
+The only timeout was:
+
+```text
+path=tests/test_stage1_compiler_seed.py
+timeout_class=HEAVY_SELF_HOSTING
+applied_timeout_seconds=180
+captured_output_tail=....
+```
+
+The timeout remains a timeout and is not reclassified as a pass. No T4 rerun
+is required because no compiler, runtime, or test logic changed after the T4.
 
 ## Scope boundary
 
