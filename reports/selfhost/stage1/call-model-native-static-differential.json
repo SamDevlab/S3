@@ -1,0 +1,42 @@
+{
+  "schema": "s3.selfhost.call-model-native-static-differential.v1",
+  "status": "BLOCKED_LINUX_NATIVE_ENVIRONMENT_UNAVAILABLE",
+  "canonical_source_sha256": "20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341",
+  "canonical_source_bytes": 166984,
+  "native_probe": {
+    "transport": "ssh s3-vm",
+    "endpoint": "127.0.0.1:2222",
+    "result": "CONNECTION_REFUSED",
+    "error": "connect to host 127.0.0.1 port 2222: Connection refused",
+    "native_identifier_open_candidates": null,
+    "native_signatures": null,
+    "native_calls": null,
+    "native_arguments": null,
+    "native_max_arity": null
+  },
+  "static_model": {
+    "static_identifier_open_candidates": null,
+    "static_signatures": null,
+    "static_calls": 792,
+    "static_arguments": 1041,
+    "static_max_arity": 27,
+    "source": "reports/selfhost/stage1/codegen-ir-v2-call-argument-static-audit.json"
+  },
+  "historical_native_evidence": {
+    "identifier_open_candidates": 690,
+    "signatures": 34,
+    "calls": 656,
+    "arguments": 736,
+    "max_arity": 4,
+    "status": "VALID_PRIOR_TO_CURRENT_SSH_UNAVAILABLE_PROBE"
+  },
+  "first_divergence_offset": null,
+  "first_divergence_line": null,
+  "first_divergence_column": null,
+  "native_decision": "UNAVAILABLE",
+  "static_decision": "NOT_COMPARED",
+  "root_cause": "LINUX_NATIVE_ENVIRONMENT_UNAVAILABLE",
+  "post_fix_native_static_equal": null,
+  "canonical_source_mutated": false,
+  "next": "RESTORE_LINUX_GUEST_THEN_RUN_NATIVE_STATIC_DIFFERENTIAL"
+}

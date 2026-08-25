@@ -1,6 +1,34 @@
 # Stage1 IR-v2 and General Emitter Qualification
 
-## Current checkpoint
+## Current continuation checkpoint
+
+The continuation campaign attempted the required native probe with
+`ssh s3-vm` and received `connect to host 127.0.0.1 port 2222: Connection
+refused`. The guest was not replaced with WSL, Docker, another VM, or another
+checkout. No compiler or test logic was changed.
+
+```text
+CURRENT_HEAD=bc10571b8ecc436e87856b395af650deb4474936
+LINUX_NATIVE_ENVIRONMENT=UNAVAILABLE
+PRIMARY_BLOCKER=LINUX_NATIVE_ENVIRONMENT_UNAVAILABLE
+DEFERRED_ARCHITECTURAL_BLOCKER=BLOCKED_CANONICAL_CALL_ARGUMENT_MODEL_DOES_NOT_MATCH_NATIVE_CLOSURE
+CALL_MODEL_NATIVE_STATIC_DIFFERENTIAL=NOT_RUN_NATIVE_UNAVAILABLE
+SOURCE_CHANGED=NO
+STAGE2=NOT_CREATED
+STAGE3=NOT_STARTED
+COMPUTER_SHUTDOWN_REQUESTED=NO
+COMPUTER_RESTART_REQUESTED=NO
+COMPUTER_LEFT_RUNNING=YES
+```
+
+The prior native closure remains historical evidence for the unchanged source
+(`690` identifier-open candidates, `34` signatures, `656` calls, `736`
+arguments, maximum arity `4`). It is not fresh evidence for this continuation
+because the guest connection was refused. The required first-divergence
+transcript is therefore not fabricated; its unavailable state is recorded in
+`call-model-native-static-differential.json`.
+
+## Previous checkpoint before the current SSH probe
 
 This is the current qualification state for PR #268. The campaign stopped at
 the first real IR-v2 guard blocker. No source compiler change was made while

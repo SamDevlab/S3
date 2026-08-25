@@ -294,9 +294,13 @@
   "pr_state": "DRAFT",
   "branch": "feature/actual-stage1-compiler-seed-20260824",
   "base": "integration/m271-m280-20260823",
+  "linux_native_environment": "UNAVAILABLE_CURRENT_CAMPAIGN_SSH_CONNECTION_REFUSED",
+  "linux_native_last_probe": "ssh s3-vm: connect to host 127.0.0.1 port 2222: Connection refused",
   "stage2_started": false,
   "stage3_started": false,
   "full_self_hosting": false,
-  "current_gate": "STOPPED_AT_CANONICAL_CALL_ARGUMENT_MODEL_GUARD",
+  "current_gate": "STOPPED_AT_LINUX_NATIVE_ENVIRONMENT",
+  "current_blocker": "LINUX_NATIVE_ENVIRONMENT_UNAVAILABLE",
+  "deferred_architectural_blocker": "BLOCKED_CANONICAL_CALL_ARGUMENT_MODEL_DOES_NOT_MATCH_NATIVE_CLOSURE",
   "next_if_full_chain_passes": "UNIFIED_VALUE_NAMESPACE_CANDIDATE_PREFLIGHT; DO_NOT_PROMOTE CANONICAL SOURCE OR CLAIM SELF_EMIT/STAGE2 FROM LOCAL PASS"
 }
