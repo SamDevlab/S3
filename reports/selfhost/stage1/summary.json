@@ -12,9 +12,9 @@
   "verifier_real_data_flow": "PASS_STRUCTURAL_BOOTSTRAP_SUBSET_NOT_CODEGEN_COMPLETE",
   "emitter_real_data_flow": "BLOCKED_IR_V2_GUARD_INCOMPLETE",
   "stage0_to_stage1": "PASS_LINUX_X86_64_AT_LAST_NATIVE_SOURCE_GATE",
-  "stage1_self_source_emission": "BLOCKED_CANONICAL_CALL_ARGUMENT_MODEL_DOES_NOT_MATCH_NATIVE_CLOSURE",
+  "stage1_self_source_emission": "BLOCKED_PREPARED_IR_V2_CHAIN_LINUX_GUEST_PYTEST_UNAVAILABLE",
   "stage1_to_stage2": "BLOCKED_NOT_STARTED",
-  "first_self_compile_blocker": "BLOCKED_CANONICAL_CALL_ARGUMENT_MODEL_DOES_NOT_MATCH_NATIVE_CLOSURE",
+  "first_self_compile_blocker": "BLOCKED_PREPARED_IR_V2_CHAIN_LINUX_GUEST_PYTEST_UNAVAILABLE",
   "historical_resolved_blocker": "IR_CALL_ARGUMENT_POOL_CAPACITY_EXCEEDED",
   "ir_counts_last_native_source_gate": {
     "source_functions": 34,
@@ -63,7 +63,7 @@
     "parameter_and_local_candidate_projection": true,
     "parameter_overflow_route": "EXTEND_CALL_ARGUMENT_POOL_FROM_EXACT_PARAMETER_CANDIDATE_REQUIREMENT",
     "local_overflow_route": "EXTEND_CALL_ARGUMENT_POOL_FROM_EXACT_LOCAL_CANDIDATE_REQUIREMENT",
-    "status": "BLOCKED_CANONICAL_CALL_ARGUMENT_MODEL_DOES_NOT_MATCH_NATIVE_CLOSURE",
+    "status": "PASS_NATIVE_STATIC_EQUIVALENT",
     "native_current_measurement": {
       "identifier_open_candidates": 690,
       "function_signatures": 34,
@@ -81,7 +81,7 @@
     }
   },
   "codegen_ir_v2_contract": "reports/selfhost/stage1/codegen-ir-v2-contract.json",
-  "codegen_ir_v2_status": "BLOCKED_CANONICAL_CALL_ARGUMENT_MODEL_DOES_NOT_MATCH_NATIVE_CLOSURE",
+  "codegen_ir_v2_status": "PASS_CALL_MODEL_NATIVE_STATIC_EQUIVALENT_CHAIN_READY",
   "compaction_candidate": {
     "transform": "DROP_REDUNDANT_DISCARD_KEYWORD_EVENT",
     "canonical_source_mutated": false,
@@ -246,7 +246,16 @@
     "canonical_commit_allowed": false,
     "report": "reports/selfhost/stage1/codegen-ir-v2-full-candidate-chain.json",
     "home_runbook": "reports/selfhost/stage1/HOME_NATIVE_CAPACITY_CHECK.txt",
-    "status": "BLOCKED_AT_IR_V2_GUARD_TESTS"
+    "status": "BLOCKED_AT_LINUX_GUEST_GUARD_DEPENDENCY",
+    "linux_guest_attempt": {
+      "vm": "Ubuntu server",
+      "ssh": "PASS",
+      "python": "/usr/bin/python3",
+      "guard_tests": "BLOCKED_PYTEST_UNAVAILABLE",
+      "base_chain": "NOT_RUN",
+      "stage2": "NOT_STARTED",
+      "stage3": "NOT_STARTED"
+    }
   },
   "capacity_risk_last_native_source_gate": {
     "event_capacity": 1460,
@@ -269,7 +278,7 @@
     "call_argument_headroom": 10
   },
   "last_completed_focused_gates": "37 passed, 1 skipped on source head 2b9a391dc1376d34cd13a946a16d92693d389898 (historical)",
-  "current_checkpoint_tooling_tests": "27 passed, 2 failed; both failures are canonical call-model guards",
+  "current_checkpoint_tooling_tests": "IR-v2 focused suite PASS; 17 call-model tests and the prepared guard tests passed",
   "compileall": "PASS",
   "json_validation": "PASS",
   "diff_check": "PASS",
@@ -294,13 +303,13 @@
   "pr_state": "DRAFT",
   "branch": "feature/actual-stage1-compiler-seed-20260824",
   "base": "integration/m271-m280-20260823",
-  "linux_native_environment": "UNAVAILABLE_CURRENT_CAMPAIGN_SSH_CONNECTION_REFUSED",
-  "linux_native_last_probe": "ssh s3-vm: connect to host 127.0.0.1 port 2222: Connection refused",
+  "linux_native_environment": "PASS_CURRENT_CAMPAIGN",
+  "linux_native_last_probe": "ssh s3-vm: Linux 7.0.0-30-generic x86_64",
   "stage2_started": false,
   "stage3_started": false,
   "full_self_hosting": false,
-  "current_gate": "STOPPED_AT_LINUX_NATIVE_ENVIRONMENT",
-  "current_blocker": "LINUX_NATIVE_ENVIRONMENT_UNAVAILABLE",
-  "deferred_architectural_blocker": "BLOCKED_CANONICAL_CALL_ARGUMENT_MODEL_DOES_NOT_MATCH_NATIVE_CLOSURE",
+  "current_gate": "STOPPED_AT_LINUX_GUEST_GUARD_DEPENDENCY",
+  "current_blocker": "LINUX_GUEST_PYTEST_UNAVAILABLE_FOR_PREPARED_IR_V2_CHAIN",
+  "deferred_architectural_blocker": "NONE_CALL_MODEL_CLOSED",
   "next_if_full_chain_passes": "UNIFIED_VALUE_NAMESPACE_CANDIDATE_PREFLIGHT; DO_NOT_PROMOTE CANONICAL SOURCE OR CLAIM SELF_EMIT/STAGE2 FROM LOCAL PASS"
 }

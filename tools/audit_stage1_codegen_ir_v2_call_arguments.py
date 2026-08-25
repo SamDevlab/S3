@@ -44,6 +44,10 @@ EXPECTED_CANONICAL_ARITY_DISTRIBUTION = {
     "4_plus": 20,
 }
 
+_TOKEN_CURSOR_SCALE = 1_000_000
+_TOKEN_KIND_SCALE = 1_000
+_TOKEN_VALUE_OFFSET = 500
+
 
 class CallArgumentModelError(RuntimeError):
     pass
@@ -70,39 +74,114 @@ def _is_function_signature_open(tokens: list[Stage1Token], index: int) -> bool:
     )
 
 
-def collect_call_argument_model(source: str) -> dict[str, object]:
-    """Mirror Stage1's bounded call stack/argument occurrence accounting."""
+def _truncating_division(numerator: int, denominator: int) -> int:
+    """Mirror S3 integer division, which truncates toward zero."""
 
-    tokens = stage1_tokens(source)
+    quotient = abs(numerator) // denominator
+    return -quotient if numerator < 0 else quotient
+
+
+def _stage1_execution_tokens(source: str) -> list[tuple[Stage1Token, int]]:
+    """Reproduce the token values the native Stage1 loop actually receives.
+
+    ``scan_token`` returns one packed integer.  Its cursor/kind/value lanes are
+    only lossless while the token value fits the value lane.  The canonical
+    source currently reaches a wide numeric literal in ``pack_ir_record``;
+    native decoding then advances past the remaining input.  Modeling the pack
+    and decode step here keeps the static oracle aligned with that real Stage1
+    contract and prevents it from inventing events after native scanning has
+    terminated.
+    """
+
+    lexical_tokens = stage1_tokens(source)
+    execution_tokens: list[tuple[Stage1Token, int]] = []
+    cursor = 0
+    for token in lexical_tokens:
+        while cursor < len(source) and source[cursor] in " \t\r":
+            cursor += 1
+        actual_start = cursor
+        next_cursor = cursor + len(token.text)
+        packed = (
+            next_cursor * _TOKEN_CURSOR_SCALE
+            + token.kind * _TOKEN_KIND_SCALE
+            + token.value
+            + _TOKEN_VALUE_OFFSET
+        )
+        decoded_next_cursor = _truncating_division(packed, _TOKEN_CURSOR_SCALE)
+        remainder = packed - decoded_next_cursor * _TOKEN_CURSOR_SCALE
+        decoded_kind = _truncating_division(remainder, _TOKEN_KIND_SCALE)
+        decoded_value = (
+            remainder - decoded_kind * _TOKEN_KIND_SCALE - _TOKEN_VALUE_OFFSET
+        )
+        execution_tokens.append(
+            (Stage1Token(decoded_kind, decoded_value, token.text), actual_start)
+        )
+        if decoded_next_cursor <= cursor:
+            break
+        cursor = decoded_next_cursor
+        if cursor >= len(source):
+            break
+    return execution_tokens
+
+
+def collect_call_argument_trace(source: str) -> dict[str, object]:
+    """Collect decisions and bounded call metadata from the Stage1 token flow."""
+
+    execution_tokens = _stage1_execution_tokens(source)
+    tokens = [token for token, _ in execution_tokens]
     arities: list[int] = []
     active: list[int] = []
+    events: list[tuple[int, int, int, int, int]] = []
+    identifier_open_candidates = 0
+    function_signatures = 0
     maximum_depth = 0
 
     for index, token in enumerate(tokens):
-        # Stage1 computes argument_possible from the current token and stores an
-        # identifier/integer in the currently active call before processing a
-        # later ')' close. A nested callee identifier is therefore an argument
-        # occurrence of its parent call, exactly as in the bootstrap collector.
+        actual_start = execution_tokens[index][1]
         if token.kind in (1, 2) and active:
             arities[active[-1]] += 1
+            events.append((2, actual_start, token.kind, token.value, len(active)))
 
         if token.kind == 4 and token.value == 1:
             previous_is_identifier = index > 0 and tokens[index - 1].kind == 1
-            if previous_is_identifier and not _is_function_signature_open(tokens, index):
-                call_id = len(arities)
-                arities.append(0)
-                active.append(call_id)
-                maximum_depth = max(maximum_depth, len(active))
+            if previous_is_identifier:
+                identifier_open_candidates += 1
+                if _is_function_signature_open(tokens, index):
+                    function_signatures += 1
+                else:
+                    call_id = len(arities)
+                    arities.append(0)
+                    events.append(
+                        (1, actual_start, tokens[index - 1].kind, tokens[index - 1].value, len(active))
+                    )
+                    active.append(call_id)
+                    maximum_depth = max(maximum_depth, len(active))
             continue
 
         if token.kind == 4 and token.value == 2:
             if active:
                 active.pop()
-            # This intentionally mirrors the current bootstrap collector: any
-            # ')' closes one active call level, even when an inner grouping '('
-            # did not itself open a call level.
+            # Stage1 closes one active call level for every ')' even when a
+            # grouping parenthesis did not open a call level.
             continue
 
+    return {
+        "arities": arities,
+        "events": events,
+        "identifier_open_candidates": identifier_open_candidates,
+        "function_signatures": function_signatures,
+        "maximum_active_call_depth": maximum_depth,
+        "active_calls_at_eof": len(active),
+        "last_token_offset": execution_tokens[-1][1] if execution_tokens else None,
+    }
+
+
+def collect_call_argument_model(source: str) -> dict[str, object]:
+    """Mirror Stage1's bounded call stack/argument occurrence accounting."""
+
+    trace = collect_call_argument_trace(source)
+    arities = trace["arities"]
+    assert isinstance(arities, list)
     total_arguments = sum(arities)
     distribution = {
         "0": sum(1 for value in arities if value == 0),
@@ -116,8 +195,8 @@ def collect_call_argument_model(source: str) -> dict[str, object]:
         "total_call_arguments": total_arguments,
         "max_call_arity": max(arities, default=0),
         "arity_distribution": distribution,
-        "maximum_active_call_depth": maximum_depth,
-        "active_calls_at_eof": len(active),
+        "maximum_active_call_depth": trace["maximum_active_call_depth"],
+        "active_calls_at_eof": trace["active_calls_at_eof"],
         "call_capacity": CALL_CAPACITY,
         "call_argument_capacity": CALL_ARGUMENT_CAPACITY,
         "call_headroom": CALL_CAPACITY - len(arities),

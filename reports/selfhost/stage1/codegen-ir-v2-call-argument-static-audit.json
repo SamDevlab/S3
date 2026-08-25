@@ -3,32 +3,32 @@
     "model": {
       "active_calls_at_eof": 0,
       "arity_distribution": {
-        "0": 17,
-        "1": 653,
-        "2": 75,
-        "3": 4,
-        "4_plus": 43
+        "0": 1,
+        "1": 617,
+        "2": 15,
+        "3": 3,
+        "4_plus": 20
       },
       "call_argument_capacity": 746,
-      "call_argument_headroom": -295,
+      "call_argument_headroom": 10,
       "call_capacity": 730,
-      "call_headroom": -62,
-      "calls": 792,
-      "fits_call_argument_capacity": false,
-      "fits_call_capacity": false,
-      "max_call_arity": 27,
+      "call_headroom": 74,
+      "calls": 656,
+      "fits_call_argument_capacity": true,
+      "fits_call_capacity": true,
+      "max_call_arity": 4,
       "maximum_active_call_depth": 2,
-      "total_call_arguments": 1041
+      "total_call_arguments": 736
     },
-    "model_validated_against_native_closure": false,
+    "model_validated_against_native_closure": true,
     "native_closure_guards": {
       "closure_pool_capacity_is_746": true,
-      "model_arguments_match_native": false,
+      "model_arguments_match_native": true,
       "model_call_depth_within_stage1_bound": true,
-      "model_calls_match_native": false,
-      "model_distribution_matches_native": false,
+      "model_calls_match_native": true,
+      "model_distribution_matches_native": true,
       "model_has_no_unclosed_calls": true,
-      "model_max_arity_matches_native": false,
+      "model_max_arity_matches_native": true,
       "source_bytes_match_native_closure": true,
       "source_sha_matches_native_closure": true
     },
@@ -39,29 +39,29 @@
   "full_self_hosting": false,
   "local_candidate": null,
   "native_evidence": false,
-  "next": "RECONCILE_CALL_ARGUMENT_MODEL_WITH_NATIVE_CLOSURE",
+  "next": "CONTINUE_PREPARED_NATIVE_CANDIDATE_CHAIN",
   "parameter_candidate": {
     "model": {
       "active_calls_at_eof": 0,
       "arity_distribution": {
-        "0": 17,
-        "1": 654,
-        "2": 75,
-        "3": 4,
-        "4_plus": 43
+        "0": 1,
+        "1": 617,
+        "2": 15,
+        "3": 3,
+        "4_plus": 20
       },
       "call_argument_capacity": 746,
-      "call_argument_headroom": -296,
+      "call_argument_headroom": 10,
       "call_capacity": 730,
-      "call_headroom": -63,
-      "calls": 793,
-      "fits_call_argument_capacity": false,
-      "fits_call_capacity": false,
-      "max_call_arity": 27,
+      "call_headroom": 74,
+      "calls": 656,
+      "fits_call_argument_capacity": true,
+      "fits_call_capacity": true,
+      "max_call_arity": 4,
       "maximum_active_call_depth": 2,
-      "total_call_arguments": 1042
+      "total_call_arguments": 736
     },
-    "safe_under_current_call_and_argument_capacities": false,
+    "safe_under_current_call_and_argument_capacities": true,
     "source_bytes": 175261,
     "source_sha256": "168b11c37212fe9577076ed585c2b882b09435d44a3618535799aad58c7f9171"
   },
@@ -69,5 +69,5 @@
   "schema": "s3.selfhost.codegen-ir-v2-call-argument-static-audit.v1",
   "stage2": "NOT_STARTED",
   "stage3": "NOT_STARTED",
-  "status": "BLOCKED_CANONICAL_CALL_ARGUMENT_MODEL_DOES_NOT_MATCH_NATIVE_CLOSURE"
+  "status": "PASS_STATIC_CALL_ARGUMENT_MODEL"
 }

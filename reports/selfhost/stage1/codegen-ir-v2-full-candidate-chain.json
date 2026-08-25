@@ -1,10 +1,93 @@
 {
   "base_chain": null,
-  "base_chain_error": null,
+  "base_chain_error": "native capacity qualification requires Linux x86-64",
   "call_argument_error": null,
-  "call_argument_guard": null,
+  "call_argument_guard": {
+    "canonical": {
+      "model": {
+        "active_calls_at_eof": 0,
+        "arity_distribution": {
+          "0": 1,
+          "1": 617,
+          "2": 15,
+          "3": 3,
+          "4_plus": 20
+        },
+        "call_argument_capacity": 746,
+        "call_argument_headroom": 10,
+        "call_capacity": 730,
+        "call_headroom": 74,
+        "calls": 656,
+        "fits_call_argument_capacity": true,
+        "fits_call_capacity": true,
+        "max_call_arity": 4,
+        "maximum_active_call_depth": 2,
+        "total_call_arguments": 736
+      },
+      "model_validated_against_native_closure": true,
+      "native_closure_guards": {
+        "closure_pool_capacity_is_746": true,
+        "model_arguments_match_native": true,
+        "model_call_depth_within_stage1_bound": true,
+        "model_calls_match_native": true,
+        "model_distribution_matches_native": true,
+        "model_has_no_unclosed_calls": true,
+        "model_max_arity_matches_native": true,
+        "source_bytes_match_native_closure": true,
+        "source_sha_matches_native_closure": true
+      },
+      "source_bytes": 166984,
+      "source_sha256": "20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341"
+    },
+    "canonical_source_mutated": false,
+    "full_self_hosting": false,
+    "local_candidate": null,
+    "native_evidence": false,
+    "next": "CONTINUE_PREPARED_NATIVE_CANDIDATE_CHAIN",
+    "parameter_candidate": {
+      "model": {
+        "active_calls_at_eof": 0,
+        "arity_distribution": {
+          "0": 1,
+          "1": 617,
+          "2": 15,
+          "3": 3,
+          "4_plus": 20
+        },
+        "call_argument_capacity": 746,
+        "call_argument_headroom": 10,
+        "call_capacity": 730,
+        "call_headroom": 74,
+        "calls": 656,
+        "fits_call_argument_capacity": true,
+        "fits_call_capacity": true,
+        "max_call_arity": 4,
+        "maximum_active_call_depth": 2,
+        "total_call_arguments": 736
+      },
+      "safe_under_current_call_and_argument_capacities": true,
+      "source_bytes": 175261,
+      "source_sha256": "168b11c37212fe9577076ed585c2b882b09435d44a3618535799aad58c7f9171"
+    },
+    "qualification_rule": "Static projections are trusted only because the unchanged canonical source must reproduce the existing native 656-call/736-argument closure exactly. Any transformed candidate still requires native Linux qualification before promotion.",
+    "schema": "s3.selfhost.codegen-ir-v2-call-argument-static-audit.v1",
+    "stage2": "NOT_STARTED",
+    "stage3": "NOT_STARTED",
+    "status": "PASS_STATIC_CALL_ARGUMENT_MODEL"
+  },
   "canonical_commit_allowed": false,
   "canonical_source_mutated": false,
+  "linux_guest_attempt": {
+    "vm": "Ubuntu server",
+    "ssh": "PASS",
+    "kernel": "Linux 7.0.0-30-generic x86_64",
+    "python": "/usr/bin/python3",
+    "guard_tests": "BLOCKED_PYTEST_UNAVAILABLE",
+    "base_chain": "NOT_RUN",
+    "local_native": "NOT_RUN",
+    "stage2": "NOT_STARTED",
+    "stage3": "NOT_STARTED"
+  },
   "full_self_hosting": false,
   "general_emitter": "BLOCKED_IR_V2_INCOMPLETE",
   "guard_tests": {
@@ -13,18 +96,18 @@
       "tests/test_stage1_codegen_ir_v2_local_qualifier.py",
       "tests/test_stage1_codegen_ir_v2_full_chain.py"
     ],
-    "returncode": 1,
-    "status": "FAIL",
+    "returncode": 0,
+    "status": "PASS",
     "stderr": "",
-    "stdout": "...FF...........                                                         [100%]\n================================== FAILURES ===================================\n_______ test_canonical_model_must_reproduce_native_736_argument_closure _______\n\n    def test_canonical_model_must_reproduce_native_736_argument_closure() -> None:\n        closure = json.loads(CLOSURE.read_text(encoding=\"utf-8\"))\n        model, guards = validate_canonical_model(SOURCE.read_bytes(), closure=closure)\n>       assert all(guards.values())\nE       AssertionError: assert False\nE        +  where False = all(dict_values([True, True, True, False, False, False, False, True, True]))\nE        +    where dict_values([True, True, True, False, False, False, False, True, True]) = <built-in method values of dict object at 0x000001F0375EB4C0>()\nE        +      where <built-in method values of dict object at 0x000001F0375EB4C0> = {'source_sha_matches_native_closure': True, 'source_bytes_match_native_closure': True, 'closure_pool_capacity_is_746': True, 'model_calls_match_native': False, ...}.values\n\ntests\\test_stage1_codegen_ir_v2_call_arguments.py:71: AssertionError\n__ test_parameter_candidate_must_not_silently_overflow_current_argument_pool __\n\n    def test_parameter_candidate_must_not_silently_overflow_current_argument_pool() -> None:\n        closure = json.loads(CLOSURE.read_text(encoding=\"utf-8\"))\n        result = audit(\n            canonical_source=SOURCE.read_text(encoding=\"utf-8\"),\n            closure=closure,\n        )\n>       assert result[\"canonical\"][\"model_validated_against_native_closure\"] is True\nE       assert False is True\n\ntests\\test_stage1_codegen_ir_v2_call_arguments.py:84: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_stage1_codegen_ir_v2_call_arguments.py::test_canonical_model_must_reproduce_native_736_argument_closure\nFAILED tests/test_stage1_codegen_ir_v2_call_arguments.py::test_parameter_candidate_must_not_silently_overflow_current_argument_pool\n"
+    "stdout": "............................                                             [100%]\n"
   },
   "local_native": null,
   "local_native_error": null,
-  "next": "REPAIR_IR_V2_GUARD_TOOLING",
+  "next": "REPAIR_BASE_PARAMETER_CHAIN_OR_ENVIRONMENT",
   "qualification_rule": "PASS here means only that candidate compaction, parameter metadata and local metadata reached their expected Stage1 boundaries. It never promotes canonical source and never implies self-emission or Stage2.",
   "schema": "s3.selfhost.codegen-ir-v2-full-candidate-chain.v2",
   "self_emit": "NOT_STARTED",
   "stage2": "NOT_STARTED",
   "stage3": "NOT_STARTED",
-  "status": "BLOCKED_AT_IR_V2_GUARD_TESTS"
+  "status": "BLOCKED_AT_LINUX_GUEST_GUARD_DEPENDENCY"
 }

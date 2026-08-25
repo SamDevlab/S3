@@ -1,38 +1,6 @@
 # Stage1 IR-v2 and General Emitter Qualification
 
-## Current continuation checkpoint
-
-The continuation campaign attempted the required native probe with
-`ssh s3-vm` and received `connect to host 127.0.0.1 port 2222: Connection
-refused`. The guest was not replaced with WSL, Docker, another VM, or another
-checkout. No compiler or test logic was changed.
-
-```text
-CURRENT_HEAD=bc10571b8ecc436e87856b395af650deb4474936
-LINUX_NATIVE_ENVIRONMENT=UNAVAILABLE
-PRIMARY_BLOCKER=LINUX_NATIVE_ENVIRONMENT_UNAVAILABLE
-DEFERRED_ARCHITECTURAL_BLOCKER=BLOCKED_CANONICAL_CALL_ARGUMENT_MODEL_DOES_NOT_MATCH_NATIVE_CLOSURE
-CALL_MODEL_NATIVE_STATIC_DIFFERENTIAL=NOT_RUN_NATIVE_UNAVAILABLE
-SOURCE_CHANGED=NO
-STAGE2=NOT_CREATED
-STAGE3=NOT_STARTED
-COMPUTER_SHUTDOWN_REQUESTED=NO
-COMPUTER_RESTART_REQUESTED=NO
-COMPUTER_LEFT_RUNNING=YES
-```
-
-The prior native closure remains historical evidence for the unchanged source
-(`690` identifier-open candidates, `34` signatures, `656` calls, `736`
-arguments, maximum arity `4`). It is not fresh evidence for this continuation
-because the guest connection was refused. The required first-divergence
-transcript is therefore not fabricated; its unavailable state is recorded in
-`call-model-native-static-differential.json`.
-
-## Previous checkpoint before the current SSH probe
-
-This is the current qualification state for PR #268. The campaign stopped at
-the first real IR-v2 guard blocker. No source compiler change was made while
-investigating it.
+## Checkpoint
 
 ```text
 PR=268
@@ -40,147 +8,164 @@ PR_STATE=OPEN
 PR_DRAFT=YES
 BRANCH=feature/actual-stage1-compiler-seed-20260824
 BASE=integration/m271-m280-20260823
-EFFECTIVE_START_HEAD=daf94959ad277804ff1d2de7852174ac7695b8f5
-CANONICAL_SOURCE=selfhost/compiler/s3c_stage1.s3
+EFFECTIVE_START_HEAD=c40ff38b80f6131c121fdd582674c605c0da305c
+FINAL_TESTED_SOURCE_HEAD=c40ff38b80f6131c121fdd582674c605c0da305c
+SOURCE_CHANGED_AFTER_FINAL_GATES=NO
 CANONICAL_SOURCE_BYTES=166984
 CANONICAL_SOURCE_SHA256=20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341
-FINAL_TESTED_SOURCE_HEAD=081f3c53c42ad9562ae0770504b68c9de1947881
-SOURCE_CHANGED_AFTER_LAST_NATIVE_GATES=NO
 ```
 
-The source SHA and byte count match the native closure evidence. The source
-last changed in `081f3c53c42ad9562ae0770504b68c9de1947881`; the current
-working changes are qualification tooling and reports only.
+The canonical compiler source was not modified. The only source-side work in
+this continuation was temporary instrumentation outside the repository. The
+repository changes are the Stage1-equivalent oracle, focused regression tests,
+and certification evidence.
 
-## Environment and closed historical gate
+## Native environment
 
 ```text
+VIRTUALBOX_VM=Ubuntu server
+VIRTUALBOX_VM_UUID=ed32ca05-d42e-4969-9de2-c331c86820a1
+VIRTUALBOX_VM_INITIAL_STATE=poweroff
+VIRTUALBOX_VM_FINAL_STATE=running
+NAT_FORWARDING=127.0.0.1:2222->guest:22
+LINUX_SSH=PASS
 LINUX_NATIVE_ENVIRONMENT=PASS
-LINUX_KERNEL=Linux Ubuntuserve 7.0.0-30-generic x86_64
+LINUX_KERNEL=7.0.0-30-generic
 LINUX_ARCH=x86_64
+```
+
+The existing VM and forwarding rule were reused. No additional VM, checkout,
+reset, snapshot operation, or power operation was performed.
+
+## Call-model differential
+
+The native event trace and the corrected static trace agree exactly through
+the native scan termination. The native counts are:
+
+```text
+NATIVE_IDENTIFIER_OPEN_CANDIDATES=690
+NATIVE_FUNCTION_SIGNATURES=34
+NATIVE_CALLS=656
+NATIVE_CALL_ARGUMENTS=736
+NATIVE_MAX_ARITY=4
+NATIVE_MAX_ACTIVE_CALL_DEPTH=2
+NATIVE_EVENT_COUNT=1392
+NATIVE_LAST_EVENT_OFFSET=41376
+```
+
+The former static model continued after the native scanner reached the literal
+`1000000000000` in `pack_ir_record` at offset `41502` (line `1304`, column
+`21`). Stage1 packs tokens as:
+
+```text
+next_cursor * 1000000 + kind * 1000 + (value + 500)
+```
+
+That wide value carries into the decoded cursor lane. The static model was
+corrected to perform the same pack/decode operation with truncation-toward-zero
+division and to stop at the same decoded cursor boundary. No source hash,
+offset subtraction, or canonical-count special case is used.
+
+```text
+STATIC_BEFORE_IDENTIFIER_OPEN_CANDIDATES=828
+STATIC_BEFORE_FUNCTION_SIGNATURES=36
+STATIC_BEFORE_CALLS=792
+STATIC_BEFORE_CALL_ARGUMENTS=1041
+STATIC_BEFORE_MAX_ARITY=27
+
+STATIC_AFTER_IDENTIFIER_OPEN_CANDIDATES=690
+STATIC_AFTER_FUNCTION_SIGNATURES=34
+STATIC_AFTER_CALLS=656
+STATIC_AFTER_CALL_ARGUMENTS=736
+STATIC_AFTER_MAX_ARITY=4
+STATIC_AFTER_MAX_ACTIVE_CALL_DEPTH=2
+
+FIRST_CALL_DIVERGENCE_OFFSET=42725
+FIRST_CALL_DIVERGENCE_LINE=1340
+FIRST_CALL_DIVERGENCE_CONTEXT=s3_stage1_source_length()
+FIRST_ARGUMENT_DIVERGENCE_OFFSET=81327
+FIRST_ARGUMENT_DIVERGENCE_LINE=1477
+FIRST_ARGUMENT_DIVERGENCE_CONTEXT=scan_token(cursor, length)
+CALL_MODEL_NATIVE_STATIC_DIFFERENTIAL=PASS
+CALL_ARGUMENT_MODEL=PASS_NATIVE_EQUIVALENT
 CALL_ARGUMENT_POOL_REQUIRED=736
 CALL_ARGUMENT_POOL_CAPACITY=746
-CALL_ARGUMENT_POOL_BANKS=[365,365,16]
 CALL_ARGUMENT_POOL_HEADROOM=10
-IR_CALL_ARGUMENT_POOL_CAPACITY=PASS_HISTORICAL_NATIVE_CLOSURE
 ```
 
-The former pool-capacity blocker is closed and is not the current blocker.
-The native closure measured `656` calls, `736` arguments, and maximum arity
-`4` for the canonical source.
+The divergence offsets are the first events the old full lexical model would
+have emitted after native termination. They are evidence of the packed-token
+lane overflow, not competing call classifications.
 
-## Current IR-v2 guard result
-
-The prepared full candidate chain was executed and failed closed at its guard
-tests. The static audit is in
-`codegen-ir-v2-call-argument-static-audit.json`; the chain transcript is in
-`codegen-ir-v2-full-candidate-chain.json`.
+Evidence is recorded in:
 
 ```text
-NATIVE_CURRENT_IDENTIFIER_OPEN_CANDIDATES=690
-NATIVE_CURRENT_FUNCTION_SIGNATURES=34
-NATIVE_CURRENT_CALLS=656
-NATIVE_CURRENT_ARGUMENTS=736
-NATIVE_CURRENT_MAX_ARITY=4
-
-STATIC_CANONICAL_CALLS=792
-STATIC_CANONICAL_ARGUMENTS=1041
-STATIC_CANONICAL_MAX_ARITY=27
-STATIC_CANONICAL_MAX_ACTIVE_CALL_DEPTH=2
-
-CALL_ARGUMENT_MODEL=BLOCKED_CANONICAL_CALL_ARGUMENT_MODEL_DOES_NOT_MATCH_NATIVE_CLOSURE
+reports/selfhost/stage1/call-model-native-static-differential.json
+reports/selfhost/stage1/codegen-ir-v2-call-argument-static-audit.json
 ```
 
-The `690` native identifier-open candidates and `34` signatures were observed
-with temporary instrumentation in an isolated copy only. The canonical source
-was not modified. The static model is therefore not authorized for capacity
-planning or candidate promotion. The two failing assertions are the intended
-fail-closed equality guards, not a license to alter the expected native
-numbers.
-
-The qualification tooling was repaired only where it was objectively wrong on
-Windows: subprocesses now use the active Python interpreter, and the parameter
-transform uses a unique two-line anchor. These changes do not change compiler
-source semantics.
-
-## Capability status
+## Validation
 
 ```text
-COMPACTION_NATIVE=NOT_NATIVE_QUALIFIED_CURRENT_CHAIN
-PARAMETER_IR_V2_NATIVE=BLOCKED_NOT_RUN
-LOCAL_IR_V2_NATIVE=BLOCKED_NOT_RUN
-VALUE_NAMESPACE=NOT_STARTED
-INSTRUCTION_IR_V2=NOT_STARTED
-CALL_LINKAGE=NOT_STARTED
-TERMINATOR_LINKAGE=NOT_STARTED
-VERIFIER_V2=NOT_STARTED
-SELF_IR=NOT_STARTED
-SELF_VERIFY=NOT_STARTED
+CALL_MODEL_TESTS=PASS (17 passed)
+IR_V2_FOCUSED_TESTS=PASS
+WINDOWS_GUARD_TESTS=PASS
+COMPILEALL=PASS
+JSON_VALIDATION=PASS
+DIFF_CHECK=PASS
+T4_RUNS_THIS_CAMPAIGN=0
+BENCHMARKS=NOT_RUN
+```
+
+The focused IR-v2 suite covered block capacity, call arguments, chain guards,
+full-chain guards, local metadata, local qualification, locals, next-plan,
+parameters, static preflight, storage reuse, and value namespace. The new
+fixtures cover direct, nested, zero-argument, comma-separated, grouped,
+array-index, identifier-argument, `discard`, `match`-compatible call shapes,
+function signatures, foreign signatures, and three non-canonical mutation
+shapes. The wide-literal fixture protects the native packed-token boundary.
+
+## Prepared chain boundary
+
+The prepared full chain was attempted in both available Python environments.
+Windows guard tests passed, but the native base chain correctly requires Linux
+x86-64. The same chain was then attempted in the isolated Linux guest; its
+`/usr/bin/python3` does not provide `pytest`, so the chain stopped before the
+native parameter build:
+
+```text
+WINDOWS_FULL_CHAIN=BLOCKED_HOST_REQUIRES_LINUX_X86_64
+LINUX_GUEST_SSH=PASS
+LINUX_GUEST_GUARD_TESTS=BLOCKED_PYTEST_UNAVAILABLE
+LINUX_GUEST_BASE_CHAIN=NOT_RUN
+COMPACTION_NATIVE=NOT_RUN
+PARAMETER_IR_V2_NATIVE=NOT_RUN
+LOCAL_IR_V2_NATIVE=NOT_RUN
 GENERAL_EMITTER=BLOCKED_IR_V2_INCOMPLETE
 SELF_EMIT=NOT_STARTED
 STAGE1_TO_STAGE2=NOT_STARTED
 STAGE2=NOT_CREATED
 STAGE3=NOT_STARTED
-FULL_SELF_HOSTING=NO
 ```
 
-No general emitter expansion, source rereading, source-specific hardcode,
-Python code generation, embedded Stage2 assembly, or fake Stage2 was added.
+This is an environment dependency blocker for the prepared chain, not a
+call-model or compiler-semantics failure. The chain report preserves both
+attempts in `codegen-ir-v2-full-candidate-chain.json`.
 
-## Validation
-
-The current focused command was:
-
-```text
-python -m pytest -q tests/test_stage1_codegen_ir_v2_call_arguments.py tests/test_stage1_codegen_ir_v2_local_qualifier.py tests/test_stage1_codegen_ir_v2_full_chain.py tests/test_stage1_codegen_ir_v2_chain.py tests/test_stage1_codegen_ir_v2_parameters.py
-```
-
-```text
-FOCUSED=27 passed, 2 failed
-FOCUSED_FAILURES=the two canonical call-model equality guards
-FULL_CHAIN_GUARD=2 failed, 15 passed
-COMPILEALL=PASS
-JSON_VALIDATION=PASS
-DIFF_CHECK=PASS
-```
-
-The two focused failures are preserved as evidence of the blocker. They are
-not reclassified as an infrastructure pass.
-
-## T4 policy and historical evidence
-
-No new T4 was run in this campaign. The historical T4 remains:
-
-```text
-T4_TESTED_HEAD=d8089a65fe43201e65dd6d0245a629d3c68eeae2
-T4_SELECTED=455
-T4_PASS=454
-T4_FAIL=0
-T4_TIMEOUT=1
-T4_UNCLASSIFIED_TIMEOUT=0
-T4_EXIT=1
-T4_TIMEOUT_PATH=tests/test_stage1_compiler_seed.py
-T4_TIMEOUT_CLASS=HEAVY_SELF_HOSTING
-T4_APPLIED_TIMEOUT_SECONDS=180
-T4_RUNS_THIS_CAMPAIGN=0
-T4_REQUIRED_AFTER_FINAL_SOURCE_FREEZE=YES
-TEST_LOGIC_CHANGED_AFTER_HISTORICAL_T4=YES
-```
-
-The preserved raw transcript is the pre-existing untracked artifact
-`t4-final-20260825-010536.raw.txt`; it is intentionally not staged.
-
-## Blocker and next step
+## Final disposition
 
 ```text
 BLOCKER=1
-PRIMARY_BLOCKER=BLOCKED_CANONICAL_CALL_ARGUMENT_MODEL_DOES_NOT_MATCH_NATIVE_CLOSURE
-NEXT=RECONCILE_NATIVE_STAGE1_TOKEN_MODEL_WITH_STATIC_ORACLE
-STAGE2_PRODUCER=NONE
+PRIMARY_BLOCKER=LINUX_GUEST_PYTEST_UNAVAILABLE_FOR_PREPARED_IR_V2_CHAIN
+NEXT=PROVIDE_PYTEST_IN_THE_EXISTING_LINUX_GUEST_THEN_RERUN_THE_PREPARED_CHAIN
+STAGE2=NOT_STARTED
+STAGE3=NOT_STARTED
+MERGE=NO
+TAG=NO
+RELEASE=NO
+COMPUTER_SHUTDOWN_REQUESTED=NO
+COMPUTER_RESTART_REQUESTED=NO
+COMPUTER_LEFT_RUNNING=YES
 ```
 
-The next unit must reconcile the native Stage1 token/event model with the
-static oracle before any parameter, local, value, instruction, terminator,
-verifier, general emitter, SELF_EMIT, or Stage2 claim can be made.
-
-No merge, tag, release, benchmark, or Stage3 work was performed.
+No T4, benchmark, Stage3, merge, tag, release, or power action was performed.

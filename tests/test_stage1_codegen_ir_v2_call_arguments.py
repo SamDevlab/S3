@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from tools.audit_stage1_codegen_ir_v2_call_arguments import (
     CLOSURE,
     SOURCE,
     audit,
+    collect_call_argument_trace,
     collect_call_argument_model,
     validate_canonical_model,
 )
@@ -63,6 +66,135 @@ def test_nested_callee_identifier_is_parent_structural_argument_occurrence() -> 
     assert model["arity_distribution"]["1"] == 1
     assert model["arity_distribution"]["2"] == 1
     assert model["maximum_active_call_depth"] == 2
+
+
+@pytest.mark.parametrize(
+    ("source", "calls", "arguments", "max_arity"),
+    [
+        (
+            "fn main() -> tryte:\n"
+            "    discard helper(1)\n",
+            1,
+            1,
+            1,
+        ),
+        (
+            "fn main() -> tryte:\n"
+            "    discard outer(inner(1), 2)\n",
+            2,
+            3,
+            2,
+        ),
+        (
+            "fn main() -> tryte:\n"
+            "    mut value: i64 = (1 + 2)\n",
+            0,
+            0,
+            0,
+        ),
+        (
+            "fn main() -> tryte:\n"
+            "    mut value: i64 = array[index]\n",
+            0,
+            0,
+            0,
+        ),
+        (
+            "fn helper(a: i64) -> i64:\n"
+            "    return a\n",
+            0,
+            0,
+            0,
+        ),
+        (
+            "foreign fn helper(a: i64) -> i64:\n",
+            0,
+            0,
+            0,
+        ),
+        (
+            "fn main() -> tryte:\n"
+            "    discard helper((1 + 2))\n",
+            1,
+            2,
+            2,
+        ),
+        (
+            "fn main() -> tryte:\n"
+            "    discard helper(value)\n",
+            1,
+            1,
+            1,
+        ),
+        (
+            "fn main() -> tryte:\n"
+            "    discard helper(other(value))\n",
+            2,
+            2,
+            1,
+        ),
+        (
+            "fn main() -> tryte:\n"
+            "    discard helper()\n",
+            1,
+            0,
+            0,
+        ),
+    ],
+)
+def test_stage1_call_shapes_match_execution_model(
+    source: str,
+    calls: int,
+    arguments: int,
+    max_arity: int,
+) -> None:
+    model = collect_call_argument_model(source)
+    assert model["calls"] == calls
+    assert model["total_call_arguments"] == arguments
+    assert model["max_call_arity"] == max_arity
+    assert model["active_calls_at_eof"] == 0
+
+
+def test_wide_numeric_token_terminates_like_native_packed_scan() -> None:
+    source = (
+        "fn main() -> tryte:\n"
+        "    mut value: i64 = 1000000000000\n"
+        "    discard helper(1)\n"
+    )
+    trace = collect_call_argument_trace(source)
+    model = collect_call_argument_model(source)
+    assert model["calls"] == 0
+    assert model["total_call_arguments"] == 0
+    assert trace["last_token_offset"] == source.index("1000000000000")
+
+
+def test_mutation_fixtures_are_not_calibrated_to_canonical_totals() -> None:
+    fixtures = (
+        (
+            "fn main() -> tryte:\n"
+            "    discard first(1)\n"
+            "    discard second(2)\n",
+            2,
+            2,
+        ),
+        (
+            "fn main() -> tryte:\n"
+            "    discard outer(inner(1), leaf(2))\n",
+            3,
+            4,
+        ),
+        (
+            "fn main() -> tryte:\n"
+            "    mut value: i64 = array[index]\n"
+            "    discard target((1 + 2))\n",
+            1,
+            2,
+        ),
+    )
+    for source, expected_calls, expected_arguments in fixtures:
+        model = collect_call_argument_model(source)
+        assert model["calls"] == expected_calls
+        assert model["total_call_arguments"] == expected_arguments
 
 
 def test_canonical_model_must_reproduce_native_736_argument_closure() -> None:

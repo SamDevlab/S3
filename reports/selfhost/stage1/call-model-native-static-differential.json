@@ -1,42 +1,93 @@
 {
-  "schema": "s3.selfhost.call-model-native-static-differential.v1",
-  "status": "BLOCKED_LINUX_NATIVE_ENVIRONMENT_UNAVAILABLE",
+  "schema": "s3.selfhost.call-model-native-static-differential.v2",
+  "status": "PASS_NATIVE_STATIC_EQUIVALENT",
   "canonical_source_sha256": "20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341",
   "canonical_source_bytes": 166984,
-  "native_probe": {
+  "native": {
     "transport": "ssh s3-vm",
     "endpoint": "127.0.0.1:2222",
-    "result": "CONNECTION_REFUSED",
-    "error": "connect to host 127.0.0.1 port 2222: Connection refused",
-    "native_identifier_open_candidates": null,
-    "native_signatures": null,
-    "native_calls": null,
-    "native_arguments": null,
-    "native_max_arity": null
-  },
-  "static_model": {
-    "static_identifier_open_candidates": null,
-    "static_signatures": null,
-    "static_calls": 792,
-    "static_arguments": 1041,
-    "static_max_arity": 27,
-    "source": "reports/selfhost/stage1/codegen-ir-v2-call-argument-static-audit.json"
-  },
-  "historical_native_evidence": {
+    "platform": "Linux x86_64",
     "identifier_open_candidates": 690,
     "signatures": 34,
     "calls": 656,
     "arguments": 736,
     "max_arity": 4,
-    "status": "VALID_PRIOR_TO_CURRENT_SSH_UNAVAILABLE_PROBE"
+    "max_active_call_depth": 2,
+    "event_sequence": {
+      "events": 1392,
+      "format": "(kind, source_offset, token_kind_or_previous_kind, value_or_previous_value, active_call_depth)",
+      "prefix_captured": true,
+      "last_event_offset": 41376
+    },
+    "scan_termination": {
+      "token": "1000000000000",
+      "offset": 41502,
+      "line": 1304,
+      "column": 21,
+      "packed_token_formula": "next_cursor * 1000000 + kind * 1000 + (value + 500)",
+      "effect": "wide numeric value carries into the decoded cursor lane and terminates the native token loop before later source events"
+    }
   },
-  "first_divergence_offset": null,
-  "first_divergence_line": null,
-  "first_divergence_column": null,
-  "native_decision": "UNAVAILABLE",
-  "static_decision": "NOT_COMPARED",
-  "root_cause": "LINUX_NATIVE_ENVIRONMENT_UNAVAILABLE",
-  "post_fix_native_static_equal": null,
-  "canonical_source_mutated": false,
-  "next": "RESTORE_LINUX_GUEST_THEN_RUN_NATIVE_STATIC_DIFFERENTIAL"
+  "static_before": {
+    "identifier_open_candidates": 828,
+    "signatures": 36,
+    "calls": 792,
+    "arguments": 1041,
+    "max_arity": 27,
+    "max_active_call_depth": 2,
+    "behavior": "continued lexical scanning after the native packed-token termination"
+  },
+  "first_call_divergence": {
+    "offset": 42725,
+    "line": 1340,
+    "column": 46,
+    "context": "mut length: i64 = s3_stage1_source_length()",
+    "native_decision": "NO_DECISION_AFTER_PACKED_TOKEN_TERMINATION_AT_41502",
+    "static_decision": {
+      "classification": "CALL",
+      "previous_kind": 1,
+      "previous_value": 361,
+      "active_call_depth_before": 0
+    }
+  },
+  "first_argument_divergence": {
+    "offset": 81327,
+    "line": 1477,
+    "column": 38,
+    "context": "mut packed: i64 = scan_token(cursor, length)",
+    "native_decision": "NO_DECISION_AFTER_PACKED_TOKEN_TERMINATION_AT_41502",
+    "static_decision": {
+      "classification": "ARGUMENT",
+      "argument_kind": 1,
+      "argument_value": 310,
+      "active_call_depth": 1
+    }
+  },
+  "root_cause": {
+    "category": "PACKED_TOKEN_VALUE_LANE_OVERFLOW",
+    "description": "The native Stage1 scanner does not return a structured token. It packs cursor, kind, and value into one integer. The Python oracle previously consumed the complete lexical stream and therefore modeled events after a native cursor jump caused by the 1000000000000 literal.",
+    "correction": "The static oracle now performs the same pack/decode step with truncation-toward-zero division and stops when the decoded cursor leaves the source. No canonical-source hash, offset subtraction, or special-case count is used.",
+    "canonical_source_mutated": false
+  },
+  "static_after": {
+    "identifier_open_candidates": 690,
+    "signatures": 34,
+    "calls": 656,
+    "arguments": 736,
+    "max_arity": 4,
+    "max_active_call_depth": 2,
+    "last_token_offset": 41502
+  },
+  "exact_match": {
+    "calls": true,
+    "arguments": true,
+    "max_arity": true,
+    "identifier_open_candidates": true,
+    "signatures": true,
+    "event_sequence_if_available": true,
+    "native_event_prefix_events": 1392
+  },
+  "native_evidence": true,
+  "call_argument_model": "PASS_NATIVE_EQUIVALENT",
+  "next": "CONTINUE_PREPARED_NATIVE_CANDIDATE_CHAIN"
 }
