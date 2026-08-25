@@ -1,7 +1,7 @@
 {
   "schema": "s3.selfhost.stage1-build.v4",
   "final_tested_source_head": "bb6cac76270fa1eccf98a9f246e1ee00993ff923",
-  "final_candidate_head": "REPORT_COMMIT_HEAD_TO_BE_RECORDED",
+  "final_candidate_head": "9cda9df",
   "source_changed_after_final_gates": false,
   "stage0_source_check": "PASS",
   "stage0_native_assembly": "PASS",
