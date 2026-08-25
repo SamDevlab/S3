@@ -1,156 +1,137 @@
-S3 PR #268 — HOME NATIVE IR-V2 CANDIDATE CHECK
+S3 PR #268 — HOME NATIVE IR-V2 FULL CANDIDATE CHECK
 
 Branch:
 feature/actual-stage1-compiler-seed-20260824
 
 Purpose:
-Qualify prepared IR-v2 candidates on real Linux x86-64 without mutating the canonical compiler source, then use the resulting native parameter evidence to run the exact local-metadata candidate preflight.
+Run the prepared fail-closed candidate chain on real Linux x86-64 without mutating or promoting the canonical compiler source.
 
 Run only after pulling the latest branch:
 
 git pull --ff-only
-python3 tools/qualify_stage1_codegen_ir_v2_chain.py
+python3 tools/qualify_stage1_codegen_ir_v2_full_chain.py
 
-The chain performs, in order:
-1. focused IR-v2 tooling/unit tests, including chain and local-candidate tests;
-2. static physical-storage reuse audit on the canonical source;
-3. static physical-storage reuse audit on the exact compaction+parameter candidate;
-4. static packed 730-block design audit;
-5. static fixed-array initializer audit;
-6. compaction-only native Stage1 candidate;
-7. validation of the compaction report;
-8. packed parameter IR-v2 static preflight;
-9. packed parameter IR-v2 native Stage1 candidate;
-10. fail-closed verifier/bounded-capacity checks;
-11. native-driven next-phase budget;
-12. if the parameter report has full native provenance, rebuild the exact parameter candidate and run the exact local-metadata candidate preflight in memory;
-13. route the next gate from native parameter counts + exact local-candidate lexical/control delta.
+Do NOT run the older base chain separately unless diagnosing a reported blocker. The full-chain wrapper invokes it internally.
 
-The local preflight does NOT run a native local Stage1 and does NOT mutate/promote the canonical source.
+The full chain performs, in order:
+1. dedicated IR-v2 guard tests, including call-argument, local qualifier and full-chain routing tests;
+2. static call/call-argument model validation against the authoritative native canonical closure (656 calls, 736 argument occurrences, max arity 4, capacity 746);
+3. existing IR-v2 tooling/unit tests;
+4. canonical + exact parameter-candidate storage audits;
+5. block-capacity and initializer audits;
+6. native compaction candidate;
+7. native packed-parameter candidate;
+8. native-derived next-phase budget;
+9. exact report-gated local candidate preflight;
+10. if and only if local static preflight routes to NATIVE_LOCAL_METADATA_CANDIDATE, transactional native local candidate build/self-source verification;
+11. route the next gate from the actual result.
 
-Important new local gate:
-The old native snapshot recorded local_count=23, but that number is NOT used as a new local-record capacity by assumption. The local preflight mirrors the Stage1 lexer/hash model and requires the fresh native parameter-candidate report to agree with:
-- every Stage1 identifier hash 87 token;
-- literal `mut` count;
-- supported `mut name: type = ...` / `mut name: type[N] = ...` declarations;
-- numeric-token/value count;
-- structural event count;
-- call count.
+The chain is candidate-only:
+CANONICAL_SOURCE_MUTATED=False
+CANONICAL_COMMIT_ALLOWED=False
+STAGE2=NOT_STARTED
+STAGE3=NOT_STARTED
+FULL_SELF_HOSTING=NO
 
-If those do not agree, the correct result is:
-LOCAL_STATIC_PREFLIGHT=BLOCKED_STAGE1_NATIVE_LEXICAL_MODEL_MISMATCH
-LOCAL_NATIVE_QUALIFICATION_ALLOWED=False
-LOCAL_NEXT=RECONCILE_NATIVE_LOCAL_VALUE_EVENT_CALL_COUNTS_BEFORE_LOCAL_IR_V2
+CALL-ARGUMENT SAFETY
+The canonical pool was previously measured natively at:
+CALLS=656
+CALL_ARGUMENTS=736
+MAX_ARITY=4
+CALL_ARGUMENT_CAPACITY=746
+HEADROOM=10
 
-That is a valid fail-closed result, not a test harness failure.
+The new static model is not trusted merely because it exists. Before projecting parameter/local candidates it must reproduce the unchanged canonical native closure exactly, including the arity distribution. If it cannot, the chain stops before native candidate work.
 
-Local record candidate now preserves:
+Possible call-argument blockers:
+STATUS=BLOCKED_AT_CALL_ARGUMENT_PREFLIGHT_ERROR
+or
+STATUS=BLOCKED_AT_PARAMETER_CALL_ARGUMENT_PREFLIGHT
+
+A parameter candidate that would exceed 746 stored argument occurrences routes to:
+EXTEND_CALL_ARGUMENT_POOL_FROM_EXACT_PARAMETER_CANDIDATE_REQUIREMENT
+
+A local candidate that would exceed the pool routes to:
+EXTEND_CALL_ARGUMENT_POOL_FROM_EXACT_LOCAL_CANDIDATE_REQUIREMENT
+
+LOCAL METADATA
+The local candidate preserves:
 - owner function ID;
 - name identity;
 - type ID;
 - mutability;
-- storage kind (scalar or fixed array);
+- storage kind (SCALAR or FIXED_ARRAY);
 - per-function local ordinal;
 - fixed-array extent;
 - semantic value ID.
 
-A physical byte/frame offset is deliberately NOT frozen in semantic IR. The future emitter owns deterministic physical layout.
+Physical frame/byte offsets are not frozen in semantic IR. The future emitter owns deterministic physical layout.
 
-The local candidate capacity is selected from its exact self-source local-record requirement after the parameter report is validated. It is NOT fixed to 23 or 64. One non-banked lane is allowed only up to 365 records; above that the preflight routes to a measured banked-local design.
+Historical local_count=23 is not used as capacity authority. The fresh parameter candidate must agree with the Stage1 lexical/hash model for local/value/event/call counts before local native qualification.
 
-Expected native-chain success through parameters:
-TOOLING_TESTS=PASS
-STATIC_PREFLIGHT=PASS
-STORAGE_REUSE=STATIC_STORAGE_AUDIT_PASS
-PARAMETER_CANDIDATE_STORAGE_REUSE=STATIC_STORAGE_AUDIT_PASS
-BLOCK_CAPACITY_DESIGN=STATIC_BLOCK_CAPACITY_DESIGN_PASS
-ARRAY_INITIALIZERS=STATIC_ARRAY_INITIALIZER_AUDIT_PASS
-CAPACITY_GATE=PASS
-PARAMETER_GATE=PASS
-CHAIN_STATUS=PASS_THROUGH_PARAMETER_CANDIDATE
+Local record capacity is selected from the exact self-source candidate requirement. A single lane is allowed only when required_records <= 365; otherwise the chain routes to measured banked-local storage.
+
+VALID LOCAL ROUTES
+The exact static preflight may return:
+NATIVE_LOCAL_METADATA_CANDIDATE
+PACKED_730_BLOCK_CAPACITY_CANDIDATE
+QUALIFY_ZERO_INIT_OR_VALUE_NAMESPACE_CAPACITY_REDUCTION
+QUALIFY_ADDITIONAL_EVENT_COMPACTION
+EXTEND_CALL_CAPACITY_FROM_MEASURED_LOCAL_CANDIDATE_REQUIREMENT
+EXTEND_CALL_ARGUMENT_POOL_FROM_EXACT_LOCAL_CANDIDATE_REQUIREMENT
+DESIGN_BANKED_LOCAL_RECORD_STORAGE_FROM_EXACT_REQUIRED_COUNT
+RECONCILE_NATIVE_LOCAL_VALUE_EVENT_CALL_COUNTS_BEFORE_LOCAL_IR_V2
+
+If local native qualification runs, it remains transactional. It requires:
+- strict Linux x86-64 parameter-report provenance;
+- every parameter subgate PASS;
+- exact parameter source SHA/bytes;
+- exact local preflight SHA/bytes;
+- call/call-argument capacity safety;
+- Stage0 build of the local candidate in a temporary directory;
+- trivial return-7 compile PASS;
+- self-source exit 2 with S3_STAGE1_EMITTER_BLOCKED;
+- native audit counts equal the exact preflight projections;
+- local_count and ir_local_count equal the selected exact local capacity;
+- function/foreign/local-function identity preserved.
+
+Best-case end of this command:
+STATUS=PASS_THROUGH_LOCAL_NATIVE_CANDIDATE
+NEXT=UNIFIED_VALUE_NAMESPACE_CANDIDATE_PREFLIGHT
 CANONICAL_SOURCE_MUTATED=False
+STAGE2=NOT_STARTED
+STAGE3=NOT_STARTED
 
-After that, inspect LOCAL_STATIC_PREFLIGHT and LOCAL_NEXT.
+That best-case result is NOT self-hosting and does NOT authorize canonical promotion by itself.
 
-Possible best case for the new local preflight:
-LOCAL_STATIC_PREFLIGHT=PASS_STATIC_LOCAL_CANDIDATE_NATIVE_QUALIFICATION_REQUIRED
-LOCAL_REQUIRED_RECORDS=<exact candidate self-source count>
-LOCAL_SELECTED_CAPACITY=<same bounded exact count, <=365>
-LOCAL_PROJECTED_EVENTS=<native parameter events + exact candidate delta>
-LOCAL_PROJECTED_VALUES=<native parameter values + exact numeric delta>
-LOCAL_PROJECTED_BLOCKS=<native parameter blocks + exact match/while block delta>
-LOCAL_PROJECTED_CALLS=<native parameter calls + exact call delta>
-LOCAL_NATIVE_QUALIFICATION_ALLOWED=True
-LOCAL_NEXT=NATIVE_LOCAL_METADATA_CANDIDATE
-
-Other valid local routes include:
-LOCAL_NEXT=PACKED_730_BLOCK_CAPACITY_CANDIDATE
-LOCAL_NEXT=QUALIFY_ZERO_INIT_OR_VALUE_NAMESPACE_CAPACITY_REDUCTION
-LOCAL_NEXT=QUALIFY_ADDITIONAL_EVENT_COMPACTION
-LOCAL_NEXT=EXTEND_CALL_CAPACITY_FROM_MEASURED_LOCAL_CANDIDATE_REQUIREMENT
-LOCAL_NEXT=DESIGN_BANKED_LOCAL_RECORD_STORAGE_FROM_EXACT_REQUIRED_COUNT
-LOCAL_NEXT=RECONCILE_NATIVE_LOCAL_VALUE_EVENT_CALL_COUNTS_BEFORE_LOCAL_IR_V2
-
-LOCAL_IR_V2_START_ALLOWED=False in the next-phase budget remains expected. The exact local preflight is a separate routing gate; even when LOCAL_NATIVE_QUALIFICATION_ALLOWED=True, no canonical source is promoted and no native local PASS has occurred yet.
-
-Reports written/prepared:
-reports/selfhost/stage1/codegen-ir-v2-storage-reuse-audit.json
-reports/selfhost/stage1/codegen-ir-v2-parameter-candidate-storage-reuse-audit.json
-reports/selfhost/stage1/codegen-ir-v2-block-capacity-audit.json
-reports/selfhost/stage1/codegen-ir-v2-array-initializer-audit.json
+Reports produced/updated include:
+reports/selfhost/stage1/codegen-ir-v2-call-argument-static-audit.json
 reports/selfhost/stage1/codegen-ir-v2-static-preflight.json
 reports/selfhost/stage1/codegen-ir-v2-capacity-native-candidate.json
 reports/selfhost/stage1/codegen-ir-v2-parameters-native-candidate.json
 reports/selfhost/stage1/codegen-ir-v2-next-phase-budget.json
 reports/selfhost/stage1/codegen-ir-v2-locals-static-preflight.json
+reports/selfhost/stage1/codegen-ir-v2-locals-native-candidate.json
 reports/selfhost/stage1/codegen-ir-v2-native-chain.json
+reports/selfhost/stage1/codegen-ir-v2-full-candidate-chain.json
 
-Local tooling prepared:
+Prepared tooling:
+tools/audit_stage1_codegen_ir_v2_call_arguments.py
 tools/audit_stage1_codegen_ir_v2_local_metadata.py
 tools/patch_stage1_codegen_ir_v2_locals.py
 tools/preflight_stage1_codegen_ir_v2_locals.py
-tests/test_stage1_codegen_ir_v2_local_metadata.py
-tests/test_stage1_codegen_ir_v2_locals.py
+tools/qualify_stage1_codegen_ir_v2_locals.py
+tools/qualify_stage1_codegen_ir_v2_full_chain.py
 
 Important:
-- The chain NEVER promotes or rewrites canonical selfhost/compiler/s3c_stage1.s3.
-- Do NOT run the local transformer CLI manually just to bypass a preflight result.
-- Do NOT run T4.
+- Do NOT bypass a routed blocker by manually materializing/promoting a candidate.
+- Do NOT run T4 during this development chain.
 - Do NOT run Stage2 or Stage3.
 - Do NOT run benchmarks.
-- Do NOT run a promoter with --in-place yet.
-- Preserve all JSON reports and send the final console output/report for review.
+- Do NOT run a promoter with --in-place.
+- Preserve all JSON reports and console output.
 
-Storage/block strategy:
-- reuse four existing 365-slot AST/event banks as candidate physical IR-v2 instruction storage only after the legacy event verifier;
-- audit the same storage assumption on the exact compaction+parameter candidate before native work;
-- reuse four existing 365-slot value banks only after an explicit semantic namespace rebuild;
-- candidate block capacity is 730 by reusing two existing i64[365] block arrays as packed block banks;
-- packed block owns function owner, terminator kind, target A/B, condition value ID and return value ID;
-- instruction record is OWNERLESS: block/opcode/operandA/operandB/result/aux IDs;
-- instruction owner is derived via block_id -> packed block owner;
-- ownerless instruction max at 730 blocks is 213156320415447743, within signed i64;
-- the rejected ownerful layout requires 13855160827004103359 and exceeds signed i64;
-- aux is an ID/reference only, not an arbitrary raw i64 payload;
-- event -> IR-v2 instruction mapping/in-place rewrite still requires a new native IR-v2 verifier.
-
-The initializer audit only quantifies source structure. A large count of all-zero initializer items is NOT automatically value-pool headroom. Any aggregate zero-init transform still requires a native Stage1 candidate proving identical behavior and reduced semantic value usage.
-
-Compaction qualification remains fail-closed:
-- 2 assignment statements removed from the self-source;
-- 1 numeric literal removed;
-- expected compacted structural values: 1212;
-- expected compacted assignments: 73;
-- static projections are never substituted for native measurements.
-
-The prepared parameter phase uses one packed i64[64] lane encoding:
-owner_function_id + name_identity + type_id + abi_index + value_id.
-
-Semantic value IDs remain separate from the legacy structural numeric-token stream:
-parameter fixed domain = [0,64)
-parameter IDs actually used = [0,parameter_count)
-local candidate IDs = 64 + global local-record index
-future dynamic instruction/constant/result IDs must be allocated only after the value namespace is explicitly rebuilt.
+Historical T4 remains historical only: 455 selected, 454 passed, 0 failed, 1 timeout at HEAVY_SELF_HOSTING 180s, exit 1. New tooling exists after that run, so exactly one new T4 belongs only after a future compiler/test source freeze.
 
 Current canonical source remains unchanged:
 sha256=20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341
@@ -159,6 +140,5 @@ bytes=166984
 FULL_SELF_HOSTING=NO
 GENERAL_EMITTER=BLOCKED_IR_V2_INCOMPLETE
 SELF_EMIT=NOT_STARTED
-LOCAL_NATIVE_QUALIFICATION=NOT_RUN
 STAGE2=NOT_STARTED
 STAGE3=NOT_STARTED
