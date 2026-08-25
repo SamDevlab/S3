@@ -1,0 +1,96 @@
+{
+  "schema": "s3.selfhost.codegen-ir-v2-local-value-plan.v1",
+  "status": "PRE_IMPLEMENTATION_PLAN",
+  "native_evidence": false,
+  "canonical_source_mutated": false,
+  "pr": 268,
+  "prerequisite": {
+    "capacity_candidate": "PASS_NATIVE_CANDIDATE_REQUIRED",
+    "parameter_candidate": "PASS_NATIVE_CANDIDATE_REQUIRED",
+    "reason": "Local/value implementation must use the post-parameter native audit as its capacity baseline."
+  },
+  "local_record": {
+    "observed_pre_ir_v2_locals": 23,
+    "selected_capacity": 64,
+    "physical_lanes": 1,
+    "lane_type": "i64[64]",
+    "packed_fields": [
+      "owner_function_id",
+      "name_identity",
+      "type_id",
+      "mutability",
+      "frame_slot",
+      "value_id"
+    ],
+    "encoding": {
+      "radix": 1000,
+      "formula": "(owner+1)*1000000000000000 + (name+1)*1000000000000 + (type+1)*1000000000 + (mutability_code+1)*1000000 + (frame_slot+1)*1000 + (value_id+1)",
+      "signed_i64_safe_for_bounded_bootstrap_domain": true,
+      "maximum_component_exclusive": 1000
+    },
+    "mutability_rule": "derive from the declaration form; fail closed on an unrepresented declaration kind",
+    "frame_slot_rule": "deterministic declaration order within owner function; zero based",
+    "reason_for_packing": "One record per local avoids five or six independently initialized arrays, reducing self-source value pressure."
+  },
+  "value_namespace": {
+    "parameter_ids": "[0, parameter_count)",
+    "local_storage_ids": "[parameter_count, parameter_count + local_count)",
+    "first_non_storage_value_id": "parameter_count + local_count",
+    "instruction_constant_and_result_ids": "allocated monotonically from first_non_storage_value_id in deterministic lowering order",
+    "no_collision_rule": true,
+    "no_reuse_rule": "bootstrap IR v2 does not recycle value IDs",
+    "ownership_rule": "every value ID records exactly one owner_function_id and one definition kind"
+  },
+  "required_local_verifier_checks": [
+    "local record is nonzero for every declared local",
+    "owner function ID is valid",
+    "name identity is in the bounded identifier domain",
+    "type ID is a valid S3 type identity",
+    "mutability code is recognized",
+    "frame slot is unique within the owner function",
+    "local value ID is inside the reserved local-storage range",
+    "local value IDs do not collide with parameter IDs",
+    "no local record exceeds selected capacity"
+  ],
+  "next_def_use_contract": {
+    "parameter_reference": "resolves to parameter value ID",
+    "local_reference": "resolves to local storage value ID",
+    "store": "records destination local value ID and source value ID",
+    "constant": "defines a new value ID",
+    "arithmetic_or_comparison": "records operand value IDs and a new result value ID",
+    "call": "records ordered argument value IDs and result value ID or explicit no-result sentinel",
+    "terminator": "records condition or return value ID when required"
+  },
+  "capacity_policy": {
+    "event_capacity": 1460,
+    "value_capacity": 1460,
+    "block_capacity": 365,
+    "call_capacity": 730,
+    "call_argument_capacity": 746,
+    "local_record_capacity": 64,
+    "rule": "Use the actual parameter-candidate native audit as the new baseline. Do not expand any pool from a static projection alone."
+  },
+  "forbidden_shortcuts": [
+    "raw source reread in emitter",
+    "source regex or pattern matching for codegen",
+    "hardcoded canonical compiler function bodies",
+    "Python code generation after Stage1",
+    "embedded Stage2 assembly",
+    "Stage0 assembly copying",
+    "silent truncation or ID wraparound"
+  ],
+  "implementation_order_after_native_parameter_pass": [
+    "LOCAL_IDENTITY_TYPE_MUTABILITY_FRAME_SLOT",
+    "UNIFIED_VALUE_NAMESPACE",
+    "INSTRUCTION_OPERAND_RESULT_DEF_USE",
+    "CALL_INSTRUCTION_RESULT_LINKAGE",
+    "TERMINATOR_CONDITION_RETURN_LINKAGE",
+    "VERIFIER_V2",
+    "GENERAL_EMITTER_FIXTURES",
+    "SELF_EMIT",
+    "STAGE1_TO_STAGE2"
+  ],
+  "stage2": "NOT_STARTED",
+  "stage3": "NOT_STARTED",
+  "full_self_hosting": false
+}
