@@ -69,7 +69,16 @@ BASELINE_DISCARDS = 699
 BASELINE_PARAMETERS = 64
 BASELINE_CALLS = 656
 BASELINE_VALUES = 1213
+BASELINE_ASSIGNMENTS = 75
 BASELINE_BLOCKS = 305
+
+# The candidate intentionally removes exactly these two source assignments:
+#   ir_ast_event_opcode = 5
+#   ir_ast_event_operand = value
+# Only the first removed assignment contains a numeric literal.  The Stage1
+# structural scanner therefore must observe these deterministic source deltas.
+EXPECTED_COMPACTED_VALUES = BASELINE_VALUES - 1
+EXPECTED_COMPACTED_ASSIGNMENTS = BASELINE_ASSIGNMENTS - 2
 
 
 def _sha256_bytes(data: bytes) -> str:
@@ -149,14 +158,16 @@ def _audit_invariants(audit: dict[str, int] | None) -> dict[str, bool]:
             "discard_count_preserved": False,
             "parameter_count_preserved": False,
             "call_count_preserved": False,
-            "value_count_preserved": False,
+            "value_count_expected_delta": False,
+            "assignment_count_expected_delta": False,
             "block_count_preserved": False,
         }
     return {
         "discard_count_preserved": audit.get("ast_discard_count") == BASELINE_DISCARDS,
         "parameter_count_preserved": audit.get("parameter_count") == BASELINE_PARAMETERS,
         "call_count_preserved": audit.get("ast_call_count") == BASELINE_CALLS,
-        "value_count_preserved": audit.get("ir_value_count") == BASELINE_VALUES,
+        "value_count_expected_delta": audit.get("ir_value_count") == EXPECTED_COMPACTED_VALUES,
+        "assignment_count_expected_delta": audit.get("ast_assignment_count") == EXPECTED_COMPACTED_ASSIGNMENTS,
         "block_count_preserved": audit.get("ir_block_count") == BASELINE_BLOCKS,
     }
 
@@ -258,10 +269,18 @@ def qualify(*, report_path: Path, run_contract_tests: bool) -> dict[str, object]
                 "source_bytes": len(baseline_bytes),
                 "native_events": BASELINE_EVENTS,
                 "native_discard_events": BASELINE_DISCARDS,
+                "native_values": BASELINE_VALUES,
+                "native_assignments": BASELINE_ASSIGNMENTS,
                 "event_capacity": 1460,
                 "parameter_capacity": 64,
                 "call_capacity": 730,
                 "call_argument_capacity": 746,
+            },
+            "expected_source_delta": {
+                "removed_assignments": 2,
+                "removed_numeric_literals": 1,
+                "expected_ir_value_count": EXPECTED_COMPACTED_VALUES,
+                "expected_ast_assignment_count": EXPECTED_COMPACTED_ASSIGNMENTS,
             },
             "candidate": {
                 "transform": "DROP_REDUNDANT_DISCARD_KEYWORD_EVENT",
@@ -357,6 +376,8 @@ def main(argv: list[str] | None = None) -> int:
     if audit is not None:
         print(f"ACTUAL_IR_INSTRUCTION_COUNT={audit['ir_instruction_count']}")
         print(f"ACTUAL_AST_DISCARD_COUNT={audit['ast_discard_count']}")
+        print(f"ACTUAL_AST_ASSIGNMENT_COUNT={audit['ast_assignment_count']}")
+        print(f"ACTUAL_IR_VALUE_COUNT={audit['ir_value_count']}")
         print(f"ACTUAL_PARAMETER_COUNT={audit['parameter_count']}")
         print(f"ACTUAL_CALL_COUNT={audit['ast_call_count']}")
     return 0 if qualification["canonical_commit_allowed"] else 2
