@@ -135,7 +135,13 @@ def transform_parameters(compacted_source: str) -> str:
         label="parameter declaration capture",
     )
 
-    type_capture_anchor = "        argument_possible = 0\n"
+    # Match the outer argument-capture block as a complete line pair. A bare
+    # indentation prefix also occurs in nested match branches and is not a
+    # unique transform boundary.
+    type_capture_anchor = (
+        "        argument_possible = 0\n"
+        "        match kind == 1:\n"
+    )
     type_capture = (
         "        match pending_parameter_index >= 0:\n"
         "            -1:\n"

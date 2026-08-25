@@ -16,8 +16,8 @@ from __future__ import annotations
 
 import argparse
 import json
-import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 from tools.patch_stage1_codegen_ir_v2_locals import (
@@ -82,7 +82,7 @@ def _write(path: Path, value: dict[str, object]) -> None:
 def _run_tooling_tests() -> dict[str, object]:
     completed = subprocess.run(
         [
-            shutil.which("python3") or "python3",
+            sys.executable,
             "-m",
             "pytest",
             "-q",

@@ -16,6 +16,7 @@ import platform
 import shutil
 import subprocess
 import tempfile
+import sys
 from pathlib import Path
 
 from tools.build_stage1_compiler import build_stage1
@@ -131,7 +132,7 @@ def _expected_trivial_assembly(value: int) -> bytes:
 def _run_contract_tests() -> dict[str, object]:
     completed = subprocess.run(
         [
-            shutil.which("python3") or "python3",
+            sys.executable,
             "-m",
             "pytest",
             "-q",

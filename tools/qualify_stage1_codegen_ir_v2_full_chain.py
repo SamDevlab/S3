@@ -14,8 +14,8 @@ from __future__ import annotations
 
 import argparse
 import json
-import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import tools.qualify_stage1_codegen_ir_v2_chain as base_chain
@@ -65,7 +65,7 @@ def _write(path: Path, value: dict[str, object]) -> None:
 def _run_guard_tests() -> dict[str, object]:
     completed = subprocess.run(
         [
-            shutil.which("python3") or "python3",
+            sys.executable,
             "-m",
             "pytest",
             "-q",
