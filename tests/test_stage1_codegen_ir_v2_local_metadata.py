@@ -3,12 +3,14 @@ from __future__ import annotations
 import pytest
 
 from tools.audit_stage1_codegen_ir_v2_local_metadata import (
-    FRAME_SLOT_DOMAIN,
+    EXTENT_DOMAIN,
     FUNCTION_DOMAIN,
+    LOCAL_ORDINAL_DOMAIN,
     MUTABILITY_DOMAIN,
     NAME_DOMAIN,
     SIGNED_I64_MAX,
     SOURCE,
+    STORAGE_KIND_DOMAIN,
     TYPE_DOMAIN,
     VALUE_ID_DOMAIN,
     audit,
@@ -24,7 +26,9 @@ def test_packed_local_boundary_round_trip() -> None:
         NAME_DOMAIN - 1,
         TYPE_DOMAIN - 1,
         MUTABILITY_DOMAIN - 1,
-        FRAME_SLOT_DOMAIN - 1,
+        STORAGE_KIND_DOMAIN - 1,
+        LOCAL_ORDINAL_DOMAIN - 1,
+        EXTENT_DOMAIN - 1,
         VALUE_ID_DOMAIN - 1,
     )
     record = pack_local(*fields)
@@ -40,30 +44,38 @@ def test_packed_local_boundary_round_trip() -> None:
         (1, NAME_DOMAIN),
         (2, TYPE_DOMAIN),
         (3, MUTABILITY_DOMAIN),
-        (4, FRAME_SLOT_DOMAIN),
-        (5, VALUE_ID_DOMAIN),
+        (4, STORAGE_KIND_DOMAIN),
+        (5, LOCAL_ORDINAL_DOMAIN),
+        (6, EXTENT_DOMAIN),
+        (7, VALUE_ID_DOMAIN),
     ],
 )
 def test_packed_local_rejects_out_of_domain(index: int, bad_value: int) -> None:
-    fields = [0, 0, 0, 0, 0, 0]
+    fields = [0, 0, 0, 0, 0, 0, 0, 0]
     fields[index] = bad_value
     with pytest.raises(ValueError, match="outside packed-local domain"):
         pack_local(*fields)
 
 
-def test_current_source_supports_local_metadata_design_without_existing_lane() -> None:
+def test_current_source_supports_shape_preserving_local_metadata_design() -> None:
     result = audit(SOURCE.read_text(encoding="utf-8"))
     assert result["status"] == "STATIC_LOCAL_METADATA_DESIGN_PASS"
     assert result["observed"]["existing_local_record_arrays"] == []
     assert result["guards"]["mut_keyword_is_current_local_signal"] is True
     assert result["guards"]["current_function_state_exists"] is True
     assert result["guards"]["packed_local_record_fits_signed_i64"] is True
-    assert result["candidate_record"]["planned_value_id_range"] == {
-        "start": 64,
-        "end_exclusive": 128,
+    assert result["guards"]["observed_fixed_array_extents_fit_record_domain"] is True
+    assert result["observed"]["fixed_array_declaration_lines"] > 0
+    assert result["candidate_record"]["storage_kinds"] == {
+        "1": "SCALAR",
+        "2": "FIXED_ARRAY",
     }
-    assert result["parser_strategy"]["frame_slot"]["requires_new_large_array"] is False
-    assert result["local_transform"] == "NOT_IMPLEMENTED"
+    assert result["candidate_record"]["parameter_value_id_domain_reserved"] == [0, 64]
+    assert result["parser_strategy"]["local_ordinal"].endswith(
+        "physical frame/static offset is emitter-owned"
+    )
+    assert result["parser_strategy"]["array_shape"].startswith("storage_kind=2")
+    assert result["local_transform"] == "PREPARATION_ALLOWED_REPORT_GATED"
 
 
 def test_local_design_audit_fails_if_mut_signal_disappears() -> None:
@@ -88,4 +100,12 @@ def test_local_design_audit_fails_if_existing_lane_would_be_silently_reinterpret
 
 def test_boolean_local_field_is_rejected() -> None:
     with pytest.raises(ValueError, match="owner outside packed-local domain"):
-        pack_local(True, 1, 1, 1, 1, 1)
+        pack_local(True, 1, 1, 1, 1, 1, 1, 1)
+
+
+def test_scalar_and_fixed_array_shapes_are_distinct_records() -> None:
+    scalar = pack_local(1, 2, 67, 1, 1, 1, 1, 65)
+    array = pack_local(1, 2, 67, 1, 2, 1, 365, 65)
+    assert scalar != array
+    assert unpack_local(scalar)[4:7] == (1, 1, 1)
+    assert unpack_local(array)[4:7] == (2, 1, 365)
