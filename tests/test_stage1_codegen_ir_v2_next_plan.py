@@ -29,16 +29,20 @@ def test_missing_native_parameter_report_stays_fail_closed() -> None:
     assert plan["native_evidence"] is False
     assert plan["local_ir_v2_design_possible"] is False
     assert plan["local_ir_v2_start_allowed"] is False
+    assert plan["local_candidate_control_preflight_required"] is True
     assert plan["unified_value_namespace_start_allowed"] is False
 
 
-def test_good_native_parameter_report_reserves_logical_symbol_ranges_but_requires_migration() -> None:
+def test_good_native_parameter_report_reserves_logical_symbol_ranges_but_requires_local_control_preflight() -> None:
     plan = build_plan(_parameter_report())
-    assert plan["status"] == "READY_FOR_LOCAL_IR_V2_DESIGN"
+    assert plan["status"] == "READY_FOR_LOCAL_IR_V2_CANDIDATE_PREFLIGHT"
     assert plan["local_ir_v2_design_possible"] is True
-    assert plan["local_ir_v2_start_allowed"] is True
+    assert plan["local_ir_v2_start_allowed"] is False
+    assert plan["local_candidate_control_preflight_required"] is True
+    assert plan["legacy_local_route_has_any_control_budget"] is True
     assert plan["block_capacity_expansion_required_before_local_metadata"] is False
     assert plan["unified_value_namespace_start_allowed"] is False
+    assert plan["next"] == "PREPARE_LOCAL_METADATA_CANDIDATE_AND_PROJECT_EXACT_CONTROL_DELTA"
 
     ranges = plan["value_id_reservations"]
     assert ranges["status"] == "LOGICAL_RESERVATION_PENDING_NAMESPACE_REBUILD"
@@ -66,6 +70,7 @@ def test_good_native_parameter_report_reserves_logical_symbol_ranges_but_require
     assert plan["headroom"]["blocks_strict_pass"] == 44
     assert plan["headroom"]["legacy_additional_structural_control_budget"] == 14
     assert plan["headroom"]["local_records"] == 41
+    assert plan["block_capacity_route"]["direct_local_transform_authorized"] is False
 
 
 def test_near_full_legacy_block_pool_routes_to_730_block_candidate() -> None:
@@ -74,18 +79,22 @@ def test_near_full_legacy_block_pool_routes_to_730_block_candidate() -> None:
     assert plan["headroom"]["blocks_strict_pass"] == 2
     assert plan["headroom"]["legacy_additional_structural_control_budget"] == 0
     assert plan["local_ir_v2_start_allowed"] is False
+    assert plan["local_candidate_control_preflight_required"] is False
     assert plan["block_capacity_expansion_required_before_local_metadata"] is True
     assert plan["status"] == "READY_FOR_BLOCK_CAPACITY_EXPANSION_BEFORE_LOCAL_IR_V2"
     assert plan["next"] == "PACKED_730_BLOCK_CAPACITY_CANDIDATE"
     assert plan["block_capacity_route"]["candidate_capacity"] == 730
 
 
-def test_one_additional_control_event_is_enough_to_keep_direct_local_route_open() -> None:
+def test_one_additional_control_event_is_not_enough_to_authorize_unknown_local_transform() -> None:
     plan = build_plan(_parameter_report(ir_block_count=361))
     assert plan["headroom"]["blocks_strict_pass"] == 3
     assert plan["headroom"]["legacy_additional_structural_control_budget"] == 1
-    assert plan["local_ir_v2_start_allowed"] is True
+    assert plan["legacy_local_route_has_any_control_budget"] is True
+    assert plan["local_ir_v2_start_allowed"] is False
+    assert plan["local_candidate_control_preflight_required"] is True
     assert plan["block_capacity_expansion_required_before_local_metadata"] is False
+    assert plan["status"] == "READY_FOR_LOCAL_IR_V2_CANDIDATE_PREFLIGHT"
 
 
 def test_locals_start_after_fixed_parameter_domain_even_when_few_parameters_are_used() -> None:
@@ -101,7 +110,8 @@ def test_locals_start_after_fixed_parameter_domain_even_when_few_parameters_are_
 def test_conservative_value_overflow_does_not_fake_unified_namespace_readiness() -> None:
     plan = build_plan(_parameter_report(ir_value_count=1400))
     assert plan["local_ir_v2_design_possible"] is True
-    assert plan["local_ir_v2_start_allowed"] is True
+    assert plan["local_ir_v2_start_allowed"] is False
+    assert plan["local_candidate_control_preflight_required"] is True
     assert plan["unified_value_namespace_start_allowed"] is False
     transition = plan["namespace_transition"]
     assert transition["conservative_no_compaction_required_slots"] == 1487
