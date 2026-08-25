@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
 from tools.audit_stage1_codegen_ir import audit
+from tools.patch_stage1_codegen_ir_v2_capacity import (
+    BASELINE_SOURCE_SHA256,
+    transform,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -71,3 +76,26 @@ def test_compaction_projection_is_explicitly_not_a_native_pass() -> None:
     assert projection["projected_headroom"] == 699
     assert projection["status"] == "PROJECTION_ONLY_NATIVE_REMEASUREMENT_REQUIRED"
     assert "Calls/stores remain explicit instructions" in projection["side_effect_rule"]
+
+
+def test_compaction_patch_matches_only_the_qualified_source_shape() -> None:
+    source = SOURCE.read_text(encoding="utf-8")
+    assert hashlib.sha256(source.encode("utf-8")).hexdigest() == BASELINE_SOURCE_SHA256
+
+    transformed = transform(source)
+    assert transformed != source
+    assert "ast_discard_count += 1" in transformed
+    assert "ir_ast_event_opcode = 5" not in transformed
+    assert "ir_ast_event_operand = value" in source
+    assert len(transformed) < len(source)
+
+
+def test_compaction_patch_rejects_already_transformed_source() -> None:
+    source = SOURCE.read_text(encoding="utf-8")
+    transformed = transform(source)
+    try:
+        transform(transformed)
+    except ValueError as error:
+        assert "expected exactly one Stage1 discard-event block" in str(error)
+    else:
+        raise AssertionError("compaction patch must fail closed when applied twice")
