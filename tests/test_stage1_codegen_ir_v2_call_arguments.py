@@ -33,6 +33,18 @@ def test_simple_call_argument_model_tracks_bootstrap_occurrences() -> None:
     assert model["active_calls_at_eof"] == 0
 
 
+def test_grouped_expression_parenthesis_does_not_open_a_call() -> None:
+    source = (
+        "fn main() -> tryte:\n"
+        "    mut value: i64 = (1 + 2)\n"
+        "    return 0\n"
+    )
+    model = collect_call_argument_model(source)
+    assert model["calls"] == 0
+    assert model["total_call_arguments"] == 0
+    assert model["active_calls_at_eof"] == 0
+
+
 def test_nested_callee_identifier_is_parent_structural_argument_occurrence() -> None:
     source = (
         "fn inner(a: i64) -> i64:\n"
