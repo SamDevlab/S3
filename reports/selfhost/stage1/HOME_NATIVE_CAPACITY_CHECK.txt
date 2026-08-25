@@ -1,39 +1,61 @@
-S3 PR #268 — HOME NATIVE CAPACITY CHECK
+S3 PR #268 — HOME NATIVE IR-V2 CANDIDATE CHECK
 
 Branch:
 feature/actual-stage1-compiler-seed-20260824
 
 Purpose:
-Qualify the compaction-first IR-v2 capacity candidate on real Linux x86-64 without mutating the canonical compiler source.
+Qualify prepared IR-v2 candidates on real Linux x86-64 without mutating the canonical compiler source.
 
 Run only after pulling the latest branch:
 
 git pull --ff-only
-python3 tools/qualify_stage1_codegen_ir_v2_capacity.py
+python3 tools/qualify_stage1_codegen_ir_v2_chain.py
 
-Expected success indicators:
-CONTRACT_TESTS=PASS
-AUDIT_INVARIANTS=PASS
-EVENT_HEADROOM=PASS
-CAPACITY_CANDIDATE=PASS_NATIVE_CANDIDATE
-CANONICAL_COMMIT_ALLOWED=True
+The chain performs, in order:
+1. compaction-only native Stage1 candidate;
+2. validation of the compaction report;
+3. packed parameter IR-v2 static preflight;
+4. packed parameter IR-v2 native Stage1 candidate;
+5. fail-closed verifier/bounded-capacity checks.
 
-The command writes:
+Expected best-case output:
+CAPACITY_GATE=PASS
+PARAMETER_GATE=PASS
+CHAIN_STATUS=PASS_THROUGH_PARAMETER_CANDIDATE
+CANONICAL_SOURCE_MUTATED=False
+STAGE2=NOT_STARTED
+STAGE3=NOT_STARTED
+
+Reports written:
 reports/selfhost/stage1/codegen-ir-v2-capacity-native-candidate.json
+reports/selfhost/stage1/codegen-ir-v2-parameters-native-candidate.json
+reports/selfhost/stage1/codegen-ir-v2-native-chain.json
 
-Do NOT run T4.
-Do NOT run Stage2 or Stage3.
-Do NOT run benchmarks.
-Do NOT run the promoter with --in-place yet.
+Important:
+- The chain NEVER promotes or rewrites the canonical s3c_stage1.s3.
+- Do NOT run T4.
+- Do NOT run Stage2 or Stage3.
+- Do NOT run benchmarks.
+- Do NOT run either promoter with --in-place yet.
+- Preserve all JSON reports and send the final console output/report for review.
 
-After the command finishes, preserve the JSON and send its output/report for review. The promoter is already implemented and defaults to validation-only. It requires complete Linux x86-64 evidence, contract/capacity test PASS, invariant preservation, deterministic candidate SHA, real event headroom, and the expected fail-closed emitter boundary. Its --in-place path uses temporary files, rollback, and post-write verification for the canonical source+manifest pair.
+Compaction qualification is fail-closed and now models its intentional source deltas:
+- 2 assignment statements removed from the self-source;
+- 1 numeric literal removed;
+- parameter/call/discard/control structure invariants remain checked;
+- static projections are never substituted for native measurements.
 
-If --skip-contract-tests is used for diagnosis, CANONICAL_COMMIT_ALLOWED must remain False and promotion is blocked.
+The prepared parameter phase uses ONE packed i64[64] lane instead of five separate arrays, encoding:
+owner_function_id + name_identity + type_id + abi_index + value_id.
+This avoids adding at least 320 initializer literals to a source whose native value baseline was already 1213/1460.
+
+The parameter candidate also has a static preflight for values/blocks/functions and a native verifier. Even a native parameter PASS remains candidate-only until the reports are reviewed.
 
 Current canonical source remains unchanged:
 sha256=20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341
 bytes=166984
 
 FULL_SELF_HOSTING=NO
+SELF_EMIT=BLOCKED_IR_V2_INCOMPLETE
 STAGE2=NOT_STARTED
 STAGE3=NOT_STARTED
