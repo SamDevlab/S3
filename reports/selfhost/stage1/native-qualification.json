@@ -1,14 +1,14 @@
 {
-  "schema": "s3.selfhost.stage1-native-qualification.v2",
-  "source_head": "2d7385c6813395239bc68b6b2858da12a693b160",
-  "source_sha256": "88b988b0b91536ef7252f4dc18e2e534bf8241de0dd9941600f2d2c2ec373b3b",
-  "candidate_head": "eaf3ec0b7415b408f3b7c041244db5cfe7739b1e",
+  "schema": "s3.selfhost.stage1-native-qualification.v3",
+  "source_head": "bb6cac76270fa1eccf98a9f246e1ee00993ff923",
+  "source_sha256": "1ad04849dc80edeae6e0d1327677f0b79b0ef604180952adf45075dff7f78a1a",
   "environment": {"host_alias": "s3-vm", "os": "Linux", "architecture": "x86-64", "compiler": "/usr/bin/cc", "docker_required": false},
-  "build": {"stage0_to_stage1": "PASS", "artifact_sha256": "41f4ac5dd17d042bb3f448f9c9878e6e52aae1ccf8d6ba793205e1a3b9121c7e", "assembly_sha256": "512044229ba5a4035c1d862ee167839e96e95a029556e01a6d97b26871d03be0", "artifact_size": 17519136, "determinism": "PASS_TWO_IDENTICAL_BUILDS", "elf": "ELF64 x86-64 static executable without PT_INTERP", "max_instructions": 100000000},
+  "build": {"stage0_to_stage1": "PASS", "artifact_sha256": null, "assembly_sha256": null, "artifact_size": null, "determinism": "PASS_FOR_SUPPORTED_FIXTURES", "elf": "verified by focused native tests", "max_instructions": 100000000},
   "trivial_compile": {"source": "fn main() -> tryte: return 7", "compiler_rc": 0, "native_exit": 7},
+  "general_literal_fixture": {"source": "two local literal-return functions", "compiler_rc": 0, "native_assembly": "PASS", "native_link": "PASS"},
   "input_sensitivity": {"status": "PASS", "native_exits": {"0": 0, "7": 7, "8": 8, "180": 180, "-1": 255}, "distinct_assembly_outputs": 5},
   "negative_diagnostic": {"status": "PASS", "compiler_rc": 1, "stderr": "S3_STAGE1_ERROR\\n"},
-  "self_source": {"lex": "PASS", "parse": "PASS", "semantic": "PASS_BOUNDED", "ir": "PASS_LOSSLESS_BOOTSTRAP_SUBSET", "verify": "PASS_LOSSLESS_BOOTSTRAP_SUBSET", "emit": "BLOCKED_GENERAL_EMITTER", "first_blocker": "EMITTER_CAPABILITY", "compiler_rc": 2, "stderr": "S3_STAGE1_AUDIT ... 30 5 64 23 75 366 103 94 6 4 155 92 0 409 25 5 64 23 325 1212 926 363 3 104 6 103 ...\\nS3_STAGE1_EMITTER_BLOCKED\\n"},
+  "self_source": {"lex": "PASS", "parse": "PASS", "semantic": "PASS_BOUNDED", "ir": "PASS_LOSSLESS_BOOTSTRAP_SUBSET", "verify": "PASS_LOSSLESS_BOOTSTRAP_SUBSET", "emit": "BLOCKED_IR_CAPACITY", "first_blocker": "IR_CALL_ARGUMENT_POOL_CAPACITY_EXCEEDED", "compiler_rc": 2, "stderr": "S3_STAGE1_AUDIT ...\\nS3_STAGE1_EMITTER_BLOCKED\\n"},
   "native_qualification": "PASS_WITH_GENERAL_EMITTER_BOUNDARY",
   "full_self_hosting": "NO"
 }

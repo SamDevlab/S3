@@ -1,35 +1,11 @@
 {
-  "schema": "s3.selfhost.stage1-verifier.v2",
-  "source_head": "2d7385c6813395239bc68b6b2858da12a693b160",
+  "schema": "s3.selfhost.stage1-verifier.v3",
+  "source_head": "bb6cac76270fa1eccf98a9f246e1ee00993ff923",
   "execution": "verified on Linux x86-64 self-source run before emitter boundary",
   "status": "PASS_LOSSLESS_BOOTSTRAP_SUBSET",
-  "checks": {
-    "function_ids_and_flags": "PASS",
-    "foreign_functions_have_no_body": "PASS",
-    "local_functions_have_entry_block": "PASS",
-    "return_types": "PASS",
-    "parameter_and_local_ranges": "PASS_BOUNDED_COUNTS",
-    "block_owner_ranges": "PASS",
-    "instruction_range_bounds": "PASS",
-    "terminator_and_target_ranges": "PASS",
-    "event_opcode_range": "PASS",
-    "event_owner_range": "PASS",
-    "value_id_ranges": "PASS",
-    "call_callee_and_kind": "PASS",
-    "call_argument_pool": "PASS",
-    "capacity_overflow": "PASS_FAIL_CLOSED"
-  },
-  "audit_counts": {
-    "functions": 30,
-    "blocks": 325,
-    "instructions": 1212,
-    "values": 926,
-    "internal_calls": 363,
-    "foreign_calls": 3,
-    "branches": 104,
-    "loops": 6,
-    "returns": 103
-  },
+  "checks": {"function_ids_and_flags": "PASS", "foreign_functions_have_no_body": "PASS", "local_functions_have_entry_block": "PASS", "return_types": "PASS", "parameter_and_local_ranges": "PASS_BOUNDED_COUNTS", "block_owner_ranges": "PASS", "instruction_range_bounds": "PASS_EVENT_CAPACITY", "terminator_and_target_ranges": "PASS", "event_opcode_range": "PASS", "event_owner_range": "PASS", "value_id_ranges": "PASS", "call_callee_and_kind": "PASS", "call_argument_pool": "PASS_FAIL_CLOSED", "capacity_overflow": "PASS_FAIL_CLOSED"},
+  "audit_counts": {"functions": 34, "blocks": 305, "instructions": 1460, "values": 1213, "internal_calls": 653, "foreign_calls": 3, "branches": 104, "loops": 6, "returns": 107},
   "diagnostic_after_verify": "S3_STAGE1_EMITTER_BLOCKED",
-  "general_emitter": "BLOCKED_NEW_IR_NOT_YET_SUPPORTED"
+  "general_emitter": "PARTIAL_LITERAL_RETURN_SUBSET",
+  "stage2_started": false
 }

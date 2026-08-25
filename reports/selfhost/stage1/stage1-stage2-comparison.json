@@ -1,11 +1,11 @@
 {
-  "schema": "s3.selfhost.stage1-stage2-comparison.v2",
-  "status": "NOT_ATTEMPTED",
-  "stage1_to_stage2": "NOT_STARTED_THIS_ROUND",
+  "schema": "s3.selfhost.stage1-stage2-comparison.v3",
+  "status": "NOT_STARTED_BLOCKED_BY_SELF_EMIT",
+  "stage1_to_stage2": "BLOCKED_NOT_STARTED",
   "stage1_behavior": "PASS_SUPPORTED_NATIVE_SUBSET",
   "stage2_behavior": null,
   "corpus_equivalence": "NOT_AVAILABLE",
-  "reason": "lossless bootstrap IR closure stopped at the general-emitter boundary as requested",
-  "first_self_compile_blocker": "EMITTER_CAPABILITY",
+  "reason": "A real Stage2 candidate cannot be built until SELF_EMIT succeeds; no fake Stage2 was produced",
+  "first_self_compile_blocker": "IR_CALL_ARGUMENT_POOL_CAPACITY_EXCEEDED",
   "stage2_to_stage3": "NOT_STARTED"
 }

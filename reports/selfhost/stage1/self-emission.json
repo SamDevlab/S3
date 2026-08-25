@@ -1,0 +1,21 @@
+{
+  "schema": "s3.selfhost.stage1-self-emission.v1",
+  "source_head": "bb6cac76270fa1eccf98a9f246e1ee00993ff923",
+  "source_sha256": "1ad04849dc80edeae6e0d1327677f0b79b0ef604180952adf45075dff7f78a1a",
+  "status": "BLOCKED",
+  "self_lex": "PASS",
+  "self_parse": "PASS",
+  "self_semantic": "PASS_BOUNDED",
+  "self_ir": "PASS_LOSSLESS_BOOTSTRAP_SUBSET",
+  "self_verify": "PASS_LOSSLESS_BOOTSTRAP_SUBSET",
+  "self_emit": "BLOCKED",
+  "process_exit": 2,
+  "stderr_marker": "S3_STAGE1_EMITTER_BLOCKED",
+  "audit_values": [34, 5, 64, 23, 75, 656, 107, 94, 6, 4, 155, 92, 0, 699, 29, 5, 64, 23, 305, 1460, 1213, 653, 3, 104, 6, 107],
+  "audit_order": ["source_functions", "foreign_functions", "parameters", "locals", "assignments", "calls", "returns", "matches", "whiles", "breaks", "binops", "comparisons", "casts", "discards", "local_functions", "foreign_functions_2", "parameters_2", "locals_2", "blocks", "instructions", "values", "internal_calls", "foreign_calls", "branches", "loops", "returns_2"],
+  "assembly_bytes": null,
+  "assembly_sha256": null,
+  "first_blocker": "IR_CALL_ARGUMENT_POOL_CAPACITY_EXCEEDED",
+  "stage1_to_stage2": "BLOCKED_NOT_STARTED",
+  "stage3_started": false
+}

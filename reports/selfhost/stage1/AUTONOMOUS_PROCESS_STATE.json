@@ -1,0 +1,11 @@
+{
+  "schema": "s3.autonomous-process-state.v1",
+  "status": "RUNNING",
+  "controller_pid": 0,
+  "campaign_parent_pid": 0,
+  "tracked_processes": [],
+  "normal_shutdown_started": false,
+  "watchdog_started": false,
+  "campaign_process_tree_terminated_unexpectedly": false,
+  "emergency_shutdown_requested": false
+}
