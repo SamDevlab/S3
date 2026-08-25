@@ -4,11 +4,15 @@ This tool never mutates the canonical compiler. It consumes a native parameter
 candidate report and computes bounded headroom plus the *planned* symbol/value
 ID domains for the local-metadata and later unified-value phases.
 
-Important: the current ``ir_value_records`` stream is a legacy structural
-numeric-token stream, not the final semantic def/use namespace. Parameter/local
-value IDs therefore remain logical reservations until a separately qualified
-namespace rebuild migrates/replaces the legacy value stream. The planner must
-never label those overlapping domains collision-free.
+Important namespace rules:
+- parameter IDs live in the fixed bootstrap domain [0, 64), even when a program
+  uses fewer than 64 parameters;
+- local IDs start at 64, so they can be assigned in one parse pass without
+  knowing how many parameters later functions will declare;
+- the current ``ir_value_records`` stream is a legacy structural numeric-token
+  stream, not the final semantic def/use namespace. Parameter/local IDs remain
+  logical reservations until a separately qualified namespace rebuild migrates
+  or replaces that legacy stream.
 """
 
 from __future__ import annotations
@@ -34,6 +38,7 @@ VALUE_CAPACITY = 1460
 BLOCK_CAPACITY = 365
 CALL_CAPACITY = 730
 CALL_ARGUMENT_CAPACITY = 746
+PARAMETER_VALUE_ID_DOMAIN_CAPACITY = 64
 LOCAL_RECORD_CAPACITY = 64
 
 
@@ -60,7 +65,7 @@ def _int(audit: dict[str, Any], key: str) -> int:
 
 def build_plan(parameter_report: dict[str, Any] | None) -> dict[str, Any]:
     base: dict[str, Any] = {
-        "schema": "s3.selfhost.codegen-ir-v2-next-phase-budget.v2",
+        "schema": "s3.selfhost.codegen-ir-v2-next-phase-budget.v3",
         "canonical_source_mutated": False,
         "native_evidence": parameter_report is not None,
         "capacities": {
@@ -69,6 +74,7 @@ def build_plan(parameter_report: dict[str, Any] | None) -> dict[str, Any]:
             "blocks": BLOCK_CAPACITY,
             "calls": CALL_CAPACITY,
             "call_arguments": CALL_ARGUMENT_CAPACITY,
+            "parameter_value_id_domain": PARAMETER_VALUE_ID_DOMAIN_CAPACITY,
             "local_records": LOCAL_RECORD_CAPACITY,
         },
         "local_record_strategy": "ONE_PACKED_I64_64_LANE",
@@ -105,9 +111,10 @@ def build_plan(parameter_report: dict[str, Any] | None) -> dict[str, Any]:
     blocks = _int(audit, "ir_block_count")
     calls = _int(audit, "ast_call_count")
 
-    parameter_first = 0
-    parameter_end = parameters
-    local_first = parameter_end
+    parameter_domain_first = 0
+    parameter_domain_end = PARAMETER_VALUE_ID_DOMAIN_CAPACITY
+    parameters_used_end = parameters
+    local_first = parameter_domain_end
     local_end = local_first + locals_count
     first_dynamic = local_end
 
@@ -118,13 +125,15 @@ def build_plan(parameter_report: dict[str, Any] | None) -> dict[str, Any]:
     legacy_value_end = values
     symbol_overlap = max(
         0,
-        min(local_end, legacy_value_end) - max(parameter_first, legacy_value_start),
+        min(local_end, legacy_value_end) - max(parameter_domain_first, legacy_value_start),
     )
     conservative_combined_required = values + local_end
     conservative_combined_fits = conservative_combined_required <= VALUE_CAPACITY
 
     guards = {
-        "parameter_count_fits_reserved_domain": parameters <= LOCAL_RECORD_CAPACITY,
+        "parameter_count_fits_fixed_value_id_domain": (
+            parameters <= PARAMETER_VALUE_ID_DOMAIN_CAPACITY
+        ),
         "local_count_fits_packed_lane": locals_count <= LOCAL_RECORD_CAPACITY,
         "planned_symbol_id_domain_fits_value_pool": local_end <= VALUE_CAPACITY,
         "event_headroom_positive": events < EVENT_CAPACITY,
@@ -142,7 +151,7 @@ def build_plan(parameter_report: dict[str, Any] | None) -> dict[str, Any]:
             "status": "LEGACY_NUMERIC_TOKEN_STREAM_NOT_FINAL_DEF_USE_NAMESPACE",
         },
         "planned_symbol_value_domain": {
-            "start": parameter_first,
+            "start": parameter_domain_first,
             "end_exclusive": local_end,
             "count": local_end,
         },
@@ -177,10 +186,22 @@ def build_plan(parameter_report: dict[str, Any] | None) -> dict[str, Any]:
         },
         "value_id_reservations": {
             "status": "LOGICAL_RESERVATION_PENDING_NAMESPACE_REBUILD",
-            "parameters": {"start": parameter_first, "end_exclusive": parameter_end},
+            "parameter_domain": {
+                "start": parameter_domain_first,
+                "end_exclusive": parameter_domain_end,
+            },
+            "parameters_used": {
+                "start": parameter_domain_first,
+                "end_exclusive": parameters_used_end,
+            },
+            "unused_parameter_domain": {
+                "start": parameters_used_end,
+                "end_exclusive": parameter_domain_end,
+            },
             "local_storage": {"start": local_first, "end_exclusive": local_end},
             "first_instruction_constant_or_result_id": first_dynamic,
-            "parameter_and_local_ranges_nonoverlapping": parameter_end <= local_first,
+            "parameter_and_local_ranges_nonoverlapping": parameter_domain_end <= local_first,
+            "local_ids_assignable_single_pass": True,
             "planned_symbol_domain_fits": local_end <= VALUE_CAPACITY,
             "collision_free_with_legacy_value_stream": symbol_overlap == 0,
         },
