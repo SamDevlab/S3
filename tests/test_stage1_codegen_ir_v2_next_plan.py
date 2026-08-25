@@ -39,10 +39,13 @@ def test_good_native_parameter_report_reserves_logical_symbol_ranges_but_require
 
     ranges = plan["value_id_reservations"]
     assert ranges["status"] == "LOGICAL_RESERVATION_PENDING_NAMESPACE_REBUILD"
-    assert ranges["parameters"] == {"start": 0, "end_exclusive": 64}
+    assert ranges["parameter_domain"] == {"start": 0, "end_exclusive": 64}
+    assert ranges["parameters_used"] == {"start": 0, "end_exclusive": 64}
+    assert ranges["unused_parameter_domain"] == {"start": 64, "end_exclusive": 64}
     assert ranges["local_storage"] == {"start": 64, "end_exclusive": 87}
     assert ranges["first_instruction_constant_or_result_id"] == 87
     assert ranges["parameter_and_local_ranges_nonoverlapping"] is True
+    assert ranges["local_ids_assignable_single_pass"] is True
     assert ranges["collision_free_with_legacy_value_stream"] is False
 
     transition = plan["namespace_transition"]
@@ -60,6 +63,16 @@ def test_good_native_parameter_report_reserves_logical_symbol_ranges_but_require
     assert plan["headroom"]["conservative_values_after_symbol_reservation"] == 73
     assert plan["headroom"]["blocks"] == 45
     assert plan["headroom"]["local_records"] == 41
+
+
+def test_locals_start_after_fixed_parameter_domain_even_when_few_parameters_are_used() -> None:
+    plan = build_plan(_parameter_report(parameter_count=2, local_count=3))
+    ranges = plan["value_id_reservations"]
+    assert ranges["parameter_domain"] == {"start": 0, "end_exclusive": 64}
+    assert ranges["parameters_used"] == {"start": 0, "end_exclusive": 2}
+    assert ranges["unused_parameter_domain"] == {"start": 2, "end_exclusive": 64}
+    assert ranges["local_storage"] == {"start": 64, "end_exclusive": 67}
+    assert ranges["first_instruction_constant_or_result_id"] == 67
 
 
 def test_conservative_value_overflow_does_not_fake_unified_namespace_readiness() -> None:
@@ -84,6 +97,12 @@ def test_native_capacity_exhaustion_blocks_local_phase() -> None:
 def test_too_many_locals_blocks_packed_lane() -> None:
     plan = build_plan(_parameter_report(local_count=65))
     assert plan["guards"]["local_count_fits_packed_lane"] is False
+    assert plan["local_ir_v2_start_allowed"] is False
+
+
+def test_too_many_parameters_blocks_fixed_parameter_domain() -> None:
+    plan = build_plan(_parameter_report(parameter_count=65))
+    assert plan["guards"]["parameter_count_fits_fixed_value_id_domain"] is False
     assert plan["local_ir_v2_start_allowed"] is False
 
 
