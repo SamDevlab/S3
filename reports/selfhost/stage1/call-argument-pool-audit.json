@@ -2,7 +2,8 @@
   "schema_version": 1,
   "campaign": "PR-268",
   "measurement": "native Stage1 call argument pool audit",
-  "status": "PASS_MEASUREMENT_BLOCKED_BY_POOL",
+  "phase": "pre_fix_runtime_measurement",
+  "status": "PRE_FIX_BLOCKED_BY_POOL",
   "platform": "Linux x86-64",
   "input": {
     "description": "exact pre-instrumentation Stage1 source snapshot",
