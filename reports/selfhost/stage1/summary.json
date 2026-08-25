@@ -1,5 +1,5 @@
 {
-  "schema": "s3.selfhost.stage1-summary.v9",
+  "schema": "s3.selfhost.stage1-summary.v10",
   "final_tested_source_head": "2b9a391dc1376d34cd13a946a16d92693d389898",
   "source_changed_after_last_native_gates": false,
   "test_logic_changed_after_last_t4": true,
@@ -45,7 +45,7 @@
     "status": "PASS_AT_LAST_NATIVE_SOURCE_GATE"
   },
   "codegen_ir_v2_contract": "reports/selfhost/stage1/codegen-ir-v2-contract.json",
-  "codegen_ir_v2_status": "CANDIDATE_TOOLING_AND_STORAGE_PLAN_PREPARED_NATIVE_QUALIFICATION_PENDING",
+  "codegen_ir_v2_status": "CANDIDATE_TOOLING_STORAGE_BLOCK_AND_LOCAL_DESIGN_PREPARED_NATIVE_QUALIFICATION_PENDING",
   "compaction_candidate": {
     "transform": "DROP_REDUNDANT_DISCARD_KEYWORD_EVENT",
     "canonical_source_mutated": false,
@@ -67,37 +67,102 @@
     "preflight": "tools/preflight_stage1_codegen_ir_v2_parameters.py",
     "qualifier": "tools/qualify_stage1_codegen_ir_v2_parameters.py",
     "storage": "ONE_PACKED_I64_64_LANE",
-    "packed_fields": ["owner_function_id", "name_identity", "type_id", "abi_index", "value_id"],
-    "value_id_reservation": "[0, parameter_count)",
+    "packed_fields": [
+      "owner_function_id",
+      "name_identity",
+      "type_id",
+      "abi_index",
+      "value_id"
+    ],
+    "fixed_semantic_value_domain": "[0,64)",
+    "used_value_ids": "[0,parameter_count)",
     "status": "PREPARED_NOT_NATIVE_QUALIFIED"
   },
-  "local_value_plan": {
-    "plan": "reports/selfhost/stage1/codegen-ir-v2-local-value-plan.json",
-    "local_storage": "ONE_PACKED_I64_64_LANE",
-    "packed_fields": ["owner_function_id", "name_identity", "type_id", "mutability", "frame_slot", "value_id"],
-    "parameter_value_ids": "[0, parameter_count)",
-    "local_value_ids": "[parameter_count, parameter_count + local_count)",
-    "dynamic_value_ids": "monotonic after parameter_count + local_count",
-    "native_budget_planner": "tools/plan_stage1_codegen_ir_v2_next.py",
-    "status": "PLAN_ONLY_REQUIRES_NATIVE_PARAMETER_PASS"
+  "local_metadata_design": {
+    "audit": "tools/audit_stage1_codegen_ir_v2_local_metadata.py",
+    "tests": "tests/test_stage1_codegen_ir_v2_local_metadata.py",
+    "source_transform": "NOT_IMPLEMENTED",
+    "physical_candidate": "ONE_PACKED_I64_64_LANE_IF_EXACT_CANDIDATE_PREFLIGHT_FITS",
+    "packed_fields": [
+      "owner_function_id",
+      "name_identity",
+      "type_id",
+      "mutability",
+      "frame_slot",
+      "semantic_value_id"
+    ],
+    "parameter_semantic_domain": "[0,64)",
+    "local_semantic_domain": "[64,64+local_count)",
+    "bounded_lane_worst_case": "[64,128)",
+    "frame_slot_strategy": "SCALAR_CURRENT_FUNCTION_COUNTER_RESET_ON_FUNCTION_ACTIVATION",
+    "local_ir_v2_design_possible": "PENDING_NATIVE_PARAMETER_REPORT",
+    "local_ir_v2_start_allowed": false,
+    "start_rule": "Concrete local candidate must exist and exact numeric/match/while/mut/function delta must fit the native parameter baseline before source-transform authorization.",
+    "status": "STATIC_DESIGN_AUDIT_PREPARED_NATIVE_AND_CANDIDATE_PREFLIGHT_PENDING"
+  },
+  "value_namespace_plan": {
+    "parameter_domain": "[0,64)",
+    "parameters_used": "[0,parameter_count)",
+    "local_domain": "[64,64+local_count)",
+    "dynamic_value_ids": "monotonic after 64+local_count",
+    "legacy_value_stream": "STRUCTURAL_NUMERIC_TOKEN_STREAM_NOT_FINAL_SEMANTIC_NAMESPACE",
+    "legacy_collision": true,
+    "migration_required": true,
+    "unified_value_namespace_start_allowed": false,
+    "large_raw_i64_literal_representation": "UNRESOLVED_REQUIRES_SEPARATE_VALUE_REPRESENTATION_GATE",
+    "static_zero_initializer_counts_are_native_headroom": false
+  },
+  "block_capacity_design": {
+    "audit": "tools/audit_stage1_codegen_ir_v2_block_capacity.py",
+    "tests": "tests/test_stage1_codegen_ir_v2_block_capacity.py",
+    "legacy_capacity": 365,
+    "candidate_capacity": 730,
+    "physical_strategy": "REUSE_TWO_EXISTING_I64_365_BLOCK_ARRAYS_AS_TWO_PACKED_BLOCK_BANKS",
+    "packed_fields": [
+      "owner_function_id",
+      "terminator_kind",
+      "target_a_block_id",
+      "target_b_block_id",
+      "condition_value_id",
+      "return_value_id"
+    ],
+    "maximum_encoded_record": 593114483562119,
+    "signed_i64_max": 9223372036854775807,
+    "fits_signed_i64": true,
+    "native_status": "NOT_QUALIFIED"
   },
   "storage_reuse_plan": {
     "plan": "reports/selfhost/stage1/codegen-ir-v2-storage-reuse-plan.json",
     "audit": "tools/audit_stage1_ir_v2_storage_reuse.py",
     "tests": "tests/test_stage1_codegen_ir_v2_storage_reuse.py",
-    "instruction_physical_candidate": "REUSE_FOUR_IR_AST_EVENT_BANKS_4X365",
-    "value_physical_candidate": "REUSE_FOUR_IR_VALUE_BANKS_4X365",
+    "instruction_physical_candidate": "REUSE_FOUR_IR_AST_EVENT_BANKS_4X365_AFTER_LEGACY_EVENT_VERIFIER",
+    "value_physical_candidate": "REUSE_FOUR_IR_VALUE_BANKS_4X365_AFTER_EXPLICIT_NAMESPACE_REBUILD",
     "call_result_linkage": "INSTRUCTION_RECORD_RESULT_ID_NO_NEW_730_ARRAY",
-    "terminator_linkage": "REPACK_EXISTING_IR_BLOCK_TERMINATOR_AND_REUSE_TARGET_A_B",
+    "terminator_linkage": "PACKED_BLOCK_RECORD_OWNS_KIND_TARGETS_CONDITION_RETURN",
     "instruction_record_encoding": {
-      "kind": "SIGNED_I64_MIXED_RADIX",
-      "fields": ["owner", "block", "opcode", "operand_a", "operand_b", "result", "aux_id"],
-      "max_encoded": 6937057267692888959,
+      "kind": "SIGNED_I64_MIXED_RADIX_OWNERLESS",
+      "fields": [
+        "block_id",
+        "opcode",
+        "operand_a_value_id",
+        "operand_b_value_id",
+        "result_value_id",
+        "aux_id"
+      ],
+      "owner": "DERIVED_FROM_BLOCK_RECORD",
+      "max_encoded": 213156320415447743,
       "signed_i64_max": 9223372036854775807,
       "fits": true,
       "aux_constraint": "ID_REFERENCE_ONLY_NOT_ARBITRARY_RAW_I64"
     },
-    "important_native_gate": "EVENT_TO_IR_V2_INSTRUCTION_MAPPING_MUST_BE_PROVEN_ONE_TO_ONE_BEFORE_IN_PLACE_REWRITE",
+    "rejected_ownerful_730_block_encoding": {
+      "max_encoded": 13855160827004103359,
+      "signed_i64_max": 9223372036854775807,
+      "fits": false,
+      "decision": "OWNER_MUST_LIVE_IN_PACKED_BLOCK_NOT_EACH_INSTRUCTION"
+    },
+    "event_overwrite_frontier": "AFTER_LEGACY_EVENT_VERIFIER_BEFORE_REMAINING_VERIFIER_AND_PIPELINE_DECISION",
+    "important_native_gate": "EVENT_TO_IR_V2_INSTRUCTION_MAPPING_AND_IN_PLACE_REWRITE_REQUIRE_NEW_NATIVE_IR_V2_VERIFIER",
     "status": "STATIC_PLAN_PREPARED_NATIVE_SEMANTIC_QUALIFICATION_PENDING"
   },
   "array_initializer_audit": {
@@ -106,25 +171,35 @@
     "purpose": "quantify repeated fixed-array zero initializer payload before semantic value compaction",
     "zero_count_is_value_headroom": false,
     "aggregate_zero_init_candidate_requires_native_pass": true,
-    "status": "STATIC_AUDIT_PREPARED_NOT_YET_EXECUTED_IN_QUALIFIED_ENVIRONMENT"
+    "status": "STATIC_AUDIT_PREPARED_NOT_NATIVE_EVIDENCE"
   },
   "static_preflight": {
     "runner": "tools/preflight_stage1_codegen_ir_v2_static.py",
-    "storage_report": "reports/selfhost/stage1/codegen-ir-v2-storage-reuse-audit.json",
+    "canonical_storage_report": "reports/selfhost/stage1/codegen-ir-v2-storage-reuse-audit.json",
+    "exact_parameter_candidate_storage_report": "reports/selfhost/stage1/codegen-ir-v2-parameter-candidate-storage-reuse-audit.json",
+    "block_report": "reports/selfhost/stage1/codegen-ir-v2-block-capacity-audit.json",
     "array_report": "reports/selfhost/stage1/codegen-ir-v2-array-initializer-audit.json",
     "aggregate_report": "reports/selfhost/stage1/codegen-ir-v2-static-preflight.json",
+    "exact_parameter_candidate_chain": [
+      "DROP_REDUNDANT_DISCARD_KEYWORD_EVENT",
+      "ADD_PACKED_PARAMETER_IR_V2"
+    ],
     "qualification": "STATIC_ONLY_NEVER_NATIVE_EVIDENCE"
   },
   "native_candidate_chain": {
     "runner": "tools/qualify_stage1_codegen_ir_v2_chain.py",
     "tooling_tests_run_before_native": true,
+    "chain_self_tests_included": true,
     "static_preflight_run_before_native": true,
     "capacity_report": "reports/selfhost/stage1/codegen-ir-v2-capacity-native-candidate.json",
     "parameter_report": "reports/selfhost/stage1/codegen-ir-v2-parameters-native-candidate.json",
     "next_phase_budget_report": "reports/selfhost/stage1/codegen-ir-v2-next-phase-budget.json",
     "chain_report": "reports/selfhost/stage1/codegen-ir-v2-native-chain.json",
     "canonical_source_mutated": false,
-    "best_case_status": "PASS_THROUGH_PARAMETER_CANDIDATE",
+    "best_case_chain_status": "PASS_THROUGH_PARAMETER_CANDIDATE",
+    "best_case_next_if_legacy_blocks_fit_concrete_design": "READY_FOR_LOCAL_IR_V2_CANDIDATE_PREFLIGHT",
+    "local_ir_v2_start_allowed_at_chain_end": false,
+    "alternate_next_if_native_block_headroom_too_small": "PACKED_730_BLOCK_CAPACITY_CANDIDATE",
     "home_runbook": "reports/selfhost/stage1/HOME_NATIVE_CAPACITY_CHECK.txt"
   },
   "capacity_risk_last_native_source_gate": {
@@ -176,6 +251,6 @@
   "stage2_started": false,
   "stage3_started": false,
   "full_self_hosting": false,
-  "current_gate": "TOOLING_TESTS_THEN_STATIC_PREFLIGHT_THEN_NATIVE_CAPACITY_AND_PARAMETER_CHAIN",
-  "next_if_chain_passes": "REVIEW NATIVE REPORTS AND NEXT-PHASE BUDGET; PROMOTE ONLY QUALIFIED CHECKPOINTS; THEN IMPLEMENT LOCAL METADATA AND UNIFIED DEF_USE USING STORAGE-REUSE PLAN"
+  "current_gate": "TOOLING_TESTS_THEN_DUAL_STORAGE_STATIC_PREFLIGHT_THEN_NATIVE_COMPACTION_AND_PARAMETER_CHAIN",
+  "next_if_chain_passes": "REVIEW_NATIVE_REPORTS; IF BLOCK_HEADROOM_TOO_SMALL_PREPARE_730_BLOCK_NATIVE_CANDIDATE; OTHERWISE_PREPARE_CONCRETE_LOCAL_METADATA_CANDIDATE_AND_EXACT_CONTROL_DELTA_PREFLIGHT; DO_NOT_SET_LOCAL_START_ALLOWED_FROM_HEADROOM_ALONE"
 }
