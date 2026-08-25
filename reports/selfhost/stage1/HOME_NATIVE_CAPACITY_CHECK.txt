@@ -12,16 +12,18 @@ git pull --ff-only
 python3 tools/qualify_stage1_codegen_ir_v2_chain.py
 
 The chain performs, in order:
-1. static physical-storage reuse audit;
-2. static fixed-array initializer audit;
-3. compaction-only native Stage1 candidate;
-4. validation of the compaction report;
-5. packed parameter IR-v2 static preflight;
-6. packed parameter IR-v2 native Stage1 candidate;
-7. fail-closed verifier/bounded-capacity checks;
-8. native-driven next-phase budget for locals/value IDs.
+1. focused IR-v2 tooling/unit tests;
+2. static physical-storage reuse audit;
+3. static fixed-array initializer audit;
+4. compaction-only native Stage1 candidate;
+5. validation of the compaction report;
+6. packed parameter IR-v2 static preflight;
+7. packed parameter IR-v2 native Stage1 candidate;
+8. fail-closed verifier/bounded-capacity checks;
+9. native-driven next-phase budget for locals/value IDs.
 
 Expected best-case output:
+TOOLING_TESTS=PASS
 STATIC_PREFLIGHT=PASS
 STORAGE_REUSE=STATIC_STORAGE_AUDIT_PASS
 ARRAY_INITIALIZERS=STATIC_ARRAY_INITIALIZER_AUDIT_PASS
@@ -57,15 +59,17 @@ Storage-reuse strategy prepared before native qualification:
 - reuse the four existing 365-slot value banks for the later unified value namespace;
 - keep existing block target arrays and repack ir_block_terminator with kind/condition/return IDs;
 - link call result IDs through the IR-v2 instruction record instead of adding a 730-entry call-result array;
-- mixed-radix instruction record was selected specifically so owner/block/opcode/operandA/operandB/result/aux IDs fit inside signed i64;
-- aux is an ID/reference only, not an arbitrary raw i64 payload.
+- mixed-radix instruction record encodes owner/block/opcode/operandA/operandB/result/aux IDs inside signed i64;
+- aux is an ID/reference only, not an arbitrary raw i64 payload;
+- event -> IR-v2 instruction mapping must be proven one-to-one before any in-place rewrite is promoted.
 
 The initializer audit only quantifies source structure. A large count of all-zero initializer items is NOT automatically value-pool headroom. Any aggregate zero-init transform still requires a native Stage1 candidate proving identical behavior and reduced semantic value usage.
 
 Compaction qualification is fail-closed and models its intentional source deltas:
 - 2 assignment statements removed from the self-source;
 - 1 numeric literal removed;
-- parameter/call/discard/control structure invariants remain checked;
+- expected compacted structural values: 1212;
+- expected compacted assignments: 73;
 - static projections are never substituted for native measurements.
 
 The prepared parameter phase uses ONE packed i64[64] lane instead of five separate arrays, encoding:
