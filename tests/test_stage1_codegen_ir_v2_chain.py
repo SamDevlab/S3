@@ -48,6 +48,50 @@ def _parameter(pass_gate: bool) -> dict[str, object]:
     }
 
 
+def _run(
+    tmp_path: Path,
+    *,
+    static_preflight_report: str = "static.json",
+) -> dict[str, object]:
+    return chain.run_chain(
+        capacity_report_path=tmp_path / "capacity.json",
+        parameter_report_path=tmp_path / "parameter.json",
+        next_phase_report_path=tmp_path / "next.json",
+        chain_report_path=tmp_path / "chain.json",
+        static_preflight_report_path=tmp_path / static_preflight_report,
+        run_tooling_tests=False,
+    )
+
+
+def test_chain_stops_before_static_preflight_when_tooling_tests_fail(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(
+        chain,
+        "_run_tooling_tests",
+        lambda: {"status": "FAIL", "returncode": 1, "files": []},
+    )
+
+    def unexpected_static(**_):
+        raise AssertionError("static preflight must not run after tooling-test failure")
+
+    monkeypatch.setattr(chain, "run_static_preflight", unexpected_static)
+    result = chain.run_chain(
+        capacity_report_path=tmp_path / "capacity.json",
+        parameter_report_path=tmp_path / "parameter.json",
+        next_phase_report_path=tmp_path / "next.json",
+        chain_report_path=tmp_path / "chain.json",
+        static_preflight_report_path=tmp_path / "static.json",
+        run_tooling_tests=True,
+    )
+    assert result["chain_status"] == "BLOCKED_AT_TOOLING_TESTS"
+    assert result["tooling_tests"]["status"] == "FAIL"
+    assert result["static_preflight"]["status"] == "NOT_RUN"
+    assert result["capacity_gate"]["status"] == "NOT_RUN"
+    assert result["canonical_source_mutated"] is False
+
+
 def test_chain_stops_before_native_when_static_preflight_fails(
     tmp_path: Path,
     monkeypatch,
@@ -58,13 +102,7 @@ def test_chain_stops_before_native_when_static_preflight_fails(
         raise AssertionError("native capacity qualifier must not run after static preflight failure")
 
     monkeypatch.setattr(chain, "qualify_capacity", unexpected_capacity)
-    result = chain.run_chain(
-        capacity_report_path=tmp_path / "capacity.json",
-        parameter_report_path=tmp_path / "parameter.json",
-        next_phase_report_path=tmp_path / "next.json",
-        chain_report_path=tmp_path / "chain.json",
-        static_preflight_report_path=tmp_path / "static.json",
-    )
+    result = _run(tmp_path)
     assert result["chain_status"] == "BLOCKED_AT_STATIC_PREFLIGHT"
     assert result["capacity_gate"]["status"] == "NOT_RUN"
     assert result["parameter_gate"]["status"] == "NOT_RUN"
@@ -82,13 +120,7 @@ def test_chain_stops_before_parameter_when_capacity_fails(
         raise AssertionError("parameter qualifier must not run after capacity failure")
 
     monkeypatch.setattr(chain, "qualify_parameters", unexpected_parameter)
-    result = chain.run_chain(
-        capacity_report_path=tmp_path / "capacity.json",
-        parameter_report_path=tmp_path / "parameter.json",
-        next_phase_report_path=tmp_path / "next.json",
-        chain_report_path=tmp_path / "chain.json",
-        static_preflight_report_path=tmp_path / "static.json",
-    )
+    result = _run(tmp_path)
     assert result["chain_status"] == "BLOCKED_AT_CAPACITY_CANDIDATE"
     assert result["parameter_gate"]["status"] == "NOT_RUN"
     assert result["next_phase_budget"]["status"] == "WAITING_FOR_NATIVE_PARAMETER_REPORT"
@@ -102,13 +134,7 @@ def test_chain_parameter_pass_produces_local_budget(
     monkeypatch.setattr(chain, "run_static_preflight", lambda **_: _static(True))
     monkeypatch.setattr(chain, "qualify_capacity", lambda **_: _capacity(True))
     monkeypatch.setattr(chain, "qualify_parameters", lambda **_: _parameter(True))
-    result = chain.run_chain(
-        capacity_report_path=tmp_path / "capacity.json",
-        parameter_report_path=tmp_path / "parameter.json",
-        next_phase_report_path=tmp_path / "next.json",
-        chain_report_path=tmp_path / "chain.json",
-        static_preflight_report_path=tmp_path / "static.json",
-    )
+    result = _run(tmp_path)
     assert result["chain_status"] == "PASS_THROUGH_PARAMETER_CANDIDATE"
     assert result["static_preflight"]["status"] == "PASS"
     assert result["next_phase_budget"]["status"] == "READY_FOR_LOCAL_IR_V2_DESIGN"
@@ -129,13 +155,7 @@ def test_chain_parameter_failure_keeps_local_phase_blocked(
     monkeypatch.setattr(chain, "run_static_preflight", lambda **_: _static(True))
     monkeypatch.setattr(chain, "qualify_capacity", lambda **_: _capacity(True))
     monkeypatch.setattr(chain, "qualify_parameters", lambda **_: _parameter(False))
-    result = chain.run_chain(
-        capacity_report_path=tmp_path / "capacity.json",
-        parameter_report_path=tmp_path / "parameter.json",
-        next_phase_report_path=tmp_path / "next.json",
-        chain_report_path=tmp_path / "chain.json",
-        static_preflight_report_path=tmp_path / "static.json",
-    )
+    result = _run(tmp_path)
     assert result["chain_status"] == "BLOCKED_AT_PARAMETER_CANDIDATE"
     assert result["next_phase_budget"]["local_ir_v2_start_allowed"] is False
     assert result["canonical_source_mutated"] is False
