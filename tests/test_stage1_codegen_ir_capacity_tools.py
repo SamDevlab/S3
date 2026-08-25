@@ -22,6 +22,10 @@ from tools.promote_stage1_codegen_ir_v2_capacity import (
     validate_manifest,
     validate_native_report,
 )
+from tools.qualify_stage1_codegen_ir_v2_capacity import (
+    EXPECTED_COMPACTED_ASSIGNMENTS,
+    EXPECTED_COMPACTED_VALUES,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -54,7 +58,7 @@ def _good_native_report(canonical_bytes: bytes) -> dict[str, object]:
         "foreign_count": 5,
         "parameter_count": 64,
         "local_count": 23,
-        "ast_assignment_count": 75,
+        "ast_assignment_count": EXPECTED_COMPACTED_ASSIGNMENTS,
         "ast_call_count": 656,
         "ast_return_count": 107,
         "ast_match_count": 92,
@@ -69,8 +73,8 @@ def _good_native_report(canonical_bytes: bytes) -> dict[str, object]:
         "ir_parameter_count": 64,
         "ir_local_count": 23,
         "ir_block_count": 305,
-        "ir_instruction_count": 761,
-        "ir_value_count": 1213,
+        "ir_instruction_count": 759,
+        "ir_value_count": EXPECTED_COMPACTED_VALUES,
         "ir_internal_call_count": 653,
         "ir_foreign_call_count": 3,
         "ir_branch_count": 104,
@@ -81,7 +85,8 @@ def _good_native_report(canonical_bytes: bytes) -> dict[str, object]:
         "discard_count_preserved": True,
         "parameter_count_preserved": True,
         "call_count_preserved": True,
-        "value_count_preserved": True,
+        "value_count_expected_delta": True,
+        "assignment_count_expected_delta": True,
         "block_count_preserved": True,
     }
     return {
@@ -93,10 +98,18 @@ def _good_native_report(canonical_bytes: bytes) -> dict[str, object]:
             "source_bytes": len(canonical_bytes),
             "native_events": 1460,
             "native_discard_events": 699,
+            "native_values": 1213,
+            "native_assignments": 75,
             "event_capacity": 1460,
             "parameter_capacity": 64,
             "call_capacity": 730,
             "call_argument_capacity": 746,
+        },
+        "expected_source_delta": {
+            "removed_assignments": 2,
+            "removed_numeric_literals": 1,
+            "expected_ir_value_count": EXPECTED_COMPACTED_VALUES,
+            "expected_ast_assignment_count": EXPECTED_COMPACTED_ASSIGNMENTS,
         },
         "candidate": {
             "transform": "DROP_REDUNDANT_DISCARD_KEYWORD_EVENT",
@@ -119,10 +132,10 @@ def _good_native_report(canonical_bytes: bytes) -> dict[str, object]:
         },
         "audit_invariants": invariants,
         "capacity_measurement": {
-            "actual_ir_instruction_count": 761,
+            "actual_ir_instruction_count": 759,
             "actual_ast_discard_count": 699,
-            "actual_event_reduction_from_native_baseline": 699,
-            "actual_event_headroom": 699,
+            "actual_event_reduction_from_native_baseline": 701,
+            "actual_event_headroom": 701,
             "projection_was_761_events": True,
             "projection_is_not_substituted_for_native_measurement": True,
         },
@@ -162,6 +175,7 @@ def test_compaction_transform_is_narrow_and_single_use() -> None:
     assert transformed.count("ast_discard_count += 1") == source.count("ast_discard_count += 1")
     assert "ir_ast_event_opcode = 5" not in transformed
     assert len(transformed.encode("utf-8")) < len(source.encode("utf-8"))
+    assert transformed.count("ir_ast_event_operand = value") == source.count("ir_ast_event_operand = value") - 1
 
     with pytest.raises(ValueError, match="expected exactly one"):
         transform(transformed)
@@ -174,8 +188,10 @@ def test_native_report_validator_accepts_complete_consistent_evidence() -> None:
     candidate_bytes, audit = validate_native_report(report, canonical_bytes=canonical_bytes)
 
     assert _sha256(candidate_bytes) == report["candidate"]["source_sha256"]
-    assert audit["ir_instruction_count"] == 761
+    assert audit["ir_instruction_count"] == 759
     assert audit["ast_discard_count"] == 699
+    assert audit["ir_value_count"] == EXPECTED_COMPACTED_VALUES
+    assert audit["ast_assignment_count"] == EXPECTED_COMPACTED_ASSIGNMENTS
 
 
 def test_native_report_validator_rejects_skipped_contract_tests() -> None:
@@ -204,6 +220,15 @@ def test_native_report_validator_rejects_changed_semantic_counts() -> None:
     report["self_source"]["audit"]["ast_call_count"] = 655
 
     with pytest.raises(PromotionError, match="call count changed"):
+        validate_native_report(report, canonical_bytes=canonical_bytes)
+
+
+def test_native_report_validator_rejects_wrong_intentional_value_delta() -> None:
+    canonical_bytes = SOURCE.read_bytes()
+    report = _good_native_report(canonical_bytes)
+    report["self_source"]["audit"]["ir_value_count"] = 1213
+
+    with pytest.raises(PromotionError, match="intentional compaction delta"):
         validate_native_report(report, canonical_bytes=canonical_bytes)
 
 
