@@ -1,0 +1,30 @@
+{
+  "base_chain": null,
+  "base_chain_error": null,
+  "call_argument_error": null,
+  "call_argument_guard": null,
+  "canonical_commit_allowed": false,
+  "canonical_source_mutated": false,
+  "full_self_hosting": false,
+  "general_emitter": "BLOCKED_IR_V2_INCOMPLETE",
+  "guard_tests": {
+    "files": [
+      "tests/test_stage1_codegen_ir_v2_call_arguments.py",
+      "tests/test_stage1_codegen_ir_v2_local_qualifier.py",
+      "tests/test_stage1_codegen_ir_v2_full_chain.py"
+    ],
+    "returncode": 1,
+    "status": "FAIL",
+    "stderr": "",
+    "stdout": "...FF...........                                                         [100%]\n================================== FAILURES ===================================\n_______ test_canonical_model_must_reproduce_native_736_argument_closure _______\n\n    def test_canonical_model_must_reproduce_native_736_argument_closure() -> None:\n        closure = json.loads(CLOSURE.read_text(encoding=\"utf-8\"))\n        model, guards = validate_canonical_model(SOURCE.read_bytes(), closure=closure)\n>       assert all(guards.values())\nE       AssertionError: assert False\nE        +  where False = all(dict_values([True, True, True, False, False, False, False, True, True]))\nE        +    where dict_values([True, True, True, False, False, False, False, True, True]) = <built-in method values of dict object at 0x000001F0375EB4C0>()\nE        +      where <built-in method values of dict object at 0x000001F0375EB4C0> = {'source_sha_matches_native_closure': True, 'source_bytes_match_native_closure': True, 'closure_pool_capacity_is_746': True, 'model_calls_match_native': False, ...}.values\n\ntests\\test_stage1_codegen_ir_v2_call_arguments.py:71: AssertionError\n__ test_parameter_candidate_must_not_silently_overflow_current_argument_pool __\n\n    def test_parameter_candidate_must_not_silently_overflow_current_argument_pool() -> None:\n        closure = json.loads(CLOSURE.read_text(encoding=\"utf-8\"))\n        result = audit(\n            canonical_source=SOURCE.read_text(encoding=\"utf-8\"),\n            closure=closure,\n        )\n>       assert result[\"canonical\"][\"model_validated_against_native_closure\"] is True\nE       assert False is True\n\ntests\\test_stage1_codegen_ir_v2_call_arguments.py:84: AssertionError\n=========================== short test summary info ===========================\nFAILED tests/test_stage1_codegen_ir_v2_call_arguments.py::test_canonical_model_must_reproduce_native_736_argument_closure\nFAILED tests/test_stage1_codegen_ir_v2_call_arguments.py::test_parameter_candidate_must_not_silently_overflow_current_argument_pool\n"
+  },
+  "local_native": null,
+  "local_native_error": null,
+  "next": "REPAIR_IR_V2_GUARD_TOOLING",
+  "qualification_rule": "PASS here means only that candidate compaction, parameter metadata and local metadata reached their expected Stage1 boundaries. It never promotes canonical source and never implies self-emission or Stage2.",
+  "schema": "s3.selfhost.codegen-ir-v2-full-candidate-chain.v2",
+  "self_emit": "NOT_STARTED",
+  "stage2": "NOT_STARTED",
+  "stage3": "NOT_STARTED",
+  "status": "BLOCKED_AT_IR_V2_GUARD_TESTS"
+}

@@ -1,6 +1,6 @@
 {
   "schema": "s3.selfhost.stage1-summary.v12",
-  "final_tested_source_head": "2b9a391dc1376d34cd13a946a16d92693d389898",
+  "final_tested_source_head": "081f3c53c42ad9562ae0770504b68c9de1947881",
   "source_changed_after_last_native_gates": false,
   "test_logic_changed_after_last_t4": true,
   "canonical_compiler_source_set": "PASS",
@@ -10,11 +10,11 @@
   "compiler_sources_manifest": "SYNCHRONIZED_TO_CURRENT_CANONICAL_SOURCE",
   "ir_real_data_flow": "PASS_STRUCTURAL_BOOTSTRAP_SUBSET_NOT_CODEGEN_COMPLETE",
   "verifier_real_data_flow": "PASS_STRUCTURAL_BOOTSTRAP_SUBSET_NOT_CODEGEN_COMPLETE",
-  "emitter_real_data_flow": "FAIL_CLOSED_GENERAL_EMITTER_CAPABILITY_GAP",
+  "emitter_real_data_flow": "BLOCKED_IR_V2_GUARD_INCOMPLETE",
   "stage0_to_stage1": "PASS_LINUX_X86_64_AT_LAST_NATIVE_SOURCE_GATE",
-  "stage1_self_source_emission": "BLOCKED_GENERAL_EMITTER_CAPABILITY_GAP",
+  "stage1_self_source_emission": "BLOCKED_CANONICAL_CALL_ARGUMENT_MODEL_DOES_NOT_MATCH_NATIVE_CLOSURE",
   "stage1_to_stage2": "BLOCKED_NOT_STARTED",
-  "first_self_compile_blocker": "CODEGEN_COMPLETE_IR_V2_REQUIRED_BEFORE_GENERAL_EMITTER",
+  "first_self_compile_blocker": "BLOCKED_CANONICAL_CALL_ARGUMENT_MODEL_DOES_NOT_MATCH_NATIVE_CLOSURE",
   "historical_resolved_blocker": "IR_CALL_ARGUMENT_POOL_CAPACITY_EXCEEDED",
   "ir_counts_last_native_source_gate": {
     "source_functions": 34,
@@ -63,10 +63,25 @@
     "parameter_and_local_candidate_projection": true,
     "parameter_overflow_route": "EXTEND_CALL_ARGUMENT_POOL_FROM_EXACT_PARAMETER_CANDIDATE_REQUIREMENT",
     "local_overflow_route": "EXTEND_CALL_ARGUMENT_POOL_FROM_EXACT_LOCAL_CANDIDATE_REQUIREMENT",
-    "status": "PREPARED_NOT_EXECUTED_ON_CURRENT_HEAD"
+    "status": "BLOCKED_CANONICAL_CALL_ARGUMENT_MODEL_DOES_NOT_MATCH_NATIVE_CLOSURE",
+    "native_current_measurement": {
+      "identifier_open_candidates": 690,
+      "function_signatures": 34,
+      "calls": 656,
+      "arguments": 736,
+      "max_arity": 4,
+      "evidence": "Current canonical source on Linux x86-64; temporary native debug instrumentation confirmed the 690 identifier-open candidates and 34 signatures without mutating the canonical source."
+    },
+    "static_current_model": {
+      "calls": 792,
+      "arguments": 1041,
+      "max_arity": 27,
+      "maximum_active_call_depth": 2,
+      "evidence": "reports/selfhost/stage1/codegen-ir-v2-call-argument-static-audit.json"
+    }
   },
   "codegen_ir_v2_contract": "reports/selfhost/stage1/codegen-ir-v2-contract.json",
-  "codegen_ir_v2_status": "COMPACTION_PARAMETER_LOCAL_AND_GUARDED_NATIVE_LOCAL_CHAIN_PREPARED_EXECUTION_PENDING",
+  "codegen_ir_v2_status": "BLOCKED_CANONICAL_CALL_ARGUMENT_MODEL_DOES_NOT_MATCH_NATIVE_CLOSURE",
   "compaction_candidate": {
     "transform": "DROP_REDUNDANT_DISCARD_KEYWORD_EVENT",
     "canonical_source_mutated": false,
@@ -231,7 +246,7 @@
     "canonical_commit_allowed": false,
     "report": "reports/selfhost/stage1/codegen-ir-v2-full-candidate-chain.json",
     "home_runbook": "reports/selfhost/stage1/HOME_NATIVE_CAPACITY_CHECK.txt",
-    "status": "PREPARED_NOT_EXECUTED_ON_CURRENT_HEAD"
+    "status": "BLOCKED_AT_IR_V2_GUARD_TESTS"
   },
   "capacity_risk_last_native_source_gate": {
     "event_capacity": 1460,
@@ -253,11 +268,11 @@
     "call_argument_native_used": 736,
     "call_argument_headroom": 10
   },
-  "last_completed_focused_gates": "37 passed, 1 skipped on source head 2b9a391dc1376d34cd13a946a16d92693d389898",
-  "current_checkpoint_tooling_tests": "PENDING_OPERATOR_EXECUTION",
-  "compileall": "PENDING_AFTER_NEW_TOOLING",
-  "json_validation": "PENDING_AFTER_NEW_TOOLING",
-  "diff_check": "PENDING_AFTER_NEW_TOOLING",
+  "last_completed_focused_gates": "37 passed, 1 skipped on source head 2b9a391dc1376d34cd13a946a16d92693d389898 (historical)",
+  "current_checkpoint_tooling_tests": "27 passed, 2 failed; both failures are canonical call-model guards",
+  "compileall": "PASS",
+  "json_validation": "PASS",
+  "diff_check": "PASS",
   "github_actions": "NO_CURRENT_HEAD_STATUS; DO_NOT_CLASSIFY_TOOLING_AS_PASS",
   "historical_t4": {
     "status": "BLOCKED_TIMEOUT",
@@ -282,6 +297,6 @@
   "stage2_started": false,
   "stage3_started": false,
   "full_self_hosting": false,
-  "current_gate": "RUN_GUARDED_FULL_IR_V2_CANDIDATE_CHAIN_ON_LINUX_X86_64",
+  "current_gate": "STOPPED_AT_CANONICAL_CALL_ARGUMENT_MODEL_GUARD",
   "next_if_full_chain_passes": "UNIFIED_VALUE_NAMESPACE_CANDIDATE_PREFLIGHT; DO_NOT_PROMOTE CANONICAL SOURCE OR CLAIM SELF_EMIT/STAGE2 FROM LOCAL PASS"
 }
