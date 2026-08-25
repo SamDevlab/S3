@@ -1,10 +1,10 @@
-"""Run the prepared Stage1 IR-v2 native candidate gates in sequence.
+"""Run prepared Stage1 IR-v2 candidate gates in fail-closed sequence.
 
 The chain is read-only with respect to the canonical compiler source. It first
-qualifies compaction capacity. Only on a real PASS does it qualify the packed
-parameter lane. If parameters pass, it also computes the next-phase local/value
-budget directly from that native audit. It never promotes source, starts
-Stage2/Stage3, or claims self-hosting.
+runs static storage/initializer preflight, then qualifies compaction capacity,
+then (only on PASS) the packed parameter lane. If parameters pass, it computes
+the next-phase local/value budget directly from that native audit. It never
+promotes source, starts Stage2/Stage3, or claims self-hosting.
 """
 
 from __future__ import annotations
@@ -16,6 +16,10 @@ from pathlib import Path
 from tools.plan_stage1_codegen_ir_v2_next import (
     DEFAULT_REPORT as DEFAULT_NEXT_PHASE_REPORT,
     build_plan as build_next_phase_plan,
+)
+from tools.preflight_stage1_codegen_ir_v2_static import (
+    DEFAULT_REPORT as DEFAULT_STATIC_PREFLIGHT_REPORT,
+    run as run_static_preflight,
 )
 from tools.qualify_stage1_codegen_ir_v2_capacity import (
     DEFAULT_REPORT as DEFAULT_CAPACITY_REPORT,
@@ -37,19 +41,36 @@ DEFAULT_CHAIN_REPORT = (
 )
 
 
+def _write(path: Path, value: dict[str, object]) -> None:
+    path = path.resolve()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(value, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+
+
 def run_chain(
     *,
     capacity_report_path: Path,
     parameter_report_path: Path,
     next_phase_report_path: Path,
     chain_report_path: Path,
+    static_preflight_report_path: Path = DEFAULT_STATIC_PREFLIGHT_REPORT,
 ) -> dict[str, object]:
-    capacity = qualify_capacity(
-        report_path=capacity_report_path,
-        run_contract_tests=True,
-    )
-    capacity_pass = (
-        capacity.get("qualification", {}).get("capacity_candidate")
+    static_preflight = run_static_preflight(report_path=static_preflight_report_path)
+    static_pass = static_preflight.get("native_chain_allowed") is True
+
+    capacity: dict[str, object] | None = None
+    if static_pass:
+        capacity = qualify_capacity(
+            report_path=capacity_report_path,
+            run_contract_tests=True,
+        )
+    capacity_pass = bool(
+        capacity is not None
+        and capacity.get("qualification", {}).get("capacity_candidate")
         == "PASS_NATIVE_CANDIDATE"
         and capacity.get("qualification", {}).get("canonical_commit_allowed") is True
     )
@@ -68,19 +89,29 @@ def run_chain(
     )
 
     next_phase = build_next_phase_plan(parameter if parameter_pass else None)
-    next_destination = next_phase_report_path.resolve()
-    next_destination.parent.mkdir(parents=True, exist_ok=True)
-    next_destination.write_text(
-        json.dumps(next_phase, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-        newline="\n",
-    )
+    _write(next_phase_report_path, next_phase)
+
+    if not static_pass:
+        chain_status = "BLOCKED_AT_STATIC_PREFLIGHT"
+    elif not capacity_pass:
+        chain_status = "BLOCKED_AT_CAPACITY_CANDIDATE"
+    elif not parameter_pass:
+        chain_status = "BLOCKED_AT_PARAMETER_CANDIDATE"
+    else:
+        chain_status = "PASS_THROUGH_PARAMETER_CANDIDATE"
 
     result = {
-        "schema": "s3.selfhost.codegen-ir-v2-native-chain.v2",
+        "schema": "s3.selfhost.codegen-ir-v2-native-chain.v3",
         "canonical_source_mutated": False,
+        "static_preflight": {
+            "status": "PASS" if static_pass else "FAIL",
+            "report": str(static_preflight_report_path.resolve()),
+            "storage_reuse": static_preflight.get("storage_reuse_audit", {}).get("status"),
+            "array_initializers": static_preflight.get("array_initializer_audit", {}).get("status"),
+            "zero_initializer_items": static_preflight.get("array_initializer_audit", {}).get("zero_initializer_items"),
+        },
         "capacity_gate": {
-            "status": "PASS" if capacity_pass else "FAIL",
+            "status": "PASS" if capacity_pass else "FAIL" if capacity is not None else "NOT_RUN",
             "report": str(capacity_report_path.resolve()),
         },
         "parameter_gate": {
@@ -92,15 +123,9 @@ def run_chain(
         "next_phase_budget": {
             "status": next_phase["status"],
             "local_ir_v2_start_allowed": next_phase["local_ir_v2_start_allowed"],
-            "report": str(next_destination),
+            "report": str(next_phase_report_path.resolve()),
         },
-        "chain_status": (
-            "PASS_THROUGH_PARAMETER_CANDIDATE"
-            if capacity_pass and parameter_pass
-            else "BLOCKED_AT_PARAMETER_CANDIDATE"
-            if capacity_pass
-            else "BLOCKED_AT_CAPACITY_CANDIDATE"
-        ),
+        "chain_status": chain_status,
         "canonical_commit_allowed": False,
         "canonical_commit_reason": "Candidate chain intentionally never mutates/promotes the canonical source. Review native reports first.",
         "general_emitter": "BLOCKED_IR_V2_INCOMPLETE",
@@ -110,18 +135,13 @@ def run_chain(
         "full_self_hosting": False,
     }
 
-    destination = chain_report_path.resolve()
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(
-        json.dumps(result, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-        newline="\n",
-    )
+    _write(chain_report_path, result)
     return result
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--static-preflight-report", type=Path, default=DEFAULT_STATIC_PREFLIGHT_REPORT)
     parser.add_argument("--capacity-report", type=Path, default=DEFAULT_CAPACITY_REPORT)
     parser.add_argument("--parameter-report", type=Path, default=DEFAULT_PARAMETER_REPORT)
     parser.add_argument("--next-phase-report", type=Path, default=DEFAULT_NEXT_PHASE_REPORT)
@@ -129,12 +149,17 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     result = run_chain(
+        static_preflight_report_path=args.static_preflight_report,
         capacity_report_path=args.capacity_report,
         parameter_report_path=args.parameter_report,
         next_phase_report_path=args.next_phase_report,
         chain_report_path=args.chain_report,
     )
     print(f"CHAIN_REPORT={args.chain_report.resolve()}")
+    print(f"STATIC_PREFLIGHT={result['static_preflight']['status']}")
+    print(f"STORAGE_REUSE={result['static_preflight']['storage_reuse']}")
+    print(f"ARRAY_INITIALIZERS={result['static_preflight']['array_initializers']}")
+    print(f"ZERO_INITIALIZER_ITEMS={result['static_preflight']['zero_initializer_items']}")
     print(f"CAPACITY_GATE={result['capacity_gate']['status']}")
     print(f"PARAMETER_GATE={result['parameter_gate']['status']}")
     print(f"NEXT_PHASE_BUDGET={result['next_phase_budget']['status']}")
