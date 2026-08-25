@@ -1,0 +1,51 @@
+{
+  "schema": "s3.selfhost.codegen-ir-v2-preflight.v1",
+  "pr": 268,
+  "source_head": "2b9a391dc1376d34cd13a946a16d92693d389898",
+  "source_sha256": "20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341",
+  "audit_kind": "STATIC_STORAGE_AND_SCHEMA_PREFLIGHT",
+  "native_linux_remeasurement_required_after_source_change": true,
+  "current_storage": {
+    "ast_event_records": {"banks": [365, 365, 365, 365], "capacity": 1460, "native_used": 1460, "baseline_headroom": 0},
+    "value_records": {"banks": [365, 365, 365, 365], "capacity": 1460, "native_used": 1213, "baseline_headroom": 247},
+    "call_records": {"banks": [365, 365], "capacity": 730, "native_used": 656, "baseline_headroom": 74},
+    "call_argument_records": {"banks": [365, 365, 16], "capacity": 746, "native_used": 736, "baseline_headroom": 10},
+    "blocks": {"capacity": 365, "native_used": 305, "baseline_headroom": 60},
+    "parameters": {"capacity": 64, "native_used": 64, "baseline_headroom": 0},
+    "functions": {"capacity": 64, "native_used": 34, "baseline_headroom": 30}
+  },
+  "critical_findings": [
+    {
+      "id": "IR_V2_EVENT_CAPACITY_PREFLIGHT",
+      "severity": "BLOCKING",
+      "finding": "The native baseline already uses all 1460 event slots. Any IR-v2 implementation that adds compiler-source events can overflow before the new representation is qualified."
+    },
+    {
+      "id": "IR_V2_PARAMETER_CAPACITY_PREFLIGHT",
+      "severity": "BLOCKING",
+      "finding": "The native baseline uses all 64 parameter slots. Adding helper functions with parameters can overflow the current parameter capacity. Prefer in-place lowering or measured bounded capacity expansion."
+    },
+    {
+      "id": "IR_V2_CALL_ARG_HEADROOM_LOW",
+      "severity": "HIGH",
+      "finding": "Only 10 measured call-argument slots remain. New helper-call-heavy code is unsafe without remeasurement and a bounded pool update."
+    },
+    {
+      "id": "IR_V2_CALL_RECORD_HEADROOM_LOW",
+      "severity": "HIGH",
+      "finding": "Only 74 call records remain at the native baseline. Avoid unnecessary helper calls during the structural IR-v2 patch."
+    }
+  ],
+  "required_next_checkpoint": {
+    "id": "CAPACITY_PREFLIGHT",
+    "requirements": [
+      "Preserve the closed 736/746 call-argument evidence as the historical baseline.",
+      "Add only the minimum bounded storage needed to make an IR-v2 implementation itself representable.",
+      "Keep all overflow behavior fail-closed.",
+      "Run focused non-native tests before Linux qualification.",
+      "Remeasure every changed count on native Linux x86-64 before declaring the capacity checkpoint PASS.",
+      "Do not start the general emitter, SELF_EMIT, or Stage2 until IR-v2 construction and verification pass."
+    ]
+  },
+  "status": "BLOCKED_PENDING_BOUNDED_CAPACITY_PREFLIGHT"
+}
