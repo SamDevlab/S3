@@ -1,10 +1,10 @@
 {
-  "schema": "s3.selfhost.codegen-ir-v2-contract.v1",
+  "schema": "s3.selfhost.codegen-ir-v2-contract.v2",
   "pr": 268,
   "source_head": "2b9a391dc1376d34cd13a946a16d92693d389898",
   "source_sha256": "20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341",
-  "status": "PRE_IMPLEMENTATION_CONTRACT",
-  "purpose": "Define the minimum verified IR required by the Stage1 general emitter without source rereading or code-generation delegation.",
+  "status": "PRE_IMPLEMENTATION_CONTRACT_RECONCILED_PACKED_ARCHITECTURE",
+  "purpose": "Define the minimum verified IR required by the Stage1 general emitter without source rereading, semantic reconstruction from source, or code-generation delegation.",
   "closed_prerequisite": {
     "id": "IR_CALL_ARGUMENT_POOL_CAPACITY_EXCEEDED",
     "status": "RESOLVED",
@@ -19,6 +19,7 @@
     "foreign_functions": 5,
     "parameters": 64,
     "locals": 23,
+    "locals_note": "Historical native count only; fresh candidate lexical/native reconciliation is mandatory before local capacity selection.",
     "blocks": 305,
     "instructions_or_events": 1460,
     "values": 1213,
@@ -33,13 +34,13 @@
     "discards": 699
   },
   "capacity_preflight": {
-    "status": "REQUIRED_BEFORE_IR_V2_IMPLEMENTATION",
-    "reason": "The current canonical self-source already reaches 1460 aggregate events/instructions, equal to the four 365-entry event banks. Adding codegen-complete IR logic changes the compiler source itself, so capacity must be expanded or compacted before new logic can be qualified.",
+    "status": "REQUIRED_BEFORE_EACH_IR_V2_SOURCE_TRANSFORM",
     "rules": [
-      "Do not truncate any event, value, call, argument, parameter, local, block, instruction, or terminator lane.",
-      "Do not select a large arbitrary capacity. Record the pre-change count, the structural delta, selected bounded capacity, and post-change native count.",
+      "Do not truncate any event, semantic value, call, argument, parameter, local, block, instruction, or terminator representation.",
+      "Do not select a large arbitrary capacity. Record the pre-change count, exact candidate delta, selected bounded capacity, and post-change native count.",
       "Every capacity remains fail-closed and verifier checked.",
-      "The call-argument pool closure remains 746 unless a measured post-change source proves a new requirement."
+      "The call-argument pool remains 746 only while the exact transformed candidate fits the independently validated call-argument model and subsequent native measurement.",
+      "Static zero-initializer counts are never treated as semantic value headroom without a separately qualified transform."
     ]
   },
   "required_lanes": {
@@ -55,62 +56,83 @@
       "name_identity",
       "type_id",
       "mutability",
-      "value_id",
-      "frame_slot"
+      "storage_kind",
+      "local_ordinal",
+      "fixed_extent",
+      "value_id"
     ],
     "value": [
       "value_id",
-      "owner_function_id",
+      "owner_function_id_or_global",
       "type_id",
       "definition_kind",
-      "definition_instruction_id_or_payload"
+      "definition_reference_or_literal_payload_reference"
     ],
     "instruction": [
       "instruction_id",
-      "owner_function_id",
       "block_id",
       "opcode",
-      "operand_a_value_id",
-      "operand_b_value_id",
-      "result_value_id",
-      "immediate_or_aux_id"
+      "operand_a_value_id_or_none",
+      "operand_b_value_id_or_none",
+      "result_value_id_or_none",
+      "aux_id_or_none"
     ],
     "call": [
-      "instruction_id",
+      "instruction_id_via_instruction_record",
       "callee_function_id",
       "flags_local_or_foreign",
       "argument_start_bank",
       "argument_start_slot",
-      "argument_count",
-      "result_value_id_or_no_result"
+      "argument_count"
     ],
-    "terminator": [
+    "block_terminator": [
       "block_id",
+      "owner_function_id",
       "terminator_kind",
       "condition_value_id_or_none",
-      "target_a",
-      "target_b",
+      "target_a_block_id_or_none",
+      "target_b_block_id_or_none",
       "return_value_id_or_none"
     ]
   },
+  "representation_rules": {
+    "parameter": "Packed bounded record; current candidate uses one i64[64] lane.",
+    "local": "Packed bounded shape-preserving record; scalar versus fixed-array kind and extent are semantic. Physical byte/frame offset is emitter-owned and is not frozen in IR.",
+    "instruction_owner": "Do not duplicate owner_function_id in every instruction. Derive owner through instruction.block_id -> packed block.owner_function_id.",
+    "instruction_storage": "Candidate reuses the four legacy event banks only after the legacy event verifier and only after native IR-v2 verification proves the in-place rewrite.",
+    "call_result": "Do not add a duplicate call-result array. The call-producing instruction owns result_value_id; call metadata supplies callee/flags/arguments.",
+    "terminator": "Packed block/terminator record owns kind, targets, condition and return value linkage.",
+    "value_storage": "Legacy ir_value_records_0..3 are structural numeric-token records and must not be silently reinterpreted as a semantic namespace. Explicit rebuild/rebase is mandatory."
+  },
   "identity_rules": {
     "function_ids": "stable deterministic source-order IDs",
-    "parameter_ids": "stable deterministic function-signature order",
-    "local_ids": "stable deterministic declaration order within owner function",
+    "parameter_ids": "stable deterministic function-signature order in fixed semantic domain [0,64)",
+    "local_ids": "stable deterministic declaration order; current candidate rule is 64 + global local-record index",
     "instruction_ids": "stable deterministic lowering order",
-    "value_ids": "single non-colliding namespace for parameters, locals/constants/results used by instructions and terminators",
-    "block_ids": "stable deterministic lowering order"
+    "value_ids": "single non-colliding namespace for parameters, locals, constants and instruction results",
+    "block_ids": "stable deterministic lowering order",
+    "physical_layout": "not part of semantic local identity"
   },
   "required_def_use": [
-    "A parameter reference resolves to its parameter value ID.",
-    "A local read resolves to the current local value/storage identity required by bootstrap lowering.",
-    "A store records destination local identity and source value ID.",
+    "A parameter reference resolves to its parameter semantic value ID.",
+    "A local read resolves to the local semantic/storage identity and the currently defined value required by bootstrap lowering.",
+    "A local store records destination local identity and source value ID.",
     "Arithmetic and comparison instructions record operand value IDs and result value ID.",
-    "Calls record ordered argument value IDs and a result value ID when the result is consumed.",
-    "Discard preserves the identity of its side-effecting instruction instead of erasing it.",
-    "Conditional terminators record the condition value ID and both verified targets.",
-    "Return terminators record the returned value ID rather than only an aggregate/literal lane."
+    "Calls consume ordered argument value IDs from the existing bounded argument pool and expose result_value_id through the producing instruction when consumed.",
+    "Discard preserves the side-effecting instruction; it is not a second semantic instruction by itself.",
+    "Conditional terminators record condition value ID and verified block targets.",
+    "Return terminators record the returned value ID rather than an aggregate/literal-only lane."
   ],
+  "required_source_markers": {
+    "parameter_packed_metadata": "ir_parameter_records",
+    "local_packed_metadata": "ir_local_records",
+    "semantic_value_namespace": "ir_semantic_value",
+    "instruction_v2_pack": "pack_ir_v2_instruction",
+    "packed_block_v2": "pack_ir_v2_block",
+    "instruction_result_linkage": "result_value_id",
+    "terminator_condition_linkage": "condition_value_id",
+    "terminator_return_linkage": "return_value_id"
+  },
   "emitter_boundary": {
     "input": "verified IR v2 only",
     "raw_source_reread": false,
@@ -122,31 +144,32 @@
   },
   "verifier_minimum": [
     "all function/parameter/local/block/instruction/value/call IDs are in range",
-    "all parameter/local owners exist and match function ranges",
-    "each instruction belongs to exactly one valid block/function",
-    "all operand/result value IDs are defined and owned compatibly",
-    "call argument ranges are within the bounded 3-bank pool",
-    "call result IDs are valid when present",
+    "all parameter/local owners exist and match function ownership",
+    "local storage kind/extent/ordinal invariants are valid",
+    "each instruction belongs to exactly one valid block and derives exactly one valid owner through that block",
+    "all operand/result semantic value IDs are defined and owned compatibly",
+    "call argument ranges are within the bounded banked argument pool",
+    "call-producing instruction/result linkage is valid when a result exists",
     "terminator condition/return IDs are valid when required",
     "all branch targets are valid blocks owned by the same function",
-    "no silent overflow or truncation in any bank"
+    "no silent overflow, truncation, namespace collision or raw-source reconstruction"
   ],
   "implementation_order": [
     "CAPACITY_PREFLIGHT",
     "PARAMETER_IDENTITY_AND_TYPES",
-    "LOCAL_IDENTITY_TYPES_MUTABILITY_AND_SLOTS",
-    "UNIFIED_VALUE_IDS_AND_DEF_USE",
+    "LOCAL_IDENTITY_TYPE_MUTABILITY_STORAGE_KIND_EXTENT_AND_ORDINAL",
+    "UNIFIED_VALUE_NAMESPACE_AND_DEF_USE",
     "INSTRUCTION_OPERANDS_RESULTS_AND_ORDERING",
-    "CALL_INSTRUCTION_AND_RESULT_LINKAGE",
-    "TERMINATOR_CONDITION_AND_RETURN_LINKAGE",
+    "CALL_INSTRUCTION_LINKAGE",
+    "PACKED_BLOCK_TERMINATOR_CONDITION_AND_RETURN_LINKAGE",
     "VERIFIER_V2",
     "GENERAL_EMITTER_FIXTURES",
     "SELF_EMIT",
     "STAGE1_TO_STAGE2"
   ],
   "qualification": {
-    "static_contract": "PASS_BY_SCHEMA_AFTER_REVIEW",
-    "native_linux_required_for_implementation_pass": true,
+    "contract_reconciled_to_current_packed_design": true,
+    "native_linux_required_for_every_implementation_pass": true,
     "self_emit_required": true,
     "stage2_required_for_round_success": true,
     "stage3_allowed_in_this_round": false,
