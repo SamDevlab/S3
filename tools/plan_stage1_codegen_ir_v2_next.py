@@ -17,9 +17,14 @@ Important namespace rules:
 Important block rule:
 - the legacy verifier requires ``ir_block_count < 365``;
 - each newly represented match/while currently adds three synthetic blocks;
-- direct local-metadata work under the legacy pool is allowed only when at least
-  one additional control event can still fit. Otherwise the next gate is the
-  prepared packed 730-block capacity candidate.
+- native headroom alone is not enough to authorize the local-metadata source
+  transform because that transform has not yet been materialized and its exact
+  self-source control delta is unknown;
+- when legacy headroom exists, the next gate is therefore a concrete local
+  candidate preflight that must measure its exact added match/while lines and
+  projected block count before ``local_ir_v2_start_allowed`` may become true;
+- when no additional control event can fit, route directly to the prepared
+  packed 730-block capacity candidate.
 """
 
 from __future__ import annotations
@@ -74,7 +79,7 @@ def _int(audit: dict[str, Any], key: str) -> int:
 
 def build_plan(parameter_report: dict[str, Any] | None) -> dict[str, Any]:
     base: dict[str, Any] = {
-        "schema": "s3.selfhost.codegen-ir-v2-next-phase-budget.v4",
+        "schema": "s3.selfhost.codegen-ir-v2-next-phase-budget.v5",
         "canonical_source_mutated": False,
         "native_evidence": parameter_report is not None,
         "capacities": {
@@ -98,6 +103,7 @@ def build_plan(parameter_report: dict[str, Any] | None) -> dict[str, Any]:
             "status": "WAITING_FOR_NATIVE_PARAMETER_REPORT",
             "local_ir_v2_design_possible": False,
             "local_ir_v2_start_allowed": False,
+            "local_candidate_control_preflight_required": True,
             "block_capacity_expansion_required_before_local_metadata": False,
             "unified_value_namespace_start_allowed": False,
             "reason": "Post-parameter native counts are required before selecting the next bounded source transform.",
@@ -157,12 +163,21 @@ def build_plan(parameter_report: dict[str, Any] | None) -> dict[str, Any]:
         "call_headroom_positive": calls < CALL_CAPACITY,
     }
     local_design_possible = all(design_guards.values())
-    direct_legacy_block_pool_allowed = bool(
+    legacy_local_route_has_any_control_budget = bool(
         local_design_possible and legacy_additional_control_budget >= 1
     )
     block_expansion_required = bool(
-        local_design_possible and not direct_legacy_block_pool_allowed
+        local_design_possible and not legacy_local_route_has_any_control_budget
     )
+
+    # Native parameter evidence can prove that a local representation is worth
+    # designing, but it cannot prove that the not-yet-materialized local source
+    # transform fits the legacy block pool. The exact transform must first be
+    # built in memory and statically projected against this native baseline.
+    local_candidate_control_preflight_required = bool(
+        local_design_possible and not block_expansion_required
+    )
+    direct_local_start_allowed = False
 
     namespace_transition = {
         "legacy_structural_value_stream": {
@@ -199,8 +214,8 @@ def build_plan(parameter_report: dict[str, Any] | None) -> dict[str, Any]:
         status = "READY_FOR_BLOCK_CAPACITY_EXPANSION_BEFORE_LOCAL_IR_V2"
         next_gate = "PACKED_730_BLOCK_CAPACITY_CANDIDATE"
     else:
-        status = "READY_FOR_LOCAL_IR_V2_DESIGN"
-        next_gate = "LOCAL_IDENTITY_TYPE_MUTABILITY_FRAME_SLOT_CANDIDATE"
+        status = "READY_FOR_LOCAL_IR_V2_CANDIDATE_PREFLIGHT"
+        next_gate = "PREPARE_LOCAL_METADATA_CANDIDATE_AND_PROJECT_EXACT_CONTROL_DELTA"
 
     base.update({
         "status": status,
@@ -241,7 +256,9 @@ def build_plan(parameter_report: dict[str, Any] | None) -> dict[str, Any]:
         "namespace_transition": namespace_transition,
         "guards": design_guards,
         "local_ir_v2_design_possible": local_design_possible,
-        "local_ir_v2_start_allowed": direct_legacy_block_pool_allowed,
+        "local_ir_v2_start_allowed": direct_local_start_allowed,
+        "local_candidate_control_preflight_required": local_candidate_control_preflight_required,
+        "legacy_local_route_has_any_control_budget": legacy_local_route_has_any_control_budget,
         "block_capacity_expansion_required_before_local_metadata": block_expansion_required,
         "block_capacity_route": {
             "legacy_capacity": BLOCK_CAPACITY,
@@ -250,6 +267,10 @@ def build_plan(parameter_report: dict[str, Any] | None) -> dict[str, Any]:
             "additional_control_budget": legacy_additional_control_budget,
             "candidate_capacity": 730,
             "prepared_static_audit": "tools/audit_stage1_codegen_ir_v2_block_capacity.py",
+            "direct_local_transform_authorized": False,
+            "authorization_rule": (
+                "Require exact control-delta preflight of the concrete local-metadata candidate against the native parameter block baseline."
+            ),
         },
         "unified_value_namespace_start_allowed": False,
         "next": next_gate,
@@ -294,6 +315,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"STATUS={report['status']}")
     print(f"LOCAL_IR_V2_DESIGN_POSSIBLE={report['local_ir_v2_design_possible']}")
     print(f"LOCAL_IR_V2_START_ALLOWED={report['local_ir_v2_start_allowed']}")
+    print(f"LOCAL_CANDIDATE_CONTROL_PREFLIGHT_REQUIRED={report['local_candidate_control_preflight_required']}")
     print(f"BLOCK_CAPACITY_EXPANSION_REQUIRED={report['block_capacity_expansion_required_before_local_metadata']}")
     print(f"UNIFIED_VALUE_NAMESPACE_START_ALLOWED={report['unified_value_namespace_start_allowed']}")
     if "headroom" in report:
