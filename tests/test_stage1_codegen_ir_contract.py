@@ -23,6 +23,7 @@ def test_codegen_ir_v2_contract_records_closed_pool_and_real_baseline() -> None:
     assert observed["values"] == 1213
     assert observed["calls"] == 656
     assert observed["call_arguments"] == 736
+    assert observed["discards"] == 699
 
 
 def test_codegen_ir_v2_contract_requires_real_def_use_and_terminators() -> None:
@@ -56,6 +57,17 @@ def test_static_audit_detects_zero_event_headroom_at_native_baseline() -> None:
     result = audit(SOURCE, CONTRACT)
     capacity = result["capacity_observation"]
     assert capacity["native_baseline_events"] == 1460
+    assert capacity["native_baseline_discard_events"] == 699
     assert capacity["static_event_slots"] == 1460
     assert capacity["static_event_headroom_against_native_baseline"] == 0
     assert capacity["preflight_required"] is True
+
+
+def test_compaction_projection_is_explicitly_not_a_native_pass() -> None:
+    result = audit(SOURCE, CONTRACT)
+    projection = result["capacity_observation"]["compaction_projection"]
+    assert projection["strategy"] == "DO_NOT_SERIALIZE_AGGREGATE_DISCARD_KEYWORD_EVENT"
+    assert projection["projected_events"] == 761
+    assert projection["projected_headroom"] == 699
+    assert projection["status"] == "PROJECTION_ONLY_NATIVE_REMEASUREMENT_REQUIRED"
+    assert "Calls/stores remain explicit instructions" in projection["side_effect_rule"]
