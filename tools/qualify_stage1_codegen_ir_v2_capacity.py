@@ -64,6 +64,13 @@ AUDIT_FIELDS = (
     "ir_return_count",
 )
 
+BASELINE_EVENTS = 1460
+BASELINE_DISCARDS = 699
+BASELINE_PARAMETERS = 64
+BASELINE_CALLS = 656
+BASELINE_VALUES = 1213
+BASELINE_BLOCKS = 305
+
 
 def _sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
@@ -120,6 +127,7 @@ def _run_contract_tests() -> dict[str, object]:
             "pytest",
             "-q",
             "tests/test_stage1_codegen_ir_contract.py",
+            "tests/test_stage1_codegen_ir_capacity_tools.py",
         ],
         cwd=str(ROOT),
         capture_output=True,
@@ -132,6 +140,24 @@ def _run_contract_tests() -> dict[str, object]:
         "stdout": completed.stdout,
         "stderr": completed.stderr,
         "status": "PASS" if completed.returncode == 0 else "FAIL",
+    }
+
+
+def _audit_invariants(audit: dict[str, int] | None) -> dict[str, bool]:
+    if audit is None:
+        return {
+            "discard_count_preserved": False,
+            "parameter_count_preserved": False,
+            "call_count_preserved": False,
+            "value_count_preserved": False,
+            "block_count_preserved": False,
+        }
+    return {
+        "discard_count_preserved": audit.get("ast_discard_count") == BASELINE_DISCARDS,
+        "parameter_count_preserved": audit.get("parameter_count") == BASELINE_PARAMETERS,
+        "call_count_preserved": audit.get("ast_call_count") == BASELINE_CALLS,
+        "value_count_preserved": audit.get("ir_value_count") == BASELINE_VALUES,
+        "block_count_preserved": audit.get("ir_block_count") == BASELINE_BLOCKS,
     }
 
 
@@ -159,8 +185,9 @@ def qualify(*, report_path: Path, run_contract_tests: bool) -> dict[str, object]
         if run_contract_tests
         else {"status": "SKIPPED_BY_OPERATOR"}
     )
-    if run_contract_tests and contract_tests["status"] != "PASS":
-        raise RuntimeError("IR-v2 contract tests failed before candidate build")
+    contract_tests_pass = contract_tests.get("status") == "PASS"
+    if run_contract_tests and not contract_tests_pass:
+        raise RuntimeError("IR-v2 contract/capacity tests failed before candidate build")
 
     baseline_text = baseline_bytes.decode("utf-8")
     candidate_text = transform(baseline_text)
@@ -200,12 +227,22 @@ def qualify(*, report_path: Path, run_contract_tests: bool) -> dict[str, object]
             and marker == "S3_STAGE1_EMITTER_BLOCKED"
         )
 
-        baseline_events = 1460
-        baseline_discards = 699
         actual_events = audit.get("ir_instruction_count") if audit else None
         actual_discards = audit.get("ast_discard_count") if audit else None
         actual_event_reduction = (
-            baseline_events - actual_events if actual_events is not None else None
+            BASELINE_EVENTS - actual_events if actual_events is not None else None
+        )
+        audit_invariants = _audit_invariants(audit)
+        audit_invariants_pass = all(audit_invariants.values())
+        event_headroom_pass = (
+            isinstance(actual_events, int) and 0 < actual_events < BASELINE_EVENTS
+        )
+        native_candidate_pass = bool(
+            contract_tests_pass
+            and trivial_pass
+            and self_boundary_pass
+            and audit_invariants_pass
+            and event_headroom_pass
         )
 
         result = {
@@ -219,8 +256,8 @@ def qualify(*, report_path: Path, run_contract_tests: bool) -> dict[str, object]
             "baseline": {
                 "source_sha256": baseline_sha,
                 "source_bytes": len(baseline_bytes),
-                "native_events": baseline_events,
-                "native_discard_events": baseline_discards,
+                "native_events": BASELINE_EVENTS,
+                "native_discard_events": BASELINE_DISCARDS,
                 "event_capacity": 1460,
                 "parameter_capacity": 64,
                 "call_capacity": 730,
@@ -252,34 +289,32 @@ def qualify(*, report_path: Path, run_contract_tests: bool) -> dict[str, object]
                 "audit": audit,
                 "final_marker": marker,
             },
+            "audit_invariants": audit_invariants,
             "capacity_measurement": {
                 "actual_ir_instruction_count": actual_events,
                 "actual_ast_discard_count": actual_discards,
                 "actual_event_reduction_from_native_baseline": actual_event_reduction,
                 "actual_event_headroom": (
-                    1460 - actual_events if actual_events is not None else None
+                    BASELINE_EVENTS - actual_events
+                    if actual_events is not None
+                    else None
                 ),
                 "projection_was_761_events": True,
                 "projection_is_not_substituted_for_native_measurement": True,
             },
             "qualification": {
+                "contract_tests": "PASS" if contract_tests_pass else "NOT_PASS",
                 "candidate_build": "PASS",
                 "trivial_compile": "PASS" if trivial_pass else "FAIL",
                 "self_source_expected_boundary": (
                     "PASS" if self_boundary_pass else "FAIL"
                 ),
+                "audit_invariants": "PASS" if audit_invariants_pass else "FAIL",
+                "event_headroom": "PASS" if event_headroom_pass else "FAIL",
                 "capacity_candidate": (
-                    "PASS_NATIVE_CANDIDATE"
-                    if trivial_pass and self_boundary_pass and actual_events is not None
-                    and actual_events < 1460
-                    else "FAIL"
+                    "PASS_NATIVE_CANDIDATE" if native_candidate_pass else "FAIL"
                 ),
-                "canonical_commit_allowed": bool(
-                    trivial_pass
-                    and self_boundary_pass
-                    and actual_events is not None
-                    and actual_events < 1460
-                ),
+                "canonical_commit_allowed": native_candidate_pass,
                 "self_emit": "NOT_ATTEMPTED_GENERAL_EMITTER_STILL_BLOCKED",
                 "stage2": "NOT_STARTED",
                 "stage3": "NOT_STARTED",
@@ -300,7 +335,11 @@ def qualify(*, report_path: Path, run_contract_tests: bool) -> dict[str, object]
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
-    parser.add_argument("--skip-contract-tests", action="store_true")
+    parser.add_argument(
+        "--skip-contract-tests",
+        action="store_true",
+        help="diagnostic-only mode; skipping tests can never authorize canonical promotion",
+    )
     args = parser.parse_args(argv)
 
     result = qualify(
@@ -309,6 +348,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     qualification = result["qualification"]
     print(f"REPORT={args.report.resolve()}")
+    print(f"CONTRACT_TESTS={qualification['contract_tests']}")
+    print(f"AUDIT_INVARIANTS={qualification['audit_invariants']}")
+    print(f"EVENT_HEADROOM={qualification['event_headroom']}")
     print(f"CAPACITY_CANDIDATE={qualification['capacity_candidate']}")
     print(f"CANONICAL_COMMIT_ALLOWED={qualification['canonical_commit_allowed']}")
     audit = result["self_source"]["audit"]
