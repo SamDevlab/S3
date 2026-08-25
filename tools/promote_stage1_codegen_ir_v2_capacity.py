@@ -223,8 +223,53 @@ def promoted_manifest(manifest: dict[str, Any], candidate_bytes: bytes) -> dict[
     return result
 
 
+def _write_promoted_pair(
+    *,
+    candidate_bytes: bytes,
+    new_manifest: dict[str, Any],
+    original_source: bytes,
+    original_manifest: bytes,
+) -> None:
+    """Replace source+manifest with rollback on any write/verification failure."""
+
+    source_tmp = SOURCE.with_name(SOURCE.name + ".ir-v2-promote.tmp")
+    manifest_tmp = MANIFEST.with_name(MANIFEST.name + ".ir-v2-promote.tmp")
+    manifest_payload = (json.dumps(new_manifest, indent=2) + "\n").encode("utf-8")
+
+    try:
+        source_tmp.write_bytes(candidate_bytes)
+        manifest_tmp.write_bytes(manifest_payload)
+        _require(source_tmp.read_bytes() == candidate_bytes, "temporary promoted source verification failed")
+        staged_manifest = json.loads(manifest_tmp.read_text(encoding="utf-8"))
+        validate_manifest(staged_manifest, candidate_bytes)
+
+        source_tmp.replace(SOURCE)
+        manifest_tmp.replace(MANIFEST)
+
+        _require(SOURCE.read_bytes() == candidate_bytes, "post-write canonical source verification failed")
+        validate_manifest(_load_json(MANIFEST), candidate_bytes)
+    except Exception as error:
+        rollback_errors: list[str] = []
+        try:
+            SOURCE.write_bytes(original_source)
+        except OSError as rollback_error:
+            rollback_errors.append(f"source rollback failed: {rollback_error}")
+        try:
+            MANIFEST.write_bytes(original_manifest)
+        except OSError as rollback_error:
+            rollback_errors.append(f"manifest rollback failed: {rollback_error}")
+        detail = f"promotion write failed and was rolled back: {error}"
+        if rollback_errors:
+            detail += "; " + "; ".join(rollback_errors)
+        raise PromotionError(detail) from error
+    finally:
+        source_tmp.unlink(missing_ok=True)
+        manifest_tmp.unlink(missing_ok=True)
+
+
 def promote(*, report_path: Path, in_place: bool) -> dict[str, Any]:
     canonical_bytes = SOURCE.read_bytes()
+    manifest_bytes = MANIFEST.read_bytes()
     manifest = _load_json(MANIFEST)
     validate_manifest(manifest, canonical_bytes)
     report = _load_json(report_path)
@@ -243,11 +288,11 @@ def promote(*, report_path: Path, in_place: bool) -> dict[str, Any]:
     }
 
     if in_place:
-        SOURCE.write_bytes(candidate_bytes)
-        MANIFEST.write_text(
-            json.dumps(new_manifest, indent=2) + "\n",
-            encoding="utf-8",
-            newline="\n",
+        _write_promoted_pair(
+            candidate_bytes=candidate_bytes,
+            new_manifest=new_manifest,
+            original_source=canonical_bytes,
+            original_manifest=manifest_bytes,
         )
         result["canonical_source_mutated"] = True
         result["status"] = "PROMOTED_NATIVE_QUALIFIED_CANDIDATE"
@@ -261,7 +306,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--in-place",
         action="store_true",
-        help="after full native-report validation, rewrite canonical source and manifest",
+        help="after full native-report validation, transactionally rewrite canonical source and manifest",
     )
     args = parser.parse_args(argv)
 
