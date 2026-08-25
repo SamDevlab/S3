@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+import tools.promote_stage1_codegen_ir_v2_capacity as promoter
 from tools.patch_stage1_codegen_ir_v2_capacity import (
     BASELINE_SOURCE_SHA256,
     NEW_DISCARD_EVENT_BLOCK,
@@ -28,6 +29,22 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def _manifest_for(data: bytes) -> dict[str, object]:
+    return {
+        "schema": "s3.compiler.sources.v1",
+        "source_count": 1,
+        "total_bytes": len(data),
+        "sources": [
+            {
+                "path": "selfhost/compiler/s3c_stage1.s3",
+                "sha256": _sha256(data),
+                "role": "canonical_stage1_compiler",
+                "ordering": 0,
+            }
+        ],
+    }
 
 
 def _good_native_report(canonical_bytes: bytes) -> dict[str, object]:
@@ -215,3 +232,44 @@ def test_promoter_default_is_validation_only(tmp_path: Path) -> None:
     assert result["canonical_source_mutated"] is False
     assert SOURCE.read_bytes() == canonical_before
     assert MANIFEST.read_bytes() == manifest_before
+
+
+def test_transactional_promoter_rolls_back_both_files_on_post_write_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source_path = tmp_path / "s3c_stage1.s3"
+    manifest_path = tmp_path / "compiler-sources.json"
+    original_source = b"original-stage1-source\n"
+    original_manifest = json.dumps(_manifest_for(original_source), indent=2).encode("utf-8") + b"\n"
+    candidate_source = b"candidate-stage1-source\n"
+    new_manifest = _manifest_for(candidate_source)
+    source_path.write_bytes(original_source)
+    manifest_path.write_bytes(original_manifest)
+
+    monkeypatch.setattr(promoter, "SOURCE", source_path)
+    monkeypatch.setattr(promoter, "MANIFEST", manifest_path)
+    real_validate_manifest = promoter.validate_manifest
+    calls = 0
+
+    def fail_second_validation(manifest: dict[str, object], data: bytes) -> None:
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            raise PromotionError("forced post-write verification failure")
+        real_validate_manifest(manifest, data)
+
+    monkeypatch.setattr(promoter, "validate_manifest", fail_second_validation)
+
+    with pytest.raises(PromotionError, match="was rolled back"):
+        promoter._write_promoted_pair(
+            candidate_bytes=candidate_source,
+            new_manifest=new_manifest,
+            original_source=original_source,
+            original_manifest=original_manifest,
+        )
+
+    assert source_path.read_bytes() == original_source
+    assert manifest_path.read_bytes() == original_manifest
+    assert not source_path.with_name(source_path.name + ".ir-v2-promote.tmp").exists()
+    assert not manifest_path.with_name(manifest_path.name + ".ir-v2-promote.tmp").exists()
