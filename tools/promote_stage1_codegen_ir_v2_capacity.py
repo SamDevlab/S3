@@ -102,13 +102,19 @@ def validate_native_report(
     _require(baseline.get("call_capacity") == 730, "unexpected call capacity")
     _require(baseline.get("call_argument_capacity") == 746, "unexpected call-argument capacity")
 
+    contract_tests = report.get("contract_tests") or {}
+    _require(contract_tests.get("status") == "PASS", "contract/capacity tests did not pass")
+
     qualification = report.get("qualification") or {}
+    _require(qualification.get("contract_tests") == "PASS", "qualification did not record contract-test PASS")
     _require(qualification.get("candidate_build") == "PASS", "candidate build did not pass")
     _require(qualification.get("trivial_compile") == "PASS", "trivial compile did not pass")
     _require(
         qualification.get("self_source_expected_boundary") == "PASS",
         "candidate self-source did not reach the expected emitter boundary",
     )
+    _require(qualification.get("audit_invariants") == "PASS", "native audit invariants did not pass")
+    _require(qualification.get("event_headroom") == "PASS", "native event headroom did not pass")
     _require(
         qualification.get("capacity_candidate") == "PASS_NATIVE_CANDIDATE",
         "capacity candidate is not a native PASS candidate",
@@ -144,6 +150,17 @@ def validate_native_report(
     _require(audit.get("ast_call_count") == 656, "call count changed during compaction")
     _require(audit.get("ir_value_count") == 1213, "value count changed during compaction")
     _require(audit.get("ir_block_count") == 305, "block count changed during compaction")
+
+    audit_invariants = report.get("audit_invariants") or {}
+    expected_invariants = {
+        "discard_count_preserved",
+        "parameter_count_preserved",
+        "call_count_preserved",
+        "value_count_preserved",
+        "block_count_preserved",
+    }
+    _require(expected_invariants <= set(audit_invariants), "native audit invariant fields are incomplete")
+    _require(all(audit_invariants[name] is True for name in expected_invariants), "one or more native audit invariants failed")
 
     measurement = report.get("capacity_measurement") or {}
     _require(
