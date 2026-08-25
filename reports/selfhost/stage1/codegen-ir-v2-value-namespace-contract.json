@@ -1,0 +1,141 @@
+{
+  "schema": "s3.selfhost.codegen-ir-v2-value-namespace-contract.v1",
+  "pr": 268,
+  "status": "DESIGN_ONLY_NATIVE_LOCAL_PREREQUISITE_PENDING",
+  "canonical_source_mutated": false,
+  "purpose": "Define a single non-colliding semantic value-ID namespace for parameters, locals, typed constants and instruction results without reusing the legacy numeric-token stream as if it were semantic SSA.",
+  "prerequisite": {
+    "required_gate": "PASS_THROUGH_LOCAL_NATIVE_CANDIDATE",
+    "required_next": "UNIFIED_VALUE_NAMESPACE_CANDIDATE_PREFLIGHT",
+    "canonical_promotion_required_before_design": false,
+    "native_local_report_required_before_transform": true
+  },
+  "physical_storage": {
+    "candidate": "REBUILD_IN_PLACE_USING_EXISTING_IR_VALUE_RECORDS_0_TO_3",
+    "bank_count": 4,
+    "bank_size": 365,
+    "physical_slots": 1460,
+    "legacy_contents": "STRUCTURAL_NUMERIC_TOKEN_RECORDS",
+    "silent_reinterpretation_allowed": false,
+    "rewrite_frontier": "ONLY_AFTER_LEGACY_VALUE_INFORMATION_NEEDED_FOR_REBUILD_HAS_BEEN_CONSUMED_AND_NEW_VERIFIER_CAN_PROVE_NAMESPACE"
+  },
+  "semantic_id_layout": {
+    "parameter_domain": "[0,64)",
+    "parameter_ids_used": "[0,parameter_count)",
+    "local_domain_start": 64,
+    "local_ids": "64 + global_local_record_index",
+    "dynamic_start": "64 + local_record_count",
+    "dynamic_allocation": "monotonic physical-slot allocation; semantic IDs may contain reserved extension holes for wide literals",
+    "maximum_semantic_id": 1459
+  },
+  "value_kinds": {
+    "1": "PARAMETER",
+    "2": "LOCAL_STORAGE_IDENTITY",
+    "3": "TYPED_CONSTANT_INLINE",
+    "4": "TYPED_CONSTANT_WIDE",
+    "5": "INSTRUCTION_RESULT"
+  },
+  "packed_header": {
+    "word_type": "signed i64 non-negative header",
+    "fields": [
+      "kind",
+      "owner_function_id_or_global",
+      "type_id",
+      "payload_or_reference"
+    ],
+    "domains": {
+      "kind": 8,
+      "owner": 65,
+      "type": 366,
+      "payload_or_reference": 1461
+    },
+    "maximum_encoded": 278309879,
+    "signed_i64_max": 9223372036854775807,
+    "fits_signed_i64": true
+  },
+  "constant_representation": {
+    "interning_key": [
+      "type_id",
+      "literal_value"
+    ],
+    "owner": "GLOBAL_IMMUTABLE",
+    "deduplicate_repeated_literals": true,
+    "reason": "Repeated immutable constants, especially fixed-array zero initializers, must not consume one semantic value record per lexical occurrence.",
+    "inline_range": {
+      "min": -730,
+      "max": 730,
+      "encoding": "literal + 730",
+      "physical_slots": 1
+    },
+    "wide_literal": {
+      "physical_slots": 2,
+      "header_kind": "TYPED_CONSTANT_WIDE",
+      "header_reference": "immediately following extension slot",
+      "extension_word": "raw signed i64 literal payload",
+      "extension_slot_is_semantic_value_id": false,
+      "verifier_requirement": "no operand/result/terminator/call argument may reference an extension-only slot"
+    }
+  },
+  "parameter_value": {
+    "kind": "PARAMETER",
+    "payload_or_reference": "parameter_record_index",
+    "type_and_owner": "must agree with packed parameter metadata"
+  },
+  "local_value": {
+    "kind": "LOCAL_STORAGE_IDENTITY",
+    "payload_or_reference": "local_record_index",
+    "type_and_owner": "must agree with packed local metadata",
+    "note": "A later store changes the value flowing through instructions; it does not create a new local identity. Instruction-result/source value IDs preserve def-use separately."
+  },
+  "instruction_result": {
+    "kind": "INSTRUCTION_RESULT",
+    "payload_or_reference": "defining_instruction_id",
+    "owner": "derived/verified against defining instruction block owner",
+    "allocation": "only for instructions whose semantic result is consumed or returned under the bootstrap lowering contract"
+  },
+  "capacity_rules": [
+    "Do not use lexical numeric-token count as semantic value count.",
+    "Do not assume static zero-initializer count is free headroom.",
+    "Intern typed immutable constants before capacity calculation.",
+    "Count wide-literal extension slots separately.",
+    "Count only semantically materialized instruction results, but prove every use has exactly one valid definition.",
+    "Parameter/local fixed domains must never collide with dynamic constants/results.",
+    "If exact semantic records plus extension slots exceed 1460, route to a measured bank-expansion design rather than truncate."
+  ],
+  "required_preflight_measurements": [
+    "native parameter_count from PASS local candidate",
+    "native local_record_count from PASS local candidate",
+    "exact typed unique constant inventory",
+    "exact wide-literal extension-slot count",
+    "exact materialized instruction-result count",
+    "exact maximum semantic value ID/physical slot",
+    "exact use-site inventory for operands, calls and terminators"
+  ],
+  "verifier_requirements": [
+    "parameter IDs [0,parameter_count) are populated and agree with parameter records",
+    "unused reserved parameter IDs are never referenced",
+    "local IDs start at 64 and agree with local records",
+    "dynamic allocation begins after local identities",
+    "every constant has a valid primitive type",
+    "inline constants decode exactly",
+    "wide constants own exactly one following extension slot and preserve the raw signed i64 payload",
+    "extension-only slots are never used as semantic IDs",
+    "instruction-result values reference valid defining instructions",
+    "all use sites reference defined header semantic IDs",
+    "value owner/type compatibility is checked at each use",
+    "no namespace collision, truncation or out-of-range reference"
+  ],
+  "prohibited_shortcuts": [
+    "reinterpret legacy ir_value_records as semantic IDs without rebuild",
+    "raw-source reread by emitter to recover literal values or variable identities",
+    "one semantic value per lexical zero initializer occurrence",
+    "truncate large literals into packed metadata",
+    "allocate arbitrary larger value arrays before exact measurement"
+  ],
+  "next_after_static_design": "WAIT_FOR_NATIVE_LOCAL_PASS_THEN_BUILD_EXACT_VALUE_NAMESPACE_PREFLIGHT",
+  "general_emitter": "BLOCKED_IR_V2_INCOMPLETE",
+  "self_emit": "NOT_STARTED",
+  "stage2": "NOT_STARTED",
+  "stage3": "NOT_STARTED",
+  "full_self_hosting": false
+}
