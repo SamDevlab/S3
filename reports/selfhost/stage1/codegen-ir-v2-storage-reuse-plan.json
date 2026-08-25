@@ -1,106 +1,115 @@
 {
-  "schema": "s3.selfhost.codegen-ir-v2-storage-reuse-plan.v1",
+  "schema": "s3.selfhost.codegen-ir-v2-storage-reuse-plan.v2",
   "status": "PRE_IMPLEMENTATION_STORAGE_PLAN",
   "native_evidence": false,
   "canonical_source_mutated": false,
   "pr": 268,
-  "motivation": "Avoid adding large initialized arrays to a self-source that is already capacity-sensitive. Prefer repacking or reusing the bounded physical banks already present in Stage1.",
+  "architecture": "OWNER_IN_PACKED_BLOCK; OWNERLESS_INSTRUCTION; FIXED_PARAMETER_VALUE_ID_DOMAIN",
+  "motivation": "Avoid speculative large arrays while removing the legacy 365-block bottleneck and keeping all packed records within signed i64.",
   "observed_existing_storage": {
     "ast_event_records": {"banks": 4, "bank_size": 365, "total_slots": 1460, "type": "i64"},
     "value_records": {"banks": 4, "bank_size": 365, "total_slots": 1460, "type": "i64"},
-    "block_records": {"capacity": 365, "existing_fields": ["function", "first_instruction", "instruction_count", "terminator", "target_a", "target_b"]},
+    "legacy_block_fields": {"arrays": 6, "bank_size": 365, "type": "i64"},
     "call_records": {"banks": 2, "bank_size": 365, "total_slots": 730},
     "call_argument_records": {"bank_sizes": [365, 365, 16], "total_slots": 746},
     "parameter_candidate": {"physical_lanes": 1, "capacity": 64, "type": "i64"},
     "local_candidate": {"physical_lanes": 1, "capacity": 64, "type": "i64"}
   },
-  "instruction_storage_candidate": {
-    "physical_storage": "reuse ir_ast_event_records_0..3 after compacted structural parsing/lowering",
-    "total_slots": 1460,
-    "instruction_id": "implicit global slot index 0..instruction_count-1",
-    "conversion_rule": "one compacted structural event slot is rewritten in place into at most one verified IR-v2 instruction slot; no expansion is allowed in this storage mode",
-    "reason": "The current implementation already sets ir_instruction_count = ir_ast_event_count after structural/control lowering. Reusing the same slot preserves bounded cardinality and avoids four new 365-entry arrays.",
-    "required_gate": "Native candidate must prove event/instruction one-to-one mapping for every opcode shape before in-place conversion is promoted.",
-    "rename_policy": "Physical array names may remain bootstrap-specific until reproducibility certification; names do not define semantics."
-  },
-  "instruction_record_encoding": {
-    "type": "signed i64 mixed-radix",
-    "instruction_id_stored": false,
-    "instruction_id_source": "physical slot index",
-    "fields": [
-      {"name": "owner_function_id_or_none", "radix": 65, "encoding": "none=0, id=N => N+1"},
-      {"name": "block_id_or_none", "radix": 366, "encoding": "none=0, id=N => N+1"},
-      {"name": "opcode", "radix": 64, "encoding": "0..63"},
-      {"name": "operand_a_value_id_or_none", "radix": 1461, "encoding": "none=0, id=N => N+1"},
-      {"name": "operand_b_value_id_or_none", "radix": 1461, "encoding": "none=0, id=N => N+1"},
-      {"name": "result_value_id_or_none", "radix": 1461, "encoding": "none=0, id=N => N+1"},
-      {"name": "aux_value_id_or_none", "radix": 1461, "encoding": "none=0, id=N => N+1"}
+  "block_storage_candidate": {
+    "logical_capacity": 730,
+    "physical_storage": "reuse two existing i64[365] legacy block arrays as packed block bank 0 and bank 1; no new large array",
+    "packed_fields": [
+      "owner_function_id_or_none",
+      "terminator_kind",
+      "target_a_block_id_or_none",
+      "target_b_block_id_or_none",
+      "condition_value_id_or_none",
+      "return_value_id_or_none"
     ],
-    "maximum_encoded_record": 6937057267692888959,
+    "block_id_encoding": "none=0; logical block id N => N+1; radix=731",
+    "maximum_encoded_record": 593114483562119,
     "signed_i64_max": 9223372036854775807,
     "fits_signed_i64": true,
-    "important_constraint": "aux is an ID/payload reference, not an arbitrary raw i64 literal or source byte offset. Large literal payload storage requires its own verified representation."
+    "legacy_first_instruction": "not present in final packed block record; IR-v2 instruction carries block_id",
+    "legacy_instruction_count": "not present in final packed block record; verifier derives membership/cardinality from instruction.block_id",
+    "static_evidence": "tools/audit_stage1_codegen_ir_v2_block_capacity.py",
+    "native_status": "NOT_QUALIFIED"
+  },
+  "instruction_storage_candidate": {
+    "physical_storage": "reuse ir_ast_event_records_0..3 only after the proven legacy-event-verifier overwrite frontier",
+    "total_slots": 1460,
+    "instruction_id": "implicit global slot index 0..instruction_count-1",
+    "event_overwrite_frontier": "AFTER_LEGACY_EVENT_VERIFIER_BEFORE_REMAINING_VERIFIER_AND_PIPELINE_DECISION",
+    "fields": [
+      "block_id_or_none",
+      "opcode",
+      "operand_a_value_id_or_none",
+      "operand_b_value_id_or_none",
+      "result_value_id_or_none",
+      "aux_id_or_none"
+    ],
+    "owner_function_id": "not stored in instruction; derive through block_id -> packed_block.owner_function_id",
+    "block_radix": 731,
+    "opcode_radix": 64,
+    "value_id_radix": 1461,
+    "maximum_encoded_record": 213156320415447743,
+    "signed_i64_max": 9223372036854775807,
+    "fits_signed_i64": true,
+    "rejected_ownerful_730_block_record_max": 13855160827004103359,
+    "rejected_ownerful_reason": "owner + 730-block id + opcode + four value-id lanes exceeds signed i64",
+    "aux_constraint": "ID/reference only; raw arbitrary i64 literal payload belongs in value storage",
+    "required_gate": "Native candidate must preserve legacy events through the old verifier, rewrite only after the proven frontier, then pass a new IR-v2 verifier."
   },
   "call_linkage_without_new_large_array": {
-    "call_id": "existing bounded call-table index",
-    "callee_and_args": "existing call tables and 746-entry call-argument pool",
-    "instruction_link": "IR-v2 call instruction carries the call_id in an operand/aux ID field",
-    "result_link": "IR-v2 call instruction carries result_value_id_or_none",
+    "call_id": "existing bounded call-table index 0..729",
+    "callee_and_args": "existing two-bank call table plus 746-entry call-argument pool",
+    "instruction_link": "call instruction aux/operand carries call_id",
+    "result_link": "call instruction carries result_value_id_or_none",
     "new_call_result_array_required": false
   },
-  "terminator_storage_candidate": {
-    "kind_condition_return": "repack existing ir_block_terminator[365]",
-    "targets": "reuse existing ir_block_target_a[365] and ir_block_target_b[365]",
-    "owner": "derive from existing ir_block_function[365]",
-    "new_condition_array_required": false,
-    "new_return_array_required": false,
-    "encoding": {
-      "kind_radix": 8,
-      "condition_radix": 1461,
-      "return_radix": 1461,
-      "formula": "((kind * 1461) + condition_encoded) * 1461 + return_encoded"
-    }
-  },
   "value_storage_candidate": {
-    "physical_storage": "reuse ir_value_records_0..3",
+    "physical_storage": "reuse ir_value_records_0..3 after an explicit namespace rebuild",
     "total_slots": 1460,
-    "value_id": "implicit global slot index",
-    "planned_storage_ids": {
-      "parameters": "[0, parameter_count)",
-      "locals": "[parameter_count, parameter_count+local_count)",
-      "dynamic_values": "monotonic thereafter"
+    "planned_semantic_ids": {
+      "parameter_domain": "[0,64)",
+      "parameters_used": "[0,parameter_count)",
+      "locals": "[64,64+local_count)",
+      "dynamic_values": "monotonic from 64+local_count"
     },
-    "unresolved_before_implementation": [
-      "Large raw i64 literal payloads cannot be blindly folded into the instruction mixed-radix record.",
-      "Current structural ir_value_count counts source numeric values rather than a final semantic def/use namespace.",
-      "Array initializer literals must be audited/compacted before selecting the final literal payload representation."
-    ],
-    "status": "PHYSICAL_BANK_REUSE_SELECTED; SEMANTIC_LITERAL_PAYLOAD_ENCODING_PENDING_AUDIT"
+    "reason_for_fixed_parameter_domain": "locals must receive deterministic IDs in one parse pass even when later functions declare additional parameters",
+    "legacy_collision": "current ir_value_records are a structural numeric-token stream and overlap the planned semantic IDs",
+    "migration_required": true,
+    "unified_namespace_status": "NOT_STARTED_FAIL_CLOSED",
+    "unresolved": [
+      "Large raw i64 literal payloads need a verified value representation.",
+      "Aggregate zero-init may reduce structural value pressure but static zero counts are not native headroom.",
+      "Legacy numeric-token records must be rebuilt/rebased rather than silently reinterpreted as semantic IDs."
+    ]
   },
-  "array_initializer_compaction_candidate": {
-    "status": "AUDIT_REQUIRED_BEFORE_SOURCE_TRANSFORM",
-    "idea": "Represent repeated zero-filled fixed-array initializers as aggregate zero-init metadata rather than one semantic value per zero token.",
-    "rule": "Do not claim any value headroom from this idea until a static source audit and native Stage1 candidate measurement agree.",
-    "non_zero_initializers": "must remain semantically explicit or use a separately verified aggregate representation"
-  },
+  "capacity_order": [
+    "COMPACTION_NATIVE_CANDIDATE",
+    "PARAMETER_NATIVE_CANDIDATE",
+    "NATIVE_NEXT_PHASE_BUDGET",
+    "PACKED_730_BLOCK_CAPACITY_CANDIDATE_IF_LEGACY_CONTROL_BUDGET_IS_INSUFFICIENT",
+    "LOCAL_METADATA_CANDIDATE",
+    "VALUE_NAMESPACE_REBUILD",
+    "INSTRUCTION_REPACK_AFTER_EVENT_OVERWRITE_FRONTIER",
+    "PACKED_BLOCK_CFG_AND_TERMINATOR_FINALIZATION",
+    "IR_V2_VERIFIER",
+    "GENERAL_EMITTER",
+    "SELF_EMIT",
+    "STAGE1_TO_STAGE2"
+  ],
   "no_new_large_array_rule": {
     "enabled": true,
-    "exception": "A new large array requires measured native evidence that existing banks cannot represent the required semantic lane and a bounded capacity rationale.",
-    "forbidden": ["speculative 1460-entry result array", "speculative 1460-entry operand array", "speculative 365-entry terminator condition array", "speculative 730-entry call-result array"]
+    "exception": "Only measured native evidence plus a bounded semantic necessity may authorize a new large array.",
+    "forbidden_without_new_evidence": [
+      "speculative 1460-entry result array",
+      "speculative 1460-entry operand array",
+      "speculative 730-entry call-result array",
+      "six new 730-entry block-field arrays"
+    ]
   },
-  "required_next_gates": [
-    "NATIVE_CAPACITY_CANDIDATE_PASS",
-    "NATIVE_PARAMETER_CANDIDATE_PASS",
-    "NEXT_PHASE_NATIVE_BUDGET_PASS",
-    "STATIC_STORAGE_REUSE_AUDIT_PASS",
-    "ARRAY_INITIALIZER_AND_LITERAL_PAYLOAD_AUDIT",
-    "LOCAL_METADATA_CANDIDATE",
-    "UNIFIED_VALUE_DEF_USE_CANDIDATE",
-    "INSTRUCTION_IN_PLACE_REPACK_CANDIDATE",
-    "TERMINATOR_REPACK_CANDIDATE",
-    "VERIFIER_V2",
-    "GENERAL_EMITTER"
-  ],
   "self_emit": "NOT_STARTED",
   "stage2": "NOT_STARTED",
   "stage3": "NOT_STARTED",
