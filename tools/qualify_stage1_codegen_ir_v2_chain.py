@@ -1,11 +1,11 @@
 """Run prepared Stage1 IR-v2 candidate gates in fail-closed sequence.
 
 The chain is read-only with respect to the canonical compiler source. It first
-runs the focused IR-v2 tooling tests and static storage/initializer preflight,
+runs focused IR-v2 tooling tests and static storage/block/initializer preflight,
 then qualifies compaction capacity, then (only on PASS) the packed parameter
-lane. If parameters pass, it computes the next-phase local/value budget from
-that native audit. It never promotes source, starts Stage2/Stage3, or claims
-self-hosting.
+lane. If parameters pass, it computes the next gate directly from native
+headroom: either local metadata or the packed 730-block capacity candidate.
+It never promotes source, starts Stage2/Stage3, or claims self-hosting.
 """
 
 from __future__ import annotations
@@ -48,6 +48,7 @@ TOOLING_TEST_FILES = (
     "tests/test_stage1_codegen_ir_v2_parameters.py",
     "tests/test_stage1_codegen_ir_v2_next_plan.py",
     "tests/test_stage1_codegen_ir_v2_storage_reuse.py",
+    "tests/test_stage1_codegen_ir_v2_block_capacity.py",
     "tests/test_stage1_array_initializer_audit.py",
     "tests/test_stage1_codegen_ir_v2_static_preflight.py",
 )
@@ -151,8 +152,13 @@ def run_chain(
     else:
         chain_status = "PASS_THROUGH_PARAMETER_CANDIDATE"
 
+    block_preflight = (
+        static_preflight.get("block_capacity_audit", {})
+        if static_preflight is not None
+        else {}
+    )
     result = {
-        "schema": "s3.selfhost.codegen-ir-v2-native-chain.v4",
+        "schema": "s3.selfhost.codegen-ir-v2-native-chain.v5",
         "canonical_source_mutated": False,
         "tooling_tests": tooling_tests,
         "static_preflight": {
@@ -163,6 +169,14 @@ def run_chain(
                 if static_preflight is not None
                 else None
             ),
+            "event_overwrite_frontier": (
+                static_preflight.get("storage_reuse_audit", {}).get("event_overwrite_frontier")
+                if static_preflight is not None
+                else None
+            ),
+            "block_capacity_design": block_preflight.get("status"),
+            "projected_parameter_blocks": block_preflight.get("projected_parameter_blocks"),
+            "static_strict_control_budget": block_preflight.get("strict_additional_control_budget"),
             "array_initializers": (
                 static_preflight.get("array_initializer_audit", {}).get("status")
                 if static_preflight is not None
@@ -186,7 +200,15 @@ def run_chain(
         },
         "next_phase_budget": {
             "status": next_phase["status"],
+            "local_ir_v2_design_possible": next_phase.get("local_ir_v2_design_possible", False),
             "local_ir_v2_start_allowed": next_phase["local_ir_v2_start_allowed"],
+            "block_capacity_expansion_required": next_phase.get(
+                "block_capacity_expansion_required_before_local_metadata", False
+            ),
+            "unified_value_namespace_start_allowed": next_phase.get(
+                "unified_value_namespace_start_allowed", False
+            ),
+            "next": next_phase.get("next"),
             "report": str(next_phase_report_path.resolve()),
         },
         "chain_status": chain_status,
@@ -224,12 +246,20 @@ def main(argv: list[str] | None = None) -> int:
     print(f"TOOLING_TESTS={result['tooling_tests']['status']}")
     print(f"STATIC_PREFLIGHT={result['static_preflight']['status']}")
     print(f"STORAGE_REUSE={result['static_preflight']['storage_reuse']}")
+    print(f"EVENT_OVERWRITE_FRONTIER={result['static_preflight']['event_overwrite_frontier']}")
+    print(f"BLOCK_CAPACITY_DESIGN={result['static_preflight']['block_capacity_design']}")
+    print(f"PROJECTED_PARAMETER_BLOCKS={result['static_preflight']['projected_parameter_blocks']}")
+    print(f"STATIC_STRICT_CONTROL_BUDGET={result['static_preflight']['static_strict_control_budget']}")
     print(f"ARRAY_INITIALIZERS={result['static_preflight']['array_initializers']}")
     print(f"ZERO_INITIALIZER_ITEMS={result['static_preflight']['zero_initializer_items']}")
     print(f"CAPACITY_GATE={result['capacity_gate']['status']}")
     print(f"PARAMETER_GATE={result['parameter_gate']['status']}")
     print(f"NEXT_PHASE_BUDGET={result['next_phase_budget']['status']}")
+    print(f"LOCAL_IR_V2_DESIGN_POSSIBLE={result['next_phase_budget']['local_ir_v2_design_possible']}")
     print(f"LOCAL_IR_V2_START_ALLOWED={result['next_phase_budget']['local_ir_v2_start_allowed']}")
+    print(f"BLOCK_CAPACITY_EXPANSION_REQUIRED={result['next_phase_budget']['block_capacity_expansion_required']}")
+    print(f"UNIFIED_VALUE_NAMESPACE_START_ALLOWED={result['next_phase_budget']['unified_value_namespace_start_allowed']}")
+    print(f"NEXT={result['next_phase_budget']['next']}")
     print(f"CHAIN_STATUS={result['chain_status']}")
     print("CANONICAL_SOURCE_MUTATED=False")
     print("STAGE2=NOT_STARTED")
