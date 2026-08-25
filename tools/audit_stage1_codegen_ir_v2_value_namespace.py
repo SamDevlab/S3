@@ -129,7 +129,8 @@ def audit(source: str, contract: dict[str, object]) -> dict[str, object]:
     contract_header = contract.get("packed_header")
     physical = contract.get("physical_storage")
     constants = contract.get("constant_representation")
-    if not isinstance(contract_header, dict) or not isinstance(physical, dict) or not isinstance(constants, dict):
+    layout = contract.get("semantic_id_layout")
+    if not isinstance(contract_header, dict) or not isinstance(physical, dict) or not isinstance(constants, dict) or not isinstance(layout, dict):
         raise ValueError("value namespace contract is missing required sections")
 
     guards = {
@@ -142,7 +143,7 @@ def audit(source: str, contract: dict[str, object]) -> dict[str, object]:
         "header_fits_signed_i64": header_limit() <= SIGNED_I64_MAX,
         "header_boundary_round_trip": round_trip,
         "physical_capacity_matches_contract": physical.get("physical_slots") == VALUE_CAPACITY,
-        "parameter_domain_matches_contract": contract.get("semantic_id_layout", {}).get("parameter_domain") == "[0,64)",
+        "parameter_domain_matches_contract": layout.get("parameter_domain") == "[0,64)",
         "inline_min_matches_contract": constants.get("inline_range", {}).get("min") == INLINE_LITERAL_MIN,
         "inline_max_matches_contract": constants.get("inline_range", {}).get("max") == INLINE_LITERAL_MAX,
         "wide_extension_is_not_semantic_id": constants.get("wide_literal", {}).get("extension_slot_is_semantic_value_id") is False,
@@ -171,11 +172,11 @@ def audit(source: str, contract: dict[str, object]) -> dict[str, object]:
         },
         "numeric_inventory": numeric,
         "namespace": {
-            "parameter_domain": [0, PARAMETER_DOMAIN_END],
+            "parameter_domain": {"start": 0, "end_exclusive": PARAMETER_DOMAIN_END},
             "local_start": PARAMETER_DOMAIN_END,
             "dynamic_start": "64 + native_local_record_count",
             "physical_capacity": VALUE_CAPACITY,
-            "semantic_id_equals_header_slot": true if False else True,
+            "semantic_id_equals_header_slot": True,
             "wide_extension_slots_are_holes": True
         },
         "guards": guards,
