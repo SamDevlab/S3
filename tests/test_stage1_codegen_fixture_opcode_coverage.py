@@ -9,6 +9,7 @@ from tools.audit_stage1_codegen_fixture_opcode_coverage import audit
 
 
 pytestmark = pytest.mark.s3_fast
+REFERENCE_SHA = "a" * 64
 
 
 def _load(path: str) -> dict[str, object]:
@@ -19,6 +20,7 @@ def _load(path: str) -> dict[str, object]:
 def _reference(*opcodes: str) -> dict[str, object]:
     return {
         "schema": "s3.selfhost.reference-bootstrap-opcode-inventory.v1",
+        "canonical_source": {"sha256": REFERENCE_SHA},
         "reference_ir": {"observed_opcodes": list(opcodes)},
     }
 
@@ -28,6 +30,7 @@ def test_existing_fixture_corpus_covers_basic_const_and_return() -> None:
     contract = _load("reports/selfhost/stage1/reference-bootstrap-opcode-contract.json")
     result = audit(fixtures, _reference("const", "return"), contract)
     assert result["status"] == "PASS_HOSTED_FIXTURE_OPCODE_COVERAGE"
+    assert result["reference_canonical_source_sha256"] == REFERENCE_SHA
     assert result["missing_required_opcodes"] == []
     assert result["qualification"]["native_fixture_execution"] == "NOT_RUN_BY_THIS_TOOL"
     assert result["qualification"]["stage2_allowed"] is False
@@ -37,7 +40,7 @@ def test_missing_reference_opcode_blocks_hosted_fixture_coverage() -> None:
     fixtures = _load("tests/stage1_codegen_complete_fixtures.json")
     contract = _load("reports/selfhost/stage1/reference-bootstrap-opcode-contract.json")
     # Current bootstrap-complete fixtures deliberately do not exercise
-    # reference_store.  If the canonical compiler later requires it, the
+    # reference_store. If the canonical compiler later requires it, the
     # fixture suite must grow before Stage1 certification.
     result = audit(fixtures, _reference("const", "return", "reference_store"), contract)
     assert result["status"] == "BLOCKED_FIXTURE_OPCODE_COVERAGE_GAP"
