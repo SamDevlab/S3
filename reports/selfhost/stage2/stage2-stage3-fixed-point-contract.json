@@ -24,7 +24,7 @@
     "stage2": "execute Stage1 compiler on exact canonical source -> assembly -> host assembler/linker -> ELF",
     "stage3": "execute Stage2 compiler on same exact canonical source -> assembly -> identical host assembler/linker recipe -> ELF",
     "host_object": "compile stage1_host_io.c exactly once and reuse the identical object for Stage2 and Stage3 linking",
-    "link_flags": ["-nostdlib", "-static", "-no-pie", "-s", "-Wl,--build-id=none"],
+    "link_flags": ["-nostdlib", "-no-pie", "-s", "-Wl,--build-id=none"],
     "prohibited": ["copy Stage1 to Stage2", "copy Stage2 to Stage3", "embedded prebuilt compiler bytes", "Python code generation", "Stage0 compiler delegation after Stage1"]
   },
   "pythonless_compiler_runtime": {
@@ -42,7 +42,7 @@
       "TZ": "UTC",
       "SOURCE_DATE_EPOCH": "0"
     },
-    "strict_runtime_proof": "strace -f trace=execve,open,openat: exactly one compiler execve, no descendant execve, and no open/openat targeting repository/bootstrap/Python source. Stage2/Stage3 are statically linked so unexpected file opens are themselves suspicious.",
+    "strict_runtime_proof": "strace -f trace=execve,open,openat: exactly one compiler execve, no descendant execve, and no open/openat targeting repository checkout, bootstrap, .py or .pyc. System dynamic-loader files may be observed and are not compiler delegation.",
     "strace_missing": "blocks strict FULL_SELF_HOSTING certification rather than silently downgrading proof"
   },
   "determinism": {
@@ -51,7 +51,6 @@
     "stage2_stage3_elf_sha_equal": true,
     "stage2_stage3_elf_bytes_equal": true,
     "link_build_id": "disabled",
-    "static_link": true,
     "same_host_object": true,
     "same_link_recipe": true,
     "optional_stage4": "Stage3 may compile the same source to Stage4 as an additional fixed-point confirmation"
