@@ -78,20 +78,21 @@ def _generated_dispatch_source(bank_count: int) -> str:
         indent="    ",
         fail_closed_body=("return -99",),
     )
-    checks = [f"(route({key}) == {key})" for key in range(bank_count)]
+    checks = [f"to_i64(route({key}) == {key})" for key in range(bank_count)]
     checks.extend(
         [
-            "(route(-1) == -99)",
-            f"(route({bank_count}) == -99)",
-            f"(route({bank_count + 1}) == -99)",
+            "to_i64(route(-1) == -99)",
+            f"to_i64(route({bank_count}) == -99)",
+            f"to_i64(route({bank_count + 1}) == -99)",
         ]
     )
-    expression = " & ".join(checks)
+    expected_sum = -len(checks)
+    sum_expression = " + ".join(checks)
     return (
         "fn route(selector: i64) -> i64:\n"
         + dispatch
         + "\nfn main() -> trit:\n"
-        + f"    return {expression}\n"
+        + f"    return ({sum_expression}) == {expected_sum}\n"
     )
 
 
@@ -100,11 +101,13 @@ def generated_s3_probe(bank_count: int) -> dict[str, object]:
     actual = run_source(source, optimization="O0")
     return {
         "bank_count": bank_count,
+        "checks": bank_count + 3,
         "expected": -1,
         "actual": actual,
         "pass": actual == -1,
         "source_bytes": len(source.encode("utf-8")),
         "source_lines": len(source.splitlines()),
+        "aggregation": "SUM_TO_I64_PREDICATES_AND_REQUIRE_EXACT_NEGATIVE_COUNT",
     }
 
 
@@ -147,6 +150,7 @@ def audit(contract: dict[str, object]) -> dict[str, object]:
             "bank_11_one_to_one": next(
                 item["one_to_one"] for item in model if item["bank_count"] == 11
             ),
+            "generated_probe_uses_exact_sum_not_ternary_minimum": True,
         },
         "qualification": {
             "native_evidence": False,
