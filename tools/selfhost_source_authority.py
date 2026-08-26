@@ -24,13 +24,14 @@ def require_authoritative_source_manifest(
     authoritative: Path,
     root: Path,
 ) -> tuple[Path, bytes, dict[str, Any], dict[str, Any]]:
-    """Require the exact canonical source manifest and validate its single source."""
+    """Require the exact committed canonical manifest and validate its source."""
 
     document, generic_binding = require_authoritative_contract(
         candidate,
         authoritative=authoritative,
         expected_schema="s3.compiler.sources.v1",
         label="canonical compiler source manifest",
+        git_root=root,
     )
     sources = document.get("sources")
     if not isinstance(sources, list) or len(sources) != 1:
