@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from tools.qualify_stage2_stage3_strict_sandbox import ROOT, _is_forbidden_read, _quoted_open_path
 
 
@@ -20,5 +22,18 @@ def test_repository_and_python_reads_are_forbidden() -> None:
     assert _is_forbidden_read("/tmp/copied-bootstrap/compiler.pyc") is True
 
 
-def test_non_python_sandbox_temporary_file_is_not_intrinsically_forbidden() -> None:
+def test_all_relative_file_reads_fail_closed() -> None:
+    assert _is_forbidden_read("compiler-input.bin") is True
+    assert _is_forbidden_read("../selfhost/compiler/s3c_stage1.s3") is True
+    assert _is_forbidden_read("../../bootstrap/s3/pipeline.py") is True
+
+
+def test_non_python_absolute_sandbox_temporary_file_is_not_intrinsically_forbidden() -> None:
     assert _is_forbidden_read("/tmp/compiler-input.bin") is False
+
+
+def test_absolute_symlink_to_checkout_is_resolved_before_policy(tmp_path: Path) -> None:
+    target = ROOT / "selfhost" / "compiler" / "compiler-sources.json"
+    link = tmp_path / "compiler-manifest-link"
+    link.symlink_to(target)
+    assert _is_forbidden_read(str(link.resolve())) is True
