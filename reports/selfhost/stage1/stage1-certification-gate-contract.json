@@ -5,29 +5,10 @@
   "purpose": "Provide the only machine-readable Stage2 authorization. Every required report is re-opened, re-hashed, schema-checked, assertion-checked, and where applicable rebound to the exact final canonical source and Stage1 artifact.",
   "required_document_shape": {
     "schema": "s3.selfhost.stage1-certification-gate.v2",
-    "canonical_source": {
-      "sha256": "<exact final canonical SHA256>",
-      "bytes": "<exact final canonical byte count>",
-      "commit": "<commit containing exact final canonical source>"
-    },
-    "stage1_artifact": {
-      "path": "<path to exact executable used by evidence>",
-      "sha256": "<exact executable SHA256>",
-      "bytes": "<exact executable byte count>"
-    },
-    "evidence": {
-      "<required role>": {
-        "path": "<repository-relative JSON path>",
-        "sha256": "<exact report SHA256>"
-      }
-    },
-    "qualification": {
-      "stage1_certified_for_stage2": true,
-      "self_emit": "PASS",
-      "semantic_ir": "PASS_CODEGEN_COMPLETE_BOOTSTRAP_SUBSET",
-      "verifier_v2": "PASS",
-      "general_emitter": "PASS_BOOTSTRAP_REQUIRED_OPCODES"
-    }
+    "canonical_source": {"sha256": "<exact final canonical SHA256>", "bytes": "<exact final canonical byte count>", "commit": "<commit containing exact final canonical source>"},
+    "stage1_artifact": {"path": "<path to exact executable used by evidence>", "sha256": "<exact executable SHA256>", "bytes": "<exact executable byte count>"},
+    "evidence": {"<required role>": {"path": "<repository-relative JSON path>", "sha256": "<exact report SHA256>"}},
+    "qualification": {"stage1_certified_for_stage2": true, "self_emit": "PASS", "semantic_ir": "PASS_CODEGEN_COMPLETE_BOOTSTRAP_SUBSET", "verifier_v2": "PASS", "general_emitter": "PASS_BOOTSTRAP_REQUIRED_OPCODES"}
   },
   "required_evidence_roles": {
     "native_source_coverage": {
@@ -46,6 +27,18 @@
         {"path": "representation.explicit_local_metadata_complete", "equals": true},
         {"path": "representation.packed_parameter_record_present", "equals": false},
         {"path": "representation.packed_local_record_present", "equals": false}
+      ],
+      "canonical_source_sha256_path": "source.sha256"
+    },
+    "reference_current_call_inventory": {
+      "schema": "s3.selfhost.reference-current-call-inventory.v1",
+      "assertions": [
+        {"path": "status", "equals": "PASS_HOSTED_CURRENT_SOURCE_CALL_INVENTORY"},
+        {"path": "native_evidence", "equals": false},
+        {"path": "historical_closure.calls_656_arguments_736_authoritative_for_this_source", "equals": false},
+        {"path": "qualification.native_stage1_call_high_water_required", "equals": true},
+        {"path": "qualification.native_stage1_call_argument_high_water_required", "equals": true},
+        {"path": "qualification.physical_capacity_selected_by_this_report", "equals": false}
       ],
       "canonical_source_sha256_path": "source.sha256"
     },
@@ -115,6 +108,7 @@
   "mandatory_evidence_before_emission": [
     "100 percent native token/source byte coverage tied to the final canonical source SHA",
     "the final source representation epoch has explicit parameter/local metadata and no legacy packed parameter/local records",
+    "a fresh source-bound hosted call inventory replaces the historical 656/736 closure while still requiring independent native call/call-argument high-water evidence",
     "typed reference opcode inventory reconciled with emitter requirements",
     "hosted fixture corpus covers every bootstrap-required reference opcode",
     "native codegen-complete fixture corpus passes using the exact Stage1 artifact",
@@ -135,6 +129,8 @@
     "creating the gate from static projections alone",
     "creating the gate before native self-emit",
     "setting stage1_certified_for_stage2 by operator override",
+    "using historical 656/736 call closure as current evidence after source bytes changed",
+    "using a hosted AST/O0 call inventory as physical native capacity evidence",
     "using a pre-convergence or stale parameter/local capacity report",
     "using a representation-epoch report for different source bytes",
     "reapplying historical packed parameter/local transforms to a source that already materializes explicit lanes",
