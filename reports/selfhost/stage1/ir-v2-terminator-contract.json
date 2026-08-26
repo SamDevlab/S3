@@ -1,0 +1,71 @@
+{
+  "schema": "s3.selfhost.ir-v2-terminator-contract.v1",
+  "pr": 268,
+  "status": "DESIGN_ONLY_BLOCK_CAPACITY_AND_VALUE_NAMESPACE_PREREQUISITES_PENDING",
+  "canonical_source_mutated": false,
+  "purpose": "Preserve one complete typed terminator per semantic block, including branch condition values, all branch/jump targets and return value IDs.",
+  "prerequisite": {
+    "required_workstreams": ["W1_symbol_and_value_identity"],
+    "required_external_gate": "CURRENT_COMPACT_BLOCK_CAPACITY_NATIVE_RESULT",
+    "canonical_promotion_required_before_design": false
+  },
+  "compact_block_candidate_scope": {
+    "classification": "STRUCTURAL_CAPACITY_ONLY",
+    "fields": ["owner_function", "terminator_kind", "target_a", "target_b"],
+    "closes_complete_terminator_lane": false,
+    "reason": "Complete branch3 semantics require a condition value ID and three target edges; return semantics require a return value ID. A two-target structural record cannot be promoted as the final terminator representation."
+  },
+  "terminator_kinds": {
+    "RETURN": {
+      "required": ["owner_block_id", "return_value_id"],
+      "target_count": 0
+    },
+    "JUMP": {
+      "required": ["owner_block_id", "target_block_id"],
+      "target_count": 1
+    },
+    "BRANCH3": {
+      "required": [
+        "owner_block_id",
+        "condition_value_id",
+        "negative_target_block_id",
+        "zero_target_block_id",
+        "positive_target_block_id"
+      ],
+      "target_count": 3
+    }
+  },
+  "logical_terminator": {
+    "fields": [
+      "owner_block_id",
+      "kind",
+      "condition_value_id_or_none",
+      "target_block_ids",
+      "return_value_id_or_none"
+    ],
+    "one_per_block": true,
+    "ordering_rule": "terminator is the final semantic instruction of its owner block"
+  },
+  "verifier_requirements": [
+    "every semantic block has exactly one terminator",
+    "RETURN has a valid type-compatible return value ID and no block targets",
+    "JUMP has exactly one valid target and no condition value",
+    "BRANCH3 has exactly one valid condition value ID and three valid targets",
+    "all target block IDs are inside the current semantic block domain",
+    "terminator kind agrees with the final semantic instruction opcode",
+    "no aggregate event opcode or structural two-target block record is accepted as complete terminator evidence"
+  ],
+  "prohibited_shortcuts": [
+    "treat ir_block_terminator > 0 plus target_a/target_b as complete branch3 semantics",
+    "recover branch condition by rereading raw source",
+    "drop the zero or positive branch edge",
+    "represent return without the returned semantic value ID",
+    "promote the compact block capacity candidate as W4 closure"
+  ],
+  "next_after_static_design": "WAIT_FOR_COMPACT_BLOCK_NATIVE_RESULT_AND_W1_THEN_BUILD_TERMINATOR_PREFLIGHT",
+  "general_emitter": "BLOCKED_TERMINATOR_LINKAGE_INCOMPLETE",
+  "self_emit": "NOT_STARTED",
+  "stage2": "NOT_CREATED",
+  "stage3": "NOT_STARTED",
+  "full_self_hosting": false
+}
