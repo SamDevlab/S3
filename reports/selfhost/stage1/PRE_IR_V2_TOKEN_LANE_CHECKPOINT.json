@@ -1,0 +1,87 @@
+{
+  "schema": "s3.selfhost.pre-ir-v2-token-lane-checkpoint.v1",
+  "pr": 268,
+  "status": "PREPARED_NATIVE_TOKEN_LANE_QUALIFICATION_PENDING",
+  "canonical_source": {
+    "path": "selfhost/compiler/s3c_stage1.s3",
+    "sha256": "20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341",
+    "bytes": 166984,
+    "mutated_by_this_checkpoint": false
+  },
+  "previous_native_evidence_preserved": {
+    "call_model_native_static_differential": "PASS_ON_LEGACY_NATIVE_TOKEN_TRAVERSAL",
+    "calls": 656,
+    "call_arguments": 736,
+    "max_arity": 4,
+    "compaction_candidate_build": "PASS",
+    "compaction_trivial_compile": "PASS",
+    "compaction_self_source_boundary": "PASS",
+    "compaction_actual_events": 1097,
+    "compaction_actual_assignments": 75,
+    "compaction_actual_values": 1213,
+    "compaction_actual_blocks": 329,
+    "compaction_old_qualification": "FAIL_AUDIT_INVARIANTS",
+    "note": "These measurements are preserved exactly. They are not erased or relabeled PASS. They were produced under the legacy packed-token traversal now known not to preserve arbitrary numeric i64 token values."
+  },
+  "deeper_root_cause": {
+    "primary_blocker": "PACKED_TOKEN_VALUE_LANE_CAPACITY_OR_ENCODING_GAP",
+    "legacy_pack_formula": "next_cursor*1000000 + kind*1000 + value + 500",
+    "lossless_value_domain": "[-500,499]",
+    "canonical_has_wide_numeric_literals": true,
+    "proven_example": 1000000000000,
+    "effect": "wide numeric values spill into packed kind/cursor fields, so self-source traversal can jump beyond the intended token and stop before complete source coverage",
+    "why_compaction_is_deferred": "Textual source deltas and native audit counters cannot be used as stable compaction invariants until Stage1 can traverse the complete exact source without packed-token cursor corruption."
+  },
+  "prepared_token_lane_candidate": {
+    "transformer": "tools/patch_stage1_token_lane_wide_literals.py",
+    "static_audit": "tools/audit_stage1_token_lane_wide_literals.py",
+    "native_qualifier": "tools/qualify_stage1_token_lane_wide_literals.py",
+    "pre_ir_v2_chain": "tools/qualify_stage1_pre_ir_v2_chain.py",
+    "tests": "tests/test_stage1_token_lane_wide_literals.py",
+    "strategy": "PACK_NUMERIC_ZERO_AND_RECONSTRUCT_EXACT_SIGNED_I64_FROM_TOKEN_SOURCE_RANGE",
+    "new_function_signatures": 0,
+    "new_mut_declarations": 0,
+    "canonical_promotion_allowed": false,
+    "native_status": "NOT_RUN"
+  },
+  "prepared_rebased_compaction": {
+    "composition": "FROZEN_CANONICAL_TO_WIDE_TOKEN_LANE_TO_DROP_REDUNDANT_DISCARD_EVENT",
+    "transformer": "tools/patch_stage1_compaction_after_token_lane.py",
+    "static_differential": "tools/audit_stage1_compaction_after_token_lane.py",
+    "tests": [
+      "tests/test_stage1_compaction_after_token_lane.py",
+      "tests/test_stage1_compaction_after_token_lane_audit.py"
+    ],
+    "qualification_model": "SAME_INPUT_EVENT_STREAM_EQUAL_AFTER_FILTERING_ONLY_REDUNDANT_DISCARD_OPCODE_5",
+    "native_2x2_required": true,
+    "native_status": "NOT_RUN"
+  },
+  "full_source_capacity_planning": {
+    "planner": "tools/plan_stage1_full_source_capacities.py",
+    "tests": "tests/test_stage1_full_source_capacity_plan.py",
+    "call_metadata": "EXACT_FULL_SOURCE_REQUIREMENT_THEN_MINIMAL_365_BANK_MULTIPLE",
+    "call_arguments": "EXACT_FULL_SOURCE_REQUIREMENT_THEN_MINIMAL_BOUNDED_BANKS",
+    "events": "EXACT_POST_COMPACTION_FULL_SOURCE_REQUIREMENT_THEN_MINIMAL_365_BANK_MULTIPLE",
+    "values": "DO_NOT_AUTO_EXPAND_FROM_LEXICAL_NUMERIC_COUNT; REQUIRE_EXPLICIT_SEMANTIC_VALUE_NAMESPACE",
+    "native_remeasurement_required": true
+  },
+  "authoritative_next_order": [
+    "RUN_PRE_IR_V2_TOKEN_LANE_GUARD_TESTS",
+    "RUN_STATIC_FULL_SOURCE_TOKEN_LANE_AUDIT",
+    "RUN_STATIC_REBASED_COMPACTION_DIFFERENTIAL",
+    "RUN_STATIC_FULL_SOURCE_CAPACITY_PLAN",
+    "QUALIFY_WIDE_TOKEN_LANE_NATIVE_LINUX_X86_64",
+    "RESOLVE_EXACT_FULL_SOURCE_CAPACITY_ROUTE",
+    "QUALIFY_REBASED_COMPACTION_NATIVE_2X2",
+    "THEN_REBASE_PARAMETER_AND_LOCAL_IR_V2_CANDIDATES"
+  ],
+  "legacy_ir_v2_chain_first": false,
+  "new_tooling_executed_in_chat_environment": false,
+  "new_tooling_native_evidence": false,
+  "general_emitter": "BLOCKED_IR_V2_INCOMPLETE",
+  "self_emit": "NOT_STARTED",
+  "stage2": "NOT_STARTED",
+  "stage3": "NOT_STARTED",
+  "full_self_hosting": false,
+  "next": "RUN_PRE_IR_V2_TOKEN_LANE_CHAIN_ON_EXISTING_LINUX_GUEST"
+}
