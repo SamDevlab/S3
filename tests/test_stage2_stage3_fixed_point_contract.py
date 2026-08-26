@@ -27,6 +27,19 @@ def _certificate(sha: str) -> dict[str, object]:
     }
 
 
+def _fixed_point_contract() -> dict[str, object]:
+    root = Path(__file__).resolve().parents[1]
+    return json.loads(
+        (
+            root
+            / "reports"
+            / "selfhost"
+            / "stage2"
+            / "stage2-stage3-fixed-point-contract.json"
+        ).read_text(encoding="utf-8")
+    )
+
+
 def test_stage1_gate_requires_every_strict_prerequisite() -> None:
     sha = "a" * 64
     validate_stage1_certification(_certificate(sha), sha)
@@ -65,10 +78,8 @@ def test_execve_trace_parser_exposes_descendant_execs(tmp_path: Path) -> None:
 
 
 def test_fixed_point_contract_keeps_elf_equality_mandatory_not_assembly_text() -> None:
-    root = Path(__file__).resolve().parents[1]
-    contract = json.loads(
-        (root / "reports" / "selfhost" / "stage2" / "stage2-stage3-fixed-point-contract.json").read_text(encoding="utf-8")
-    )
+    contract = _fixed_point_contract()
+    assert contract["schema"] == "s3.selfhost.stage2-stage3-fixed-point-contract.v2"
     determinism = contract["determinism"]
     assert determinism["stage2_stage3_elf_bytes_equal"] is True
     assert determinism["stage2_stage3_elf_sha_equal"] is True
@@ -81,14 +92,19 @@ def test_intermediate_harness_can_never_authorize_full_self_hosting() -> None:
     assert '"authority": "INTERMEDIATE_ONLY_STRICT_SANDBOX_WRAPPER_REQUIRED_FOR_FULL_SELF_HOSTING"' in source
     assert '"full_self_hosting": False' in source
     assert '"next": "RUN_STRICT_PROCESS_AND_FILESYSTEM_SANDBOX_WRAPPER"' in source
+    contract = _fixed_point_contract()
+    assert contract["authority_rule"]["intermediate_fixed_point_harness_may_authorize_full_self_hosting"] is False
+    assert contract["authority_rule"]["strict_sandbox_v3_is_required_for_full_self_hosting"] is True
 
 
-def test_final_contract_names_strict_process_and_file_trace() -> None:
-    root = Path(__file__).resolve().parents[1]
-    contract = json.loads(
-        (root / "reports" / "selfhost" / "stage2" / "stage2-stage3-fixed-point-contract.json").read_text(encoding="utf-8")
-    )
+def test_final_contract_requires_strict_process_file_and_embedded_python_trace() -> None:
+    contract = _fixed_point_contract()
     assert contract["final_gate"]["stage2_pythonless_compiler"] == "PASS_STRICT_PROCESS_AND_FILE_TRACE"
-    proof = contract["pythonless_compiler_runtime"]["strict_runtime_proof"]
-    assert "openat" in proof
+    runtime = contract["pythonless_compiler_runtime"]
+    assert runtime["required_strict_sandbox_schema"] == "s3.selfhost.stage2-stage3-strict-sandbox.v3"
+    assert runtime["embedded_python_runtime_allowed"] is False
+    assert runtime["trace_syscalls"] == ["execve", "open", "openat", "openat2"]
+    proof = runtime["strict_runtime_proof"]
     assert "bootstrap" in proof
+    assert "libpython" in proof
+    assert "Relative file opens fail closed" in proof
