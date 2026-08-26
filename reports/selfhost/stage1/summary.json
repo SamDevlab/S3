@@ -1,6 +1,6 @@
 {
   "schema": "s3.selfhost.stage1-summary.v12",
-  "final_tested_source_head": "081f3c53c42ad9562ae0770504b68c9de1947881",
+  "final_tested_source_head": "c40ff38b80f6131c121fdd582674c605c0da305c",
   "source_changed_after_last_native_gates": false,
   "test_logic_changed_after_last_t4": true,
   "canonical_compiler_source_set": "PASS",
@@ -12,9 +12,9 @@
   "verifier_real_data_flow": "PASS_STRUCTURAL_BOOTSTRAP_SUBSET_NOT_CODEGEN_COMPLETE",
   "emitter_real_data_flow": "BLOCKED_IR_V2_GUARD_INCOMPLETE",
   "stage0_to_stage1": "PASS_LINUX_X86_64_AT_LAST_NATIVE_SOURCE_GATE",
-  "stage1_self_source_emission": "BLOCKED_PREPARED_IR_V2_CHAIN_LINUX_GUEST_PYTEST_UNAVAILABLE",
+  "stage1_self_source_emission": "BLOCKED_NATIVE_COMPACTION_AUDIT_INVARIANTS",
   "stage1_to_stage2": "BLOCKED_NOT_STARTED",
-  "first_self_compile_blocker": "BLOCKED_PREPARED_IR_V2_CHAIN_LINUX_GUEST_PYTEST_UNAVAILABLE",
+  "first_self_compile_blocker": "COMPACTION_NATIVE_FAILED_AUDIT_INVARIANTS",
   "historical_resolved_blocker": "IR_CALL_ARGUMENT_POOL_CAPACITY_EXCEEDED",
   "ir_counts_last_native_source_gate": {
     "source_functions": 34,
@@ -95,7 +95,32 @@
     "projection_status": "NON_AUTHORITATIVE_NATIVE_REMEASUREMENT_REQUIRED",
     "qualifier": "tools/qualify_stage1_codegen_ir_v2_capacity.py",
     "promoter": "tools/promote_stage1_codegen_ir_v2_capacity.py",
-    "status": "PREPARED_NOT_NATIVE_QUALIFIED_CURRENT_CANDIDATE"
+    "status": "BLOCKED_NATIVE_COMPACTION_AUDIT_INVARIANTS",
+    "native_evidence": {
+      "status": "FAIL",
+      "candidate_source_sha256": "cfc65f801cfa7fa7e417c144c866f3db38acc2a0630e1ba30be12ac13f4383f9",
+      "candidate_source_bytes": 166883,
+      "candidate_build": "PASS",
+      "trivial_compile": "PASS",
+      "self_source_boundary": "PASS",
+      "actual_ir_instruction_count": 1097,
+      "actual_event_headroom": 363,
+      "actual_ast_assignment_count": 75,
+      "expected_ast_assignment_count": 73,
+      "actual_ir_value_count": 1213,
+      "expected_ir_value_count": 1212,
+      "actual_ir_block_count": 329,
+      "expected_ir_block_count": 305,
+      "audit_invariants": {
+        "discard_count_preserved": true,
+        "parameter_count_preserved": true,
+        "call_count_preserved": true,
+        "value_count_expected_delta": false,
+        "assignment_count_expected_delta": false,
+        "block_count_preserved": false
+      },
+      "report": "reports/selfhost/stage1/codegen-ir-v2-capacity-native-candidate.json"
+    }
   },
   "parameter_ir_v2_candidate": {
     "canonical_source_mutated": false,
@@ -112,7 +137,7 @@
     ],
     "fixed_semantic_value_domain": "[0,64)",
     "used_value_ids": "[0,parameter_count)",
-    "status": "PREPARED_NOT_NATIVE_QUALIFIED_CURRENT_CANDIDATE"
+    "status": "NOT_RUN_NATIVE_COMPACTION_FAILED"
   },
   "local_metadata_candidate": {
     "design_audit": "tools/audit_stage1_codegen_ir_v2_local_metadata.py",
@@ -152,7 +177,7 @@
     "native_qualifier_requires_call_argument_guard": true,
     "native_qualifier_requires_exact_preflight_counts": true,
     "native_qualifier_expected_boundary": "EXIT_2_S3_STAGE1_EMITTER_BLOCKED",
-    "local_native_qualification": "NOT_RUN",
+    "local_native_qualification": "NOT_RUN_PARAMETER_GATE_NOT_PASS",
     "canonical_commit_allowed": false,
     "status": "REPORT_GATED_TRANSFORM_PREFLIGHT_AND_NATIVE_QUALIFIER_PREPARED"
   },
@@ -246,13 +271,23 @@
     "canonical_commit_allowed": false,
     "report": "reports/selfhost/stage1/codegen-ir-v2-full-candidate-chain.json",
     "home_runbook": "reports/selfhost/stage1/HOME_NATIVE_CAPACITY_CHECK.txt",
-    "status": "BLOCKED_AT_LINUX_GUEST_GUARD_DEPENDENCY",
+    "status": "BLOCKED_IN_BASE_PARAMETER_CHAIN",
     "linux_guest_attempt": {
       "vm": "Ubuntu server",
       "ssh": "PASS",
       "python": "/usr/bin/python3",
-      "guard_tests": "BLOCKED_PYTEST_UNAVAILABLE",
-      "base_chain": "NOT_RUN",
+      "venv": "/home/vboxuser/.cache/s3-pr268-venv",
+      "python_version": "Python 3.14.4",
+      "pytest": "pytest 9.1.1",
+      "pytest_install_source": "guest pip cache",
+      "focused_selected": 130,
+      "focused_passed": 130,
+      "focused_failed": 0,
+      "focused_skipped": 0,
+      "guard_tests": "PASS",
+      "base_chain": "BLOCKED_AT_CAPACITY_CANDIDATE",
+      "compaction_native": "FAIL_AUDIT_INVARIANTS",
+      "parameter_ir_v2_native": "NOT_RUN",
       "stage2": "NOT_STARTED",
       "stage3": "NOT_STARTED"
     }
@@ -277,8 +312,8 @@
     "call_argument_native_used": 736,
     "call_argument_headroom": 10
   },
-  "last_completed_focused_gates": "37 passed, 1 skipped on source head 2b9a391dc1376d34cd13a946a16d92693d389898 (historical)",
-  "current_checkpoint_tooling_tests": "IR-v2 focused suite PASS; 17 call-model tests and the prepared guard tests passed",
+  "last_completed_focused_gates": "130 passed, 0 failed, 0 skipped in the isolated Linux guest venv on source head c40ff38b80f6131c121fdd582674c605c0da305c",
+  "current_checkpoint_tooling_tests": "GUEST_PYTEST=PASS; focused IR-v2 suite 130 passed, 0 failed, 0 skipped; chain guard tests passed",
   "compileall": "PASS",
   "json_validation": "PASS",
   "diff_check": "PASS",
@@ -308,8 +343,19 @@
   "stage2_started": false,
   "stage3_started": false,
   "full_self_hosting": false,
-  "current_gate": "STOPPED_AT_LINUX_GUEST_GUARD_DEPENDENCY",
-  "current_blocker": "LINUX_GUEST_PYTEST_UNAVAILABLE_FOR_PREPARED_IR_V2_CHAIN",
+  "guest_pytest": {
+    "status": "PASS",
+    "python": "/home/vboxuser/.cache/s3-pr268-venv/bin/python",
+    "python_version": "Python 3.14.4",
+    "pytest_version": "9.1.1",
+    "install_source": "guest pip cache",
+    "focused_selected": 130,
+    "focused_passed": 130,
+    "focused_failed": 0,
+    "focused_skipped": 0
+  },
+  "current_gate": "STOPPED_AT_NATIVE_COMPACTION_AUDIT_INVARIANTS",
+  "current_blocker": "COMPACTION_NATIVE_FAILED_AUDIT_INVARIANTS",
   "deferred_architectural_blocker": "NONE_CALL_MODEL_CLOSED",
-  "next_if_full_chain_passes": "UNIFIED_VALUE_NAMESPACE_CANDIDATE_PREFLIGHT; DO_NOT_PROMOTE CANONICAL SOURCE OR CLAIM SELF_EMIT/STAGE2 FROM LOCAL PASS"
+  "next_if_full_chain_passes": "FIX_COMPACTION_NATIVE_AUDIT_INVARIANTS_THEN_RERUN_PREPARED_NATIVE_CHAIN; DO_NOT_PROMOTE CANONICAL SOURCE OR CLAIM SELF_EMIT/STAGE2_FROM_LOCAL_PASS"
 }

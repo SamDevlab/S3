@@ -110,6 +110,15 @@ reports/selfhost/stage1/codegen-ir-v2-call-argument-static-audit.json
 CALL_MODEL_TESTS=PASS (17 passed)
 IR_V2_FOCUSED_TESTS=PASS
 WINDOWS_GUARD_TESTS=PASS
+GUEST_PYTHON_VERSION=3.14.4
+GUEST_VENV=/home/vboxuser/.cache/s3-pr268-venv
+GUEST_PYTEST=PASS
+GUEST_PYTEST_VERSION=9.1.1
+PYTEST_INSTALL_SOURCE=GUEST_PIP_CACHE
+GUEST_FOCUSED_SELECTED=130
+GUEST_FOCUSED_PASSED=130
+GUEST_FOCUSED_FAILED=0
+GUEST_FOCUSED_SKIPPED=0
 COMPILEALL=PASS
 JSON_VALIDATION=PASS
 DIFF_CHECK=PASS
@@ -129,16 +138,31 @@ shapes. The wide-literal fixture protects the native packed-token boundary.
 
 The prepared full chain was attempted in both available Python environments.
 Windows guard tests passed, but the native base chain correctly requires Linux
-x86-64. The same chain was then attempted in the isolated Linux guest; its
-`/usr/bin/python3` does not provide `pytest`, so the chain stopped before the
-native parameter build:
+x86-64. An isolated venv was then provisioned in the existing Linux guest and
+the focused tooling suite passed. The native chain reached the compaction
+candidate and stopped at its factual audit-invariant failure:
 
 ```text
 WINDOWS_FULL_CHAIN=BLOCKED_HOST_REQUIRES_LINUX_X86_64
 LINUX_GUEST_SSH=PASS
-LINUX_GUEST_GUARD_TESTS=BLOCKED_PYTEST_UNAVAILABLE
-LINUX_GUEST_BASE_CHAIN=NOT_RUN
-COMPACTION_NATIVE=NOT_RUN
+GUEST_PYTEST=PASS
+GUEST_PYTEST_VERSION=9.1.1
+GUEST_FOCUSED=130 passed, 0 failed, 0 skipped
+LINUX_GUEST_GUARD_TESTS=PASS
+LINUX_GUEST_BASE_CHAIN=BLOCKED_AT_CAPACITY_CANDIDATE
+COMPACTION_NATIVE=FAIL_AUDIT_INVARIANTS
+COMPACTION_CANDIDATE_BUILD=PASS
+COMPACTION_TRIVIAL_COMPILE=PASS
+COMPACTION_SELF_SOURCE_BOUNDARY=PASS
+COMPACTION_ACTUAL_EVENTS=1097
+COMPACTION_EVENT_HEADROOM=363
+COMPACTION_ACTUAL_ASSIGNMENTS=75
+COMPACTION_EXPECTED_ASSIGNMENTS=73
+COMPACTION_ACTUAL_VALUES=1213
+COMPACTION_EXPECTED_VALUES=1212
+COMPACTION_ACTUAL_BLOCKS=329
+COMPACTION_EXPECTED_BLOCKS=305
+COMPACTION_FAILED_INVARIANTS=assignment_count_expected_delta,value_count_expected_delta,block_count_preserved
 PARAMETER_IR_V2_NATIVE=NOT_RUN
 LOCAL_IR_V2_NATIVE=NOT_RUN
 GENERAL_EMITTER=BLOCKED_IR_V2_INCOMPLETE
@@ -148,16 +172,18 @@ STAGE2=NOT_CREATED
 STAGE3=NOT_STARTED
 ```
 
-This is an environment dependency blocker for the prepared chain, not a
-call-model or compiler-semantics failure. The chain report preserves both
-attempts in `codegen-ir-v2-full-candidate-chain.json`.
+The call-model gate remains closed and the canonical source remains unchanged.
+The compaction candidate's event reduction is real, but it does not satisfy
+the required structural deltas and block-count invariant, so parameter IR-v2
+and local IR-v2 were correctly not attempted. The chain report and native
+candidate report preserve the complete evidence.
 
 ## Final disposition
 
 ```text
 BLOCKER=1
-PRIMARY_BLOCKER=LINUX_GUEST_PYTEST_UNAVAILABLE_FOR_PREPARED_IR_V2_CHAIN
-NEXT=PROVIDE_PYTEST_IN_THE_EXISTING_LINUX_GUEST_THEN_RERUN_THE_PREPARED_CHAIN
+PRIMARY_BLOCKER=COMPACTION_NATIVE_FAILED_AUDIT_INVARIANTS
+NEXT=FIX_COMPACTION_TRANSFORM_OR_ITS_EXACT_INVARIANTS_THEN_RERUN_THE_PREPARED_NATIVE_CHAIN
 STAGE2=NOT_STARTED
 STAGE3=NOT_STARTED
 MERGE=NO

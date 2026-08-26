@@ -1,0 +1,116 @@
+{
+  "audit_invariants": {
+    "assignment_count_expected_delta": false,
+    "block_count_preserved": false,
+    "call_count_preserved": true,
+    "discard_count_preserved": true,
+    "parameter_count_preserved": true,
+    "value_count_expected_delta": false
+  },
+  "baseline": {
+    "call_argument_capacity": 746,
+    "call_capacity": 730,
+    "event_capacity": 1460,
+    "native_assignments": 75,
+    "native_discard_events": 699,
+    "native_events": 1460,
+    "native_values": 1213,
+    "parameter_capacity": 64,
+    "source_bytes": 166984,
+    "source_sha256": "20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341"
+  },
+  "candidate": {
+    "source_bytes": 166883,
+    "source_sha256": "cfc65f801cfa7fa7e417c144c866f3db38acc2a0630e1ba30be12ac13f4383f9",
+    "stage1_assembly_bytes": 47365394,
+    "stage1_assembly_sha256": "f7d421105ea5a3c7294bd9f388301abb9bc10643e327749f95bac94834c1b6ae",
+    "stage1_executable_bytes": 18364488,
+    "stage1_executable_sha256": "82aee66ef69ca5d9999bc028abe8636db50ef0e97f618893742263db38a75c25",
+    "transform": "DROP_REDUNDANT_DISCARD_KEYWORD_EVENT"
+  },
+  "canonical_source_mutated": false,
+  "capacity_measurement": {
+    "actual_ast_discard_count": 699,
+    "actual_event_headroom": 363,
+    "actual_event_reduction_from_native_baseline": 363,
+    "actual_ir_instruction_count": 1097,
+    "projection_is_not_substituted_for_native_measurement": true,
+    "projection_was_761_events": true
+  },
+  "contract_tests": {
+    "returncode": 0,
+    "status": "PASS",
+    "stderr": "",
+    "stdout": "..................                                                       [100%]\n18 passed in 0.52s\n"
+  },
+  "expected_source_delta": {
+    "expected_ast_assignment_count": 73,
+    "expected_ir_value_count": 1212,
+    "removed_assignments": 2,
+    "removed_numeric_literals": 1
+  },
+  "platform": {
+    "compiler": "/usr/bin/cc",
+    "machine": "x86_64",
+    "system": "Linux"
+  },
+  "qualification": {
+    "audit_invariants": "FAIL",
+    "candidate_build": "PASS",
+    "canonical_commit_allowed": false,
+    "capacity_candidate": "FAIL",
+    "contract_tests": "PASS",
+    "event_headroom": "PASS",
+    "full_self_hosting": false,
+    "self_emit": "NOT_ATTEMPTED_GENERAL_EMITTER_STILL_BLOCKED",
+    "self_source_expected_boundary": "PASS",
+    "stage2": "NOT_STARTED",
+    "stage3": "NOT_STARTED",
+    "trivial_compile": "PASS"
+  },
+  "schema": "s3.selfhost.codegen-ir-v2-capacity-native-candidate.v1",
+  "self_source": {
+    "audit": {
+      "ast_assignment_count": 75,
+      "ast_binop_count": 155,
+      "ast_break_count": 4,
+      "ast_call_count": 656,
+      "ast_cast_count": 0,
+      "ast_comparison_count": 92,
+      "ast_discard_count": 699,
+      "ast_match_count": 94,
+      "ast_return_count": 107,
+      "ast_while_count": 6,
+      "foreign_count": 5,
+      "function_count": 34,
+      "ir_block_count": 329,
+      "ir_branch_count": 104,
+      "ir_foreign_call_count": 3,
+      "ir_foreign_function_count": 5,
+      "ir_instruction_count": 1097,
+      "ir_internal_call_count": 653,
+      "ir_local_count": 23,
+      "ir_loop_count": 6,
+      "ir_parameter_count": 64,
+      "ir_return_count": 107,
+      "ir_value_count": 1213,
+      "local_count": 23,
+      "local_function_count": 29,
+      "parameter_count": 64
+    },
+    "final_marker": "S3_STAGE1_EMITTER_BLOCKED",
+    "returncode": 2,
+    "status": "PASS_THROUGH_VERIFY_TO_EXPECTED_EMITTER_BOUNDARY",
+    "stderr_lines": [
+      "S3_STAGE1_AUDIT 34 5 64 23 75 656 107 94 6 4 155 92 0 699 29 5 64 23 329 1097 1213 653 3 104 6 107 ",
+      "S3_STAGE1_EMITTER_BLOCKED"
+    ],
+    "stdout_bytes": 0
+  },
+  "trivial_compile": {
+    "returncode": 0,
+    "status": "PASS",
+    "stderr": "",
+    "stdout_sha256": "8883737b8ab8d27159226ebac7857a21b255397d48f31479a7ba9386326b9d33"
+  }
+}
