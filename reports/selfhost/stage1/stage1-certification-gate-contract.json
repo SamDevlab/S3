@@ -42,6 +42,19 @@
       ],
       "canonical_source_sha256_path": "source.sha256"
     },
+    "native_call_reconciliation": {
+      "schema": "s3.selfhost.stage1-native-call-reconciliation.v1",
+      "assertions": [
+        {"path": "status", "equals": "PASS_NATIVE_CURRENT_SOURCE_CALL_RECONCILIATION"},
+        {"path": "native_evidence", "equals": true},
+        {"path": "historical_closure.calls_656_arguments_736_reused", "equals": false},
+        {"path": "qualification.native_call_capacity", "equals": "PASS"},
+        {"path": "qualification.native_call_argument_capacity", "equals": "PASS"},
+        {"path": "qualification.semantic_call_linkage_complete_from_this_report_alone", "equals": false}
+      ],
+      "canonical_source_sha256_path": "canonical_source.sha256",
+      "stage1_artifact_sha256_path": "stage1.sha256"
+    },
     "reference_opcode_inventory": {
       "schema": "s3.selfhost.reference-bootstrap-opcode-inventory.v1",
       "assertions": [
@@ -108,7 +121,8 @@
   "mandatory_evidence_before_emission": [
     "100 percent native token/source byte coverage tied to the final canonical source SHA",
     "the final source representation epoch has explicit parameter/local metadata and no legacy packed parameter/local records",
-    "a fresh source-bound hosted call inventory replaces the historical 656/736 closure while still requiring independent native call/call-argument high-water evidence",
+    "a fresh source-bound hosted call inventory replaces the historical 656/736 closure",
+    "native call/call-argument high-water, classification closure and slice/addressability guards pass on the same exact source and Stage1 artifact",
     "typed reference opcode inventory reconciled with emitter requirements",
     "hosted fixture corpus covers every bootstrap-required reference opcode",
     "native codegen-complete fixture corpus passes using the exact Stage1 artifact",
@@ -131,6 +145,7 @@
     "setting stage1_certified_for_stage2 by operator override",
     "using historical 656/736 call closure as current evidence after source bytes changed",
     "using a hosted AST/O0 call inventory as physical native capacity evidence",
+    "accepting native call high-water without internal+foreign closure or call/argument slice guards",
     "using a pre-convergence or stale parameter/local capacity report",
     "using a representation-epoch report for different source bytes",
     "reapplying historical packed parameter/local transforms to a source that already materializes explicit lanes",
