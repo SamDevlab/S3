@@ -31,7 +31,6 @@ def require_authoritative_source_manifest(
         authoritative=authoritative,
         expected_schema="s3.compiler.sources.v1",
         label="canonical compiler source manifest",
-        git_root=root,
     )
     sources = document.get("sources")
     if not isinstance(sources, list) or len(sources) != 1:
