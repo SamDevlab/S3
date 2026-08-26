@@ -1,0 +1,22 @@
+{
+  "schema": "s3.selfhost.stage1-semantic-ir-native-call-boundary-contract.v1",
+  "semantic_ir_schema": "s3.selfhost.stage1-final-semantic-ir-verifier.v1",
+  "native_call_schema": "s3.selfhost.stage1-native-call-reconciliation.v1",
+  "output_schema": "s3.selfhost.stage1-final-semantic-ir-verifier.v1",
+  "purpose": "Bind the final semantic-IR call/call-argument inventory to the exact native Stage1 call high-water evidence on the same source/artifact without weakening any semantic verifier requirements.",
+  "requirements": [
+    "same canonical source SHA and bytes",
+    "same Stage1 artifact SHA and bytes",
+    "semantic IR report already PASS_CODEGEN_COMPLETE_BOOTSTRAP_SUBSET / verifier-v2 PASS / general emitter PASS",
+    "native call reconciliation already PASS_NATIVE_CURRENT_SOURCE_CALL_RECONCILIATION",
+    "semantic IR inventory_counts.calls equals native audit.ir_call_count",
+    "semantic IR inventory_counts.call_arguments equals native audit.ir_call_arg_pool_count",
+    "native call capacity and native call-argument capacity are PASS",
+    "native call reconciliation does not claim semantic call linkage complete by itself"
+  ],
+  "authority": {
+    "output_authority": "STAGE1_FINAL_SEMANTIC_IR_NATIVE_CALL_BOUND",
+    "stage2_allowed_from_this_report_alone": false,
+    "full_self_hosting": false
+  }
+}
