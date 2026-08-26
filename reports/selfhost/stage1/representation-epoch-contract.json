@@ -1,0 +1,50 @@
+{
+  "schema": "s3.selfhost.stage1-representation-epoch-contract.v1",
+  "output_schema": "s3.selfhost.stage1-representation-epoch.v1",
+  "purpose": "Classify which IR metadata representation is already materialized in an exact Stage1 source so historical candidate transformers and reports cannot be reapplied to a newer representation epoch.",
+  "epochs": {
+    "0": "LEGACY_NO_PARAMETER_METADATA",
+    "1": "LEGACY_PACKED_PARAMETER_RECORD",
+    "2": "EXPLICIT_PARAMETER_METADATA",
+    "3": "EXPLICIT_PARAMETER_AND_LOCAL_METADATA"
+  },
+  "explicit_parameter_arrays_required": [
+    "ir_parameter_owner",
+    "ir_parameter_name",
+    "ir_parameter_ordinal",
+    "ir_parameter_type"
+  ],
+  "packed_parameter_marker": "ir_parameter_records",
+  "packed_local_marker": "ir_local_records",
+  "explicit_local_array_minimum": 8,
+  "local_array_prefix": "ir_local_",
+  "local_array_exclusions": [
+    "ir_local_records"
+  ],
+  "classification_rules": [
+    "packed and explicit parameter metadata may not coexist",
+    "packed and explicit local metadata may not coexist",
+    "epoch 2 requires all four explicit parameter arrays",
+    "epoch 3 requires epoch 2 plus at least eight distinct explicit ir_local_* array lanes",
+    "ir_local_record_count is a scalar audit counter and never counts as a metadata lane",
+    "source SHA and byte count are part of the epoch identity"
+  ],
+  "historical_transform_policy": {
+    "packed_parameter_transform": "allowed only before explicit parameter metadata exists and still subject to its own source-SHA lock",
+    "packed_local_transform": "must fail closed when explicit local lanes already exist",
+    "legacy_static_or_native_report": "stale unless its source SHA equals the exact current source SHA and its declared representation epoch equals the detected epoch"
+  },
+  "authority": {
+    "native_evidence": false,
+    "stage1_certification_from_this_report_alone": false,
+    "stage2_allowed_from_this_report_alone": false,
+    "full_self_hosting": false
+  },
+  "fail_closed_if": [
+    "packed and explicit parameter representations coexist",
+    "only a subset of explicit parameter arrays exists",
+    "packed and explicit local representations coexist",
+    "a consumer presents an epoch report for a different source SHA",
+    "a historical transformer declares applicability to a newer detected epoch without an explicit migration contract"
+  ]
+}
