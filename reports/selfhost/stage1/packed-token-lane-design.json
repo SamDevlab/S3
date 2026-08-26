@@ -1,0 +1,47 @@
+{
+  "schema": "s3.selfhost.packed-token-lane-design.v1",
+  "pr": 268,
+  "status": "CANDIDATE_PREPARED_NATIVE_QUALIFICATION_REQUIRED",
+  "canonical_source_mutated": false,
+  "canonical_source_sha256": "20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341",
+  "canonical_source_bytes": 166984,
+  "proven_legacy_problem": {
+    "packing_formula": "next_cursor*1000000 + kind*1000 + value + 500",
+    "packed_value_lossless_min": -500,
+    "packed_value_lossless_max": 499,
+    "wide_numeric_literals_exist_in_canonical_source": true,
+    "native_static_root_cause_already_observed": "PACKED_TOKEN_VALUE_LANE_OVERFLOW",
+    "consequence": "numeric value spill can alter decoded kind/cursor and terminate self-source traversal before the complete source is observed"
+  },
+  "candidate": {
+    "transformer": "tools/patch_stage1_token_lane_wide_literals.py",
+    "static_audit": "tools/audit_stage1_token_lane_wide_literals.py",
+    "native_qualifier": "tools/qualify_stage1_token_lane_wide_literals.py",
+    "chain": "tools/qualify_stage1_pre_ir_v2_chain.py",
+    "tests": "tests/test_stage1_token_lane_wide_literals.py",
+    "strategy": "PACK_NUMERIC_ZERO_THEN_RECOVER_EXACT_SIGNED_I64_FROM_SOURCE_RANGE_IN_MAIN",
+    "new_function_signatures": 0,
+    "new_mut_declarations": 0,
+    "identifier_and_punctuation_packing_unchanged": true,
+    "wide_numeric_payload_truncation_allowed": false
+  },
+  "qualification": {
+    "static_full_source_coverage_required": true,
+    "native_linux_x86_64_required": true,
+    "native_full_source_ast_differential_required": true,
+    "canonical_promotion_allowed_now": false,
+    "legacy_compaction_chain_allowed_before_token_lane_pass": false,
+    "reason": "The previous compaction invariants were measured on a native self-source traversal known to be incomplete/unstable under the packed numeric token lane."
+  },
+  "post_pass_routing": [
+    "EXPAND_CALL_CAPACITY_FROM_FULL_SOURCE_TOKEN_LANE_MODEL",
+    "EXPAND_CALL_ARGUMENT_CAPACITY_FROM_FULL_SOURCE_TOKEN_LANE_MODEL",
+    "QUALIFY_FULL_SOURCE_EVENT_COMPACTION_OR_CAPACITY",
+    "REBASE_COMPACTION_ON_QUALIFIED_WIDE_TOKEN_LANE_CANDIDATE"
+  ],
+  "general_emitter": "BLOCKED_IR_V2_INCOMPLETE",
+  "self_emit": "NOT_STARTED",
+  "stage2": "NOT_STARTED",
+  "stage3": "NOT_STARTED",
+  "full_self_hosting": false
+}
