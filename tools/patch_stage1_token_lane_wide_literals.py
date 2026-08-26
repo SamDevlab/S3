@@ -43,21 +43,19 @@ RECOVERY_SLOT_BLOCK = """        mut slot: i64 = actual_start
         match kind == 2:
             -1:
                 value = 0
+                simple_value = 1
                 match read_at(slot) == 45:
                     -1:
+                        simple_value = -1
                         slot += 1
-                        while slot < next_cursor:
-                            value = value * 10 + (to_i64(read_at(slot)) - 48)
-                            slot += 1
-                        value = 0 - value
                     0:
-                        while slot < next_cursor:
-                            value = value * 10 + (to_i64(read_at(slot)) - 48)
-                            slot += 1
+                        discard 0
                     1:
-                        while slot < next_cursor:
-                            value = value * 10 + (to_i64(read_at(slot)) - 48)
-                            slot += 1
+                        discard 0
+                while slot < next_cursor:
+                    value = value * 10 + (to_i64(read_at(slot)) - 48)
+                    slot += 1
+                value = value * simple_value
             0:
                 discard 0
             1:
@@ -110,6 +108,8 @@ def transform(source: str) -> str:
         raise ValueError("safe numeric pack marker is not unique")
     if transformed.count("slot = token_count") != 1:
         raise ValueError("numeric recovery does not restore token ring slot exactly once")
+    if transformed.count("simple_value = -1") != 1:
+        raise ValueError("numeric sign recovery marker is not unique")
     return transformed
 
 
@@ -155,6 +155,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"SOURCE_AFTER_BYTES={len(candidate.encode('utf-8'))}")
     print("TRANSFORM=NUMERIC_TOKEN_VALUE_RECOVERED_FROM_SOURCE_RANGE")
     print("PACKED_NUMERIC_PAYLOAD=0")
+    print("RECOVERY_SIGN_TEMP=EXISTING_SIMPLE_VALUE_LOCAL")
     print("NEW_FUNCTION_SIGNATURES=0")
     print("NEW_MUT_DECLARATIONS=0")
     print("CANONICAL_SOURCE_MUTATED=" + str(args.in_place))
