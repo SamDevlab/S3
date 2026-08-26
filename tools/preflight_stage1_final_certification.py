@@ -24,9 +24,13 @@ DEFAULT_REPORT = (
 )
 
 CONTRACTS = {
+    "representation_epoch": (
+        "reports/selfhost/stage1/representation-epoch-contract.json",
+        "s3.selfhost.stage1-representation-epoch-contract.v1",
+    ),
     "final_capacity": (
         "reports/selfhost/stage1/final-capacity-contract.json",
-        "s3.selfhost.stage1-final-capacity-contract.v1",
+        "s3.selfhost.stage1-final-capacity-contract.v2",
     ),
     "final_semantic_ir_verifier": (
         "reports/selfhost/stage1/final-semantic-ir-verifier-contract.json",
@@ -47,7 +51,11 @@ CONTRACTS = {
 }
 
 TOOL_FILES = [
+    "tools/audit_stage1_representation_epoch.py",
+    "tools/audit_stage1_final_capacity_measurement_readiness.py",
+    "tools/qualify_stage1_selfhost_capacity_convergence.py",
     "tools/qualify_stage1_final_capacity.py",
+    "tools/qualify_stage1_final_capacity_converged.py",
     "tools/qualify_stage1_final_semantic_ir_verifier.py",
     "tools/qualify_stage1_final_self_emit.py",
     "tools/qualify_stage1_final_self_emit_static.py",
@@ -59,6 +67,9 @@ TOOL_FILES = [
 ]
 
 TEST_FILES = [
+    "tests/test_stage1_representation_epoch.py",
+    "tests/test_stage1_final_capacity_measurement_readiness.py",
+    "tests/test_stage1_selfhost_capacity_convergence.py",
     "tests/test_stage1_final_capacity.py",
     "tests/test_stage1_final_semantic_ir_verifier.py",
     "tests/test_stage1_final_self_emit.py",
@@ -76,6 +87,7 @@ TEST_FILES = [
 
 FINAL_EVIDENCE = {
     "native_source_coverage": "reports/selfhost/stage1/packed-token-lane-native-full-coverage.json",
+    "representation_epoch": "reports/selfhost/stage1/stage1-representation-epoch.json",
     "reference_opcode_inventory": "reports/selfhost/stage1/reference-bootstrap-opcode-inventory.json",
     "hosted_fixture_opcode_coverage": "reports/selfhost/stage1/stage1-codegen-fixture-opcode-coverage.json",
     "native_codegen_fixtures": "reports/selfhost/stage1/stage1-codegen-complete-fixtures-native.json",
