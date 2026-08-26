@@ -6,9 +6,10 @@ is passed through ``validate_stage1_evidence`` before it is written. The exact
 canonical source must also be the exact blob stored at the current Git HEAD, so a
 working-tree-only source edit cannot be certified accidentally.
 
-The contract CLI argument is a location override only, never a policy override:
-its exact bytes must equal the repository's canonical Stage1 certification
-contract before gate construction can begin.
+Contract and source path arguments are location selections only, never policy or
+compiler-source overrides. The contract must be byte-identical to canonical
+policy and the source must resolve exactly to the single source declared by the
+canonical compiler-sources manifest.
 """
 
 from __future__ import annotations
@@ -25,6 +26,10 @@ from tools.selfhost_contract_authority import (
     ContractAuthorityError,
     require_authoritative_contract,
 )
+from tools.selfhost_source_authority import (
+    SourceAuthorityError,
+    require_authoritative_source_manifest,
+)
 from tools.stage1_certification_evidence import (
     ROOT,
     Stage1CertificationEvidenceError,
@@ -34,6 +39,7 @@ from tools.stage1_certification_evidence import (
 
 
 DEFAULT_SOURCE = ROOT / "selfhost" / "compiler" / "s3c_stage1.s3"
+DEFAULT_MANIFEST = ROOT / "selfhost" / "compiler" / "compiler-sources.json"
 DEFAULT_CONTRACT = (
     ROOT / "reports" / "selfhost" / "stage1"
     / "stage1-certification-gate-contract.json"
@@ -125,6 +131,7 @@ def build_gate(
     contract: dict[str, Any],
     root: Path = ROOT,
     contract_authority: dict[str, Any] | None = None,
+    source_manifest_authority: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if contract.get("schema") != "s3.selfhost.stage1-certification-gate-contract.v3":
         raise Stage1CertificationGateError("Stage1 certification contract schema mismatch")
@@ -192,6 +199,19 @@ def build_gate(
         if contract_authority.get("status") != "PASS_CANONICAL_CONTRACT_AUTHORITY":
             raise Stage1CertificationGateError("Stage1 contract authority did not pass")
         gate["contract_authority"] = contract_authority
+    if source_manifest_authority is not None:
+        if source_manifest_authority.get("status") != "PASS_CANONICAL_SOURCE_MANIFEST_AUTHORITY":
+            raise Stage1CertificationGateError("canonical source manifest authority did not pass")
+        manifest_source = source_manifest_authority.get("source")
+        if not isinstance(manifest_source, dict):
+            raise Stage1CertificationGateError("canonical source manifest binding lacks source")
+        if manifest_source.get("sha256") != canonical_source.get("sha256"):
+            raise Stage1CertificationGateError("canonical source SHA differs from manifest authority")
+        if manifest_source.get("bytes") != canonical_source.get("bytes"):
+            raise Stage1CertificationGateError("canonical source bytes differ from manifest authority")
+        if manifest_source.get("path") != canonical_source.get("path"):
+            raise Stage1CertificationGateError("canonical source path differs from manifest authority")
+        gate["source_manifest_authority"] = source_manifest_authority
 
     revalidated = validate_stage1_evidence(
         gate,
@@ -218,7 +238,18 @@ def emit_gate(
         expected_schema="s3.selfhost.stage1-certification-gate-contract.v3",
         label="Stage1 certification contract",
     )
-    canonical = git_head_source_binding(source)
+    canonical_path, _canonical_bytes, _manifest, source_manifest_authority = (
+        require_authoritative_source_manifest(
+            DEFAULT_MANIFEST,
+            authoritative=DEFAULT_MANIFEST,
+            root=ROOT,
+        )
+    )
+    if source.resolve() != canonical_path.resolve():
+        raise Stage1CertificationGateError(
+            "--source must resolve to the exact canonical compiler source declared by compiler-sources.json"
+        )
+    canonical = git_head_source_binding(canonical_path)
     gate = build_gate(
         canonical_source=canonical,
         stage1_path=stage1,
@@ -226,6 +257,7 @@ def emit_gate(
         contract=contract,
         root=ROOT,
         contract_authority=contract_authority,
+        source_manifest_authority=source_manifest_authority,
     )
 
     output = output_path.resolve()
@@ -292,6 +324,7 @@ def main(argv: list[str] | None = None) -> int:
         OSError,
         UnicodeError,
         ContractAuthorityError,
+        SourceAuthorityError,
         Stage1CertificationEvidenceError,
         Stage1CertificationGateError,
     ) as error:
@@ -303,6 +336,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"STAGE1_SHA256={gate['stage1_artifact']['sha256']}")
     print(f"CONTRACT_AUTHORITY={gate['contract_authority']['status']}")
     print(f"CONTRACT_SHA256={gate['contract_authority']['sha256']}")
+    print(f"SOURCE_MANIFEST_AUTHORITY={gate['source_manifest_authority']['status']}")
+    print(f"SOURCE_MANIFEST_SHA256={gate['source_manifest_authority']['sha256']}")
     print("EVIDENCE_REVALIDATION=PASS_STAGE1_HASHED_EVIDENCE_REVALIDATION")
     print("STAGE1_CERTIFIED_FOR_STAGE2=YES")
     print("STAGE2_CERTIFIED=NO")
