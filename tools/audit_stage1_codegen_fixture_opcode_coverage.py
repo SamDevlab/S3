@@ -1,7 +1,7 @@
 """Prove the native Stage1 fixture corpus exercises every required opcode.
 
 The required set comes from the typed reference-opcode inventory for the exact
-canonical compiler source.  This tool is hosted coverage evidence only; native
+canonical compiler source. This tool is hosted coverage evidence only; native
 execution of the fixtures remains a separate mandatory gate.
 """
 
@@ -69,8 +69,12 @@ def audit(
     if contract.get("schema") != "s3.selfhost.reference-bootstrap-opcode-contract.v1":
         raise FixtureCoverageError("reference opcode contract schema mismatch")
     reference_ir = reference_document.get("reference_ir")
+    reference_source = reference_document.get("canonical_source")
     if not isinstance(reference_ir, dict) or not isinstance(reference_ir.get("observed_opcodes"), list):
         raise FixtureCoverageError("reference opcode inventory lacks observed_opcodes")
+    if not isinstance(reference_source, dict) or not isinstance(reference_source.get("sha256"), str):
+        raise FixtureCoverageError("reference opcode inventory lacks canonical source SHA")
+    reference_sha = reference_source["sha256"]
     required_opcodes = set(reference_ir["observed_opcodes"])
     capabilities = contract.get("opcode_capabilities")
     if not isinstance(capabilities, dict):
@@ -117,6 +121,7 @@ def audit(
         "status": "PASS_HOSTED_FIXTURE_OPCODE_COVERAGE" if passed else "BLOCKED_FIXTURE_OPCODE_COVERAGE_GAP",
         "authority": "HOSTED_COVERAGE_ONLY_NATIVE_FIXTURE_EXECUTION_STILL_REQUIRED",
         "native_evidence": False,
+        "reference_canonical_source_sha256": reference_sha,
         "required_opcodes": sorted(required_opcodes),
         "required_capabilities": sorted(
             {capabilities[opcode] for opcode in required_opcodes if opcode in capabilities}
@@ -166,6 +171,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     print(f"REPORT={destination}")
     print(f"STATUS={result['status']}")
+    print(f"REFERENCE_SOURCE_SHA256={result['reference_canonical_source_sha256']}")
     print("MISSING_OPCODES=" + ",".join(result["missing_required_opcodes"]))
     print("MISSING_CAPABILITIES=" + ",".join(result["missing_required_capabilities"]))
     print("NATIVE_EVIDENCE=False")
