@@ -36,6 +36,10 @@ CONTRACTS = {
         "reports/selfhost/stage1/reference-current-call-inventory-contract.json",
         "s3.selfhost.reference-current-call-inventory-contract.v1",
     ),
+    "native_call_reconciliation": (
+        "reports/selfhost/stage1/native-call-reconciliation-contract.json",
+        "s3.selfhost.stage1-native-call-reconciliation-contract.v1",
+    ),
     "final_capacity": (
         "reports/selfhost/stage1/final-capacity-contract.json",
         "s3.selfhost.stage1-final-capacity-contract.v2",
@@ -62,6 +66,7 @@ TOOL_FILES = [
     "tools/audit_stage1_representation_epoch.py",
     "tools/check_stage1_representation_compatibility.py",
     "tools/audit_stage1_reference_current_calls.py",
+    "tools/reconcile_stage1_native_calls.py",
     "tools/audit_stage1_final_capacity_measurement_readiness.py",
     "tools/qualify_stage1_selfhost_capacity_convergence.py",
     "tools/qualify_stage1_final_capacity.py",
@@ -80,6 +85,7 @@ TEST_FILES = [
     "tests/test_stage1_representation_epoch.py",
     "tests/test_stage1_representation_compatibility.py",
     "tests/test_stage1_reference_current_calls.py",
+    "tests/test_stage1_native_call_reconciliation.py",
     "tests/test_stage1_final_capacity_measurement_readiness.py",
     "tests/test_stage1_selfhost_capacity_convergence.py",
     "tests/test_stage1_final_capacity.py",
@@ -101,6 +107,7 @@ FINAL_EVIDENCE = {
     "native_source_coverage": "reports/selfhost/stage1/packed-token-lane-native-full-coverage.json",
     "representation_epoch": "reports/selfhost/stage1/stage1-representation-epoch.json",
     "reference_current_call_inventory": "reports/selfhost/stage1/reference-current-call-inventory.json",
+    "native_call_reconciliation": "reports/selfhost/stage1/stage1-native-call-reconciliation.json",
     "reference_opcode_inventory": "reports/selfhost/stage1/reference-bootstrap-opcode-inventory.json",
     "hosted_fixture_opcode_coverage": "reports/selfhost/stage1/stage1-codegen-fixture-opcode-coverage.json",
     "native_codegen_fixtures": "reports/selfhost/stage1/stage1-codegen-complete-fixtures-native.json",
@@ -148,7 +155,6 @@ def _validate_contracts() -> dict[str, Any]:
             passed = actual_schema == expected_schema
             error = None if passed else f"expected {expected_schema!r}, got {actual_schema!r}"
         except (OSError, json.JSONDecodeError) as exc:
-            document = None
             actual_schema = None
             passed = False
             error = str(exc)
@@ -172,36 +178,18 @@ def _evidence_readiness() -> dict[str, Any]:
         exists = path.is_file()
         if not exists:
             missing.append(role)
-        entries[role] = {
-            "path": relative,
-            "exists": exists,
-            "sha256": _sha256(path) if exists else None,
-        }
-    return {
-        "all_present": not missing,
-        "missing_roles": missing,
-        "evidence": entries,
-    }
+        entries[role] = {"path": relative, "exists": exists, "sha256": _sha256(path) if exists else None}
+    return {"all_present": not missing, "missing_roles": missing, "evidence": entries}
 
 
 def run_preflight(*, run_tests: bool = True) -> dict[str, Any]:
     contracts = _validate_contracts()
     py_compile = _run([sys.executable, "-m", "py_compile", *TOOL_FILES])
-    tests = {
-        "status": "SKIPPED",
-        "command": None,
-        "returncode": None,
-        "stdout": "",
-        "stderr": "",
-    }
+    tests = {"status": "SKIPPED", "command": None, "returncode": None, "stdout": "", "stderr": ""}
     if run_tests and contracts["status"] == "PASS" and py_compile["status"] == "PASS":
         tests = _run([sys.executable, "-m", "pytest", "-q", *TEST_FILES])
 
-    tooling_pass = (
-        contracts["status"] == "PASS"
-        and py_compile["status"] == "PASS"
-        and (not run_tests or tests["status"] == "PASS")
-    )
+    tooling_pass = contracts["status"] == "PASS" and py_compile["status"] == "PASS" and (not run_tests or tests["status"] == "PASS")
     readiness = _evidence_readiness()
     if not tooling_pass:
         status = "BLOCKED_FINAL_CERTIFICATION_TOOLING"
@@ -241,11 +229,7 @@ def main(argv: list[str] | None = None) -> int:
     result = run_preflight(run_tests=not args.skip_tests)
     destination = args.report.resolve()
     destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(
-        json.dumps(result, indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
-        newline="\n",
-    )
+    destination.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
     print(f"REPORT={destination}")
     print(f"STATUS={result['status']}")
     print(f"TOOLING_PREFLIGHT={result['qualification']['tooling_preflight']}")
