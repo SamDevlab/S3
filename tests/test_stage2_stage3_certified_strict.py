@@ -117,10 +117,29 @@ def test_certified_wrapper_records_v2_revalidation_as_final_authority(
     canonical_path = ROOT / "selfhost" / "compiler" / "s3c_stage1.s3"
     canonical_bytes = b"canonical"
     manifest_doc = {"schema": "s3.compiler.sources.v1"}
+    source_manifest_authority = {
+        "status": "PASS_CANONICAL_SOURCE_MANIFEST_AUTHORITY",
+        "schema": "s3.compiler.sources.v1",
+        "sha256": "c" * 64,
+        "bytes": 100,
+        "exact_bytes_equal": True,
+        "source": {
+            "path": "selfhost/compiler/s3c_stage1.s3",
+            "sha256": "a" * 64,
+            "bytes": len(canonical_bytes),
+            "role": "canonical_stage1_compiler",
+            "ordering": 0,
+        },
+    }
     monkeypatch.setattr(
         certified,
-        "_canonical_source",
-        lambda manifest: (canonical_path, canonical_bytes, manifest_doc),
+        "require_authoritative_source_manifest",
+        lambda *args, **kwargs: (
+            canonical_path,
+            canonical_bytes,
+            manifest_doc,
+            source_manifest_authority,
+        ),
     )
     monkeypatch.setattr(
         certified,
@@ -128,6 +147,13 @@ def test_certified_wrapper_records_v2_revalidation_as_final_authority(
         lambda gate, **kwargs: {
             "canonical_sha256": "a" * 64,
             "canonical_bytes": len(canonical_bytes),
+            "canonical_commit_binding": {
+                "status": "PASS_CANONICAL_SOURCE_GIT_COMMIT_BINDING",
+                "commit": "1" * 40,
+                "sha256": "a" * 64,
+                "bytes": len(canonical_bytes),
+                "commit_blob_bytes_equal": True,
+            },
             "stage1_sha256": "b" * 64,
             "stage1_bytes": stage1.stat().st_size,
             "evidence": {
@@ -163,5 +189,7 @@ def test_certified_wrapper_records_v2_revalidation_as_final_authority(
     assert result["authority"] == "FINAL_SELF_HOSTING_AUTHORITY"
     assert result["stage1_certification"]["schema"] == "s3.selfhost.stage1-certification-gate.v2"
     assert result["stage1_certification"]["compatibility_adapter"]["persisted"] is False
+    assert result["canonical_source"]["manifest_authority"]["status"] == "PASS_CANONICAL_SOURCE_MANIFEST_AUTHORITY"
+    assert result["canonical_source"]["git_commit_binding"]["status"] == "PASS_CANONICAL_SOURCE_GIT_COMMIT_BINDING"
     assert result["qualification"]["full_self_hosting"] is True
     assert report.is_file()
