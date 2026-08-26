@@ -65,7 +65,12 @@
     "final_capacity": {
       "schema": "s3.selfhost.stage1-final-capacity.v1",
       "assertions": [
-        {"path": "qualification.all_capacities_no_truncation", "equals": "PASS"}
+        {"path": "authority", "equals": "STAGE1_FINAL_CAPACITY_V2_CONVERGED"},
+        {"path": "qualification.all_capacities_no_truncation", "equals": "PASS"},
+        {"path": "qualification.selfhost_capacity_convergence", "equals": "PASS"},
+        {"path": "selfhost_capacity_convergence.status", "equals": "PASS_SELFHOST_CAPACITY_CONVERGENCE"},
+        {"path": "selfhost_capacity_convergence.same_canonical_source", "equals": true},
+        {"path": "selfhost_capacity_convergence.same_stage1_artifact", "equals": true}
       ],
       "canonical_source_sha256_path": "canonical_source.sha256",
       "stage1_artifact_sha256_path": "stage1.sha256"
@@ -101,6 +106,7 @@
     "typed reference opcode inventory reconciled with emitter requirements",
     "hosted fixture corpus covers every bootstrap-required reference opcode",
     "native codegen-complete fixture corpus passes using the exact Stage1 artifact",
+    "recursive parameter/local capacity convergence is proven after the final source/capacity edit",
     "all measured capacities pass without truncation",
     "parameter/local/storage metadata are native-qualified",
     "explicit semantic value namespace and verified def-use",
@@ -117,6 +123,7 @@
     "creating the gate from static projections alone",
     "creating the gate before native self-emit",
     "setting stage1_certified_for_stage2 by operator override",
+    "using a pre-convergence or stale parameter/local capacity report",
     "using raw-source codegen or Python compiler delegation to satisfy self-emit",
     "accepting a dynamic/PT_INTERP Stage2 self-emit artifact",
     "reusing the gate after canonical source bytes change",
