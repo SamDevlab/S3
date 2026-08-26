@@ -1,17 +1,24 @@
-"""Final authority wrapper for strict Stage2/Stage3 self-hosting certification.
+"""Hashed-evidence strict engine for Stage2/Stage3 self-hosting qualification.
 
 The older fixed-point/strict-sandbox tools remain useful execution engines but
 accept the historical Stage1 certification schema. This wrapper accepts only
 ``stage1-certification-gate.v2``, revalidates all content-hashed evidence,
 verifies the exact Stage1 executable and canonical source, creates a v1
-compatibility certificate in a temporary directory, runs the existing
-strict+Landlock engine, and then independently rechecks every final gate.
+compatibility certificate in a temporary directory, and runs the existing
+strict+Landlock engine.
+
+This module is deliberately NOT final self-hosting authority. A PASS here means
+only that hashed Stage1 evidence and strict runtime/fixed-point prerequisites are
+ready for ``qualify_stage2_stage3_certified_static.py``, which must additionally
+prove Stage1-self-emit Stage2 continuity and final freestanding ELF binding.
+Accordingly this engine always reports ``full_self_hosting=false``.
 
 Contract and source-manifest path arguments are location overrides only. The
 Stage1 evidence policy, Stage2/Stage3 fixed-point policy, and compiler source
-manifest must be byte-identical to their repository canonical authorities. The
-consumer also re-opens the declared Git commit and compares the canonical source
-blob byte-for-byte instead of trusting producer booleans.
+manifest must be byte-identical to repository canonical authorities committed at
+Git HEAD. The consumer also requires the Stage1 gate to carry producer-side Git
+HEAD bindings for its contract and manifest, and independently re-opens the
+declared source commit blob instead of trusting producer booleans.
 """
 
 from __future__ import annotations
@@ -85,6 +92,47 @@ def _load_json(path: Path, label: str) -> dict[str, Any]:
     return value
 
 
+def _valid_commit_sha(value: object) -> bool:
+    return (
+        isinstance(value, str)
+        and len(value) == 40
+        and all(char in "0123456789abcdefABCDEF" for char in value)
+    )
+
+
+def _validate_embedded_git_head_binding(
+    embedded_authority: dict[str, Any],
+    *,
+    expected_authority: dict[str, Any],
+    label: str,
+) -> None:
+    """Require producer proof that its canonical policy was committed at HEAD."""
+
+    embedded = embedded_authority.get("git_head_binding")
+    expected = expected_authority.get("git_head_binding")
+    if not isinstance(embedded, dict):
+        raise CertifiedStrictError(f"Stage1 gate {label} lacks producer Git HEAD binding")
+    if not isinstance(expected, dict):
+        raise CertifiedStrictError(f"current canonical {label} lacks Git HEAD binding")
+    required = {
+        "status": "PASS_REPOSITORY_FILE_GIT_HEAD_BINDING",
+        "path": expected.get("path"),
+        "sha256": expected_authority.get("sha256"),
+        "bytes": expected_authority.get("bytes"),
+        "git_object_type": "commit",
+        "working_tree_equals_head_blob": True,
+    }
+    for field, value in required.items():
+        if embedded.get(field) != value:
+            raise CertifiedStrictError(
+                f"Stage1 gate {label} producer Git binding {field} must be {value!r}"
+            )
+    if not _valid_commit_sha(embedded.get("commit")):
+        raise CertifiedStrictError(
+            f"Stage1 gate {label} producer Git binding lacks a full commit SHA"
+        )
+
+
 def _validate_gate_contract_authority(
     gate: dict[str, Any],
     *,
@@ -105,6 +153,11 @@ def _validate_gate_contract_authority(
             raise CertifiedStrictError(
                 f"Stage1 gate contract authority {field} must be {value!r}"
             )
+    _validate_embedded_git_head_binding(
+        embedded,
+        expected_authority=expected,
+        label="contract authority",
+    )
 
 
 def _validate_gate_source_manifest_authority(
@@ -127,6 +180,11 @@ def _validate_gate_source_manifest_authority(
             raise CertifiedStrictError(
                 f"Stage1 gate source manifest authority {field} must be {value!r}"
             )
+    _validate_embedded_git_head_binding(
+        embedded,
+        expected_authority=expected,
+        label="source manifest authority",
+    )
     expected_source = expected.get("source")
     embedded_source = embedded.get("source")
     if not isinstance(expected_source, dict) or not isinstance(embedded_source, dict):
@@ -254,6 +312,8 @@ def _compatibility_v1_gate(gate_v2: dict[str, Any]) -> dict[str, Any]:
 
 
 def _final_qualification(strict: dict[str, Any], evidence_status: str) -> dict[str, Any]:
+    """Compute strict prerequisites only; never authorize full self-hosting here."""
+
     if strict.get("schema") != "s3.selfhost.stage2-stage3-strict-sandbox.v4":
         raise CertifiedStrictError("underlying strict sandbox schema mismatch")
     qualification = strict.get("qualification")
@@ -273,22 +333,24 @@ def _final_qualification(strict: dict[str, Any], evidence_status: str) -> dict[s
         if qualification.get(key) != expected
     }
     hashed_pass = evidence_status == "PASS_STAGE1_HASHED_EVIDENCE_REVALIDATION"
-    engine_pass = qualification.get("full_self_hosting") is True and not failures
-    full = hashed_pass and engine_pass
+    underlying_signal = qualification.get("full_self_hosting") is True
+    prerequisites_pass = hashed_pass and underlying_signal and not failures
     return {
         **required,
         "stage1_hashed_evidence_revalidation": evidence_status,
-        "underlying_strict_engine_full_self_hosting": qualification.get("full_self_hosting") is True,
+        "underlying_strict_engine_full_self_hosting_signal": underlying_signal,
         "failed_final_gates": failures,
-        "full_self_hosting": full,
+        "strict_prerequisites_pass": prerequisites_pass,
+        "final_static_authority_required": True,
+        "full_self_hosting": False,
         "status": (
-            "FULL_SELF_HOSTING_CERTIFIED_VIA_HASHED_STAGE1_GATE"
-            if full
-            else "BLOCKED_STRICT_SELF_HOSTING_CERTIFICATION"
+            "PASS_HASHED_EVIDENCE_STRICT_ENGINE_PREREQUISITES"
+            if prerequisites_pass
+            else "BLOCKED_STRICT_SELF_HOSTING_PREREQUISITES"
         ),
         "next": (
-            "FINAL_CERTIFICATION_COMPLETE"
-            if full
+            "RUN_CERTIFIED_STATIC_FINAL_AUTHORITY"
+            if prerequisites_pass
             else "REPAIR_FAILED_HASHED_EVIDENCE_OR_STRICT_STAGE_GATE"
         ),
     }
@@ -360,7 +422,8 @@ def qualify_certified_strict(
     final = _final_qualification(strict, evidence_status)
     result = {
         "schema": "s3.selfhost.stage2-stage3-certified-strict.v1",
-        "authority": "FINAL_SELF_HOSTING_AUTHORITY",
+        "authority": "HASHED_EVIDENCE_STRICT_ENGINE_ONLY",
+        "final_authority": False,
         "contract": {
             "schema": fixed_policy["schema"],
             "path": str(fixed_point_contract.resolve()),
@@ -445,6 +508,7 @@ def main(argv: list[str] | None = None) -> int:
 
     qualification = result["qualification"]
     print(f"REPORT={args.report.resolve()}")
+    print(f"AUTHORITY={result['authority']}")
     print(f"STAGE1_CONTRACT_AUTHORITY={result['stage1_certification']['contract_authority']['status']}")
     print(f"SOURCE_MANIFEST_AUTHORITY={result['canonical_source']['manifest_authority']['status']}")
     print(f"SOURCE_GIT_BINDING={result['canonical_source']['git_commit_binding']['status']}")
@@ -456,10 +520,11 @@ def main(argv: list[str] | None = None) -> int:
     print(f"STAGE2_CONFORMANCE={qualification['stage2_conformance']}")
     print(f"STAGE2_TO_STAGE3={qualification['stage2_to_stage3']}")
     print(f"EXACT_ELF_FIXED_POINT={qualification['stage2_stage3_exact_elf_fixed_point']}")
-    print("FULL_SELF_HOSTING=" + ("YES" if qualification["full_self_hosting"] else "NO"))
+    print("STRICT_PREREQUISITES_PASS=" + ("YES" if qualification["strict_prerequisites_pass"] else "NO"))
+    print("FULL_SELF_HOSTING=NO")
     print(f"STATUS={qualification['status']}")
     print(f"NEXT={qualification['next']}")
-    return 0 if qualification["full_self_hosting"] else 2
+    return 0 if qualification["strict_prerequisites_pass"] else 2
 
 
 if __name__ == "__main__":
