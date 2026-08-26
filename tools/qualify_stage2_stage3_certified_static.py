@@ -1,20 +1,25 @@
 """Static-link final authority for Stage2/Stage3 self-hosting certification.
 
-This entrypoint composes the hashed-evidence certified wrapper with the shared
-freestanding static linker. It temporarily replaces only the legacy fixed-point
-module's link function; all compiler execution, strace, conformance, fixed-point,
-ELF, and Landlock checks remain owned by the existing strict engine. The
-replacement is restored even on failure.
+This entrypoint composes the hashed-evidence strict prerequisite engine with the
+shared freestanding static linker. It temporarily replaces only the legacy
+fixed-point module's link function; all compiler execution, strace, conformance,
+fixed-point, ELF, and Landlock checks remain owned by the existing strict engine.
+The replacement is restored even on failure.
+
+The hashed-evidence strict engine is intentionally non-final and always reports
+``full_self_hosting=false``. This module is the only authority that may upgrade a
+successful ``strict_prerequisites_pass`` into FULL_SELF_HOSTING, and only after
+it also proves Stage1-self-emit Stage2 continuity plus final Stage2/Stage3 ELF
+identity/freestanding binding.
 
 The final authority re-opens the exact Stage2 and Stage3 artifacts recorded by
 the fixed-point engine, audits both as freestanding static ELF, and binds the
 audit SHA/byte counts back to the measured fixed-point entries. It also re-opens
 the exact Stage1 final-self-emit evidence report selected by the Stage1 gate,
 re-hashes that report to close the report-mutation/TOCTOU boundary, extracts its
-certified Stage2 candidate, and requires the fixed-point Stage2 to be exactly the
-same ELF by SHA256 and byte count. Since Stage2 == Stage3 is already an exact
-fixed-point prerequisite, the final Stage3 is bound to the same Stage1 self-emit
-candidate as well.
+Stage2 candidate, and requires the fixed-point Stage2 to be exactly the same ELF
+by SHA256 and byte count. Since Stage2 == Stage3 is already an exact fixed-point
+prerequisite, the final Stage3 is bound to the same Stage1 self-emit candidate.
 """
 
 from __future__ import annotations
@@ -376,9 +381,15 @@ def qualify_certified_static(
 
     if base.get("schema") != "s3.selfhost.stage2-stage3-certified-strict.v1":
         raise CertifiedStaticError("hashed-evidence strict engine schema mismatch")
+    if base.get("authority") != "HASHED_EVIDENCE_STRICT_ENGINE_ONLY":
+        raise CertifiedStaticError("hashed-evidence strict engine authority mismatch")
+    if base.get("final_authority") is not False:
+        raise CertifiedStaticError("hashed-evidence strict engine must not claim final authority")
     base_qualification = base.get("qualification")
     if not isinstance(base_qualification, dict):
         raise CertifiedStaticError("hashed-evidence strict engine lacks qualification")
+    if base_qualification.get("full_self_hosting") is not False:
+        raise CertifiedStaticError("hashed-evidence strict engine must not pre-authorize full self-hosting")
 
     final_artifact_audits = _audit_final_stage_artifacts(base)
     self_emit_stage2 = _load_stage1_self_emit_stage2_binding(base)
@@ -394,11 +405,14 @@ def qualify_certified_static(
         stage2_continuity.get("status")
         == "PASS_STAGE1_SELF_EMIT_TO_STAGE2_STAGE3_CONTINUITY"
     )
-    engine_full = base_qualification.get("full_self_hosting") is True
-    full = engine_full and artifacts_pass and continuity_pass
+    strict_prerequisites_pass = (
+        base_qualification.get("strict_prerequisites_pass") is True
+    )
+    full = strict_prerequisites_pass and artifacts_pass and continuity_pass
     result: dict[str, Any] = {
         "schema": "s3.selfhost.stage2-stage3-certified-static.v1",
         "authority": "FINAL_SELF_HOSTING_AUTHORITY",
+        "final_authority": True,
         "static_link_recipe": {
             "mode": "STATIC_FREESTANDING_FINAL_AUTHORITY",
             "flags": list(STATIC_LINK_FLAGS),
@@ -436,7 +450,10 @@ def qualify_certified_static(
             "stage2_matches_stage1_self_emit_candidate": continuity_pass,
             "stage3_matches_stage1_self_emit_candidate_via_fixed_point": continuity_pass,
             "static_freestanding_link_recipe": artifacts_pass,
-            "underlying_strict_engine_full_self_hosting": engine_full,
+            "hashed_evidence_strict_prerequisites_pass": strict_prerequisites_pass,
+            "underlying_strict_engine_full_self_hosting_signal": base_qualification.get(
+                "underlying_strict_engine_full_self_hosting_signal"
+            ),
             "full_self_hosting": full,
             "status": (
                 "FULL_SELF_HOSTING_CERTIFIED_STATIC_HASHED_EVIDENCE"
@@ -489,6 +506,7 @@ def main(argv: list[str] | None = None) -> int:
 
     q = result["qualification"]
     print(f"REPORT={args.report.resolve()}")
+    print("AUTHORITY=FINAL_SELF_HOSTING_AUTHORITY")
     print("STATIC_FREESTANDING_LINK_RECIPE=YES")
     print(f"STAGE1_HASHED_EVIDENCE={q['stage1_hashed_evidence_revalidation']}")
     print(f"STAGE1_TO_STAGE2={q['stage1_to_stage2']}")
@@ -502,6 +520,7 @@ def main(argv: list[str] | None = None) -> int:
     print("FINAL_ARTIFACT_BINDING=" + ("PASS" if q["final_artifacts_bound_to_fixed_point"] else "FAIL"))
     print("SELF_EMIT_REPORT_REVALIDATED=" + ("PASS" if q["stage1_self_emit_report_revalidated"] else "FAIL"))
     print("STAGE2_MATCHES_STAGE1_SELF_EMIT=" + ("PASS" if q["stage2_matches_stage1_self_emit_candidate"] else "FAIL"))
+    print("STRICT_PREREQUISITES=" + ("PASS" if q["hashed_evidence_strict_prerequisites_pass"] else "FAIL"))
     print("FULL_SELF_HOSTING=" + ("YES" if q["full_self_hosting"] else "NO"))
     print(f"STATUS={q['status']}")
     print(f"NEXT={q['next']}")
