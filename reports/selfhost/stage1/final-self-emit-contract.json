@@ -1,7 +1,7 @@
 {
   "schema": "s3.selfhost.stage1-final-self-emit-contract.v1",
   "output_schema": "s3.selfhost.stage1-final-self-emit.v1",
-  "purpose": "Prove that the exact final Stage1 artifact, after passing final semantic IR/verifier evidence, compiles the exact canonical compiler source into a deterministic real Stage2 compiler artifact. This gate creates a Stage2 candidate but does not certify Stage2 or start Stage3.",
+  "purpose": "Prove that the exact final Stage1 artifact, after passing call-bound final semantic IR/verifier evidence, compiles the exact canonical compiler source into a deterministic real Stage2 compiler artifact. This gate creates a Stage2 candidate but does not certify Stage2 or start Stage3.",
   "authoritative_runner": "tools/qualify_stage1_final_self_emit_static.py",
   "required_platform": {"system": "Linux", "machine": "x86_64"},
   "required_link_recipe": {
@@ -12,10 +12,19 @@
   },
   "semantic_ir_dependency": {
     "schema": "s3.selfhost.stage1-final-semantic-ir-verifier.v1",
+    "authority": "STAGE1_FINAL_SEMANTIC_IR_NATIVE_CALL_BOUND",
     "qualification": {
       "semantic_ir": "PASS_CODEGEN_COMPLETE_BOOTSTRAP_SUBSET",
       "verifier_v2": "PASS",
-      "general_emitter": "PASS_BOOTSTRAP_REQUIRED_OPCODES"
+      "general_emitter": "PASS_BOOTSTRAP_REQUIRED_OPCODES",
+      "native_call_capacity_boundary": "PASS"
+    },
+    "native_call_capacity_dependency": {
+      "status": "PASS_NATIVE_CURRENT_SOURCE_CALL_RECONCILIATION",
+      "same_canonical_source": true,
+      "same_stage1_artifact": true,
+      "semantic_calls_equal_native_high_water": true,
+      "semantic_call_arguments_equal_native_high_water": true
     },
     "same_canonical_source_required": true,
     "same_stage1_artifact_required": true
@@ -36,7 +45,8 @@
     "same_host_object_for_both_links": true,
     "stage2_elf_bytes_equal": true,
     "stage2_elf_sha256_equal": true,
-    "stage2_freestanding_elf_audit": "PASS_FREESTANDING_STATIC_ELF"
+    "stage2_freestanding_elf_audit": "PASS_FREESTANDING_STATIC_ELF",
+    "semantic_ir_native_call_boundary": "PASS"
   },
   "stage2_smoke": {
     "source": "fn main() -> tryte:\n    return 7\n",
@@ -55,6 +65,8 @@
     "embedded/precomputed Stage2 assembly",
     "dynamic/PT_INTERP Stage2 artifact",
     "using a semantic IR report bound to a different source or Stage1 artifact",
+    "using a semantic IR report that is not STAGE1_FINAL_SEMANTIC_IR_NATIVE_CALL_BOUND",
+    "using semantic call or call-argument counts that differ from native current-source high-water evidence",
     "accepting trace output without replay hash/byte binding",
     "accepting only one self-emit run",
     "linking the two Stage2 artifacts with different host objects or recipes",
@@ -67,6 +79,7 @@
     "stage2_artifact_created": true,
     "stage2_certified": false,
     "stage3_started": false,
+    "semantic_ir_native_call_boundary": "PASS",
     "full_self_hosting": false,
     "next": "EMIT_AND_REVALIDATE_STAGE1_CERTIFICATION_GATE_THEN_RUN_STAGE2_STAGE3_HARNESS"
   }
