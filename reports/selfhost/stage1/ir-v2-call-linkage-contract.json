@@ -1,0 +1,63 @@
+{
+  "schema": "s3.selfhost.ir-v2-call-linkage-contract.v1",
+  "pr": 268,
+  "status": "DESIGN_ONLY_VALUE_AND_INSTRUCTION_PREREQUISITES_PENDING",
+  "canonical_source_mutated": false,
+  "purpose": "Preserve typed call argument value IDs, result destinations, callee identity and internal/foreign ABI shape as semantic IR rather than lexical call aggregates.",
+  "prerequisite": {
+    "required_workstreams": [
+      "W1_symbol_and_value_identity",
+      "W2_instruction_def_use_and_order"
+    ],
+    "canonical_promotion_required_before_design": false
+  },
+  "logical_call": {
+    "fields": [
+      "defining_instruction_id",
+      "callee_kind",
+      "callee_function_id_or_foreign_id",
+      "argument_value_ids",
+      "result_value_ids",
+      "signature_reference"
+    ],
+    "callee_kinds": ["INTERNAL", "FOREIGN"],
+    "argument_rule": "arguments are semantic value IDs in source evaluation order",
+    "result_rule": "result IDs are definitions owned by the defining call instruction",
+    "zero_result_calls_allowed": true,
+    "zero_argument_calls_allowed": true
+  },
+  "foreign_abi": {
+    "required_fields": [
+      "foreign_symbol_identity",
+      "parameter_types",
+      "return_type",
+      "argument_value_ids",
+      "result_value_ids"
+    ],
+    "lowering_rule": "ABI register/stack placement is derived from the typed signature plus ordered semantic argument IDs, never from lexical token position.",
+    "unsupported_shape_rule": "fail closed before general emission"
+  },
+  "verifier_requirements": [
+    "defining_instruction_id references a CALL instruction",
+    "callee identity resolves to exactly one internal or foreign declaration",
+    "argument count equals the resolved signature arity",
+    "each argument value ID is defined and type-compatible with its parameter",
+    "result count/type agrees with the resolved return type",
+    "result value IDs agree with W1/W2 definition ownership",
+    "foreign and internal call kinds cannot be silently interchanged",
+    "call records preserve complete source evaluation order"
+  ],
+  "prohibited_shortcuts": [
+    "use aggregate ast_call_count as semantic call records",
+    "store lexical identifier hashes instead of semantic argument value IDs",
+    "recover arguments by rereading source in the emitter",
+    "infer foreign ABI shape from call arity alone",
+    "drop call result destinations"
+  ],
+  "next_after_static_design": "WAIT_FOR_W1_W2_NATIVE_CLOSURE_THEN_BUILD_CALL_LINKAGE_PREFLIGHT",
+  "general_emitter": "BLOCKED_CALL_LINKAGE_INCOMPLETE",
+  "self_emit": "NOT_STARTED",
+  "stage2": "NOT_CREATED",
+  "stage3": "NOT_STARTED",
+  "full_self_hosting": false
+}
