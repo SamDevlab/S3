@@ -1,0 +1,62 @@
+{
+  "schema": "s3.selfhost.freestanding-pythonless-sandbox-contract.v1",
+  "pr": 268,
+  "status": "PREPARED_DORMANT_UNTIL_REAL_STAGE_ARTIFACTS_EXIST",
+  "purpose": "Strengthen the post-Stage1 Pythonless proof from observed non-access to kernel-enforced filesystem inaccessibility while preserving Python only as an external orchestrator.",
+  "artifact_precondition": {
+    "platform": "Linux x86-64 ELF64 little-endian",
+    "elf_type": "ET_EXEC",
+    "pt_interp_allowed": false,
+    "pt_dynamic_allowed": false,
+    "dynamic_needed_allowed": false,
+    "pie_allowed": false,
+    "reason": "The Stage compiler and stage1_host_io.c require only their own mapped code/data plus stdin/stdout/stderr syscalls. A dynamic loader would require filesystem reads after the sandbox is installed."
+  },
+  "kernel_filesystem_proof": {
+    "mechanism": "Linux Landlock path-beneath ruleset installed by a small host launcher immediately before execve of the compiler",
+    "host_launcher_is_compiler_backend": false,
+    "landlock_missing_or_unsupported": "FAIL_CLOSED",
+    "handled_rights": ["LANDLOCK_ACCESS_FS_EXECUTE", "LANDLOCK_ACCESS_FS_READ_FILE"],
+    "allowed_path": "exact compiler executable only",
+    "other_readable_files": false,
+    "other_executable_files": false,
+    "source_delivery": "stdin",
+    "stdout_delivery": "assembly bytes",
+    "stderr_policy": "empty for valid canonical source",
+    "required_replay": "sandboxed compiler assembly SHA256 and bytes must equal the assembly used to construct the measured next-stage artifact"
+  },
+  "independent_process_trace": {
+    "mechanism": "direct strace proof remains separate from the Landlock replay",
+    "reason": "Landlock prevents filesystem-backed Python/bootstrap delegation; strace independently proves the compiler did not spawn/exec descendants or attempt forbidden file paths.",
+    "required": true
+  },
+  "compiler_syscall_boundary": {
+    "known_host_io": ["read stdin", "write stdout", "write stderr", "exit"],
+    "filesystem_open_needed_by_compiler": false,
+    "filesystem_open_attempt_under_landlock": "kernel denied",
+    "python_or_shell_exec_under_landlock": "kernel denied because no other executable path is permitted"
+  },
+  "full_self_hosting_rule": [
+    "Stage1/Stage2 artifacts satisfy freestanding ELF gate",
+    "direct strict process/file trace passes",
+    "Landlock sandbox replay passes for Stage1->Stage2 and Stage2->Stage3",
+    "sandboxed assembly equals the corresponding measured build assembly",
+    "Stage2 conformance passes",
+    "Stage2 and Stage3 ELF bytes/SHA256 are exactly equal"
+  ],
+  "prohibited": [
+    "calling absence of observed file opens equivalent to inaccessible filesystem",
+    "allowing the repository root or bootstrap as a Landlock read path",
+    "allowing /usr/bin/python or a Python runtime path",
+    "falling back to unsandboxed execution when Landlock is unavailable",
+    "using Docker as a required dependency",
+    "using the Landlock host launcher as code generation or semantic compilation"
+  ],
+  "qualification": {
+    "native_evidence": false,
+    "stage2_started": false,
+    "stage3_started": false,
+    "full_self_hosting": false,
+    "next": "IMPLEMENT_FREESTANDING_ELF_AUDIT_AND_LANDLOCK_REPLAY_HARNESS"
+  }
+}
