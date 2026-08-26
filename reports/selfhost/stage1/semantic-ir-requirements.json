@@ -2,47 +2,47 @@
   "ast_node_counts": {
     "ArrayLiteral": 56,
     "ArrayType": 56,
-    "AssignmentStatement": 507,
-    "BinaryExpression": 531,
-    "Block": 1095,
+    "AssignmentStatement": 523,
+    "BinaryExpression": 546,
+    "Block": 1134,
     "BreakStatement": 4,
-    "CallArgument": 1008,
-    "CallExpression": 867,
-    "CompoundAssignmentStatement": 81,
-    "DiscardStatement": 1072,
+    "CallArgument": 1039,
+    "CallExpression": 896,
+    "CompoundAssignmentStatement": 84,
+    "DiscardStatement": 1102,
     "ForeignFunctionDeclaration": 5,
     "FunctionDeclaration": 32,
     "FunctionSignature": 37,
-    "Identifier": 2012,
-    "IndexExpression": 103,
+    "Identifier": 2082,
+    "IndexExpression": 116,
     "IndexTarget": 198,
-    "IntegerLiteral": 13818,
-    "Parameter": 69,
+    "IntegerLiteral": 13874,
+    "Parameter": 70,
     "Program": 1,
     "ReturnStatement": 120,
-    "SwitchStatement": 346,
-    "TernaryCase": 1038,
+    "SwitchStatement": 358,
+    "TernaryCase": 1074,
     "UnaryExpression": 141,
-    "VariableDeclaration": 203,
-    "VariableTarget": 390,
-    "WhileStatement": 25
+    "VariableDeclaration": 206,
+    "VariableTarget": 409,
+    "WhileStatement": 28
   },
   "binary_operators": {
     "*": 19,
-    "+": 86,
+    "+": 88,
     "-": 61,
     "/": 14,
-    "<": 81,
-    "<=": 3,
+    "<": 88,
+    "<=": 5,
     "<=>": 10,
-    "==": 222,
+    "==": 224,
     ">": 22,
-    ">=": 13
+    ">=": 15
   },
   "call_arities": {
     "0": 17,
-    "1": 796,
-    "2": 10,
+    "1": 823,
+    "2": 12,
     "26": 2,
     "3": 28,
     "4": 14
@@ -83,8 +83,8 @@
     "simple_next": 1,
     "to_i64": 14,
     "to_tryte": 65,
-    "valid_type_name": 5,
-    "write_byte": 553,
+    "valid_type_name": 7,
+    "write_byte": 580,
     "write_error_byte": 66
   },
   "current_observed_lanes": {
@@ -104,8 +104,8 @@
     "array[64]<i64>": 10,
     "array[64]<tryte>": 7,
     "array[68]<i64>": 4,
-    "i64": 118,
-    "parameter:i64": 59,
+    "i64": 121,
+    "parameter:i64": 60,
     "parameter:tryte": 10,
     "trit": 23,
     "tryte": 6
@@ -167,8 +167,8 @@
       "statements": 8
     },
     "emit_general_parameter_function": {
-      "expressions": 209,
-      "statements": 70
+      "expressions": 305,
+      "statements": 102
     },
     "emit_general_preamble": {
       "expressions": 533,
@@ -207,8 +207,8 @@
       "statements": 19
     },
     "main": {
-      "expressions": 14530,
-      "statements": 1312
+      "expressions": 14617,
+      "statements": 1347
     },
     "pack_ir_record": {
       "expressions": 13,
@@ -258,59 +258,59 @@
   ],
   "parser_semantic_audit": {
     "array_literals": 56,
-    "assignments": 588,
+    "assignments": 607,
     "breaks": 4,
-    "call_arguments": 1008,
-    "calls": 867,
-    "discards": 1072,
+    "call_arguments": 1039,
+    "calls": 896,
+    "discards": 1102,
     "foreign_functions": 5,
     "functions": 32,
-    "index_expressions": 103,
+    "index_expressions": 116,
     "index_targets": 198,
-    "integer_literals": 13818,
-    "local_declarations": 203,
+    "integer_literals": 13874,
+    "local_declarations": 206,
     "max_call_arity": 26,
-    "parameters": 69,
+    "parameters": 70,
     "returns": 120,
-    "semantic_constant_values": 13959,
-    "semantic_expression_types": 16605,
-    "switches": 346,
-    "whiles": 25
+    "semantic_constant_values": 14015,
+    "semantic_expression_types": 16759,
+    "switches": 358,
+    "whiles": 28
   },
   "reference_typed_ir": {
-    "blocks": 2872,
+    "blocks": 2987,
     "call_kinds": {
       "foreign": 22,
-      "internal": 766
+      "internal": 795
     },
     "functions": 37,
-    "instruction_results": 32336,
-    "instructions": 48658,
-    "max_blocks_per_function": 2100,
-    "max_instructions_per_function": 44689,
-    "max_registers_per_function": 29450,
-    "memory_objects": 544,
+    "instruction_results": 32630,
+    "instructions": 49128,
+    "max_blocks_per_function": 2175,
+    "max_instructions_per_function": 45000,
+    "max_registers_per_function": 29640,
+    "memory_objects": 560,
     "opcodes": {
-      "add": 167,
-      "branch3": 712,
-      "call": 788,
-      "compare": 351,
-      "const": 29421,
+      "add": 172,
+      "branch3": 740,
+      "call": 817,
+      "compare": 364,
+      "const": 29616,
       "convert": 79,
       "divide": 14,
-      "jump": 2040,
-      "load": 1436,
+      "jump": 2127,
+      "load": 1488,
       "multiply": 19,
       "numeric_difference": 61,
       "return": 120,
-      "store": 13450
+      "store": 13511
     },
-    "parameters": 69,
-    "registers": 32405,
+    "parameters": 70,
+    "registers": 32700,
     "status": "MEASURED_HOST_IR_ORACLE_NOT_STAGE1_EVIDENCE",
     "terminators": {
-      "branch3": 712,
-      "jump": 2040,
+      "branch3": 740,
+      "jump": 2127,
       "return": 120
     }
   },
@@ -342,9 +342,9 @@
   },
   "schema": "s3.selfhost.stage1-semantic-ir-requirements.v1",
   "source": {
-    "bytes": 179657,
+    "bytes": 185508,
     "path": "C:\\Users\\samue\\Downloads\\S3\\S3-actual-stage1-compiler-seed-20260824\\selfhost\\compiler\\s3c_stage1.s3",
-    "sha256": "9605cb6e757150460983f8304bf03d1fc9809c633b97c66aa4a15a7713168396"
+    "sha256": "ec6bef92782fe253f4b1c1390d90f95017670a3cbb65497eff9dba12a2e7623c"
   },
   "stage1_self_emit": "BLOCKED_UNTIL_MISSING_LANES_EXIST_AND_VERIFY",
   "stage2": "NOT_STARTED",
@@ -356,23 +356,23 @@
         "cursor"
       ],
       "operand_assignment_lines": [
-        1731,
-        1780,
-        1790,
-        1800,
-        1809,
-        1819,
-        1834,
-        1843,
-        1852,
-        1861,
-        1871,
-        1880,
-        1889,
+        1778,
+        1827,
+        1837,
+        1847,
+        1856,
+        1866,
+        1881,
+        1890,
         1899,
-        1909,
-        1919,
-        2116
+        1908,
+        1918,
+        1927,
+        1936,
+        1946,
+        1956,
+        1966,
+        2163
       ],
       "operand_assignment_sources": [
         "previous_value",
@@ -380,48 +380,48 @@
       ],
       "pack_expression_count": 1,
       "pack_lines": [
-        2466
+        2513
       ],
       "schema": "packed(opcode, owner_function_plus_one, token_operand, token_offset)"
     },
     "event_records": {
       "declaration_count": 4,
       "declaration_lines": [
-        1452,
-        1453,
-        1454,
-        1455
+        1499,
+        1500,
+        1501,
+        1502
       ],
       "read_count": 0,
       "read_lines": [],
       "write_count": 21,
       "write_lines": [
-        2469,
-        2473,
-        2477,
-        2479,
-        2481,
-        2483,
-        2485,
-        2799,
-        2803,
-        2807,
-        2809,
-        2811,
-        2813,
-        2815,
-        3088,
-        3092,
-        3096,
-        3098,
-        3100,
-        3102,
-        3104
+        2516,
+        2520,
+        2524,
+        2526,
+        2528,
+        2530,
+        2532,
+        2846,
+        2850,
+        2854,
+        2856,
+        2858,
+        2860,
+        2862,
+        3135,
+        3139,
+        3143,
+        3145,
+        3147,
+        3149,
+        3151
       ]
     },
     "instruction_cardinality": {
       "assignment_lines": [
-        2884
+        2931
       ],
       "derived_from_event_count": true
     },
@@ -429,40 +429,40 @@
     "legacy_instruction_records": {
       "declaration_count": 2,
       "declaration_lines": [
-        1450,
-        1451
+        1497,
+        1498
       ],
       "read_count": 0,
       "read_lines": [],
       "write_count": 9,
       "write_lines": [
-        2076,
-        2078,
-        2080,
-        2085,
-        2087,
-        2089,
-        2094,
-        2096,
-        2098
+        2123,
+        2125,
+        2127,
+        2132,
+        2134,
+        2136,
+        2141,
+        2143,
+        2145
       ]
     },
     "lexical_numeric_records": {
       "declaration_count": 4,
       "declaration_lines": [
-        1456,
-        1457,
-        1458,
-        1459
+        1503,
+        1504,
+        1505,
+        1506
       ],
       "read_count": 0,
       "read_lines": [],
       "write_count": 4,
       "write_lines": [
-        2143,
-        2150,
-        2157,
-        2164
+        2190,
+        2197,
+        2204,
+        2211
       ]
     },
     "parameter_metadata": {

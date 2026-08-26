@@ -897,7 +897,7 @@ fn emit_general_literal_function(name: i64, value: i64) -> trit:
     discard write_byte(10)
     return -1
 
-fn emit_general_parameter_function(name: i64) -> trit:
+fn emit_general_parameter_function(name: i64, ordinal: i64) -> trit:
     discard write_byte(46)
     discard write_byte(103)
     discard write_byte(108)
@@ -942,9 +942,56 @@ fn emit_general_parameter_function(name: i64) -> trit:
     discard write_byte(120)
     discard write_byte(44)
     discard write_byte(32)
-    discard write_byte(114)
-    discard write_byte(100)
-    discard write_byte(105)
+    match ordinal == 0:
+        -1:
+            discard write_byte(114)
+            discard write_byte(100)
+            discard write_byte(105)
+        0:
+            match ordinal == 1:
+                -1:
+                    discard write_byte(114)
+                    discard write_byte(115)
+                    discard write_byte(105)
+                0:
+                    match ordinal == 2:
+                        -1:
+                            discard write_byte(114)
+                            discard write_byte(100)
+                            discard write_byte(120)
+                        0:
+                            match ordinal == 3:
+                                -1:
+                                    discard write_byte(114)
+                                    discard write_byte(99)
+                                    discard write_byte(120)
+                                0:
+                                    match ordinal == 4:
+                                        -1:
+                                            discard write_byte(114)
+                                            discard write_byte(56)
+                                        0:
+                                            discard write_byte(114)
+                                            discard write_byte(57)
+                                        1:
+                                            discard write_byte(114)
+                                            discard write_byte(57)
+                                1:
+                                    discard write_byte(114)
+                                    discard write_byte(99)
+                                    discard write_byte(120)
+                        1:
+                            discard write_byte(114)
+                            discard write_byte(100)
+                            discard write_byte(120)
+                1:
+                    discard write_byte(114)
+                    discard write_byte(115)
+                    discard write_byte(105)
+        1:
+            discard write_byte(114)
+            discard write_byte(100)
+            discard write_byte(105)
     discard write_byte(10)
     discard write_byte(32)
     discard write_byte(32)
@@ -3251,9 +3298,9 @@ fn main() -> tryte:
                     0:
                         match ir_return_kind[general_parameter_scan] == 2:
                             -1:
-                                match ir_function_param_count[general_parameter_scan] == 1:
+                                match ir_function_param_count[general_parameter_scan] < 7:
                                     -1:
-                                        match ir_return_operand[general_parameter_scan] == 0:
+                                        match ir_return_operand[general_parameter_scan] < ir_function_param_count[general_parameter_scan]:
                                             -1:
                                                 match valid_type_name(ir_parameter_type[ir_function_param_start[general_parameter_scan]]):
                                                     -1:
@@ -3277,9 +3324,9 @@ fn main() -> tryte:
                     1:
                         match ir_return_kind[general_parameter_scan] == 2:
                             -1:
-                                match ir_function_param_count[general_parameter_scan] == 1:
+                                match ir_function_param_count[general_parameter_scan] < 7:
                                     -1:
-                                        match ir_return_operand[general_parameter_scan] == 0:
+                                        match ir_return_operand[general_parameter_scan] < ir_function_param_count[general_parameter_scan]:
                                             -1:
                                                 match valid_type_name(ir_parameter_type[ir_function_param_start[general_parameter_scan]]):
                                                     -1:
@@ -3301,6 +3348,62 @@ fn main() -> tryte:
                             1:
                                 discard 0
                 general_parameter_scan += 1
+            mut general_parameter_type_scan: i64 = 0
+            mut general_parameter_type_index: i64 = 0
+            mut general_parameter_type_end: i64 = 0
+            while general_parameter_type_scan < function_count:
+                match function_flags[general_parameter_type_scan] == 2:
+                    -1:
+                        discard 0
+                    0:
+                        match ir_function_param_start[general_parameter_type_scan] >= 0:
+                            -1:
+                                general_parameter_type_index = ir_function_param_start[general_parameter_type_scan]
+                                general_parameter_type_end = general_parameter_type_index + ir_function_param_count[general_parameter_type_scan]
+                                match general_parameter_type_end <= 68:
+                                    -1:
+                                        while general_parameter_type_index < general_parameter_type_end:
+                                            match valid_type_name(ir_parameter_type[general_parameter_type_index]):
+                                                -1:
+                                                    discard 0
+                                                0:
+                                                    general_emitter_possible = 0
+                                                1:
+                                                    general_emitter_possible = 0
+                                            general_parameter_type_index += 1
+                                    0:
+                                        general_emitter_possible = 0
+                                    1:
+                                        general_emitter_possible = 0
+                            0:
+                                general_emitter_possible = 0
+                            1:
+                                general_emitter_possible = 0
+                    1:
+                        match ir_function_param_start[general_parameter_type_scan] >= 0:
+                            -1:
+                                general_parameter_type_index = ir_function_param_start[general_parameter_type_scan]
+                                general_parameter_type_end = general_parameter_type_index + ir_function_param_count[general_parameter_type_scan]
+                                match general_parameter_type_end <= 68:
+                                    -1:
+                                        while general_parameter_type_index < general_parameter_type_end:
+                                            match valid_type_name(ir_parameter_type[general_parameter_type_index]):
+                                                -1:
+                                                    discard 0
+                                                0:
+                                                    general_emitter_possible = 0
+                                                1:
+                                                    general_emitter_possible = 0
+                                            general_parameter_type_index += 1
+                                    0:
+                                        general_emitter_possible = 0
+                                    1:
+                                        general_emitter_possible = 0
+                            0:
+                                general_emitter_possible = 0
+                            1:
+                                general_emitter_possible = 0
+                general_parameter_type_scan += 1
             match general_main_seen == -1:
                 -1:
                     discard 0
@@ -3370,7 +3473,7 @@ fn main() -> tryte:
                             0:
                                 match ir_return_kind[general_emit_index] == 2:
                                     -1:
-                                        discard emit_general_parameter_function(function_names[general_emit_index])
+                                        discard emit_general_parameter_function(function_names[general_emit_index], ir_return_operand[general_emit_index])
                                     0:
                                         discard emit_general_literal_function(function_names[general_emit_index], ir_value[general_emit_index])
                                     1:
@@ -3378,7 +3481,7 @@ fn main() -> tryte:
                             1:
                                 match ir_return_kind[general_emit_index] == 2:
                                     -1:
-                                        discard emit_general_parameter_function(function_names[general_emit_index])
+                                        discard emit_general_parameter_function(function_names[general_emit_index], ir_return_operand[general_emit_index])
                                     0:
                                         discard emit_general_literal_function(function_names[general_emit_index], ir_value[general_emit_index])
                                     1:

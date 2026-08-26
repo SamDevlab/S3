@@ -15,10 +15,10 @@ def test_canonical_source_requires_lossless_typed_ir_before_general_emitter() ->
     semantic = result["parser_semantic_audit"]
     assert semantic["functions"] == 32
     assert semantic["foreign_functions"] == 5
-    assert semantic["parameters"] == 69
-    assert semantic["local_declarations"] == 203
-    assert semantic["calls"] == 867
-    assert semantic["call_arguments"] == 1008
+    assert semantic["parameters"] == 70
+    assert semantic["local_declarations"] == 206
+    assert semantic["calls"] == 896
+    assert semantic["call_arguments"] == 1039
     assert result["required_operations"]["CALL_INTERNAL"] is True
     assert result["required_operations"]["CALL_FOREIGN"] is True
     assert result["required_operations"]["BRANCH"] is True
