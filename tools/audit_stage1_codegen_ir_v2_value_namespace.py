@@ -1,9 +1,10 @@
 """Static design audit for the Stage1 IR-v2 semantic value namespace.
 
 This is not a source transform and not native evidence. It validates the packed
-header mathematics, fixed parameter/local ID domains, current physical value-bank
-shape, and the constant representation rules that a later report-gated value
-namespace candidate must obey after a native local PASS.
+header mathematics, the current direct 68-slot parameter metadata capacity,
+the dynamic semantic-ID layout, current physical value-bank shape, and the
+constant representation rules that a later report-gated value namespace
+candidate must obey after a native local PASS.
 """
 
 from __future__ import annotations
@@ -33,7 +34,7 @@ OWNER_DOMAIN = 65
 TYPE_DOMAIN = 366
 PAYLOAD_DOMAIN = 1461
 VALUE_CAPACITY = 1460
-PARAMETER_DOMAIN_END = 64
+PARAMETER_CAPACITY = 68
 INLINE_LITERAL_MIN = -730
 INLINE_LITERAL_MAX = 730
 
@@ -104,6 +105,25 @@ def _value_banks(source: str) -> list[dict[str, object]]:
     return result
 
 
+def _parameter_lanes(source: str) -> list[dict[str, object]]:
+    expected = {
+        "ir_parameter_owner",
+        "ir_parameter_name",
+        "ir_parameter_ordinal",
+        "ir_parameter_type",
+    }
+    result: list[dict[str, object]] = []
+    for match in _ARRAY_DECL.finditer(source):
+        name = match.group("name")
+        if name in expected:
+            result.append({
+                "name": name,
+                "element_type": match.group("type"),
+                "size": int(match.group("size")),
+            })
+    return result
+
+
 def _numeric_inventory(source: str) -> dict[str, object]:
     numeric = [token.value for token in stage1_tokens(source) if token.kind == 2]
     unique = sorted(set(numeric))
@@ -121,6 +141,7 @@ def _numeric_inventory(source: str) -> dict[str, object]:
 
 def audit(source: str, contract: dict[str, object]) -> dict[str, object]:
     banks = _value_banks(source)
+    parameter_lanes = _parameter_lanes(source)
     total_slots = sum(int(bank["size"]) for bank in banks)
     boundary = (KIND_DOMAIN - 1, OWNER_DOMAIN - 1, TYPE_DOMAIN - 1, PAYLOAD_DOMAIN - 1)
     round_trip = unpack_header(pack_header(*boundary)) == boundary
@@ -133,17 +154,32 @@ def audit(source: str, contract: dict[str, object]) -> dict[str, object]:
     if not isinstance(contract_header, dict) or not isinstance(physical, dict) or not isinstance(constants, dict) or not isinstance(layout, dict):
         raise ValueError("value namespace contract is missing required sections")
 
+    parameter_names = {str(lane["name"]) for lane in parameter_lanes}
     guards = {
         "four_legacy_value_banks_present": len(banks) == 4,
         "legacy_value_capacity_is_1460": total_slots == VALUE_CAPACITY,
         "all_legacy_value_banks_are_i64_365": all(
             bank["element_type"] == "i64" and bank["size"] == 365 for bank in banks
         ),
+        "four_direct_parameter_lanes_present": parameter_names == {
+            "ir_parameter_owner",
+            "ir_parameter_name",
+            "ir_parameter_ordinal",
+            "ir_parameter_type",
+        },
+        "direct_parameter_capacity_is_68": len(parameter_lanes) == 4 and all(
+            lane["element_type"] == "i64" and lane["size"] == PARAMETER_CAPACITY
+            for lane in parameter_lanes
+        ),
         "header_limit_matches_contract": contract_header.get("maximum_encoded") == header_limit(),
         "header_fits_signed_i64": header_limit() <= SIGNED_I64_MAX,
         "header_boundary_round_trip": round_trip,
         "physical_capacity_matches_contract": physical.get("physical_slots") == VALUE_CAPACITY,
-        "parameter_domain_matches_contract": layout.get("parameter_domain") == "[0,64)",
+        "parameter_capacity_bound_matches_contract": layout.get("parameter_capacity_bound") == PARAMETER_CAPACITY,
+        "parameter_domain_is_dynamic": layout.get("parameter_domain") == "[0,parameter_count)",
+        "local_domain_starts_at_parameter_count": layout.get("local_domain_start") == "parameter_count",
+        "dynamic_start_follows_locals": layout.get("dynamic_start") == "parameter_count + local_record_count",
+        "historical_fixed_64_reservation_disabled": layout.get("fixed_64_parameter_reservation") is False,
         "inline_min_matches_contract": constants.get("inline_range", {}).get("min") == INLINE_LITERAL_MIN,
         "inline_max_matches_contract": constants.get("inline_range", {}).get("max") == INLINE_LITERAL_MAX,
         "wide_extension_is_not_semantic_id": constants.get("wide_literal", {}).get("extension_slot_is_semantic_value_id") is False,
@@ -151,7 +187,7 @@ def audit(source: str, contract: dict[str, object]) -> dict[str, object]:
     }
 
     return {
-        "schema": "s3.selfhost.codegen-ir-v2-value-namespace-design-audit.v1",
+        "schema": "s3.selfhost.codegen-ir-v2-value-namespace-design-audit.v2",
         "status": (
             "STATIC_VALUE_NAMESPACE_DESIGN_PASS"
             if all(guards.values())
@@ -164,6 +200,12 @@ def audit(source: str, contract: dict[str, object]) -> dict[str, object]:
             "total_slots": total_slots,
             "contents": "STRUCTURAL_NUMERIC_TOKEN_RECORDS_NOT_SEMANTIC_VALUES"
         },
+        "parameter_metadata": {
+            "lanes": parameter_lanes,
+            "capacity_bound": PARAMETER_CAPACITY,
+            "semantic_id_domain": "[0,parameter_count)",
+            "fixed_64_reservation": False,
+        },
         "packed_header": {
             "maximum_encoded": header_limit(),
             "signed_i64_max": SIGNED_I64_MAX,
@@ -172,16 +214,17 @@ def audit(source: str, contract: dict[str, object]) -> dict[str, object]:
         },
         "numeric_inventory": numeric,
         "namespace": {
-            "parameter_domain": {"start": 0, "end_exclusive": PARAMETER_DOMAIN_END},
-            "local_start": PARAMETER_DOMAIN_END,
-            "dynamic_start": "64 + native_local_record_count",
+            "parameter_domain": {"start": 0, "end_exclusive": "parameter_count"},
+            "local_start": "parameter_count",
+            "local_id_rule": "parameter_count + global_local_record_index",
+            "dynamic_start": "parameter_count + native_local_record_count",
             "physical_capacity": VALUE_CAPACITY,
             "semantic_id_equals_header_slot": True,
             "wide_extension_slots_are_holes": True
         },
         "guards": guards,
         "qualification_rule": (
-            "This audit validates representation mathematics and the unchanged physical banks only. Exact typed constant interning, wide-literal slot count, materialized instruction results and use-site def/use must be measured from a PASS native local candidate before a value-namespace transform may be built."
+            "This audit validates representation mathematics and the unchanged physical banks only. Exact native parameter_count/local_record_count, typed constant interning, wide-literal slot count, materialized instruction results and use-site def/use must be measured from a PASS native local candidate before a value-namespace transform may be built."
         ),
         "next": "WAIT_FOR_NATIVE_LOCAL_PASS_THEN_BUILD_EXACT_VALUE_NAMESPACE_PREFLIGHT",
         "general_emitter": "BLOCKED_IR_V2_INCOMPLETE",
@@ -208,6 +251,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"REPORT={destination}")
     print(f"STATUS={result['status']}")
     print(f"LEGACY_VALUE_SLOTS={result['legacy_storage']['total_slots']}")
+    print(f"PARAMETER_CAPACITY_BOUND={result['parameter_metadata']['capacity_bound']}")
     print(f"UNIQUE_UNTYPED_NUMERIC_VALUES={result['numeric_inventory']['unique_untyped_numeric_values']}")
     print(f"UNIQUE_WIDE_VALUES={result['numeric_inventory']['unique_wide_values']}")
     print(f"HEADER_MAX={result['packed_header']['maximum_encoded']}")
