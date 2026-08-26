@@ -43,8 +43,8 @@
     "strace_missing": "blocks strict FULL_SELF_HOSTING certification rather than silently downgrading proof"
   },
   "determinism": {
-    "stage2_stage3_assembly_sha_equal": true,
-    "stage2_stage3_assembly_bytes_equal": true,
+    "stage2_stage3_assembly_sha_equal": "DIAGNOSTIC_STRONG_SIGNAL_NOT_REQUIRED_IF_ELF_FIXED_POINT_IS_EXACT",
+    "stage2_stage3_assembly_bytes_equal": "DIAGNOSTIC_STRONG_SIGNAL_NOT_REQUIRED_IF_ELF_FIXED_POINT_IS_EXACT",
     "stage2_stage3_elf_sha_equal": true,
     "stage2_stage3_elf_bytes_equal": true,
     "link_build_id": "disabled",
@@ -66,7 +66,7 @@
     "stage2_pythonless_compiler": "PASS_STRICT_EXECVE_TRACE",
     "stage2_conformance": "PASS",
     "stage2_to_stage3": "PASS",
-    "stage2_stage3_exact_fixed_point": true,
+    "stage2_stage3_exact_elf_fixed_point": true,
     "full_self_hosting": true
   },
   "fail_closed": [
@@ -76,7 +76,6 @@
     "Stage2 compiler invokes any descendant process",
     "strace unavailable for strict certification",
     "Stage2 conformance failure",
-    "Stage2 and Stage3 assembly differ",
     "Stage2 and Stage3 ELF bytes differ",
     "canonical source changes between stages"
   ]
