@@ -6,10 +6,12 @@ The old compaction qualifier conflated two independent effects:
 * self-source input: the compacted compiler source itself no longer contains the
   two assignments that used to populate that aggregate event.
 
-This model evaluates both compiler behaviors against both source inputs.  The
+This model evaluates both compiler behaviors against both source inputs. The
 strong invariant is same-input equivalence after filtering only opcode 5, not a
 blind expectation that every textual source delta appears in a capped native IR
-counter.
+counter. It also exposes the exact source-level function/match/while inputs used
+by Stage1's current synthetic block-reconstruction formula so capacity planning
+can distinguish CFG pressure from event pressure.
 """
 
 from __future__ import annotations
@@ -97,16 +99,24 @@ def _source_counts(source: str) -> dict[str, int]:
     tokens = stage1_tokens(source)
     identifiers = [token.value for token in tokens if token.kind == 1]
     punctuation = [token.value for token in tokens if token.kind == 4]
+    function_signatures = sum(1 for value in identifiers if value == 352)
+    foreign_declarations = sum(1 for value in identifiers if value == 311)
     return {
         "tokens": len(tokens),
         "numeric_tokens": sum(1 for token in tokens if token.kind == 2),
+        "function_signature_tokens": function_signatures,
+        "foreign_declaration_tokens": foreign_declarations,
+        "local_function_count": function_signatures - foreign_declarations,
+        "local_declaration_tokens": sum(1 for value in identifiers if value == 87),
         "assignment_observation_tokens": (
             sum(1 for value in identifiers if value == 87)
             + sum(1 for value in punctuation if value in {5, 14})
         ),
         "discard_keyword_tokens": sum(1 for value in identifiers if value == 220),
+        "return_tokens": sum(1 for value in identifiers if value == 342),
         "match_tokens": sum(1 for value in identifiers if value == 135),
         "while_tokens": sum(1 for value in identifiers if value == 162),
+        "break_tokens": sum(1 for value in identifiers if value == 37),
     }
 
 
@@ -143,14 +153,19 @@ def audit(source: str) -> dict[str, object]:
             source_delta["assignment_observation_tokens"] == -2
         ),
         "compacted_source_removes_one_numeric_token": source_delta["numeric_tokens"] == -1,
+        "compacted_source_keeps_function_signatures": source_delta["function_signature_tokens"] == 0,
+        "compacted_source_keeps_foreign_declarations": source_delta["foreign_declaration_tokens"] == 0,
+        "compacted_source_keeps_local_declarations": source_delta["local_declaration_tokens"] == 0,
         "compacted_source_keeps_discard_keywords": source_delta["discard_keyword_tokens"] == 0,
+        "compacted_source_keeps_return_tokens": source_delta["return_tokens"] == 0,
         "compacted_source_keeps_match_tokens": source_delta["match_tokens"] == 0,
         "compacted_source_keeps_while_tokens": source_delta["while_tokens"] == 0,
+        "compacted_source_keeps_break_tokens": source_delta["break_tokens"] == 0,
     }
     static_pass = all(guards.values())
 
     return {
-        "schema": "s3.selfhost.compaction-after-token-lane-static-differential.v1",
+        "schema": "s3.selfhost.compaction-after-token-lane-static-differential.v2",
         "status": (
             "STATIC_COMPACTION_SEMANTIC_DIFFERENTIAL_PASS_NATIVE_2X2_REQUIRED"
             if static_pass
@@ -178,6 +193,22 @@ def audit(source: str) -> dict[str, object]:
             "E0_S1_discard_events": sum(1 for event in e0_s1 if event[1] == 5),
             "E1_S0_discard_events": sum(1 for event in e1_s0 if event[1] == 5),
             "E1_S1_discard_events": sum(1 for event in e1_s1 if event[1] == 5),
+        },
+        "cfg_reconstruction_model": {
+            "formula": "local_function_count + 3*(match_tokens + while_tokens)",
+            "S0_required_blocks": (
+                counts_s0["local_function_count"]
+                + 3 * (counts_s0["match_tokens"] + counts_s0["while_tokens"])
+            ),
+            "S1_required_blocks": (
+                counts_s1["local_function_count"]
+                + 3 * (counts_s1["match_tokens"] + counts_s1["while_tokens"])
+            ),
+            "note": (
+                "This mirrors the current synthetic Stage1 block reconstruction: "
+                "one entry block per local function and three additional blocks "
+                "for each recorded match/while event. Native qualification remains required."
+            ),
         },
         "guards": guards,
         "root_cause_model": (
@@ -216,6 +247,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"STATUS={result['status']}")
     print(f"E0_S0_EVENTS={result['matrix']['E0_S0_events']}")
     print(f"E1_S0_EVENTS={result['matrix']['E1_S0_events']}")
+    print(f"S0_REQUIRED_BLOCKS={result['cfg_reconstruction_model']['S0_required_blocks']}")
+    print(f"S1_REQUIRED_BLOCKS={result['cfg_reconstruction_model']['S1_required_blocks']}")
     print(f"SOURCE_ASSIGNMENT_DELTA={result['source_input_delta']['assignment_observation_tokens']}")
     print(f"SOURCE_NUMERIC_DELTA={result['source_input_delta']['numeric_tokens']}")
     print(f"NEXT={result['next']}")
