@@ -1,0 +1,62 @@
+{
+  "schema": "s3.selfhost.ir-v2-instruction-stream-contract.v1",
+  "pr": 268,
+  "status": "DESIGN_ONLY_VALUE_NAMESPACE_PREREQUISITE_PENDING",
+  "canonical_source_mutated": false,
+  "purpose": "Preserve complete instruction ordering, typed operand value IDs and result value IDs without allocating a fixed in-memory instruction matrix sized to the host oracle.",
+  "prerequisite": {
+    "required_workstream": "W1_symbol_and_value_identity",
+    "required_gate": "NATIVE_TYPED_VALUE_NAMESPACE_QUALIFICATION",
+    "canonical_promotion_required_before_design": false
+  },
+  "logical_instruction": {
+    "fields": [
+      "instruction_id",
+      "owner_block_id",
+      "ordinal_in_block",
+      "opcode",
+      "operand_value_ids",
+      "result_value_ids",
+      "type_or_signature_reference",
+      "immediate_or_aux_reference"
+    ],
+    "instruction_id_rule": "monotonic module-order ID",
+    "ordering_rule": "functions in canonical function order; blocks in canonical block order; instructions in lexical/semantic order within each block",
+    "operand_rule": "every operand is a defined semantic value ID or an opcode-specific non-value auxiliary field",
+    "result_rule": "every materialized result owns exactly one semantic value ID whose defining_instruction_id equals instruction_id",
+    "zero_result_instructions_allowed": true,
+    "multiple_result_representation": "count plus contiguous result-ID list; current bootstrap subset may use zero/one but schema must not encode that as a permanent invariant"
+  },
+  "physical_strategy": {
+    "kind": "STREAMING_SERIALIZED_RECORDS",
+    "fixed_instruction_matrix_allowed": false,
+    "reason": "The measured host IR is much larger than the current legacy 365-slot banks; arbitrary fixed expansion recreates the bootstrap memory failure mode.",
+    "legacy_ir_instruction_records_semantic_reuse_allowed": false,
+    "legacy_lane_rewrite_frontier": "Only after all legacy information needed by the current scanner/verifier has been consumed and a new verifier proves exact instruction count, ordering, operand definitions and result definitions.",
+    "storage_reuse": "Existing write-only legacy instruction banks may be reclaimed only after the rewrite frontier is proven; their existing contents are not semantic instruction definitions."
+  },
+  "verifier_requirements": [
+    "instruction IDs are contiguous and strictly monotonic",
+    "every instruction references a valid owner block",
+    "ordinal_in_block is contiguous from zero for each block",
+    "all operand value IDs are defined before use except explicitly modeled control-flow phi-like semantics, which are not part of the current bootstrap subset",
+    "all result value IDs are unique definitions and agree with the value namespace type/owner contract",
+    "opcode-specific operand/result cardinalities are validated",
+    "call instructions delegate call argument/result linkage to the call contract",
+    "terminator instructions delegate branch/jump/return completeness to the terminator contract",
+    "serialized instruction count equals the semantic instruction count with no truncation"
+  ],
+  "prohibited_shortcuts": [
+    "reinterpret aggregate event opcodes as complete semantic instructions",
+    "reinterpret legacy ir_instruction_records stores as def-use IR without reads/verifier",
+    "allocate an arbitrary fixed matrix sized from a historical partial audit",
+    "recover operands/results by rereading raw source in the general emitter",
+    "drop instruction ordering and reconstruct it later from aggregate counts"
+  ],
+  "next_after_static_design": "WAIT_FOR_NATIVE_VALUE_NAMESPACE_THEN_BUILD_INSTRUCTION_STREAM_PREFLIGHT",
+  "general_emitter": "BLOCKED_IR_V2_INCOMPLETE",
+  "self_emit": "NOT_STARTED",
+  "stage2": "NOT_CREATED",
+  "stage3": "NOT_STARTED",
+  "full_self_hosting": false
+}
