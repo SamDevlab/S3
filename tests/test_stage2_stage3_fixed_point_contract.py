@@ -73,3 +73,22 @@ def test_fixed_point_contract_keeps_elf_equality_mandatory_not_assembly_text() -
     assert determinism["stage2_stage3_elf_bytes_equal"] is True
     assert determinism["stage2_stage3_elf_sha_equal"] is True
     assert "DIAGNOSTIC" in determinism["stage2_stage3_assembly_bytes_equal"]
+
+
+def test_intermediate_harness_can_never_authorize_full_self_hosting() -> None:
+    root = Path(__file__).resolve().parents[1]
+    source = (root / "tools" / "qualify_stage2_stage3_fixed_point.py").read_text(encoding="utf-8")
+    assert '"authority": "INTERMEDIATE_ONLY_STRICT_SANDBOX_WRAPPER_REQUIRED_FOR_FULL_SELF_HOSTING"' in source
+    assert '"full_self_hosting": False' in source
+    assert '"next": "RUN_STRICT_PROCESS_AND_FILESYSTEM_SANDBOX_WRAPPER"' in source
+
+
+def test_final_contract_names_strict_process_and_file_trace() -> None:
+    root = Path(__file__).resolve().parents[1]
+    contract = json.loads(
+        (root / "reports" / "selfhost" / "stage2" / "stage2-stage3-fixed-point-contract.json").read_text(encoding="utf-8")
+    )
+    assert contract["final_gate"]["stage2_pythonless_compiler"] == "PASS_STRICT_PROCESS_AND_FILE_TRACE"
+    proof = contract["pythonless_compiler_runtime"]["strict_runtime_proof"]
+    assert "openat" in proof
+    assert "bootstrap" in proof
