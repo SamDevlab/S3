@@ -10,6 +10,8 @@ from tools.qualify_stage2_stage3_certified_strict import (
     CertifiedStrictError,
     _compatibility_v1_gate,
     _final_qualification,
+    _validate_gate_contract_authority,
+    _validate_gate_source_manifest_authority,
 )
 
 
@@ -32,20 +34,78 @@ def _strict_engine(*, full: bool = True, filesystem: str = "PASS_LANDLOCK") -> d
     }
 
 
-def test_final_authority_requires_hashed_stage1_evidence_and_all_strict_gates() -> None:
+def _git_binding(*, path: str, sha256: str, bytes_: int, commit: str = "1" * 40) -> dict[str, object]:
+    return {
+        "status": "PASS_REPOSITORY_FILE_GIT_HEAD_BINDING",
+        "commit": commit,
+        "path": path,
+        "sha256": sha256,
+        "bytes": bytes_,
+        "git_object_type": "commit",
+        "working_tree_equals_head_blob": True,
+    }
+
+
+def _contract_authority() -> dict[str, object]:
+    sha = "c" * 64
+    size = 100
+    return {
+        "status": "PASS_CANONICAL_CONTRACT_AUTHORITY",
+        "schema": "s3.selfhost.stage1-certification-gate-contract.v3",
+        "sha256": sha,
+        "bytes": size,
+        "exact_bytes_equal": True,
+        "git_head_binding": _git_binding(
+            path="reports/selfhost/stage1/stage1-certification-gate-contract.json",
+            sha256=sha,
+            bytes_=size,
+        ),
+    }
+
+
+def _source_manifest_authority() -> dict[str, object]:
+    sha = "d" * 64
+    size = 120
+    return {
+        "status": "PASS_CANONICAL_SOURCE_MANIFEST_AUTHORITY",
+        "schema": "s3.compiler.sources.v1",
+        "sha256": sha,
+        "bytes": size,
+        "exact_bytes_equal": True,
+        "git_head_binding": _git_binding(
+            path="selfhost/compiler/compiler-sources.json",
+            sha256=sha,
+            bytes_=size,
+        ),
+        "source": {
+            "path": "selfhost/compiler/s3c_stage1.s3",
+            "sha256": "a" * 64,
+            "bytes": 10,
+            "role": "canonical_stage1_compiler",
+            "ordering": 0,
+        },
+    }
+
+
+def test_strict_engine_only_computes_prerequisites_never_final_authority() -> None:
     result = _final_qualification(
         _strict_engine(), "PASS_STAGE1_HASHED_EVIDENCE_REVALIDATION"
     )
-    assert result["full_self_hosting"] is True
-    assert result["status"] == "FULL_SELF_HOSTING_CERTIFIED_VIA_HASHED_STAGE1_GATE"
+    assert result["strict_prerequisites_pass"] is True
+    assert result["final_static_authority_required"] is True
+    assert result["full_self_hosting"] is False
+    assert result["status"] == "PASS_HASHED_EVIDENCE_STRICT_ENGINE_PREREQUISITES"
+    assert result["next"] == "RUN_CERTIFIED_STATIC_FINAL_AUTHORITY"
 
     result = _final_qualification(_strict_engine(), "FAIL")
+    assert result["strict_prerequisites_pass"] is False
     assert result["full_self_hosting"] is False
 
     result = _final_qualification(
         _strict_engine(filesystem="FAIL_OR_BLOCKED"),
         "PASS_STAGE1_HASHED_EVIDENCE_REVALIDATION",
     )
+    assert result["strict_prerequisites_pass"] is False
     assert result["full_self_hosting"] is False
     assert "filesystem_inaccessible" in result["failed_final_gates"]
 
@@ -53,10 +113,12 @@ def test_final_authority_requires_hashed_stage1_evidence_and_all_strict_gates() 
         _strict_engine(full=False),
         "PASS_STAGE1_HASHED_EVIDENCE_REVALIDATION",
     )
+    assert result["strict_prerequisites_pass"] is False
+    assert result["underlying_strict_engine_full_self_hosting_signal"] is False
     assert result["full_self_hosting"] is False
 
 
-def test_underlying_old_schema_cannot_be_final_authority() -> None:
+def test_underlying_old_schema_cannot_supply_strict_prerequisites() -> None:
     old = _strict_engine()
     old["schema"] = "s3.selfhost.stage2-stage3-strict-sandbox.v3"
     with pytest.raises(CertifiedStrictError, match="schema mismatch"):
@@ -81,7 +143,49 @@ def test_compatibility_gate_is_explicitly_ephemeral_and_has_no_authority() -> No
     assert "evidence" not in compat
 
 
-def test_certified_wrapper_records_v2_revalidation_as_final_authority(
+def test_stage1_gate_contract_authority_requires_producer_git_head_binding() -> None:
+    expected = _contract_authority()
+    gate = {"contract_authority": json.loads(json.dumps(expected))}
+    _validate_gate_contract_authority(gate, expected=expected)
+
+    del gate["contract_authority"]["git_head_binding"]
+    with pytest.raises(CertifiedStrictError, match="lacks producer Git HEAD binding"):
+        _validate_gate_contract_authority(gate, expected=expected)
+
+
+def test_stage1_gate_contract_authority_rejects_malformed_producer_commit() -> None:
+    expected = _contract_authority()
+    embedded = json.loads(json.dumps(expected))
+    embedded["git_head_binding"]["commit"] = "not-a-commit"
+    with pytest.raises(CertifiedStrictError, match="full commit SHA"):
+        _validate_gate_contract_authority(
+            {"contract_authority": embedded},
+            expected=expected,
+        )
+
+
+def test_stage1_gate_source_manifest_authority_requires_same_committed_policy_and_source() -> None:
+    expected = _source_manifest_authority()
+    gate = {"source_manifest_authority": json.loads(json.dumps(expected))}
+    _validate_gate_source_manifest_authority(gate, expected=expected)
+
+    gate["source_manifest_authority"]["source"]["sha256"] = "f" * 64
+    with pytest.raises(CertifiedStrictError, match="source.sha256 mismatch"):
+        _validate_gate_source_manifest_authority(gate, expected=expected)
+
+
+def test_stage1_gate_source_manifest_authority_rejects_wrong_git_bound_path() -> None:
+    expected = _source_manifest_authority()
+    embedded = json.loads(json.dumps(expected))
+    embedded["git_head_binding"]["path"] = "other/manifest.json"
+    with pytest.raises(CertifiedStrictError, match="producer Git binding path"):
+        _validate_gate_source_manifest_authority(
+            {"source_manifest_authority": embedded},
+            expected=expected,
+        )
+
+
+def test_certified_wrapper_records_v2_revalidation_as_nonfinal_strict_engine(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     stage1 = tmp_path / "stage1"
@@ -117,20 +221,8 @@ def test_certified_wrapper_records_v2_revalidation_as_final_authority(
     canonical_path = ROOT / "selfhost" / "compiler" / "s3c_stage1.s3"
     canonical_bytes = b"canonical"
     manifest_doc = {"schema": "s3.compiler.sources.v1"}
-    source_manifest_authority = {
-        "status": "PASS_CANONICAL_SOURCE_MANIFEST_AUTHORITY",
-        "schema": "s3.compiler.sources.v1",
-        "sha256": "c" * 64,
-        "bytes": 100,
-        "exact_bytes_equal": True,
-        "source": {
-            "path": "selfhost/compiler/s3c_stage1.s3",
-            "sha256": "a" * 64,
-            "bytes": len(canonical_bytes),
-            "role": "canonical_stage1_compiler",
-            "ordering": 0,
-        },
-    }
+    source_manifest_authority = _source_manifest_authority()
+    source_manifest_authority["source"]["bytes"] = len(canonical_bytes)
     monkeypatch.setattr(
         certified,
         "require_authoritative_source_manifest",
@@ -186,10 +278,13 @@ def test_certified_wrapper_records_v2_revalidation_as_final_authority(
     assert captured_compat["schema"] == "s3.selfhost.stage1-certification-gate.v1"
     assert captured_compat["authority"] == "NONE_EPHEMERAL_AFTER_V2_HASHED_EVIDENCE_REVALIDATION"
     assert result["schema"] == "s3.selfhost.stage2-stage3-certified-strict.v1"
-    assert result["authority"] == "FINAL_SELF_HOSTING_AUTHORITY"
+    assert result["authority"] == "HASHED_EVIDENCE_STRICT_ENGINE_ONLY"
+    assert result["final_authority"] is False
     assert result["stage1_certification"]["schema"] == "s3.selfhost.stage1-certification-gate.v2"
     assert result["stage1_certification"]["compatibility_adapter"]["persisted"] is False
     assert result["canonical_source"]["manifest_authority"]["status"] == "PASS_CANONICAL_SOURCE_MANIFEST_AUTHORITY"
     assert result["canonical_source"]["git_commit_binding"]["status"] == "PASS_CANONICAL_SOURCE_GIT_COMMIT_BINDING"
-    assert result["qualification"]["full_self_hosting"] is True
+    assert result["qualification"]["strict_prerequisites_pass"] is True
+    assert result["qualification"]["full_self_hosting"] is False
+    assert result["qualification"]["next"] == "RUN_CERTIFIED_STATIC_FINAL_AUTHORITY"
     assert report.is_file()
