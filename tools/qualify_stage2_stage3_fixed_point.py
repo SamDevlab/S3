@@ -1,11 +1,16 @@
-"""Strict Stage1->Stage2->Stage3 fixed-point certification harness.
+"""Intermediate Stage1->Stage2->Stage3 fixed-point harness.
 
 This tool is deliberately dormant until a machine-readable Stage1 certification
 exists. Python is the external orchestrator only: Stage1/Stage2 compiler
-processes run with a sanitized environment and are traced with strace. Any
-compiler descendant execve blocks certification. Stage2 and Stage3 are built
-with the same host object and deterministic linker recipe, then compared as
-exact ELF bytes.
+processes run with a sanitized environment and are traced for execve. Stage2 and
+Stage3 are built with the same host object and deterministic linker recipe, then
+compared as exact ELF bytes.
+
+IMPORTANT: this harness is intentionally NOT an authority for
+FULL_SELF_HOSTING=YES. It proves the intermediate artifact/conformance/fixed-
+point gates. Final authorization belongs to
+``tools.qualify_stage2_stage3_strict_sandbox``, which additionally proves no
+repository/bootstrap/Python filesystem access by the compiler processes.
 """
 
 from __future__ import annotations
@@ -184,7 +189,7 @@ def _compile_stage(compiler: Path, source: bytes, *, cc: str, host_object: Path,
     trace = _trace_compiler(compiler, source, cwd=directory, trace_path=directory / "compiler.execve.trace", strace=strace)
     if trace["returncode"] != 0 or trace["stderr"] != b"" or not trace["strict_single_exec"] or trace["python_exec_seen"]:
         raise FixedPointError(
-            f"{output_name} compiler invocation failed strict Pythonless gate: "
+            f"{output_name} compiler invocation failed intermediate Pythonless-exec gate: "
             f"returncode={trace['returncode']} stderr_bytes={len(trace['stderr'])} "
             f"execves={trace['execve_count']} python_exec={trace['python_exec_seen']}"
         )
@@ -270,13 +275,13 @@ def _stage2_conformance(stage2: Path, *, cc: str, host_object: Path, workspace: 
 
 def qualify(*, stage1: Path, stage1_certification: Path, manifest: Path, host_io: Path, report: Path, workspace: Path, stage4: bool = False) -> dict[str, object]:
     if platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"}:
-        raise FixedPointError("strict Stage2/Stage3 certification requires Linux x86-64")
+        raise FixedPointError("Stage2/Stage3 intermediate fixed-point qualification requires Linux x86-64")
     cc = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
     strace = shutil.which("strace")
     if cc is None:
         raise FixedPointError("host assembler/linker driver cc/gcc/clang is unavailable")
     if strace is None:
-        raise FixedPointError("strace is required for strict Pythonless compiler-process certification")
+        raise FixedPointError("strace is required for intermediate compiler-process proof")
     stage1 = stage1.resolve()
     if not stage1.is_file() or not os.access(stage1, os.X_OK):
         raise FixedPointError("Stage1 executable is missing or not executable")
@@ -319,9 +324,19 @@ def qualify(*, stage1: Path, stage1_certification: Path, manifest: Path, host_io
             "build": stage4_build,
         }
 
-    full_self_hosting = bool(elf_equal and sha_equal and stage2_conformance["status"] == "PASS" and stage2_build["strict_single_exec"] and stage3_build["strict_single_exec"] and not stage2_build["python_exec_seen"] and not stage3_build["python_exec_seen"] and (not stage4 or stage4_result["status"] == "PASS"))
+    intermediate_pass = bool(
+        elf_equal
+        and sha_equal
+        and stage2_conformance["status"] == "PASS"
+        and stage2_build["strict_single_exec"]
+        and stage3_build["strict_single_exec"]
+        and not stage2_build["python_exec_seen"]
+        and not stage3_build["python_exec_seen"]
+        and (not stage4 or stage4_result["status"] == "PASS")
+    )
     result = {
-        "schema": "s3.selfhost.stage2-stage3-fixed-point.v1",
+        "schema": "s3.selfhost.stage2-stage3-fixed-point-intermediate.v2",
+        "authority": "INTERMEDIATE_ONLY_STRICT_SANDBOX_WRAPPER_REQUIRED_FOR_FULL_SELF_HOSTING",
         "platform": {"system": platform.system(), "machine": platform.machine(), "cc": cc, "strace": strace},
         "canonical_source": {"path": str(source_path), "sha256": canonical_sha, "bytes": len(source), "manifest": source_manifest},
         "stage1": {"path": str(stage1), "sha256": _sha256(stage1.read_bytes()), "certification_path": str(stage1_certification.resolve())},
@@ -336,12 +351,13 @@ def qualify(*, stage1: Path, stage1_certification: Path, manifest: Path, host_io
         "stage4": stage4_result,
         "qualification": {
             "stage1_to_stage2": "PASS",
-            "stage2_pythonless_compiler": "PASS_STRICT_EXECVE_TRACE",
+            "stage2_execve_only_intermediate": "PASS" if stage2_build["strict_single_exec"] and not stage2_build["python_exec_seen"] else "FAIL",
             "stage2_conformance": stage2_conformance["status"],
             "stage2_to_stage3": "PASS",
             "stage2_stage3_exact_elf_fixed_point": elf_equal and sha_equal,
-            "full_self_hosting": full_self_hosting,
-            "next": "FULL_SELF_HOSTING_CERTIFICATION_READY" if full_self_hosting else "REPAIR_STAGE2_STAGE3_DETERMINISM",
+            "intermediate_fixed_point_pass": intermediate_pass,
+            "full_self_hosting": False,
+            "next": "RUN_STRICT_PROCESS_AND_FILESYSTEM_SANDBOX_WRAPPER" if intermediate_pass else "REPAIR_STAGE2_STAGE3_INTERMEDIATE_GATE",
         },
     }
     report = report.resolve()
@@ -363,17 +379,17 @@ def main(argv: list[str] | None = None) -> int:
     try:
         result = qualify(stage1=args.stage1, stage1_certification=args.stage1_certification, manifest=args.manifest, host_io=args.host_io, report=args.report, workspace=args.workspace, stage4=args.stage4)
     except FixedPointError as error:
-        parser.exit(2, f"fixed-point certification blocked: {error}\n")
+        parser.exit(2, f"fixed-point qualification blocked: {error}\n")
     qualification = result["qualification"]
     print(f"REPORT={args.report.resolve()}")
     print(f"STAGE2_SHA256={result['stage2']['sha256']}")
     print(f"STAGE3_SHA256={result['stage3']['sha256']}")
     print(f"STAGE2_STAGE3_BYTES_EQUAL={result['fixed_point']['stage2_stage3_bytes_equal']}")
-    print(f"STAGE2_PYTHONLESS_COMPILER={qualification['stage2_pythonless_compiler']}")
     print(f"STAGE2_CONFORMANCE={qualification['stage2_conformance']}")
-    print(f"FULL_SELF_HOSTING={qualification['full_self_hosting']}")
+    print(f"INTERMEDIATE_FIXED_POINT_PASS={qualification['intermediate_fixed_point_pass']}")
+    print("FULL_SELF_HOSTING=False")
     print(f"NEXT={qualification['next']}")
-    return 0 if qualification["full_self_hosting"] else 2
+    return 0 if qualification["intermediate_fixed_point_pass"] else 2
 
 
 if __name__ == "__main__":
