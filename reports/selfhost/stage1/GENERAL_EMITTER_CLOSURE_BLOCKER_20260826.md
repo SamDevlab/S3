@@ -359,3 +359,49 @@ Stage1 certification. The remaining blocker is still the absence of complete
 typed local/value/instruction/call/terminator relationships and a canonical
 serialized IR artifact for the other canonical functions. No Stage2 or Stage3
 artifact was created.
+
+## Latest selected-parameter IR checkpoint
+
+The current implementation checkpoint is commit `3e3382d`. It extends the
+previous parameter-return lane only through metadata already preserved by the
+IR: a direct return may select parameter ordinals zero through five, mapped to
+the integer SysV argument registers. The general-emitter gate also checks that
+the function parameter range is representable and that every stored parameter
+type is valid before emission.
+
+```text
+COMMIT=3e3382d
+CANONICAL_SOURCE_SHA256=ec6bef92782fe253f4b1c1390d90f95017670a3cbb65497eff9dba12a2e7623c
+CANONICAL_SOURCE_BYTES=185508
+CANONICAL_SOURCE_MUTATED=YES
+FUNCTIONS=32
+NONFOREIGN_PARAMETERS=65
+FOREIGN_PARAMETERS=4
+PARAMETER_CAPACITY=68
+PARAMETER_SUPPORTED_ORDINALS=0..5
+PARAMETER_FIELDS=owner_function,name_identity,ordinal,declared_type
+PARAMETER_MISSING_FIELDS=mutability,semantic_value_id
+HOST_FOCUSED_TESTS=2 passed, 3 skipped
+HOST_SOURCE_PARSE=PASS
+LINUX_NATIVE_BUILD=PASS
+LINUX_NATIVE_LITERAL_FIXTURE=PASS
+LINUX_NATIVE_IDENTITY_FIXTURE=PASS
+LINUX_NATIVE_SELECTED_PARAMETER_FIXTURE=PASS
+NATIVE_SELECTED_PARAMETER_ASSEMBLY=mov rax, rdx
+NATIVE_EXECUTABLE_SHA256=2dad907421cea2bdb159b29be71bdf15edd6c4fe566e60f36283408ce149ede7
+NATIVE_ASSEMBLY_SHA256=78065c6c46ac93e036a2b3155ab58efb240c070bb88172c26a3e69d04ef4dae8
+SELF_EMIT_EXIT=2
+SELF_EMIT_ASSEMBLY_BYTES=0
+SELF_EMIT_MARKER=S3_STAGE1_EMITTER_BLOCKED
+SELF_EMIT_REASON=REMAINING_LOSSLESS_TYPED_IR_LANES
+STAGE1_TO_STAGE2=BLOCKED_NOT_STARTED
+STAGE2=NOT_CREATED
+STAGE3=NOT_STARTED
+T4=NOT_RUN_SOURCE_NOT_FROZEN
+```
+
+This remains an incremental capability proof, not Stage1 certification. The
+canonical source still requires typed local/value definitions, instruction
+operands and results, call value relationships, complete terminator values,
+and a canonical serialized IR artifact. Consequently the fail-closed gate
+still prevents self-emission, Stage2, and Stage3.
