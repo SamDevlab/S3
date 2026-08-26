@@ -312,3 +312,50 @@ capacities of 730 or 1,095 blocks cannot be promoted by calibration. A valid
 Stage1 design must either use an exact, bounded per-function/streaming
 representation or prove an equivalent measured capacity; it may not silently
 truncate or allocate an arbitrary matrix.
+
+## Latest parameter-return IR checkpoint
+
+The historical checkpoint sections above describe the source before the first
+typed parameter-return lane. The current source checkpoint is:
+
+COMMIT=cbdb963
+CANONICAL_SOURCE_SHA256=9605cb6e757150460983f8304bf03d1fc9809c633b97c66aa4a15a7713168396
+CANONICAL_SOURCE_BYTES=179657
+CANONICAL_SOURCE_MUTATED=YES
+PARAMETER_CAPACITY=68
+PARAMETER_FIELDS=owner_function,name_identity,ordinal,declared_type
+PARAMETER_MISSING_FIELDS=mutability,semantic_value_id
+
+The general emitter now has one additional verified lowering form:
+return <first-parameter> for a single valid parameter. The lowering uses the
+SysV x86-64 rdi to rax move, so an i64 value is not truncated to 32 bits.
+The gate rejects non-zero parameter ordinals, arities other than one, and
+invalid parameter types.
+
+Focused evidence for this source checkpoint:
+
+HOST_FOCUSED_TESTS=3 passed, 1 skipped
+HOST_SOURCE_PARSE=PASS
+LINUX_NATIVE_BUILD=PASS
+LINUX_NATIVE_IDENTITY_FIXTURE=PASS
+LINUX_NATIVE_LITERAL_FIXTURE=PASS
+NATIVE_IDENTITY_ASSEMBLY=mov rax, rdi
+NATIVE_EXECUTABLE_SHA256=e43fb84a7938f9958804da9de87fccd285050be1b99b04c388f3f20d1e4743f7
+NATIVE_ASSEMBLY_SHA256=15407b0bdd86761f58181b0973a26a7822bc5d91bcd58d588324c7968442716d
+
+The same native artifact was run once on the current canonical source:
+
+SELF_EMIT_EXIT=2
+SELF_EMIT_ASSEMBLY_BYTES=0
+SELF_EMIT_MARKER=S3_STAGE1_EMITTER_BLOCKED
+SELF_EMIT_REASON=REMAINING_LOSSLESS_TYPED_IR_LANES
+STAGE1_TO_STAGE2=BLOCKED_NOT_STARTED
+STAGE2=NOT_CREATED
+STAGE3=NOT_STARTED
+T4=NOT_RUN_SOURCE_NOT_FROZEN
+
+The parameter lane is therefore a qualified incremental capability, not a
+Stage1 certification. The remaining blocker is still the absence of complete
+typed local/value/instruction/call/terminator relationships and a canonical
+serialized IR artifact for the other canonical functions. No Stage2 or Stage3
+artifact was created.
