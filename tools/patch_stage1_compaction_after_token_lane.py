@@ -1,14 +1,15 @@
-"""Compose the wide-token-lane repair with discard-event compaction.
+"""Compose the corrected pre-IR-v2 foundation with discard-event compaction.
 
-The previous compaction qualifier operated directly on the legacy canonical
-source, whose self-source traversal is now known to be incomplete because wide
-numeric literals spill into ``pack_token``'s cursor/kind lanes.  This module
-creates the only compaction candidate that should be considered after the token
-lane is natively qualified:
+The authoritative candidate order is now:
 
-    frozen canonical -> wide token lane -> discard aggregate-event compaction
+    frozen canonical
+      -> wide numeric token-lane repair
+      -> remove unused legacy lexical-numeric value-record writer
+      -> discard aggregate-event compaction
 
-It is a pure in-memory/file transform and makes no native PASS claim.
+The value-record cleanup and discard compaction are separately native-gated so a
+single qualification step never hides two behavior changes.  This module only
+builds exact sources; it makes no native PASS claim.
 """
 
 from __future__ import annotations
@@ -18,6 +19,9 @@ import hashlib
 from pathlib import Path
 
 from tools.patch_stage1_codegen_ir_v2_capacity import transform as compact_discard_event
+from tools.patch_stage1_drop_legacy_numeric_value_records import (
+    transform_after_token_lane as drop_legacy_numeric_records,
+)
 from tools.patch_stage1_token_lane_wide_literals import (
     BASELINE_SOURCE_SHA256,
     SOURCE,
@@ -33,9 +37,12 @@ def build_token_lane_candidate(source: str) -> str:
     return repair_token_lane(source)
 
 
+def build_pre_compaction_candidate(source: str) -> str:
+    return drop_legacy_numeric_records(build_token_lane_candidate(source))
+
+
 def build_compacted_candidate(source: str) -> str:
-    token_lane = build_token_lane_candidate(source)
-    return compact_discard_event(token_lane)
+    return compact_discard_event(build_pre_compaction_candidate(source))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -54,23 +61,26 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     token_lane = build_token_lane_candidate(source)
+    pre_compaction = build_pre_compaction_candidate(source)
     compacted = build_compacted_candidate(source)
     destination = (
         args.output.resolve()
         if args.output is not None
-        else source_path.with_suffix(".wide-token-lane.compacted.s3")
+        else source_path.with_suffix(".pre-ir-v2.compacted.s3")
     )
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(compacted, encoding="utf-8", newline="\n")
 
     print(f"CANONICAL_SHA256={before_sha}")
     print(f"TOKEN_LANE_SHA256={_sha256_text(token_lane)}")
+    print(f"PRE_COMPACTION_SHA256={_sha256_text(pre_compaction)}")
     print(f"COMPACTED_SHA256={_sha256_text(compacted)}")
     print(f"CANONICAL_BYTES={len(source.encode('utf-8'))}")
     print(f"TOKEN_LANE_BYTES={len(token_lane.encode('utf-8'))}")
+    print(f"PRE_COMPACTION_BYTES={len(pre_compaction.encode('utf-8'))}")
     print(f"COMPACTED_BYTES={len(compacted.encode('utf-8'))}")
-    print("ORDER=WIDE_TOKEN_LANE_THEN_DROP_REDUNDANT_DISCARD_EVENT")
-    print("NATIVE_QUALIFICATION_REQUIRED=True")
+    print("ORDER=WIDE_TOKEN_LANE,DROP_LEGACY_NUMERIC_RECORD_WRITER,DROP_REDUNDANT_DISCARD_EVENT")
+    print("SEPARATE_NATIVE_GATES_REQUIRED=True")
     print("CANONICAL_SOURCE_MUTATED=False")
     print(f"OUTPUT={destination}")
     return 0
