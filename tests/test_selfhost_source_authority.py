@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 import tools.selfhost_source_authority as authority
+from tools.selfhost_contract_authority import ContractAuthorityError
 from tools.selfhost_source_authority import (
     SourceAuthorityError,
     require_authoritative_source_manifest,
@@ -76,7 +77,7 @@ def test_same_schema_but_weakened_or_changed_manifest_is_rejected(tmp_path: Path
     changed["total_bytes"] = len(payload) + 1
     _write_json(candidate, changed)
 
-    with pytest.raises(Exception, match="canonical authoritative policy"):
+    with pytest.raises(ContractAuthorityError, match="canonical authoritative policy"):
         require_authoritative_source_manifest(
             candidate,
             authoritative=authoritative,
