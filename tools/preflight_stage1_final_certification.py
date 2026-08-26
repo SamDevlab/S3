@@ -95,6 +95,7 @@ TEST_FILES = [
     "tests/test_stage1_final_self_emit.py",
     "tests/test_stage1_final_self_emit_call_bound.py",
     "tests/test_emit_stage1_certification_gate.py",
+    "tests/test_stage1_certification_default_evidence_contract.py",
     "tests/test_stage1_certification_evidence.py",
     "tests/test_stage2_stage3_certified_strict.py",
     "tests/test_selfhost_static_link.py",
