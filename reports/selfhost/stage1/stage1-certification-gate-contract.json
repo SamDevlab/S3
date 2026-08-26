@@ -1,0 +1,43 @@
+{
+  "schema": "s3.selfhost.stage1-certification-gate-contract.v1",
+  "output_schema": "s3.selfhost.stage1-certification-gate.v1",
+  "output_path": "reports/selfhost/stage1/stage1-certification-gate.json",
+  "purpose": "Provide the only machine-readable authorization consumed by the strict Stage2/Stage3 harness. This document may be emitted only after the final canonical Stage1 source and native evidence are frozen.",
+  "required_document_shape": {
+    "schema": "s3.selfhost.stage1-certification-gate.v1",
+    "canonical_source": {
+      "sha256": "<exact final canonical SHA256>",
+      "bytes": "<exact final canonical byte count>",
+      "commit": "<commit containing exact final canonical source>"
+    },
+    "qualification": {
+      "stage1_certified_for_stage2": true,
+      "self_emit": "PASS",
+      "semantic_ir": "PASS_CODEGEN_COMPLETE_BOOTSTRAP_SUBSET",
+      "verifier_v2": "PASS",
+      "general_emitter": "PASS_BOOTSTRAP_REQUIRED_OPCODES"
+    }
+  },
+  "mandatory_evidence_before_emission": [
+    "100 percent native token/source coverage",
+    "all measured capacities pass without truncation",
+    "parameter and local metadata native qualification",
+    "explicit semantic value namespace",
+    "explicit mutable-local LOAD/STORE and fixed-array LOAD_INDEX/STORE_INDEX semantics",
+    "instruction operands/results and deterministic order",
+    "call argument/result linkage",
+    "terminator condition/return/target linkage",
+    "verifier v2 rejects malformed def-use/storage/CFG fixtures",
+    "general emitter consumes verified IR only",
+    "Stage1 compiles the exact final canonical compiler source into a real compiler artifact",
+    "representative Stage1 conformance corpus passes"
+  ],
+  "prohibited": [
+    "creating the gate from static projections alone",
+    "creating the gate before native self-emit",
+    "setting stage1_certified_for_stage2 by operator override",
+    "using raw-source codegen or Python compiler delegation to satisfy self-emit",
+    "reusing the gate after canonical source bytes change"
+  ],
+  "consumer": "tools/qualify_stage2_stage3_fixed_point.py"
+}
