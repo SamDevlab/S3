@@ -82,8 +82,8 @@ def transform(source: str) -> str:
         "match ir_return_operand[general_parameter_scan] < parameter_count:",
         "match ir_parameter_owner[ir_return_operand[general_parameter_scan]] == general_parameter_scan:",
         "ir_parameter_ordinal[ir_return_operand[general_emit_index]]",
-        "while general_parameter_type_scan < parameter_count:",
-        "match valid_type_name(ir_parameter_type[general_parameter_type_scan]):",
+        "while general_parameter_type_scan < function_count:",
+        "match valid_type_name(ir_parameter_type[general_parameter_type_index]):",
     )
     for marker in required:
         if marker not in candidate:
