@@ -1,0 +1,59 @@
+{
+  "schema": "s3.selfhost.capacity-dispatch-proof-contract.v1",
+  "pr": 268,
+  "status": "PARALLEL_DESIGN_GATE_NOT_NATIVE_EVIDENCE",
+  "canonical_source_mutated": false,
+  "purpose": "Prevent bank-selection corruption when generated S3 dispatch code routes expanded IR/event/value/call storage. S3 relational predicates and three-way compare have different result domains and must never be conflated.",
+  "relation_semantics": {
+    "boolean_relations": {
+      "operators": ["==", "!=", "<", "<=", ">", ">="],
+      "result_type": "trit",
+      "true_value": -1,
+      "false_value": 0,
+      "positive_one_meaning": "UNREACHABLE_FOR_A_WELL_FORMED_BOOLEAN_RELATION",
+      "rule": "A match over a boolean relation may use -1 as true and 0 as false. The +1 arm must be impossible/fail-closed; it must never be interpreted as greater-than or as a second false branch carrying distinct routing semantics."
+    },
+    "three_way_compare": {
+      "operator": "<=>",
+      "result_type": "trit",
+      "less_value": -1,
+      "equal_value": 0,
+      "greater_value": 1,
+      "rule": "Only an explicitly proven <=> comparison may use all three trit outcomes as ordered less/equal/greater routing."
+    }
+  },
+  "safe_boolean_split": {
+    "ordered_bank_keys": "strictly increasing integer bank IDs",
+    "pivot_equality": "match selector == pivot: -1 selects pivot; 0 continues partition; +1 is fail-closed",
+    "partition": "inside equality-false path, match selector < pivot: -1 selects left subtree; 0 selects right subtree; +1 is fail-closed",
+    "leaf": "match selector == leaf: -1 selects leaf; 0 and +1 fail closed",
+    "invalid_selector": "must fail closed rather than aliasing a valid bank"
+  },
+  "proof_obligations": [
+    "every valid logical bank ID maps to exactly one physical bank",
+    "no two valid logical bank IDs alias the same routed case unless their payload is intentionally identical and the metadata contract explicitly allows aliasing",
+    "all configured banks are reachable",
+    "selectors below zero fail closed",
+    "selectors at or above bank_count fail closed",
+    "boolean relation +1 arms are never used to encode ordered-greater routing",
+    "bank-count changes require rerunning exhaustive routing proof",
+    "generated S3 source must be type/semantic checked before native qualification",
+    "native qualification remains authoritative after static/exhaustive helper proof"
+  ],
+  "known_regression_shape": {
+    "description": "A generated tree treats selector < pivot as if its match result were an ordered ternary relation. Because < returns only -1/0, a +1 branch is unreachable and distinct non-less subtrees can collapse/alias.",
+    "required_regression": "tests must demonstrate that the unsafe three-way interpretation is rejected and that bank IDs 0..N-1 route one-to-one under the safe algorithm"
+  },
+  "integration_rule": {
+    "preferred": "capacity/event/value/call bank generators call one shared relation-safe dispatch helper instead of carrying private ad-hoc comparison trees",
+    "temporary_acceptance": "an existing private helper may remain only if its generated routing is exhaustively proven against the same contract",
+    "main_pr_mutation_from_parallel_branch": false
+  },
+  "qualification": {
+    "native_evidence": false,
+    "stage1_source_change": false,
+    "stage2_allowed": false,
+    "full_self_hosting": false,
+    "next": "EXHAUSTIVE_RELATION_AND_BANK_ROUTING_REGRESSION_THEN_RECONCILE_WITH_MAIN_AGENT_AFTER_CHECKPOINT"
+  }
+}
