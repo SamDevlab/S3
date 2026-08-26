@@ -72,6 +72,7 @@ TOOL_FILES = [
     "tools/qualify_stage1_final_capacity.py",
     "tools/qualify_stage1_final_capacity_converged.py",
     "tools/qualify_stage1_final_semantic_ir_verifier.py",
+    "tools/bind_stage1_semantic_ir_native_calls.py",
     "tools/qualify_stage1_final_self_emit.py",
     "tools/qualify_stage1_final_self_emit_static.py",
     "tools/emit_stage1_certification_gate.py",
@@ -90,7 +91,9 @@ TEST_FILES = [
     "tests/test_stage1_selfhost_capacity_convergence.py",
     "tests/test_stage1_final_capacity.py",
     "tests/test_stage1_final_semantic_ir_verifier.py",
+    "tests/test_stage1_semantic_ir_native_call_boundary.py",
     "tests/test_stage1_final_self_emit.py",
+    "tests/test_stage1_final_self_emit_call_bound.py",
     "tests/test_emit_stage1_certification_gate.py",
     "tests/test_stage1_certification_evidence.py",
     "tests/test_stage2_stage3_certified_strict.py",
@@ -112,7 +115,7 @@ FINAL_EVIDENCE = {
     "hosted_fixture_opcode_coverage": "reports/selfhost/stage1/stage1-codegen-fixture-opcode-coverage.json",
     "native_codegen_fixtures": "reports/selfhost/stage1/stage1-codegen-complete-fixtures-native.json",
     "final_capacity": "reports/selfhost/stage1/stage1-final-capacity.json",
-    "final_semantic_ir_verifier": "reports/selfhost/stage1/stage1-final-semantic-ir-verifier.json",
+    "final_semantic_ir_verifier": "reports/selfhost/stage1/stage1-final-semantic-ir-verifier-call-bound.json",
     "final_self_emit": "reports/selfhost/stage1/stage1-final-self-emit.json",
 }
 
