@@ -62,6 +62,9 @@ def plan(source: str) -> dict[str, object]:
     arguments_required = int(call_model["total_call_arguments"])
     compacted_events_required = int(matrix["E1_S0_events"])
     baseline_events_required = int(matrix["E0_S0_events"])
+    numeric_tokens = int(
+        compaction["token_lane_source"]["counts"]["numeric_tokens"]
+    )
 
     call_selected = max(CURRENT_CALL_CAPACITY, _round_bank(calls_required))
     event_selected = max(CURRENT_EVENT_CAPACITY, _round_bank(compacted_events_required))
@@ -90,7 +93,7 @@ def plan(source: str) -> dict[str, object]:
             "call_arguments": arguments_required,
             "events_before_discard_compaction": baseline_events_required,
             "events_after_discard_compaction": compacted_events_required,
-            "numeric_tokens_full_source": repaired["lexical_token_count"],
+            "numeric_tokens_full_source": numeric_tokens,
         },
         "current": {
             "call_capacity": CURRENT_CALL_CAPACITY,
@@ -108,8 +111,12 @@ def plan(source: str) -> dict[str, object]:
         },
         "routes": routes,
         "value_capacity_policy": {
-            "auto_expand_from_lexical_numeric_tokens": false,
-            "reason": "Legacy numeric-token records are not the final semantic value namespace; typed constant interning and instruction-result def/use must be measured before choosing value capacity."
+            "auto_expand_from_lexical_numeric_tokens": False,
+            "reason": (
+                "Legacy numeric-token records are not the final semantic value "
+                "namespace; typed constant interning and instruction-result def/use "
+                "must be measured before choosing value capacity."
+            ),
         },
         "qualification_rule": (
             "This is a static minimum planner. Any source-capacity change must be "
@@ -119,7 +126,7 @@ def plan(source: str) -> dict[str, object]:
         "next": routes[0],
         "stage2": "NOT_STARTED",
         "stage3": "NOT_STARTED",
-        "full_self_hosting": false
+        "full_self_hosting": False,
     }
 
 
