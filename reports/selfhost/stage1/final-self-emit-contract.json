@@ -1,0 +1,65 @@
+{
+  "schema": "s3.selfhost.stage1-final-self-emit-contract.v1",
+  "output_schema": "s3.selfhost.stage1-final-self-emit.v1",
+  "purpose": "Prove that the exact final Stage1 artifact, after passing final semantic IR/verifier evidence, compiles the exact canonical compiler source into a deterministic real Stage2 compiler artifact. This gate creates a Stage2 candidate but does not certify Stage2 or start Stage3.",
+  "required_platform": {"system": "Linux", "machine": "x86_64"},
+  "semantic_ir_dependency": {
+    "schema": "s3.selfhost.stage1-final-semantic-ir-verifier.v1",
+    "qualification": {
+      "semantic_ir": "PASS_CODEGEN_COMPLETE_BOOTSTRAP_SUBSET",
+      "verifier_v2": "PASS",
+      "general_emitter": "PASS_BOOTSTRAP_REQUIRED_OPCODES"
+    },
+    "same_canonical_source_required": true,
+    "same_stage1_artifact_required": true
+  },
+  "self_emit_requirements": {
+    "native_linux_x86_64": true,
+    "strict_trace_pass_each_run": true,
+    "exactly_one_compiler_execve_each_run": true,
+    "python_exec_seen": false,
+    "forbidden_checkout_or_python_reads": false,
+    "compiler_returncode": 0,
+    "compiler_stderr_bytes": 0,
+    "assembly_nonempty": true,
+    "two_independent_runs": true,
+    "trace_replay_assembly_binding": true,
+    "assembly_bytes_equal": true,
+    "assembly_sha256_equal": true,
+    "same_host_object_for_both_links": true,
+    "stage2_elf_bytes_equal": true,
+    "stage2_elf_sha256_equal": true,
+    "stage2_freestanding_elf_audit": "PASS_FREESTANDING_STATIC_ELF"
+  },
+  "stage2_smoke": {
+    "source": "fn main() -> tryte:\n    return 7\n",
+    "strict_trace": "PASS_STRICT_PROCESS_AND_FILE_TRACE",
+    "trace_replay_assembly_binding": true,
+    "compile_returncode": 0,
+    "compile_stderr_bytes": 0,
+    "assembly_nonempty": true,
+    "program_exit": 7,
+    "program_stdout_bytes": 0,
+    "program_stderr_bytes": 0
+  },
+  "prohibited": [
+    "Python code generation or compiler delegation",
+    "raw source code generation after the verified-IR boundary",
+    "embedded/precomputed Stage2 assembly",
+    "using a semantic IR report bound to a different source or Stage1 artifact",
+    "accepting trace output without replay hash/byte binding",
+    "accepting only one self-emit run",
+    "linking the two Stage2 artifacts with different host objects or recipes",
+    "calling Stage2 certified from this gate alone",
+    "starting Stage3 from this gate alone"
+  ],
+  "output_qualification": {
+    "self_emit": "PASS",
+    "stage1_certified_candidate": true,
+    "stage2_artifact_created": true,
+    "stage2_certified": false,
+    "stage3_started": false,
+    "full_self_hosting": false,
+    "next": "EMIT_AND_REVALIDATE_STAGE1_CERTIFICATION_GATE_THEN_RUN_STAGE2_STAGE3_HARNESS"
+  }
+}
