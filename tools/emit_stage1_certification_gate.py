@@ -5,6 +5,10 @@ paths are fixed by role, their current contents are hashed, and the complete gat
 is passed through ``validate_stage1_evidence`` before it is written. The exact
 canonical source must also be the exact blob stored at the current Git HEAD, so a
 working-tree-only source edit cannot be certified accidentally.
+
+The contract CLI argument is a location override only, never a policy override:
+its exact bytes must equal the repository's canonical Stage1 certification
+contract before gate construction can begin.
 """
 
 from __future__ import annotations
@@ -17,6 +21,10 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from tools.selfhost_contract_authority import (
+    ContractAuthorityError,
+    require_authoritative_contract,
+)
 from tools.stage1_certification_evidence import (
     ROOT,
     Stage1CertificationEvidenceError,
@@ -116,6 +124,7 @@ def build_gate(
     evidence_paths: dict[str, str],
     contract: dict[str, Any],
     root: Path = ROOT,
+    contract_authority: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if contract.get("schema") != "s3.selfhost.stage1-certification-gate-contract.v3":
         raise Stage1CertificationGateError("Stage1 certification contract schema mismatch")
@@ -179,6 +188,10 @@ def build_gate(
             "full_self_hosting": False,
         },
     }
+    if contract_authority is not None:
+        if contract_authority.get("status") != "PASS_CANONICAL_CONTRACT_AUTHORITY":
+            raise Stage1CertificationGateError("Stage1 contract authority did not pass")
+        gate["contract_authority"] = contract_authority
 
     revalidated = validate_stage1_evidence(
         gate,
@@ -199,7 +212,12 @@ def emit_gate(
     output_path: Path,
     evidence_paths: dict[str, str] | None = None,
 ) -> dict[str, Any]:
-    contract = _load_json(contract_path.resolve(), "Stage1 certification contract")
+    contract, contract_authority = require_authoritative_contract(
+        contract_path,
+        authoritative=DEFAULT_CONTRACT,
+        expected_schema="s3.selfhost.stage1-certification-gate-contract.v3",
+        label="Stage1 certification contract",
+    )
     canonical = git_head_source_binding(source)
     gate = build_gate(
         canonical_source=canonical,
@@ -207,6 +225,7 @@ def emit_gate(
         evidence_paths=DEFAULT_EVIDENCE_PATHS if evidence_paths is None else evidence_paths,
         contract=contract,
         root=ROOT,
+        contract_authority=contract_authority,
     )
 
     output = output_path.resolve()
@@ -255,7 +274,10 @@ def main(argv: list[str] | None = None) -> int:
         action="append",
         default=[],
         metavar="ROLE=PATH",
-        help="override a default repository-relative evidence report path",
+        help=(
+            "override a default repository-relative evidence report path; "
+            "--contract may relocate only an exact byte-identical canonical policy"
+        ),
     )
     args = parser.parse_args(argv)
     try:
@@ -269,6 +291,7 @@ def main(argv: list[str] | None = None) -> int:
     except (
         OSError,
         UnicodeError,
+        ContractAuthorityError,
         Stage1CertificationEvidenceError,
         Stage1CertificationGateError,
     ) as error:
@@ -278,6 +301,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"CANONICAL_SHA256={gate['canonical_source']['sha256']}")
     print(f"CANONICAL_COMMIT={gate['canonical_source']['commit']}")
     print(f"STAGE1_SHA256={gate['stage1_artifact']['sha256']}")
+    print(f"CONTRACT_AUTHORITY={gate['contract_authority']['status']}")
+    print(f"CONTRACT_SHA256={gate['contract_authority']['sha256']}")
     print("EVIDENCE_REVALIDATION=PASS_STAGE1_HASHED_EVIDENCE_REVALIDATION")
     print("STAGE1_CERTIFIED_FOR_STAGE2=YES")
     print("STAGE2_CERTIFIED=NO")
