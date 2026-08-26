@@ -1,0 +1,61 @@
+{
+  "schema": "s3.selfhost.stage1-final-capacity-contract.v1",
+  "measurement_schema": "s3.selfhost.stage1-capacity-measurement.v1",
+  "output_schema": "s3.selfhost.stage1-final-capacity.v1",
+  "purpose": "Certify that every bounded Stage1 compiler storage lane on the exact final canonical source and exact Stage1 artifact has native no-truncation evidence. Historical projections or partial candidate reports cannot satisfy this contract.",
+  "required_platform": {"system": "Linux", "machine": "x86_64"},
+  "minimum_required_lanes": [
+    "tokens",
+    "events",
+    "blocks",
+    "instructions",
+    "semantic_values",
+    "calls",
+    "call_arguments",
+    "parameters",
+    "locals",
+    "storage_objects"
+  ],
+  "measurement_requirements": {
+    "native_evidence": true,
+    "projection_substituted_for_native_measurement": false,
+    "bounded_lane_inventory_complete": true,
+    "bounded_write_sites_accounted_exactly": true,
+    "all_banked_dispatch_proofs_pass": true,
+    "all_banked_roundtrip_proofs_pass": true,
+    "all_lane_overflow_guards_exercised": true,
+    "canonical_source_sha_matches_runtime_input": true,
+    "stage1_artifact_sha_matches_executed_binary": true
+  },
+  "lane_shape": {
+    "required": "integer >= 0; exact native high-water requirement for this canonical compile",
+    "capacity": "integer >= 0; physical capacity available in the final Stage1 artifact",
+    "headroom": "must equal capacity-required",
+    "max_written_index": "null only when required=0; otherwise integer required-1 or lower when sparse storage is explicitly declared",
+    "sparse": "boolean; if false max_written_index must equal required-1",
+    "overflow_attempted": "boolean, must be false for canonical compile",
+    "truncation_detected": "boolean, must be false",
+    "guard_probe": "PASS; qualification test must separately prove an out-of-range write fails closed",
+    "dispatch_proof": "PASS for banked lane, NOT_BANKED for single lane",
+    "roundtrip_proof": "PASS for banked lane, NOT_BANKED for single lane",
+    "provenance": "non-empty description of the native counter/write frontier"
+  },
+  "fail_closed_if": [
+    "any minimum lane is missing",
+    "bounded lane inventory is incomplete",
+    "bounded write-site count differs from accounted write-site count",
+    "a lane has required > capacity or negative headroom",
+    "a lane reports truncation or overflow on the canonical compile",
+    "a lane lacks an exercised fail-closed overflow guard",
+    "a banked lane lacks exhaustive dispatch and roundtrip proof",
+    "the report is static/projection-only",
+    "canonical source SHA/bytes differ from the source file supplied to the finalizer",
+    "Stage1 artifact SHA/bytes differ from the executable supplied to the finalizer",
+    "platform is not native Linux x86-64"
+  ],
+  "output_qualification": {
+    "all_capacities_no_truncation": "PASS only when every rule above passes",
+    "stage2_allowed_from_this_report_alone": false,
+    "full_self_hosting": false
+  }
+}
