@@ -1,0 +1,92 @@
+{
+  "schema": "s3.selfhost.stage2-serialized-ir-envelope-contract.v1",
+  "pr": 268,
+  "status": "DESIGN_ONLY_ALL_TYPED_LANES_PREREQUISITE_PENDING",
+  "canonical_source_mutated": false,
+  "purpose": "Define a deterministic independent Stage1-to-Stage2 IR transport boundary that cannot be emitted or accepted while any typed semantic lane is incomplete.",
+  "prerequisite": {
+    "required_workstreams": [
+      "W1_symbol_and_value_identity",
+      "W2_instruction_def_use_and_order",
+      "W3_call_dataflow_and_abi",
+      "W4_terminator_dataflow"
+    ],
+    "all_required_native_gates_must_pass": true,
+    "stage2_creation_allowed_before_prerequisites": false
+  },
+  "envelope": {
+    "magic": "S3IR2",
+    "schema_version": 1,
+    "encoding": "deterministic byte stream",
+    "required_header_fields": [
+      "magic",
+      "schema_version",
+      "source_byte_length",
+      "function_count",
+      "value_record_count",
+      "block_count",
+      "instruction_count",
+      "call_count",
+      "terminator_count",
+      "completeness_mask"
+    ],
+    "optional_external_provenance_fields": [
+      "source_sha256",
+      "artifact_sha256"
+    ],
+    "cryptographic_hash_required_inside_bootstrap_compiler": false,
+    "reason": "The bootstrap language currently has no proven SHA primitive; byte-for-byte determinism and structural counts are the in-compiler acceptance boundary, while external qualification may add hashes."
+  },
+  "section_order": [
+    "functions",
+    "values",
+    "blocks",
+    "instructions",
+    "calls",
+    "terminators"
+  ],
+  "determinism_rules": [
+    "functions serialize in canonical function order",
+    "semantic values serialize by ascending semantic value ID",
+    "blocks serialize in canonical block ID order",
+    "instructions serialize by ascending instruction ID",
+    "call linkage records serialize by defining instruction ID",
+    "terminators serialize by owner block ID",
+    "no hash-map iteration or host-dependent ordering is permitted",
+    "identical complete Stage1 IR must serialize byte-for-byte identically"
+  ],
+  "completeness_bits": {
+    "1": "SYMBOL_AND_VALUE_IDENTITY_COMPLETE",
+    "2": "INSTRUCTION_DEF_USE_ORDER_COMPLETE",
+    "4": "CALL_DATAFLOW_ABI_COMPLETE",
+    "8": "TERMINATOR_DATAFLOW_COMPLETE"
+  },
+  "required_completeness_mask": 15,
+  "stage1_emission_rules": [
+    "do not emit the S3IR2 magic unless completeness_mask == 15",
+    "all header counts must equal verifier-approved semantic counts",
+    "no legacy lexical/event lane may be serialized as if it were a typed semantic section",
+    "serialization failure emits no partial Stage2-authoritative artifact"
+  ],
+  "stage2_acceptance_rules": [
+    "reject unknown magic or schema version",
+    "reject completeness_mask != 15",
+    "reject section count mismatches",
+    "reject out-of-order or duplicate IDs",
+    "reject any value use without a valid definition",
+    "reject instruction/block/call/terminator cross-reference outside declared bounds",
+    "reject trailing or missing records relative to header counts"
+  ],
+  "prohibited_shortcuts": [
+    "Stage2 rereads Stage1 source to recover missing semantics",
+    "Stage2 accepts aggregate Stage1 event records as typed instructions",
+    "Stage1 emits a partial envelope with missing completeness bits",
+    "Stage2 begins before independent parser/validator tests exist"
+  ],
+  "next_after_static_design": "WAIT_FOR_W1_W2_W3_W4_NATIVE_CLOSURE_THEN_IMPLEMENT_REFERENCE_SERIALIZER_AND_INDEPENDENT_STAGE2_PARSER",
+  "general_emitter": "BLOCKED_IR_V2_INCOMPLETE",
+  "self_emit": "NOT_STARTED",
+  "stage2": "DESIGN_ONLY_NOT_CREATED",
+  "stage3": "NOT_STARTED",
+  "full_self_hosting": false
+}
