@@ -65,7 +65,7 @@ def test_logical_indices_route_to_exact_bank_and_slot(
 def test_call_argument_tail_bank_has_exact_short_capacity() -> None:
     report = audit_layout("call_argument_pool", (365, 365, 16))
     assert report["total_capacity"] == 746
-    assert report["boundary_indices"][-3:] == [730, 745]
+    assert report["boundary_indices"][-3:] == [729, 730, 745]
     assert report["bijection"] is True
     assert report["all_valid_reads_roundtrip"] is True
     assert report["invalid_fail_closed_and_storage_unchanged"] is True
