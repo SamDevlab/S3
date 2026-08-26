@@ -1,0 +1,53 @@
+{
+  "schema": "s3.selfhost.stage1-native-call-reconciliation-contract.v1",
+  "measurement_schema": "s3.selfhost.stage1-native-call-measurement.v1",
+  "hosted_inventory_schema": "s3.selfhost.reference-current-call-inventory.v1",
+  "output_schema": "s3.selfhost.stage1-native-call-reconciliation.v1",
+  "purpose": "Replace stale historical call closure with exact source/artifact-bound native Stage1 call-record and call-argument high-water evidence, while keeping AST and O0 IR counts diagnostic rather than physical-capacity authorities.",
+  "required_platform": {"system": "Linux", "machine": "x86_64"},
+  "measurement_requirements": {
+    "native_evidence": true,
+    "projection_substituted_for_native_measurement": false,
+    "canonical_source_sha_matches_runtime_input": true,
+    "stage1_artifact_sha_matches_executed_binary": true,
+    "all_call_slices_in_range": true,
+    "all_argument_slices_in_range": true,
+    "all_recorded_arguments_addressable": true
+  },
+  "call_record_requirements": [
+    "high_water equals audit.ir_call_count",
+    "audit.ir_internal_call_count + audit.ir_foreign_call_count equals audit.ir_call_count",
+    "high_water <= physical capacity",
+    "max_written_index == high_water-1 for nonzero dense records",
+    "no canonical overflow attempt",
+    "no truncation",
+    "overflow guard probe PASS"
+  ],
+  "call_argument_requirements": [
+    "high_water equals audit.ir_call_arg_pool_count",
+    "high_water <= physical capacity",
+    "max_written_index == high_water-1 for nonzero dense pool",
+    "no canonical overflow attempt",
+    "no truncation",
+    "overflow guard probe PASS"
+  ],
+  "hosted_oracle_policy": {
+    "same_exact_source_sha_required": true,
+    "ast_call_count_equals_native_required": false,
+    "ast_argument_count_equals_native_required": false,
+    "o0_ir_call_count_equals_native_required": false,
+    "o0_ir_operand_count_equals_native_required": false,
+    "deltas_are_diagnostic": true,
+    "physical_capacity_selected_from_hosted_oracle": false
+  },
+  "historical_policy": {
+    "656_calls_736_arguments_may_be_reused_after_source_change": false,
+    "report_without_exact_source_and_stage1_binding": "BLOCK"
+  },
+  "authority": {
+    "native_capacity_evidence_for_call_lanes": true,
+    "semantic_call_linkage_complete_from_this_report_alone": false,
+    "stage1_certified_for_stage2_from_this_report_alone": false,
+    "full_self_hosting": false
+  }
+}
