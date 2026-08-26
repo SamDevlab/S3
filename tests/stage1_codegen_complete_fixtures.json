@@ -1,0 +1,69 @@
+{
+  "schema": "s3.selfhost.stage1-codegen-complete-fixtures.v1",
+  "purpose": "Representative native execution corpus for the bootstrap-required Stage1 general emitter. Passing these fixtures is necessary but not sufficient for Stage1 certification; canonical self-emit and verifier-v2 evidence remain mandatory.",
+  "fixtures": [
+    {
+      "name": "literal_return",
+      "source": "fn main() -> tryte:\n    return 7\n",
+      "expected_exit": 7,
+      "expected_stdout_hex": "",
+      "logical_requirements": ["CONST", "RETURN_VALUE"]
+    },
+    {
+      "name": "scalar_load_store",
+      "source": "fn main() -> tryte:\n    mut x: i64 = 3\n    x = x + 4\n    return to_tryte(x)\n",
+      "expected_exit": 7,
+      "expected_stdout_hex": "",
+      "logical_requirements": ["STORE_LOCAL", "LOAD_LOCAL", "ADD", "CALL_OR_BUILTIN_CONVERSION", "RETURN_VALUE"]
+    },
+    {
+      "name": "internal_call_four_arguments",
+      "source": "fn sum4(a: i64, b: i64, c: i64, d: i64) -> i64:\n    return a + b + c + d\n\nfn main() -> tryte:\n    return to_tryte(sum4(1, 1, 2, 3))\n",
+      "expected_exit": 7,
+      "expected_stdout_hex": "",
+      "logical_requirements": ["PARAMETER", "INTERNAL_CALL", "CALL_ARGUMENT_ORDER", "CALL_RESULT", "ADD", "RETURN_VALUE"]
+    },
+    {
+      "name": "while_conditional",
+      "source": "fn main() -> tryte:\n    mut x: i64 = 0\n    while x < 3:\n        x += 1\n    return to_tryte(x)\n",
+      "expected_exit": 3,
+      "expected_stdout_hex": "",
+      "logical_requirements": ["LOAD_LOCAL", "STORE_LOCAL", "COMPARE", "CONDITIONAL_BRANCH", "JUMP", "ADD", "RETURN_VALUE"]
+    },
+    {
+      "name": "match_cfg",
+      "source": "fn main() -> tryte:\n    mut x: i64 = 1\n    match x == 1:\n        -1:\n            return 7\n        0:\n            return 2\n        1:\n            return 3\n",
+      "expected_exit": 7,
+      "expected_stdout_hex": "",
+      "logical_requirements": ["LOAD_LOCAL", "COMPARE", "CONDITIONAL_BRANCH", "RETURN_VALUE"]
+    },
+    {
+      "name": "fixed_array_load_store",
+      "source": "fn main() -> tryte:\n    mut values: i64[2] = [2, 5]\n    values[0] = values[0] + values[1]\n    return to_tryte(values[0])\n",
+      "expected_exit": 7,
+      "expected_stdout_hex": "",
+      "logical_requirements": ["FIXED_ARRAY_INITIALIZATION", "LOAD_INDEX", "STORE_INDEX", "ADD", "RETURN_VALUE"]
+    },
+    {
+      "name": "foreign_call_side_effect",
+      "source": "foreign fn s3_stage1_write_byte(value: tryte) -> tryte\n\nfn main() -> tryte:\n    discard s3_stage1_write_byte(65)\n    return 0\n",
+      "expected_exit": 0,
+      "expected_stdout_hex": "41",
+      "logical_requirements": ["FOREIGN_CALL", "DISCARD_EFFECT_PRESERVED", "RETURN_VALUE"]
+    },
+    {
+      "name": "computed_return_nested_calls",
+      "source": "fn inc(x: i64) -> i64:\n    return x + 1\n\nfn main() -> tryte:\n    return to_tryte(inc(inc(5)))\n",
+      "expected_exit": 7,
+      "expected_stdout_hex": "",
+      "logical_requirements": ["INTERNAL_CALL", "CALL_RESULT", "NESTED_CALL_ORDER", "ADD", "RETURN_VALUE"]
+    }
+  ],
+  "negative_fixtures": [
+    {
+      "name": "invalid_return_missing_expression",
+      "source": "fn main() -> tryte:\n    return\n",
+      "required": "nonzero deterministic failure; two runs must have identical exit/stdout/stderr"
+    }
+  ]
+}
