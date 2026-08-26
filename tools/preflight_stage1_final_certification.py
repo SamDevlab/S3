@@ -97,6 +97,7 @@ TEST_FILES = [
     "tests/test_emit_stage1_certification_gate.py",
     "tests/test_stage1_certification_default_evidence_contract.py",
     "tests/test_stage1_certification_evidence.py",
+    "tests/test_stage1_certification_cross_role_hashes.py",
     "tests/test_stage2_stage3_certified_strict.py",
     "tests/test_selfhost_static_link.py",
     "tests/test_stage2_stage3_certified_static.py",
