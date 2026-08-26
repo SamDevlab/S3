@@ -1,12 +1,16 @@
 """Final authority wrapper for strict Stage2/Stage3 self-hosting certification.
 
 The older fixed-point/strict-sandbox tools remain useful execution engines but
-accept the historical Stage1 certification schema.  This wrapper is the only
-final authority: it accepts only ``stage1-certification-gate.v2``, revalidates
-all content-hashed evidence, verifies the exact Stage1 executable and canonical
-source, creates a v1 compatibility certificate in a temporary directory, runs
-the existing strict+Landlock engine, and then independently rechecks every final
-gate before it can report FULL_SELF_HOSTING=YES.
+accept the historical Stage1 certification schema. This wrapper accepts only
+``stage1-certification-gate.v2``, revalidates all content-hashed evidence,
+verifies the exact Stage1 executable and canonical source, creates a v1
+compatibility certificate in a temporary directory, runs the existing
+strict+Landlock engine, and then independently rechecks every final gate.
+
+Contract path arguments are location overrides only. Both the Stage1 evidence
+policy and the Stage2/Stage3 fixed-point policy must be byte-identical to the
+repository's canonical contracts, and the Stage1 gate must carry the exact same
+canonical contract SHA that this consumer revalidates.
 """
 
 from __future__ import annotations
@@ -26,6 +30,10 @@ from tools.qualify_stage2_stage3_fixed_point import (
     _canonical_source,
 )
 from tools.qualify_stage2_stage3_strict_sandbox import qualify_strict
+from tools.selfhost_contract_authority import (
+    ContractAuthorityError,
+    require_authoritative_contract,
+)
 from tools.stage1_certification_evidence import (
     ROOT,
     Stage1CertificationEvidenceError,
@@ -72,6 +80,28 @@ def _load_json(path: Path, label: str) -> dict[str, Any]:
     return value
 
 
+def _validate_gate_contract_authority(
+    gate: dict[str, Any],
+    *,
+    expected: dict[str, Any],
+) -> None:
+    embedded = gate.get("contract_authority")
+    if not isinstance(embedded, dict):
+        raise CertifiedStrictError("Stage1 gate lacks canonical contract authority binding")
+    required = {
+        "status": "PASS_CANONICAL_CONTRACT_AUTHORITY",
+        "schema": "s3.selfhost.stage1-certification-gate-contract.v3",
+        "sha256": expected.get("sha256"),
+        "bytes": expected.get("bytes"),
+        "exact_bytes_equal": True,
+    }
+    for field, value in required.items():
+        if embedded.get(field) != value:
+            raise CertifiedStrictError(
+                f"Stage1 gate contract authority {field} must be {value!r}"
+            )
+
+
 def validate_hashed_stage1_gate(
     gate: dict[str, Any],
     *,
@@ -79,11 +109,13 @@ def validate_hashed_stage1_gate(
     canonical_source: bytes,
     canonical_source_path: Path,
     contract: dict[str, Any],
+    contract_authority: dict[str, Any],
 ) -> dict[str, Any]:
     if contract.get("schema") != "s3.selfhost.stage1-certification-gate-contract.v3":
         raise CertifiedStrictError("Stage1 certification contract schema mismatch")
     if gate.get("schema") != "s3.selfhost.stage1-certification-gate.v2":
         raise CertifiedStrictError("final Stage2/Stage3 wrapper requires Stage1 gate v2")
+    _validate_gate_contract_authority(gate, expected=contract_authority)
 
     canonical_sha = _sha_bytes(canonical_source)
     canonical = gate.get("canonical_source")
@@ -148,6 +180,7 @@ def validate_hashed_stage1_gate(
         "canonical_bytes": len(canonical_source),
         "stage1_sha256": stage1_sha,
         "stage1_bytes": stage1.stat().st_size,
+        "contract_authority": contract_authority,
         "evidence": evidence,
     }
 
@@ -228,10 +261,18 @@ def qualify_certified_strict(
 ) -> dict[str, Any]:
     stage1_gate_path = stage1_certification.resolve()
     gate = _load_json(stage1_gate_path, "Stage1 certification gate v2")
-    stage1_policy = _load_json(stage1_contract.resolve(), "Stage1 certification contract")
-    fixed_policy = _load_json(fixed_point_contract.resolve(), "Stage2/Stage3 fixed-point contract")
-    if fixed_policy.get("schema") != "s3.selfhost.stage2-stage3-fixed-point-contract.v3":
-        raise CertifiedStrictError("Stage2/Stage3 fixed-point contract schema mismatch")
+    stage1_policy, stage1_contract_authority = require_authoritative_contract(
+        stage1_contract,
+        authoritative=DEFAULT_STAGE1_CONTRACT,
+        expected_schema="s3.selfhost.stage1-certification-gate-contract.v3",
+        label="Stage1 certification contract",
+    )
+    fixed_policy, fixed_contract_authority = require_authoritative_contract(
+        fixed_point_contract,
+        authoritative=DEFAULT_FIXED_POINT_CONTRACT,
+        expected_schema="s3.selfhost.stage2-stage3-fixed-point-contract.v3",
+        label="Stage2/Stage3 fixed-point contract",
+    )
 
     canonical_path, canonical_source, manifest_document = _canonical_source(manifest.resolve())
     stage1_validation = validate_hashed_stage1_gate(
@@ -240,6 +281,7 @@ def qualify_certified_strict(
         canonical_source=canonical_source,
         canonical_source_path=canonical_path,
         contract=stage1_policy,
+        contract_authority=stage1_contract_authority,
     )
 
     with tempfile.TemporaryDirectory(prefix="s3-stage1-cert-v1-adapter-") as temporary:
@@ -269,7 +311,8 @@ def qualify_certified_strict(
         "contract": {
             "schema": fixed_policy["schema"],
             "path": str(fixed_point_contract.resolve()),
-            "sha256": sha256_file(fixed_point_contract.resolve()),
+            "sha256": fixed_contract_authority["sha256"],
+            "authority": fixed_contract_authority,
         },
         "canonical_source": {
             "path": str(canonical_path),
@@ -286,6 +329,7 @@ def qualify_certified_strict(
             "path": str(stage1_gate_path),
             "sha256": sha256_file(stage1_gate_path),
             "schema": gate["schema"],
+            "contract_authority": stage1_contract_authority,
             "evidence_revalidation": stage1_validation["evidence"],
             "compatibility_adapter": {
                 "schema": "s3.selfhost.stage1-certification-gate.v1",
@@ -334,6 +378,7 @@ def main(argv: list[str] | None = None) -> int:
         )
     except (
         CertifiedStrictError,
+        ContractAuthorityError,
         FixedPointError,
         Stage1CertificationEvidenceError,
         OSError,
@@ -343,6 +388,8 @@ def main(argv: list[str] | None = None) -> int:
 
     qualification = result["qualification"]
     print(f"REPORT={args.report.resolve()}")
+    print(f"STAGE1_CONTRACT_AUTHORITY={result['stage1_certification']['contract_authority']['status']}")
+    print(f"FIXED_POINT_CONTRACT_AUTHORITY={result['contract']['authority']['status']}")
     print(f"STAGE1_HASHED_EVIDENCE={qualification['stage1_hashed_evidence_revalidation']}")
     print(f"STAGE1_TO_STAGE2={qualification['stage1_to_stage2']}")
     print(f"STAGE2_PYTHONLESS={qualification['stage2_pythonless_compiler']}")
