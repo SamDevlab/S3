@@ -3,8 +3,8 @@
 The underlying fixed-point harness builds Stage2/Stage3 and runs conformance.
 This wrapper adds the final anti-delegation proof: it replays the exact canonical
 compile under strace, rejects descendant execve and any checkout/bootstrap/Python
-file read, and verifies the traced assembly SHA matches the assembly used to
-construct the already-measured Stage2/Stage3 artifacts.
+runtime file read, and verifies the traced assembly SHA matches the assembly used
+to construct the already-measured Stage2/Stage3 artifacts.
 """
 
 from __future__ import annotations
@@ -31,33 +31,49 @@ from tools.qualify_stage2_stage3_fixed_point import (
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REPORT = ROOT / "reports" / "selfhost" / "stage2" / "stage2-stage3-strict-sandbox.json"
+_TRACE_FILE_SYSCALLS = ("open", "openat", "openat2")
+_PYTHON_PATH_SEGMENT = re.compile(r"/(?:python|python3(?:\.\d+)?)(?:/|$)", re.IGNORECASE)
+_LIBPYTHON_BASENAME = re.compile(r"^libpython(?:3(?:\.\d+)*)?.*\.so(?:\..*)?$", re.IGNORECASE)
 
 
 def _quoted_open_path(line: str) -> str | None:
-    if "open(" not in line and "openat(" not in line:
+    if not any(f"{name}(" in line for name in _TRACE_FILE_SYSCALLS):
         return None
-    match = re.search(r"open(?:at)?\([^\"]*\"([^\"]+)\"", line)
+    match = re.search(r"open(?:at2|at)?\([^\"]*\"([^\"]+)\"", line)
     return None if match is None else match.group(1)
+
+
+def _is_python_runtime_path(normalized: str) -> bool:
+    lowered = normalized.lower()
+    basename = Path(normalized).name
+    return (
+        lowered.endswith((".py", ".pyc", ".pyo", ".pyz"))
+        or "/site-packages/" in lowered
+        or lowered.endswith("/site-packages")
+        or "/dist-packages/" in lowered
+        or lowered.endswith("/dist-packages")
+        or _PYTHON_PATH_SEGMENT.search(normalized) is not None
+        or _LIBPYTHON_BASENAME.match(basename) is not None
+        or ("python" in basename.lower() and basename.lower().endswith(".zip"))
+    )
 
 
 def _is_forbidden_read(path: str) -> bool:
     candidate = Path(path)
     # The compiler receives its entire input on stdin and has no legitimate
-    # reason to open cwd-relative files.  Failing closed on every relative open
-    # also avoids an openat(dirfd, "../../repo/...") bypass where a textual path
-    # would not contain the absolute checkout prefix.
+    # reason to open cwd-relative files. Failing closed on every relative open
+    # also avoids openat/openat2(dirfd, "../../repo/...") bypasses where a
+    # textual path would not contain the absolute checkout prefix.
     if not candidate.is_absolute():
         return True
     resolved = candidate.resolve(strict=False)
     normalized = str(resolved).replace("\\", "/")
     root = str(ROOT.resolve()).replace("\\", "/")
-    lowered = normalized.lower()
     return (
         normalized == root
         or normalized.startswith(root + "/")
         or "/bootstrap/" in normalized
-        or lowered.endswith(".py")
-        or lowered.endswith(".pyc")
+        or _is_python_runtime_path(normalized)
     )
 
 
@@ -65,8 +81,9 @@ def trace_compiler_sandbox(compiler: Path, source: bytes, *, directory: Path, st
     directory.mkdir(parents=True, exist_ok=True)
     trace_path = directory / "process-and-files.trace"
     env = _sanitized_compiler_env(directory / "sandbox-home")
+    trace_expression = "execve," + ",".join(_TRACE_FILE_SYSCALLS)
     completed = subprocess.run(
-        [strace, "-f", "-qq", "-e", "trace=execve,open,openat", "-o", str(trace_path), str(compiler.resolve())],
+        [strace, "-f", "-qq", "-e", f"trace={trace_expression}", "-o", str(trace_path), str(compiler.resolve())],
         cwd=str(directory),
         input=source,
         stdout=subprocess.PIPE,
@@ -98,6 +115,7 @@ def trace_compiler_sandbox(compiler: Path, source: bytes, *, directory: Path, st
         "execve_count": len(execves),
         "execve_lines": execves,
         "python_exec_seen": python_exec,
+        "trace_file_syscalls": list(_TRACE_FILE_SYSCALLS),
         "opened_paths": opens,
         "forbidden_checkout_or_python_reads": forbidden,
         "trace_path": str(trace_path),
@@ -146,7 +164,7 @@ def qualify_strict(*, stage1: Path, stage1_certification: Path, manifest: Path, 
     )
 
     result = {
-        "schema": "s3.selfhost.stage2-stage3-strict-sandbox.v2",
+        "schema": "s3.selfhost.stage2-stage3-strict-sandbox.v3",
         "base_fixed_point": base,
         "strict_runtime": {
             "stage1_compiles_stage2": stage1_trace,
@@ -156,6 +174,8 @@ def qualify_strict(*, stage1: Path, stage1_certification: Path, manifest: Path, 
             "bootstrap_checkout_inaccessible_by_observed_file_access": strict_trace_pass,
             "relative_file_reads_fail_closed": True,
             "absolute_paths_resolved_before_checkout_comparison": True,
+            "embedded_python_runtime_file_access_forbidden": True,
+            "openat2_traced": True,
         },
         "qualification": {
             "stage1_to_stage2": base["qualification"]["stage1_to_stage2"],
