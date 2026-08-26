@@ -897,6 +897,78 @@ fn emit_general_literal_function(name: i64, value: i64) -> trit:
     discard write_byte(10)
     return -1
 
+fn emit_general_parameter_function(name: i64) -> trit:
+    discard write_byte(46)
+    discard write_byte(103)
+    discard write_byte(108)
+    discard write_byte(111)
+    discard write_byte(98)
+    discard write_byte(108)
+    discard write_byte(32)
+    discard emit_general_name(name)
+    discard write_byte(10)
+    discard write_byte(46)
+    discard write_byte(116)
+    discard write_byte(121)
+    discard write_byte(112)
+    discard write_byte(101)
+    discard write_byte(32)
+    discard emit_general_name(name)
+    discard write_byte(44)
+    discard write_byte(32)
+    discard write_byte(64)
+    discard write_byte(102)
+    discard write_byte(117)
+    discard write_byte(110)
+    discard write_byte(99)
+    discard write_byte(116)
+    discard write_byte(105)
+    discard write_byte(111)
+    discard write_byte(110)
+    discard write_byte(10)
+    discard emit_general_name(name)
+    discard write_byte(58)
+    discard write_byte(10)
+    discard write_byte(32)
+    discard write_byte(32)
+    discard write_byte(32)
+    discard write_byte(32)
+    discard write_byte(109)
+    discard write_byte(111)
+    discard write_byte(118)
+    discard write_byte(32)
+    discard write_byte(114)
+    discard write_byte(97)
+    discard write_byte(120)
+    discard write_byte(44)
+    discard write_byte(32)
+    discard write_byte(114)
+    discard write_byte(100)
+    discard write_byte(105)
+    discard write_byte(10)
+    discard write_byte(32)
+    discard write_byte(32)
+    discard write_byte(32)
+    discard write_byte(32)
+    discard write_byte(114)
+    discard write_byte(101)
+    discard write_byte(116)
+    discard write_byte(10)
+    discard write_byte(46)
+    discard write_byte(115)
+    discard write_byte(105)
+    discard write_byte(122)
+    discard write_byte(101)
+    discard write_byte(32)
+    discard emit_general_name(name)
+    discard write_byte(44)
+    discard write_byte(32)
+    discard write_byte(46)
+    discard write_byte(45)
+    discard emit_general_name(name)
+    discard write_byte(10)
+    return -1
+
 fn emit_general_epilogue() -> trit:
     discard write_byte(46)
     discard write_byte(115)
@@ -1400,6 +1472,14 @@ fn main() -> tryte:
     mut ir_opcode: tryte[64] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     mut ir_type: tryte[64] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     mut ir_value: i64[64] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut ir_parameter_owner: i64[68] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut ir_parameter_name: i64[68] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut ir_parameter_ordinal: i64[68] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut ir_parameter_type: i64[68] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut ir_return_kind: i64[64] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut ir_return_operand: i64[64] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut parameter_type_pending: trit = 0
+    mut parameter_type_slot: i64 = -1
     mut cursor: i64 = 0
     mut token_count: i64 = 0
     mut lexer_ok: trit = -1
@@ -1564,6 +1644,8 @@ fn main() -> tryte:
                                     -1:
                                         ir_function_return_type[current_function] = 2
                                         ir_value[current_function] = value
+                                        ir_return_kind[current_function] = 1
+                                        ir_return_operand[current_function] = value
                                     0:
                                         ir_function_return_type[current_function] = -1
                                     1:
@@ -1626,6 +1708,14 @@ fn main() -> tryte:
                 discard 0
         match kind == 1:
             -1:
+                match parameter_type_pending == -1:
+                    -1:
+                        ir_parameter_type[parameter_type_slot] = value
+                        parameter_type_pending = 0
+                    0:
+                        discard 0
+                    1:
+                        discard 0
                 match value == 311:
                     -1:
                         pending_foreign = -1
@@ -1639,6 +1729,44 @@ fn main() -> tryte:
                         ir_return_count += 1
                         ir_ast_event_opcode = 1
                         ir_ast_event_operand = value
+                    0:
+                        discard 0
+                    1:
+                        discard 0
+                match previous_value == 342:
+                    -1:
+                        match current_function >= 0:
+                            -1:
+                                mut parameter_scan: i64 = ir_function_param_start[current_function]
+                                mut parameter_scan_end: i64 = parameter_scan + ir_function_param_count[current_function]
+                                while parameter_scan < parameter_scan_end:
+                                    match ir_parameter_owner[parameter_scan] == current_function:
+                                        -1:
+                                            match ir_parameter_name[parameter_scan] == value:
+                                                -1:
+                                                    match ir_return_kind[current_function] == 0:
+                                                        -1:
+                                                            ir_return_kind[current_function] = 2
+                                                            ir_return_operand[current_function] = ir_parameter_ordinal[parameter_scan]
+                                                            ir_function_return_type[current_function] = 2
+                                                        0:
+                                                            ir_return_kind[current_function] = -1
+                                                        1:
+                                                            ir_return_kind[current_function] = -1
+                                                    parameter_scan = parameter_scan_end
+                                                0:
+                                                    discard 0
+                                                1:
+                                                    discard 0
+                                        0:
+                                            discard 0
+                                        1:
+                                            discard 0
+                                    parameter_scan += 1
+                            0:
+                                discard 0
+                            1:
+                                discard 0
                     0:
                         discard 0
                     1:
@@ -2165,8 +2293,20 @@ fn main() -> tryte:
                                     -1:
                                         match signature_paren_depth > 0:
                                             -1:
-                                                match parameter_count < 64:
+                                                match parameter_count < 68:
                                                     -1:
+                                                        ir_parameter_owner[parameter_count] = current_function
+                                                        ir_parameter_name[parameter_count] = previous_value
+                                                        parameter_type_pending = -1
+                                                        parameter_type_slot = parameter_count
+                                                        match current_function >= 0:
+                                                            -1:
+                                                                ir_parameter_ordinal[parameter_count] = ir_function_param_count[current_function]
+                                                                ir_function_param_count[current_function] += 1
+                                                            0:
+                                                                discard 0
+                                                            1:
+                                                                discard 0
                                                         parameter_count += 1
                                                     0:
                                                         ir_capacity_ok = 0
@@ -3059,6 +3199,28 @@ fn main() -> tryte:
                             1:
                                 general_emitter_possible = 0
                 general_scan += 1
+            mut general_kind_scan: i64 = 0
+            while general_kind_scan < function_count:
+                match function_flags[general_kind_scan] == 2:
+                    -1:
+                        discard 0
+                    0:
+                        match ir_return_kind[general_kind_scan] == 0:
+                            -1:
+                                general_emitter_possible = 0
+                            0:
+                                discard 0
+                            1:
+                                discard 0
+                    1:
+                        match ir_return_kind[general_kind_scan] == 0:
+                            -1:
+                                general_emitter_possible = 0
+                            0:
+                                discard 0
+                            1:
+                                discard 0
+                general_kind_scan += 1
             mut general_literal_scan: i64 = 0
             while general_literal_scan < function_count:
                 match function_flags[general_literal_scan] == 2:
@@ -3081,6 +3243,64 @@ fn main() -> tryte:
                             1:
                                 general_emitter_possible = 0
                 general_literal_scan += 1
+            mut general_parameter_scan: i64 = 0
+            while general_parameter_scan < function_count:
+                match function_flags[general_parameter_scan] == 2:
+                    -1:
+                        discard 0
+                    0:
+                        match ir_return_kind[general_parameter_scan] == 2:
+                            -1:
+                                match ir_function_param_count[general_parameter_scan] == 1:
+                                    -1:
+                                        match ir_return_operand[general_parameter_scan] == 0:
+                                            -1:
+                                                match valid_type_name(ir_parameter_type[ir_function_param_start[general_parameter_scan]]):
+                                                    -1:
+                                                        discard 0
+                                                    0:
+                                                        general_emitter_possible = 0
+                                                    1:
+                                                        general_emitter_possible = 0
+                                            0:
+                                                general_emitter_possible = 0
+                                            1:
+                                                general_emitter_possible = 0
+                                    0:
+                                        general_emitter_possible = 0
+                                    1:
+                                        general_emitter_possible = 0
+                            0:
+                                discard 0
+                            1:
+                                discard 0
+                    1:
+                        match ir_return_kind[general_parameter_scan] == 2:
+                            -1:
+                                match ir_function_param_count[general_parameter_scan] == 1:
+                                    -1:
+                                        match ir_return_operand[general_parameter_scan] == 0:
+                                            -1:
+                                                match valid_type_name(ir_parameter_type[ir_function_param_start[general_parameter_scan]]):
+                                                    -1:
+                                                        discard 0
+                                                    0:
+                                                        general_emitter_possible = 0
+                                                    1:
+                                                        general_emitter_possible = 0
+                                            0:
+                                                general_emitter_possible = 0
+                                            1:
+                                                general_emitter_possible = 0
+                                    0:
+                                        general_emitter_possible = 0
+                                    1:
+                                        general_emitter_possible = 0
+                            0:
+                                discard 0
+                            1:
+                                discard 0
+                general_parameter_scan += 1
             match general_main_seen == -1:
                 -1:
                     discard 0
@@ -3148,9 +3368,21 @@ fn main() -> tryte:
                             -1:
                                 discard 0
                             0:
-                                discard emit_general_literal_function(function_names[general_emit_index], ir_value[general_emit_index])
+                                match ir_return_kind[general_emit_index] == 2:
+                                    -1:
+                                        discard emit_general_parameter_function(function_names[general_emit_index])
+                                    0:
+                                        discard emit_general_literal_function(function_names[general_emit_index], ir_value[general_emit_index])
+                                    1:
+                                        discard emit_general_literal_function(function_names[general_emit_index], ir_value[general_emit_index])
                             1:
-                                discard emit_general_literal_function(function_names[general_emit_index], ir_value[general_emit_index])
+                                match ir_return_kind[general_emit_index] == 2:
+                                    -1:
+                                        discard emit_general_parameter_function(function_names[general_emit_index])
+                                    0:
+                                        discard emit_general_literal_function(function_names[general_emit_index], ir_value[general_emit_index])
+                                    1:
+                                        discard emit_general_literal_function(function_names[general_emit_index], ir_value[general_emit_index])
                         general_emit_index += 1
                     discard emit_general_epilogue()
                     discard s3_stage1_exit(0)

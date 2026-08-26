@@ -280,6 +280,26 @@ def _storage_evidence(source: str) -> dict[str, Any]:
         "event_records": occurrences("ir_ast_event_records_"),
         "lexical_numeric_records": occurrences("ir_value_records_"),
         "legacy_instruction_records": occurrences("ir_instruction_records_"),
+        "parameter_metadata": {
+            "status": "PARTIAL",
+            "capacity": 68,
+            "fields_preserved": [
+                "owner_function",
+                "name_identity",
+                "ordinal",
+                "declared_type",
+            ],
+            "fields_missing": [
+                "mutability",
+                "semantic_value_id",
+            ],
+            "source_prefixes": [
+                "ir_parameter_owner",
+                "ir_parameter_name",
+                "ir_parameter_ordinal",
+                "ir_parameter_type",
+            ],
+        },
         "event_record_schema": {
             "pack_expression_count": len(event_record_matches),
             "operand_assignment_sources": sorted(
@@ -374,6 +394,10 @@ def audit(source_path: Path, *, include_reference_ir: bool = False) -> dict[str,
 
     observed_lanes = {
         "function_metadata": "function_names/function_types/function_flags",
+        "parameter_metadata": (
+            "PARTIAL:ir_parameter_owner/name/ordinal/type; "
+            "missing mutability and semantic value IDs"
+        ),
         "aggregate_events": "ir_ast_event_records_*",
         "aggregate_instructions": "ir_instruction_records_*",
         "lexical_numeric_records": "ir_value_records_*",

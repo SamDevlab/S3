@@ -13,12 +13,12 @@ def test_canonical_source_requires_lossless_typed_ir_before_general_emitter() ->
 
     assert result["status"] == "BLOCKED_GENERAL_EMITTER_CAPABILITY_GAP"
     semantic = result["parser_semantic_audit"]
-    assert semantic["functions"] == 31
+    assert semantic["functions"] == 32
     assert semantic["foreign_functions"] == 5
-    assert semantic["parameters"] == 68
-    assert semantic["local_declarations"] == 191
-    assert semantic["calls"] == 792
-    assert semantic["call_arguments"] == 931
+    assert semantic["parameters"] == 69
+    assert semantic["local_declarations"] == 203
+    assert semantic["calls"] == 867
+    assert semantic["call_arguments"] == 1008
     assert result["required_operations"]["CALL_INTERNAL"] is True
     assert result["required_operations"]["CALL_FOREIGN"] is True
     assert result["required_operations"]["BRANCH"] is True
@@ -30,6 +30,26 @@ def test_canonical_source_requires_lossless_typed_ir_before_general_emitter() ->
     assert len(result["missing_lossless_typed_lanes"]) >= 6
 
     storage = result["storage_evidence"]
+    assert storage["parameter_metadata"] == {
+        "status": "PARTIAL",
+        "capacity": 68,
+        "fields_preserved": [
+            "owner_function",
+            "name_identity",
+            "ordinal",
+            "declared_type",
+        ],
+        "fields_missing": [
+            "mutability",
+            "semantic_value_id",
+        ],
+        "source_prefixes": [
+            "ir_parameter_owner",
+            "ir_parameter_name",
+            "ir_parameter_ordinal",
+            "ir_parameter_type",
+        ],
+    }
     assert storage["event_record_schema"]["schema"] == (
         "packed(opcode, owner_function_plus_one, token_operand, token_offset)"
     )

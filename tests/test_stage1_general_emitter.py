@@ -36,7 +36,9 @@ def test_general_emitter_is_closed_over_preserved_ir() -> None:
     assert "function_statements[general_literal_scan] == 1" in source
     assert "function_count > 1" in source
     assert "s3_stage1_exit(0)" in source
-    assert "parameter_count < 64" in source
+    assert "parameter_count < 68" in source
+    assert "ir_parameter_owner" in source
+    assert "emit_general_parameter_function" in source
 
 
 @pytest.mark.skipif(not LINUX_NATIVE, reason="requires Linux x86-64 native execution")
@@ -54,4 +56,20 @@ def test_general_emitter_emits_multiple_literal_functions(tmp_path: Path) -> Non
     assert b".globl s3_fn_" in compiled.stdout
     assert b"call s3_fn_36" in compiled.stdout
     assert b"mov eax, 7" in compiled.stdout
+    assert b"mov eax, 9" in compiled.stdout
+
+
+@pytest.mark.skipif(not LINUX_NATIVE, reason="requires Linux x86-64 native execution")
+def test_general_emitter_emits_first_parameter_return(tmp_path: Path) -> None:
+    executable = build_stage1(tmp_path / "s3c-stage1")
+    source = (
+        b"fn identity(x: i64) -> i64:\n"
+        b"    return x\n"
+        b"fn main() -> tryte:\n"
+        b"    return 9\n"
+    )
+    compiled = _run_stage1(executable, source)
+    assert compiled.returncode == 0
+    assert compiled.stderr == b""
+    assert b"mov rax, rdi" in compiled.stdout
     assert b"mov eax, 9" in compiled.stdout

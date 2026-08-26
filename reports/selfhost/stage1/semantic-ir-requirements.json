@@ -1,48 +1,48 @@
 {
   "ast_node_counts": {
-    "ArrayLiteral": 50,
-    "ArrayType": 50,
-    "AssignmentStatement": 478,
-    "BinaryExpression": 508,
-    "Block": 1028,
+    "ArrayLiteral": 56,
+    "ArrayType": 56,
+    "AssignmentStatement": 507,
+    "BinaryExpression": 531,
+    "Block": 1095,
     "BreakStatement": 4,
-    "CallArgument": 931,
-    "CallExpression": 792,
-    "CompoundAssignmentStatement": 77,
-    "DiscardStatement": 975,
+    "CallArgument": 1008,
+    "CallExpression": 867,
+    "CompoundAssignmentStatement": 81,
+    "DiscardStatement": 1072,
     "ForeignFunctionDeclaration": 5,
-    "FunctionDeclaration": 31,
-    "FunctionSignature": 36,
-    "Identifier": 1845,
-    "IndexExpression": 74,
-    "IndexTarget": 186,
-    "IntegerLiteral": 13283,
-    "Parameter": 68,
+    "FunctionDeclaration": 32,
+    "FunctionSignature": 37,
+    "Identifier": 2012,
+    "IndexExpression": 103,
+    "IndexTarget": 198,
+    "IntegerLiteral": 13818,
+    "Parameter": 69,
     "Program": 1,
-    "ReturnStatement": 119,
-    "SwitchStatement": 325,
-    "TernaryCase": 975,
-    "UnaryExpression": 135,
-    "VariableDeclaration": 191,
-    "VariableTarget": 369,
-    "WhileStatement": 22
+    "ReturnStatement": 120,
+    "SwitchStatement": 346,
+    "TernaryCase": 1038,
+    "UnaryExpression": 141,
+    "VariableDeclaration": 203,
+    "VariableTarget": 390,
+    "WhileStatement": 25
   },
   "binary_operators": {
     "*": 19,
-    "+": 85,
+    "+": 86,
     "-": 61,
     "/": 14,
-    "<": 78,
+    "<": 81,
     "<=": 3,
     "<=>": 10,
-    "==": 205,
+    "==": 222,
     ">": 22,
-    ">=": 11
+    ">=": 13
   },
   "call_arities": {
     "0": 17,
-    "1": 723,
-    "2": 8,
+    "1": 796,
+    "2": 10,
     "26": 2,
     "3": 28,
     "4": 14
@@ -58,8 +58,9 @@
     "emit_decimal": 3,
     "emit_error": 10,
     "emit_general_epilogue": 1,
-    "emit_general_literal_function": 2,
-    "emit_general_name": 5,
+    "emit_general_literal_function": 4,
+    "emit_general_name": 10,
+    "emit_general_parameter_function": 2,
     "emit_general_preamble": 1,
     "emit_ir_return": 4,
     "identifier_hash": 1,
@@ -82,8 +83,8 @@
     "simple_next": 1,
     "to_i64": 14,
     "to_tryte": 65,
-    "valid_type_name": 3,
-    "write_byte": 489,
+    "valid_type_name": 5,
+    "write_byte": 553,
     "write_error_byte": 66
   },
   "current_observed_lanes": {
@@ -91,7 +92,8 @@
     "aggregate_instructions": "ir_instruction_records_*",
     "call_metadata": "ir_call_*",
     "function_metadata": "function_names/function_types/function_flags",
-    "lexical_numeric_records": "ir_value_records_*"
+    "lexical_numeric_records": "ir_value_records_*",
+    "parameter_metadata": "PARTIAL:ir_parameter_owner/name/ordinal/type; missing mutability and semantic value IDs"
   },
   "declared_types": {
     "array[16]<i64>": 5,
@@ -99,12 +101,13 @@
     "array[16]<tryte>": 1,
     "array[365]<i64>": 20,
     "array[365]<tryte>": 8,
-    "array[64]<i64>": 8,
+    "array[64]<i64>": 10,
     "array[64]<tryte>": 7,
-    "i64": 113,
-    "parameter:i64": 58,
+    "array[68]<i64>": 4,
+    "i64": 118,
+    "parameter:i64": 59,
     "parameter:tryte": 10,
-    "trit": 22,
+    "trit": 23,
     "tryte": 6
   },
   "foreign_call_names": [
@@ -163,6 +166,10 @@
       "expressions": 23,
       "statements": 8
     },
+    "emit_general_parameter_function": {
+      "expressions": 209,
+      "statements": 70
+    },
     "emit_general_preamble": {
       "expressions": 533,
       "statements": 178
@@ -200,8 +207,8 @@
       "statements": 19
     },
     "main": {
-      "expressions": 13904,
-      "statements": 1215
+      "expressions": 14530,
+      "statements": 1312
     },
     "pack_ir_record": {
       "expressions": 13,
@@ -250,61 +257,61 @@
     "canonical_serialized_ir_artifact"
   ],
   "parser_semantic_audit": {
-    "array_literals": 50,
-    "assignments": 555,
+    "array_literals": 56,
+    "assignments": 588,
     "breaks": 4,
-    "call_arguments": 931,
-    "calls": 792,
-    "discards": 975,
+    "call_arguments": 1008,
+    "calls": 867,
+    "discards": 1072,
     "foreign_functions": 5,
-    "functions": 31,
-    "index_expressions": 74,
-    "index_targets": 186,
-    "integer_literals": 13283,
-    "local_declarations": 191,
+    "functions": 32,
+    "index_expressions": 103,
+    "index_targets": 198,
+    "integer_literals": 13818,
+    "local_declarations": 203,
     "max_call_arity": 26,
-    "parameters": 68,
-    "returns": 119,
-    "semantic_constant_values": 13418,
-    "semantic_expression_types": 15845,
-    "switches": 325,
-    "whiles": 22
+    "parameters": 69,
+    "returns": 120,
+    "semantic_constant_values": 13959,
+    "semantic_expression_types": 16605,
+    "switches": 346,
+    "whiles": 25
   },
   "reference_typed_ir": {
-    "blocks": 2684,
+    "blocks": 2872,
     "call_kinds": {
       "foreign": 22,
-      "internal": 691
+      "internal": 766
     },
-    "functions": 36,
-    "instruction_results": 30944,
-    "instructions": 46573,
-    "max_blocks_per_function": 1913,
-    "max_instructions_per_function": 42739,
-    "max_registers_per_function": 28192,
-    "memory_objects": 510,
+    "functions": 37,
+    "instruction_results": 32336,
+    "instructions": 48658,
+    "max_blocks_per_function": 2100,
+    "max_instructions_per_function": 44689,
+    "max_registers_per_function": 29450,
+    "memory_objects": 544,
     "opcodes": {
-      "add": 162,
-      "branch3": 666,
-      "call": 713,
-      "compare": 329,
-      "const": 28244,
+      "add": 167,
+      "branch3": 712,
+      "call": 788,
+      "compare": 351,
+      "const": 29421,
       "convert": 79,
       "divide": 14,
-      "jump": 1899,
-      "load": 1323,
+      "jump": 2040,
+      "load": 1436,
       "multiply": 19,
       "numeric_difference": 61,
-      "return": 119,
-      "store": 12945
+      "return": 120,
+      "store": 13450
     },
-    "parameters": 68,
-    "registers": 31012,
+    "parameters": 69,
+    "registers": 32405,
     "status": "MEASURED_HOST_IR_ORACLE_NOT_STAGE1_EVIDENCE",
     "terminators": {
-      "branch3": 666,
-      "jump": 1899,
-      "return": 119
+      "branch3": 712,
+      "jump": 2040,
+      "return": 120
     }
   },
   "required_operations": {
@@ -335,9 +342,9 @@
   },
   "schema": "s3.selfhost.stage1-semantic-ir-requirements.v1",
   "source": {
-    "bytes": 166984,
+    "bytes": 179657,
     "path": "C:\\Users\\samue\\Downloads\\S3\\S3-actual-stage1-compiler-seed-20260824\\selfhost\\compiler\\s3c_stage1.s3",
-    "sha256": "20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341"
+    "sha256": "9605cb6e757150460983f8304bf03d1fc9809c633b97c66aa4a15a7713168396"
   },
   "stage1_self_emit": "BLOCKED_UNTIL_MISSING_LANES_EXIST_AND_VERIFY",
   "stage2": "NOT_STARTED",
@@ -349,23 +356,23 @@
         "cursor"
       ],
       "operand_assignment_lines": [
-        1641,
-        1652,
-        1662,
-        1672,
-        1681,
-        1691,
-        1706,
-        1715,
-        1724,
-        1733,
-        1743,
-        1752,
-        1761,
-        1771,
-        1781,
-        1791,
-        1988
+        1731,
+        1780,
+        1790,
+        1800,
+        1809,
+        1819,
+        1834,
+        1843,
+        1852,
+        1861,
+        1871,
+        1880,
+        1889,
+        1899,
+        1909,
+        1919,
+        2116
       ],
       "operand_assignment_sources": [
         "previous_value",
@@ -373,48 +380,48 @@
       ],
       "pack_expression_count": 1,
       "pack_lines": [
-        2326
+        2466
       ],
       "schema": "packed(opcode, owner_function_plus_one, token_operand, token_offset)"
     },
     "event_records": {
       "declaration_count": 4,
       "declaration_lines": [
-        1380,
-        1381,
-        1382,
-        1383
+        1452,
+        1453,
+        1454,
+        1455
       ],
       "read_count": 0,
       "read_lines": [],
       "write_count": 21,
       "write_lines": [
-        2329,
-        2333,
-        2337,
-        2339,
-        2341,
-        2343,
-        2345,
-        2659,
-        2663,
-        2667,
-        2669,
-        2671,
-        2673,
-        2675,
-        2948,
-        2952,
-        2956,
-        2958,
-        2960,
-        2962,
-        2964
+        2469,
+        2473,
+        2477,
+        2479,
+        2481,
+        2483,
+        2485,
+        2799,
+        2803,
+        2807,
+        2809,
+        2811,
+        2813,
+        2815,
+        3088,
+        3092,
+        3096,
+        3098,
+        3100,
+        3102,
+        3104
       ]
     },
     "instruction_cardinality": {
       "assignment_lines": [
-        2744
+        2884
       ],
       "derived_from_event_count": true
     },
@@ -422,41 +429,61 @@
     "legacy_instruction_records": {
       "declaration_count": 2,
       "declaration_lines": [
-        1378,
-        1379
+        1450,
+        1451
       ],
       "read_count": 0,
       "read_lines": [],
       "write_count": 9,
       "write_lines": [
-        1948,
-        1950,
-        1952,
-        1957,
-        1959,
-        1961,
-        1966,
-        1968,
-        1970
+        2076,
+        2078,
+        2080,
+        2085,
+        2087,
+        2089,
+        2094,
+        2096,
+        2098
       ]
     },
     "lexical_numeric_records": {
       "declaration_count": 4,
       "declaration_lines": [
-        1384,
-        1385,
-        1386,
-        1387
+        1456,
+        1457,
+        1458,
+        1459
       ],
       "read_count": 0,
       "read_lines": [],
       "write_count": 4,
       "write_lines": [
-        2015,
-        2022,
-        2029,
-        2036
+        2143,
+        2150,
+        2157,
+        2164
       ]
+    },
+    "parameter_metadata": {
+      "capacity": 68,
+      "fields_missing": [
+        "mutability",
+        "semantic_value_id"
+      ],
+      "fields_preserved": [
+        "owner_function",
+        "name_identity",
+        "ordinal",
+        "declared_type"
+      ],
+      "source_prefixes": [
+        "ir_parameter_owner",
+        "ir_parameter_name",
+        "ir_parameter_ordinal",
+        "ir_parameter_type"
+      ],
+      "status": "PARTIAL"
     },
     "semantic_relationships": {
       "call_argument_value_ids": false,
