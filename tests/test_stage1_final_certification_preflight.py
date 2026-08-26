@@ -114,3 +114,17 @@ def test_skip_tests_never_turns_preflight_into_native_evidence(monkeypatch: pyte
     assert result["qualification"]["tooling_preflight"] == "PASS"
     assert result["focused_hosted_tests"]["status"] == "SKIPPED"
     assert result["native_execution_evidence"] is False
+
+
+def test_preflight_final_semantic_ir_path_is_call_bound() -> None:
+    final_semantic = preflight.FINAL_EVIDENCE["final_semantic_ir_verifier"]
+    assert final_semantic.endswith("stage1-final-semantic-ir-verifier-call-bound.json")
+    assert final_semantic != "reports/selfhost/stage1/stage1-final-semantic-ir-verifier.json"
+    assert "native_call_reconciliation" in preflight.FINAL_EVIDENCE
+
+
+def test_preflight_compiles_and_tests_call_boundary_tooling() -> None:
+    assert "tools/bind_stage1_semantic_ir_native_calls.py" in preflight.TOOL_FILES
+    assert "tools/qualify_stage1_final_self_emit_static.py" in preflight.TOOL_FILES
+    assert "tests/test_stage1_semantic_ir_native_call_boundary.py" in preflight.TEST_FILES
+    assert "tests/test_stage1_final_self_emit_call_bound.py" in preflight.TEST_FILES
