@@ -75,7 +75,9 @@
       "assertions": [
         {"path": "qualification.semantic_ir", "equals": "PASS_CODEGEN_COMPLETE_BOOTSTRAP_SUBSET"},
         {"path": "qualification.verifier_v2", "equals": "PASS"},
-        {"path": "qualification.general_emitter", "equals": "PASS_BOOTSTRAP_REQUIRED_OPCODES"}
+        {"path": "qualification.general_emitter", "equals": "PASS_BOOTSTRAP_REQUIRED_OPCODES"},
+        {"path": "emitter_boundary.status", "equals": "PASS_VERIFIED_IR_ONLY"},
+        {"path": "emitter_boundary.raw_source_accesses_after_verifier", "equals": 0}
       ],
       "canonical_source_sha256_path": "canonical_source.sha256",
       "stage1_artifact_sha256_path": "stage1.sha256"
@@ -84,7 +86,11 @@
       "schema": "s3.selfhost.stage1-final-self-emit.v1",
       "assertions": [
         {"path": "qualification.self_emit", "equals": "PASS"},
-        {"path": "qualification.stage1_certified_candidate", "equals": true}
+        {"path": "qualification.stage1_certified_candidate", "equals": true},
+        {"path": "qualification.stage2_certified", "equals": false},
+        {"path": "link_recipe.mode", "equals": "STATIC_FREESTANDING_FINAL_AUTHORITY"},
+        {"path": "stage2.freestanding_elf_audit.status", "equals": "PASS_FREESTANDING_STATIC_ELF"},
+        {"path": "stage2_smoke.status", "equals": "PASS"}
       ],
       "canonical_source_sha256_path": "canonical_source.sha256",
       "stage1_artifact_sha256_path": "stage1.sha256"
@@ -103,7 +109,8 @@
     "call argument/result linkage and terminator condition/return/target linkage are complete",
     "verifier v2 rejects malformed def-use/storage/CFG fixtures",
     "general emitter consumes verified IR only and covers every required semantic opcode",
-    "Stage1 self-emits the exact final canonical source into a real compiler artifact",
+    "Stage1 self-emits the exact final canonical source twice deterministically using the static freestanding final link recipe",
+    "the resulting Stage2 candidate is freestanding static ELF and passes its own strict compile/execute smoke",
     "all evidence reports are content-hash bound and revalidated by the Stage2 consumer"
   ],
   "prohibited": [
@@ -111,13 +118,17 @@
     "creating the gate before native self-emit",
     "setting stage1_certified_for_stage2 by operator override",
     "using raw-source codegen or Python compiler delegation to satisfy self-emit",
+    "accepting a dynamic/PT_INTERP Stage2 self-emit artifact",
     "reusing the gate after canonical source bytes change",
     "reusing native evidence produced by a different Stage1 artifact where artifact binding is required",
     "trusting report paths without re-hashing their current contents",
     "allowing an evidence entry to choose its own schema/assertion policy"
   ],
-  "consumers": [
+  "producer": "tools/emit_stage1_certification_gate.py",
+  "final_consumer": "tools/qualify_stage2_stage3_certified_static.py",
+  "legacy_internal_consumers_not_final_authority": [
     "tools/qualify_stage2_stage3_fixed_point.py",
-    "tools/qualify_stage2_stage3_strict_sandbox.py"
+    "tools/qualify_stage2_stage3_strict_sandbox.py",
+    "tools/qualify_stage2_stage3_certified_strict.py"
   ]
 }
