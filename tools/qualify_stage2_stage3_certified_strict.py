@@ -7,10 +7,11 @@ verifies the exact Stage1 executable and canonical source, creates a v1
 compatibility certificate in a temporary directory, runs the existing
 strict+Landlock engine, and then independently rechecks every final gate.
 
-Contract path arguments are location overrides only. Both the Stage1 evidence
-policy and the Stage2/Stage3 fixed-point policy must be byte-identical to the
-repository's canonical contracts, and the Stage1 gate must carry the exact same
-canonical contract SHA that this consumer revalidates.
+Contract and source-manifest path arguments are location overrides only. The
+Stage1 evidence policy, Stage2/Stage3 fixed-point policy, and compiler source
+manifest must be byte-identical to their repository canonical authorities. The
+consumer also re-opens the declared Git commit and compares the canonical source
+blob byte-for-byte instead of trusting producer booleans.
 """
 
 from __future__ import annotations
@@ -27,12 +28,16 @@ from tools.qualify_stage2_stage3_fixed_point import (
     DEFAULT_HOST_IO,
     DEFAULT_MANIFEST,
     FixedPointError,
-    _canonical_source,
 )
 from tools.qualify_stage2_stage3_strict_sandbox import qualify_strict
 from tools.selfhost_contract_authority import (
     ContractAuthorityError,
     require_authoritative_contract,
+)
+from tools.selfhost_source_authority import (
+    SourceAuthorityError,
+    require_authoritative_source_manifest,
+    verify_git_commit_source_binding,
 )
 from tools.stage1_certification_evidence import (
     ROOT,
@@ -102,6 +107,37 @@ def _validate_gate_contract_authority(
             )
 
 
+def _validate_gate_source_manifest_authority(
+    gate: dict[str, Any],
+    *,
+    expected: dict[str, Any],
+) -> None:
+    embedded = gate.get("source_manifest_authority")
+    if not isinstance(embedded, dict):
+        raise CertifiedStrictError("Stage1 gate lacks canonical source manifest authority binding")
+    required = {
+        "status": "PASS_CANONICAL_SOURCE_MANIFEST_AUTHORITY",
+        "schema": "s3.compiler.sources.v1",
+        "sha256": expected.get("sha256"),
+        "bytes": expected.get("bytes"),
+        "exact_bytes_equal": True,
+    }
+    for field, value in required.items():
+        if embedded.get(field) != value:
+            raise CertifiedStrictError(
+                f"Stage1 gate source manifest authority {field} must be {value!r}"
+            )
+    expected_source = expected.get("source")
+    embedded_source = embedded.get("source")
+    if not isinstance(expected_source, dict) or not isinstance(embedded_source, dict):
+        raise CertifiedStrictError("Stage1 gate source manifest authority lacks source binding")
+    for field in ("path", "sha256", "bytes", "role", "ordering"):
+        if embedded_source.get(field) != expected_source.get(field):
+            raise CertifiedStrictError(
+                f"Stage1 gate source manifest authority source.{field} mismatch"
+            )
+
+
 def validate_hashed_stage1_gate(
     gate: dict[str, Any],
     *,
@@ -110,12 +146,14 @@ def validate_hashed_stage1_gate(
     canonical_source_path: Path,
     contract: dict[str, Any],
     contract_authority: dict[str, Any],
+    source_manifest_authority: dict[str, Any],
 ) -> dict[str, Any]:
     if contract.get("schema") != "s3.selfhost.stage1-certification-gate-contract.v3":
         raise CertifiedStrictError("Stage1 certification contract schema mismatch")
     if gate.get("schema") != "s3.selfhost.stage1-certification-gate.v2":
         raise CertifiedStrictError("final Stage2/Stage3 wrapper requires Stage1 gate v2")
     _validate_gate_contract_authority(gate, expected=contract_authority)
+    _validate_gate_source_manifest_authority(gate, expected=source_manifest_authority)
 
     canonical_sha = _sha_bytes(canonical_source)
     canonical = gate.get("canonical_source")
@@ -125,17 +163,24 @@ def validate_hashed_stage1_gate(
         raise CertifiedStrictError("Stage1 gate canonical SHA differs from current manifest source")
     if canonical.get("bytes") != len(canonical_source):
         raise CertifiedStrictError("Stage1 gate canonical byte count differs from current manifest source")
+    relative_canonical = canonical_source_path.resolve().relative_to(ROOT.resolve()).as_posix()
     if canonical.get("path") not in {
         str(canonical_source_path),
         str(canonical_source_path.resolve()),
-        canonical_source_path.resolve().relative_to(ROOT.resolve()).as_posix(),
+        relative_canonical,
     }:
         raise CertifiedStrictError("Stage1 gate canonical path differs from manifest source")
     commit = canonical.get("commit")
-    if not isinstance(commit, str) or len(commit) != 40:
+    if not isinstance(commit, str):
         raise CertifiedStrictError("Stage1 gate lacks exact canonical commit binding")
     if canonical.get("working_tree_equals_commit_blob") is not True:
-        raise CertifiedStrictError("Stage1 gate does not prove source equals committed blob")
+        raise CertifiedStrictError("Stage1 gate does not claim source equals committed blob")
+    git_commit_binding = verify_git_commit_source_binding(
+        commit=commit,
+        source_path=canonical_source_path,
+        source=canonical_source,
+        root=ROOT,
+    )
 
     stage1 = stage1.resolve()
     if not stage1.is_file() or not os.access(stage1, os.X_OK):
@@ -178,9 +223,11 @@ def validate_hashed_stage1_gate(
     return {
         "canonical_sha256": canonical_sha,
         "canonical_bytes": len(canonical_source),
+        "canonical_commit_binding": git_commit_binding,
         "stage1_sha256": stage1_sha,
         "stage1_bytes": stage1.stat().st_size,
         "contract_authority": contract_authority,
+        "source_manifest_authority": source_manifest_authority,
         "evidence": evidence,
     }
 
@@ -273,8 +320,13 @@ def qualify_certified_strict(
         expected_schema="s3.selfhost.stage2-stage3-fixed-point-contract.v3",
         label="Stage2/Stage3 fixed-point contract",
     )
-
-    canonical_path, canonical_source, manifest_document = _canonical_source(manifest.resolve())
+    canonical_path, canonical_source, manifest_document, source_manifest_authority = (
+        require_authoritative_source_manifest(
+            manifest,
+            authoritative=DEFAULT_MANIFEST,
+            root=ROOT,
+        )
+    )
     stage1_validation = validate_hashed_stage1_gate(
         gate,
         stage1=stage1,
@@ -282,6 +334,7 @@ def qualify_certified_strict(
         canonical_source_path=canonical_path,
         contract=stage1_policy,
         contract_authority=stage1_contract_authority,
+        source_manifest_authority=source_manifest_authority,
     )
 
     with tempfile.TemporaryDirectory(prefix="s3-stage1-cert-v1-adapter-") as temporary:
@@ -319,6 +372,8 @@ def qualify_certified_strict(
             "sha256": stage1_validation["canonical_sha256"],
             "bytes": stage1_validation["canonical_bytes"],
             "manifest": manifest_document,
+            "manifest_authority": source_manifest_authority,
+            "git_commit_binding": stage1_validation["canonical_commit_binding"],
         },
         "stage1": {
             "path": str(stage1.resolve()),
@@ -330,6 +385,7 @@ def qualify_certified_strict(
             "sha256": sha256_file(stage1_gate_path),
             "schema": gate["schema"],
             "contract_authority": stage1_contract_authority,
+            "source_manifest_authority": source_manifest_authority,
             "evidence_revalidation": stage1_validation["evidence"],
             "compatibility_adapter": {
                 "schema": "s3.selfhost.stage1-certification-gate.v1",
@@ -379,6 +435,7 @@ def main(argv: list[str] | None = None) -> int:
     except (
         CertifiedStrictError,
         ContractAuthorityError,
+        SourceAuthorityError,
         FixedPointError,
         Stage1CertificationEvidenceError,
         OSError,
@@ -389,6 +446,8 @@ def main(argv: list[str] | None = None) -> int:
     qualification = result["qualification"]
     print(f"REPORT={args.report.resolve()}")
     print(f"STAGE1_CONTRACT_AUTHORITY={result['stage1_certification']['contract_authority']['status']}")
+    print(f"SOURCE_MANIFEST_AUTHORITY={result['canonical_source']['manifest_authority']['status']}")
+    print(f"SOURCE_GIT_BINDING={result['canonical_source']['git_commit_binding']['status']}")
     print(f"FIXED_POINT_CONTRACT_AUTHORITY={result['contract']['authority']['status']}")
     print(f"STAGE1_HASHED_EVIDENCE={qualification['stage1_hashed_evidence_revalidation']}")
     print(f"STAGE1_TO_STAGE2={qualification['stage1_to_stage2']}")
