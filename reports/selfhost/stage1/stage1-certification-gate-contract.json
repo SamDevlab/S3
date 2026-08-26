@@ -109,7 +109,10 @@
         {"path": "emitter_boundary.raw_source_accesses_after_verifier", "equals": 0}
       ],
       "canonical_source_sha256_path": "canonical_source.sha256",
-      "stage1_artifact_sha256_path": "stage1.sha256"
+      "stage1_artifact_sha256_path": "stage1.sha256",
+      "evidence_sha256_matches_role": [
+        {"path": "native_call_capacity_dependency.report_sha256", "role": "native_call_reconciliation"}
+      ]
     },
     "final_self_emit": {
       "schema": "s3.selfhost.stage1-final-self-emit.v1",
@@ -129,7 +132,11 @@
         {"path": "stage2_smoke.status", "equals": "PASS"}
       ],
       "canonical_source_sha256_path": "canonical_source.sha256",
-      "stage1_artifact_sha256_path": "stage1.sha256"
+      "stage1_artifact_sha256_path": "stage1.sha256",
+      "evidence_sha256_matches_role": [
+        {"path": "semantic_ir_call_boundary.sha256", "role": "final_semantic_ir_verifier"},
+        {"path": "semantic_ir_call_boundary.native_call_reconciliation_sha256", "role": "native_call_reconciliation"}
+      ]
     }
   },
   "mandatory_evidence_before_emission": [
@@ -138,7 +145,8 @@
     "a fresh source-bound hosted call inventory replaces the historical 656/736 closure",
     "native call/call-argument high-water, classification closure and slice/addressability guards pass on the same exact source and Stage1 artifact",
     "final semantic IR calls and call_arguments equal those native current-source high-water counts before self-emit",
-    "final self-emit consumes only the call-bound semantic IR authority for the same source and Stage1 artifact",
+    "the call-bound semantic IR report references the exact native-call reconciliation report selected by the certification gate",
+    "final self-emit consumes only the exact call-bound semantic IR and native-call reports selected by the certification gate",
     "typed reference opcode inventory reconciled with emitter requirements",
     "hosted fixture corpus covers every bootstrap-required reference opcode",
     "native codegen-complete fixture corpus passes using the exact Stage1 artifact",
@@ -153,7 +161,7 @@
     "general emitter consumes verified IR only and covers every required semantic opcode",
     "Stage1 self-emits the exact final canonical source twice deterministically using the static freestanding final link recipe",
     "the resulting Stage2 candidate is freestanding static ELF and passes its own strict compile/execute smoke",
-    "all evidence reports are content-hash bound and revalidated by the Stage2 consumer"
+    "all evidence reports are content-hash bound, cross-report hash bound, and revalidated by the Stage2 consumer"
   ],
   "prohibited": [
     "creating the gate from static projections alone",
@@ -164,6 +172,7 @@
     "accepting native call high-water without internal+foreign closure or call/argument slice guards",
     "accepting semantic IR call inventory that differs from native current-source call high-water",
     "allowing final self-emit to consume an unbound semantic IR report",
+    "accepting a semantic IR or self-emit report whose embedded dependency SHA points at a different evidence file than the certification role",
     "using a pre-convergence or stale parameter/local capacity report",
     "using a representation-epoch report for different source bytes",
     "reapplying historical packed parameter/local transforms to a source that already materializes explicit lanes",
