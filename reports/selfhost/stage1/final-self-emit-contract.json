@@ -2,7 +2,14 @@
   "schema": "s3.selfhost.stage1-final-self-emit-contract.v1",
   "output_schema": "s3.selfhost.stage1-final-self-emit.v1",
   "purpose": "Prove that the exact final Stage1 artifact, after passing final semantic IR/verifier evidence, compiles the exact canonical compiler source into a deterministic real Stage2 compiler artifact. This gate creates a Stage2 candidate but does not certify Stage2 or start Stage3.",
+  "authoritative_runner": "tools/qualify_stage1_final_self_emit_static.py",
   "required_platform": {"system": "Linux", "machine": "x86_64"},
+  "required_link_recipe": {
+    "mode": "STATIC_FREESTANDING_FINAL_AUTHORITY",
+    "flags": ["-static", "-nostdlib", "-no-pie", "-s", "-Wl,--build-id=none"],
+    "same_host_object_for_both_stage2_links": true,
+    "same_recipe_for_stage2_smoke_program": true
+  },
   "semantic_ir_dependency": {
     "schema": "s3.selfhost.stage1-final-semantic-ir-verifier.v1",
     "qualification": {
@@ -46,6 +53,7 @@
     "Python code generation or compiler delegation",
     "raw source code generation after the verified-IR boundary",
     "embedded/precomputed Stage2 assembly",
+    "dynamic/PT_INTERP Stage2 artifact",
     "using a semantic IR report bound to a different source or Stage1 artifact",
     "accepting trace output without replay hash/byte binding",
     "accepting only one self-emit run",
