@@ -1,5 +1,5 @@
 {
-  "schema": "s3.selfhost.codegen-ir-v2-value-namespace-contract.v1",
+  "schema": "s3.selfhost.codegen-ir-v2-value-namespace-contract.v2",
   "pr": 268,
   "status": "DESIGN_ONLY_NATIVE_LOCAL_PREREQUISITE_PENDING",
   "canonical_source_mutated": false,
@@ -20,13 +20,15 @@
     "rewrite_frontier": "ONLY_AFTER_LEGACY_VALUE_INFORMATION_NEEDED_FOR_REBUILD_HAS_BEEN_CONSUMED_AND_NEW_VERIFIER_CAN_PROVE_NAMESPACE"
   },
   "semantic_id_layout": {
-    "parameter_domain": "[0,64)",
+    "parameter_capacity_bound": 68,
+    "parameter_domain": "[0,parameter_count)",
     "parameter_ids_used": "[0,parameter_count)",
-    "local_domain_start": 64,
-    "local_ids": "64 + global_local_record_index",
-    "dynamic_start": "64 + local_record_count",
+    "local_domain_start": "parameter_count",
+    "local_ids": "parameter_count + global_local_record_index",
+    "dynamic_start": "parameter_count + local_record_count",
     "dynamic_allocation": "monotonic physical-slot allocation; semantic IDs may contain reserved extension holes for wide literals",
-    "maximum_semantic_id": 1459
+    "maximum_semantic_id": 1459,
+    "fixed_64_parameter_reservation": false
   },
   "value_kinds": {
     "1": "PARAMETER",
@@ -60,13 +62,16 @@
   },
   "parameter_value": {
     "kind": "PARAMETER",
+    "semantic_value_id": "parameter_record_index",
     "payload_or_reference": "parameter_record_index",
-    "type_and_owner": "must agree with packed parameter metadata"
+    "type_and_owner": "must agree with direct parameter metadata lanes",
+    "capacity_bound": 68
   },
   "local_value": {
     "kind": "LOCAL_STORAGE_IDENTITY",
+    "semantic_value_id": "parameter_count + local_record_index",
     "payload_or_reference": "local_record_index",
-    "type_and_owner": "must agree with packed local metadata",
+    "type_and_owner": "must agree with local metadata",
     "note": "A later store changes the value flowing through instructions; it does not create a new local identity. Instruction-result/source value IDs preserve def-use separately."
   },
   "instruction_result": {
@@ -81,7 +86,9 @@
     "Intern typed immutable constants before capacity calculation.",
     "Count wide-literal extension slots separately.",
     "Count only semantically materialized instruction results, but prove every use has exactly one valid definition.",
-    "Parameter/local fixed domains must never collide with dynamic constants/results.",
+    "Parameter IDs occupy exactly [0,parameter_count); do not reserve a historical fixed [0,64) range.",
+    "Local identities begin exactly at parameter_count and dynamic constants/results begin after local identities.",
+    "Parameter/local/dynamic domains must never collide.",
     "If exact semantic records plus extension slots exceed 1460, route to a measured bank-expansion design rather than truncate."
   ],
   "required_preflight_measurements": [
@@ -94,10 +101,10 @@
     "exact use-site inventory for operands, calls and terminators"
   ],
   "verifier_requirements": [
+    "parameter_count is within the current direct metadata capacity bound of 68",
     "parameter IDs [0,parameter_count) are populated and agree with parameter records",
-    "unused reserved parameter IDs are never referenced",
-    "local IDs start at 64 and agree with local records",
-    "dynamic allocation begins after local identities",
+    "local IDs start at parameter_count and agree with local records",
+    "dynamic allocation begins at parameter_count + local_record_count",
     "every constant has a valid primitive type",
     "inline constants decode exactly",
     "wide constants own exactly one following extension slot and preserve the raw signed i64 payload",
@@ -109,6 +116,7 @@
   ],
   "prohibited_shortcuts": [
     "reinterpret legacy ir_value_records as semantic IDs without rebuild",
+    "restore or assume a fixed [0,64) parameter semantic-ID reservation",
     "raw-source reread by emitter to recover literal values or variable identities",
     "one semantic value per lexical zero initializer occurrence",
     "truncate large literals into packed metadata",
