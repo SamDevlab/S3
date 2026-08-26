@@ -32,6 +32,10 @@ CONTRACTS = {
         "reports/selfhost/stage1/representation-tool-compatibility.json",
         "s3.selfhost.stage1-representation-tool-compatibility.v1",
     ),
+    "reference_current_call_inventory": (
+        "reports/selfhost/stage1/reference-current-call-inventory-contract.json",
+        "s3.selfhost.reference-current-call-inventory-contract.v1",
+    ),
     "final_capacity": (
         "reports/selfhost/stage1/final-capacity-contract.json",
         "s3.selfhost.stage1-final-capacity-contract.v2",
@@ -57,6 +61,7 @@ CONTRACTS = {
 TOOL_FILES = [
     "tools/audit_stage1_representation_epoch.py",
     "tools/check_stage1_representation_compatibility.py",
+    "tools/audit_stage1_reference_current_calls.py",
     "tools/audit_stage1_final_capacity_measurement_readiness.py",
     "tools/qualify_stage1_selfhost_capacity_convergence.py",
     "tools/qualify_stage1_final_capacity.py",
@@ -74,6 +79,7 @@ TOOL_FILES = [
 TEST_FILES = [
     "tests/test_stage1_representation_epoch.py",
     "tests/test_stage1_representation_compatibility.py",
+    "tests/test_stage1_reference_current_calls.py",
     "tests/test_stage1_final_capacity_measurement_readiness.py",
     "tests/test_stage1_selfhost_capacity_convergence.py",
     "tests/test_stage1_final_capacity.py",
@@ -94,6 +100,7 @@ TEST_FILES = [
 FINAL_EVIDENCE = {
     "native_source_coverage": "reports/selfhost/stage1/packed-token-lane-native-full-coverage.json",
     "representation_epoch": "reports/selfhost/stage1/stage1-representation-epoch.json",
+    "reference_current_call_inventory": "reports/selfhost/stage1/reference-current-call-inventory.json",
     "reference_opcode_inventory": "reports/selfhost/stage1/reference-bootstrap-opcode-inventory.json",
     "hosted_fixture_opcode_coverage": "reports/selfhost/stage1/stage1-codegen-fixture-opcode-coverage.json",
     "native_codegen_fixtures": "reports/selfhost/stage1/stage1-codegen-complete-fixtures-native.json",
