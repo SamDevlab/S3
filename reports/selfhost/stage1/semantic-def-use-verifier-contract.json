@@ -1,18 +1,25 @@
 {
-  "schema": "s3.selfhost.semantic-def-use-verifier-contract.v1",
+  "schema": "s3.selfhost.semantic-def-use-verifier-contract.v2",
   "pr": 268,
   "status": "DESIGN_ONLY_PARALLEL_AUDIT",
   "canonical_source_mutated": false,
-  "purpose": "Close the semantic gap between local storage identities and instruction-result values before the general emitter. Mutable locals and fixed arrays are modeled as storage; reads create result values and writes consume source values, so the emitter never reconstructs a current value from raw source.",
+  "purpose": "Close the semantic gap between storage identities and instruction-result values before the general emitter. Mutable locals and fixed arrays are storage; reads create result values and writes consume source values. Logical scalar/indexed access semantics may share generic physical LOAD/STORE opcodes, matching the reference S3 IR, provided storage identity and optional index value remain explicit and verifier checked.",
+  "reference_ir_alignment": {
+    "reference": "bootstrap/s3/ir.py",
+    "physical_opcodes": ["LOAD", "STORE"],
+    "memory_object_fields": ["index", "element_type", "length", "mutable"],
+    "instruction_fields_used": ["result", "operands", "memory"],
+    "rule": "Do not multiply physical opcodes when generic LOAD/STORE plus explicit storage/index operands preserve the same semantics."
+  },
   "storage_model": {
     "parameter": "immutable semantic value available at function entry",
-    "scalar_local": "stable LOCAL_STORAGE_IDENTITY; reading requires LOAD_LOCAL -> fresh instruction result; writing requires STORE_LOCAL(local_id, source_value_id)",
-    "fixed_array_local": "stable LOCAL_STORAGE_IDENTITY with element type and fixed extent; element reads require LOAD_INDEX(array_local_id, index_value_id) -> fresh result; element writes require STORE_INDEX(array_local_id, index_value_id, source_value_id)",
-    "compound_assignment": "lower to explicit load + arithmetic/comparison operation + store; no implicit mutable-current-value lane",
-    "array_initializer": "must lower deterministically either to FIXED_ARRAY_INIT or to a verified ordered sequence of element stores",
-    "phi_policy": "SSA phi nodes are not required for mutable local storage itself. Instruction-result values remain single-definition values; control-flow joins observe locals through explicit loads from storage."
+    "scalar_local": "stable LOCAL_STORAGE_IDENTITY; logical LOAD_LOCAL means physical LOAD(storage_id, no_index) -> fresh result; logical STORE_LOCAL means physical STORE(storage_id, source_value_id, no_index)",
+    "fixed_array_local": "stable LOCAL_STORAGE_IDENTITY with element type and fixed extent; logical LOAD_INDEX means physical LOAD(storage_id, index_value_id) -> fresh result; logical STORE_INDEX means physical STORE(storage_id, source_value_id, index_value_id)",
+    "compound_assignment": "lower to explicit LOAD + arithmetic/comparison + STORE; no implicit mutable-current-value lane",
+    "array_initializer": "lower deterministically either to a verified initialization form or to an ordered sequence of STORE operations with explicit constant index values",
+    "phi_policy": "SSA phi nodes are not required for mutable storage itself. Instruction-result values remain single-definition values; control-flow joins observe mutable storage through explicit LOAD operations."
   },
-  "required_instruction_semantics": [
+  "logical_instruction_semantics": [
     "CONST",
     "LOAD_LOCAL",
     "STORE_LOCAL",
@@ -29,31 +36,41 @@
     "CONDITIONAL_BRANCH",
     "JUMP"
   ],
+  "physical_opcode_candidate": {
+    "storage_read": "LOAD",
+    "storage_write": "STORE",
+    "scalar_vs_indexed_discriminator": "presence/absence of index semantic value operand plus verified storage shape",
+    "load_result": "fresh semantic instruction-result value",
+    "store_result": "none unless language semantics separately require one",
+    "storage_reference": "explicit local/storage identity; never recovered from source"
+  },
   "array_requirements": [
     "index expression is a semantic value ID, never a raw-source token",
     "array owner/local identity is explicit",
     "element type is derived from verified local metadata",
     "fixed extent is preserved in local metadata",
     "verifier proves statically-known constant indices are in range",
-    "dynamic indices remain runtime checked or follow the bootstrap language's separately documented bounds policy",
-    "STORE_INDEX source type equals array element type",
-    "LOAD_INDEX result type equals array element type"
+    "dynamic indices follow the bootstrap language's documented runtime bounds semantics",
+    "indexed STORE source type equals array element type",
+    "indexed LOAD result type equals array element type",
+    "scalar local access must not carry an index operand",
+    "fixed-array element access must carry exactly one scalar index value operand"
   ],
   "definition_kinds": {
     "PARAMETER": "defined at function entry",
     "CONSTANT": "global immutable typed value",
-    "LOAD_RESULT": "defined by LOAD_LOCAL or LOAD_INDEX instruction",
+    "LOAD_RESULT": "defined by a generic LOAD instruction",
     "COMPUTE_RESULT": "defined by arithmetic/comparison/cast instruction",
     "CALL_RESULT": "defined by a result-producing call instruction"
   },
   "use_rules": [
-    "every operand references a populated semantic value header, never an extension-only physical slot",
+    "every value operand references a populated semantic value header, never an extension-only physical slot",
     "parameter values may only be used by their owning function",
-    "local storage identities may only be accessed by instructions owned by the same function",
+    "storage identities may only be accessed by instructions owned by the same function",
     "instruction-result values have exactly one defining instruction",
     "instruction-result definitions dominate every use under the final CFG; constants and parameters are entry-available",
-    "STORE_LOCAL/STORE_INDEX do not redefine the local identity and do not fabricate a second semantic value",
-    "CALL arguments preserve source/lowering order and reference semantic value IDs",
+    "STORE does not redefine the storage identity and does not fabricate a second semantic value",
+    "CALL arguments preserve lowering order and reference semantic value IDs",
     "RETURN_VALUE references a defined value compatible with function return type",
     "CONDITIONAL_BRANCH references a defined condition value and same-function target blocks"
   ],
@@ -63,21 +80,25 @@
     "decode blocks and establish block-to-function ownership",
     "decode instructions in deterministic block order",
     "establish exactly-one definition for each instruction-result value",
-    "validate storage accesses and array shapes",
+    "validate generic LOAD/STORE storage identity, storage shape, optional index cardinality and mutability",
+    "validate array element index type and statically-known bounds where applicable",
     "validate operand type/owner compatibility",
     "validate call argument/result linkage",
     "validate terminators and same-function targets",
     "validate instruction-result dominance/use-before-definition",
-    "reject any unreferenced wide-literal extension slot presented as a semantic value ID",
+    "reject any wide-literal extension slot presented as a semantic value ID",
     "reject overflow, truncation, namespace collision, or source reconstruction"
   ],
   "fail_closed_cases": [
-    "direct local read with no LOAD_LOCAL",
-    "direct array element use with no LOAD_INDEX",
-    "array write with no STORE_INDEX",
+    "local scalar value consumed directly from LOCAL_STORAGE_IDENTITY with no LOAD",
+    "array element consumed with no LOAD carrying explicit index value",
+    "array element written with no STORE carrying explicit index and source values",
+    "scalar local LOAD/STORE incorrectly carries an index",
+    "fixed-array element LOAD/STORE omits index",
+    "STORE to immutable storage",
     "instruction result referenced before or outside its valid CFG definition",
     "same semantic result ID defined by more than one instruction",
-    "cross-function local/value use",
+    "cross-function storage/value use",
     "invalid array index value type",
     "constant out-of-range index when statically knowable",
     "call argument references storage identity where a loaded scalar value is required",
@@ -95,6 +116,6 @@
     "stage1_source_change": false,
     "general_emitter_allowed": false,
     "stage2_allowed": false,
-    "next": "INVENTORY_CANONICAL_STORAGE_READ_WRITE_AND_ARRAY_INDEX_REQUIREMENTS_THEN_REQUIRE_EXPLICIT_LOAD_STORE_IR"
+    "next": "RUN_TYPED_AST_STORAGE_INVENTORY_THEN_REQUIRE_NATIVE_IR_V2_TO_ACCOUNT_FOR_EVERY_LOGICAL_LOAD_STORE_AND_INDEX_USE"
   }
 }
