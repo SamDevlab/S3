@@ -1,0 +1,57 @@
+{
+  "schema": "s3.selfhost.reference-semantic-value-inventory-contract.v1",
+  "pr": 268,
+  "status": "PREPARED_HOSTED_ORACLE_ONLY",
+  "purpose": "Measure typed constants, materialized results, operand uses, memory operations, calls, and terminators in the trusted Stage0 typed IR for the exact canonical compiler source. This is a sizing/differential oracle only; it is not a claim that Stage1 IR-v2 must duplicate Stage0 IR one-for-one.",
+  "canonical_source_manifest": "selfhost/compiler/compiler-sources.json",
+  "reference_pipeline": {
+    "entry": "bootstrap.s3.pipeline.compile_source",
+    "optimization": "O0",
+    "semantic_types": "CompilationResult.semantic_model.expression_types",
+    "semantic_constants": "CompilationResult.semantic_model.constant_values",
+    "typed_ir": "CompilationResult.ir"
+  },
+  "planned_stage1_value_storage": {
+    "legacy_physical_banks": 4,
+    "slots_per_bank": 365,
+    "total_physical_slots": 1460,
+    "inline_signed_literal_min": -730,
+    "inline_signed_literal_max": 730,
+    "wide_literal_extension_slots": 1,
+    "warning": "The 1460-slot layout is only a candidate. If a complete Stage1 semantic IR needs more slots, the implementation must prove a valid compacting/interning/banked design; the oracle may not be ignored or calibrated away."
+  },
+  "required_measurements": [
+    "source_sha256",
+    "source_bytes",
+    "function_count",
+    "external_function_count",
+    "parameter_count",
+    "memory_object_count",
+    "block_count",
+    "instruction_count",
+    "register_count",
+    "result_register_count",
+    "non_constant_result_register_count",
+    "operand_use_count",
+    "opcode_histogram",
+    "typed_constant_occurrences",
+    "unique_typed_constants",
+    "wide_unique_typed_integer_constants",
+    "interned_constant_physical_slots",
+    "call_count",
+    "call_argument_operand_uses",
+    "load_count",
+    "store_count",
+    "terminator_count",
+    "semantic_constant_expression_count",
+    "semantic_unique_typed_constant_expressions"
+  ],
+  "interpretation": {
+    "reference_ir_is_architecture_authority": false,
+    "reference_ir_is_sizing_and_semantic_oracle": true,
+    "native_evidence": false,
+    "stage2_allowed_from_this_report": false,
+    "full_self_hosting_allowed_from_this_report": false,
+    "capacity_rule": "If the candidate Stage1 namespace is materially smaller than the reference materialized-result inventory, Stage1 must prove which results are not required or how they are safely represented/compacted. Silent omission is forbidden."
+  }
+}
