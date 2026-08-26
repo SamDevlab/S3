@@ -30,13 +30,14 @@ def test_reference_ir_inventory_tracks_results_uses_calls_and_storage() -> None:
     assert report["result_register_count"] > 0
     assert report["non_constant_result_register_count"] > 0
     assert report["operand_use_count"] > 0
-    assert report["call_count"] >= 2  # add + to_tryte
-    assert report["call_argument_operand_uses"] >= 3
+    assert report["call_count"] >= 1  # internal add()
+    assert report["call_argument_operand_uses"] >= 2
     assert report["load_count"] > 0
     assert report["store_count"] > 0
     assert report["terminator_count"] >= 2
     assert report["opcode_histogram"]["load"] > 0
     assert report["opcode_histogram"]["store"] > 0
+    assert report["opcode_histogram"]["convert"] > 0  # to_tryte is IR CONVERT
 
 
 def test_wide_typed_i64_constant_consumes_header_plus_extension_slot() -> None:
