@@ -1,0 +1,51 @@
+{
+  "schema": "s3.selfhost.stage1-representation-tool-compatibility.v1",
+  "representation_epoch_contract": "reports/selfhost/stage1/representation-epoch-contract.json",
+  "purpose": "Fail closed before applying a transformer/auditor whose structural assumptions belong to an older Stage1 representation epoch.",
+  "profiles": {
+    "legacy_packed_parameter_candidate_builder": {
+      "allowed_epochs": [0],
+      "examples": ["tools/patch_stage1_codegen_ir_v2_parameters.py"],
+      "reason": "The builder creates ir_parameter_records and is invalid once packed or explicit parameter metadata is already materialized."
+    },
+    "legacy_packed_local_candidate_builder_from_canonical": {
+      "allowed_epochs": [0],
+      "examples": ["tools/patch_stage1_codegen_ir_v2_locals.py"],
+      "reason": "The CLI rebuilds the packed-parameter candidate from the canonical baseline before adding ir_local_records."
+    },
+    "legacy_ir_v2_full_chain": {
+      "allowed_epochs": [0],
+      "examples": ["tools/qualify_stage1_codegen_ir_v2_full_chain.py"],
+      "reason": "The historical chain owns the old compaction/packed-parameter/packed-local progression and must not be replayed over explicit metadata."
+    },
+    "explicit_parameter_metadata_consumer": {
+      "minimum_epoch": 2,
+      "forbid_packed_parameter": true,
+      "reason": "Consumes the materialized ir_parameter_owner/name/ordinal/type representation."
+    },
+    "explicit_parameter_local_metadata_consumer": {
+      "minimum_epoch": 3,
+      "forbid_packed_parameter": true,
+      "forbid_packed_local": true,
+      "reason": "Consumes the explicit parameter and local metadata representation rather than historical packed candidate records."
+    },
+    "final_stage1_certification": {
+      "minimum_epoch": 3,
+      "forbid_packed_parameter": true,
+      "forbid_packed_local": true,
+      "reason": "Final Stage1 evidence requires explicit parameter/local metadata and rejects legacy packed representations."
+    }
+  },
+  "rules": [
+    "compatibility is evaluated against the exact current source bytes, never a remembered HEAD label",
+    "a source-SHA lock remains mandatory even when epoch compatibility passes",
+    "epoch compatibility is necessary but not sufficient for native qualification",
+    "unknown profiles fail closed",
+    "mixed or partial representation epochs fail closed before profile evaluation"
+  ],
+  "authority": {
+    "native_evidence": false,
+    "stage2_allowed": false,
+    "full_self_hosting": false
+  }
+}
