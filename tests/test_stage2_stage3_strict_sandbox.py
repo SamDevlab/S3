@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from tools.qualify_stage2_stage3_strict_sandbox import ROOT, _is_forbidden_read, _quoted_open_path
+from tools.qualify_stage2_stage3_strict_sandbox import (
+    ROOT,
+    _is_forbidden_read,
+    _quoted_open_path,
+)
 
 
 def test_openat_parser_extracts_path() -> None:
@@ -10,16 +14,31 @@ def test_openat_parser_extracts_path() -> None:
     assert _quoted_open_path(line) == "/etc/ld.so.cache"
 
 
+def test_openat2_parser_extracts_path() -> None:
+    line = '123 openat2(AT_FDCWD, "/tmp/input.bin", {flags=O_RDONLY}, 24) = 3'
+    assert _quoted_open_path(line) == "/tmp/input.bin"
+
+
 def test_system_loader_files_are_not_mistaken_for_bootstrap_delegation() -> None:
     assert _is_forbidden_read("/etc/ld.so.cache") is False
     assert _is_forbidden_read("/lib/x86_64-linux-gnu/libc.so.6") is False
 
 
-def test_repository_and_python_reads_are_forbidden() -> None:
+def test_repository_and_python_source_reads_are_forbidden() -> None:
     root = str(ROOT.resolve()).replace("\\", "/")
     assert _is_forbidden_read(root + "/bootstrap/s3/pipeline.py") is True
     assert _is_forbidden_read("bootstrap/s3/pipeline.py") is True
     assert _is_forbidden_read("/tmp/copied-bootstrap/compiler.pyc") is True
+    assert _is_forbidden_read("/tmp/copied-bootstrap/compiler.pyo") is True
+    assert _is_forbidden_read("/tmp/copied-bootstrap/runtime.pyz") is True
+
+
+def test_embedded_python_runtime_and_package_reads_are_forbidden() -> None:
+    assert _is_forbidden_read("/usr/lib/x86_64-linux-gnu/libpython3.14.so.1.0") is True
+    assert _is_forbidden_read("/usr/lib/python3.14/os.py") is True
+    assert _is_forbidden_read("/usr/local/lib/python3.14/site-packages/pkg/module.so") is True
+    assert _is_forbidden_read("/usr/lib/python3/dist-packages/pkg/module.py") is True
+    assert _is_forbidden_read("/usr/lib/python314.zip") is True
 
 
 def test_all_relative_file_reads_fail_closed() -> None:
