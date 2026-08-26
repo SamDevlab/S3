@@ -1,10 +1,11 @@
 """Strict wrapper for Stage2/Stage3 fixed-point certification.
 
 The underlying fixed-point harness builds Stage2/Stage3 and runs conformance.
-This wrapper adds the final anti-delegation proof: it replays the exact canonical
-compile under strace, rejects descendant execve and any checkout/bootstrap/Python
-runtime file read, and verifies the traced assembly SHA matches the assembly used
-to construct the already-measured Stage2/Stage3 artifacts.
+This wrapper adds two independent anti-delegation proofs:
+1. direct strace replay rejects descendant execve and Python/bootstrap file use;
+2. Landlock replay requires a freestanding ELF and makes every filesystem object
+   except the compiler itself unreadable/unexecutable before compiler execve.
+Both replays must emit the exact assembly used to build the measured artifacts.
 """
 
 from __future__ import annotations
@@ -17,6 +18,10 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from tools.qualify_selfhost_landlock_replay import (
+    LandlockReplayError,
+    replay as replay_landlock,
+)
 from tools.qualify_stage2_stage3_fixed_point import (
     DEFAULT_HOST_IO,
     DEFAULT_MANIFEST,
@@ -123,6 +128,37 @@ def trace_compiler_sandbox(compiler: Path, source: bytes, *, directory: Path, st
     }
 
 
+def _landlock_or_blocked(
+    compiler: Path,
+    source: bytes,
+    *,
+    expected_sha256: str,
+    expected_bytes: int,
+    workspace: Path,
+) -> dict[str, object]:
+    try:
+        return replay_landlock(
+            compiler,
+            source,
+            expected_assembly_sha256=expected_sha256,
+            expected_assembly_bytes=expected_bytes,
+            workspace=workspace,
+        )
+    except (OSError, LandlockReplayError) as error:
+        return {
+            "schema": "s3.selfhost.landlock-replay.v1",
+            "status": "BLOCKED_LANDLOCK_REPLAY",
+            "native_execution_evidence": False,
+            "error": str(error),
+            "qualification": {
+                "filesystem_inaccessible_proof": "BLOCKED",
+                "process_trace_still_required_independently": True,
+                "full_self_hosting": False,
+                "next": "REBUILD_STAGE_ARTIFACT_FREESTANDING_OR_FIX_LANDLOCK_SUPPORT",
+            },
+        }
+
+
 def qualify_strict(*, stage1: Path, stage1_certification: Path, manifest: Path, host_io: Path, report: Path, workspace: Path, stage4: bool = False) -> dict[str, object]:
     strace = shutil.which("strace")
     if strace is None:
@@ -139,10 +175,11 @@ def qualify_strict(*, stage1: Path, stage1_certification: Path, manifest: Path, 
         stage4=stage4,
     )
     _, source, _ = _canonical_source(manifest.resolve())
-    stage2_path = Path(base["stage2"]["path"])
+    stage1_path = stage1.resolve()
+    stage2_path = Path(base["stage2"]["path"]).resolve()
 
-    stage1_trace = trace_compiler_sandbox(stage1.resolve(), source, directory=workspace / "strict-trace-stage1", strace=strace)
-    stage2_trace = trace_compiler_sandbox(stage2_path.resolve(), source, directory=workspace / "strict-trace-stage2", strace=strace)
+    stage1_trace = trace_compiler_sandbox(stage1_path, source, directory=workspace / "strict-trace-stage1", strace=strace)
+    stage2_trace = trace_compiler_sandbox(stage2_path, source, directory=workspace / "strict-trace-stage2", strace=strace)
 
     stage1_trace_matches_artifact = stage1_trace["stdout_sha256"] == base["stage2"]["build"]["assembly_sha256"]
     stage2_trace_matches_artifact = stage2_trace["stdout_sha256"] == base["stage3"]["build"]["assembly_sha256"]
@@ -152,6 +189,26 @@ def qualify_strict(*, stage1: Path, stage1_certification: Path, manifest: Path, 
         and stage1_trace_matches_artifact
         and stage2_trace_matches_artifact
     )
+
+    stage1_landlock = _landlock_or_blocked(
+        stage1_path,
+        source,
+        expected_sha256=base["stage2"]["build"]["assembly_sha256"],
+        expected_bytes=base["stage2"]["build"]["assembly_bytes"],
+        workspace=workspace / "landlock-stage1-to-stage2",
+    )
+    stage2_landlock = _landlock_or_blocked(
+        stage2_path,
+        source,
+        expected_sha256=base["stage3"]["build"]["assembly_sha256"],
+        expected_bytes=base["stage3"]["build"]["assembly_bytes"],
+        workspace=workspace / "landlock-stage2-to-stage3",
+    )
+    landlock_pass = (
+        stage1_landlock["status"] == "PASS_LANDLOCK_FILESYSTEM_INACCESSIBLE_REPLAY"
+        and stage2_landlock["status"] == "PASS_LANDLOCK_FILESYSTEM_INACCESSIBLE_REPLAY"
+    )
+
     fixed_point_pass = bool(base["fixed_point"]["stage2_stage3_bytes_equal"] and base["fixed_point"]["stage2_stage3_sha256_equal"])
     conformance_pass = base["stage2"]["conformance"]["status"] == "PASS"
     full_self_hosting = bool(
@@ -160,31 +217,47 @@ def qualify_strict(*, stage1: Path, stage1_certification: Path, manifest: Path, 
         and fixed_point_pass
         and conformance_pass
         and strict_trace_pass
+        and landlock_pass
         and (not stage4 or base["stage4"]["status"] == "PASS")
     )
 
+    if full_self_hosting:
+        next_step = "FULL_SELF_HOSTING_CERTIFICATION_READY"
+    elif not landlock_pass:
+        next_step = "REBUILD_STAGE_ARTIFACTS_FREESTANDING_OR_REPAIR_LANDLOCK_GATE"
+    else:
+        next_step = "REPAIR_STRICT_TRACE_CONFORMANCE_OR_FIXED_POINT_GATE"
+
     result = {
-        "schema": "s3.selfhost.stage2-stage3-strict-sandbox.v3",
+        "schema": "s3.selfhost.stage2-stage3-strict-sandbox.v4",
         "base_fixed_point": base,
         "strict_runtime": {
             "stage1_compiles_stage2": stage1_trace,
             "stage2_compiles_stage3": stage2_trace,
             "stage1_trace_assembly_matches_stage2_build": stage1_trace_matches_artifact,
             "stage2_trace_assembly_matches_stage3_build": stage2_trace_matches_artifact,
-            "bootstrap_checkout_inaccessible_by_observed_file_access": strict_trace_pass,
+            "process_and_file_trace_pass": strict_trace_pass,
             "relative_file_reads_fail_closed": True,
             "absolute_paths_resolved_before_checkout_comparison": True,
             "embedded_python_runtime_file_access_forbidden": True,
             "openat2_traced": True,
+            "landlock": {
+                "stage1_to_stage2": stage1_landlock,
+                "stage2_to_stage3": stage2_landlock,
+                "filesystem_inaccessible_proof_pass": landlock_pass,
+                "fallback_allowed": False,
+            },
+            "bootstrap_checkout_inaccessible": landlock_pass,
         },
         "qualification": {
             "stage1_to_stage2": base["qualification"]["stage1_to_stage2"],
             "stage2_pythonless_compiler": "PASS_STRICT_PROCESS_AND_FILE_TRACE" if strict_trace_pass else "FAIL",
+            "filesystem_inaccessible": "PASS_LANDLOCK" if landlock_pass else "FAIL_OR_BLOCKED",
             "stage2_conformance": base["stage2"]["conformance"]["status"],
             "stage2_to_stage3": base["qualification"]["stage2_to_stage3"],
             "stage2_stage3_exact_elf_fixed_point": fixed_point_pass,
             "full_self_hosting": full_self_hosting,
-            "next": "FULL_SELF_HOSTING_CERTIFICATION_READY" if full_self_hosting else "REPAIR_STRICT_SANDBOX_OR_FIXED_POINT_GATE",
+            "next": next_step,
         },
     }
     destination = report.resolve()
@@ -218,6 +291,7 @@ def main(argv: list[str] | None = None) -> int:
     qualification = result["qualification"]
     print(f"REPORT={args.report.resolve()}")
     print(f"STAGE2_PYTHONLESS_COMPILER={qualification['stage2_pythonless_compiler']}")
+    print(f"FILESYSTEM_INACCESSIBLE={qualification['filesystem_inaccessible']}")
     print(f"STAGE2_CONFORMANCE={qualification['stage2_conformance']}")
     print(f"STAGE2_STAGE3_FIXED_POINT={qualification['stage2_stage3_exact_elf_fixed_point']}")
     print(f"FULL_SELF_HOSTING={qualification['full_self_hosting']}")
