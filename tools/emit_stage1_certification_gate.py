@@ -1,8 +1,8 @@
 """Emit the only Stage1 -> Stage2 authorization gate after strict revalidation.
 
-The output is never assembled from operator-provided PASS booleans.  Evidence
+The output is never assembled from operator-provided PASS booleans. Evidence
 paths are fixed by role, their current contents are hashed, and the complete gate
-is passed through ``validate_stage1_evidence`` before it is written.  The exact
+is passed through ``validate_stage1_evidence`` before it is written. The exact
 canonical source must also be the exact blob stored at the current Git HEAD, so a
 working-tree-only source edit cannot be certified accidentally.
 """
@@ -35,11 +35,14 @@ DEFAULT_OUTPUT = (
 )
 DEFAULT_EVIDENCE_PATHS = {
     "native_source_coverage": "reports/selfhost/stage1/packed-token-lane-native-full-coverage.json",
+    "representation_epoch": "reports/selfhost/stage1/stage1-representation-epoch.json",
+    "reference_current_call_inventory": "reports/selfhost/stage1/reference-current-call-inventory.json",
+    "native_call_reconciliation": "reports/selfhost/stage1/stage1-native-call-reconciliation.json",
     "reference_opcode_inventory": "reports/selfhost/stage1/reference-bootstrap-opcode-inventory.json",
     "hosted_fixture_opcode_coverage": "reports/selfhost/stage1/stage1-codegen-fixture-opcode-coverage.json",
     "native_codegen_fixtures": "reports/selfhost/stage1/stage1-codegen-complete-fixtures-native.json",
     "final_capacity": "reports/selfhost/stage1/stage1-final-capacity.json",
-    "final_semantic_ir_verifier": "reports/selfhost/stage1/stage1-final-semantic-ir-verifier.json",
+    "final_semantic_ir_verifier": "reports/selfhost/stage1/stage1-final-semantic-ir-verifier-call-bound.json",
     "final_self_emit": "reports/selfhost/stage1/stage1-final-self-emit.json",
 }
 
@@ -214,9 +217,6 @@ def emit_gate(
         newline="\n",
     )
 
-    # Re-open what was actually written and revalidate one final time. This is
-    # intentionally not stored inside the file (which would recursively alter
-    # the file hash); successful return is the producer's final assertion.
     written = _load_json(output, "written Stage1 certification gate")
     validate_stage1_evidence(
         written,
