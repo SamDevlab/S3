@@ -2,7 +2,7 @@
   "schema": "s3.selfhost.stage2-stage3-fixed-point-contract.v3",
   "pr": 268,
   "status": "PREPARED_DORMANT_UNTIL_STAGE1_CERTIFIED",
-  "purpose": "Define the strict Stage1->Stage2->Stage3 certification path without Python/compiler-bootstrap delegation, with content-bound Stage1 evidence and exact fixed-point reproducibility.",
+  "purpose": "Define the strict Stage1->Stage2->Stage3 certification path without Python/compiler-bootstrap delegation, with content-bound Stage1 evidence, freestanding static artifacts, and exact fixed-point reproducibility.",
   "stage1_prerequisite": {
     "required_schema": "s3.selfhost.stage1-certification-gate.v2",
     "required_contract": "s3.selfhost.stage1-certification-gate-contract.v3",
@@ -24,16 +24,18 @@
     "compiler_receives_source_via": "stdin"
   },
   "artifact_construction": {
-    "stage2": "execute Stage1 compiler on exact canonical source -> assembly -> host assembler/linker -> ELF",
-    "stage3": "execute Stage2 compiler on same exact canonical source -> assembly -> identical host assembler/linker recipe -> ELF",
+    "stage2": "execute Stage1 compiler on exact canonical source -> assembly -> host assembler/linker -> static ELF",
+    "stage3": "execute Stage2 compiler on same exact canonical source -> assembly -> identical host assembler/linker recipe -> static ELF",
     "host_object": "compile stage1_host_io.c exactly once and reuse the identical object for Stage2 and Stage3 linking",
-    "link_flags": ["-nostdlib", "-no-pie", "-s", "-Wl,--build-id=none"],
+    "link_flags": ["-static", "-nostdlib", "-no-pie", "-s", "-Wl,--build-id=none"],
+    "authoritative_linker": "tools/selfhost_static_link.py::assemble_link_static",
     "prohibited": [
       "copy Stage1 to Stage2",
       "copy Stage2 to Stage3",
       "embedded prebuilt compiler bytes",
       "Python code generation",
-      "Stage0 compiler delegation after Stage1"
+      "Stage0 compiler delegation after Stage1",
+      "PT_INTERP or dynamically loaded Stage2/Stage3 compiler artifact"
     ]
   },
   "pythonless_compiler_runtime": {
@@ -44,7 +46,9 @@
     "compiler_bootstrap_reads_allowed": false,
     "embedded_python_runtime_allowed": false,
     "underlying_execution_engine_schema": "s3.selfhost.stage2-stage3-strict-sandbox.v4",
-    "final_authority_wrapper_schema": "s3.selfhost.stage2-stage3-certified-strict.v1",
+    "hashed_evidence_engine_schema": "s3.selfhost.stage2-stage3-certified-strict.v1",
+    "final_authority_wrapper_schema": "s3.selfhost.stage2-stage3-certified-static.v1",
+    "final_authority_runner": "tools/qualify_stage2_stage3_certified_static.py",
     "required_environment": {
       "PATH": "/nonexistent",
       "PYTHONPATH": "",
@@ -65,6 +69,7 @@
     "stage2_stage3_elf_sha_equal": true,
     "stage2_stage3_elf_bytes_equal": true,
     "link_build_id": "disabled",
+    "static_link": true,
     "same_host_object": true,
     "same_link_recipe": true,
     "optional_stage4": "Stage3 may compile the same source to Stage4 as an additional fixed-point confirmation"
@@ -80,6 +85,7 @@
   ],
   "final_gate": {
     "stage1_hashed_evidence_revalidation": "PASS_STAGE1_HASHED_EVIDENCE_REVALIDATION",
+    "static_freestanding_link_recipe": true,
     "stage1_to_stage2": "PASS",
     "stage2_pythonless_compiler": "PASS_STRICT_PROCESS_AND_FILE_TRACE",
     "filesystem_inaccessible": "PASS_LANDLOCK",
@@ -91,7 +97,8 @@
   "authority_rule": {
     "intermediate_fixed_point_harness_may_authorize_full_self_hosting": false,
     "underlying_strict_sandbox_v4_may_authorize_full_self_hosting_by_itself": false,
-    "only_certified_strict_wrapper_v1_is_final_authority": true,
+    "hashed_evidence_engine_v1_may_authorize_full_self_hosting_by_itself": false,
+    "only_certified_static_wrapper_v1_is_final_authority": true,
     "compatibility_v1_stage1_gate_may_exist_only_ephemerally_after_v2_revalidation": true
   },
   "fail_closed": [
@@ -106,6 +113,7 @@
     "relative compiler file open observed",
     "strace unavailable or required syscall trace unsupported",
     "Landlock unavailable or filesystem-inaccessible replay fails",
+    "Stage2 or Stage3 artifact is not freestanding static ELF",
     "Stage2 conformance failure",
     "Stage2 and Stage3 ELF bytes differ",
     "canonical source changes between stages"
