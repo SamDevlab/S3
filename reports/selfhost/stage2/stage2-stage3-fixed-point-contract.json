@@ -2,7 +2,7 @@
   "schema": "s3.selfhost.stage2-stage3-fixed-point-contract.v3",
   "pr": 268,
   "status": "PREPARED_DORMANT_UNTIL_STAGE1_CERTIFIED",
-  "purpose": "Define the strict Stage1->Stage2->Stage3 certification path without Python/compiler-bootstrap delegation, with content-bound Stage1 evidence, freestanding static artifacts, and exact fixed-point reproducibility.",
+  "purpose": "Define the strict Stage1->Stage2->Stage3 certification path without Python/compiler-bootstrap delegation, with content-bound Stage1 evidence, freestanding static artifacts, exact artifact-to-measurement binding, and exact fixed-point reproducibility.",
   "stage1_prerequisite": {
     "required_schema": "s3.selfhost.stage1-certification-gate.v2",
     "required_contract": "s3.selfhost.stage1-certification-gate-contract.v3",
@@ -29,13 +29,24 @@
     "host_object": "compile stage1_host_io.c exactly once and reuse the identical object for Stage2 and Stage3 linking",
     "link_flags": ["-static", "-nostdlib", "-no-pie", "-s", "-Wl,--build-id=none"],
     "authoritative_linker": "tools/selfhost_static_link.py::assemble_link_static",
+    "final_artifact_audit": {
+      "auditor": "tools/audit_selfhost_freestanding_elf.py::audit_path",
+      "stage2_status": "PASS_FREESTANDING_STATIC_ELF",
+      "stage3_status": "PASS_FREESTANDING_STATIC_ELF",
+      "audit_sha256_must_equal_fixed_point_measurement": true,
+      "audit_bytes_must_equal_fixed_point_measurement": true,
+      "stage2_stage3_audited_sha256_equal": true,
+      "stage2_stage3_audited_bytes_equal": true,
+      "required_for_full_self_hosting": true
+    },
     "prohibited": [
       "copy Stage1 to Stage2",
       "copy Stage2 to Stage3",
       "embedded prebuilt compiler bytes",
       "Python code generation",
       "Stage0 compiler delegation after Stage1",
-      "PT_INTERP or dynamically loaded Stage2/Stage3 compiler artifact"
+      "PT_INTERP or dynamically loaded Stage2/Stage3 compiler artifact",
+      "certifying a Stage2/Stage3 path after the measured artifact has been replaced or mutated"
     ]
   },
   "pythonless_compiler_runtime": {
@@ -68,6 +79,8 @@
     "stage2_stage3_assembly_bytes_equal": "DIAGNOSTIC_STRONG_SIGNAL_NOT_REQUIRED_IF_ELF_FIXED_POINT_IS_EXACT",
     "stage2_stage3_elf_sha_equal": true,
     "stage2_stage3_elf_bytes_equal": true,
+    "final_audited_elf_sha_equal": true,
+    "final_audited_elf_bytes_equal": true,
     "link_build_id": "disabled",
     "static_link": true,
     "same_host_object": true,
@@ -92,6 +105,9 @@
     "stage2_conformance": "PASS",
     "stage2_to_stage3": "PASS",
     "stage2_stage3_exact_elf_fixed_point": true,
+    "stage2_freestanding_static_elf": "PASS_FREESTANDING_STATIC_ELF",
+    "stage3_freestanding_static_elf": "PASS_FREESTANDING_STATIC_ELF",
+    "final_artifacts_bound_to_fixed_point": true,
     "full_self_hosting": true
   },
   "authority_rule": {
@@ -114,6 +130,8 @@
     "strace unavailable or required syscall trace unsupported",
     "Landlock unavailable or filesystem-inaccessible replay fails",
     "Stage2 or Stage3 artifact is not freestanding static ELF",
+    "Stage2 or Stage3 final ELF audit SHA/bytes differ from the fixed-point measurement",
+    "Stage2 or Stage3 measured artifact is replaced or mutated before final authority audit",
     "Stage2 conformance failure",
     "Stage2 and Stage3 ELF bytes differ",
     "canonical source changes between stages"
