@@ -1,9 +1,17 @@
 {
-  "schema": "s3.selfhost.stage1-final-capacity-contract.v1",
+  "schema": "s3.selfhost.stage1-final-capacity-contract.v2",
   "measurement_schema": "s3.selfhost.stage1-capacity-measurement.v1",
   "output_schema": "s3.selfhost.stage1-final-capacity.v1",
-  "purpose": "Certify that every bounded Stage1 compiler storage lane on the exact final canonical source and exact Stage1 artifact has native no-truncation evidence. Historical projections or partial candidate reports cannot satisfy this contract.",
+  "purpose": "Certify that every bounded Stage1 compiler storage lane on the exact final canonical source and exact Stage1 artifact has native no-truncation evidence. Historical projections or partial candidate reports cannot satisfy this contract. Parameter/local capacities additionally require an independent recursive self-host capacity-convergence proof so source growth caused by the metadata implementation cannot make the measurement stale.",
   "required_platform": {"system": "Linux", "machine": "x86_64"},
+  "selfhost_capacity_convergence_dependency": {
+    "schema": "s3.selfhost.stage1-selfhost-capacity-convergence.v1",
+    "required_status": "PASS_SELFHOST_CAPACITY_CONVERGENCE",
+    "required_qualification": {"selfhost_capacity_convergence": "PASS", "stale_capacity_evidence": false},
+    "same_canonical_source_required": true,
+    "same_stage1_artifact_required": true,
+    "purpose": "Prove that parameter/local required counts were independently recounted from the exact final source and reproduced by at least two native measurements after the last capacity/source edit."
+  },
   "minimum_required_lanes": [
     "tokens",
     "events",
@@ -25,7 +33,8 @@
     "all_banked_roundtrip_proofs_pass": true,
     "all_lane_overflow_guards_exercised": true,
     "canonical_source_sha_matches_runtime_input": true,
-    "stage1_artifact_sha_matches_executed_binary": true
+    "stage1_artifact_sha_matches_executed_binary": true,
+    "selfhost_capacity_convergence_consumed": true
   },
   "lane_shape": {
     "required": "integer >= 0; exact native high-water requirement for this canonical compile",
@@ -41,6 +50,8 @@
     "provenance": "non-empty description of the native counter/write frontier"
   },
   "fail_closed_if": [
+    "selfhost capacity convergence report is missing, stale, or bound to a different source/artifact",
+    "parameter/local capacity measurement was produced before the last source/capacity mutation",
     "any minimum lane is missing",
     "bounded lane inventory is incomplete",
     "bounded write-site count differs from accounted write-site count",
