@@ -95,9 +95,16 @@
     "final_semantic_ir_verifier": {
       "schema": "s3.selfhost.stage1-final-semantic-ir-verifier.v1",
       "assertions": [
+        {"path": "authority", "equals": "STAGE1_FINAL_SEMANTIC_IR_NATIVE_CALL_BOUND"},
         {"path": "qualification.semantic_ir", "equals": "PASS_CODEGEN_COMPLETE_BOOTSTRAP_SUBSET"},
         {"path": "qualification.verifier_v2", "equals": "PASS"},
         {"path": "qualification.general_emitter", "equals": "PASS_BOOTSTRAP_REQUIRED_OPCODES"},
+        {"path": "qualification.native_call_capacity_boundary", "equals": "PASS"},
+        {"path": "native_call_capacity_dependency.status", "equals": "PASS_NATIVE_CURRENT_SOURCE_CALL_RECONCILIATION"},
+        {"path": "native_call_capacity_dependency.same_canonical_source", "equals": true},
+        {"path": "native_call_capacity_dependency.same_stage1_artifact", "equals": true},
+        {"path": "native_call_capacity_dependency.semantic_calls_equal_native_high_water", "equals": true},
+        {"path": "native_call_capacity_dependency.semantic_call_arguments_equal_native_high_water", "equals": true},
         {"path": "emitter_boundary.status", "equals": "PASS_VERIFIED_IR_ONLY"},
         {"path": "emitter_boundary.raw_source_accesses_after_verifier", "equals": 0}
       ],
@@ -123,6 +130,7 @@
     "the final source representation epoch has explicit parameter/local metadata and no legacy packed parameter/local records",
     "a fresh source-bound hosted call inventory replaces the historical 656/736 closure",
     "native call/call-argument high-water, classification closure and slice/addressability guards pass on the same exact source and Stage1 artifact",
+    "final semantic IR calls and call_arguments equal those native current-source high-water counts before self-emit",
     "typed reference opcode inventory reconciled with emitter requirements",
     "hosted fixture corpus covers every bootstrap-required reference opcode",
     "native codegen-complete fixture corpus passes using the exact Stage1 artifact",
@@ -146,6 +154,7 @@
     "using historical 656/736 call closure as current evidence after source bytes changed",
     "using a hosted AST/O0 call inventory as physical native capacity evidence",
     "accepting native call high-water without internal+foreign closure or call/argument slice guards",
+    "accepting semantic IR call inventory that differs from native current-source call high-water",
     "using a pre-convergence or stale parameter/local capacity report",
     "using a representation-epoch report for different source bytes",
     "reapplying historical packed parameter/local transforms to a source that already materializes explicit lanes",
