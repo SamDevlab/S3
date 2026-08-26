@@ -2,7 +2,7 @@
   "schema": "s3.selfhost.stage2-stage3-fixed-point-contract.v1",
   "pr": 268,
   "status": "PREPARED_DORMANT_UNTIL_STAGE1_CERTIFIED",
-  "purpose": "Define the strict Stage1->Stage2->Stage3 certification path without Python compiler delegation and with exact fixed-point reproducibility.",
+  "purpose": "Define the strict Stage1->Stage2->Stage3 certification path without Python/compiler-bootstrap delegation and with exact fixed-point reproducibility.",
   "stage1_prerequisite": {
     "required_schema": "s3.selfhost.stage1-certification-gate.v1",
     "required": {
@@ -17,19 +17,22 @@
   "canonical_source": {
     "manifest": "selfhost/compiler/compiler-sources.json",
     "same_exact_source_required_for_stage1_to_stage2_and_stage2_to_stage3": true,
-    "source_change_requires_restart_from_stage1": true
+    "source_change_requires_restart_from_stage1": true,
+    "compiler_receives_source_via": "stdin"
   },
   "artifact_construction": {
     "stage2": "execute Stage1 compiler on exact canonical source -> assembly -> host assembler/linker -> ELF",
     "stage3": "execute Stage2 compiler on same exact canonical source -> assembly -> identical host assembler/linker recipe -> ELF",
     "host_object": "compile stage1_host_io.c exactly once and reuse the identical object for Stage2 and Stage3 linking",
-    "link_flags": ["-nostdlib", "-no-pie", "-s", "-Wl,--build-id=none"],
+    "link_flags": ["-nostdlib", "-static", "-no-pie", "-s", "-Wl,--build-id=none"],
     "prohibited": ["copy Stage1 to Stage2", "copy Stage2 to Stage3", "embedded prebuilt compiler bytes", "Python code generation", "Stage0 compiler delegation after Stage1"]
   },
   "pythonless_compiler_runtime": {
     "orchestrator_python_allowed": true,
     "compiler_process_python_allowed": false,
     "compiler_descendant_exec_allowed": false,
+    "compiler_checkout_reads_allowed": false,
+    "compiler_bootstrap_reads_allowed": false,
     "required_environment": {
       "PATH": "/nonexistent",
       "PYTHONPATH": "",
@@ -39,7 +42,7 @@
       "TZ": "UTC",
       "SOURCE_DATE_EPOCH": "0"
     },
-    "strict_runtime_proof": "strace -f execve trace shows exactly the compiler executable and no descendant execve",
+    "strict_runtime_proof": "strace -f trace=execve,open,openat: exactly one compiler execve, no descendant execve, and no open/openat targeting repository/bootstrap/Python source. Stage2/Stage3 are statically linked so unexpected file opens are themselves suspicious.",
     "strace_missing": "blocks strict FULL_SELF_HOSTING certification rather than silently downgrading proof"
   },
   "determinism": {
@@ -48,6 +51,7 @@
     "stage2_stage3_elf_sha_equal": true,
     "stage2_stage3_elf_bytes_equal": true,
     "link_build_id": "disabled",
+    "static_link": true,
     "same_host_object": true,
     "same_link_recipe": true,
     "optional_stage4": "Stage3 may compile the same source to Stage4 as an additional fixed-point confirmation"
@@ -63,7 +67,7 @@
   ],
   "final_gate": {
     "stage1_to_stage2": "PASS",
-    "stage2_pythonless_compiler": "PASS_STRICT_EXECVE_TRACE",
+    "stage2_pythonless_compiler": "PASS_STRICT_PROCESS_AND_FILE_TRACE",
     "stage2_conformance": "PASS",
     "stage2_to_stage3": "PASS",
     "stage2_stage3_exact_elf_fixed_point": true,
@@ -73,7 +77,8 @@
     "stage1 certification report missing or inconsistent",
     "canonical manifest/source mismatch",
     "Stage1 compiler emits nonzero status or diagnostics for canonical source",
-    "Stage2 compiler invokes any descendant process",
+    "compiler invokes any descendant process",
+    "compiler opens repository/bootstrap/Python source",
     "strace unavailable for strict certification",
     "Stage2 conformance failure",
     "Stage2 and Stage3 ELF bytes differ",
