@@ -1,14 +1,21 @@
 {
-  "schema": "s3.selfhost.stage1-certification-gate-contract.v1",
+  "schema": "s3.selfhost.stage1-certification-gate-contract.v2",
   "output_schema": "s3.selfhost.stage1-certification-gate.v1",
   "output_path": "reports/selfhost/stage1/stage1-certification-gate.json",
-  "purpose": "Provide the only machine-readable authorization consumed by the strict Stage2/Stage3 harness. This document may be emitted only after the final canonical Stage1 source and native evidence are frozen.",
+  "purpose": "Provide the only machine-readable authorization consumed by the Stage2/Stage3 harnesses. This document may be emitted only after the final canonical Stage1 source and native evidence are frozen.",
   "required_document_shape": {
     "schema": "s3.selfhost.stage1-certification-gate.v1",
     "canonical_source": {
       "sha256": "<exact final canonical SHA256>",
       "bytes": "<exact final canonical byte count>",
       "commit": "<commit containing exact final canonical source>"
+    },
+    "evidence": {
+      "native_source_coverage_report": "<path + SHA tied to final canonical source>",
+      "capacity_report": "<path + SHA>",
+      "semantic_ir_verifier_report": "<path + SHA>",
+      "codegen_fixture_report": "reports/selfhost/stage1/stage1-codegen-complete-fixtures-native.json",
+      "self_emit_report": "<path + SHA>"
     },
     "qualification": {
       "stage1_certified_for_stage2": true,
@@ -19,16 +26,18 @@
     }
   },
   "mandatory_evidence_before_emission": [
-    "100 percent native token/source coverage",
+    "100 percent native token/source coverage, including direct native byte-read coverage proof",
     "all measured capacities pass without truncation",
     "parameter and local metadata native qualification",
     "explicit semantic value namespace",
-    "explicit mutable-local LOAD/STORE and fixed-array LOAD_INDEX/STORE_INDEX semantics",
+    "mutable locals modeled as storage identities with explicit LOAD/STORE semantics",
+    "fixed-array element access modeled with explicit storage identity + semantic index operand; physical generic LOAD/STORE is allowed",
     "instruction operands/results and deterministic order",
     "call argument/result linkage",
     "terminator condition/return/target linkage",
     "verifier v2 rejects malformed def-use/storage/CFG fixtures",
     "general emitter consumes verified IR only",
+    "reports/selfhost/stage1/stage1-codegen-complete-fixtures-native.json has schema s3.selfhost.stage1-codegen-complete-fixtures-native.v1 and qualification.codegen_complete_representative_fixtures=PASS",
     "Stage1 compiles the exact final canonical compiler source into a real compiler artifact",
     "representative Stage1 conformance corpus passes"
   ],
@@ -37,7 +46,12 @@
     "creating the gate before native self-emit",
     "setting stage1_certified_for_stage2 by operator override",
     "using raw-source codegen or Python compiler delegation to satisfy self-emit",
-    "reusing the gate after canonical source bytes change"
+    "reusing the gate after canonical source bytes change",
+    "treating a storage identity as a scalar semantic value without an explicit load",
+    "treating a fixed-array element as a scalar value without an explicit semantic index operand"
   ],
-  "consumer": "tools/qualify_stage2_stage3_fixed_point.py"
+  "consumers": [
+    "tools/qualify_stage2_stage3_fixed_point.py",
+    "tools/qualify_stage2_stage3_strict_sandbox.py"
+  ]
 }
