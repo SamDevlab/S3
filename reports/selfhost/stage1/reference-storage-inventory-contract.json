@@ -1,0 +1,57 @@
+{
+  "schema": "s3.selfhost.reference-storage-inventory-contract.v1",
+  "pr": 268,
+  "status": "PREPARED_HOSTED_ORACLE_ONLY",
+  "purpose": "Classify every memory object and LOAD/STORE in the trusted O0 typed reference IR for the exact canonical compiler source, correlating source-origin locations where possible. This is a semantic/sizing oracle only and cannot certify Stage1 natively.",
+  "canonical_source_manifest": "selfhost/compiler/compiler-sources.json",
+  "reference_pipeline": "bootstrap.s3.pipeline.compile_source(..., optimization='O0')",
+  "source_origin_classes": [
+    "local_scalar_declaration",
+    "local_array_declaration",
+    "array_parameter",
+    "for_induction_storage",
+    "lowering_temporary_or_projection"
+  ],
+  "memory_rules": {
+    "load": "exactly one index operand; index type tryte or i64; result type equals memory element type",
+    "store": "exactly two operands ordered index,value; index type tryte or i64; value type equals memory element type",
+    "scalar_local": "source-correlated mutable non-array declaration backed by length-1 memory; reference lowering uses explicit constant-zero index",
+    "local_array": "source-correlated fixed array; memory length equals declared extent when element storage is represented by a memory object",
+    "array_parameter": "source-correlated fixed array parameter; reference memory is immutable and initialized from incoming parameter cells",
+    "for_induction": "length-1 mutable memory with explicit zero index",
+    "temporary": "memory object with no declarative storage origin at the same function/source offset; never count it as a source local merely because its length is one"
+  },
+  "required_measurements": [
+    "memory_object_count",
+    "declared_storage_memory_count",
+    "lowering_temporary_memory_count",
+    "memory_element_type_histogram",
+    "memory_extent_histogram",
+    "load_count",
+    "store_count",
+    "initialization_store_count",
+    "load_index_type_histogram",
+    "store_index_type_histogram",
+    "scalar_storage_access_count",
+    "scalar_zero_index_access_count",
+    "scalar_nonzero_or_unknown_index_accesses",
+    "array_access_count",
+    "i64_index_access_count",
+    "tryte_index_access_count"
+  ],
+  "fail_closed": [
+    "memory source-origin ambiguity is reported rather than guessed",
+    "non-tryte/non-i64 index is a reference invariant violation",
+    "source-correlated array extent mismatch is a reference invariant violation",
+    "source-correlated scalar storage with length other than one is a reference invariant violation",
+    "source-correlated scalar LOAD/STORE with known nonzero index is a reference invariant violation",
+    "STORE value type mismatch or LOAD result type mismatch is a reference invariant violation"
+  ],
+  "authority": {
+    "reference_ir_physical_encoding_is_stage1_mandate": false,
+    "reference_storage_semantics_is_external_oracle": true,
+    "native_evidence": false,
+    "stage2_allowed": false,
+    "full_self_hosting_allowed": false
+  }
+}
