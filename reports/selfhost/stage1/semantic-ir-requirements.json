@@ -271,7 +271,41 @@
     "whiles": 22
   },
   "reference_typed_ir": {
-    "status": "NOT_MEASURED_BY_DEFAULT"
+    "blocks": 2684,
+    "call_kinds": {
+      "foreign": 22,
+      "internal": 691
+    },
+    "functions": 36,
+    "instruction_results": 30944,
+    "instructions": 46573,
+    "max_blocks_per_function": 1913,
+    "max_instructions_per_function": 42739,
+    "max_registers_per_function": 28192,
+    "memory_objects": 510,
+    "opcodes": {
+      "add": 162,
+      "branch3": 666,
+      "call": 713,
+      "compare": 329,
+      "const": 28244,
+      "convert": 79,
+      "divide": 14,
+      "jump": 1899,
+      "load": 1323,
+      "multiply": 19,
+      "numeric_difference": 61,
+      "return": 119,
+      "store": 12945
+    },
+    "parameters": 68,
+    "registers": 31012,
+    "status": "MEASURED_HOST_IR_ORACLE_NOT_STAGE1_EVIDENCE",
+    "terminators": {
+      "branch3": 666,
+      "jump": 1899,
+      "return": 119
+    }
   },
   "required_operations": {
     "ADD": true,

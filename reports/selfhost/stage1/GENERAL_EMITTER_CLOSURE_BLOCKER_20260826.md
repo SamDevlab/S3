@@ -284,3 +284,31 @@ aggregate event records as semantic instructions and does not authorize
 general emission, self-emission, Stage2, or Stage3. The Linux guest remained
 available over `s3-vm` (`Linux`, `x86_64`, Python `3.14.4`) with no active
 compiler/test process during the check.
+
+## Host IR capacity oracle
+
+The same audit was run with its explicit host-IR oracle enabled. These values
+describe the existing Python pipeline only; they are not Stage1 qualification
+evidence:
+
+```text
+HOST_IR_FUNCTIONS=36
+HOST_IR_PARAMETERS=68
+HOST_IR_REGISTERS=31012
+HOST_IR_MEMORY_OBJECTS=510
+HOST_IR_BLOCKS=2684
+HOST_IR_INSTRUCTIONS=46573
+HOST_IR_INSTRUCTION_RESULTS=30944
+HOST_IR_MAX_REGISTERS_PER_FUNCTION=28192
+HOST_IR_MAX_BLOCKS_PER_FUNCTION=1913
+HOST_IR_MAX_INSTRUCTIONS_PER_FUNCTION=42739
+HOST_IR_TERMINATORS=branch3:666,jump:1899,return:119
+HOST_IR_CALLS=internal:691,foreign:22
+```
+
+`main` is the dominant function in this oracle (`28,192` registers,
+`1,913` blocks, `42,739` instructions). Therefore the earlier candidate
+capacities of 730 or 1,095 blocks cannot be promoted by calibration. A valid
+Stage1 design must either use an exact, bounded per-function/streaming
+representation or prove an equivalent measured capacity; it may not silently
+truncate or allocate an arbitrary matrix.
