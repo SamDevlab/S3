@@ -5,9 +5,11 @@ invocation, but those paths must not become policy overrides. An alternate path
 is accepted only when its exact bytes are identical to the repository's
 canonical authoritative file and both documents carry the expected schema.
 
-Final callers may additionally require the canonical authority itself to match
-the exact blob stored at the current Git HEAD. This prevents an uncommitted
-working-tree edit from silently weakening certification policy.
+When the canonical authority lives inside a Git checkout, the helper also
+requires the working-tree bytes to equal the exact blob stored at the current
+HEAD. This prevents an uncommitted policy edit from silently weakening final
+certification. Callers may pass ``git_root`` explicitly; otherwise the helper
+walks upward from the authoritative file and auto-detects ``.git``.
 """
 
 from __future__ import annotations
@@ -52,6 +54,14 @@ def _run_git(root: Path, args: list[str]) -> bytes:
             f"git {' '.join(args)} failed with {completed.returncode}: {detail}"
         )
     return completed.stdout
+
+
+def _discover_git_root(path: Path) -> Path | None:
+    current = path.resolve().parent
+    for candidate in (current, *current.parents):
+        if (candidate / ".git").exists():
+            return candidate
+    return None
 
 
 def _git_head_file_binding(path: Path, *, root: Path, label: str) -> dict[str, Any]:
@@ -140,9 +150,10 @@ def require_authoritative_contract(
             f"expected_sha256={authoritative_sha} actual_sha256={candidate_sha}"
         )
 
+    effective_git_root = git_root if git_root is not None else _discover_git_root(authoritative_path)
     git_head_binding = (
-        _git_head_file_binding(authoritative_path, root=git_root, label=label)
-        if git_root is not None
+        _git_head_file_binding(authoritative_path, root=effective_git_root, label=label)
+        if effective_git_root is not None
         else None
     )
     binding = {
