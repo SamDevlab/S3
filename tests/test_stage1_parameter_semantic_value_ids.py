@@ -25,8 +25,8 @@ def test_parameter_semantic_value_candidate_verifies_global_slot_owner() -> None
     assert candidate.count(
         "match ir_parameter_owner[ir_return_operand[general_parameter_scan]] == general_parameter_scan:"
     ) == 2
-    assert "while general_parameter_type_scan < parameter_count:" in candidate
-    assert "match valid_type_name(ir_parameter_type[general_parameter_type_scan]):" in candidate
+    assert "while general_parameter_type_scan < function_count:" in candidate
+    assert "match valid_type_name(ir_parameter_type[general_parameter_type_index]):" in candidate
 
 
 def test_parameter_semantic_value_candidate_resolves_value_id_to_abi_ordinal_only_at_emission() -> None:
