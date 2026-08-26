@@ -41,15 +41,23 @@ def _quoted_open_path(line: str) -> str | None:
 
 
 def _is_forbidden_read(path: str) -> bool:
-    normalized = path.replace("\\", "/")
+    candidate = Path(path)
+    # The compiler receives its entire input on stdin and has no legitimate
+    # reason to open cwd-relative files.  Failing closed on every relative open
+    # also avoids an openat(dirfd, "../../repo/...") bypass where a textual path
+    # would not contain the absolute checkout prefix.
+    if not candidate.is_absolute():
+        return True
+    resolved = candidate.resolve(strict=False)
+    normalized = str(resolved).replace("\\", "/")
     root = str(ROOT.resolve()).replace("\\", "/")
+    lowered = normalized.lower()
     return (
         normalized == root
         or normalized.startswith(root + "/")
-        or normalized.startswith("bootstrap/")
         or "/bootstrap/" in normalized
-        or normalized.endswith(".py")
-        or normalized.endswith(".pyc")
+        or lowered.endswith(".py")
+        or lowered.endswith(".pyc")
     )
 
 
@@ -138,7 +146,7 @@ def qualify_strict(*, stage1: Path, stage1_certification: Path, manifest: Path, 
     )
 
     result = {
-        "schema": "s3.selfhost.stage2-stage3-strict-sandbox.v1",
+        "schema": "s3.selfhost.stage2-stage3-strict-sandbox.v2",
         "base_fixed_point": base,
         "strict_runtime": {
             "stage1_compiles_stage2": stage1_trace,
@@ -146,6 +154,8 @@ def qualify_strict(*, stage1: Path, stage1_certification: Path, manifest: Path, 
             "stage1_trace_assembly_matches_stage2_build": stage1_trace_matches_artifact,
             "stage2_trace_assembly_matches_stage3_build": stage2_trace_matches_artifact,
             "bootstrap_checkout_inaccessible_by_observed_file_access": strict_trace_pass,
+            "relative_file_reads_fail_closed": True,
+            "absolute_paths_resolved_before_checkout_comparison": True,
         },
         "qualification": {
             "stage1_to_stage2": base["qualification"]["stage1_to_stage2"],
