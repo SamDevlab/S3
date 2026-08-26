@@ -53,6 +53,24 @@ SELF_SOURCE_BOUNDARY=S3_STAGE1_EMITTER_BLOCKED_REQUIRED
 CANONICAL_PROMOTION=SEPARATE_REVIEW_REQUIRED
 ```
 
+## CI disposition
+
+The latest pre-candidate GitHub Actions run observed for PR #268 was attached
+to HEAD `0789ad2`. Its jobs were created as failures with no executed steps and
+no allocated runner (`steps=[]`, `runner_id=0`). That state is infrastructure
+evidence only; it is not interpreted as a compiler-test failure.
+
+No native PASS is recorded for this candidate until a Linux x86-64 runner
+actually executes `tools/qualify_stage1_seventh_parameter_return.py` and emits
+the candidate report.
+
+```text
+PREVIOUS_PR_CI_HEAD=0789ad2
+PREVIOUS_PR_CI=FAIL_BEFORE_JOB_STEPS
+PREVIOUS_PR_CI_TEST_EVIDENCE=NONE
+CANDIDATE_NATIVE_EXECUTION=NOT_YET_OBSERVED
+```
+
 ## Certification disposition
 
 ```text
