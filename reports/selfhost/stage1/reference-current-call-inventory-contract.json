@@ -1,0 +1,70 @@
+{
+  "schema": "s3.selfhost.reference-current-call-inventory-contract.v1",
+  "output_schema": "s3.selfhost.reference-current-call-inventory.v1",
+  "purpose": "Provide source-SHA-bound hosted semantic call inventories for the current Stage1 source after historical 656-call/736-argument closure became stale. AST calls and typed O0 IR CALL instructions are independent semantic oracles; neither substitutes for native Stage1 physical call/call-argument high-water measurements.",
+  "views": {
+    "ast": {
+      "counts": [
+        "total_call_expressions",
+        "total_argument_occurrences",
+        "max_arity",
+        "arity_histogram",
+        "simple_identifier_calls",
+        "dynamic_or_nonidentifier_callees",
+        "internal_calls",
+        "foreign_calls",
+        "builtin_or_other_calls",
+        "per_callee",
+        "per_caller"
+      ],
+      "definition": "Every typed AST CallExpression occurrence, including nested calls. Arguments are CallExpression.arguments occurrences."
+    },
+    "o0_ir": {
+      "counts": [
+        "total_call_instructions",
+        "total_operand_uses",
+        "total_result_definitions",
+        "max_operand_count",
+        "operand_count_histogram",
+        "internal_calls",
+        "foreign_calls",
+        "builtin_or_other_calls",
+        "per_callee",
+        "per_caller"
+      ],
+      "definition": "Every IROpcode.CALL in typed O0 IR. Operands/results use IRInstruction.operands/results and are not assumed to equal AST argument/result counts."
+    }
+  },
+  "binding": {
+    "exact_source_sha256_required": true,
+    "exact_source_bytes_required": true,
+    "optimization": "O0",
+    "source_change_invalidates_report": true
+  },
+  "classification": {
+    "internal": "callee name is declared by a non-foreign source function",
+    "foreign": "callee name is declared by a source foreign function",
+    "builtin_or_other": "simple callee name is neither a source internal nor source foreign declaration",
+    "dynamic_or_nonidentifier": "AST callee is not a simple Identifier; IR CALL without a callee string is reported separately"
+  },
+  "prohibited_inference": [
+    "AST call count equals native Stage1 physical call-record requirement",
+    "AST argument occurrence count equals native Stage1 call-argument-pool requirement",
+    "O0 IR CALL count equals native Stage1 physical call-record requirement",
+    "O0 IR operand count equals native Stage1 call-argument-pool requirement",
+    "historical 656 calls / 736 arguments remains current after source SHA changes",
+    "using this hosted report as native capacity evidence"
+  ],
+  "final_capacity_policy": {
+    "native_stage1_call_high_water_still_required": true,
+    "native_stage1_call_argument_high_water_still_required": true,
+    "hosted_oracle_may_detect_stale_or_incomplete_native_measurement": true,
+    "hosted_oracle_may_not_choose_physical_capacity": true
+  },
+  "authority": {
+    "native_evidence": false,
+    "stage1_certified_for_stage2": false,
+    "stage2_allowed": false,
+    "full_self_hosting": false
+  }
+}
