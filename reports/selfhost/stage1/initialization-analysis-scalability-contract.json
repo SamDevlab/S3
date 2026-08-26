@@ -1,0 +1,83 @@
+{
+  "schema": "s3.selfhost.initialization-analysis-scalability-contract.v1",
+  "pr": 268,
+  "status": "PARALLEL_REVIEW_CONTRACT_NOT_NATIVE_EVIDENCE",
+  "canonical_source_mutated": false,
+  "purpose": "Allow the bootstrap initialization analysis to scale to the expanded Stage1 candidate without changing definite-initialization semantics, diagnostics, CFG joins, or public detailed-report meaning.",
+  "legacy_cost_shape": {
+    "state_key": "(memory_object_id, element_index)",
+    "state_value": "UNINITIALIZED | INITIALIZED | MAYBE_INITIALIZED",
+    "entry_state_per_reachable_block": true,
+    "exit_state_per_reachable_block": true,
+    "dense_entry_pressure": "O(total_memory_cells * reachable_blocks) persistent report/state entries plus transfer/join copies",
+    "risk": "Large fixed-array-heavy compiler candidates can create tens of millions of Python dict entries even when the semantic information is only two bits per cell."
+  },
+  "scalable_internal_representation": {
+    "allowed": [
+      "two bitsets: definitely-initialized and maybe-initialized",
+      "packed tri-state vector with equivalent semantics",
+      "another representation with no worse asymptotic persistent state and proven equivalence"
+    ],
+    "cell_encoding": {
+      "uninitialized": "initialized=0 maybe=0",
+      "initialized": "initialized=1 maybe=0",
+      "maybe_initialized": "initialized=0 maybe=1",
+      "forbidden": "initialized=1 maybe=1 unless explicitly normalized and proven equivalent"
+    },
+    "join": {
+      "same_state": "preserve state",
+      "different_states": "MAYBE_INITIALIZED",
+      "must_match_legacy_join_state": true
+    }
+  },
+  "report_policy": {
+    "public_detailed_report": "When a caller explicitly requests the InitializationReport, entry/exit cell states must preserve the legacy observable meaning and deterministic ordering.",
+    "internal_validation_only": "Callers that only need pass/fail validation should not materialize per-cell entry/exit report tuples.",
+    "report_omission_must_not_skip_analysis": true,
+    "report_omission_must_not_weaken_diagnostics": true
+  },
+  "semantic_invariants": [
+    "constant-index LOAD of definitely uninitialized memory raises the same initialization diagnostic",
+    "second constant-index STORE to immutable already-initialized memory raises the same immutable-write diagnostic",
+    "unknown-index STORE marks each previously-uninitialized cell in that memory object maybe-initialized",
+    "CFG join of different predecessor states yields maybe-initialized",
+    "unreachable blocks do not affect reachable-state joins",
+    "memory mutability and length checks remain unchanged",
+    "constant propagation used for memory indices remains semantically unchanged",
+    "verify_ir still runs before initialization analysis",
+    "report/no-report modes validate the same program with the same success or exception class/code"
+  ],
+  "qualification_gates": [
+    "existing focused initialization semantic suite passes unchanged",
+    "new equivalence tests compare detailed and validation-only modes on joins, unknown indices, immutable writes, and uninitialized loads",
+    "compileall and diff-check pass",
+    "expanded Stage1 candidate completes Stage0/native preparation without OOM attributable to initialization-state materialization",
+    "no performance result is promoted to compiler correctness evidence by itself"
+  ],
+  "measurement": {
+    "required_per_function": [
+      "memory_object_count",
+      "total_memory_cells",
+      "reachable_block_count",
+      "legacy_dense_entry_projection",
+      "packed_word_projection"
+    ],
+    "projection_is_not_runtime_memory_measurement": true,
+    "native_or_host_process RSS remains separate evidence": true
+  },
+  "prohibited": [
+    "changing S3 source semantics to make analysis cheaper",
+    "skipping verify_ir",
+    "dropping maybe-initialized state",
+    "treating unknown-index STORE as fully initializing the whole memory object",
+    "suppressing initialization errors in validation-only mode",
+    "claiming PASS from lower memory usage without semantic regression tests"
+  ],
+  "qualification": {
+    "native_evidence": false,
+    "stage1_source_change": false,
+    "stage2_allowed": false,
+    "full_self_hosting": false,
+    "next": "MEASURE_STATE_SHAPE_AND_RECONCILE_MAIN_AGENT_BITSET_PATCH_AFTER_CHECKPOINT"
+  }
+}
