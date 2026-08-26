@@ -38,6 +38,17 @@
       ],
       "canonical_source_sha256_path": "native_source_coverage.candidate_sha256"
     },
+    "representation_epoch": {
+      "schema": "s3.selfhost.stage1-representation-epoch.v1",
+      "assertions": [
+        {"path": "status", "equals": "PASS_REPRESENTATION_EPOCH_CLASSIFIED"},
+        {"path": "representation.explicit_parameter_metadata_complete", "equals": true},
+        {"path": "representation.explicit_local_metadata_complete", "equals": true},
+        {"path": "representation.packed_parameter_record_present", "equals": false},
+        {"path": "representation.packed_local_record_present", "equals": false}
+      ],
+      "canonical_source_sha256_path": "source.sha256"
+    },
     "reference_opcode_inventory": {
       "schema": "s3.selfhost.reference-bootstrap-opcode-inventory.v1",
       "assertions": [
@@ -103,6 +114,7 @@
   },
   "mandatory_evidence_before_emission": [
     "100 percent native token/source byte coverage tied to the final canonical source SHA",
+    "the final source representation epoch has explicit parameter/local metadata and no legacy packed parameter/local records",
     "typed reference opcode inventory reconciled with emitter requirements",
     "hosted fixture corpus covers every bootstrap-required reference opcode",
     "native codegen-complete fixture corpus passes using the exact Stage1 artifact",
@@ -124,6 +136,8 @@
     "creating the gate before native self-emit",
     "setting stage1_certified_for_stage2 by operator override",
     "using a pre-convergence or stale parameter/local capacity report",
+    "using a representation-epoch report for different source bytes",
+    "reapplying historical packed parameter/local transforms to a source that already materializes explicit lanes",
     "using raw-source codegen or Python compiler delegation to satisfy self-emit",
     "accepting a dynamic/PT_INTERP Stage2 self-emit artifact",
     "reusing the gate after canonical source bytes change",
