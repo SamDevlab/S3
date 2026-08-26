@@ -101,6 +101,7 @@ def validate_stage1_evidence(
         )
 
     validated: dict[str, Any] = {}
+    loaded_reports: dict[str, dict[str, Any]] = {}
     for role, raw_spec in role_policy.items():
         entry = evidence.get(role)
         if not isinstance(raw_spec, dict) or not isinstance(entry, dict):
@@ -122,6 +123,7 @@ def validate_stage1_evidence(
             raise Stage1CertificationEvidenceError(
                 f"evidence role {role!r} report is not a JSON object"
             )
+        loaded_reports[role] = report
         expected_schema = raw_spec.get("schema")
         if report.get("schema") != expected_schema:
             raise Stage1CertificationEvidenceError(
@@ -182,10 +184,51 @@ def validate_stage1_evidence(
             "stage1_artifact_bound": artifact_path is not None,
         }
 
+    cross_role_hash_bindings: list[dict[str, str]] = []
+    for role, raw_spec in role_policy.items():
+        if not isinstance(raw_spec, dict):
+            raise Stage1CertificationEvidenceError(f"evidence role {role!r} policy is malformed")
+        bindings = raw_spec.get("evidence_sha256_matches_role", [])
+        if not isinstance(bindings, list):
+            raise Stage1CertificationEvidenceError(
+                f"evidence role {role!r} cross-role SHA policy is malformed"
+            )
+        for binding in bindings:
+            if not isinstance(binding, dict):
+                raise Stage1CertificationEvidenceError(
+                    f"evidence role {role!r} contains malformed cross-role SHA binding"
+                )
+            field = binding.get("path")
+            target_role = binding.get("role")
+            if not isinstance(field, str) or not isinstance(target_role, str):
+                raise Stage1CertificationEvidenceError(
+                    f"evidence role {role!r} contains malformed cross-role SHA binding"
+                )
+            if target_role not in validated:
+                raise Stage1CertificationEvidenceError(
+                    f"evidence role {role!r} cross-role SHA target {target_role!r} is not a required validated role"
+                )
+            referenced_digest = json_path(loaded_reports[role], field)
+            target_digest = validated[target_role]["sha256"]
+            if referenced_digest != target_digest:
+                raise Stage1CertificationEvidenceError(
+                    f"evidence role {role!r} cross-role SHA binding {field!r} does not match "
+                    f"role {target_role!r}: referenced={referenced_digest!r} actual={target_digest!r}"
+                )
+            cross_role_hash_bindings.append(
+                {
+                    "role": role,
+                    "path": field,
+                    "target_role": target_role,
+                    "sha256": target_digest,
+                }
+            )
+
     return {
         "status": "PASS_STAGE1_HASHED_EVIDENCE_REVALIDATION",
         "canonical_source_sha256": canonical_sha256,
         "stage1_sha256": stage1_sha256,
         "required_roles": sorted(role_policy),
         "validated_roles": validated,
+        "cross_role_hash_bindings": cross_role_hash_bindings,
     }
