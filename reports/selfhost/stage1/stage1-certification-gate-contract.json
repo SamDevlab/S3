@@ -1,21 +1,25 @@
 {
-  "schema": "s3.selfhost.stage1-certification-gate-contract.v2",
-  "output_schema": "s3.selfhost.stage1-certification-gate.v1",
+  "schema": "s3.selfhost.stage1-certification-gate-contract.v3",
+  "output_schema": "s3.selfhost.stage1-certification-gate.v2",
   "output_path": "reports/selfhost/stage1/stage1-certification-gate.json",
-  "purpose": "Provide the only machine-readable authorization consumed by the Stage2/Stage3 harnesses. This document may be emitted only after the final canonical Stage1 source and native evidence are frozen.",
+  "purpose": "Provide the only machine-readable Stage2 authorization. Every required report is re-opened, re-hashed, schema-checked, assertion-checked, and where applicable rebound to the exact final canonical source and Stage1 artifact.",
   "required_document_shape": {
-    "schema": "s3.selfhost.stage1-certification-gate.v1",
+    "schema": "s3.selfhost.stage1-certification-gate.v2",
     "canonical_source": {
       "sha256": "<exact final canonical SHA256>",
       "bytes": "<exact final canonical byte count>",
       "commit": "<commit containing exact final canonical source>"
     },
+    "stage1_artifact": {
+      "path": "<path to exact executable used by evidence>",
+      "sha256": "<exact executable SHA256>",
+      "bytes": "<exact executable byte count>"
+    },
     "evidence": {
-      "native_source_coverage_report": "<path + SHA tied to final canonical source>",
-      "capacity_report": "<path + SHA>",
-      "semantic_ir_verifier_report": "<path + SHA>",
-      "codegen_fixture_report": "reports/selfhost/stage1/stage1-codegen-complete-fixtures-native.json",
-      "self_emit_report": "<path + SHA>"
+      "<required role>": {
+        "path": "<repository-relative JSON path>",
+        "sha256": "<exact report SHA256>"
+      }
     },
     "qualification": {
       "stage1_certified_for_stage2": true,
@@ -25,21 +29,82 @@
       "general_emitter": "PASS_BOOTSTRAP_REQUIRED_OPCODES"
     }
   },
+  "required_evidence_roles": {
+    "native_source_coverage": {
+      "schema": "s3.selfhost.packed-token-lane-native-full-coverage.v1",
+      "assertions": [
+        {"path": "qualification.token_lane_full_coverage", "equals": "PASS_NATIVE_FULL_SOURCE_COVERAGE"},
+        {"path": "native_source_coverage.status", "equals": "PASS"}
+      ],
+      "canonical_source_sha256_path": "native_source_coverage.candidate_sha256"
+    },
+    "reference_opcode_inventory": {
+      "schema": "s3.selfhost.reference-bootstrap-opcode-inventory.v1",
+      "assertions": [
+        {"path": "status", "equals": "PASS_HOSTED_REFERENCE_OPCODE_RECONCILIATION"},
+        {"path": "reconciliation.legacy_emitter_requirements_stale", "equals": false}
+      ],
+      "canonical_source_sha256_path": "canonical_source.sha256"
+    },
+    "hosted_fixture_opcode_coverage": {
+      "schema": "s3.selfhost.stage1-codegen-fixture-opcode-coverage.v1",
+      "assertions": [
+        {"path": "status", "equals": "PASS_HOSTED_FIXTURE_OPCODE_COVERAGE"},
+        {"path": "qualification.hosted_fixture_coverage", "equals": true}
+      ],
+      "canonical_source_sha256_path": "reference_canonical_source_sha256"
+    },
+    "native_codegen_fixtures": {
+      "schema": "s3.selfhost.stage1-codegen-complete-fixtures-native.v1",
+      "assertions": [
+        {"path": "qualification.codegen_complete_representative_fixtures", "equals": "PASS"},
+        {"path": "qualification.native_evidence", "equals": true}
+      ],
+      "stage1_artifact_sha256_path": "stage1.sha256"
+    },
+    "final_capacity": {
+      "schema": "s3.selfhost.stage1-final-capacity.v1",
+      "assertions": [
+        {"path": "qualification.all_capacities_no_truncation", "equals": "PASS"}
+      ],
+      "canonical_source_sha256_path": "canonical_source.sha256",
+      "stage1_artifact_sha256_path": "stage1.sha256"
+    },
+    "final_semantic_ir_verifier": {
+      "schema": "s3.selfhost.stage1-final-semantic-ir-verifier.v1",
+      "assertions": [
+        {"path": "qualification.semantic_ir", "equals": "PASS_CODEGEN_COMPLETE_BOOTSTRAP_SUBSET"},
+        {"path": "qualification.verifier_v2", "equals": "PASS"},
+        {"path": "qualification.general_emitter", "equals": "PASS_BOOTSTRAP_REQUIRED_OPCODES"}
+      ],
+      "canonical_source_sha256_path": "canonical_source.sha256",
+      "stage1_artifact_sha256_path": "stage1.sha256"
+    },
+    "final_self_emit": {
+      "schema": "s3.selfhost.stage1-final-self-emit.v1",
+      "assertions": [
+        {"path": "qualification.self_emit", "equals": "PASS"},
+        {"path": "qualification.stage1_certified_candidate", "equals": true}
+      ],
+      "canonical_source_sha256_path": "canonical_source.sha256",
+      "stage1_artifact_sha256_path": "stage1.sha256"
+    }
+  },
   "mandatory_evidence_before_emission": [
-    "100 percent native token/source coverage, including direct native byte-read coverage proof",
+    "100 percent native token/source byte coverage tied to the final canonical source SHA",
+    "typed reference opcode inventory reconciled with emitter requirements",
+    "hosted fixture corpus covers every bootstrap-required reference opcode",
+    "native codegen-complete fixture corpus passes using the exact Stage1 artifact",
     "all measured capacities pass without truncation",
-    "parameter and local metadata native qualification",
-    "explicit semantic value namespace",
-    "mutable locals modeled as storage identities with explicit LOAD/STORE semantics",
-    "fixed-array element access modeled with explicit storage identity + semantic index operand; physical generic LOAD/STORE is allowed",
-    "instruction operands/results and deterministic order",
-    "call argument/result linkage",
-    "terminator condition/return/target linkage",
+    "parameter/local/storage metadata are native-qualified",
+    "explicit semantic value namespace and verified def-use",
+    "mutable locals/fixed arrays are storage identities with explicit LOAD/STORE/index operands",
+    "instruction operands/results and deterministic order are complete",
+    "call argument/result linkage and terminator condition/return/target linkage are complete",
     "verifier v2 rejects malformed def-use/storage/CFG fixtures",
-    "general emitter consumes verified IR only",
-    "reports/selfhost/stage1/stage1-codegen-complete-fixtures-native.json has schema s3.selfhost.stage1-codegen-complete-fixtures-native.v1 and qualification.codegen_complete_representative_fixtures=PASS",
-    "Stage1 compiles the exact final canonical compiler source into a real compiler artifact",
-    "representative Stage1 conformance corpus passes"
+    "general emitter consumes verified IR only and covers every required semantic opcode",
+    "Stage1 self-emits the exact final canonical source into a real compiler artifact",
+    "all evidence reports are content-hash bound and revalidated by the Stage2 consumer"
   ],
   "prohibited": [
     "creating the gate from static projections alone",
@@ -47,8 +112,9 @@
     "setting stage1_certified_for_stage2 by operator override",
     "using raw-source codegen or Python compiler delegation to satisfy self-emit",
     "reusing the gate after canonical source bytes change",
-    "treating a storage identity as a scalar semantic value without an explicit load",
-    "treating a fixed-array element as a scalar value without an explicit semantic index operand"
+    "reusing native evidence produced by a different Stage1 artifact where artifact binding is required",
+    "trusting report paths without re-hashing their current contents",
+    "allowing an evidence entry to choose its own schema/assertion policy"
   ],
   "consumers": [
     "tools/qualify_stage2_stage3_fixed_point.py",
