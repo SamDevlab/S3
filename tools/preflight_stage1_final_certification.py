@@ -28,6 +28,10 @@ CONTRACTS = {
         "reports/selfhost/stage1/representation-epoch-contract.json",
         "s3.selfhost.stage1-representation-epoch-contract.v1",
     ),
+    "representation_tool_compatibility": (
+        "reports/selfhost/stage1/representation-tool-compatibility.json",
+        "s3.selfhost.stage1-representation-tool-compatibility.v1",
+    ),
     "final_capacity": (
         "reports/selfhost/stage1/final-capacity-contract.json",
         "s3.selfhost.stage1-final-capacity-contract.v2",
@@ -52,6 +56,7 @@ CONTRACTS = {
 
 TOOL_FILES = [
     "tools/audit_stage1_representation_epoch.py",
+    "tools/check_stage1_representation_compatibility.py",
     "tools/audit_stage1_final_capacity_measurement_readiness.py",
     "tools/qualify_stage1_selfhost_capacity_convergence.py",
     "tools/qualify_stage1_final_capacity.py",
@@ -68,6 +73,7 @@ TOOL_FILES = [
 
 TEST_FILES = [
     "tests/test_stage1_representation_epoch.py",
+    "tests/test_stage1_representation_compatibility.py",
     "tests/test_stage1_final_capacity_measurement_readiness.py",
     "tests/test_stage1_selfhost_capacity_convergence.py",
     "tests/test_stage1_final_capacity.py",
