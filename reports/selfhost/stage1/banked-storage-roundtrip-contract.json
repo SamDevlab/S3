@@ -1,0 +1,61 @@
+{
+  "schema": "s3.selfhost.banked-storage-roundtrip-contract.v1",
+  "pr": 268,
+  "status": "PARALLEL_DESIGN_GATE_NOT_NATIVE_EVIDENCE",
+  "canonical_source_mutated": false,
+  "purpose": "Prove that expanded bounded banked storage preserves a one-to-one logical-index mapping across writers, readers and boundary transitions before native IR-v2 qualification.",
+  "mapping": {
+    "logical_index_domain": "[0,total_capacity)",
+    "physical_location": "exactly one (bank_id, slot) pair",
+    "bank_order": "source/layout order",
+    "slot_domain": "[0,bank_capacity)",
+    "mapping_rule": "subtract complete preceding bank capacities; the first bank whose remaining index is below its capacity owns the slot",
+    "invalid_low": "index < 0 fails closed",
+    "invalid_high": "index >= total_capacity fails closed"
+  },
+  "writer_reader_invariants": [
+    "writer and reader use the same logical-index mapping",
+    "writing one logical index changes exactly one physical slot",
+    "reading the same logical index returns exactly the written full-width value",
+    "writing an index must not alias any other valid logical index",
+    "bank transition at each cumulative capacity boundary is exact",
+    "first and last slot of every bank are explicitly tested",
+    "invalid writes do not mutate storage",
+    "invalid reads fail closed rather than returning a neighboring slot",
+    "full signed i64 payloads are preserved where the physical lane is i64",
+    "capacity changes invalidate previous roundtrip proof and require regeneration"
+  ],
+  "required_layout_examples": {
+    "legacy_instruction_two_banks": [365, 365],
+    "legacy_value_four_banks": [365, 365, 365, 365],
+    "call_argument_pool": [365, 365, 16],
+    "expanded_event_example": [365, 365, 365, 365, 365, 365, 365, 365, 365, 365, 365]
+  },
+  "boundary_set": [
+    "0",
+    "last slot of each bank",
+    "first slot of each bank after bank 0",
+    "total_capacity - 1",
+    "-1 invalid",
+    "total_capacity invalid"
+  ],
+  "relation_dependency": {
+    "contract": "reports/selfhost/stage1/capacity-dispatch-proof-contract.json",
+    "rule": "If writer/reader dispatch is generated through relational trees, the relation-safe dispatch proof must pass first."
+  },
+  "native_rule": "Hosted/model roundtrip proof is necessary but not sufficient. The exact transformed Stage1 candidate must still pass native trivial/self-source/audit gates.",
+  "prohibited": [
+    "assuming equal bank sizes when a tail bank is shorter",
+    "using modulo by the first-bank size without proving layout equivalence",
+    "writer/reader private mappings with no differential proof",
+    "silently clamping invalid indices",
+    "treating aggregate count equality as proof of slot-level preservation"
+  ],
+  "qualification": {
+    "native_evidence": false,
+    "stage1_source_change": false,
+    "stage2_allowed": false,
+    "full_self_hosting": false,
+    "next": "EXHAUSTIVE_BANK_BOUNDARY_ROUNDTRIP_THEN_RECONCILE_EXACT_MAIN_AGENT_LAYOUTS"
+  }
+}
