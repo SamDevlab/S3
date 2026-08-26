@@ -2,7 +2,7 @@
   "schema": "s3.selfhost.stage2-stage3-fixed-point-contract.v3",
   "pr": 268,
   "status": "PREPARED_DORMANT_UNTIL_STAGE1_CERTIFIED",
-  "purpose": "Define the strict Stage1->Stage2->Stage3 certification path without Python/compiler-bootstrap delegation, with content-bound Stage1 evidence, freestanding static artifacts, exact artifact-to-measurement binding, and exact fixed-point reproducibility.",
+  "purpose": "Define the strict Stage1->Stage2->Stage3 certification path without Python/compiler-bootstrap delegation, with content-bound Stage1 evidence, exact continuity from the Stage1 self-emit Stage2 candidate, freestanding static artifacts, exact artifact-to-measurement binding, and exact fixed-point reproducibility.",
   "stage1_prerequisite": {
     "required_schema": "s3.selfhost.stage1-certification-gate.v2",
     "required_contract": "s3.selfhost.stage1-certification-gate-contract.v3",
@@ -15,7 +15,9 @@
       "general_emitter": "PASS_BOOTSTRAP_REQUIRED_OPCODES"
     },
     "canonical_source_sha_must_match_manifest": true,
-    "stage1_artifact_sha_must_match_executed_binary": true
+    "stage1_artifact_sha_must_match_executed_binary": true,
+    "final_self_emit_report_must_be_rehashed_at_final_authority": true,
+    "fixed_point_stage2_must_equal_stage1_self_emit_stage2_sha256_and_bytes": true
   },
   "canonical_source": {
     "manifest": "selfhost/compiler/compiler-sources.json",
@@ -24,11 +26,25 @@
     "compiler_receives_source_via": "stdin"
   },
   "artifact_construction": {
-    "stage2": "execute Stage1 compiler on exact canonical source -> assembly -> host assembler/linker -> static ELF",
-    "stage3": "execute Stage2 compiler on same exact canonical source -> assembly -> identical host assembler/linker recipe -> static ELF",
-    "host_object": "compile stage1_host_io.c exactly once and reuse the identical object for Stage2 and Stage3 linking",
+    "stage2": "execute Stage1 compiler on exact canonical source -> assembly -> host assembler/linker -> static ELF; final fixed-point Stage2 must be byte-identical by SHA256 and byte count to the Stage2 candidate already recorded by Stage1 final self-emit evidence",
+    "stage3": "execute the exact Stage2 compiler continuing from the Stage1 self-emit candidate on the same exact canonical source -> assembly -> identical host assembler/linker recipe -> static ELF",
+    "host_object": "compile stage1_host_io.c exactly once inside the Stage2/Stage3 harness and reuse the identical object for Stage2 and Stage3 linking",
     "link_flags": ["-static", "-nostdlib", "-no-pie", "-s", "-Wl,--build-id=none"],
     "authoritative_linker": "tools/selfhost_static_link.py::assemble_link_static",
+    "stage1_self_emit_stage2_continuity": {
+      "source_role": "final_self_emit",
+      "source_report_schema": "s3.selfhost.stage1-final-self-emit.v1",
+      "source_report_sha256_must_equal_stage1_gate_validated_role_sha256": true,
+      "report_rehash_required_immediately_before_candidate_use": true,
+      "source_stage2_deterministic_elf_bytes_equal": true,
+      "source_stage2_deterministic_elf_sha256_equal": true,
+      "source_stage2_freestanding_static_elf": "PASS_FREESTANDING_STATIC_ELF",
+      "source_stage2_must_not_claim_stage2_certified_by_itself": true,
+      "fixed_point_stage2_sha256_must_equal_source_stage2_sha256": true,
+      "fixed_point_stage2_bytes_must_equal_source_stage2_bytes": true,
+      "fixed_point_stage3_must_preserve_source_stage2_identity_via_exact_fixed_point": true,
+      "status": "PASS_STAGE1_SELF_EMIT_TO_STAGE2_STAGE3_CONTINUITY"
+    },
     "final_artifact_audit": {
       "auditor": "tools/audit_selfhost_freestanding_elf.py::audit_path",
       "stage2_status": "PASS_FREESTANDING_STATIC_ELF",
@@ -46,7 +62,9 @@
       "Python code generation",
       "Stage0 compiler delegation after Stage1",
       "PT_INTERP or dynamically loaded Stage2/Stage3 compiler artifact",
-      "certifying a Stage2/Stage3 path after the measured artifact has been replaced or mutated"
+      "certifying a Stage2/Stage3 path after the measured artifact has been replaced or mutated",
+      "continuing with a separately rebuilt Stage2 whose SHA256 or byte count differs from the Stage1 final-self-emit Stage2 candidate",
+      "trusting final_self_emit report contents after Stage1 gate validation without re-hashing the current report bytes"
     ]
   },
   "pythonless_compiler_runtime": {
@@ -75,6 +93,8 @@
     "strace_or_landlock_missing": "blocks strict FULL_SELF_HOSTING certification rather than silently downgrading proof"
   },
   "determinism": {
+    "stage1_self_emit_stage2_to_fixed_point_stage2_sha_equal": true,
+    "stage1_self_emit_stage2_to_fixed_point_stage2_bytes_equal": true,
     "stage2_stage3_assembly_sha_equal": "DIAGNOSTIC_STRONG_SIGNAL_NOT_REQUIRED_IF_ELF_FIXED_POINT_IS_EXACT",
     "stage2_stage3_assembly_bytes_equal": "DIAGNOSTIC_STRONG_SIGNAL_NOT_REQUIRED_IF_ELF_FIXED_POINT_IS_EXACT",
     "stage2_stage3_elf_sha_equal": true,
@@ -83,7 +103,7 @@
     "final_audited_elf_bytes_equal": true,
     "link_build_id": "disabled",
     "static_link": true,
-    "same_host_object": true,
+    "same_host_object_within_stage2_stage3_harness": true,
     "same_link_recipe": true,
     "optional_stage4": "Stage3 may compile the same source to Stage4 as an additional fixed-point confirmation"
   },
@@ -98,6 +118,9 @@
   ],
   "final_gate": {
     "stage1_hashed_evidence_revalidation": "PASS_STAGE1_HASHED_EVIDENCE_REVALIDATION",
+    "stage1_self_emit_report_revalidated": true,
+    "stage2_matches_stage1_self_emit_candidate": true,
+    "stage3_matches_stage1_self_emit_candidate_via_fixed_point": true,
     "static_freestanding_link_recipe": true,
     "stage1_to_stage2": "PASS",
     "stage2_pythonless_compiler": "PASS_STRICT_PROCESS_AND_FILE_TRACE",
@@ -120,6 +143,10 @@
   "fail_closed": [
     "Stage1 gate v2 missing or inconsistent",
     "any hashed Stage1 evidence role fails revalidation",
+    "final_self_emit report current SHA differs from the SHA revalidated by the Stage1 gate",
+    "final_self_emit Stage2 candidate identity is malformed or no longer proves deterministic freestanding static ELF",
+    "fixed-point Stage2 SHA256 or byte count differs from the Stage1 self-emit Stage2 candidate",
+    "fixed-point Stage3 does not preserve the Stage1 self-emit Stage2 identity through exact Stage2==Stage3 fixed point",
     "Stage1 artifact SHA differs from executed Stage1 binary",
     "canonical manifest/source mismatch",
     "Stage1 compiler emits nonzero status or diagnostics for canonical source",
