@@ -9,6 +9,7 @@ from tools.audit_stage1_codegen_ir_v2_value_namespace import (
     CONTRACT,
     INLINE_LITERAL_MAX,
     INLINE_LITERAL_MIN,
+    PARAMETER_CAPACITY,
     PAYLOAD_DOMAIN,
     SIGNED_I64_MAX,
     SOURCE,
@@ -52,18 +53,30 @@ def test_current_value_storage_design_is_static_only_and_legacy_is_not_semantic(
     assert result["legacy_storage"]["total_slots"] == 1460
     assert len(result["legacy_storage"]["banks"]) == 4
     assert result["legacy_storage"]["contents"] == "STRUCTURAL_NUMERIC_TOKEN_RECORDS_NOT_SEMANTIC_VALUES"
+    assert result["parameter_metadata"]["capacity_bound"] == PARAMETER_CAPACITY == 68
+    assert result["parameter_metadata"]["semantic_id_domain"] == "[0,parameter_count)"
+    assert result["parameter_metadata"]["fixed_64_reservation"] is False
+    assert result["namespace"]["local_start"] == "parameter_count"
+    assert result["namespace"]["local_id_rule"] == "parameter_count + global_local_record_index"
     assert result["native_evidence"] is False
     assert result["canonical_source_mutated"] is False
     assert result["next"] == "WAIT_FOR_NATIVE_LOCAL_PASS_THEN_BUILD_EXACT_VALUE_NAMESPACE_PREFLIGHT"
 
 
-def test_contract_forbids_silent_value_reinterpretation_and_per_occurrence_zero_values() -> None:
+def test_contract_forbids_fixed_64_reservation_and_silent_value_reinterpretation() -> None:
     contract = json.loads(CONTRACT.read_text(encoding="utf-8"))
+    layout = contract["semantic_id_layout"]
+    assert layout["parameter_capacity_bound"] == 68
+    assert layout["parameter_domain"] == "[0,parameter_count)"
+    assert layout["local_domain_start"] == "parameter_count"
+    assert layout["dynamic_start"] == "parameter_count + local_record_count"
+    assert layout["fixed_64_parameter_reservation"] is False
     assert contract["physical_storage"]["silent_reinterpretation_allowed"] is False
     assert contract["constant_representation"]["deduplicate_repeated_literals"] is True
     assert contract["constant_representation"]["wide_literal"]["extension_slot_is_semantic_value_id"] is False
     prohibited = set(contract["prohibited_shortcuts"])
     assert "reinterpret legacy ir_value_records as semantic IDs without rebuild" in prohibited
+    assert "restore or assume a fixed [0,64) parameter semantic-ID reservation" in prohibited
     assert "one semantic value per lexical zero initializer occurrence" in prohibited
 
 
