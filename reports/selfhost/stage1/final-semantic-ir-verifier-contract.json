@@ -1,5 +1,5 @@
 {
-  "schema": "s3.selfhost.stage1-final-semantic-ir-verifier-contract.v1",
+  "schema": "s3.selfhost.stage1-final-semantic-ir-verifier-contract.v2",
   "measurement_schema": "s3.selfhost.stage1-semantic-ir-measurement.v1",
   "output_schema": "s3.selfhost.stage1-final-semantic-ir-verifier.v1",
   "purpose": "Certify emitter-complete semantic IR and verifier-v2 on the exact Stage1/source pair that already passed final capacity. The typed Stage0 reference IR supplies required semantic capabilities only; Stage1 may use a different physical encoding.",
@@ -20,7 +20,36 @@
     "wide_literal_extensions_verified": true,
     "no_truncation": true
   },
+  "required_semantic_features": [
+    "PARAMETER_VALUE",
+    "LOCAL_STORAGE_IDENTITY",
+    "TYPED_CONSTANT_INLINE",
+    "TYPED_CONSTANT_WIDE",
+    "INSTRUCTION_RESULT",
+    "EXPLICIT_LOAD_STORAGE_AND_INDEX",
+    "EXPLICIT_STORE_STORAGE_INDEX_AND_VALUE",
+    "INTERNAL_CALL_ARGUMENT_AND_RESULT_LINKAGE",
+    "FOREIGN_CALL_ARGUMENT_AND_RESULT_LINKAGE",
+    "RETURN_VALUE_LINKAGE",
+    "JUMP_TARGET_LINKAGE",
+    "BRANCH_CONDITION_AND_TARGET_LINKAGE",
+    "DETERMINISTIC_BLOCK_INSTRUCTION_ORDER",
+    "WIDE_EXTENSION_SLOT_NOT_VALUE_ID"
+  ],
   "minimum_inventory_counts": [
+    "functions",
+    "parameters",
+    "storage_objects",
+    "blocks",
+    "instructions",
+    "semantic_values",
+    "calls",
+    "call_arguments",
+    "terminators",
+    "operand_uses",
+    "instruction_results"
+  ],
+  "strict_positive_inventory_counts": [
     "functions",
     "parameters",
     "storage_objects",
