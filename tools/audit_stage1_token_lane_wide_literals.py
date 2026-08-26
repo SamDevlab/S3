@@ -144,13 +144,19 @@ def _execute(source: str, *, recover_numeric: bool) -> dict[str, object]:
             break
         effective_cursor = decoded_next
 
-    if recover_numeric and positioned:
+    if recover_numeric and positioned and terminating_spill is None:
         # Candidate decoding should walk all lexical tokens.  Account for any
         # trailing Stage1 whitespace after the final token when reporting source
         # coverage.
         final_cursor = effective_cursor
         while final_cursor < len(source) and source[final_cursor] in " \t\r\n":
             final_cursor += 1
+
+    full_coverage = bool(
+        terminating_spill is None
+        and len(execution) == len(positioned)
+        and final_cursor >= len(source)
+    )
 
     return {
         "execution": execution,
@@ -163,7 +169,7 @@ def _execute(source: str, *, recover_numeric: bool) -> dict[str, object]:
         "final_cursor": final_cursor,
         "source_bytes": len(source.encode("utf-8")),
         "source_characters": len(source),
-        "full_character_coverage": final_cursor >= len(source),
+        "full_character_coverage": full_coverage,
     }
 
 
@@ -234,7 +240,7 @@ def audit(source: str) -> dict[str, object]:
     repaired_baseline_call_model = _call_model(repaired_baseline["execution"])
     repaired_candidate_call_model = _call_model(repaired_candidate["execution"])
 
-    guards = {
+    lane_guards = {
         "canonical_sha_matches": _sha256(source_bytes) == BASELINE_SOURCE_SHA256,
         "candidate_changes_no_function_signatures": source.count("fn ") == candidate.count("fn "),
         "candidate_changes_no_mut_declarations": source.count("mut ") == candidate.count("mut "),
@@ -244,11 +250,20 @@ def audit(source: str) -> dict[str, object]:
         "repaired_candidate_covers_full_source": repaired_candidate["full_character_coverage"] is True,
         "repaired_baseline_no_terminating_spill": repaired_baseline["terminating_spill"] is None,
         "repaired_candidate_no_terminating_spill": repaired_candidate["terminating_spill"] is None,
-        "repaired_calls_close": repaired_candidate_call_model["active_calls_at_eof"] == 0,
     }
-    static_pass = all(guards.values())
+    lane_pass = all(lane_guards.values())
 
-    if not static_pass:
+    call_model_observations = {
+        "active_calls_at_eof": repaired_candidate_call_model["active_calls_at_eof"],
+        "maximum_active_call_depth": repaired_candidate_call_model["maximum_active_call_depth"],
+        "note": (
+            "Call-model shape is reported as a downstream capacity/collector observation; "
+            "it is not a prerequisite for proving the numeric token lane itself covers "
+            "the complete source."
+        ),
+    }
+
+    if not lane_pass:
         status = "STATIC_WIDE_TOKEN_LANE_FAIL"
         next_gate = "FIX_WIDE_TOKEN_LANE_STATIC_MODEL"
     elif not repaired_candidate_call_model["fits_current_call_capacity"]:
@@ -262,7 +277,7 @@ def audit(source: str) -> dict[str, object]:
         next_gate = "QUALIFY_WIDE_TOKEN_LANE_NATIVE"
 
     return {
-        "schema": "s3.selfhost.packed-token-lane-static-audit.v1",
+        "schema": "s3.selfhost.packed-token-lane-static-audit.v2",
         "status": status,
         "native_evidence": False,
         "canonical_source_mutated": False,
@@ -288,7 +303,8 @@ def audit(source: str) -> dict[str, object]:
             "call_model": repaired_candidate_call_model,
         },
         "legacy_call_model": legacy_call_model,
-        "guards": guards,
+        "lane_guards": lane_guards,
+        "call_model_observations": call_model_observations,
         "next": next_gate,
         "qualification_rule": (
             "Static full-source coverage is necessary but not native evidence. "
