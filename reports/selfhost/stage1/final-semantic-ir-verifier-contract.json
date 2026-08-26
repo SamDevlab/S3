@@ -1,5 +1,5 @@
 {
-  "schema": "s3.selfhost.stage1-final-semantic-ir-verifier-contract.v2",
+  "schema": "s3.selfhost.stage1-final-semantic-ir-verifier-contract.v3",
   "measurement_schema": "s3.selfhost.stage1-semantic-ir-measurement.v1",
   "output_schema": "s3.selfhost.stage1-final-semantic-ir-verifier.v1",
   "purpose": "Certify emitter-complete semantic IR and verifier-v2 on the exact Stage1/source pair that already passed final capacity. The typed Stage0 reference IR supplies required semantic capabilities only; Stage1 may use a different physical encoding.",
@@ -19,6 +19,13 @@
     "terminator_linkage_complete": true,
     "wide_literal_extensions_verified": true,
     "no_truncation": true
+  },
+  "required_emitter_boundary": {
+    "status": "PASS_VERIFIED_IR_ONLY",
+    "raw_source_accesses_after_verifier": 0,
+    "source_pattern_codegen": false,
+    "python_codegen": false,
+    "embedded_stage2_assembly": false
   },
   "required_semantic_features": [
     "PARAMETER_VALUE",
