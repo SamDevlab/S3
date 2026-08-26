@@ -1,0 +1,437 @@
+{
+  "ast_node_counts": {
+    "ArrayLiteral": 50,
+    "ArrayType": 50,
+    "AssignmentStatement": 478,
+    "BinaryExpression": 508,
+    "Block": 1028,
+    "BreakStatement": 4,
+    "CallArgument": 931,
+    "CallExpression": 792,
+    "CompoundAssignmentStatement": 77,
+    "DiscardStatement": 975,
+    "ForeignFunctionDeclaration": 5,
+    "FunctionDeclaration": 31,
+    "FunctionSignature": 36,
+    "Identifier": 1845,
+    "IndexExpression": 74,
+    "IndexTarget": 186,
+    "IntegerLiteral": 13283,
+    "Parameter": 68,
+    "Program": 1,
+    "ReturnStatement": 119,
+    "SwitchStatement": 325,
+    "TernaryCase": 975,
+    "UnaryExpression": 135,
+    "VariableDeclaration": 191,
+    "VariableTarget": 369,
+    "WhileStatement": 22
+  },
+  "binary_operators": {
+    "*": 19,
+    "+": 85,
+    "-": 61,
+    "/": 14,
+    "<": 78,
+    "<=": 3,
+    "<=>": 10,
+    "==": 205,
+    ">": 22,
+    ">=": 11
+  },
+  "call_arities": {
+    "0": 17,
+    "1": 723,
+    "2": 8,
+    "26": 2,
+    "3": 28,
+    "4": 14
+  },
+  "call_names": {
+    "decimal_digit": 2,
+    "emit_assembly": 1,
+    "emit_audit_decimal": 1,
+    "emit_audit_header": 1,
+    "emit_audit_snapshot": 2,
+    "emit_audit_value": 26,
+    "emit_blocked": 3,
+    "emit_decimal": 3,
+    "emit_error": 10,
+    "emit_general_epilogue": 1,
+    "emit_general_literal_function": 2,
+    "emit_general_name": 5,
+    "emit_general_preamble": 1,
+    "emit_ir_return": 4,
+    "identifier_hash": 1,
+    "is_digit": 5,
+    "is_foreign_name": 4,
+    "is_identifier_continue": 1,
+    "is_identifier_start": 2,
+    "is_space_unit": 1,
+    "is_statement_name": 1,
+    "pack_ir_record": 14,
+    "pack_token": 23,
+    "read_at": 15,
+    "remainder_digit": 2,
+    "s3_stage1_exit": 18,
+    "s3_stage1_read_byte": 1,
+    "s3_stage1_source_length": 1,
+    "s3_stage1_write_byte": 1,
+    "s3_stage1_write_error_byte": 1,
+    "scan_token": 1,
+    "simple_next": 1,
+    "to_i64": 14,
+    "to_tryte": 65,
+    "valid_type_name": 3,
+    "write_byte": 489,
+    "write_error_byte": 66
+  },
+  "current_observed_lanes": {
+    "aggregate_events": "ir_ast_event_records_*",
+    "aggregate_instructions": "ir_instruction_records_*",
+    "call_metadata": "ir_call_*",
+    "function_metadata": "function_names/function_types/function_flags",
+    "lexical_numeric_records": "ir_value_records_*"
+  },
+  "declared_types": {
+    "array[16]<i64>": 5,
+    "array[16]<trit>": 1,
+    "array[16]<tryte>": 1,
+    "array[365]<i64>": 20,
+    "array[365]<tryte>": 8,
+    "array[64]<i64>": 8,
+    "array[64]<tryte>": 7,
+    "i64": 113,
+    "parameter:i64": 58,
+    "parameter:tryte": 10,
+    "trit": 22,
+    "tryte": 6
+  },
+  "foreign_call_names": [
+    "s3_stage1_exit",
+    "s3_stage1_read_byte",
+    "s3_stage1_source_length",
+    "s3_stage1_write_byte",
+    "s3_stage1_write_error_byte"
+  ],
+  "function_shape": {
+    "decimal_digit": {
+      "expressions": 9,
+      "statements": 3
+    },
+    "emit_assembly": {
+      "expressions": 590,
+      "statements": 197
+    },
+    "emit_audit_decimal": {
+      "expressions": 77,
+      "statements": 29
+    },
+    "emit_audit_header": {
+      "expressions": 50,
+      "statements": 17
+    },
+    "emit_audit_snapshot": {
+      "expressions": 85,
+      "statements": 29
+    },
+    "emit_audit_value": {
+      "expressions": 8,
+      "statements": 3
+    },
+    "emit_blocked": {
+      "expressions": 80,
+      "statements": 27
+    },
+    "emit_decimal": {
+      "expressions": 81,
+      "statements": 22
+    },
+    "emit_error": {
+      "expressions": 50,
+      "statements": 17
+    },
+    "emit_general_epilogue": {
+      "expressions": 116,
+      "statements": 39
+    },
+    "emit_general_literal_function": {
+      "expressions": 203,
+      "statements": 68
+    },
+    "emit_general_name": {
+      "expressions": 23,
+      "statements": 8
+    },
+    "emit_general_preamble": {
+      "expressions": 533,
+      "statements": 178
+    },
+    "emit_ir_return": {
+      "expressions": 15,
+      "statements": 7
+    },
+    "identifier_hash": {
+      "expressions": 22,
+      "statements": 8
+    },
+    "is_digit": {
+      "expressions": 14,
+      "statements": 7
+    },
+    "is_foreign_name": {
+      "expressions": 36,
+      "statements": 16
+    },
+    "is_identifier_continue": {
+      "expressions": 11,
+      "statements": 4
+    },
+    "is_identifier_start": {
+      "expressions": 47,
+      "statements": 22
+    },
+    "is_space_unit": {
+      "expressions": 43,
+      "statements": 22
+    },
+    "is_statement_name": {
+      "expressions": 43,
+      "statements": 19
+    },
+    "main": {
+      "expressions": 13904,
+      "statements": 1215
+    },
+    "pack_ir_record": {
+      "expressions": 13,
+      "statements": 1
+    },
+    "pack_token": {
+      "expressions": 11,
+      "statements": 1
+    },
+    "read_at": {
+      "expressions": 3,
+      "statements": 1
+    },
+    "remainder_digit": {
+      "expressions": 14,
+      "statements": 4
+    },
+    "scan_token": {
+      "expressions": 401,
+      "statements": 137
+    },
+    "simple_next": {
+      "expressions": 129,
+      "statements": 78
+    },
+    "valid_type_name": {
+      "expressions": 20,
+      "statements": 10
+    },
+    "write_byte": {
+      "expressions": 3,
+      "statements": 1
+    },
+    "write_error_byte": {
+      "expressions": 3,
+      "statements": 1
+    }
+  },
+  "missing_lossless_typed_lanes": [
+    "parameter_identity_type_mutability_and_value_id",
+    "local_identity_type_mutability_storage_and_value_id",
+    "typed_constant_interning_and_definition_ids",
+    "instruction_operands_results_and_order",
+    "call_result_and_argument_value_ids",
+    "branch_conditions_and_complete_terminators",
+    "canonical_serialized_ir_artifact"
+  ],
+  "parser_semantic_audit": {
+    "array_literals": 50,
+    "assignments": 555,
+    "breaks": 4,
+    "call_arguments": 931,
+    "calls": 792,
+    "discards": 975,
+    "foreign_functions": 5,
+    "functions": 31,
+    "index_expressions": 74,
+    "index_targets": 186,
+    "integer_literals": 13283,
+    "local_declarations": 191,
+    "max_call_arity": 26,
+    "parameters": 68,
+    "returns": 119,
+    "semantic_constant_values": 13418,
+    "semantic_expression_types": 15845,
+    "switches": 325,
+    "whiles": 22
+  },
+  "reference_typed_ir": {
+    "status": "NOT_MEASURED_BY_DEFAULT"
+  },
+  "required_operations": {
+    "ADD": true,
+    "ARRAY_INITIALIZER": true,
+    "BRANCH": true,
+    "CALL_FOREIGN": true,
+    "CALL_INTERNAL": true,
+    "COMPARE": true,
+    "COMPARE_EQUAL": true,
+    "COMPARE_GREATER": true,
+    "COMPARE_GREATER_EQUAL": true,
+    "COMPARE_LESS": true,
+    "COMPARE_LESS_EQUAL": true,
+    "CONST_I64": true,
+    "DISCARD_EFFECT": true,
+    "DIV": true,
+    "INDEX_LOAD_OR_STORE": true,
+    "JUMP": true,
+    "LOAD": true,
+    "LOCAL": true,
+    "MUL": true,
+    "PARAM": true,
+    "RETURN": true,
+    "STORE": true,
+    "SUB": true,
+    "UNARY": true
+  },
+  "schema": "s3.selfhost.stage1-semantic-ir-requirements.v1",
+  "source": {
+    "bytes": 166984,
+    "path": "C:\\Users\\samue\\Downloads\\S3\\S3-actual-stage1-compiler-seed-20260824\\selfhost\\compiler\\s3c_stage1.s3",
+    "sha256": "20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341"
+  },
+  "stage1_self_emit": "BLOCKED_UNTIL_MISSING_LANES_EXIST_AND_VERIFY",
+  "stage2": "NOT_STARTED",
+  "stage3": "NOT_STARTED",
+  "status": "BLOCKED_GENERAL_EMITTER_CAPABILITY_GAP",
+  "storage_evidence": {
+    "event_record_schema": {
+      "offset_assignment_expressions": [
+        "cursor"
+      ],
+      "operand_assignment_lines": [
+        1641,
+        1652,
+        1662,
+        1672,
+        1681,
+        1691,
+        1706,
+        1715,
+        1724,
+        1733,
+        1743,
+        1752,
+        1761,
+        1771,
+        1781,
+        1791,
+        1988
+      ],
+      "operand_assignment_sources": [
+        "previous_value",
+        "value"
+      ],
+      "pack_expression_count": 1,
+      "pack_lines": [
+        2326
+      ],
+      "schema": "packed(opcode, owner_function_plus_one, token_operand, token_offset)"
+    },
+    "event_records": {
+      "declaration_count": 4,
+      "declaration_lines": [
+        1380,
+        1381,
+        1382,
+        1383
+      ],
+      "read_count": 0,
+      "read_lines": [],
+      "write_count": 21,
+      "write_lines": [
+        2329,
+        2333,
+        2337,
+        2339,
+        2341,
+        2343,
+        2345,
+        2659,
+        2663,
+        2667,
+        2669,
+        2671,
+        2673,
+        2675,
+        2948,
+        2952,
+        2956,
+        2958,
+        2960,
+        2962,
+        2964
+      ]
+    },
+    "instruction_cardinality": {
+      "assignment_lines": [
+        2744
+      ],
+      "derived_from_event_count": true
+    },
+    "interpretation": "event records preserve token-derived aggregates; numeric records preserve lexical numeric observations; legacy instruction records are not consumed as semantic instruction definitions",
+    "legacy_instruction_records": {
+      "declaration_count": 2,
+      "declaration_lines": [
+        1378,
+        1379
+      ],
+      "read_count": 0,
+      "read_lines": [],
+      "write_count": 9,
+      "write_lines": [
+        1948,
+        1950,
+        1952,
+        1957,
+        1959,
+        1961,
+        1966,
+        1968,
+        1970
+      ]
+    },
+    "lexical_numeric_records": {
+      "declaration_count": 4,
+      "declaration_lines": [
+        1384,
+        1385,
+        1386,
+        1387
+      ],
+      "read_count": 0,
+      "read_lines": [],
+      "write_count": 4,
+      "write_lines": [
+        2015,
+        2022,
+        2029,
+        2036
+      ]
+    },
+    "semantic_relationships": {
+      "call_argument_value_ids": false,
+      "call_result_value_ids": false,
+      "canonical_serialized_ir": false,
+      "complete_terminator_values": false,
+      "instruction_operand_value_ids": false,
+      "instruction_result_value_ids": false,
+      "typed_value_definitions": false
+    }
+  }
+}
