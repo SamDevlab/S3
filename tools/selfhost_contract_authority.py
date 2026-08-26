@@ -1,15 +1,20 @@
-"""Fail-closed authority binding for final self-hosting JSON contracts.
+"""Fail-closed authority binding for final self-hosting JSON policies.
 
-Final certification CLIs may expose a contract path for portability or explicit
-invocation, but the path must not become a policy override. This module accepts
-an alternate path only when its exact bytes are identical to the repository's
-canonical authoritative contract and both documents carry the expected schema.
+Final certification CLIs may expose policy paths for portability or explicit
+invocation, but those paths must not become policy overrides. An alternate path
+is accepted only when its exact bytes are identical to the repository's
+canonical authoritative file and both documents carry the expected schema.
+
+Final callers may additionally require the canonical authority itself to match
+the exact blob stored at the current Git HEAD. This prevents an uncommitted
+working-tree edit from silently weakening certification policy.
 """
 
 from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -32,14 +37,71 @@ def _decode_json_object(data: bytes, *, label: str) -> dict[str, Any]:
     return document
 
 
+def _run_git(root: Path, args: list[str]) -> bytes:
+    completed = subprocess.run(
+        ["git", *args],
+        cwd=str(root.resolve()),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+        shell=False,
+    )
+    if completed.returncode != 0:
+        detail = completed.stderr.decode("utf-8", errors="replace").strip()
+        raise ContractAuthorityError(
+            f"git {' '.join(args)} failed with {completed.returncode}: {detail}"
+        )
+    return completed.stdout
+
+
+def _git_head_file_binding(path: Path, *, root: Path, label: str) -> dict[str, Any]:
+    root_resolved = root.resolve()
+    path_resolved = path.resolve()
+    try:
+        relative = path_resolved.relative_to(root_resolved).as_posix()
+    except ValueError as error:
+        raise ContractAuthorityError(
+            f"authoritative {label} must be inside repository root"
+        ) from error
+
+    head = _run_git(root_resolved, ["rev-parse", "HEAD"]).decode(
+        "ascii", errors="strict"
+    ).strip()
+    if len(head) != 40 or any(char not in "0123456789abcdefABCDEF" for char in head):
+        raise ContractAuthorityError(f"unexpected Git HEAD for authoritative {label}: {head!r}")
+    object_type = _run_git(root_resolved, ["cat-file", "-t", head]).decode(
+        "ascii", errors="strict"
+    ).strip()
+    if object_type != "commit":
+        raise ContractAuthorityError(
+            f"Git HEAD for authoritative {label} must resolve to a commit"
+        )
+    committed = _run_git(root_resolved, ["show", f"{head}:{relative}"])
+    working = path_resolved.read_bytes()
+    if committed != working:
+        raise ContractAuthorityError(
+            f"authoritative {label} differs from its Git HEAD blob; commit/freeze policy before certification"
+        )
+    return {
+        "status": "PASS_REPOSITORY_FILE_GIT_HEAD_BINDING",
+        "commit": head.lower(),
+        "path": relative,
+        "sha256": _sha256(working),
+        "bytes": len(working),
+        "git_object_type": object_type,
+        "working_tree_equals_head_blob": True,
+    }
+
+
 def require_authoritative_contract(
     candidate: Path,
     *,
     authoritative: Path,
     expected_schema: str,
     label: str,
+    git_root: Path | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Return the candidate document only when it equals canonical policy bytes."""
+    """Return candidate policy only when it equals canonical authority bytes."""
 
     candidate_path = candidate.resolve()
     authoritative_path = authoritative.resolve()
@@ -78,7 +140,12 @@ def require_authoritative_contract(
             f"expected_sha256={authoritative_sha} actual_sha256={candidate_sha}"
         )
 
-    return candidate_document, {
+    git_head_binding = (
+        _git_head_file_binding(authoritative_path, root=git_root, label=label)
+        if git_root is not None
+        else None
+    )
+    binding = {
         "status": "PASS_CANONICAL_CONTRACT_AUTHORITY",
         "label": label,
         "schema": expected_schema,
@@ -88,3 +155,6 @@ def require_authoritative_contract(
         "bytes": len(authoritative_bytes),
         "exact_bytes_equal": True,
     }
+    if git_head_binding is not None:
+        binding["git_head_binding"] = git_head_binding
+    return candidate_document, binding
