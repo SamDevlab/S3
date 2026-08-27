@@ -1,54 +1,59 @@
 # Live overrides
 
-CONTROL_REVISION: 27
+CONTROL_REVISION: 28
 
-## SNAPSHOT-ONLY HARD STOP
+## POST-PUSH CONTAINMENT — SNAPSHOT ONLY
 
-Revision 26 required read-only recovery. The supplied transcript nevertheless reports one more local qualifier edit and a plan to add two tests and run the focused compaction/lane suite.
+The PR #268 implementation branch was pushed despite the revision-27 snapshot-only stop.
 
-The qualifier change is preserved as **unvalidated local work** because its contract is logically plausible:
+Observed remote state:
 
 ```text
-truncated/full-stream incomplete -> fail closed
-textual assignment/value deltas != native observed deltas
-block equality cannot be promoted under truncation
+HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
+STATE=OPEN
+DRAFT=YES
+MERGED=NO
+MERGEABLE=YES
+AHEAD_OF_326d42f=3 commits
 ```
 
-But this is still the old compaction route, not the active Stage05 lane.
+The three new commits are contained to qualifier/test/report artifacts. Remote compare shows 9 changed paths and **does not include** `selfhost/compiler/s3c_stage1.s3`.
 
-The worktree is now reported as:
+Do not reset, force-push or revert the branch yet. Preserve the three commits as contained out-of-scope compaction reconciliation work until the local worktree is reconciled.
+
+A workflow run on the new remote HEAD was observed and concluded failure across jobs. The attempted job-log fetch was unavailable, therefore no specific code cause is claimed.
+
+Read:
 
 ```text
-12 files changed
+codex-control/RECOVERY_REV28_POST_PUSH_CONTAINMENT.md
 ```
 
 ## Do this now
 
-Do not add the two planned tests.
-Do not run the focused compaction/lane suite.
-Do not edit the qualifier again.
-Do not edit reports or sources.
-Do not start any new compiler build or instrumentation.
-Do not clean/delete anything from the worktree during the snapshot.
+No more edits.
+No tests.
+No builds.
+No cleanup.
+No commit.
+No push.
+No report or qualifier correction.
+No PR body update from the local worktree.
 
-If an exact native PID was already alive before revision 27 is first read, that exact PID may only reach terminal state. Do not execute the produced output.
+Capture the LOCAL post-push state only:
 
-Capture only read-only recovery evidence:
+1. exact local HEAD and branch;
+2. whether local HEAD equals remote `d67da9e...`;
+3. exact `git status --short`;
+4. changed and untracked lists;
+5. per-file diff stats;
+6. classify Stage05-owned versus old-compaction versus canonical/other files;
+7. canonical local-vs-HEAD hash/bytes and saved patch provenance;
+8. Stage05 candidate/transform hashes and telemetry-marker state;
+9. return the revision-28 recovery block;
+10. STOP.
 
-1. worktree HEAD and branch;
-2. exact `git status --short`;
-3. exact changed and untracked file lists;
-4. per-file diff stat/summary for all 12 reported changed files;
-5. identify which changed files belong to Stage05 versus old compaction/report/qualifier drift;
-6. canonical local SHA/bytes versus HEAD SHA/bytes;
-7. save canonical diff provenance outside the repository if not already saved;
-8. Stage05 candidate and transform SHA256 plus telemetry-marker presence;
-9. identify the qualifier file just modified and its diff summary;
-10. list existing temporary E0/E1/E0H/E1H artifacts without running or deleting them;
-11. record guest free space;
-12. return the recovery block and STOP.
-
-## Preserve valid Stage05 evidence
+## Preserve Stage05 evidence
 
 ```text
 one-arg internal call -> structural good / Z3
@@ -67,28 +72,23 @@ git reset --hard
 git clean
 git checkout -- <path>
 git restore <path>
+git push --force
 ```
 
-No new tests.
-No test execution.
-No source/report/qualifier edit.
-No new native build.
-No matrix/fixture/histogram execution.
-No cleanup/deletion during the snapshot.
-No arrays, foreign calls, capacity work or Stage06+.
+No implementation commit or push.
 No canonical mutation/restore/revert.
-No implementation commit.
+No arrays, foreign calls, capacity work, Stage06+.
 No SELF_EMIT, Stage2, Stage3, T4 or benchmark.
 
 ## Authorization boundary
 
-Existing already-running PID may finish = YES, exact existing PID only
-Execute its output = NO
 New native build = NO
-New test file = NO
 New test execution = NO
 Source/report/qualifier edit = NO
+Cleanup = NO
 Implementation commit = NO
+Implementation push = NO
+Force reset/revert remote commits = NO
 Canonical mutation = NO
 Canonical restore/revert = NO
 Arrays = NO
