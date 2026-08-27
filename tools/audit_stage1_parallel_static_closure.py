@@ -1,8 +1,9 @@
 """Run every host/static PR #268 parallel-closure audit in one fail-closed pass.
 
 This entry point performs no native build, no source transform, no Stage2
-creation and no T4. It exists so the independent design work prepared while a
-Linux scratch candidate is running can be validated together later.
+creation and no T4. It exists so independent design work can be validated
+without confusing historical lane cardinalities with current emitter-facing
+semantic closure.
 """
 
 from __future__ import annotations
@@ -17,7 +18,7 @@ from tools.audit_stage1_checkpoint_consistency import audit as audit_checkpoint
 from tools.audit_stage1_codegen_ir_v2_value_namespace import audit as audit_value_namespace
 from tools.audit_stage1_compact_block_capacity import audit as audit_blocks
 from tools.audit_stage1_instruction_stream_contract import audit as audit_instructions
-from tools.audit_stage1_ir_closure_dependencies import build_matrix
+from tools.audit_stage1_ir_closure_surfaces import build_surface_report
 from tools.audit_stage1_local_namespace_rebase import audit as audit_local_rebase
 from tools.audit_stage2_serialized_ir_envelope import audit as audit_stage2_envelope
 
@@ -38,7 +39,7 @@ DEFAULT_REPORT = STAGE1 / "parallel-static-closure-report.json"
 
 EXPECTED = {
     "compact_blocks": {"STATIC_COMPACT_BLOCK_CAPACITY_CONTRACT_PASS"},
-    "dependency_matrix": {"STATIC_PARALLEL_WORKSTREAM_MATRIX_PASS"},
+    "closure_surfaces": {"STATIC_FIVE_SURFACE_MODEL_PASS"},
     "checkpoint": {
         "CURRENT_CHECKPOINT_IDENTIFIED_HISTORICAL_HANDOFFS_PRESENT",
         "CURRENT_CHECKPOINT_DOCUMENTS_CONSISTENT",
@@ -67,7 +68,7 @@ def run() -> dict[str, Any]:
 
     results: dict[str, dict[str, Any]] = {
         "compact_blocks": audit_blocks(source),
-        "dependency_matrix": build_matrix(requirements),
+        "closure_surfaces": build_surface_report(requirements),
         "checkpoint": audit_checkpoint(
             source_bytes=source_bytes,
             requirements=requirements,
@@ -95,8 +96,9 @@ def run() -> dict[str, Any]:
         for name, result in results.items()
     }
     all_expected = all(gates.values())
+    surfaces = results["closure_surfaces"]
     return {
-        "schema": "s3.selfhost.stage1-parallel-static-closure.v1",
+        "schema": "s3.selfhost.stage1-parallel-static-closure.v2",
         "status": (
             "STATIC_PARALLEL_CLOSURE_PREPARED"
             if all_expected
@@ -104,6 +106,10 @@ def run() -> dict[str, Any]:
         ),
         "native_evidence": False,
         "canonical_source_mutated": False,
+        "semantic_surface_count": surfaces.get("semantic_surface_count"),
+        "missing_semantic_surface_count": surfaces.get("missing_surface_count"),
+        "missing_semantic_surfaces": surfaces.get("missing_surfaces"),
+        "historical_missing_lane_count": surfaces.get("historical_missing_lane_count"),
         "results": {
             name: {
                 "status": result.get("status"),
@@ -142,6 +148,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     print(f"REPORT={destination}")
     print(f"STATUS={result['status']}")
+    print(f"SEMANTIC_SURFACES={result['semantic_surface_count']}")
+    print(f"MISSING_SEMANTIC_SURFACES={result['missing_semantic_surface_count']}")
     for name, gate in result["results"].items():
         print(f"{name.upper()}={gate['status']}")
     print("NATIVE_ACTIONS_PERFORMED=0")
