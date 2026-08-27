@@ -1,0 +1,151 @@
+{
+  "schema": "s3.selfhost.semantic-ir-port-contract.v1",
+  "status": "REFERENCE_IMPLEMENTED_STAGE1_PORT_PENDING",
+  "base_pr": 268,
+  "base_head": "0789ad2df5f200c6b35b67d591d10e016c1a557a",
+  "principles": {
+    "logical_value_id_is_physical_slot": false,
+    "host_ir_cardinality_is_stage1_capacity": false,
+    "missing_semantics_fail_closed": true,
+    "case_level_behavior_promotes_surface": false,
+    "storage_strategy": "STREAM_AND_REUSE_WITH_BOUNDED_SYMBOL_SCRATCH",
+    "global_monotonic_logical_ids": true,
+    "deterministic_ordering": true
+  },
+  "pass_model": {
+    "pass_a": {
+      "name": "symbols_and_signatures",
+      "preserves": [
+        "function identity",
+        "foreign/internal identity",
+        "parameter names",
+        "parameter ordinals",
+        "parameter types",
+        "return types",
+        "function source ranges"
+      ]
+    },
+    "pass_b": {
+      "name": "streaming_semantic_lowering",
+      "scope": "one source function at a time with reusable physical scratch",
+      "emits": [
+        "value definitions",
+        "instruction def/use records",
+        "call dataflow records",
+        "complete terminators",
+        "canonical serialized records"
+      ]
+    }
+  },
+  "S1_typed_value_definitions": {
+    "required": true,
+    "logical_id": "module-monotonic i64",
+    "kinds": [
+      "parameter",
+      "local_or_storage_binding",
+      "constant",
+      "instruction_result"
+    ],
+    "fields": [
+      "value_id",
+      "owner_function",
+      "kind",
+      "declared_or_result_type",
+      "source_identity_when_available",
+      "mutability_when_applicable",
+      "storage_identity_when_applicable"
+    ],
+    "rules": [
+      "parameter IDs are assigned deterministically by function then ordinal",
+      "local/storage IDs are not derived from physical scratch slot numbers",
+      "constant/result IDs remain logical even when physical scratch is reused",
+      "reuse requires no surviving stale reference to the previous occupant"
+    ]
+  },
+  "S2_instruction_def_use": {
+    "required": true,
+    "fields": [
+      "instruction_id",
+      "owner_function",
+      "owner_block",
+      "ordinal",
+      "opcode",
+      "ordered_operand_value_ids",
+      "ordered_result_value_ids",
+      "type_or_signature_metadata",
+      "auxiliary_immediate_or_storage_metadata"
+    ],
+    "rules": [
+      "every operand resolves to an already-defined logical value or a structurally permitted forward target",
+      "instruction order is deterministic",
+      "physical instruction storage is not required to be module-global"
+    ]
+  },
+  "S3_call_dataflow": {
+    "required": true,
+    "fields": [
+      "instruction_id",
+      "callee_identity",
+      "callee_kind",
+      "callee_signature",
+      "ordered_argument_value_ids",
+      "ordered_result_value_ids"
+    ],
+    "callee_kinds": [
+      "internal",
+      "foreign",
+      "builtin_or_external"
+    ]
+  },
+  "S4_complete_terminators": {
+    "required": true,
+    "RETURN": [
+      "return_value_ids"
+    ],
+    "JUMP": [
+      "target_block"
+    ],
+    "BRANCH3": [
+      "condition_value_id",
+      "negative_target",
+      "zero_target",
+      "positive_target"
+    ],
+    "rules": [
+      "every non-external basic block ends in exactly one complete terminator",
+      "targets are deterministic block identities, not physical scratch offsets"
+    ]
+  },
+  "S5_canonical_serialized_ir": {
+    "required": true,
+    "format_family": "S3IR2",
+    "reference_encoding": "canonical JSON",
+    "stage1_encoding": "deterministic stream permitted",
+    "header": [
+      "magic/version",
+      "source identity",
+      "schema/completeness mask"
+    ],
+    "record_order": [
+      "function/signature metadata",
+      "value definitions and instructions in source lowering order",
+      "call records at owning instruction",
+      "terminators at block end"
+    ],
+    "authoritative_only_when": [
+      "S1 complete",
+      "S2 complete",
+      "S3 complete",
+      "S4 complete",
+      "verifier pass"
+    ]
+  },
+  "promotion_gate": {
+    "general_emitter": "S1 && S2 && S3 && S4 && S5",
+    "self_emit": "general_emitter && canonical_source_coverage && native_verifier",
+    "stage2": "self_emit",
+    "stage3": "stage2_correctness"
+  },
+  "reference_implementation": "tools/stage1_semantic_ir_reference.py",
+  "reference_evidence_is_stage1_evidence": false
+}
