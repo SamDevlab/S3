@@ -1,6 +1,6 @@
 # Live overrides
 
-CONTROL_REVISION: 7
+CONTROL_REVISION: 8
 
 No emergency stop is active.
 
@@ -10,13 +10,20 @@ Current direction:
 - Stage 02 hosted contract qualification is recorded as PASS.
 - Stage 03 transition was observed; detailed evidence remains backfill debt where not re-observed.
 - Stage 04 remains the active implementation stage.
-- Revision 7 does **not** broaden Stage04 and does not authorize any later stage.
-- Finish any currently running Stage0/native build/probe/test process before applying this revision. Do not duplicate an in-flight gate.
-- Continue using `codex-control/STAGE04_FAST_PATH.md`.
-- Before interpreting or repairing the first strict conformance mismatch, read `codex-control/STAGE04_CONFORMANCE_EXPECTATIONS.md`.
-- The new conformance document is guidance for the frozen S3IR2 v2 verifier, not permission to redesign the protocol.
+- Revision 8 activates **Codex + ChatGPT paired engineering mode** via `codex-control/PAIRING_MODE.md`.
+- Revision 8 does not broaden Stage04 and does not authorize any later stage.
+- `allow_automatic_stage_advance=false` for this closeout: do not enter Stage05 until the formal Stage04 checkpoint is jointly reviewed through the control plane.
+- Finish any currently running atomic command before applying this revision. Do not duplicate an in-flight gate.
+- Continue using `codex-control/STAGE04_FAST_PATH.md` and `codex-control/STAGE04_CONFORMANCE_EXPECTATIONS.md`.
+- After a meaningful native matrix, strict conformance run, focused test gate, formal checkpoint, or before an implementation commit, emit the compact `PAIRING_CHECKPOINT` block defined in `PAIRING_MODE.md`.
 - Fix one first real blocker per cycle. Do not make multiple speculative repairs from one failed run.
 - Do not repeatedly re-check SSH, Linux/Python/cc, PR OPEN/DRAFT state, or already-proven function/block discovery unless a new execution failure implicates them.
+
+PAIRED OWNERSHIP:
+
+- Codex owns candidate implementation, local generator changes, Stage0 checks, Linux builds/runs, raw stdout/stderr/exit status, and exact candidate/binary identities.
+- ChatGPT owns oracle/conformance interpretation, control-plane transitions, S3-Benchmarks triage/fixtures/evidence contracts, and narrowing the next semantic slice.
+- Neither side may convert the other side's missing evidence into PASS.
 
 STRICT STAGE04 CONFORMANCE NOTES:
 
@@ -71,7 +78,7 @@ SELF_EMIT, Stage2, Stage3 and T4 remain unauthorized.
 Required Stage04 checkpoint:
 
 ```text
-CONTROL_REVISION=7
+CONTROL_REVISION=8
 STAGE03_EVIDENCE_BACKFILL=PASS/PARTIAL/NOT_RECORDED/NOT_REOBSERVED
 EXPR_PARSER_SYNTAX=PASS/BLOCKED
 INTEGER_LITERAL_LOWERING=PASS/BLOCKED
@@ -97,8 +104,10 @@ S2_DEF_USE=PASS/BLOCKED
 Z_MASK=3
 CANONICAL_SOURCE_MUTATED=NO
 FIRST_REAL_BLOCKER=
-NEXT_STAGE=05_CALLS_ARRAYS_S3 only if Stage04 exit gate is satisfied and the live control plane still permits automatic advance
+NEXT_STAGE=05_CALLS_ARRAYS_S3 only after paired review updates the live control plane
 ```
+
+When the Stage04 checkpoint is written, re-fetch control, emit a `PAIRING_CHECKPOINT` with `COMMAND_CLASS=CHECKPOINT`, and stop at the stage boundary. ChatGPT will evaluate it against the benchmark/oracle contracts and update the control plane if the exit evidence is sufficient.
 
 If strict conformance fails, preserve one smallest representative mismatch and correct that semantic slice before broadening tests. Use `STAGE04_CONFORMANCE_EXPECTATIONS.md` to map verifier text to the owning candidate slice. A constant-fold-only difference must not be confused with a semantic mismatch; use parameter/local fixtures where needed to compare the preserved semantics.
 
