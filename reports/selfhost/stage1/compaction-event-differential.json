@@ -1,0 +1,84 @@
+{
+  "schema": "s3.selfhost.compaction-event-differential.v2",
+  "status": "NATIVE_EVENT_DIFFERENTIAL_PASS_PREFIX_ONLY",
+  "native_evidence": true,
+  "source": {
+    "S0_sha256": "20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341",
+    "S0_bytes": 166984,
+    "S1_sha256": "cfc65f801cfa7fa7e417c144c866f3db38acc2a0630e1ba30be12ac13f4383f9",
+    "S1_bytes": 166883,
+    "delta_bytes": -101
+  },
+  "native_attempted_event_stream": {
+    "E0_S0": {
+      "attempted_events": 1796,
+      "retained_events": 1460,
+      "event_pool_capacity": 1460,
+      "histogram_opcode_1_to_16": [107, 6, 94, 4, 699, 23, 52, 42, 7, 9, 5, 67, 10, 11, 4, 656]
+    },
+    "E1_S0": {
+      "attempted_events": 1097,
+      "retained_events": 1097,
+      "event_pool_capacity": 1460,
+      "histogram_opcode_1_to_16": [107, 6, 94, 4, 0, 23, 52, 42, 7, 9, 5, 67, 10, 11, 4, 656]
+    },
+    "E0_S1": {
+      "attempted_events": 1796,
+      "retained_events": 1460,
+      "event_pool_capacity": 1460,
+      "histogram_opcode_1_to_16": [107, 6, 94, 4, 699, 23, 52, 42, 7, 9, 5, 67, 10, 11, 4, 656]
+    },
+    "E1_S1": {
+      "attempted_events": 1097,
+      "retained_events": 1097,
+      "event_pool_capacity": 1460,
+      "histogram_opcode_1_to_16": [107, 6, 94, 4, 0, 23, 52, 42, 7, 9, 5, 67, 10, 11, 4, 656]
+    }
+  },
+  "same_input_differential": {
+    "baseline": "E0_S0",
+    "candidate": "E1_S0",
+    "baseline_event_histogram": {"1": 107, "2": 6, "3": 94, "4": 4, "5": 699, "6": 23, "7": 52, "8": 42, "9": 7, "10": 9, "11": 5, "12": 67, "13": 10, "14": 11, "15": 4, "16": 656},
+    "candidate_event_histogram": {"1": 107, "2": 6, "3": 94, "4": 4, "5": 0, "6": 23, "7": 52, "8": 42, "9": 7, "10": 9, "11": 5, "12": 67, "13": 10, "14": 11, "15": 4, "16": 656},
+    "removed_by_opcode": {"1": 0, "2": 0, "3": 0, "4": 0, "5": 699, "6": 0, "7": 0, "8": 0, "9": 0, "10": 0, "11": 0, "12": 0, "13": 0, "14": 0, "15": 0, "16": 0},
+    "opcode_5_removed": 699,
+    "non_discard_histogram_preserved": true,
+    "static_prefix_event_sequence_after_filtering_opcode_5": true,
+    "native_complete_sequence_available": false,
+    "sequence_scope_note": "Temporary native instrumentation exposed per-opcode histograms. Exact event-sequence equality is established by the static prefix oracle at the native cursor frontier and by the five native synthetic fixtures; full-source equality remains unclaimed until token-lane coverage and capacity are complete."
+  },
+  "synthetic_fixtures": {
+    "fixture_1_discard_call": {"baseline_event_count": 4, "candidate_event_count": 3, "discard_events_removed": 1, "non_discard_counters_preserved": true, "both_reached_fail_closed_boundary": true},
+    "fixture_2_multiple_discard_calls": {"baseline_event_count": 8, "candidate_event_count": 5, "discard_events_removed": 3, "non_discard_counters_preserved": true, "both_reached_fail_closed_boundary": true},
+    "fixture_3_local_assignment_discard": {"baseline_event_count": 6, "candidate_event_count": 5, "discard_events_removed": 1, "non_discard_counters_preserved": true, "both_reached_fail_closed_boundary": true},
+    "fixture_4_while_discard_call": {"baseline_event_count": 10, "candidate_event_count": 9, "discard_events_removed": 1, "non_discard_counters_preserved": true, "block_count_preserved": true, "both_reached_fail_closed_boundary": true},
+    "fixture_5_match_discard_calls": {"baseline_event_count": 9, "candidate_event_count": 6, "discard_events_removed": 3, "non_discard_counters_preserved": true, "block_count_preserved": true, "both_reached_fail_closed_boundary": true}
+  },
+  "semantic_invariants": {
+    "call_sequence_preserved": "PASS_NATIVE_COUNTERS_AND_STATIC_PREFIX",
+    "store_sequence_preserved": "PASS_STATIC_EVENT_MODEL_NO_STORE_EVENT_REMOVED",
+    "control_sequence_preserved": "PASS_NATIVE_HISTOGRAM_AND_STATIC_PREFIX",
+    "return_sequence_preserved": "PASS_NATIVE_HISTOGRAM_AND_STATIC_PREFIX",
+    "non_discard_event_sequence_preserved": "PASS_STATIC_PREFIX_AND_SYNTHETIC_NATIVE_FIXTURES",
+    "discard_audit_count_preserved": true,
+    "side_effecting_calls_preserved": true
+  },
+  "block_drift": {
+    "baseline_blocks": 305,
+    "candidate_blocks": 329,
+    "delta": 24,
+    "cause": "EVENT_POOL_TRUNCATION_AFTER_DISCARD_COMPACTION_WITH_PACKED_TOKEN_FRONTIER",
+    "explanation": "E0 attempts 1796 events and retains only the first 1460, so its block reconstruction sees a truncated prefix. E1 removes 699 aggregate discard events and retains all 1097 non-discard events, including later control events; 329 versus 305 is not evidence that compaction creates CFG blocks."
+  },
+  "root_cause": {
+    "textual_source_delta": "real but after the native cursor frontier",
+    "compiler_behavior_delta": "real and narrow: opcode-5 aggregate discard events only",
+    "input_source_delta": "not observable in this legacy native matrix",
+    "packed_token_effect": "terminates source observation at offset 41502",
+    "decision": "COMPACTION_TRANSFORM_VALID; OLD_AUDIT_INVARIANTS_INVALID; PACKED_TOKEN_VALUE_LANE_PREVENTS_FULL_SOURCE_PROMOTION"
+  },
+  "general_emitter": "BLOCKED_IR_V2_INCOMPLETE",
+  "stage2": "NOT_STARTED",
+  "stage3": "NOT_STARTED",
+  "t4": "NOT_RUN"
+}

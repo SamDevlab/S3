@@ -1,0 +1,49 @@
+{
+  "schema": "s3.selfhost.packed-token-lane-native-audit.v1",
+  "status": "BLOCKED_NATIVE_REQUALIFICATION_REQUIRED",
+  "decision": "PACKED_TOKEN_VALUE_LANE_CAPACITY_OR_ENCODING_GAP",
+  "native_evidence_scope": "The recorded native overflow evidence belongs to the earlier canonical source listed below; it is not relabeled as a fresh qualification of the current dirty source.",
+  "historical_authoritative_evidence": {
+    "source_sha256": "20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341",
+    "source_bytes": 166984,
+    "overflow_literal": "1000000000000",
+    "overflow_source_offset": 41502,
+    "packing_formula": "next_cursor * 1000000 + kind * 1000 + (value + 500)",
+    "effect": "The wide value carries into the decoded cursor lane and terminates the native token loop before later source events.",
+    "source_coverage": "INCOMPLETE",
+    "report": "reports/selfhost/stage1/call-model-native-static-differential.json"
+  },
+  "current_source": {
+    "worktree_head": "0789ad2df5f200c6b35b67d591d10e016c1a557a",
+    "source_sha256": "03ffebbf1512da6400c9612dbab778a06f9125641185d10995c045d1556799c5",
+    "source_bytes": 208723,
+    "packing_formula_present": true,
+    "native_token_roundtrip": "NOT_REQUALIFIED",
+    "native_full_source_coverage": "NOT_REQUALIFIED"
+  },
+  "qualification": {
+    "token_pack_decode_roundtrip": "NOT_PROVEN",
+    "token_cursor_full_source": "NOT_PROVEN",
+    "compaction_2x2": "NOT_RUN",
+    "event_differential": "NOT_RUN"
+  },
+  "next": "Repair or replace the packed token representation with mathematically reversible bounded fields, then requalify native full-source coverage before compaction or IR-v2 promotion.",
+  "stage2": "NOT_STARTED",
+  "stage3": "NOT_STARTED",
+  "t4": "NOT_RUN",
+  "native_reconciliation_20260827": {
+    "historical_overflow_source_sha256": "20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341",
+    "historical_overflow_source_bytes": 166984,
+    "first_invalid_source_offset": 41502,
+    "first_invalid_token": "1000000000000",
+    "native_compaction_matrix": "EXECUTED_E0_S0_E0_S1_E1_S0_E1_S1",
+    "native_compaction_matrix_status": "PASS_EXPECTED_EMITTER_BOUNDARY_ALL_CELLS",
+    "native_token_frontier_status": "LEGACY_FRONTIER_STOPS_BEFORE_COMPACTION",
+    "wide_token_lane_static_repair": "PASS_FULL_SOURCE_COVERAGE_MODEL",
+    "wide_token_lane_native_promotion": "BLOCKED_FULL_SOURCE_CALL_EVENT_CAPACITY_AND_GENERAL_EMITTER",
+    "promotion_decision": "DO_NOT_PROMOTE_COMPACTION_FROM_TRUNCATED_LEGACY_PREFIX",
+    "current_dirty_source_sha256": "739dc6ac16c2c79a4f3bff0b7ca2f40324171b3ad155f7a6265747d441cb5758",
+    "current_dirty_source_bytes": 211674,
+    "next": "QUALIFY_THE_REPAIRED_TOKEN_LANE_WITH_FULL_SOURCE_CAPACITY_AND_TYPED_IR_BEFORE_GENERAL_EMITTER"
+  }
+}

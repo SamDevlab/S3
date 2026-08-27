@@ -9,9 +9,10 @@ It then executes each compiler against both exact source inputs S0/E0-source and
 S1/E1-source.  This separates compiler-behavior effects from self-source textual
 input effects.  The native semantic gate compares full AST observations on the
 same input and checks capped event counts against the independent full-source
-static model.  Block equality is required only when both compared event streams
-fit completely in the current event pool; otherwise block drift remains an
-explicit capacity/truncation observation rather than being silently waived.
+static model.  Textual source deltas are reported separately from native
+observations. Block equality is required only when both compared event streams
+fit completely in the current event pool; an incomplete stream blocks
+promotion rather than being silently waived.
 
 This is candidate-only and never promotes the canonical compiler.
 """
@@ -143,25 +144,37 @@ def _event_count_guard(cell: dict[str, object], expected_full: int) -> bool:
     return audit.get("ir_instruction_count") == min(expected_full, EVENT_CAPACITY)
 
 
-def _input_delta_guards(s0_cell: dict[str, object], s1_cell: dict[str, object]) -> dict[str, bool]:
+def _native_input_observation_guards(
+    s0_cell: dict[str, object],
+    s1_cell: dict[str, object],
+) -> dict[str, bool]:
     a0 = s0_cell.get("audit")
     a1 = s1_cell.get("audit")
     if not isinstance(a0, dict) or not isinstance(a1, dict):
         return {
-            "assignment_delta_minus_two": False,
             "discard_count_preserved": False,
             "match_count_preserved": False,
             "while_count_preserved": False,
         }
     return {
-        "assignment_delta_minus_two": (
-            int(a1.get("ast_assignment_count", -10**9))
-            - int(a0.get("ast_assignment_count", 10**9))
-            == -2
-        ),
         "discard_count_preserved": a1.get("ast_discard_count") == a0.get("ast_discard_count"),
         "match_count_preserved": a1.get("ast_match_count") == a0.get("ast_match_count"),
         "while_count_preserved": a1.get("ast_while_count") == a0.get("ast_while_count"),
+    }
+
+
+def _source_delta_guards(static: dict[str, object]) -> dict[str, bool]:
+    delta = static.get("source_input_delta")
+    if not isinstance(delta, dict):
+        return {
+            "assignment_observation_delta_minus_two": False,
+            "numeric_token_delta_minus_one": False,
+        }
+    return {
+        "assignment_observation_delta_minus_two": (
+            delta.get("assignment_observation_tokens") == -2
+        ),
+        "numeric_token_delta_minus_one": delta.get("numeric_tokens") == -1,
     }
 
 
@@ -267,10 +280,17 @@ def qualify(
         for name, expected in expected_events.items()
     }
     event_counts_pass = all(event_guards.values())
+    event_stream_complete = {
+        name: expected <= EVENT_CAPACITY
+        for name, expected in expected_events.items()
+    }
+    event_streams_complete = all(event_stream_complete.values())
 
-    input_delta_e0 = _input_delta_guards(cells["E0_S0"], cells["E0_S1"])
-    input_delta_e1 = _input_delta_guards(cells["E1_S0"], cells["E1_S1"])
-    input_delta_pass = all(input_delta_e0.values()) and all(input_delta_e1.values())
+    input_delta_e0 = _native_input_observation_guards(cells["E0_S0"], cells["E0_S1"])
+    input_delta_e1 = _native_input_observation_guards(cells["E1_S0"], cells["E1_S1"])
+    native_input_observation_pass = all(input_delta_e0.values()) and all(input_delta_e1.values())
+    source_delta_guards = _source_delta_guards(static)
+    source_delta_pass = all(source_delta_guards.values())
 
     block_s0 = _block_guard(
         cells["E0_S0"], cells["E1_S0"],
@@ -291,14 +311,16 @@ def qualify(
         and boundaries_pass
         and same_input_ast_pass
         and event_counts_pass
-        and input_delta_pass
+        and event_streams_complete
+        and native_input_observation_pass
+        and source_delta_pass
         and blocks_pass
     )
 
     routes = list(capacity.get("routes", []))
     if not semantic_pass:
-        status = "FAIL_NATIVE_COMPACTION_2X2_SEMANTIC_DIFFERENTIAL"
-        next_gate = "REPAIR_REBASED_COMPACTION_OR_NATIVE_DIFFERENTIAL_MODEL"
+        status = "BLOCKED_NATIVE_COMPACTION_FULL_SOURCE"
+        next_gate = "REPAIR_PACKED_TOKEN_LANE_OR_FULL_SOURCE_EVENT_CAPACITY"
     elif routes != ["NATIVE_TOKEN_LANE_THEN_COMPACTION_2X2"]:
         status = "PASS_NATIVE_COMPACTION_SEMANTICS_CAPACITY_ROUTE_REQUIRED"
         next_gate = str(routes[0]) if routes else "REVIEW_FULL_SOURCE_CAPACITY_PLAN"
@@ -334,19 +356,23 @@ def qualify(
         "expected_full_event_counts": expected_events,
         "capped_event_count_guards": event_guards,
         "event_counts_pass": event_counts_pass,
-        "input_source_delta_guards": {"E0": input_delta_e0, "E1": input_delta_e1},
-        "input_source_delta_pass": input_delta_pass,
+        "event_stream_complete": event_stream_complete,
+        "event_streams_complete": event_streams_complete,
+        "native_input_observation_guards": {"E0": input_delta_e0, "E1": input_delta_e1},
+        "native_input_observation_pass": native_input_observation_pass,
+        "source_input_delta_guards": source_delta_guards,
+        "source_input_delta_pass": source_delta_pass,
         "block_shape_guards": {"S0": block_s0, "S1": block_s1},
         "block_shape_pass_when_applicable": blocks_pass,
         "semantic_compaction_pass": semantic_pass,
         "full_source_capacity_plan": capacity,
         "next": next_gate,
         "qualification_rule": (
-            "Native PASS means the same-input AST observations agree, native capped "
-            "event counts match the independent full-source model, textual source "
-            "deltas are observed on both compilers, and block equality holds whenever "
-            "both event streams fit completely. It never turns truncation-induced "
-            "block drift into a pass and never promotes canonical source by itself."
+            "Native PASS requires same-input AST observations, complete native event "
+            "streams, matching capped counts, independently verified textual source "
+            "deltas, and block equality. Textual deltas are never inferred from a "
+            "truncated native prefix; incomplete token coverage or event capacity "
+            "blocks promotion and never promotes canonical source by itself."
         ),
         "general_emitter": "BLOCKED_IR_V2_INCOMPLETE",
         "self_emit": "NOT_STARTED",
@@ -380,7 +406,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"SEMANTIC_COMPACTION_PASS={result['semantic_compaction_pass']}")
     print(f"SAME_INPUT_AST_PASS={result['same_input_ast_pass']}")
     print(f"EVENT_COUNTS_PASS={result['event_counts_pass']}")
-    print(f"INPUT_SOURCE_DELTA_PASS={result['input_source_delta_pass']}")
+    print(f"EVENT_STREAMS_COMPLETE={result['event_streams_complete']}")
+    print(f"SOURCE_INPUT_DELTA_PASS={result['source_input_delta_pass']}")
     print(f"BLOCK_SHAPE_PASS_WHEN_APPLICABLE={result['block_shape_pass_when_applicable']}")
     print(f"CAPACITY_ROUTES={','.join(str(item) for item in result['full_source_capacity_plan']['routes'])}")
     print(f"NEXT={result['next']}")

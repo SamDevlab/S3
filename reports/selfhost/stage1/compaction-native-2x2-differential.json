@@ -1,0 +1,114 @@
+{
+  "schema": "s3.selfhost.compaction-native-2x2-differential.v2",
+  "status": "NATIVE_EVENT_DIFFERENTIAL_PASS_PREFIX_ONLY_BLOCKED_FULL_SOURCE_TOKEN_LANE",
+  "native_evidence": true,
+  "canonical_source_mutated": false,
+  "qualification_scope": "The matrix is native evidence for the exact historical compaction transform, but not a full-source promotion gate because the legacy packed-token cursor terminates before the transform location.",
+  "platform": {
+    "system": "Linux",
+    "machine": "x86_64",
+    "python": "/home/vboxuser/.cache/s3-pr268-venv/bin/python",
+    "pytest": "9.1.1"
+  },
+  "sources": {
+    "S0_canonical": {
+      "sha256": "20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341",
+      "bytes": 166984,
+      "role": "exact canonical source from commit 081f3c5"
+    },
+    "S1_compaction_candidate": {
+      "sha256": "cfc65f801cfa7fa7e417c144c866f3db38acc2a0630e1ba30be12ac13f4383f9",
+      "bytes": 166883,
+      "delta_bytes_from_S0": -101,
+      "role": "S0 with only ir_ast_event_opcode = 5 and ir_ast_event_operand = value removed"
+    }
+  },
+  "executables": {
+    "E0_from_S0": {
+      "sha256": "77808a70c4582bd08df2e260f73576a1cb61ed093f16d9d96c184f177097e174",
+      "bytes": 18370824,
+      "build": "PASS"
+    },
+    "E1_from_S1": {
+      "sha256": "82aee66ef69ca5d9999bc028abe8636db50ef0e97f618893742263db38a75c25",
+      "bytes": 18364488,
+      "build": "PASS"
+    }
+  },
+  "cells": {
+    "E0_S0": {
+      "returncode": 2,
+      "stdout_bytes": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_bytes": 126,
+      "stderr_sha256": "c1bba8ad7ea4debbbe8a351abf44a7201dd2dea571a24608f625bc3cb7f0d7d45",
+      "final_marker": "S3_STAGE1_EMITTER_BLOCKED",
+      "audit": {"function_count": 34, "foreign_count": 5, "parameter_count": 64, "local_count": 23, "ast_assignment_count": 75, "ast_call_count": 656, "ast_return_count": 107, "ast_match_count": 94, "ast_while_count": 6, "ast_break_count": 4, "ast_binop_count": 155, "ast_comparison_count": 92, "ast_cast_count": 0, "ast_discard_count": 699, "local_function_count": 29, "ir_foreign_function_count": 5, "ir_parameter_count": 64, "ir_local_count": 23, "ir_block_count": 305, "ir_instruction_count": 1460, "ir_value_count": 1213, "ir_internal_call_count": 653, "ir_foreign_call_count": 3, "ir_branch_count": 104, "ir_loop_count": 6, "ir_return_count": 107}
+    },
+    "E0_S1": {
+      "returncode": 2,
+      "stdout_bytes": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_bytes": 126,
+      "stderr_sha256": "c1bba8ad7ea4debbbe8a351abf44a7201dd2dea571a24608f625bc3cb7f0d7d45",
+      "final_marker": "S3_STAGE1_EMITTER_BLOCKED",
+      "audit": {"function_count": 34, "foreign_count": 5, "parameter_count": 64, "local_count": 23, "ast_assignment_count": 75, "ast_call_count": 656, "ast_return_count": 107, "ast_match_count": 94, "ast_while_count": 6, "ast_break_count": 4, "ast_binop_count": 155, "ast_comparison_count": 92, "ast_cast_count": 0, "ast_discard_count": 699, "local_function_count": 29, "ir_foreign_function_count": 5, "ir_parameter_count": 64, "ir_local_count": 23, "ir_block_count": 305, "ir_instruction_count": 1460, "ir_value_count": 1213, "ir_internal_call_count": 653, "ir_foreign_call_count": 3, "ir_branch_count": 104, "ir_loop_count": 6, "ir_return_count": 107}
+    },
+    "E1_S0": {
+      "returncode": 2,
+      "stdout_bytes": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_bytes": 126,
+      "stderr_sha256": "8a7737235cc5537ddfffe467a563490806c68d45f9ed110c75c289d85d7feb",
+      "final_marker": "S3_STAGE1_EMITTER_BLOCKED",
+      "audit": {"function_count": 34, "foreign_count": 5, "parameter_count": 64, "local_count": 23, "ast_assignment_count": 75, "ast_call_count": 656, "ast_return_count": 107, "ast_match_count": 94, "ast_while_count": 6, "ast_break_count": 4, "ast_binop_count": 155, "ast_comparison_count": 92, "ast_cast_count": 0, "ast_discard_count": 699, "local_function_count": 29, "ir_foreign_function_count": 5, "ir_parameter_count": 64, "ir_local_count": 23, "ir_block_count": 329, "ir_instruction_count": 1097, "ir_value_count": 1213, "ir_internal_call_count": 653, "ir_foreign_call_count": 3, "ir_branch_count": 104, "ir_loop_count": 6, "ir_return_count": 107}
+    },
+    "E1_S1": {
+      "returncode": 2,
+      "stdout_bytes": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr_bytes": 126,
+      "stderr_sha256": "8a7737235cc5537ddfffe467a563490806c68d45f9ed110c75c289d85d7feb",
+      "final_marker": "S3_STAGE1_EMITTER_BLOCKED",
+      "audit": {"function_count": 34, "foreign_count": 5, "parameter_count": 64, "local_count": 23, "ast_assignment_count": 75, "ast_call_count": 656, "ast_return_count": 107, "ast_match_count": 94, "ast_while_count": 6, "ast_break_count": 4, "ast_binop_count": 155, "ast_comparison_count": 92, "ast_cast_count": 0, "ast_discard_count": 699, "local_function_count": 29, "ir_foreign_function_count": 5, "ir_parameter_count": 64, "ir_local_count": 23, "ir_block_count": 329, "ir_instruction_count": 1097, "ir_value_count": 1213, "ir_internal_call_count": 653, "ir_foreign_call_count": 3, "ir_branch_count": 104, "ir_loop_count": 6, "ir_return_count": 107}
+    }
+  },
+  "causal_deltas": {
+    "input_source_effect": "NONE_OBSERVABLE: E0_S0 == E0_S1 and E1_S0 == E1_S1 across all captured audit fields and stderr/stdout hashes",
+    "compiler_behavior_effect": "E0_S0 -> E1_S0 removes 699 retained opcode-5 discard events from the attempted stream; all non-discard histogram lanes and AST counters are unchanged, while retained instructions fall from 1460 to 1097 and reconstructed blocks rise from 305 to 329",
+    "self_coupling_effect": "NONE_OBSERVABLE: E1_S0 == E1_S1 because S1 differs only after the packed-token frontier",
+    "textual_source_delta": {"bytes": -101, "assignment_observation_tokens": -2, "numeric_tokens": -1, "discard_keywords": 0, "function_signatures": 0, "match_tokens": 0, "while_tokens": 0, "break_tokens": 0},
+    "native_observable_scanner_delta": {"ast_assignment_count": 0, "ir_value_count": 0, "ast_discard_count": 0, "explanation": "The scanner stops before the two removed assignments, so the textual delta is outside the native observable prefix."},
+    "semantic_ir_event_delta": {"discard_aggregate_opcode_5": -699, "non_discard_event_histogram": 0, "ast_semantic_counters": 0, "status": "COMPACTION_NARROW_ON_OBSERVED_PREFIX"}
+  },
+  "packed_token_frontier": {
+    "packing_formula": "next_cursor * 1000000 + kind * 1000 + (value + 500)",
+    "first_numeric_spill": {"source_offset": 2932, "token_index": 81, "text": "1000000", "value": 1000000, "packed": 2940002500, "decoded_next": 2940, "nominal_next": 2939},
+    "terminating_spill": {"source_offset": 41502, "token_index": 6859, "text": "1000000000000", "value": 1000000000000, "packed": 1041515002500, "decoded_next": 1041515, "nominal_next": 41515, "reason": "decoded_next_outside_source"},
+    "matrix": {
+      "E0_S0": {"last_valid_source_offset_exclusive": 41501, "last_valid_token_index": 6858, "last_valid_token_kind": 4, "last_valid_token_value": 8, "last_valid_token_text": "*", "first_invalid_source_offset": 41502, "first_invalid_token_index": 6859, "first_invalid_token_kind": 2, "first_invalid_token_value": 1000000000000, "reason": "decoded_next_outside_source"},
+      "E0_S1": {"last_valid_source_offset_exclusive": 41501, "last_valid_token_index": 6858, "last_valid_token_kind": 4, "last_valid_token_value": 8, "last_valid_token_text": "*", "first_invalid_source_offset": 41502, "first_invalid_token_index": 6859, "first_invalid_token_kind": 2, "first_invalid_token_value": 1000000000000, "reason": "decoded_next_outside_source"},
+      "E1_S0": {"last_valid_source_offset_exclusive": 41501, "last_valid_token_index": 6858, "last_valid_token_kind": 4, "last_valid_token_value": 8, "last_valid_token_text": "*", "first_invalid_source_offset": 41502, "first_invalid_token_index": 6859, "first_invalid_token_kind": 2, "first_invalid_token_value": 1000000000000, "reason": "decoded_next_outside_source"},
+      "E1_S1": {"last_valid_source_offset_exclusive": 41501, "last_valid_token_index": 6858, "last_valid_token_kind": 4, "last_valid_token_value": 8, "last_valid_token_text": "*", "first_invalid_source_offset": 41502, "first_invalid_token_index": 6859, "first_invalid_token_kind": 2, "first_invalid_token_value": 1000000000000, "reason": "decoded_next_outside_source"}
+    },
+    "transform_locations": {"discard_transform_start_offset": 88492, "discard_opcode_assignment_offset": 88492, "discard_operand_assignment_offset": 88540, "answer": "Both removed statements are after the native packed-token frontier at 41502; they are not visible to the legacy native structural audit."}
+  },
+  "qualification": {
+    "builds": "PASS",
+    "native_matrix_boundary": "PASS_ALL_FOUR_CELLS_REACHED_EXPECTED_FAIL_CLOSED_EMITTER_BOUNDARY",
+    "compaction_semantic_equivalence": "PASS_OBSERVED_PREFIX_AND_SYNTHETIC_FIXTURES",
+    "full_source_compaction_promotion": "BLOCKED_PACKED_TOKEN_VALUE_LANE_FULL_SOURCE_COVERAGE",
+    "old_audit_invariants": "INVALID_FOR_THIS_NATIVE_PREFIX: textual assignment/value deltas are after the cursor frontier; block equality is invalid while baseline event storage truncates",
+    "block_drift_cause": "EVENT_POOL_TRUNCATION_AFTER_DISCARD_COMPACTION_WITH_PACKED_TOKEN_FRONTIER",
+    "root_cause_decision": "COMPACTION_TRANSFORM_VALID; OLD_AUDIT_INVARIANTS_INVALID; PACKED_TOKEN_VALUE_LANE_PREVENTS_STABLE_FULL_SOURCE_QUALIFICATION",
+    "canonical_commit_allowed": false,
+    "general_emitter": "BLOCKED_IR_V2_INCOMPLETE",
+    "self_emit": "NOT_STARTED",
+    "stage2": "NOT_STARTED",
+    "stage3": "NOT_STARTED",
+    "t4": "NOT_RUN"
+  },
+  "next": "NATIVE_REQUALIFY_THE_WIDE_TOKEN_LANE_AND_RESOLVE_FULL_SOURCE_CALL_EVENT_CAPACITY_BEFORE_PROMOTING_COMPACTION_OR_RESUMING_GENERAL_EMITTER",
+  "merge": "NO",
+  "shutdown": "NO"
+}

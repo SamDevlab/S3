@@ -1,0 +1,125 @@
+{
+  "canonical_source_mutated": false,
+  "cfg_reconstruction_model": {
+    "S0_required_blocks": 1048,
+    "S1_required_blocks": 1048,
+    "formula": "local_function_count + 3*(match_tokens + while_tokens)",
+    "note": "This mirrors the current synthetic Stage1 block reconstruction: one entry block per local function and three additional blocks for each recorded match/while event. Native qualification remains required."
+  },
+  "compacted_source": {
+    "bytes": 164067,
+    "counts": {
+      "assignment_observation_tokens": 946,
+      "break_tokens": 10,
+      "discard_keyword_tokens": 966,
+      "foreign_declaration_tokens": 5,
+      "function_signature_tokens": 36,
+      "local_declaration_tokens": 199,
+      "local_function_count": 31,
+      "match_tokens": 317,
+      "numeric_tokens": 14252,
+      "return_tokens": 132,
+      "tokens": 38704,
+      "while_tokens": 22
+    },
+    "sha256": "ca78ff3cb6a8da506e84dd86513a64eb8e4a2e9fcdf581a0f32bdb28ca53c445"
+  },
+  "full_self_hosting": false,
+  "general_emitter": "BLOCKED_IR_V2_INCOMPLETE",
+  "guards": {
+    "block_driving_events_preserved_same_input": true,
+    "compacted_source_keeps_break_tokens": true,
+    "compacted_source_keeps_discard_keywords": true,
+    "compacted_source_keeps_foreign_declarations": true,
+    "compacted_source_keeps_function_signatures": true,
+    "compacted_source_keeps_local_declarations": true,
+    "compacted_source_keeps_match_tokens": true,
+    "compacted_source_keeps_return_tokens": true,
+    "compacted_source_keeps_while_tokens": true,
+    "compacted_source_removes_one_numeric_token": true,
+    "compacted_source_removes_two_assignment_observation_tokens": true,
+    "same_input_s0_diff_is_discard_only": true,
+    "same_input_s1_diff_is_discard_only": true
+  },
+  "legacy_cleanup_delta": {
+    "assignment_observation_tokens": -21,
+    "break_tokens": 0,
+    "discard_keyword_tokens": -13,
+    "foreign_declaration_tokens": 0,
+    "function_signature_tokens": 0,
+    "local_declaration_tokens": -2,
+    "local_function_count": 0,
+    "match_tokens": -10,
+    "numeric_tokens": -75,
+    "return_tokens": 0,
+    "tokens": -316,
+    "while_tokens": 0
+  },
+  "matrix": {
+    "E0_S0_discard_events": 966,
+    "E0_S0_events": 3689,
+    "E0_S1_discard_events": 966,
+    "E0_S1_events": 3687,
+    "E1_S0_discard_events": 0,
+    "E1_S0_events": 2723,
+    "E1_S1_discard_events": 0,
+    "E1_S1_events": 2721
+  },
+  "native_evidence": false,
+  "next": "RUN_NATIVE_COMPACTION_2X2_AFTER_TOKEN_LANE_PASS",
+  "pre_compaction_source": {
+    "bytes": 164168,
+    "counts": {
+      "assignment_observation_tokens": 948,
+      "break_tokens": 10,
+      "discard_keyword_tokens": 966,
+      "foreign_declaration_tokens": 5,
+      "function_signature_tokens": 36,
+      "local_declaration_tokens": 199,
+      "local_function_count": 31,
+      "match_tokens": 317,
+      "numeric_tokens": 14253,
+      "return_tokens": 132,
+      "tokens": 38712,
+      "while_tokens": 22
+    },
+    "sha256": "77361b1d5e6d78bf228190413885cab2f2f30fd7ccf7738b5a246c34495f7350"
+  },
+  "root_cause_model": "Textual source counters and compiler-behavior event compaction are separate axes. Native qualification must compare same-input event streams and treat source deltas separately; capped IR value/event counters cannot be assumed to equal textual token deltas.",
+  "schema": "s3.selfhost.compaction-after-token-lane-static-differential.v2",
+  "source_input_delta": {
+    "assignment_observation_tokens": -2,
+    "break_tokens": 0,
+    "discard_keyword_tokens": 0,
+    "foreign_declaration_tokens": 0,
+    "function_signature_tokens": 0,
+    "local_declaration_tokens": 0,
+    "local_function_count": 0,
+    "match_tokens": 0,
+    "numeric_tokens": -1,
+    "return_tokens": 0,
+    "tokens": -8,
+    "while_tokens": 0
+  },
+  "stage2": "NOT_STARTED",
+  "stage3": "NOT_STARTED",
+  "status": "STATIC_COMPACTION_SEMANTIC_DIFFERENTIAL_PASS_NATIVE_2X2_REQUIRED",
+  "token_lane_source": {
+    "bytes": 167594,
+    "counts": {
+      "assignment_observation_tokens": 969,
+      "break_tokens": 10,
+      "discard_keyword_tokens": 979,
+      "foreign_declaration_tokens": 5,
+      "function_signature_tokens": 36,
+      "local_declaration_tokens": 201,
+      "local_function_count": 31,
+      "match_tokens": 327,
+      "numeric_tokens": 14328,
+      "return_tokens": 132,
+      "tokens": 39028,
+      "while_tokens": 22
+    },
+    "sha256": "2e2e902129a36273e69d0053e2c38f5bc85b02c6b845e4e6841e6daff9d273ac"
+  }
+}
