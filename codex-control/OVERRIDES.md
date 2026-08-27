@@ -1,6 +1,6 @@
 # Live overrides
 
-CONTROL_REVISION: 19
+CONTROL_REVISION: 20
 
 No emergency stop is active.
 
@@ -9,95 +9,88 @@ No emergency stop is active.
 - Stage 04 remains accepted for transition as `PASS_REPORTED_PENDING_REMOTE_BACKFILL`.
 - Stage 05 remains active under paired engineering mode.
 - Automatic stage advance remains disabled.
-- Preserve the previously proven `stage05_special_open` legacy-dispatch guard.
-- The residual token trace is now complete and supersedes the generic revision-18 blocker.
-- Read `codex-control/STAGE05_CALL_CLOSE_SPECIAL_GUARD_REPAIR.md` before any later source edit.
-- A native build containing the localized call-close guard is already reported in flight. Finish that exact build before any new build or repair.
-
-## Proven second root cause
-
-Latest trace proves:
-
-```text
-parse_ok stays -1 through call-open and argument handling
-matching ')' is reached
-call frame is valid
-computed arity is valid
-Stage05 call-close logic runs
-same ')' still reaches legacy unknown-punctuation rejection
-legacy path writes parse_ok=0
-```
-
-This occurs for zero- and one-argument calls, so argument-count-specific parsing is not the owner.
-
-Current blocker:
-
-```text
-VALID_CALL_CLOSE_TOKEN_FALLS_THROUGH_LEGACY_PUNCTUATION_REJECTION
-```
-
-## Single repair owner
-
-Only a `RIGHT_PAREN` proven to close an active valid Stage05 call frame may be marked special for that token cycle so legacy unknown-punctuation rejection does not see it.
-
-Required semantics:
-
-```text
-valid Stage05 call-close ')':
-  keep Stage05 arity/frame validation active
-  close the call normally
-  skip only legacy rejection of that same token
-  preserve parse_ok unless Stage05 validation itself fails
-
-all other ')'/punctuation:
-  preserve existing legacy behavior exactly
-```
-
-Do not globally whitelist `)`. Do not weaken unmatched/grouping validation. Do not revisit `stage05_open_kind > 0` truth semantics.
+- The parser/call-close fixes are retained; simple internal call execution is now reported `RC=0` with `C` and ordered `A` emitted.
+- The observed final mask for that simple call is `Z 3`, not `Z 7`; therefore S3 is not yet closed/claimed.
+- Do not infer from `Z 3` alone that the mask-emission code is wrong.
+- A real multi-argument bug was found: the comma branch advanced the cursor twice and skipped the next argument. The localized cursor repair is already in an in-flight native build.
+- Finish that exact build before any new edit/build.
+- Read `codex-control/STAGE05_CALL_MATRIX_BEFORE_ARRAYS.md` before broadening.
 
 ## Current atomic task
 
-Finish the already-running native build containing this localized call-close guard.
-
-Then, using the same produced binary:
-
-1. run exact pinned `zero_arg_internal_call.s3`;
-2. run exact pinned `internal_one_arg_call.s3`;
-3. record exit code and final `Z` for both;
-4. preserve `C/A` records and parser state evidence;
-5. if either valid call still reaches `Z 0`, stop broadening and preserve the first remaining failure;
-6. if both clear to Stage05 mask `Z 7`, run strict Stage05 conformance immediately on the one-arg fixture;
-7. preserve verifier JSON and use only `errors[0]` for any next repair.
-
-Do not rebuild between the zero- and one-argument fixtures while the candidate hash is unchanged.
-
-## First-call target
+When the in-flight build terminates, reuse the same binary for:
 
 ```text
-CALL opcode=14
-C_INTERNAL=VALID
-A_ORDER=PASS
-O_ORDER=PASS
-R_RESULT=PASS_WHEN_APPLICABLE
-STRICT_STAGE05_CONFORMANCE=PASS
-Z_MASK=7
+zero_arg_internal_call.s3
+internal_one_arg_call.s3
+ordered_two_arg_internal_call.s3
 ```
 
-`Z 31` remains invalid as a Stage05 target.
+Record for each:
 
-## Do not reopen
+```text
+EXIT_CODE=
+Z_MASK=
+CALL_OPCODE=
+C_RECORD_PRESENT=
+A_RECORD_COUNT=
+A_VALUE_IDS_IN_SOURCE_ORDER=
+O_RECORD_COUNT=
+O_VALUE_IDS_IN_SOURCE_ORDER=
+R_RECORD_COUNT=
+PARSE_OK_FINAL=
+```
 
-Unless new evidence directly contradicts it, do not revisit:
+Stop at the first valid-call regression to `Z 0` or malformed call data.
 
-- special-open first-setter diagnosis;
-- `stage05_open_kind > 0` truth experiment;
-- callee recognition;
-- argument-count-specific parser repair;
-- basic `C/A` structural emission;
-- SSH/Linux/Python/cc qualification;
-- Stage04 matrix;
-- arrays;
-- foreign calls;
+## Gate before arrays
+
+If zero/one/two-argument calls structurally pass, run the current **stage-local** strict Stage05 conformance gate on the one-argument fixture before editing arrays or foreign calls.
+
+Decision:
+
+```text
+STRICT_CONFORMANCE=FAIL
+  -> preserve verifier JSON
+  -> consume errors[0] only
+  -> fix one semantic owner
+
+STRICT_CONFORMANCE=PASS and Z_MASK=3
+  -> inspect only the candidate Stage05/S3 completeness predicate
+  -> identify which required S3 condition is still unset
+  -> do not force bit 4 merely because C/A exist
+
+STRICT_CONFORMANCE=PASS and Z_MASK=7
+  -> first internal-call S3 proof closed
+  -> continue same-binary internal call regression matrix
+```
+
+The frozen hosted oracle uses a full-completeness mask for its own final stream; the paired Stage04/Stage05 campaign has stage-local partial masks. Use the current worktree's stage-local verifier/gate and report exactly which command/verifier produced the result.
+
+## Internal-call order after first strict PASS
+
+```text
+zero arg
+one arg
+ordered two arg
+nested call
+call result reuse
+unresolved callee fail-closed
+```
+
+Only after the internal call matrix is stable may a later control revision unlock foreign calls and arrays/indexing.
+
+## Do not reopen / do not broaden
+
+Do not spend time on:
+
+- the old special-open/right-paren parser traces unless a regression directly points there;
+- `stage05_open_kind > 0` truth experiments;
+- SSH/Linux/Python/cc requalification;
+- Stage04 expression matrix;
+- historical capacity;
+- arrays right now;
+- foreign calls right now;
 - Stage06 or later.
 
 ## Authorization boundary
