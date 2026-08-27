@@ -1,0 +1,15 @@
+{
+  "schema": "s3.codex-control.stage05-fixture-manifest.v1",
+  "encoding": "utf-8",
+  "newline": "LF",
+  "fixtures": [
+    {"id":"grouping_control","path":"codex-control/fixtures/stage05/grouping_control.s3","bytes":81,"sha256":"644ff711960765a99f981fbfc98c94bb65dd66b5c8b76f8194ec2e672d6c2b8b","expected_mask":3},
+    {"id":"internal_one_arg_call","path":"codex-control/fixtures/stage05/internal_one_arg_call.s3","bytes":87,"sha256":"769480e71eb4ed6711aa1bc608f000ea6f2802894df9796871277a33d72b2f34","expected_mask":7},
+    {"id":"zero_arg_internal_call","path":"codex-control/fixtures/stage05/zero_arg_internal_call.s3","bytes":72,"sha256":"968a07ebc33948d006cea7de1f0ac50aafe6a5b21cef190d3d7e681927bc9c7a","expected_mask":7},
+    {"id":"ordered_two_arg_internal_call","path":"codex-control/fixtures/stage05/ordered_two_arg_internal_call.s3","bytes":90,"sha256":"da1c7b0dd7d9dcd7af7fd50b0f552916df4d652fc2582cc1bbc7b88a20184bc3","expected_mask":7},
+    {"id":"nested_internal_call","path":"codex-control/fixtures/stage05/nested_internal_call.s3","bytes":83,"sha256":"3831d1379e2a3918b31baee2a95b31b9aff24afd016a2fd5d8969d9eeb36e0f7","expected_mask":7},
+    {"id":"call_result_reuse","path":"codex-control/fixtures/stage05/call_result_reuse.s3","bytes":110,"sha256":"16b786faf112274ba169e7af4c544fd5dd1035faddc35e5884b6115c728641fe","expected_mask":7},
+    {"id":"unresolved_callee_fail_closed","path":"codex-control/fixtures/stage05/unresolved_callee_fail_closed.s3","bytes":40,"sha256":"c77c28044abd53f40d15385ca17ecda3b197d652dab0da641dab29e5b5e21d03","expected_mask":0}
+  ],
+  "rule": "Use git show from the control ref to materialize exact LF bytes. Verify SHA256 before native execution. Do not run locked fixtures before their unlock point in STAGE05_POSTFIX_REGRESSION_MATRIX.json."
+}
