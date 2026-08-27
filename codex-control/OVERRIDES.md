@@ -1,107 +1,110 @@
 # Live overrides
 
-CONTROL_REVISION: 17
+CONTROL_REVISION: 18
 
 No emergency stop is active.
 
 ## Current direction
 
-- Stage 04 remains accepted for transition as `PASS_REPORTED_PENDING_REMOTE_BACKFILL`; preserve/push the local Stage04 checkpoint on the next implementation commit without fabricating remote evidence.
+- Stage 04 remains accepted for transition as `PASS_REPORTED_PENDING_REMOTE_BACKFILL`.
 - Stage 05 remains active under paired engineering mode.
 - Automatic stage advance remains disabled.
-- The prior right-parenthesis diagnosis is superseded by the latest token trace.
-- Read `codex-control/STAGE05_SPECIAL_OPEN_GUARD_REPAIR.md` before the next source edit.
-- Use `codex-control/STAGE05_COMMAND_CARD.md` as the short operational entry point after `CURRENT.json` and this file.
-- Use exact UTF-8/LF fixtures under `codex-control/fixtures/stage05/` and verify hashes against `MANIFEST.json`.
+- The special-open legacy-dispatch bug was a real first setter and its guard must be preserved, but post-guard evidence proves another residual blocker remains.
+- Read `codex-control/STAGE05_RESIDUAL_PARSE_TRANSITION.md` before the next permanent source edit.
+- Finish only the already-started token-trace build on the guarded candidate. Do not start another build or repair before it terminates.
 
-## Proven root cause
-
-Latest paired trace proves:
+## New post-guard evidence
 
 ```text
-callee detected
-stage05_special_open becomes active
-current_kind is temporarily rewritten to synthetic punctuation
-legacy operand dispatch sees the synthetic kind
-legacy dispatch writes parse_ok=0
-argument parsing has not yet occurred
+special-open guard applied
+internal call still structurally recognized
+C emitted
+A emitted
+helper()  -> Z 0
+helper(1) -> Z 0
 ```
 
-Therefore the previous blocker:
+Therefore the old blocker is retained as a fixed/partial cause, not the current owner:
 
 ```text
-VALID_INTERNAL_CALL_REJECTED_AT_OR_AROUND_RIGHT_PAREN_CALL_CLOSE
+PRIOR_CAUSE=SYNTHETIC_CALL_OPEN_KIND_FALLS_THROUGH_LEGACY_OPERAND_DISPATCH
+CURRENT_BLOCKER=POST_SPECIAL_OPEN_RESIDUAL_PARSE_OK_SETTER_COMMON_TO_ZERO_AND_ONE_ARG
 ```
 
-is replaced by:
+Because zero- and one-argument calls both fail, do not prioritize argument parsing or one-argument arity logic unless the new trace proves it.
+
+## Atomic task
+
+Capture the FIRST `parse_ok` transition from valid `-1` to invalid `0` on the already-guarded candidate.
+
+Preserve token order and, when available, these fields:
 
 ```text
-SYNTHETIC_CALL_OPEN_KIND_FALLS_THROUGH_LEGACY_OPERAND_DISPATCH
+TOKEN_INDEX=
+TOKEN_CODE=
+CURRENT_KIND=
+PARSE_OK_BEFORE=
+PARSE_OK_AFTER=
+STAGE05_SPECIAL_OPEN=
+CALL_FRAME_ACTIVE=
+PAREN_DEPTH=
+OP_COUNT=
+ARG_COUNT=
+HAS_ARG=
 ```
 
-The `RIGHT_PAREN` close path is not the first setter for this fixture.
+Use the actual marker/variable names if different.
 
-The attempted change of the success branch for `stage05_open_kind > 0` from `-1` to `1` is rejected. Runtime evidence showed the original `-1` branch is the successful path here; the `1` version stopped call emission.
+## Classification
 
-## Single repair only
-
-Patch only the legacy operand-dispatch ownership boundary:
+If the first flip is still on the synthetic special-open token:
 
 ```text
-when stage05_special_open is active:
-  do not let the synthetic call-open marker enter the normal operand rejection path
-  preserve parse_ok
-  continue Stage05 call-open handling
-
-otherwise:
-  preserve legacy operand behavior exactly
+NEXT_OWNER=SPECIAL_OPEN_GUARD_COVERAGE
 ```
 
-Do not rewrite call close, truth conventions, punctuation globally, or the parser architecture.
-
-## Required post-repair fast path
-
-1. update only `tools/patch_stage1_calls_arrays_s3.py` for the proven guard;
-2. regenerate a clean candidate with no temporary trace markers;
-3. `s3 check` once;
-4. record candidate SHA256;
-5. build one Linux native binary;
-6. record binary SHA256;
-7. run exact pinned `internal_one_arg_call.s3` first;
-8. if valid parsing is restored, run strict Stage05 conformance immediately;
-9. preserve verifier JSON and classify `errors[0]` only via `STAGE05_CONFORMANCE_EXPECTATIONS.md`;
-10. fix one owner only;
-11. after strict conformance passes, reuse the unchanged binary through unlocked fixtures in `STAGE05_POSTFIX_REGRESSION_MATRIX.json` until the first unexpected result.
-
-Do not rebuild between fixtures while candidate source/hash is unchanged.
-
-## First-call target
+If parsing remains valid until the matching `)` and flips while closing both zero- and one-arg calls:
 
 ```text
-CALL opcode=14
-C_RECORD=VALID_INTERNAL
-A_ORDER=PASS
-O_ORDER=PASS
-R_RESULT=PASS_WHEN_APPLICABLE
-STRICT_STAGE05_CONFORMANCE=PASS
-Z_MASK=7
+NEXT_OWNER=CALL_CLOSE_COMMON_STATE
 ```
 
-A parser repair by itself does not close S3.
+If `)` closes valid and the flip occurs later in the same token cycle:
 
-## Time-saving prohibitions
+```text
+NEXT_OWNER=POST_CALL_FALLTHROUGH_OR_FRAME_RESTORE
+```
 
-Do not re-run or revisit unless the next failure directly implicates them:
+If parser state never flips but final output remains `Z 0`:
 
-- SSH/Linux/Python/cc qualification;
-- PR OPEN/DRAFT state;
-- Stage04 expression matrix;
-- function/block discovery;
-- right-parenthesis close instrumentation;
+```text
+NEXT_OWNER=STAGE05_COMPLETENESS_OR_CONFORMANCE
+```
+
+In that case stop parser instrumentation and run strict conformance/completeness on a clean candidate.
+
+## After the trace
+
+1. preserve raw trace and exact hashes if available;
+2. regenerate cleanly to remove diagnostics;
+3. patch one proven owner only;
+4. `s3 check` once;
+5. build once;
+6. run exact pinned zero-arg and one-arg fixtures on the same binary;
+7. stop on the first unexpected result;
+8. when parser is valid, run strict Stage05 conformance immediately and consume `errors[0]` only.
+
+## Do not reopen
+
+Unless new evidence contradicts it, do not revisit:
+
 - the `stage05_open_kind > 0` truth-branch experiment;
-- historical 736/746 capacity;
-- foreign calls;
+- callee recognition;
+- basic `C/A` structural emission;
+- Stage04 expression matrix;
+- SSH/Linux/Python/cc qualification;
 - arrays;
+- foreign calls;
 - Stage06 or later.
 
 ## Authorization boundary
