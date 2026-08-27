@@ -1,6 +1,6 @@
 # Live overrides
 
-CONTROL_REVISION: 5
+CONTROL_REVISION: 6
 
 No emergency stop is active.
 
@@ -8,47 +8,57 @@ Current direction:
 
 - Stage 01 is complete.
 - Stage 02 hosted contract qualification is recorded as PASS.
-- The live Codex execution is in Stage 04 expression lowering. Revision 5 keeps that route active.
-- Stage 03 transition was observed, but its detailed evidence must still be backfilled in the next checkpoint. Do not fabricate retrospective PASS fields.
-- The current parser cleanup in `stage1_expression_lowering_v2.s3` is legitimate Stage04 work. Fix syntax/indentation/duplicated `match` branches narrowly and keep advancing the real parser/lowering.
+- Stage 03 transition was observed; detailed evidence remains backfill debt where not re-observed.
+- Stage 04 remains the active implementation stage.
+- Revision 6 does **not** broaden Stage04 and does not authorize any later stage. It adds the closure fast path in `codex-control/STAGE04_FAST_PATH.md`.
+- Finish any currently running Stage0/native build/probe/test process before applying this revision. Do not duplicate an in-flight gate.
+- After the current numeric-cast proof finishes, follow `STAGE04_FAST_PATH.md` in order: supported casts -> fixed regression matrix -> exact Stage0 check -> focused Stage04 tests -> representative strict S3IR2 conformance -> full focused Stage04 checkpoint.
+- Fix one first real blocker per cycle. Do not make multiple speculative repairs from one failed run.
+- Do not repeatedly re-check SSH, Linux/Python/cc, PR OPEN/DRAFT state, or already-proven function/block discovery unless a new execution failure implicates them.
 
-CRITICAL OPERATOR-SCOPE CORRECTION:
+CRITICAL OPERATOR-SCOPE RULE:
 
-The current S3 language/AST/IR does **not** have arithmetic multiplication, division, or remainder. Do not implement them as part of Stage04.
+The current S3 language/AST/IR does **not** have arithmetic multiplication, division, or remainder as Stage04 requirements.
 
 Supported current scalar operators relevant to Stage04 are:
 
 ```text
 unary:  -  ~
 binary: +  -  &  |  <=>  ==  !=  <  <=  >  >=
+casts:  to_i64(x)  to_f64(x)  to_tryte(x)
 ```
 
-Subtraction follows the existing S3 architecture. `*` must not be interpreted as arithmetic multiplication. Where `*` exists for reference dereference, that is a distinct language feature and is not a Stage04 multiplication requirement.
+Subtraction follows the existing S3 architecture. Unsupported `*`, `/`, `%` must remain fail-closed and produce no arithmetic opcode. Do not reinterpret reference dereference as multiplication.
 
-For precedence, use repository-supported evidence such as:
+Stage04 semantic requirements remain:
 
-```s3
-mut res: trit = 1 <=> 2 < 3
-```
+- integer, negative and wide literals;
+- identifier lookup and lexical shadowing;
+- supported unary/binary operators and precedence;
+- numeric casts used by canonical Stage1;
+- local initialization;
+- assignment/reassignment;
+- semantic loads/stores;
+- instruction result IDs;
+- ordered O edges;
+- exactly one R definition for each result;
+- every use resolves to a defined logical value;
+- logical semantic IDs remain independent from physical storage/scratch indices.
 
-which current V0.6 parser tests expect as `(1 <=> 2) < 3`.
+Completeness boundary:
 
-- Do not return to Stage 03 implementation unless Stage 04 exposes a concrete binding/scope regression.
-- Before the first Stage04 implementation commit after observing revision 5, backfill the Stage03 checkpoint evidence in the report: functions, signatures, parameters, locals, loop bindings, scope resolution, shadowing, candidate Stage0 check, and exact candidate/source identity where available. Missing evidence must remain NOT_REOBSERVED/NOT_RECORDED.
-- Required Stage04 coverage: integer/negative/wide literals, identifier lookup, unary `-` and `~`, supported binary operators/precedence, actual casts used by canonical Stage1, local initialization, assignment/reassignment, semantic loads/stores, instruction results, ordered O edges and exactly one R definition for each result.
-- Every use must resolve to a defined logical value. Physical scratch indices are not semantic IDs.
-- Preserve lexical shadowing established by Pass1. Ambiguous lookup must fail closed with a reproducer.
-- Do not emit `Z 31` during Stage04. S3/S4/S5 are incomplete.
-- Do not over-expand fixed arrays speculatively. Measure actual pressure first.
-- Before every Stage04 implementation commit, re-fetch this control branch and acknowledge `CONTROL_REVISION=5` unless a newer revision appears.
-- Canonical `selfhost/compiler/s3c_stage1.s3` mutation remains unauthorized.
-- SELF_EMIT, Stage2, Stage3 and T4 remain unauthorized.
+- `Z 3` is the expected successful Stage04-only completeness mask.
+- `Z 0` is appropriate for unsupported/fail-closed fixtures.
+- Do not emit `Z 31` in Stage04; S3/S4/S5 are incomplete.
+
+Canonical `selfhost/compiler/s3c_stage1.s3` mutation remains unauthorized.
+SELF_EMIT, Stage2, Stage3 and T4 remain unauthorized.
 
 Required Stage04 checkpoint:
 
 ```text
-CONTROL_REVISION=5
-STAGE03_EVIDENCE_BACKFILL=PASS/PARTIAL/NOT_RECORDED
+CONTROL_REVISION=6
+STAGE03_EVIDENCE_BACKFILL=PASS/PARTIAL/NOT_RECORDED/NOT_REOBSERVED
 EXPR_PARSER_SYNTAX=PASS/BLOCKED
 INTEGER_LITERAL_LOWERING=PASS/BLOCKED
 NEGATIVE_WIDE_LITERAL_LOWERING=PASS/BLOCKED
@@ -59,6 +69,7 @@ UNARY_INVERT=PASS/BLOCKED
 SUPPORTED_BINARY_OPERATORS=PASS/BLOCKED
 BINARY_PRECEDENCE=PASS/BLOCKED
 COMPARISON_LOWERING=PASS/BLOCKED
+NUMERIC_CASTS_USED_BY_STAGE1=PASS/BLOCKED
 LOCAL_INITIALIZATION=PASS/BLOCKED
 ASSIGNMENT_REASSIGNMENT=PASS/BLOCKED
 INSTRUCTION_RESULT_IDS=PASS/BLOCKED
@@ -69,12 +80,12 @@ CANDIDATE_STAGE0_CHECK=PASS/BLOCKED
 FOCUSED_NATIVE_V2_CONFORMANCE=PASS_FOR_STAGE04_FIXTURES/BLOCKED/NOT_RUN
 S1_TYPED_VALUES=PASS/BLOCKED
 S2_DEF_USE=PASS/BLOCKED
-Z_MASK=<31
+Z_MASK=3
 CANONICAL_SOURCE_MUTATED=NO
 FIRST_REAL_BLOCKER=
-NEXT_STAGE=05_CALLS_ARRAYS_S3 only if Stage04 exit gate is satisfied
+NEXT_STAGE=05_CALLS_ARRAYS_S3 only if Stage04 exit gate is satisfied and the live control plane still permits automatic advance
 ```
 
-If a Stage04 gate fails because implementation is missing, continue implementing that slice. Do not stop merely to document the blocker. If parser repair reveals the next structural error, fix that next real error without rewriting unrelated branches.
+If strict conformance fails, preserve one smallest representative mismatch and correct that semantic slice before broadening tests. A constant-fold-only difference must not be confused with a semantic mismatch; use parameter/local fixtures where needed to compare the preserved semantics.
 
 If the control-branch fetch/read fails, Codex may finish the current atomic command but must not enter a new stage, create an implementation commit, mutate canonical Stage1 or cross a promotion/bootstrap gate until the live control revision can be read again.
