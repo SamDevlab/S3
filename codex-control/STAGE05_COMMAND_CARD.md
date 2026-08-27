@@ -1,118 +1,106 @@
 # Stage05 command card — Codex fast path
 
-Use this file to avoid rereading the full control package during the current paired Stage05 campaign.
+Use this file to avoid rereading the full control package during the paired Stage05 campaign.
 
 This card never overrides `CURRENT.json` or `OVERRIDES.md`. If the revision changes, re-read those first.
 
-## Current atomic task — revision 22
+## CURRENT STATE — REVISION 23 RECOVERY STOP
 
-Latest trace supersedes the evaluator hypothesis.
-
-Known positive control:
-
-```text
-one-argument internal call
-RC=0
-C emitted
-A ordered
-Z=3
-```
-
-Unresolved callee remains fail-closed.
-
-Two comma/cursor defects were already repaired and must remain fixed.
-
-Latest proven cause for the multi-argument `Z0`:
-
-```text
-Stage05 already consumes a token
--> same token falls through into legacy dispatcher
--> common-parenthesis/legacy path reprocesses it
--> parse_ok becomes 0 before evaluator error handling
-```
-
-Permanent rule now reported in the clean candidate:
-
-```text
-if current token was explicitly consumed by Stage05 in this cycle:
-    skip legacy reprocessing/rejection for this same token
-else:
-    preserve legacy behavior exactly
-```
-
-Do not globally whitelist `(`, `)`, comma or punctuation.
+Context compaction mixed valid Stage05 work with an older PR #268/pre-IR/compaction route. Do not continue implementation until the recovery snapshot is returned.
 
 Read:
 
 ```text
-codex-control/STAGE05_CONSUMED_TOKEN_LEGACY_GUARD.md
+codex-control/RECOVERY_REV23_WORKTREE_RECONCILIATION.md
 ```
 
-## Build already in flight
-
-Finish the single native Linux build already running. No new source edit or build before terminal state.
-
-Then use the same binary for:
+## Preserve these valid Stage05 results
 
 ```text
-zero_arg_internal_call.s3
-internal_one_arg_call.s3
-ordered_two_arg_internal_call.s3
+one-arg internal call -> structural good / Z3
+ordered multi-arg internal call -> recovered to Z3
+unresolved callee -> fail-closed
+nested call with representable inner result -> pass
+failing nested a + 1 fixture -> expression-lowering dependency that reproduces without call
 ```
 
-Use pinned LF fixtures and hashes from `codex-control/fixtures/stage05/MANIFEST.json`.
+Preserve:
 
-Record existing evidence only:
+- consumed-token legacy guard;
+- comma/cursor repair #1;
+- comma/cursor repair #2.
+
+Do not label the `a + 1` limitation as a nested-call defect.
+
+## Stop these drifted routes
+
+Do not continue:
 
 ```text
-EXIT_CODE
-Z_MASK
-CALL_OPCODE
-C_RECORD_PRESENT
-A_RECORD_COUNT
-A_VALUE_IDS_IN_SOURCE_ORDER
-O_RECORD_COUNT
-O_VALUE_IDS_IN_SOURCE_ORDER
-R_RECORD_COUNT
-PARSE_OK_FINAL
+arrays
+foreign calls
+old pre-IR/token-lane route
+compaction 2x2 E0/E1
+capacity planning
+T4
+benchmark
+Stage06+
+canonical mutation/restoration
+implementation commits
 ```
 
-Stop at first unexpected result.
+## Recovery only
 
-## Immediate routing
+No new native build.
+
+Capture:
 
 ```text
-one-arg regresses
-  -> STOP: guard/shared parser regression
-
-two-arg still Z0
-  -> preserve first remaining setter; do not return to evaluator/capacity by default
-
-zero/one/two structurally valid
-  -> run stage-local strict Stage05 conformance on one-arg before arrays
+WORKTREE_HEAD
+WORKTREE_BRANCH
+GIT_STATUS_SHORT
+CHANGED_FILES
+CANONICAL_LOCAL_SHA256
+CANONICAL_LOCAL_BYTES
+CANONICAL_HEAD_SHA256
+CANONICAL_HEAD_BYTES
+CANONICAL_DIFF_PRESENT
+CANONICAL_DIFF_PATCH_SAVED
+STAGE05_CANDIDATE_SHA256
+STAGE05_TRANSFORM_SHA256
+STAGE05_TEMP_TELEMETRY_PRESENT
+GUEST_FREE_BEFORE
+GUEST_FREE_AFTER
+OUT_OF_SPACE_ARTIFACT
 ```
 
-Strict gate:
+Save canonical diff provenance before any future restore. Do not run `git reset --hard`, `git clean`, `git checkout --`, or `git restore` during revision 23.
+
+Disk cleanup may remove only disposable `/tmp` files clearly created by the current diagnostic/cross-build attempts. Do not delete repository files, unknown untracked files, caches or toolchains.
+
+Return the exact `PAIRING_RECOVERY_BEGIN ... PAIRING_RECOVERY_END` block from `RECOVERY_REV23_WORKTREE_RECONCILIATION.md`.
+
+## Remote safety fact
+
+Observed remote PR #268 HEAD remains:
 
 ```text
-strict FAIL
-  -> errors[0] only
-
-strict PASS + Z3
-  -> inspect only Stage05/S3 completeness predicate
-  -> do not force bit 4
-
-strict PASS + Z7
-  -> continue same-binary internal matrix:
-     nested -> result reuse -> unresolved fail-closed
+326d42f8a2623ced5a2151d6daaf2d67743faca8
 ```
 
-## Locked
+The later route drift is therefore local/unpushed in the latest evidence.
 
-No arrays yet.
-No foreign-call edits yet.
-No capacity changes.
-No Stage06.
-No canonical mutation.
-No SELF_EMIT.
-No Stage2/Stage3/T4.
+## Authorization boundary during revision 23
+
+New native build = NO
+Implementation commit = NO
+Canonical mutation = NO
+Canonical restore/revert = NO
+Arrays = NO
+Foreign calls = NO
+Stage06 = NO
+SELF_EMIT = NO
+Stage2 = NO
+Stage3 = NO
+T4 = NO
+Benchmark = NO
