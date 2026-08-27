@@ -9,10 +9,13 @@
   "frozen_handoff_head": "c12e45d646af27f85b39c391d3a7645a812b28c5",
   "frozen_pr268_reference_head": "0789ad2df5f200c6b35b67d591d10e016c1a557a",
   "authoritative_protocol": "S3IR2 v2",
+  "start_here_file": "codex-control/START_HERE.md",
+  "megaprompt_file": "codex-control/MEGAPROMPT_STAGE1_SEMANTIC_V2.md",
+  "stage_sequence_file": "codex-control/STAGE_SEQUENCE.json",
+  "mandatory_override_file": "codex-control/OVERRIDES.md",
   "active_stage": "01_PRECHECK_AND_IMPORT",
   "active_stage_file": "codex-control/stages/01_PRECHECK_AND_IMPORT.md",
-  "mandatory_override_file": "codex-control/OVERRIDES.md",
-  "megaprompt_file": "codex-control/MEGAPROMPT_STAGE1_SEMANTIC_V2.md",
+  "initial_control_package_complete": true,
   "emergency_stop": false,
   "pause_after_current_stage": false,
   "allow_automatic_stage_advance": true,
@@ -25,5 +28,5 @@
   "stage2_authorized": false,
   "stage3_authorized": false,
   "t4_authorized": false,
-  "notes": "This branch is a read-only instruction/control channel for Codex. Never merge, rebase, checkout over the implementation worktree, or cherry-pick it into PR #268. Use git fetch + git show only."
+  "notes": "Read-only instruction/control channel for Codex. Never merge, rebase, checkout over the implementation worktree, or cherry-pick it into PR #268. Use git fetch + git show only. A higher control_revision means re-read CURRENT/OVERRIDES before the next irreversible action."
 }
