@@ -1,6 +1,6 @@
 {
   "schema": "s3.codex-control.stage1-semantic-v2.v1",
-  "control_revision": 6,
+  "control_revision": 7,
   "control_branch": "control/codex-stage1-semantic-v2-20260827",
   "implementation_branch": "feature/actual-stage1-compiler-seed-20260824",
   "implementation_pr": 268,
@@ -15,6 +15,7 @@
   "mandatory_override_file": "codex-control/OVERRIDES.md",
   "handoff_import_manifest_file": "codex-control/HANDOFF_IMPORT_MANIFEST.json",
   "stage04_fast_path_file": "codex-control/STAGE04_FAST_PATH.md",
+  "stage04_conformance_expectations_file": "codex-control/STAGE04_CONFORMANCE_EXPECTATIONS.md",
   "active_stage": "04_EXPRESSIONS_S1_S2",
   "active_stage_file": "codex-control/stages/04_EXPRESSIONS_S1_S2.md",
   "initial_control_package_complete": true,
@@ -23,6 +24,7 @@
   "stage03_evidence_backfill_required": true,
   "stage04_operator_scope_corrected": true,
   "stage04_fast_path_active": true,
+  "stage04_strict_conformance_guidance_active": true,
   "emergency_stop": false,
   "pause_after_current_stage": false,
   "allow_automatic_stage_advance": true,
@@ -35,5 +37,5 @@
   "stage2_authorized": false,
   "stage3_authorized": false,
   "t4_authorized": false,
-  "notes": "Revision 6 keeps Stage04 active and adds a closure fast path. Finish the in-flight cast proof, rerun the fixed regression matrix, then strict representative conformance; fix only the first real blocker per cycle. Do not repeatedly re-prove healthy infrastructure. Z 3 remains the expected Stage04 mask. Canonical mutation and all bootstrap actions remain unauthorized."
+  "notes": "Revision 7 keeps Stage04 active. Finish any in-flight command, then use STAGE04_FAST_PATH plus STAGE04_CONFORMANCE_EXPECTATIONS. Numeric casts are CONVERT opcode 10 with one O and one R edge; local binding identity is separate from instruction-result identity. Fix only the first strict mismatch per cycle. Z 3 remains the expected valid Stage04 mask. Canonical mutation and all bootstrap actions remain unauthorized."
 }
