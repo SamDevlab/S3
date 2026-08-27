@@ -1,6 +1,6 @@
 # Live overrides
 
-CONTROL_REVISION: 20
+CONTROL_REVISION: 21
 
 No emergency stop is active.
 
@@ -9,88 +9,91 @@ No emergency stop is active.
 - Stage 04 remains accepted for transition as `PASS_REPORTED_PENDING_REMOTE_BACKFILL`.
 - Stage 05 remains active under paired engineering mode.
 - Automatic stage advance remains disabled.
-- The parser/call-close fixes are retained; simple internal call execution is now reported `RC=0` with `C` and ordered `A` emitted.
-- The observed final mask for that simple call is `Z 3`, not `Z 7`; therefore S3 is not yet closed/claimed.
-- Do not infer from `Z 3` alone that the mask-emission code is wrong.
-- A real multi-argument bug was found: the comma branch advanced the cursor twice and skipped the next argument. The localized cursor repair is already in an in-flight native build.
-- Finish that exact build before any new edit/build.
-- Read `codex-control/STAGE05_CALL_MATRIX_BEFORE_ARRAYS.md` before broadening.
+- The simple one-argument internal call remains a positive control: reported `RC=0`, `C` emitted, ordered `A` emitted, final `Z 3`.
+- Unresolved callee fail-closed behavior remains reported intact.
+- Multi-argument calls now reach `C/A` emission but still finish `Z 0`.
+- Capacity and callee resolution are not the reported current blocker.
+- Two comma/cursor defects were found in sequence and their latest localized repair must be preserved:
+  1. double cursor advance skipped the next argument;
+  2. residual comma revisit made `has_arg=0` look like an error.
+- Do not reopen parser/call-close work unless the current evaluator telemetry directly contradicts the recovered one-argument control.
+- Read `codex-control/STAGE05_MULTIARG_EVALUATOR_DIAGNOSIS.md` before the next permanent source edit.
 
 ## Current atomic task
 
-When the in-flight build terminates, reuse the same binary for:
+Finish only the evaluator-error telemetry already in progress.
+
+Use the same instrumented binary for:
 
 ```text
-zero_arg_internal_call.s3
-internal_one_arg_call.s3
-ordered_two_arg_internal_call.s3
+CONTROL: known-good one-argument internal call
+REPRODUCER: ordered two-argument internal call
 ```
 
-Record for each:
+Capture the first existing evaluator error marker that differs between the two runs.
+
+Useful summary:
 
 ```text
-EXIT_CODE=
-Z_MASK=
-CALL_OPCODE=
-C_RECORD_PRESENT=
-A_RECORD_COUNT=
-A_VALUE_IDS_IN_SOURCE_ORDER=
-O_RECORD_COUNT=
-O_VALUE_IDS_IN_SOURCE_ORDER=
-R_RECORD_COUNT=
-PARSE_OK_FINAL=
+ONE_ARG_EXIT=
+ONE_ARG_Z=
+ONE_ARG_EVAL_ERROR_MARKER=
+
+TWO_ARG_EXIT=
+TWO_ARG_Z=
+TWO_ARG_EVAL_ERROR_MARKER=
+TWO_ARG_ERROR_ARGUMENT_ORDINAL=
+TWO_ARG_EXPECTED_TYPE=
+TWO_ARG_ACTUAL_TYPE=
+TWO_ARG_RESULT_OR_RETURN_ERROR=
 ```
 
-Stop at the first valid-call regression to `Z 0` or malformed call data.
+Use `NOT_RECORDED` for unavailable fields. Do not add broader parser/token instrumentation unless these existing evaluator markers cannot identify the first owner.
 
-## Gate before arrays
-
-If zero/one/two-argument calls structurally pass, run the current **stage-local** strict Stage05 conformance gate on the one-argument fixture before editing arrays or foreign calls.
-
-Decision:
+## Decision
 
 ```text
-STRICT_CONFORMANCE=FAIL
-  -> preserve verifier JSON
-  -> consume errors[0] only
-  -> fix one semantic owner
+one-arg clean; two-arg trips argument compatibility/type/ordinal
+  -> MULTI_ARG_ARGUMENT_COMPATIBILITY_OR_ORDINAL
+  -> fix only that argument-state transition
 
-STRICT_CONFORMANCE=PASS and Z_MASK=3
-  -> inspect only the candidate Stage05/S3 completeness predicate
-  -> identify which required S3 condition is still unset
-  -> do not force bit 4 merely because C/A exist
+one-arg clean; two-arg arguments pass; result/return trips
+  -> MULTI_ARG_POST_CALL_RESULT_OR_RETURN_STATE
+  -> fix only the post-call result/return state
 
-STRICT_CONFORMANCE=PASS and Z_MASK=7
-  -> first internal-call S3 proof closed
-  -> continue same-binary internal call regression matrix
+one-arg trips the same evaluator error
+  -> DEBUG_BINARY_OR_SHARED_EVALUATOR_REGRESSION
+  -> stop the multiarg hypothesis until the positive control is restored
+
+no evaluator marker trips; two-arg still Z0
+  -> POST_EVALUATOR_COMPLETENESS_OR_UNOBSERVED_SETTER
+  -> leave parser alone and inspect the first post-evaluator state/completeness condition
 ```
 
-The frozen hosted oracle uses a full-completeness mask for its own final stream; the paired Stage04/Stage05 campaign has stage-local partial masks. Use the current worktree's stage-local verifier/gate and report exactly which command/verifier produced the result.
+## After one proven repair
 
-## Internal-call order after first strict PASS
+1. regenerate cleanly with all temporary telemetry removed;
+2. `s3 check` once;
+3. record candidate SHA256;
+4. build one Linux native binary;
+5. record binary SHA256;
+6. run exact pinned zero-, one-, and ordered two-argument fixtures on that same binary;
+7. stop on the first valid-call `Z 0` or malformed `C/A/O/R` shape;
+8. if those calls remain structurally valid, run the current stage-local strict Stage05 conformance gate on the one-argument fixture;
+9. strict FAIL -> consume `errors[0]` only;
+10. strict PASS + `Z 3` -> inspect only the Stage05/S3 completeness predicate; do not force bit 4;
+11. strict PASS + `Z 7` -> continue internal call regressions on the same binary.
 
-```text
-zero arg
-one arg
-ordered two arg
-nested call
-call result reuse
-unresolved callee fail-closed
-```
-
-Only after the internal call matrix is stable may a later control revision unlock foreign calls and arrays/indexing.
-
-## Do not reopen / do not broaden
+## Locked work
 
 Do not spend time on:
 
-- the old special-open/right-paren parser traces unless a regression directly points there;
-- `stage05_open_kind > 0` truth experiments;
+- arrays;
+- foreign calls;
+- capacity changes;
+- generic parser/call-close traces;
 - SSH/Linux/Python/cc requalification;
 - Stage04 expression matrix;
-- historical capacity;
-- arrays right now;
-- foreign calls right now;
 - Stage06 or later.
 
 ## Authorization boundary
