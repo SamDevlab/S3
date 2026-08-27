@@ -1,113 +1,110 @@
 # Live overrides
 
-CONTROL_REVISION: 10
+CONTROL_REVISION: 11
 
 No emergency stop is active.
 
 ## Current direction
 
-- Stage 01 is complete.
-- Stage 02 hosted contract qualification is recorded as PASS.
-- Stage 03 missing detailed evidence remains backfill debt.
-- Stage 04 remains accepted for transition as `PASS_REPORTED_PENDING_REMOTE_BACKFILL`; preserve/push `reports/selfhost/stage1/STAGE04_CHECKPOINT_20260827.md` on the next implementation commit without fabricating missing remote evidence.
-- Stage 05 is the active implementation stage.
-- Paired engineering mode remains mandatory.
-- Read `codex-control/STAGE05_CALL_PARSE_DIAGNOSIS.md` before the next Stage05 edit.
+- Stage 04 remains accepted for transition as `PASS_REPORTED_PENDING_REMOTE_BACKFILL`; preserve/push the local Stage04 checkpoint on the next implementation commit without fabricating remote evidence.
+- Stage 05 remains active under paired engineering mode.
 - Automatic stage advance remains disabled.
+- Read `codex-control/STAGE05_CALL_PAREN_DIFFERENTIAL.md` before the next probe.
 
-## Latest paired diagnosis
+## Latest paired update
 
-The latest live Codex instrumentation localized the first Stage05 blocker:
+The deeper temporary instrumentation around call close was rejected because the debug-only insertion created an indentation error. That instrumentation was then removed and the clean candidate was regenerated. This is not a semantic candidate failure.
 
-```text
-simple helper expression: parse_ok=-1 at parser checkpoint
-helper(1):               parse_ok=0 at parser checkpoint
-failure phase:           PARSER
-failure before eval:     YES
-```
+A single clean native build is already reported in flight. Finish that exact build. Do not start another build.
 
-Therefore the first proven blocker is now:
+The prior valid diagnostic still stands:
 
 ```text
-VALID_INTERNAL_CALL_REJECTED_DURING_PARSER_PHASE
+simple helper expression -> parse_ok=-1
+helper(1)                -> parse_ok=0 during parsing
+failure before eval      -> YES
 ```
 
-Do not keep instrumenting evaluation, `C/A`, arrays, or foreign calls until valid call parsing is repaired.
+## Immediate same-binary differential
 
-Candidate/binary SHA256 were not present in the supplied checkpoint and remain required backfill. Do not invent them.
+After the clean build reaches terminal state, run exactly two inputs through that same binary.
 
-## Immediate repair slice
+A — grouping control:
 
-The repository parser treats a call as postfix syntax: parse the callee primary, recognize `(` as a call opener, parse arguments as expressions, and consume the matching `)` once in the call closer.
+```s3
+fn helper(value: i64) -> i64:
+    return value
 
-For `helper(1)` inspect, in this order:
-
-1. **call-vs-grouping classification** — `(` following an identifier/primary must open a call frame rather than generic grouping;
-2. **argument stop predicate** — `)` at the active call-frame depth must end the argument/call rather than be classified as an invalid expression token;
-3. **right-paren bookkeeping** — close/decrement the call parenthesis exactly once and do not fall through into a second generic `)` rejection;
-4. **call-frame restoration** — clear/restore call-pending, callee and argument state without changing `parse_ok`.
-
-Earlier work already found `paren_count` placement defects, so inspect the right-paren path carefully, but do not assume it is the cause until the exact branch is shown.
-
-## Required next sequence
-
-1. statically inspect the generated candidate around call-open, argument stop and call-close;
-2. identify one exact branch that sets or propagates `parse_ok=0` for `helper(1)`;
-3. patch only that branch in `tools/patch_stage1_calls_arrays_s3.py`;
-4. regenerate the clean candidate and remove temporary diagnostic output;
-5. run `s3 check` on that exact candidate;
-6. record exact candidate SHA256;
-7. perform one native Linux build and record binary SHA256;
-8. rerun the same minimal internal-call fixture;
-9. run strict Stage05 conformance for that fixture;
-10. emit a paired checkpoint and stop before broadening.
-
-If static inspection still cannot identify the exact branch, one additional diagnostic build is allowed. Trace only the tokens around `helper`, `(`, `1`, `)` with token kind, call-frame mode/flag, parenthesis depth, argument ordinal and `parse_ok`. No broad trace.
-
-## First internal-call success boundary
-
-Require:
+fn main() -> i64:
+    return (1)
+```
 
 ```text
-PARSE_OK_AFTER_RPN=-1
-PARSE_OK_AFTER_EVAL=-1
-PARSE_OK_FINAL=-1
-CALL_OPCODE=14
-C_RECORD=VALID_INTERNAL
-A_ORDER=PASS
-O_ORDER=PASS
-R_RESULT=PASS_WHEN_APPLICABLE
-STRICT_STAGE05_CONFORMANCE=PASS
-Z_MASK=7
+SHA256=644ff711960765a99f981fbfc98c94bb65dd66b5c8b76f8194ec2e672d6c2b8b
 ```
 
-Call records must preserve:
+B — internal call reproducer:
 
-- ordered `O` operands;
-- `R` result when applicable;
-- `C` with callee kind `1`, resolved internal function id, exact ASCII callee span, argument count and result count;
-- ordered `A` arguments matching the same semantic values as CALL `O` operands;
-- reusable logical result identity independent of physical scratch/pool slots.
+```s3
+fn helper(value: i64) -> i64:
+    return value
 
-`Z 31` remains forbidden until S4/S5 close. Invalid/unresolved calls may fail closed with `Z 0`, but valid `helper(1)` may not.
+fn main() -> i64:
+    return helper(1)
+```
 
-## Expansion order after the first call passes
+```text
+SHA256=769480e71eb4ed6711aa1bc608f000ea6f2802894df9796871277a33d72b2f34
+```
 
-Only then:
+Record raw stdout/stderr/exit and Z mask for both. Do not add new instrumentation merely to run this differential.
 
-1. zero-argument internal call;
-2. ordered multiple arguments;
-3. nested call;
-4. call result reuse;
-5. unresolved callee fail-closed;
-6. foreign resolution/signature;
-7. fixed-array/index load/store required by canonical Stage1.
+## Classification
 
-Do not implement arrays while the valid internal-call parser blocker remains unresolved.
+If A succeeds and B fails:
 
-## Capacity policy
+```text
+CALL_SPECIFIC_PARSER_FRAME_BUG
+```
 
-Historical `736 required / 746 capacity` call-pool evidence is provenance only. Measure exact current pressure before changing capacity. Semantic `A` edges and logical values are not physical pool slots.
+Do not modify generic grouping. Inspect only postfix call-open, argument stop at call depth, right-paren call close, and call-frame restoration.
+
+If A and B both fail:
+
+```text
+GENERIC_PAREN_CLOSE_OR_DEPTH_BUG
+```
+
+Inspect shared parenthesis/depth bookkeeping first.
+
+If A and B both succeed:
+
+```text
+PREVIOUS_FAILURE_REMOVED_BY_CLEAN_REGENERATION_OR_STALE_DEBUG_STATE
+```
+
+Run strict Stage05 conformance on B next; do not re-instrument without a new semantic blocker.
+
+If A fails and B succeeds:
+
+```text
+UNEXPECTED_DIFFERENTIAL
+```
+
+Stop and hand back exact raw evidence.
+
+## Do not broaden
+
+Until the differential is classified and the first internal call is conformant:
+
+- no zero-arg expansion;
+- no nested/multi-arg expansion;
+- no foreign calls;
+- no arrays;
+- no capacity changes;
+- no Stage06.
+
+The valid internal-call target remains exact S1+S2+S3 with `Z 7`. `Z 31` remains forbidden until S4/S5 close.
 
 ## Authorization boundary
 
@@ -116,6 +113,3 @@ SELF_EMIT remains unauthorized.
 Stage2 remains unauthorized.
 Stage3 remains unauthorized.
 T4 remains unauthorized.
-Stage06 remains unauthorized.
-
-If the control branch cannot be read, Codex may finish only the current atomic command. Do not create a new implementation commit, begin another stage, mutate canonical Stage1, or cross any bootstrap/promotion gate until the live revision is readable again.
