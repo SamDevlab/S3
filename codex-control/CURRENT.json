@@ -1,6 +1,6 @@
 {
   "schema": "s3.codex-control.stage1-semantic-v2.v1",
-  "control_revision": 15,
+  "control_revision": 16,
   "control_branch": "control/codex-stage1-semantic-v2-20260827",
   "implementation_branch": "feature/actual-stage1-compiler-seed-20260824",
   "implementation_pr": 268,
@@ -12,10 +12,10 @@
   "start_here_file": "codex-control/START_HERE.md",
   "mandatory_override_file": "codex-control/OVERRIDES.md",
   "pairing_mode_file": "codex-control/PAIRING_MODE.md",
-  "stage05_pairing_plan_file": "codex-control/STAGE05_PAIRING_PLAN.md",
+  "stage05_command_card_file": "codex-control/STAGE05_COMMAND_CARD.md",
   "stage05_right_paren_close_probe_file": "codex-control/STAGE05_RIGHT_PAREN_CLOSE_PROBE.md",
   "stage05_postfix_oracle_file": "codex-control/STAGE05_POSTFIX_ORACLE.md",
-  "stage05_command_card_file": "codex-control/STAGE05_COMMAND_CARD.md",
+  "stage05_conformance_expectations_file": "codex-control/STAGE05_CONFORMANCE_EXPECTATIONS.md",
   "stage05_regression_matrix_file": "codex-control/STAGE05_POSTFIX_REGRESSION_MATRIX.json",
   "stage05_triage_table_file": "codex-control/STAGE05_TRIAGE_DECISION_TABLE.json",
   "stage05_fixture_manifest_file": "codex-control/fixtures/stage05/MANIFEST.json",
@@ -40,6 +40,7 @@
   "stage05_next_repair": "DEFER_UNTIL_CLOSE_PROBE_IDENTIFIES_FIRST_PARSE_OK_TRANSITION",
   "stage05_fast_path_aids_active": true,
   "stage05_exact_lf_fixtures_pinned": true,
+  "stage05_strict_conformance_error_map_pinned": true,
   "stage05_same_binary_regression_policy": true,
   "stage05_stop_on_first_unexpected_result": true,
   "emergency_stop": false,
@@ -53,5 +54,5 @@
   "stage2_authorized": false,
   "stage3_authorized": false,
   "t4_authorized": false,
-  "notes": "Revision 15 does not change the semantic blocker or in-flight task. Finish only the current_code == 2 close diagnostic. Exact UTF-8/LF Stage05 fixture files are now pinned under codex-control/fixtures/stage05 with byte counts and SHA256 in MANIFEST.json. STAGE05_COMMAND_CARD.md contains a Windows-safe materialization path using native git output plus SHA verification, eliminating hand-built PowerShell probe strings and CRLF ambiguity. After a proven repair, build once and reuse the exact same binary across unlocked fixtures, stopping at the first unexpected result. Foreign calls, arrays, capacity changes, Stage06, canonical mutation, SELF_EMIT, Stage2, Stage3 and T4 remain unauthorized."
+  "notes": "Revision 16 does not change the in-flight task or blocker. Finish only the current_code == 2 close diagnostic. The next likely phase is now pre-triaged too: STAGE05_CONFORMANCE_EXPECTATIONS.md maps the authoritative verifier's exact call-related errors to one repair owner (CALL I shape, O/value mapping, R result, C attachment/metadata/span, A argument edge). Once valid call parsing is restored, run strict conformance immediately and fix errors[0] only. Exact LF fixtures, same-binary regression order, and stop-on-first-unexpected-result remain active. Foreign calls, arrays, capacity changes, Stage06, canonical mutation, SELF_EMIT, Stage2, Stage3 and T4 remain unauthorized."
 }
