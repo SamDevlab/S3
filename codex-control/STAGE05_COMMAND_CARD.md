@@ -1,106 +1,110 @@
 # Stage05 command card — Codex fast path
 
-Use this file to avoid rereading the full control package during the paired Stage05 campaign.
+Use this file only after reading `CURRENT.json` and `OVERRIDES.md`.
 
-This card never overrides `CURRENT.json` or `OVERRIDES.md`. If the revision changes, re-read those first.
+## REVISION 24 — RECOVERY ONLY
 
-## CURRENT STATE — REVISION 23 RECOVERY STOP
+The Stage05 campaign is temporarily paused because context compaction drifted into the old pre-IR/compaction 2x2 route.
 
-Context compaction mixed valid Stage05 work with an older PR #268/pre-IR/compaction route. Do not continue implementation until the recovery snapshot is returned.
+Latest supplied transcript reports:
+
+```text
+E0_BUILD_RC=0
+E1_BUILD=STARTED
+GUEST_FREE_BEFORE=831 MB
+GUEST_FREE_AFTER_CONTROLLED_TMP_CLEANUP=3.9 GB
+```
+
+These are recovery facts, not Stage05 promotion evidence.
 
 Read:
 
 ```text
-codex-control/RECOVERY_REV23_WORKTREE_RECONCILIATION.md
+codex-control/RECOVERY_REV24_STOP_AFTER_INFLIGHT_E1.md
 ```
 
-## Preserve these valid Stage05 results
+## Do this now
 
 ```text
-one-arg internal call -> structural good / Z3
-ordered multi-arg internal call -> recovered to Z3
-unresolved callee -> fail-closed
-nested call with representable inner result -> pass
-failing nested a + 1 fixture -> expression-lowering dependency that reproduces without call
+if exact E1 process is already running:
+    let that exact PID finish
+else:
+    do not start/restart E1
+
+then:
+    run ZERO 2x2 matrix executions
+    capture recovery snapshot
+    return PAIRING_RECOVERY block
+    STOP
+```
+
+No new compiler build.
+No E0 restart.
+No E1 restart.
+No matrix execution.
+
+## Preserve valid Stage05 progress
+
+```text
+one-arg = structural good / Z3
+multi-arg = recovered to Z3
+unresolved = fail-closed
+nested with representable result = pass
+nested a + 1 failure = expression-lowering dependency reproduced without call
 ```
 
 Preserve:
 
-- consumed-token legacy guard;
-- comma/cursor repair #1;
-- comma/cursor repair #2.
+- comma double-advance repair;
+- comma revisit / `has_arg=0` repair;
+- Stage05-consumed-token legacy-dispatch guard.
 
-Do not label the `a + 1` limitation as a nested-call defect.
+## Recovery fields
 
-## Stop these drifted routes
-
-Do not continue:
+Return:
 
 ```text
-arrays
-foreign calls
-old pre-IR/token-lane route
-compaction 2x2 E0/E1
-capacity planning
-T4
-benchmark
-Stage06+
-canonical mutation/restoration
-implementation commits
+PAIRING_RECOVERY_BEGIN
+CONTROL_REVISION=24
+WORKTREE_HEAD=
+WORKTREE_BRANCH=
+REMOTE_PR268_HEAD=326d42f8a2623ced5a2151d6daaf2d67743faca8
+GIT_STATUS_SHORT=
+CHANGED_FILES=
+UNTRACKED_FILES=
+CANONICAL_LOCAL_SHA256=
+CANONICAL_LOCAL_BYTES=
+CANONICAL_HEAD_SHA256=
+CANONICAL_HEAD_BYTES=
+CANONICAL_DIFF_PRESENT=
+CANONICAL_DIFF_PATCH_SAVED=
+STAGE05_CANDIDATE_SHA256=
+STAGE05_TRANSFORM_SHA256=
+STAGE05_TEMP_TELEMETRY_PRESENT=
+E0_BUILD_RC=
+E0_OUTPUT_SHA256=
+E1_STATUS=
+E1_BUILD_RC=
+E1_OUTPUT_SHA256=
+MATRIX_EXECUTIONS_AFTER_REV24=0
+GUEST_FREE_AFTER_E1=
+NEW_BUILD_STARTED_AFTER_REV24=NO
+CANONICAL_RESTORED_OR_REVERTED=NO
+IMPLEMENTATION_COMMIT_CREATED=NO
+T4_EXECUTED=NO
+BENCHMARK_EXECUTED=NO
+FIRST_RECOVERY_BLOCKER=
+PAIRING_RECOVERY_END
 ```
 
-## Recovery only
+## Locked until a newer revision
 
-No new native build.
-
-Capture:
-
-```text
-WORKTREE_HEAD
-WORKTREE_BRANCH
-GIT_STATUS_SHORT
-CHANGED_FILES
-CANONICAL_LOCAL_SHA256
-CANONICAL_LOCAL_BYTES
-CANONICAL_HEAD_SHA256
-CANONICAL_HEAD_BYTES
-CANONICAL_DIFF_PRESENT
-CANONICAL_DIFF_PATCH_SAVED
-STAGE05_CANDIDATE_SHA256
-STAGE05_TRANSFORM_SHA256
-STAGE05_TEMP_TELEMETRY_PRESENT
-GUEST_FREE_BEFORE
-GUEST_FREE_AFTER
-OUT_OF_SPACE_ARTIFACT
-```
-
-Save canonical diff provenance before any future restore. Do not run `git reset --hard`, `git clean`, `git checkout --`, or `git restore` during revision 23.
-
-Disk cleanup may remove only disposable `/tmp` files clearly created by the current diagnostic/cross-build attempts. Do not delete repository files, unknown untracked files, caches or toolchains.
-
-Return the exact `PAIRING_RECOVERY_BEGIN ... PAIRING_RECOVERY_END` block from `RECOVERY_REV23_WORKTREE_RECONCILIATION.md`.
-
-## Remote safety fact
-
-Observed remote PR #268 HEAD remains:
-
-```text
-326d42f8a2623ced5a2151d6daaf2d67743faca8
-```
-
-The later route drift is therefore local/unpushed in the latest evidence.
-
-## Authorization boundary during revision 23
-
-New native build = NO
-Implementation commit = NO
-Canonical mutation = NO
-Canonical restore/revert = NO
-Arrays = NO
-Foreign calls = NO
-Stage06 = NO
-SELF_EMIT = NO
-Stage2 = NO
-Stage3 = NO
-T4 = NO
-Benchmark = NO
+No arrays.
+No foreign calls.
+No capacity work.
+No Stage06.
+No canonical mutation/restore/revert.
+No implementation commit.
+No SELF_EMIT.
+No Stage2/Stage3/T4.
+No benchmark.
