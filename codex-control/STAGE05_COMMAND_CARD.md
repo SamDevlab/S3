@@ -2,46 +2,51 @@
 
 Use this file only after reading `CURRENT.json` and `OVERRIDES.md`.
 
-## REVISION 24 — RECOVERY ONLY
+## REVISION 25 — RECOVERY ONLY
 
-The Stage05 campaign is temporarily paused because context compaction drifted into the old pre-IR/compaction 2x2 route.
+The active Stage05 campaign is paused because context compaction continued into the old pre-IR/compaction route despite revision-23/24 stops.
 
 Latest supplied transcript reports:
 
 ```text
 E0_BUILD_RC=0
-E1_BUILD=STARTED
-GUEST_FREE_BEFORE=831 MB
-GUEST_FREE_AFTER_CONTROLLED_TMP_CLEANUP=3.9 GB
+E1_BUILD=COMPLETED
+2x2 matrix native runs=4
+all rc=2
+E0(S0)=E0(S1)=1460/305/1213
+E1(S0)=E1(S1)=1097/329/1213
+common overflow offset=41502
+E0H histogram build=STARTED
 ```
 
-These are recovery facts, not Stage05 promotion evidence.
+These are drift/recovery facts, not Stage05 promotion evidence.
 
 Read:
 
 ```text
-codex-control/RECOVERY_REV24_STOP_AFTER_INFLIGHT_E1.md
+codex-control/RECOVERY_REV25_STOP_AFTER_INFLIGHT_E0H.md
 ```
 
 ## Do this now
 
 ```text
-if exact E1 process is already running:
+if exact E0H process is already running:
     let that exact PID finish
 else:
-    do not start/restart E1
+    do not start/restart E0H
 
 then:
-    run ZERO 2x2 matrix executions
+    DO NOT execute E0H
+    DO NOT start E1H
+    DO NOT run any matrix/fixture/histogram command
     capture recovery snapshot
     return PAIRING_RECOVERY block
     STOP
 ```
 
 No new compiler build.
-No E0 restart.
-No E1 restart.
-No matrix execution.
+No new instrumentation.
+No cleanup/deletion of worktree files during the snapshot.
 
 ## Preserve valid Stage05 progress
 
@@ -65,7 +70,7 @@ Return:
 
 ```text
 PAIRING_RECOVERY_BEGIN
-CONTROL_REVISION=24
+CONTROL_REVISION=25
 WORKTREE_HEAD=
 WORKTREE_BRANCH=
 REMOTE_PR268_HEAD=326d42f8a2623ced5a2151d6daaf2d67743faca8
@@ -81,14 +86,22 @@ CANONICAL_DIFF_PATCH_SAVED=
 STAGE05_CANDIDATE_SHA256=
 STAGE05_TRANSFORM_SHA256=
 STAGE05_TEMP_TELEMETRY_PRESENT=
-E0_BUILD_RC=
-E0_OUTPUT_SHA256=
-E1_STATUS=
+E0_BUILD_RC=0
 E1_BUILD_RC=
-E1_OUTPUT_SHA256=
-MATRIX_EXECUTIONS_AFTER_REV24=0
-GUEST_FREE_AFTER_E1=
-NEW_BUILD_STARTED_AFTER_REV24=NO
+MATRIX_RUN_COUNT=4
+MATRIX_E0_S0=
+MATRIX_E0_S1=
+MATRIX_E1_S0=
+MATRIX_E1_S1=
+MATRIX_COMMON_OVERFLOW_OFFSET=
+HISTOGRAM_TEMP_FILES=
+E0H_STATUS=
+E0H_BUILD_RC=
+E0H_OUTPUT_SHA256=
+E0H_EXECUTED=NO
+E1H_STARTED=NO
+NEW_BUILD_STARTED_AFTER_REV25=NO
+GUEST_FREE=
 CANONICAL_RESTORED_OR_REVERTED=NO
 IMPLEMENTATION_COMMIT_CREATED=NO
 T4_EXECUTED=NO
@@ -97,7 +110,7 @@ FIRST_RECOVERY_BLOCKER=
 PAIRING_RECOVERY_END
 ```
 
-## Locked until a newer revision
+## Locked until newer revision
 
 No arrays.
 No foreign calls.
@@ -108,3 +121,4 @@ No implementation commit.
 No SELF_EMIT.
 No Stage2/Stage3/T4.
 No benchmark.
+No matrix/fixture/histogram execution.
