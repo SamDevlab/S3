@@ -1,0 +1,68 @@
+{
+  "schema": "s3.codex-control.stage05-postfix-regression-matrix.v1",
+  "stage": "05_CALLS_ARRAYS_S3",
+  "run_policy": "same native binary, stop on first unexpected result",
+  "stage_success_mask": 7,
+  "final_complete_mask_forbidden_here": 31,
+  "fixtures": [
+    {
+      "id": "grouping_control",
+      "source": "fn helper(value: i64) -> i64:\n    return value\n\nfn main() -> i64:\n    return (1)\n",
+      "sha256": "644ff711960765a99f981fbfc98c94bb65dd66b5c8b76f8194ec2e672d6c2b8b",
+      "expected": "VALID_GROUPING",
+      "expected_mask": 3,
+      "unlock": "ALWAYS_AFTER_CLEAN_BUILD"
+    },
+    {
+      "id": "internal_one_arg_call",
+      "source": "fn helper(value: i64) -> i64:\n    return value\n\nfn main() -> i64:\n    return helper(1)\n",
+      "sha256": "769480e71eb4ed6711aa1bc608f000ea6f2802894df9796871277a33d72b2f34",
+      "expected": "VALID_INTERNAL_CALL",
+      "expected_mask": 7,
+      "required_records": ["I:CALL14", "O", "R", "C:INTERNAL", "A"],
+      "unlock": "ALWAYS_AFTER_CLEAN_BUILD"
+    },
+    {
+      "id": "zero_arg_internal_call",
+      "source": "fn answer() -> i64:\n    return 7\n\nfn main() -> i64:\n    return answer()\n",
+      "expected": "VALID_INTERNAL_CALL",
+      "expected_mask": 7,
+      "unlock": "ONLY_AFTER_internal_one_arg_call_STRICT_PASS"
+    },
+    {
+      "id": "ordered_two_arg_internal_call",
+      "source": "fn choose(a: i64, b: i64) -> i64:\n    return a\n\nfn main() -> i64:\n    return choose(7, 8)\n",
+      "expected": "VALID_INTERNAL_CALL_ARGUMENT_ORDER",
+      "expected_mask": 7,
+      "unlock": "ONLY_AFTER_internal_one_arg_call_STRICT_PASS"
+    },
+    {
+      "id": "nested_internal_call",
+      "source": "fn id(value: i64) -> i64:\n    return value\n\nfn main() -> i64:\n    return id(id(1))\n",
+      "expected": "VALID_NESTED_INTERNAL_CALL",
+      "expected_mask": 7,
+      "unlock": "ONLY_AFTER_ordered_two_arg_internal_call_PASS"
+    },
+    {
+      "id": "call_result_reuse",
+      "source": "fn id(value: i64) -> i64:\n    return value\n\nfn main() -> i64:\n    value: i64 = id(1)\n    return value + value\n",
+      "expected": "VALID_REUSED_CALL_RESULT_IDENTITY",
+      "expected_mask": 7,
+      "unlock": "ONLY_AFTER_nested_internal_call_PASS"
+    },
+    {
+      "id": "unresolved_callee_fail_closed",
+      "source": "fn main() -> i64:\n    return missing(1)\n",
+      "expected": "FAIL_CLOSED_UNRESOLVED_CALLEE",
+      "expected_mask": 0,
+      "forbid_fabricated_records": ["C:RESOLVED_INTERNAL", "R:VALID_CALL_RESULT"],
+      "unlock": "ONLY_AFTER_call_result_reuse_PASS"
+    }
+  ],
+  "later_locked_slices": [
+    "foreign_call_resolution",
+    "fixed_array_index_load",
+    "fixed_array_index_store"
+  ],
+  "rule": "Do not run a locked fixture merely because it is present. Respect unlock ordering and stop on the first semantic or parser regression."
+}
