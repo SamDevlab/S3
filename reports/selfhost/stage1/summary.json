@@ -479,8 +479,8 @@
   },
   "latest_compaction_native_reconciliation": {
     "campaign_date": "2026-08-27",
-    "final_head": "6e6b837e295ba79bd456e2fc96de9f8ff7ea2a15",
-    "commit": "6e6b837e295ba79bd456e2fc96de9f8ff7ea2a15",
+    "final_head": "8c02802660e163478bd30a5fa8139bf5ab4d9f25",
+    "commit": "8c02802660e163478bd30a5fa8139bf5ab4d9f25",
     "pushed": true,
     "canonical_source_sha256": "20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341",
     "canonical_source_bytes": 166984,
