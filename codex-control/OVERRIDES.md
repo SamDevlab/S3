@@ -1,6 +1,6 @@
 # Live overrides
 
-CONTROL_REVISION: 13
+CONTROL_REVISION: 14
 
 No emergency stop is active.
 
@@ -10,58 +10,31 @@ No emergency stop is active.
 - Stage 05 remains active under paired engineering mode.
 - Automatic stage advance remains disabled.
 - Finish the already in-flight `current_code == 2` right-parenthesis diagnostic build before applying any new repair.
-- Read `codex-control/STAGE05_RIGHT_PAREN_CLOSE_PROBE.md` and `codex-control/STAGE05_POSTFIX_ORACLE.md` before the next edit.
+- For the current Stage05 campaign, use `codex-control/STAGE05_COMMAND_CARD.md` as the short operational entry point after reading `CURRENT.json` and this file.
+- Use `codex-control/STAGE05_TRIAGE_DECISION_TABLE.json` to classify the close probe and `codex-control/STAGE05_POSTFIX_REGRESSION_MATRIX.json` for post-fix same-binary regression order.
 
-## Latest paired evidence
-
-```text
-valid internal call still ends Z 0
-C record structurally emitted
-A record structurally emitted
-prior failure phase = parser, before evaluation
-RIGHT_PAREN token code = 2
-owning close branch under diagnosis = current_code == 2
-```
-
-The grouping-control result from the earlier A/B probe was not included in the supplied excerpt, so it remains `NOT_REPORTED`. Do not infer it.
-
-The first blocker remains:
+## Current blocker
 
 ```text
 VALID_INTERNAL_CALL_REJECTED_AT_OR_AROUND_RIGHT_PAREN_CALL_CLOSE
 ```
 
-## Authoritative postfix oracle
-
-Repository test coverage confirms these are valid parser forms:
+Observed facts remain:
 
 ```text
-f()
-f(a, b)
-(a).b
-f().value
-pkg.function()
-factory()[0]
-functions[0]()
-consume(pkg.make().value)
-a[0].b(c)[1]
-(factory())[0]
+valid internal call -> Z 0
+C structurally emitted
+A structurally emitted
+failure phase -> parser before evaluation
+RIGHT_PAREN token code -> 2
+owning diagnostic branch -> current_code == 2
 ```
 
-The explicit negative boundary is:
+The grouping-control result remains `NOT_REPORTED`; do not infer it.
 
-```text
-f(1   -> expected ')' after arguments
-f(a,) -> expected argument after ','
-```
+## Finish the in-flight close probe only
 
-Therefore a complete `helper(1)` must not fail merely because `RIGHT_PAREN` is encountered. Call parentheses are postfix-call delimiters and the matching close is consumed exactly once by the call closer.
-
-Do **not** patch from this oracle alone. Use the current close diagnostic to prove where `parse_ok` first changes.
-
-## Required close-state observation
-
-When the current build terminates, run only the same minimal `helper(1)` fixture and preserve raw output. Capture:
+Capture:
 
 ```text
 BEFORE_CLOSE_OP_COUNT=
@@ -69,79 +42,60 @@ BEFORE_CLOSE_PAREN_DEPTH=
 BEFORE_CLOSE_ARITY=
 BEFORE_CLOSE_ARGUMENT_FLAG=
 BEFORE_CLOSE_PARSE_OK=
-
 AFTER_CLOSE_OP_COUNT=
 AFTER_CLOSE_PAREN_DEPTH=
 AFTER_CLOSE_ARITY=
 AFTER_CLOSE_ARGUMENT_FLAG=
 AFTER_CLOSE_PARSE_OK=
-
 EXIT_CODE=
 Z_MASK=
 ```
 
-Use the actual debug marker names if different.
+Then regenerate the candidate cleanly and remove temporary diagnostics.
 
-## Classification and one repair only
-
-If `parse_ok` is already false before close:
+Classification:
 
 ```text
-NEXT_OWNER=ARGUMENT_STOP_OR_TOKEN_BEFORE_RIGHT_PAREN
+BEFORE false
+  -> ARGUMENT_STOP_OR_TOKEN_BEFORE_RIGHT_PAREN
+
+BEFORE valid, AFTER false
+  -> RIGHT_PAREN_CALL_CLOSE
+
+BEFORE valid, AFTER valid, final Z 0
+  -> POST_PARSE_FINALIZATION_OR_COMPLETENESS
 ```
 
-If `parse_ok` flips from true to false inside close:
+Patch one proven owning condition only.
 
-```text
-NEXT_OWNER=RIGHT_PAREN_CALL_CLOSE
-```
+## Fast path after the eventual repair
 
-Use the raw state to choose exactly one proven failing condition: argument-complete/arity validation, parenthesis/depth decrement, fallthrough into a generic `)` rejection, or call-frame restoration.
+Do not waste a native build per fixture.
 
-If `parse_ok` remains true after close but final `Z 0` persists:
+1. regenerate clean candidate;
+2. `s3 check` once;
+3. record candidate SHA256;
+4. build one Linux native binary;
+5. record binary SHA256;
+6. reuse the same binary through the unlocked fixtures in `STAGE05_POSTFIX_REGRESSION_MATRIX.json`;
+7. stop at the first unexpected parser/semantic/mask result;
+8. run strict Stage05 conformance immediately on the first valid internal call before another source edit;
+9. emit a paired checkpoint.
 
-```text
-NEXT_OWNER=POST_PARSE_FINALIZATION_OR_COMPLETENESS
-```
+The first valid internal call requires exact S1+S2+S3 semantics and `Z 7`. `Z 31` remains forbidden until S4/S5 close.
 
-Regenerate cleanly and run strict Stage05 conformance before touching the call parser again.
+## Time-saving prohibitions
 
-## After the diagnostic
+Do not re-run or revisit these unless a new failure directly implicates them:
 
-1. preserve raw stdout/stderr/exit and exact candidate/binary hashes if available;
-2. regenerate the clean candidate so temporary diagnostics disappear;
-3. emit a paired checkpoint;
-4. re-read control before another repair/build.
-
-Do not trigger another build solely to recover the missing grouping result.
-
-## First internal-call success boundary
-
-```text
-PARSE_OK_AFTER_RPN=-1
-PARSE_OK_AFTER_EVAL=-1
-PARSE_OK_FINAL=-1
-CALL_OPCODE=14
-C_RECORD=VALID_INTERNAL
-A_ORDER=PASS
-O_ORDER=PASS
-R_RESULT=PASS_WHEN_APPLICABLE
-STRICT_STAGE05_CONFORMANCE=PASS
-Z_MASK=7
-```
-
-`Z 31` remains forbidden until S4/S5 close.
-
-## Do not broaden
-
-Until the first valid internal call is conformant:
-
-- no zero-arg expansion;
-- no multi-arg or nested expansion;
-- no foreign calls;
-- no arrays;
-- no capacity changes;
-- no Stage06.
+- SSH/Linux/Python/cc qualification;
+- PR OPEN/DRAFT state;
+- Stage04 expression matrix;
+- function/block discovery;
+- historical 736/746 capacity;
+- foreign calls;
+- arrays;
+- Stage06 or later.
 
 ## Authorization boundary
 
