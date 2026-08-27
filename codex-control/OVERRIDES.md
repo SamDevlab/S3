@@ -1,6 +1,6 @@
 # Live overrides
 
-CONTROL_REVISION: 18
+CONTROL_REVISION: 19
 
 No emergency stop is active.
 
@@ -9,100 +9,93 @@ No emergency stop is active.
 - Stage 04 remains accepted for transition as `PASS_REPORTED_PENDING_REMOTE_BACKFILL`.
 - Stage 05 remains active under paired engineering mode.
 - Automatic stage advance remains disabled.
-- The special-open legacy-dispatch bug was a real first setter and its guard must be preserved, but post-guard evidence proves another residual blocker remains.
-- Read `codex-control/STAGE05_RESIDUAL_PARSE_TRANSITION.md` before the next permanent source edit.
-- Finish only the already-started token-trace build on the guarded candidate. Do not start another build or repair before it terminates.
+- Preserve the previously proven `stage05_special_open` legacy-dispatch guard.
+- The residual token trace is now complete and supersedes the generic revision-18 blocker.
+- Read `codex-control/STAGE05_CALL_CLOSE_SPECIAL_GUARD_REPAIR.md` before any later source edit.
+- A native build containing the localized call-close guard is already reported in flight. Finish that exact build before any new build or repair.
 
-## New post-guard evidence
+## Proven second root cause
 
-```text
-special-open guard applied
-internal call still structurally recognized
-C emitted
-A emitted
-helper()  -> Z 0
-helper(1) -> Z 0
-```
-
-Therefore the old blocker is retained as a fixed/partial cause, not the current owner:
+Latest trace proves:
 
 ```text
-PRIOR_CAUSE=SYNTHETIC_CALL_OPEN_KIND_FALLS_THROUGH_LEGACY_OPERAND_DISPATCH
-CURRENT_BLOCKER=POST_SPECIAL_OPEN_RESIDUAL_PARSE_OK_SETTER_COMMON_TO_ZERO_AND_ONE_ARG
+parse_ok stays -1 through call-open and argument handling
+matching ')' is reached
+call frame is valid
+computed arity is valid
+Stage05 call-close logic runs
+same ')' still reaches legacy unknown-punctuation rejection
+legacy path writes parse_ok=0
 ```
 
-Because zero- and one-argument calls both fail, do not prioritize argument parsing or one-argument arity logic unless the new trace proves it.
+This occurs for zero- and one-argument calls, so argument-count-specific parsing is not the owner.
 
-## Atomic task
-
-Capture the FIRST `parse_ok` transition from valid `-1` to invalid `0` on the already-guarded candidate.
-
-Preserve token order and, when available, these fields:
+Current blocker:
 
 ```text
-TOKEN_INDEX=
-TOKEN_CODE=
-CURRENT_KIND=
-PARSE_OK_BEFORE=
-PARSE_OK_AFTER=
-STAGE05_SPECIAL_OPEN=
-CALL_FRAME_ACTIVE=
-PAREN_DEPTH=
-OP_COUNT=
-ARG_COUNT=
-HAS_ARG=
+VALID_CALL_CLOSE_TOKEN_FALLS_THROUGH_LEGACY_PUNCTUATION_REJECTION
 ```
 
-Use the actual marker/variable names if different.
+## Single repair owner
 
-## Classification
+Only a `RIGHT_PAREN` proven to close an active valid Stage05 call frame may be marked special for that token cycle so legacy unknown-punctuation rejection does not see it.
 
-If the first flip is still on the synthetic special-open token:
+Required semantics:
 
 ```text
-NEXT_OWNER=SPECIAL_OPEN_GUARD_COVERAGE
+valid Stage05 call-close ')':
+  keep Stage05 arity/frame validation active
+  close the call normally
+  skip only legacy rejection of that same token
+  preserve parse_ok unless Stage05 validation itself fails
+
+all other ')'/punctuation:
+  preserve existing legacy behavior exactly
 ```
 
-If parsing remains valid until the matching `)` and flips while closing both zero- and one-arg calls:
+Do not globally whitelist `)`. Do not weaken unmatched/grouping validation. Do not revisit `stage05_open_kind > 0` truth semantics.
+
+## Current atomic task
+
+Finish the already-running native build containing this localized call-close guard.
+
+Then, using the same produced binary:
+
+1. run exact pinned `zero_arg_internal_call.s3`;
+2. run exact pinned `internal_one_arg_call.s3`;
+3. record exit code and final `Z` for both;
+4. preserve `C/A` records and parser state evidence;
+5. if either valid call still reaches `Z 0`, stop broadening and preserve the first remaining failure;
+6. if both clear to Stage05 mask `Z 7`, run strict Stage05 conformance immediately on the one-arg fixture;
+7. preserve verifier JSON and use only `errors[0]` for any next repair.
+
+Do not rebuild between the zero- and one-argument fixtures while the candidate hash is unchanged.
+
+## First-call target
 
 ```text
-NEXT_OWNER=CALL_CLOSE_COMMON_STATE
+CALL opcode=14
+C_INTERNAL=VALID
+A_ORDER=PASS
+O_ORDER=PASS
+R_RESULT=PASS_WHEN_APPLICABLE
+STRICT_STAGE05_CONFORMANCE=PASS
+Z_MASK=7
 ```
 
-If `)` closes valid and the flip occurs later in the same token cycle:
-
-```text
-NEXT_OWNER=POST_CALL_FALLTHROUGH_OR_FRAME_RESTORE
-```
-
-If parser state never flips but final output remains `Z 0`:
-
-```text
-NEXT_OWNER=STAGE05_COMPLETENESS_OR_CONFORMANCE
-```
-
-In that case stop parser instrumentation and run strict conformance/completeness on a clean candidate.
-
-## After the trace
-
-1. preserve raw trace and exact hashes if available;
-2. regenerate cleanly to remove diagnostics;
-3. patch one proven owner only;
-4. `s3 check` once;
-5. build once;
-6. run exact pinned zero-arg and one-arg fixtures on the same binary;
-7. stop on the first unexpected result;
-8. when parser is valid, run strict Stage05 conformance immediately and consume `errors[0]` only.
+`Z 31` remains invalid as a Stage05 target.
 
 ## Do not reopen
 
-Unless new evidence contradicts it, do not revisit:
+Unless new evidence directly contradicts it, do not revisit:
 
-- the `stage05_open_kind > 0` truth-branch experiment;
+- special-open first-setter diagnosis;
+- `stage05_open_kind > 0` truth experiment;
 - callee recognition;
+- argument-count-specific parser repair;
 - basic `C/A` structural emission;
-- Stage04 expression matrix;
 - SSH/Linux/Python/cc qualification;
+- Stage04 matrix;
 - arrays;
 - foreign calls;
 - Stage06 or later.
