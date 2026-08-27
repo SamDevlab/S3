@@ -3,7 +3,7 @@
 This entry point performs no native build, no source transform, no Stage2
 creation and no T4. It exists so independent design work can be validated
 without confusing historical lane cardinalities with current emitter-facing
-semantic closure.
+semantic closure or using host-oracle counts as Stage1 capacity authority.
 """
 
 from __future__ import annotations
@@ -19,6 +19,7 @@ from tools.audit_stage1_codegen_ir_v2_value_namespace import audit as audit_valu
 from tools.audit_stage1_compact_block_capacity import audit as audit_blocks
 from tools.audit_stage1_instruction_stream_contract import audit as audit_instructions
 from tools.audit_stage1_ir_closure_surfaces import build_surface_report
+from tools.audit_stage1_ir_storage_topology import audit as audit_storage_topology
 from tools.audit_stage1_local_namespace_rebase import audit as audit_local_rebase
 from tools.audit_stage2_serialized_ir_envelope import audit as audit_stage2_envelope
 
@@ -40,6 +41,7 @@ DEFAULT_REPORT = STAGE1 / "parallel-static-closure-report.json"
 EXPECTED = {
     "compact_blocks": {"STATIC_COMPACT_BLOCK_CAPACITY_CONTRACT_PASS"},
     "closure_surfaces": {"STATIC_FIVE_SURFACE_MODEL_PASS"},
+    "storage_topology": {"STATIC_IR_STORAGE_TOPOLOGY_PASS"},
     "checkpoint": {
         "CURRENT_CHECKPOINT_IDENTIFIED_HISTORICAL_HANDOFFS_PRESENT",
         "CURRENT_CHECKPOINT_DOCUMENTS_CONSISTENT",
@@ -69,6 +71,7 @@ def run() -> dict[str, Any]:
     results: dict[str, dict[str, Any]] = {
         "compact_blocks": audit_blocks(source),
         "closure_surfaces": build_surface_report(requirements),
+        "storage_topology": audit_storage_topology(requirements, value_contract),
         "checkpoint": audit_checkpoint(
             source_bytes=source_bytes,
             requirements=requirements,
@@ -97,8 +100,9 @@ def run() -> dict[str, Any]:
     }
     all_expected = all(gates.values())
     surfaces = results["closure_surfaces"]
+    topology = results["storage_topology"].get("storage", {})
     return {
-        "schema": "s3.selfhost.stage1-parallel-static-closure.v2",
+        "schema": "s3.selfhost.stage1-parallel-static-closure.v3",
         "status": (
             "STATIC_PARALLEL_CLOSURE_PREPARED"
             if all_expected
@@ -110,6 +114,11 @@ def run() -> dict[str, Any]:
         "missing_semantic_surface_count": surfaces.get("missing_surface_count"),
         "missing_semantic_surfaces": surfaces.get("missing_surfaces"),
         "historical_missing_lane_count": surfaces.get("historical_missing_lane_count"),
+        "storage_topology": {
+            family: data.get("classification")
+            for family, data in topology.items()
+            if isinstance(data, dict)
+        },
         "results": {
             name: {
                 "status": result.get("status"),
@@ -150,6 +159,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"STATUS={result['status']}")
     print(f"SEMANTIC_SURFACES={result['semantic_surface_count']}")
     print(f"MISSING_SEMANTIC_SURFACES={result['missing_semantic_surface_count']}")
+    for family, topology in result["storage_topology"].items():
+        print(f"TOPOLOGY_{family.upper()}={topology}")
     for name, gate in result["results"].items():
         print(f"{name.upper()}={gate['status']}")
     print("NATIVE_ACTIONS_PERFORMED=0")
