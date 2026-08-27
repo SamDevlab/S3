@@ -4,53 +4,41 @@ Use this file to avoid rereading the full control package during the current pai
 
 This card never overrides `CURRENT.json` or `OVERRIDES.md`. If the control revision changes, re-read those two files first.
 
-## Current atomic task
+## Current atomic task — revision 17
 
-Finish the already in-flight `current_code == 2` right-parenthesis diagnostic. Do not start another build until it reaches terminal state.
+The right-parenthesis investigation is closed as the wrong first-owner hypothesis for the current fixture.
 
-Capture only:
-
-```text
-BEFORE_CLOSE_OP_COUNT=
-BEFORE_CLOSE_PAREN_DEPTH=
-BEFORE_CLOSE_ARITY=
-BEFORE_CLOSE_ARGUMENT_FLAG=
-BEFORE_CLOSE_PARSE_OK=
-AFTER_CLOSE_OP_COUNT=
-AFTER_CLOSE_PAREN_DEPTH=
-AFTER_CLOSE_ARITY=
-AFTER_CLOSE_ARGUMENT_FLAG=
-AFTER_CLOSE_PARSE_OK=
-EXIT_CODE=
-Z_MASK=
-```
-
-Then regenerate the candidate cleanly so all temporary diagnostics disappear.
-
-## Immediate classification
+Proven root cause:
 
 ```text
-BEFORE parse_ok false
-  -> ARGUMENT_STOP_OR_TOKEN_BEFORE_RIGHT_PAREN
-
-BEFORE valid, AFTER false
-  -> RIGHT_PAREN_CALL_CLOSE
-
-BEFORE valid, AFTER valid, final Z 0
-  -> POST_PARSE_FINALIZATION_OR_COMPLETENESS
+callee detected
+stage05_special_open active
+current_kind temporarily becomes synthetic punctuation
+legacy operand dispatch sees synthetic kind
+legacy dispatch writes parse_ok=0
+argument parsing has not started yet
 ```
 
-Do not patch more than one owning condition per cycle.
-
-## Exact LF fixtures — do not hand-build probe strings
-
-Fixtures and SHA256 values live in:
+Apply one repair only:
 
 ```text
-codex-control/fixtures/stage05/MANIFEST.json
+GUARD_LEGACY_OPERAND_DISPATCH_WHEN_STAGE05_SPECIAL_OPEN_ACTIVE
 ```
 
-From PowerShell, use `cmd.exe` redirection so native `git show` bytes are preserved instead of passing the blob through PowerShell text encoding. Example for the current minimal call:
+Read `codex-control/STAGE05_SPECIAL_OPEN_GUARD_REPAIR.md` before editing.
+
+Do not change the truth convention of `stage05_open_kind > 0`; the attempted `-1 -> 1` success-branch change was disproven by runtime behavior.
+
+## Exact LF fixture — first proof only
+
+Do not hand-build the probe string.
+
+```text
+codex-control/fixtures/stage05/internal_one_arg_call.s3
+SHA256=769480e71eb4ed6711aa1bc608f000ea6f2802894df9796871277a33d72b2f34
+```
+
+From PowerShell, preserve native `git show` bytes:
 
 ```powershell
 $ControlRef = 'origin/control/codex-stage1-semantic-v2-20260827'
@@ -59,32 +47,27 @@ cmd.exe /d /s /c "git show $ControlRef`:codex-control/fixtures/stage05/internal_
 (Get-FileHash -Algorithm SHA256 $Out).Hash.ToLowerInvariant()
 ```
 
-Expected SHA256:
+If the hash differs, do not run the fixture.
+
+## One repair → one build
+
+1. patch only the proven special-open guard in `tools/patch_stage1_calls_arrays_s3.py`;
+2. regenerate clean candidate; temporary traces must be absent;
+3. run `s3 check` once;
+4. record candidate SHA256;
+5. build one Linux native binary;
+6. record binary SHA256;
+7. run exact `internal_one_arg_call.s3`;
+8. if `parse_ok` still becomes invalid, preserve only the first raw transition and stop;
+9. if parsing remains valid, run strict Stage05 conformance immediately;
+10. use verifier `errors[0]` only and classify through `STAGE05_CONFORMANCE_EXPECTATIONS.md`;
+11. after strict conformance passes, reuse the same binary through unlocked fixtures in `STAGE05_POSTFIX_REGRESSION_MATRIX.json` until the first unexpected result.
+
+Do not rebuild between fixtures while candidate SHA is unchanged.
+
+## First-call success target
 
 ```text
-769480e71eb4ed6711aa1bc608f000ea6f2802894df9796871277a33d72b2f34
-```
-
-If the hash differs, do not run the fixture. Fix materialization first. The manifest contains hashes for every later unlocked fixture.
-
-## After a proven parser repair
-
-1. regenerate clean candidate;
-2. run `s3 check` once;
-3. record candidate SHA256;
-4. build one native Linux binary;
-5. record binary SHA256;
-6. use the same binary for all allowed fixtures in `STAGE05_POSTFIX_REGRESSION_MATRIX.json` until one fails;
-7. on the first failure, stop broadening and emit a paired checkpoint;
-8. if the minimal internal call passes, run strict Stage05 conformance immediately before another source edit.
-
-Do not rebuild between fixtures when the candidate source is unchanged. A fixture failure is diagnostic evidence, not a reason to rebuild the same candidate.
-
-## Current success target
-
-```text
-valid helper(1)
-PARSE_OK=valid through closeout
 CALL opcode=14
 C internal metadata=valid
 A order=PASS
@@ -94,10 +77,12 @@ STRICT_STAGE05_CONFORMANCE=PASS
 Z=7
 ```
 
-`Z 31` is not a Stage05 target.
+A parser PASS alone is not S3 PASS. `Z 31` is not a Stage05 target.
 
-## Do not spend time on these unless the current failure points there
+## Do not spend time on these unless a new failure directly points there
 
+- right-parenthesis close instrumentation;
+- `stage05_open_kind > 0` truth-branch experiments;
 - SSH/Linux/Python/cc requalification;
 - PR OPEN/DRAFT checks;
 - function/block discovery;
