@@ -1,0 +1,57 @@
+{
+  "schema": "s3.codex-control.semantic-v2-import-closure.v1",
+  "control_revision": 2,
+  "source_ref": "origin/parallel/pr268-semantic-lowering-v1-20260827",
+  "purpose": "Exact hosted qualification closure for Stage 02. Import selectively; never merge PR #270.",
+  "required_files": [
+    {
+      "path": "tools/stage1_semantic_ir_reference.py",
+      "blob_sha": "04e2489be60d809fe5c73e757b569908e000de57",
+      "role": "typed IR projection dependency"
+    },
+    {
+      "path": "tools/stage1_source_binding_reference.py",
+      "blob_sha": "205239f1ea153bd54cf6bebde9725e606441d68e",
+      "role": "typed AST source-binding dependency"
+    },
+    {
+      "path": "tools/stage1_semantic_stream_v2.py",
+      "blob_sha": "d53ecd0e6d2bda1572a15d53691b0b1ad5fe97e6",
+      "role": "authoritative hosted S3IR2 v2 oracle/encoder/parser/verifier"
+    },
+    {
+      "path": "tools/verify_stage1_semantic_conformance_v2.py",
+      "blob_sha": "a1ce681896534b8d8b3e80ebc3b5a88a5d4102c3",
+      "role": "strict hosted-vs-candidate semantic conformance gate"
+    },
+    {
+      "path": "selfhost/compiler/stage1_semantic_stream_v2.s3",
+      "blob_sha": "25547bd944468f366a8bd7d072ee284f8c657299",
+      "role": "S3IR2 v2 Stage1 emission primitives"
+    },
+    {
+      "path": "tests/test_stage1_semantic_stream_v2.py",
+      "blob_sha": "af43223c9da31d5bd7ab9c6ab9314c5055acb696",
+      "role": "focused five-lane hosted regression tests"
+    },
+    {
+      "path": "reports/selfhost/stage1/semantic-ir-v2-handoff-contract.json",
+      "blob_sha": "9866b8ec2d31822e529dce687ff45fa87029e0ef",
+      "role": "machine-readable frozen protocol contract"
+    }
+  ],
+  "python_dependency_edges": [
+    "tools/stage1_semantic_stream_v2.py -> tools/stage1_semantic_ir_reference.py",
+    "tools/stage1_semantic_stream_v2.py -> tools/stage1_source_binding_reference.py",
+    "tools/verify_stage1_semantic_conformance_v2.py -> tools/stage1_semantic_stream_v2.py",
+    "tests/test_stage1_semantic_stream_v2.py -> tools/stage1_semantic_stream_v2.py",
+    "tests/test_stage1_semantic_stream_v2.py -> tools/verify_stage1_semantic_conformance_v2.py"
+  ],
+  "already_expected_in_pr268_base": [
+    "bootstrap/s3/ir.py",
+    "bootstrap/s3/ast.py",
+    "bootstrap/s3/pipeline.py"
+  ],
+  "stage02_rule": "If any required file is absent or its imported blob differs from this manifest, repair the selective import before interpreting pytest/compileall results as semantic evidence.",
+  "promotion_effect": "NONE_HOSTED_CONTRACT_ONLY"
+}
