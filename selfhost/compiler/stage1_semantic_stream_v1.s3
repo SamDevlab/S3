@@ -1,7 +1,29 @@
+foreign fn s3_stage1_read_byte(index: i64) -> tryte
 foreign fn s3_stage1_write_byte(value: tryte) -> tryte
+
+fn semantic_read_byte(index: i64) -> tryte:
+    return s3_stage1_read_byte(index)
 
 fn semantic_write_byte(value: tryte) -> tryte:
     return s3_stage1_write_byte(value)
+
+fn semantic_span_equal(left_start: i64, left_length: i64, right_start: i64, right_length: i64) -> trit:
+    match left_length == right_length:
+        -1:
+            mut offset: i64 = 0
+            while offset < left_length:
+                match semantic_read_byte(left_start + offset) == semantic_read_byte(right_start + offset):
+                    -1:
+                        offset += 1
+                    0:
+                        return 0
+                    1:
+                        return 0
+            return -1
+        0:
+            return 0
+        1:
+            return 0
 
 fn semantic_emit_nonnegative(value: i64) -> trit:
     mut number: i64 = value
@@ -73,6 +95,16 @@ fn semantic_emit_value(value_id: i64, owner_function: i64, kind: i64, type_code:
     discard semantic_emit_field(name_length)
     discard semantic_emit_field(mutable_flag)
     discard semantic_emit_field(storage_id)
+    return semantic_emit_eol()
+
+fn semantic_emit_memory(owner_function: i64, memory_id: i64, type_code: i64, length: i64, mutable_flag: i64) -> trit:
+    # M owner memory type length mutable\n
+    discard semantic_write_byte(77)
+    discard semantic_emit_field(owner_function)
+    discard semantic_emit_field(memory_id)
+    discard semantic_emit_field(type_code)
+    discard semantic_emit_field(length)
+    discard semantic_emit_field(mutable_flag)
     return semantic_emit_eol()
 
 fn semantic_emit_instruction(instruction_id: i64, owner_function: i64, owner_block: i64, ordinal: i64, opcode: i64, result_count: i64, operand_count: i64, aux_a: i64, aux_b: i64) -> trit:
