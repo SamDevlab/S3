@@ -1,6 +1,6 @@
 {
   "schema": "s3.codex-control.stage1-semantic-v2.v1",
-  "control_revision": 4,
+  "control_revision": 5,
   "control_branch": "control/codex-stage1-semantic-v2-20260827",
   "implementation_branch": "feature/actual-stage1-compiler-seed-20260824",
   "implementation_pr": 268,
@@ -20,6 +20,7 @@
   "stage02_hosted_contract_qualified": true,
   "stage03_transition_observed": true,
   "stage03_evidence_backfill_required": true,
+  "stage04_operator_scope_corrected": true,
   "emergency_stop": false,
   "pause_after_current_stage": false,
   "allow_automatic_stage_advance": true,
@@ -32,5 +33,5 @@
   "stage2_authorized": false,
   "stage3_authorized": false,
   "t4_authorized": false,
-  "notes": "Revision 4 aligns the live control route with Codex's observed Stage04 expression-lowering work. This does not retroactively fabricate Stage03 PASS; Stage03 evidence must be backfilled in the next checkpoint. Canonical Stage1 mutation remains unauthorized."
+  "notes": "Revision 5 keeps Stage04 active but corrects the operator scope to the actual S3 language: no multiplication/division/remainder in the current AST/IR. Use supported unary -, ~; binary +, -, &, |, <=> and relational operators. Stage03 evidence still requires backfill. Canonical Stage1 mutation remains unauthorized."
 }
