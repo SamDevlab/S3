@@ -1,0 +1,107 @@
+{
+  "schema": "s3.selfhost.semantic-ir-v2-handoff-contract.v1",
+  "status": "REFERENCE_AND_CONFORMANCE_LAYER_COMPLETE",
+  "protocol": {
+    "name": "S3IR2",
+    "version": 2,
+    "header": "S3IR2 2",
+    "authoritative_python": "tools/stage1_semantic_stream_v2.py",
+    "authoritative_s3_primitives": "selfhost/compiler/stage1_semantic_stream_v2.s3",
+    "conformance_gate": "tools/verify_stage1_semantic_conformance_v2.py",
+    "complete_mask": 31,
+    "records": ["F", "B", "V", "M", "I", "O", "R", "C", "A", "T", "Z"]
+  },
+  "lanes": {
+    "S1_typed_values_and_bindings": {
+      "bit": 1,
+      "required": [
+        "parameters have typed logical value identity",
+        "locals and loop variables have source binding identity",
+        "constants have typed value definitions",
+        "every instruction result has a typed logical value",
+        "logical value identity is independent from physical storage"
+      ]
+    },
+    "S2_instruction_def_use": {
+      "bit": 2,
+      "required": [
+        "every instruction has stable owner function/block/ordinal/opcode",
+        "every operand is an O edge to a defined logical value",
+        "every result is an R edge to exactly one logical value definition",
+        "result and operand cardinalities match the I record"
+      ]
+    },
+    "S3_call_dataflow": {
+      "bit": 4,
+      "required": [
+        "callee kind is internal, foreign, or builtin/external",
+        "internal/foreign callee function ID is resolved when available",
+        "argument A edges preserve source order",
+        "call result values are the corresponding I/R results"
+      ]
+    },
+    "S4_complete_terminators": {
+      "bit": 8,
+      "required": [
+        "every non-external block has one terminal T record",
+        "RETURN carries its return value when present",
+        "JUMP stores its sole target in target_negative and leaves zero/positive unset",
+        "BRANCH3 carries one condition value and negative/zero/positive block IDs"
+      ]
+    },
+    "S5_canonical_serialization": {
+      "bit": 16,
+      "required": [
+        "record order is deterministic",
+        "numeric IDs are deterministic semantic IDs rather than physical slots",
+        "stream is parseable and internally valid",
+        "Z 31 is emitted only after S1-S4 are complete",
+        "any unresolved semantic condition must emit a mask smaller than 31"
+      ]
+    }
+  },
+  "identity_policy": {
+    "semantic_value_id_equals_physical_slot": false,
+    "physical_slot_reuse_allowed": true,
+    "source_binding_identity": "function + lexical scope + source anchor + exact identifier",
+    "parameter_order": "source declaration order",
+    "instruction_order": "function order, block order, instruction order",
+    "block_ids": "numeric and function-local",
+    "function_ids": "numeric and module-order"
+  },
+  "two_pass_stage1_target": {
+    "pass_1": "lex/parse function signatures and source bindings; resolve function IDs and binding identities",
+    "pass_2": "stream semantic expression/control-flow lowering into S3IR2 v2 using reusable bounded scratch"
+  },
+  "stage1_integration_requirements": [
+    "do not reinterpret the four legacy 365-entry value banks as the semantic namespace",
+    "do not reserve a permanent [0,64) semantic ID domain for parameters",
+    "do not require module-global arrays sized to total instruction/value cardinality",
+    "use bounded expression/operator/binding scratch and stream completed records",
+    "preserve exact argument order and BRANCH3 target ordering",
+    "fail closed on unresolved names, types, uses, calls, blocks, or terminators"
+  ],
+  "qualification": {
+    "reference_layer": "COMPLETE",
+    "stream_protocol": "FROZEN_V2",
+    "strict_conformance_gate": "IMPLEMENTED",
+    "s3_emission_primitives": "IMPLEMENTED",
+    "selfhost_stage1_parser_lowering_integrated": false,
+    "canonical_stage1_mutated": false,
+    "pr268_mutated": false,
+    "native_stage1_v2_evidence": false,
+    "self_emit_authorized": false,
+    "stage2_authorized": false,
+    "stage3_authorized": false,
+    "t4_authorized": false
+  },
+  "codex_acceptance_gate": [
+    "python -m pytest -q tests/test_stage1_semantic_stream_v2.py",
+    "python -m bootstrap.s3.cli check selfhost/compiler/stage1_semantic_stream_v2.s3",
+    "generate a Stage1 candidate without overwriting selfhost/compiler/s3c_stage1.s3",
+    "build that candidate with tools/build_stage1_compiler.py on Linux x86-64",
+    "run the candidate against focused semantic fixtures",
+    "validate every emitted stream with tools/verify_stage1_semantic_conformance_v2.py",
+    "only after representative and canonical-source conformance PASS may a canonical Stage1 patch be proposed"
+  ]
+}
