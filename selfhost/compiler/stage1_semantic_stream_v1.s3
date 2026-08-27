@@ -1,0 +1,151 @@
+foreign fn s3_stage1_write_byte(value: tryte) -> tryte
+
+fn semantic_write_byte(value: tryte) -> tryte:
+    return s3_stage1_write_byte(value)
+
+fn semantic_emit_nonnegative(value: i64) -> trit:
+    mut number: i64 = value
+    match number < 0:
+        -1:
+            return 0
+        0:
+            discard 0
+        1:
+            discard 0
+    match number == 0:
+        -1:
+            discard semantic_write_byte(48)
+            return -1
+        0:
+            discard 0
+        1:
+            discard 0
+    mut divisor: i64 = 1
+    mut probe: i64 = number
+    while probe >= 10:
+        probe = probe / 10
+        divisor = divisor * 10
+    while divisor > 0:
+        mut digit: i64 = number / divisor
+        discard semantic_write_byte(to_tryte(digit + 48))
+        number = number - digit * divisor
+        divisor = divisor / 10
+    return -1
+
+fn semantic_emit_signed(value: i64) -> trit:
+    match value < 0:
+        -1:
+            discard semantic_write_byte(45)
+            return semantic_emit_nonnegative(0 - value)
+        0:
+            return semantic_emit_nonnegative(value)
+        1:
+            return semantic_emit_nonnegative(value)
+
+fn semantic_emit_field(value: i64) -> trit:
+    discard semantic_write_byte(32)
+    return semantic_emit_signed(value)
+
+fn semantic_emit_eol() -> trit:
+    discard semantic_write_byte(10)
+    return -1
+
+fn semantic_emit_header() -> trit:
+    # S3IR2 1\n
+    discard semantic_write_byte(83)
+    discard semantic_write_byte(51)
+    discard semantic_write_byte(73)
+    discard semantic_write_byte(82)
+    discard semantic_write_byte(50)
+    discard semantic_write_byte(32)
+    discard semantic_write_byte(49)
+    discard semantic_write_byte(10)
+    return -1
+
+fn semantic_emit_value(value_id: i64, owner_function: i64, kind: i64, type_code: i64, name_start: i64, name_length: i64, mutable_flag: i64, storage_id: i64) -> trit:
+    # V value owner kind type name_start name_length mutable storage\n
+    discard semantic_write_byte(86)
+    discard semantic_emit_field(value_id)
+    discard semantic_emit_field(owner_function)
+    discard semantic_emit_field(kind)
+    discard semantic_emit_field(type_code)
+    discard semantic_emit_field(name_start)
+    discard semantic_emit_field(name_length)
+    discard semantic_emit_field(mutable_flag)
+    discard semantic_emit_field(storage_id)
+    return semantic_emit_eol()
+
+fn semantic_emit_instruction(instruction_id: i64, owner_function: i64, owner_block: i64, ordinal: i64, opcode: i64, result_count: i64, operand_count: i64, aux_a: i64, aux_b: i64) -> trit:
+    # I id owner block ordinal opcode results operands aux_a aux_b\n
+    discard semantic_write_byte(73)
+    discard semantic_emit_field(instruction_id)
+    discard semantic_emit_field(owner_function)
+    discard semantic_emit_field(owner_block)
+    discard semantic_emit_field(ordinal)
+    discard semantic_emit_field(opcode)
+    discard semantic_emit_field(result_count)
+    discard semantic_emit_field(operand_count)
+    discard semantic_emit_field(aux_a)
+    discard semantic_emit_field(aux_b)
+    return semantic_emit_eol()
+
+fn semantic_emit_operand(instruction_id: i64, ordinal: i64, value_id: i64) -> trit:
+    # O instruction ordinal value\n
+    discard semantic_write_byte(79)
+    discard semantic_emit_field(instruction_id)
+    discard semantic_emit_field(ordinal)
+    discard semantic_emit_field(value_id)
+    return semantic_emit_eol()
+
+fn semantic_emit_result(instruction_id: i64, ordinal: i64, value_id: i64) -> trit:
+    # R instruction ordinal value\n
+    discard semantic_write_byte(82)
+    discard semantic_emit_field(instruction_id)
+    discard semantic_emit_field(ordinal)
+    discard semantic_emit_field(value_id)
+    return semantic_emit_eol()
+
+fn semantic_emit_call(instruction_id: i64, callee_kind: i64, callee_function: i64, callee_name_start: i64, callee_name_length: i64, argument_count: i64, result_count: i64) -> trit:
+    # C instruction kind function name_start name_length args results\n
+    discard semantic_write_byte(67)
+    discard semantic_emit_field(instruction_id)
+    discard semantic_emit_field(callee_kind)
+    discard semantic_emit_field(callee_function)
+    discard semantic_emit_field(callee_name_start)
+    discard semantic_emit_field(callee_name_length)
+    discard semantic_emit_field(argument_count)
+    discard semantic_emit_field(result_count)
+    return semantic_emit_eol()
+
+fn semantic_emit_call_argument(instruction_id: i64, ordinal: i64, value_id: i64) -> trit:
+    # A instruction ordinal value\n
+    discard semantic_write_byte(65)
+    discard semantic_emit_field(instruction_id)
+    discard semantic_emit_field(ordinal)
+    discard semantic_emit_field(value_id)
+    return semantic_emit_eol()
+
+fn semantic_emit_terminator(instruction_id: i64, kind: i64, condition_value_id: i64, target_negative: i64, target_zero: i64, target_positive: i64, return_value_id: i64) -> trit:
+    # T instruction kind condition negative zero positive return\n
+    discard semantic_write_byte(84)
+    discard semantic_emit_field(instruction_id)
+    discard semantic_emit_field(kind)
+    discard semantic_emit_field(condition_value_id)
+    discard semantic_emit_field(target_negative)
+    discard semantic_emit_field(target_zero)
+    discard semantic_emit_field(target_positive)
+    discard semantic_emit_field(return_value_id)
+    return semantic_emit_eol()
+
+fn semantic_emit_complete(mask: i64) -> trit:
+    # Z completeness-mask\n
+    discard semantic_write_byte(90)
+    discard semantic_emit_field(mask)
+    return semantic_emit_eol()
+
+fn main() -> i64:
+    # Compile-time fixture only. The canonical Stage1 port will call these helpers
+    # from its lowering pass; this standalone main proves the protocol is ordinary S3.
+    discard semantic_emit_header()
+    discard semantic_emit_complete(0)
+    return 0
