@@ -1,0 +1,50 @@
+{
+  "schema": "s3.codex-control.stage05-triage-decision-table.v1",
+  "stage": "05_CALLS_ARRAYS_S3",
+  "current_fixture": "internal_one_arg_call",
+  "rules": [
+    {
+      "id": "already_false_before_close",
+      "when": "BEFORE_CLOSE_PARSE_OK is false/0",
+      "classification": "ARGUMENT_STOP_OR_TOKEN_BEFORE_RIGHT_PAREN",
+      "next_owner": "argument expression stop predicate or token immediately before RIGHT_PAREN",
+      "forbid": ["close bookkeeping patch", "C/A patch", "foreign", "arrays"]
+    },
+    {
+      "id": "flips_inside_close",
+      "when": "BEFORE_CLOSE_PARSE_OK is valid/-1 and AFTER_CLOSE_PARSE_OK is false/0",
+      "classification": "RIGHT_PAREN_CALL_CLOSE",
+      "next_owner": "first exact condition in current_code == 2 that changes parse_ok",
+      "inspect_order": [
+        "argument-complete / arity predicate",
+        "paren depth decrement exactly once",
+        "generic RIGHT_PAREN rejection fallthrough",
+        "call-frame restoration"
+      ],
+      "forbid": ["multiple speculative fixes", "foreign", "arrays"]
+    },
+    {
+      "id": "close_valid_but_z0",
+      "when": "BEFORE_CLOSE_PARSE_OK and AFTER_CLOSE_PARSE_OK are valid but final Z_MASK == 0",
+      "classification": "POST_PARSE_FINALIZATION_OR_COMPLETENESS",
+      "next_owner": "strict Stage05 conformance first mismatch after clean regeneration",
+      "forbid": ["more parser edits before conformance", "foreign", "arrays"]
+    },
+    {
+      "id": "minimal_call_z7",
+      "when": "internal_one_arg_call Z_MASK == 7 and strict conformance PASS",
+      "classification": "FIRST_INTERNAL_CALL_CLOSED",
+      "next_owner": "zero_arg_internal_call using same binary when possible",
+      "forbid": ["foreign before internal matrix", "arrays before internal matrix"]
+    },
+    {
+      "id": "semantic_call_mismatch",
+      "when": "parser valid but strict conformance FAIL",
+      "classification": "S3_CALL_DATAFLOW_MISMATCH",
+      "next_owner": "first verifier mismatch only",
+      "inspect_order": ["CALL opcode 14", "O order", "R result", "C callee metadata/span", "A order and identity"],
+      "forbid": ["parser rewrite without parser evidence", "broad matrix"]
+    }
+  ],
+  "global_rule": "One real blocker per cycle. Preserve raw evidence and candidate/binary hashes. Never infer PASS from structure alone."
+}
