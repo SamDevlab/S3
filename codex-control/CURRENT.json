@@ -1,6 +1,6 @@
 {
   "schema": "s3.codex-control.stage1-semantic-v2.v1",
-  "control_revision": 5,
+  "control_revision": 6,
   "control_branch": "control/codex-stage1-semantic-v2-20260827",
   "implementation_branch": "feature/actual-stage1-compiler-seed-20260824",
   "implementation_pr": 268,
@@ -14,6 +14,7 @@
   "stage_sequence_file": "codex-control/STAGE_SEQUENCE.json",
   "mandatory_override_file": "codex-control/OVERRIDES.md",
   "handoff_import_manifest_file": "codex-control/HANDOFF_IMPORT_MANIFEST.json",
+  "stage04_fast_path_file": "codex-control/STAGE04_FAST_PATH.md",
   "active_stage": "04_EXPRESSIONS_S1_S2",
   "active_stage_file": "codex-control/stages/04_EXPRESSIONS_S1_S2.md",
   "initial_control_package_complete": true,
@@ -21,6 +22,7 @@
   "stage03_transition_observed": true,
   "stage03_evidence_backfill_required": true,
   "stage04_operator_scope_corrected": true,
+  "stage04_fast_path_active": true,
   "emergency_stop": false,
   "pause_after_current_stage": false,
   "allow_automatic_stage_advance": true,
@@ -33,5 +35,5 @@
   "stage2_authorized": false,
   "stage3_authorized": false,
   "t4_authorized": false,
-  "notes": "Revision 5 keeps Stage04 active but corrects the operator scope to the actual S3 language: no multiplication/division/remainder in the current AST/IR. Use supported unary -, ~; binary +, -, &, |, <=> and relational operators. Stage03 evidence still requires backfill. Canonical Stage1 mutation remains unauthorized."
+  "notes": "Revision 6 keeps Stage04 active and adds a closure fast path. Finish the in-flight cast proof, rerun the fixed regression matrix, then strict representative conformance; fix only the first real blocker per cycle. Do not repeatedly re-prove healthy infrastructure. Z 3 remains the expected Stage04 mask. Canonical mutation and all bootstrap actions remain unauthorized."
 }
