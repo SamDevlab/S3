@@ -1,6 +1,6 @@
 # Live overrides
 
-CONTROL_REVISION: 14
+CONTROL_REVISION: 15
 
 No emergency stop is active.
 
@@ -10,8 +10,10 @@ No emergency stop is active.
 - Stage 05 remains active under paired engineering mode.
 - Automatic stage advance remains disabled.
 - Finish the already in-flight `current_code == 2` right-parenthesis diagnostic build before applying any new repair.
-- For the current Stage05 campaign, use `codex-control/STAGE05_COMMAND_CARD.md` as the short operational entry point after reading `CURRENT.json` and this file.
-- Use `codex-control/STAGE05_TRIAGE_DECISION_TABLE.json` to classify the close probe and `codex-control/STAGE05_POSTFIX_REGRESSION_MATRIX.json` for post-fix same-binary regression order.
+- Use `codex-control/STAGE05_COMMAND_CARD.md` as the short operational entry point after reading `CURRENT.json` and this file.
+- Use `codex-control/STAGE05_TRIAGE_DECISION_TABLE.json` to classify the close probe.
+- Use `codex-control/STAGE05_POSTFIX_REGRESSION_MATRIX.json` for post-fix same-binary regression order.
+- Use exact source files under `codex-control/fixtures/stage05/`; verify every fixture against `codex-control/fixtures/stage05/MANIFEST.json` before execution. Do not hand-build Stage05 probe strings when a pinned fixture exists.
 
 ## Current blocker
 
@@ -68,19 +70,31 @@ BEFORE valid, AFTER valid, final Z 0
 
 Patch one proven owning condition only.
 
-## Fast path after the eventual repair
+## Exact fixture materialization
 
-Do not waste a native build per fixture.
+The current minimal call fixture is pinned as:
+
+```text
+path=codex-control/fixtures/stage05/internal_one_arg_call.s3
+bytes=87
+sha256=769480e71eb4ed6711aa1bc608f000ea6f2802894df9796871277a33d72b2f34
+```
+
+Use the materialization command in `STAGE05_COMMAND_CARD.md`; if the local hash differs, do not execute the fixture.
+
+## Fast path after the eventual repair
 
 1. regenerate clean candidate;
 2. `s3 check` once;
 3. record candidate SHA256;
 4. build one Linux native binary;
 5. record binary SHA256;
-6. reuse the same binary through the unlocked fixtures in `STAGE05_POSTFIX_REGRESSION_MATRIX.json`;
+6. reuse that same binary through only the unlocked fixtures in `STAGE05_POSTFIX_REGRESSION_MATRIX.json`;
 7. stop at the first unexpected parser/semantic/mask result;
 8. run strict Stage05 conformance immediately on the first valid internal call before another source edit;
 9. emit a paired checkpoint.
+
+Do not rebuild between fixtures while candidate source/hash is unchanged.
 
 The first valid internal call requires exact S1+S2+S3 semantics and `Z 7`. `Z 31` remains forbidden until S4/S5 close.
 
