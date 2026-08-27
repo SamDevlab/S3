@@ -1,6 +1,6 @@
 {
   "schema": "s3.codex-control.stage1-semantic-v2.v1",
-  "control_revision": 9,
+  "control_revision": 10,
   "control_branch": "control/codex-stage1-semantic-v2-20260827",
   "implementation_branch": "feature/actual-stage1-compiler-seed-20260824",
   "implementation_pr": 268,
@@ -16,6 +16,7 @@
   "handoff_import_manifest_file": "codex-control/HANDOFF_IMPORT_MANIFEST.json",
   "pairing_mode_file": "codex-control/PAIRING_MODE.md",
   "stage05_pairing_plan_file": "codex-control/STAGE05_PAIRING_PLAN.md",
+  "stage05_call_parse_diagnosis_file": "codex-control/STAGE05_CALL_PARSE_DIAGNOSIS.md",
   "active_stage": "05_CALLS_ARRAYS_S3",
   "active_stage_file": "codex-control/stages/05_CALLS_ARRAYS_S3.md",
   "initial_control_package_complete": true,
@@ -30,7 +31,10 @@
   "stage04_checkpoint_remote_backfill_required": true,
   "paired_engineering_mode_active": true,
   "stage05_first_slice": "INTERNAL_CALL_PARSE_OK_AND_S3_DATAFLOW",
-  "stage05_first_blocker": "LOCATE_FIRST_PARSE_OK_ZERO_TRANSITION",
+  "stage05_first_blocker": "VALID_INTERNAL_CALL_REJECTED_DURING_PARSER_PHASE",
+  "stage05_parse_failure_localized": true,
+  "stage05_parse_failure_before_evaluation": true,
+  "stage05_next_repair": "CALL_POSTFIX_OPEN_ARGUMENT_STOP_OR_RIGHT_PAREN_CLOSE_BRANCH",
   "emergency_stop": false,
   "pause_after_current_stage": false,
   "allow_automatic_stage_advance": false,
@@ -43,5 +47,5 @@
   "stage2_authorized": false,
   "stage3_authorized": false,
   "t4_authorized": false,
-  "notes": "Revision 9 jointly accepts the user-supplied Stage04 evidence for transition as PASS_REPORTED_PENDING_REMOTE_BACKFILL and activates Stage05. Codex must finish the already in-flight parse_ok diagnostic first, preserve candidate/binary hashes, regenerate the clean candidate after diagnostic instrumentation, and close one minimal internal call before broadening to zero-arg/nested/foreign/arrays. S1+S2+S3 stage-appropriate success is Z 7; Z 31 remains forbidden. Automatic stage advance remains disabled. Canonical mutation and all bootstrap actions remain unauthorized."
+  "notes": "Revision 10 consumes the latest paired diagnostic: a simple helper expression remains parse_ok=-1 while helper(1) reaches parse_ok=0 during parsing, before evaluation. Stage05 remains active. Read STAGE05_CALL_PARSE_DIAGNOSIS.md and repair exactly one call-parser owning branch (call-vs-grouping classification, argument stop, right-paren close, or call-frame restoration) before any broad matrix. Regenerate a clean candidate after instrumentation, run s3 check, one native build, the same internal-call fixture, and strict Stage05 conformance. Success for S1+S2+S3 is Z 7. Candidate/binary hashes remain required backfill if absent. No foreign calls, arrays, Stage06, canonical mutation, SELF_EMIT, Stage2, Stage3, or T4 are authorized."
 }
