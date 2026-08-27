@@ -1,6 +1,6 @@
 {
   "schema": "s3.codex-control.stage1-semantic-v2.v1",
-  "control_revision": 10,
+  "control_revision": 11,
   "control_branch": "control/codex-stage1-semantic-v2-20260827",
   "implementation_branch": "feature/actual-stage1-compiler-seed-20260824",
   "implementation_pr": 268,
@@ -17,6 +17,7 @@
   "pairing_mode_file": "codex-control/PAIRING_MODE.md",
   "stage05_pairing_plan_file": "codex-control/STAGE05_PAIRING_PLAN.md",
   "stage05_call_parse_diagnosis_file": "codex-control/STAGE05_CALL_PARSE_DIAGNOSIS.md",
+  "stage05_call_paren_differential_file": "codex-control/STAGE05_CALL_PAREN_DIFFERENTIAL.md",
   "active_stage": "05_CALLS_ARRAYS_S3",
   "active_stage_file": "codex-control/stages/05_CALLS_ARRAYS_S3.md",
   "initial_control_package_complete": true,
@@ -34,7 +35,10 @@
   "stage05_first_blocker": "VALID_INTERNAL_CALL_REJECTED_DURING_PARSER_PHASE",
   "stage05_parse_failure_localized": true,
   "stage05_parse_failure_before_evaluation": true,
-  "stage05_next_repair": "CALL_POSTFIX_OPEN_ARGUMENT_STOP_OR_RIGHT_PAREN_CLOSE_BRANCH",
+  "stage05_debug_instrumentation_removed": true,
+  "stage05_clean_native_build_in_flight_reported": true,
+  "stage05_next_probe": "CALL_VS_GROUPING_DIFFERENTIAL_SAME_BINARY",
+  "stage05_next_repair": "DEFER_UNTIL_DIFFERENTIAL_CLASSIFIES_CALL_SPECIFIC_VS_GENERIC_PAREN",
   "emergency_stop": false,
   "pause_after_current_stage": false,
   "allow_automatic_stage_advance": false,
@@ -47,5 +51,5 @@
   "stage2_authorized": false,
   "stage3_authorized": false,
   "t4_authorized": false,
-  "notes": "Revision 10 consumes the latest paired diagnostic: a simple helper expression remains parse_ok=-1 while helper(1) reaches parse_ok=0 during parsing, before evaluation. Stage05 remains active. Read STAGE05_CALL_PARSE_DIAGNOSIS.md and repair exactly one call-parser owning branch (call-vs-grouping classification, argument stop, right-paren close, or call-frame restoration) before any broad matrix. Regenerate a clean candidate after instrumentation, run s3 check, one native build, the same internal-call fixture, and strict Stage05 conformance. Success for S1+S2+S3 is Z 7. Candidate/binary hashes remain required backfill if absent. No foreign calls, arrays, Stage06, canonical mutation, SELF_EMIT, Stage2, Stage3, or T4 are authorized."
+  "notes": "Revision 11 consumes the latest paired update: deeper debug instrumentation was rejected only because of debug-only indentation, then fully removed; a clean candidate was regenerated and one native build is already in flight. Do not start another build. When that exact build completes, run the A/B fixtures in STAGE05_CALL_PAREN_DIFFERENTIAL.md through the same binary. Grouping succeeds while helper(1) fails => call-specific postfix/frame bug; both fail => shared paren/depth bug; both succeed => stale debug state was the prior blocker and strict Stage05 conformance is next. Preserve exact candidate/binary hashes and raw exit/Z evidence. No foreign calls, arrays, Stage06, canonical mutation, SELF_EMIT, Stage2, Stage3, or T4 are authorized."
 }
