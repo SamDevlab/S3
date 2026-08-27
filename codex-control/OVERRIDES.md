@@ -1,91 +1,96 @@
 # Live overrides
 
-CONTROL_REVISION: 22
+CONTROL_REVISION: 23
 
-No emergency stop is active.
+## TEMPORARY EMERGENCY RECONCILIATION STOP
 
-## Current direction
+A context-compaction drift mixed the valid paired Stage05 call campaign with an older PR #268/pre-IR/compaction route. Until the revision-23 recovery checkpoint is returned, the only authorized work is **state capture plus narrowly-scoped temporary-disk cleanup**.
 
-- Stage 04 remains accepted for transition as `PASS_REPORTED_PENDING_REMOTE_BACKFILL`.
-- Stage 05 remains active under paired engineering mode.
-- Automatic stage advance remains disabled.
-- One-argument internal call remains the positive control (`RC=0`, `C`, ordered `A`, `Z3`).
-- Unresolved callee fail-closed behavior remains reported intact.
-- The evaluator is no longer the current owner: latest telemetry shows `parse_ok` is already zero before evaluator-error markers fire.
-- The latest trace found a common-parenthesis/legacy-dispatch path reached by a token already consumed by Stage05.
-- Preserve both previous comma/cursor repairs.
-- Preserve the new localized consumed-token guard: a token explicitly consumed by Stage05 in the current cycle must not be processed/rejected again by the legacy dispatcher in that same cycle.
-- Do not globally whitelist punctuation or parentheses; unconsumed/invalid tokens retain legacy fail-closed behavior.
-- Read `codex-control/STAGE05_CONSUMED_TOKEN_LEGACY_GUARD.md` before any later permanent source edit.
+Read first:
+
+```text
+codex-control/RECOVERY_REV23_WORKTREE_RECONCILIATION.md
+```
+
+## Valid Stage05 progress that must be preserved
+
+Latest supplied evidence before the route drift reports:
+
+```text
+one-arg internal call -> structural good / Z3
+ordered multi-arg internal call -> recovered to Z3
+unresolved callee -> fail-closed
+nested call with representable inner result -> pass
+nested fixture using a + 1 -> fails because arithmetic expression lowering is limited
+same a + 1 limitation reproduces without a call
+```
+
+Therefore do **not** relabel the arithmetic dependency as a nested-call bug, and do not discard the consumed-token guard or the two comma/cursor repairs.
+
+## Out-of-scope drift that must stop now
+
+Do not continue:
+
+- array lowering/inspection;
+- foreign-call lowering;
+- old pre-IR/token-lane/compaction route;
+- E0/E1 2x2 cross-build experiments;
+- T4;
+- benchmarks;
+- capacity planning;
+- Stage06 or later;
+- canonical promotion/restoration/mutation;
+- implementation commits.
+
+The remote PR #268 HEAD observed by ChatGPT is still:
+
+```text
+326d42f8a2623ced5a2151d6daaf2d67743faca8
+```
+
+so the later drift is local/unpushed and must be reconciled before any promotion.
 
 ## Current atomic task
 
-A clean candidate containing the consumed-token guard is already reported in one native Linux build.
+Do **not** start a new compiler build.
 
-Finish that exact build. Do not start another build or source edit before it terminates.
+1. If the previously running build already ended, record only its terminal state.
+2. Capture current worktree HEAD/branch/status/diff summary.
+3. Capture local canonical SHA256/bytes and HEAD canonical SHA256/bytes.
+4. Save the canonical diff as a patch outside the repository before any future restore/revert.
+5. Capture Stage05 candidate and transform SHA256 if present.
+6. Confirm whether temporary Stage05 telemetry remains in the candidate/transform.
+7. Record guest free-space state.
+8. Remove only disposable `/tmp` artifacts clearly created by the current Stage05/2x2 diagnostic attempts; do not delete repository files, toolchains, caches, or unknown untracked worktree files.
+9. Record free-space state again.
+10. Return the exact `PAIRING_RECOVERY_BEGIN ... PAIRING_RECOVERY_END` block from the revision-23 recovery file.
 
-Then reuse the same binary for:
+## Destructive commands forbidden during recovery
 
-```text
-zero_arg_internal_call.s3
-internal_one_arg_call.s3
-ordered_two_arg_internal_call.s3
-```
-
-Record available evidence:
-
-```text
-EXIT_CODE=
-Z_MASK=
-CALL_OPCODE=
-C_RECORD_PRESENT=
-A_RECORD_COUNT=
-A_VALUE_IDS_IN_SOURCE_ORDER=
-O_RECORD_COUNT=
-O_VALUE_IDS_IN_SOURCE_ORDER=
-R_RECORD_COUNT=
-PARSE_OK_FINAL=
-```
-
-Stop on the first valid-call `Z0`, parser regression or malformed `C/A/O/R` shape.
-
-## Decision after build
+Do not run:
 
 ```text
-one-arg regresses
-  -> stop; consumed-token guard may be too broad/shared state regressed
-
-two-arg remains Z0
-  -> preserve first remaining setter only; do not reopen capacity/evaluator by default
-
-zero/one/two structurally valid
-  -> run stage-local strict Stage05 conformance on the one-arg fixture
-
-strict FAIL
-  -> preserve verifier JSON
-  -> consume errors[0] only
-
-strict PASS + Z3
-  -> inspect Stage05/S3 completeness predicate only
-  -> do not force bit 4
-
-strict PASS + Z7
-  -> continue internal matrix on same binary: nested -> result reuse -> unresolved fail-closed
+git reset --hard
+git clean
+git checkout -- <canonical>
+git restore <canonical>
 ```
 
-## Locked work
-
-No arrays.
-No foreign-call edits.
-No capacity changes.
-No generic parser/evaluator traces unless the new clean build directly requires one.
-No Stage06 or later.
+Do not delete untracked worktree files before listing them. Do not revert the canonical file yet; its provenance must be captured first.
 
 ## Authorization boundary
 
-Canonical `selfhost/compiler/s3c_stage1.s3` mutation remains unauthorized.
-SELF_EMIT remains unauthorized.
-Stage2 remains unauthorized.
-Stage3 remains unauthorized.
-T4 remains unauthorized.
-Stage06 remains unauthorized.
+New native build = NO
+Implementation commit = NO
+Canonical mutation = NO
+Canonical restore/revert = NO until next control revision
+SELF_EMIT = NO
+Stage2 = NO
+Stage3 = NO
+T4 = NO
+Benchmark = NO
+Stage06 = NO
+Arrays = NO
+Foreign calls = NO
+
+The next control revision will resume Stage05 from the preserved call evidence after this reconciliation is reviewed.
