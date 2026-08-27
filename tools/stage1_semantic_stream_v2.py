@@ -116,6 +116,38 @@ def _anchor(row: dict[str, Any], *, default_length: int = 0) -> tuple[int, int]:
     return offset, default_length
 
 
+def _is_identifier_char(value: str) -> bool:
+    return value == "_" or value.isalnum()
+
+
+def _find_identifier_anchor(source: str, approximate_offset: int, name: str) -> int:
+    """Resolve an exact ASCII identifier start near a hosted source location."""
+
+    if not name:
+        return -1
+    if approximate_offset < 0 or approximate_offset > len(source):
+        approximate_offset = 0
+    line_start = source.rfind("\n", 0, approximate_offset) + 1
+    line_end = source.find("\n", approximate_offset)
+    if line_end < 0:
+        line_end = len(source)
+    candidates: list[int] = []
+    cursor = line_start
+    while cursor <= line_end - len(name):
+        found = source.find(name, cursor, line_end)
+        if found < 0:
+            break
+        before_ok = found == 0 or not _is_identifier_char(source[found - 1])
+        after_index = found + len(name)
+        after_ok = after_index >= len(source) or not _is_identifier_char(source[after_index])
+        if before_ok and after_ok:
+            candidates.append(found)
+        cursor = found + 1
+    if not candidates:
+        return -1
+    return min(candidates, key=lambda item: abs(item - approximate_offset))
+
+
 def _binding_type_code(declared: str) -> int:
     if declared.startswith("array["):
         return TYPE_CODES["array"]
@@ -131,6 +163,10 @@ def _canonical_json(value: object) -> bytes:
 
 
 def build_model(source: str) -> dict[str, Any]:
+    if not source.isascii():
+        raise SemanticStreamV2Error(
+            "S3IR2 v2 Stage1 source anchors currently require the ASCII self-hosting subset"
+        )
     source_bytes = source.encode("utf-8")
     compilation = compile_source(source)
     if compilation.ir is None:
@@ -148,7 +184,8 @@ def build_model(source: str) -> dict[str, Any]:
     for function_index, function in enumerate(program.functions):
         function_name_to_index[function.name] = function_index
         location = _source(function)
-        name_start = int(location["offset"]) if isinstance(location, dict) and isinstance(location.get("offset"), int) else -1
+        approximate = int(location["offset"]) if isinstance(location, dict) and isinstance(location.get("offset"), int) else -1
+        name_start = _find_identifier_anchor(source, approximate, function.name)
         functions.append({
             "function_id": function_index,
             "kind": "foreign" if function.external else "internal",
@@ -173,6 +210,10 @@ def build_model(source: str) -> dict[str, Any]:
             row,
             default_length=(len(str(definition.get("parameter_name", ""))) if kind == "parameter" else 0),
         )
+        if kind == "parameter":
+            parameter_name = str(definition.get("parameter_name", ""))
+            start = _find_identifier_anchor(source, start, parameter_name)
+            length = len(parameter_name)
         value_row = {
             "value_id": int(row["value_id"]),
             "function_id": int(row["function_index"]),
@@ -192,31 +233,55 @@ def build_model(source: str) -> dict[str, Any]:
     next_value_id = max((row["value_id"] for row in value_rows), default=-1) + 1
     binding_rows: list[dict[str, Any]] = []
     for binding in bindings["bindings"]:
+        binding_function_name = str(binding["function"])
+        binding_function_id = function_name_to_index.get(binding_function_name)
+        if binding_function_id is None:
+            raise SemanticStreamV2Error(
+                f"source binding owner does not resolve in IR: {binding_function_name}:{binding['name']}"
+            )
         kind = str(binding["kind"])
+        location = binding.get("source")
+        approximate = int(location["offset"]) if isinstance(location, dict) and isinstance(location.get("offset"), int) else -1
+        binding_name = str(binding["name"])
+        exact_name_start = _find_identifier_anchor(source, approximate, binding_name)
+        normalized_binding = {
+            **binding,
+            "function_index": binding_function_id,
+            "source_name_start": exact_name_start,
+            "source_name_length": len(binding_name),
+        }
         if kind == "parameter":
-            key = (int(binding["function_index"]), int(binding["parameter_ordinal"]))
+            key = (binding_function_id, int(binding["parameter_ordinal"]))
             linked = parameter_key_to_value.get(key)
             if linked is None:
-                raise SemanticStreamV2Error(f"parameter binding has no IR value link: {binding['function']}:{binding['name']}")
-            binding_rows.append({**binding, "value_id": linked, "link_status": "LINKED_PARAMETER_VALUE"})
+                raise SemanticStreamV2Error(
+                    f"parameter binding has no IR value link: {binding_function_name}:{binding_name}"
+                )
+            binding_rows.append({
+                **normalized_binding,
+                "value_id": linked,
+                "link_status": "LINKED_PARAMETER_VALUE",
+            })
             continue
         if kind not in {"local", "loop_variable"}:
             continue
-        location = binding.get("source")
-        start = int(location["offset"]) if isinstance(location, dict) and isinstance(location.get("offset"), int) else -1
         declared = str(binding["declared_type"])
         local_value = {
             "value_id": next_value_id,
-            "function_id": int(binding["function_index"]),
+            "function_id": binding_function_id,
             "kind": "local_binding",
             "type": declared,
-            "anchor_start": start,
-            "anchor_length": len(str(binding["name"])),
+            "anchor_start": exact_name_start,
+            "anchor_length": len(binding_name),
             "mutable": bool(binding["mutable"]),
             "storage_id": -1,
         }
         value_rows.append(local_value)
-        binding_rows.append({**binding, "value_id": next_value_id, "link_status": "SOURCE_BINDING_VALUE"})
+        binding_rows.append({
+            **normalized_binding,
+            "value_id": next_value_id,
+            "link_status": "SOURCE_BINDING_VALUE",
+        })
         next_value_id += 1
 
     instructions = list(projected["lanes"]["instructions"])
@@ -244,13 +309,14 @@ def build_model(source: str) -> dict[str, Any]:
     call_rows: list[dict[str, Any]] = []
     for call in projected["lanes"]["calls"]:
         instruction = instruction_by_id[int(call["instruction_id"])]
-        start, _ = _anchor(instruction)
+        approximate, _ = _anchor(instruction)
         callee = call.get("callee")
         callee_name = str(callee) if callee is not None else ""
+        callee_start = _find_identifier_anchor(source, approximate, callee_name) if callee_name else -1
         call_rows.append({
             **call,
             "callee_function_id": function_name_to_index.get(callee_name, -1),
-            "callee_name_start": start,
+            "callee_name_start": callee_start,
             "callee_name_length": len(callee_name) if callee_name else -1,
         })
 
@@ -261,12 +327,14 @@ def build_model(source: str) -> dict[str, Any]:
         for target in term.get("targets", []):
             target_id = block_name_to_index.get((function_id, str(target)))
             if target_id is None:
-                raise SemanticStreamV2Error(f"unresolved terminator target {term['function']}:{target}")
+                raise SemanticStreamV2Error(
+                    f"unresolved terminator target {term['function']}:{target}"
+                )
             target_ids.append(target_id)
         terminator_rows.append({**term, "target_block_ids": target_ids})
 
     completeness = {
-        "S1_typed_values_and_bindings": bool(projected["completeness"].get("typed_value_definitions")) and all(row["link_status"] for row in binding_rows),
+        "S1_typed_values_and_bindings": bool(projected["completeness"].get("typed_value_definitions")) and all(bool(row["link_status"]) for row in binding_rows),
         "S2_instruction_def_use": bool(projected["completeness"].get("instruction_def_use")),
         "S3_call_dataflow": bool(projected["completeness"].get("call_dataflow")) and all(row["callee_kind"] != "invalid" for row in call_rows),
         "S4_complete_terminators": bool(projected["completeness"].get("complete_terminators")) and all(row["target_block_ids"] is not None for row in terminator_rows),
@@ -278,7 +346,7 @@ def build_model(source: str) -> dict[str, Any]:
         "source_bytes": len(source_bytes),
         "identity_policy": {
             "logical_value_ids": "DETERMINISTIC_SEMANTIC_ORDER_NOT_PHYSICAL_SLOT",
-            "source_binding_identity": "FUNCTION_SCOPE_PLUS_SOURCE_OFFSET_PLUS_EXACT_NAME",
+            "source_binding_identity": "RESOLVED_IR_FUNCTION_PLUS_LEXICAL_SCOPE_PLUS_EXACT_ASCII_NAME_SPAN",
             "physical_storage_is_semantic_identity": False,
             "scratch_storage_reuse_allowed": True,
         },
@@ -392,7 +460,12 @@ def parse_stream(text: str) -> dict[str, Any]:
         records.append({"tag": tag, "fields": fields, "line": line_number})
     if mask is None:
         raise SemanticStreamV2Error("missing completeness record")
-    return {"schema": SCHEMA, "records": records, "completeness_mask": mask, "complete": mask == COMPLETE_MASK}
+    return {
+        "schema": SCHEMA,
+        "records": records,
+        "completeness_mask": mask,
+        "complete": mask == COMPLETE_MASK,
+    }
 
 
 def verify_stream(parsed: dict[str, Any]) -> dict[str, Any]:
@@ -452,6 +525,8 @@ def verify_stream(parsed: dict[str, Any]) -> dict[str, Any]:
         elif tag == "A":
             call_args.setdefault(f[0], []).append((f[1], f[2]))
         elif tag == "T":
+            if f[0] in terminators:
+                errors.append(f"duplicate terminator for instruction {f[0]}")
             terminators[f[0]] = f
 
     for iid, (owner, block, result_count, operand_count) in instructions.items():
@@ -511,7 +586,9 @@ def verify_stream(parsed: dict[str, Any]) -> dict[str, Any]:
         if terminator_id < 0:
             errors.append(f"block {function_id}:{block_id} lacks terminator")
         elif terminator_id not in terminators:
-            errors.append(f"block {function_id}:{block_id} terminator {terminator_id} missing T record")
+            errors.append(
+                f"block {function_id}:{block_id} terminator {terminator_id} missing T record"
+            )
 
     status = "PASS" if parsed["complete"] and not errors else "BLOCKED"
     return {
@@ -549,9 +626,17 @@ def main(argv: list[str] | None = None) -> int:
     args.stream_output.parent.mkdir(parents=True, exist_ok=True)
     args.stream_output.write_text(stream, encoding="utf-8", newline="\n")
     args.model_output.parent.mkdir(parents=True, exist_ok=True)
-    args.model_output.write_text(json.dumps(model, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
+    args.model_output.write_text(
+        json.dumps(model, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
     args.verification_output.parent.mkdir(parents=True, exist_ok=True)
-    args.verification_output.write_text(json.dumps(verification, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
+    args.verification_output.write_text(
+        json.dumps(verification, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
     print(f"STATUS={verification['status']}")
     print(f"FUNCTIONS={verification['function_count']}")
     print(f"BLOCKS={verification['block_count']}")
