@@ -2,7 +2,7 @@
 
 From the active PR #268 worktree, do not checkout this branch.
 
-Run:
+Minimum control refresh:
 
 ```bash
 CONTROL_BRANCH=control/codex-stage1-semantic-v2-20260827
@@ -11,14 +11,16 @@ CONTROL_REF="origin/$CONTROL_BRANCH"
 
 git show "$CONTROL_REF:codex-control/CURRENT.json"
 git show "$CONTROL_REF:codex-control/OVERRIDES.md"
-git show "$CONTROL_REF:codex-control/MEGAPROMPT_STAGE1_SEMANTIC_V2.md"
-git show "$CONTROL_REF:codex-control/STAGE_SEQUENCE.json"
 ```
 
-Then begin the stage indicated by `CURRENT.json`.
+If `CURRENT.json` exposes a stage-specific command-card file, read that next and use it as the short operational path for the current atomic task. For the current Stage05 campaign:
 
-Before each new stage and each important commit, fetch/read the control files again.
+```bash
+git show "$CONTROL_REF:codex-control/STAGE05_COMMAND_CARD.md"
+```
 
-If the revision changed, newer control instructions take precedence before continuing.
+Only open the longer stage/oracle/plan files when the command card or a new failure points to them.
+
+Before each new stage and each important implementation commit, fetch/read `CURRENT.json` and `OVERRIDES.md` again. If the revision changed, newer control instructions take precedence before continuing.
 
 Never merge/check out/cherry-pick the control branch into PR #268.
