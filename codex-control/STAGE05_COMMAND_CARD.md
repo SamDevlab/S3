@@ -2,68 +2,87 @@
 
 Use this file to avoid rereading the full control package during the current paired Stage05 campaign.
 
-This card never overrides `CURRENT.json` or `OVERRIDES.md`. If the control revision changes, re-read those two files first.
+This card never overrides `CURRENT.json` or `OVERRIDES.md`. If the revision changes, re-read those first.
 
-## Current atomic task — revision 17
+## Current atomic task — revision 18
 
-The right-parenthesis investigation is closed as the wrong first-owner hypothesis for the current fixture.
+The special-open guard was a real fix but not sufficient.
 
-Proven root cause:
-
-```text
-callee detected
-stage05_special_open active
-current_kind temporarily becomes synthetic punctuation
-legacy operand dispatch sees synthetic kind
-legacy dispatch writes parse_ok=0
-argument parsing has not started yet
-```
-
-Apply one repair only:
+Current evidence:
 
 ```text
-GUARD_LEGACY_OPERAND_DISPATCH_WHEN_STAGE05_SPECIAL_OPEN_ACTIVE
+special-open legacy rejection guarded
+C/A still emitted
+helper()  -> Z 0
+helper(1) -> Z 0
 ```
 
-Read `codex-control/STAGE05_SPECIAL_OPEN_GUARD_REPAIR.md` before editing.
-
-Do not change the truth convention of `stage05_open_kind > 0`; the attempted `-1 -> 1` success-branch change was disproven by runtime behavior.
-
-## Exact LF fixture — first proof only
-
-Do not hand-build the probe string.
+The remaining blocker is therefore:
 
 ```text
-codex-control/fixtures/stage05/internal_one_arg_call.s3
-SHA256=769480e71eb4ed6711aa1bc608f000ea6f2802894df9796871277a33d72b2f34
+POST_SPECIAL_OPEN_RESIDUAL_PARSE_OK_SETTER_COMMON_TO_ZERO_AND_ONE_ARG
 ```
 
-From PowerShell, preserve native `git show` bytes:
+Finish only the token-trace build that is already in flight on the guarded candidate. Do not start another build or permanent repair until it terminates.
 
-```powershell
-$ControlRef = 'origin/control/codex-stage1-semantic-v2-20260827'
-$Out = Join-Path $env:TEMP 'stage05-internal-one-arg.s3'
-cmd.exe /d /s /c "git show $ControlRef`:codex-control/fixtures/stage05/internal_one_arg_call.s3 > `"$Out`""
-(Get-FileHash -Algorithm SHA256 $Out).Hash.ToLowerInvariant()
+Read:
+
+```text
+codex-control/STAGE05_RESIDUAL_PARSE_TRANSITION.md
 ```
 
-If the hash differs, do not run the fixture.
+## What to capture
 
-## One repair → one build
+Find the FIRST `parse_ok` transition from `-1` to `0`.
 
-1. patch only the proven special-open guard in `tools/patch_stage1_calls_arrays_s3.py`;
-2. regenerate clean candidate; temporary traces must be absent;
-3. run `s3 check` once;
-4. record candidate SHA256;
-5. build one Linux native binary;
-6. record binary SHA256;
-7. run exact `internal_one_arg_call.s3`;
-8. if `parse_ok` still becomes invalid, preserve only the first raw transition and stop;
-9. if parsing remains valid, run strict Stage05 conformance immediately;
-10. use verifier `errors[0]` only and classify through `STAGE05_CONFORMANCE_EXPECTATIONS.md`;
-11. after strict conformance passes, reuse the same binary through unlocked fixtures in `STAGE05_POSTFIX_REGRESSION_MATRIX.json` until the first unexpected result.
+Useful fields when already available in the trace:
 
-Do not rebuild between fixtures while candidate SHA is unchanged.
+```text
+TOKEN_INDEX
+TOKEN_CODE
+CURRENT_KIND
+PARSE_OK_BEFORE
+PARSE_OK_AFTER
+STAGE05_SPECIAL_OPEN
+CALL_FRAME_ACTIVE
+PAREN_DEPTH
+OP_COUNT
+ARG_COUNT
+HAS_ARG
+```
+
+Do not add another instrumentation build merely to obtain every field; the first setter is the priority.
+
+## Immediate decision
+
+```text
+flip still on synthetic special-open
+  -> SPECIAL_OPEN_GUARD_COVERAGE
+
+valid through arguments, flip on matching ')'
+  -> CALL_CLOSE_COMMON_STATE
+
+')' closes valid, flip later in same cycle
+  -> POST_CALL_FALLTHROUGH_OR_FRAME_RESTORE
+
+no parse_ok flip, final Z 0
+  -> STAGE05_COMPLETENESS_OR_CONFORMANCE
+```
+
+Zero- and one-argument calls both fail, so argument-specific logic is not the default suspect.
+
+## After one proven repair
+
+1. regenerate a clean candidate;
+2. `s3 check` once;
+3. record candidate SHA256;
+4. build one Linux native binary;
+5. record binary SHA256;
+6. run exact pinned `zero_arg_internal_call.s3` and `internal_one_arg_call.s3` on the same binary;
+7. stop at first unexpected result;
+8. if parser remains valid, run strict Stage05 conformance immediately;
+9. consume verifier `errors[0]` only via `STAGE05_CONFORMANCE_EXPECTATIONS.md`;
+10. do not rebuild between fixtures while candidate SHA is unchanged.
 
 ## First-call success target
 
@@ -79,15 +98,14 @@ Z=7
 
 A parser PASS alone is not S3 PASS. `Z 31` is not a Stage05 target.
 
-## Do not spend time on these unless a new failure directly points there
+## Do not spend time on these unless new evidence points there
 
-- right-parenthesis close instrumentation;
-- `stage05_open_kind > 0` truth-branch experiments;
-- SSH/Linux/Python/cc requalification;
-- PR OPEN/DRAFT checks;
-- function/block discovery;
-- Stage04 operator matrix;
-- historical 736/746 capacity;
+- `stage05_open_kind > 0` truth experiments;
+- callee recognition;
+- basic C/A emission;
+- SSH/toolchain requalification;
+- Stage04 matrix;
+- historical capacity;
 - foreign calls;
 - arrays;
 - Stage06 or later.
