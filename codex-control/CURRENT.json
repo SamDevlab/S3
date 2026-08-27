@@ -1,6 +1,6 @@
 {
   "schema": "s3.codex-control.stage1-semantic-v2.v1",
-  "control_revision": 3,
+  "control_revision": 4,
   "control_branch": "control/codex-stage1-semantic-v2-20260827",
   "implementation_branch": "feature/actual-stage1-compiler-seed-20260824",
   "implementation_pr": 268,
@@ -14,10 +14,12 @@
   "stage_sequence_file": "codex-control/STAGE_SEQUENCE.json",
   "mandatory_override_file": "codex-control/OVERRIDES.md",
   "handoff_import_manifest_file": "codex-control/HANDOFF_IMPORT_MANIFEST.json",
-  "active_stage": "03_PASS1_BINDINGS",
-  "active_stage_file": "codex-control/stages/03_PASS1_BINDINGS.md",
+  "active_stage": "04_EXPRESSIONS_S1_S2",
+  "active_stage_file": "codex-control/stages/04_EXPRESSIONS_S1_S2.md",
   "initial_control_package_complete": true,
   "stage02_hosted_contract_qualified": true,
+  "stage03_transition_observed": true,
+  "stage03_evidence_backfill_required": true,
   "emergency_stop": false,
   "pause_after_current_stage": false,
   "allow_automatic_stage_advance": true,
@@ -30,5 +32,5 @@
   "stage2_authorized": false,
   "stage3_authorized": false,
   "t4_authorized": false,
-  "notes": "Revision 3 records Stage02 hosted qualification PASS and routes Codex to Stage03 candidate-only Pass1 bindings. Canonical Stage1 mutation remains unauthorized."
+  "notes": "Revision 4 aligns the live control route with Codex's observed Stage04 expression-lowering work. This does not retroactively fabricate Stage03 PASS; Stage03 evidence must be backfilled in the next checkpoint. Canonical Stage1 mutation remains unauthorized."
 }
