@@ -42,6 +42,31 @@ BEFORE valid, AFTER valid, final Z 0
 
 Do not patch more than one owning condition per cycle.
 
+## Exact LF fixtures — do not hand-build probe strings
+
+Fixtures and SHA256 values live in:
+
+```text
+codex-control/fixtures/stage05/MANIFEST.json
+```
+
+From PowerShell, use `cmd.exe` redirection so native `git show` bytes are preserved instead of passing the blob through PowerShell text encoding. Example for the current minimal call:
+
+```powershell
+$ControlRef = 'origin/control/codex-stage1-semantic-v2-20260827'
+$Out = Join-Path $env:TEMP 'stage05-internal-one-arg.s3'
+cmd.exe /d /s /c "git show $ControlRef`:codex-control/fixtures/stage05/internal_one_arg_call.s3 > `"$Out`""
+(Get-FileHash -Algorithm SHA256 $Out).Hash.ToLowerInvariant()
+```
+
+Expected SHA256:
+
+```text
+769480e71eb4ed6711aa1bc608f000ea6f2802894df9796871277a33d72b2f34
+```
+
+If the hash differs, do not run the fixture. Fix materialization first. The manifest contains hashes for every later unlocked fixture.
+
 ## After a proven parser repair
 
 1. regenerate clean candidate;
@@ -52,6 +77,8 @@ Do not patch more than one owning condition per cycle.
 6. use the same binary for all allowed fixtures in `STAGE05_POSTFIX_REGRESSION_MATRIX.json` until one fails;
 7. on the first failure, stop broadening and emit a paired checkpoint;
 8. if the minimal internal call passes, run strict Stage05 conformance immediately before another source edit.
+
+Do not rebuild between fixtures when the candidate source is unchanged. A fixture failure is diagnostic evidence, not a reason to rebuild the same candidate.
 
 ## Current success target
 
