@@ -1,48 +1,52 @@
 # Live overrides
 
-CONTROL_REVISION: 26
+CONTROL_REVISION: 27
 
-## READ-ONLY RECOVERY STOP
+## SNAPSHOT-ONLY HARD STOP
 
-Context compaction continued the old pre-IR/compaction campaign beyond revisions 23, 24 and 25. The latest supplied transcript now reports:
+Revision 26 required read-only recovery. The supplied transcript nevertheless reports one more local qualifier edit and a plan to add two tests and run the focused compaction/lane suite.
 
-```text
-E0 completed RC=0
-E1 completed
-2x2 matrix executed 4 times, all rc=2
-E0(S0)=E0(S1)=1460/305/1213
-E1(S0)=E1(S1)=1097/329/1213
-common boundary=41502
-five narrow discard fixtures executed
-E0H completed
-E1H started
-post-compaction qualifier/report files edited locally
-histogram interpretation: observable difference is opcode 5 only
-first packed-token spill literal=1000000000000 at offset 41502
-removed assignments=88492,88540
-```
-
-These facts are frozen as out-of-scope drift evidence. They do not promote Stage05 and do not authorize any further compaction qualification, histogram work or report editing.
-
-Read first:
+The qualifier change is preserved as **unvalidated local work** because its contract is logically plausible:
 
 ```text
-codex-control/RECOVERY_REV26_READ_ONLY_SNAPSHOT.md
+truncated/full-stream incomplete -> fail closed
+textual assignment/value deltas != native observed deltas
+block equality cannot be promoted under truncation
 ```
 
-## Only allowed process exception
+But this is still the old compaction route, not the active Stage05 lane.
 
-At first read of revision 26:
+The worktree is now reported as:
 
 ```text
-IF an exact native PID from an already-started E1H/other command is still running:
-    let only that exact existing PID reach terminal state
-    DO NOT execute its output
-ELSE:
-    start nothing
+12 files changed
 ```
 
-After the existing PID terminates, all commands must be read-only state capture except saving the canonical diff patch and recovery transcript outside the repository.
+## Do this now
+
+Do not add the two planned tests.
+Do not run the focused compaction/lane suite.
+Do not edit the qualifier again.
+Do not edit reports or sources.
+Do not start any new compiler build or instrumentation.
+Do not clean/delete anything from the worktree during the snapshot.
+
+If an exact native PID was already alive before revision 27 is first read, that exact PID may only reach terminal state. Do not execute the produced output.
+
+Capture only read-only recovery evidence:
+
+1. worktree HEAD and branch;
+2. exact `git status --short`;
+3. exact changed and untracked file lists;
+4. per-file diff stat/summary for all 12 reported changed files;
+5. identify which changed files belong to Stage05 versus old compaction/report/qualifier drift;
+6. canonical local SHA/bytes versus HEAD SHA/bytes;
+7. save canonical diff provenance outside the repository if not already saved;
+8. Stage05 candidate and transform SHA256 plus telemetry-marker presence;
+9. identify the qualifier file just modified and its diff summary;
+10. list existing temporary E0/E1/E0H/E1H artifacts without running or deleting them;
+11. record guest free space;
+12. return the recovery block and STOP.
 
 ## Preserve valid Stage05 evidence
 
@@ -56,24 +60,6 @@ nested a + 1 fixture -> expression-lowering limitation reproduced without call
 
 Preserve the two comma/cursor repairs and the Stage05-consumed-token legacy-dispatch guard.
 
-## Current atomic task
-
-Do not build, test or edit anything further.
-
-Capture only:
-
-1. worktree HEAD/branch/status/changed/untracked files;
-2. local canonical SHA/bytes and HEAD canonical SHA/bytes;
-3. canonical diff patch provenance saved outside the repository;
-4. Stage05 candidate/transform SHA and telemetry presence;
-5. report/qualifier files modified by the drift;
-6. `/tmp` compaction/histogram artifacts present, without executing/deleting them;
-7. E0/E1/E0H/E1H terminal state and hashes of existing outputs if available;
-8. whether E0H/E1H were already executed and any already-existing histogram output;
-9. guest free space;
-10. exact revision-26 `PAIRING_RECOVERY_BEGIN ... PAIRING_RECOVERY_END` block;
-11. STOP.
-
 ## Forbidden
 
 ```text
@@ -83,12 +69,12 @@ git checkout -- <path>
 git restore <path>
 ```
 
-No source edit.
-No report/qualifier edit.
+No new tests.
+No test execution.
+No source/report/qualifier edit.
 No new native build.
-No E0/E1/E0H/E1H restart.
 No matrix/fixture/histogram execution.
-No cleanup/deletion during this snapshot.
+No cleanup/deletion during the snapshot.
 No arrays, foreign calls, capacity work or Stage06+.
 No canonical mutation/restore/revert.
 No implementation commit.
@@ -99,8 +85,9 @@ No SELF_EMIT, Stage2, Stage3, T4 or benchmark.
 Existing already-running PID may finish = YES, exact existing PID only
 Execute its output = NO
 New native build = NO
-New test/execution = NO
-Source/report edit = NO
+New test file = NO
+New test execution = NO
+Source/report/qualifier edit = NO
 Implementation commit = NO
 Canonical mutation = NO
 Canonical restore/revert = NO
