@@ -1,6 +1,6 @@
 # Live overrides
 
-CONTROL_REVISION: 6
+CONTROL_REVISION: 7
 
 No emergency stop is active.
 
@@ -10,11 +10,25 @@ Current direction:
 - Stage 02 hosted contract qualification is recorded as PASS.
 - Stage 03 transition was observed; detailed evidence remains backfill debt where not re-observed.
 - Stage 04 remains the active implementation stage.
-- Revision 6 does **not** broaden Stage04 and does not authorize any later stage. It adds the closure fast path in `codex-control/STAGE04_FAST_PATH.md`.
+- Revision 7 does **not** broaden Stage04 and does not authorize any later stage.
 - Finish any currently running Stage0/native build/probe/test process before applying this revision. Do not duplicate an in-flight gate.
-- After the current numeric-cast proof finishes, follow `STAGE04_FAST_PATH.md` in order: supported casts -> fixed regression matrix -> exact Stage0 check -> focused Stage04 tests -> representative strict S3IR2 conformance -> full focused Stage04 checkpoint.
+- Continue using `codex-control/STAGE04_FAST_PATH.md`.
+- Before interpreting or repairing the first strict conformance mismatch, read `codex-control/STAGE04_CONFORMANCE_EXPECTATIONS.md`.
+- The new conformance document is guidance for the frozen S3IR2 v2 verifier, not permission to redesign the protocol.
 - Fix one first real blocker per cycle. Do not make multiple speculative repairs from one failed run.
 - Do not repeatedly re-check SSH, Linux/Python/cc, PR OPEN/DRAFT state, or already-proven function/block discovery unless a new execution failure implicates them.
+
+STRICT STAGE04 CONFORMANCE NOTES:
+
+- Candidate logical value IDs are allowed to differ from hosted IDs.
+- Parameters are mapped by function/declaration order plus semantic metadata/source identity.
+- Local bindings are mapped by function owner + exact source name/span + declared type + mutability.
+- Local-binding `V` identity is distinct from an instruction-result `V`; do not collapse them because physical storage happens to coincide.
+- Hosted instruction results are mapped through `R` edges.
+- Ordered operand identity is checked through `O` edges.
+- Numeric casts `to_i64`, `to_f64`, `to_tryte` lower as `CONVERT` opcode `10`, one operand, one result, `aux_a=-1`, `aux_b=-1`, one `O 0`, one `R 0`; target type belongs to the result `V` metadata. They are not call records.
+- Immutable scalar initialization uses `MOVE` opcode `3` with one operand and one result.
+- Mutable scalar initialization/reassignment uses `STORE` opcode `16`; scalar memory has length 1 and store operands are ordered `[index_value, stored_value]`. Initialization is not serialized as an extra S3IR2 field.
 
 CRITICAL OPERATOR-SCOPE RULE:
 
@@ -57,7 +71,7 @@ SELF_EMIT, Stage2, Stage3 and T4 remain unauthorized.
 Required Stage04 checkpoint:
 
 ```text
-CONTROL_REVISION=6
+CONTROL_REVISION=7
 STAGE03_EVIDENCE_BACKFILL=PASS/PARTIAL/NOT_RECORDED/NOT_REOBSERVED
 EXPR_PARSER_SYNTAX=PASS/BLOCKED
 INTEGER_LITERAL_LOWERING=PASS/BLOCKED
@@ -86,6 +100,6 @@ FIRST_REAL_BLOCKER=
 NEXT_STAGE=05_CALLS_ARRAYS_S3 only if Stage04 exit gate is satisfied and the live control plane still permits automatic advance
 ```
 
-If strict conformance fails, preserve one smallest representative mismatch and correct that semantic slice before broadening tests. A constant-fold-only difference must not be confused with a semantic mismatch; use parameter/local fixtures where needed to compare the preserved semantics.
+If strict conformance fails, preserve one smallest representative mismatch and correct that semantic slice before broadening tests. Use `STAGE04_CONFORMANCE_EXPECTATIONS.md` to map verifier text to the owning candidate slice. A constant-fold-only difference must not be confused with a semantic mismatch; use parameter/local fixtures where needed to compare the preserved semantics.
 
 If the control-branch fetch/read fails, Codex may finish the current atomic command but must not enter a new stage, create an implementation commit, mutate canonical Stage1 or cross a promotion/bootstrap gate until the live control revision can be read again.
