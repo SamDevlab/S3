@@ -4,85 +4,83 @@ Use this file to avoid rereading the full control package during the current pai
 
 This card never overrides `CURRENT.json` or `OVERRIDES.md`. If the revision changes, re-read those first.
 
-## Current atomic task — revision 18
+## Current atomic task — revision 19
 
-The special-open guard was a real fix but not sufficient.
+The residual token trace is complete.
 
-Current evidence:
-
-```text
-special-open legacy rejection guarded
-C/A still emitted
-helper()  -> Z 0
-helper(1) -> Z 0
-```
-
-The remaining blocker is therefore:
+Second proven root cause:
 
 ```text
-POST_SPECIAL_OPEN_RESIDUAL_PARSE_OK_SETTER_COMMON_TO_ZERO_AND_ONE_ARG
+parse_ok valid through call-open/arguments
+matching ')' reached
+call frame valid
+arity valid
+Stage05 close runs
+same ')' falls through to legacy unknown-punctuation rejection
+parse_ok becomes 0
 ```
 
-Finish only the token-trace build that is already in flight on the guarded candidate. Do not start another build or permanent repair until it terminates.
+Current repair owner:
+
+```text
+VALID_CALL_CLOSE_TOKEN_FALLS_THROUGH_LEGACY_PUNCTUATION_REJECTION
+```
+
+A build containing the localized repair is already reported in flight. Finish it. Do not start another build or source edit before terminal state.
 
 Read:
 
 ```text
-codex-control/STAGE05_RESIDUAL_PARSE_TRANSITION.md
+codex-control/STAGE05_CALL_CLOSE_SPECIAL_GUARD_REPAIR.md
 ```
 
-## What to capture
+## Repair semantics already frozen
 
-Find the FIRST `parse_ok` transition from `-1` to `0`.
+Only a `RIGHT_PAREN` proven to close an active valid Stage05 call frame may bypass legacy unknown-punctuation rejection for that token cycle.
 
-Useful fields when already available in the trace:
+Do not globally whitelist `)`. Keep Stage05 arity/frame validation active. Preserve all non-call punctuation/grouping behavior.
+
+## Post-build proof — same binary
+
+Run exactly:
 
 ```text
-TOKEN_INDEX
-TOKEN_CODE
-CURRENT_KIND
-PARSE_OK_BEFORE
-PARSE_OK_AFTER
-STAGE05_SPECIAL_OPEN
-CALL_FRAME_ACTIVE
-PAREN_DEPTH
-OP_COUNT
-ARG_COUNT
-HAS_ARG
+zero_arg_internal_call.s3
+internal_one_arg_call.s3
 ```
 
-Do not add another instrumentation build merely to obtain every field; the first setter is the priority.
+Use the pinned UTF-8/LF fixtures and SHA256 values from:
+
+```text
+codex-control/fixtures/stage05/MANIFEST.json
+```
+
+Record for each:
+
+```text
+EXIT_CODE=
+Z_MASK=
+C_RECORD_PRESENT=
+A_RECORD_COUNT=
+PARSE_OK_FINAL=
+```
+
+Do not rebuild between these fixtures if candidate SHA is unchanged.
 
 ## Immediate decision
 
 ```text
-flip still on synthetic special-open
-  -> SPECIAL_OPEN_GUARD_COVERAGE
+both valid calls -> Z 7
+  -> run strict Stage05 conformance immediately on internal_one_arg_call
 
-valid through arguments, flip on matching ')'
-  -> CALL_CLOSE_COMMON_STATE
+parser valid but Z 0
+  -> stop parser edits; classify completeness/conformance
 
-')' closes valid, flip later in same cycle
-  -> POST_CALL_FALLTHROUGH_OR_FRAME_RESTORE
-
-no parse_ok flip, final Z 0
-  -> STAGE05_COMPLETENESS_OR_CONFORMANCE
+parse_ok still flips to 0
+  -> preserve first remaining setter only; stop broadening
 ```
 
-Zero- and one-argument calls both fail, so argument-specific logic is not the default suspect.
-
-## After one proven repair
-
-1. regenerate a clean candidate;
-2. `s3 check` once;
-3. record candidate SHA256;
-4. build one Linux native binary;
-5. record binary SHA256;
-6. run exact pinned `zero_arg_internal_call.s3` and `internal_one_arg_call.s3` on the same binary;
-7. stop at first unexpected result;
-8. if parser remains valid, run strict Stage05 conformance immediately;
-9. consume verifier `errors[0]` only via `STAGE05_CONFORMANCE_EXPECTATIONS.md`;
-10. do not rebuild between fixtures while candidate SHA is unchanged.
+If strict conformance fails, use only verifier `errors[0]` and classify through `STAGE05_CONFORMANCE_EXPECTATIONS.md`.
 
 ## First-call success target
 
@@ -102,6 +100,7 @@ A parser PASS alone is not S3 PASS. `Z 31` is not a Stage05 target.
 
 - `stage05_open_kind > 0` truth experiments;
 - callee recognition;
+- argument-count-specific parser repair;
 - basic C/A emission;
 - SSH/toolchain requalification;
 - Stage04 matrix;
