@@ -7,20 +7,28 @@ on:
     paths:
       - "tools/stage1_semantic_ir_reference.py"
       - "tools/stage1_semantic_stream_protocol.py"
+      - "tools/stage1_source_binding_reference.py"
+      - "tools/patch_stage1_semantic_port_v1.py"
       - "selfhost/compiler/stage1_semantic_stream_v1.s3"
       - "tests/test_stage1_semantic_ir_reference.py"
       - "tests/test_stage1_semantic_stream_v1.py"
       - "tests/test_stage1_semantic_stream_protocol.py"
+      - "tests/test_stage1_source_binding_reference.py"
+      - "tests/test_patch_stage1_semantic_port_v1.py"
       - "reports/selfhost/stage1/semantic-ir-v1-contract.json"
       - ".github/workflows/stage1-semantic-reference.yml"
   pull_request:
     paths:
       - "tools/stage1_semantic_ir_reference.py"
       - "tools/stage1_semantic_stream_protocol.py"
+      - "tools/stage1_source_binding_reference.py"
+      - "tools/patch_stage1_semantic_port_v1.py"
       - "selfhost/compiler/stage1_semantic_stream_v1.s3"
       - "tests/test_stage1_semantic_ir_reference.py"
       - "tests/test_stage1_semantic_stream_v1.py"
       - "tests/test_stage1_semantic_stream_protocol.py"
+      - "tests/test_stage1_source_binding_reference.py"
+      - "tests/test_patch_stage1_semantic_port_v1.py"
       - "reports/selfhost/stage1/semantic-ir-v1-contract.json"
       - ".github/workflows/stage1-semantic-reference.yml"
   workflow_dispatch:
@@ -28,6 +36,7 @@ on:
 jobs:
   semantic-reference:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -38,14 +47,18 @@ jobs:
       - name: Install test dependency
         run: python -m pip install pytest
 
-      - name: Compile Python reference
+      - name: Compile Python reference and port tools
         run: |
           python -m compileall -q \
             tools/stage1_semantic_ir_reference.py \
             tools/stage1_semantic_stream_protocol.py \
+            tools/stage1_source_binding_reference.py \
+            tools/patch_stage1_semantic_port_v1.py \
             tests/test_stage1_semantic_ir_reference.py \
             tests/test_stage1_semantic_stream_v1.py \
-            tests/test_stage1_semantic_stream_protocol.py
+            tests/test_stage1_semantic_stream_protocol.py \
+            tests/test_stage1_source_binding_reference.py \
+            tests/test_patch_stage1_semantic_port_v1.py
 
       - name: Validate semantic port contract JSON
         run: python -c "import json; json.load(open('reports/selfhost/stage1/semantic-ir-v1-contract.json', encoding='utf-8'))"
@@ -55,4 +68,16 @@ jobs:
           python -m pytest -q \
             tests/test_stage1_semantic_ir_reference.py \
             tests/test_stage1_semantic_stream_v1.py \
-            tests/test_stage1_semantic_stream_protocol.py
+            tests/test_stage1_semantic_stream_protocol.py \
+            tests/test_stage1_source_binding_reference.py \
+            tests/test_patch_stage1_semantic_port_v1.py
+
+      - name: Generate Stage1 S1 semantic candidate
+        run: |
+          mkdir -p .artifacts
+          python tools/patch_stage1_semantic_port_v1.py \
+            --output .artifacts/s3c_stage1_semantic_s1.s3
+
+      - name: Stage0 compile generated Stage1 semantic candidate
+        timeout-minutes: 10
+        run: python -m bootstrap.s3.cli check .artifacts/s3c_stage1_semantic_s1.s3
