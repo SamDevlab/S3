@@ -1,6 +1,6 @@
 {
   "schema": "s3.codex-control.stage1-semantic-v2.v1",
-  "control_revision": 2,
+  "control_revision": 3,
   "control_branch": "control/codex-stage1-semantic-v2-20260827",
   "implementation_branch": "feature/actual-stage1-compiler-seed-20260824",
   "implementation_pr": 268,
@@ -14,9 +14,10 @@
   "stage_sequence_file": "codex-control/STAGE_SEQUENCE.json",
   "mandatory_override_file": "codex-control/OVERRIDES.md",
   "handoff_import_manifest_file": "codex-control/HANDOFF_IMPORT_MANIFEST.json",
-  "active_stage": "02_HOSTED_CONTRACT_QUALIFICATION",
-  "active_stage_file": "codex-control/stages/02_HOSTED_CONTRACT_QUALIFICATION.md",
+  "active_stage": "03_PASS1_BINDINGS",
+  "active_stage_file": "codex-control/stages/03_PASS1_BINDINGS.md",
   "initial_control_package_complete": true,
+  "stage02_hosted_contract_qualified": true,
   "emergency_stop": false,
   "pause_after_current_stage": false,
   "allow_automatic_stage_advance": true,
@@ -29,5 +30,5 @@
   "stage2_authorized": false,
   "stage3_authorized": false,
   "t4_authorized": false,
-  "notes": "Revision 2 fixes the Stage02 selective-import closure. Read HANDOFF_IMPORT_MANIFEST.json before further hosted qualification. The control branch remains read-only: git fetch + git show only."
+  "notes": "Revision 3 records Stage02 hosted qualification PASS and routes Codex to Stage03 candidate-only Pass1 bindings. Canonical Stage1 mutation remains unauthorized."
 }
