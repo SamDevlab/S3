@@ -1,101 +1,114 @@
-# Codex fast path — recovery/reconciliation
+# Codex fast path — recovery/preservation
 
 Read `CURRENT.json` and `OVERRIDES.md` first.
 
-## REVISION 30 — LOCAL STAGE03 STOP CONFIRMED
+## REVISION 31 — DIRTY WORKTREE PRESERVATION
 
-The user confirmed the last supplied Stage03 output is exactly where the local Codex session stopped.
-
-Do not classify it as stale.
-
-Reported local stop:
+Reconciliation is complete:
 
 ```text
-CONTROL_REVISION=3
-ACTIVE_STAGE=03_PASS1_BINDINGS
-commits around 800a3ab / 326d42f
-Stage0 PASS
-focused tests PASS
-Linux native build PASS
-trivial probe PASS
-canonical not mutated
-```
-
-A later local editor state reported `stage1_expression_lowering_v2.s3` with approximately +1410 lines.
-
-Current observed remote PR268 is later:
-
-```text
+LOCAL_HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
 REMOTE_HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
-OPEN / DRAFT / MERGEABLE / NOT MERGED
+LEFT_RIGHT=0 0
+TRACKED_MODIFIED=36
+UNTRACKED=454
 ```
 
-Therefore the next action is not Stage04 or Stage05 implementation. It is local/remote reconciliation.
+The problem is not branch divergence. The problem is a large uncommitted worktree.
 
-## Do this now — READ ONLY
+Important preserved artifacts:
 
 ```text
-1. git branch --show-current
-2. git rev-parse HEAD
-3. git status --short
-4. git diff --stat
-5. git diff --name-only
-6. git ls-files --others --exclude-standard
-7. git log --oneline --decorate -n 12
-8. git fetch origin (read-only remote metadata only, no merge/rebase)
-9. git rev-list --left-right --count HEAD...origin/feature/actual-stage1-compiler-seed-20260824
-10. locate stage1_expression_lowering_v2.s3 if present and record path/tracked state/SHA256/bytes/diff stat
-11. record canonical local-vs-HEAD SHA256/bytes
-12. return block below
-13. STOP
+canonical local:
+  selfhost/compiler/s3c_stage1.s3
+  sha256=739dc6ac16c2c79a4f3bff0b7ca2f40324171b3ad155f7a6265747d441cb5758
+  bytes=211674
+  classification=Stage03-lineage source
+
+expression lowering:
+  .artifacts/s3c_stage1_expression_lowering_v2.s3
+  sha256=ff047a880b871d6428e2f33198db09d9b5c416b940df8bfe4d96867031439858
+  bytes=222530
+  tracked=NO
 ```
+
+## Do this now
+
+Create one recovery package OUTSIDE the repository, following:
+
+```text
+codex-control/RECOVERY_REV31_DIRTY_WORKTREE_PRESERVATION.md
+```
+
+Package must contain:
+
+```text
+git-status-short.txt
+tracked-diff.patch            # git diff --binary HEAD
+tracked-diff-stat.txt
+changed-files.txt
+untracked-files.txt
+untracked-size-summary.txt
+sha256-manifest.txt
+canonical-local-stage03-lineage.s3
+s3c_stage1_expression_lowering_v2.s3
+stage1_semantic_stream_v2.s3  # if present
+recovery-metadata.txt
+```
+
+Verify copied-source hashes against originals.
+
+Do NOT modify the repository while creating the package.
 
 ## Return
 
 ```text
-PAIRING_RECONCILIATION_BEGIN
-CONTROL_REVISION=30
-LOCAL_STOP_CONFIRMED_STAGE=03_PASS1_BINDINGS
-LOCAL_BRANCH=
-LOCAL_HEAD=
-REMOTE_PR268_HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
-LOCAL_REMOTE_LEFT_RIGHT_COUNT=
-GIT_STATUS_SHORT=
-CHANGED_FILES=
-UNTRACKED_FILES=
-PER_FILE_DIFF_STAT=
-RECENT_LOCAL_LOG=
-EXPRESSION_LOWERING_ARTIFACT_PRESENT=
-EXPRESSION_LOWERING_ARTIFACT_PATH=
-EXPRESSION_LOWERING_ARTIFACT_TRACKED_STATE=
-EXPRESSION_LOWERING_ARTIFACT_SHA256=
-EXPRESSION_LOWERING_ARTIFACT_BYTES=
-EXPRESSION_LOWERING_ARTIFACT_DIFF_STAT=
-CANONICAL_LOCAL_SHA256=
-CANONICAL_LOCAL_BYTES=
-CANONICAL_HEAD_SHA256=
-CANONICAL_HEAD_BYTES=
-CANONICAL_DIFF_PRESENT=
-LOCAL_STAGE03_OWNED_CHANGED_FILES=
-LATER_OR_UNCLASSIFIED_CHANGED_FILES=
-NEW_EDIT_AFTER_REV30=NO
-NEW_TEST_AFTER_REV30=NO
-NEW_BUILD_AFTER_REV30=NO
-NEW_COMMIT_AFTER_REV30=NO
-NEW_PUSH_AFTER_REV30=NO
-PULL_REBASE_MERGE_AFTER_REV30=NO
-FIRST_RECONCILIATION_BLOCKER=
-PAIRING_RECONCILIATION_END
+PAIRING_PRESERVATION_BEGIN
+CONTROL_REVISION=31
+LOCAL_HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
+REMOTE_HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
+LOCAL_REMOTE_LEFT_RIGHT=0 0
+RECOVERY_PACKAGE_PATH=
+RECOVERY_PACKAGE_OUTSIDE_REPOSITORY=YES
+RECOVERY_PACKAGE_FILE_COUNT=
+TRACKED_DIFF_PATCH_PRESENT=
+TRACKED_DIFF_PATCH_SHA256=
+CHANGED_FILES_MANIFEST_COUNT=
+UNTRACKED_FILES_MANIFEST_COUNT=
+SHA256_MANIFEST_ENTRY_COUNT=
+UNTRACKED_TOTAL_BYTES=
+UNTRACKED_TOP_LEVEL_SIZE_SUMMARY=
+CANONICAL_COPY_PRESENT=
+CANONICAL_ORIGINAL_SHA256=739dc6ac16c2c79a4f3bff0b7ca2f40324171b3ad155f7a6265747d441cb5758
+CANONICAL_COPY_SHA256=
+CANONICAL_COPY_MATCH=
+EXPRESSION_LOWERING_COPY_PRESENT=
+EXPRESSION_LOWERING_ORIGINAL_SHA256=ff047a880b871d6428e2f33198db09d9b5c416b940df8bfe4d96867031439858
+EXPRESSION_LOWERING_COPY_SHA256=
+EXPRESSION_LOWERING_COPY_MATCH=
+SEMANTIC_STREAM_PRESENT=
+SEMANTIC_STREAM_COPY_SHA256=
+WORKTREE_STATUS_CHANGED_BY_EXPORT=NO
+NEW_TEST=NO
+NEW_BUILD=NO
+NEW_COMMIT=NO
+NEW_PUSH=NO
+CLEANUP_OR_DELETION=NO
+FIRST_PRESERVATION_BLOCKER=
+PAIRING_PRESERVATION_END
 ```
+
+Then STOP.
 
 ## Locked
 
-No semantic stage advance yet.
-No edits/tests/builds.
+No cleanup.
+No semantic resume yet.
+No source/report edits.
+No tests/builds.
 No commit/push.
-No pull/rebase/merge into the worktree.
-No reset/restore/cleanup.
+No pull/rebase/merge.
+No reset/restore/checkout/clean.
 No canonical mutation.
-No SELF_EMIT.
-No Stage2/Stage3/T4.
-No benchmark.
+No artifact regeneration.
+No SELF_EMIT/Stage2/Stage3/T4/benchmark/merge.
