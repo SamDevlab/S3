@@ -1,92 +1,45 @@
-# Codex fast path — recovery/classification
+# Codex fast path — recovery/provenance
 
-Read `CURRENT.json`, `OVERRIDES.md`, and `RECOVERY_REV32_CLEAN_WORKTREE_CLASSIFICATION.md` first.
+Read `CURRENT.json`, `OVERRIDES.md`, and `RECOVERY_REV33_PROVENANCE_GRAPH.md` first.
 
-## REVISION 32 — CLEAN WORKTREE + CLASSIFICATION ONLY
+## REVISION 33 — PROVENANCE GRAPH ONLY
 
-Revision 31 preservation is complete and verified.
+Revision 32 completed successfully:
 
 ```text
 HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
-DIRTY_TRACKED=36
-DIRTY_UNTRACKED=454
-RECOVERY_PACKAGE=C:\Users\samue\Downloads\S3\S3-PR268-Recovery-Rev31-20260827-214412
+DIRTY_WORKTREE=preserved
+CLEAN_DETACHED_WORKTREE=created and empty
+KEEP_STAGE1_CORE=28
+QUARANTINE_OLD_COMPACTION_CAPACITY=366
+QUARANTINE_HISTORICAL_REPORTS=66
+REGENERABLE=1
+UNKNOWN=2
 ```
 
 ## Do this now
 
 ```text
-1. create NEW detached worktree at exact d67da9e outside dirty checkout
-2. verify clean worktree status is empty
-3. do NOT modify original dirty worktree
-4. do NOT apply/copy any preserved changes yet
-5. classify preserved relevant artifacts into:
-   KEEP_STAGE1_CORE
-   KEEP_EXPRESSION_LOWERING
-   KEEP_CALLS_STAGE1
-   KEEP_ORACLE_AND_CONFORMANCE
-   QUARANTINE_OLD_COMPACTION_CAPACITY
-   QUARANTINE_HISTORICAL_REPORTS
-   REGENERABLE_ARTIFACTS
-   UNKNOWN_REVIEW_REQUIRED
-6. write classification manifests outside both worktrees
-7. return checkpoint
-8. STOP
+1. inspect KEEP and UNKNOWN items read-only
+2. build exact per-file provenance/dependency records
+3. resolve scratch_host_probe_stage4.py and scratch_test_eq_chain.py without executing them
+4. distinguish native Stage1 implementation from hosted oracle/conformance
+5. identify exact artifact-linked historical validation, if any
+6. determine highest semantic checkpoint actually provable
+7. produce minimal ordered reapplication waves with exact paths
+8. write reports outside both worktrees
+9. STOP
 ```
 
-Critical artifacts that must be classified explicitly:
-
-```text
-selfhost/compiler/s3c_stage1.s3
-.artifacts/s3c_stage1_expression_lowering_v2.s3
-selfhost/compiler/stage1_semantic_stream_v2.s3
-bootstrap/s3/codegen.py
-bootstrap/s3/initialization.py
-bootstrap/s3/optimizer.py
-all Stage1 semantic/codegen/call/expression-lowering tools/tests
-```
-
-## Return
-
-```text
-PAIRING_CLASSIFICATION_BEGIN
-CONTROL_REVISION=32
-ORIGINAL_DIRTY_WORKTREE_PATH=
-ORIGINAL_DIRTY_HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
-ORIGINAL_DIRTY_STATUS_UNCHANGED=
-CLEAN_WORKTREE_PATH=
-CLEAN_WORKTREE_OUTSIDE_DIRTY=YES
-CLEAN_WORKTREE_HEAD=
-CLEAN_WORKTREE_STATUS_EMPTY=
-KEEP_STAGE1_CORE_COUNT=
-KEEP_EXPRESSION_LOWERING_COUNT=
-KEEP_CALLS_STAGE1_COUNT=
-KEEP_ORACLE_AND_CONFORMANCE_COUNT=
-QUARANTINE_OLD_COMPACTION_CAPACITY_COUNT=
-QUARANTINE_HISTORICAL_REPORTS_COUNT=
-REGENERABLE_ARTIFACTS_COUNT=
-UNKNOWN_REVIEW_REQUIRED_COUNT=
-CLASSIFICATION_FILES=
-CANONICAL_STAGE03_LINEAGE_CLASSIFICATION=
-EXPRESSION_LOWERING_CLASSIFICATION=
-SEMANTIC_STREAM_CLASSIFICATION=
-PATCH_OR_COPY_APPLIED_TO_CLEAN_WORKTREE=NO
-NEW_TEST=NO
-NEW_BUILD=NO
-NEW_COMMIT=NO
-NEW_PUSH=NO
-CLEANUP_OR_DELETION=NO
-SEMANTIC_STAGE_ADVANCED=NO
-FIRST_CLASSIFICATION_BLOCKER=
-PAIRING_CLASSIFICATION_END
-```
+Do not claim PASS from file presence alone.
+Do not copy/apply anything to the clean worktree yet.
 
 ## Locked
 
 No source mutation.
 No patch/copy reapplication.
 No cleanup.
-No tests/builds.
+No tests/builds/probes.
 No commit/push.
 No canonical promotion.
 No SELF_EMIT/Stage2/Stage3/T4/benchmark/merge.
