@@ -19,7 +19,7 @@ from pathlib import Path
 
 from tools.audit_stage1_compaction_after_token_lane import audit as audit_compaction
 from tools.audit_stage1_token_lane_wide_literals import audit as audit_token_lane
-from tools.patch_stage1_token_lane_wide_literals import SOURCE
+from tools.patch_stage1_token_lane_wide_literals import SOURCE, is_applied as token_lane_is_applied
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -62,7 +62,8 @@ def plan(source: str) -> dict[str, object]:
     call_model = repaired["call_model"]
     matrix = compaction["matrix"]
     cfg = compaction["cfg_reconstruction_model"]
-    s0_counts = compaction["token_lane_source"]["counts"]
+    s0_counts = compaction["pre_compaction_source"]["counts"]
+    token_lane_counts = compaction["token_lane_source"]["counts"]
     s1_counts = compaction["compacted_source"]["counts"]
 
     calls_required = int(call_model["calls"])
@@ -75,6 +76,10 @@ def plan(source: str) -> dict[str, object]:
 
     call_selected = max(CURRENT_CALL_CAPACITY, _round_bank(calls_required))
     event_selected = max(CURRENT_EVENT_CAPACITY, _round_bank(compacted_events_required))
+    event_before_compaction_selected = max(
+        CURRENT_EVENT_CAPACITY,
+        _round_bank(baseline_events_required),
+    )
     block_selected = max(CURRENT_BLOCK_CAPACITY, _round_bank(blocks_required))
     arg_selected = max(CURRENT_CALL_ARGUMENT_CAPACITY, arguments_required)
     arg_banks = _call_argument_banks(arg_selected)
@@ -103,7 +108,7 @@ def plan(source: str) -> dict[str, object]:
         "schema": "s3.selfhost.full-source-capacity-plan.v2",
         "status": "STATIC_PLAN_NATIVE_REMEASUREMENT_REQUIRED",
         "native_evidence": False,
-        "canonical_source_mutated": False,
+        "canonical_source_mutated": token_lane_is_applied(source),
         "token_lane_status": token["status"],
         "compaction_static_status": compaction["status"],
         "requirements": {
@@ -114,6 +119,7 @@ def plan(source: str) -> dict[str, object]:
             "blocks_after_discard_compaction": blocks_required,
             "legacy_numeric_records_before_compaction": numeric_tokens_before,
             "legacy_numeric_records_after_compaction": numeric_tokens_after,
+            "legacy_numeric_records_before_cleanup": int(token_lane_counts["numeric_tokens"]),
         },
         "current": {
             "call_capacity": CURRENT_CALL_CAPACITY,
@@ -129,6 +135,8 @@ def plan(source: str) -> dict[str, object]:
             "call_argument_banks": arg_banks,
             "event_capacity_bank_multiple": event_selected,
             "event_banks_365": event_selected // BANK,
+            "event_capacity_before_compaction_bank_multiple": event_before_compaction_selected,
+            "event_banks_before_compaction_365": event_before_compaction_selected // BANK,
             "block_capacity_bank_multiple": block_selected,
             "block_banks_365": block_selected // BANK,
         },

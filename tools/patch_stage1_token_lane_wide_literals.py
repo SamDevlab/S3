@@ -39,6 +39,20 @@ LEGACY_SLOT_ANCHOR = """        mut slot: i64 = token_count
         while slot > 15:
 """
 
+LEGACY_RING_NORMALIZATION = """        slot = token_count
+        while slot > 15:
+            slot = slot - 16
+"""
+
+DIRECT_RING_NORMALIZATION = """        slot = token_count / 16
+        slot = token_count - slot * 16
+"""
+
+LEGACY_STATEMENT_COUNTER_DECL = "    mut function_statements: tryte[64] = "
+WIDE_STATEMENT_COUNTER_DECL = "    mut function_statements: i64[64] = "
+LEGACY_STATEMENT_COUNTER_READ = "to_i64(function_statements[ir_index])"
+WIDE_STATEMENT_COUNTER_READ = "function_statements[ir_index]"
+
 RECOVERY_SLOT_BLOCK = """        mut slot: i64 = actual_start
         match kind == 2:
             -1:
@@ -63,6 +77,21 @@ RECOVERY_SLOT_BLOCK = """        mut slot: i64 = actual_start
         slot = token_count
         while slot > 15:
 """
+
+
+def is_applied(source: str) -> bool:
+    """Return whether all source-level wide-token repair markers are present."""
+
+    return (
+        source.count(SAFE_NUMERIC_PACK) == 1
+        and source.count("mut slot: i64 = actual_start") == 1
+        and source.count(DIRECT_RING_NORMALIZATION) == 1
+        and source.count(WIDE_STATEMENT_COUNTER_DECL) == 1
+        and LEGACY_NUMERIC_PACK not in source
+        and LEGACY_RING_NORMALIZATION not in source
+        and LEGACY_STATEMENT_COUNTER_DECL not in source
+        and LEGACY_STATEMENT_COUNTER_READ not in source
+    )
 
 
 def sha256_text(source: str) -> str:
@@ -97,6 +126,28 @@ def transform(source: str) -> str:
         RECOVERY_SLOT_BLOCK,
         label="main token-slot",
     )
+    transformed = _replace_exactly_once(
+        transformed,
+        LEGACY_RING_NORMALIZATION,
+        DIRECT_RING_NORMALIZATION,
+        label="token ring normalization",
+    )
+    transformed = _replace_exactly_once(
+        transformed,
+        LEGACY_STATEMENT_COUNTER_DECL,
+        WIDE_STATEMENT_COUNTER_DECL,
+        label="full-source statement counter",
+    )
+    statement_read_count = transformed.count(LEGACY_STATEMENT_COUNTER_READ)
+    if statement_read_count != 2:
+        raise ValueError(
+            "expected exactly two tryte statement-counter conversions; "
+            f"found {statement_read_count}"
+        )
+    transformed = transformed.replace(
+        LEGACY_STATEMENT_COUNTER_READ,
+        WIDE_STATEMENT_COUNTER_READ,
+    )
 
     if transformed.count("fn ") != before_functions:
         raise ValueError("token-lane candidate unexpectedly changed function signatures")
@@ -106,8 +157,16 @@ def transform(source: str) -> str:
         raise ValueError("legacy wide numeric payload is still packed")
     if transformed.count(SAFE_NUMERIC_PACK) != 1:
         raise ValueError("safe numeric pack marker is not unique")
-    if transformed.count("slot = token_count") != 1:
-        raise ValueError("numeric recovery does not restore token ring slot exactly once")
+    if transformed.count(DIRECT_RING_NORMALIZATION) != 1:
+        raise ValueError("numeric recovery does not use direct token ring normalization")
+    if LEGACY_RING_NORMALIZATION in transformed:
+        raise ValueError("linear token ring normalization is still present")
+    if transformed.count(WIDE_STATEMENT_COUNTER_DECL) != 1:
+        raise ValueError("wide full-source statement counter is not unique")
+    if LEGACY_STATEMENT_COUNTER_DECL in transformed:
+        raise ValueError("tryte full-source statement counter is still present")
+    if LEGACY_STATEMENT_COUNTER_READ in transformed:
+        raise ValueError("i64 statement counter still has a to_i64 conversion")
     if transformed.count("simple_value = -1") != 1:
         raise ValueError("numeric sign recovery marker is not unique")
     return transformed

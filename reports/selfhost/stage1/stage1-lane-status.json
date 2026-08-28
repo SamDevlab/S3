@@ -1,0 +1,18 @@
+{
+  "checkpoint": "2026-08-28",
+  "base": "d67da9ea7dc8b83b0b80adb681011717eebec616",
+  "branch": "recovery/pr268-stage1-lanes-20260828",
+  "lanes": {
+    "S1.1": "PASS",
+    "S1.2": "BLOCKED",
+    "S1.3": "NOT_RUN",
+    "S1.4": "NOT_RUN",
+    "S1.5": "NOT_RUN",
+    "S1.6": "NOT_RUN",
+    "S1.7": "BLOCKED"
+  },
+  "current_first_blocker": "S1.2_TYPED_CONSTANTS",
+  "self_emit": "NOT_RUN",
+  "stage2": "NOT_RUN",
+  "stage3": "NOT_RUN"
+}

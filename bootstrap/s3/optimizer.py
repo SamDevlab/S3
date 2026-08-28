@@ -348,12 +348,12 @@ def optimize_ir(
 ) -> IRModule:
     selected = OptimizationLevel.parse(level)
     verify_ir(module)
-    analyze_initialization(module)
+    analyze_initialization(module, include_states=False)
     if selected is OptimizationLevel.O0:
         return module
     optimized = _PassManager(
         _o1_passes(preserve_memory_observability=preserve_memory_observability)
     ).run(module)
     verify_ir(optimized)
-    analyze_initialization(optimized)
+    analyze_initialization(optimized, include_states=False)
     return optimized

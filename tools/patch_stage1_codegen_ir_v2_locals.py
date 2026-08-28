@@ -77,7 +77,10 @@ def validate_parameter_prerequisite(
     if qualification.get("parameter_ir_v2_candidate") != "PASS_NATIVE_CANDIDATE":
         raise LocalCandidateError("parameter IR-v2 prerequisite is not a native PASS candidate")
 
-    parameter_source = build_parameter_candidate(canonical_source)
+    try:
+        parameter_source = build_parameter_candidate(canonical_source)
+    except ValueError as error:
+        raise LocalCandidateError(str(error)) from error
     parameter_bytes = parameter_source.encode("utf-8")
     candidate = report.get("candidate")
     if not isinstance(candidate, dict):
@@ -121,8 +124,8 @@ def transform_locals(parameter_source: str, *, local_capacity: int) -> str:
         )
     if "mut ir_parameter_records: i64[64]" not in parameter_source:
         raise LocalCandidateError("local transform requires the packed-parameter candidate first")
-    if "mut ir_local_records:" in parameter_source:
-        raise LocalCandidateError("local IR-v2 lane already exists")
+    if "mut ir_local_records:" in parameter_source or "mut ir_local_owner: i64[" in parameter_source:
+        raise LocalCandidateError("local IR-v2 metadata lane already exists")
 
     source = parameter_source
 
@@ -327,7 +330,15 @@ def transform_locals(parameter_source: str, *, local_capacity: int) -> str:
         "                                    -1:\n"
         "                                        match local_ordinal < 365:\n"
         "                                            -1:\n"
-        "                                                ir_local_records[local_capture_index] = (((((((local_capture_owner + 1) * 366 + (local_capture_name + 1)) * 366 + (local_capture_type + 1)) * 2 + 1) * 3 + local_capture_storage_kind) * 366 + (local_ordinal + 1)) * 1461 + local_capture_extent) * 1461 + (64 + local_capture_index + 1)\n"
+        "                                                mut local_record: i64 = local_capture_owner + 1\n"
+        "                                                local_record = local_record * 366 + local_capture_name + 1\n"
+        "                                                local_record = local_record * 366 + local_capture_type + 1\n"
+        "                                                local_record = local_record * 2 + 1\n"
+        "                                                local_record = local_record * 3 + local_capture_storage_kind\n"
+        "                                                local_record = local_record * 366 + local_ordinal + 1\n"
+        "                                                local_record = local_record * 1461 + local_capture_extent\n"
+        "                                                local_record = local_record * 1461 + 64 + local_capture_index + 1\n"
+        "                                                ir_local_records[local_capture_index] = local_record\n"
         "                                                ir_local_record_count += 1\n"
         "                                                local_ordinal += 1\n"
         "                                                local_capture_state = 0\n"

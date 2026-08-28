@@ -180,7 +180,7 @@ def _generate_instruction(instruction: IRInstruction) -> AssemblyInstruction:
 
 def generate_assembly(ir_program: IRProgram) -> AssemblyProgram:
     verify_ir(ir_program)
-    analyze_initialization(ir_program)
+    analyze_initialization(ir_program, include_states=False)
     functions: list[AssemblyFunction] = []
     for function in ir_program.functions:
         reference_sizes: dict[int, int] = {}

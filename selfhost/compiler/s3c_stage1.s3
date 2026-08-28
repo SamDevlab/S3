@@ -222,7 +222,7 @@ fn scan_token(cursor: i64, length: i64) -> i64:
                         break
                     1:
                         break
-            return pack_token(position, 2, number * negative)
+            return pack_token(position, 2, 0)
         0:
             discard 0
         1:
@@ -1479,7 +1479,7 @@ fn main() -> tryte:
     mut function_names: i64[64] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     mut function_name_lengths: tryte[64] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     mut function_types: tryte[64] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    mut function_statements: tryte[64] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut function_statements: i64[64] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     mut function_name_starts: i64[64] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     mut function_name_byte_lengths: i64[64] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     mut function_flags: tryte[64] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -1519,12 +1519,22 @@ fn main() -> tryte:
     mut ir_opcode: tryte[64] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     mut ir_type: tryte[64] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     mut ir_value: i64[64] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    mut ir_parameter_owner: i64[68] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    mut ir_parameter_name: i64[68] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    mut ir_parameter_ordinal: i64[68] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    mut ir_parameter_type: i64[68] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut ir_parameter_owner: i64[70] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut ir_parameter_name: i64[70] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut ir_parameter_ordinal: i64[70] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut ir_parameter_type: i64[70] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut ir_parameter_mutability: trit[70] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut ir_parameter_value_id: i64[70] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     mut ir_return_kind: i64[64] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     mut ir_return_operand: i64[64] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut ir_local_owner: i64[229] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut ir_local_name: i64[229] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut ir_local_type: i64[229] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut ir_local_mutability: i64[229] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut ir_local_storage: i64[229] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut ir_local_ordinal: i64[229] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut ir_local_extent: i64[229] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut ir_local_value_id: i64[229] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     mut parameter_type_pending: trit = 0
     mut parameter_type_slot: i64 = -1
     mut cursor: i64 = 0
@@ -1548,6 +1558,7 @@ fn main() -> tryte:
     mut ast_cast_count: i64 = 0
     mut ir_instruction_count: i64 = 0
     mut ir_value_count: i64 = 0
+    mut ir_semantic_value_records: i64[365] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     mut ir_block_count: i64 = 0
     mut ir_branch_count: i64 = 0
     mut ir_loop_count: i64 = 0
@@ -1558,6 +1569,17 @@ fn main() -> tryte:
     mut ir_call_count: i64 = 0
     mut ir_call_arg_pool_count: i64 = 0
     mut ir_local_record_count: i64 = 0
+    mut local_capture_state: i64 = 0
+    mut local_capture_owner: i64 = -1
+    mut local_capture_name: i64 = 0
+    mut local_capture_type: i64 = 0
+    mut local_capture_storage: i64 = 0
+    mut local_capture_extent: i64 = 0
+    mut local_capture_ordinal: i64 = 0
+    mut current_local_ordinal: i64 = 0
+    mut local_rebase_index: i64 = 0
+    mut local_verify_index: i64 = 0
+    mut local_verify_value: i64 = 0
     mut ir_ast_event_count: i64 = 0
     mut ir_ast_event_bank: tryte = 0
     mut ir_ast_event_slot: i64 = 0
@@ -1645,9 +1667,29 @@ fn main() -> tryte:
                 discard 0
             1:
                 discard 0
-        mut slot: i64 = token_count
-        while slot > 15:
-            slot = slot - 16
+        mut slot: i64 = actual_start
+        match kind == 2:
+            -1:
+                value = 0
+                simple_value = 1
+                match read_at(slot) == 45:
+                    -1:
+                        simple_value = -1
+                        slot += 1
+                    0:
+                        discard 0
+                    1:
+                        discard 0
+                while slot < next_cursor:
+                    value = value * 10 + (to_i64(read_at(slot)) - 48)
+                    slot += 1
+                value = value * simple_value
+            0:
+                discard 0
+            1:
+                discard 0
+        slot = token_count / 16
+        slot = token_count - slot * 16
         token_kind[slot] = to_tryte(kind)
         token_start[slot] = cursor
         token_end[slot] = next_cursor
@@ -1679,6 +1721,199 @@ fn main() -> tryte:
             1:
                 discard 0
         token_count += 1
+        previous_start = local_capture_state
+        match previous_start == 1:
+            -1:
+                match kind == 1:
+                    -1:
+                        local_capture_name = value
+                        local_capture_state = 2
+                    0:
+                        ir_capacity_ok = 0
+                        local_capture_state = 0
+                    1:
+                        ir_capacity_ok = 0
+                        local_capture_state = 0
+            0:
+                discard 0
+            1:
+                discard 0
+        match previous_start == 2:
+            -1:
+                match kind == 4:
+                    -1:
+                        match value == 3:
+                            -1:
+                                local_capture_state = 3
+                            0:
+                                ir_capacity_ok = 0
+                                local_capture_state = 0
+                            1:
+                                ir_capacity_ok = 0
+                                local_capture_state = 0
+                    0:
+                        ir_capacity_ok = 0
+                        local_capture_state = 0
+                    1:
+                        ir_capacity_ok = 0
+                        local_capture_state = 0
+            0:
+                discard 0
+            1:
+                discard 0
+        match previous_start == 3:
+            -1:
+                match kind == 1:
+                    -1:
+                        local_capture_type = value
+                        local_capture_state = 4
+                    0:
+                        ir_capacity_ok = 0
+                        local_capture_state = 0
+                    1:
+                        ir_capacity_ok = 0
+                        local_capture_state = 0
+            0:
+                discard 0
+            1:
+                discard 0
+        match previous_start == 4:
+            -1:
+                match kind == 4:
+                    -1:
+                        match value == 10:
+                            -1:
+                                local_capture_storage = 1
+                                local_capture_state = 5
+                            0:
+                                match value == 5:
+                                    -1:
+                                        local_capture_state = 8
+                                    0:
+                                        ir_capacity_ok = 0
+                                        local_capture_state = 0
+                                    1:
+                                        ir_capacity_ok = 0
+                                        local_capture_state = 0
+                            1:
+                                match value == 5:
+                                    -1:
+                                        local_capture_state = 8
+                                    0:
+                                        ir_capacity_ok = 0
+                                        local_capture_state = 0
+                                    1:
+                                        ir_capacity_ok = 0
+                                        local_capture_state = 0
+                    0:
+                        match kind == 3:
+                            -1:
+                                local_capture_state = 8
+                            0:
+                                ir_capacity_ok = 0
+                                local_capture_state = 0
+                            1:
+                                ir_capacity_ok = 0
+                                local_capture_state = 0
+                    1:
+                        match value == 10:
+                            -1:
+                                local_capture_storage = 1
+                                local_capture_state = 5
+                            0:
+                                match value == 5:
+                                    -1:
+                                        local_capture_state = 8
+                                    0:
+                                        ir_capacity_ok = 0
+                                        local_capture_state = 0
+                                    1:
+                                        ir_capacity_ok = 0
+                                        local_capture_state = 0
+                            1:
+                                match value == 5:
+                                    -1:
+                                        local_capture_state = 8
+                                    0:
+                                        ir_capacity_ok = 0
+                                        local_capture_state = 0
+                                    1:
+                                        ir_capacity_ok = 0
+                                        local_capture_state = 0
+            0:
+                discard 0
+            1:
+                discard 0
+        match previous_start == 5:
+            -1:
+                match kind == 2:
+                    -1:
+                        local_capture_extent = value
+                        local_capture_state = 6
+                    0:
+                        ir_capacity_ok = 0
+                        local_capture_state = 0
+                    1:
+                        ir_capacity_ok = 0
+                        local_capture_state = 0
+            0:
+                discard 0
+            1:
+                discard 0
+        match previous_start == 6:
+            -1:
+                match kind == 4:
+                    -1:
+                        match value == 11:
+                            -1:
+                                local_capture_state = 8
+                            0:
+                                ir_capacity_ok = 0
+                                local_capture_state = 0
+                            1:
+                                ir_capacity_ok = 0
+                                local_capture_state = 0
+                    0:
+                        ir_capacity_ok = 0
+                        local_capture_state = 0
+                    1:
+                        ir_capacity_ok = 0
+                        local_capture_state = 0
+            0:
+                discard 0
+            1:
+                discard 0
+        match previous_start == 8:
+            -1:
+                match local_capture_owner >= 0:
+                    -1:
+                        match ir_local_record_count < 229:
+                            -1:
+                                ir_local_owner[ir_local_record_count] = local_capture_owner
+                                ir_local_name[ir_local_record_count] = local_capture_name
+                                ir_local_type[ir_local_record_count] = local_capture_type
+                                ir_local_mutability[ir_local_record_count] = 1
+                                ir_local_storage[ir_local_record_count] = local_capture_storage
+                                ir_local_ordinal[ir_local_record_count] = local_capture_ordinal
+                                ir_local_extent[ir_local_record_count] = local_capture_extent
+                                ir_local_value_id[ir_local_record_count] = ir_local_record_count
+                                ir_local_record_count += 1
+                                local_capture_owner = -1
+                                local_capture_state = 0
+                            0:
+                                ir_capacity_ok = 0
+                                local_capture_state = 0
+                            1:
+                                ir_capacity_ok = 0
+                                local_capture_state = 0
+                    0:
+                        local_capture_state = 0
+                    1:
+                        local_capture_state = 0
+            0:
+                discard 0
+            1:
+                discard 0
         match kind == 2:
             -1:
                 simple_value = value
@@ -1758,6 +1993,7 @@ fn main() -> tryte:
                 match parameter_type_pending == -1:
                     -1:
                         ir_parameter_type[parameter_type_slot] = value
+                        ir_semantic_value_records[parameter_type_slot] = pack_ir_record(1, ir_parameter_owner[parameter_type_slot], value, parameter_type_slot)
                         parameter_type_pending = 0
                     0:
                         discard 0
@@ -1861,6 +2097,14 @@ fn main() -> tryte:
                 match value == 87:
                     -1:
                         local_count += 1
+                        local_capture_owner = current_function
+                        local_capture_ordinal = current_local_ordinal
+                        current_local_ordinal += 1
+                        local_capture_name = 0
+                        local_capture_type = 0
+                        local_capture_storage = 0
+                        local_capture_extent = 0
+                        local_capture_state = 1
                         ast_assignment_count += 1
                         ir_ast_event_opcode = 6
                         ir_ast_event_operand = value
@@ -2340,10 +2584,12 @@ fn main() -> tryte:
                                     -1:
                                         match signature_paren_depth > 0:
                                             -1:
-                                                match parameter_count < 68:
+                                                match parameter_count < 70:
                                                     -1:
                                                         ir_parameter_owner[parameter_count] = current_function
                                                         ir_parameter_name[parameter_count] = previous_value
+                                                        ir_parameter_mutability[parameter_count] = 0
+                                                        ir_parameter_value_id[parameter_count] = parameter_count
                                                         parameter_type_pending = -1
                                                         parameter_type_slot = parameter_count
                                                         match current_function >= 0:
@@ -2662,6 +2908,7 @@ fn main() -> tryte:
                                         function_flags[function_count] = 1
                                 function_count += 1
                                 current_function = function_count - 1
+                                current_local_ordinal = 0
                                 pending_function_name = 0
                                 parser_foreign_pending = 0
                             0:
@@ -2724,6 +2971,29 @@ fn main() -> tryte:
                 discard 0
             1:
                 discard 0
+    match local_count > 0:
+        -1:
+            match local_capture_state == 0:
+                -1:
+                    discard 0
+                0:
+                    ir_capacity_ok = 0
+                1:
+                    ir_capacity_ok = 0
+        0:
+            local_capture_state = 0
+        1:
+            local_capture_state = 0
+    match parameter_count + ir_local_record_count < 365:
+        -1:
+            while local_rebase_index < ir_local_record_count:
+                ir_local_value_id[local_rebase_index] = parameter_count + local_rebase_index
+                ir_semantic_value_records[parameter_count + local_rebase_index] = pack_ir_record(2, ir_local_owner[local_rebase_index], ir_local_type[local_rebase_index], local_rebase_index)
+                local_rebase_index += 1
+        0:
+            ir_capacity_ok = 0
+        1:
+            ir_capacity_ok = 0
     match function_count == 1:
         -1:
             match simple_number_seen == -1:
@@ -2937,9 +3207,9 @@ fn main() -> tryte:
                     -1:
                         discard 0
                     0:
-                        ir_value[ir_index] = to_i64(function_statements[ir_index])
+                        ir_value[ir_index] = function_statements[ir_index]
                     1:
-                        ir_value[ir_index] = to_i64(function_statements[ir_index])
+                        ir_value[ir_index] = function_statements[ir_index]
                 ir_index += 1
             match function_count == 1:
                 -1:
@@ -3125,6 +3395,83 @@ fn main() -> tryte:
                     1:
                         discard 0
                 call_verify_index += 1
+            mut parameter_verify_index: i64 = 0
+            while parameter_verify_index < parameter_count:
+                match ir_parameter_owner[parameter_verify_index] >= 0:
+                    -1:
+                        match ir_parameter_owner[parameter_verify_index] < function_count:
+                            -1:
+                                discard 0
+                            0:
+                                verifier_ok = 0
+                            1:
+                                verifier_ok = 0
+                    0:
+                        verifier_ok = 0
+                    1:
+                        verifier_ok = 0
+                match ir_parameter_name[parameter_verify_index] >= 0:
+                    -1:
+                        match ir_parameter_name[parameter_verify_index] < 365:
+                            -1:
+                                discard 0
+                            0:
+                                verifier_ok = 0
+                            1:
+                                verifier_ok = 0
+                    0:
+                        verifier_ok = 0
+                    1:
+                        verifier_ok = 0
+                match ir_parameter_mutability[parameter_verify_index] == 0:
+                    -1:
+                        discard 0
+                    0:
+                        verifier_ok = 0
+                    1:
+                        verifier_ok = 0
+                match ir_parameter_value_id[parameter_verify_index] == parameter_verify_index:
+                    -1:
+                        discard 0
+                    0:
+                        verifier_ok = 0
+                    1:
+                        verifier_ok = 0
+                match valid_type_name(ir_parameter_type[parameter_verify_index]):
+                    -1:
+                        discard 0
+                    0:
+                        verifier_ok = 0
+                    1:
+                        verifier_ok = 0
+                parameter_verify_index += 1
+            match parameter_count + ir_local_record_count < 365:
+                -1:
+                    discard 0
+                0:
+                    verifier_ok = 0
+                1:
+                    verifier_ok = 0
+            local_verify_index = 0
+            while local_verify_index < parameter_count:
+                match ir_semantic_value_records[local_verify_index] == pack_ir_record(1, ir_parameter_owner[local_verify_index], ir_parameter_type[local_verify_index], local_verify_index):
+                    -1:
+                        discard 0
+                    0:
+                        verifier_ok = 0
+                    1:
+                        verifier_ok = 0
+                local_verify_index += 1
+            local_verify_index = 0
+            while local_verify_index < ir_local_record_count:
+                match ir_semantic_value_records[parameter_count + local_verify_index] == pack_ir_record(2, ir_local_owner[local_verify_index], ir_local_type[local_verify_index], local_verify_index):
+                    -1:
+                        discard 0
+                    0:
+                        verifier_ok = 0
+                    1:
+                        verifier_ok = 0
+                local_verify_index += 1
             mut event_verify_index: i64 = 0
             while event_verify_index < ir_ast_event_count:
                 mut event_verify_bank: i64 = event_verify_index / 365
@@ -3196,6 +3543,131 @@ fn main() -> tryte:
                     1:
                         verifier_ok = 0
                 verify_index += 1
+            match ir_local_record_count == local_count:
+                -1:
+                    discard 0
+                0:
+                    verifier_ok = 0
+                1:
+                    verifier_ok = 0
+            match ir_local_record_count < 230:
+                -1:
+                    discard 0
+                0:
+                    verifier_ok = 0
+                1:
+                    verifier_ok = 0
+            local_verify_index = 0
+            while local_verify_index < ir_local_record_count:
+                match ir_local_owner[local_verify_index] >= 0:
+                    -1:
+                        discard 0
+                    0:
+                        verifier_ok = 0
+                    1:
+                        verifier_ok = 0
+                match ir_local_owner[local_verify_index] < function_count:
+                    -1:
+                        discard 0
+                    0:
+                        verifier_ok = 0
+                    1:
+                        verifier_ok = 0
+                match ir_local_name[local_verify_index] >= 0:
+                    -1:
+                        discard 0
+                    0:
+                        verifier_ok = 0
+                    1:
+                        verifier_ok = 0
+                match ir_local_name[local_verify_index] < 365:
+                    -1:
+                        discard 0
+                    0:
+                        verifier_ok = 0
+                    1:
+                        verifier_ok = 0
+                match valid_type_name(ir_local_type[local_verify_index]):
+                    -1:
+                        discard 0
+                    0:
+                        verifier_ok = 0
+                    1:
+                        verifier_ok = 0
+                match ir_local_mutability[local_verify_index] == 1:
+                    -1:
+                        discard 0
+                    0:
+                        verifier_ok = 0
+                    1:
+                        verifier_ok = 0
+                match ir_local_storage[local_verify_index] >= 0:
+                    -1:
+                        discard 0
+                    0:
+                        verifier_ok = 0
+                    1:
+                        verifier_ok = 0
+                match ir_local_storage[local_verify_index] < 2:
+                    -1:
+                        discard 0
+                    0:
+                        verifier_ok = 0
+                    1:
+                        verifier_ok = 0
+                match ir_local_ordinal[local_verify_index] >= 0:
+                    -1:
+                        discard 0
+                    0:
+                        verifier_ok = 0
+                    1:
+                        verifier_ok = 0
+                match ir_local_ordinal[local_verify_index] < 366:
+                    -1:
+                        discard 0
+                    0:
+                        verifier_ok = 0
+                    1:
+                        verifier_ok = 0
+                match ir_local_storage[local_verify_index] == 1:
+                    -1:
+                        match ir_local_extent[local_verify_index] > 0:
+                            -1:
+                                match ir_local_extent[local_verify_index] <= 365:
+                                    -1:
+                                        discard 0
+                                    0:
+                                        verifier_ok = 0
+                                    1:
+                                        verifier_ok = 0
+                            0:
+                                verifier_ok = 0
+                            1:
+                                verifier_ok = 0
+                    0:
+                        match ir_local_extent[local_verify_index] == 0:
+                            -1:
+                                discard 0
+                            0:
+                                verifier_ok = 0
+                            1:
+                                verifier_ok = 0
+                    1:
+                        match ir_local_extent[local_verify_index] == 0:
+                            -1:
+                                discard 0
+                            0:
+                                verifier_ok = 0
+                            1:
+                                verifier_ok = 0
+                match ir_local_value_id[local_verify_index] == parameter_count + local_verify_index:
+                    -1:
+                        discard 0
+                    0:
+                        verifier_ok = 0
+                    1:
+                        verifier_ok = 0
+                local_verify_index += 1
             match verifier_ok == 0:
                 -1:
                     discard 0
@@ -3360,7 +3832,7 @@ fn main() -> tryte:
                             -1:
                                 general_parameter_type_index = ir_function_param_start[general_parameter_type_scan]
                                 general_parameter_type_end = general_parameter_type_index + ir_function_param_count[general_parameter_type_scan]
-                                match general_parameter_type_end <= 68:
+                                match general_parameter_type_end <= 70:
                                     -1:
                                         while general_parameter_type_index < general_parameter_type_end:
                                             match valid_type_name(ir_parameter_type[general_parameter_type_index]):
@@ -3384,7 +3856,7 @@ fn main() -> tryte:
                             -1:
                                 general_parameter_type_index = ir_function_param_start[general_parameter_type_scan]
                                 general_parameter_type_end = general_parameter_type_index + ir_function_param_count[general_parameter_type_scan]
-                                match general_parameter_type_end <= 68:
+                                match general_parameter_type_end <= 70:
                                     -1:
                                         while general_parameter_type_index < general_parameter_type_end:
                                             match valid_type_name(ir_parameter_type[general_parameter_type_index]):
@@ -3530,7 +4002,7 @@ fn main() -> tryte:
                 0:
                     match function_count > 1:
                         -1:
-                            discard emit_audit_snapshot(function_count, foreign_count, parameter_count, local_count, ast_assignment_count, ast_call_count, ast_return_count, ast_match_count, ast_while_count, ast_break_count, ast_binop_count, ast_comparison_count, ast_cast_count, ast_discard_count, function_count - foreign_count, foreign_count, parameter_count, local_count, ir_block_count, ir_instruction_count, ir_value_count, ir_internal_call_count, ir_foreign_call_count, ir_branch_count, ir_loop_count, ir_return_count)
+                            discard emit_audit_snapshot(function_count, foreign_count, parameter_count, local_count, ast_assignment_count, ast_call_count, ast_return_count, ast_match_count, ast_while_count, ast_break_count, ast_binop_count, ast_comparison_count, ast_cast_count, ast_discard_count, function_count - foreign_count, foreign_count, parameter_count, ir_local_record_count, ir_block_count, ir_instruction_count, ir_value_count, ir_internal_call_count, ir_foreign_call_count, ir_branch_count, ir_loop_count, ir_return_count)
                             discard emit_blocked()
                             discard s3_stage1_exit(2)
                         0:
@@ -3545,7 +4017,7 @@ fn main() -> tryte:
         0:
             match function_count > 1:
                 -1:
-                    discard emit_audit_snapshot(function_count, foreign_count, parameter_count, local_count, ast_assignment_count, ast_call_count, ast_return_count, ast_match_count, ast_while_count, ast_break_count, ast_binop_count, ast_comparison_count, ast_cast_count, ast_discard_count, function_count - foreign_count, foreign_count, parameter_count, local_count, ir_block_count, ir_instruction_count, ir_value_count, ir_internal_call_count, ir_foreign_call_count, ir_branch_count, ir_loop_count, ir_return_count)
+                    discard emit_audit_snapshot(function_count, foreign_count, parameter_count, local_count, ast_assignment_count, ast_call_count, ast_return_count, ast_match_count, ast_while_count, ast_break_count, ast_binop_count, ast_comparison_count, ast_cast_count, ast_discard_count, function_count - foreign_count, foreign_count, parameter_count, ir_local_record_count, ir_block_count, ir_instruction_count, ir_value_count, ir_internal_call_count, ir_foreign_call_count, ir_branch_count, ir_loop_count, ir_return_count)
                     match ir_capacity_ok == -1:
                         -1:
                             discard emit_error()

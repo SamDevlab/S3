@@ -61,6 +61,7 @@ def test_current_source_supports_shape_preserving_local_metadata_design() -> Non
     result = audit(SOURCE.read_text(encoding="utf-8"))
     assert result["status"] == "STATIC_LOCAL_METADATA_DESIGN_PASS"
     assert result["observed"]["existing_local_record_arrays"] == []
+    assert result["observed"]["fixed_array_declaration_lines"] >= 8
     assert result["guards"]["mut_keyword_is_current_local_signal"] is True
     assert result["guards"]["current_function_state_exists"] is True
     assert result["guards"]["packed_local_record_fits_signed_i64"] is True

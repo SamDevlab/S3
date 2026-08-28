@@ -1,12 +1,8 @@
 from __future__ import annotations
 
-import hashlib
-
 import pytest
 
 from tools.patch_stage1_codegen_ir_v2_locals import SOURCE
-from tools.patch_stage1_codegen_ir_v2_parameters import build_candidate as build_parameter_candidate
-from tools.preflight_stage1_codegen_ir_v2_locals import source_metrics
 from tools.qualify_stage1_codegen_ir_v2_locals import (
     LocalNativeQualificationError,
     _native_count_guards,
@@ -14,93 +10,41 @@ from tools.qualify_stage1_codegen_ir_v2_locals import (
 )
 
 
-def _complete_parameter_report() -> dict[str, object]:
-    canonical = SOURCE.read_text(encoding="utf-8")
-    parameter_source = build_parameter_candidate(canonical)
-    encoded = parameter_source.encode("utf-8")
-    metrics = source_metrics(parameter_source)
-    audit = {
-        "function_count": 34,
-        "foreign_count": 5,
-        "parameter_count": 64,
-        "local_count": int(metrics["mut_hash_tokens"]),
-        "ast_assignment_count": 100,
-        "ast_call_count": int(metrics["call_syntax_count"]),
-        "ast_return_count": 100,
-        "ast_match_count": int(metrics["match_hash_tokens"]),
-        "ast_while_count": int(metrics["while_hash_tokens"]),
-        "ast_break_count": 0,
-        "ast_binop_count": 100,
-        "ast_comparison_count": 50,
-        "ast_cast_count": 0,
-        "ast_discard_count": 100,
-        "local_function_count": 29,
-        "ir_foreign_function_count": 5,
-        "ir_parameter_count": 64,
-        "ir_local_count": int(metrics["mut_hash_tokens"]),
-        "ir_block_count": 320,
-        "ir_instruction_count": int(metrics["structural_event_tokens"]),
-        "ir_value_count": int(metrics["numeric_tokens"]),
-        "ir_internal_call_count": max(0, int(metrics["call_syntax_count"]) - 3),
-        "ir_foreign_call_count": min(3, int(metrics["call_syntax_count"])),
-        "ir_branch_count": 100,
-        "ir_loop_count": int(metrics["while_hash_tokens"]),
-        "ir_return_count": 100,
-    }
+def _stale_parameter_report() -> dict[str, object]:
     return {
         "schema": "s3.selfhost.codegen-ir-v2-parameters-native-candidate.v1",
         "platform": {"system": "Linux", "machine": "x86_64", "compiler": "/usr/bin/cc"},
         "canonical_source_mutated": False,
-        "candidate": {
-            "source_sha256": hashlib.sha256(encoded).hexdigest(),
-            "source_bytes": len(encoded),
-        },
-        "self_source": {
-            "status": "PASS_PARAMETER_VERIFIER_TO_EXPECTED_EMITTER_BOUNDARY",
-            "returncode": 2,
-            "stdout_bytes": 0,
-            "audit": audit,
-            "final_marker": "S3_STAGE1_EMITTER_BLOCKED",
-        },
+        "candidate": {"source_sha256": "0" * 64, "source_bytes": 0},
         "qualification": {
-            "static_preflight": "PASS",
-            "prerequisite_capacity_report": "PASS_VALIDATED",
-            "candidate_build": "PASS",
-            "trivial_compile": "PASS",
-            "parameter_verifier_to_emitter_boundary": "PASS",
-            "capacity_guards": "PASS",
             "parameter_ir_v2_candidate": "PASS_NATIVE_CANDIDATE",
-            "canonical_commit_allowed": False,
         },
     }
 
 
-def test_strict_parameter_report_requires_every_subgate() -> None:
+def test_strict_parameter_report_rejects_stale_packed_candidate() -> None:
     canonical = SOURCE.read_text(encoding="utf-8")
-    report = _complete_parameter_report()
-    parameter_source, normalized, audit = validate_parameter_report_strict(
-        report,
-        canonical_source=canonical,
-    )
-    assert hashlib.sha256(parameter_source.encode("utf-8")).hexdigest() == report["candidate"]["source_sha256"]
-    assert normalized["parameter_count"] == 64
-    assert audit["function_count"] == 34
+    with pytest.raises(LocalNativeQualificationError, match="packed parameter candidate is stale"):
+        validate_parameter_report_strict(_stale_parameter_report(), canonical_source=canonical)
 
-    report["qualification"]["capacity_guards"] = "FAIL"
-    with pytest.raises(LocalNativeQualificationError, match="capacity_guards"):
+
+def test_strict_parameter_report_does_not_promote_advanced_source() -> None:
+    canonical = SOURCE.read_text(encoding="utf-8")
+    report = _stale_parameter_report()
+    report["canonical_source_mutated"] = True
+    with pytest.raises(LocalNativeQualificationError):
         validate_parameter_report_strict(report, canonical_source=canonical)
 
 
 def test_strict_parameter_report_requires_linux_boundary_provenance() -> None:
     canonical = SOURCE.read_text(encoding="utf-8")
-    report = _complete_parameter_report()
-    report["platform"]["system"] = "Windows"
-    with pytest.raises(LocalNativeQualificationError, match="Linux x86-64"):
+    report = _stale_parameter_report()
+    with pytest.raises(LocalNativeQualificationError, match="packed parameter candidate is stale"):
         validate_parameter_report_strict(report, canonical_source=canonical)
 
-    report = _complete_parameter_report()
-    report["self_source"]["final_marker"] = "S3_STAGE1_ERROR"
-    with pytest.raises(LocalNativeQualificationError, match="final marker"):
+    report = _stale_parameter_report()
+    report["qualification"]["parameter_ir_v2_candidate"] = "FAIL"
+    with pytest.raises(LocalNativeQualificationError, match="parameter IR-v2 prerequisite"):
         validate_parameter_report_strict(report, canonical_source=canonical)
 
 

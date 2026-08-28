@@ -10,28 +10,37 @@ from tools.patch_stage1_token_lane_wide_literals import (
     LEGACY_NUMERIC_PACK,
     SAFE_NUMERIC_PACK,
     SOURCE,
+    is_applied,
     transform,
 )
 
 
 def test_transform_is_deterministic_and_does_not_add_functions_or_locals() -> None:
     source = SOURCE.read_text(encoding="utf-8")
-    first = transform(source)
-    second = transform(source)
+    already_applied = is_applied(source)
+    first = source if already_applied else transform(source)
+    second = source if already_applied else transform(source)
 
     assert first == second
-    assert first != source
+    if already_applied:
+        assert first == source
+    else:
+        assert first != source
     assert first.count("fn ") == source.count("fn ")
     assert first.count("mut ") == source.count("mut ")
     assert LEGACY_NUMERIC_PACK not in first
     assert first.count(SAFE_NUMERIC_PACK) == 1
     assert first.count("mut slot: i64 = actual_start") == 1
-    assert first.count("slot = token_count") == 1
+    assert first.count("slot = token_count / 16") == 1
+    assert first.count("slot = token_count - slot * 16") == 1
+    assert first.count("mut function_statements: i64[64]") == 1
+    assert "to_i64(function_statements[ir_index])" not in first
+    assert first.count("ir_value[ir_index] = function_statements[ir_index]") == 2
 
 
 def test_transform_rejects_second_application() -> None:
     source = SOURCE.read_text(encoding="utf-8")
-    candidate = transform(source)
+    candidate = source if is_applied(source) else transform(source)
     with pytest.raises(ValueError, match="already applied"):
         transform(candidate)
 
@@ -77,7 +86,7 @@ def test_recovered_lane_covers_all_canonical_lexical_tokens() -> None:
 
 def test_candidate_recovered_lane_covers_all_candidate_tokens() -> None:
     source = SOURCE.read_text(encoding="utf-8")
-    candidate = transform(source)
+    candidate = source if is_applied(source) else transform(source)
     repaired = _execute(candidate, recover_numeric=True)
 
     assert repaired["full_character_coverage"] is True

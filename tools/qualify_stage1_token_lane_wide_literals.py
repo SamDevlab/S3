@@ -1,10 +1,10 @@
-"""Qualify the Stage1 wide-numeric token-lane candidate on Linux x86-64.
+"""Qualify the bounded full-source Stage1 capacity candidate on Linux x86-64.
 
 The qualifier deliberately separates tokenizer correctness from the capacities
 that become visible once the compiler can finally scan its entire own source.
-A token-lane PASS therefore proves full-source AST/call observations match the
-static repaired model; it does *not* authorize canonical promotion while newly
-exposed call/event/value/block capacities remain unresolved.
+A candidate PASS proves that the bounded full-source capacity transform reaches
+the native fail-closed boundary with the static repaired model; it does *not*
+authorize canonical promotion or any Stage2 work.
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ from pathlib import Path
 
 from tools.audit_stage1_token_lane_wide_literals import audit as static_audit
 from tools.build_stage1_compiler import build_stage1
-from tools.patch_stage1_token_lane_wide_literals import (
+from tools.patch_stage1_full_source_capacity_candidate import (
     BASELINE_SOURCE_SHA256,
     SOURCE,
     transform,
@@ -37,12 +37,12 @@ from tools.qualify_stage1_codegen_ir_v2_capacity import (
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REPORT = (
     ROOT / "reports" / "selfhost" / "stage1" /
-    "packed-token-lane-native-candidate.json"
+    "full-source-capacity-native-candidate.json"
 )
 
-CALL_CAPACITY = 730
-CALL_ARGUMENT_CAPACITY = 746
-EVENT_CAPACITY = 1460
+CALL_CAPACITY = 1095
+CALL_ARGUMENT_CAPACITY = 1043
+EVENT_CAPACITY = 4015
 
 
 def _sha256(data: bytes) -> str:
@@ -207,7 +207,7 @@ def qualify(*, report_path: Path, run_tests: bool = True) -> dict[str, object]:
             next_gate = "REBASE_COMPACTION_ON_QUALIFIED_WIDE_TOKEN_LANE_CANDIDATE"
 
         result = {
-            "schema": "s3.selfhost.packed-token-lane-native-candidate.v1",
+            "schema": "s3.selfhost.full-source-capacity-native-candidate.v1",
             "platform": {
                 "system": platform.system(),
                 "machine": platform.machine(),

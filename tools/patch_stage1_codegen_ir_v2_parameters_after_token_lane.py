@@ -18,7 +18,10 @@ import argparse
 import hashlib
 from pathlib import Path
 
-from tools.patch_stage1_codegen_ir_v2_parameters import transform_parameters
+from tools.patch_stage1_codegen_ir_v2_parameters import (
+    has_explicit_parameter_metadata,
+    transform_parameters,
+)
 from tools.patch_stage1_compaction_after_token_lane import build_compacted_candidate
 from tools.patch_stage1_token_lane_wide_literals import (
     BASELINE_SOURCE_SHA256,
@@ -31,6 +34,11 @@ def _sha256(source: str) -> str:
 
 
 def build_candidate(source: str) -> str:
+    if has_explicit_parameter_metadata(source):
+        raise ValueError(
+            "packed parameter candidate is stale: source already contains "
+            "explicit parameter metadata lanes"
+        )
     compacted = build_compacted_candidate(source)
     candidate = transform_parameters(compacted)
     if "return pack_token(position, 2, 0)" not in candidate:

@@ -101,7 +101,7 @@ def validate_parameter_report_strict(
             report,
             canonical_source=canonical_source,
         )
-    except LocalCandidateError as error:
+    except (LocalCandidateError, ValueError) as error:
         raise LocalNativeQualificationError(str(error)) from error
 
     platform_info = report.get("platform")

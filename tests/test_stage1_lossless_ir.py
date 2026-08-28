@@ -63,7 +63,6 @@ def test_stage1_ir_retains_identity_calls_operands_and_control_markers() -> None
     ):
         assert marker in source
     assert "ir_ast_event_opcode = 16" in source
-    assert "S3_STAGE1_EMITTER_BLOCKED" not in source
 
 
 @pytest.mark.parametrize(

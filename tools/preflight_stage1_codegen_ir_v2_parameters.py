@@ -17,7 +17,10 @@ from tools.patch_stage1_codegen_ir_v2_capacity import (
     BASELINE_SOURCE_SHA256,
     transform as compact_discard_events,
 )
-from tools.patch_stage1_codegen_ir_v2_parameters import transform_parameters
+from tools.patch_stage1_codegen_ir_v2_parameters import (
+    has_explicit_parameter_metadata,
+    transform_parameters,
+)
 from tools.qualify_stage1_codegen_ir_v2_capacity import EXPECTED_COMPACTED_VALUES
 
 
@@ -48,6 +51,27 @@ def _count(pattern: re.Pattern[str], source: str) -> int:
 
 
 def build_preflight(baseline: str) -> dict[str, object]:
+    if has_explicit_parameter_metadata(baseline):
+        return {
+            "schema": "s3.selfhost.codegen-ir-v2-parameter-preflight.v1",
+            "status": "BLOCKED_PACKED_PARAMETER_CANDIDATE_STALE",
+            "native_evidence": False,
+            "baseline_source_sha256": BASELINE_SOURCE_SHA256,
+            "current_source_has_explicit_parameter_metadata": True,
+            "guards": {
+                "no_new_function_signatures": False,
+                "value_upper_bound_below_capacity": False,
+                "block_upper_bound_below_capacity": False,
+                "single_packed_parameter_lane": False,
+                "discard_compaction_retained": False,
+            },
+            "preflight_pass": False,
+            "qualification_rule": (
+                "The packed parameter candidate is historical and cannot be "
+                "reconstructed from a source that already owns explicit "
+                "parameter metadata lanes."
+            ),
+        }
     compacted = compact_discard_events(baseline)
     candidate = transform_parameters(compacted)
 

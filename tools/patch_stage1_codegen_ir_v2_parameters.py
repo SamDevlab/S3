@@ -51,6 +51,20 @@ def _zero_array(size: int) -> str:
     return "[" + ", ".join("0" for _ in range(size)) + "]"
 
 
+def has_explicit_parameter_metadata(source: str) -> bool:
+    """Return whether ``source`` already owns the current parameter lanes."""
+
+    return all(
+        marker in source
+        for marker in (
+            "mut ir_parameter_owner: i64[",
+            "mut ir_parameter_name: i64[",
+            "mut ir_parameter_ordinal: i64[",
+            "mut ir_parameter_type: i64[",
+        )
+    )
+
+
 def transform_parameters(compacted_source: str) -> str:
     """Add packed parameter metadata and fail-closed verifier checks."""
 
@@ -151,7 +165,12 @@ def transform_parameters(compacted_source: str) -> str:
         "                            -1:\n"
         "                                match current_function >= 0:\n"
         "                                    -1:\n"
-        "                                        ir_parameter_records[pending_parameter_index] = (current_function + 1) * 1000000000000 + (pending_parameter_name + 1) * 1000000000 + (value + 1) * 1000000 + (pending_parameter_index - ir_function_param_start[current_function] + 1) * 1000 + (pending_parameter_index + 1)\n"
+        "                                        mut parameter_record_owner: i64 = current_function + 1\n"
+        "                                        mut parameter_record_name: i64 = pending_parameter_name + 1\n"
+        "                                        mut parameter_record_type: i64 = value + 1\n"
+        "                                        mut parameter_record_abi: i64 = pending_parameter_index - ir_function_param_start[current_function] + 1\n"
+        "                                        mut parameter_record_value: i64 = pending_parameter_index + 1\n"
+        "                                        ir_parameter_records[pending_parameter_index] = parameter_record_owner * 1000000000000 + parameter_record_name * 1000000000 + parameter_record_type * 1000000 + parameter_record_abi * 1000 + parameter_record_value\n"
         "                                        pending_parameter_index = -1\n"
         "                                    0:\n"
         "                                        ir_capacity_ok = 0\n"
@@ -330,6 +349,11 @@ def transform_parameters(compacted_source: str) -> str:
 def build_candidate(baseline_source: str) -> str:
     """Apply compaction then the parameter-metadata phase deterministically."""
 
+    if has_explicit_parameter_metadata(baseline_source):
+        raise ValueError(
+            "packed parameter candidate is stale: source already contains "
+            "explicit parameter metadata lanes"
+        )
     compacted = compact_discard_events(baseline_source)
     return transform_parameters(compacted)
 

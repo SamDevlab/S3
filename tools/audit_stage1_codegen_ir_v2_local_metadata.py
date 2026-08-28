@@ -135,9 +135,11 @@ def audit(source: str) -> dict[str, object]:
         for match in arrays
     }
 
+    # The current source owns eight explicit local metadata lanes.  They are
+    # the intended shape-preserving representation, not a legacy packed lane.
+    # Only the old aggregate ``ir_local_records`` name is a silent-reuse risk.
     existing_local_arrays = sorted(
-        name for name in declarations
-        if name.startswith("ir_local_") or name == "ir_local_records"
+        name for name in declarations if name == "ir_local_records"
     )
     has_counter = "mut ir_local_record_count: i64 = 0" in source
     has_local_count = "mut local_count: i64 = 0" in source

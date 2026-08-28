@@ -36,6 +36,7 @@ class InitializationAnalysisError(S3Error):
 
 Cell = tuple[int, int]
 StateMap = dict[Cell, InitializationState]
+BitState = tuple[int, int]
 
 
 @dataclass(frozen=True, slots=True)
@@ -67,6 +68,53 @@ def _join_maps(states: list[StateMap]) -> StateMap:
         for cell in result:
             result[cell] = _join_state(result[cell], state[cell])
     return result
+
+
+def _memory_layout(
+    function: IRFunction,
+) -> tuple[dict[int, int], dict[int, int], dict[int, int], int]:
+    """Assign each memory cell one bit position for flow analysis.
+
+    The previous implementation copied a dictionary entry for every cell into
+    every reachable block.  Large generated functions therefore consumed
+    memory proportional to ``blocks * cells``.  Bitsets retain the same three
+    state lattice while making block states compact.
+    """
+
+    offsets: dict[int, int] = {}
+    masks: dict[int, int] = {}
+    lengths: dict[int, int] = {}
+    offset = 0
+    for memory in sorted(function.memory_objects, key=lambda item: item.index):
+        offsets[memory.index] = offset
+        lengths[memory.index] = memory.length
+        masks[memory.index] = ((1 << memory.length) - 1) << offset
+        offset += memory.length
+    return offsets, masks, lengths, offset
+
+
+def _cell_bit(
+    memory: int,
+    index: int | None,
+    offsets: dict[int, int],
+    lengths: dict[int, int],
+) -> int:
+    if index is None or memory not in offsets:
+        return 0
+    if index < 0 or index >= lengths[memory]:
+        return 0
+    return 1 << (offsets[memory] + index)
+
+
+def _join_bit_states(states: list[BitState], full_mask: int) -> BitState:
+    assert states
+    initialized = states[0][0]
+    uninitialized = full_mask & ~(states[0][0] | states[0][1])
+    for state_initialized, state_maybe in states[1:]:
+        initialized &= state_initialized
+        uninitialized &= full_mask & ~(state_initialized | state_maybe)
+    maybe = full_mask & ~(initialized | uninitialized)
+    return initialized, maybe
 
 
 def _width(type_name: IRType) -> TernaryWidth:
@@ -185,52 +233,70 @@ def _constant_index(
 
 
 def _apply_store(
-    state: StateMap,
+    state: BitState,
     instruction: IRInstruction,
     constants: dict[int, int],
+    offsets: dict[int, int],
     memory_lengths: dict[int, int],
-) -> None:
+    memory_masks: dict[int, int],
+) -> BitState:
     assert instruction.memory is not None
+    initialized, maybe = state
     index = _constant_index(instruction, constants)
-    if index is not None and 0 <= index < memory_lengths[instruction.memory]:
-        state[(instruction.memory, index)] = InitializationState.INITIALIZED
-        return
-    for cell, current in tuple(state.items()):
-        if cell[0] != instruction.memory:
-            continue
-        if current is InitializationState.UNINITIALIZED:
-            state[cell] = InitializationState.MAYBE_INITIALIZED
+    bit = _cell_bit(
+        instruction.memory,
+        index,
+        offsets,
+        memory_lengths,
+    )
+    if bit:
+        return initialized | bit, maybe & ~bit
+    memory_mask = memory_masks[instruction.memory]
+    uninitialized = memory_mask & ~(initialized | maybe)
+    return initialized, maybe | uninitialized
 
 
 def _transfer(
-    state: StateMap,
+    state: BitState,
     instructions: tuple[IRInstruction, ...],
     constants: dict[int, int],
+    offsets: dict[int, int],
     memory_lengths: dict[int, int],
-) -> StateMap:
-    result = dict(state)
+    memory_masks: dict[int, int],
+) -> BitState:
+    result = state
     for instruction in instructions:
         if instruction.opcode is IROpcode.STORE:
-            _apply_store(result, instruction, constants, memory_lengths)
+            result = _apply_store(
+                result,
+                instruction,
+                constants,
+                offsets,
+                memory_lengths,
+                memory_masks,
+            )
     return result
 
 
-def _analyze_function(function: IRFunction) -> FunctionInitialization:
+def _analyze_function(
+    function: IRFunction,
+    *,
+    include_states: bool,
+) -> FunctionInitialization:
     blocks = {block.name: block for block in function.blocks}
     successors = _successors(function)
     predecessors = _predecessors(function, successors)
     reachable = _reachable(successors)
     constants = _constant_values(function)
-    initial = _initial_state(function)
-    memory_lengths = {
-        memory.index: memory.length for memory in function.memory_objects
-    }
+    offsets, memory_masks, memory_lengths, total_cells = _memory_layout(function)
+    full_mask = (1 << total_cells) - 1 if total_cells else 0
+    initial: BitState = (0, 0)
     memory_mutability = {
         memory.index: memory.mutable for memory in function.memory_objects
     }
 
-    entries: dict[str, StateMap] = {}
-    exits: dict[str, StateMap] = {}
+    entries: dict[str, BitState] = {}
+    exits: dict[str, BitState] = {}
     changed = True
     while changed:
         changed = False
@@ -246,12 +312,14 @@ def _analyze_function(function: IRFunction) -> FunctionInitialization:
                 incoming.insert(0, initial)
             if not incoming:
                 continue
-            entry = _join_maps(incoming)
+            entry = _join_bit_states(incoming, full_mask)
             exit_state = _transfer(
                 entry,
                 block.instructions,
                 constants,
+                offsets,
                 memory_lengths,
+                memory_masks,
             )
             if entries.get(block.name) != entry:
                 entries[block.name] = entry
@@ -263,17 +331,18 @@ def _analyze_function(function: IRFunction) -> FunctionInitialization:
     for block in function.blocks:
         if block.name not in reachable:
             continue
-        state = dict(entries[block.name])
+        state = entries[block.name]
         for instruction in block.instructions:
             if instruction.opcode is IROpcode.LOAD:
                 assert instruction.memory is not None
                 index = _constant_index(instruction, constants)
-                if (
-                    index is not None
-                    and 0 <= index < memory_lengths[instruction.memory]
-                    and state[(instruction.memory, index)]
-                    is InitializationState.UNINITIALIZED
-                ):
+                bit = _cell_bit(
+                    instruction.memory,
+                    index,
+                    offsets,
+                    memory_lengths,
+                )
+                if bit and not (state[0] & bit) and not (state[1] & bit):
                     raise InitializationAnalysisError(
                         f"function '{function.name}', block '{block.name}', "
                         f"load: memory m{instruction.memory} index {index} is "
@@ -294,12 +363,16 @@ def _analyze_function(function: IRFunction) -> FunctionInitialization:
             elif instruction.opcode is IROpcode.STORE:
                 assert instruction.memory is not None
                 index = _constant_index(instruction, constants)
+                bit = _cell_bit(
+                    instruction.memory,
+                    index,
+                    offsets,
+                    memory_lengths,
+                )
                 if (
                     not memory_mutability[instruction.memory]
-                    and index is not None
-                    and 0 <= index < memory_lengths[instruction.memory]
-                    and state[(instruction.memory, index)]
-                    is InitializationState.INITIALIZED
+                    and bit
+                    and state[0] & bit
                 ):
                     raise InitializationAnalysisError(
                         f"function '{function.name}', block '{block.name}', "
@@ -318,15 +391,43 @@ def _analyze_function(function: IRFunction) -> FunctionInitialization:
                             "index": index,
                         },
                     )
-                _apply_store(state, instruction, constants, memory_lengths)
+                state = _apply_store(
+                    state,
+                    instruction,
+                    constants,
+                    offsets,
+                    memory_lengths,
+                    memory_masks,
+                )
 
-    def freeze(states: dict[str, StateMap]):
+    def freeze(states: dict[str, BitState]):
+        if not include_states:
+            return ()
+        cells = tuple(
+            (memory.index, index)
+            for memory in sorted(
+                function.memory_objects,
+                key=lambda item: item.index,
+            )
+            for index in range(memory.length)
+        )
         return tuple(
             (
                 name,
                 tuple(
-                    (cell, state.value)
-                    for cell, state in sorted(states[name].items())
+                    (
+                        cell,
+                        (
+                            InitializationState.INITIALIZED
+                            if states[name][0]
+                            & (1 << (offsets[cell[0]] + cell[1]))
+                            else InitializationState.MAYBE_INITIALIZED
+                            if states[name][1]
+                            & (1 << (offsets[cell[0]] + cell[1]))
+                            else InitializationState.UNINITIALIZED
+                        ).value,
+                    )
+                    for cell in cells
                 ),
             )
             for name in sorted(states)
@@ -340,11 +441,15 @@ def _analyze_function(function: IRFunction) -> FunctionInitialization:
     )
 
 
-def analyze_initialization(module: IRModule) -> InitializationReport:
+def analyze_initialization(
+    module: IRModule,
+    *,
+    include_states: bool = True,
+) -> InitializationReport:
     verify_ir(module)
     return InitializationReport(
         tuple(
-            _analyze_function(function)
+            _analyze_function(function, include_states=include_states)
             for function in module.functions
             if not function.external
         )
