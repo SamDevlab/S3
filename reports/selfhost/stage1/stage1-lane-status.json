@@ -1,6 +1,7 @@
 {
   "checkpoint": "2026-08-28",
   "base": "d67da9ea7dc8b83b0b80adb681011717eebec616",
+  "current_head": "e275a4f239d029ac968f6bfb0a58244f59d81ee0",
   "branch": "recovery/pr268-stage1-lanes-20260828",
   "lanes": {
     "S1.1": "PASS",
@@ -11,7 +12,11 @@
     "S1.6": "NOT_RUN",
     "S1.7": "BLOCKED"
   },
-  "current_first_blocker": "S1.2_TYPED_CONSTANTS",
+  "recovered_wave_b_expression_candidate": "PASS",
+  "recovered_wave_b_expression_candidate_sha256": "ff047a880b871d6428e2f33198db09d9b5c416b940df8bfe4d96867031439858",
+  "current_first_blocker": "S1.2_TYPED_CONSTANTS_CANONICAL_INTEGRATION",
+  "exact_reproducer": "fn main() -> tryte: return 1 + 2; canonical self-input emits S3_STAGE1_EMITTER_BLOCKED",
+  "next_allowed_task": "integrate typed constant identities into the canonical Stage1 IR",
   "self_emit": "NOT_RUN",
   "stage2": "NOT_RUN",
   "stage3": "NOT_RUN"
