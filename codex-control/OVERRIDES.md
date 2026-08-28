@@ -1,70 +1,72 @@
 # Live overrides
 
-CONTROL_REVISION: 32
+CONTROL_REVISION: 33
 
-## CLEAN WORKTREE + CLASSIFICATION ONLY
+## PROVENANCE GRAPH ONLY — NO REAPPLICATION
 
-Revision 31 preservation completed with no blocker.
+Revision 32 completed clean detached worktree creation and coarse classification.
 
-Verified recovery package:
+Confirmed:
 
 ```text
-C:\Users\samue\Downloads\S3\S3-PR268-Recovery-Rev31-20260827-214412
+DIRTY_WORKTREE=C:\Users\samue\Downloads\S3\S3-actual-stage1-compiler-seed-20260824
+CLEAN_WORKTREE=C:\Users\samue\Downloads\S3\S3-PR268-Clean-Rev32
+HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
+CLEAN_STATUS_EMPTY=YES
+KEEP_STAGE1_CORE=28
+QUARANTINE_OLD_COMPACTION_CAPACITY=366
+QUARANTINE_HISTORICAL_REPORTS=66
+REGENERABLE=1
+UNKNOWN=2
 ```
 
-Verified facts:
+Unknown files:
 
 ```text
-LOCAL_HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
-REMOTE_HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
-LEFT_RIGHT=0 0
-TRACKED_MODIFIED=36
-UNTRACKED=454
-TRACKED_DIFF_PATCH_SHA256=0ffb5b361b70a89d16e6393117efd8d5b5bf028742e04bf3303d6297ddd388fd
-SHA256_MANIFEST_ENTRIES=210
-```
-
-Critical recovery copies match originals:
-
-```text
-canonical Stage03-lineage = 739dc6ac16c2c79a4f3bff0b7ca2f40324171b3ad155f7a6265747d441cb5758
-expression lowering = ff047a880b871d6428e2f33198db09d9b5c416b940df8bfe4d96867031439858
-semantic stream = b2ee279dbb11358a0c5b9774e08e9217f4c904a9bb39825a71ad8362362e4d5c
+scratch_host_probe_stage4.py
+scratch_test_eq_chain.py
 ```
 
 ## Authorized now
 
-Read `codex-control/RECOVERY_REV32_CLEAN_WORKTREE_CLASSIFICATION.md`.
+Read `codex-control/RECOVERY_REV33_PROVENANCE_GRAPH.md`.
 
-1. Create a NEW detached clean worktree outside the dirty checkout at exact commit `d67da9e...`.
-2. Verify the new worktree has empty `git status --short`.
-3. Leave the original dirty worktree untouched.
-4. Read the Rev31 recovery manifests and dirty worktree read-only.
-5. Classify relevant source/test/tool/report artifacts into KEEP / QUARANTINE / REGENERABLE / UNKNOWN categories defined by revision 32.
-6. Write classification manifests outside both worktrees.
-7. Return classification counts and STOP.
+Perform read-only provenance/dependency analysis only:
+
+1. inspect each KEEP/UNKNOWN relevant source/test/tool;
+2. map each to Stage03/pass1, expression lowering, call dataflow, terminators/serialization/emitter, oracle/conformance, or unknown;
+3. distinguish native Stage1 implementation evidence from hosted oracle/reference support;
+4. resolve the two scratch unknowns without executing them;
+5. check whether KEEP items depend on quarantined compaction/capacity work;
+6. determine the highest semantic checkpoint supported by exact artifact-linked evidence;
+7. produce a minimal ordered reapplication plan;
+8. write Rev33 outputs outside both worktrees;
+9. STOP.
+
+## Evidence rule
+
+File presence is not PASS evidence.
+Historical PASS can only be carried forward when an existing report/checkpoint concretely links command/result/hash to the exact artifact under review.
+Missing linkage = NOT_PROVABLE.
 
 ## Forbidden
 
-No source changes in either worktree.
-No patch apply or file copy into clean worktree.
-No cleanup of dirty worktree.
+No source mutation in either worktree.
+No patch/copy reapplication.
 No tests/builds/probes.
-No commit/push.
-No pull/rebase/merge.
-No reset/restore/clean of original.
+No artifact regeneration.
+No cleanup/deletion.
+No commit/push/pull/rebase/merge.
+No reset/restore/checkout/clean.
 No canonical promotion/mutation.
-No semantic-stage advance.
 No SELF_EMIT/Stage2/Stage3/T4/benchmark/merge.
 
 ## Authorization boundary
 
-Create detached clean worktree = YES
-Classification outside worktrees = YES
-Original dirty worktree mutation = NO
-Clean source mutation = NO
+Read-only provenance = YES
+External provenance reports = YES
 Reapply work = NO
-Cleanup = NO
 Build/test = NO
+Cleanup = NO
 Commit/push = NO
 Semantic resume = NOT YET
