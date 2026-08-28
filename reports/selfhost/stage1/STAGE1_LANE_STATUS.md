@@ -2,7 +2,8 @@
 
 Checkpoint: 2026-08-28
 Base HEAD: `d67da9ea7dc8b83b0b80adb681011717eebec616`
-Current HEAD: `6842137f6cbb6c46da2f28cf9508be4e0f114bc3`
+Last validated implementation/test HEAD: `6842137f6cbb6c46da2f28cf9508be4e0f114bc3`
+Documentation checkpoint parent: `4997e58b3b1a15e9d014c88da82e9a9c8a5b85bc`
 Branch: `recovery/pr268-stage1-lanes-20260828`
 
 | Lane | Hosted Contract | Native Implementation | Focused Tests | Native Probe | Status |

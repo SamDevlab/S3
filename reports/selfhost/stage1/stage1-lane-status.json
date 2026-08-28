@@ -1,7 +1,9 @@
 {
   "checkpoint": "2026-08-28",
   "base": "d67da9ea7dc8b83b0b80adb681011717eebec616",
-  "current_head": "6842137f6cbb6c46da2f28cf9508be4e0f114bc3",
+  "last_validated_implementation_test_head": "6842137f6cbb6c46da2f28cf9508be4e0f114bc3",
+  "documentation_checkpoint_parent": "4997e58b3b1a15e9d014c88da82e9a9c8a5b85bc",
+  "current_head_is_documentation_only_after_validation": true,
   "branch": "recovery/pr268-stage1-lanes-20260828",
   "lanes": {
     "S1.1": "PASS",
