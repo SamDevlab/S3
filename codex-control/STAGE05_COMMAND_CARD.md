@@ -1,114 +1,92 @@
-# Codex fast path — recovery/preservation
+# Codex fast path — recovery/classification
 
-Read `CURRENT.json` and `OVERRIDES.md` first.
+Read `CURRENT.json`, `OVERRIDES.md`, and `RECOVERY_REV32_CLEAN_WORKTREE_CLASSIFICATION.md` first.
 
-## REVISION 31 — DIRTY WORKTREE PRESERVATION
+## REVISION 32 — CLEAN WORKTREE + CLASSIFICATION ONLY
 
-Reconciliation is complete:
-
-```text
-LOCAL_HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
-REMOTE_HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
-LEFT_RIGHT=0 0
-TRACKED_MODIFIED=36
-UNTRACKED=454
-```
-
-The problem is not branch divergence. The problem is a large uncommitted worktree.
-
-Important preserved artifacts:
+Revision 31 preservation is complete and verified.
 
 ```text
-canonical local:
-  selfhost/compiler/s3c_stage1.s3
-  sha256=739dc6ac16c2c79a4f3bff0b7ca2f40324171b3ad155f7a6265747d441cb5758
-  bytes=211674
-  classification=Stage03-lineage source
-
-expression lowering:
-  .artifacts/s3c_stage1_expression_lowering_v2.s3
-  sha256=ff047a880b871d6428e2f33198db09d9b5c416b940df8bfe4d96867031439858
-  bytes=222530
-  tracked=NO
+HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
+DIRTY_TRACKED=36
+DIRTY_UNTRACKED=454
+RECOVERY_PACKAGE=C:\Users\samue\Downloads\S3\S3-PR268-Recovery-Rev31-20260827-214412
 ```
 
 ## Do this now
 
-Create one recovery package OUTSIDE the repository, following:
-
 ```text
-codex-control/RECOVERY_REV31_DIRTY_WORKTREE_PRESERVATION.md
+1. create NEW detached worktree at exact d67da9e outside dirty checkout
+2. verify clean worktree status is empty
+3. do NOT modify original dirty worktree
+4. do NOT apply/copy any preserved changes yet
+5. classify preserved relevant artifacts into:
+   KEEP_STAGE1_CORE
+   KEEP_EXPRESSION_LOWERING
+   KEEP_CALLS_STAGE1
+   KEEP_ORACLE_AND_CONFORMANCE
+   QUARANTINE_OLD_COMPACTION_CAPACITY
+   QUARANTINE_HISTORICAL_REPORTS
+   REGENERABLE_ARTIFACTS
+   UNKNOWN_REVIEW_REQUIRED
+6. write classification manifests outside both worktrees
+7. return checkpoint
+8. STOP
 ```
 
-Package must contain:
+Critical artifacts that must be classified explicitly:
 
 ```text
-git-status-short.txt
-tracked-diff.patch            # git diff --binary HEAD
-tracked-diff-stat.txt
-changed-files.txt
-untracked-files.txt
-untracked-size-summary.txt
-sha256-manifest.txt
-canonical-local-stage03-lineage.s3
-s3c_stage1_expression_lowering_v2.s3
-stage1_semantic_stream_v2.s3  # if present
-recovery-metadata.txt
+selfhost/compiler/s3c_stage1.s3
+.artifacts/s3c_stage1_expression_lowering_v2.s3
+selfhost/compiler/stage1_semantic_stream_v2.s3
+bootstrap/s3/codegen.py
+bootstrap/s3/initialization.py
+bootstrap/s3/optimizer.py
+all Stage1 semantic/codegen/call/expression-lowering tools/tests
 ```
-
-Verify copied-source hashes against originals.
-
-Do NOT modify the repository while creating the package.
 
 ## Return
 
 ```text
-PAIRING_PRESERVATION_BEGIN
-CONTROL_REVISION=31
-LOCAL_HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
-REMOTE_HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
-LOCAL_REMOTE_LEFT_RIGHT=0 0
-RECOVERY_PACKAGE_PATH=
-RECOVERY_PACKAGE_OUTSIDE_REPOSITORY=YES
-RECOVERY_PACKAGE_FILE_COUNT=
-TRACKED_DIFF_PATCH_PRESENT=
-TRACKED_DIFF_PATCH_SHA256=
-CHANGED_FILES_MANIFEST_COUNT=
-UNTRACKED_FILES_MANIFEST_COUNT=
-SHA256_MANIFEST_ENTRY_COUNT=
-UNTRACKED_TOTAL_BYTES=
-UNTRACKED_TOP_LEVEL_SIZE_SUMMARY=
-CANONICAL_COPY_PRESENT=
-CANONICAL_ORIGINAL_SHA256=739dc6ac16c2c79a4f3bff0b7ca2f40324171b3ad155f7a6265747d441cb5758
-CANONICAL_COPY_SHA256=
-CANONICAL_COPY_MATCH=
-EXPRESSION_LOWERING_COPY_PRESENT=
-EXPRESSION_LOWERING_ORIGINAL_SHA256=ff047a880b871d6428e2f33198db09d9b5c416b940df8bfe4d96867031439858
-EXPRESSION_LOWERING_COPY_SHA256=
-EXPRESSION_LOWERING_COPY_MATCH=
-SEMANTIC_STREAM_PRESENT=
-SEMANTIC_STREAM_COPY_SHA256=
-WORKTREE_STATUS_CHANGED_BY_EXPORT=NO
+PAIRING_CLASSIFICATION_BEGIN
+CONTROL_REVISION=32
+ORIGINAL_DIRTY_WORKTREE_PATH=
+ORIGINAL_DIRTY_HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
+ORIGINAL_DIRTY_STATUS_UNCHANGED=
+CLEAN_WORKTREE_PATH=
+CLEAN_WORKTREE_OUTSIDE_DIRTY=YES
+CLEAN_WORKTREE_HEAD=
+CLEAN_WORKTREE_STATUS_EMPTY=
+KEEP_STAGE1_CORE_COUNT=
+KEEP_EXPRESSION_LOWERING_COUNT=
+KEEP_CALLS_STAGE1_COUNT=
+KEEP_ORACLE_AND_CONFORMANCE_COUNT=
+QUARANTINE_OLD_COMPACTION_CAPACITY_COUNT=
+QUARANTINE_HISTORICAL_REPORTS_COUNT=
+REGENERABLE_ARTIFACTS_COUNT=
+UNKNOWN_REVIEW_REQUIRED_COUNT=
+CLASSIFICATION_FILES=
+CANONICAL_STAGE03_LINEAGE_CLASSIFICATION=
+EXPRESSION_LOWERING_CLASSIFICATION=
+SEMANTIC_STREAM_CLASSIFICATION=
+PATCH_OR_COPY_APPLIED_TO_CLEAN_WORKTREE=NO
 NEW_TEST=NO
 NEW_BUILD=NO
 NEW_COMMIT=NO
 NEW_PUSH=NO
 CLEANUP_OR_DELETION=NO
-FIRST_PRESERVATION_BLOCKER=
-PAIRING_PRESERVATION_END
+SEMANTIC_STAGE_ADVANCED=NO
+FIRST_CLASSIFICATION_BLOCKER=
+PAIRING_CLASSIFICATION_END
 ```
-
-Then STOP.
 
 ## Locked
 
+No source mutation.
+No patch/copy reapplication.
 No cleanup.
-No semantic resume yet.
-No source/report edits.
 No tests/builds.
 No commit/push.
-No pull/rebase/merge.
-No reset/restore/checkout/clean.
-No canonical mutation.
-No artifact regeneration.
+No canonical promotion.
 No SELF_EMIT/Stage2/Stage3/T4/benchmark/merge.
