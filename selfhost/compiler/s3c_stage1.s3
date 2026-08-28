@@ -1559,6 +1559,7 @@ fn main() -> tryte:
     mut ir_instruction_count: i64 = 0
     mut ir_value_count: i64 = 0
     mut ir_semantic_value_records: i64[365] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    mut s12_constant_definition_records: i64[365] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     mut ir_block_count: i64 = 0
     mut ir_branch_count: i64 = 0
     mut ir_loop_count: i64 = 0
@@ -1569,6 +1570,12 @@ fn main() -> tryte:
     mut ir_call_count: i64 = 0
     mut ir_call_arg_pool_count: i64 = 0
     mut ir_local_record_count: i64 = 0
+    mut s12_constant_count: i64 = 0
+    mut s12_constant_ok: trit = -1
+    mut s12_semantic_value_id: i64 = 0
+    mut s12_constant_verify_index: i64 = 0
+    mut s12_constant_verify_record: i64 = 0
+    mut s12_observation_possible: trit = 0
     mut local_capture_state: i64 = 0
     mut local_capture_owner: i64 = -1
     mut local_capture_name: i64 = 0
@@ -1940,6 +1947,91 @@ fn main() -> tryte:
                         discard 0
                     1:
                         discard 0
+                match current_function >= 0:
+                    -1:
+                        mut s12_type_name: i64 = to_i64(function_types[current_function])
+                        match previous_start == 8:
+                            -1:
+                                s12_type_name = local_capture_type
+                            0:
+                                discard 0
+                            1:
+                                discard 0
+                        mut s12_constant_type_code: i64 = 0
+                        match s12_type_name == 76:
+                            -1:
+                                s12_constant_type_code = 1
+                            0:
+                                match s12_type_name == 313:
+                                    -1:
+                                        s12_constant_type_code = 2
+                                    0:
+                                        match s12_type_name == 66:
+                                            -1:
+                                                s12_constant_type_code = 3
+                                            0:
+                                                match s12_type_name == 103:
+                                                    -1:
+                                                        s12_constant_type_code = 4
+                                                    0:
+                                                        discard 0
+                                                    1:
+                                                        s12_constant_type_code = 4
+                                            1:
+                                                s12_constant_type_code = 3
+                                    1:
+                                        s12_constant_type_code = 2
+                            1:
+                                s12_constant_type_code = 1
+                        match s12_constant_type_code > 0:
+                            -1:
+                                match value >= -730:
+                                    -1:
+                                        match value <= 730:
+                                            -1:
+                                                match cursor < 1000000000:
+                                                    -1:
+                                                        match next_cursor - cursor < 1000:
+                                                            -1:
+                                                                match parameter_count + ir_local_record_count + s12_constant_count < 365:
+                                                                    -1:
+                                                                        mut s12_owner_scale: i64 = 5
+                                                                        mut s12_definition_header: i64 = current_function + 1
+                                                                        s12_definition_header = s12_definition_header * s12_owner_scale
+                                                                        s12_definition_header = s12_definition_header + s12_constant_type_code
+                                                                        s12_definition_header = s12_definition_header * 1461
+                                                                        s12_definition_header = s12_definition_header + value
+                                                                        s12_definition_header = s12_definition_header + 730
+                                                                        s12_constant_definition_records[s12_constant_count] = s12_definition_header * 1000000000 + cursor * 1000 + next_cursor - cursor
+                                                                        s12_constant_count += 1
+                                                                    0:
+                                                                        s12_constant_ok = 0
+                                                                    1:
+                                                                        s12_constant_ok = 0
+                                                            0:
+                                                                s12_constant_ok = 0
+                                                            1:
+                                                                s12_constant_ok = 0
+                                                    0:
+                                                        s12_constant_ok = 0
+                                                    1:
+                                                        s12_constant_ok = 0
+                                            0:
+                                                s12_constant_ok = 0
+                                            1:
+                                                s12_constant_ok = 0
+                                    0:
+                                        s12_constant_ok = 0
+                                    1:
+                                        s12_constant_ok = 0
+                            0:
+                                s12_constant_ok = 0
+                            1:
+                                s12_constant_ok = 0
+                    0:
+                        s12_constant_ok = 0
+                    1:
+                        s12_constant_ok = 0
             0:
                 discard 0
             1:
@@ -2994,6 +3086,41 @@ fn main() -> tryte:
             ir_capacity_ok = 0
         1:
             ir_capacity_ok = 0
+    match parameter_count + ir_local_record_count + s12_constant_count < 365:
+        -1:
+            s12_semantic_value_id = parameter_count + ir_local_record_count
+            s12_constant_verify_index = 0
+            while s12_constant_verify_index < s12_constant_count:
+                s12_constant_verify_record = s12_constant_definition_records[s12_constant_verify_index]
+                mut s12_final_value_scale: i64 = 1461
+                mut s12_final_owner_scale: i64 = 5
+                mut s12_final_header: i64 = s12_constant_verify_record / 1000000000
+                mut s12_final_owner_type: i64 = s12_final_header / s12_final_value_scale
+                mut s12_final_owner_quotient: i64 = s12_final_owner_type / s12_final_owner_scale
+                mut s12_final_payload: i64 = s12_final_header - (s12_final_owner_type * s12_final_value_scale)
+                mut s12_final_type: i64 = s12_final_owner_type - s12_final_owner_quotient * s12_final_owner_scale
+                mut s12_final_literal: i64 = s12_final_payload - 730
+                ir_semantic_value_records[s12_semantic_value_id] = pack_ir_record(3, s12_final_owner_quotient - 1, s12_final_type, s12_final_literal)
+                s12_semantic_value_id += 1
+                s12_constant_verify_index += 1
+        0:
+            ir_capacity_ok = 0
+            match parameter_count + ir_local_record_count < 365:
+                -1:
+                    s12_constant_count = 365 - parameter_count - ir_local_record_count
+                0:
+                    s12_constant_count = 0
+                1:
+                    s12_constant_count = 0
+        1:
+            ir_capacity_ok = 0
+            match parameter_count + ir_local_record_count < 365:
+                -1:
+                    s12_constant_count = 365 - parameter_count - ir_local_record_count
+                0:
+                    s12_constant_count = 0
+                1:
+                    s12_constant_count = 0
     match function_count == 1:
         -1:
             match simple_number_seen == -1:
@@ -3472,6 +3599,70 @@ fn main() -> tryte:
                     1:
                         verifier_ok = 0
                 local_verify_index += 1
+            s12_constant_verify_index = 0
+            while s12_constant_verify_index < s12_constant_count:
+                s12_constant_verify_record = s12_constant_definition_records[s12_constant_verify_index]
+                s12_semantic_value_id = parameter_count + ir_local_record_count + s12_constant_verify_index
+                mut s12_verify_value_scale: i64 = 1461
+                mut s12_verify_owner_scale: i64 = 5
+                mut s12_verify_header: i64 = s12_constant_verify_record / 1000000000
+                mut s12_verify_owner_type: i64 = s12_verify_header / s12_verify_value_scale
+                mut s12_verify_owner: i64 = s12_verify_owner_type / s12_verify_owner_scale - 1
+                mut s12_verify_owner_quotient: i64 = s12_verify_owner_type / s12_verify_owner_scale
+                mut s12_verify_type: i64 = s12_verify_owner_type - s12_verify_owner_quotient * s12_verify_owner_scale
+                mut s12_verify_payload: i64 = s12_verify_header - s12_verify_owner_type * s12_verify_value_scale
+                mut s12_verify_literal: i64 = s12_verify_payload - 730
+                mut s12_verify_tail: i64 = s12_constant_verify_record - s12_verify_header * 1000000000
+                mut s12_verify_anchor: i64 = s12_verify_tail / 1000
+                mut s12_verify_length: i64 = s12_verify_tail - s12_verify_anchor * 1000
+                match s12_semantic_value_id < 365:
+                    -1:
+                        match ir_semantic_value_records[s12_semantic_value_id] == pack_ir_record(3, s12_verify_owner, s12_verify_type, s12_verify_literal):
+                            -1:
+                                discard 0
+                            0:
+                                verifier_ok = 0
+                            1:
+                                verifier_ok = 0
+                        match s12_verify_owner >= 0:
+                            -1:
+                                match s12_verify_owner < function_count:
+                                    -1:
+                                        discard 0
+                                    0:
+                                        verifier_ok = 0
+                                    1:
+                                        verifier_ok = 0
+                            0:
+                                verifier_ok = 0
+                            1:
+                                verifier_ok = 0
+                        match s12_verify_type > 0:
+                            -1:
+                                discard 0
+                            0:
+                                verifier_ok = 0
+                            1:
+                                verifier_ok = 0
+                        match s12_verify_anchor >= 0:
+                            -1:
+                                discard 0
+                            0:
+                                verifier_ok = 0
+                            1:
+                                verifier_ok = 0
+                        match s12_verify_length > 0:
+                            -1:
+                                discard 0
+                            0:
+                                verifier_ok = 0
+                            1:
+                                verifier_ok = 0
+                    0:
+                        verifier_ok = 0
+                    1:
+                        verifier_ok = 0
+                s12_constant_verify_index += 1
             mut event_verify_index: i64 = 0
             while event_verify_index < ir_ast_event_count:
                 mut event_verify_bank: i64 = event_verify_index / 365
@@ -3932,6 +4123,108 @@ fn main() -> tryte:
             pipeline_ok = 0
         1:
             pipeline_ok = 0
+    match s12_constant_ok == -1:
+        -1:
+            discard 0
+        0:
+            pipeline_ok = 0
+        1:
+            pipeline_ok = 0
+    match function_count == 1:
+        -1:
+            match s12_constant_count > 0:
+                -1:
+                    match local_count > 0:
+                        -1:
+                            s12_observation_possible = -1
+                        0:
+                            match ast_binop_count > 0:
+                                -1:
+                                    s12_observation_possible = -1
+                                0:
+                                    discard 0
+                                1:
+                                    s12_observation_possible = -1
+                        1:
+                            match ast_binop_count > 0:
+                                -1:
+                                    s12_observation_possible = -1
+                                0:
+                                    discard 0
+                                1:
+                                    s12_observation_possible = -1
+                0:
+                    discard 0
+                1:
+                    discard 0
+        0:
+            discard 0
+        1:
+            discard 0
+    match pipeline_ok == 0:
+        -1:
+            s12_observation_possible = -1
+        0:
+            discard 0
+        1:
+            discard 0
+    match s12_observation_possible == -1:
+        -1:
+            mut s12_output_index: i64 = 0
+            mut s12_output_value_id: i64 = parameter_count + ir_local_record_count
+            while s12_output_index < s12_constant_count:
+                mut s12_output_record: i64 = s12_constant_definition_records[s12_output_index]
+                mut s12_output_value_scale: i64 = 1461
+                mut s12_output_owner_scale: i64 = 5
+                mut s12_output_header: i64 = s12_output_record / 1000000000
+                mut s12_output_owner_type: i64 = s12_output_header / s12_output_value_scale
+                mut s12_output_owner_quotient: i64 = s12_output_owner_type / s12_output_owner_scale
+                mut s12_output_type: i64 = s12_output_owner_type - s12_output_owner_quotient * s12_output_owner_scale
+                mut s12_output_payload: i64 = s12_output_header - s12_output_owner_type * s12_output_value_scale
+                mut s12_output_literal: i64 = s12_output_payload - 730
+                mut s12_output_tail: i64 = s12_output_record - s12_output_header * 1000000000
+                mut s12_output_anchor: i64 = s12_output_tail / 1000
+                mut s12_output_length: i64 = s12_output_tail - s12_output_anchor * 1000
+                discard write_error_byte(83)
+                discard write_error_byte(51)
+                discard write_error_byte(95)
+                discard write_error_byte(83)
+                discard write_error_byte(84)
+                discard write_error_byte(65)
+                discard write_error_byte(71)
+                discard write_error_byte(69)
+                discard write_error_byte(49)
+                discard write_error_byte(95)
+                discard write_error_byte(84)
+                discard write_error_byte(89)
+                discard write_error_byte(80)
+                discard write_error_byte(69)
+                discard write_error_byte(68)
+                discard write_error_byte(95)
+                discard write_error_byte(67)
+                discard write_error_byte(79)
+                discard write_error_byte(78)
+                discard write_error_byte(83)
+                discard write_error_byte(84)
+                discard write_error_byte(65)
+                discard write_error_byte(78)
+                discard write_error_byte(84)
+                discard write_error_byte(32)
+                discard emit_audit_value(s12_output_value_id)
+                discard emit_audit_value(s12_output_owner_quotient - 1)
+                discard emit_audit_value(s12_output_type)
+                discard emit_audit_value(s12_output_literal)
+                discard emit_audit_value(s12_output_anchor)
+                discard emit_audit_value(s12_output_length)
+                discard write_error_byte(45)
+                discard write_error_byte(49)
+                discard write_error_byte(10)
+                s12_output_index += 1
+                s12_output_value_id += 1
+        0:
+            discard 0
+        1:
+            discard 0
     match pipeline_ok == -1:
         -1:
             match general_emitter_possible == -1:
