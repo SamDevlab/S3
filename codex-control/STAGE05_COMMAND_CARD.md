@@ -1,45 +1,55 @@
-# Codex fast path — recovery/provenance
+# Codex fast path — autonomous overnight Stage1 → Stage2 → Stage3
 
-Read `CURRENT.json`, `OVERRIDES.md`, and `RECOVERY_REV33_PROVENANCE_GRAPH.md` first.
-
-## REVISION 33 — PROVENANCE GRAPH ONLY
-
-Revision 32 completed successfully:
+Read, in order:
 
 ```text
-HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
-DIRTY_WORKTREE=preserved
-CLEAN_DETACHED_WORKTREE=created and empty
-KEEP_STAGE1_CORE=28
-QUARANTINE_OLD_COMPACTION_CAPACITY=366
-QUARANTINE_HISTORICAL_REPORTS=66
-REGENERABLE=1
-UNKNOWN=2
+codex-control/CURRENT.json
+codex-control/OVERRIDES.md
+codex-control/RECOVERY_REV33_PROVENANCE_GRAPH.md
+codex-control/OVERNIGHT_REV34_STAGE1_STAGE2_STAGE3.md
 ```
 
-## Do this now
+Expected control:
 
 ```text
-1. inspect KEEP and UNKNOWN items read-only
-2. build exact per-file provenance/dependency records
-3. resolve scratch_host_probe_stage4.py and scratch_test_eq_chain.py without executing them
-4. distinguish native Stage1 implementation from hosted oracle/conformance
-5. identify exact artifact-linked historical validation, if any
-6. determine highest semantic checkpoint actually provable
-7. produce minimal ordered reapplication waves with exact paths
-8. write reports outside both worktrees
-9. STOP
+CONTROL_REVISION=34
+ACTIVE_STAGE=OVERNIGHT_GATED_STAGE1_STAGE2_STAGE3
 ```
 
-Do not claim PASS from file presence alone.
-Do not copy/apply anything to the clean worktree yet.
+## Mandatory first action
 
-## Locked
+Finish revision-33 provenance analysis before reapplying anything.
 
-No source mutation.
-No patch/copy reapplication.
-No cleanup.
-No tests/builds/probes.
-No commit/push.
-No canonical promotion.
-No SELF_EMIT/Stage2/Stage3/T4/benchmark/merge.
+Then, only if the provenance graph gives a safe ordered plan:
+
+```text
+Stage1 minimal reapplication waves
+→ validate each wave
+→ narrow repairs only
+→ Stage1 closure
+→ SELF_EMIT
+→ Stage2
+→ Stage2 compiles Stage3
+→ Stage2↔Stage3 equality/determinism
+→ correctness tests
+→ benchmark
+→ final report
+→ shutdown Windows after 60s
+```
+
+## Critical rules
+
+- Original dirty worktree is immutable evidence.
+- Use a dedicated overnight branch from exact d67da9e.
+- Missing evidence is never PASS.
+- Hosted oracle is not native Stage1 proof.
+- Stage2 must be produced by actual SELF_EMIT.
+- Stage3 must be produced by actual Stage2.
+- Do not invent equality rules.
+- Benchmark comes last.
+- No PR merge.
+- No force push.
+- Stop at first non-narrow/unprovable blocker.
+- Write final report before shutdown.
+
+Full campaign rules are in `OVERNIGHT_REV34_STAGE1_STAGE2_STAGE3.md`.
