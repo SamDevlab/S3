@@ -2,13 +2,13 @@
 
 Checkpoint: 2026-08-28
 Base HEAD: `d67da9ea7dc8b83b0b80adb681011717eebec616`
-Current HEAD: `e275a4f239d029ac968f6bfb0a58244f59d81ee0`
+Current HEAD: `6842137f6cbb6c46da2f28cf9508be4e0f114bc3`
 Branch: `recovery/pr268-stage1-lanes-20260828`
 
 | Lane | Hosted Contract | Native Implementation | Focused Tests | Native Probe | Status |
 | --- | --- | --- | --- | --- | --- |
 | S1.1 Foundation/Bindings | PASS | PASS | PASS | PASS | PASS |
-| S1.2 Typed Constants | PASS for recovered candidate | PASS for recovered candidate | PASS | PASS | BLOCKED |
+| S1.2 Typed Constants | Candidate PASS; canonical BLOCKED | Candidate PASS; canonical BLOCKED | PASS | PASS | BLOCKED |
 | S1.3 Def/Use | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN |
 | S1.4 Calls | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN |
 | S1.5 Terminators | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN |
@@ -23,7 +23,7 @@ Branch: `recovery/pr268-stage1-lanes-20260828`
 
 `RECOVERED_WAVE_B_CANDIDATE=PASS_HASH_ff047a880b871d6428e2f33198db09d9b5c416b940df8bfe4d96867031439858`
 
-`NEXT_ALLOWED_TASK=integrate typed constant identities into the canonical Stage1 IR`
+`NEXT_ALLOWED_TASK=design and integrate canonical typed constant identities with definition/use links`
 
 `SELF_EMIT=NOT_RUN`
 
@@ -34,3 +34,20 @@ Branch: `recovery/pr268-stage1-lanes-20260828`
 No lane is marked PASS without a corresponding contract, focused test, and
 native evidence. The structured sequence remains S1.2 through S1.7, followed
 by native Stage1 and only then self-emission.
+
+## S1.2 Reconciliation
+
+The static audit reports `STATUS=BLOCKED_GENERAL_EMITTER_CAPABILITY_GAP` with
+32 functions, 70 parameters, 229 local declarations, 903 calls, and 1058
+call arguments. The canonical source has no typed constant interning or
+definition IDs, no operand/result value IDs, and no canonical serialized IR
+artifact. Its numeric records preserve lexical observations rather than
+semantic constant identities. The recovered expression candidate demonstrates
+the required typed records, but it is not the canonical implementation and
+cannot be promoted by changing the emitter contract implicitly.
+
+The focused requirements, general-emitter, and lossless-IR tests pass after
+their expectations were aligned with the current canonical source. The
+canonical source check and `compileall bootstrap/s3` also pass. The canonical
+self-input still emits `S3_STAGE1_EMITTER_BLOCKED`; therefore S1.2 remains
+blocked and no S1.3 work is authorized.

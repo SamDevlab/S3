@@ -2,10 +2,11 @@
 
 BASE_HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
 FINAL_BRANCH=recovery/pr268-stage1-lanes-20260828
-FINAL_HEAD=bbbc0034ec391a87616aacaea0cbbc5ce3f83e92
+FINAL_TESTED_HEAD=6842137f6cbb6c46da2f28cf9508be4e0f114bc3
+REPORT_HEAD=DOCUMENTATION_UPDATE_PENDING
 
 FOUNDATION=PASS
-TYPED_CONSTANTS=BLOCKED
+TYPED_CONSTANTS=BLOCKED_CANONICAL_TYPED_IDENTITY_GAP
 DEF_USE=NOT_RUN
 CALL_DATAFLOW=NOT_RUN
 TERMINATORS=NOT_RUN
@@ -26,7 +27,7 @@ BENCHMARK=NOT_RUN
 CURRENT_FIRST_BLOCKER=S1.2_TYPED_CONSTANTS_CANONICAL_INTEGRATION
 NEXT_ALLOWED_TASK=integrate typed constant identities into the canonical Stage1 IR
 
-COMMITS=2776792e5664a72cfd062895381ace674029a8fe selfhost(stage1): recover proven semantic foundation; e275a4f239d029ac968f6bfb0a58244f59d81ee0 selfhost(stage1): recover qualified expression lowering base; bbbc0034ec391a87616aacaea0cbbc5ce3f83e92 docs(selfhost): record Stage1 lane checkpoints
+COMMITS=2776792e5664a72cfd062895381ace674029a8fe selfhost(stage1): recover proven semantic foundation; e275a4f239d029ac968f6bfb0a58244f59d81ee0 selfhost(stage1): recover qualified expression lowering base; bbbc0034ec391a87616aacaea0cbbc5ce3f83e92 docs(selfhost): record Stage1 lane checkpoints; 6842137f6cbb6c46da2f28cf9508be4e0f114bc3 test(selfhost): align Stage1 semantic audit counts
 PUSH=NO
 
 ## Evidence
@@ -48,10 +49,16 @@ The canonical probe accepts the literal-return subset, but does not yet carry
 typed local initializers or expression results through the emitter.
 
 The static semantic audit identified the missing canonical capabilities:
-typed constant interning and definition IDs; instruction operand/result/order
-records; call result and argument value IDs; complete terminator links; and a
-canonical serialized IR artifact. Those gaps prevent a narrow general-emitter
-repair. No information was fabricated and no emitter validation was weakened.
+parameter/local semantic identities; typed constant interning and definition
+IDs; instruction operand/result/order records; call result and argument value
+IDs; complete terminator links; and a canonical serialized IR artifact. Those
+gaps prevent a narrow general-emitter repair. No information was fabricated
+and no emitter validation was weakened.
+
+The observed audit counts are 32 functions, 70 parameters, 229 local
+declarations, 903 calls, and 1058 call arguments. The focused test contract
+now records those actual source counts. This is a test-contract correction,
+not evidence that the canonical typed-constant lane is complete.
 
 No Stage2, Stage3, self-emission, benchmark, or T4 was run. The next session
 must begin with S1.2 only and must re-read the lane tracker before editing.
