@@ -1,133 +1,102 @@
 # Live overrides
 
-CONTROL_REVISION: 29
+CONTROL_REVISION: 30
 
-## STALE-CONTEXT FIREWALL + POST-PUSH SNAPSHOT ONLY
+## LOCAL CODEX STOP CONFIRMED — READ-ONLY RECONCILIATION
 
-Historical Codex summaries resurfaced reporting:
+The user clarified that the supplied output reporting:
 
 ```text
 CONTROL_REVISION=3
 ACTIVE_STAGE=03_PASS1_BINDINGS
-HEAD around 800a3ab / 326d42f
+commits 800a3ab / 326d42f
 ```
 
-Those are historical checkpoints, not current control.
+is the exact point where the local Codex session stopped. It is **not** to be dismissed as stale context.
 
-The file:
+At that local stop, the reported facts were:
 
 ```text
-reports/selfhost/stage1/PASS1_BINDINGS_CANDIDATE_20260827.md
+Linux SSH = PASS
+host = Ubuntuserve
+Python = 3.14.4
+cc = /usr/bin/cc
+Stage03 Pass1 candidate = implemented/validated
+Stage0 = PASS
+focused tests = PASS
+Linux native build = PASS
+trivial probe = PASS
+canonical source mutated = NO
 ```
 
-is valid Stage03 evidence but explicitly records `CONTROL_REVISION=3` and `ACTIVE_STAGE=03_PASS1_BINDINGS`. It must never override `codex-control/CURRENT.json`.
-
-Current authoritative remote state remains:
-
-```text
-CONTROL_REVISION=29
-ACTIVE_STAGE=05_CALLS_ARRAYS_S3
-PR268_HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
-PR268_STATE=OPEN_DRAFT_MERGEABLE_NOT_MERGED
-```
-
-## Hard stale-context rule
-
-```text
-IF any compacted summary / historical report says CONTROL_REVISION < 29:
-    classify STALE_CONTEXT
-    do not regress stage
-    do not execute its NEXT instruction
-
-IF it says ACTIVE_STAGE=03 while CURRENT.json says Stage05:
-    classify STALE_CONTEXT
-
-ONLY a newer codex-control/CURRENT.json may supersede revision 29.
-```
-
-The separately reported local edit:
+A later editor state also reported:
 
 ```text
 stage1_expression_lowering_v2.s3
-+1410 lines reported in editor
+approximately +1410 lines
 ```
 
-is not present as a changed path in the remote PR #268 delta. Treat it as:
+Its exact path/tracked state/hash/bytes/diff are not yet recorded.
+
+## Remote divergence
+
+The currently observed remote PR #268 is:
 
 ```text
-LOCAL_UNRECONCILED_ARTIFACT
+HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
+STATE=OPEN_DRAFT_MERGEABLE_NOT_MERGED
 ```
 
-until the local snapshot reports exact path, tracked/untracked state, SHA256, bytes and diff stat. Do not delete, restore, build, test, commit or push it.
+Remote compare shows three later commits after `326d42f` and 9 noncanonical qualifier/test/report paths. `selfhost/compiler/s3c_stage1.s3` is not in that later remote delta.
+
+Do not guess how the stopped local session relates to those later remote commits. Reconcile first.
 
 ## Do this now
 
-No more edits.
-No tests.
-No builds.
-No cleanup.
-No commit.
-No push.
-No force-push.
-No revert.
+READ-ONLY commands only.
 
-Capture the LOCAL post-push state only, including the expression-lowering artifact if present:
+Capture:
 
-1. exact local HEAD and branch;
-2. equality with remote `d67da9e...`;
-3. exact `git status --short`;
-4. changed and untracked lists;
-5. per-file diff stats;
-6. classify Stage05-owned vs old-compaction vs canonical/other;
-7. canonical local-vs-HEAD hash/bytes and saved patch provenance;
-8. Stage05 candidate/transform hashes and telemetry state;
-9. `stage1_expression_lowering_v2.s3` path/status/SHA/bytes/diff if present;
-10. return the revision-29 recovery block;
-11. STOP.
-
-## Preserve Stage05 evidence
-
-```text
-one-arg internal call -> structural good / Z3
-ordered multi-arg internal call -> recovered to Z3
-unresolved callee -> fail-closed
-nested call with representable inner result -> pass
-nested a + 1 fixture -> expression-lowering limitation reproduced without call
-```
-
-Preserve the two comma/cursor repairs and the Stage05-consumed-token legacy-dispatch guard.
+1. current local branch and HEAD;
+2. `git status --short`;
+3. exact changed/untracked files;
+4. per-file diff stat;
+5. whether local HEAD is `326d42f`, `d67da9e`, or another commit;
+6. `git log --oneline --decorate -n 12`;
+7. `git rev-list --left-right --count HEAD...origin/feature/actual-stage1-compiler-seed-20260824` after a read-only fetch if needed;
+8. exact status/path/SHA256/bytes/diff for `stage1_expression_lowering_v2.s3` if present;
+9. canonical local SHA256/bytes and HEAD version SHA256/bytes;
+10. identify local Stage03-owned changes versus later/unrelated changes;
+11. return the revision-30 reconciliation block;
+12. STOP.
 
 ## Forbidden
 
-```text
-git reset --hard
-git clean
-git checkout -- <path>
-git restore <path>
-git push --force
-```
-
-No implementation commit or push.
-No canonical mutation/restore/revert.
-No arrays, foreign calls, capacity work, Stage06+.
+No source/report edits.
+No tests.
+No native builds.
+No cleanup/deletion.
+No commit.
+No push.
+No pull/rebase/merge into the worktree.
+No reset/restore/checkout of files.
+No force-push/revert.
+No canonical mutation.
 No SELF_EMIT, Stage2, Stage3, T4 or benchmark.
 
 ## Authorization boundary
 
-Historical Stage03 checkpoint = EVIDENCE_ONLY
-Stage regression from stale summary = NO
-New native build = NO
-New test execution = NO
-Source/report/qualifier edit = NO
+Confirmed local Stage03 stop = REAL LOCAL CHECKPOINT
+Semantic resume stage = NOT YET DECIDED
+Remote d67da9e = OBSERVED LATER REMOTE STATE
+New build = NO
+New test = NO
+Edit = NO
+Commit = NO
+Push = NO
+Pull/rebase/merge = NO
 Cleanup = NO
-Implementation commit = NO
-Implementation push = NO
-Force reset/revert remote commits = NO
 Canonical mutation = NO
-Canonical restore/revert = NO
-Arrays = NO
-Foreign calls = NO
-Stage06 = NO
 SELF_EMIT = NO
 Stage2 = NO
 Stage3 = NO
