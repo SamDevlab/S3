@@ -2,14 +2,14 @@
 
 Checkpoint: 2026-08-28
 Base HEAD: `d67da9ea7dc8b83b0b80adb681011717eebec616`
-Last validated implementation/test HEAD: `6842137f6cbb6c46da2f28cf9508be4e0f114bc3`
-Documentation checkpoint parent: `4997e58b3b1a15e9d014c88da82e9a9c8a5b85bc`
+Last validated implementation/test HEAD: `6dc94422dee9724ab9112f6e8d29248c191c445f`
+Documentation checkpoint parent: `6dc94422dee9724ab9112f6e8d29248c191c445f`
 Branch: `recovery/pr268-stage1-lanes-20260828`
 
 | Lane | Hosted Contract | Native Implementation | Focused Tests | Native Probe | Status |
 | --- | --- | --- | --- | --- | --- |
 | S1.1 Foundation/Bindings | PASS | PASS | PASS | PASS | PASS |
-| S1.2 Typed Constants | Candidate PASS; canonical BLOCKED | Candidate PASS; canonical BLOCKED | PASS | PASS | BLOCKED |
+| S1.2 Typed Constants | PASS | PASS | PASS | PASS | PASS |
 | S1.3 Def/Use | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN |
 | S1.4 Calls | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN |
 | S1.5 Terminators | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN |
@@ -18,13 +18,13 @@ Branch: `recovery/pr268-stage1-lanes-20260828`
 
 ## Gate State
 
-`CURRENT_FIRST_BLOCKER=S1.2_TYPED_CONSTANTS_CANONICAL_INTEGRATION`
+`CURRENT_FIRST_BLOCKER=S1.3_DEF_USE`
 
-`EXACT_REPRODUCER=fn main() -> tryte: return 1 + 2; canonical self-input still emits S3_STAGE1_EMITTER_BLOCKED`
+`EXACT_REPRODUCER=fn main() -> tryte: return 1 + 2; canonical self-input remains S3_STAGE1_EMITTER_BLOCKED until S1.3-S1.7 close the remaining lanes`
 
 `RECOVERED_WAVE_B_CANDIDATE=PASS_HASH_ff047a880b871d6428e2f33198db09d9b5c416b940df8bfe4d96867031439858`
 
-`NEXT_ALLOWED_TASK=design and integrate canonical typed constant identities with definition/use links`
+`NEXT_ALLOWED_TASK=integrate canonical def/use records consuming the S1.2 semantic value IDs`
 
 `SELF_EMIT=NOT_RUN`
 
@@ -38,17 +38,18 @@ by native Stage1 and only then self-emission.
 
 ## S1.2 Reconciliation
 
-The static audit reports `STATUS=BLOCKED_GENERAL_EMITTER_CAPABILITY_GAP` with
-32 functions, 70 parameters, 229 local declarations, 903 calls, and 1058
-call arguments. The canonical source has no typed constant interning or
-definition IDs, no operand/result value IDs, and no canonical serialized IR
-artifact. Its numeric records preserve lexical observations rather than
-semantic constant identities. The recovered expression candidate demonstrates
-the required typed records, but it is not the canonical implementation and
-cannot be promoted by changing the emitter contract implicitly.
+The canonical source now records each numeric literal as a typed constant
+definition, with kind `3`, the existing type-code mapping, an owning function,
+and a source anchor. Semantic value IDs are allocated after the parameter and
+local binding IDs; the definition-table index is not exposed as a value ID and
+no storage or scratch slot is used as identity. Repeated literal occurrences
+remain distinct, matching the candidate's factual behavior.
 
-The focused requirements, general-emitter, and lossless-IR tests pass after
-their expectations were aligned with the current canonical source. The
-canonical source check and `compileall bootstrap/s3` also pass. The canonical
-self-input still emits `S3_STAGE1_EMITTER_BLOCKED`; therefore S1.2 remains
-blocked and no S1.3 work is authorized.
+The final semantic capacity is enforced after all bindings are known. For the
+canonical self-input, the remaining suffix is `299..364`; excess constant
+occurrences fail closed and are not reported with out-of-domain IDs. The native
+probe confirms the minimal literal path, local initializer, addition, existing
+type codes, deterministic repeated execution, and exact unresolved-identifier
+failure. The canonical self-input still exits at the expected
+`S3_STAGE1_EMITTER_BLOCKED` boundary, so S1.3 is the next allowed lane and no
+general emitter capability is being claimed.

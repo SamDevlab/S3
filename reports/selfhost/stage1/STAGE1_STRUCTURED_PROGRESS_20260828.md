@@ -2,12 +2,12 @@
 
 BASE_HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
 FINAL_BRANCH=recovery/pr268-stage1-lanes-20260828
-FINAL_TESTED_HEAD=6842137f6cbb6c46da2f28cf9508be4e0f114bc3
-REPORT_BASE_HEAD=4997e58b3b1a15e9d014c88da82e9a9c8a5b85bc
+FINAL_TESTED_HEAD=6dc94422dee9724ab9112f6e8d29248c191c445f
+REPORT_BASE_HEAD=6dc94422dee9724ab9112f6e8d29248c191c445f
 SOURCE_CHANGED_AFTER_VALIDATION=NO
 
 FOUNDATION=PASS
-TYPED_CONSTANTS=BLOCKED_CANONICAL_TYPED_IDENTITY_GAP
+TYPED_CONSTANTS=PASS
 DEF_USE=NOT_RUN
 CALL_DATAFLOW=NOT_RUN
 TERMINATORS=NOT_RUN
@@ -15,7 +15,7 @@ CANONICAL_SERIALIZATION=NOT_RUN
 GENERAL_EMITTER=BLOCKED
 
 NATIVE_BUILD=PASS
-CANONICAL_SELF_INPUT=FAIL
+CANONICAL_SELF_INPUT=BLOCKED_EMITTER_BOUNDARY
 
 BOOTSTRAP_STAGE1=BLOCKED
 SELF_EMIT=NOT_RUN
@@ -25,10 +25,10 @@ FIXED_POINT=NOT_RUN
 CORRECTNESS=NOT_RUN
 BENCHMARK=NOT_RUN
 
-CURRENT_FIRST_BLOCKER=S1.2_TYPED_CONSTANTS_CANONICAL_INTEGRATION
-NEXT_ALLOWED_TASK=integrate typed constant identities into the canonical Stage1 IR
+CURRENT_FIRST_BLOCKER=S1.3_DEF_USE
+NEXT_ALLOWED_TASK=integrate canonical def/use records consuming the S1.2 semantic value IDs
 
-COMMITS=2776792e5664a72cfd062895381ace674029a8fe selfhost(stage1): recover proven semantic foundation; e275a4f239d029ac968f6bfb0a58244f59d81ee0 selfhost(stage1): recover qualified expression lowering base; bbbc0034ec391a87616aacaea0cbbc5ce3f83e92 docs(selfhost): record Stage1 lane checkpoints; 6842137f6cbb6c46da2f28cf9508be4e0f114bc3 test(selfhost): align Stage1 semantic audit counts
+COMMITS=2776792e5664a72cfd062895381ace674029a8fe selfhost(stage1): recover proven semantic foundation; e275a4f239d029ac968f6bfb0a58244f59d81ee0 selfhost(stage1): recover qualified expression lowering base; bbbc0034ec391a87616aacaea0cbbc5ce3f83e92 docs(selfhost): record Stage1 lane checkpoints; 684213711fd4662116f93abfdaade2879f9cefb0 test(selfhost): align Stage1 semantic audit counts; 6dc94422dee9724ab9112f6e8d29248c191c445f selfhost(stage1): integrate canonical typed constant identities
 PUSH=NO
 
 ## Evidence
@@ -43,23 +43,21 @@ a typed constant and `return 1 + 2`. The native candidate output contained
 typed value records, instruction records, operand/result links, and a return
 link. An unresolved identifier produced an incomplete `Z 0` stream.
 
-The candidate is not the canonical emitter. The canonical source remains
-`739dc6ac16c2c79a4f3bff0b7ca2f40324171b3ad155f7a6265747d441cb5758` and its
-self-input still exits with `2` and emits `S3_STAGE1_EMITTER_BLOCKED`.
-The canonical probe accepts the literal-return subset, but does not yet carry
-typed local initializers or expression results through the emitter.
+The canonical source now records typed constant identities. Its self-input
+still exits with `2` and emits `S3_STAGE1_EMITTER_BLOCKED`, which is the
+expected boundary while def/use, call dataflow, terminators, serialization,
+and the general emitter remain unimplemented. The canonical native view never
+reports a constant ID beyond the global semantic domain.
 
-The static semantic audit identified the missing canonical capabilities:
-parameter/local semantic identities; typed constant interning and definition
-IDs; instruction operand/result/order records; call result and argument value
-IDs; complete terminator links; and a canonical serialized IR artifact. Those
-gaps prevent a narrow general-emitter repair. No information was fabricated
-and no emitter validation was weakened.
+The remaining lossless-IR gaps are instruction operand/result/order records,
+call result and argument value IDs, complete terminator links, and a canonical
+serialized IR artifact. Those gaps still prevent a narrow general-emitter
+repair. No information was fabricated and no emitter validation was weakened.
 
-The observed audit counts are 32 functions, 70 parameters, 229 local
-declarations, 903 calls, and 1058 call arguments. The focused test contract
-now records those actual source counts. This is a test-contract correction,
-not evidence that the canonical typed-constant lane is complete.
+The final native self-input audit observed the updated source counters and
+remained at the emitter boundary; the focused test contract records the
+factual audit tuple. This is evidence for the S1.2 checkpoint, not a claim of
+general-emitter completeness.
 
 No Stage2, Stage3, self-emission, benchmark, or T4 was run. The next session
-must begin with S1.2 only and must re-read the lane tracker before editing.
+may begin with S1.3 only and must re-read the lane tracker before editing.
