@@ -2,25 +2,41 @@
 
 Use this file only after reading `CURRENT.json` and `OVERRIDES.md`.
 
-## REVISION 28 — POST-PUSH SNAPSHOT ONLY
+## REVISION 29 — STALE-CONTEXT FIREWALL / SNAPSHOT ONLY
 
-PR #268 remote HEAD is now:
-
-```text
-d67da9ea7dc8b83b0b80adb681011717eebec616
-```
-
-It is 3 commits ahead of the previously observed `326d42f...`. Those three commits are confined remotely to 9 qualifier/test/report paths; the canonical Stage1 source path is not in that remote delta.
-
-Do not revert or force-reset them now. Do not add another commit.
-
-A Tests workflow on `d67da9e...` was observed with conclusion `failure`; no specific code cause is assigned because logs were unavailable.
-
-Read:
+Current control is **NOT Stage03**.
 
 ```text
-codex-control/RECOVERY_REV28_POST_PUSH_CONTAINMENT.md
+CONTROL_REVISION=29
+ACTIVE_STAGE=05_CALLS_ARRAYS_S3
+REMOTE_PR268_HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
 ```
+
+Historical summaries such as:
+
+```text
+CONTROL_REVISION=3
+ACTIVE_STAGE=03_PASS1_BINDINGS
+HEAD=800a3ab / 326d42f era
+```
+
+are stale. `reports/selfhost/stage1/PASS1_BINDINGS_CANDIDATE_20260827.md` is historical evidence only.
+
+## Stale-context rule
+
+```text
+if reported CONTROL_REVISION < 29:
+    STALE_CONTEXT
+    do not regress stage
+    do not execute its NEXT
+
+if reported ACTIVE_STAGE=03 while CURRENT.json says Stage05:
+    STALE_CONTEXT
+
+only a newer CURRENT.json may supersede revision 29
+```
+
+A local editor artifact `stage1_expression_lowering_v2.s3` with about +1410 lines was reported. It is not in the remote PR delta. Treat it as `LOCAL_UNRECONCILED_ARTIFACT` until the snapshot proves exact status/hash/diff.
 
 ## Do this now
 
@@ -34,8 +50,9 @@ NO push
 NO force-push
 NO revert
 
-capture LOCAL worktree state
-return revision-28 recovery block
+capture LOCAL post-push worktree state
+include stage1_expression_lowering_v2.s3 status/hash/diff if present
+return revision-29 recovery block
 STOP
 ```
 
@@ -59,7 +76,7 @@ Preserve:
 
 ```text
 PAIRING_RECOVERY_BEGIN
-CONTROL_REVISION=28
+CONTROL_REVISION=29
 WORKTREE_HEAD=
 WORKTREE_BRANCH=
 REMOTE_PR268_HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
@@ -81,15 +98,20 @@ CANONICAL_DIFF_PATCH_SAVED=
 STAGE05_CANDIDATE_SHA256=
 STAGE05_TRANSFORM_SHA256=
 STAGE05_TEMP_TELEMETRY_PRESENT=
+EXPRESSION_LOWERING_ARTIFACT_PRESENT=
+EXPRESSION_LOWERING_ARTIFACT_PATH=
+EXPRESSION_LOWERING_ARTIFACT_TRACKED_STATE=
+EXPRESSION_LOWERING_ARTIFACT_SHA256=
+EXPRESSION_LOWERING_ARTIFACT_BYTES=
+EXPRESSION_LOWERING_ARTIFACT_DIFF_STAT=
 REMOTE_CONTAINED_COMPACTION_COMMITS=6e6b837,8c02802,d67da9e
-REMOTE_CHANGED_PATH_COUNT_SINCE_326D42F=9
 REMOTE_CANONICAL_PATH_CHANGED=NO
-REMOTE_WORKFLOW_STATUS=FAILURE_OBSERVED
-NEW_EDIT_AFTER_REV28=NO
-NEW_TEST_AFTER_REV28=NO
-NEW_BUILD_AFTER_REV28=NO
-NEW_COMMIT_AFTER_REV28=NO
-NEW_PUSH_AFTER_REV28=NO
+REMOTE_WORKFLOW_STATUS=FAILURE_OBSERVED_CAUSE_NOT_ATTRIBUTED
+NEW_EDIT_AFTER_REV29=NO
+NEW_TEST_AFTER_REV29=NO
+NEW_BUILD_AFTER_REV29=NO
+NEW_COMMIT_AFTER_REV29=NO
+NEW_PUSH_AFTER_REV29=NO
 CANONICAL_RESTORED_OR_REVERTED=NO
 T4_EXECUTED=NO
 BENCHMARK_EXECUTED=NO
@@ -109,3 +131,4 @@ No SELF_EMIT.
 No Stage2/Stage3/T4.
 No benchmark.
 No old compaction continuation.
+No regression to Stage03 from stale context.
