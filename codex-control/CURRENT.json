@@ -1,6 +1,6 @@
 {
   "schema": "s3.codex-control.stage1-semantic-v2.v1",
-  "control_revision": 28,
+  "control_revision": 29,
   "control_branch": "control/codex-stage1-semantic-v2-20260827",
   "implementation_branch": "feature/actual-stage1-compiler-seed-20260824",
   "implementation_pr": 268,
@@ -26,6 +26,16 @@
   "active_stage_file": "codex-control/stages/05_CALLS_ARRAYS_S3.md",
   "stage04_exit_status": "PASS_REPORTED_PENDING_REMOTE_BACKFILL",
   "paired_engineering_mode_active": true,
+  "stale_context_guard_enabled": true,
+  "stale_context_minimum_revision": 29,
+  "stale_context_rule": "ANY_SUMMARY_OR_CHECKPOINT_REPORTING_CONTROL_REVISION_LT_29_OR_ACTIVE_STAGE_03_MUST_BE_TREATED_AS_HISTORICAL_ONLY_UNLESS_CURRENT_JSON_ITSELF_IS_REPLACED_BY_A_NEWER_REVISION",
+  "stale_stage03_checkpoint_path": "reports/selfhost/stage1/PASS1_BINDINGS_CANDIDATE_20260827.md",
+  "stale_stage03_checkpoint_classification": "HISTORICAL_PASS1_EVIDENCE_NOT_CURRENT_CONTROL",
+  "stale_stage03_checkpoint_reported_revision": 3,
+  "stale_stage03_checkpoint_reported_stage": "03_PASS1_BINDINGS",
+  "stage1_expression_lowering_v2_local_edit_reported": true,
+  "stage1_expression_lowering_v2_remote_pr_path_present": false,
+  "stage1_expression_lowering_v2_classification": "LOCAL_UNRECONCILED_ARTIFACT_UNTIL_POST_PUSH_SNAPSHOT_PROVES_PATH_STATUS_SHA_AND_DIFF",
   "stage05_consumed_token_guard_applied_reported": true,
   "stage05_multi_arg_z3_recovered_reported": true,
   "stage05_one_arg_z3_reported": true,
@@ -50,8 +60,8 @@
   "implementation_commit_authorized": false,
   "implementation_push_authorized": false,
   "emergency_stop": true,
-  "emergency_stop_scope": "POST_PUSH_LOCAL_WORKTREE_SNAPSHOT_ONLY",
-  "current_atomic_task": "CAPTURE_EXACT_LOCAL_WORKTREE_POST_PUSH_SNAPSHOT_NO_EDITS_TESTS_BUILDS_COMMITS_PUSHES_OR_CLEANUP",
+  "emergency_stop_scope": "POST_PUSH_LOCAL_WORKTREE_SNAPSHOT_ONLY_WITH_STALE_CONTEXT_GUARD",
+  "current_atomic_task": "CAPTURE_EXACT_LOCAL_WORKTREE_POST_PUSH_SNAPSHOT_INCLUDING_STAGE1_EXPRESSION_LOWERING_V2_STATUS_NO_EDITS_TESTS_BUILDS_COMMITS_PUSHES_OR_CLEANUP",
   "new_native_build_authorized": false,
   "new_test_execution_authorized": false,
   "source_or_report_edit_authorized": false,
@@ -67,5 +77,5 @@
   "stage3_authorized": false,
   "t4_authorized": false,
   "benchmark_authorized": false,
-  "notes": "Revision 28 reconciles the remote push that occurred despite revision-27 snapshot-only control. PR #268 is now observed at d67da9e, three commits ahead of 326d42f. Remote compare shows 9 changed paths, all qualifier/test/report artifacts; selfhost/compiler/s3c_stage1.s3 is not in the remote delta. Do not force-reset or revert these commits yet; freeze them as contained out-of-scope compaction reconciliation work, not Stage05 promotion. A Tests workflow on d67da9e is observed failed across jobs, but job logs were unavailable, so no code cause is inferred. No further PR268 edit/test/build/commit/push is authorized. Capture the exact local post-push worktree, classify Stage05-owned vs old-compaction vs canonical/other changes, preserve canonical provenance, and return the revision-28 recovery block. Preserve valid Stage05 evidence: one-arg Z3, multiarg Z3, unresolved fail-closed, nested representable pass; nested a+1 remains an expression-lowering dependency reproduced without calls. Arrays, foreign calls, capacity, Stage06, canonical mutation/restore/revert, SELF_EMIT, Stage2, Stage3, T4 and benchmark remain unauthorized."
+  "notes": "Revision 29 adds a stale-context firewall after historical Codex summaries resurfaced claiming control revision 3 / Stage03. The historical PASS1_BINDINGS_CANDIDATE_20260827.md is valid evidence of prior Stage03 work but is not current control. Current remote PR268 remains d67da9e, OPEN/DRAFT/MERGEABLE/NOT_MERGED, and active control remains Stage05. The separately reported local edit stage1_expression_lowering_v2.s3 (+1410) is not present in the remote PR delta and must be classified only from the local post-push snapshot; do not promote, delete, restore, test, build, commit or push it. Any compacted summary reporting revision lower than 29 or Stage03 is stale unless a newer CURRENT.json explicitly supersedes this revision. Continue snapshot-only containment: no edits/tests/builds/commits/pushes/cleanup/reverts/merges. Preserve valid Stage05 evidence and locks from revision 28."
 }
