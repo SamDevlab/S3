@@ -1,0 +1,102 @@
+{
+  "schema": "s3.selfhost.semantic-ir-v3-audit-contract.v1",
+  "status": "AUDITED_REFERENCE_CANDIDATE",
+  "provenance": {
+    "oracle_branch_base": "c12e45d646af27f85b39c391d3a7645a812b28c5",
+    "hosted_compiler_base": "0789ad2df5f200c6b35b67d591d10e016c1a557a",
+    "source_identity": "RAW_BYTES_SHA256",
+    "newline_policy": "PRESERVE_RAW_BYTES"
+  },
+  "protocol": {
+    "family": "S3IR2",
+    "version": 3,
+    "header": "S3IR2 3",
+    "records": [
+      "F",
+      "B",
+      "D",
+      "V",
+      "M",
+      "I",
+      "O",
+      "R",
+      "C",
+      "A",
+      "T",
+      "Z"
+    ],
+    "semantic_complete_mask": 15,
+    "canonical_serialization_mask": null
+  },
+  "ontology": {
+    "D": "source binding identity; must target a real V or M",
+    "V": "logical runtime/IR value: parameter, constant, or instruction result",
+    "M": "logical storage object with source provenance",
+    "I_O_R": "instruction and def/use graph",
+    "C_A": "call dataflow",
+    "T": "control-flow terminator"
+  },
+  "binding_identity": {
+    "semantic": "function + lexical scope + declaration identity + exact identifier",
+    "wire_disambiguator": "mapped function + exact raw-source declaration/name anchor",
+    "shadowing": "distinct declaration anchors must remain distinct",
+    "target_required": true,
+    "target_kinds": [
+      "value",
+      "storage"
+    ]
+  },
+  "gates": {
+    "S1": "values + source bindings + storage links are complete",
+    "S2": "instruction def/use is complete",
+    "S3": "call dataflow is complete",
+    "S4": "terminators are complete",
+    "S1_2_native_gate": "semantic conformance; producer numeric IDs may differ",
+    "S1_6_gate": "canonical ID assignment, deterministic record order, byte identity and SHA; separate future gate"
+  },
+  "resource_discipline": {
+    "policy": [
+      "MEASURE",
+      "RESPECT",
+      "ADAPT",
+      "PROVE"
+    ],
+    "strict_O1_memory_required": false,
+    "streaming_required_globally": false,
+    "hard_resource_contracts_still_apply": true
+  },
+  "fail_closed": [
+    "mixed/unprovable binding target",
+    "non-ASCII source in current bootstrap subset",
+    "CONST_STR until lossless payload encoding exists",
+    "f64 immediate until lossless payload encoding exists",
+    "unknown value/storage/block/callee/terminator",
+    "storage provenance mismatch",
+    "incomplete semantic mask"
+  ],
+  "v2_reclassification": {
+    "status": "LEGACY_FROZEN_REFERENCE_NOT_ABSOLUTE_GROUND_TRUTH",
+    "known_issues": [
+      "local bindings were synthesized as V values without proof of link to actual IR value/storage",
+      "conformance did not fully enforce lexical binding identity",
+      "storage records were not compared strongly enough by hosted-vs-native conformance",
+      "S1.2 semantic equivalence and S1.6 canonical byte identity were conflated",
+      "CLI text reading could normalize CRLF before SHA/anchor accounting",
+      "bootstrap stream claimed type breadth wider than its lossless immediate/string encoding",
+      "grouped record serialization encouraged implementation architecture to follow file layout"
+    ]
+  },
+  "qualification": [
+    "python -m compileall -q tools/stage1_semantic_stream_v3.py tools/verify_stage1_semantic_conformance_v3.py tests/test_stage1_semantic_stream_v3.py",
+    "python -m pytest -q tests/test_stage1_semantic_stream_v3.py",
+    "run oracle from one integral pinned worktree; do not mix c12 tools with another checkout bootstrap package",
+    "run LF and CRLF fixtures from raw bytes",
+    "run canonical Stage1 source only after focused v3 fixtures pass"
+  ],
+  "resume_policy": {
+    "rev39_progress": "PRESERVE",
+    "do_not_replay_v2_special_cases_blindly": true,
+    "resume_only_after_hosted_v3_qualification": true,
+    "10e12_to_10e9_change_authorized": false
+  }
+}
