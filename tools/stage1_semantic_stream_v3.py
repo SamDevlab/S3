@@ -236,7 +236,7 @@ def build_model_bytes(raw_source: bytes) -> dict[str, Any]:
 
     value_rows: list[dict[str, Any]] = []
     register_to_value: dict[tuple[int, int], int] = {}
-    parameter_key_to_value: dict[tuple[int, int], int] = {}
+    parameter_name_to_value: dict[tuple[int, str], int] = {}
     for row in projected["lanes"]["typed_values"]:
         kind = _definition_kind(row)
         if kind not in VALUE_KIND_CODES:
@@ -252,9 +252,12 @@ def build_model_bytes(raw_source: bytes) -> dict[str, Any]:
             parameter_name = str(definition.get("parameter_name", ""))
             anchor_start = _find_identifier_anchor(source, anchor_start, parameter_name)
             anchor_length = len(parameter_name)
-            ordinal = definition.get("parameter_ordinal")
-            if isinstance(ordinal, int) and not isinstance(ordinal, bool):
-                parameter_key_to_value[(function_id, ordinal)] = value_id
+            key = (function_id, parameter_name)
+            if key in parameter_name_to_value:
+                raise SemanticStreamV3Error(
+                    f"parameter name is not a unique IR value: {function_id}:{parameter_name}"
+                )
+            parameter_name_to_value[key] = value_id
         value_rows.append(
             {
                 "value_id": value_id,
@@ -318,11 +321,12 @@ def build_model_bytes(raw_source: bytes) -> dict[str, Any]:
         target_kind: str
         target_id: int
         if kind == "parameter":
-            ordinal = int(binding["parameter_ordinal"])
-            linked = parameter_key_to_value.get((function_id, ordinal))
+            linked = parameter_name_to_value.get((function_id, binding_name))
             if linked is None:
                 raise SemanticStreamV3Error(
-                    f"parameter binding has no logical value: {function_name}:{binding_name}"
+                    "parameter binding does not resolve to one scalar IR value "
+                    f"(aggregate/expanded parameters are outside the v3 bootstrap subset): "
+                    f"{function_name}:{binding_name}"
                 )
             target_kind, target_id = "value", linked
         elif kind in {"local", "loop_variable"}:
