@@ -1,13 +1,13 @@
 # Live overrides
 
-CONTROL_REVISION: 38
+CONTROL_REVISION: 39
 
-## CURRENT TASK — SEMANTIC EVENT SPINE FOR CANONICAL V REPLAY
+## CURRENT TASK — CONTINUOUS AUTONOMOUS SEMANTIC EVENT SPINE
 
 Read first:
 
 ```text
-codex-control/OVERNIGHT_REV38_SEMANTIC_EVENT_SPINE.md
+codex-control/OVERNIGHT_REV39_CONTINUOUS_AUTONOMY.md
 codex-control/CURRENT.json
 ```
 
@@ -25,11 +25,32 @@ S1.2 mechanism = PASS
 Streaming architecture/native frame gate = PASS
 Native bounded V writer = PASS_NARROW_FIXTURE
 Full-resident banking = REJECTED_NATIVE_FRAME
-Canonical native V replay = BLOCKED by missing/reconstructed semantic fields
+Canonical native V replay = BLOCKED by semantic-event provenance/source
 S1.3 = NOT_STARTED
 ```
 
-The Rev37 writer proved native output mechanics. The current first blocker is now the semantic event source feeding that writer.
+## Continuity override
+
+The user explicitly authorizes continuous autonomous technical work while unavailable.
+
+Do not end the campaign while a safe authorized next action exists.
+
+A checkpoint, report, test failure, build failure, oracle mismatch, context compaction, quiet long-running command, transient VM/process failure, dirty preserved worktree, missing packed-IR field, `S3_STAGE1_EMITTER_BLOCKED`, or zero canonical V records is not terminal by itself.
+
+Follow the Rev39 loop continuously:
+
+```text
+reconcile
+→ identify first causal blocker
+→ inspect evidence
+→ choose smallest safe bounded repair/design
+→ test
+→ classify
+→ update baton
+→ continue
+```
+
+Three unsuccessful narrow repairs mean reconsider the approach, not stop the campaign.
 
 ## Current atomic task
 
@@ -37,49 +58,45 @@ The Rev37 writer proved native output mechanics. The current first blocker is no
 AUDIT_MISSING_V_FIELDS_AND_IMPLEMENT_BOUNDED_REGISTER_SEMANTIC_EVENT_RECONSTRUCTION_FEEDING_NATIVE_V_REPLAY
 ```
 
-For every V field and value kind, classify whether it is directly available, deterministically reconstructable, or requires narrow metadata preservation at parsing/lowering/value creation.
+Prefer bounded source/lowering replay or narrow metadata preservation at semantic value/register creation. Do not reopen full-resident banking.
 
-Do not treat lossy packed IR as the only possible source. Prefer source/lowering replay or semantic metadata captured at register/value creation.
+## AUTONOMOUS_BATON
 
-## Required architecture
+Maintain:
+
+```text
+reports/selfhost/stage1/AUTONOMOUS_BATON_REV39.md
+```
+
+Update it before long-running commands and after meaningful checkpoints. After context/session recovery, reread Rev39 + baton, reconcile actual git/process state and resume from the recorded next safe action.
+
+## Architecture locks
 
 - STREAMING_MULTI_PASS remains authoritative.
 - No full-resident V/I/O/R tables or proportional banks.
 - Logical ValueId remains module-monotonic i64 and independent from storage.
-- No S3 object >365 elements.
-- Native frame remains <=131072 logical trits; do not raise the limit.
-- Exact hosted/native comparison must use identical source SHA and pinned oracle provenance.
+- No S3 object larger than 365 elements.
+- Native logical frame remains at or below 131072 logical trits; do not raise it.
+- Same-source hosted/native comparison requires pinned oracle provenance.
 - Hosted oracle is reference only, never native PASS.
+- Missing evidence is NOT_PROVABLE/NOT_RUN, never PASS.
 
-## Non-terminal states
+## Automatic route
 
-The following alone are explicitly NOT terminal:
+After exact canonical V equality passes, continue automatically through S1.3, S1.4, S1.5, S1.6, S1.7, Stage1, real SELF_EMIT, real Stage2, real Stage3, fixed point, correctness and benchmark last. Every prior gate must concretely PASS.
 
-```text
-S3_STAGE1_EMITTER_BLOCKED
-current packed IR lacks a required V field
-canonical V replay currently emits 0 records
-```
+## True terminal rule
 
-They become terminal only after a documented bounded reconstruction/preservation audit proves no safe S3IR2-compatible path remains.
+Stop only after maximum authorized completion or after a documented blocker for which no safe autonomous repair, diagnostic, replay, worktree or implementation path remains within Rev39 authorization.
 
-## Autonomous route
-
-When exact canonical V replay passes, commit/push normally and continue automatically through S1.3, S1.4, S1.5, S1.6, S1.7, Stage1, real SELF_EMIT, real Stage2, real Stage3, fixed point, correctness and benchmark last, with every previous gate concretely PASS.
+If a meaningful `NEXT_SAFE_ACTION` exists, the campaign is not terminal.
 
 ## Git locks
 
-Allowed: source edits, focused tests, hosted oracle, native builds/probes, preservation patches, clean recovery worktrees, validated commits, normal push/push -u and tracker updates.
+Allowed: implementation edits, tests, oracle runs, native builds/probes, preservation patches, clean recovery worktrees, coherent validated commits, normal pushes and tracker updates.
 
-Forbidden: PR merge, force push, force-with-lease, history rewrite, destructive reset/restore/clean of evidence worktrees, evidence deletion.
+Forbidden: PR merge, force push, force-with-lease, history rewrite, destructive reset/restore/clean of evidence worktrees, and evidence deletion.
 
-## Shutdown
+## End-of-campaign power action
 
-Windows shutdown remains authorized only after a TRUE terminal campaign state and final report/evidence preservation. Before shutdown ensure no build/test/oracle/git/file-write process remains. Reboot, suspend and hibernate remain unauthorized.
-
-## Evidence policy
-
-```text
-missing evidence = NOT_PROVABLE / NOT_RUN
-PASS = exact concrete evidence only
-```
+The previously granted end-of-campaign Windows power-off authorization remains valid only after a true terminal state, final evidence preservation and confirmation that no relevant process or write is active. Reboot, suspend and hibernate remain unauthorized.
