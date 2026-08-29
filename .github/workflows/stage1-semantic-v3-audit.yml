@@ -1,5 +1,6 @@
 name: Stage1 Semantic V3 Audit
 
+# PR #271 qualification workflow.
 on:
   push:
     branches:
