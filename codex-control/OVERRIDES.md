@@ -1,13 +1,13 @@
 # Live overrides
 
-CONTROL_REVISION: 36
+CONTROL_REVISION: 37
 
-## CURRENT TASK — AUTONOMOUS STREAMED BOOTSTRAP
+## CURRENT TASK — CANONICAL V REPLAY CONTINUATION
 
 Read first:
 
 ```text
-codex-control/OVERNIGHT_REV36_STREAMING_AUTONOMY.md
+codex-control/OVERNIGHT_REV37_V_REPLAY_CONTINUATION.md
 codex-control/CURRENT.json
 ```
 
@@ -37,9 +37,17 @@ S1.2 mechanism = PASS
 Streaming architecture/native frame gate = PASS
 Full-resident banking = REJECTED_NATIVE_FRAME
 Streaming frame = 82781 / 131072 trits
+Hosted canonical V stream = 38724 for last tested source/provenance snapshot
+Native canonical V stream = 0
 S1.2 canonical native V stream = BLOCKED
 S1.3 Def/Use = NOT_STARTED
 ```
+
+## Critical correction
+
+`S3_STAGE1_EMITTER_BLOCKED` is expected before later Stage1 lanes close and is NOT a terminal blocker while a dedicated bounded native V replay/observation path remains implementable.
+
+Do not stop merely because the general emitter is blocked.
 
 Current first blocker:
 
@@ -50,14 +58,12 @@ S1_2_CANONICAL_STREAM_COMPLETENESS
 Current atomic task:
 
 ```text
-IMPLEMENT_BOUNDED_LOSSLESS_CANONICAL_V_REPLAY_STREAM_WITH_EXACT_ORACLE_PROVENANCE
+IMPLEMENT_DEDICATED_BOUNDED_NATIVE_V_REPLAY_OBSERVATION_PATH_INDEPENDENT_OF_GENERAL_EMITTER
 ```
 
 ## Autonomous route
 
-The user explicitly authorizes continuous autonomous technical decisions while away. Do not pause merely to request confirmation for ordinary technical choices that remain inside Rev36 locks.
-
-Proceed only through evidence-gated transitions:
+Continue autonomously through evidence-gated transitions:
 
 ```text
 S1.2 exact native V replay
@@ -75,81 +81,54 @@ S1.2 exact native V replay
 → benchmark LAST
 ```
 
-Every previous gate must have concrete PASS evidence before the next gate begins.
+Every prior gate must concretely PASS before the next begins.
+
+## V replay requirement
+
+Implement a narrow native/Stage1 observation path that emits or captures canonical `V` records sequentially without invoking the general emitter and without retaining the complete V lane in memory. Reuse existing byte-output/probe/runtime mechanisms when suitable. This observation path is evidence machinery, not the final general emitter.
+
+Prove exact same-source hosted/native equality for V count, IDs, function IDs, kind, type code, anchors, mutability, storage ID, order, cross-365 logical IDs and determinism.
+
+Any source edit requires rerunning the exact hosted oracle on the exact new source SHA with pinned oracle/reference provenance.
 
 ## Streaming locks
 
 - Do not return to full-resident semantic IR banking.
 - Logical IDs are not storage slots.
-- Logical ValueId remains module-monotonic `i64` according to S3IR2.
+- Logical ValueId remains module-monotonic i64 according to S3IR2.
 - No single S3 array/memory object >365 elements.
 - Keep native frame <=131072 logical trits; never raise the limit to obtain PASS.
 - Use bounded streaming/replay with a small fixed number of source passes.
-- Any source edit requires rerunning the exact hosted oracle on the exact new source SHA before equality claims.
-- Hosted oracle output is architecture/reference evidence, never native Stage1 proof.
-
-## Oracle provenance
-
-Before exact equality claims, record exact source SHA, oracle/ref/blob provenance, semantic-reference provenance, source-binding-reference provenance, bootstrap pipeline HEAD, Python executable/PYTHONPATH and invocation mode. Same source + same provenance must reproduce identical counts and stream hash twice.
+- Hosted oracle is reference evidence only, never native Stage1 proof.
 
 ## Repair authority
 
-For each concrete blocker, capture evidence, identify first causal failure, apply the narrowest repair, rerun the smallest proving test, then rerun the gate. Up to three narrow repairs for the same cause are allowed. A structural redesign is allowed autonomously if it is evidence-backed, preserves rejected attempts, remains bounded, and does not violate normative language/resource locks.
+Capture the first causal failure, apply the narrowest repair, run the smallest proving test and then rerun the gate. Up to three narrow repairs per same cause. Structural redesign is authorized if evidence-backed, bounded, deterministic, fail-closed and S3IR2-compatible.
 
-Stop only on a terminal blocker that cannot be safely attributed/resolved within the authorized architecture, or when a forbidden operation/spec change would be required. Document exact evidence before stopping.
+A known general-emitter gap is not enough to declare a terminal blocker during S1.2 replay work.
 
 ## Git/worktree
 
-Allowed:
+Allowed: validated commits, normal push/push -u, tracker updates, preservation patches, clean recovery worktrees when needed to preserve evidence.
 
-```text
-validated commits
-normal push / push -u
-tracker updates
-preservation patches
-new clean recovery worktree/branch when necessary to preserve dirty evidence
-```
-
-Forbidden:
-
-```text
-PR merge
-force push / force-with-lease
-history rewrite
-destructive reset/restore/clean of preserved evidence worktrees
-destructive evidence deletion
-```
+Forbidden: PR merge, force push/force-with-lease, history rewrite, destructive reset/restore/clean of evidence worktrees, destructive evidence deletion.
 
 ## Final shutdown authorization
 
-The user now authorizes shutting down the Windows computer after the campaign reaches a terminal state.
-
-Terminal state means either:
+Windows shutdown remains authorized only after a TRUE terminal campaign state:
 
 - maximum safely reachable authorized completion, or
-- a fully documented blocker with no further safe autonomous repair available.
+- a newly proven fully documented blocker with no safe remaining autonomous repair.
 
-Before shutdown:
+The current `S3_STAGE1_EMITTER_BLOCKED` state alone is explicitly NOT terminal while S1.2 native V replay has not been implemented/exhausted.
 
-1. write and flush the final report;
-2. preserve dirty evidence;
-3. finish intended validated commit/push;
-4. verify no build, test, oracle, git, or file-write process remains active;
-5. record final branch/HEAD/remote/divergence and maximum gate reached.
-
-Then execute:
-
-```text
-shutdown.exe /s /t 60 /c "S3 autonomous campaign finished; final report saved"
-```
-
-Do not reboot, suspend, or hibernate. Do not escalate privileges if shutdown fails; record the error and leave the host running.
+Before shutdown: save and flush final report; preserve dirty evidence; finish intended validated commit/push; verify no build/test/oracle/git/file-write process remains active; record final branch/HEAD/remote/divergence and maximum gate reached. Then use the shutdown command already authorized by Rev36. Do not reboot, suspend or hibernate.
 
 ## Evidence policy
 
 ```text
 missing evidence = NOT_PROVABLE / NOT_RUN
-failure without attribution = FAIL / BLOCKED as appropriate
+hosted oracle = NOT native Stage1 proof
 PASS = exact concrete evidence only
 ```
 
