@@ -1,6 +1,6 @@
 {
   "schema": "s3.codex-control.stage1-semantic-v2.v1",
-  "control_revision": 38,
+  "control_revision": 39,
   "control_branch": "control/codex-stage1-semantic-v2-20260827",
   "implementation_branch": "recovery/pr268-stage1-streaming-values-20260828",
   "implementation_pr": 268,
@@ -22,8 +22,8 @@
   "frame_limit_trits": 131072,
   "frame_headroom_trits_reported": 48291,
   "latest_hosted_v_records_reported": 38724,
-  "active_stage": "STAGE1_SEMANTIC_EVENT_SPINE",
-  "recovery_file": "codex-control/OVERNIGHT_REV38_SEMANTIC_EVENT_SPINE.md",
+  "active_stage": "STAGE1_CONTINUOUS_AUTONOMOUS_SEMANTIC_EVENT_SPINE",
+  "recovery_file": "codex-control/OVERNIGHT_REV39_CONTINUOUS_AUTONOMY.md",
   "current_atomic_task": "AUDIT_MISSING_V_FIELDS_AND_IMPLEMENT_BOUNDED_REGISTER_SEMANTIC_EVENT_RECONSTRUCTION_FEEDING_NATIVE_V_REPLAY",
   "logical_value_id_policy": "MODULE_MONOTONIC_FUNCTION_REGISTER_MAP",
   "single_object_max_elements": 365,
@@ -33,6 +33,16 @@
   "dedicated_v_replay_observation_authorized": true,
   "semantic_event_spine_authorized": true,
   "missing_semantic_fields_is_terminal_without_reconstruction_audit": false,
+  "continuous_autonomy_mode": true,
+  "premature_final_response_forbidden": true,
+  "return_final_only_if_true_terminal": true,
+  "checkpoint_is_terminal": false,
+  "individual_command_timeout_is_terminal": false,
+  "context_compaction_is_terminal": false,
+  "transient_process_failure_is_terminal": false,
+  "automatic_retry_and_resume_authorized": true,
+  "autonomous_baton_required": true,
+  "autonomous_baton_path": "reports/selfhost/stage1/AUTONOMOUS_BATON_REV39.md",
   "allow_automatic_stage_advance": true,
   "automatic_stage_advance_requires_explicit_previous_gate_pass": true,
   "autonomous_technical_decisions_authorized": true,
@@ -57,5 +67,5 @@
   "windows_shutdown_only_after_final_report_and_true_terminal_campaign_state": true,
   "windows_reboot_suspend_hibernate_authorized": false,
   "missing_evidence_policy": "NOT_PROVABLE_OR_NOT_RUN_NEVER_PASS",
-  "notes": "Revision 38 supersedes Rev37. The dedicated bounded native V writer is proven on a narrow fixture; the remaining S1.2 blocker is the semantic event source feeding that writer. Audit each required V field and reconstruct or narrowly preserve semantic metadata at value/register creation without full-resident IR. Missing fields in the current lossy IR are not terminal while source/lowering replay can recover them. Close exact same-source canonical V equality before S1.3. Shutdown remains authorized only after a true terminal state and final evidence preservation."
+  "notes": "Revision 39 supersedes Rev38 and adds mandatory continuous autonomy. Do not return a final campaign response while any safe authorized next action exists. Context compaction, quiet long-running commands, ordinary test/build failures, stale checkpoints, emitter blocked status, zero canonical V output and missing semantic fields are non-terminal by themselves. Maintain AUTONOMOUS_BATON_REV39.md so execution can resume immediately after context/runtime interruption. Continue the bounded semantic event spine until exact canonical V equality, then automatically advance through S1.3-S1.7, Stage1, real SELF_EMIT, Stage2, Stage3, fixed point, correctness and benchmark last. Shutdown is authorized only after a true terminal state and final evidence preservation."
 }
