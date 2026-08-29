@@ -1,6 +1,6 @@
 {
   "schema": "s3.codex-control.stage1-semantic-v2.v1",
-  "control_revision": 36,
+  "control_revision": 37,
   "control_branch": "control/codex-stage1-semantic-v2-20260827",
   "implementation_branch": "recovery/pr268-stage1-streaming-values-20260828",
   "implementation_pr": 268,
@@ -30,13 +30,15 @@
   "latest_hosted_result_edges_reported": 38408,
   "latest_hosted_calls_reported": 861,
   "latest_hosted_terminators_reported": 3747,
-  "active_stage": "STAGE1_CANONICAL_STREAMING_CLOSURE",
-  "recovery_file": "codex-control/OVERNIGHT_REV36_STREAMING_AUTONOMY.md",
-  "current_atomic_task": "IMPLEMENT_BOUNDED_LOSSLESS_CANONICAL_V_REPLAY_STREAM_WITH_EXACT_ORACLE_PROVENANCE",
+  "active_stage": "STAGE1_CANONICAL_V_REPLAY",
+  "recovery_file": "codex-control/OVERNIGHT_REV37_V_REPLAY_CONTINUATION.md",
+  "current_atomic_task": "IMPLEMENT_DEDICATED_BOUNDED_NATIVE_V_REPLAY_OBSERVATION_PATH_INDEPENDENT_OF_GENERAL_EMITTER",
   "logical_value_id_policy": "MODULE_MONOTONIC_FUNCTION_REGISTER_MAP",
   "single_object_max_elements": 365,
   "banked_storage_required": false,
   "full_resident_ir_storage_forbidden": true,
+  "general_emitter_block_is_terminal": false,
+  "dedicated_v_replay_observation_authorized": true,
   "allow_automatic_stage_advance": true,
   "automatic_stage_advance_requires_explicit_previous_gate_pass": true,
   "autonomous_technical_decisions_authorized": true,
@@ -58,8 +60,8 @@
   "benchmark_authorized_only_after_selfhost_and_correctness_gates": true,
   "merge_authorized": false,
   "windows_shutdown_authorized": true,
-  "windows_shutdown_only_after_final_report_and_terminal_campaign_state": true,
+  "windows_shutdown_only_after_final_report_and_true_terminal_campaign_state": true,
   "windows_reboot_suspend_hibernate_authorized": false,
   "missing_evidence_policy": "NOT_PROVABLE_OR_NOT_RUN_NEVER_PASS",
-  "notes": "Revision 36 supersedes Rev35. Full-resident banking was rejected by the native frame gate (375670 trits). Streaming multi-pass reduced the reported frame to 82781 trits under the 131072 limit and is the authorized architecture. Close exact native canonical V replay first, then S1.3 def/use, S1.4 calls, S1.5 terminators, S1.6 canonical serialization, S1.7 emitter, real SELF_EMIT, Stage2, Stage3, fixed point, correctness, benchmark last. Continuous autonomous technical decisions, coherent commits and normal pushes are authorized behind exact evidence gates. Windows shutdown is authorized only after the final report is saved and either maximum authorized completion or a terminal documented blocker is reached."
+  "notes": "Revision 37 supersedes Rev36 terminal classification. Streaming remains the authorized architecture. S3_STAGE1_EMITTER_BLOCKED is expected and is not terminal while a dedicated bounded V replay/observation path can close S1.2 independently of the general emitter. Implement exact same-source native canonical V replay first; only after PASS advance through S1.3 and later gated stages. Shutdown remains authorized only after a true terminal state and final evidence preservation."
 }
