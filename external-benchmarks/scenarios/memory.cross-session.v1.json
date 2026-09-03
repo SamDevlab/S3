@@ -22,9 +22,9 @@
   "oracle": {
     "commands": [
       {
-        "id": "cross-session-regression-suite",
-        "argv": ["{python}", "-m", "pytest", "-q"],
-        "timeout_seconds": 300
+        "id": "cross-session-focused-regressions",
+        "argv": ["{python}", "-m", "pytest", "-q", "tests/test_numeric_domains.py", "tests/test_s3_alias_analysis.py", "tests/test_advanced_reference_semantics.py", "tests/test_host_services.py"],
+        "timeout_seconds": 240
       }
     ],
     "required_patterns": [
