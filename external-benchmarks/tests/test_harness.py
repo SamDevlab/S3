@@ -68,3 +68,37 @@ def test_scenario_discovery_is_deterministic(tmp_path: Path) -> None:
     rows = list_scenarios(tmp_path)
 
     assert [row["scenario_id"] for row in rows] == ["test.memory.v1", "test.memory.v2"]
+
+
+def test_handoff_and_stale_memory_metadata_are_safely_recorded(tmp_path: Path) -> None:
+    source = tmp_path / "src" / "pkg" / "module.py"
+    source.parent.mkdir(parents=True)
+    source.write_text("def safe_call():\n    return 1\n", encoding="utf-8")
+    observation = _observation()
+    observation["handoff"] = {
+        "kind": "cross-agent",
+        "source_agent": {
+            "provider": "source",
+            "model": "a",
+            "harness": "one",
+            "token": "must-not-persist",
+        },
+        "target_agent": {"provider": "target", "model": "b", "harness": "two"},
+        "transcript_reused": False,
+    }
+    observation["stale_memory"] = {
+        "claim_id": "obsolete-claim",
+        "injected": True,
+        "secret": "must-not-persist",
+    }
+
+    result = evaluate_scenario(_scenario(), observation, repository_root=tmp_path)
+
+    assert result["handoff"] == {
+        "kind": "cross-agent",
+        "source_agent": {"provider": "source", "model": "a", "harness": "one"},
+        "target_agent": {"provider": "target", "model": "b", "harness": "two"},
+        "transcript_reused": False,
+    }
+    assert result["stale_memory"] == {"claim_id": "obsolete-claim", "injected": True}
+    assert "must-not-persist" not in json.dumps(result)
