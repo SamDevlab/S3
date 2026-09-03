@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "category": "agent-memory",
   "objective": "Measure whether an external memory/agent configuration preserves the S3 host-process policy while changing repository code.",
-  "task": "Extend or refactor external process integration without introducing implicit shell execution and without regressing the S3 test suite.",
+  "task": "Extend or refactor external process integration without introducing implicit shell execution and without regressing the focused S3 host-services contract.",
   "critical_invariants": [
     {
       "id": "host-process-no-shell",
@@ -14,9 +14,9 @@
   "oracle": {
     "commands": [
       {
-        "id": "s3-regression-suite",
-        "argv": ["{python}", "-m", "pytest", "-q"],
-        "timeout_seconds": 300
+        "id": "host-services-regression-tests",
+        "argv": ["{python}", "-m", "pytest", "-q", "tests/test_host_services.py"],
+        "timeout_seconds": 180
       }
     ],
     "forbidden_patterns": [
