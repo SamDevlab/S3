@@ -46,11 +46,27 @@ def load_campaign(path: Path) -> dict[str, Any]:
     for item in configurations:
         configuration = _require_object(item, "campaign configuration")
         configuration_id = configuration.get("id")
+        description = configuration.get("description")
         if not isinstance(configuration_id, str) or not configuration_id:
             raise ExternalBenchmarkError("campaign configuration id must be a non-empty string")
+        if not isinstance(description, str) or not description:
+            raise ExternalBenchmarkError("campaign configuration description must be a non-empty string")
         configuration_ids.append(configuration_id)
     if len(configuration_ids) != len(set(configuration_ids)):
         raise ExternalBenchmarkError("campaign configuration ids must be unique")
+
+    protocol = _require_object(document["protocol"], "campaign protocol")
+    if protocol.get("worktree_isolation") != "fresh-worktree-per-scenario":
+        raise ExternalBenchmarkError("campaign worktree isolation must be fresh-worktree-per-scenario")
+    repetitions = protocol.get("recommended_repetitions")
+    if not isinstance(repetitions, int) or isinstance(repetitions, bool) or repetitions < 1:
+        raise ExternalBenchmarkError("campaign recommended_repetitions must be a positive integer")
+    result_collection = protocol.get("result_collection")
+    rules = protocol.get("rules")
+    if not isinstance(result_collection, str) or not result_collection:
+        raise ExternalBenchmarkError("campaign result_collection must be a non-empty string")
+    if not isinstance(rules, list) or not rules or any(not isinstance(rule, str) or not rule for rule in rules):
+        raise ExternalBenchmarkError("campaign rules must be a non-empty string list")
 
     scenarios = document["scenarios"]
     if not isinstance(scenarios, list) or not scenarios:
@@ -60,16 +76,25 @@ def load_campaign(path: Path) -> dict[str, Any]:
         scenario = _require_object(item, "campaign scenario")
         scenario_id = scenario.get("scenario_id")
         mode = scenario.get("mode")
+        purpose = scenario.get("purpose")
         if not isinstance(scenario_id, str) or not scenario_id:
             raise ExternalBenchmarkError("campaign scenario_id must be a non-empty string")
         if mode not in _ALLOWED_MODES:
             raise ExternalBenchmarkError(f"unsupported campaign scenario mode: {mode}")
+        if not isinstance(purpose, str) or not purpose:
+            raise ExternalBenchmarkError("campaign scenario purpose must be a non-empty string")
         scenario_ids.append(scenario_id)
     if len(scenario_ids) != len(set(scenario_ids)):
         raise ExternalBenchmarkError("campaign scenario ids must be unique")
 
-    _require_object(document["protocol"], "campaign protocol")
-    _require_object(document["gates"], "campaign gates")
+    gates = _require_object(document["gates"], "campaign gates")
+    expected_gates = {
+        "require_all_oracles_pass": True,
+        "recall_is_gate": False,
+        "provider_consistency": True,
+    }
+    if gates != expected_gates:
+        raise ExternalBenchmarkError("campaign 1.0.0 requires correctness-first, non-recall, single-provider gates")
     return document
 
 
@@ -108,17 +133,22 @@ def _load_scenario_result(path: Path, expected_scenario_id: str) -> dict[str, An
     provider = _require_object(document.get("provider"), "scenario result provider")
     if not isinstance(provider.get("id"), str) or not provider["id"]:
         raise ExternalBenchmarkError(f"scenario result provider id is invalid: {path.name}")
+    if not isinstance(provider.get("version"), str) or not provider["version"]:
+        raise ExternalBenchmarkError(f"scenario result provider version is invalid: {path.name}")
     _require_object(document.get("metrics"), "scenario result metrics")
     return document
 
 
 def _agent_identity(value: object, name: str) -> tuple[str, str, str]:
     agent = _require_object(value, name)
-    return (
+    identity = (
         str(agent.get("provider", "")),
         str(agent.get("model", "")),
         str(agent.get("harness", "")),
     )
+    if not any(identity):
+        raise ExternalBenchmarkError(f"{name} must contain at least one identity field")
+    return identity
 
 
 def _validate_protocol_evidence(entry: Mapping[str, Any], result: Mapping[str, Any]) -> None:
@@ -136,6 +166,9 @@ def _validate_protocol_evidence(entry: Mapping[str, Any], result: Mapping[str, A
             raise ExternalBenchmarkError(f"cross-agent scenario requires distinct agent identities: {scenario_id}")
     elif mode == "stale-memory":
         stale = _require_object(result.get("stale_memory"), f"stale-memory evidence for {scenario_id}")
+        claim_id = stale.get("claim_id")
+        if not isinstance(claim_id, str) or not claim_id:
+            raise ExternalBenchmarkError(f"stale-memory claim id is missing for {scenario_id}")
         if stale.get("injected") is not True:
             raise ExternalBenchmarkError(f"stale memory was not recorded as injected for {scenario_id}")
 
@@ -146,7 +179,7 @@ def aggregate_campaign(campaign: Mapping[str, Any], *, result_dir: Path) -> dict
         raise ExternalBenchmarkError("campaign result directory does not exist")
 
     allowed_provider_ids = {
-        str(_require_object(item, "campaign configuration")["id"])
+        str(_require_object(item, "campaign configuration").get("id", ""))
         for item in campaign["configurations"]
     }
     results: list[dict[str, Any]] = []
@@ -162,10 +195,9 @@ def aggregate_campaign(campaign: Mapping[str, Any], *, result_dir: Path) -> dict
         result = dict(result)
         result["campaign_mode"] = str(entry["mode"])
         results.append(result)
-        provider_keys.add((provider_id, str(provider.get("version", "unknown"))))
+        provider_keys.add((provider_id, str(provider["version"])))
 
-    gates = _require_object(campaign["gates"], "campaign gates")
-    if gates.get("provider_consistency", True) and len(provider_keys) != 1:
+    if len(provider_keys) != 1:
         raise ExternalBenchmarkError("campaign results must use one provider configuration per aggregation")
 
     passed = sum(1 for result in results if result["status"] == "PASS")
@@ -181,9 +213,8 @@ def aggregate_campaign(campaign: Mapping[str, Any], *, result_dir: Path) -> dict
         if isinstance(failures, int):
             critical_oracle_failures += failures
 
-    require_all = bool(gates.get("require_all_oracles_pass", True))
-    status = "FAIL" if require_all and failed else "PASS"
-    provider_id, provider_version = next(iter(provider_keys)) if provider_keys else ("unknown", "unknown")
+    status = "FAIL" if failed else "PASS"
+    provider_id, provider_version = next(iter(provider_keys))
     mean_recall = statistics.fmean(recalls) if recalls else None
 
     return {
