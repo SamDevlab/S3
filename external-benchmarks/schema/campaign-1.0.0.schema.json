@@ -66,9 +66,9 @@
       "additionalProperties": false,
       "required": ["require_all_oracles_pass", "recall_is_gate", "provider_consistency"],
       "properties": {
-        "require_all_oracles_pass": {"type": "boolean"},
-        "recall_is_gate": {"type": "boolean"},
-        "provider_consistency": {"type": "boolean"}
+        "require_all_oracles_pass": {"const": true},
+        "recall_is_gate": {"const": false},
+        "provider_consistency": {"const": true}
       }
     }
   }
