@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://s3-lang.local/external-benchmarks/result-1.0.0.schema.json",
+  "title": "S3 External Benchmark Result 1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "scenario_id", "scenario_version", "category", "provider", "agent", "status", "reported_invariants", "metrics", "oracle"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "scenario_id": {"type": "string", "minLength": 1},
+    "scenario_version": {"type": "string", "minLength": 1},
+    "category": {"type": "string", "minLength": 1},
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "version": {"type": "string", "minLength": 1}
+      }
+    },
+    "agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "provider": {"type": "string"},
+        "model": {"type": "string"},
+        "harness": {"type": "string"}
+      }
+    },
+    "status": {"enum": ["PASS", "FAIL"]},
+    "reported_invariants": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["critical_invariants_total", "critical_invariants_reported", "invariant_recall_rate", "oracle_checks_total", "oracle_checks_passed", "critical_oracle_failures"],
+      "properties": {
+        "critical_invariants_total": {"type": "integer", "minimum": 0},
+        "critical_invariants_reported": {"type": "integer", "minimum": 0},
+        "invariant_recall_rate": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "oracle_checks_total": {"type": "integer", "minimum": 0},
+        "oracle_checks_passed": {"type": "integer", "minimum": 0},
+        "critical_oracle_failures": {"type": "integer", "minimum": 0}
+      }
+    },
+    "oracle": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "passed", "detail"],
+        "properties": {
+          "id": {"type": "string"},
+          "kind": {"enum": ["command", "required_pattern", "forbidden_pattern"]},
+          "passed": {"type": "boolean"},
+          "detail": {"type": "string"}
+        }
+      }
+    }
+  }
+}
