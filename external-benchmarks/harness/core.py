@@ -126,19 +126,57 @@ def _safe_provider(observation: Mapping[str, Any]) -> dict[str, str]:
     return {"id": provider_id, "version": version or "unknown"}
 
 
-def _safe_agent(observation: Mapping[str, Any]) -> dict[str, str]:
-    agent = observation.get("agent", {})
-    if not isinstance(agent, dict):
-        raise ExternalBenchmarkError("agent must be a JSON object")
+def _safe_agent_value(value: object, name: str) -> dict[str, str]:
+    if value is None:
+        return {}
+    if not isinstance(value, dict):
+        raise ExternalBenchmarkError(f"{name} must be a JSON object")
     allowed = ("provider", "model", "harness")
     result: dict[str, str] = {}
     for key in allowed:
-        value = agent.get(key)
-        if value is not None:
-            if not isinstance(value, str):
-                raise ExternalBenchmarkError(f"agent.{key} must be a string")
-            result[key] = value
+        item = value.get(key)
+        if item is not None:
+            if not isinstance(item, str):
+                raise ExternalBenchmarkError(f"{name}.{key} must be a string")
+            result[key] = item
     return result
+
+
+def _safe_agent(observation: Mapping[str, Any]) -> dict[str, str]:
+    return _safe_agent_value(observation.get("agent", {}), "agent")
+
+
+def _safe_handoff(observation: Mapping[str, Any]) -> dict[str, Any] | None:
+    raw = observation.get("handoff")
+    if raw is None:
+        return None
+    handoff = _require_object(raw, "handoff")
+    kind = handoff.get("kind")
+    if kind not in {"cross-session", "cross-agent"}:
+        raise ExternalBenchmarkError("handoff.kind must be cross-session or cross-agent")
+    transcript_reused = handoff.get("transcript_reused")
+    if not isinstance(transcript_reused, bool):
+        raise ExternalBenchmarkError("handoff.transcript_reused must be boolean")
+    return {
+        "kind": kind,
+        "source_agent": _safe_agent_value(handoff.get("source_agent", {}), "handoff.source_agent"),
+        "target_agent": _safe_agent_value(handoff.get("target_agent", {}), "handoff.target_agent"),
+        "transcript_reused": transcript_reused,
+    }
+
+
+def _safe_stale_memory(observation: Mapping[str, Any]) -> dict[str, Any] | None:
+    raw = observation.get("stale_memory")
+    if raw is None:
+        return None
+    stale = _require_object(raw, "stale_memory")
+    claim_id = stale.get("claim_id")
+    injected = stale.get("injected")
+    if not isinstance(claim_id, str) or not claim_id:
+        raise ExternalBenchmarkError("stale_memory.claim_id must be a non-empty string")
+    if not isinstance(injected, bool):
+        raise ExternalBenchmarkError("stale_memory.injected must be boolean")
+    return {"claim_id": claim_id, "injected": injected}
 
 
 def evaluate_scenario(
@@ -184,7 +222,7 @@ def evaluate_scenario(
         "oracle_checks_passed": len(results) - len(failed),
         "critical_oracle_failures": len(failed),
     }
-    return {
+    result: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
         "scenario_id": str(scenario["scenario_id"]),
         "scenario_version": str(scenario["version"]),
@@ -196,3 +234,10 @@ def evaluate_scenario(
         "metrics": metrics,
         "oracle": results,
     }
+    handoff = _safe_handoff(observation)
+    if handoff is not None:
+        result["handoff"] = handoff
+    stale_memory = _safe_stale_memory(observation)
+    if stale_memory is not None:
+        result["stale_memory"] = stale_memory
+    return result
