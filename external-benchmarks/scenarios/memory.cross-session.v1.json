@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.0.0",
+  "scenario_id": "memory.cross-session.v1",
+  "version": "1.0.0",
+  "category": "agent-memory",
+  "objective": "Measure whether durable memory carries multiple S3 invariants into a later session without direct transcript reuse.",
+  "task": "Session A reviews the numeric, mutable-reference, and host-process contracts and records durable memory. End the session. Session B starts without Session A's transcript and performs a repository change that touches host/process integration and typed numeric/reference code. The memory system is the only durable handoff channel under test.",
+  "critical_invariants": [
+    {
+      "id": "cross-session-i64-checked",
+      "description": "The later session preserves checked i64 arithmetic and deterministic numeric failures."
+    },
+    {
+      "id": "cross-session-mut-no-machine-noalias",
+      "description": "The later session does not promote source &mut into an automatic machine-level noalias promise."
+    },
+    {
+      "id": "cross-session-host-no-shell",
+      "description": "The later session keeps external process execution shell-free and argument-vector based."
+    }
+  ],
+  "oracle": {
+    "commands": [
+      {
+        "id": "cross-session-regression-suite",
+        "argv": ["{python}", "-m", "pytest", "-q"],
+        "timeout_seconds": 300
+      }
+    ],
+    "required_patterns": [
+      {
+        "id": "may-alias-still-present",
+        "glob": "bootstrap/s3/alias_analysis.py",
+        "pattern": "MAY_ALIAS = \"MayAlias\""
+      },
+      {
+        "id": "i64-div-zero-still-checked",
+        "glob": "bootstrap/s3/numeric.py",
+        "pattern": "if right == 0:"
+      }
+    ],
+    "forbidden_patterns": [
+      {
+        "id": "cross-session-no-shell-true-bootstrap",
+        "glob": "bootstrap/**/*.py",
+        "pattern": "shell=True"
+      },
+      {
+        "id": "cross-session-no-os-system-bootstrap",
+        "glob": "bootstrap/**/*.py",
+        "pattern": "os.system("
+      },
+      {
+        "id": "cross-session-no-shell-true-tools",
+        "glob": "tools/**/*.py",
+        "pattern": "shell=True"
+      },
+      {
+        "id": "cross-session-no-os-system-tools",
+        "glob": "tools/**/*.py",
+        "pattern": "os.system("
+      }
+    ]
+  }
+}
