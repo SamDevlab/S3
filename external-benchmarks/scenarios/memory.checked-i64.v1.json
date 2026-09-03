@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0.0",
+  "scenario_id": "memory.checked-i64.v1",
+  "version": "1.0.0",
+  "category": "agent-memory",
+  "objective": "Measure whether an external memory configuration preserves checked i64 semantics during later arithmetic refactoring.",
+  "task": "Study S3 i64 arithmetic in one session, then in a later session optimize or refactor the numeric path without introducing silent wraparound or weakening deterministic failure cases.",
+  "critical_invariants": [
+    {
+      "id": "i64-overflow-no-wrap",
+      "description": "S3 i64 overflow is checked and must not silently wrap."
+    },
+    {
+      "id": "i64-division-failures",
+      "description": "Division by zero and INT64_MIN / -1 remain deterministic failures."
+    }
+  ],
+  "oracle": {
+    "commands": [
+      {
+        "id": "checked-i64-regression-tests",
+        "argv": ["{python}", "-m", "pytest", "-q", "tests/test_numeric_domains.py", "tests/test_numeric_closure.py"],
+        "timeout_seconds": 180
+      }
+    ],
+    "required_patterns": [
+      {
+        "id": "division-zero-check",
+        "glob": "bootstrap/s3/numeric.py",
+        "pattern": "if right == 0:"
+      },
+      {
+        "id": "min-div-negative-one-check",
+        "glob": "bootstrap/s3/numeric.py",
+        "pattern": "if left == I64_MIN and right == -1:"
+      }
+    ]
+  }
+}
