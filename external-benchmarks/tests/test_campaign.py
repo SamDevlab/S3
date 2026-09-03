@@ -20,7 +20,10 @@ def _campaign() -> dict[str, object]:
         "version": "1.0.0",
         "category": "agent-memory",
         "objective": "test",
-        "configurations": [{"id": "provider-a", "description": "test provider"}],
+        "configurations": [
+            {"id": "provider-a", "description": "test provider A"},
+            {"id": "provider-b", "description": "test provider B"},
+        ],
         "protocol": {
             "worktree_isolation": "fresh-worktree-per-scenario",
             "recommended_repetitions": 1,
@@ -39,8 +42,14 @@ def _campaign() -> dict[str, object]:
     }
 
 
-def _result(scenario_id: str, *, provider: str = "provider-a", status: str = "PASS", recall: float = 1.0) -> dict[str, object]:
-    return {
+def _result(
+    scenario_id: str,
+    *,
+    provider: str = "provider-a",
+    status: str = "PASS",
+    recall: float = 1.0,
+) -> dict[str, object]:
+    result: dict[str, object] = {
         "schema_version": "1.0.0",
         "scenario_id": scenario_id,
         "scenario_version": "1.0.0",
@@ -59,6 +68,14 @@ def _result(scenario_id: str, *, provider: str = "provider-a", status: str = "PA
         },
         "oracle": [],
     }
+    if scenario_id == "two":
+        result["handoff"] = {
+            "kind": "cross-session",
+            "source_agent": {"provider": "test", "model": "fixture", "harness": "pytest-a"},
+            "target_agent": {"provider": "test", "model": "fixture", "harness": "pytest-b"},
+            "transcript_reused": False,
+        }
+    return result
 
 
 def test_campaign_aggregation_is_correctness_first(tmp_path: Path) -> None:
@@ -81,6 +98,17 @@ def test_campaign_rejects_mixed_provider_results(tmp_path: Path) -> None:
     (tmp_path / "two.json").write_text(json.dumps(_result("two", provider="provider-b")), encoding="utf-8")
 
     with pytest.raises(ExternalBenchmarkError, match="one provider configuration"):
+        aggregate_campaign(_campaign(), result_dir=tmp_path)
+
+
+def test_campaign_rejects_transcript_reuse(tmp_path: Path) -> None:
+    first = _result("one")
+    second = _result("two")
+    second["handoff"]["transcript_reused"] = True  # type: ignore[index]
+    (tmp_path / "one.json").write_text(json.dumps(first), encoding="utf-8")
+    (tmp_path / "two.json").write_text(json.dumps(second), encoding="utf-8")
+
+    with pytest.raises(ExternalBenchmarkError, match="transcript reuse is forbidden"):
         aggregate_campaign(_campaign(), result_dir=tmp_path)
 
 
