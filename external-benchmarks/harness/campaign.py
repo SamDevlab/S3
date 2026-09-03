@@ -112,21 +112,57 @@ def _load_scenario_result(path: Path, expected_scenario_id: str) -> dict[str, An
     return document
 
 
+def _agent_identity(value: object, name: str) -> tuple[str, str, str]:
+    agent = _require_object(value, name)
+    return (
+        str(agent.get("provider", "")),
+        str(agent.get("model", "")),
+        str(agent.get("harness", "")),
+    )
+
+
+def _validate_protocol_evidence(entry: Mapping[str, Any], result: Mapping[str, Any]) -> None:
+    mode = str(entry["mode"])
+    scenario_id = str(entry["scenario_id"])
+    if mode in {"cross-session", "cross-agent"}:
+        handoff = _require_object(result.get("handoff"), f"handoff evidence for {scenario_id}")
+        if handoff.get("kind") != mode:
+            raise ExternalBenchmarkError(f"handoff kind mismatch for {scenario_id}")
+        if handoff.get("transcript_reused") is not False:
+            raise ExternalBenchmarkError(f"transcript reuse is forbidden for {scenario_id}")
+        source = _agent_identity(handoff.get("source_agent"), f"source agent for {scenario_id}")
+        target = _agent_identity(handoff.get("target_agent"), f"target agent for {scenario_id}")
+        if mode == "cross-agent" and source == target:
+            raise ExternalBenchmarkError(f"cross-agent scenario requires distinct agent identities: {scenario_id}")
+    elif mode == "stale-memory":
+        stale = _require_object(result.get("stale_memory"), f"stale-memory evidence for {scenario_id}")
+        if stale.get("injected") is not True:
+            raise ExternalBenchmarkError(f"stale memory was not recorded as injected for {scenario_id}")
+
+
 def aggregate_campaign(campaign: Mapping[str, Any], *, result_dir: Path) -> dict[str, Any]:
     result_dir = result_dir.resolve()
     if not result_dir.is_dir():
         raise ExternalBenchmarkError("campaign result directory does not exist")
 
+    allowed_provider_ids = {
+        str(_require_object(item, "campaign configuration")["id"])
+        for item in campaign["configurations"]
+    }
     results: list[dict[str, Any]] = []
     provider_keys: set[tuple[str, str]] = set()
     for entry in campaign["scenarios"]:
         scenario_id = str(entry["scenario_id"])
         result = _load_scenario_result(result_dir / f"{scenario_id}.json", scenario_id)
+        _validate_protocol_evidence(entry, result)
+        provider = result["provider"]
+        provider_id = str(provider["id"])
+        if provider_id not in allowed_provider_ids:
+            raise ExternalBenchmarkError(f"provider is not a declared campaign configuration: {provider_id}")
         result = dict(result)
         result["campaign_mode"] = str(entry["mode"])
         results.append(result)
-        provider = result["provider"]
-        provider_keys.add((str(provider["id"]), str(provider.get("version", "unknown"))))
+        provider_keys.add((provider_id, str(provider.get("version", "unknown"))))
 
     gates = _require_object(campaign["gates"], "campaign gates")
     if gates.get("provider_consistency", True) and len(provider_keys) != 1:
