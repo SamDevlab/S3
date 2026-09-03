@@ -48,6 +48,38 @@ For `cross-agent`, Agent B must be a distinct agent or harness identity and does
 
 For `stale-memory`, inject the stale statement exactly as specified by the scenario. The desired behavior is not blind recall: the agent should compare it with the current checkout and prefer current authoritative evidence.
 
+## Protocol evidence
+
+The campaign aggregator enforces protocol evidence for non-trivial handoffs.
+
+A `cross-session` observation must include:
+
+```json
+{
+  "handoff": {
+    "kind": "cross-session",
+    "source_agent": {"provider": "openai", "model": "MODEL", "harness": "codex-session-a"},
+    "target_agent": {"provider": "openai", "model": "MODEL", "harness": "codex-session-b"},
+    "transcript_reused": false
+  }
+}
+```
+
+A `cross-agent` observation uses `kind: "cross-agent"`, must set `transcript_reused` to `false`, and the source/target agent identity tuples must differ.
+
+A stale-memory observation must record that the declared stale input was actually injected:
+
+```json
+{
+  "stale_memory": {
+    "claim_id": "ffi-future-unavailable",
+    "injected": true
+  }
+}
+```
+
+These fields intentionally contain only non-secret benchmark metadata. Do not place prompts, transcripts, tokens, URLs with credentials, or environment dumps inside them.
+
 ## Correctness-first rule
 
 Reported recall is not a pass condition.
@@ -78,7 +110,13 @@ After the external agent has completed its task in the isolated worktree, create
   "reported_invariants": [
     "i64-overflow-no-wrap",
     "i64-division-failures"
-  ]
+  ],
+  "handoff": {
+    "kind": "cross-session",
+    "source_agent": {"provider": "openai", "model": "MODEL", "harness": "codex-session-a"},
+    "target_agent": {"provider": "openai", "model": "MODEL", "harness": "codex-session-b"},
+    "transcript_reused": false
+  }
 }
 ```
 
@@ -118,7 +156,14 @@ python tools/external_bench.py \
   --output-json results/ai-memory/run-1/campaign.json
 ```
 
-The aggregator rejects mixed provider identities inside one run.
+The aggregator rejects:
+
+- mixed provider identities inside one run;
+- providers not declared by the campaign;
+- missing handoff evidence;
+- transcript reuse in cross-session/cross-agent scenarios;
+- identical source/target identities in cross-agent scenarios;
+- stale-memory scenarios that do not record the stale claim as injected.
 
 ## Comparison discipline
 
@@ -147,6 +192,7 @@ A published campaign report should include, per provider configuration:
 - critical oracle failure count;
 - mean invariant recall rate;
 - individual scenario result JSON files;
+- handoff/stale-memory protocol evidence where applicable;
 - any deviations from the protocol.
 
 Do not publish credentials, tokens, personal paths, usernames, private hostnames, environment dumps, or network identifiers.
