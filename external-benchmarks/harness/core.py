@@ -23,7 +23,15 @@ def _require_object(value: object, name: str) -> dict[str, Any]:
 
 def load_scenario(path: Path) -> dict[str, Any]:
     document = _require_object(json.loads(path.read_text(encoding="utf-8")), "scenario")
-    required = {"schema_version", "scenario_id", "version", "category", "objective", "critical_invariants", "oracle"}
+    required = {
+        "schema_version",
+        "scenario_id",
+        "version",
+        "category",
+        "objective",
+        "critical_invariants",
+        "oracle",
+    }
     missing = sorted(required.difference(document))
     if missing:
         raise ExternalBenchmarkError(f"scenario missing required fields: {', '.join(missing)}")
@@ -56,7 +64,11 @@ def _expand_argument(value: str) -> str:
 
 def _command_check(check: Mapping[str, Any], repository_root: Path) -> dict[str, Any]:
     argv = check.get("argv")
-    if not isinstance(argv, list) or not argv or any(not isinstance(item, str) or not item for item in argv):
+    if (
+        not isinstance(argv, list)
+        or not argv
+        or any(not isinstance(item, str) or not item for item in argv)
+    ):
         raise ExternalBenchmarkError("oracle command argv must be a non-empty string list")
     timeout = check.get("timeout_seconds", 120)
     if not isinstance(timeout, (int, float)) or timeout <= 0:
@@ -91,7 +103,12 @@ def _matching_files(repository_root: Path, pattern: str) -> list[Path]:
     return sorted(path for path in repository_root.glob(pattern) if path.is_file())
 
 
-def _pattern_check(check: Mapping[str, Any], repository_root: Path, *, forbidden: bool) -> dict[str, Any]:
+def _pattern_check(
+    check: Mapping[str, Any],
+    repository_root: Path,
+    *,
+    forbidden: bool,
+) -> dict[str, Any]:
     glob = check.get("glob")
     pattern = check.get("pattern")
     if not isinstance(glob, str) or not isinstance(pattern, str) or not pattern:
@@ -146,6 +163,29 @@ def _safe_agent(observation: Mapping[str, Any]) -> dict[str, str]:
     return _safe_agent_value(observation.get("agent", {}), "agent")
 
 
+def _safe_execution(observation: Mapping[str, Any]) -> dict[str, Any] | None:
+    raw = observation.get("execution")
+    if raw is None:
+        return None
+    execution = _require_object(raw, "execution")
+    result: dict[str, Any] = {}
+    for key in (
+        "s3_commit",
+        "agent_harness_version",
+        "tool_permissions_profile",
+        "task_protocol_version",
+    ):
+        value = execution.get(key)
+        if not isinstance(value, str) or not value:
+            raise ExternalBenchmarkError(f"execution.{key} must be a non-empty string")
+        result[key] = value
+    repetition = execution.get("repetition")
+    if not isinstance(repetition, int) or isinstance(repetition, bool) or repetition < 1:
+        raise ExternalBenchmarkError("execution.repetition must be a positive integer")
+    result["repetition"] = repetition
+    return result
+
+
 def _safe_handoff(observation: Mapping[str, Any]) -> dict[str, Any] | None:
     raw = observation.get("handoff")
     if raw is None:
@@ -159,8 +199,12 @@ def _safe_handoff(observation: Mapping[str, Any]) -> dict[str, Any] | None:
         raise ExternalBenchmarkError("handoff.transcript_reused must be boolean")
     return {
         "kind": kind,
-        "source_agent": _safe_agent_value(handoff.get("source_agent", {}), "handoff.source_agent"),
-        "target_agent": _safe_agent_value(handoff.get("target_agent", {}), "handoff.target_agent"),
+        "source_agent": _safe_agent_value(
+            handoff.get("source_agent", {}), "handoff.source_agent"
+        ),
+        "target_agent": _safe_agent_value(
+            handoff.get("target_agent", {}), "handoff.target_agent"
+        ),
         "transcript_reused": transcript_reused,
     }
 
@@ -208,9 +252,21 @@ def evaluate_scenario(
     for check in oracle.get("commands", []):
         results.append(_command_check(_require_object(check, "command check"), repository_root))
     for check in oracle.get("required_patterns", []):
-        results.append(_pattern_check(_require_object(check, "required pattern check"), repository_root, forbidden=False))
+        results.append(
+            _pattern_check(
+                _require_object(check, "required pattern check"),
+                repository_root,
+                forbidden=False,
+            )
+        )
     for check in oracle.get("forbidden_patterns", []):
-        results.append(_pattern_check(_require_object(check, "forbidden pattern check"), repository_root, forbidden=True))
+        results.append(
+            _pattern_check(
+                _require_object(check, "forbidden pattern check"),
+                repository_root,
+                forbidden=True,
+            )
+        )
 
     failed = [item for item in results if not item["passed"]]
     total = len(invariant_ids)
@@ -234,6 +290,9 @@ def evaluate_scenario(
         "metrics": metrics,
         "oracle": results,
     }
+    execution = _safe_execution(observation)
+    if execution is not None:
+        result["execution"] = execution
     handoff = _safe_handoff(observation)
     if handoff is not None:
         result["handoff"] = handoff

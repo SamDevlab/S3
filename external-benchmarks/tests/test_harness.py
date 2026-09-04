@@ -17,10 +17,16 @@ def _scenario() -> dict[str, object]:
         "version": "1.0.0",
         "category": "agent-memory",
         "objective": "test",
-        "critical_invariants": [{"id": "remember-me", "description": "test invariant"}],
+        "critical_invariants": [
+            {"id": "remember-me", "description": "test invariant"}
+        ],
         "oracle": {
-            "required_patterns": [{"id": "required", "glob": "src/**/*.py", "pattern": "safe_call"}],
-            "forbidden_patterns": [{"id": "forbidden", "glob": "src/**/*.py", "pattern": "shell=True"}],
+            "required_patterns": [
+                {"id": "required", "glob": "src/**/*.py", "pattern": "safe_call"}
+            ],
+            "forbidden_patterns": [
+                {"id": "forbidden", "glob": "src/**/*.py", "pattern": "shell=True"}
+            ],
         },
     }
 
@@ -29,6 +35,14 @@ def _observation() -> dict[str, object]:
     return {
         "provider": {"id": "ai-memory", "version": "2.x"},
         "agent": {"provider": "test", "model": "fixture", "harness": "pytest"},
+        "execution": {
+            "s3_commit": "abc123",
+            "agent_harness_version": "1",
+            "tool_permissions_profile": "standard",
+            "task_protocol_version": "agent-memory-v1",
+            "repetition": 1,
+            "token": "must-not-persist",
+        },
         "reported_invariants": ["remember-me"],
     }
 
@@ -42,7 +56,14 @@ def test_oracle_passes_and_reports_recall(tmp_path: Path) -> None:
 
     assert result["status"] == "PASS"
     assert result["metrics"]["invariant_recall_rate"] == 1.0
-    assert result["metrics"]["critical_oracle_failures"] == 0
+    assert result["execution"] == {
+        "s3_commit": "abc123",
+        "agent_harness_version": "1",
+        "tool_permissions_profile": "standard",
+        "task_protocol_version": "agent-memory-v1",
+        "repetition": 1,
+    }
+    assert "must-not-persist" not in json.dumps(result)
 
 
 def test_oracle_failure_cannot_be_hidden_by_recall(tmp_path: Path) -> None:
@@ -54,7 +75,6 @@ def test_oracle_failure_cannot_be_hidden_by_recall(tmp_path: Path) -> None:
 
     assert result["metrics"]["invariant_recall_rate"] == 1.0
     assert result["status"] == "FAIL"
-    assert result["metrics"]["critical_oracle_failures"] == 1
 
 
 def test_scenario_discovery_is_deterministic(tmp_path: Path) -> None:

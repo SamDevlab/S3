@@ -42,12 +42,23 @@ def _campaign() -> dict[str, object]:
     }
 
 
+def _execution(repetition: int = 1) -> dict[str, object]:
+    return {
+        "s3_commit": "abc123",
+        "agent_harness_version": "1",
+        "tool_permissions_profile": "standard",
+        "task_protocol_version": "agent-memory-v1",
+        "repetition": repetition,
+    }
+
+
 def _result(
     scenario_id: str,
     *,
     provider: str = "provider-a",
     status: str = "PASS",
     recall: float = 1.0,
+    repetition: int = 1,
 ) -> dict[str, object]:
     result: dict[str, object] = {
         "schema_version": "1.0.0",
@@ -56,6 +67,7 @@ def _result(
         "category": "agent-memory",
         "provider": {"id": provider, "version": "1"},
         "agent": {"provider": "test", "model": "fixture", "harness": "pytest"},
+        "execution": _execution(repetition),
         "status": status,
         "reported_invariants": [],
         "metrics": {
@@ -71,22 +83,35 @@ def _result(
     if scenario_id == "two":
         result["handoff"] = {
             "kind": "cross-session",
-            "source_agent": {"provider": "test", "model": "fixture", "harness": "pytest-a"},
-            "target_agent": {"provider": "test", "model": "fixture", "harness": "pytest-b"},
+            "source_agent": {
+                "provider": "test",
+                "model": "fixture",
+                "harness": "pytest-a",
+            },
+            "target_agent": {
+                "provider": "test",
+                "model": "fixture",
+                "harness": "pytest-b",
+            },
             "transcript_reused": False,
         }
     return result
 
 
 def test_campaign_aggregation_is_correctness_first(tmp_path: Path) -> None:
-    (tmp_path / "one.json").write_text(json.dumps(_result("one", recall=1.0)), encoding="utf-8")
+    (tmp_path / "one.json").write_text(
+        json.dumps(_result("one", recall=1.0)),
+        encoding="utf-8",
+    )
     (tmp_path / "two.json").write_text(
-        json.dumps(_result("two", status="FAIL", recall=1.0)), encoding="utf-8"
+        json.dumps(_result("two", status="FAIL", recall=1.0)),
+        encoding="utf-8",
     )
 
     result = aggregate_campaign(_campaign(), result_dir=tmp_path)
 
     assert result["status"] == "FAIL"
+    assert result["execution"] == _execution()
     assert result["metrics"]["scenarios_passed"] == 1
     assert result["metrics"]["scenarios_failed"] == 1
     assert result["metrics"]["critical_oracle_failures"] == 1
@@ -94,10 +119,27 @@ def test_campaign_aggregation_is_correctness_first(tmp_path: Path) -> None:
 
 
 def test_campaign_rejects_mixed_provider_results(tmp_path: Path) -> None:
-    (tmp_path / "one.json").write_text(json.dumps(_result("one", provider="provider-a")), encoding="utf-8")
-    (tmp_path / "two.json").write_text(json.dumps(_result("two", provider="provider-b")), encoding="utf-8")
+    (tmp_path / "one.json").write_text(
+        json.dumps(_result("one", provider="provider-a")),
+        encoding="utf-8",
+    )
+    (tmp_path / "two.json").write_text(
+        json.dumps(_result("two", provider="provider-b")),
+        encoding="utf-8",
+    )
 
     with pytest.raises(ExternalBenchmarkError, match="one provider configuration"):
+        aggregate_campaign(_campaign(), result_dir=tmp_path)
+
+
+def test_campaign_rejects_mixed_execution_profiles(tmp_path: Path) -> None:
+    first = _result("one")
+    second = _result("two")
+    second["execution"]["s3_commit"] = "different"  # type: ignore[index]
+    (tmp_path / "one.json").write_text(json.dumps(first), encoding="utf-8")
+    (tmp_path / "two.json").write_text(json.dumps(second), encoding="utf-8")
+
+    with pytest.raises(ExternalBenchmarkError, match="one execution profile"):
         aggregate_campaign(_campaign(), result_dir=tmp_path)
 
 
@@ -142,8 +184,5 @@ def test_agent_memory_v1_references_existing_unique_scenarios() -> None:
         "ai-memory",
         "ai-memory+s3-integrity-gate",
     ]
-    assert campaign["gates"] == {
-        "require_all_oracles_pass": True,
-        "recall_is_gate": False,
-        "provider_consistency": True,
-    }
+    stale = next(entry for entry in campaign["scenarios"] if entry["mode"] == "stale-memory")
+    assert stale["stale_claim_id"] == "ffi-is-future-work"

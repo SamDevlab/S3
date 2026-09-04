@@ -6,79 +6,15 @@
   "additionalProperties": false,
   "required": ["schema_version", "scenario_id", "scenario_version", "category", "provider", "agent", "status", "reported_invariants", "metrics", "oracle"],
   "properties": {
-    "schema_version": {"const": "1.0.0"},
-    "scenario_id": {"type": "string", "minLength": 1},
-    "scenario_version": {"type": "string", "minLength": 1},
-    "category": {"type": "string", "minLength": 1},
-    "provider": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["id", "version"],
-      "properties": {
-        "id": {"type": "string", "minLength": 1},
-        "version": {"type": "string", "minLength": 1}
-      }
-    },
-    "agent": {"$ref": "#/$defs/agent"},
-    "handoff": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["kind", "source_agent", "target_agent", "transcript_reused"],
-      "properties": {
-        "kind": {"enum": ["cross-session", "cross-agent"]},
-        "source_agent": {"$ref": "#/$defs/agent"},
-        "target_agent": {"$ref": "#/$defs/agent"},
-        "transcript_reused": {"type": "boolean"}
-      }
-    },
-    "stale_memory": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["claim_id", "injected"],
-      "properties": {
-        "claim_id": {"type": "string", "minLength": 1},
-        "injected": {"type": "boolean"}
-      }
-    },
-    "status": {"enum": ["PASS", "FAIL"]},
-    "reported_invariants": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
-    "metrics": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["critical_invariants_total", "critical_invariants_reported", "invariant_recall_rate", "oracle_checks_total", "oracle_checks_passed", "critical_oracle_failures"],
-      "properties": {
-        "critical_invariants_total": {"type": "integer", "minimum": 0},
-        "critical_invariants_reported": {"type": "integer", "minimum": 0},
-        "invariant_recall_rate": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
-        "oracle_checks_total": {"type": "integer", "minimum": 0},
-        "oracle_checks_passed": {"type": "integer", "minimum": 0},
-        "critical_oracle_failures": {"type": "integer", "minimum": 0}
-      }
-    },
-    "oracle": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["id", "kind", "passed", "detail"],
-        "properties": {
-          "id": {"type": "string"},
-          "kind": {"enum": ["command", "required_pattern", "forbidden_pattern"]},
-          "passed": {"type": "boolean"},
-          "detail": {"type": "string"}
-        }
-      }
-    }
+    "schema_version": {"const": "1.0.0"}, "scenario_id": {"type": "string", "minLength": 1}, "scenario_version": {"type": "string", "minLength": 1}, "category": {"type": "string", "minLength": 1},
+    "provider": {"type": "object", "additionalProperties": false, "required": ["id", "version"], "properties": {"id": {"type": "string", "minLength": 1}, "version": {"type": "string", "minLength": 1}}},
+    "agent": {"type": "object", "additionalProperties": false, "properties": {"provider": {"type": "string"}, "model": {"type": "string"}, "harness": {"type": "string"}}},
+    "execution": {"type": "object", "additionalProperties": false, "required": ["s3_commit", "agent_harness_version", "tool_permissions_profile", "task_protocol_version", "repetition"], "properties": {"s3_commit": {"type": "string", "minLength": 1}, "agent_harness_version": {"type": "string", "minLength": 1}, "tool_permissions_profile": {"type": "string", "minLength": 1}, "task_protocol_version": {"type": "string", "minLength": 1}, "repetition": {"type": "integer", "minimum": 1}}},
+    "handoff": {"type": "object", "additionalProperties": false, "required": ["kind", "source_agent", "target_agent", "transcript_reused"], "properties": {"kind": {"enum": ["cross-session", "cross-agent"]}, "source_agent": {"$ref": "#/$defs/agentIdentity"}, "target_agent": {"$ref": "#/$defs/agentIdentity"}, "transcript_reused": {"type": "boolean"}}},
+    "stale_memory": {"type": "object", "additionalProperties": false, "required": ["claim_id", "injected"], "properties": {"claim_id": {"type": "string", "minLength": 1}, "injected": {"type": "boolean"}}},
+    "status": {"enum": ["PASS", "FAIL"]}, "reported_invariants": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "metrics": {"type": "object", "additionalProperties": false, "required": ["critical_invariants_total", "critical_invariants_reported", "invariant_recall_rate", "oracle_checks_total", "oracle_checks_passed", "critical_oracle_failures"], "properties": {"critical_invariants_total": {"type": "integer", "minimum": 0}, "critical_invariants_reported": {"type": "integer", "minimum": 0}, "invariant_recall_rate": {"type": ["number", "null"], "minimum": 0, "maximum": 1}, "oracle_checks_total": {"type": "integer", "minimum": 0}, "oracle_checks_passed": {"type": "integer", "minimum": 0}, "critical_oracle_failures": {"type": "integer", "minimum": 0}}},
+    "oracle": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["id", "kind", "passed", "detail"], "properties": {"id": {"type": "string"}, "kind": {"enum": ["command", "required_pattern", "forbidden_pattern"]}, "passed": {"type": "boolean"}, "detail": {"type": "string"}}}}
   },
-  "$defs": {
-    "agent": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "provider": {"type": "string"},
-        "model": {"type": "string"},
-        "harness": {"type": "string"}
-      }
-    }
-  }
+  "$defs": {"agentIdentity": {"type": "object", "additionalProperties": false, "properties": {"provider": {"type": "string"}, "model": {"type": "string"}, "harness": {"type": "string"}}}}
 }

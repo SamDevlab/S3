@@ -4,56 +4,13 @@
   "title": "S3 External Benchmark Campaign Result 1.0.0",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "schema_version",
-    "campaign_id",
-    "campaign_version",
-    "category",
-    "provider",
-    "status",
-    "metrics",
-    "results"
-  ],
+  "required": ["schema_version", "campaign_id", "campaign_version", "category", "provider", "execution", "status", "metrics", "results"],
   "properties": {
-    "schema_version": {"const": "1.0.0"},
-    "campaign_id": {"type": "string", "minLength": 1},
-    "campaign_version": {"type": "string", "minLength": 1},
-    "category": {"type": "string", "minLength": 1},
-    "provider": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["id", "version"],
-      "properties": {
-        "id": {"type": "string", "minLength": 1},
-        "version": {"type": "string", "minLength": 1}
-      }
-    },
+    "schema_version": {"const": "1.0.0"}, "campaign_id": {"type": "string", "minLength": 1}, "campaign_version": {"type": "string", "minLength": 1}, "category": {"type": "string", "minLength": 1},
+    "provider": {"type": "object", "additionalProperties": false, "required": ["id", "version"], "properties": {"id": {"type": "string", "minLength": 1}, "version": {"type": "string", "minLength": 1}}},
+    "execution": {"type": "object", "additionalProperties": false, "required": ["s3_commit", "agent_harness_version", "tool_permissions_profile", "task_protocol_version", "repetition"], "properties": {"s3_commit": {"type": "string", "minLength": 1}, "agent_harness_version": {"type": "string", "minLength": 1}, "tool_permissions_profile": {"type": "string", "minLength": 1}, "task_protocol_version": {"type": "string", "minLength": 1}, "repetition": {"type": "integer", "minimum": 1}}},
     "status": {"enum": ["PASS", "FAIL"]},
-    "metrics": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "scenarios_total",
-        "scenarios_passed",
-        "scenarios_failed",
-        "critical_oracle_failures",
-        "mean_invariant_recall_rate"
-      ],
-      "properties": {
-        "scenarios_total": {"type": "integer", "minimum": 0},
-        "scenarios_passed": {"type": "integer", "minimum": 0},
-        "scenarios_failed": {"type": "integer", "minimum": 0},
-        "critical_oracle_failures": {"type": "integer", "minimum": 0},
-        "mean_invariant_recall_rate": {
-          "type": ["number", "null"],
-          "minimum": 0,
-          "maximum": 1
-        }
-      }
-    },
-    "results": {
-      "type": "array",
-      "items": {"type": "object"}
-    }
+    "metrics": {"type": "object", "additionalProperties": false, "required": ["scenarios_total", "scenarios_passed", "scenarios_failed", "critical_oracle_failures", "mean_invariant_recall_rate"], "properties": {"scenarios_total": {"type": "integer", "minimum": 0}, "scenarios_passed": {"type": "integer", "minimum": 0}, "scenarios_failed": {"type": "integer", "minimum": 0}, "critical_oracle_failures": {"type": "integer", "minimum": 0}, "mean_invariant_recall_rate": {"type": ["number", "null"], "minimum": 0, "maximum": 1}}},
+    "results": {"type": "array", "items": {"type": "object"}}
   }
 }

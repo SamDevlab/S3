@@ -1,198 +1,106 @@
 # Agent Memory V1
 
-`agent-memory-v1` is the first versioned S3 external benchmark campaign for durable AI-agent memory systems.
-
-The campaign does **not** benchmark S3 runtime performance. It uses the S3 repository as a difficult, executable correctness oracle for external systems that claim to preserve engineering knowledge across time, sessions, or agents.
+`agent-memory-v1` is the first versioned S3 external benchmark campaign for durable AI-agent memory systems. It does not benchmark S3 runtime performance; it uses the S3 repository as an executable correctness oracle.
 
 ## Research question
 
 Can a memory configuration help coding agents preserve current S3 architectural invariants during real repository work without increasing semantic regressions, accepting stale knowledge, or leaking state between benchmark cases?
 
-The campaign compares these provider configurations:
+## Provider configurations
 
 1. `no-memory` — no durable state between phases;
-2. `context-only` — only the active model context is available;
+2. `context-only` — active model context only;
 3. `ai-memory` — AI-MEMORY supplies durable external memory;
-4. `ai-memory+s3-integrity-gate` — AI-MEMORY plus an S3-oriented validation layer.
+4. `ai-memory+s3-integrity-gate` — AI-MEMORY plus S3-oriented validation before durable conclusions are trusted.
 
-AI-MEMORY remains an optional system under test. Nothing in the compiler, runtime, public package, `s3bench`, or main CI imports or requires it.
+AI-MEMORY remains optional. Nothing in the compiler, runtime, public package, `s3bench`, or main CI imports or requires it.
 
 ## Campaign cases
 
 | Scenario | Mode | What it tests |
 | --- | --- | --- |
-| `memory.host-shell-policy.v1` | single-session | retention of shell-free host-process policy |
+| `memory.host-shell-policy.v1` | single-session | shell-free host-process policy |
 | `memory.ternary-subtraction.v1` | cross-session | balanced subtraction remains distinct from `NUMERIC_DIFFERENCE` / `TNDIFF` |
-| `memory.checked-i64.v1` | cross-session | checked i64 overflow/division semantics survive later refactoring |
-| `memory.mut-no-noalias.v1` | cross-session | `&mut` is not silently converted into a machine `noalias` promise |
-| `memory.stale-memory.v1` | stale-memory | current repository evidence overrides an obsolete durable claim |
+| `memory.checked-i64.v1` | cross-session | checked i64 semantics survive later refactoring |
+| `memory.mut-no-noalias.v1` | cross-session | `&mut` is not silently converted into machine `noalias` |
+| `memory.stale-memory.v1` | stale-memory | current repository evidence overrides obsolete durable knowledge |
 | `memory.cross-session.v1` | cross-session | multiple invariants survive a hard session boundary |
-| `memory.cross-agent.v1` | cross-agent | multiple invariants survive handoff between distinct agent identities |
+| `memory.cross-agent.v1` | cross-agent | invariants survive handoff between distinct agent identities |
 
 ## Isolation protocol
 
-Every scenario/repetition starts from a fresh clean worktree pinned to the same S3 commit used by the other provider configurations in the comparison.
+Every scenario/repetition starts from a fresh clean worktree pinned to the same S3 commit used by the other provider configurations. Do not share modified worktrees, hidden files, local notes, previous transcripts, unrecorded prompts, or provider state from another scenario unless the scenario defines that state as experimental input.
 
-Do not share:
+For cross-session, Session A ends before Session B starts and Session B does not receive the prior transcript. For cross-agent, Agent B is a distinct identity and receives no Agent A transcript. For stale-memory, inject the declared stale statement unchanged and require reconciliation against current repository evidence.
 
-- modified worktrees;
-- hidden files;
-- local notes;
-- previous transcripts;
-- unrecorded prompts;
-- provider state from another scenario unless the scenario itself defines that state as its experimental input.
+## Controlled execution evidence
 
-For `cross-session`, Session A is ended before Session B starts. Session B does not receive Session A's transcript. The configured durable memory mechanism is the only allowed persistent handoff channel.
-
-For `cross-agent`, Agent B must be a distinct agent or harness identity and does not receive Agent A's transcript. Repository state and the configured durable memory system are the allowed handoff surfaces.
-
-For `stale-memory`, inject the stale statement exactly as specified by the scenario. The desired behavior is not blind recall: the agent should compare it with the current checkout and prefer current authoritative evidence.
-
-## Protocol evidence
-
-The campaign aggregator enforces protocol evidence for non-trivial handoffs.
-
-A `cross-session` observation must include:
+Every Agent Memory V1 observation records:
 
 ```json
 {
-  "handoff": {
-    "kind": "cross-session",
-    "source_agent": {"provider": "openai", "model": "MODEL", "harness": "codex-session-a"},
-    "target_agent": {"provider": "openai", "model": "MODEL", "harness": "codex-session-b"},
-    "transcript_reused": false
+  "execution": {
+    "s3_commit": "PINNED_COMMIT",
+    "agent_harness_version": "HARNESS_VERSION",
+    "tool_permissions_profile": "PROFILE",
+    "task_protocol_version": "agent-memory-v1",
+    "repetition": 1
   }
 }
 ```
 
-A `cross-agent` observation uses `kind: "cross-agent"`, must set `transcript_reused` to `false`, and the source/target agent identity tuples must differ.
+A provider repetition is rejected when its scenario results do not share exactly one execution profile/repetition.
 
-A stale-memory observation must record that the declared stale input was actually injected:
+Cross-session/cross-agent cases also record `source_agent`, `target_agent`, and `transcript_reused: false`. Cross-agent source/target identities must differ.
+
+The stale-memory case uses the normative claim id:
 
 ```json
-{
-  "stale_memory": {
-    "claim_id": "ffi-future-unavailable",
-    "injected": true
-  }
-}
+{"stale_memory": {"claim_id": "ffi-is-future-work", "injected": true}}
 ```
 
-These fields intentionally contain only non-secret benchmark metadata. Do not place prompts, transcripts, tokens, URLs with credentials, or environment dumps inside them.
+Any other claim id is rejected by the campaign aggregator.
 
 ## Correctness-first rule
 
-Reported recall is not a pass condition.
-
-An agent may report every critical invariant and still fail the scenario if its resulting worktree violates an oracle. Conversely, a correct worktree can pass with incomplete explicit recall; that missing recall remains visible as an informative metric.
-
-Campaign gate:
-
 ```text
 any critical oracle failure -> scenario FAIL
-any scenario FAIL          -> campaign FAIL
+any scenario FAIL          -> provider repetition FAIL
 ```
 
-`mean_invariant_recall_rate` is descriptive and never overrides those gates.
+Recall is descriptive and never overrides these gates.
 
-## Running one scenario
+## Aggregation and comparison
 
-After the external agent has completed its task in the isolated worktree, create an observation file:
-
-```json
-{
-  "provider": {"id": "ai-memory", "version": "2.x"},
-  "agent": {
-    "provider": "openai",
-    "model": "MODEL",
-    "harness": "codex"
-  },
-  "reported_invariants": [
-    "i64-overflow-no-wrap",
-    "i64-division-failures"
-  ],
-  "handoff": {
-    "kind": "cross-session",
-    "source_agent": {"provider": "openai", "model": "MODEL", "harness": "codex-session-a"},
-    "target_agent": {"provider": "openai", "model": "MODEL", "harness": "codex-session-b"},
-    "transcript_reused": false
-  }
-}
-```
-
-Evaluate the worktree and persist the result using the scenario id as filename:
-
-```bash
-python tools/external_bench.py \
-  --scenario memory.checked-i64.v1 \
-  --observation-file observation.json \
-  --repository-root /path/to/isolated/worktree \
-  --output-json results/ai-memory/run-1/memory.checked-i64.v1.json
-```
-
-Repeat for every scenario. The recommended initial campaign is three repetitions per provider configuration.
-
-## Aggregating one provider run
-
-A result directory contains exactly one result for every campaign scenario:
-
-```text
-results/ai-memory/run-1/
-  memory.host-shell-policy.v1.json
-  memory.ternary-subtraction.v1.json
-  memory.checked-i64.v1.json
-  memory.mut-no-noalias.v1.json
-  memory.stale-memory.v1.json
-  memory.cross-session.v1.json
-  memory.cross-agent.v1.json
-```
-
-Aggregate it with:
+Run all seven scenarios in isolated worktrees, persist one scenario result per file, then aggregate one provider repetition:
 
 ```bash
 python tools/external_bench.py \
   --campaign agent-memory-v1 \
-  --result-dir results/ai-memory/run-1 \
-  --output-json results/ai-memory/run-1/campaign.json
+  --result-dir results/agent-memory-v1/ai-memory/run-1 \
+  --output-json results/agent-memory-v1/ai-memory/run-1/campaign.json
 ```
 
-The aggregator rejects:
+After all provider repetitions exist, compare them:
 
-- mixed provider identities inside one run;
-- providers not declared by the campaign;
-- missing handoff evidence;
-- transcript reuse in cross-session/cross-agent scenarios;
-- identical source/target identities in cross-agent scenarios;
-- stale-memory scenarios that do not record the stale claim as injected.
+```bash
+python tools/external_bench.py \
+  --campaign agent-memory-v1 \
+  --compare-root results/agent-memory-v1 \
+  --output-json results/agent-memory-v1/comparison.json \
+  --output-markdown results/agent-memory-v1/comparison.md
+```
 
-## Comparison discipline
+The comparison checks the S3 commit, harness version, permissions profile, task-protocol version, scenario versions, agent identities, and handoff identities across providers. A mismatch yields `NOT_COMPARABLE`; no provider-to-provider capability claim should then be made.
 
-A provider comparison is valid only when the following are held constant unless the scenario explicitly tests one of them:
+The report deliberately does not rank or select a winner. It reports campaign-run PASS counts, scenario pass rates, critical oracle failures, and mean invariant recall separately.
 
-- S3 commit;
-- scenario version;
-- agent model/version;
-- agent harness/version;
-- task text;
-- tool permissions;
-- operating-system/toolchain class needed by the oracle;
-- number of repetitions.
+The recommended campaign uses three repetitions per provider. `--repetitions 1` is allowed for exploratory smoke runs only.
 
-Latency, token cost, retrieval volume, or provider-specific diagnostics may be collected separately, but Agent Memory V1 does not treat them as correctness gates.
+See `agent-memory-v1-execution.md` for directory layout and observation templates.
 
-## Minimum report
+## Minimum published report
 
-A published campaign report should include, per provider configuration:
+Include the pinned S3 commit, provider id/version, agent model/harness identity, repetitions, scenario pass/fail counts, critical oracle failures, mean invariant recall, individual result JSON files, protocol evidence, comparability status/reasons, and deviations from protocol.
 
-- S3 commit under test;
-- provider id/version;
-- agent model/harness identity;
-- number of repetitions;
-- scenario pass/fail counts;
-- critical oracle failure count;
-- mean invariant recall rate;
-- individual scenario result JSON files;
-- handoff/stale-memory protocol evidence where applicable;
-- any deviations from the protocol.
-
-Do not publish credentials, tokens, personal paths, usernames, private hostnames, environment dumps, or network identifiers.
+Never publish credentials, tokens, personal paths, usernames, private hostnames, prompts/transcripts, environment dumps, or network identifiers.
