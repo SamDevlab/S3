@@ -2,6 +2,16 @@
 
 This kit turns `agent-memory-v1` into a repeatable four-arm experiment without coupling S3 to any model or memory SDK.
 
+## Subject/controller split
+
+The controller is the `external-benchmarks-v1` branch. The S3 subject under test is pinned by the campaign manifest and must be identical across every provider/repetition:
+
+```text
+db5f4bf10e2066f52bf144d23e6f7db56154e298
+```
+
+The run-plan builder rejects another `s3_commit`. Each scenario runs in its own detached worktree of that subject commit. The worktree root must be outside the controller repository.
+
 ## Directory contract
 
 ```text
@@ -12,36 +22,9 @@ results/agent-memory-v1/
   ai-memory+s3-integrity-gate/run-1/ ... run-3/
 ```
 
-Every scenario is executed in a fresh worktree. `run-N` is a logical repetition identifier; scenarios do not share one modified worktree.
+Within a run directory, the controller may create `plan.json`, `runbook.json`, rendered prompts, observations, scenario results, and `campaign.json`. Absolute worktree paths are operational state only and are not part of scientific result documents.
 
-## Required execution metadata
-
-Every Agent Memory V1 observation must include:
-
-```json
-{
-  "execution": {
-    "s3_commit": "<pinned-s3-commit>",
-    "agent_harness_version": "<version>",
-    "tool_permissions_profile": "<stable-profile-id>",
-    "task_protocol_version": "agent-memory-v1",
-    "repetition": 1
-  }
-}
-```
-
-The provider is the independent variable. The campaign aggregator requires one execution profile inside a provider repetition. Cross-provider comparison requires the same S3 commit, harness version, permissions profile, task protocol, scenario version, agent identity, and handoff identity across every corresponding provider and repetition. Controlled-variable drift between repetitions is also rejected.
-
-## Provider arms
-
-- `no-memory`: no durable memory service.
-- `context-only`: active context is allowed, but no external durable memory survives a hard boundary.
-- `ai-memory`: AI-MEMORY is the durable memory channel.
-- `ai-memory+s3-integrity-gate`: the same memory provider plus the experimental S3 integrity validation layer.
-
-## Prepare one provider repetition
-
-Generate the deterministic plan before running agents:
+## 1. Prepare a provider repetition
 
 ```bash
 python tools/external_bench.py \
@@ -50,7 +33,7 @@ python tools/external_bench.py \
   --provider ai-memory \
   --provider-version 2.x \
   --repetition 1 \
-  --s3-commit COMMIT \
+  --s3-commit db5f4bf10e2066f52bf144d23e6f7db56154e298 \
   --agent-provider openai \
   --agent-model MODEL \
   --agent-harness codex \
@@ -59,42 +42,99 @@ python tools/external_bench.py \
   --output-json results/agent-memory-v1/ai-memory/run-1/plan.json
 ```
 
-`--prepare-run` is offline. It does not create worktrees or invoke agents/providers. It emits the canonical run root and seven scenario records containing:
+The provider is the independent variable. Model, harness version, permissions profile, task protocol, subject commit, scenario versions, and corresponding handoff identities are controlled variables.
 
-- the scenario/mode;
-- the observation template;
-- a unique worktree key;
-- observation/result paths;
-- required handoff or stale-memory evidence;
-- the normative stale claim id where applicable.
+## 2. Prepare isolated subject worktrees
 
-Use the plan as the handoff contract for whichever external orchestration actually creates the clean worktrees and runs the agent.
+Preview first:
 
-## Handoff evidence
-
-Cross-session and cross-agent observations record `source_agent`, `target_agent`, and `transcript_reused: false`. Cross-agent source and target identities must differ.
-
-## Stale-memory evidence
-
-The stale-memory case must record:
-
-```json
-{"stale_memory": {"claim_id": "ffi-is-future-work", "injected": true}}
+```bash
+python tools/external_bench_worktrees.py prepare \
+  --plan-file results/agent-memory-v1/ai-memory/run-1/plan.json \
+  --worktree-root /tmp/s3-agent-memory-v1-worktrees \
+  --preview
 ```
 
-The aggregator rejects another claim id.
+Create them:
 
-## One scenario
+```bash
+python tools/external_bench_worktrees.py prepare \
+  --plan-file results/agent-memory-v1/ai-memory/run-1/plan.json \
+  --worktree-root /tmp/s3-agent-memory-v1-worktrees \
+  --execute
+```
+
+Cleanup refuses to delete dirty experiment worktrees unless the operator explicitly supplies the discard option. This prevents silent loss of an unfinished run.
+
+## 3. Render task prompts and runbook
+
+The versioned task pack is `external-benchmarks/task-packs/agent-memory-v1.json`. It defines Phase A/Phase B instructions, authoritative paths, required changed-file scopes, forbidden changed-file scopes, and a change budget.
+
+For direct arms, provide the same native agent command used for that experimental arm. Cross-agent cases require an explicit, different receiving-agent identity and command. AI-MEMORY arms use the managed AI-MEMORY launcher and fresh native sessions.
+
+Example:
+
+```bash
+python tools/external_bench_runbook.py \
+  --plan-file results/agent-memory-v1/ai-memory/run-1/plan.json \
+  --run-dir results/agent-memory-v1/ai-memory/run-1 \
+  --target-agent-file target-agent.json
+```
+
+Prompts instruct the agent to write only the minimal recall sidecar at the end of the coding phase:
+
+```json
+{"schema_version":"1.0.0","reported_invariants":["invariant-id"]}
+```
+
+The sidecar is evidence only. It is forbidden as a handoff/memory channel and is excluded from the task-diff gate.
+
+## 4. Run the agent phases
+
+`no-memory` and `context-only` use provider-neutral direct argv execution. AI-MEMORY arms use the optional `ai-memory run` adapter already implemented under `external-benchmarks/providers/ai_memory/`.
+
+Hard-boundary rules:
+
+- cross-session: end Phase A and start Phase B with no native transcript reuse;
+- cross-agent: Phase B must use a distinct recorded agent/harness identity;
+- AI-MEMORY is the only durable handoff channel in AI-MEMORY arms;
+- no hidden note files or unrecorded handoff channels are permitted.
+
+The `stale-memory` task deliberately injects `ffi-is-future-work`. Its Phase A does not reveal the current FFI invariant; the receiving phase must reconcile the stale claim against the current subject checkout.
+
+## 5. Materialize observation evidence
+
+Prefer deriving handoff identity from the actual runbook and recall from the agent sidecar:
+
+```bash
+python tools/external_bench_observation.py \
+  --plan-file results/agent-memory-v1/ai-memory/run-1/plan.json \
+  --runbook-file results/agent-memory-v1/ai-memory/run-1/runbook.json \
+  --scenario memory.cross-session.v1 \
+  --agent-report-file /tmp/s3-agent-memory-v1-worktrees/ai-memory/run-1/memory.cross-session.v1/.s3-agent-memory-report.json \
+  --output-json results/agent-memory-v1/ai-memory/run-1/memory.cross-session.v1.observation.json
+```
+
+No prompt, transcript, credential, hostname, environment dump, or personal path is copied into the observation.
+
+## 6. Evaluate one scenario
 
 ```bash
 python tools/external_bench.py \
   --scenario memory.checked-i64.v1 \
-  --observation-file observation.json \
-  --repository-root /path/to/fresh/worktree \
+  --observation-file results/agent-memory-v1/ai-memory/run-1/memory.checked-i64.v1.observation.json \
+  --repository-root /tmp/s3-agent-memory-v1-worktrees/ai-memory/run-1/memory.checked-i64.v1 \
   --output-json results/agent-memory-v1/ai-memory/run-1/memory.checked-i64.v1.json
 ```
 
-## One provider repetition
+For Agent Memory V1, PASS requires both:
+
+1. semantic S3 oracle checks;
+2. task-artifact checks proving the required scoped change was actually made.
+
+A no-op therefore fails even when the baseline tests already pass.
+
+## 7. Aggregate one repetition
 
 ```bash
 python tools/external_bench.py \
@@ -103,7 +143,7 @@ python tools/external_bench.py \
   --output-json results/agent-memory-v1/ai-memory/run-1/campaign.json
 ```
 
-## Four-provider comparison
+## 8. Compare providers
 
 ```bash
 python tools/external_bench.py \
@@ -113,6 +153,41 @@ python tools/external_bench.py \
   --output-markdown results/agent-memory-v1/comparison.md
 ```
 
-The comparison is `NOT_COMPARABLE` when a controlled variable differs. Metrics remain available for diagnosis, but provider-to-provider capability claims are forbidden. The report is neutral and never selects a winner.
+The comparison becomes `NOT_COMPARABLE` on controlled-variable drift, including collective drift between repetitions. The report never selects a winner automatically.
 
-For an exploratory smoke run, `--repetitions 1` may override the recommended three repetitions; published results should label such a run exploratory.
+## Offline smoke before live execution
+
+Before spending model/provider calls, validate all protocol wiring:
+
+```bash
+python tools/external_bench_smoke.py \
+  --workspace-root /tmp/s3-agent-memory-v1-smoke \
+  --with-oracles \
+  --output-json /tmp/s3-agent-memory-v1-smoke.json
+```
+
+The smoke covers exactly 4 providers × 7 scenarios = 28 bundles and 52 phase steps, and validates all seven semantic oracles against the pinned subject commit. Synthetic observations deliberately report every invariant so the smoke tests plumbing, not memory quality.
+
+Every smoke artifact says:
+
+```json
+{"scientific_claims_allowed": false}
+```
+
+Only real agent executions may be used for provider capability claims.
+
+## Real campaign size
+
+Exploratory run:
+
+```text
+4 providers × 7 scenarios × 1 repetition = 28 live agent scenario executions
+```
+
+Recommended V1 campaign:
+
+```text
+4 providers × 7 scenarios × 3 repetitions = 84 live agent scenario executions
+```
+
+Live provider/model calls remain explicit and operator-controlled. The S3 repository never writes to the upstream AI-MEMORY repository.
