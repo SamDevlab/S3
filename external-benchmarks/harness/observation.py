@@ -91,8 +91,10 @@ def materialize_observation(
     }
 
     if mode == "cross-session":
-        source = _agent(source_agent or agent, "source agent")
-        target = _agent(target_agent or agent, "target agent")
+        source_value: object = agent if source_agent is None else source_agent
+        target_value: object = agent if target_agent is None else target_agent
+        source = _agent(source_value, "source agent")
+        target = _agent(target_value, "target agent")
         observation["handoff"] = {
             "kind": "cross-session",
             "source_agent": source,
