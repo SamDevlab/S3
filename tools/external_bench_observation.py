@@ -1,0 +1,72 @@
+"""Materialize safe external benchmark observations from a deterministic run plan."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+from typing import Any
+
+REPOSITORY_ROOT = Path(__file__).resolve().parent.parent
+EXTERNAL_ROOT = REPOSITORY_ROOT / "external-benchmarks"
+sys.path.insert(0, str(EXTERNAL_ROOT))
+
+from harness.core import ExternalBenchmarkError  # noqa: E402
+from harness.observation import materialize_observation  # noqa: E402
+
+
+def _load_object(path: Path, name: str) -> dict[str, Any]:
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except OSError as error:
+        raise ExternalBenchmarkError(f"{name} could not be read") from error
+    except json.JSONDecodeError as error:
+        raise ExternalBenchmarkError(f"{name} is not valid JSON") from error
+    if not isinstance(document, dict):
+        raise ExternalBenchmarkError(f"{name} must be a JSON object")
+    return document
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Materialize one S3 external benchmark observation from a run plan"
+    )
+    parser.add_argument("--plan-file", type=Path, required=True)
+    parser.add_argument("--scenario", required=True)
+    parser.add_argument("--reported-invariant", action="append", default=[])
+    parser.add_argument("--source-agent-file", type=Path)
+    parser.add_argument("--target-agent-file", type=Path)
+    parser.add_argument("--output-json", type=Path, required=True)
+    args = parser.parse_args(argv)
+
+    try:
+        plan = _load_object(args.plan_file, "run plan")
+        source = (
+            _load_object(args.source_agent_file, "source agent")
+            if args.source_agent_file
+            else None
+        )
+        target = (
+            _load_object(args.target_agent_file, "target agent")
+            if args.target_agent_file
+            else None
+        )
+        observation = materialize_observation(
+            plan,
+            scenario_id=args.scenario,
+            reported_invariants=args.reported_invariant,
+            source_agent=source,
+            target_agent=target,
+        )
+        payload = json.dumps(observation, indent=2, sort_keys=True, allow_nan=False)
+        args.output_json.parent.mkdir(parents=True, exist_ok=True)
+        args.output_json.write_text(payload + "\n", encoding="utf-8", newline="\n")
+        print(payload)
+        return 0
+    except ExternalBenchmarkError as error:
+        raise SystemExit(str(error)) from error
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

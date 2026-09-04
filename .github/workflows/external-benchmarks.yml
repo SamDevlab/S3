@@ -7,6 +7,7 @@ on:
       - "external-benchmarks/**"
       - "tools/external_bench.py"
       - "tools/external_bench_ai_memory.py"
+      - "tools/external_bench_observation.py"
       - "tools/s3_memory_gate.py"
       - ".github/workflows/external-benchmarks.yml"
 
@@ -39,6 +40,7 @@ jobs:
           external-benchmarks
           tools/external_bench.py
           tools/external_bench_ai_memory.py
+          tools/external_bench_observation.py
           tools/s3_memory_gate.py
 
       - name: Validate external benchmark harness, campaigns, and providers
@@ -68,6 +70,17 @@ jobs:
 
       - name: Validate generated run-plan JSON
         run: python -m json.tool /tmp/agent-memory-plan.json > /dev/null
+
+      - name: Validate deterministic observation materialization
+        run: >-
+          python tools/external_bench_observation.py
+          --plan-file /tmp/agent-memory-plan.json
+          --scenario memory.host-shell-policy.v1
+          --reported-invariant host-process-no-shell
+          --output-json /tmp/agent-memory-observation.json
+
+      - name: Validate generated observation JSON
+        run: python -m json.tool /tmp/agent-memory-observation.json > /dev/null
 
       - name: Validate AI-MEMORY managed command preview
         run: >-
