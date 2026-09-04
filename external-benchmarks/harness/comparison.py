@@ -9,6 +9,8 @@ from typing import Any, Mapping
 
 from .campaign import CAMPAIGN_RESULT_SCHEMA_VERSION
 from .core import ExternalBenchmarkError
+from .plan import PLAN_SCHEMA_VERSION
+from .provider_profile import provider_profile_identity, sanitize_provider_profile
 
 COMPARISON_SCHEMA_VERSION = "1.0.0"
 _COMPARABILITY_KEYS = (
@@ -25,45 +27,82 @@ def _require_object(value: object, name: str) -> dict[str, Any]:
     return value
 
 
-def _load_campaign_result(path: Path) -> dict[str, Any]:
+def _read_object(path: Path, name: str) -> dict[str, Any]:
     try:
-        document = _require_object(
-            json.loads(path.read_text(encoding="utf-8")),
-            "campaign result",
-        )
+        return _require_object(json.loads(path.read_text(encoding="utf-8")), name)
     except OSError as error:
-        raise ExternalBenchmarkError(f"missing campaign result: {path}") from error
+        raise ExternalBenchmarkError(f"missing {name}: {path}") from error
     except json.JSONDecodeError as error:
-        raise ExternalBenchmarkError(f"invalid campaign result JSON: {path}") from error
+        raise ExternalBenchmarkError(f"invalid {name} JSON: {path}") from error
+
+
+def _load_campaign_result(path: Path) -> dict[str, Any]:
+    document = _read_object(path, "campaign result")
     if document.get("schema_version") != CAMPAIGN_RESULT_SCHEMA_VERSION:
         raise ExternalBenchmarkError(f"unsupported campaign result schema: {path}")
     if document.get("status") not in {"PASS", "FAIL"}:
         raise ExternalBenchmarkError(f"invalid campaign result status: {path}")
-
     provider = _require_object(document.get("provider"), "campaign result provider")
     for key in ("id", "version"):
         value = provider.get(key)
         if not isinstance(value, str) or not value:
-            raise ExternalBenchmarkError(
-                f"campaign result provider.{key} is invalid: {path}"
-            )
-
+            raise ExternalBenchmarkError(f"campaign result provider.{key} is invalid: {path}")
     execution = _require_object(document.get("execution"), "campaign result execution")
     for key in _COMPARABILITY_KEYS:
         value = execution.get(key)
         if not isinstance(value, str) or not value:
-            raise ExternalBenchmarkError(
-                f"campaign result execution.{key} is invalid: {path}"
-            )
+            raise ExternalBenchmarkError(f"campaign result execution.{key} is invalid: {path}")
     repetition = execution.get("repetition")
     if not isinstance(repetition, int) or isinstance(repetition, bool) or repetition < 1:
-        raise ExternalBenchmarkError(
-            f"campaign result execution.repetition is invalid: {path}"
-        )
-
+        raise ExternalBenchmarkError(f"campaign result execution.repetition is invalid: {path}")
     if not isinstance(document.get("results"), list):
         raise ExternalBenchmarkError(f"campaign result results must be a list: {path}")
     return document
+
+
+def _load_run_plan(
+    path: Path,
+    *,
+    campaign: Mapping[str, Any],
+    provider_id: str,
+    repetition: int,
+) -> dict[str, Any]:
+    plan = _read_object(path, "run plan")
+    if plan.get("schema_version") != PLAN_SCHEMA_VERSION:
+        raise ExternalBenchmarkError(f"unsupported run plan schema: {path}")
+    if plan.get("campaign_id") != campaign["campaign_id"]:
+        raise ExternalBenchmarkError(f"run plan campaign id mismatch: {path}")
+    if plan.get("campaign_version") != campaign["version"]:
+        raise ExternalBenchmarkError(f"run plan campaign version mismatch: {path}")
+    provider = _require_object(plan.get("provider"), "run plan provider")
+    if provider.get("id") != provider_id:
+        raise ExternalBenchmarkError(f"run plan provider id mismatch: {path}")
+    if not isinstance(provider.get("version"), str) or not provider["version"]:
+        raise ExternalBenchmarkError(f"run plan provider version is invalid: {path}")
+    execution = _require_object(plan.get("execution"), "run plan execution")
+    if execution.get("repetition") != repetition:
+        raise ExternalBenchmarkError(f"run plan repetition mismatch: {path}")
+    plan["provider_profile"] = sanitize_provider_profile(
+        plan.get("provider_profile"),
+        provider_id=provider_id,
+    )
+    return plan
+
+
+def _validate_plan_result_pair(
+    plan: Mapping[str, Any],
+    result: Mapping[str, Any],
+    *,
+    path: Path,
+) -> None:
+    if _require_object(plan["provider"], "run plan provider") != _require_object(
+        result["provider"], "campaign result provider"
+    ):
+        raise ExternalBenchmarkError(f"run plan provider differs from campaign result: {path}")
+    if _require_object(plan["execution"], "run plan execution") != _require_object(
+        result["execution"], "campaign result execution"
+    ):
+        raise ExternalBenchmarkError(f"run plan execution differs from campaign result: {path}")
 
 
 def _scenario_map(result: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
@@ -74,9 +113,7 @@ def _scenario_map(result: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
         if not isinstance(scenario_id, str) or not scenario_id:
             raise ExternalBenchmarkError("scenario result must contain a scenario_id")
         if scenario_id in rows:
-            raise ExternalBenchmarkError(
-                f"duplicate scenario result in campaign run: {scenario_id}"
-            )
+            raise ExternalBenchmarkError(f"duplicate scenario result in campaign run: {scenario_id}")
         rows[scenario_id] = scenario
     return rows
 
@@ -110,36 +147,37 @@ def _comparability_reasons(
     reasons: list[str] = []
     provider_ids = [str(item["id"]) for item in campaign["configurations"]]
     scenario_ids = [str(item["scenario_id"]) for item in campaign["scenarios"]]
-
     reference_provider = provider_ids[0]
     canonical = provider_runs[reference_provider][0]
     canonical_execution = _require_object(canonical["execution"], "reference execution")
     canonical_scenarios = _scenario_map(canonical)
 
     for provider_id in provider_ids:
-        provider_version = str(
-            _require_object(provider_runs[provider_id][0]["provider"], "provider").get(
-                "version", ""
-            )
+        first = provider_runs[provider_id][0]
+        provider_version = str(_require_object(first["provider"], "provider").get("version", ""))
+        profile_identity = provider_profile_identity(
+            _require_object(first["_provider_profile"], "provider profile")
         )
         for repetition in range(1, repetitions + 1):
             candidate = provider_runs[provider_id][repetition - 1]
-            candidate_execution = _require_object(
-                candidate["execution"],
-                "candidate execution",
-            )
+            candidate_execution = _require_object(candidate["execution"], "candidate execution")
             for key in _COMPARABILITY_KEYS:
                 if candidate_execution.get(key) != canonical_execution.get(key):
                     reasons.append(
                         f"run-{repetition}: {provider_id} execution.{key} differs "
                         f"from canonical {reference_provider}/run-1"
                     )
-
             current_provider = _require_object(candidate["provider"], "provider")
             if str(current_provider.get("version", "")) != provider_version:
                 reasons.append(
-                    f"run-{repetition}: {provider_id} provider version differs "
-                    "from its run-1"
+                    f"run-{repetition}: {provider_id} provider version differs from its run-1"
+                )
+            candidate_profile = provider_profile_identity(
+                _require_object(candidate["_provider_profile"], "provider profile")
+            )
+            if candidate_profile != profile_identity:
+                reasons.append(
+                    f"run-{repetition}: {provider_id} provider profile differs from its run-1"
                 )
 
             candidate_scenarios = _scenario_map(candidate)
@@ -149,7 +187,6 @@ def _comparability_reasons(
                     f"from canonical {reference_provider}/run-1"
                 )
                 continue
-
             for scenario_id in scenario_ids:
                 left = canonical_scenarios.get(scenario_id)
                 right = candidate_scenarios.get(scenario_id)
@@ -158,22 +195,15 @@ def _comparability_reasons(
                     continue
                 if right.get("scenario_version") != left.get("scenario_version"):
                     reasons.append(
-                        f"run-{repetition} {scenario_id}: scenario version differs "
-                        f"for {provider_id}"
+                        f"run-{repetition} {scenario_id}: scenario version differs for {provider_id}"
                     )
-                if _agent_signature(right.get("agent", {})) != _agent_signature(
-                    left.get("agent", {})
-                ):
+                if _agent_signature(right.get("agent", {})) != _agent_signature(left.get("agent", {})):
                     reasons.append(
-                        f"run-{repetition} {scenario_id}: agent identity differs "
-                        f"for {provider_id}"
+                        f"run-{repetition} {scenario_id}: agent identity differs for {provider_id}"
                     )
-                if _handoff_signature(right.get("handoff")) != _handoff_signature(
-                    left.get("handoff")
-                ):
+                if _handoff_signature(right.get("handoff")) != _handoff_signature(left.get("handoff")):
                     reasons.append(
-                        f"run-{repetition} {scenario_id}: handoff identity differs "
-                        f"for {provider_id}"
+                        f"run-{repetition} {scenario_id}: handoff identity differs for {provider_id}"
                     )
     return sorted(set(reasons))
 
@@ -185,7 +215,6 @@ def _provider_summary(runs: list[Mapping[str, Any]]) -> dict[str, Any]:
     critical_failures = 0
     recalls: list[float] = []
     per_scenario: dict[str, dict[str, Any]] = {}
-
     for run in runs:
         for scenario in run["results"]:
             item = _require_object(scenario, "scenario result")
@@ -200,16 +229,9 @@ def _provider_summary(runs: list[Mapping[str, Any]]) -> dict[str, Any]:
             recall = metrics.get("invariant_recall_rate")
             if isinstance(recall, (int, float)):
                 recalls.append(float(recall))
-
             summary = per_scenario.setdefault(
                 scenario_id,
-                {
-                    "runs": 0,
-                    "passed": 0,
-                    "failed": 0,
-                    "critical_oracle_failures": 0,
-                    "recalls": [],
-                },
+                {"runs": 0, "passed": 0, "failed": 0, "critical_oracle_failures": 0, "recalls": []},
             )
             summary["runs"] += 1
             if item.get("status") == "PASS":
@@ -226,24 +248,18 @@ def _provider_summary(runs: list[Mapping[str, Any]]) -> dict[str, Any]:
         values = list(summary.pop("recalls"))
         scenario_rows[scenario_id] = {
             **summary,
-            "pass_rate": (
-                summary["passed"] / summary["runs"] if summary["runs"] else None
-            ),
-            "mean_invariant_recall_rate": (
-                statistics.fmean(values) if values else None
-            ),
+            "pass_rate": summary["passed"] / summary["runs"] if summary["runs"] else None,
+            "mean_invariant_recall_rate": statistics.fmean(values) if values else None,
         }
-
     return {
+        "provider_profile": dict(_require_object(runs[0]["_provider_profile"], "provider profile")),
         "campaign_runs_total": len(runs),
         "campaign_runs_passed": campaign_passed,
         "campaign_runs_failed": len(runs) - campaign_passed,
         "scenario_observations_total": scenario_total,
         "scenario_observations_passed": scenario_passed,
         "scenario_observations_failed": scenario_total - scenario_passed,
-        "scenario_pass_rate": (
-            scenario_passed / scenario_total if scenario_total else None
-        ),
+        "scenario_pass_rate": scenario_passed / scenario_total if scenario_total else None,
         "critical_oracle_failures": critical_failures,
         "mean_invariant_recall_rate": statistics.fmean(recalls) if recalls else None,
         "scenarios": scenario_rows,
@@ -269,19 +285,30 @@ def compare_campaign(
     for provider_id in provider_ids:
         runs: list[Mapping[str, Any]] = []
         for repetition in range(1, repetitions + 1):
-            path = comparison_root / provider_id / f"run-{repetition}" / "campaign.json"
-            result = _load_campaign_result(path)
+            run_dir = comparison_root / provider_id / f"run-{repetition}"
+            result_path = run_dir / "campaign.json"
+            plan_path = run_dir / "plan.json"
+            result = _load_campaign_result(result_path)
+            plan = _load_run_plan(
+                plan_path,
+                campaign=campaign,
+                provider_id=provider_id,
+                repetition=repetition,
+            )
             if result.get("campaign_id") != campaign["campaign_id"]:
-                raise ExternalBenchmarkError(f"campaign id mismatch: {path}")
+                raise ExternalBenchmarkError(f"campaign id mismatch: {result_path}")
             if result.get("campaign_version") != campaign["version"]:
-                raise ExternalBenchmarkError(f"campaign version mismatch: {path}")
+                raise ExternalBenchmarkError(f"campaign version mismatch: {result_path}")
             provider = _require_object(result["provider"], "campaign result provider")
             if provider.get("id") != provider_id:
-                raise ExternalBenchmarkError(f"provider id mismatch: {path}")
+                raise ExternalBenchmarkError(f"provider id mismatch: {result_path}")
             execution = _require_object(result["execution"], "campaign result execution")
             if execution.get("repetition") != repetition:
-                raise ExternalBenchmarkError(f"repetition metadata mismatch: {path}")
-            runs.append(result)
+                raise ExternalBenchmarkError(f"repetition metadata mismatch: {result_path}")
+            _validate_plan_result_pair(plan, result, path=run_dir)
+            row = dict(result)
+            row["_provider_profile"] = dict(plan["provider_profile"])
+            runs.append(row)
         provider_runs[provider_id] = runs
 
     reasons = _comparability_reasons(campaign, provider_runs, repetitions)
@@ -304,10 +331,7 @@ def compare_campaign(
             "status": "COMPARABLE" if comparable else "NOT_COMPARABLE",
             "reasons": reasons,
             "repetitions": repetitions,
-            "reference": {
-                key: reference_execution.get(key)
-                for key in _COMPARABILITY_KEYS
-            },
+            "reference": {key: reference_execution.get(key) for key in _COMPARABILITY_KEYS},
         },
         "providers": summaries,
     }

@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, Mapping
 
 from .core import ExternalBenchmarkError
+from .provider_profile import build_provider_profile
 
 PLAN_SCHEMA_VERSION = "1.0.0"
 _TEMPLATE_BY_MODE = {
@@ -19,6 +21,10 @@ def _required_string(value: object, name: str) -> str:
     if not isinstance(value, str) or not value:
         raise ExternalBenchmarkError(f"{name} must be a non-empty string")
     return value
+
+
+def _repository_root() -> Path:
+    return Path(__file__).resolve().parents[2]
 
 
 def build_run_plan(
@@ -89,6 +95,10 @@ def build_run_plan(
         "campaign_id": str(campaign["campaign_id"]),
         "campaign_version": str(campaign["version"]),
         "provider": {"id": provider_id, "version": provider_version},
+        "provider_profile": build_provider_profile(
+            provider_id,
+            repository_root=_repository_root(),
+        ),
         "agent": {
             "provider": agent_provider,
             "model": agent_model,

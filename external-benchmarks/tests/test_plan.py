@@ -20,7 +20,9 @@ def _campaign() -> dict[str, object]:
         "version": "1.0.0",
         "configurations": [
             {"id": "no-memory"},
+            {"id": "context-only"},
             {"id": "ai-memory"},
+            {"id": "ai-memory+s3-integrity-gate"},
         ],
         "scenarios": [
             {"scenario_id": "one", "mode": "single-session"},
@@ -55,6 +57,11 @@ def test_run_plan_is_deterministic_and_encodes_isolation() -> None:
     plan = _build()
 
     assert plan["run_root"] == "ai-memory/run-2"
+    assert plan["provider_profile"] == {
+        "schema_version": "1.0.0",
+        "memory_mode": "ai-memory",
+        "integrity_gate": {"enabled": False},
+    }
     assert plan["execution"] == {
         "s3_commit": "abc123",
         "agent_harness_version": "1",
@@ -69,6 +76,18 @@ def test_run_plan_is_deterministic_and_encodes_isolation() -> None:
     assert scenarios[2]["template"].endswith("cross-agent.json")
     assert scenarios[3]["required_evidence"] == ["stale_memory"]
     assert scenarios[3]["stale_claim_id"] == "ffi-is-future-work"
+
+
+def test_gated_run_plan_pins_integrity_registry_hash() -> None:
+    plan = _build(provider_id="ai-memory+s3-integrity-gate")
+    profile = plan["provider_profile"]
+
+    assert profile["memory_mode"] == "ai-memory"
+    assert profile["integrity_gate"]["enabled"] is True
+    assert profile["integrity_gate"]["registry_schema_version"] == "1.0.0"
+    digest = profile["integrity_gate"]["registry_sha256"]
+    assert len(digest) == 64
+    assert set(digest) <= set("0123456789abcdef")
 
 
 def test_run_plan_rejects_undeclared_provider() -> None:
@@ -90,7 +109,7 @@ def test_prepare_run_cli_uses_real_campaign_and_templates(tmp_path: Path) -> Non
             "--campaign",
             "agent-memory-v1",
             "--provider",
-            "ai-memory",
+            "ai-memory+s3-integrity-gate",
             "--provider-version",
             "2.x",
             "--repetition",
@@ -115,9 +134,7 @@ def test_prepare_run_cli_uses_real_campaign_and_templates(tmp_path: Path) -> Non
     assert exit_code == 0
     plan = json.loads(output.read_text(encoding="utf-8"))
     assert plan["campaign_id"] == "agent-memory-v1"
-    assert plan["provider"]["id"] == "ai-memory"
+    assert plan["provider"]["id"] == "ai-memory+s3-integrity-gate"
+    assert plan["provider_profile"]["integrity_gate"]["enabled"] is True
     assert len(plan["scenarios"]) == 7
-    assert all(
-        (EXTERNAL_ROOT / scenario["template"]).is_file()
-        for scenario in plan["scenarios"]
-    )
+    assert all((EXTERNAL_ROOT / scenario["template"]).is_file() for scenario in plan["scenarios"])

@@ -17,6 +17,19 @@ def _num(value: object) -> str:
     return str(value)
 
 
+def _profile_text(profile: Mapping[str, Any]) -> str:
+    mode = str(profile.get("memory_mode", "unknown"))
+    gate = profile.get("integrity_gate")
+    if not isinstance(gate, dict):
+        return mode
+    if gate.get("enabled") is not True:
+        return f"{mode}; gate=off"
+    digest = gate.get("registry_sha256")
+    short = str(digest)[:12] if isinstance(digest, str) else "unknown"
+    version = str(gate.get("registry_schema_version", "unknown"))
+    return f"{mode}; gate=on; registry={version}@{short}"
+
+
 def render_comparison_markdown(comparison: Mapping[str, Any]) -> str:
     lines = [
         f"# {comparison['campaign_id']} comparison",
@@ -35,6 +48,21 @@ def render_comparison_markdown(comparison: Mapping[str, Any]) -> str:
 
     lines.extend(
         [
+            "## Provider profiles",
+            "",
+            "| Provider | Experimental profile |",
+            "| --- | --- |",
+        ]
+    )
+    for provider_id, metrics in comparison["providers"].items():
+        lines.append(
+            f"| `{provider_id}` | "
+            f"{_profile_text(metrics.get('provider_profile', {}))} |"
+        )
+
+    lines.extend(
+        [
+            "",
             "## Provider outcomes",
             "",
             "| Provider | Campaign runs passed | Scenario pass rate | Critical oracle failures | Mean invariant recall |",
