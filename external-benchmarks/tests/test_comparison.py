@@ -4,10 +4,13 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 EXTERNAL_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(EXTERNAL_ROOT))
 
 from harness.comparison import compare_campaign  # noqa: E402
+from harness.core import ExternalBenchmarkError  # noqa: E402
 from harness.report import render_comparison_markdown  # noqa: E402
 
 
@@ -220,3 +223,13 @@ def test_comparison_blocks_claims_when_agent_identity_differs(tmp_path: Path) ->
         "agent identity differs" in reason
         for reason in result["comparability"]["reasons"]
     )
+
+
+def test_comparison_rejects_incomplete_execution_metadata(tmp_path: Path) -> None:
+    missing_commit = _campaign_result("no-memory", 1)
+    del missing_commit["execution"]["s3_commit"]  # type: ignore[index]
+    _write(tmp_path, "no-memory", 1, missing_commit)
+    _write(tmp_path, "ai-memory", 1, _campaign_result("ai-memory", 1))
+
+    with pytest.raises(ExternalBenchmarkError, match="execution.s3_commit is invalid"):
+        compare_campaign(_campaign(), comparison_root=tmp_path, repetitions=1)
