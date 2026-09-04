@@ -39,8 +39,28 @@ def _load_campaign_result(path: Path) -> dict[str, Any]:
         raise ExternalBenchmarkError(f"unsupported campaign result schema: {path}")
     if document.get("status") not in {"PASS", "FAIL"}:
         raise ExternalBenchmarkError(f"invalid campaign result status: {path}")
-    _require_object(document.get("provider"), "campaign result provider")
-    _require_object(document.get("execution"), "campaign result execution")
+
+    provider = _require_object(document.get("provider"), "campaign result provider")
+    for key in ("id", "version"):
+        value = provider.get(key)
+        if not isinstance(value, str) or not value:
+            raise ExternalBenchmarkError(
+                f"campaign result provider.{key} is invalid: {path}"
+            )
+
+    execution = _require_object(document.get("execution"), "campaign result execution")
+    for key in _COMPARABILITY_KEYS:
+        value = execution.get(key)
+        if not isinstance(value, str) or not value:
+            raise ExternalBenchmarkError(
+                f"campaign result execution.{key} is invalid: {path}"
+            )
+    repetition = execution.get("repetition")
+    if not isinstance(repetition, int) or isinstance(repetition, bool) or repetition < 1:
+        raise ExternalBenchmarkError(
+            f"campaign result execution.repetition is invalid: {path}"
+        )
+
     if not isinstance(document.get("results"), list):
         raise ExternalBenchmarkError(f"campaign result results must be a list: {path}")
     return document
