@@ -91,35 +91,47 @@ def _comparability_reasons(
     provider_ids = [str(item["id"]) for item in campaign["configurations"]]
     scenario_ids = [str(item["scenario_id"]) for item in campaign["scenarios"]]
 
-    for repetition in range(1, repetitions + 1):
-        reference_provider = provider_ids[0]
-        reference = provider_runs[reference_provider][repetition - 1]
-        reference_execution = _require_object(
-            reference["execution"],
-            "reference execution",
+    reference_provider = provider_ids[0]
+    canonical = provider_runs[reference_provider][0]
+    canonical_execution = _require_object(canonical["execution"], "reference execution")
+    canonical_scenarios = _scenario_map(canonical)
+
+    for provider_id in provider_ids:
+        provider_version = str(
+            _require_object(provider_runs[provider_id][0]["provider"], "provider").get(
+                "version", ""
+            )
         )
-        reference_scenarios = _scenario_map(reference)
-        for provider_id in provider_ids[1:]:
+        for repetition in range(1, repetitions + 1):
             candidate = provider_runs[provider_id][repetition - 1]
             candidate_execution = _require_object(
                 candidate["execution"],
                 "candidate execution",
             )
             for key in _COMPARABILITY_KEYS:
-                if candidate_execution.get(key) != reference_execution.get(key):
+                if candidate_execution.get(key) != canonical_execution.get(key):
                     reasons.append(
                         f"run-{repetition}: {provider_id} execution.{key} differs "
-                        f"from {reference_provider}"
+                        f"from canonical {reference_provider}/run-1"
                     )
+
+            current_provider = _require_object(candidate["provider"], "provider")
+            if str(current_provider.get("version", "")) != provider_version:
+                reasons.append(
+                    f"run-{repetition}: {provider_id} provider version differs "
+                    "from its run-1"
+                )
+
             candidate_scenarios = _scenario_map(candidate)
-            if set(candidate_scenarios) != set(reference_scenarios):
+            if set(candidate_scenarios) != set(canonical_scenarios):
                 reasons.append(
                     f"run-{repetition}: {provider_id} scenario set differs "
-                    f"from {reference_provider}"
+                    f"from canonical {reference_provider}/run-1"
                 )
                 continue
+
             for scenario_id in scenario_ids:
-                left = reference_scenarios.get(scenario_id)
+                left = canonical_scenarios.get(scenario_id)
                 right = candidate_scenarios.get(scenario_id)
                 if left is None or right is None:
                     reasons.append(f"run-{repetition}: missing scenario {scenario_id}")

@@ -30,7 +30,7 @@ Every Agent Memory V1 observation must include:
 }
 ```
 
-The provider is the independent variable. The campaign aggregator requires one execution profile inside a provider repetition. Cross-provider comparison requires the same S3 commit, harness version, permissions profile, task protocol, scenario version, agent identity, and handoff identity for corresponding repetitions.
+The provider is the independent variable. The campaign aggregator requires one execution profile inside a provider repetition. Cross-provider comparison requires the same S3 commit, harness version, permissions profile, task protocol, scenario version, agent identity, and handoff identity across every corresponding provider and repetition. Controlled-variable drift between repetitions is also rejected.
 
 ## Provider arms
 
@@ -38,6 +38,37 @@ The provider is the independent variable. The campaign aggregator requires one e
 - `context-only`: active context is allowed, but no external durable memory survives a hard boundary.
 - `ai-memory`: AI-MEMORY is the durable memory channel.
 - `ai-memory+s3-integrity-gate`: the same memory provider plus the experimental S3 integrity validation layer.
+
+## Prepare one provider repetition
+
+Generate the deterministic plan before running agents:
+
+```bash
+python tools/external_bench.py \
+  --prepare-run \
+  --campaign agent-memory-v1 \
+  --provider ai-memory \
+  --provider-version 2.x \
+  --repetition 1 \
+  --s3-commit COMMIT \
+  --agent-provider openai \
+  --agent-model MODEL \
+  --agent-harness codex \
+  --agent-harness-version VERSION \
+  --tool-permissions-profile standard \
+  --output-json results/agent-memory-v1/ai-memory/run-1/plan.json
+```
+
+`--prepare-run` is offline. It does not create worktrees or invoke agents/providers. It emits the canonical run root and seven scenario records containing:
+
+- the scenario/mode;
+- the observation template;
+- a unique worktree key;
+- observation/result paths;
+- required handoff or stale-memory evidence;
+- the normative stale claim id where applicable.
+
+Use the plan as the handoff contract for whichever external orchestration actually creates the clean worktrees and runs the agent.
 
 ## Handoff evidence
 

@@ -37,6 +37,26 @@ Read `campaigns/agent-memory-v1.md` for the scientific protocol and `campaigns/a
 
 Every Agent Memory V1 scenario result carries a controlled execution profile (`s3_commit`, harness version, permissions profile, task protocol, repetition). The campaign aggregator rejects mixed profiles.
 
+Prepare a deterministic run plan before executing any external agent:
+
+```bash
+python tools/external_bench.py \
+  --prepare-run \
+  --campaign agent-memory-v1 \
+  --provider ai-memory \
+  --provider-version 2.x \
+  --repetition 1 \
+  --s3-commit COMMIT \
+  --agent-provider openai \
+  --agent-model MODEL \
+  --agent-harness codex \
+  --agent-harness-version VERSION \
+  --tool-permissions-profile standard \
+  --output-json results/agent-memory-v1/ai-memory/run-1/plan.json
+```
+
+The plan does not invoke a model, memory provider, network call, or Git worktree operation. It freezes the controlled metadata and enumerates one isolated worktree key, observation path, result path, template, and required protocol evidence per scenario.
+
 Aggregate one provider repetition:
 
 ```bash
@@ -56,7 +76,7 @@ python tools/external_bench.py \
   --output-markdown results/agent-memory-v1/comparison.md
 ```
 
-A comparison becomes `NOT_COMPARABLE` when a controlled variable differs. Metrics remain available for diagnosis, but capability claims are forbidden. The Markdown report is neutral and never selects a winner.
+A comparison becomes `NOT_COMPARABLE` when a controlled variable differs, including drift between repetitions even when every provider drifts together. Metrics remain available for diagnosis, but capability claims are forbidden. The Markdown report is neutral and never selects a winner.
 
 ## Privacy and provider isolation
 

@@ -10,6 +10,7 @@ from typing import Sequence
 from .campaign import aggregate_campaign, list_campaigns, load_campaign
 from .comparison import compare_campaign
 from .core import ExternalBenchmarkError, evaluate_scenario, list_scenarios, load_scenario
+from .plan import build_run_plan
 from .report import render_comparison_markdown
 
 EXTERNAL_ROOT = Path(__file__).resolve().parents[1]
@@ -27,7 +28,8 @@ def create_parser() -> argparse.ArgumentParser:
         help="list available external benchmark campaigns",
     )
     parser.add_argument("--scenario", help="scenario id to evaluate")
-    parser.add_argument("--campaign", help="campaign id to aggregate or compare")
+    parser.add_argument("--campaign", help="campaign id to aggregate, compare, or plan")
+    parser.add_argument("--prepare-run", action="store_true", help="emit a deterministic provider/repetition run plan")
     parser.add_argument(
         "--observation-file",
         type=Path,
@@ -43,6 +45,16 @@ def create_parser() -> argparse.ArgumentParser:
         type=Path,
         help="root containing provider/run-N/campaign.json results",
     )
+    parser.add_argument("--provider")
+    parser.add_argument("--provider-version")
+    parser.add_argument("--repetition", type=int)
+    parser.add_argument("--s3-commit")
+    parser.add_argument("--agent-provider")
+    parser.add_argument("--agent-model")
+    parser.add_argument("--agent-harness")
+    parser.add_argument("--agent-harness-version")
+    parser.add_argument("--tool-permissions-profile")
+    parser.add_argument("--task-protocol-version")
     parser.add_argument(
         "--repetitions",
         type=int,
@@ -82,6 +94,14 @@ def _campaign_path(root: Path, campaign_id: str) -> Path:
     return candidates[0]
 
 
+def _write_document(document: dict[str, object], output_json: Path | None) -> None:
+    payload = json.dumps(document, indent=2, sort_keys=True, allow_nan=False)
+    if output_json:
+        output_json.parent.mkdir(parents=True, exist_ok=True)
+        output_json.write_text(payload + "\n", encoding="utf-8", newline="\n")
+    print(payload)
+
+
 def _emit(
     result: dict[str, object],
     output_json: Path | None,
@@ -89,10 +109,7 @@ def _emit(
     output_markdown: Path | None = None,
     markdown: str | None = None,
 ) -> int:
-    payload = json.dumps(result, indent=2, sort_keys=True, allow_nan=False)
-    if output_json:
-        output_json.parent.mkdir(parents=True, exist_ok=True)
-        output_json.write_text(payload + "\n", encoding="utf-8", newline="\n")
+    _write_document(result, output_json)
     if output_markdown:
         if markdown is None:
             raise ExternalBenchmarkError(
@@ -100,8 +117,45 @@ def _emit(
             )
         output_markdown.parent.mkdir(parents=True, exist_ok=True)
         output_markdown.write_text(markdown, encoding="utf-8", newline="\n")
-    print(payload)
     return 0 if result["status"] == "PASS" else 1
+
+
+def _required_plan_argument(args: argparse.Namespace, name: str) -> str:
+    value = getattr(args, name)
+    if not isinstance(value, str) or not value:
+        raise ExternalBenchmarkError(f"--{name.replace('_', '-')} is required with --prepare-run")
+    return value
+
+
+def _prepare_run(args: argparse.Namespace, campaign: dict[str, object]) -> int:
+    if args.result_dir is not None or args.compare_root is not None or args.scenario:
+        raise ExternalBenchmarkError(
+            "--prepare-run cannot be combined with --scenario, --result-dir, or --compare-root"
+        )
+    if args.output_markdown is not None:
+        raise ExternalBenchmarkError("--output-markdown is not valid with --prepare-run")
+    if args.repetition is None:
+        raise ExternalBenchmarkError("--repetition is required with --prepare-run")
+
+    plan = build_run_plan(
+        campaign,
+        provider_id=_required_plan_argument(args, "provider"),
+        provider_version=_required_plan_argument(args, "provider_version"),
+        repetition=args.repetition,
+        s3_commit=_required_plan_argument(args, "s3_commit"),
+        agent_provider=_required_plan_argument(args, "agent_provider"),
+        agent_model=_required_plan_argument(args, "agent_model"),
+        agent_harness=_required_plan_argument(args, "agent_harness"),
+        agent_harness_version=_required_plan_argument(args, "agent_harness_version"),
+        tool_permissions_profile=_required_plan_argument(args, "tool_permissions_profile"),
+        task_protocol_version=args.task_protocol_version,
+    )
+    for scenario in plan["scenarios"]:
+        template = EXTERNAL_ROOT / str(scenario["template"])
+        if not template.is_file():
+            raise ExternalBenchmarkError(f"run-plan template is missing: {scenario['template']}")
+    _write_document(plan, args.output_json)
+    return 0
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -123,6 +177,31 @@ def main(argv: Sequence[str] | None = None) -> int:
         raise SystemExit("--output-markdown requires --compare-root")
 
     try:
+        if args.prepare_run:
+            if not args.campaign:
+                raise ExternalBenchmarkError("--campaign is required with --prepare-run")
+            if args.repetitions is not None:
+                raise ExternalBenchmarkError("--repetitions is not valid with --prepare-run")
+            campaign = load_campaign(_campaign_path(campaign_root, args.campaign))
+            return _prepare_run(args, campaign)
+
+        plan_only_values = (
+            args.provider,
+            args.provider_version,
+            args.repetition,
+            args.s3_commit,
+            args.agent_provider,
+            args.agent_model,
+            args.agent_harness,
+            args.agent_harness_version,
+            args.tool_permissions_profile,
+            args.task_protocol_version,
+        )
+        if any(value is not None for value in plan_only_values):
+            raise ExternalBenchmarkError(
+                "run-plan arguments require --prepare-run"
+            )
+
         if args.campaign:
             if args.result_dir is not None and args.compare_root is not None:
                 raise ExternalBenchmarkError(

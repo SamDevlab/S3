@@ -82,6 +82,7 @@ def _campaign_result(
     repetition: int,
     *,
     fail_second: bool = False,
+    s3_commit: str = "abc123",
 ) -> dict[str, object]:
     first = _scenario("one", status="PASS", recall=1.0)
     second = _scenario(
@@ -96,7 +97,7 @@ def _campaign_result(
         "category": "agent-memory",
         "provider": {"id": provider, "version": "v1"},
         "execution": {
-            "s3_commit": "abc123",
+            "s3_commit": s3_commit,
             "agent_harness_version": "1",
             "tool_permissions_profile": "standard",
             "task_protocol_version": "agent-memory-v1",
@@ -171,6 +172,30 @@ def test_comparison_blocks_claims_when_execution_differs(tmp_path: Path) -> None
     assert result["comparability"]["status"] == "NOT_COMPARABLE"
     assert any(
         "execution.s3_commit differs" in reason
+        for reason in result["comparability"]["reasons"]
+    )
+
+
+def test_comparison_blocks_drift_shared_by_every_provider(tmp_path: Path) -> None:
+    for provider in ("no-memory", "ai-memory"):
+        _write(
+            tmp_path,
+            provider,
+            1,
+            _campaign_result(provider, 1, s3_commit="abc123"),
+        )
+        _write(
+            tmp_path,
+            provider,
+            2,
+            _campaign_result(provider, 2, s3_commit="new-commit"),
+        )
+
+    result = compare_campaign(_campaign(), comparison_root=tmp_path)
+
+    assert result["comparability"]["status"] == "NOT_COMPARABLE"
+    assert any(
+        "canonical no-memory/run-1" in reason
         for reason in result["comparability"]["reasons"]
     )
 
