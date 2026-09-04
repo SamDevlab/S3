@@ -89,10 +89,4 @@ jobs:
             < external-benchmarks/providers/ai_memory/sample-eval-proposal.json \
             > /tmp/s3-memory-gate.json
           python -m json.tool /tmp/s3-memory-gate.json > /dev/null
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          result = json.loads(Path('/tmp/s3-memory-gate.json').read_text())
-          if result.get('passed') is not True:
-              raise SystemExit(f"integrity gate rejected safe fixture: {result}")
-          PY
+          python -c "import json,pathlib; result=json.loads(pathlib.Path('/tmp/s3-memory-gate.json').read_text()); assert result.get('passed') is True, result"
