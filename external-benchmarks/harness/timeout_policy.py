@@ -125,6 +125,7 @@ def run_controlled_process(
             stdin=subprocess.PIPE if input_text is not None else None,
             shell=False,
             text=True,
+            encoding="utf-8",
         )
     except OSError as error:
         raise ExternalBenchmarkError("controlled process could not be started") from error

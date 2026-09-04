@@ -44,6 +44,22 @@ def test_controlled_process_returns_timeout_exit_code_and_kills_tree(tmp_path: P
     assert result.elapsed_seconds < 1
 
 
+def test_controlled_process_sends_prompt_as_utf8(tmp_path: Path) -> None:
+    result = run_controlled_process(
+        [sys.executable, "-c", "import sys; raise SystemExit(0 if sys.stdin.buffer.read().decode('utf-8') == 'ação ✓' else 3)"],
+        cwd=tmp_path,
+        input_text="ação ✓",
+        policy=TimeoutPolicy(
+            policy_id=TIMEOUT_POLICY_ID,
+            timeout_seconds=2,
+            on_timeout="INVALID_OPERATIONAL_RUN",
+            dynamic_adjustment=False,
+        ),
+    )
+    assert result.returncode == 0
+    assert result.timed_out is False
+
+
 def test_policy_loader_rejects_modified_timeout(tmp_path: Path) -> None:
     path = tmp_path / "policy.json"
     path.write_text(
