@@ -5,6 +5,7 @@ from __future__ import annotations
 import ipaddress
 import json
 import os
+import re
 from dataclasses import dataclass
 from typing import Any
 from urllib.error import HTTPError, URLError
@@ -13,10 +14,19 @@ from urllib.request import Request, urlopen
 
 PROBE_SCHEMA_VERSION = "1.0.0"
 _DEFAULT_SERVER_URL = "http://127.0.0.1:49374"
+_SCOPE_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 
 
 class AiMemoryProviderError(RuntimeError):
     """AI-MEMORY provider configuration or read-only probe failed."""
+
+
+def validate_scope_name(value: str, name: str) -> str:
+    if not isinstance(value, str) or not _SCOPE_RE.fullmatch(value):
+        raise AiMemoryProviderError(
+            f"{name} must match ^[a-z0-9][a-z0-9._-]*$"
+        )
+    return value
 
 
 def _validated_base_url(value: str) -> str:
@@ -34,8 +44,7 @@ def _validated_base_url(value: str) -> str:
     path = parsed.path.rstrip("/")
     if path not in {"", "/"}:
         raise AiMemoryProviderError("AI-MEMORY server URL must point at the server root")
-    authority = parsed.netloc
-    return f"{parsed.scheme}://{authority}"
+    return f"{parsed.scheme}://{parsed.netloc}"
 
 
 def _endpoint_class(hostname: str) -> str:
@@ -60,7 +69,11 @@ class AiMemoryConfig:
         object.__setattr__(self, "server_url", _validated_base_url(self.server_url))
         if self.auth_token is not None and not isinstance(self.auth_token, str):
             raise AiMemoryProviderError("AI-MEMORY auth token must be a string when present")
-        if not isinstance(self.timeout_seconds, (int, float)) or self.timeout_seconds <= 0:
+        if (
+            not isinstance(self.timeout_seconds, (int, float))
+            or isinstance(self.timeout_seconds, bool)
+            or self.timeout_seconds <= 0
+        ):
             raise AiMemoryProviderError("AI-MEMORY timeout must be positive")
 
     @classmethod
@@ -128,8 +141,8 @@ class AiMemoryClient:
     def probe(self, *, workspace: str, project: str) -> dict[str, Any]:
         """Check one benchmark scope without persisting endpoint or credential material."""
 
-        if not workspace or not project:
-            raise AiMemoryProviderError("workspace and project must be non-empty")
+        workspace = validate_scope_name(workspace, "workspace")
+        project = validate_scope_name(project, "project")
         workspaces = self._get_json("/api/v1/workspaces")
         projects = self._get_json("/api/v1/projects", {"workspace": workspace})
         workspace_rows = workspaces.get("workspaces")
@@ -181,6 +194,8 @@ class AiMemoryClient:
     ) -> int:
         """Return only hit count so benchmark diagnostics do not persist memory contents."""
 
+        workspace = validate_scope_name(workspace, "workspace")
+        project = validate_scope_name(project, "project")
         if not query:
             raise AiMemoryProviderError("search query must be non-empty")
         if not isinstance(limit, int) or isinstance(limit, bool) or not 1 <= limit <= 100:

@@ -12,18 +12,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from .client import AiMemoryProviderError
+from .client import AiMemoryProviderError, validate_scope_name
 
-_SCOPE_RE = re.compile(r"^[a-z0-9._-]+$")
-_HARNESS_RE = re.compile(r"^[a-z0-9._-]+$")
-
-
-def _scope(value: str, name: str) -> str:
-    if not isinstance(value, str) or not _SCOPE_RE.fullmatch(value):
-        raise AiMemoryProviderError(
-            f"{name} must contain only lowercase letters, digits, dot, dash, or underscore"
-        )
-    return value
+_HARNESS_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 
 
 def _harness(value: str) -> str:
@@ -65,7 +56,7 @@ def workstream_name_from_plan(plan: Mapping[str, Any], scenario_id: str) -> str:
         raise AiMemoryProviderError("run plan provider.id is invalid")
     if not isinstance(repetition, int) or isinstance(repetition, bool) or repetition < 1:
         raise AiMemoryProviderError("run plan execution.repetition is invalid")
-    return _scope(
+    return validate_scope_name(
         f"s3-amv1-{_provider_slug(provider_id)}-r{repetition}-{_scenario_slug(scenario_id)}",
         "workstream",
     )
@@ -112,14 +103,14 @@ def build_managed_run_command(
         executable,
         "run",
         "--workspace",
-        _scope(workspace, "workspace"),
+        validate_scope_name(workspace, "workspace"),
         "--project",
-        _scope(project, "project"),
+        validate_scope_name(project, "project"),
     ]
     if phase == "new":
-        argv.extend(["--new", _scope(workstream, "workstream")])
+        argv.extend(["--new", validate_scope_name(workstream, "workstream")])
     else:
-        argv.extend(["--workstream", _scope(workstream, "workstream")])
+        argv.extend(["--workstream", validate_scope_name(workstream, "workstream")])
     if fresh:
         argv.append("--fresh")
     argv.append(_harness(harness))
