@@ -26,6 +26,9 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
 
+      - name: Compile external benchmark Python
+        run: python -m compileall -q external-benchmarks tools/external_bench.py
+
       - name: Validate external benchmark harness and campaigns
         run: python -m pytest -q external-benchmarks/tests
 
@@ -34,3 +37,22 @@ jobs:
 
       - name: Validate campaign discovery
         run: python tools/external_bench.py --list-campaigns
+
+      - name: Validate deterministic Agent Memory run planning
+        run: >-
+          python tools/external_bench.py
+          --prepare-run
+          --campaign agent-memory-v1
+          --provider no-memory
+          --provider-version builtin
+          --repetition 1
+          --s3-commit "${GITHUB_SHA}"
+          --agent-provider fixture
+          --agent-model offline-fixture
+          --agent-harness workflow-fixture
+          --agent-harness-version 1
+          --tool-permissions-profile offline-validation
+          --output-json /tmp/agent-memory-plan.json
+
+      - name: Validate generated run-plan JSON
+        run: python -m json.tool /tmp/agent-memory-plan.json > /dev/null
