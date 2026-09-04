@@ -57,6 +57,29 @@ def _endpoint_class(hostname: str) -> str:
     return "loopback" if address.is_loopback else "remote"
 
 
+def _extract_rows(document: object, envelope_key: str) -> list[dict[str, Any]]:
+    """Normalize one documented envelope or AI-MEMORY's bare-list response."""
+
+    if isinstance(document, list):
+        rows = document
+    elif isinstance(document, dict):
+        rows = document.get(envelope_key)
+    else:
+        raise AiMemoryProviderError(
+            "AI-MEMORY read-only API response root must be an object or array"
+        )
+
+    if not isinstance(rows, list):
+        raise AiMemoryProviderError(
+            f"AI-MEMORY read-only API response must contain a list under {envelope_key!r}"
+        )
+    if not all(isinstance(row, dict) for row in rows):
+        raise AiMemoryProviderError(
+            f"AI-MEMORY read-only API {envelope_key!r} list must contain objects"
+        )
+    return rows
+
+
 @dataclass(frozen=True)
 class AiMemoryConfig:
     """Runtime-only connection settings. Tokens are never serialized by this module."""
@@ -105,7 +128,11 @@ class AiMemoryClient:
     def __init__(self, config: AiMemoryConfig) -> None:
         self.config = config
 
-    def _get_json(self, path: str, params: dict[str, str | int] | None = None) -> dict[str, Any]:
+    def _get_json(
+        self,
+        path: str,
+        params: dict[str, str | int] | None = None,
+    ) -> dict[str, Any] | list[Any]:
         if not path.startswith("/api/v1/"):
             raise AiMemoryProviderError("AI-MEMORY adapter permits only /api/v1 read endpoints")
         query = f"?{urlencode(params)}" if params else ""
@@ -134,8 +161,10 @@ class AiMemoryClient:
             document = json.loads(raw.decode("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError) as error:
             raise AiMemoryProviderError("AI-MEMORY read-only API returned invalid JSON") from error
-        if not isinstance(document, dict):
-            raise AiMemoryProviderError("AI-MEMORY read-only API response must be a JSON object")
+        if not isinstance(document, (dict, list)):
+            raise AiMemoryProviderError(
+                "AI-MEMORY read-only API response root must be an object or array"
+            )
         return document
 
     def probe(self, *, workspace: str, project: str) -> dict[str, Any]:
@@ -145,10 +174,8 @@ class AiMemoryClient:
         project = validate_scope_name(project, "project")
         workspaces = self._get_json("/api/v1/workspaces")
         projects = self._get_json("/api/v1/projects", {"workspace": workspace})
-        workspace_rows = workspaces.get("workspaces")
-        project_rows = projects.get("projects")
-        if not isinstance(workspace_rows, list) or not isinstance(project_rows, list):
-            raise AiMemoryProviderError("AI-MEMORY probe response shape is unsupported")
+        workspace_rows = _extract_rows(workspaces, "workspaces")
+        project_rows = _extract_rows(projects, "projects")
 
         workspace_present = any(
             isinstance(item, dict) and item.get("workspace_name") == workspace
@@ -209,7 +236,5 @@ class AiMemoryClient:
                 "limit": limit,
             },
         )
-        hits = document.get("hits")
-        if not isinstance(hits, list):
-            raise AiMemoryProviderError("AI-MEMORY search response shape is unsupported")
+        hits = _extract_rows(document, "hits")
         return len(hits)

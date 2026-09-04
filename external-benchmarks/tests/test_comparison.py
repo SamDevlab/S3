@@ -12,6 +12,7 @@ sys.path.insert(0, str(EXTERNAL_ROOT))
 from harness.comparison import compare_campaign  # noqa: E402
 from harness.core import ExternalBenchmarkError  # noqa: E402
 from harness.report import render_comparison_markdown  # noqa: E402
+from harness.timeout_policy import TIMEOUT_POLICY_ID, TIMEOUT_SECONDS  # noqa: E402
 
 
 def _campaign(*, gated: bool = False) -> dict[str, object]:
@@ -136,6 +137,12 @@ def _plan(provider: str, repetition: int, result: dict[str, object], *, digest: 
         "campaign_id": "agent-memory-v1",
         "campaign_version": "1.0.0",
         "provider": dict(result["provider"]),
+        "timeout_policy": {
+            "policy_id": TIMEOUT_POLICY_ID,
+            "timeout_seconds": TIMEOUT_SECONDS,
+            "on_timeout": "INVALID_OPERATIONAL_RUN",
+            "dynamic_adjustment": False,
+        },
         "provider_profile": _profile(provider, digest=digest),
         "agent": {"provider": "openai", "model": "fixture", "harness": "codex"},
         "execution": dict(result["execution"]),

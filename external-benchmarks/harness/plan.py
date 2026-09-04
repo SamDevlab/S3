@@ -7,6 +7,7 @@ from typing import Any, Mapping
 
 from .core import ExternalBenchmarkError
 from .provider_profile import build_provider_profile
+from .timeout_policy import timeout_policy_document
 
 PLAN_SCHEMA_VERSION = "1.0.0"
 _TEMPLATE_BY_MODE = {
@@ -110,6 +111,7 @@ def build_run_plan(
         "campaign_id": str(campaign["campaign_id"]),
         "campaign_version": str(campaign["version"]),
         "provider": {"id": provider_id, "version": provider_version},
+        "timeout_policy": timeout_policy_document(),
         "provider_profile": build_provider_profile(
             provider_id,
             repository_root=_repository_root(),

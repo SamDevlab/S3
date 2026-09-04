@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import json
-import subprocess
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from .core import ExternalBenchmarkError
 from .task_pack import render_phase_prompt, task_for_scenario
+from .timeout_policy import (
+    load_timeout_policy,
+    run_controlled_process,
+    timeout_policy_document,
+)
 
 RUNBOOK_SCHEMA_VERSION = "1.0.0"
 _AI_MEMORY_ARMS = {"ai-memory", "ai-memory+s3-integrity-gate"}
@@ -241,6 +245,7 @@ def build_runbook(
         "provider_profile": profile,
         "source_agent": source_agent,
         "target_agent": clean_target,
+        "timeout_policy": timeout_policy_document(),
         "scenarios": scenario_books,
     }
     (run_dir / "runbook.json").write_text(
@@ -280,14 +285,12 @@ def execute_direct_step(
     if not prompt_path.is_file() or not worktree.is_dir():
         raise ExternalBenchmarkError("runbook prompt or worktree is unavailable")
     try:
-        completed = subprocess.run(
+        result = run_controlled_process(
             list(argv),
             cwd=worktree,
-            input=prompt_path.read_text(encoding="utf-8"),
-            text=True,
-            shell=False,
-            check=False,
+            input_text=prompt_path.read_text(encoding="utf-8"),
+            policy=load_timeout_policy(),
         )
     except OSError as error:
         raise ExternalBenchmarkError("direct agent process could not be started") from error
-    return int(completed.returncode)
+    return int(result.returncode)

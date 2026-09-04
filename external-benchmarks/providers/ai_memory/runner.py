@@ -7,12 +7,12 @@ command and executes it only when the caller explicitly requests execution.
 from __future__ import annotations
 
 import re
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from .client import AiMemoryProviderError, validate_scope_name
+from harness.timeout_policy import load_timeout_policy, run_controlled_process
 
 _HARNESS_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 
@@ -124,10 +124,9 @@ def execute_managed_run(launch: AiMemoryLaunch, *, worktree: Path) -> int:
     worktree = worktree.resolve()
     if not worktree.is_dir():
         raise AiMemoryProviderError("AI-MEMORY launch worktree does not exist")
-    completed = subprocess.run(  # noqa: S603
+    result = run_controlled_process(
         list(launch.argv),
         cwd=worktree,
-        shell=False,
-        check=False,
+        policy=load_timeout_policy(),
     )
-    return int(completed.returncode)
+    return int(result.returncode)

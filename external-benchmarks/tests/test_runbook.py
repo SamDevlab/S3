@@ -17,6 +17,7 @@ from harness.runbook import (  # noqa: E402
     handoff_agents_from_runbook,
 )
 from harness.task_pack import load_task_pack  # noqa: E402
+from harness.timeout_policy import TIMEOUT_POLICY_ID, TIMEOUT_SECONDS  # noqa: E402
 
 
 def _scenarios(*ids: str) -> dict[str, dict[str, object]]:
@@ -60,6 +61,12 @@ def test_direct_runbook_materializes_prompts_without_absolute_paths(tmp_path: Pa
     assert steps[0]["hard_boundary_after"] is True
     assert steps[1]["agent"]["model"] == "fixture-b"
     assert steps[0]["argv"] != steps[1]["argv"]
+    assert runbook["timeout_policy"] == {
+        "policy_id": TIMEOUT_POLICY_ID,
+        "timeout_seconds": TIMEOUT_SECONDS,
+        "on_timeout": "INVALID_OPERATIONAL_RUN",
+        "dynamic_adjustment": False,
+    }
     payload = json.dumps(runbook)
     assert str(tmp_path) not in payload
     phase_a = (tmp_path / steps[0]["prompt_relpath"]).read_text(encoding="utf-8")

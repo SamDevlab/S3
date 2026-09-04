@@ -11,6 +11,7 @@ from .campaign import CAMPAIGN_RESULT_SCHEMA_VERSION
 from .core import ExternalBenchmarkError
 from .plan import PLAN_SCHEMA_VERSION
 from .provider_profile import provider_profile_identity, sanitize_provider_profile
+from .timeout_policy import timeout_policy_document
 
 COMPARISON_SCHEMA_VERSION = "1.0.0"
 _COMPARABILITY_KEYS = (
@@ -82,6 +83,8 @@ def _load_run_plan(
     execution = _require_object(plan.get("execution"), "run plan execution")
     if execution.get("repetition") != repetition:
         raise ExternalBenchmarkError(f"run plan repetition mismatch: {path}")
+    if plan.get("timeout_policy") != timeout_policy_document():
+        raise ExternalBenchmarkError(f"run plan timeout policy is not frozen v1: {path}")
     plan["provider_profile"] = sanitize_provider_profile(
         plan.get("provider_profile"),
         provider_id=provider_id,
@@ -150,6 +153,9 @@ def _comparability_reasons(
     reference_provider = provider_ids[0]
     canonical = provider_runs[reference_provider][0]
     canonical_execution = _require_object(canonical["execution"], "reference execution")
+    canonical_timeout_policy = _require_object(
+        canonical.get("_timeout_policy"), "reference timeout policy"
+    )
     canonical_scenarios = _scenario_map(canonical)
 
     for provider_id in provider_ids:
@@ -167,6 +173,11 @@ def _comparability_reasons(
                         f"run-{repetition}: {provider_id} execution.{key} differs "
                         f"from canonical {reference_provider}/run-1"
                     )
+            if candidate.get("_timeout_policy") != canonical_timeout_policy:
+                reasons.append(
+                    f"run-{repetition}: {provider_id} timeout policy differs "
+                    f"from canonical {reference_provider}/run-1"
+                )
             current_provider = _require_object(candidate["provider"], "provider")
             if str(current_provider.get("version", "")) != provider_version:
                 reasons.append(
@@ -308,6 +319,7 @@ def compare_campaign(
             _validate_plan_result_pair(plan, result, path=run_dir)
             row = dict(result)
             row["_provider_profile"] = dict(plan["provider_profile"])
+            row["_timeout_policy"] = dict(plan["timeout_policy"])
             runs.append(row)
         provider_runs[provider_id] = runs
 
@@ -320,6 +332,10 @@ def compare_campaign(
         provider_runs[provider_ids[0]][0]["execution"],
         "reference execution",
     )
+    canonical_timeout_policy = _require_object(
+        provider_runs[provider_ids[0]][0]["_timeout_policy"],
+        "reference timeout policy",
+    )
     comparable = not reasons
     return {
         "schema_version": COMPARISON_SCHEMA_VERSION,
@@ -331,7 +347,10 @@ def compare_campaign(
             "status": "COMPARABLE" if comparable else "NOT_COMPARABLE",
             "reasons": reasons,
             "repetitions": repetitions,
-            "reference": {key: reference_execution.get(key) for key in _COMPARABILITY_KEYS},
+            "reference": {
+                **{key: reference_execution.get(key) for key in _COMPARABILITY_KEYS},
+                "timeout_policy": canonical_timeout_policy,
+            },
         },
         "providers": summaries,
     }

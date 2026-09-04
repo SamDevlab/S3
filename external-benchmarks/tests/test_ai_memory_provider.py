@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import json
-import subprocess
 import sys
 from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
 
@@ -26,7 +24,7 @@ from providers.ai_memory.runner import (  # noqa: E402
 
 
 class _Response:
-    def __init__(self, document: dict[str, object]) -> None:
+    def __init__(self, document: object) -> None:
         self._payload = json.dumps(document).encode("utf-8")
 
     def __enter__(self) -> "_Response":
@@ -131,6 +129,89 @@ def test_read_only_probe_never_persists_token_or_endpoint(monkeypatch: pytest.Mo
     assert all("/api/v1/" in url for url in seen_urls)
 
 
+@pytest.mark.parametrize("envelope", [False, True])
+def test_probe_accepts_bare_lists_and_documented_envelopes(
+    monkeypatch: pytest.MonkeyPatch,
+    envelope: bool,
+) -> None:
+    def fake_urlopen(request: object, *, timeout: float) -> _Response:
+        del timeout
+        if request.full_url.endswith("/api/v1/workspaces"):  # type: ignore[attr-defined]
+            rows = [{"workspace_name": "s3bench", "project_count": 1}]
+            return _Response({"workspaces": rows} if envelope else rows)
+        rows = [
+            {
+                "workspace_name": "s3bench",
+                "project_name": "s3-agent-memory-v1",
+                "page_count": 12,
+            }
+        ]
+        return _Response({"projects": rows} if envelope else rows)
+
+    monkeypatch.setattr(client_module, "urlopen", fake_urlopen)
+
+    result = AiMemoryClient(AiMemoryConfig()).probe(
+        workspace="s3bench",
+        project="s3-agent-memory-v1",
+    )
+
+    assert result["status"] == "PASS"
+    assert result["scope"]["project_page_count"] == 12  # type: ignore[index]
+
+
+@pytest.mark.parametrize("envelope", [False, True])
+def test_search_count_accepts_bare_lists_and_documented_envelopes(
+    monkeypatch: pytest.MonkeyPatch,
+    envelope: bool,
+) -> None:
+    def fake_urlopen(request: object, *, timeout: float) -> _Response:
+        del request, timeout
+        rows = [{"snippet": "secret-memory-content"}, {"snippet": "other-content"}]
+        return _Response({"hits": rows} if envelope else rows)
+
+    monkeypatch.setattr(client_module, "urlopen", fake_urlopen)
+
+    result = AiMemoryClient(AiMemoryConfig()).search_count(
+        workspace="s3bench",
+        project="s3-agent-memory-v1",
+        query="memory",
+    )
+
+    assert result == 2
+    assert "secret-memory-content" not in json.dumps(result)
+
+
+@pytest.mark.parametrize(
+    ("document", "envelope_key"),
+    [
+        (None, "workspaces"),
+        ("text", "workspaces"),
+        (42, "workspaces"),
+        (True, "workspaces"),
+        ({"projects": []}, "workspaces"),
+        ({"workspaces": {}}, "workspaces"),
+        (["invalid-row"], "workspaces"),
+    ],
+)
+def test_extract_rows_rejects_malformed_shapes(
+    document: object,
+    envelope_key: str,
+) -> None:
+    with pytest.raises(AiMemoryProviderError, match="response|list|root"):
+        client_module._extract_rows(document, envelope_key)
+
+
+def test_get_json_rejects_malformed_json(monkeypatch: pytest.MonkeyPatch) -> None:
+    class _MalformedResponse(_Response):
+        def read(self) -> bytes:
+            return b"{not-json"
+
+    monkeypatch.setattr(client_module, "urlopen", lambda *_args, **_kwargs: _MalformedResponse({}))
+
+    with pytest.raises(AiMemoryProviderError, match="invalid JSON"):
+        AiMemoryClient(AiMemoryConfig())._get_json("/api/v1/workspaces")
+
+
 def test_workstream_names_isolate_provider_arms() -> None:
     plain = workstream_name_from_plan(_plan("ai-memory"), "memory.cross-session.v1")
     gated = workstream_name_from_plan(
@@ -184,19 +265,16 @@ def test_execute_managed_run_is_shell_free_and_does_not_capture(
     )
     observed: dict[str, object] = {}
 
-    def fake_run(argv: list[str], **kwargs: object) -> SimpleNamespace:
+    def fake_controlled(argv: list[str], **kwargs: object) -> object:
         observed["argv"] = argv
         observed.update(kwargs)
-        return SimpleNamespace(returncode=7)
+        return type("Result", (), {"returncode": 7})()
 
-    monkeypatch.setattr(subprocess, "run", fake_run)
+    monkeypatch.setattr("providers.ai_memory.runner.run_controlled_process", fake_controlled)
 
     assert execute_managed_run(launch, worktree=tmp_path) == 7
-    assert observed["shell"] is False
-    assert observed["check"] is False
-    assert "capture_output" not in observed
-    assert "stdout" not in observed
-    assert "stderr" not in observed
+    assert observed["cwd"] == tmp_path
+    assert "input_text" not in observed
 
 
 def test_cli_blocks_linked_native_session_for_cross_session(tmp_path: Path) -> None:
