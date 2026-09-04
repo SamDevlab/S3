@@ -7,6 +7,7 @@ on:
       - "external-benchmarks/**"
       - "tools/external_bench.py"
       - "tools/external_bench_ai_memory.py"
+      - "tools/s3_memory_gate.py"
       - ".github/workflows/external-benchmarks.yml"
 
 permissions:
@@ -38,6 +39,7 @@ jobs:
           external-benchmarks
           tools/external_bench.py
           tools/external_bench_ai_memory.py
+          tools/s3_memory_gate.py
 
       - name: Validate external benchmark harness, campaigns, and providers
         run: python -m pytest -q external-benchmarks/tests
@@ -80,3 +82,17 @@ jobs:
 
       - name: Validate AI-MEMORY command JSON
         run: python -m json.tool /tmp/ai-memory-command.json > /dev/null
+
+      - name: Validate S3 integrity gate fixture
+        run: |
+          python tools/s3_memory_gate.py \
+            < external-benchmarks/providers/ai_memory/sample-eval-proposal.json \
+            > /tmp/s3-memory-gate.json
+          python -m json.tool /tmp/s3-memory-gate.json > /dev/null
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('/tmp/s3-memory-gate.json').read_text())
+          if result.get('passed') is not True:
+              raise SystemExit(f"integrity gate rejected safe fixture: {result}")
+          PY

@@ -19,8 +19,8 @@ installed by the benchmark operator.
 - stdout/stderr are not captured by the adapter, so native prompts/transcripts do
   not become benchmark artifacts.
 - Actual process execution requires the explicit `run ... --execute` command.
-- No operation in this adapter creates issues, branches, commits, or pull
-  requests in the upstream AI-MEMORY repository.
+- No operation in this adapter creates issues, branches, commits, comments, or
+  pull requests in the upstream AI-MEMORY repository.
 
 ## Probe
 
@@ -84,3 +84,38 @@ python tools/external_bench_ai_memory.py run \
 
 Native harness arguments may be repeated with `--native-arg`. Keep them identical
 between provider arms when they are controlled variables of the comparison.
+
+## S3 Integrity Gate
+
+The `ai-memory+s3-integrity-gate` arm uses `tools/s3_memory_gate.py` as an
+operator-supplied AI-MEMORY auto-improve eval scorer. The scorer is local,
+deterministic, side-effect-free, and network-free.
+
+It receives one proposal JSON object on stdin and returns the AI-MEMORY scorer
+contract on stdout:
+
+```json
+{"score_before":1.0,"score_after":1.0,"passed":true,"reason":"..."}
+```
+
+The gate verifies its own invariant registry against the current S3 checkout
+before trusting it. If expected repository evidence has drifted or disappeared,
+the scorer fails closed rather than applying stale assumptions.
+
+Registered V1 invariants cover:
+
+- balanced trit/tryte subtraction versus machine `NUMERIC_DIFFERENCE` / `TNDIFF`;
+- checked non-wrapping `i64` semantics;
+- `&mut` not implying automatic machine `noalias`;
+- shell-free host process execution;
+- the current executable FFI boundary.
+
+Try the local safe fixture:
+
+```bash
+python tools/s3_memory_gate.py \
+  < external-benchmarks/providers/ai_memory/sample-eval-proposal.json
+```
+
+`auto-improve-eval.example.toml` shows the operator-side configuration block.
+It is documentation only: S3 never edits the AI-MEMORY config automatically.
