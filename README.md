@@ -2,100 +2,84 @@
 
 [![Tests](https://github.com/SamDevlab/S3/actions/workflows/tests.yml/badge.svg)](https://github.com/SamDevlab/S3/actions/workflows/tests.yml)
 
-S3 é uma linguagem experimental de sistemas baseada em **ternário balanceado**, com foco em semântica explícita, execução determinística, segurança de memória por construção e um caminho nativo Linux x86-64 verificável.
+**S3 é uma linguagem experimental de sistemas baseada em ternário balanceado**, desenvolvida para explorar semântica explícita, execução determinística, verificação forte do pipeline e um caminho nativo Linux x86-64.
 
-O pacote publicável continua sendo **`s3-bootstrap` 0.7.0**. A linha interna **1.x** evolui o compilador, a linguagem e o runtime sem implicar automaticamente um novo release público.
+O projeto não é apenas um parser ou transpiler: ele possui frontend de compilador, análise semântica, IR tipada, CFG/SSA, verifier, otimizações, Assembly própria, emulador e backend nativo.
 
-```text
-fonte S3
-  ↓
-lexer / parser / semântica
-  ↓
-IR tipada e verificada
-  ↓
-O0 / O1 + verificação
-  ↓
-S3 Assembly versionada
-  ├─→ emulador
-  └─→ backend Linux x86-64 → ELF nativo
+> O compilador de referência é implementado em Python. Os executáveis nativos gerados pelo S3 não dependem de Python para executar.
+
+## Visão em 30 segundos
+
+```mermaid
+flowchart LR
+    A[Source S3] --> B[Lexer / Parser]
+    B --> C[Semantic Analysis]
+    C --> D[Typed IR]
+    D --> E[Verifier]
+    E --> F[CFG / SSA]
+    F --> G[O0 / O1]
+    G --> H[S3 Assembly]
+    H --> I[Assembly Emulator]
+    H --> J[Linux x86-64 Backend]
+    J --> K[Native ELF]
 ```
 
-O compilador de referência continua em Python dentro de `bootstrap/`. Os programas nativos gerados não dependem de Python para executar.
+### O que já existe
 
-## Estado atual
-
-A linha atual já vai além do MVP 0.7 e inclui, entre outras capacidades:
-
-- `trit` e `tryte` balanceados, preservando a semântica ternária original;
-- `i64` assinado de 64 bits com aritmética checked;
-- `f64` IEEE-754 binary64;
-- funções, chamadas, recursão, `while`, `for`, `break`, `continue` e `match`;
-- bindings imutáveis e `mut` explícito;
-- arrays estáticos e bounds checking;
+- `trit` e `tryte` balanceados;
+- `i64` checked e `f64` IEEE-754;
+- funções, recursão, loops e `match`;
+- arrays com bounds checking;
 - records e enums nominais;
-- módulos determinísticos com imports/exports explícitos;
-- referências seguras `&T` e `&mut T`, sem raw pointers;
-- referências para elementos de arrays e campos de records;
-- reborrow de referências;
-- IR SSA/CFG, verificação, emulação e backend nativo;
-- O0 e O1 com contratos de correção;
-- backend Linux x86-64 com System V AMD64;
-- CI em Python 3.11–3.13, gates diferenciais, SSA, benchmark e Linux nativo obrigatório.
+- módulos com imports/exports explícitos;
+- referências seguras `&T` e `&mut T`;
+- CFG, dominância e SSA;
+- IR e Assembly verificáveis;
+- otimizações conservadoras;
+- emulador;
+- backend Linux x86-64 / System V AMD64;
+- differential testing e CI multi-versão de Python.
 
-A versão publicável permanece 0.7.0 enquanto essas milestones internas amadurecem.
+## Por que este projeto existe
 
-## Domínios numéricos
+S3 é um laboratório de engenharia de linguagens. O objetivo é estudar como decisões de representação, verificação e lowering podem tornar o comportamento de uma linguagem mais explícito e auditável.
+
+Três princípios guiam o projeto:
+
+1. **correção antes de performance** — otimização não pode alterar comportamento observável;
+2. **semântica explícita** — operações importantes têm contratos próprios em vez de depender de transformações implícitas frágeis;
+3. **evidência end-to-end** — uma capacidade só é considerada pronta quando parser, semântica, IR, Assembly, emulação e backend aplicável demonstram o mesmo contrato.
+
+## Estado e versionamento
+
+O pacote publicável continua sendo **`s3-bootstrap` 0.7.0**.
+
+A linha interna **1.x** evolui o compilador, a linguagem e o runtime, mas a existência de código ou de uma milestone não implica automaticamente uma nova release pública.
+
+## Tipos numéricos
 
 ### `trit` e `tryte`
 
-Os tipos balanceados continuam sendo parte central da linguagem. A introdução de tipos de máquina não redefine operadores ternários nem transforma valores inteiros em ponteiros.
+Os tipos ternários balanceados permanecem parte central da linguagem. A introdução de tipos de máquina não redefine a semântica ternária histórica.
 
 ### `i64`
 
-`i64` é um inteiro assinado de 64 bits com operações checked:
+Inteiro assinado de 64 bits com operações checked:
 
 ```text
-+
--
-*
-/
-unary -
++ - * / unary-
 == != < <= > >=
 ```
 
-Overflow não faz wrap silencioso. Divisão por zero e o caso `INT64_MIN / -1` são tratados como falhas determinísticas.
+Overflow, divisão por zero e `INT64_MIN / -1` não fazem wrap silencioso.
 
-A subtração de máquina possui uma operação tipada própria no pipeline (`NUMERIC_DIFFERENCE` / `TNDIFF`) para que casos válidos como:
-
-```text
-INT64_MIN - INT64_MIN == 0
--1 - INT64_MIN == INT64_MAX
-```
-
-não sofram um overflow intermediário artificial causado por uma transformação `negate + add`.
-
-A subtração balanceada de `trit`/`tryte` continua usando o lowering histórico `INVERT + ADD`; não existe um opcode genérico `SUBTRACT`/`TSUB` para substituir essa semântica.
+A subtração de máquina usa uma operação tipada própria (`NUMERIC_DIFFERENCE` / `TNDIFF`) para evitar overflow intermediário artificial em casos válidos.
 
 ### `f64`
 
-`f64` segue IEEE-754 binary64 e oferece:
-
-```text
-+
--
-*
-/
-unary -
-== != < <= > >=
-```
-
-NaN, `+Inf`, `-Inf` e signed zero permanecem valores válidos. O compilador não habilita fast-math nem reassociação que altere a semântica IEEE-754.
-
-No backend Linux x86-64, operações `f64` usam SSE2/XMM e o ABI interno suporta argumentos inteiros e floating-point no mesmo fluxo System V AMD64.
+Segue IEEE-754 binary64. Na geração nativa x86-64, operações floating-point usam SSE2/XMM e participam do ABI interno System V AMD64.
 
 ### Conversões explícitas
-
-As conversões numéricas iniciais são explícitas:
 
 ```text
 to_i64(trit|tryte) -> i64
@@ -103,11 +87,31 @@ to_f64(trit|tryte|i64) -> f64
 to_tryte(i64) -> tryte
 ```
 
-`to_tryte(i64)` é checked para a faixa balanceada `[-364, 364]`.
+`to_tryte(i64)` verifica a faixa balanceada `[-364, 364]`.
 
-Não existem casts entre referências e inteiros.
+Não existem casts referência ↔ inteiro.
 
-## Exemplo numérico
+## Referências e memória
+
+S3 possui referências tipadas:
+
+```text
+&T
+&mut T
+```
+
+O modelo atual evita:
+
+- null references;
+- raw pointers;
+- pointer arithmetic;
+- casts referência ↔ inteiro.
+
+`&mut` representa capacidade de escrita, sem prometer automaticamente o mesmo modelo de exclusividade/noalias de Rust.
+
+A implementação cobre storage local, elementos de arrays, campos de records e reborrow, preservando proveniência no compilador.
+
+## Exemplo
 
 ```s3
 fn score(logp: f64, mw: f64, aromatic: f64, tpsa: f64) -> f64:
@@ -121,73 +125,32 @@ fn main() -> trit:
     return (counter == 1000000) & (score(2.0, 300.0, 2.0, 50.0) < -4.54)
 ```
 
-A milestone numérica possui probes end-to-end para parser, semântica, IR, Assembly, emuladores e backend Linux x86-64, incluindo um loop nativo cujo contador `i64` chega a 1.000.000.
+## Otimização e verificação
 
-## Referências seguras
-
-S3 possui referências tipadas seguras:
-
-```text
-&T
-&mut T
-```
-
-O modelo atual evita:
-
-- null references;
-- raw pointers;
-- pointer arithmetic;
-- casts referência ↔ inteiro;
-- comparação de identidade de ponteiros como semântica pública.
-
-`&mut` representa capacidade de escrita. Ele não deve ser interpretado automaticamente como o mesmo modelo de exclusividade/noalias de Rust.
-
-A implementação atual suporta referências a storage local, elementos de arrays, campos de records e reborrow, com proveniência preservada pelo compilador.
-
-## Pipeline do compilador
-
-O fluxo principal é:
-
-```text
-source
-  → lexer
-  → parser
-  → semantic analysis
-  → typed IR
-  → verifier
-  → optimization
-  → S3 Assembly
-  → Assembly verifier
-  ├→ Assembly emulator
-  └→ Linux x86-64 backend
-```
-
-A infraestrutura inclui:
+O pipeline inclui:
 
 - CFG e dominância;
 - SSA e verificação por passes;
-- constant propagation/folding;
-- DCE e otimizações conservadoras;
-- Memory Effects/proveniência para referências;
+- constant propagation / folding;
+- DCE;
+- contratos de efeitos de memória e proveniência;
 - differential testing;
-- contratos determinísticos de serialização e Assembly;
+- serialização determinística;
 - register allocation GPR experimental no backend nativo.
 
-Otimização nunca deve alterar a semântica observável do programa.
+A regra central é simples: **otimização nunca deve mudar a semântica observável do programa**.
 
 ## Backend nativo
 
-O target nativo principal é **Linux x86-64**.
+Target principal: **Linux x86-64**.
 
-O backend gera GNU assembly e usa a toolchain disponível (`cc`, `gcc` ou `clang`) para montar e linkar o ELF.
+O backend gera GNU Assembly e usa `cc`, `gcc` ou `clang` para montar e linkar o ELF.
 
 ```bash
 s3 native-asm examples/first.s3 -o build/first.s
 s3 build examples/first.s3 -o build/first
 s3 run-native examples/first.s3
 ```
-
-O caminho nativo continua sendo obrigatório mesmo com a evolução futura de containers e providers externos.
 
 ## Instalação
 
@@ -222,13 +185,7 @@ python -m pip install -e ".[dev]"
 python -m pytest
 ```
 
-O pacote não possui dependências runtime externas obrigatórias; `pytest` e `pytest-xdist` pertencem ao ambiente de desenvolvimento.
-
 ## CLI
-
-A sintaxe fonte V0.6 continua sendo o modo padrão da versão publicável.
-
-Comandos comuns:
 
 ```bash
 s3 targets
@@ -240,26 +197,16 @@ s3 inspect examples/first.s3 --emit assembly
 s3 tokens examples/static_array.s3
 s3 ast examples/static_array.s3
 s3 ir examples/static_array.s3
-s3 ir-json examples/static_array.s3 -o build/array.s3ir.json
 s3 verify-ir build/array.s3ir.json
 s3 asm examples/first.s3 -O1
 s3 run examples/static_array.s3
-s3 native-asm examples/first.s3 -o build/first.s
 s3 build examples/first.s3 -o build/first
 s3 run-native examples/first.s3 -O1
 ```
 
-Em um checkout sem instalação:
-
-```bash
-python -m bootstrap.s3.cli --help
-```
-
-A sintaxe V0.5 permanece apenas como compatibilidade legada/deprecated por seleção explícita.
-
 ## Testes e CI
 
-A suíte possui categorias explícitas para separar correção rápida, contratos, diferencial, nativo, testes lentos e benchmarks:
+Categorias da suíte:
 
 ```text
 s3_fast
@@ -277,28 +224,17 @@ python -m pytest
 python tools/golden_inspect.py check
 ```
 
-O workflow principal cobre Python 3.11, 3.12 e 3.13, além de gates separados para:
+A CI cobre Python 3.11, 3.12 e 3.13 e inclui gates separados para execução nativa, SSA, diferencial determinístico, goldens e benchmark smoke.
 
-- Linux x86-64 nativo;
-- verificação SSA por passes;
-- diferencial determinístico;
-- renderer/goldens;
-- benchmark smoke;
-- capability probes específicos quando uma milestone exige evidência end-to-end.
+Benchmarks são caracterização; **correção e equivalência são gates**.
 
-Benchmarks são caracterização. Correção, equivalência, checksums e contratos semânticos são gates de correctness.
+## Self-hosting
 
-## Renderer e self-hosting
+O projeto possui uma linha incremental de self-hosting e renderer Assembly escrito em S3.
 
-O projeto contém uma linha incremental de self-hosting e renderer Assembly escrita em S3.
+Python continua sendo a implementação de referência. Um componente só substitui o caminho de referência quando equivalência e cobertura suficiente demonstram que a migração é segura.
 
-Python continua sendo o compilador de referência e o caminho padrão. Componentes em S3 só substituem o caminho Python quando equivalência, cobertura e gates próprios demonstrarem que a migração é segura.
-
-A estratégia é progressiva: primeiro construir componentes verificáveis, depois comparar contra a implementação de referência e somente então promover o caminho S3.
-
-## Roadmap de capacidades
-
-A ordem arquitetural atual da linha de produção é:
+## Roadmap arquitetural
 
 ```text
 NUMERIC
@@ -316,7 +252,7 @@ PROJECT_CONTAINER_MODEL
 S3_DOCKER
 ```
 
-Correspondência das milestones:
+Milestones associadas:
 
 ```text
 1.32  Numeric Domains & Large Indexing
@@ -328,61 +264,50 @@ Correspondência das milestones:
 1.38  S3 Docker V1
 ```
 
-A existência de código, documentação ou uma PR numerada não é, sozinha, prova de conclusão de uma capacidade. Cada milestone precisa demonstrar a funcionalidade prometida de forma utilizável por um programador S3 e passar seus gates end-to-end antes de ser considerada completa.
-
-O princípio estratégico é **external-first quando isso for mais eficiente**: bibliotecas C, Linux, Python, Docker/OCI e outros componentes maduros podem atuar como providers enquanto o núcleo S3 amadurece. Reimplementações nativas só devem substituir esses providers quando houver motivo concreto de desempenho, controle, segurança ou self-hosting.
-
 ## Interoperabilidade
 
-S3 não pretende existir isolado do ecossistema.
+A direção do projeto inclui:
 
-A direção arquitetural inclui:
-
-- C ABI como lingua franca de interoperabilidade;
+- C ABI como fronteira de interoperabilidade;
 - bibliotecas S3 carregáveis por hosts externos;
 - buffers contíguos e zero-copy;
-- integração com Python/C/C++/Rust por camadas de ABI;
-- processos, argv/env, stdin/stdout/stderr, arquivos e pipes;
-- Docker/OCI como sistema de compatibilidade e aplicação;
-- GPU inicialmente por integração com engines existentes, antes de um backend GPU próprio.
+- integração com Python/C/C++/Rust por ABI;
+- processos, arquivos e pipes;
+- Docker/OCI como camada de compatibilidade;
+- GPU inicialmente por providers maduros antes de um backend próprio.
 
-Nem todas essas capacidades fazem parte da versão publicável 0.7.0; elas pertencem à evolução interna 1.x e exigem gates próprios antes de promoção.
+Essas capacidades só devem ser tratadas como públicas após seus respectivos gates.
 
 ## Limitações atuais
 
-S3 ainda não é uma linguagem de produção geral e mantém limites deliberados.
+S3 ainda é experimental e não deve ser apresentado como linguagem de produção geral.
 
-Entre eles:
+Limitações importantes:
 
 - sem raw pointers, null ou pointer arithmetic;
 - sem garbage collector;
 - sem generics gerais;
-- sem concorrência de linguagem madura;
-- sem backend nativo completo para Windows, macOS ou ARM64;
-- sem JIT ou otimização interprocedural madura;
-- self-hosting ainda incremental;
-- capacidades de slices, FFI, runtime dinâmico, serviços de host e containers só devem ser tratadas como públicas quando seus respectivos gates de capability estiverem concluídos.
+- sem concorrência madura de linguagem;
+- sem backend completo para Windows, macOS ou ARM64;
+- sem JIT;
+- self-hosting ainda incremental.
 
-O target nativo de referência permanece Linux x86-64.
-
-## Organização do repositório
+## Estrutura do repositório
 
 ```text
 bootstrap/s3/    frontend, IR, verifier, Assembly, emuladores e backends
 spec/            especificações e contratos normativos
-docs/            milestones, decisões arquiteturais e documentação técnica
-docs/decisions/  ADRs
-examples/        programas S3 e fixtures oficiais
+docs/            milestones e documentação técnica
+docs/decisions/  decisões arquiteturais
+examples/        programas e fixtures oficiais
 tests/           regressão, contratos, diferencial, nativo e benchmarks
-selfhost/        fronteira da evolução Python → S3
+selfhost/        evolução Python → S3
+stdlib/          biblioteca padrão em evolução
 ```
 
 ## Documentação
 
-Pontos de entrada úteis:
-
 - [`docs/roadmap.md`](docs/roadmap.md) — roadmap geral;
-- [`docs/milestone-1.32.md`](docs/milestone-1.32.md) — Numeric Domains & Large Indexing;
 - [`spec/`](spec/) — especificações normativas;
 - [`docs/decisions/`](docs/decisions/) — decisões arquiteturais;
 - [`docs/releases/0.7.0.md`](docs/releases/0.7.0.md) — release público 0.7.0.
