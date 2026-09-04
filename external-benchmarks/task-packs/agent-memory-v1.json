@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "campaign_id": "agent-memory-v1",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "global_rules": [
     "Do not inspect external-benchmarks/, benchmark result directories, or benchmark oracle definitions from the controller checkout.",
     "Treat the checked-out S3 repository state as authoritative when it conflicts with remembered claims.",
@@ -21,7 +21,8 @@
         "authoritative_paths": []
       },
       "expected_artifacts": {
-        "required_changed": ["bootstrap/s3/os_services.py", "tests/test_host_services.py"],
+        "required_changed": ["bootstrap/s3/os_services.py"],
+        "required_changed_any": [["tests/test_host_services.py", "tests/test_m166_cross_platform_os_services.py"]],
         "forbidden_changed": ["external-benchmarks/**", ".github/**", "benchmarks/**"],
         "max_changed_files": 6
       }
@@ -53,7 +54,8 @@
         "authoritative_paths": []
       },
       "expected_artifacts": {
-        "required_changed": ["bootstrap/s3/numeric.py", "tests/test_numeric_domains.py"],
+        "required_changed": ["bootstrap/s3/numeric.py"],
+        "required_changed_any": [["tests/test_numeric_domains.py", "tests/test_numeric_closure.py"]],
         "forbidden_changed": ["external-benchmarks/**", ".github/**", "benchmarks/**"],
         "max_changed_files": 6
       }
@@ -102,7 +104,11 @@
         "authoritative_paths": []
       },
       "expected_artifacts": {
-        "required_changed": ["bootstrap/s3/numeric.py", "bootstrap/s3/alias_analysis.py", "bootstrap/s3/os_services.py", "tests/test_numeric_domains.py", "tests/test_s3_alias_analysis.py", "tests/test_host_services.py"],
+        "required_changed": ["bootstrap/s3/numeric.py", "bootstrap/s3/alias_analysis.py", "bootstrap/s3/os_services.py", "tests/test_s3_alias_analysis.py"],
+        "required_changed_any": [
+          ["tests/test_numeric_domains.py", "tests/test_numeric_closure.py"],
+          ["tests/test_host_services.py", "tests/test_m166_cross_platform_os_services.py"]
+        ],
         "forbidden_changed": ["external-benchmarks/**", ".github/**", "benchmarks/**"],
         "max_changed_files": 12
       }
@@ -118,7 +124,11 @@
         "authoritative_paths": []
       },
       "expected_artifacts": {
-        "required_changed": ["bootstrap/s3/lowering.py", "bootstrap/s3/alias_analysis.py", "bootstrap/s3/os_services.py", "tests/test_compiler.py", "tests/test_s3_alias_analysis.py", "tests/test_host_services.py"],
+        "required_changed": ["bootstrap/s3/lowering.py", "bootstrap/s3/alias_analysis.py", "bootstrap/s3/os_services.py", "tests/test_s3_alias_analysis.py"],
+        "required_changed_any": [
+          ["tests/test_compiler.py", "tests/test_memory_lowering.py"],
+          ["tests/test_host_services.py", "tests/test_m166_cross_platform_os_services.py"]
+        ],
         "forbidden_changed": ["external-benchmarks/**", ".github/**", "benchmarks/**"],
         "max_changed_files": 12
       }

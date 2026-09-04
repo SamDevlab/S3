@@ -76,6 +76,16 @@ def load_task_pack(path: Path) -> dict[str, Any]:
                 raise TaskPackError(f"expected_artifacts.{key} must be a list")
             for item in values:
                 _safe_pattern(item, f"expected_artifacts.{key}")
+        alternatives = artifacts.get("required_changed_any", [])
+        if not isinstance(alternatives, list):
+            raise TaskPackError("expected_artifacts.required_changed_any must be a list")
+        for group in alternatives:
+            if not isinstance(group, list) or not group:
+                raise TaskPackError(
+                    "expected_artifacts.required_changed_any entries must be non-empty lists"
+                )
+            for item in group:
+                _safe_pattern(item, "required_changed_any")
         maximum = artifacts.get("max_changed_files")
         if not isinstance(maximum, int) or isinstance(maximum, bool) or maximum < 1:
             raise TaskPackError("expected_artifacts.max_changed_files must be positive")
@@ -231,6 +241,21 @@ def validate_task_artifacts(
         rows.append(
             {
                 "id": f"task-required:{pattern}",
+                "kind": "task_artifact",
+                "passed": bool(matches),
+                "detail": "matches=" + (",".join(matches) if matches else "none"),
+            }
+        )
+    for raw_group in artifacts.get("required_changed_any", []):
+        if not isinstance(raw_group, list) or not raw_group:
+            raise TaskPackError("required_changed_any entries must be non-empty lists")
+        patterns = [_safe_pattern(item, "required_changed_any") for item in raw_group]
+        matches = [
+            path for path in changed if any(fnmatch.fnmatch(path, pattern) for pattern in patterns)
+        ]
+        rows.append(
+            {
+                "id": "task-required-any:" + "|".join(patterns),
                 "kind": "task_artifact",
                 "passed": bool(matches),
                 "detail": "matches=" + (",".join(matches) if matches else "none"),

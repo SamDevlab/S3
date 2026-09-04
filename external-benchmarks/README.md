@@ -53,11 +53,11 @@ python tools/external_bench.py \
   --agent-model MODEL \
   --agent-harness codex \
   --agent-harness-version VERSION \
-  --tool-permissions-profile standard \
+  --tool-permissions-profile windows-danger-full-access-v1 \
   --output-json results/agent-memory-v1/ai-memory/run-1/plan.json
 ```
 
-The plan does not invoke a model, memory provider, network call, or Git worktree operation.
+The plan does not invoke a model, memory provider, network call, or Git worktree operation. Future comparable Windows runs must use `windows-danger-full-access-v1` consistently across all four provider arms.
 
 ## Offline protocol smoke
 

@@ -49,7 +49,7 @@ The worktree orchestrator records only worktrees it created and refuses to remov
 
 ## Versioned task pack
 
-`external-benchmarks/task-packs/agent-memory-v1.json` defines the actual coding work for all seven scenarios. Each entry contains Phase A/Phase B instructions, authoritative paths, required changed-file scopes, forbidden changed-file scopes, and a maximum changed-file budget.
+`external-benchmarks/task-packs/agent-memory-v1.json` defines the actual coding work for all seven scenarios. The current task pack is version `1.0.1` and supersedes task pack `1.0.0` for future real runs. Each entry contains Phase A/Phase B instructions, authoritative paths, required changed-file scopes, optional explicit alternatives for equivalent focused test files, forbidden changed-file scopes, and a maximum changed-file budget. Results produced under task pack `1.0.0` remain historical and are not reclassified.
 
 The stale-memory Phase A intentionally does **not** expose the current FFI invariant. It supplies the obsolete claim under test and requires the later phase to resolve it against the subject checkout.
 
@@ -103,6 +103,8 @@ Every Agent Memory V1 observation records:
 ```
 
 A provider repetition is rejected when its scenario results do not share exactly one execution profile/repetition.
+
+For the next comparable Windows execution, use `windows-danger-full-access-v1` as the same effective `tool_permissions_profile` in all four provider arms. Do not reuse the prior `workspace-write` exploratory results as a comparable repetition.
 
 Cross-session/cross-agent cases also record `source_agent`, `target_agent`, and `transcript_reused: false`. Cross-agent source/target identities must differ, and direct provider runbooks require a distinct receiving command as well as a distinct identity.
 

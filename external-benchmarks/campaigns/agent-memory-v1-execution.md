@@ -38,7 +38,7 @@ python tools/external_bench.py \
   --agent-model MODEL \
   --agent-harness codex \
   --agent-harness-version VERSION \
-  --tool-permissions-profile standard \
+  --tool-permissions-profile windows-danger-full-access-v1 \
   --output-json results/agent-memory-v1/ai-memory/run-1/plan.json
 ```
 
@@ -68,7 +68,9 @@ Cleanup refuses to delete dirty experiment worktrees unless the operator explici
 
 ## 3. Render task prompts and runbook
 
-The versioned task pack is `external-benchmarks/task-packs/agent-memory-v1.json`. It defines Phase A/Phase B instructions, authoritative paths, required changed-file scopes, forbidden changed-file scopes, and a change budget.
+The versioned task pack is `external-benchmarks/task-packs/agent-memory-v1.json` (version `1.0.1`, superseding `1.0.0` for future real runs). It defines Phase A/Phase B instructions, authoritative paths, required changed-file scopes, explicit alternatives for equivalent focused test files, forbidden changed-file scopes, and a change budget.
+
+For the next comparable Windows execution, use `windows-danger-full-access-v1` as the same effective `tool_permissions_profile` in all four provider arms. The previous `workspace-write` divergence is historical and does not make the prior real runs reusable.
 
 For direct arms, provide the same native agent command used for that experimental arm. Cross-agent cases require an explicit, different receiving-agent identity and command. AI-MEMORY arms use the managed AI-MEMORY launcher and fresh native sessions.
 
