@@ -27,6 +27,20 @@ def _repository_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
+def _validate_subject_commit(campaign: Mapping[str, Any], s3_commit: str) -> None:
+    protocol = campaign.get("protocol")
+    if not isinstance(protocol, dict):
+        return
+    subject_commit = protocol.get("subject_commit")
+    if subject_commit is None:
+        return
+    expected = _required_string(subject_commit, "campaign protocol.subject_commit")
+    if s3_commit != expected:
+        raise ExternalBenchmarkError(
+            "s3_commit does not match the campaign's pinned subject_commit"
+        )
+
+
 def build_run_plan(
     campaign: Mapping[str, Any],
     *,
@@ -50,6 +64,7 @@ def build_run_plan(
         )
     _required_string(provider_version, "provider_version")
     _required_string(s3_commit, "s3_commit")
+    _validate_subject_commit(campaign, s3_commit)
     _required_string(agent_provider, "agent_provider")
     _required_string(agent_model, "agent_model")
     _required_string(agent_harness, "agent_harness")

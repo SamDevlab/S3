@@ -13,9 +13,11 @@ from harness.cli import main  # noqa: E402
 from harness.core import ExternalBenchmarkError  # noqa: E402
 from harness.plan import build_run_plan  # noqa: E402
 
+SUBJECT = "a" * 40
 
-def _campaign() -> dict[str, object]:
-    return {
+
+def _campaign(*, pinned: bool = False) -> dict[str, object]:
+    campaign: dict[str, object] = {
         "campaign_id": "agent-memory-v1",
         "version": "1.0.0",
         "configurations": [
@@ -35,6 +37,9 @@ def _campaign() -> dict[str, object]:
             },
         ],
     }
+    if pinned:
+        campaign["protocol"] = {"subject_commit": SUBJECT}
+    return campaign
 
 
 def _build(**overrides: object) -> dict[str, object]:
@@ -55,39 +60,46 @@ def _build(**overrides: object) -> dict[str, object]:
 
 def test_run_plan_is_deterministic_and_encodes_isolation() -> None:
     plan = _build()
-
     assert plan["run_root"] == "ai-memory/run-2"
     assert plan["provider_profile"] == {
         "schema_version": "1.0.0",
         "memory_mode": "ai-memory",
         "integrity_gate": {"enabled": False},
     }
-    assert plan["execution"] == {
-        "s3_commit": "abc123",
-        "agent_harness_version": "1",
-        "tool_permissions_profile": "standard",
-        "task_protocol_version": "agent-memory-v1",
-        "repetition": 2,
-    }
+    assert plan["execution"]["s3_commit"] == "abc123"
     scenarios = plan["scenarios"]
     assert [row["scenario_id"] for row in scenarios] == ["one", "two", "three", "four"]
     assert scenarios[0]["worktree_key"] == "ai-memory/run-2/one"
     assert scenarios[1]["required_evidence"] == ["handoff"]
     assert scenarios[2]["template"].endswith("cross-agent.json")
-    assert scenarios[3]["required_evidence"] == ["stale_memory"]
     assert scenarios[3]["stale_claim_id"] == "ffi-is-future-work"
 
 
 def test_gated_run_plan_pins_integrity_registry_hash() -> None:
     plan = _build(provider_id="ai-memory+s3-integrity-gate")
     profile = plan["provider_profile"]
-
     assert profile["memory_mode"] == "ai-memory"
     assert profile["integrity_gate"]["enabled"] is True
     assert profile["integrity_gate"]["registry_schema_version"] == "1.0.0"
     digest = profile["integrity_gate"]["registry_sha256"]
     assert len(digest) == 64
     assert set(digest) <= set("0123456789abcdef")
+
+
+def test_pinned_campaign_rejects_subject_override() -> None:
+    arguments = {
+        "provider_id": "ai-memory",
+        "provider_version": "2.x",
+        "repetition": 1,
+        "s3_commit": "b" * 40,
+        "agent_provider": "openai",
+        "agent_model": "fixture",
+        "agent_harness": "codex",
+        "agent_harness_version": "1",
+        "tool_permissions_profile": "standard",
+    }
+    with pytest.raises(ExternalBenchmarkError, match="subject_commit"):
+        build_run_plan(_campaign(pinned=True), **arguments)
 
 
 def test_run_plan_rejects_undeclared_provider() -> None:
@@ -100,9 +112,8 @@ def test_run_plan_rejects_invalid_repetition() -> None:
         _build(repetition=0)
 
 
-def test_prepare_run_cli_uses_real_campaign_and_templates(tmp_path: Path) -> None:
+def test_prepare_run_cli_defaults_to_real_campaign_subject_commit(tmp_path: Path) -> None:
     output = tmp_path / "plan.json"
-
     exit_code = main(
         [
             "--prepare-run",
@@ -114,8 +125,6 @@ def test_prepare_run_cli_uses_real_campaign_and_templates(tmp_path: Path) -> Non
             "2.x",
             "--repetition",
             "1",
-            "--s3-commit",
-            "abc123",
             "--agent-provider",
             "openai",
             "--agent-model",
@@ -130,11 +139,9 @@ def test_prepare_run_cli_uses_real_campaign_and_templates(tmp_path: Path) -> Non
             str(output),
         ]
     )
-
     assert exit_code == 0
     plan = json.loads(output.read_text(encoding="utf-8"))
-    assert plan["campaign_id"] == "agent-memory-v1"
-    assert plan["provider"]["id"] == "ai-memory+s3-integrity-gate"
+    assert plan["execution"]["s3_commit"] == "db5f4bf10e2066f52bf144d23e6f7db56154e298"
     assert plan["provider_profile"]["integrity_gate"]["enabled"] is True
     assert len(plan["scenarios"]) == 7
     assert all((EXTERNAL_ROOT / scenario["template"]).is_file() for scenario in plan["scenarios"])

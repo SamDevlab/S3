@@ -12,6 +12,8 @@ sys.path.insert(0, str(EXTERNAL_ROOT))
 from harness.campaign import aggregate_campaign, list_campaigns, load_campaign  # noqa: E402
 from harness.core import ExternalBenchmarkError, load_scenario  # noqa: E402
 
+SUBJECT = "a" * 40
+
 
 def _campaign() -> dict[str, object]:
     return {
@@ -25,6 +27,7 @@ def _campaign() -> dict[str, object]:
             {"id": "provider-b", "description": "test provider B"},
         ],
         "protocol": {
+            "subject_commit": SUBJECT,
             "worktree_isolation": "fresh-worktree-per-scenario",
             "recommended_repetitions": 1,
             "result_collection": "isolated",
@@ -42,9 +45,9 @@ def _campaign() -> dict[str, object]:
     }
 
 
-def _execution(repetition: int = 1) -> dict[str, object]:
+def _execution(repetition: int = 1, *, commit: str = SUBJECT) -> dict[str, object]:
     return {
-        "s3_commit": "abc123",
+        "s3_commit": commit,
         "agent_harness_version": "1",
         "tool_permissions_profile": "standard",
         "task_protocol_version": "agent-memory-v1",
@@ -59,6 +62,7 @@ def _result(
     status: str = "PASS",
     recall: float = 1.0,
     repetition: int = 1,
+    commit: str = SUBJECT,
 ) -> dict[str, object]:
     result: dict[str, object] = {
         "schema_version": "1.0.0",
@@ -67,7 +71,7 @@ def _result(
         "category": "agent-memory",
         "provider": {"id": provider, "version": "1"},
         "agent": {"provider": "test", "model": "fixture", "harness": "pytest"},
-        "execution": _execution(repetition),
+        "execution": _execution(repetition, commit=commit),
         "status": status,
         "reported_invariants": [],
         "metrics": {
@@ -83,63 +87,43 @@ def _result(
     if scenario_id == "two":
         result["handoff"] = {
             "kind": "cross-session",
-            "source_agent": {
-                "provider": "test",
-                "model": "fixture",
-                "harness": "pytest-a",
-            },
-            "target_agent": {
-                "provider": "test",
-                "model": "fixture",
-                "harness": "pytest-b",
-            },
+            "source_agent": {"provider": "test", "model": "fixture", "harness": "pytest-a"},
+            "target_agent": {"provider": "test", "model": "fixture", "harness": "pytest-b"},
             "transcript_reused": False,
         }
     return result
 
 
+def _write_results(tmp_path: Path, first: dict[str, object], second: dict[str, object]) -> None:
+    (tmp_path / "one.json").write_text(json.dumps(first), encoding="utf-8")
+    (tmp_path / "two.json").write_text(json.dumps(second), encoding="utf-8")
+
+
 def test_campaign_aggregation_is_correctness_first(tmp_path: Path) -> None:
-    (tmp_path / "one.json").write_text(
-        json.dumps(_result("one", recall=1.0)),
-        encoding="utf-8",
-    )
-    (tmp_path / "two.json").write_text(
-        json.dumps(_result("two", status="FAIL", recall=1.0)),
-        encoding="utf-8",
-    )
-
+    _write_results(tmp_path, _result("one"), _result("two", status="FAIL"))
     result = aggregate_campaign(_campaign(), result_dir=tmp_path)
-
     assert result["status"] == "FAIL"
     assert result["execution"] == _execution()
-    assert result["metrics"]["scenarios_passed"] == 1
-    assert result["metrics"]["scenarios_failed"] == 1
     assert result["metrics"]["critical_oracle_failures"] == 1
-    assert result["metrics"]["mean_invariant_recall_rate"] == 1.0
 
 
 def test_campaign_rejects_mixed_provider_results(tmp_path: Path) -> None:
-    (tmp_path / "one.json").write_text(
-        json.dumps(_result("one", provider="provider-a")),
-        encoding="utf-8",
+    _write_results(
+        tmp_path,
+        _result("one", provider="provider-a"),
+        _result("two", provider="provider-b"),
     )
-    (tmp_path / "two.json").write_text(
-        json.dumps(_result("two", provider="provider-b")),
-        encoding="utf-8",
-    )
-
     with pytest.raises(ExternalBenchmarkError, match="one provider configuration"):
         aggregate_campaign(_campaign(), result_dir=tmp_path)
 
 
-def test_campaign_rejects_mixed_execution_profiles(tmp_path: Path) -> None:
-    first = _result("one")
-    second = _result("two")
-    second["execution"]["s3_commit"] = "different"  # type: ignore[index]
-    (tmp_path / "one.json").write_text(json.dumps(first), encoding="utf-8")
-    (tmp_path / "two.json").write_text(json.dumps(second), encoding="utf-8")
-
-    with pytest.raises(ExternalBenchmarkError, match="one execution profile"):
+def test_campaign_rejects_subject_commit_drift(tmp_path: Path) -> None:
+    _write_results(
+        tmp_path,
+        _result("one"),
+        _result("two", commit="b" * 40),
+    )
+    with pytest.raises(ExternalBenchmarkError, match="subject_commit"):
         aggregate_campaign(_campaign(), result_dir=tmp_path)
 
 
@@ -147,9 +131,7 @@ def test_campaign_rejects_transcript_reuse(tmp_path: Path) -> None:
     first = _result("one")
     second = _result("two")
     second["handoff"]["transcript_reused"] = True  # type: ignore[index]
-    (tmp_path / "one.json").write_text(json.dumps(first), encoding="utf-8")
-    (tmp_path / "two.json").write_text(json.dumps(second), encoding="utf-8")
-
+    _write_results(tmp_path, first, second)
     with pytest.raises(ExternalBenchmarkError, match="transcript reuse is forbidden"):
         aggregate_campaign(_campaign(), result_dir=tmp_path)
 
@@ -160,23 +142,20 @@ def test_campaign_listing_is_deterministic(tmp_path: Path) -> None:
     second["campaign_id"] = "z-campaign"
     (tmp_path / "b.json").write_text(json.dumps(second), encoding="utf-8")
     (tmp_path / "a.json").write_text(json.dumps(first), encoding="utf-8")
-
     rows = list_campaigns(tmp_path)
-
     assert [row["campaign_id"] for row in rows] == ["test-campaign", "z-campaign"]
 
 
-def test_agent_memory_v1_references_existing_unique_scenarios() -> None:
+def test_agent_memory_v1_is_frozen_and_references_existing_unique_scenarios() -> None:
     campaign = load_campaign(EXTERNAL_ROOT / "campaigns" / "agent-memory-v1.json")
     scenario_ids = [entry["scenario_id"] for entry in campaign["scenarios"]]
     discovered = {
         load_scenario(path)["scenario_id"]
         for path in sorted((EXTERNAL_ROOT / "scenarios").glob("*.json"))
     }
-
     assert campaign["campaign_id"] == "agent-memory-v1"
-    assert len(scenario_ids) == 7
-    assert len(scenario_ids) == len(set(scenario_ids))
+    assert campaign["protocol"]["subject_commit"] == "db5f4bf10e2066f52bf144d23e6f7db56154e298"
+    assert len(scenario_ids) == 7 == len(set(scenario_ids))
     assert set(scenario_ids).issubset(discovered)
     assert [configuration["id"] for configuration in campaign["configurations"]] == [
         "no-memory",

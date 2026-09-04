@@ -12,8 +12,10 @@ REPOSITORY_ROOT = Path(__file__).resolve().parent.parent
 EXTERNAL_ROOT = REPOSITORY_ROOT / "external-benchmarks"
 sys.path.insert(0, str(EXTERNAL_ROOT))
 
+from harness.agent_report import load_agent_report  # noqa: E402
 from harness.core import ExternalBenchmarkError  # noqa: E402
 from harness.observation import materialize_observation  # noqa: E402
+from harness.runbook import handoff_agents_from_runbook  # noqa: E402
 
 
 def _load_object(path: Path, name: str) -> dict[str, Any]:
@@ -35,27 +37,53 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--plan-file", type=Path, required=True)
     parser.add_argument("--scenario", required=True)
     parser.add_argument("--reported-invariant", action="append", default=[])
+    parser.add_argument("--agent-report-file", type=Path)
+    parser.add_argument("--runbook-file", type=Path)
     parser.add_argument("--source-agent-file", type=Path)
     parser.add_argument("--target-agent-file", type=Path)
     parser.add_argument("--output-json", type=Path, required=True)
     args = parser.parse_args(argv)
 
     try:
+        if args.agent_report_file is not None and args.reported_invariant:
+            raise ExternalBenchmarkError(
+                "--agent-report-file and --reported-invariant are mutually exclusive"
+            )
+        if args.runbook_file is not None and (
+            args.source_agent_file is not None or args.target_agent_file is not None
+        ):
+            raise ExternalBenchmarkError(
+                "--runbook-file cannot be combined with explicit source/target agent files"
+            )
+
         plan = _load_object(args.plan_file, "run plan")
-        source = (
-            _load_object(args.source_agent_file, "source agent")
-            if args.source_agent_file
-            else None
-        )
-        target = (
-            _load_object(args.target_agent_file, "target agent")
-            if args.target_agent_file
-            else None
-        )
+        reported = list(args.reported_invariant)
+        if args.agent_report_file is not None:
+            reported = list(load_agent_report(args.agent_report_file)["reported_invariants"])
+
+        source: dict[str, Any] | None = None
+        target: dict[str, Any] | None = None
+        if args.runbook_file is not None:
+            runbook = _load_object(args.runbook_file, "runbook")
+            handoff = handoff_agents_from_runbook(runbook, args.scenario)
+            if handoff is not None:
+                source, target = handoff
+        else:
+            source = (
+                _load_object(args.source_agent_file, "source agent")
+                if args.source_agent_file
+                else None
+            )
+            target = (
+                _load_object(args.target_agent_file, "target agent")
+                if args.target_agent_file
+                else None
+            )
+
         observation = materialize_observation(
             plan,
             scenario_id=args.scenario,
-            reported_invariants=args.reported_invariant,
+            reported_invariants=reported,
             source_agent=source,
             target_agent=target,
         )

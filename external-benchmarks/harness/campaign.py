@@ -14,6 +14,7 @@ CAMPAIGN_SCHEMA_VERSION = "1.0.0"
 CAMPAIGN_RESULT_SCHEMA_VERSION = "1.0.0"
 _ALLOWED_MODES = {"single-session", "cross-session", "cross-agent", "stale-memory"}
 _SAFE_ID = re.compile(r"^[A-Za-z0-9._+-]+$")
+_COMMIT_ID = re.compile(r"^[0-9a-f]{40}$")
 _EXECUTION_KEYS = (
     "s3_commit",
     "agent_harness_version",
@@ -65,6 +66,9 @@ def load_campaign(path: Path) -> dict[str, Any]:
         raise ExternalBenchmarkError("campaign configuration ids must be unique")
 
     protocol = _require_object(document["protocol"], "campaign protocol")
+    subject_commit = protocol.get("subject_commit")
+    if not isinstance(subject_commit, str) or not _COMMIT_ID.fullmatch(subject_commit):
+        raise ExternalBenchmarkError("campaign subject_commit must be a full lowercase git sha")
     if protocol.get("worktree_isolation") != "fresh-worktree-per-scenario":
         raise ExternalBenchmarkError("campaign worktree isolation must be fresh-worktree-per-scenario")
     repetitions = protocol.get("recommended_repetitions")
@@ -220,6 +224,11 @@ def aggregate_campaign(campaign: Mapping[str, Any], *, result_dir: Path) -> dict
     if not result_dir.is_dir():
         raise ExternalBenchmarkError("campaign result directory does not exist")
 
+    protocol = _require_object(campaign.get("protocol"), "campaign protocol")
+    subject_commit = protocol.get("subject_commit")
+    if not isinstance(subject_commit, str) or not _COMMIT_ID.fullmatch(subject_commit):
+        raise ExternalBenchmarkError("campaign subject_commit is invalid")
+
     allowed_provider_ids = {
         str(_require_object(item, "campaign configuration").get("id", ""))
         for item in campaign["configurations"]
@@ -237,7 +246,12 @@ def aggregate_campaign(campaign: Mapping[str, Any], *, result_dir: Path) -> dict
             raise ExternalBenchmarkError(
                 f"provider is not a declared campaign configuration: {provider_id}"
             )
-        execution_keys.add(_execution_identity(result.get("execution"), scenario_id))
+        execution_identity = _execution_identity(result.get("execution"), scenario_id)
+        if execution_identity[0] != subject_commit:
+            raise ExternalBenchmarkError(
+                f"scenario result does not use campaign subject_commit: {scenario_id}"
+            )
+        execution_keys.add(execution_identity)
         result = dict(result)
         result["campaign_mode"] = str(entry["mode"])
         results.append(result)

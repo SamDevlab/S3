@@ -12,11 +12,19 @@ from .comparison import compare_campaign
 from .core import ExternalBenchmarkError, evaluate_scenario, list_scenarios, load_scenario
 from .plan import build_run_plan
 from .report import render_comparison_markdown
+from .task_pack import (
+    TaskPackError,
+    attach_task_checks,
+    load_task_pack,
+    task_for_scenario,
+    validate_task_artifacts,
+)
 
 EXTERNAL_ROOT = Path(__file__).resolve().parents[1]
 REPOSITORY_ROOT = EXTERNAL_ROOT.parent
 DEFAULT_SCENARIOS = EXTERNAL_ROOT / "scenarios"
 DEFAULT_CAMPAIGNS = EXTERNAL_ROOT / "campaigns"
+DEFAULT_TASK_PACK = EXTERNAL_ROOT / "task-packs" / "agent-memory-v1.json"
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -62,6 +70,7 @@ def create_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--scenario-root", type=Path, default=DEFAULT_SCENARIOS)
     parser.add_argument("--campaign-root", type=Path, default=DEFAULT_CAMPAIGNS)
+    parser.add_argument("--task-pack-file", type=Path, default=DEFAULT_TASK_PACK)
     parser.add_argument("--repository-root", type=Path, default=REPOSITORY_ROOT)
     parser.add_argument("--output-json", type=Path)
     parser.add_argument("--output-markdown", type=Path)
@@ -127,6 +136,14 @@ def _required_plan_argument(args: argparse.Namespace, name: str) -> str:
     return value
 
 
+def _subject_commit(campaign: dict[str, object]) -> str | None:
+    protocol = campaign.get("protocol")
+    if not isinstance(protocol, dict):
+        return None
+    value = protocol.get("subject_commit")
+    return value if isinstance(value, str) and value else None
+
+
 def _prepare_run(args: argparse.Namespace, campaign: dict[str, object]) -> int:
     if args.result_dir is not None or args.compare_root is not None or args.scenario:
         raise ExternalBenchmarkError(
@@ -136,13 +153,18 @@ def _prepare_run(args: argparse.Namespace, campaign: dict[str, object]) -> int:
         raise ExternalBenchmarkError("--output-markdown is not valid with --prepare-run")
     if args.repetition is None:
         raise ExternalBenchmarkError("--repetition is required with --prepare-run")
+    s3_commit = args.s3_commit or _subject_commit(campaign)
+    if not isinstance(s3_commit, str) or not s3_commit:
+        raise ExternalBenchmarkError(
+            "--s3-commit is required when the campaign does not pin protocol.subject_commit"
+        )
 
     plan = build_run_plan(
         campaign,
         provider_id=_required_plan_argument(args, "provider"),
         provider_version=_required_plan_argument(args, "provider_version"),
         repetition=args.repetition,
-        s3_commit=_required_plan_argument(args, "s3_commit"),
+        s3_commit=s3_commit,
         agent_provider=_required_plan_argument(args, "agent_provider"),
         agent_model=_required_plan_argument(args, "agent_model"),
         agent_harness=_required_plan_argument(args, "agent_harness"),
@@ -156,6 +178,35 @@ def _prepare_run(args: argparse.Namespace, campaign: dict[str, object]) -> int:
             raise ExternalBenchmarkError(f"run-plan template is missing: {scenario['template']}")
     _write_document(plan, args.output_json)
     return 0
+
+
+def _attach_agent_memory_task_checks(
+    result: dict[str, object],
+    *,
+    scenario_id: str,
+    observation: dict[str, object],
+    task_pack_file: Path,
+    repository_root: Path,
+) -> None:
+    task_pack = load_task_pack(task_pack_file)
+    rows = task_pack.get("scenarios")
+    if not isinstance(rows, list):
+        raise TaskPackError("task pack scenarios are invalid")
+    if not any(isinstance(row, dict) and row.get("scenario_id") == scenario_id for row in rows):
+        return
+    task = task_for_scenario(task_pack, scenario_id)
+    execution = observation.get("execution")
+    if not isinstance(execution, dict):
+        raise TaskPackError("Agent Memory V1 observation requires execution metadata")
+    base_commit = execution.get("s3_commit")
+    if not isinstance(base_commit, str) or not base_commit:
+        raise TaskPackError("Agent Memory V1 observation requires execution.s3_commit")
+    checks = validate_task_artifacts(
+        task,
+        repository_root=repository_root,
+        base_commit=base_commit,
+    )
+    attach_task_checks(result, checks)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -198,9 +249,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.task_protocol_version,
         )
         if any(value is not None for value in plan_only_values):
-            raise ExternalBenchmarkError(
-                "run-plan arguments require --prepare-run"
-            )
+            raise ExternalBenchmarkError("run-plan arguments require --prepare-run")
 
         if args.campaign:
             if args.result_dir is not None and args.compare_root is not None:
@@ -240,6 +289,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             observation,
             repository_root=args.repository_root,
         )
+        _attach_agent_memory_task_checks(
+            result,
+            scenario_id=args.scenario,
+            observation=observation,
+            task_pack_file=args.task_pack_file,
+            repository_root=args.repository_root,
+        )
         return _emit(result, args.output_json)
-    except (OSError, json.JSONDecodeError, ExternalBenchmarkError) as error:
+    except (OSError, json.JSONDecodeError, ExternalBenchmarkError, TaskPackError) as error:
         raise SystemExit(str(error)) from error
