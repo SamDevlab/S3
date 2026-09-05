@@ -10,7 +10,7 @@ from typing import Any, Mapping, Sequence, TYPE_CHECKING
 if TYPE_CHECKING:
     from .timeout_policy import ProcessResult
 
-EXECUTION_PROTOCOL_VERSION = "agent-memory-v1.0.2"
+EXECUTION_PROTOCOL_VERSION = "agent-memory-v1.0.3"
 PROCESS_METADATA_SCHEMA_VERSION = "1.0.0"
 RESULT_SCHEMA_VERSION = "1.1.0"
 VALID_RESULT_STATUSES = {
@@ -81,6 +81,8 @@ def write_process_metadata(
     runner: str,
     argv: Sequence[str],
     result: "ProcessResult",
+    prompt_delivery: str | None = None,
+    prompt_present: bool | None = None,
 ) -> dict[str, Any]:
     """Persist only structured process outcome metadata, never process output."""
 
@@ -98,6 +100,11 @@ def write_process_metadata(
         "timed_out": bool(result.timed_out),
         "elapsed_seconds": float(result.elapsed_seconds),
     }
+    if prompt_delivery is not None or prompt_present is not None:
+        if prompt_delivery != "stdin" or prompt_present is not True:
+            raise ExecutionEvidenceError("prompt delivery evidence is invalid")
+        document["prompt_delivery"] = prompt_delivery
+        document["prompt_present"] = prompt_present
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps(document, indent=2, sort_keys=True, allow_nan=False) + "\n",
@@ -133,7 +140,7 @@ def _phase_metadata(raw: object, *, expected_scenario: str, expected_phase: str)
     argv = document.get("argv")
     if not isinstance(argv, list) or any(not isinstance(item, str) or not item for item in argv):
         raise ExecutionEvidenceError("process metadata argv is invalid")
-    return {
+    result = {
         "phase": expected_phase,
         "agent": agent,
         "runner": runner,
@@ -141,6 +148,18 @@ def _phase_metadata(raw: object, *, expected_scenario: str, expected_phase: str)
         "timed_out": timed_out,
         "elapsed_seconds": float(elapsed),
     }
+    if runner == "ai-memory-managed":
+        if document.get("prompt_delivery") != "stdin":
+            raise ExecutionEvidenceError(
+                "managed process prompt delivery evidence is missing or invalid"
+            )
+        if document.get("prompt_present") is not True:
+            raise ExecutionEvidenceError(
+                "managed process prompt presence evidence is missing or invalid"
+            )
+        result["prompt_delivery"] = "stdin"
+        result["prompt_present"] = True
+    return result
 
 
 def load_process_metadata(
@@ -186,11 +205,19 @@ def classify_process_phases(phases: Sequence[Mapping[str, Any]]) -> dict[str, An
     nonzero: list[dict[str, Any]] = []
     timeouts: list[dict[str, Any]] = []
     for raw in phases:
-        phase = _phase_metadata(
-            raw,
-            expected_scenario=str(raw.get("scenario_id", "")),
-            expected_phase=str(raw.get("phase", "")),
-        ) if raw.get("schema_version") is not None else dict(raw)
+        if raw.get("schema_version") is not None:
+            phase = _phase_metadata(
+                raw,
+                expected_scenario=str(raw.get("scenario_id", "")),
+                expected_phase=str(raw.get("phase", "")),
+            )
+        else:
+            phase = dict(raw)
+            if phase.get("runner") == "ai-memory-managed":
+                if phase.get("prompt_delivery") != "stdin" or phase.get("prompt_present") is not True:
+                    raise ExecutionEvidenceError(
+                        "managed process prompt delivery evidence is missing or invalid"
+                    )
         clean.append(phase)
         if phase["timed_out"]:
             timeouts.append({"phase": phase["phase"], "elapsed_seconds": phase["elapsed_seconds"]})

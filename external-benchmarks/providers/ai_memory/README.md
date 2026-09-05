@@ -79,8 +79,15 @@ python tools/external_bench_ai_memory.py run \
   --phase resume \
   --harness codex \
   --worktree /path/to/isolated/worktree \
+  --prompt-file /path/to/run/prompts/memory.cross-session.v1.phase-b.md \
   --execute
 ```
+
+`--prompt-file` is required for managed execution. It must be a non-empty
+UTF-8 file inside the run-plan directory. The adapter sends only that phase's
+prompt through stdin, without capturing stdout/stderr or persisting prompt
+content. Managed process evidence records only `prompt_delivery=stdin` and
+`prompt_present=true`.
 
 Native harness arguments may be repeated with `--native-arg`. Keep them identical
 between provider arms when they are controlled variables of the comparison.

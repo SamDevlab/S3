@@ -155,3 +155,16 @@ def test_historical_stale_memory_shape_cannot_become_pass(tmp_path: Path) -> Non
     assert result["status"] == "VALID_FAIL"
     assert result["dimensions"]["semantic_oracle"]["status"] == "PASS"  # type: ignore[index]
     assert result["dimensions"]["task_artifact"]["status"] == "PASS"  # type: ignore[index]
+
+
+def test_managed_process_without_prompt_delivery_evidence_fails_closed(tmp_path: Path) -> None:
+    result = _evaluate(
+        tmp_path,
+        phases=[
+            {
+                **_phase("single-session"),
+                "runner": "ai-memory-managed",
+            }
+        ],
+    )
+    assert result["status"] == "INVALID_EXECUTION_EVIDENCE"

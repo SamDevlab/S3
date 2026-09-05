@@ -17,6 +17,7 @@ from providers.ai_memory.client import (  # noqa: E402
     AiMemoryProviderError,
 )
 from providers.ai_memory.runner import (  # noqa: E402
+    AiMemoryLaunch,
     build_managed_run_command,
     execute_managed_run,
     workstream_name_from_plan,
@@ -263,6 +264,9 @@ def test_execute_managed_run_is_shell_free_and_does_not_capture(
         phase="new",
         harness="codex",
     )
+    prompt_path = tmp_path / "run" / "prompts" / "phase.md"
+    prompt_path.parent.mkdir(parents=True)
+    prompt_path.write_text("perform the benchmark task\n", encoding="utf-8")
     observed: dict[str, object] = {}
 
     def fake_controlled(argv: list[str], **kwargs: object) -> object:
@@ -272,9 +276,231 @@ def test_execute_managed_run_is_shell_free_and_does_not_capture(
 
     monkeypatch.setattr("providers.ai_memory.runner.run_controlled_process", fake_controlled)
 
-    assert execute_managed_run(launch, worktree=tmp_path) == 7
+    assert execute_managed_run(
+        launch,
+        worktree=tmp_path,
+        prompt_path=prompt_path,
+        allowed_prompt_root=prompt_path.parents[1],
+    ) == 7
     assert observed["cwd"] == tmp_path
-    assert "input_text" not in observed
+    assert observed["input_text"] == "perform the benchmark task\n"
+    assert "capture_output" not in observed
+    assert "stdout" not in observed
+    assert "stderr" not in observed
+
+
+@pytest.mark.parametrize("returncode", [0, 7])
+def test_managed_run_preserves_child_returncode(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    returncode: int,
+) -> None:
+    prompt_path = tmp_path / "prompt.md"
+    prompt_path.write_text("task\n", encoding="utf-8")
+
+    monkeypatch.setattr(
+        "providers.ai_memory.runner.run_controlled_process",
+        lambda *_args, **_kwargs: type("Result", (), {"returncode": returncode})(),
+    )
+
+    assert execute_managed_run(
+        build_managed_run_command(
+            executable="ai-memory",
+            workspace="s3bench",
+            project="s3-agent-memory-v1",
+            workstream="s3-amv1-ai-memory-r1-test",
+            phase="new",
+            harness="codex",
+        ),
+        worktree=tmp_path,
+        prompt_path=prompt_path,
+    ) == returncode
+
+
+@pytest.mark.parametrize(
+    ("prompt_text", "expected"),
+    [(None, "unavailable"), ("", "must not be empty"), ("   \n", "must not be empty")],
+)
+def test_managed_run_fails_closed_before_subprocess_for_missing_or_empty_prompt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    prompt_text: str | None,
+    expected: str,
+) -> None:
+    prompt_path = tmp_path / "prompt.md"
+    if prompt_text is not None:
+        prompt_path.write_text(prompt_text, encoding="utf-8")
+    monkeypatch.setattr(
+        "providers.ai_memory.runner.run_controlled_process",
+        lambda *_args, **_kwargs: pytest.fail("subprocess must not start"),
+    )
+
+    with pytest.raises(AiMemoryProviderError, match=expected):
+        execute_managed_run(
+            build_managed_run_command(
+                executable="ai-memory",
+                workspace="s3bench",
+                project="s3-agent-memory-v1",
+                workstream="s3-amv1-ai-memory-r1-test",
+                phase="new",
+                harness="codex",
+            ),
+            worktree=tmp_path,
+            prompt_path=prompt_path,
+        )
+
+
+def test_managed_run_rejects_prompt_outside_allowed_run_root(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prompt_path = tmp_path / "outside.md"
+    prompt_path.write_text("task\n", encoding="utf-8")
+    monkeypatch.setattr(
+        "providers.ai_memory.runner.run_controlled_process",
+        lambda *_args, **_kwargs: pytest.fail("subprocess must not start"),
+    )
+
+    with pytest.raises(AiMemoryProviderError, match="escapes"):
+        execute_managed_run(
+            build_managed_run_command(
+                executable="ai-memory",
+                workspace="s3bench",
+                project="s3-agent-memory-v1",
+                workstream="s3-amv1-ai-memory-r1-test",
+                phase="new",
+                harness="codex",
+            ),
+            worktree=tmp_path,
+            prompt_path=prompt_path,
+            allowed_prompt_root=tmp_path / "run",
+        )
+
+
+def test_managed_phase_a_and_phase_b_receive_only_their_own_prompt(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prompt_a = tmp_path / "run" / "prompts" / "a.md"
+    prompt_b = tmp_path / "run" / "prompts" / "b.md"
+    prompt_a.parent.mkdir(parents=True)
+    prompt_a.write_text("phase A only\n", encoding="utf-8")
+    prompt_b.write_text("phase B only\n", encoding="utf-8")
+    observed: list[str] = []
+
+    def fake_controlled(_argv: list[str], **kwargs: object) -> object:
+        observed.append(str(kwargs["input_text"]))
+        return type("Result", (), {"returncode": 0})()
+
+    monkeypatch.setattr("providers.ai_memory.runner.run_controlled_process", fake_controlled)
+    for phase, prompt_path in (("new", prompt_a), ("resume", prompt_b)):
+        execute_managed_run(
+            build_managed_run_command(
+                executable="ai-memory",
+                workspace="s3bench",
+                project="s3-agent-memory-v1",
+                workstream="s3-amv1-ai-memory-r1-phase-test",
+                phase=phase,
+                harness="codex",
+                fresh=True,
+            ),
+            worktree=tmp_path,
+            prompt_path=prompt_path,
+            allowed_prompt_root=prompt_a.parents[1],
+        )
+
+    assert observed == ["phase A only\n", "phase B only\n"]
+
+
+def test_managed_cross_agent_phase_b_uses_only_target_prompt(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    prompt_a = tmp_path / "run" / "prompts" / "cross-agent-a.md"
+    prompt_b = tmp_path / "run" / "prompts" / "cross-agent-b.md"
+    prompt_a.parent.mkdir(parents=True)
+    prompt_a.write_text("source agent task\n", encoding="utf-8")
+    prompt_b.write_text("target agent task\n", encoding="utf-8")
+    observed: list[str] = []
+    monkeypatch.setattr(
+        "providers.ai_memory.runner.run_controlled_process",
+        lambda _argv, **kwargs: (
+            observed.append(str(kwargs["input_text"]))
+            or type("Result", (), {"returncode": 0})()
+        ),
+    )
+
+    execute_managed_run(
+        build_managed_run_command(
+            executable="ai-memory",
+            workspace="s3bench",
+            project="s3-agent-memory-v1",
+            workstream="s3-amv1-ai-memory-r1-cross-agent-test",
+            phase="resume",
+            harness="codex-b",
+            fresh=True,
+        ),
+        worktree=tmp_path,
+        prompt_path=prompt_b,
+        allowed_prompt_root=prompt_a.parents[1],
+    )
+
+    assert observed == ["target agent task\n"]
+
+
+def test_managed_metadata_contains_safe_prompt_delivery_evidence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prompt_path = tmp_path / "prompt.md"
+    prompt_path.write_text("secret prompt must not persist\n", encoding="utf-8")
+    metadata_path = tmp_path / "metadata.json"
+    monkeypatch.setattr(
+        "providers.ai_memory.runner.run_controlled_process",
+        lambda *_args, **_kwargs: type(
+            "Result", (), {"returncode": 0, "timed_out": False, "elapsed_seconds": 0.1}
+        )(),
+    )
+
+    execute_managed_run(
+        build_managed_run_command(
+            executable="ai-memory",
+            workspace="s3bench",
+            project="s3-agent-memory-v1",
+            workstream="s3-amv1-ai-memory-r1-metadata-test",
+            phase="new",
+            harness="codex",
+        ),
+        worktree=tmp_path,
+        prompt_path=prompt_path,
+        process_metadata_file=metadata_path,
+        scenario_id="memory.host-shell-policy.v1",
+        phase="single-session",
+        agent={"provider": "openai", "model": "fixture", "harness": "codex"},
+    )
+    document = json.loads(metadata_path.read_text(encoding="utf-8"))
+    assert document["prompt_delivery"] == "stdin"
+    assert document["prompt_present"] is True
+    assert "secret prompt must not persist" not in json.dumps(document)
+
+
+def test_managed_prompt_delivery_reaches_real_child_without_capture(tmp_path: Path) -> None:
+    prompt_path = tmp_path / "run" / "prompt.md"
+    prompt_path.parent.mkdir(parents=True)
+    prompt_path.write_text("perform the benchmark task\n", encoding="utf-8")
+    launch = AiMemoryLaunch(
+        argv=(
+            sys.executable,
+            "-c",
+            "import sys; raise SystemExit(0 if sys.stdin.read() == 'perform the benchmark task\\n' else 7)",
+        ),
+        phase="new",
+        workstream="fixture",
+    )
+
+    assert execute_managed_run(
+        launch,
+        worktree=tmp_path,
+        prompt_path=prompt_path,
+        allowed_prompt_root=prompt_path.parent.parent,
+    ) == 0
 
 
 def test_cli_blocks_linked_native_session_for_cross_session(tmp_path: Path) -> None:
@@ -305,6 +531,8 @@ def test_cli_blocks_linked_native_session_for_cross_session(tmp_path: Path) -> N
 def test_cli_run_requires_explicit_execute(tmp_path: Path) -> None:
     plan_path = tmp_path / "plan.json"
     plan_path.write_text(json.dumps(_plan()), encoding="utf-8")
+    prompt_path = tmp_path / "prompt.md"
+    prompt_path.write_text("task\n", encoding="utf-8")
 
     with pytest.raises(SystemExit, match="explicit --execute"):
         ai_memory_main(
@@ -324,5 +552,7 @@ def test_cli_run_requires_explicit_execute(tmp_path: Path) -> None:
                 "codex",
                 "--worktree",
                 str(tmp_path),
+                "--prompt-file",
+                str(prompt_path),
             ]
         )

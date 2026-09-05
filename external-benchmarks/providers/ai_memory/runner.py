@@ -123,19 +123,39 @@ def execute_managed_run(
     launch: AiMemoryLaunch,
     *,
     worktree: Path,
+    prompt_path: Path,
+    allowed_prompt_root: Path | None = None,
     process_metadata_file: Path | None = None,
     scenario_id: str | None = None,
     phase: str | None = None,
     agent: Mapping[str, Any] | None = None,
 ) -> int:
-    """Execute an interactive host harness without capturing or persisting its transcript."""
+    """Execute a managed harness with one phase prompt on inherited stdin."""
 
     worktree = worktree.resolve()
     if not worktree.is_dir():
         raise AiMemoryProviderError("AI-MEMORY launch worktree does not exist")
+    prompt_path = prompt_path.resolve()
+    if allowed_prompt_root is not None:
+        prompt_root = allowed_prompt_root.resolve()
+        try:
+            prompt_path.relative_to(prompt_root)
+        except ValueError as error:
+            raise AiMemoryProviderError(
+                "AI-MEMORY prompt path escapes its configured run root"
+            ) from error
+    if not prompt_path.is_file():
+        raise AiMemoryProviderError("AI-MEMORY prompt file is unavailable")
+    try:
+        prompt = prompt_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as error:
+        raise AiMemoryProviderError("AI-MEMORY prompt file could not be read") from error
+    if not prompt.strip():
+        raise AiMemoryProviderError("AI-MEMORY prompt file must not be empty")
     result = run_controlled_process(
         list(launch.argv),
         cwd=worktree,
+        input_text=prompt,
         policy=load_timeout_policy(),
     )
     if process_metadata_file is not None:
@@ -152,6 +172,8 @@ def execute_managed_run(
                 runner="ai-memory-managed",
                 argv=list(launch.argv),
                 result=result,
+                prompt_delivery="stdin",
+                prompt_present=True,
             )
         except (OSError, TypeError, ValueError) as error:
             raise AiMemoryProviderError(

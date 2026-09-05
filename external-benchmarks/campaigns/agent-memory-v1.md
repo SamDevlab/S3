@@ -55,7 +55,7 @@ The stale-memory Phase A intentionally does **not** expose the current FFI invar
 
 ## Correctness-first and task-completion gates
 
-The execution semantics are versioned as `agent-memory-v1.0.2`. The task pack
+The execution semantics are versioned as `agent-memory-v1.0.3`. The task pack
 remains `1.0.1`.
 
 A new-protocol scenario passes only when all three independent dimensions pass:

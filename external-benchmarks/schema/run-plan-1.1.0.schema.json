@@ -12,7 +12,7 @@
     "timeout_policy": {"type": "object"},
     "provider_profile": {"type": "object"},
     "agent": {"type": "object"},
-    "execution": {"type": "object", "required": ["execution_protocol_version"], "properties": {"execution_protocol_version": {"const": "agent-memory-v1.0.2"}}},
+    "execution": {"type": "object", "required": ["execution_protocol_version"], "properties": {"execution_protocol_version": {"const": "agent-memory-v1.0.3"}}},
     "run_root": {"type": "string", "minLength": 1},
     "scenarios": {"type": "array", "minItems": 1}
   }

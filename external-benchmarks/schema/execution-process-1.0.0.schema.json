@@ -7,7 +7,7 @@
   "required": ["schema_version", "execution_protocol_version", "scenario_id", "phase", "agent", "runner", "argv", "returncode", "timed_out", "elapsed_seconds"],
   "properties": {
     "schema_version": {"const": "1.0.0"},
-    "execution_protocol_version": {"const": "agent-memory-v1.0.2"},
+    "execution_protocol_version": {"const": "agent-memory-v1.0.3"},
     "scenario_id": {"type": "string", "minLength": 1},
     "phase": {"type": "string", "minLength": 1},
     "agent": {"$ref": "#/$defs/agent"},
@@ -15,7 +15,9 @@
     "argv": {"type": "array", "items": {"type": "string", "minLength": 1}},
     "returncode": {"type": "integer"},
     "timed_out": {"type": "boolean"},
-    "elapsed_seconds": {"type": "number", "minimum": 0}
+    "elapsed_seconds": {"type": "number", "minimum": 0},
+    "prompt_delivery": {"const": "stdin"},
+    "prompt_present": {"const": true}
   },
   "$defs": {
     "agent": {

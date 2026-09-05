@@ -2,7 +2,7 @@
 
 This kit turns `agent-memory-v1` into a repeatable four-arm experiment without coupling S3 to any model or memory SDK.
 
-The execution contract is `agent-memory-v1.0.2`. It keeps the task pack and
+The execution contract is `agent-memory-v1.0.3`. It keeps the task pack and
 semantic oracles unchanged, but persists structured return-code evidence for
 each required agent phase.
 
@@ -77,6 +77,17 @@ The versioned task pack is `external-benchmarks/task-packs/agent-memory-v1.json`
 For the next comparable Windows execution, use `windows-danger-full-access-v1` as the same effective `tool_permissions_profile` in all four provider arms. The previous `workspace-write` divergence is historical and does not make the prior real runs reusable.
 
 For direct arms, provide the same native agent command used for that experimental arm. Cross-agent cases require an explicit, different receiving-agent identity and command. AI-MEMORY arms use the managed AI-MEMORY launcher and fresh native sessions.
+
+Every managed invocation must explicitly receive its phase-specific prompt:
+
+```text
+--prompt-file <run-directory>/prompts/<scenario>.<phase>.md
+```
+
+The adapter validates that this is a non-empty UTF-8 file inside the run-plan
+directory and sends only that invocation's contents through stdin. It records
+only `prompt_delivery=stdin` and `prompt_present=true`; prompt content and
+process output are not persisted as scientific evidence.
 
 Example:
 

@@ -6,7 +6,7 @@
   "required": ["schema_version", "execution_protocol_version", "campaign_id", "provider", "provider_profile", "source_agent", "target_agent", "timeout_policy", "scenarios"],
   "properties": {
     "schema_version": {"const": "1.1.0"},
-    "execution_protocol_version": {"const": "agent-memory-v1.0.2"},
+    "execution_protocol_version": {"const": "agent-memory-v1.0.3"},
     "campaign_id": {"const": "agent-memory-v1"},
     "provider": {"type": "object"},
     "provider_profile": {"type": "object"},

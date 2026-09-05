@@ -89,6 +89,7 @@ def create_parser() -> argparse.ArgumentParser:
         )
         if name == "run":
             launch.add_argument("--worktree", type=Path, required=True)
+            launch.add_argument("--prompt-file", type=Path, required=True)
             launch.add_argument("--process-metadata-file", type=Path)
             launch.add_argument("--phase-name")
             launch.add_argument("--agent-provider")
@@ -164,6 +165,8 @@ def _launch(args: argparse.Namespace) -> int:
     return execute_managed_run(
         launch,
         worktree=args.worktree,
+        prompt_path=args.prompt_file,
+        allowed_prompt_root=args.plan_file.parent,
         process_metadata_file=args.process_metadata_file,
         scenario_id=args.scenario if args.process_metadata_file is not None else None,
         phase=args.phase_name if args.process_metadata_file is not None else None,
