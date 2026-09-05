@@ -1,0 +1,62 @@
+{
+  "checkpoint": "2026-08-28",
+  "base": "1ec76af89992f119865a370488593ad5c85c4c49",
+  "current_head": "1ec76af89992f119865a370488593ad5c85c4c49",
+  "branch": "recovery/pr268-stage1-streaming-values-20260828",
+  "source_status": "UNCOMMITTED_IMPLEMENTATION_CANDIDATE",
+  "lanes": {
+    "S1.1": "PASS",
+    "S1.2_mechanism": "PASS",
+    "S1.2_canonical_streaming_enumeration": "BLOCKED",
+    "S1.3": "NOT_RUN",
+    "S1.4": "NOT_RUN",
+    "S1.5": "NOT_RUN",
+    "S1.6": "NOT_RUN",
+    "S1.7": "BLOCKED"
+  },
+  "current_first_blocker": "S1.2_CANONICAL_STREAM_COMPLETENESS",
+  "next_allowed_task": "close canonical streaming value enumeration before S1.3",
+  "semantic_storage_strategy": "STREAMING_MULTI_PASS",
+  "full_resident_value_banks": "ABSENT",
+  "full_resident_constant_banks": "ABSENT",
+  "frame_gate": {
+    "main_memory_objects": 570,
+    "main_logical_trits": 82781,
+    "limit": 131072,
+    "status": "PASS"
+  },
+  "s3ir2_oracle": {
+    "status": "PASS_HOSTED_ORACLE_ONLY",
+    "sha256": "9faf6a144be0bb94fa5ffb9952c26638e92c6d1cb4520e0f9321e83ff8776435",
+    "values": 38724,
+    "parameters": 70,
+    "local_bindings": 246,
+    "constants": 34945,
+    "instruction_results": 3463,
+    "instructions": 58070,
+    "operand_edges": 37349,
+    "result_edges": 38408,
+    "calls": 862,
+    "call_argument_edges": 1006,
+    "terminators": 3681
+  },
+  "canonical_self_input": {
+    "exit": 2,
+    "marker": "S3_STAGE1_EMITTER_BLOCKED"
+  },
+  "gates": {
+    "focused_tests": "PASS",
+    "compileall_bootstrap_s3": "PASS",
+    "git_diff_check": "PASS",
+    "native_build": "PASS",
+    "native_narrow_probes": "PASS",
+    "s1_2_canonical_completeness": "BLOCKED",
+    "self_emit": "BLOCKED_GENERAL_EMITTER_CAPABILITY_GAP",
+    "stage2": "NOT_RUN",
+    "stage3": "NOT_RUN",
+    "t4": "NOT_RUN"
+  },
+  "commits_created": 0,
+  "push": "NO",
+  "shutdown": "NO"
+}

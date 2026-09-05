@@ -1,0 +1,13 @@
+MILESTONE_START=2026-09-04T22:23:52.9490993-03:00
+TARGET_F=24
+CANDIDATE_SHA256=eeddc241c168b586f0e72b36ad1fbb93261b6031a56e23b7e22f8b6a4e1cc583
+[stage1] F=1 elapsed=0.321s
+[stage1] F=2 elapsed=1.338s
+[stage1] F=3 elapsed=2.420s
+[stage1] F=4 elapsed=3.685s
+[stage1] F=5 elapsed=5.989s
+[stage1] F=6 elapsed=21.713s
+[stage1] F=7 elapsed=338.824s
+[stage1] F=8 elapsed=570.796s
+[stage1] F=9 elapsed=571.326s
+[stage1] F=10 elapsed=581.652s

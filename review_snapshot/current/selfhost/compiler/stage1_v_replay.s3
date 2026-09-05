@@ -1,0 +1,391 @@
+foreign fn s3_stage1_source_length() -> i64
+foreign fn s3_stage1_read_byte(index: i64) -> tryte
+foreign fn s3_stage1_write_error_byte(value: tryte) -> tryte
+foreign fn s3_stage1_exit(status: i64) -> i64
+
+fn read_byte(index: i64) -> i64:
+    return to_i64(s3_stage1_read_byte(index))
+
+fn emit_nonnegative(value: i64) -> trit:
+    mut number: i64 = value
+    match number < 0:
+        -1:
+            return 0
+        0:
+            discard 0
+        1:
+            discard 0
+    match number == 0:
+        -1:
+            discard s3_stage1_write_error_byte(48)
+            return -1
+        0:
+            discard 0
+        1:
+            discard 0
+    mut divisor: i64 = 1
+    mut probe: i64 = number
+    while probe >= 10:
+        probe = probe / 10
+        divisor = divisor * 10
+    while divisor > 0:
+        mut digit: i64 = number / divisor
+        discard s3_stage1_write_error_byte(to_tryte(digit + 48))
+        number = number - digit * divisor
+        divisor = divisor / 10
+    return -1
+
+fn emit_signed(value: i64) -> trit:
+    match value < 0:
+        -1:
+            discard s3_stage1_write_error_byte(45)
+            return emit_nonnegative(0 - value)
+        0:
+            return emit_nonnegative(value)
+        1:
+            return emit_nonnegative(value)
+
+fn emit_field(value: i64) -> trit:
+    discard s3_stage1_write_error_byte(32)
+    return emit_signed(value)
+
+fn emit_v(value_id: i64, function_id: i64, kind: i64, type_code: i64, anchor_start: i64, anchor_length: i64, mutable_flag: i64, storage_id: i64) -> trit:
+    discard s3_stage1_write_error_byte(86)
+    discard emit_field(value_id)
+    discard emit_field(function_id)
+    discard emit_field(kind)
+    discard emit_field(type_code)
+    discard emit_field(anchor_start)
+    discard emit_field(anchor_length)
+    discard emit_field(mutable_flag)
+    discard emit_field(storage_id)
+    discard s3_stage1_write_error_byte(10)
+    return -1
+
+fn emit_blocked() -> trit:
+    discard s3_stage1_write_error_byte(83)
+    discard s3_stage1_write_error_byte(51)
+    discard s3_stage1_write_error_byte(95)
+    discard s3_stage1_write_error_byte(83)
+    discard s3_stage1_write_error_byte(84)
+    discard s3_stage1_write_error_byte(65)
+    discard s3_stage1_write_error_byte(71)
+    discard s3_stage1_write_error_byte(69)
+    discard s3_stage1_write_error_byte(49)
+    discard s3_stage1_write_error_byte(95)
+    discard s3_stage1_write_error_byte(86)
+    discard s3_stage1_write_error_byte(95)
+    discard s3_stage1_write_error_byte(82)
+    discard s3_stage1_write_error_byte(69)
+    discard s3_stage1_write_error_byte(80)
+    discard s3_stage1_write_error_byte(76)
+    discard s3_stage1_write_error_byte(65)
+    discard s3_stage1_write_error_byte(89)
+    discard s3_stage1_write_error_byte(95)
+    discard s3_stage1_write_error_byte(66)
+    discard s3_stage1_write_error_byte(76)
+    discard s3_stage1_write_error_byte(79)
+    discard s3_stage1_write_error_byte(67)
+    discard s3_stage1_write_error_byte(75)
+    discard s3_stage1_write_error_byte(69)
+    discard s3_stage1_write_error_byte(68)
+    discard s3_stage1_write_error_byte(10)
+    return -1
+
+fn is_space(value: i64) -> trit:
+    match value == 32:
+        -1:
+            return -1
+        0:
+            match value == 9:
+                -1:
+                    return -1
+                0:
+                    match value == 13:
+                        -1:
+                            return -1
+                        0:
+                            return 0
+                        1:
+                            return 0
+                1:
+                    return -1
+        1:
+            return -1
+
+fn is_digit(value: i64) -> trit:
+    match value < 48:
+        -1:
+            return 0
+        0:
+            match value > 57:
+                -1:
+                    return 0
+                0:
+                    return -1
+                1:
+                    return 0
+        1:
+            return 0
+
+fn is_identifier_start(value: i64) -> trit:
+    match value == 95:
+        -1:
+            return -1
+        0:
+            match value < 65:
+                -1:
+                    return 0
+                0:
+                    match value > 90:
+                        -1:
+                            match value < 97:
+                                -1:
+                                    return 0
+                                0:
+                                    match value > 122:
+                                        -1:
+                                            return 0
+                                        0:
+                                            return -1
+                                        1:
+                                            return 0
+                                1:
+                                    return 0
+                        0:
+                            return -1
+                        1:
+                            return 0
+                1:
+                    return 0
+        1:
+            return -1
+
+fn is_identifier_continue(value: i64) -> trit:
+    match is_identifier_start(value):
+        -1:
+            return -1
+        0:
+            return is_digit(value)
+        1:
+            return is_digit(value)
+
+fn identifier_hash(start: i64, end: i64) -> i64:
+    mut cursor: i64 = start
+    mut value: i64 = 0
+    while cursor < end:
+        value = value * 31 + read_byte(cursor)
+        cursor += 1
+    return value
+
+fn skip_spaces(cursor: i64, length: i64) -> i64:
+    mut position: i64 = cursor
+    while position < length:
+        match is_space(read_byte(position)):
+            -1:
+                position += 1
+            0:
+                return position
+            1:
+                return position
+    return position
+
+fn word_end(cursor: i64, length: i64) -> i64:
+    mut position: i64 = cursor
+    while position < length:
+        match is_identifier_continue(read_byte(position)):
+            -1:
+                position += 1
+            0:
+                return position
+            1:
+                return position
+    return position
+
+fn number_end(cursor: i64, length: i64) -> i64:
+    mut position: i64 = cursor
+    while position < length:
+        match is_digit(read_byte(position)):
+            -1:
+                position += 1
+            0:
+                return position
+            1:
+                return position
+    return position
+
+fn expect_byte(cursor: i64, length: i64, expected: i64) -> trit:
+    match cursor < length:
+        -1:
+            match read_byte(cursor) == expected:
+                -1:
+                    return -1
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+
+fn word_is(start: i64, end: i64, expected_hash: i64, expected_length: i64) -> trit:
+    match end - start == expected_length:
+        -1:
+            match identifier_hash(start, end) == expected_hash:
+                -1:
+                    return -1
+                0:
+                    return 0
+                1:
+                    return 0
+        0:
+            return 0
+        1:
+            return 0
+
+fn type_code(start: i64, end: i64) -> i64:
+    match word_is(start, end, 110644588, 5):
+        -1:
+            return 2
+        0:
+            match word_is(start, end, 102631, 3):
+                -1:
+                    return 3
+                0:
+                    return 0
+                1:
+                    return 0
+        1:
+            return 2
+
+fn main() -> i64:
+    # S3_STAGE1_V_REPLAY: scalar, bounded, fail-closed observation path.
+    mut length: i64 = s3_stage1_source_length()
+    mut valid: trit = -1
+    mut cursor: i64 = skip_spaces(0, length)
+    mut word_start: i64 = cursor
+    mut word_stop: i64 = word_end(cursor, length)
+    match word_is(word_start, word_stop, 3272, 2):
+        -1:
+            cursor = skip_spaces(word_stop, length)
+        0:
+            valid = 0
+        1:
+            valid = 0
+
+    word_start = cursor
+    word_stop = word_end(cursor, length)
+    match word_stop > word_start:
+        -1:
+            cursor = skip_spaces(word_stop, length)
+        0:
+            valid = 0
+        1:
+            valid = 0
+    cursor = skip_spaces(word_stop, length)
+    match expect_byte(cursor, length, 40):
+        -1:
+            cursor += 1
+        0:
+            valid = 0
+        1:
+            valid = 0
+    cursor = skip_spaces(cursor, length)
+    match expect_byte(cursor, length, 41):
+        -1:
+            cursor += 1
+        0:
+            valid = 0
+        1:
+            valid = 0
+    cursor = skip_spaces(cursor, length)
+    match expect_byte(cursor, length, 45):
+        -1:
+            cursor += 1
+            cursor = skip_spaces(cursor, length)
+            match expect_byte(cursor, length, 62):
+                -1:
+                    cursor += 1
+                0:
+                    valid = 0
+                1:
+                    valid = 0
+        0:
+            valid = 0
+        1:
+            valid = 0
+    cursor = skip_spaces(cursor, length)
+    word_start = cursor
+    word_stop = word_end(cursor, length)
+    mut parsed_type: i64 = type_code(word_start, word_stop)
+    match parsed_type > 0:
+        -1:
+            cursor = skip_spaces(word_stop, length)
+        0:
+            valid = 0
+        1:
+            valid = 0
+    cursor = skip_spaces(word_stop, length)
+    match expect_byte(cursor, length, 58):
+        -1:
+            cursor += 1
+        0:
+            valid = 0
+        1:
+            valid = 0
+    cursor = skip_spaces(cursor, length)
+    match expect_byte(cursor, length, 10):
+        -1:
+            cursor += 1
+        0:
+            valid = 0
+        1:
+            valid = 0
+    cursor = skip_spaces(cursor, length)
+    word_start = cursor
+    word_stop = word_end(cursor, length)
+    match word_is(word_start, word_stop, 3360570672, 6):
+        -1:
+            cursor = skip_spaces(word_stop, length)
+        0:
+            valid = 0
+        1:
+            valid = 0
+    cursor = skip_spaces(word_stop, length)
+    match is_digit(read_byte(cursor)):
+        -1:
+            word_start = cursor
+            word_stop = number_end(cursor, length)
+            cursor = skip_spaces(word_stop, length)
+            match expect_byte(cursor, length, 10):
+                -1:
+                    cursor += 1
+                0:
+                    valid = 0
+                1:
+                    valid = 0
+        0:
+            valid = 0
+        1:
+            valid = 0
+    cursor = skip_spaces(cursor, length)
+    match cursor == length:
+        -1:
+            discard 0
+        0:
+            valid = 0
+        1:
+            valid = 0
+    match valid == -1:
+        -1:
+            discard emit_v(0, 0, 3, parsed_type, word_start, word_stop - word_start, 0, -1)
+            discard s3_stage1_exit(0)
+        0:
+            discard emit_blocked()
+            discard s3_stage1_exit(2)
+        1:
+            discard emit_blocked()
+            discard s3_stage1_exit(2)
+    return 2
+

@@ -1,0 +1,20 @@
+1ec76af (HEAD -> recovery/pr268-stage1-streaming-values-20260828, origin/recovery/pr268-stage1-lanes-20260828, recovery/pr268-stage1-lanes-20260828) docs(selfhost): record Stage1 typed constant checkpoint
+6dc9442 selfhost(stage1): integrate canonical typed constant identities
+05a15b6 docs(selfhost): finalize Stage1 checkpoint metadata
+4997e58 docs(selfhost): reconcile Stage1 lane blocker
+6842137 test(selfhost): align Stage1 semantic audit counts
+9a3f8fd docs(selfhost): record structured Stage1 progress
+bbbc003 docs(selfhost): record Stage1 lane checkpoints
+e275a4f selfhost(stage1): recover qualified expression lowering base
+2776792 selfhost(stage1): recover proven semantic foundation
+d67da9e (origin/feature/actual-stage1-compiler-seed-20260824, recovery/pr268-overnight-stage123-20260827, feature/actual-stage1-compiler-seed-20260824) docs(selfhost): finalize compaction evidence head
+8c02802 docs(selfhost): reconcile compaction publication head
+6e6b837 fix(selfhost): qualify compaction by native event semantics
+326d42f docs(selfhost): record semantic pass one qualification
+800a3ab feat(selfhost): add bounded semantic pass one candidate
+0789ad2 docs(selfhost): record parameter emitter boundary
+49b2784 docs(selfhost): record parameter ordinal emitter proof
+3e3382d feat(selfhost): emit preserved parameter returns by ordinal
+55321bf docs(selfhost): record parameter return lane checkpoint
+cbdb963 feat(selfhost): preserve parameter return in IR
+c00a6a2 docs(selfhost): record IR capacity oracle

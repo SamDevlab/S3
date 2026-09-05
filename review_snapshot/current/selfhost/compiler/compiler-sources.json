@@ -1,0 +1,13 @@
+{
+  "schema": "s3.compiler.sources.v1",
+  "source_count": 1,
+  "total_bytes": 225699,
+  "sources": [
+    {
+      "path": "selfhost/compiler/s3c_stage1.s3",
+      "sha256": "44f022820a9191e3a6d402c188eb4b242e0ffeefd7a149b15e2b46039031b9cb",
+      "role": "canonical_stage1_compiler",
+      "ordering": 0
+    }
+  ]
+}
