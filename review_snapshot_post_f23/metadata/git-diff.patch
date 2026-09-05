@@ -1,0 +1,1571 @@
+diff --git a/.github/workflows/tests.yml b/.github/workflows/tests.yml
+index 5bdb3af..04261f0 100644
+--- a/.github/workflows/tests.yml
++++ b/.github/workflows/tests.yml
+@@ -5,6 +5,8 @@ on:
+     branches: [main]
+     paths:
+       - "bootstrap/**"
++      - "selfhost/**"
++      - "stdlib/**"
+       - "tests/**"
+       - "tools/**"
+       - "examples/**"
+@@ -19,6 +21,8 @@ on:
+   pull_request:
+     paths:
+       - "bootstrap/**"
++      - "selfhost/**"
++      - "stdlib/**"
+       - "tests/**"
+       - "tools/**"
+       - "examples/**"
+diff --git a/reports/selfhost/stage1/STAGE1_LANE_STATUS.md b/reports/selfhost/stage1/STAGE1_LANE_STATUS.md
+index 76f0c49..c861a03 100644
+--- a/reports/selfhost/stage1/STAGE1_LANE_STATUS.md
++++ b/reports/selfhost/stage1/STAGE1_LANE_STATUS.md
+@@ -1,55 +1,61 @@
+ # Stage1 Lane Status
+ 
+ Checkpoint: 2026-08-28
+-Base HEAD: `d67da9ea7dc8b83b0b80adb681011717eebec616`
+-Last validated implementation/test HEAD: `6dc94422dee9724ab9112f6e8d29248c191c445f`
+-Documentation checkpoint parent: `6dc94422dee9724ab9112f6e8d29248c191c445f`
+-Branch: `recovery/pr268-stage1-lanes-20260828`
++Base HEAD: `1ec76af89992f119865a370488593ad5c85c4c49`
++Branch: `recovery/pr268-stage1-streaming-values-20260828`
++Source status: uncommitted implementation candidate; no push performed.
+ 
+ | Lane | Hosted Contract | Native Implementation | Focused Tests | Native Probe | Status |
+ | --- | --- | --- | --- | --- | --- |
+ | S1.1 Foundation/Bindings | PASS | PASS | PASS | PASS | PASS |
+-| S1.2 Typed Constants | PASS | PASS | PASS | PASS | PASS |
++| S1.2 Mechanism | PASS | PASS | PASS | PASS | PASS |
++| S1.2 Canonical Streaming Enumeration | PASS hosted oracle | BLOCKED | PASS narrow | PASS narrow | BLOCKED |
+ | S1.3 Def/Use | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN |
+ | S1.4 Calls | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN |
+ | S1.5 Terminators | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN |
+ | S1.6 Serialization | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN | NOT_RUN |
+-| S1.7 General Emitter | BLOCKED | BLOCKED | PASS for blocker regression | PASS for blocker reproduction | BLOCKED |
++| S1.7 General Emitter | BLOCKED | BLOCKED | PASS blocker regression | PASS blocker reproduction | BLOCKED |
+ 
+-## Gate State
++## Gate state
+ 
+-`CURRENT_FIRST_BLOCKER=S1.3_DEF_USE`
++`CURRENT_FIRST_BLOCKER=S1.2_CANONICAL_STREAM_COMPLETENESS`
+ 
+-`EXACT_REPRODUCER=fn main() -> tryte: return 1 + 2; canonical self-input remains S3_STAGE1_EMITTER_BLOCKED until S1.3-S1.7 close the remaining lanes`
++`REV35_FULL_RESIDENT_BANKING=REJECTED_NATIVE_FRAME`
+ 
+-`RECOVERED_WAVE_B_CANDIDATE=PASS_HASH_ff047a880b871d6428e2f33198db09d9b5c416b940df8bfe4d96867031439858`
++`SEMANTIC_STORAGE_STRATEGY=STREAMING_MULTI_PASS`
+ 
+-`NEXT_ALLOWED_TASK=integrate canonical def/use records consuming the S1.2 semantic value IDs`
++`FULL_RESIDENT_VALUE_BANKS=ABSENT`
+ 
+-`SELF_EMIT=NOT_RUN`
++`FULL_RESIDENT_CONSTANT_BANKS=ABSENT`
++
++`FRAME_GATE=PASS (main: 82781 logical trits; limit: 131072)`
++
++`NATIVE_BUILD=PASS`
++
++`SELF_EMIT=BLOCKED_GENERAL_EMITTER_CAPABILITY_GAP`
+ 
+ `STAGE2=NOT_RUN`
+ 
+ `STAGE3=NOT_RUN`
+ 
+-No lane is marked PASS without a corresponding contract, focused test, and
+-native evidence. The structured sequence remains S1.2 through S1.7, followed
+-by native Stage1 and only then self-emission.
+-
+-## S1.2 Reconciliation
+-
+-The canonical source now records each numeric literal as a typed constant
+-definition, with kind `3`, the existing type-code mapping, an owning function,
+-and a source anchor. Semantic value IDs are allocated after the parameter and
+-local binding IDs; the definition-table index is not exposed as a value ID and
+-no storage or scratch slot is used as identity. Repeated literal occurrences
+-remain distinct, matching the candidate's factual behavior.
+-
+-The final semantic capacity is enforced after all bindings are known. For the
+-canonical self-input, the remaining suffix is `299..364`; excess constant
+-occurrences fail closed and are not reported with out-of-domain IDs. The native
+-probe confirms the minimal literal path, local initializer, addition, existing
+-type codes, deterministic repeated execution, and exact unresolved-identifier
+-failure. The canonical self-input still exits at the expected
+-`S3_STAGE1_EMITTER_BLOCKED` boundary, so S1.3 is the next allowed lane and no
+-general emitter capability is being claimed.
++The hosted S3IR2 oracle is complete at 38724 values, 58070 instructions,
++37349 operand edges, 38408 result edges, 862 calls, and 3681 terminators for
++the current source text. Its audited value order interleaves parameters,
++constants, and instruction results by projected IR traversal, with local
++bindings appended by source-binding traversal. The current Stage1 candidate
++only streams a narrow numeric-constant observation path and cannot reproduce
++that complete namespace. The current native captures contain no S3IR2 `V`
++records; `S3_STAGE1_TYPED_CONSTANT` is a partial diagnostic shape only.
++
++The canonical self-input reaches the deliberate `S3_STAGE1_EMITTER_BLOCKED`
++boundary with exit code 2. No Stage2 or Stage3 claim is made. S1.3 must not
++start until canonical value enumeration and the preserved instruction lanes
++are closed.
++
++`NEXT_ALLOWED_TASK=close canonical streaming value enumeration before S1.3`
++
++`T4=NOT_RUN`
++
++`COMMITS_CREATED=0`
++
++`PUSH=NO`
+diff --git a/reports/selfhost/stage1/STAGE1_STRUCTURED_PROGRESS_20260828.md b/reports/selfhost/stage1/STAGE1_STRUCTURED_PROGRESS_20260828.md
+index 25fa91b..03bffb9 100644
+--- a/reports/selfhost/stage1/STAGE1_STRUCTURED_PROGRESS_20260828.md
++++ b/reports/selfhost/stage1/STAGE1_STRUCTURED_PROGRESS_20260828.md
+@@ -1,63 +1,61 @@
+ # Stage1 Structured Progress
+ 
+-BASE_HEAD=d67da9ea7dc8b83b0b80adb681011717eebec616
+-FINAL_BRANCH=recovery/pr268-stage1-lanes-20260828
+-FINAL_TESTED_HEAD=6dc94422dee9724ab9112f6e8d29248c191c445f
+-REPORT_BASE_HEAD=6dc94422dee9724ab9112f6e8d29248c191c445f
++BASE_HEAD=1ec76af89992f119865a370488593ad5c85c4c49
++FINAL_BRANCH=recovery/pr268-stage1-streaming-values-20260828
++FINAL_TESTED_SOURCE_SHA256=44f022820a9191e3a6d402c188eb4b242e0ffeefd7a149b15e2b46039031b9cb
++FINAL_TESTED_SOURCE_BYTES=225699
+ SOURCE_CHANGED_AFTER_VALIDATION=NO
+ 
+ FOUNDATION=PASS
+-TYPED_CONSTANTS=PASS
+-DEF_USE=NOT_RUN
+-CALL_DATAFLOW=NOT_RUN
+-TERMINATORS=NOT_RUN
+-CANONICAL_SERIALIZATION=NOT_RUN
++TYPED_CONSTANTS_MECHANISM=PASS
++CANONICAL_STREAMING_ENUMERATION=BLOCKED
++DEF_USE=NOT_STARTED
++CALL_DATAFLOW=NOT_STARTED
++TERMINATORS=NOT_STARTED
++CANONICAL_SERIALIZATION=NOT_STARTED
+ GENERAL_EMITTER=BLOCKED
+ 
+ NATIVE_BUILD=PASS
++MAIN_MEMORY_OBJECTS=570
++MAIN_LOGICAL_TRITS=82781
++FRAME_LIMIT=131072
++FRAME_HEADROOM=48291
+ CANONICAL_SELF_INPUT=BLOCKED_EMITTER_BOUNDARY
+ 
+ BOOTSTRAP_STAGE1=BLOCKED
+-SELF_EMIT=NOT_RUN
+-BOOTSTRAP_STAGE2=NOT_RUN
+-BOOTSTRAP_STAGE3=NOT_RUN
+-FIXED_POINT=NOT_RUN
+-CORRECTNESS=NOT_RUN
+-BENCHMARK=NOT_RUN
+-
+-CURRENT_FIRST_BLOCKER=S1.3_DEF_USE
+-NEXT_ALLOWED_TASK=integrate canonical def/use records consuming the S1.2 semantic value IDs
+-
+-COMMITS=2776792e5664a72cfd062895381ace674029a8fe selfhost(stage1): recover proven semantic foundation; e275a4f239d029ac968f6bfb0a58244f59d81ee0 selfhost(stage1): recover qualified expression lowering base; bbbc0034ec391a87616aacaea0cbbc5ce3f83e92 docs(selfhost): record Stage1 lane checkpoints; 684213711fd4662116f93abfdaade2879f9cefb0 test(selfhost): align Stage1 semantic audit counts; 6dc94422dee9724ab9112f6e8d29248c191c445f selfhost(stage1): integrate canonical typed constant identities
++SELF_EMIT=BLOCKED_GENERAL_EMITTER_CAPABILITY_GAP
++BOOTSTRAP_STAGE2=NOT_STARTED
++BOOTSTRAP_STAGE3=NOT_STARTED
++FIXED_POINT=NOT_STARTED
++CORRECTNESS=NOT_STARTED
++BENCHMARK=NOT_STARTED
++
++S3IR2_TOTAL_V_RECORDS=38724
++S3IR2_PARAMETERS=70
++S3IR2_CONSTANTS=34945
++S3IR2_INSTRUCTION_RESULTS=3463
++S3IR2_LOCAL_BINDINGS=246
++S3IR2_INSTRUCTIONS=58070
++S3IR2_OPERAND_EDGES=37349
++S3IR2_RESULT_EDGES=38408
++S3IR2_CALLS=862
++S3IR2_TERMINATORS=3681
++S3IR2_ORACLE_MODEL_SHA256=9faf6a144be0bb94fa5ffb9952c26638e92c6d1cb4520e0f9321e83ff8776435
++VALUE_COUNT_MATCH_ORACLE=BLOCKED
++VALUE_ORDER_MATCH_ORACLE=BLOCKED
++
++CURRENT_FIRST_BLOCKER=S1.2_CANONICAL_STREAM_COMPLETENESS
++NEXT_ALLOWED_TASK=close canonical streaming value enumeration before S1.3
++
++The Rev35 resident value and constant banks remain preserved outside this
++worktree as diagnostic evidence and are rejected by the native frame gate. The
++new source removes those semantic full-resident stores and uses bounded
++streaming state. The hosted oracle is complete, but the current Stage1 source
++does not yet reproduce its full logical value namespace or instruction lanes.
++The canonical self-input emits `S3_STAGE1_EMITTER_BLOCKED` with exit code 2.
++
++No Stage2, Stage3, T4, commit, push, or shutdown was performed.
++
++COMMITS_CREATED=0
+ PUSH=NO
+-
+-## Evidence
+-
+-Wave A focused tests, `compileall bootstrap/s3`, Stage0 check, and the native
+-trivial probe passed. The canonical native build completed successfully.
+-
+-The recovered expression candidate is deterministic at
+-`ff047a880b871d6428e2f33198db09d9b5c416b940df8bfe4d96867031439858`, passed
+-Stage0 check, focused general-emitter/lossless-IR tests, and native probes for
+-a typed constant and `return 1 + 2`. The native candidate output contained
+-typed value records, instruction records, operand/result links, and a return
+-link. An unresolved identifier produced an incomplete `Z 0` stream.
+-
+-The canonical source now records typed constant identities. Its self-input
+-still exits with `2` and emits `S3_STAGE1_EMITTER_BLOCKED`, which is the
+-expected boundary while def/use, call dataflow, terminators, serialization,
+-and the general emitter remain unimplemented. The canonical native view never
+-reports a constant ID beyond the global semantic domain.
+-
+-The remaining lossless-IR gaps are instruction operand/result/order records,
+-call result and argument value IDs, complete terminator links, and a canonical
+-serialized IR artifact. Those gaps still prevent a narrow general-emitter
+-repair. No information was fabricated and no emitter validation was weakened.
+-
+-The final native self-input audit observed the updated source counters and
+-remained at the emitter boundary; the focused test contract records the
+-factual audit tuple. This is evidence for the S1.2 checkpoint, not a claim of
+-general-emitter completeness.
+-
+-No Stage2, Stage3, self-emission, benchmark, or T4 was run. The next session
+-may begin with S1.3 only and must re-read the lane tracker before editing.
++SHUTDOWN=NO
+diff --git a/reports/selfhost/stage1/stage1-lane-status.json b/reports/selfhost/stage1/stage1-lane-status.json
+index c660345..ffafb63 100644
+--- a/reports/selfhost/stage1/stage1-lane-status.json
++++ b/reports/selfhost/stage1/stage1-lane-status.json
+@@ -1,44 +1,62 @@
+ {
+   "checkpoint": "2026-08-28",
+-  "base": "d67da9ea7dc8b83b0b80adb681011717eebec616",
+-  "last_validated_implementation_test_head": "6dc94422dee9724ab9112f6e8d29248c191c445f",
+-  "documentation_checkpoint_parent": "6dc94422dee9724ab9112f6e8d29248c191c445f",
+-  "current_head": "6dc94422dee9724ab9112f6e8d29248c191c445f",
+-  "current_head_is_documentation_only_after_validation": true,
+-  "branch": "recovery/pr268-stage1-lanes-20260828",
++  "base": "1ec76af89992f119865a370488593ad5c85c4c49",
++  "current_head": "1ec76af89992f119865a370488593ad5c85c4c49",
++  "branch": "recovery/pr268-stage1-streaming-values-20260828",
++  "source_status": "UNCOMMITTED_IMPLEMENTATION_CANDIDATE",
+   "lanes": {
+     "S1.1": "PASS",
+-    "S1.2": "PASS",
++    "S1.2_mechanism": "PASS",
++    "S1.2_canonical_streaming_enumeration": "BLOCKED",
+     "S1.3": "NOT_RUN",
+     "S1.4": "NOT_RUN",
+     "S1.5": "NOT_RUN",
+     "S1.6": "NOT_RUN",
+     "S1.7": "BLOCKED"
+   },
+-  "recovered_wave_b_expression_candidate": "PASS",
+-  "recovered_wave_b_expression_candidate_sha256": "ff047a880b871d6428e2f33198db09d9b5c416b940df8bfe4d96867031439858",
+-  "current_first_blocker": "S1.3_DEF_USE",
+-  "exact_reproducer": "fn main() -> tryte: return 1 + 2; canonical self-input remains S3_STAGE1_EMITTER_BLOCKED until S1.3-S1.7 close the remaining lanes",
+-  "next_allowed_task": "integrate canonical def/use records consuming the S1.2 semantic value IDs",
+-  "validated_gates": {
++  "current_first_blocker": "S1.2_CANONICAL_STREAM_COMPLETENESS",
++  "next_allowed_task": "close canonical streaming value enumeration before S1.3",
++  "semantic_storage_strategy": "STREAMING_MULTI_PASS",
++  "full_resident_value_banks": "ABSENT",
++  "full_resident_constant_banks": "ABSENT",
++  "frame_gate": {
++    "main_memory_objects": 570,
++    "main_logical_trits": 82781,
++    "limit": 131072,
++    "status": "PASS"
++  },
++  "s3ir2_oracle": {
++    "status": "PASS_HOSTED_ORACLE_ONLY",
++    "sha256": "9faf6a144be0bb94fa5ffb9952c26638e92c6d1cb4520e0f9321e83ff8776435",
++    "values": 38724,
++    "parameters": 70,
++    "local_bindings": 246,
++    "constants": 34945,
++    "instruction_results": 3463,
++    "instructions": 58070,
++    "operand_edges": 37349,
++    "result_edges": 38408,
++    "calls": 862,
++    "call_argument_edges": 1006,
++    "terminators": 3681
++  },
++  "canonical_self_input": {
++    "exit": 2,
++    "marker": "S3_STAGE1_EMITTER_BLOCKED"
++  },
++  "gates": {
+     "focused_tests": "PASS",
+     "compileall_bootstrap_s3": "PASS",
+-    "stage0_source_check": "PASS",
++    "git_diff_check": "PASS",
+     "native_build": "PASS",
+-    "native_s12_probes": "PASS",
+-    "canonical_self_input": "BLOCKED (S3_STAGE1_EMITTER_BLOCKED; typed IDs bounded to 299..364)",
+-    "s1_2_typed_constants": "PASS"
++    "native_narrow_probes": "PASS",
++    "s1_2_canonical_completeness": "BLOCKED",
++    "self_emit": "BLOCKED_GENERAL_EMITTER_CAPABILITY_GAP",
++    "stage2": "NOT_RUN",
++    "stage3": "NOT_RUN",
++    "t4": "NOT_RUN"
+   },
+-  "canonical_source_sha256": "a22effeb405dd1772ac46805db539e575d045dddc1fd86f53509c8382c088b17",
+-  "missing_lossless_typed_lanes": [
+-    "parameter_identity_type_mutability_and_value_id",
+-    "local_identity_type_mutability_storage_and_value_id",
+-    "instruction_operands_results_and_order",
+-    "call_result_and_argument_value_ids",
+-    "branch_conditions_and_complete_terminators",
+-    "canonical_serialized_ir_artifact"
+-  ],
+-  "self_emit": "NOT_RUN",
+-  "stage2": "NOT_RUN",
+-  "stage3": "NOT_RUN"
++  "commits_created": 0,
++  "push": "NO",
++  "shutdown": "NO"
+ }
+diff --git a/selfhost/compiler/compiler-sources.json b/selfhost/compiler/compiler-sources.json
+index 7786627..eccd1a9 100644
+--- a/selfhost/compiler/compiler-sources.json
++++ b/selfhost/compiler/compiler-sources.json
+@@ -1,11 +1,11 @@
+ {
+   "schema": "s3.compiler.sources.v1",
+   "source_count": 1,
+-  "total_bytes": 228427,
++  "total_bytes": 225699,
+   "sources": [
+     {
+       "path": "selfhost/compiler/s3c_stage1.s3",
+-      "sha256": "a22effeb405dd1772ac46805db539e575d045dddc1fd86f53509c8382c088b17",
++      "sha256": "44f022820a9191e3a6d402c188eb4b242e0ffeefd7a149b15e2b46039031b9cb",
+       "role": "canonical_stage1_compiler",
+       "ordering": 0
+     }
+diff --git a/selfhost/compiler/s3c_stage1.s3 b/selfhost/compiler/s3c_stage1.s3
+index 6030ec2..c47d01d 100644
+--- a/selfhost/compiler/s3c_stage1.s3
++++ b/selfhost/compiler/s3c_stage1.s3
+@@ -1558,8 +1558,6 @@ fn main() -> tryte:
+     mut ast_cast_count: i64 = 0
+     mut ir_instruction_count: i64 = 0
+     mut ir_value_count: i64 = 0
+-    mut ir_semantic_value_records: i64[365] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+-    mut s12_constant_definition_records: i64[365] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+     mut ir_block_count: i64 = 0
+     mut ir_branch_count: i64 = 0
+     mut ir_loop_count: i64 = 0
+@@ -1572,10 +1570,7 @@ fn main() -> tryte:
+     mut ir_local_record_count: i64 = 0
+     mut s12_constant_count: i64 = 0
+     mut s12_constant_ok: trit = -1
+-    mut s12_semantic_value_id: i64 = 0
+-    mut s12_constant_verify_index: i64 = 0
+-    mut s12_constant_verify_record: i64 = 0
+-    mut s12_observation_possible: trit = 0
++    mut s12_observation_ready: trit = 0
+     mut local_capture_state: i64 = 0
+     mut local_capture_owner: i64 = -1
+     mut local_capture_name: i64 = 0
+@@ -1993,21 +1988,7 @@ fn main() -> tryte:
+                                                     -1:
+                                                         match next_cursor - cursor < 1000:
+                                                             -1:
+-                                                                match parameter_count + ir_local_record_count + s12_constant_count < 365:
+-                                                                    -1:
+-                                                                        mut s12_owner_scale: i64 = 5
+-                                                                        mut s12_definition_header: i64 = current_function + 1
+-                                                                        s12_definition_header = s12_definition_header * s12_owner_scale
+-                                                                        s12_definition_header = s12_definition_header + s12_constant_type_code
+-                                                                        s12_definition_header = s12_definition_header * 1461
+-                                                                        s12_definition_header = s12_definition_header + value
+-                                                                        s12_definition_header = s12_definition_header + 730
+-                                                                        s12_constant_definition_records[s12_constant_count] = s12_definition_header * 1000000000 + cursor * 1000 + next_cursor - cursor
+-                                                                        s12_constant_count += 1
+-                                                                    0:
+-                                                                        s12_constant_ok = 0
+-                                                                    1:
+-                                                                        s12_constant_ok = 0
++                                                                s12_constant_count += 1
+                                                             0:
+                                                                 s12_constant_ok = 0
+                                                             1:
+@@ -2085,7 +2066,6 @@ fn main() -> tryte:
+                 match parameter_type_pending == -1:
+                     -1:
+                         ir_parameter_type[parameter_type_slot] = value
+-                        ir_semantic_value_records[parameter_type_slot] = pack_ir_record(1, ir_parameter_owner[parameter_type_slot], value, parameter_type_slot)
+                         parameter_type_pending = 0
+                     0:
+                         discard 0
+@@ -3076,51 +3056,10 @@ fn main() -> tryte:
+             local_capture_state = 0
+         1:
+             local_capture_state = 0
+-    match parameter_count + ir_local_record_count < 365:
+-        -1:
+-            while local_rebase_index < ir_local_record_count:
+-                ir_local_value_id[local_rebase_index] = parameter_count + local_rebase_index
+-                ir_semantic_value_records[parameter_count + local_rebase_index] = pack_ir_record(2, ir_local_owner[local_rebase_index], ir_local_type[local_rebase_index], local_rebase_index)
+-                local_rebase_index += 1
+-        0:
+-            ir_capacity_ok = 0
+-        1:
+-            ir_capacity_ok = 0
+-    match parameter_count + ir_local_record_count + s12_constant_count < 365:
+-        -1:
+-            s12_semantic_value_id = parameter_count + ir_local_record_count
+-            s12_constant_verify_index = 0
+-            while s12_constant_verify_index < s12_constant_count:
+-                s12_constant_verify_record = s12_constant_definition_records[s12_constant_verify_index]
+-                mut s12_final_value_scale: i64 = 1461
+-                mut s12_final_owner_scale: i64 = 5
+-                mut s12_final_header: i64 = s12_constant_verify_record / 1000000000
+-                mut s12_final_owner_type: i64 = s12_final_header / s12_final_value_scale
+-                mut s12_final_owner_quotient: i64 = s12_final_owner_type / s12_final_owner_scale
+-                mut s12_final_payload: i64 = s12_final_header - (s12_final_owner_type * s12_final_value_scale)
+-                mut s12_final_type: i64 = s12_final_owner_type - s12_final_owner_quotient * s12_final_owner_scale
+-                mut s12_final_literal: i64 = s12_final_payload - 730
+-                ir_semantic_value_records[s12_semantic_value_id] = pack_ir_record(3, s12_final_owner_quotient - 1, s12_final_type, s12_final_literal)
+-                s12_semantic_value_id += 1
+-                s12_constant_verify_index += 1
+-        0:
+-            ir_capacity_ok = 0
+-            match parameter_count + ir_local_record_count < 365:
+-                -1:
+-                    s12_constant_count = 365 - parameter_count - ir_local_record_count
+-                0:
+-                    s12_constant_count = 0
+-                1:
+-                    s12_constant_count = 0
+-        1:
+-            ir_capacity_ok = 0
+-            match parameter_count + ir_local_record_count < 365:
+-                -1:
+-                    s12_constant_count = 365 - parameter_count - ir_local_record_count
+-                0:
+-                    s12_constant_count = 0
+-                1:
+-                    s12_constant_count = 0
++    local_rebase_index = 0
++    while local_rebase_index < ir_local_record_count:
++        ir_local_value_id[local_rebase_index] = parameter_count + local_rebase_index
++        local_rebase_index += 1
+     match function_count == 1:
+         -1:
+             match simple_number_seen == -1:
+@@ -3572,97 +3511,6 @@ fn main() -> tryte:
+                     1:
+                         verifier_ok = 0
+                 parameter_verify_index += 1
+-            match parameter_count + ir_local_record_count < 365:
+-                -1:
+-                    discard 0
+-                0:
+-                    verifier_ok = 0
+-                1:
+-                    verifier_ok = 0
+-            local_verify_index = 0
+-            while local_verify_index < parameter_count:
+-                match ir_semantic_value_records[local_verify_index] == pack_ir_record(1, ir_parameter_owner[local_verify_index], ir_parameter_type[local_verify_index], local_verify_index):
+-                    -1:
+-                        discard 0
+-                    0:
+-                        verifier_ok = 0
+-                    1:
+-                        verifier_ok = 0
+-                local_verify_index += 1
+-            local_verify_index = 0
+-            while local_verify_index < ir_local_record_count:
+-                match ir_semantic_value_records[parameter_count + local_verify_index] == pack_ir_record(2, ir_local_owner[local_verify_index], ir_local_type[local_verify_index], local_verify_index):
+-                    -1:
+-                        discard 0
+-                    0:
+-                        verifier_ok = 0
+-                    1:
+-                        verifier_ok = 0
+-                local_verify_index += 1
+-            s12_constant_verify_index = 0
+-            while s12_constant_verify_index < s12_constant_count:
+-                s12_constant_verify_record = s12_constant_definition_records[s12_constant_verify_index]
+-                s12_semantic_value_id = parameter_count + ir_local_record_count + s12_constant_verify_index
+-                mut s12_verify_value_scale: i64 = 1461
+-                mut s12_verify_owner_scale: i64 = 5
+-                mut s12_verify_header: i64 = s12_constant_verify_record / 1000000000
+-                mut s12_verify_owner_type: i64 = s12_verify_header / s12_verify_value_scale
+-                mut s12_verify_owner: i64 = s12_verify_owner_type / s12_verify_owner_scale - 1
+-                mut s12_verify_owner_quotient: i64 = s12_verify_owner_type / s12_verify_owner_scale
+-                mut s12_verify_type: i64 = s12_verify_owner_type - s12_verify_owner_quotient * s12_verify_owner_scale
+-                mut s12_verify_payload: i64 = s12_verify_header - s12_verify_owner_type * s12_verify_value_scale
+-                mut s12_verify_literal: i64 = s12_verify_payload - 730
+-                mut s12_verify_tail: i64 = s12_constant_verify_record - s12_verify_header * 1000000000
+-                mut s12_verify_anchor: i64 = s12_verify_tail / 1000
+-                mut s12_verify_length: i64 = s12_verify_tail - s12_verify_anchor * 1000
+-                match s12_semantic_value_id < 365:
+-                    -1:
+-                        match ir_semantic_value_records[s12_semantic_value_id] == pack_ir_record(3, s12_verify_owner, s12_verify_type, s12_verify_literal):
+-                            -1:
+-                                discard 0
+-                            0:
+-                                verifier_ok = 0
+-                            1:
+-                                verifier_ok = 0
+-                        match s12_verify_owner >= 0:
+-                            -1:
+-                                match s12_verify_owner < function_count:
+-                                    -1:
+-                                        discard 0
+-                                    0:
+-                                        verifier_ok = 0
+-                                    1:
+-                                        verifier_ok = 0
+-                            0:
+-                                verifier_ok = 0
+-                            1:
+-                                verifier_ok = 0
+-                        match s12_verify_type > 0:
+-                            -1:
+-                                discard 0
+-                            0:
+-                                verifier_ok = 0
+-                            1:
+-                                verifier_ok = 0
+-                        match s12_verify_anchor >= 0:
+-                            -1:
+-                                discard 0
+-                            0:
+-                                verifier_ok = 0
+-                            1:
+-                                verifier_ok = 0
+-                        match s12_verify_length > 0:
+-                            -1:
+-                                discard 0
+-                            0:
+-                                verifier_ok = 0
+-                            1:
+-                                verifier_ok = 0
+-                    0:
+-                        verifier_ok = 0
+-                    1:
+-                        verifier_ok = 0
+-                s12_constant_verify_index += 1
+             mut event_verify_index: i64 = 0
+             while event_verify_index < ir_ast_event_count:
+                 mut event_verify_bank: i64 = event_verify_index / 365
+@@ -4130,29 +3978,29 @@ fn main() -> tryte:
+             pipeline_ok = 0
+         1:
+             pipeline_ok = 0
+-    match function_count == 1:
++    match pipeline_ok == -1:
+         -1:
+-            match s12_constant_count > 0:
++            match function_count == 1:
+                 -1:
+-                    match local_count > 0:
++                    match s12_constant_count > 0:
+                         -1:
+-                            s12_observation_possible = -1
+-                        0:
+-                            match ast_binop_count > 0:
++                            match local_count > 0:
+                                 -1:
+-                                    s12_observation_possible = -1
++                                    s12_observation_ready = -1
+                                 0:
+-                                    discard 0
++                                    match ast_binop_count > 0:
++                                        -1:
++                                            s12_observation_ready = -1
++                                        0:
++                                            discard 0
++                                        1:
++                                            s12_observation_ready = -1
+                                 1:
+-                                    s12_observation_possible = -1
++                                    s12_observation_ready = -1
++                        0:
++                            discard 0
+                         1:
+-                            match ast_binop_count > 0:
+-                                -1:
+-                                    s12_observation_possible = -1
+-                                0:
+-                                    discard 0
+-                                1:
+-                                    s12_observation_possible = -1
++                            discard 0
+                 0:
+                     discard 0
+                 1:
+@@ -4161,66 +4009,135 @@ fn main() -> tryte:
+             discard 0
+         1:
+             discard 0
+-    match pipeline_ok == 0:
+-        -1:
+-            s12_observation_possible = -1
+-        0:
+-            discard 0
+-        1:
+-            discard 0
+-    match s12_observation_possible == -1:
++    match s12_observation_ready == -1:
+         -1:
+-            mut s12_output_index: i64 = 0
+-            mut s12_output_value_id: i64 = parameter_count + ir_local_record_count
+-            while s12_output_index < s12_constant_count:
+-                mut s12_output_record: i64 = s12_constant_definition_records[s12_output_index]
+-                mut s12_output_value_scale: i64 = 1461
+-                mut s12_output_owner_scale: i64 = 5
+-                mut s12_output_header: i64 = s12_output_record / 1000000000
+-                mut s12_output_owner_type: i64 = s12_output_header / s12_output_value_scale
+-                mut s12_output_owner_quotient: i64 = s12_output_owner_type / s12_output_owner_scale
+-                mut s12_output_type: i64 = s12_output_owner_type - s12_output_owner_quotient * s12_output_owner_scale
+-                mut s12_output_payload: i64 = s12_output_header - s12_output_owner_type * s12_output_value_scale
+-                mut s12_output_literal: i64 = s12_output_payload - 730
+-                mut s12_output_tail: i64 = s12_output_record - s12_output_header * 1000000000
+-                mut s12_output_anchor: i64 = s12_output_tail / 1000
+-                mut s12_output_length: i64 = s12_output_tail - s12_output_anchor * 1000
+-                discard write_error_byte(83)
+-                discard write_error_byte(51)
+-                discard write_error_byte(95)
+-                discard write_error_byte(83)
+-                discard write_error_byte(84)
+-                discard write_error_byte(65)
+-                discard write_error_byte(71)
+-                discard write_error_byte(69)
+-                discard write_error_byte(49)
+-                discard write_error_byte(95)
+-                discard write_error_byte(84)
+-                discard write_error_byte(89)
+-                discard write_error_byte(80)
+-                discard write_error_byte(69)
+-                discard write_error_byte(68)
+-                discard write_error_byte(95)
+-                discard write_error_byte(67)
+-                discard write_error_byte(79)
+-                discard write_error_byte(78)
+-                discard write_error_byte(83)
+-                discard write_error_byte(84)
+-                discard write_error_byte(65)
+-                discard write_error_byte(78)
+-                discard write_error_byte(84)
+-                discard write_error_byte(32)
+-                discard emit_audit_value(s12_output_value_id)
+-                discard emit_audit_value(s12_output_owner_quotient - 1)
+-                discard emit_audit_value(s12_output_type)
+-                discard emit_audit_value(s12_output_literal)
+-                discard emit_audit_value(s12_output_anchor)
+-                discard emit_audit_value(s12_output_length)
+-                discard write_error_byte(45)
+-                discard write_error_byte(49)
+-                discard write_error_byte(10)
+-                s12_output_index += 1
+-                s12_output_value_id += 1
++            mut s12_stream_cursor: i64 = 0
++            mut s12_stream_constant_index: i64 = 0
++            mut s12_stream_value_id: i64 = parameter_count
++            s12_stream_value_id += ir_local_record_count
++            while s12_stream_cursor < length:
++                mut s12_stream_packed: i64 = scan_token(s12_stream_cursor, length)
++                mut s12_stream_next_cursor: i64 = s12_stream_packed / 1000000
++                mut s12_stream_remainder: i64 = s12_stream_packed - s12_stream_next_cursor * 1000000
++                mut s12_stream_kind: i64 = s12_stream_remainder / 1000
++                mut s12_stream_value: i64 = s12_stream_remainder - s12_stream_kind * 1000 - 500
++                match s12_stream_kind == 2:
++                    -1:
++                        mut s12_stream_type_code: i64 = 0
++                        mut s12_stream_type_name: i64 = to_i64(function_types[0])
++                        mut s12_stream_number_cursor: i64 = s12_stream_cursor
++                        while s12_stream_number_cursor < s12_stream_next_cursor:
++                            match is_space_unit(read_at(s12_stream_number_cursor)):
++                                -1:
++                                    s12_stream_number_cursor += 1
++                                0:
++                                    break
++                                1:
++                                    break
++                        mut s12_stream_number_sign: i64 = 1
++                        match read_at(s12_stream_number_cursor) == 45:
++                            -1:
++                                s12_stream_number_sign = -1
++                                s12_stream_number_cursor += 1
++                            0:
++                                discard 0
++                            1:
++                                discard 0
++                        mut s12_stream_number: i64 = 0
++                        while s12_stream_number_cursor < s12_stream_next_cursor:
++                            match is_digit(read_at(s12_stream_number_cursor)):
++                                -1:
++                                    s12_stream_number = s12_stream_number * 10 + to_i64(read_at(s12_stream_number_cursor)) - 48
++                                0:
++                                    discard 0
++                                1:
++                                    discard 0
++                            s12_stream_number_cursor += 1
++                        s12_stream_number = s12_stream_number * s12_stream_number_sign
++                        match s12_stream_type_name == 76:
++                            -1:
++                                s12_stream_type_code = 1
++                            0:
++                                match s12_stream_type_name == 313:
++                                    -1:
++                                        s12_stream_type_code = 2
++                                    0:
++                                        match s12_stream_type_name == 66:
++                                            -1:
++                                                s12_stream_type_code = 3
++                                            0:
++                                                match s12_stream_type_name == 103:
++                                                    -1:
++                                                        s12_stream_type_code = 4
++                                                    0:
++                                                        discard 0
++                                                    1:
++                                                        s12_stream_type_code = 4
++                                            1:
++                                                s12_stream_type_code = 3
++                                    1:
++                                        s12_stream_type_code = 2
++                            1:
++                                s12_stream_type_code = 1
++                        match s12_stream_type_code > 0:
++                            -1:
++                                match s12_stream_constant_index < s12_constant_count:
++                                    -1:
++                                        discard write_error_byte(83)
++                                        discard write_error_byte(51)
++                                        discard write_error_byte(95)
++                                        discard write_error_byte(83)
++                                        discard write_error_byte(84)
++                                        discard write_error_byte(65)
++                                        discard write_error_byte(71)
++                                        discard write_error_byte(69)
++                                        discard write_error_byte(49)
++                                        discard write_error_byte(95)
++                                        discard write_error_byte(84)
++                                        discard write_error_byte(89)
++                                        discard write_error_byte(80)
++                                        discard write_error_byte(69)
++                                        discard write_error_byte(68)
++                                        discard write_error_byte(95)
++                                        discard write_error_byte(67)
++                                        discard write_error_byte(79)
++                                        discard write_error_byte(78)
++                                        discard write_error_byte(83)
++                                        discard write_error_byte(84)
++                                        discard write_error_byte(65)
++                                        discard write_error_byte(78)
++                                        discard write_error_byte(84)
++                                        discard write_error_byte(32)
++                                        discard emit_audit_value(s12_stream_value_id)
++                                        discard emit_audit_value(0)
++                                        discard emit_audit_value(s12_stream_type_code)
++                                        discard emit_audit_value(s12_stream_number)
++                                        discard emit_audit_value(s12_stream_cursor)
++                                        discard emit_audit_value(s12_stream_next_cursor - s12_stream_cursor)
++                                        discard write_error_byte(45)
++                                        discard write_error_byte(49)
++                                        discard write_error_byte(10)
++                                        s12_stream_constant_index += 1
++                                        s12_stream_value_id += 1
++                                    0:
++                                        discard 0
++                                    1:
++                                        discard 0
++                            0:
++                                discard 0
++                            1:
++                                discard 0
++                    0:
++                        discard 0
++                    1:
++                        discard 0
++                match s12_stream_next_cursor <= s12_stream_cursor:
++                    -1:
++                        s12_stream_cursor = length
++                    0:
++                        s12_stream_cursor = s12_stream_next_cursor
++                    1:
++                        s12_stream_cursor = length
+         0:
+             discard 0
+         1:
+diff --git a/tests/test_stage1_codegen_ir_v2_block_capacity.py b/tests/test_stage1_codegen_ir_v2_block_capacity.py
+index 82ed3ae..4ef080a 100644
+--- a/tests/test_stage1_codegen_ir_v2_block_capacity.py
++++ b/tests/test_stage1_codegen_ir_v2_block_capacity.py
+@@ -69,9 +69,12 @@ def test_block_audit_fails_if_first_instruction_becomes_a_semantic_read() -> Non
+     assert result["guards"]["first_instruction_is_write_only_in_current_source"] is False
+ 
+ 
+-def test_parameter_candidate_projection_is_reported_as_static_only() -> None:
++def test_historical_parameter_projection_is_not_reapplied_to_current_source() -> None:
+     result = audit(SOURCE.read_text(encoding="utf-8"))
+     projection = result["parameter_candidate_static_projection"]
++    assert projection["status"] == "NOT_APPLICABLE_HISTORICAL_PARAMETER_TRANSFORM"
+     assert projection["projection_is_native_evidence"] is False
+-    assert projection["projected_blocks"] >= result["legacy"]["last_native_blocks"]
+-    assert projection["strict_additional_match_or_while_budget"] >= 0
++    assert projection["projected_blocks"] is None
++    assert projection["strict_additional_match_or_while_budget"] is None
++    assert projection["base_match_lines_current_source"] >= 0
++    assert projection["base_while_lines_current_source"] >= 0
+diff --git a/tests/test_stage1_codegen_ir_v2_call_arguments.py b/tests/test_stage1_codegen_ir_v2_call_arguments.py
+index 301a6d2..7b2aa42 100644
+--- a/tests/test_stage1_codegen_ir_v2_call_arguments.py
++++ b/tests/test_stage1_codegen_ir_v2_call_arguments.py
+@@ -6,10 +6,14 @@ import pytest
+ 
+ from tools.audit_stage1_codegen_ir_v2_call_arguments import (
+     CLOSURE,
++    MODEL_CHUNK_SIZE,
+     SOURCE,
++    TOTAL_ARGUMENT_MODEL_LIMIT,
++    TOTAL_CALL_MODEL_LIMIT,
+     audit,
+     collect_call_argument_trace,
+     collect_call_argument_model,
++    evaluate_model_capacity,
+     validate_canonical_model,
+ )
+ 
+@@ -197,27 +201,169 @@ def test_mutation_fixtures_are_not_calibrated_to_canonical_totals() -> None:
+         assert model["total_call_arguments"] == expected_arguments
+ 
+ 
+-def test_canonical_model_must_reproduce_native_736_argument_closure() -> None:
++@pytest.mark.parametrize(
++    ("call_count", "fits"),
++    [(729, True), (730, True), (731, True)],
++)
++def test_noncanonical_call_metadata_separates_total_and_resident_capacity(
++    call_count: int,
++    fits: bool,
++) -> None:
++    calls = [f"    discard helper({index})\n" for index in range(call_count)]
++    source = "fn main() -> tryte:\n" + "".join(calls)
++    model = collect_call_argument_model(source)
++
++    assert model["calls"] == call_count
++    assert model["fits_call_capacity"] is fits
++    assert model["fits_call_resident_capacity"] is fits
++    assert model["fits_total_call_model"] is True
++    assert model["call_max_resident"] == 730
++    assert model["call_total_headroom"] == TOTAL_CALL_MODEL_LIMIT - call_count
++
++
++@pytest.mark.parametrize(
++    ("argument_count", "fits"),
++    [(745, True), (746, True), (747, False)],
++)
++def test_noncanonical_argument_pool_capacity_is_bounded(
++    argument_count: int,
++    fits: bool,
++) -> None:
++    arguments = ", ".join(["value"] * argument_count)
++    source = f"fn main() -> tryte:\n    discard helper({arguments})\n"
++    model = collect_call_argument_model(source)
++
++    assert model["calls"] == 1
++    assert model["total_call_arguments"] == argument_count
++    assert model["fits_call_argument_capacity"] is fits
++    assert model["fits_argument_resident_capacity"] is fits
++    assert model["fits_total_argument_model"] is True
++    assert model["argument_max_resident"] == 746
++
++
++@pytest.mark.parametrize(
++    ("calls", "arguments", "expected_call_chunks", "expected_argument_chunks"),
++    [
++        (MODEL_CHUNK_SIZE - 1, MODEL_CHUNK_SIZE - 1, 1, 1),
++        (MODEL_CHUNK_SIZE, MODEL_CHUNK_SIZE, 1, 1),
++        (MODEL_CHUNK_SIZE + 1, MODEL_CHUNK_SIZE + 1, 2, 2),
++        (2 * MODEL_CHUNK_SIZE, 2 * MODEL_CHUNK_SIZE, 2, 2),
++        (3 * MODEL_CHUNK_SIZE + 1, 3 * MODEL_CHUNK_SIZE + 1, 4, 4),
++    ],
++)
++def test_total_model_capacity_supports_chunk_and_replay_boundaries(
++    calls: int,
++    arguments: int,
++    expected_call_chunks: int,
++    expected_argument_chunks: int,
++) -> None:
++    capacity = evaluate_model_capacity(
++        calls=calls,
++        total_arguments=arguments,
++        maximum_active_call_records=1,
++        maximum_active_argument_records=1,
++        active_calls_at_eof=0,
++    )
++
++    assert capacity["fits_total_call_model"] is True
++    assert capacity["fits_total_argument_model"] is True
++    assert capacity["call_replay_chunks"] == expected_call_chunks
++    assert capacity["argument_replay_chunks"] == expected_argument_chunks
++    assert capacity["capacity_safe"] is True
++
++
++@pytest.mark.parametrize(
++    ("calls", "arguments", "expected"),
++    [
++        (TOTAL_CALL_MODEL_LIMIT - 1, TOTAL_ARGUMENT_MODEL_LIMIT - 1, True),
++        (TOTAL_CALL_MODEL_LIMIT, TOTAL_ARGUMENT_MODEL_LIMIT, True),
++        (TOTAL_CALL_MODEL_LIMIT + 1, TOTAL_ARGUMENT_MODEL_LIMIT, False),
++        (TOTAL_CALL_MODEL_LIMIT, TOTAL_ARGUMENT_MODEL_LIMIT + 1, False),
++    ],
++)
++def test_total_model_limit_is_independent_from_resident_capacity(
++    calls: int,
++    arguments: int,
++    expected: bool,
++) -> None:
++    capacity = evaluate_model_capacity(
++        calls=calls,
++        total_arguments=arguments,
++        maximum_active_call_records=2,
++        maximum_active_argument_records=5,
++        active_calls_at_eof=0,
++    )
++
++    assert capacity["fits_total_call_model"] is (calls <= TOTAL_CALL_MODEL_LIMIT)
++    assert capacity["fits_total_argument_model"] is (
++        arguments <= TOTAL_ARGUMENT_MODEL_LIMIT
++    )
++    assert capacity["fits_call_resident_capacity"] is True
++    assert capacity["fits_argument_resident_capacity"] is True
++    assert capacity["capacity_safe"] is expected
++
++
++def test_invalid_call_argument_relation_is_rejected_fail_closed() -> None:
++    capacity = evaluate_model_capacity(
++        calls=2,
++        total_arguments=3,
++        maximum_active_call_records=3,
++        maximum_active_argument_records=4,
++        active_calls_at_eof=0,
++    )
++
++    assert capacity["call_argument_count_relation_valid"] is False
++    assert capacity["capacity_safe"] is False
++
++
++def test_malformed_unclosed_call_unit_is_rejected_fail_closed() -> None:
++    capacity = evaluate_model_capacity(
++        calls=1,
++        total_arguments=1,
++        maximum_active_call_records=1,
++        maximum_active_argument_records=1,
++        active_calls_at_eof=1,
++    )
++
++    assert capacity["complete_call_units"] is False
++    assert capacity["capacity_safe"] is False
++
++
++def test_historical_native_736_argument_closure_is_explicit_snapshot() -> None:
+     closure = json.loads(CLOSURE.read_text(encoding="utf-8"))
+-    model, guards = validate_canonical_model(SOURCE.read_bytes(), closure=closure)
+-    assert all(guards.values())
+-    assert model["calls"] == 656
+-    assert model["total_call_arguments"] == 736
+-    assert model["max_call_arity"] == 4
+-    assert model["call_argument_headroom"] == 10
++    clean = closure["clean_source_gate"]
++    runtime = closure["runtime_measurement"]
++    pool = closure["pool"]
++    assert clean["source_sha256"] == (
++        "20fddbb73eee9ae09de911493f2f2da01ab582c7a6de879ea2e557946716a341"
++    )
++    assert clean["source_size_bytes"] == 166984
++    assert runtime["total_calls"] == 656
++    assert runtime["total_call_arguments"] == 736
++    assert runtime["max_call_arity"] == 4
++    assert pool["selected_capacity"] == 746
+ 
++    _, guards = validate_canonical_model(SOURCE.read_bytes(), closure=closure)
++    assert guards["source_sha_matches_native_closure"] is False
++    assert guards["source_bytes_match_native_closure"] is False
+ 
+-def test_parameter_candidate_must_not_silently_overflow_current_argument_pool() -> None:
++
++def test_advanced_canonical_does_not_reuse_historical_parameter_projection() -> None:
+     closure = json.loads(CLOSURE.read_text(encoding="utf-8"))
+     result = audit(
+         canonical_source=SOURCE.read_text(encoding="utf-8"),
+         closure=closure,
+     )
+-    assert result["canonical"]["model_validated_against_native_closure"] is True
+-    parameter = result["parameter_candidate"]
+-    assert parameter["model"]["calls"] <= parameter["model"]["call_capacity"]
+-    assert (
+-        parameter["model"]["total_call_arguments"]
+-        <= parameter["model"]["call_argument_capacity"]
++    assert result["status"] == (
++        "CURRENT_TOTAL_MODEL_SUPPORTED_REQUIRES_FRESH_NATIVE_CALL_ARGUMENT_RECONCILIATION"
+     )
+-    assert parameter["safe_under_current_call_and_argument_capacities"] is True
++    assert result["canonical"]["model_validated_against_native_closure"] is False
++    assert result["canonical"]["capacity_safe_under_current_limits"] is True
++    snapshot = result["canonical"]["historical_snapshot"]
++    assert snapshot["classification"] == "HISTORICAL_SNAPSHOT_CONTRACT"
++    assert snapshot["source_match_current_canonical"] is False
++    assert snapshot["bytes_match_current_canonical"] is False
++    parameter = result["parameter_candidate"]
++    assert parameter["status"] == "NOT_APPLICABLE_HISTORICAL_PARAMETER_TRANSFORM"
++    assert parameter["model"] is None
++    assert parameter["safe_under_current_call_and_argument_capacities"] is None
+diff --git a/tests/test_stage1_compiler_seed.py b/tests/test_stage1_compiler_seed.py
+index a65e970..27f896f 100644
+--- a/tests/test_stage1_compiler_seed.py
++++ b/tests/test_stage1_compiler_seed.py
+@@ -195,17 +195,17 @@ def test_stage1_self_compile_attempt_reaches_emitter_boundary(tmp_path: Path) ->
+         37,
+         5,
+         70,
+-        292,
+-        1451,
++        264,
++        1357,
+         730,
+         133,
+-        445,
+-        39,
+-        10,
+-        714,
+-        457,
++        440,
++        34,
++        12,
++        650,
++        448,
+         0,
+-        1202,
++        1200,
+         32,
+         5,
+         70,
+@@ -215,7 +215,7 @@ def test_stage1_self_compile_attempt_reaches_emitter_boundary(tmp_path: Path) ->
+         1460,
+         727,
+         3,
+-        494,
+-        39,
++        486,
++        34,
+         133,
+     )
+diff --git a/tests/test_stage1_general_emitter.py b/tests/test_stage1_general_emitter.py
+index fff3477..615511d 100644
+--- a/tests/test_stage1_general_emitter.py
++++ b/tests/test_stage1_general_emitter.py
+@@ -54,13 +54,12 @@ def test_general_emitter_is_closed_over_preserved_ir() -> None:
+     assert "general_parameter_type_end <= 70" in source
+     assert "ir_local_record_count == local_count" in source
+     assert "ir_local_value_id[local_rebase_index] = parameter_count + local_rebase_index" in source
+-    assert "mut ir_semantic_value_records: i64[365]" in source
+-    assert "ir_semantic_value_records[parameter_type_slot] = pack_ir_record(1, ir_parameter_owner[parameter_type_slot]" in source
+-    assert "ir_semantic_value_records[parameter_count + local_rebase_index] = pack_ir_record(2, ir_local_owner[local_rebase_index]" in source
+-    assert "match parameter_count + ir_local_record_count < 365:" in source
++    assert "s12_stream_cursor" in source
++    assert "s12_stream_value_id" in source
++    assert "ir_semantic_value_records" not in source
++    assert "s12_constant_definition_records" not in source
+     assert "match local_count > 0:" in source
+     assert "local_verify_index = 0" in source
+-    assert "ir_semantic_value_records[parameter_count + local_verify_index]" in source
+ 
+ 
+ @pytest.mark.skipif(not LINUX_NATIVE, reason="requires Linux x86-64 native execution")
+diff --git a/tests/test_stage1_semantic_ir_requirements.py b/tests/test_stage1_semantic_ir_requirements.py
+index 2888c46..2c4eb5f 100644
+--- a/tests/test_stage1_semantic_ir_requirements.py
++++ b/tests/test_stage1_semantic_ir_requirements.py
+@@ -16,9 +16,9 @@ def test_canonical_source_requires_lossless_typed_ir_before_general_emitter() ->
+     assert semantic["functions"] == 32
+     assert semantic["foreign_functions"] == 5
+     assert semantic["parameters"] == 70
+-    assert semantic["local_declarations"] == 274
+-    assert semantic["calls"] == 940
+-    assert semantic["call_arguments"] == 1101
++    assert semantic["local_declarations"] == 246
++    assert semantic["calls"] == 943
++    assert semantic["call_arguments"] == 1087
+     assert result["required_operations"]["CALL_INTERNAL"] is True
+     assert result["required_operations"]["CALL_FOREIGN"] is True
+     assert result["required_operations"]["BRANCH"] is True
+diff --git a/tests/test_stage1_typed_constants.py b/tests/test_stage1_typed_constants.py
+index 317358b..dd5cd73 100644
+--- a/tests/test_stage1_typed_constants.py
++++ b/tests/test_stage1_typed_constants.py
+@@ -41,17 +41,18 @@ def _typed_constant_lines(stderr: bytes) -> list[list[int]]:
+ def test_s12_canonical_keeps_semantic_constants_separate_from_storage() -> None:
+     source = SOURCE_PATH.read_text(encoding="utf-8")
+     for marker in (
+-        "s12_constant_definition_records: i64[365]",
+         "s12_constant_count",
+-        "s12_semantic_value_id = parameter_count + ir_local_record_count",
+-        "parameter_count + ir_local_record_count + s12_constant_count < 365",
+-        "s12_constant_count = 365 - parameter_count - ir_local_record_count",
+-        "pack_ir_record(3, s12_final_owner_quotient - 1",
+-        "s12_verify_anchor",
+-        "s12_verify_length",
++        "s12_stream_value_id",
++        "s12_stream_cursor",
+     ):
+         assert marker in source
+-    assert "s12_constant_definition_records[s12_constant_count]" in source
++    assert "s12_constant_definition_records" not in source
++    assert "ir_semantic_value_records" not in source
++    assert "parameter_count + ir_local_record_count + s12_constant_count < 365" not in source
++    assert "s12_constant_count = 365 - parameter_count - ir_local_record_count" not in source
++    assert "pack_ir_record(3, s12_final_owner_quotient - 1" not in source
++    assert "s12_verify_anchor" not in source
++    assert "s12_verify_length" not in source
+ 
+ 
+ @pytest.fixture(scope="module")
+diff --git a/tools/audit_stage1_codegen_ir_v2_block_capacity.py b/tools/audit_stage1_codegen_ir_v2_block_capacity.py
+index a073a65..f28b7f4 100644
+--- a/tools/audit_stage1_codegen_ir_v2_block_capacity.py
++++ b/tools/audit_stage1_codegen_ir_v2_block_capacity.py
+@@ -18,10 +18,6 @@ import json
+ import re
+ from pathlib import Path
+ 
+-from tools.patch_stage1_codegen_ir_v2_capacity import transform as compact_discards
+-from tools.patch_stage1_codegen_ir_v2_parameters import transform_parameters
+-
+-
+ ROOT = Path(__file__).resolve().parents[1]
+ SOURCE = ROOT / "selfhost" / "compiler" / "s3c_stage1.s3"
+ DEFAULT_REPORT = (
+@@ -175,14 +171,7 @@ def audit(source: str) -> dict[str, object]:
+     first_instruction_write_only = accesses["ir_block_first_instruction"]["reads"] == 0
+     instruction_count_write_only = accesses["ir_block_instruction_count"]["reads"] == 0
+ 
+-    compacted = compact_discards(source)
+-    parameter_candidate = transform_parameters(compacted)
+-    base_matches, base_whiles = _count_control(compacted)
+-    parameter_matches, parameter_whiles = _count_control(parameter_candidate)
+-    control_delta = (parameter_matches - base_matches) + (parameter_whiles - base_whiles)
+-    projected_parameter_blocks = LAST_NATIVE_BLOCKS + 3 * control_delta
+-    strict_remaining_blocks = STRICT_LEGACY_BLOCK_MAX_PASS - projected_parameter_blocks
+-    strict_additional_control_events = max(0, strict_remaining_blocks // 3)
++    current_matches, current_whiles = _count_control(source)
+ 
+     block_limit = packed_block_record_limit()
+     ownerless_instruction_limit = ownerless_instruction_record_limit()
+@@ -235,15 +224,21 @@ def audit(source: str) -> dict[str, object]:
+             "accesses": accesses,
+         },
+         "parameter_candidate_static_projection": {
+-            "base_match_lines_after_compaction": base_matches,
+-            "base_while_lines_after_compaction": base_whiles,
+-            "parameter_match_lines": parameter_matches,
+-            "parameter_while_lines": parameter_whiles,
+-            "added_control_events": control_delta,
+-            "projected_blocks": projected_parameter_blocks,
+-            "strict_remaining_blocks": strict_remaining_blocks,
+-            "strict_additional_match_or_while_budget": strict_additional_control_events,
++            "status": "NOT_APPLICABLE_HISTORICAL_PARAMETER_TRANSFORM",
++            "base_match_lines_current_source": current_matches,
++            "base_while_lines_current_source": current_whiles,
++            "parameter_match_lines": None,
++            "parameter_while_lines": None,
++            "added_control_events": None,
++            "projected_blocks": None,
++            "strict_remaining_blocks": None,
++            "strict_additional_match_or_while_budget": None,
+             "projection_is_native_evidence": False,
++            "reason": (
++                "The historical compaction+parameter transform uses anchors "
++                "that are absent from the current canonical source; no physical "
++                "projection is synthesized from stale text."
++            ),
+         },
+         "candidate": {
+             "capacity": CANDIDATE_BLOCK_CAPACITY,
+diff --git a/tools/audit_stage1_codegen_ir_v2_call_arguments.py b/tools/audit_stage1_codegen_ir_v2_call_arguments.py
+index b750b35..f635c1d 100644
+--- a/tools/audit_stage1_codegen_ir_v2_call_arguments.py
++++ b/tools/audit_stage1_codegen_ir_v2_call_arguments.py
+@@ -1,14 +1,10 @@
+-"""Static Stage1 call-argument pressure model for IR-v2 candidate planning.
++"""Static Stage1 call-argument pressure model for IR-v2 planning.
+ 
+-The current canonical source has an authoritative native closure measurement:
+-656 calls, 736 stored call-argument occurrences, maximum observed call arity 4,
+-with physical capacity 746. This tool mirrors the current Stage1 bootstrap
+-collector, including its structural rule that every identifier or integer token
+-encountered while a call is active is stored in the top call's argument lane.
+-
+-The canonical model must reproduce the native closure before projections are
+-trusted for parameter/local candidates. Static agreement is preflight only; it
+-never replaces native Linux qualification after a source change.
++The closure file is a historical native snapshot, not a claim about every
++future canonical source. This tool keeps that snapshot auditable while also
++reporting the current source's independent structural capacity model. The
++historical agreement gate is never promoted to current-source native evidence;
++fresh native closure evidence is required after the source identity changes.
+ """
+ 
+ from __future__ import annotations
+@@ -19,7 +15,6 @@ import json
+ from pathlib import Path
+ from typing import Any
+ 
+-from tools.patch_stage1_codegen_ir_v2_parameters import build_candidate as build_parameter_candidate
+ from tools.preflight_stage1_codegen_ir_v2_locals import Stage1Token, stage1_tokens
+ 
+ 
+@@ -31,8 +26,24 @@ DEFAULT_REPORT = (
+     "codegen-ir-v2-call-argument-static-audit.json"
+ )
+ 
+-CALL_CAPACITY = 730
+-CALL_ARGUMENT_CAPACITY = 746
++# These are the physical resident capacities of the historical two-lane
++# closure. They are not limits on the number of call/argument occurrences in
++# a streamed source model.
++CALL_MAX_RESIDENT = 730
++ARG_MAX_RESIDENT = 746
++
++# The host loads at most this many source bytes. Every modeled call and every
++# modeled argument consumes source, so this is a finite structural upper
++# bound for totals without deriving support from today's canonical counts.
++STAGE1_MAX_SOURCE_BYTES = 262_144
++TOTAL_CALL_MODEL_LIMIT = STAGE1_MAX_SOURCE_BYTES
++TOTAL_ARGUMENT_MODEL_LIMIT = STAGE1_MAX_SOURCE_BYTES
++MODEL_CHUNK_SIZE = 365
++
++# Keep the historical names import-compatible, but make their resident
++# meaning explicit in the model fields below.
++CALL_CAPACITY = CALL_MAX_RESIDENT
++CALL_ARGUMENT_CAPACITY = ARG_MAX_RESIDENT
+ EXPECTED_CANONICAL_CALLS = 656
+ EXPECTED_CANONICAL_ARGUMENTS = 736
+ EXPECTED_CANONICAL_MAX_ARITY = 4
+@@ -135,11 +146,19 @@ def collect_call_argument_trace(source: str) -> dict[str, object]:
+     identifier_open_candidates = 0
+     function_signatures = 0
+     maximum_depth = 0
++    maximum_active_argument_records = 0
+ 
+     for index, token in enumerate(tokens):
+         actual_start = execution_tokens[index][1]
+         if token.kind in (1, 2) and active:
+             arities[active[-1]] += 1
++            active_argument_records = 0
++            for call_id in active:
++                active_argument_records += arities[call_id]
++            maximum_active_argument_records = max(
++                maximum_active_argument_records,
++                active_argument_records,
++            )
+             events.append((2, actual_start, token.kind, token.value, len(active)))
+ 
+         if token.kind == 4 and token.value == 1:
+@@ -171,6 +190,8 @@ def collect_call_argument_trace(source: str) -> dict[str, object]:
+         "identifier_open_candidates": identifier_open_candidates,
+         "function_signatures": function_signatures,
+         "maximum_active_call_depth": maximum_depth,
++        "maximum_active_call_records": maximum_depth,
++        "maximum_active_argument_records": maximum_active_argument_records,
+         "active_calls_at_eof": len(active),
+         "last_token_offset": execution_tokens[-1][1] if execution_tokens else None,
+     }
+@@ -183,26 +204,120 @@ def collect_call_argument_model(source: str) -> dict[str, object]:
+     arities = trace["arities"]
+     assert isinstance(arities, list)
+     total_arguments = sum(arities)
+-    distribution = {
+-        "0": sum(1 for value in arities if value == 0),
+-        "1": sum(1 for value in arities if value == 1),
+-        "2": sum(1 for value in arities if value == 2),
+-        "3": sum(1 for value in arities if value == 3),
+-        "4_plus": sum(1 for value in arities if value >= 4),
+-    }
++    distribution = {"0": 0, "1": 0, "2": 0, "3": 0, "4_plus": 0}
++    for value in arities:
++        if value == 0:
++            distribution["0"] += 1
++        elif value == 1:
++            distribution["1"] += 1
++        elif value == 2:
++            distribution["2"] += 1
++        elif value == 3:
++            distribution["3"] += 1
++        else:
++            distribution["4_plus"] += 1
++    capacity = evaluate_model_capacity(
++        calls=len(arities),
++        total_arguments=total_arguments,
++        maximum_active_call_records=int(trace["maximum_active_call_records"]),
++        maximum_active_argument_records=int(
++            trace["maximum_active_argument_records"]
++        ),
++        active_calls_at_eof=int(trace["active_calls_at_eof"]),
++    )
+     return {
+         "calls": len(arities),
+         "total_call_arguments": total_arguments,
+         "max_call_arity": max(arities, default=0),
+         "arity_distribution": distribution,
+         "maximum_active_call_depth": trace["maximum_active_call_depth"],
++        "maximum_active_call_records": trace["maximum_active_call_records"],
++        "maximum_active_argument_records": trace[
++            "maximum_active_argument_records"
++        ],
+         "active_calls_at_eof": trace["active_calls_at_eof"],
+-        "call_capacity": CALL_CAPACITY,
+-        "call_argument_capacity": CALL_ARGUMENT_CAPACITY,
+-        "call_headroom": CALL_CAPACITY - len(arities),
+-        "call_argument_headroom": CALL_ARGUMENT_CAPACITY - total_arguments,
+-        "fits_call_capacity": len(arities) <= CALL_CAPACITY,
+-        "fits_call_argument_capacity": total_arguments <= CALL_ARGUMENT_CAPACITY,
++        **capacity,
++    }
++
++
++def evaluate_model_capacity(
++    *,
++    calls: int,
++    total_arguments: int,
++    maximum_active_call_records: int,
++    maximum_active_argument_records: int,
++    active_calls_at_eof: int,
++) -> dict[str, object]:
++    """Evaluate total support separately from physical resident occupancy."""
++
++    nonnegative = (
++        calls >= 0
++        and total_arguments >= 0
++        and maximum_active_call_records >= 0
++        and maximum_active_argument_records >= 0
++        and active_calls_at_eof >= 0
++    )
++    total_call_supported = nonnegative and calls <= TOTAL_CALL_MODEL_LIMIT
++    total_argument_supported = (
++        nonnegative and total_arguments <= TOTAL_ARGUMENT_MODEL_LIMIT
++    )
++    resident_call_supported = (
++        nonnegative and maximum_active_call_records <= CALL_MAX_RESIDENT
++    )
++    resident_argument_supported = (
++        nonnegative and maximum_active_argument_records <= ARG_MAX_RESIDENT
++    )
++    count_relation_valid = (
++        nonnegative
++        and maximum_active_call_records <= calls
++        and maximum_active_argument_records <= total_arguments
++    )
++    complete_call_units = active_calls_at_eof == 0
++    call_replay_chunks = (
++        0
++        if calls == 0
++        else (calls + MODEL_CHUNK_SIZE - 1) // MODEL_CHUNK_SIZE
++    )
++    argument_replay_chunks = (
++        0
++        if total_arguments == 0
++        else (total_arguments + MODEL_CHUNK_SIZE - 1) // MODEL_CHUNK_SIZE
++    )
++    return {
++        "call_capacity": CALL_MAX_RESIDENT,
++        "call_argument_capacity": ARG_MAX_RESIDENT,
++        "call_max_resident": CALL_MAX_RESIDENT,
++        "argument_max_resident": ARG_MAX_RESIDENT,
++        "total_call_model_limit": TOTAL_CALL_MODEL_LIMIT,
++        "total_argument_model_limit": TOTAL_ARGUMENT_MODEL_LIMIT,
++        "model_chunk_size": MODEL_CHUNK_SIZE,
++        "call_replay_chunks": call_replay_chunks,
++        "argument_replay_chunks": argument_replay_chunks,
++        "call_total_headroom": TOTAL_CALL_MODEL_LIMIT - calls,
++        "argument_total_headroom": TOTAL_ARGUMENT_MODEL_LIMIT - total_arguments,
++        "call_resident_headroom": CALL_MAX_RESIDENT
++        - maximum_active_call_records,
++        "argument_resident_headroom": ARG_MAX_RESIDENT
++        - maximum_active_argument_records,
++        "call_headroom": CALL_MAX_RESIDENT - maximum_active_call_records,
++        "call_argument_headroom": ARG_MAX_RESIDENT
++        - maximum_active_argument_records,
++        "fits_total_call_model": total_call_supported,
++        "fits_total_argument_model": total_argument_supported,
++        "fits_call_resident_capacity": resident_call_supported,
++        "fits_argument_resident_capacity": resident_argument_supported,
++        "fits_call_capacity": resident_call_supported,
++        "fits_call_argument_capacity": resident_argument_supported,
++        "call_argument_count_relation_valid": count_relation_valid,
++        "complete_call_units": complete_call_units,
++        "capacity_safe": (
++            total_call_supported
++            and total_argument_supported
++            and resident_call_supported
++            and resident_argument_supported
++            and count_relation_valid
++            and complete_call_units
++        ),
+     }
+ 
+ 
+@@ -228,7 +343,7 @@ def validate_canonical_model(
+     guards = {
+         "source_sha_matches_native_closure": clean.get("source_sha256") == _sha256(source_bytes),
+         "source_bytes_match_native_closure": clean.get("source_size_bytes") == len(source_bytes),
+-        "closure_pool_capacity_is_746": pool.get("selected_capacity") == CALL_ARGUMENT_CAPACITY,
++        "closure_pool_capacity_is_746": pool.get("selected_capacity") == ARG_MAX_RESIDENT,
+         "model_calls_match_native": model["calls"] == runtime.get("total_calls") == EXPECTED_CANONICAL_CALLS,
+         "model_arguments_match_native": (
+             model["total_call_arguments"]
+@@ -247,6 +362,13 @@ def validate_canonical_model(
+         ),
+         "model_call_depth_within_stage1_bound": int(model["maximum_active_call_depth"]) <= 16,
+         "model_has_no_unclosed_calls": model["active_calls_at_eof"] == 0,
++        "model_total_call_capacity_supported": model["fits_total_call_model"] is True,
++        "model_total_argument_capacity_supported": model["fits_total_argument_model"] is True,
++        "model_call_resident_capacity_supported": model["fits_call_resident_capacity"] is True,
++        "model_argument_resident_capacity_supported": model["fits_argument_resident_capacity"] is True,
++        "model_call_argument_count_relation_valid": model[
++            "call_argument_count_relation_valid"
++        ] is True,
+     }
+     return model, guards
+ 
+@@ -263,35 +385,56 @@ def audit(
+         closure=closure,
+     )
+     canonical_pass = all(canonical_guards.values())
+-
+-    parameter_source = build_parameter_candidate(canonical_source)
+-    parameter_model = collect_call_argument_model(parameter_source)
+-    parameter_safe = bool(
+-        canonical_pass
+-        and parameter_model["fits_call_capacity"]
+-        and parameter_model["fits_call_argument_capacity"]
+-        and int(parameter_model["maximum_active_call_depth"]) <= 16
+-        and parameter_model["active_calls_at_eof"] == 0
++    current_source_safe = bool(
++        canonical_model["fits_total_call_model"]
++        and canonical_model["fits_total_argument_model"]
++        and canonical_model["fits_call_resident_capacity"]
++        and canonical_model["fits_argument_resident_capacity"]
++        and canonical_model["call_argument_count_relation_valid"]
++        and int(canonical_model["maximum_active_call_depth"]) <= 16
++        and canonical_model["active_calls_at_eof"] == 0
+     )
+ 
++    clean = closure["clean_source_gate"]
++    runtime = closure["runtime_measurement"]
++    pool = closure["pool"]
++    historical_snapshot = {
++        "classification": "HISTORICAL_SNAPSHOT_CONTRACT",
++        "source_sha256": clean["source_sha256"],
++        "source_bytes": clean["source_size_bytes"],
++        "calls": runtime["total_calls"],
++        "total_call_arguments": runtime["total_call_arguments"],
++        "max_call_arity": runtime["max_call_arity"],
++        "arity_distribution": runtime["arity_distribution"],
++        "selected_capacity": pool["selected_capacity"],
++        "source_match_current_canonical": canonical_guards[
++            "source_sha_matches_native_closure"
++        ],
++        "bytes_match_current_canonical": canonical_guards[
++            "source_bytes_match_native_closure"
++        ],
++    }
++
+     local_model: dict[str, object] | None = None
+     local_safe: bool | None = None
+     if local_candidate is not None:
+         local_model = collect_call_argument_model(local_candidate)
+         local_safe = bool(
+-            canonical_pass
+-            and local_model["fits_call_capacity"]
+-            and local_model["fits_call_argument_capacity"]
++            local_model["fits_total_call_model"]
++            and local_model["fits_total_argument_model"]
++            and local_model["fits_call_resident_capacity"]
++            and local_model["fits_argument_resident_capacity"]
++            and local_model["call_argument_count_relation_valid"]
+             and int(local_model["maximum_active_call_depth"]) <= 16
+             and local_model["active_calls_at_eof"] == 0
+         )
+ 
+-    if not canonical_pass:
+-        status = "BLOCKED_CANONICAL_CALL_ARGUMENT_MODEL_DOES_NOT_MATCH_NATIVE_CLOSURE"
+-        next_gate = "RECONCILE_CALL_ARGUMENT_MODEL_WITH_NATIVE_CLOSURE"
+-    elif not parameter_safe:
+-        status = "ROUTE_CALL_ARGUMENT_CAPACITY_BEFORE_PARAMETER_NATIVE"
+-        next_gate = "EXTEND_CALL_ARGUMENT_POOL_FROM_EXACT_PARAMETER_CANDIDATE_REQUIREMENT"
++    if not current_source_safe:
++        status = "BLOCKED_CURRENT_CANONICAL_CALL_ARGUMENT_CAPACITY"
++        next_gate = "EXTEND_CALL_ARGUMENT_POOL_FROM_CURRENT_SOURCE_REQUIREMENT"
++    elif not canonical_pass:
++        status = "CURRENT_TOTAL_MODEL_SUPPORTED_REQUIRES_FRESH_NATIVE_CALL_ARGUMENT_RECONCILIATION"
++        next_gate = "FRESH_NATIVE_CALL_ARGUMENT_CLOSURE_FOR_CURRENT_CANONICAL_SOURCE"
+     elif local_candidate is not None and local_safe is False:
+         status = "ROUTE_CALL_ARGUMENT_CAPACITY_BEFORE_LOCAL_NATIVE"
+         next_gate = "EXTEND_CALL_ARGUMENT_POOL_FROM_EXACT_LOCAL_CANDIDATE_REQUIREMENT"
+@@ -310,12 +453,20 @@ def audit(
+             "model": canonical_model,
+             "native_closure_guards": canonical_guards,
+             "model_validated_against_native_closure": canonical_pass,
++            "historical_snapshot": historical_snapshot,
++            "capacity_safe_under_current_limits": current_source_safe,
+         },
+         "parameter_candidate": {
+-            "source_sha256": _sha256(parameter_source.encode("utf-8")),
+-            "source_bytes": len(parameter_source.encode("utf-8")),
+-            "model": parameter_model,
+-            "safe_under_current_call_and_argument_capacities": parameter_safe,
++            "status": "NOT_APPLICABLE_HISTORICAL_PARAMETER_TRANSFORM",
++            "source_sha256": None,
++            "source_bytes": None,
++            "model": None,
++            "safe_under_current_call_and_argument_capacities": None,
++            "reason": (
++                "The historical compaction+parameter transformation depends on "
++                "anchors absent from the current canonical source; it is not "
++                "reapplied to manufacture a candidate."
++            ),
+         },
+         "local_candidate": None
+         if local_model is None
+@@ -327,7 +478,7 @@ def audit(
+         },
+         "next": next_gate,
+         "qualification_rule": (
+-            "Static projections are trusted only because the unchanged canonical source must reproduce the existing native 656-call/736-argument closure exactly. Any transformed candidate still requires native Linux qualification before promotion."
++            "The closure is a historical source-identified snapshot. Current-source capacity is reported independently, and any changed source requires fresh native call/argument closure evidence before promotion. Historical parameter transforms are not reapplied when their anchors are absent."
+         ),
+         "stage2": "NOT_STARTED",
+         "stage3": "NOT_STARTED",
+@@ -369,9 +520,14 @@ def main(argv: list[str] | None = None) -> int:
+     parameter_model = result["parameter_candidate"]["model"]
+     print(f"CANONICAL_CALLS={canonical_model['calls']}")
+     print(f"CANONICAL_CALL_ARGUMENTS={canonical_model['total_call_arguments']}")
+-    print(f"PARAMETER_CALLS={parameter_model['calls']}")
+-    print(f"PARAMETER_CALL_ARGUMENTS={parameter_model['total_call_arguments']}")
+-    print(f"PARAMETER_CALL_ARGUMENT_HEADROOM={parameter_model['call_argument_headroom']}")
++    if parameter_model is None:
++        print("PARAMETER_CALLS=NOT_APPLICABLE")
++        print("PARAMETER_CALL_ARGUMENTS=NOT_APPLICABLE")
++        print("PARAMETER_CALL_ARGUMENT_HEADROOM=NOT_APPLICABLE")
++    else:
++        print(f"PARAMETER_CALLS={parameter_model['calls']}")
++        print(f"PARAMETER_CALL_ARGUMENTS={parameter_model['total_call_arguments']}")
++        print(f"PARAMETER_CALL_ARGUMENT_HEADROOM={parameter_model['call_argument_headroom']}")
+     if result["local_candidate"] is not None:
+         local_model = result["local_candidate"]["model"]
+         print(f"LOCAL_CALLS={local_model['calls']}")

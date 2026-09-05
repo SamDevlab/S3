@@ -1,0 +1,253 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "bootstrap/**"
+      - "selfhost/**"
+      - "stdlib/**"
+      - "tests/**"
+      - "tools/**"
+      - "examples/**"
+      - "benchmarks/**"
+      - "spec/**"
+      - "pyproject.toml"
+      - "README.md"
+      - "docs/ai-capabilities.json"
+      - "docs/decisions/**"
+      - "docs/diagnostics.md"
+      - ".github/workflows/**"
+  pull_request:
+    paths:
+      - "bootstrap/**"
+      - "selfhost/**"
+      - "stdlib/**"
+      - "tests/**"
+      - "tools/**"
+      - "examples/**"
+      - "benchmarks/**"
+      - "spec/**"
+      - "pyproject.toml"
+      - "README.md"
+      - "docs/ai-capabilities.json"
+      - "docs/decisions/**"
+      - "docs/diagnostics.md"
+      - ".github/workflows/**"
+
+concurrency:
+  group: tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  ssa-per-pass-verification:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Verify SSA after each optimization pass
+        run: >-
+          python -m pytest -q
+          tests/test_ssa_per_pass_verification.py
+          tests/test_differential_correctness_matrix.py
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Keep the supported interpreter set explicit for the stabilization contract.
+        # The include entries below assign each group to its canonical interpreter.
+        # Supported Python versions: ["3.11", "3.12", "3.13"]
+        include:
+          - python-version: "3.11"
+            group_name: unit
+            group_filter: 'not (renderer or adapter or fixture_output or benchmark or lehmer or prime)'
+          - python-version: "3.12"
+            group_name: unit
+            group_filter: 'not (renderer or adapter or fixture_output or benchmark or lehmer or prime)'
+          - python-version: "3.13"
+            group_name: unit
+            group_filter: 'not (renderer or adapter or fixture_output or benchmark or lehmer or prime)'
+          - python-version: "3.13"
+            group_name: renderer
+            group_filter: 'renderer or adapter or fixture_output'
+          - python-version: "3.13"
+            group_name: benchmark
+            group_filter: 'benchmark or lehmer or prime'
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Check golden inspect artifacts
+        if: matrix.group_name == 'unit'
+        run: python tools/golden_inspect.py check
+
+      - name: Run tests
+        run: python -m pytest -n auto -v --tb=short -k "${{ matrix.group_filter }}"
+
+  native-x86-64:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate native toolchain
+        run: |
+          uname -m
+          cc --version
+          as --version
+          ld --version
+          file --version
+          readelf --version
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Run required native x86-64 tests
+        env:
+          S3_NATIVE_REQUIRED: "1"
+        run: >-
+          python -m pytest
+          tests/test_native_x86_64_integration.py
+          tests/test_instruction_limit_e3.py
+          tests/test_external_jsmn_native.py
+
+  numeric-domain-closure:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Validate native numeric toolchain
+        run: |
+          uname -m
+          cc --version
+          as --version
+          ld --version
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Prove M1.32 programmer-visible numeric capability
+        env:
+          S3_NATIVE_REQUIRED: "1"
+        run: >-
+          python -m pytest -q
+          tests/test_numeric_domains.py
+          tests/test_numeric_closure.py
+          tests/test_numeric_source_parser.py
+          tests/test_numeric_native_integration.py
+          tests/test_numeric_capability_e2e.py
+
+  differential-generated:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Run deterministic differential gate
+        run: >-
+          python -m pytest -q
+          tests/test_deterministic_differential_generation.py
+          tests/test_differential_harness.py
+
+  benchmark-smoke:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Run functional benchmark smoke
+        run: >-
+          python tools/s3bench.py
+          --smoke
+          --benchmark runtime.scalar.accumulate.v1
+          --implementation s3
+          --mode emulator
+          --optimization O0
+          --runner-type shared-ci
+          --output-json benchmarks/results/ci-smoke.json
+          --output-markdown benchmarks/results/ci-smoke.md
+
+      - name: Validate smoke result contract
+        run: >-
+          python -m pytest
+          tests/test_s3bench_core.py
+          tests/test_s3bench_manifest.py
+          tests/test_s3bench_corpus.py
+          tests/test_s3bench_cross_language.py
+          -q

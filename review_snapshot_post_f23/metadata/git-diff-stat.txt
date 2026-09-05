@@ -1,0 +1,15 @@
+ .github/workflows/tests.yml                        |   4 +
+ reports/selfhost/stage1/STAGE1_LANE_STATUS.md      |  72 ++--
+ .../stage1/STAGE1_STRUCTURED_PROGRESS_20260828.md  | 100 +++---
+ reports/selfhost/stage1/stage1-lane-status.json    |  76 ++--
+ selfhost/compiler/compiler-sources.json            |   4 +-
+ selfhost/compiler/s3c_stage1.s3                    | 383 ++++++++-------------
+ tests/test_stage1_codegen_ir_v2_block_capacity.py  |   9 +-
+ tests/test_stage1_codegen_ir_v2_call_arguments.py  | 176 +++++++++-
+ tests/test_stage1_compiler_seed.py                 |  20 +-
+ tests/test_stage1_general_emitter.py               |   9 +-
+ tests/test_stage1_semantic_ir_requirements.py      |   6 +-
+ tests/test_stage1_typed_constants.py               |  17 +-
+ tools/audit_stage1_codegen_ir_v2_block_capacity.py |  35 +-
+ tools/audit_stage1_codegen_ir_v2_call_arguments.py | 262 +++++++++++---
+ 14 files changed, 708 insertions(+), 465 deletions(-)
