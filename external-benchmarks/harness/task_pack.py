@@ -8,6 +8,8 @@ import subprocess
 from pathlib import Path
 from typing import Any, Mapping
 
+from .core import recompute_result_status
+
 TASK_PACK_SCHEMA_VERSION = "1.0.0"
 _AGENT_REPORT_NAME = ".s3-agent-memory-report.json"
 
@@ -298,6 +300,15 @@ def attach_task_checks(result: dict[str, Any], checks: list[dict[str, object]]) 
     metrics["oracle_checks_total"] = int(metrics.get("oracle_checks_total", 0)) + len(checks)
     metrics["oracle_checks_passed"] = int(metrics.get("oracle_checks_passed", 0)) + len(checks) - failed
     metrics["critical_oracle_failures"] = int(metrics.get("critical_oracle_failures", 0)) + failed
-    if failed:
+    dimensions = result.get("dimensions")
+    if isinstance(dimensions, dict):
+        dimensions["task_artifact"] = {
+            "status": "FAIL" if failed else "PASS",
+            "checks_total": len(checks),
+            "checks_passed": len(checks) - failed,
+            "failures": failed,
+        }
+        recompute_result_status(result)
+    elif failed:
         result["status"] = "FAIL"
     return result

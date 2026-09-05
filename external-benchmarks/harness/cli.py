@@ -126,7 +126,7 @@ def _emit(
             )
         output_markdown.parent.mkdir(parents=True, exist_ok=True)
         output_markdown.write_text(markdown, encoding="utf-8", newline="\n")
-    return 0 if result["status"] == "PASS" else 1
+    return 0 if result["status"] in {"PASS", "VALID_PASS"} else 1
 
 
 def _required_plan_argument(args: argparse.Namespace, name: str) -> str:

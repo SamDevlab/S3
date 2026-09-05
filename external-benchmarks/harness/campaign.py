@@ -8,10 +8,12 @@ import statistics
 from pathlib import Path
 from typing import Any, Mapping
 
-from .core import ExternalBenchmarkError, SCHEMA_VERSION as SCENARIO_RESULT_SCHEMA_VERSION
+from .core import ExternalBenchmarkError, SCHEMA_VERSION as LEGACY_RESULT_SCHEMA_VERSION
+from .execution import RESULT_SCHEMA_VERSION, VALID_RESULT_STATUSES
 
 CAMPAIGN_SCHEMA_VERSION = "1.0.0"
-CAMPAIGN_RESULT_SCHEMA_VERSION = "1.0.0"
+CAMPAIGN_RESULT_SCHEMA_VERSION = "1.1.0"
+LEGACY_CAMPAIGN_RESULT_SCHEMA_VERSION = "1.0.0"
 _ALLOWED_MODES = {"single-session", "cross-session", "cross-agent", "stale-memory"}
 _SAFE_ID = re.compile(r"^[A-Za-z0-9._+-]+$")
 _COMMIT_ID = re.compile(r"^[0-9a-f]{40}$")
@@ -22,6 +24,7 @@ _EXECUTION_KEYS = (
     "task_protocol_version",
     "repetition",
 )
+_LEGACY_EXECUTION_PROTOCOL = "legacy-agent-memory-v1.0.0"
 
 
 def _require_object(value: object, name: str) -> dict[str, Any]:
@@ -148,13 +151,13 @@ def _load_scenario_result(path: Path, expected_scenario_id: str) -> dict[str, An
     except json.JSONDecodeError as error:
         raise ExternalBenchmarkError(f"invalid scenario result JSON: {path.name}") from error
 
-    if document.get("schema_version") != SCENARIO_RESULT_SCHEMA_VERSION:
+    if document.get("schema_version") not in {LEGACY_RESULT_SCHEMA_VERSION, RESULT_SCHEMA_VERSION}:
         raise ExternalBenchmarkError(f"unsupported scenario result schema: {path.name}")
     if document.get("scenario_id") != expected_scenario_id:
         raise ExternalBenchmarkError(
             f"scenario result id mismatch for {path.name}: expected {expected_scenario_id}"
         )
-    if document.get("status") not in {"PASS", "FAIL"}:
+    if document.get("status") not in {"PASS", "FAIL", *VALID_RESULT_STATUSES}:
         raise ExternalBenchmarkError(f"invalid scenario result status: {path.name}")
     provider = _require_object(document.get("provider"), "scenario result provider")
     if not isinstance(provider.get("id"), str) or not provider["id"]:
@@ -188,6 +191,10 @@ def _execution_identity(value: object, scenario_id: str) -> tuple[object, ...]:
         elif not isinstance(item, str) or not item:
             raise ExternalBenchmarkError(f"execution {key} is invalid for {scenario_id}")
         identity.append(item)
+    protocol_version = execution.get("execution_protocol_version", _LEGACY_EXECUTION_PROTOCOL)
+    if not isinstance(protocol_version, str) or not protocol_version:
+        raise ExternalBenchmarkError(f"execution protocol version is invalid for {scenario_id}")
+    identity.append(protocol_version)
     return tuple(identity)
 
 
@@ -266,8 +273,13 @@ def aggregate_campaign(campaign: Mapping[str, Any], *, result_dir: Path) -> dict
             "campaign results must share one execution profile and repetition"
         )
 
-    passed = sum(1 for result in results if result["status"] == "PASS")
-    failed = len(results) - passed
+    valid_passed = sum(1 for result in results if result["status"] in {"PASS", "VALID_PASS"})
+    valid_failed = sum(1 for result in results if result["status"] in {"FAIL", "VALID_FAIL"})
+    invalid = sum(
+        1
+        for result in results
+        if result["status"] in {"INVALID_OPERATIONAL_RUN", "INVALID_EXECUTION_EVIDENCE"}
+    )
     recalls: list[float] = []
     critical_oracle_failures = 0
     for result in results:
@@ -280,21 +292,51 @@ def aggregate_campaign(campaign: Mapping[str, Any], *, result_dir: Path) -> dict
             critical_oracle_failures += failures
 
     provider_id, provider_version = next(iter(provider_keys))
-    execution = dict(zip(_EXECUTION_KEYS, next(iter(execution_keys)), strict=True))
+    execution_values = next(iter(execution_keys))
+    execution = dict(zip(_EXECUTION_KEYS, execution_values[: len(_EXECUTION_KEYS)], strict=True))
+    protocol_version = execution_values[-1]
+    if protocol_version != _LEGACY_EXECUTION_PROTOCOL:
+        execution["execution_protocol_version"] = protocol_version
+    nonzero_exits = 0
+    timeouts = 0
+    agent_process_pass = 0
+    agent_process_fail = 0
+    new_protocol = protocol_version != _LEGACY_EXECUTION_PROTOCOL
+    for result in results:
+        dimensions = result.get("dimensions")
+        process = dimensions.get("agent_process") if isinstance(dimensions, dict) else None
+        if isinstance(process, dict):
+            if process.get("status") == "PASS":
+                agent_process_pass += 1
+            elif process.get("status") == "FAIL":
+                agent_process_fail += 1
+            exits = process.get("nonzero_exits")
+            if isinstance(exits, list):
+                nonzero_exits += len(exits)
+            timeout_rows = process.get("timeouts")
+            if isinstance(timeout_rows, list):
+                timeouts += len(timeout_rows)
     return {
-        "schema_version": CAMPAIGN_RESULT_SCHEMA_VERSION,
+        "schema_version": (
+            CAMPAIGN_RESULT_SCHEMA_VERSION if new_protocol else LEGACY_CAMPAIGN_RESULT_SCHEMA_VERSION
+        ),
         "campaign_id": str(campaign["campaign_id"]),
         "campaign_version": str(campaign["version"]),
         "category": str(campaign["category"]),
         "provider": {"id": provider_id, "version": provider_version},
         "execution": execution,
-        "status": "FAIL" if failed else "PASS",
+        "status": "FAIL" if invalid or (not new_protocol and valid_failed) else "PASS",
         "metrics": {
             "scenarios_total": len(results),
-            "scenarios_passed": passed,
-            "scenarios_failed": failed,
+            "scenarios_passed": valid_passed,
+            "scenarios_failed": valid_failed,
+            "scenarios_invalid": invalid,
             "critical_oracle_failures": critical_oracle_failures,
             "mean_invariant_recall_rate": statistics.fmean(recalls) if recalls else None,
+            "agent_process_pass": agent_process_pass,
+            "agent_process_fail": agent_process_fail,
+            "nonzero_agent_exits": nonzero_exits,
+            "timeouts": timeouts,
         },
         "results": results,
     }

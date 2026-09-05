@@ -2,9 +2,16 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from .core import ExternalBenchmarkError
+from .execution import (
+    EXECUTION_PROTOCOL_VERSION,
+    ExecutionEvidenceError,
+    classify_process_phases,
+    load_process_metadata,
+)
 
 
 def _object(value: object, name: str) -> dict[str, Any]:
@@ -47,6 +54,9 @@ def materialize_observation(
     reported_invariants: Sequence[str] = (),
     source_agent: Mapping[str, Any] | None = None,
     target_agent: Mapping[str, Any] | None = None,
+    process_metadata_dir: Path | None = None,
+    process_metadata: Sequence[Mapping[str, Any]] | None = None,
+    runbook: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Create safe scenario observation metadata from one pinned run plan."""
 
@@ -75,6 +85,11 @@ def materialize_observation(
     if not isinstance(repetition, int) or isinstance(repetition, bool) or repetition < 1:
         raise ExternalBenchmarkError("run plan execution.repetition is invalid")
     clean_execution["repetition"] = repetition
+    execution_protocol_version = execution.get("execution_protocol_version")
+    if execution_protocol_version is not None:
+        if not isinstance(execution_protocol_version, str) or not execution_protocol_version:
+            raise ExternalBenchmarkError("run plan execution.execution_protocol_version is invalid")
+        clean_execution["execution_protocol_version"] = execution_protocol_version
 
     if any(not isinstance(item, str) or not item for item in reported_invariants):
         raise ExternalBenchmarkError("reported invariants must be non-empty strings")
@@ -89,6 +104,29 @@ def materialize_observation(
         "execution": clean_execution,
         "reported_invariants": sorted(set(reported_invariants)),
     }
+
+    if execution_protocol_version == EXECUTION_PROTOCOL_VERSION:
+        try:
+            if process_metadata_dir is not None:
+                phases = load_process_metadata(
+                    runbook if runbook is not None else _runbook_for_observation(plan),
+                    scenario_id=scenario_id,
+                    directory=process_metadata_dir,
+                )
+            elif process_metadata is not None:
+                phases = [dict(item) for item in process_metadata]
+            else:
+                raise ExecutionEvidenceError("required process metadata was not supplied")
+            observation["agent_process"] = classify_process_phases(phases)
+        except (ExecutionEvidenceError, KeyError, TypeError, ValueError) as error:
+            observation["agent_process"] = {
+                "status": "INVALID_EXECUTION_EVIDENCE",
+                "phases": [],
+                "required_processes": 0,
+                "nonzero_exits": [],
+                "timeouts": [],
+                "reason": str(error),
+            }
 
     if mode == "cross-session":
         source_value: object = agent if source_agent is None else source_agent
@@ -128,3 +166,14 @@ def materialize_observation(
         }
 
     return observation
+
+
+def _runbook_for_observation(plan: Mapping[str, Any]) -> Mapping[str, Any]:
+    """Extract the runbook only when a caller explicitly attached it to a plan."""
+
+    runbook = plan.get("runbook")
+    if not isinstance(runbook, dict):
+        raise ExecutionEvidenceError(
+            "process metadata directory requires the runbook structure in the plan"
+        )
+    return runbook

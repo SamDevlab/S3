@@ -85,6 +85,7 @@ def main(argv: list[str] | None = None) -> int:
     execute.add_argument("--step", required=True)
     execute.add_argument("--run-dir", type=Path, required=True)
     execute.add_argument("--worktree-root", type=Path, required=True)
+    execute.add_argument("--process-metadata-file", type=Path)
 
     args = parser.parse_args(argv)
     try:
@@ -118,6 +119,9 @@ def main(argv: list[str] | None = None) -> int:
             step,
             run_dir=args.run_dir,
             worktree_root=args.worktree_root,
+            process_metadata_file=args.process_metadata_file,
+            scenario_id=args.scenario,
+            phase=args.step,
         )
     except (ExternalBenchmarkError, TaskPackError) as error:
         raise SystemExit(str(error)) from error

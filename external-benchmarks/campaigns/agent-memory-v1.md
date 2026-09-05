@@ -55,15 +55,27 @@ The stale-memory Phase A intentionally does **not** expose the current FFI invar
 
 ## Correctness-first and task-completion gates
 
-A scenario passes only when both classes of checks pass:
+The execution semantics are versioned as `agent-memory-v1.0.2`. The task pack
+remains `1.0.1`.
+
+A new-protocol scenario passes only when all three independent dimensions pass:
 
 ```text
+required agent process PASS (returncode == 0 for every required phase)
+        +
 semantic S3 oracle PASS
         +
 required task artifact/diff PASS
         =
-scenario PASS
+scenario VALID_PASS
 ```
+
+A required agent process that completes with `returncode != 0` produces
+`VALID_FAIL`, even if the semantic oracle and task-artifact dimensions pass. A
+watchdog timeout produces `INVALID_OPERATIONAL_RUN`; missing or malformed
+required exit metadata produces `INVALID_EXECUTION_EVIDENCE`. Invalid runs do
+not count as scientific executions. Auxiliary command statuses are separate
+from the required agent-process gate.
 
 Therefore:
 

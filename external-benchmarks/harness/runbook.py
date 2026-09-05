@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from .core import ExternalBenchmarkError
+from .execution import EXECUTION_PROTOCOL_VERSION, write_process_metadata
 from .task_pack import render_phase_prompt, task_for_scenario
 from .timeout_policy import (
     load_timeout_policy,
@@ -14,7 +15,7 @@ from .timeout_policy import (
     timeout_policy_document,
 )
 
-RUNBOOK_SCHEMA_VERSION = "1.0.0"
+RUNBOOK_SCHEMA_VERSION = "1.1.0"
 _AI_MEMORY_ARMS = {"ai-memory", "ai-memory+s3-integrity-gate"}
 _AGENT_REPORT_NAME = ".s3-agent-memory-report.json"
 
@@ -192,6 +193,7 @@ def build_runbook(
                     "argv": argv,
                     "prompt_relpath": relpath,
                     "worktree_key": worktree_key,
+                    "agent": source_agent,
                     "hard_boundary_after": False,
                 }
             )
@@ -240,6 +242,11 @@ def build_runbook(
 
     document = {
         "schema_version": RUNBOOK_SCHEMA_VERSION,
+        "execution_protocol_version": str(
+            plan.get("execution", {}).get(
+                "execution_protocol_version", EXECUTION_PROTOCOL_VERSION
+            )
+        ),
         "campaign_id": str(plan.get("campaign_id", "")),
         "provider": {"id": provider_id, "version": str(provider.get("version", ""))},
         "provider_profile": profile,
@@ -261,6 +268,9 @@ def execute_direct_step(
     *,
     run_dir: Path,
     worktree_root: Path,
+    process_metadata_file: Path | None = None,
+    scenario_id: str | None = None,
+    phase: str | None = None,
 ) -> int:
     """Execute only provider-neutral direct steps with prompt content on stdin."""
 
@@ -293,4 +303,21 @@ def execute_direct_step(
         )
     except OSError as error:
         raise ExternalBenchmarkError("direct agent process could not be started") from error
+    if process_metadata_file is not None:
+        if not scenario_id or not phase:
+            raise ExternalBenchmarkError(
+                "scenario_id and phase are required with process metadata"
+            )
+        try:
+            write_process_metadata(
+                process_metadata_file,
+                scenario_id=scenario_id,
+                phase=phase,
+                agent=step.get("agent", {}),
+                runner="direct",
+                argv=list(argv),
+                result=result,
+            )
+        except (OSError, TypeError, ValueError) as error:
+            raise ExternalBenchmarkError("agent process metadata could not be persisted") from error
     return int(result.returncode)

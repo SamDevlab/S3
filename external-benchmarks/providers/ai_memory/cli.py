@@ -89,6 +89,11 @@ def create_parser() -> argparse.ArgumentParser:
         )
         if name == "run":
             launch.add_argument("--worktree", type=Path, required=True)
+            launch.add_argument("--process-metadata-file", type=Path)
+            launch.add_argument("--phase-name")
+            launch.add_argument("--agent-provider")
+            launch.add_argument("--agent-model")
+            launch.add_argument("--agent-harness")
             launch.add_argument(
                 "--execute",
                 action="store_true",
@@ -140,7 +145,30 @@ def _launch(args: argparse.Namespace) -> int:
         return 0
     if not args.execute:
         raise AiMemoryProviderError("run requires explicit --execute acknowledgement")
-    return execute_managed_run(launch, worktree=args.worktree)
+    agent = None
+    if args.process_metadata_file is not None:
+        if not all(
+            isinstance(value, str) and value
+            for value in (args.agent_provider, args.agent_model, args.agent_harness)
+        ):
+            raise AiMemoryProviderError(
+                "agent identity is required with --process-metadata-file"
+            )
+        if not isinstance(args.phase_name, str) or not args.phase_name:
+            raise AiMemoryProviderError("--phase-name is required with process metadata")
+        agent = {
+            "provider": args.agent_provider,
+            "model": args.agent_model,
+            "harness": args.agent_harness,
+        }
+    return execute_managed_run(
+        launch,
+        worktree=args.worktree,
+        process_metadata_file=args.process_metadata_file,
+        scenario_id=args.scenario if args.process_metadata_file is not None else None,
+        phase=args.phase_name if args.process_metadata_file is not None else None,
+        agent=agent,
+    )
 
 
 def main(argv: Sequence[str] | None = None) -> int:

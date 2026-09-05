@@ -115,6 +115,20 @@ def _build_provider_bundle(
             reported_invariants=_critical_ids(scenarios[scenario_id]),
             source_agent=source,
             target_agent=target,
+            process_metadata=[
+                {
+                    "phase": str(step["id"]),
+                    "agent": dict(step.get("agent", plan["agent"])),
+                    "runner": str(step["runner"]),
+                    "returncode": 0,
+                    "timed_out": False,
+                    "elapsed_seconds": 0.0,
+                }
+                for step in runbook["scenarios"]
+                if isinstance(step, dict)
+                and step.get("scenario_id") == scenario_id
+                for step in step["steps"]
+            ],
         )
         if observation["provider"]["id"] != provider_id:
             raise ExternalBenchmarkError("smoke observation provider mismatch")
@@ -196,7 +210,7 @@ def run_protocol_smoke(
                     repository_root=by_scenario[scenario_id],
                 )
                 semantic_validated += 1
-                if result["status"] != "PASS":
+                if result["status"] not in {"PASS", "VALID_PASS"}:
                     semantic_failures.append(scenario_id)
         finally:
             cleanup_worktrees(

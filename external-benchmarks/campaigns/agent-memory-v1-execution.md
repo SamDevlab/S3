@@ -2,6 +2,10 @@
 
 This kit turns `agent-memory-v1` into a repeatable four-arm experiment without coupling S3 to any model or memory SDK.
 
+The execution contract is `agent-memory-v1.0.2`. It keeps the task pack and
+semantic oracles unchanged, but persists structured return-code evidence for
+each required agent phase.
+
 ## Subject/controller split
 
 The controller is the `external-benchmarks-v1` branch. The S3 subject under test is pinned by the campaign manifest and must be identical across every provider/repetition:
@@ -129,10 +133,23 @@ python tools/external_bench.py \
   --output-json results/agent-memory-v1/ai-memory/run-1/memory.checked-i64.v1.json
 ```
 
-For Agent Memory V1, PASS requires both:
+For Agent Memory V1, a new-protocol scenario is `VALID_PASS` only when all
+three independent dimensions pass:
 
-1. semantic S3 oracle checks;
-2. task-artifact checks proving the required scoped change was actually made.
+1. required agent processes finish with return code `0`;
+2. semantic S3 oracle checks;
+3. task-artifact checks proving the required scoped change was actually made.
+
+A completed required agent process with a nonzero return code is a valid
+`VALID_FAIL`, even when the other two dimensions pass. A watchdog timeout is
+`INVALID_OPERATIONAL_RUN`; missing required process metadata is
+`INVALID_EXECUTION_EVIDENCE`. Auxiliary commands do not affect the agent
+process dimension. Semantic and task-artifact checks remain diagnostic and are
+still evaluated whenever enough evidence is available.
+
+Process metadata contains only phase, agent identity, runner, sanitized argv,
+return code, timeout state, and elapsed time. It never stores transcripts,
+prompts, credentials, environment dumps, or memory contents.
 
 A no-op therefore fails even when the baseline tests already pass.
 

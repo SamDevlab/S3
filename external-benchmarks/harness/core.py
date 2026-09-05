@@ -8,6 +8,14 @@ import sys
 from pathlib import Path
 from typing import Any, Mapping
 
+from .execution import (
+    EXECUTION_PROTOCOL_VERSION,
+    classify_process_phases,
+    invalid_process_evidence,
+    is_new_execution_protocol,
+    RESULT_SCHEMA_VERSION,
+)
+
 SCHEMA_VERSION = "1.0.0"
 
 
@@ -179,10 +187,73 @@ def _safe_execution(observation: Mapping[str, Any]) -> dict[str, Any] | None:
         if not isinstance(value, str) or not value:
             raise ExternalBenchmarkError(f"execution.{key} must be a non-empty string")
         result[key] = value
+    execution_protocol_version = execution.get("execution_protocol_version")
+    if execution_protocol_version is not None:
+        if not isinstance(execution_protocol_version, str) or not execution_protocol_version:
+            raise ExternalBenchmarkError(
+                "execution.execution_protocol_version must be a non-empty string"
+            )
+        result["execution_protocol_version"] = execution_protocol_version
     repetition = execution.get("repetition")
     if not isinstance(repetition, int) or isinstance(repetition, bool) or repetition < 1:
         raise ExternalBenchmarkError("execution.repetition must be a positive integer")
     result["repetition"] = repetition
+    return result
+
+
+def _safe_agent_process(
+    observation: Mapping[str, Any],
+    execution: Mapping[str, Any] | None,
+) -> dict[str, Any] | None:
+    """Normalize required agent-phase evidence, failing closed for v1.0.2 runs."""
+
+    raw = observation.get("agent_process")
+    if raw is None:
+        if execution is not None and is_new_execution_protocol(execution):
+            return invalid_process_evidence("required agent process metadata is missing")
+        return None
+    if not isinstance(raw, dict):
+        return invalid_process_evidence("agent_process must be a JSON object")
+    phases = raw.get("phases")
+    if not isinstance(phases, list) or not phases:
+        return invalid_process_evidence("agent_process.phases must be a non-empty list")
+    try:
+        result = classify_process_phases(phases)
+    except (KeyError, TypeError, ValueError) as error:
+        return invalid_process_evidence(str(error))
+    if raw.get("required_processes") is not None and raw.get("required_processes") != len(phases):
+        return invalid_process_evidence("agent_process.required_processes does not match phases")
+    return result
+
+
+def recompute_result_status(result: dict[str, Any]) -> dict[str, Any]:
+    """Apply the versioned three-dimensional scenario gate."""
+
+    execution = result.get("execution")
+    if not isinstance(execution, dict) or not is_new_execution_protocol(execution):
+        result["status"] = "FAIL" if result.get("status") == "FAIL" else "PASS"
+        return result
+    dimensions = result.get("dimensions")
+    if not isinstance(dimensions, dict):
+        result["status"] = "INVALID_EXECUTION_EVIDENCE"
+        return result
+    process = dimensions.get("agent_process")
+    semantic = dimensions.get("semantic_oracle")
+    task = dimensions.get("task_artifact")
+    if not all(isinstance(item, dict) for item in (process, semantic, task)):
+        result["status"] = "INVALID_EXECUTION_EVIDENCE"
+        return result
+    process_status = process.get("status")
+    if process_status in {"INVALID_OPERATIONAL_RUN", "INVALID_EXECUTION_EVIDENCE"}:
+        result["status"] = process_status
+    elif (
+        process_status == "PASS"
+        and semantic.get("status") == "PASS"
+        and task.get("status") == "PASS"
+    ):
+        result["status"] = "VALID_PASS"
+    else:
+        result["status"] = "VALID_FAIL"
     return result
 
 
@@ -278,8 +349,13 @@ def evaluate_scenario(
         "oracle_checks_passed": len(results) - len(failed),
         "critical_oracle_failures": len(failed),
     }
+    execution = _safe_execution(observation)
     result: dict[str, Any] = {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": (
+            RESULT_SCHEMA_VERSION
+            if execution is not None and is_new_execution_protocol(execution)
+            else SCHEMA_VERSION
+        ),
         "scenario_id": str(scenario["scenario_id"]),
         "scenario_version": str(scenario["version"]),
         "category": str(scenario["category"]),
@@ -290,9 +366,30 @@ def evaluate_scenario(
         "metrics": metrics,
         "oracle": results,
     }
-    execution = _safe_execution(observation)
     if execution is not None:
         result["execution"] = execution
+    agent_process = _safe_agent_process(observation, execution)
+    semantic_status = "FAIL" if failed else "PASS"
+    if execution is not None and is_new_execution_protocol(execution):
+        result["dimensions"] = {
+            "agent_process": agent_process
+            if agent_process is not None
+            else {"status": "NOT_EVALUATED", "phases": [], "required_processes": 0},
+            "semantic_oracle": {
+                "status": semantic_status,
+                "checks_total": len(results),
+                "checks_passed": len(results) - len(failed),
+                "failures": len(failed),
+            },
+            "task_artifact": {
+                "status": "PASS",
+                "checks_total": 0,
+                "checks_passed": 0,
+                "failures": 0,
+            },
+        }
+        result["agent_process"] = agent_process
+        recompute_result_status(result)
     handoff = _safe_handoff(observation)
     if handoff is not None:
         result["handoff"] = handoff

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://s3-lang.local/external-benchmarks/execution-process-1.0.0.schema.json",
+  "title": "S3 Agent Memory process execution evidence 1.0.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "execution_protocol_version", "scenario_id", "phase", "agent", "runner", "argv", "returncode", "timed_out", "elapsed_seconds"],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "execution_protocol_version": {"const": "agent-memory-v1.0.2"},
+    "scenario_id": {"type": "string", "minLength": 1},
+    "phase": {"type": "string", "minLength": 1},
+    "agent": {"$ref": "#/$defs/agent"},
+    "runner": {"type": "string", "minLength": 1},
+    "argv": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "returncode": {"type": "integer"},
+    "timed_out": {"type": "boolean"},
+    "elapsed_seconds": {"type": "number", "minimum": 0}
+  },
+  "$defs": {
+    "agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "model", "harness"],
+      "properties": {
+        "provider": {"type": "string", "minLength": 1},
+        "model": {"type": "string", "minLength": 1},
+        "harness": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

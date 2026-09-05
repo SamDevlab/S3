@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from .client import AiMemoryProviderError, validate_scope_name
+from harness.execution import write_process_metadata
 from harness.timeout_policy import load_timeout_policy, run_controlled_process
 
 _HARNESS_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
@@ -118,7 +119,15 @@ def build_managed_run_command(
     return AiMemoryLaunch(argv=tuple(argv), phase=phase, workstream=workstream)
 
 
-def execute_managed_run(launch: AiMemoryLaunch, *, worktree: Path) -> int:
+def execute_managed_run(
+    launch: AiMemoryLaunch,
+    *,
+    worktree: Path,
+    process_metadata_file: Path | None = None,
+    scenario_id: str | None = None,
+    phase: str | None = None,
+    agent: Mapping[str, Any] | None = None,
+) -> int:
     """Execute an interactive host harness without capturing or persisting its transcript."""
 
     worktree = worktree.resolve()
@@ -129,4 +138,23 @@ def execute_managed_run(launch: AiMemoryLaunch, *, worktree: Path) -> int:
         cwd=worktree,
         policy=load_timeout_policy(),
     )
+    if process_metadata_file is not None:
+        if not scenario_id or not phase or agent is None:
+            raise AiMemoryProviderError(
+                "scenario_id, phase, and agent are required with process metadata"
+            )
+        try:
+            write_process_metadata(
+                process_metadata_file,
+                scenario_id=scenario_id,
+                phase=phase,
+                agent=agent,
+                runner="ai-memory-managed",
+                argv=list(launch.argv),
+                result=result,
+            )
+        except (OSError, TypeError, ValueError) as error:
+            raise AiMemoryProviderError(
+                "agent process metadata could not be persisted"
+            ) from error
     return int(result.returncode)

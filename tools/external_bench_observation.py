@@ -39,6 +39,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--reported-invariant", action="append", default=[])
     parser.add_argument("--agent-report-file", type=Path)
     parser.add_argument("--runbook-file", type=Path)
+    parser.add_argument("--process-metadata-dir", type=Path)
     parser.add_argument("--source-agent-file", type=Path)
     parser.add_argument("--target-agent-file", type=Path)
     parser.add_argument("--output-json", type=Path, required=True)
@@ -86,6 +87,8 @@ def main(argv: list[str] | None = None) -> int:
             reported_invariants=reported,
             source_agent=source,
             target_agent=target,
+            process_metadata_dir=args.process_metadata_dir,
+            runbook=runbook if args.runbook_file is not None else None,
         )
         payload = json.dumps(observation, indent=2, sort_keys=True, allow_nan=False)
         args.output_json.parent.mkdir(parents=True, exist_ok=True)

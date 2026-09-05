@@ -7,8 +7,9 @@ import statistics
 from pathlib import Path
 from typing import Any, Mapping
 
-from .campaign import CAMPAIGN_RESULT_SCHEMA_VERSION
+from .campaign import CAMPAIGN_RESULT_SCHEMA_VERSION, LEGACY_CAMPAIGN_RESULT_SCHEMA_VERSION
 from .core import ExternalBenchmarkError
+from .execution import RESULT_SCHEMA_VERSION, VALID_RESULT_STATUSES
 from .plan import PLAN_SCHEMA_VERSION
 from .provider_profile import provider_profile_identity, sanitize_provider_profile
 from .timeout_policy import timeout_policy_document
@@ -19,7 +20,14 @@ _COMPARABILITY_KEYS = (
     "agent_harness_version",
     "tool_permissions_profile",
     "task_protocol_version",
+    "execution_protocol_version",
 )
+_LEGACY_EXECUTION_PROTOCOL = "legacy-agent-memory-v1.0.0"
+_PLAN_SCHEMA_VERSIONS = {"1.0.0", PLAN_SCHEMA_VERSION}
+_CAMPAIGN_RESULT_SCHEMA_VERSIONS = {
+    LEGACY_CAMPAIGN_RESULT_SCHEMA_VERSION,
+    CAMPAIGN_RESULT_SCHEMA_VERSION,
+}
 
 
 def _require_object(value: object, name: str) -> dict[str, Any]:
@@ -39,7 +47,7 @@ def _read_object(path: Path, name: str) -> dict[str, Any]:
 
 def _load_campaign_result(path: Path) -> dict[str, Any]:
     document = _read_object(path, "campaign result")
-    if document.get("schema_version") != CAMPAIGN_RESULT_SCHEMA_VERSION:
+    if document.get("schema_version") not in _CAMPAIGN_RESULT_SCHEMA_VERSIONS:
         raise ExternalBenchmarkError(f"unsupported campaign result schema: {path}")
     if document.get("status") not in {"PASS", "FAIL"}:
         raise ExternalBenchmarkError(f"invalid campaign result status: {path}")
@@ -51,6 +59,8 @@ def _load_campaign_result(path: Path) -> dict[str, Any]:
     execution = _require_object(document.get("execution"), "campaign result execution")
     for key in _COMPARABILITY_KEYS:
         value = execution.get(key)
+        if key == "execution_protocol_version" and value is None:
+            continue
         if not isinstance(value, str) or not value:
             raise ExternalBenchmarkError(f"campaign result execution.{key} is invalid: {path}")
     repetition = execution.get("repetition")
@@ -69,7 +79,7 @@ def _load_run_plan(
     repetition: int,
 ) -> dict[str, Any]:
     plan = _read_object(path, "run plan")
-    if plan.get("schema_version") != PLAN_SCHEMA_VERSION:
+    if plan.get("schema_version") not in _PLAN_SCHEMA_VERSIONS:
         raise ExternalBenchmarkError(f"unsupported run plan schema: {path}")
     if plan.get("campaign_id") != campaign["campaign_id"]:
         raise ExternalBenchmarkError(f"run plan campaign id mismatch: {path}")
@@ -166,9 +176,21 @@ def _comparability_reasons(
         )
         for repetition in range(1, repetitions + 1):
             candidate = provider_runs[provider_id][repetition - 1]
+            invalid_rows = [
+                item
+                for item in candidate.get("results", [])
+                if isinstance(item, dict)
+                and item.get("status") in {"INVALID_OPERATIONAL_RUN", "INVALID_EXECUTION_EVIDENCE"}
+            ]
+            if invalid_rows:
+                reasons.append(
+                    f"run-{repetition}: {provider_id} contains invalid operational/execution results"
+                )
             candidate_execution = _require_object(candidate["execution"], "candidate execution")
             for key in _COMPARABILITY_KEYS:
-                if candidate_execution.get(key) != canonical_execution.get(key):
+                canonical_value = canonical_execution.get(key, _LEGACY_EXECUTION_PROTOCOL)
+                candidate_value = candidate_execution.get(key, _LEGACY_EXECUTION_PROTOCOL)
+                if candidate_value != canonical_value:
                     reasons.append(
                         f"run-{repetition}: {provider_id} execution.{key} differs "
                         f"from canonical {reference_provider}/run-1"
@@ -223,6 +245,12 @@ def _provider_summary(runs: list[Mapping[str, Any]]) -> dict[str, Any]:
     campaign_passed = sum(1 for run in runs if run["status"] == "PASS")
     scenario_total = 0
     scenario_passed = 0
+    scenario_failed = 0
+    scenario_invalid = 0
+    agent_process_pass = 0
+    agent_process_fail = 0
+    nonzero_exits = 0
+    timeouts = 0
     critical_failures = 0
     recalls: list[float] = []
     per_scenario: dict[str, dict[str, Any]] = {}
@@ -231,8 +259,25 @@ def _provider_summary(runs: list[Mapping[str, Any]]) -> dict[str, Any]:
             item = _require_object(scenario, "scenario result")
             scenario_id = str(item["scenario_id"])
             scenario_total += 1
-            if item.get("status") == "PASS":
+            if item.get("status") in {"PASS", "VALID_PASS"}:
                 scenario_passed += 1
+            elif item.get("status") in {"FAIL", "VALID_FAIL"}:
+                scenario_failed += 1
+            elif item.get("status") in {"INVALID_OPERATIONAL_RUN", "INVALID_EXECUTION_EVIDENCE"}:
+                scenario_invalid += 1
+            dimensions = item.get("dimensions")
+            process = dimensions.get("agent_process") if isinstance(dimensions, dict) else None
+            if isinstance(process, dict):
+                if process.get("status") == "PASS":
+                    agent_process_pass += 1
+                elif process.get("status") == "FAIL":
+                    agent_process_fail += 1
+                exits = process.get("nonzero_exits")
+                timeout_rows = process.get("timeouts")
+                if isinstance(exits, list):
+                    nonzero_exits += len(exits)
+                if isinstance(timeout_rows, list):
+                    timeouts += len(timeout_rows)
             metrics = _require_object(item.get("metrics"), f"metrics for {scenario_id}")
             failures = metrics.get("critical_oracle_failures")
             if isinstance(failures, int):
@@ -242,11 +287,20 @@ def _provider_summary(runs: list[Mapping[str, Any]]) -> dict[str, Any]:
                 recalls.append(float(recall))
             summary = per_scenario.setdefault(
                 scenario_id,
-                {"runs": 0, "passed": 0, "failed": 0, "critical_oracle_failures": 0, "recalls": []},
+                {
+                    "runs": 0,
+                    "passed": 0,
+                    "failed": 0,
+                    "invalid": 0,
+                    "critical_oracle_failures": 0,
+                    "recalls": [],
+                },
             )
             summary["runs"] += 1
-            if item.get("status") == "PASS":
+            if item.get("status") in {"PASS", "VALID_PASS"}:
                 summary["passed"] += 1
+            elif item.get("status") in {"INVALID_OPERATIONAL_RUN", "INVALID_EXECUTION_EVIDENCE"}:
+                summary["invalid"] += 1
             else:
                 summary["failed"] += 1
             if isinstance(failures, int):
@@ -270,9 +324,15 @@ def _provider_summary(runs: list[Mapping[str, Any]]) -> dict[str, Any]:
         "scenario_observations_total": scenario_total,
         "scenario_observations_passed": scenario_passed,
         "scenario_observations_failed": scenario_total - scenario_passed,
+        "scenario_observations_valid_failed": scenario_failed,
+        "scenario_observations_invalid": scenario_invalid,
         "scenario_pass_rate": scenario_passed / scenario_total if scenario_total else None,
         "critical_oracle_failures": critical_failures,
         "mean_invariant_recall_rate": statistics.fmean(recalls) if recalls else None,
+        "agent_process_pass": agent_process_pass,
+        "agent_process_fail": agent_process_fail,
+        "nonzero_agent_exits": nonzero_exits,
+        "timeouts": timeouts,
         "scenarios": scenario_rows,
     }
 

@@ -6,10 +6,11 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from .core import ExternalBenchmarkError
+from .execution import EXECUTION_PROTOCOL_VERSION
 from .provider_profile import build_provider_profile
 from .timeout_policy import timeout_policy_document
 
-PLAN_SCHEMA_VERSION = "1.0.0"
+PLAN_SCHEMA_VERSION = "1.1.0"
 _TEMPLATE_BY_MODE = {
     "single-session": "single-session.json",
     "cross-session": "cross-session.json",
@@ -126,6 +127,7 @@ def build_run_plan(
             "agent_harness_version": agent_harness_version,
             "tool_permissions_profile": tool_permissions_profile,
             "task_protocol_version": protocol_version,
+            "execution_protocol_version": EXECUTION_PROTOCOL_VERSION,
             "repetition": repetition,
         },
         "run_root": run_root,
