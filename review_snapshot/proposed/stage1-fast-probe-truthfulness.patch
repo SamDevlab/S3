@@ -1,0 +1,192 @@
+diff --git a/tools/stage1_fast_probe.py b/tools/stage1_fast_probe.py
+--- a/tools/stage1_fast_probe.py
++++ b/tools/stage1_fast_probe.py
+@@
+         observed_counts: dict[str, int] = {}
+         function_emission_elapsed: list[float] = []
+         milestone_reached = False
++        scan_program_result: int | None = None
+         next_progress_heartbeat: float | None = None
+         original_execute = ir_emulator._execute_function
+@@
+         try:
+             try:
+-                original_execute(self._functions, self._functions["scan_program"], (2, 0), ())
++                scan_program_result = original_execute(
++                    self._functions,
++                    self._functions["scan_program"],
++                    (2, 0),
++                    (),
++                )
+             except _MilestoneReached:
+                 pass
+         finally:
+             ir_emulator._execute_function = original_execute
+         elapsed = time.perf_counter() - started
+@@
+         if before != after:
+             raise RuntimeError("compiled candidate IR changed during execution")
+         records = _parse_v3_stream(b"S3IR2 3\n" + bytes(output))
++        scan_program_completed = (
++            not milestone_reached
++            and scan_program_result is not None
++            and scan_program_result >= 0
++        )
+         self.last_run_metadata = {
+             "candidate_compile_seconds": self.compile_seconds,
+             "execution_seconds": elapsed,
+             "record_counts": _record_counts(records),
+@@
+             ],
+             "stop_after_f": stop_after_f,
+             "milestone_reached": milestone_reached,
+             "partial_stream": stop_after_f is not None,
+-            "qualification_complete": stop_after_f is None,
++            "scan_program_result": scan_program_result,
++            "scan_program_completed": scan_program_completed,
++            "qualification_complete": stop_after_f is None and scan_program_completed,
+         }
+         return records, elapsed
+@@
+ def _canonical_diagnostic(
+-    records: dict[str, list[tuple[int, ...]]], source: bytes
++    records: dict[str, list[tuple[int, ...]]],
++    source: bytes,
++    scan_program_result: int | None,
+ ) -> dict[str, Any]:
+-    counts = _record_counts(records)
+-    if counts["Z"]:
++    if scan_program_result is not None and scan_program_result >= 0:
+         return {
+             "FIRST_LOSS": "NONE",
+-            "DIAGNOSTIC_CODE": "CANONICAL_STREAM_COMPLETE",
++            "DIAGNOSTIC_CODE": "S3IR2_SCAN_PROGRAM_COMPLETE",
+             "RULE_ID": "NONE",
++            "SCAN_PROGRAM_RESULT": scan_program_result,
++            "Z_AUTHORITY": "NOT_APPLICABLE_DIRECT_SCAN_PROGRAM",
+         }
+     last_function = "UNKNOWN"
+     if records.get("F"):
+@@
+             last_function = source[name_start : name_start + name_length].decode(
+                 "ascii", errors="replace"
+             )
+-    rule_id = "S3.CONTROL.MATCH_THREE_WAY" if counts["T"] else "S3.IR.VALUE_SINGLE_PRODUCER"
++    if scan_program_result is None:
++        condition = "scan_program did not return because execution stopped early"
++        diagnostic_code = "S3IR2_SCAN_PROGRAM_NOT_COMPLETED"
++    else:
++        condition = "scan_program returned a negative result before source traversal completed"
++        diagnostic_code = "S3IR2_SCAN_PROGRAM_FAILED"
+     return {
+         "FIRST_LOSS": {
+             "after_function": last_function,
+-            "condition": "completion record Z was not emitted",
++            "condition": condition,
+         },
+-        "DIAGNOSTIC_CODE": "S3IR2_CANONICAL_STREAM_INCOMPLETE",
+-        "RULE_ID": rule_id,
++        "DIAGNOSTIC_CODE": diagnostic_code,
++        "RULE_ID": "NOT_SPECIFIED_OR_NOT_PROVEN",
++        "SCAN_PROGRAM_RESULT": scan_program_result,
++        "Z_AUTHORITY": "NOT_APPLICABLE_DIRECT_SCAN_PROGRAM",
+     }
+@@
+         "ELAPSED_SECONDS": metadata["execution_seconds"],
+         "PARTIAL_STREAM": "YES",
+         "QUALIFICATION_COMPLETE": "NO",
++        "SCAN_PROGRAM_RESULT": metadata["scan_program_result"],
++        "SCAN_PROGRAM_COMPLETED": (
++            "YES" if metadata["scan_program_completed"] else "NO"
++        ),
+         "counts": counts,
+@@
+         payload = {
+             "execution_seconds": elapsed,
+             "counts": _record_counts(records),
+-            **_canonical_diagnostic(records, DEFAULT_CANONICAL.read_bytes()),
++            "scan_program_result": candidate.last_run_metadata["scan_program_result"],
++            "scan_program_completed": candidate.last_run_metadata[
++                "scan_program_completed"
++            ],
++            **_canonical_diagnostic(
++                records,
++                DEFAULT_CANONICAL.read_bytes(),
++                candidate.last_run_metadata["scan_program_result"],
++            ),
+         }
+@@
+     else:
+         print(
+             json.dumps(
+-                {"execution_seconds": elapsed, "counts": _record_counts(records)},
++                {
++                    "execution_seconds": elapsed,
++                    "counts": _record_counts(records),
++                    "scan_program_result": candidate.last_run_metadata[
++                        "scan_program_result"
++                    ],
++                    "scan_program_completed": candidate.last_run_metadata[
++                        "scan_program_completed"
++                    ],
++                },
+                 sort_keys=True,
+             )
+         )
+diff --git a/tests/test_stage1_fast_probe.py b/tests/test_stage1_fast_probe.py
+--- a/tests/test_stage1_fast_probe.py
++++ b/tests/test_stage1_fast_probe.py
+@@
+     milestone, _ = candidate.run_stream(MILESTONE_SOURCE, stop_after_f=2)
+     assert len(milestone["F"]) == 2
+     assert candidate.last_run_metadata["milestone_reached"] is True
+     assert candidate.last_run_metadata["partial_stream"] is True
++    assert candidate.last_run_metadata["scan_program_result"] is None
++    assert candidate.last_run_metadata["scan_program_completed"] is False
+     assert candidate.last_run_metadata["qualification_complete"] is False
+     assert len(candidate.last_run_metadata["function_emission_elapsed_seconds"]) == 2
+ 
+     qualified, _ = candidate.run_stream(MILESTONE_SOURCE)
+     assert len(qualified["F"]) == 3
+     assert candidate.last_run_metadata["milestone_reached"] is False
+     assert candidate.last_run_metadata["partial_stream"] is False
++    assert candidate.last_run_metadata["scan_program_result"] is not None
++    assert candidate.last_run_metadata["scan_program_result"] >= 0
++    assert candidate.last_run_metadata["scan_program_completed"] is True
+     assert candidate.last_run_metadata["qualification_complete"] is True
++
++
++def test_direct_scan_program_completion_does_not_require_z() -> None:
++    source = b"fn alpha() -> i64:\n    return 1\n"
++    records = {"F": [(0, 1, 3, 5, 0, 1)]}
++
++    diagnostic = fast_probe._canonical_diagnostic(records, source, 7)
++
++    assert diagnostic["FIRST_LOSS"] == "NONE"
++    assert diagnostic["DIAGNOSTIC_CODE"] == "S3IR2_SCAN_PROGRAM_COMPLETE"
++    assert diagnostic["RULE_ID"] == "NONE"
++    assert diagnostic["SCAN_PROGRAM_RESULT"] == 7
++    assert diagnostic["Z_AUTHORITY"] == "NOT_APPLICABLE_DIRECT_SCAN_PROGRAM"
++
++
++def test_failed_direct_scan_does_not_guess_semantic_rule_from_record_counts() -> None:
++    source = b"fn alpha() -> i64:\n    return 1\n"
++    records = {
++        "F": [(0, 1, 3, 5, 0, 1)],
++        "T": [(0, 3, 1, 2, 3, 4, -1)],
++    }
++
++    diagnostic = fast_probe._canonical_diagnostic(records, source, -1)
++
++    assert diagnostic["FIRST_LOSS"]["after_function"] == "alpha"
++    assert diagnostic["DIAGNOSTIC_CODE"] == "S3IR2_SCAN_PROGRAM_FAILED"
++    assert diagnostic["RULE_ID"] == "NOT_SPECIFIED_OR_NOT_PROVEN"
++    assert diagnostic["SCAN_PROGRAM_RESULT"] == -1
++    assert diagnostic["Z_AUTHORITY"] == "NOT_APPLICABLE_DIRECT_SCAN_PROGRAM"
+@@
+     assert payload["MILESTONE_REACHED"] == "YES"
+     assert payload["PARTIAL_STREAM"] == "YES"
+     assert payload["QUALIFICATION_COMPLETE"] == "NO"
++    assert payload["SCAN_PROGRAM_RESULT"] is None
++    assert payload["SCAN_PROGRAM_COMPLETED"] == "NO"
+     assert payload["LAST_FUNCTION_NAME"] == "beta"
