@@ -2,7 +2,9 @@ name: Tests
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - review/chatgpt-stage1-f27-compound-while-fix-20260906
     paths:
       - "bootstrap/**"
       - "tests/**"
@@ -16,6 +18,7 @@ on:
       - "docs/decisions/**"
       - "docs/diagnostics.md"
       - ".github/workflows/**"
+      - "review_snapshot_post_f27_fix/**"
   pull_request:
     paths:
       - "bootstrap/**"
@@ -66,9 +69,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Keep the supported interpreter set explicit for the stabilization contract.
-        # The include entries below assign each group to its canonical interpreter.
-        # Supported Python versions: ["3.11", "3.12", "3.13"]
         include:
           - python-version: "3.11"
             group_name: unit
@@ -247,3 +247,57 @@ jobs:
           tests/test_s3bench_corpus.py
           tests/test_s3bench_cross_language.py
           -q
+
+  stage1-local-closure-review:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/review/chatgpt-stage1-f27-compound-while-fix-20260906'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      S3_STAGE1_LOCAL_CLOSURE: "1"
+      S3_STAGE1_CANONICAL_PATH: /tmp/s3c_stage1_protected.s3
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Materialize protected canonical
+        run: |
+          git fetch --no-tags --depth=1 origin 1ec76af89992f119865a370488593ad5c85c4c49
+          git show 1ec76af89992f119865a370488593ad5c85c4c49:selfhost/compiler/s3c_stage1.s3 > "$S3_STAGE1_CANONICAL_PATH"
+          test "$(wc -c < "$S3_STAGE1_CANONICAL_PATH")" -eq 225699
+          test "$(sha256sum "$S3_STAGE1_CANONICAL_PATH" | awk '{print $1}')" = "44f022820a9191e3a6d402c188eb4b242e0ffeefd7a149b15e2b46039031b9cb"
+
+      - name: Install project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Run Stage1 local closure diagnostics
+        id: closure
+        shell: bash
+        run: |
+          set +e
+          python -m pytest -vv -s tests/test_stage1_f27_patch_proposal.py tests/test_stage1_local_closure_matrix.py > stage1-local-closure.log 2>&1
+          code=$?
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          cat stage1-local-closure.log
+          exit 0
+
+      - name: Upload Stage1 local closure log
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage1-local-closure-log
+          path: stage1-local-closure.log
+          if-no-files-found: error
+
+      - name: Enforce Stage1 local closure result
+        run: exit "${{ steps.closure.outputs.exit_code }}"
