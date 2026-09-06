@@ -21,11 +21,23 @@ jobs:
   focused-linux:
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    env:
+      S3_STAGE1_LOCAL_CLOSURE: '1'
+      S3_STAGE1_CANONICAL_PATH: /tmp/s3c_stage1_protected.s3
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+      - name: Materialize protected canonical from pinned commit
+        shell: bash
+        run: |
+          git fetch --no-tags --depth=1 origin 1ec76af89992f119865a370488593ad5c85c4c49
+          git show 1ec76af89992f119865a370488593ad5c85c4c49:selfhost/compiler/s3c_stage1.s3 > "$S3_STAGE1_CANONICAL_PATH"
+          test "$(wc -c < "$S3_STAGE1_CANONICAL_PATH")" -eq 225699
+          test "$(sha256sum "$S3_STAGE1_CANONICAL_PATH" | awk '{print $1}')" = "44f022820a9191e3a6d402c188eb4b242e0ffeefd7a149b15e2b46039031b9cb"
       - name: Install project
         run: python -m pip install -e .
       - name: Run focused Stage1 proposal tests
