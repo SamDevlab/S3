@@ -85,25 +85,26 @@ def _scalar_stub(span: FunctionSpan) -> bytes:
     return_type = header.split(marker, 1)[1].rsplit(b":", 1)[0].strip()
     if return_type in {b"i64", b"tryte", b"trit"}:
         return header + b"    return 0\n\n"
-    # Keep uncommon non-scalar bodies exact rather than inventing an invalid
-    # test-only value. This remains cheap for the protected canonical and
-    # preserves the real signature/body if such a helper exists.
+    # Do not invent a fake value for an uncommon non-scalar signature. Keep
+    # that body exact; the protected canonical currently only needs scalar
+    # stubs here, but this keeps the window harness fail-safe if that changes.
     return span.body
 
 
 def _window_source(canonical: bytes, spans: list[FunctionSpan], target_index: int) -> bytes:
-    target = spans[target_index]
     pieces = [_foreign_headers(canonical), b"\n"]
-    # Resolution/type checking sees every canonical function signature, while
-    # all unrelated scalar bodies are reduced to a single return. The exact
-    # target body is kept unchanged and placed immediately before `after` so
-    # the boundary under test is explicit without replaying the real prefix.
+    # Keep every original function in original order so the target retains its
+    # canonical F ordinal/function id. Only the target keeps its exact body;
+    # unrelated scalar bodies collapse to a one-return stub. Insert `after`
+    # immediately after the target, then keep later signatures/stubs available
+    # for whole-source resolution. This preserves the target's identity without
+    # replaying the expensive canonical prefix semantics.
     for index, span in enumerate(spans):
         if index == target_index:
-            continue
-        pieces.append(_scalar_stub(span))
-    pieces.append(target.body)
-    pieces.append(b"fn after() -> trit:\n    return 0\n")
+            pieces.append(span.body)
+            pieces.append(b"fn after() -> trit:\n    return 0\n\n")
+        else:
+            pieces.append(_scalar_stub(span))
     return b"".join(pieces)
 
 
@@ -164,14 +165,17 @@ def _assert_integrity(records: dict[str, list[tuple[int, ...]]]) -> None:
     values = [row[0] for row in records.get("V", [])]
     value_ids = set(values)
     assert len(values) == len(value_ids), "duplicate V ids"
+
     result_values = [row[2] for row in records.get("R", [])]
     assert len(result_values) == len(set(result_values)), "duplicate result producers"
     assert all(row[0] in instruction_ids and row[2] in value_ids for row in records.get("O", []))
     assert all(row[0] in instruction_ids and row[2] in value_ids for row in records.get("R", []))
+
     terminators = [row[0] for row in records.get("T", [])]
     assert len(terminators) == len(set(terminators)), "duplicate terminators"
     terminator_ids = set(terminators)
     assert all(row[4] in instruction_ids and row[4] in terminator_ids for row in records.get("B", []))
+
     storage_keys = [(row[0], row[1]) for row in records.get("M", [])]
     assert len(storage_keys) == len(set(storage_keys)), "storage collision"
 
@@ -198,17 +202,24 @@ def test_remaining_canonical_function_windows_close_locally() -> None:
         source = _window_source(canonical, spans, target_index)
         result, records = _run_scan(compiled, source)
         emitted = _function_names(source, records)
-        if result < 0 or len(emitted) < 2 or emitted[-2:] != [target.name, "after"]:
+
+        target_position_ok = len(emitted) > target_index and emitted[target_index] == target.name
+        after_position_ok = len(emitted) > target_index + 1 and emitted[target_index + 1] == "after"
+        if result < 0 or not target_position_ok or not after_position_ok:
+            lower = max(0, target_index - 2)
+            upper = min(len(emitted), target_index + 5)
             failures.append(
                 f"F{target_index} {target.name}: scan_program={result}; "
-                f"tailF={emitted[-6:]}"
+                f"windowF={emitted[lower:upper]}"
             )
             break
+
         try:
             _assert_integrity(records)
         except AssertionError as exc:
             failures.append(f"F{target_index} {target.name}: IR integrity: {exc}")
             break
+
         passes.append(f"F{target_index}:{target.name}")
         print(f"LOCAL_WINDOW_PASS F{target_index} {target.name}")
 
