@@ -1,6 +1,14 @@
 name: Stage1 F27 Review
 
 on:
+  push:
+    branches:
+      - 'review/chatgpt-stage1-f27-compound-while-fix-20260906'
+    paths:
+      - 'review_snapshot_post_f27_fix/**'
+      - 'tests/test_stage1_f27_patch_proposal.py'
+      - 'tests/test_stage1_local_closure_matrix.py'
+      - '.github/workflows/stage1-f27-review.yml'
   pull_request:
     paths:
       - 'review_snapshot_post_f27_fix/**'
