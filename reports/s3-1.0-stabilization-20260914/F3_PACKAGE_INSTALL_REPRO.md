@@ -4,7 +4,9 @@ Date: 2026-09-14
 
 Status: **PASS**.
 
-F3 is intentionally not marked PASS until an executable environment completes the package gate. The first PR-triggered Actions runs for this candidate did not obtain runners, so they produced no repository-step evidence.
+The first PR-triggered Actions runs for this candidate did not obtain runners,
+so they produced no repository-step evidence. The bounded local executable
+gate below supplies the package evidence for this checkpoint.
 
 ## Candidate package contract
 
@@ -32,7 +34,9 @@ DIAGNOSTIC_SCHEMA=1.0.0
 9. runs bounded official-example smoke checks;
 10. records SHA-256 values and byte-identity observations for the two independent builds.
 
-The gate deliberately prints archive identity comparison rather than pretending byte identity before the actual build system proves it. If the repository's stable reproducibility contract requires byte identity and the two builds differ, the candidate remains blocked until the difference is classified and repaired or the contract is clarified without weakening existing guarantees.
+The gate records archive identities and requires byte identity for the two
+independent builds. The packaging command now normalizes the sdist release
+tree and gzip/tar metadata when an explicit epoch is provided.
 
 ## Current static preparation
 
