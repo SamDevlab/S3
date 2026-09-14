@@ -8,21 +8,35 @@ This document defines the final release transition without executing it.
 
 ## Preconditions for F6
 
-The candidate may not be frozen until all of the following have executable evidence:
+The candidate may not be frozen until all of the following have executable evidence or an explicitly accepted environment deferment under the release policy:
 
 ```text
 F3_PACKAGE_INSTALL_REPRO=PASS
 F4_SECURITY_SUPPLY_CHAIN=PASS_OR_EXPLICIT_PROVIDER_DEFERMENT_WITH_FAIL_CLOSED_EVIDENCE
 F5_FOCUSED_CURRENT_EQUIVALENT=PASS
-F5_NATIVE_X86_64_REQUIRED=PASS_WHERE_REQUIRED_ENVIRONMENT_AVAILABLE
+F5_NATIVE_X86_64_REQUIRED=PASS_OR_EXPLICIT_ENVIRONMENT_DEFERMENT_ACCEPTED
 UNCLASSIFIED_FAILURES=0
 ```
 
-Pre-step GitHub Actions runner failures do not satisfy or fail these source gates; they leave them unresolved.
+Local certification on Windows AMD64 closed F3, F4, and the host-independent focused F5 gates. It did **not** produce Linux x86-64 native execution or the broad normal CI matrix:
+
+```text
+F3_PACKAGE_INSTALL_REPRO=PASS
+F4_SECURITY_SUPPLY_CHAIN=PASS
+F5_HOST_INDEPENDENT=PASS
+F5_LINUX_X86_64_NATIVE=DEFERRED_ENVIRONMENT_UNAVAILABLE
+F5_NORMAL_MATRIX=DEFERRED_CI_RUNNER_UNAVAILABLE
+```
+
+The candidate delta from RC2 to the current release branch does not modify the parser, semantic analyzer, IR lowering, optimizer, emulator, Linux x86-64 backend, AArch64 backend, FFI implementation, TLS implementation, registry implementation, or self-host implementation. It does modify package/release surfaces, the deterministic WASM compiler-version identity, and reproducible sdist construction. Those changed surfaces received fresh local evidence.
+
+This factual non-native delta classification does **not** silently convert the missing Linux/CI executions into PASS. Before freeze, the campaign must make an explicit release-policy decision based on executable evidence: either obtain fresh Linux/current-matrix execution, or formally accept reuse/deferment under a documented impact rule. Until that decision is recorded, F6 remains not ready.
+
+Pre-step GitHub Actions runner failures do not satisfy or fail source gates; they leave those executions unresolved.
 
 ## Freeze procedure
 
-Once prerequisites are green:
+Once prerequisites are green or explicitly accepted under a documented release-impact rule:
 
 1. record exact candidate commit SHA;
 2. record complete candidate diff against the stabilization base;
@@ -41,7 +55,7 @@ FINAL_CANDIDATE_DIFF_CLASSIFIED=YES
 SOURCE_MUTATION_AFTER_FREEZE=NO
 F3=PASS
 F4=PASS_OR_ACCEPTED_DEFERMENT
-F5=PASS
+F5=PASS_OR_EXPLICITLY_ACCEPTED_DEFERMENT
 UNRESOLVED_RELEASE_BLOCKERS=0
 ```
 
@@ -102,6 +116,12 @@ If stable publication is explicitly authorized later, execute in this order:
 ## Current state
 
 ```text
+CURRENT_CANDIDATE_SHA=779f6ddb0a5a2e55ea57a3c6e07749f150d83455
+F3_PACKAGE_INSTALL_REPRO=PASS
+F4_SECURITY_SUPPLY_CHAIN=PASS
+F5_HOST_INDEPENDENT=PASS
+F5_LINUX_X86_64_NATIVE=DEFERRED_ENVIRONMENT_UNAVAILABLE
+F5_NORMAL_MATRIX=DEFERRED_CI_RUNNER_UNAVAILABLE
 F6_CANDIDATE_FROZEN=NO
 F6_FINAL_T4_AUTHORIZED=NO
 F6_FINAL_T4_RUN=NO
