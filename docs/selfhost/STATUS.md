@@ -58,10 +58,13 @@ version, or feature that re-enables implementation.
 The project has already passed earlier capability milestones such as slices and
 dynamic owned data, so those capabilities alone are not sufficient evidence to
 resume self-hosting. A future attempt must first demonstrate a complete generic
-compiler architecture that is representable in S3.
+compiler architecture that is representable in S3. The target architecture is
+captured as a non-authorizing design reference in
+[`FUTURE_ARCHITECTURE.md`](FUTURE_ARCHITECTURE.md).
 
 See also:
 
 - [`LESSONS.md`](LESSONS.md)
 - [`REENTRY_CRITERIA.md`](REENTRY_CRITERIA.md)
+- [`FUTURE_ARCHITECTURE.md`](FUTURE_ARCHITECTURE.md)
 - [`../../selfhost/README.md`](../../selfhost/README.md)
