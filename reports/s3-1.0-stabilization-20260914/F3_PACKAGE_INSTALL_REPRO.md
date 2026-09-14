@@ -2,7 +2,7 @@
 
 Date: 2026-09-14
 
-Status: **PREPARED / EXECUTION EVIDENCE PENDING**.
+Status: **PASS**.
 
 F3 is intentionally not marked PASS until an executable environment completes the package gate. The first PR-triggered Actions runs for this candidate did not obtain runners, so they produced no repository-step evidence.
 
@@ -44,19 +44,41 @@ The candidate branch already contains:
 - `docs/releases/1.0.0.md` marked DRAFT / NOT PUBLISHED;
 - Apache-2.0 project license at `LICENSE`.
 
-## Execution status
+## Execution evidence
 
 ```text
 F3_GATE_DEFINED=YES
-F3_WHEEL_BUILD=NOT_YET_OBTAINED
-F3_SDIST_BUILD=NOT_YET_OBTAINED
-F3_METADATA_VALIDATION=NOT_YET_OBTAINED
-F3_CLEAN_VENV_INSTALL=NOT_YET_OBTAINED
-F3_CLI_SMOKE=NOT_YET_OBTAINED
-F3_EXAMPLE_SMOKE=NOT_YET_OBTAINED
-F3_REBUILD_IDENTITY_OBSERVATION=NOT_YET_OBTAINED
-F3_LICENSE_PACKAGE_INVENTORY=NOT_YET_OBTAINED
-F3_STATUS=OPEN_PENDING_EXECUTABLE_RUNNER
+F3_PYTHON=3.13.15
+F3_SOURCE_DATE_EPOCH=1700000000
+F3_WHEEL_BUILD=PASS
+F3_SDIST_BUILD=PASS
+F3_METADATA_VALIDATION=PASS
+F3_CLEAN_VENV_INSTALL=PASS
+F3_CLI_SMOKE=PASS
+F3_EXAMPLE_SMOKE=PASS
+F3_LICENSE_PACKAGE_INVENTORY=PASS
+F3_WHEEL_BYTE_IDENTITY=PASS
+F3_SDIST_BYTE_IDENTITY=PASS
+F3_STATUS=PASS
 ```
 
-F3 cannot be closed from documentation or source inspection alone.
+The final independent builds were written to `dist-release-g` and
+`dist-release-h` during the local gate. Both contained one wheel and one
+sdist, with 161 wheel entries and 569 sdist entries. No unsafe or excluded
+paths were present.
+
+```text
+WHEEL=s3_bootstrap-1.0.0-py3-none-any.whl
+WHEEL_BYTES=437037
+WHEEL_SHA256=3b8490c30a09eaa594920462f8c9c9e7267bc270e92ca79e635f593d2ee83d76
+SDIST=s3_bootstrap-1.0.0.tar.gz
+SDIST_BYTES=695713
+SDIST_SHA256=f295a899d147f7170f4143fb5fa30b9c42b70db10a2d45d60f3a85a34c9f7ae8
+WHEEL_AND_SDIST_BYTE_IDENTITY=PASS
+```
+
+The sdist reproducibility correction is in the packaging-only `setup.py`:
+when `SOURCE_DATE_EPOCH` is supplied, release-tree metadata and the gzip/tar
+headers use that epoch with normalized ownership. The clean installation
+reported version `1.0.0`; `s3 --help`, both `check` smokes and the `run`
+smoke all exited zero.
