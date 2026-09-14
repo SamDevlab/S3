@@ -28,7 +28,15 @@ F5_LINUX_X86_64_NATIVE=DEFERRED_ENVIRONMENT_UNAVAILABLE
 F5_NORMAL_MATRIX=DEFERRED_CI_RUNNER_UNAVAILABLE
 ```
 
-The candidate delta from RC2 to the current release branch does not modify the parser, semantic analyzer, IR lowering, optimizer, emulator, Linux x86-64 backend, AArch64 backend, FFI implementation, TLS implementation, registry implementation, or self-host implementation. It does modify package/release surfaces, the deterministic WASM compiler-version identity, and reproducible sdist construction. Those changed surfaces received fresh local evidence.
+The executable local certification was performed on source head:
+
+```text
+LOCAL_CERTIFIED_SOURCE_HEAD=779f6ddb0a5a2e55ea57a3c6e07749f150d83455
+```
+
+Subsequent commits that only reconcile release reports/policy are documentation-only and do not retroactively claim executable certification for a different production tree. The exact branch head must be recorded only at the later freeze, after all release-policy edits stop.
+
+The candidate delta from RC2 to the locally certified source head does not modify the parser, semantic analyzer, IR lowering, optimizer, emulator, Linux x86-64 backend, AArch64 backend, FFI implementation, TLS implementation, registry implementation, or self-host implementation. It does modify package/release surfaces, the deterministic WASM compiler-version identity, and reproducible sdist construction. Those changed surfaces received fresh local evidence.
 
 This factual non-native delta classification does **not** silently convert the missing Linux/CI executions into PASS. Before freeze, the campaign must make an explicit release-policy decision based on executable evidence: either obtain fresh Linux/current-matrix execution, or formally accept reuse/deferment under a documented impact rule. Until that decision is recorded, F6 remains not ready.
 
@@ -116,7 +124,7 @@ If stable publication is explicitly authorized later, execute in this order:
 ## Current state
 
 ```text
-CURRENT_CANDIDATE_SHA=779f6ddb0a5a2e55ea57a3c6e07749f150d83455
+LOCAL_CERTIFIED_SOURCE_HEAD=779f6ddb0a5a2e55ea57a3c6e07749f150d83455
 F3_PACKAGE_INSTALL_REPRO=PASS
 F4_SECURITY_SUPPLY_CHAIN=PASS
 F5_HOST_INDEPENDENT=PASS
