@@ -1,0 +1,110 @@
+{
+  "$id": "https://samdevlab.github.io/s3/spec/reliability/report.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "campaign_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9._-]+$",
+      "type": "string"
+    },
+    "campaign_seed": {
+      "maximum": 18446744073709551615,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "case_count": {"maximum": 10000, "minimum": 0, "type": "integer"},
+    "compiler_head": {"pattern": "^[0-9a-f]{40}$", "type": "string"},
+    "counts": {
+      "additionalProperties": false,
+      "properties": {
+        "PASS": {"minimum": 0, "type": "integer"},
+        "EXPECTED_REJECTION": {"minimum": 0, "type": "integer"},
+        "UNEXPECTED_REJECTION": {"minimum": 0, "type": "integer"},
+        "UNEXPECTED_ACCEPT": {"minimum": 0, "type": "integer"},
+        "MISCOMPILE": {"minimum": 0, "type": "integer"},
+        "CRASH": {"minimum": 0, "type": "integer"},
+        "TIMEOUT": {"minimum": 0, "type": "integer"},
+        "NONDETERMINISM": {"minimum": 0, "type": "integer"},
+        "RESOURCE_LIMIT": {"minimum": 0, "type": "integer"},
+        "HARNESS_ERROR": {"minimum": 0, "type": "integer"}
+      },
+      "required": [
+        "PASS", "EXPECTED_REJECTION", "UNEXPECTED_REJECTION",
+        "UNEXPECTED_ACCEPT", "MISCOMPILE", "CRASH", "TIMEOUT",
+        "NONDETERMINISM", "RESOURCE_LIMIT", "HARNESS_ERROR"
+      ],
+      "type": "object"
+    },
+    "coverage": {
+      "additionalProperties": {"minimum": 0, "type": "integer"},
+      "type": "object"
+    },
+    "failure_groups": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "case_ids": {
+            "items": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+            "minItems": 1,
+            "type": "array"
+          },
+          "count": {"minimum": 1, "type": "integer"},
+          "failure_signature": {"maxLength": 512, "minLength": 1, "type": "string"},
+          "first_case_index": {"minimum": 0, "type": "integer"},
+          "outcome": {
+            "enum": [
+              "UNEXPECTED_REJECTION", "UNEXPECTED_ACCEPT", "MISCOMPILE",
+              "CRASH", "TIMEOUT", "NONDETERMINISM", "RESOURCE_LIMIT",
+              "HARNESS_ERROR"
+            ]
+          }
+        },
+        "required": [
+          "outcome", "failure_signature", "count", "first_case_index", "case_ids"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "generator_version": {"maxLength": 128, "minLength": 1, "type": "string"},
+    "resource_policy": {
+      "additionalProperties": false,
+      "properties": {
+        "campaign_max_cases": {"const": 10000},
+        "campaign_wall_ms": {"const": 3600000},
+        "hosted_case_wall_ms": {"const": 5000},
+        "kill_grace_ms": {"const": 250},
+        "max_parallel_children": {"const": 1},
+        "minimizer_max_evaluations": {"const": 10000},
+        "native_case_wall_ms": {"const": 20000},
+        "replay_bundle_max_bytes": {"const": 4194304},
+        "source_max_bytes": {"const": 32768},
+        "stderr_max_bytes": {"const": 1048576},
+        "stdout_max_bytes": {"const": 1048576}
+      },
+      "required": [
+        "hosted_case_wall_ms", "native_case_wall_ms", "kill_grace_ms",
+        "stdout_max_bytes", "stderr_max_bytes", "source_max_bytes",
+        "campaign_max_cases", "campaign_wall_ms", "max_parallel_children",
+        "replay_bundle_max_bytes", "minimizer_max_evaluations"
+      ],
+      "type": "object"
+    },
+    "results": {
+      "items": {"$ref": "case-result.schema.json"},
+      "maxItems": 10000,
+      "type": "array"
+    },
+    "schema": {"const": "s3.reliability.report.v2"},
+    "status": {"enum": ["PASS", "FAIL", "INCOMPLETE", "INFRA_UNAVAILABLE"]}
+  },
+  "required": [
+    "schema", "campaign_id", "compiler_head", "campaign_seed",
+    "generator_version", "resource_policy", "status", "case_count", "counts",
+    "coverage", "results", "failure_groups"
+  ],
+  "title": "S3 Reliability Lab v2 campaign report",
+  "type": "object"
+}
