@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -9,6 +11,7 @@ from tools import reliability_campaign_v2 as cli
 
 
 pytestmark = [pytest.mark.s3_contract, pytest.mark.s3_differential]
+ROOT = Path(__file__).resolve().parent.parent
 HEAD = "a" * 40
 
 
@@ -24,6 +27,37 @@ def _report() -> dict[str, object]:
         "counts": {"PASS": 4},
         "results": [],
     }
+
+
+def test_r3_campaign_direct_script_entry_point_imports_tools_package() -> None:
+    completed = subprocess.run(
+        [sys.executable, "tools/reliability_campaign_v2.py", "--help"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert "Run a bounded deterministic S3 Reliability Lab v2 R3 campaign" in (
+        completed.stdout
+    )
+    assert "ModuleNotFoundError" not in completed.stderr
+
+
+def test_r3_campaign_module_entry_point_imports_tools_package() -> None:
+    completed = subprocess.run(
+        [sys.executable, "-m", "tools.reliability_campaign_v2", "--help"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert "Run a bounded deterministic S3 Reliability Lab v2 R3 campaign" in (
+        completed.stdout
+    )
 
 
 def test_r3_campaign_cli_fails_closed_on_head_mismatch(monkeypatch, tmp_path: Path) -> None:
