@@ -12,7 +12,8 @@ STABLE_V1_0_RELEASED=YES
 REFERENCE_COMPILER=PYTHON
 FULL_SELFHOST=DEFERRED_RESEARCH
 PYPI_PUBLISHED=NO
-S3_1_1_IMPLEMENTATION_STARTED=NO
+S3_1_1_IMPLEMENTATION_STARTED=YES
+S3_1_1_PHASE=R0_CONTRACT_FREEZE
 ```
 
 S3 `v1.0.0` is the stable GitHub release of the current reference toolchain line. The stabilization campaign is complete and the next bounded objective is now selected: **S3 1.1 — Reliability & Maintenance**.
@@ -58,4 +59,4 @@ At track selection time GitHub Actions jobs were still failing before any step w
 
 ## Next operational step
 
-Close repository hygiene debt, open the 1.1 execution ledger, and begin R0 (Reliability Lab v2 contract freeze). Production implementation starts only from current `main` after the hygiene PR is integrated.
+Complete R0 on the dedicated contract branch, then start R1 from the merged R0 contract. R1 must implement the isolated subprocess worker and prove that a genuinely hung child can be killed and reaped.
