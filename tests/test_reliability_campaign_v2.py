@@ -49,7 +49,7 @@ def test_r3_campaign_cli_fails_closed_on_head_mismatch(monkeypatch, tmp_path: Pa
 
 
 def test_r3_campaign_cli_writes_report_and_returns_zero_for_all_pass(
-    monkeypatch, tmp_path: Path, capsys
+    monkeypatch, tmp_path: Path, capsysbinary
 ) -> None:
     monkeypatch.setattr(cli, "_current_head", lambda: HEAD)
     observed: dict[str, object] = {}
@@ -94,7 +94,7 @@ def test_r3_campaign_cli_writes_report_and_returns_zero_for_all_pass(
     assert observed["head"] == HEAD
     assert observed["case_count"] == 4
     assert observed["native_case_count"] == 0
-    summary = json.loads(capsys.readouterr().out)
+    summary = json.loads(capsysbinary.readouterr().out.decode("utf-8"))
     assert summary["counts"] == {"PASS": 4}
     assert summary["compiler_head"] == HEAD
 
