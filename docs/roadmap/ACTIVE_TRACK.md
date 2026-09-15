@@ -1,40 +1,49 @@
 # Active S3 project track
 
-Last reviewed: 2026-09-14.
+Last reviewed: 2026-09-15.
 
 ## Active track
 
 ```text
-ACTIVE_TRACK=S3_1_0_FINAL_STABILIZATION
-CURRENT_PUBLIC_STABLE=v0.7.0
-CURRENT_PRERELEASE=v1.0.0-rc2
-STABLE_V1_0_RELEASED=NO
+ACTIVE_TRACK=POST_1_0_MAINTENANCE_AND_NEXT_TRACK_SELECTION
+CURRENT_PUBLIC_STABLE=v1.0.0
+CURRENT_PRERELEASE=NONE
+STABLE_V1_0_RELEASED=YES
 REFERENCE_COMPILER=PYTHON
 FULL_SELFHOST=DEFERRED_RESEARCH
-NEW_FEATURE_TRAIN_BEFORE_V1_0=NO
+PYPI_PUBLISHED=NO
 ```
 
-The active goal is to convert the already-certified 1.0 release-candidate line into a deliberately reviewed stable 1.0 candidate, not to add another capability train.
+S3 `v1.0.0` is now the stable GitHub release of the current reference toolchain line. The stabilization campaign is complete; the project should not immediately turn release closure into another feature train without first choosing the next bounded objective.
 
-See [`s3-1.0-final-stabilization.md`](s3-1.0-final-stabilization.md) for the release architecture and gates.
+## Immediate post-1.0 priorities
 
-## Why
+1. Preserve the `v1.0.0` certification baseline and treat regressions against it as release-quality issues.
+2. Perform release hygiene only where needed: documentation consistency, issue/branch cleanup, and validation of the public GitHub release surface.
+3. Review the accumulated deferred/candidate roadmap items and select one coherent post-1.0 development track.
+4. Keep full compiler self-hosting outside the critical path unless its design-first re-entry criteria are explicitly satisfied.
+5. Treat PyPI publication as a separate product/distribution decision rather than an automatic consequence of the GitHub release.
 
-The repository already has an S3 `v1.0.0-rc2` prerelease with a clean 392/392 new-source T4 result, but no stable `v1.0.0` release. The Python distribution metadata still reports `s3-bootstrap 0.7.0`, so version-surface closure is part of the release work rather than something to hide behind the RC tag.
+## Stable baseline
 
-## Out of scope
+```text
+V1_0_0_FROZEN_SOURCE=7b3c4a56599fc545b30d81ed2956399a31de0223
+V1_0_0_FULL_LINEAGE_T4=393/393 PASS
+V1_0_0_RELEASE_BLOCKERS=0
+```
 
-This active track does not authorize:
+The annotated `v1.0.0` tag targets the exact frozen source that received the final one-shot full-lineage T4.
 
-- a new language/runtime milestone family;
-- merging experimental Gen3/self-hosting trains;
-- a Stage1 V4 self-host reconstruction;
-- stable tag/release creation;
+## Out of scope until explicitly selected
+
+The post-1.0 state does not automatically authorize:
+
+- a new language/runtime capability family;
+- Stage1 V4 or another self-host reconstruction;
+- promotion of experimental Gen3/research trains;
 - PyPI publication;
-- weakening native/security/environment deferments.
-
-Those require separate decisions.
+- widening runtime/platform support claims without fresh certification.
 
 ## Next operational step
 
-Create a bounded 1.0 stabilization campaign from canonical `main`, freeze the exact candidate lineage, audit version surfaces, packaging and claims, and execute release certification according to repository policy. The final full-lineage T4 must be treated as a one-shot confirmation gate after source freeze.
+Perform a bounded post-1.0 roadmap review and choose the first 1.x objective based on value, architectural fit, implementation cost, and available certification evidence. The selected objective should become the next explicit active track rather than emerging from opportunistic feature accumulation.
