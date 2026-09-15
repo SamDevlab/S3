@@ -1,0 +1,51 @@
+{
+  "$id": "https://samdevlab.github.io/s3/spec/reliability/worker-response.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "case_id": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "diagnostic_code": {
+      "oneOf": [
+        {"maxLength": 128, "minLength": 1, "type": "string"},
+        {"type": "null"}
+      ]
+    },
+    "diagnostic_family": {
+      "oneOf": [
+        {"maxLength": 128, "minLength": 1, "type": "string"},
+        {"type": "null"}
+      ]
+    },
+    "exit_code": {"oneOf": [{"type": "integer"}, {"type": "null"}]},
+    "operation": {"enum": ["CHECK", "RUN_HOSTED", "RUN_NATIVE"]},
+    "result_sha256": {
+      "oneOf": [
+        {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+        {"type": "null"}
+      ]
+    },
+    "schema": {"const": "s3.reliability.worker-response.v1"},
+    "signal": {
+      "oneOf": [
+        {"maxLength": 64, "minLength": 1, "type": "string"},
+        {"type": "null"}
+      ]
+    },
+    "status": {"enum": ["COMPLETED", "REJECTED", "WORKER_ERROR"]},
+    "stderr_b64": {"contentEncoding": "base64", "type": "string"},
+    "stdout_b64": {"contentEncoding": "base64", "type": "string"},
+    "worker_error_family": {
+      "oneOf": [
+        {"maxLength": 128, "minLength": 1, "type": "string"},
+        {"type": "null"}
+      ]
+    }
+  },
+  "required": [
+    "schema", "case_id", "status", "operation", "exit_code", "signal",
+    "result_sha256", "diagnostic_code", "diagnostic_family", "stdout_b64",
+    "stderr_b64", "worker_error_family"
+  ],
+  "title": "S3 Reliability Lab v2 worker response",
+  "type": "object"
+}
