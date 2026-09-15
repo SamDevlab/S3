@@ -8,6 +8,17 @@ import subprocess
 import sys
 from pathlib import Path
 
+# ``python tools/reliability_campaign_v2.py`` sets sys.path[0] to ``tools/``
+# rather than the repository root. The R3 evidence procedure intentionally
+# supports that direct-script form, so make the checkout root importable before
+# importing the ``tools`` package. Module execution (``python -m ...``) is
+# unaffected.
+if __package__ in {None, ""}:
+    _REPO_ROOT = Path(__file__).resolve().parent.parent
+    _repo_root_text = str(_REPO_ROOT)
+    if _repo_root_text not in sys.path:
+        sys.path.insert(0, _repo_root_text)
+
 from tools.reliability_contract_v2 import canonical_json_document
 from tools.reliability_differential_v2 import run_campaign, write_campaign_report
 
