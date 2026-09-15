@@ -1,0 +1,100 @@
+{
+  "$id": "https://samdevlab.github.io/s3/spec/reliability/replay.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifacts": {
+      "additionalProperties": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+      "minProperties": 2,
+      "propertyNames": {
+        "pattern": "^(?![A-Za-z]:)(?!/)(?!\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+$"
+      },
+      "type": "object"
+    },
+    "campaign_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9._-]+$",
+      "type": "string"
+    },
+    "case_id": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "case_index": {"minimum": 0, "type": "integer"},
+    "case_kind": {"enum": ["valid", "malformed", "mutated", "replay"]},
+    "case_seed": {
+      "maximum": 18446744073709551615,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "compiler_head": {"pattern": "^[0-9a-f]{40}$", "type": "string"},
+    "configuration": {
+      "additionalProperties": false,
+      "properties": {
+        "backend": {"enum": ["hosted", "linux-x86_64-native"]},
+        "expected_behavior": {"enum": ["SUCCESS", "REJECTION"]},
+        "operation": {"enum": ["CHECK", "RUN_HOSTED", "RUN_NATIVE"]},
+        "optimization": {"enum": ["O0", "O1"]},
+        "options": {
+          "additionalProperties": {
+            "oneOf": [
+              {"type": "string"}, {"type": "integer"}, {"type": "number"},
+              {"type": "boolean"}, {"type": "null"}
+            ]
+          },
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation", "optimization", "backend", "expected_behavior", "options"
+      ],
+      "type": "object"
+    },
+    "expected_failure_signature": {
+      "maxLength": 512,
+      "minLength": 1,
+      "pattern": "^[ -~]+$",
+      "type": "string"
+    },
+    "expected_outcome": {
+      "enum": [
+        "UNEXPECTED_REJECTION", "UNEXPECTED_ACCEPT", "MISCOMPILE", "CRASH",
+        "TIMEOUT", "NONDETERMINISM", "RESOURCE_LIMIT", "HARNESS_ERROR"
+      ]
+    },
+    "generator_version": {"maxLength": 128, "minLength": 1, "type": "string"},
+    "resource_policy": {
+      "additionalProperties": false,
+      "properties": {
+        "campaign_max_cases": {"const": 10000},
+        "campaign_wall_ms": {"const": 3600000},
+        "hosted_case_wall_ms": {"const": 5000},
+        "kill_grace_ms": {"const": 250},
+        "max_parallel_children": {"const": 1},
+        "minimizer_max_evaluations": {"const": 10000},
+        "native_case_wall_ms": {"const": 20000},
+        "replay_bundle_max_bytes": {"const": 4194304},
+        "source_max_bytes": {"const": 32768},
+        "stderr_max_bytes": {"const": 1048576},
+        "stdout_max_bytes": {"const": 1048576}
+      },
+      "required": [
+        "hosted_case_wall_ms", "native_case_wall_ms", "kill_grace_ms",
+        "stdout_max_bytes", "stderr_max_bytes", "source_max_bytes",
+        "campaign_max_cases", "campaign_wall_ms", "max_parallel_children",
+        "replay_bundle_max_bytes", "minimizer_max_evaluations"
+      ],
+      "type": "object"
+    },
+    "schema": {"const": "s3.reliability.replay.v2"},
+    "source_bytes": {"maximum": 32768, "minimum": 0, "type": "integer"},
+    "source_path": {"const": "input.s3"},
+    "source_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+  },
+  "required": [
+    "schema", "case_id", "campaign_id", "case_index", "case_seed",
+    "generator_version", "case_kind", "source_path", "source_sha256",
+    "source_bytes", "compiler_head", "configuration", "resource_policy",
+    "expected_outcome", "expected_failure_signature", "artifacts"
+  ],
+  "title": "S3 Reliability Lab v2 replay metadata",
+  "type": "object"
+}
