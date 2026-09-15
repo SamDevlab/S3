@@ -13,7 +13,7 @@ REFERENCE_COMPILER=PYTHON
 FULL_SELFHOST=DEFERRED_RESEARCH
 PYPI_PUBLISHED=NO
 S3_1_1_IMPLEMENTATION_STARTED=YES
-S3_1_1_PHASE=R1_ISOLATED_RUNNER
+S3_1_1_PHASE=R2_DETERMINISTIC_GENERATION
 ```
 
 S3 `v1.0.0` is the stable GitHub release of the current reference toolchain line. The stabilization campaign is complete and the active bounded objective is **S3 1.1 — Reliability & Maintenance**.
@@ -36,14 +36,16 @@ The annotated `v1.0.0` tag targets the exact frozen source that received the fin
 
 R0 is integrated and froze the reliability schemas, taxonomy, deterministic identity rules, worker protocol, parent watchdog contract, and default resource policy.
 
-R1 implements the isolated worker/parent boundary. Linux-local focused probes verify a genuinely hung child and its descendant process tree can be terminated and the direct child reaped. Real repository integration tests are checked in; GitHub-hosted execution remains blocked by the independent runner-provisioning issue #284, and Windows process-tree runtime evidence remains explicit rather than being fabricated.
+R1 is integrated and provides one fresh killable subprocess boundary per executable case, parent-side monotonic timeout enforcement, bounded output capture and structured worker results. Linux focused probes demonstrated termination of a genuinely hung child and its descendant process. Windows process-tree runtime evidence and real repository integration remain explicit infrastructure evidence debt while GitHub Actions runner provisioning is unavailable.
+
+R2 implements deterministic valid, malformed and mutated source generation with explicit source hashes, case metadata and feature/family coverage accounting. Frozen identity vectors were independently reproduced. The generated valid syntax is taken from the stable 1.0 language surfaces rather than inventing a generator-specific dialect. Real `compile_source(...)` integration parametrizations are checked in and remain pending repository-capable execution because issue #284 is still open.
 
 ## Immediate priorities
 
-1. Complete R1 integration without broadening compiler behavior.
-2. Begin R2 deterministic valid/malformed generation only from the merged R0/R1 contracts.
+1. Merge R2 after review of deterministic vectors, coverage accounting and explicit integration evidence debt.
+2. Start R3 differential orchestration from merged R0/R1/R2 contracts: hosted O0 ↔ O1 first, then a bounded Linux x86-64 shard.
 3. Restore GitHub Actions runner execution and then protect `main` with required checks (#284).
-4. Preserve every real compiler failure as a deterministic regression reproducer.
+4. Preserve every real compiler failure as a deterministic replay bundle and regression reproducer.
 5. Keep historical Reliability Lab PR #238 as prototype evidence only; do not merge it wholesale.
 
 ## Out of scope
@@ -65,4 +67,4 @@ GitHub Actions jobs continue to fail before any step is assigned (`runner_id=0`,
 
 ## Next operational step
 
-Merge R1 after review of the focused isolation evidence, then start R2: deterministic grammar-aware valid generation, malformed generation/mutation, source hashing, case metadata, and explicit coverage accounting.
+Complete R2 integration, then implement R3 differential campaign orchestration using the isolated R1 worker. R3 result claims require real worker execution and may not be inferred from generator correctness alone.
