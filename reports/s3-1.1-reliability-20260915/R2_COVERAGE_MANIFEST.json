@@ -1,0 +1,42 @@
+{
+  "schema": "s3.reliability.r2-coverage-manifest.v1",
+  "generator_version": "s3.reliability.generator.v2.0.0",
+  "valid_families": [
+    "scalar-call",
+    "i64-loop",
+    "trit-match",
+    "static-array",
+    "record",
+    "enum",
+    "mutable-reference",
+    "f64"
+  ],
+  "required_valid_features": [
+    "aggregate.enum",
+    "aggregate.record",
+    "array.static",
+    "control.match",
+    "control.while",
+    "function.call",
+    "numeric.f64",
+    "numeric.i64",
+    "numeric.tryte",
+    "reference.mutable"
+  ],
+  "malformed_families": [
+    "lex-invalid-character",
+    "parse-missing-colon",
+    "parse-unclosed-expression",
+    "semantic-unknown-name",
+    "semantic-trit-range",
+    "semantic-unknown-function"
+  ],
+  "mutations": [
+    "prefix-invalid-character",
+    "append-invalid-character",
+    "remove-first-block-colon",
+    "replace-first-arrow"
+  ],
+  "multi_source_modules": "deferred-source-bundle-transport",
+  "coverage_status": "COMPLETE_FOR_DECLARED_R2_SINGLE_SOURCE_SCOPE"
+}

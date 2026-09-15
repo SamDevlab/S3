@@ -1,0 +1,31 @@
+{
+  "schema": "s3.reliability.r2-vector-audit.v1",
+  "date": "2026-09-15",
+  "generator_version": "s3.reliability.generator.v2.0.0",
+  "vectors": {
+    "valid": {
+      "campaign_id": "r2-vector",
+      "campaign_seed": 123,
+      "case_index": 0,
+      "case_kind": "valid",
+      "case_seed": 433001260938302787,
+      "source_sha256": "85fdf536a55991b54a785f036c7f73515988296145af3cdc929963c2f1645341",
+      "case_id": "144a15ee9606fb32507226241b2dbb0900324dacb3664516b694c2eb92ae2f32",
+      "match": true
+    },
+    "mutated": {
+      "campaign_id": "r2-vector",
+      "campaign_seed": 123,
+      "case_index": 0,
+      "case_kind": "mutated",
+      "case_seed": 2797293811038360610,
+      "mutation": "replace-first-arrow",
+      "source_sha256": "4c65380db66dc27ef227366bf9ba886076ebba506ef51bd3d9616a02f2c29b4e",
+      "match": true
+    }
+  },
+  "required_valid_feature_coverage_complete": true,
+  "malformed_family_cycle_complete": true,
+  "mutations_declared_rejection": true,
+  "compiler_integration_execution": "DEFERRED_RUNNER_UNAVAILABLE"
+}
