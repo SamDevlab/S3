@@ -13,12 +13,12 @@ REFERENCE_COMPILER=PYTHON
 FULL_SELFHOST=DEFERRED_RESEARCH
 PYPI_PUBLISHED=NO
 S3_1_1_IMPLEMENTATION_STARTED=YES
-S3_1_1_PHASE=R2_DETERMINISTIC_GENERATION
+S3_1_1_PHASE=R3_DIFFERENTIAL_CAMPAIGNS
 ```
 
-S3 `v1.0.0` is the stable GitHub release of the current reference toolchain line. The stabilization campaign is complete and the active bounded objective is **S3 1.1 — Reliability & Maintenance**.
+S3 `v1.0.0` is the stable GitHub release of the current reference toolchain line. The active bounded objective is **S3 1.1 — Reliability & Maintenance**.
 
-The 1.1 track strengthens the existing compiler before another broad capability train. Reliability Lab v2 is being built from current `main` with deterministic generation, real subprocess isolation and killable timeouts, differential execution, replay, minimization, and structured triage.
+Reliability Lab v2 is built incrementally from current `main`: deterministic identities and schemas (R0), killable process isolation (R1), deterministic source generation (R2), differential execution and replay (R3), minimization/triage (R4), then bounded maintenance closure (R5).
 
 See [`s3-1.1-reliability-maintenance.md`](s3-1.1-reliability-maintenance.md).
 
@@ -30,23 +30,25 @@ V1_0_0_FULL_LINEAGE_T4=393/393 PASS
 V1_0_0_RELEASE_BLOCKERS=0
 ```
 
-The annotated `v1.0.0` tag targets the exact frozen source that received the final one-shot full-lineage T4. That tag remains immutable while post-1.0 development continues on `main`.
+The annotated `v1.0.0` tag remains immutable while post-1.0 development continues on `main`.
 
 ## Current 1.1 state
 
-R0 is integrated and froze the reliability schemas, taxonomy, deterministic identity rules, worker protocol, parent watchdog contract, and default resource policy.
+R0 is integrated and freezes reliability schemas, outcome taxonomy, deterministic identity rules, worker protocol, watchdog semantics and resource policy.
 
-R1 is integrated and provides one fresh killable subprocess boundary per executable case, parent-side monotonic timeout enforcement, bounded output capture and structured worker results. Linux focused probes demonstrated termination of a genuinely hung child and its descendant process. Windows process-tree runtime evidence and real repository integration remain explicit infrastructure evidence debt while GitHub Actions runner provisioning is unavailable.
+R1 is integrated and provides a fresh killable worker process per executable case with parent-side timeout enforcement, process-tree termination and bounded structured output. Linux dependency-isolated probes demonstrated real hung-child termination; Windows runtime mechanics and repository integration remain explicit evidence debt while GitHub Actions runner provisioning is unavailable.
 
-R2 implements deterministic valid, malformed and mutated source generation with explicit source hashes, case metadata and feature/family coverage accounting. Frozen identity vectors were independently reproduced. The generated valid syntax is taken from the stable 1.0 language surfaces rather than inventing a generator-specific dialect. Real `compile_source(...)` integration parametrizations are checked in and remain pending repository-capable execution because issue #284 is still open.
+R2 is integrated and provides deterministic valid, malformed and mutated source generation, exact source hashing, case metadata and explicit feature/family coverage accounting. Its checked-in compiler-integration tests remain pending repository-capable execution under #284 rather than being represented as an unexecuted PASS.
+
+R3 implementation now owns differential orchestration. Hosted valid cases compare isolated O0 against O1 by canonical result hash. A bounded Linux x86-64 shard adds native O0/O1 through the same frozen worker protocol. Stable cross-path disagreement is `MISCOMPILE`; repeated same-path disagreement is `NONDETERMINISM`. Every non-PASS result can persist a bounded canonical replay bundle. These are implementation claims only until real repository worker campaigns execute.
 
 ## Immediate priorities
 
-1. Merge R2 after review of deterministic vectors, coverage accounting and explicit integration evidence debt.
-2. Start R3 differential orchestration from merged R0/R1/R2 contracts: hosted O0 ↔ O1 first, then a bounded Linux x86-64 shard.
-3. Restore GitHub Actions runner execution and then protect `main` with required checks (#284).
-4. Preserve every real compiler failure as a deterministic replay bundle and regression reproducer.
-5. Keep historical Reliability Lab PR #238 as prototype evidence only; do not merge it wholesale.
+1. Land R3 differential/replay infrastructure without changing compiler semantics.
+2. Execute the checked-in R1/R2/R3 integration suites when repository-capable runner access is restored.
+3. Run a real hosted O0 ↔ O1 campaign and a bounded Linux x86-64 differential shard before marking the corresponding R3 evidence gates complete.
+4. Restore GitHub Actions runner execution and protect `main` with required checks (#284).
+5. Start R4 minimization only after the R3 failure signature/replay contract is integrated.
 
 ## Out of scope
 
@@ -63,8 +65,8 @@ Full self-hosting may re-enter only through the design-first criteria in `docs/s
 
 ## Infrastructure note
 
-GitHub Actions jobs continue to fail before any step is assigned (`runner_id=0`, empty step list). That condition is infrastructure/provisioning debt, not a demonstrated compiler regression, and must not be hidden by weakening workflows.
+GitHub Actions jobs have been failing before any step is assigned (`runner_id=0`, empty step list). That condition is infrastructure/provisioning debt, not a demonstrated compiler regression, and must not be hidden by weakening workflows.
 
 ## Next operational step
 
-Complete R2 integration, then implement R3 differential campaign orchestration using the isolated R1 worker. R3 result claims require real worker execution and may not be inferred from generator correctness alone.
+Integrate R3 infrastructure, then obtain real hosted and Linux x86-64 campaign evidence. Only actual execution may close the two differential R3 gates; implementation alone is not sufficient.
