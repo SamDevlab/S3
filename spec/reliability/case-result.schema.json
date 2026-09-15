@@ -1,0 +1,144 @@
+{
+  "$id": "https://samdevlab.github.io/s3/spec/reliability/case-result.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "outcome": {"enum": ["PASS", "EXPECTED_REJECTION"]}
+        },
+        "required": ["outcome"]
+      },
+      "then": {
+        "properties": {"failure_signature": {"type": "null"}}
+      },
+      "else": {
+        "properties": {
+          "failure_signature": {"minLength": 1, "type": "string"}
+        }
+      }
+    }
+  ],
+  "properties": {
+    "campaign_id": {
+      "maxLength": 128,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9._-]+$",
+      "type": "string"
+    },
+    "case_id": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "case_index": {"minimum": 0, "type": "integer"},
+    "case_kind": {"enum": ["valid", "malformed", "mutated", "replay"]},
+    "case_seed": {
+      "maximum": 18446744073709551615,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "compiler_head": {"pattern": "^[0-9a-f]{40}$", "type": "string"},
+    "configuration": {
+      "additionalProperties": false,
+      "properties": {
+        "backend": {"enum": ["hosted", "linux-x86_64-native"]},
+        "expected_behavior": {"enum": ["SUCCESS", "REJECTION"]},
+        "operation": {"enum": ["CHECK", "RUN_HOSTED", "RUN_NATIVE"]},
+        "optimization": {"enum": ["O0", "O1"]},
+        "options": {
+          "additionalProperties": {
+            "oneOf": [
+              {"type": "string"}, {"type": "integer"}, {"type": "number"},
+              {"type": "boolean"}, {"type": "null"}
+            ]
+          },
+          "type": "object"
+        }
+      },
+      "required": [
+        "operation", "optimization", "backend", "expected_behavior", "options"
+      ],
+      "type": "object"
+    },
+    "failure_signature": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "maxLength": 512,
+          "minLength": 1,
+          "pattern": "^[ -~]+$",
+          "type": "string"
+        }
+      ]
+    },
+    "generator_version": {"maxLength": 128, "minLength": 1, "type": "string"},
+    "observations": {
+      "additionalProperties": false,
+      "properties": {
+        "diagnostic_code": {
+          "oneOf": [
+            {"maxLength": 128, "minLength": 1, "type": "string"},
+            {"type": "null"}
+          ]
+        },
+        "exit_code": {"oneOf": [{"type": "integer"}, {"type": "null"}]},
+        "result_sha256": {
+          "oneOf": [
+            {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+            {"type": "null"}
+          ]
+        },
+        "signal": {
+          "oneOf": [
+            {"maxLength": 64, "minLength": 1, "type": "string"},
+            {"type": "null"}
+          ]
+        },
+        "stderr_sha256": {
+          "oneOf": [
+            {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+            {"type": "null"}
+          ]
+        },
+        "stdout_sha256": {
+          "oneOf": [
+            {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+            {"type": "null"}
+          ]
+        }
+      },
+      "required": [
+        "stdout_sha256", "stderr_sha256", "exit_code", "signal",
+        "result_sha256", "diagnostic_code"
+      ],
+      "type": "object"
+    },
+    "outcome": {
+      "enum": [
+        "PASS", "EXPECTED_REJECTION", "UNEXPECTED_REJECTION",
+        "UNEXPECTED_ACCEPT", "MISCOMPILE", "CRASH", "TIMEOUT",
+        "NONDETERMINISM", "RESOURCE_LIMIT", "HARNESS_ERROR"
+      ]
+    },
+    "replay_bundle": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "maxLength": 512,
+          "minLength": 1,
+          "pattern": "^(?![A-Za-z]:)(?!/)(?!\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+$",
+          "type": "string"
+        }
+      ]
+    },
+    "schema": {"const": "s3.reliability.case-result.v2"},
+    "source_bytes": {"maximum": 32768, "minimum": 0, "type": "integer"},
+    "source_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+  },
+  "required": [
+    "schema", "case_id", "campaign_id", "case_index", "case_seed",
+    "generator_version", "case_kind", "source_sha256", "source_bytes",
+    "compiler_head", "configuration", "outcome", "failure_signature",
+    "observations", "replay_bundle"
+  ],
+  "title": "S3 Reliability Lab v2 case result",
+  "type": "object"
+}
