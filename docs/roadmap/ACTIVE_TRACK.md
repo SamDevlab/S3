@@ -5,24 +5,21 @@ Last reviewed: 2026-09-15.
 ## Active track
 
 ```text
-ACTIVE_TRACK=POST_1_0_MAINTENANCE_AND_NEXT_TRACK_SELECTION
+ACTIVE_TRACK=S3_1_1_RELIABILITY_AND_MAINTENANCE
 CURRENT_PUBLIC_STABLE=v1.0.0
 CURRENT_PRERELEASE=NONE
 STABLE_V1_0_RELEASED=YES
 REFERENCE_COMPILER=PYTHON
 FULL_SELFHOST=DEFERRED_RESEARCH
 PYPI_PUBLISHED=NO
+S3_1_1_IMPLEMENTATION_STARTED=NO
 ```
 
-S3 `v1.0.0` is now the stable GitHub release of the current reference toolchain line. The stabilization campaign is complete; the project should not immediately turn release closure into another feature train without first choosing the next bounded objective.
+S3 `v1.0.0` is the stable GitHub release of the current reference toolchain line. The stabilization campaign is complete and the next bounded objective is now selected: **S3 1.1 — Reliability & Maintenance**.
 
-## Immediate post-1.0 priorities
+The 1.1 track strengthens the existing compiler before another broad capability train. Its primary deliverable is Reliability Lab v2 with deterministic generation, real subprocess isolation and killable timeouts, differential execution, replay, minimization, and structured triage.
 
-1. Preserve the `v1.0.0` certification baseline and treat regressions against it as release-quality issues.
-2. Perform release hygiene only where needed: documentation consistency, issue/branch cleanup, and validation of the public GitHub release surface.
-3. Review the accumulated deferred/candidate roadmap items and select one coherent post-1.0 development track.
-4. Keep full compiler self-hosting outside the critical path unless its design-first re-entry criteria are explicitly satisfied.
-5. Treat PyPI publication as a separate product/distribution decision rather than an automatic consequence of the GitHub release.
+See [`s3-1.1-reliability-maintenance.md`](s3-1.1-reliability-maintenance.md).
 
 ## Stable baseline
 
@@ -32,18 +29,33 @@ V1_0_0_FULL_LINEAGE_T4=393/393 PASS
 V1_0_0_RELEASE_BLOCKERS=0
 ```
 
-The annotated `v1.0.0` tag targets the exact frozen source that received the final one-shot full-lineage T4.
+The annotated `v1.0.0` tag targets the exact frozen source that received the final one-shot full-lineage T4. That tag remains immutable while post-1.0 development continues on `main`.
 
-## Out of scope until explicitly selected
+## Immediate priorities
 
-The post-1.0 state does not automatically authorize:
+1. Keep repository documentation and state pointers aligned with `v1.0.0`.
+2. Restore reliable GitHub Actions runner execution and then protect `main` with required checks.
+3. Retire obsolete review/self-host PRs without deleting their historical branches/evidence.
+4. Implement Reliability Lab v2 from current `main`; do not merge the old experimental Reliability Lab PR wholesale.
+5. Preserve every real compiler failure as a deterministic regression reproducer.
 
-- a new language/runtime capability family;
-- Stage1 V4 or another self-host reconstruction;
-- promotion of experimental Gen3/research trains;
+## Out of scope
+
+The 1.1 track does not automatically authorize:
+
+- Stage1 V4 or another full self-host reconstruction;
+- promotion of experimental Gen3/self-host trains;
+- Quantum, Accelerator, Embedded, or Agent Memory experiments;
+- a new backend or widened platform claim;
 - PyPI publication;
-- widening runtime/platform support claims without fresh certification.
+- performance claims unsupported by equivalent measurement evidence.
+
+Full self-hosting may re-enter only through the design-first criteria in `docs/selfhost/REENTRY_CRITERIA.md` and a separate explicit decision.
+
+## Infrastructure note
+
+At track selection time GitHub Actions jobs were still failing before any step was assigned (`runner_id=0`, empty step list). That condition is infrastructure/provisioning debt, not a demonstrated compiler regression, and must not be hidden by weakening workflows.
 
 ## Next operational step
 
-Perform a bounded post-1.0 roadmap review and choose the first 1.x objective based on value, architectural fit, implementation cost, and available certification evidence. The selected objective should become the next explicit active track rather than emerging from opportunistic feature accumulation.
+Close repository hygiene debt, open the 1.1 execution ledger, and begin R0 (Reliability Lab v2 contract freeze). Production implementation starts only from current `main` after the hygiene PR is integrated.
