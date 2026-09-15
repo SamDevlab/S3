@@ -1,0 +1,178 @@
+name: S3 1.0 candidate gates
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "bootstrap/**"
+      - "tests/**"
+      - "tools/**"
+      - "examples/**"
+      - "pyproject.toml"
+      - "LICENSE"
+      - "docs/releases/**"
+      - ".github/workflows/release-candidate.yml"
+
+concurrency:
+  group: s3-1.0-candidate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install release build tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "build>=1.2"
+
+      - name: Build wheel and sdist twice
+        env:
+          SOURCE_DATE_EPOCH: "1700000000"
+        run: |
+          python -m build --wheel --sdist --outdir dist-a
+          python -m build --wheel --sdist --outdir dist-b
+          sha256sum dist-a/* | sort
+          sha256sum dist-b/* | sort
+
+      - name: Validate package metadata and inventory
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+          import email
+          import pathlib
+          import tarfile
+          import zipfile
+
+          def wheel_metadata(path: pathlib.Path) -> tuple[str, str, set[str]]:
+              with zipfile.ZipFile(path) as zf:
+                  names = set(zf.namelist())
+                  metadata_name = next(name for name in names if name.endswith('.dist-info/METADATA'))
+                  metadata = email.message_from_bytes(zf.read(metadata_name))
+                  return metadata['Name'], metadata['Version'], names
+
+          def sdist_metadata(path: pathlib.Path) -> tuple[str, str, set[str]]:
+              with tarfile.open(path, 'r:gz') as tf:
+                  names = set(tf.getnames())
+                  pkg_info = next(member for member in tf.getmembers() if member.name.endswith('/PKG-INFO'))
+                  handle = tf.extractfile(pkg_info)
+                  assert handle is not None
+                  metadata = email.message_from_bytes(handle.read())
+                  return metadata['Name'], metadata['Version'], names
+
+          for root in (pathlib.Path('dist-a'), pathlib.Path('dist-b')):
+              wheels = list(root.glob('*.whl'))
+              sdists = list(root.glob('*.tar.gz'))
+              assert len(wheels) == 1, wheels
+              assert len(sdists) == 1, sdists
+              w_name, w_version, w_files = wheel_metadata(wheels[0])
+              s_name, s_version, s_files = sdist_metadata(sdists[0])
+              assert w_name == s_name == 's3-bootstrap'
+              assert w_version == s_version == '1.0.0'
+              assert any(name.endswith('.dist-info/licenses/LICENSE') or name.endswith('.dist-info/LICENSE') for name in w_files), sorted(w_files)
+              assert any(name.endswith('/LICENSE') for name in s_files), sorted(s_files)
+              assert any(name.endswith('/README.md') for name in s_files), sorted(s_files)
+          PY
+
+      - name: Install wheel into clean virtual environment
+        run: |
+          python -m venv .release-venv
+          .release-venv/bin/python -m pip install --upgrade pip
+          .release-venv/bin/python -m pip install dist-a/*.whl
+          .release-venv/bin/python - <<'PY'
+          import importlib.metadata
+          assert importlib.metadata.version('s3-bootstrap') == '1.0.0'
+          PY
+
+      - name: CLI and official-example smoke
+        run: |
+          .release-venv/bin/s3 --help
+          .release-venv/bin/s3 check examples/first.s3
+          .release-venv/bin/s3 run examples/first.s3
+          .release-venv/bin/s3 check examples/static_array.s3
+
+      - name: Compare rebuilt archive identities
+        run: |
+          python - <<'PY'
+          import hashlib
+          import pathlib
+
+          def digest(path: pathlib.Path) -> str:
+              return hashlib.sha256(path.read_bytes()).hexdigest()
+
+          for suffix in ('*.whl', '*.tar.gz'):
+              first = next(pathlib.Path('dist-a').glob(suffix))
+              second = next(pathlib.Path('dist-b').glob(suffix))
+              print(first.name, digest(first))
+              print(second.name, digest(second))
+              print('byte_identical=', first.read_bytes() == second.read_bytes())
+          PY
+
+  security-supply-chain-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install project and vetted crypto provider
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,crypto]"
+
+      - name: High-signal tracked-secret scan
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+          import pathlib
+          import re
+          import subprocess
+
+          patterns = {
+              'private-key': re.compile(rb'-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----'),
+              'github-token': re.compile(rb'(?:gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{20,})'),
+              'aws-access-key': re.compile(rb'AKIA[0-9A-Z]{16}'),
+          }
+          raw = subprocess.check_output(['git', 'ls-files', '-z'])
+          hits: list[str] = []
+          for encoded in raw.split(b'\0'):
+              if not encoded:
+                  continue
+              path = pathlib.Path(encoded.decode('utf-8'))
+              try:
+                  payload = path.read_bytes()
+              except OSError:
+                  continue
+              for label, pattern in patterns.items():
+                  if pattern.search(payload):
+                      hits.append(f'{path}:{label}')
+          if hits:
+              raise SystemExit('tracked secret-like material found:\n' + '\n'.join(hits))
+          print('tracked high-signal secret scan: PASS')
+          PY
+
+      - name: Run TLS, registry, archive and trust-policy regressions
+        run: >-
+          python -m pytest -q
+          tests/test_m168_tls_client.py
+          tests/test_m175_async_tls.py
+          tests/test_m179_registry_client.py
+          tests/test_m196_signed_registry_index.py
+          tests/test_m234_m235_crypto_supply_chain.py
+          tests/test_pr182_corrections.py
