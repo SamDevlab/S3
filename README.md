@@ -2,13 +2,11 @@
 
 [![Tests](https://github.com/SamDevlab/S3/actions/workflows/tests.yml/badge.svg)](https://github.com/SamDevlab/S3/actions/workflows/tests.yml)
 
-**S3 é uma linguagem experimental de sistemas baseada em ternário balanceado**, desenvolvida para explorar semântica explícita, execução determinística, verificação forte do pipeline e um caminho nativo Linux x86-64.
+**S3 é uma linguagem experimental de sistemas baseada em ternário balanceado**, criada para explorar semântica explícita, execução determinística, verificação forte do pipeline e geração nativa Linux x86-64.
 
-O projeto não é apenas um parser ou transpiler: ele possui frontend de compilador, análise semântica, IR tipada, CFG/SSA, verifier, otimizações, Assembly própria, emulador e backend nativo.
+> A release estável atual é **S3 v1.0.0**. O compilador de referência é implementado em Python; programas nativos gerados pelo S3 não dependem de Python para executar.
 
-> O compilador de referência é implementado em Python. Os executáveis nativos gerados pelo S3 não dependem de Python para executar.
-
-## Visão em 30 segundos
+## Pipeline
 
 ```mermaid
 flowchart LR
@@ -24,7 +22,24 @@ flowchart LR
     J --> K[Native ELF]
 ```
 
-### O que já existe
+## Estado estável
+
+```text
+GitHub release          v1.0.0
+Python distribution     s3-bootstrap 1.0.0
+Source syntax default   0.6
+IR JSON                 0.6.0
+S3 Assembly             0.6.0
+Diagnostic schema       1.0.0
+Reference compiler      Python
+Primary native target   Linux x86-64
+Full self-hosting       Deferred research
+PyPI                    Not published
+```
+
+A release `v1.0.0` foi congelada e certificada antes da publicação com um T4 full-lineage de `393/393`, além de matriz Python 3.11/3.12/3.13 e certificação Linux x86-64. Os detalhes ficam em [`docs/releases/1.0.0.md`](docs/releases/1.0.0.md) e nos relatórios de estabilização.
+
+## Capacidades principais
 
 - `trit` e `tryte` balanceados;
 - `i64` checked e `f64` IEEE-754;
@@ -32,52 +47,34 @@ flowchart LR
 - arrays com bounds checking;
 - records e enums nominais;
 - módulos com imports/exports explícitos;
-- referências seguras `&T` e `&mut T`;
-- CFG, dominância e SSA;
-- IR e Assembly verificáveis;
-- otimizações conservadoras;
-- emulador;
+- referências tipadas `&T` e `&mut T`;
+- IR tipada, CFG, dominância e SSA;
+- verifier e serialização determinística;
+- otimizações O1 conservadoras;
+- S3 Assembly e emulador;
 - backend Linux x86-64 / System V AMD64;
-- differential testing e CI multi-versão de Python.
+- differential testing e gates nativos.
 
-## Por que este projeto existe
+## Princípios
 
-S3 é um laboratório de engenharia de linguagens. O objetivo é estudar como decisões de representação, verificação e lowering podem tornar o comportamento de uma linguagem mais explícito e auditável.
-
-Três princípios guiam o projeto:
-
-1. **correção antes de performance** — otimização não pode alterar comportamento observável;
-2. **semântica explícita** — operações importantes têm contratos próprios em vez de depender de transformações implícitas frágeis;
-3. **evidência end-to-end** — uma capacidade só é considerada pronta quando parser, semântica, IR, Assembly, emulação e backend aplicável demonstram o mesmo contrato.
-
-## Estado e versionamento
-
-O pacote publicável continua sendo **`s3-bootstrap` 0.7.0**.
-
-A linha interna **1.x** evolui o compilador, a linguagem e o runtime, mas a existência de código ou de uma milestone não implica automaticamente uma nova release pública.
+1. **Correção antes de performance** — otimização não pode alterar comportamento observável.
+2. **Semântica explícita** — operações importantes possuem contratos próprios.
+3. **Evidência end-to-end** — capacidades são promovidas apenas quando frontend, IR, verifier e backends aplicáveis demonstram o mesmo contrato.
+4. **Fail closed** — caminhos não certificados ou providers indisponíveis não devem virar sucesso implícito.
 
 ## Tipos numéricos
 
 ### `trit` e `tryte`
 
-Os tipos ternários balanceados permanecem parte central da linguagem. A introdução de tipos de máquina não redefine a semântica ternária histórica.
+Os tipos ternários balanceados permanecem centrais à linguagem. Um `tryte` possui seis trits e representa valores de `-364` a `364`.
 
 ### `i64`
 
-Inteiro assinado de 64 bits com operações checked:
-
-```text
-+ - * / unary-
-== != < <= > >=
-```
-
-Overflow, divisão por zero e `INT64_MIN / -1` não fazem wrap silencioso.
-
-A subtração de máquina usa uma operação tipada própria (`NUMERIC_DIFFERENCE` / `TNDIFF`) para evitar overflow intermediário artificial em casos válidos.
+Inteiro assinado de 64 bits com operações checked. Overflow, divisão por zero e `INT64_MIN / -1` não fazem wrap silencioso.
 
 ### `f64`
 
-Segue IEEE-754 binary64. Na geração nativa x86-64, operações floating-point usam SSE2/XMM e participam do ABI interno System V AMD64.
+Segue IEEE-754 binary64. No backend x86-64, operações floating-point usam SSE2/XMM dentro do contrato nativo certificado.
 
 ### Conversões explícitas
 
@@ -86,8 +83,6 @@ to_i64(trit|tryte) -> i64
 to_f64(trit|tryte|i64) -> f64
 to_tryte(i64) -> tryte
 ```
-
-`to_tryte(i64)` verifica a faixa balanceada `[-364, 364]`.
 
 Não existem casts referência ↔ inteiro.
 
@@ -100,16 +95,7 @@ S3 possui referências tipadas:
 &mut T
 ```
 
-O modelo atual evita:
-
-- null references;
-- raw pointers;
-- pointer arithmetic;
-- casts referência ↔ inteiro.
-
-`&mut` representa capacidade de escrita, sem prometer automaticamente o mesmo modelo de exclusividade/noalias de Rust.
-
-A implementação cobre storage local, elementos de arrays, campos de records e reborrow, preservando proveniência no compilador.
+O modelo evita null references, raw pointers, pointer arithmetic e casts referência ↔ inteiro. `&mut` representa capacidade de escrita sem prometer automaticamente o mesmo modelo de exclusividade/noalias de Rust.
 
 ## Exemplo
 
@@ -125,64 +111,45 @@ fn main() -> trit:
     return (counter == 1000000) & (score(2.0, 300.0, 2.0, 50.0) < -4.54)
 ```
 
-## Otimização e verificação
-
-O pipeline inclui:
-
-- CFG e dominância;
-- SSA e verificação por passes;
-- constant propagation / folding;
-- DCE;
-- contratos de efeitos de memória e proveniência;
-- differential testing;
-- serialização determinística;
-- register allocation GPR experimental no backend nativo.
-
-A regra central é simples: **otimização nunca deve mudar a semântica observável do programa**.
-
-## Backend nativo
-
-Target principal: **Linux x86-64**.
-
-O backend gera GNU Assembly e usa `cc`, `gcc` ou `clang` para montar e linkar o ELF.
-
-```bash
-s3 native-asm examples/first.s3 -o build/first.s
-s3 build examples/first.s3 -o build/first
-s3 run-native examples/first.s3
-```
-
 ## Instalação
 
+O pacote ainda **não está publicado no PyPI**. Para usar a versão estável a partir do repositório:
+
 ```bash
+git clone https://github.com/SamDevlab/S3.git
+cd S3
+git checkout v1.0.0
 python -m venv .venv
-```
-
-PowerShell:
-
-```powershell
-.venv\Scripts\Activate.ps1
 ```
 
 Linux/macOS:
 
 ```bash
 source .venv/bin/activate
+python -m pip install .
 ```
 
-Instalação:
+PowerShell:
+
+```powershell
+.venv\Scripts\Activate.ps1
+python -m pip install .
+```
+
+Depois:
 
 ```bash
-python -m pip install .
 s3 --help
+s3 check examples/first.s3
 s3 run examples/first.s3
 ```
 
-Para desenvolvimento:
+Para desenvolvimento no `main`:
 
 ```bash
 python -m pip install -e ".[dev]"
 python -m pytest
+python tools/golden_inspect.py check
 ```
 
 ## CLI
@@ -204,9 +171,9 @@ s3 build examples/first.s3 -o build/first
 s3 run-native examples/first.s3 -O1
 ```
 
-## Testes e CI
+## Testes e certificação
 
-Categorias da suíte:
+Categorias principais:
 
 ```text
 s3_fast
@@ -217,100 +184,71 @@ s3_slow
 s3_benchmark
 ```
 
-Execução local:
-
-```bash
-python -m pytest
-python tools/golden_inspect.py check
-```
-
-A CI cobre Python 3.11, 3.12 e 3.13 e inclui gates separados para execução nativa, SSA, diferencial determinístico, goldens e benchmark smoke.
+A matriz do projeto cobre Python 3.11, 3.12 e 3.13, além de gates para SSA, diferencial determinístico, goldens, benchmark smoke e Linux x86-64 nativo.
 
 Benchmarks são caracterização; **correção e equivalência são gates**.
 
+## Backend nativo
+
+O target nativo principal certificado é **Linux x86-64**. O backend gera GNU Assembly e usa `cc`, `gcc` ou `clang` para montar e linkar ELF.
+
+```bash
+s3 native-asm examples/first.s3 -o build/first.s
+s3 build examples/first.s3 -o build/first
+s3 run-native examples/first.s3
+```
+
+Outros targets só devem ser tratados como suportados quando houver evidência de execução correspondente.
+
 ## Self-hosting
 
-O projeto possui uma linha incremental de self-hosting e renderer Assembly escrito em S3.
+O repositório preserva componentes experimentais escritos em S3, mas **full compiler self-hosting está fora do caminho crítico**. Python continua sendo o compilador de referência e default.
 
-Python continua sendo a implementação de referência. Um componente só substitui o caminho de referência quando equivalência e cobertura suficiente demonstram que a migração é segura.
+Uma futura retomada exige primeiro uma arquitetura genérica completa — `source -> lexer -> parser -> AST/HIR -> semantics -> IR -> verifier -> emitter -> compile_program` — e os gates de reentrada documentados em [`docs/selfhost/REENTRY_CRITERIA.md`](docs/selfhost/REENTRY_CRITERIA.md).
 
-## Roadmap arquitetural
+Veja também [`docs/selfhost/STATUS.md`](docs/selfhost/STATUS.md) e [`docs/selfhost/FUTURE_ARCHITECTURE.md`](docs/selfhost/FUTURE_ARCHITECTURE.md).
 
-```text
-NUMERIC
-  ↓
-SLICES
-  ↓
-FFI
-  ↓
-DYNAMIC
-  ↓
-HOST_SERVICES
-  ↓
-PROJECT_CONTAINER_MODEL
-  ↓
-S3_DOCKER
-```
+## Roadmap pós-1.0
 
-Milestones associadas:
+O estado atual do projeto fica em [`docs/roadmap/ACTIVE_TRACK.md`](docs/roadmap/ACTIVE_TRACK.md). A linha pós-1.0 prioriza manutenção, confiabilidade e seleção explícita de objetivos antes de iniciar novos grandes trains.
 
-```text
-1.32  Numeric Domains & Large Indexing
-1.33  Borrowed Slices & Large Contiguous Buffers
-1.34  Foreign ABI, Library Mode & Zero-Copy Host Interop
-1.35  Owned Dynamic Runtime Data
-1.36  Linux Host Services & Foreign Tool Interop
-1.37  S3 Project & Container-Native Application Model
-1.38  S3 Docker V1
-```
-
-## Interoperabilidade
-
-A direção do projeto inclui:
-
-- C ABI como fronteira de interoperabilidade;
-- bibliotecas S3 carregáveis por hosts externos;
-- buffers contíguos e zero-copy;
-- integração com Python/C/C++/Rust por ABI;
-- processos, arquivos e pipes;
-- Docker/OCI como camada de compatibilidade;
-- GPU inicialmente por providers maduros antes de um backend próprio.
-
-Essas capacidades só devem ser tratadas como públicas após seus respectivos gates.
+O primeiro objetivo proposto para a linha 1.1 é **Reliability & Maintenance**: fuzzing/differential testing determinístico, watchdog real por subprocesso, reprodução/minimização de falhas e reforço da base estável antes de novas expansões de linguagem.
 
 ## Limitações atuais
 
 S3 ainda é experimental e não deve ser apresentado como linguagem de produção geral.
 
-Limitações importantes:
+Limitações relevantes:
 
 - sem raw pointers, null ou pointer arithmetic;
 - sem garbage collector;
 - sem generics gerais;
 - sem concorrência madura de linguagem;
-- sem backend completo para Windows, macOS ou ARM64;
+- sem backend completo certificado para Windows, macOS ou ARM64;
 - sem JIT;
-- self-hosting ainda incremental.
+- full self-hosting não concluído;
+- PyPI ainda não publicado.
 
 ## Estrutura do repositório
 
 ```text
 bootstrap/s3/    frontend, IR, verifier, Assembly, emuladores e backends
 spec/            especificações e contratos normativos
-docs/            milestones e documentação técnica
-docs/decisions/  decisões arquiteturais
+docs/            milestones, decisões e documentação técnica
 examples/        programas e fixtures oficiais
 tests/           regressão, contratos, diferencial, nativo e benchmarks
-selfhost/        evolução Python → S3
+selfhost/        pesquisa e componentes S3 escritos para diferencial/bootstrap
 stdlib/          biblioteca padrão em evolução
 ```
 
 ## Documentação
 
-- [`docs/roadmap.md`](docs/roadmap.md) — roadmap geral;
+- [`docs/releases/1.0.0.md`](docs/releases/1.0.0.md) — release estável atual;
+- [`docs/roadmap/ACTIVE_TRACK.md`](docs/roadmap/ACTIVE_TRACK.md) — estado operacional atual;
+- [`docs/roadmap.md`](docs/roadmap.md) — histórico amplo do roadmap;
 - [`spec/`](spec/) — especificações normativas;
 - [`docs/decisions/`](docs/decisions/) — decisões arquiteturais;
-- [`docs/releases/0.7.0.md`](docs/releases/0.7.0.md) — release público 0.7.0.
+- [`docs/selfhost/STATUS.md`](docs/selfhost/STATUS.md) — política atual de self-hosting.
 
 ## Licença
 
