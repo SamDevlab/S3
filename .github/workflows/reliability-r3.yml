@@ -47,7 +47,7 @@ jobs:
           set -euo pipefail
           HEAD_SHA="$(git rev-parse HEAD)"
           mkdir -p reports-local/r3/replays
-          python tools/reliability_campaign_v2.py \
+          python -m tools.reliability_campaign_v2 \
             --id "r3-github-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
             --seed 20260915 \
             --cases "${{ inputs.case_count }}" \
