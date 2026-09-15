@@ -18,7 +18,7 @@ F5_NATIVE_X86_64_REQUIRED=PASS_OR_EXPLICIT_ENVIRONMENT_DEFERMENT_ACCEPTED
 UNCLASSIFIED_FAILURES=0
 ```
 
-Local certification on Windows AMD64 closed F3, F4, and the host-independent focused F5 gates. It did **not** produce Linux x86-64 native execution or the broad normal CI matrix:
+Local certification on Windows AMD64 closed F3, F4, and the host-independent focused F5 gates. At that snapshot it did **not** produce Linux x86-64 native execution or the broad normal CI matrix. Both gaps were subsequently closed on the exact Linux candidate head documented in [`F5_LINUX_EXECUTION.md`](F5_LINUX_EXECUTION.md):
 
 ```text
 F3_PACKAGE_INSTALL_REPRO=PASS
@@ -38,7 +38,7 @@ Subsequent commits that only reconcile release reports/policy are documentation-
 
 The candidate delta from RC2 to the locally certified source head does not modify the parser, semantic analyzer, IR lowering, optimizer, emulator, Linux x86-64 backend, AArch64 backend, FFI implementation, TLS implementation, registry implementation, or self-host implementation. It does modify package/release surfaces, the deterministic WASM compiler-version identity, and reproducible sdist construction. Those changed surfaces received fresh local evidence.
 
-This factual non-native delta classification does **not** silently convert the missing Linux/CI executions into PASS. Before freeze, the campaign must make an explicit release-policy decision based on executable evidence: either obtain fresh Linux/current-matrix execution, or formally accept reuse/deferment under a documented impact rule. Until that decision is recorded, F6 remains not ready.
+This factual delta classification does **not** silently convert missing executions into PASS. Fresh Linux/current-matrix execution is now available in `F5_LINUX_EXECUTION.md`; it records native and broad-matrix PASS on `58b6f13295703bf7d26b83e41e831aef00f39682`. F6 nevertheless remains unexecuted and unauthorized by this task.
 
 Pre-step GitHub Actions runner failures do not satisfy or fail source gates; they leave those executions unresolved.
 
@@ -125,11 +125,16 @@ If stable publication is explicitly authorized later, execute in this order:
 
 ```text
 LOCAL_CERTIFIED_SOURCE_HEAD=779f6ddb0a5a2e55ea57a3c6e07749f150d83455
+F5_LINUX_EXECUTION_HEAD=58b6f13295703bf7d26b83e41e831aef00f39682
 F3_PACKAGE_INSTALL_REPRO=PASS
 F4_SECURITY_SUPPLY_CHAIN=PASS
 F5_HOST_INDEPENDENT=PASS
-F5_LINUX_X86_64_NATIVE=DEFERRED_ENVIRONMENT_UNAVAILABLE
-F5_NORMAL_MATRIX=DEFERRED_CI_RUNNER_UNAVAILABLE
+F5_LINUX_X86_64_NATIVE=PASS
+F5_NORMAL_MATRIX=PASS
+F5_PYTHON_311_UNIT=PASS
+F5_PYTHON_312_UNIT=PASS
+F5_PYTHON_313_MATRIX=PASS
+F5_READY_FOR_F6_FREEZE=YES
 F6_CANDIDATE_FROZEN=NO
 F6_FINAL_T4_AUTHORIZED=NO
 F6_FINAL_T4_RUN=NO
@@ -138,3 +143,5 @@ TAG_V1_0_0_CREATED=NO
 GITHUB_RELEASE_V1_0_0_CREATED=NO
 PYPI_PUBLISHED=NO
 ```
+
+F5 readiness permits a separate user-authorized F6 decision only. It is not a freeze, T4 authorization, merge, or publication authorization.

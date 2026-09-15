@@ -2,7 +2,7 @@
 
 Date: 2026-09-14
 
-Status: **PASS WITH EXPLICIT NATIVE AND MATRIX DEFERMENTS**.
+Status at initial Windows snapshot: **PASS WITH EXPLICIT NATIVE AND MATRIX DEFERMENTS**; superseded by the Linux closure recorded below.
 
 F5 is scoped from the actual candidate diff, not from milestone numbering.
 
@@ -75,7 +75,7 @@ The repository has evolved beyond early milestone gate naming. For this release 
 
 This mapping preserves the intent of evidence escalation without inventing fake historical gate results.
 
-## Execution evidence
+## Execution evidence — initial Windows snapshot (2026-09-14)
 
 ```text
 LOCAL_CERTIFIED_SOURCE_HEAD=779f6ddb0a5a2e55ea57a3c6e07749f150d83455
@@ -97,3 +97,21 @@ F5_READY_FOR_F6_FREEZE=NO_PENDING_DEFERMENT_RECONCILIATION
 ```
 
 The five required focused modules passed (`57 passed`). F3 package smokes and F4 security regressions provide the additional release-surface evidence. The final T4 remains outside F5 and is not authorized by this report.
+
+## Current F5 closure
+
+Fresh Linux x86-64 execution closed the two deferments from the Windows snapshot. The exact commands, host/toolchain details, logs, test counts, and current-workflow coverage are recorded in [`F5_LINUX_EXECUTION.md`](F5_LINUX_EXECUTION.md).
+
+```text
+F5_EXECUTION_HEAD=58b6f13295703bf7d26b83e41e831aef00f39682
+F5_LINUX_X86_64_NATIVE=PASS
+F5_NORMAL_MATRIX=PASS
+F5_PYTHON_311_UNIT=PASS
+F5_PYTHON_312_UNIT=PASS
+F5_PYTHON_313_MATRIX=PASS
+UNCLASSIFIED_FAILURES=0
+F5_READY_FOR_F6_FREEZE=YES
+FINAL_T4_AUTHORIZED=NO
+FINAL_T4_RUN=NO
+F6_CANDIDATE_FROZEN=NO
+```
