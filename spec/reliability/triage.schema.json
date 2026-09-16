@@ -1,0 +1,45 @@
+{
+  "$id": "https://samdevlab.github.io/s3/spec/reliability/triage.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "campaign_id": {"maxLength": 128, "minLength": 1, "type": "string"},
+    "campaign_seed": {"minimum": 0, "type": "integer"},
+    "case_count": {"minimum": 0, "type": "integer"},
+    "compiler_head": {"pattern": "^[0-9a-f]{40}$", "type": "string"},
+    "confirmation_runs_per_path": {"minimum": 0, "type": "integer"},
+    "counts": {
+      "additionalProperties": {"minimum": 0, "type": "integer"},
+      "type": "object"
+    },
+    "failure_groups": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "case_ids": {
+            "items": {"type": "string"},
+            "type": "array"
+          },
+          "count": {"minimum": 1, "type": "integer"},
+          "failure_signature": {"maxLength": 512, "minLength": 1, "type": "string"},
+          "first_case_index": {"minimum": 0, "type": "integer"},
+          "outcome": {"type": "string"}
+        },
+        "required": [
+          "outcome", "failure_signature", "count", "first_case_index", "case_ids"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "minimizations": {"items": {"type": "object"}, "type": "array"},
+    "native_case_count": {"minimum": 0, "type": "integer"},
+    "schema": {"const": "s3.reliability.triage.v1"}
+  },
+  "required": [
+    "schema", "campaign_id", "compiler_head", "case_count", "counts",
+    "failure_groups", "minimizations"
+  ],
+  "title": "S3 Reliability Lab v2 deterministic triage report",
+  "type": "object"
+}
