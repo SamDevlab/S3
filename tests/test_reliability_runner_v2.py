@@ -5,6 +5,7 @@ import json
 import os
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -17,6 +18,7 @@ from tools.reliability_contract_v2 import (
     make_case_id,
 )
 from tools.reliability_runner_v2 import run_isolated_worker
+from tools import reliability_runner_v2 as runner
 
 
 pytestmark = [pytest.mark.s3_contract]
@@ -84,9 +86,35 @@ response = {{
     "stderr_b64": {encoded_stderr!r},
     "worker_error_family": {worker_error_family!r},
 }}
-sys.stdout.write(json.dumps(response, sort_keys=True, separators=(",", ":"), ensure_ascii=False) + "\\n")
-sys.stdout.flush()
+sys.stdout.buffer.write(json.dumps(response, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8") + b"\\n")
+sys.stdout.buffer.flush()
 """
+
+
+def _defer_output_reading_until_child_exit(monkeypatch) -> None:
+    child_exited = threading.Event()
+    original_popen = subprocess.Popen
+    original_reader_run = runner._BoundedReader.run
+
+    def tracked_popen(*args, **kwargs):
+        process = original_popen(*args, **kwargs)
+        original_poll = process.poll
+
+        def tracked_poll():
+            return_code = original_poll()
+            if return_code is not None:
+                child_exited.set()
+            return return_code
+
+        process.poll = tracked_poll
+        return process
+
+    def delayed_reader_run(reader) -> None:
+        child_exited.wait()
+        original_reader_run(reader)
+
+    monkeypatch.setattr(runner.subprocess, "Popen", tracked_popen)
+    monkeypatch.setattr(runner._BoundedReader, "run", delayed_reader_run)
 
 
 def test_r1_accepts_one_canonical_worker_response(tmp_path: Path) -> None:
@@ -206,6 +234,59 @@ time.sleep(60)
     assert result.reaped is True
 
 
+@pytest.mark.parametrize("payload", [b"x" * 129, b"{" * 129])
+def test_r1_immediate_stdout_overflow_is_resource_limit(
+    tmp_path: Path,
+    monkeypatch,
+    payload: bytes,
+) -> None:
+    monkeypatch.setattr(runner, "_PROTOCOL_STDOUT_MAX_BYTES", 128)
+    _defer_output_reading_until_child_exit(monkeypatch)
+    script = (
+        "import sys; sys.stdin.buffer.read(); "
+        f"sys.stdout.buffer.write({payload!r}); sys.stdout.flush()"
+    )
+
+    result = run_isolated_worker(
+        _request(),
+        worker_argv=(sys.executable, "-c", script),
+        timeout_ms=1000,
+        cwd=tmp_path,
+    )
+
+    assert result.status == "RESOURCE_LIMIT"
+    assert result.failure_signature == "resource-limit:worker-protocol-stdout"
+    assert result.stdout_truncated is True
+    assert result.stdout_bytes == 128
+    assert result.process_exit_code == 0
+    assert result.reaped is True
+
+
+def test_r1_immediate_stderr_overflow_precedes_valid_response(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(runner, "_PROTOCOL_STDERR_MAX_BYTES", 128)
+    _defer_output_reading_until_child_exit(monkeypatch)
+    script = (
+        _canonical_response_script()
+        + "\nsys.stderr.buffer.write(b'e' * 129); sys.stderr.flush()\n"
+    )
+
+    result = run_isolated_worker(
+        _request(),
+        worker_argv=(sys.executable, "-c", script),
+        timeout_ms=1000,
+        cwd=tmp_path,
+    )
+
+    assert result.status == "RESOURCE_LIMIT"
+    assert result.failure_signature == "resource-limit:worker-process-stderr"
+    assert result.stderr_truncated is True
+    assert result.process_exit_code == 0
+    assert result.reaped is True
+
+
 def test_r1_worker_error_is_distinct_from_crash(tmp_path: Path) -> None:
     result = run_isolated_worker(
         _request(),
@@ -214,14 +295,16 @@ def test_r1_worker_error_is_distinct_from_crash(tmp_path: Path) -> None:
             "-c",
             _canonical_response_script(
                 status="WORKER_ERROR",
-                worker_error_family="protocol:synthetic",
+                worker_error_family="native-backend:S3E_NATIVE_BACKEND",
             ),
         ),
         timeout_ms=1000,
         cwd=tmp_path,
     )
     assert result.status == "HARNESS_ERROR"
-    assert result.failure_signature == "harness-error:worker:protocol:synthetic"
+    assert result.failure_signature == (
+        "harness-error:worker:native-backend:S3E_NATIVE_BACKEND"
+    )
     assert result.process_exit_code == 0
 
 

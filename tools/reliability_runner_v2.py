@@ -418,6 +418,12 @@ def run_isolated_worker(
         stdout_thread.join(timeout=1.0)
         stderr_thread.join(timeout=1.0)
 
+    if termination != "timeout":
+        if stdout_reader.overflow.is_set():
+            termination = "worker-protocol-stdout"
+        elif stderr_reader.overflow.is_set():
+            termination = "worker-process-stderr"
+
     if termination == "timeout":
         signature = (
             f"timeout:{request['operation']}:{request['backend']}:"

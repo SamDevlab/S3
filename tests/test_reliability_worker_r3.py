@@ -4,7 +4,12 @@ from types import SimpleNamespace
 
 import pytest
 
-from bootstrap.s3.backends.x86_64 import NativePlatformError
+from bootstrap.s3.backends.x86_64 import (
+    NativeBackendError,
+    NativePlatformError,
+    NativeToolchainError,
+)
+from bootstrap.s3.diagnostics import DiagnosticCode
 from tools import reliability_worker_r3 as worker
 from tools.reliability_contract_v2 import canonical_json_payload, sha256_hex
 
@@ -103,6 +108,36 @@ def test_r3_native_worker_fails_closed_when_native_host_is_unavailable(monkeypat
 
     assert response["status"] == "WORKER_ERROR"
     assert str(response["worker_error_family"]).startswith("native-environment:")
+
+
+@pytest.mark.parametrize(
+    ("error_type", "expected_family"),
+    [
+        (NativePlatformError, "native-environment:S3E_UNSUPPORTED_TARGET"),
+        (NativeToolchainError, "native-toolchain:S3E_TOOLCHAIN_NOT_FOUND"),
+        (NativeBackendError, "native-backend:S3E_NATIVE_BACKEND"),
+    ],
+)
+def test_r3_native_worker_preserves_backend_error_family(
+    monkeypatch,
+    error_type,
+    expected_family: str,
+) -> None:
+    monkeypatch.setattr(worker, "compile_source", lambda source, optimization: _Compilation())
+
+    def fail_generation(assembly, **kwargs):
+        if error_type is NativeToolchainError:
+            raise error_type(
+                "synthetic native failure",
+                diagnostic_code=DiagnosticCode.TOOLCHAIN_NOT_FOUND,
+            )
+        raise error_type("synthetic native failure")
+
+    monkeypatch.setattr(worker, "generate_native_assembly", fail_generation)
+    response = worker._run_native(_validated())
+
+    assert response["status"] == "WORKER_ERROR"
+    assert response["worker_error_family"] == expected_family
 
 
 def test_r3_native_worker_forwards_frozen_execution_limits(monkeypatch) -> None:
