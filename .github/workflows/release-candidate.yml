@@ -1,4 +1,4 @@
-name: S3 1.0 candidate gates
+name: S3 1.1 candidate gates
 
 on:
   workflow_dispatch:
@@ -14,7 +14,7 @@ on:
       - ".github/workflows/release-candidate.yml"
 
 concurrency:
-  group: s3-1.0-candidate-${{ github.event.pull_request.number || github.ref }}
+  group: s3-1.1-candidate-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -78,7 +78,7 @@ jobs:
               w_name, w_version, w_files = wheel_metadata(wheels[0])
               s_name, s_version, s_files = sdist_metadata(sdists[0])
               assert w_name == s_name == 's3-bootstrap'
-              assert w_version == s_version == '1.0.0'
+              assert w_version == s_version == '1.1.0'
               assert any(name.endswith('.dist-info/licenses/LICENSE') or name.endswith('.dist-info/LICENSE') for name in w_files), sorted(w_files)
               assert any(name.endswith('/LICENSE') for name in s_files), sorted(s_files)
               assert any(name.endswith('/README.md') for name in s_files), sorted(s_files)
@@ -91,7 +91,7 @@ jobs:
           .release-venv/bin/python -m pip install dist-a/*.whl
           .release-venv/bin/python - <<'PY'
           import importlib.metadata
-          assert importlib.metadata.version('s3-bootstrap') == '1.0.0'
+          assert importlib.metadata.version('s3-bootstrap') == '1.1.0'
           PY
 
       - name: CLI and official-example smoke

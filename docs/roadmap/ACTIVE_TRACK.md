@@ -7,13 +7,14 @@ Last reviewed: 2026-09-16.
 ```text
 ACTIVE_TRACK=S3_1_1_RELIABILITY_AND_MAINTENANCE
 CURRENT_PUBLIC_STABLE=v1.0.0
+CURRENT_RELEASE_CANDIDATE=1.1.0
 CURRENT_PRERELEASE=NONE
 STABLE_V1_0_RELEASED=YES
 REFERENCE_COMPILER=PYTHON
 FULL_SELFHOST=DEFERRED_RESEARCH
 PYPI_PUBLISHED=NO
 S3_1_1_IMPLEMENTATION_STARTED=YES
-S3_1_1_PHASE=R5_TECHNICALLY_COMPLETE_RELEASE_DECISION_PENDING
+S3_1_1_PHASE=RELEASE_PREPARATION_IN_PROGRESS
 ```
 
 S3 `v1.0.0` is the stable GitHub release of the current reference toolchain line. The active bounded objective is **S3 1.1 — Reliability & Maintenance**.
@@ -46,7 +47,7 @@ The authoritative post-hardening campaign report SHA-256 is `f749d501a01d7f6f2b1
 
 R4 is complete on the dedicated maintenance branch `feat/s3-1.1-r4-r5-reliability-closure-20260916` at implementation head `774849b1303e3fb726c2c4972457bfa88ba3247d`. The deterministic minimizer preserves the exact outcome and failure signature under the frozen 10,000-evaluation bound. Replay bundles are hash-verified before separate minimized output is written. Failure groups, canonical JSON, and Markdown reports use one deterministic ordering model. The focused R4 selection passed, and the full `python -m pytest -q` gate completed with exit code 0. No compiler/runtime semantics changed.
 
-R5 is technically complete on candidate `d277a862223e8d07b39fd9a687dd1ce0651af63b` after one bounded Linux x86-64 campaign: 256/256 PASS, hosted O0/O1 for all 256 cases, and native O0/O1 for the bounded 32-case shard. The campaign report, stdout summary, and empty stderr were preserved with hashes in [`R5_MAINTENANCE_CLOSURE.md`](../../reports/s3-1.1-reliability-20260916/R5_MAINTENANCE_CLOSURE.md). The Windows full regression evidence is reused from the preceding implementation commit because the final commit changed documentation only. Historical v1.0.0 `393/393 PASS` remains a separate immutable baseline. Release and merge decisions are pending and no new release is implied.
+R5 is technically complete on candidate `d277a862223e8d07b39fd9a687dd1ce0651af63b` after one bounded Linux x86-64 campaign: 256/256 PASS, hosted O0/O1 for all 256 cases, and native O0/O1 for the bounded 32-case shard. The campaign report, stdout summary, and empty stderr were preserved with hashes in [`R5_MAINTENANCE_CLOSURE.md`](../../reports/s3-1.1-reliability-20260916/R5_MAINTENANCE_CLOSURE.md). The Windows full regression evidence is reused from the preceding implementation commit because the final commit changed documentation only. Historical v1.0.0 `393/393 PASS` remains a separate immutable baseline. PR #294 is merged into `main`; release preparation now targets the `1.1.0` candidate, while publication has not occurred.
 
 The GitHub Actions runs for the branch remain an independent infrastructure failure under issue #284: all 12 jobs ended before any workflow step with empty step lists. No rerun or workflow weakening was performed.
 
@@ -54,7 +55,7 @@ The GitHub Actions runs for the branch remain an independent infrastructure fail
 
 1. Preserve the completed post-hardening R3 evidence and keep issue #283 synchronized with the exact execution provenance.
 2. Keep GitHub Actions runner restoration and `main` protection tracked independently under #284; do not weaken workflows to obtain a green status.
-3. Obtain an explicit release decision for the technically complete R5 candidate; preserve historical v1.0.0 evidence as a separate baseline.
+3. Complete and review the S3 1.1.0 release candidate; preserve historical v1.0.0 evidence as a separate baseline.
 4. Keep the v1.0.0 tag and release immutable; no PyPI publication or self-host re-entry is implied by R5 completion.
 
 ## Out of scope
@@ -66,6 +67,7 @@ The 1.1 track does not automatically authorize:
 - Quantum, Accelerator, Embedded, or Agent Memory experiments;
 - a new backend or widened platform claim;
 - PyPI publication;
+- GitHub tag or release publication;
 - performance claims unsupported by equivalent measurement evidence.
 
 Full self-hosting may re-enter only through the design-first criteria in `docs/selfhost/REENTRY_CRITERIA.md` and a separate explicit decision.
@@ -76,4 +78,4 @@ GitHub Actions jobs have been failing before any step is assigned (`runner_id=0`
 
 ## Next operational step
 
-R3 is closed. R4 and R5 are technically complete on the dedicated branch. Release and merge remain separate decisions pending explicit authorization.
+R3 is closed. R4 and R5 are technically complete and PR #294 is merged into `main`. Release preparation is active for candidate `1.1.0`; merge of the release-prep PR, tagging, GitHub release, and PyPI publication remain explicitly unauthorized.

@@ -4,7 +4,7 @@
 
 **S3 é uma linguagem experimental de sistemas baseada em ternário balanceado**, criada para explorar semântica explícita, execução determinística, verificação forte do pipeline e geração nativa Linux x86-64.
 
-> A release estável atual é **S3 v1.0.0**. O compilador de referência é implementado em Python; programas nativos gerados pelo S3 não dependem de Python para executar.
+> A release estável atual é **S3 v1.0.0**; a candidata **S3 v1.1.0** está em preparação. O compilador de referência é implementado em Python; programas nativos gerados pelo S3 não dependem de Python para executar.
 
 ## Pipeline
 
@@ -26,7 +26,8 @@ flowchart LR
 
 ```text
 GitHub release          v1.0.0
-Python distribution     s3-bootstrap 1.0.0
+Release candidate       S3 v1.1.0
+Python distribution     s3-bootstrap 1.1.0
 Source syntax default   0.6
 IR JSON                 0.6.0
 S3 Assembly             0.6.0

@@ -22,7 +22,7 @@ def _distribution_version() -> str:
 
 def test_release_candidate_distribution_and_compiler_identity_are_synchronized() -> None:
     distribution_version = _distribution_version()
-    assert distribution_version == "1.0.0"
+    assert distribution_version == "1.1.0"
 
     compiler_default = inspect.signature(artifact_identity).parameters[
         "compiler_version"

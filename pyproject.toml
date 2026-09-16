@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "s3-bootstrap"
-version = "1.0.0"
+version = "1.1.0"
 description = "Reference bootstrap toolchain for the S3 balanced-ternary language"
 readme = "README.md"
 requires-python = ">=3.11"
