@@ -48,6 +48,8 @@ R4 is complete on the dedicated maintenance branch `feat/s3-1.1-r4-r5-reliabilit
 
 R5 is technically complete on candidate `d277a862223e8d07b39fd9a687dd1ce0651af63b` after one bounded Linux x86-64 campaign: 256/256 PASS, hosted O0/O1 for all 256 cases, and native O0/O1 for the bounded 32-case shard. The campaign report, stdout summary, and empty stderr were preserved with hashes in [`R5_MAINTENANCE_CLOSURE.md`](../../reports/s3-1.1-reliability-20260916/R5_MAINTENANCE_CLOSURE.md). The Windows full regression evidence is reused from the preceding implementation commit because the final commit changed documentation only. Historical v1.0.0 `393/393 PASS` remains a separate immutable baseline. Release and merge decisions are pending and no new release is implied.
 
+The GitHub Actions runs for the branch remain an independent infrastructure failure under issue #284: all 12 jobs ended before any workflow step with empty step lists. No rerun or workflow weakening was performed.
+
 ## Immediate priorities
 
 1. Preserve the completed post-hardening R3 evidence and keep issue #283 synchronized with the exact execution provenance.

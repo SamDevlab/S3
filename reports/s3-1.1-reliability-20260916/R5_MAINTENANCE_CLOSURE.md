@@ -12,6 +12,7 @@ R5_BRANCH=feat/s3-1.1-r4-r5-reliability-closure-20260916
 R5_PYTHON=3.13.15
 R5_PLATFORM=Linux x86-64
 SOURCE_MUTATION_DURING_CAMPAIGN=NO
+R5_CAMPAIGN_INVOCATIONS=1
 ```
 
 The candidate contains the additive R4 Reliability Lab implementation and its
@@ -91,3 +92,14 @@ PYPI_PUBLICATION=NO
 Issue #283 remains open for reliability-track evidence. Issue #284 remains
 open for the independent GitHub Actions runner-provisioning problem; no
 workflow weakening or issue closure is part of this campaign.
+
+The two GitHub Actions runs created by the final branch push were classified
+as infrastructure failures: all 12 jobs completed in approximately 1-4
+seconds with an empty `steps` list, before any workflow command ran. The runs
+were `35105316275` and `35105316280`. They were not rerun, and this condition
+does not invalidate the independent Windows and Linux evidence above.
+
+```text
+GITHUB_ACTIONS_CLASSIFICATION=INFRASTRUCTURE_FAILURE_UNDER_ISSUE_284
+GITHUB_ACTIONS_RERUN=NO
+```
