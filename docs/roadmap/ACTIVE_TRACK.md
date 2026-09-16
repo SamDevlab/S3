@@ -13,7 +13,7 @@ REFERENCE_COMPILER=PYTHON
 FULL_SELFHOST=DEFERRED_RESEARCH
 PYPI_PUBLISHED=NO
 S3_1_1_IMPLEMENTATION_STARTED=YES
-S3_1_1_PHASE=R3_COMPLETE_R4_NOT_STARTED
+S3_1_1_PHASE=R4_COMPLETE_R5_IN_PROGRESS
 ```
 
 S3 `v1.0.0` is the stable GitHub release of the current reference toolchain line. The active bounded objective is **S3 1.1 — Reliability & Maintenance**.
@@ -44,14 +44,14 @@ R3 is complete on hardened `main` source `f16d4a8117dd6d7ceee84b691d6d9bfa1031b3
 
 The authoritative post-hardening campaign report SHA-256 is `f749d501a01d7f6f2b13e60d934b0c17dfac3cd3ccafe932ab27bd3e419e54d1`; the evidence manifest SHA-256 is `90ad0bc165d5b3d4fad93aabf5b553ae15c584100cd39dc39472f33196cd1952`. The previous successful Attempt 2 evidence on `a3aa7bd...` is retained as pre-hardening history and is not used as the final R3 certification.
 
-R4 has **not** started. Readiness for R4 is informational only and does not itself authorize minimization/triage implementation.
+R4 is complete on the dedicated maintenance branch `feat/s3-1.1-r4-r5-reliability-closure-20260916` at implementation head `774849b1303e3fb726c2c4972457bfa88ba3247d`. The deterministic minimizer preserves the exact outcome and failure signature under the frozen 10,000-evaluation bound. Replay bundles are hash-verified before separate minimized output is written. Failure groups, canonical JSON, and Markdown reports use one deterministic ordering model. The focused R4 selection passed, and the full `python -m pytest -q` gate completed with exit code 0. No compiler/runtime semantics changed. R5 maintenance closure is now in progress and has not yet been certified.
 
 ## Immediate priorities
 
 1. Preserve the completed post-hardening R3 evidence and keep issue #283 synchronized with the exact execution provenance.
 2. Keep GitHub Actions runner restoration and `main` protection tracked independently under #284; do not weaken workflows to obtain a green status.
-3. Begin R4 minimization/triage only after separate explicit authorization.
-4. Keep the v1.0.0 tag and release immutable; no PyPI publication or self-host re-entry is implied by R3 completion.
+3. Finish the bounded R5 maintenance candidate and preserve historical v1.0.0 evidence as a separate baseline.
+4. Keep the v1.0.0 tag and release immutable; no PyPI publication or self-host re-entry is implied by R4 completion.
 
 ## Out of scope
 
@@ -72,4 +72,4 @@ GitHub Actions jobs have been failing before any step is assigned (`runner_id=0`
 
 ## Next operational step
 
-R3 is closed. R4 is the next planned phase, but it remains `NOT_STARTED` pending separate explicit authorization.
+R3 is closed. R4 is complete on the dedicated branch. R5 is the active bounded maintenance phase; release and merge remain separate decisions.
