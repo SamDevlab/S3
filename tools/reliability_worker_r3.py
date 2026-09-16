@@ -16,7 +16,9 @@ from tempfile import TemporaryDirectory
 
 from bootstrap.s3.backends.x86_64 import (
     NativeBackendError,
+    NativePlatformError,
     NativeToolchain,
+    NativeToolchainError,
     generate_native_assembly,
 )
 from bootstrap.s3.diagnostics import S3Error, diagnostic_from_exception
@@ -95,12 +97,30 @@ def _run_native(validated: dict[str, object]) -> dict[str, object]:
             stdout=stdout_capture.data,
             stderr=stderr_capture.data,
         )
-    except NativeBackendError as error:
+    except NativePlatformError as error:
         diagnostic = diagnostic_from_exception(error)
         return _native_error_response(
             case_id=case_id,
             operation=operation,
             family=f"native-environment:{diagnostic.code.value}",
+            stdout=stdout_capture.data,
+            stderr=stderr_capture.data,
+        )
+    except NativeToolchainError as error:
+        diagnostic = diagnostic_from_exception(error)
+        return _native_error_response(
+            case_id=case_id,
+            operation=operation,
+            family=f"native-toolchain:{diagnostic.code.value}",
+            stdout=stdout_capture.data,
+            stderr=stderr_capture.data,
+        )
+    except NativeBackendError as error:
+        diagnostic = diagnostic_from_exception(error)
+        return _native_error_response(
+            case_id=case_id,
+            operation=operation,
+            family=f"native-backend:{diagnostic.code.value}",
             stdout=stdout_capture.data,
             stderr=stderr_capture.data,
         )
