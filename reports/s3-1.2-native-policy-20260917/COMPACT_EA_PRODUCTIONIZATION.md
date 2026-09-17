@@ -71,3 +71,51 @@ full-suite timing failure remains visible and is not converted into a skip or
 used to weaken the test. The feature branch is not ready for an unconditional
 main merge until that environment-sensitive result and the CI infrastructure
 failure are reviewed.
+
+## Merge-readiness closure
+
+HEAD_SHA=5267955f50fb436c21365fd72e25cec3a71134b5
+HEAD_TREE=b9d1304177a70300f543d3eca5c067d521124060
+POST_TESTED_SOURCE_EXECUTABLE_DELTA=NO
+
+FEATURE_HEAD_FOCUSED=PASS
+MAIN_FOCUSED=PASS
+FEATURE_HEAD_FOCUSED_EXIT=0
+MAIN_FOCUSED_EXIT=0
+
+WINDOWS_TIMING_REPRO_RUNS=10
+WINDOWS_TIMING_REPRO_PASSED=9
+WINDOWS_TIMING_REPRO_FAILED=1
+MAIN_TIMING_REPRO_RUNS=10
+MAIN_TIMING_REPRO_PASSED=9
+MAIN_TIMING_REPRO_FAILED=1
+WINDOWS_TIMING_CLASSIFICATION=PREEXISTING_OR_ENVIRONMENTAL_WINDOWS_TIMING_FLAKE
+WINDOWS_TIMING_FAILURE_MODE=DESCENDANT_MARKER_SURVIVED_ON_ONE_INVOCATION
+TIMING_FIX_REQUIRED=NO_FOR_COMPACT_EA_PR
+NO_COMPACT_EA_REGRESSION=YES
+
+WINDOWS_FULL_SELECTED=3374
+WINDOWS_FULL_PASSED=3151
+WINDOWS_FULL_SKIPPED=223
+WINDOWS_FULL_FAILED=0
+WINDOWS_FULL_EXIT_CODE=0
+WINDOWS_FULL_TRANSCRIPT=scratch/windows-full-compact-ea-closure-20260917.log
+
+LINUX_EVIDENCE_REUSED_BECAUSE_EXECUTABLE_SOURCE_UNCHANGED=YES
+LINUX_DIFFERENTIAL=128/128_PASS
+LINUX_SOAK=3_PASS
+LINUX_NONDETERMINISM=0
+LINUX_FULL=PASS
+COMPILEALL=PASS
+DIFF_CHECK=PASS
+
+The focused timing failure occurred once in ten fresh feature processes and
+once in ten fresh `origin/main` processes. The failing assertion observed the
+descendant marker after the worker timeout; this is retained as a real
+pre-existing Windows process-tree timing/environment result, not relabeled as
+a Compact EA failure and not hidden with a skip or xfail. No reliability
+runner code was changed in this PR.
+
+The final Windows full suite was run once on the exact current candidate and
+completed with zero failures. The feature remains Draft because focused
+timing stability is not 10/10 and GitHub Actions is blocked before execution.
