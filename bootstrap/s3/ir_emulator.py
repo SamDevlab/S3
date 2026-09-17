@@ -11,11 +11,13 @@ from .ir import (
     IRModule,
     IROpcode,
     IRType,
+    composite_vector_runtime_signature,
 )
 from .dynamic import (
     DynamicBytes,
     DynamicText,
     DynamicVector,
+    DynamicCompositeVector,
     DynamicMap,
     DynamicSet,
     bytes_from_text,
@@ -235,14 +237,23 @@ def _execute_function(functions, function, arguments, caller):
             _store_value(value.cells[value.offset + index], _read(frame, instruction.operands[3]), instruction.reference_target)
         elif op is IROpcode.CALL:
             args = tuple(_read(frame, reg) for reg in instruction.operands)
-            if instruction.callee in DYNAMIC_BUILTIN_SIGNATURES:
+            signature = DYNAMIC_BUILTIN_SIGNATURES.get(instruction.callee or "")
+            if signature is None:
+                signature = composite_vector_runtime_signature(instruction.callee or "")
+            if signature is not None:
                 result = _execute_dynamic_builtin(instruction.callee, args)
             else:
                 callee = functions[instruction.callee]
                 result = _execute_function(functions, callee, args, frame)
-            if instruction.results: _write(frame, instruction.results[0], result)
+            if instruction.results:
+                values = result if isinstance(result, tuple) and len(instruction.results) > 1 else (result,)
+                if len(values) != len(instruction.results):
+                    raise IRExecutionError("call result width does not match returned value width")
+                for register, value in zip(instruction.results, values, strict=True):
+                    _write(frame, register, value)
         elif op is IROpcode.RETURN:
-            return _read(frame, instruction.operands[0])
+            values = tuple(_read(frame, register) for register in instruction.operands)
+            return values if len(values) > 1 else values[0]
         elif op is IROpcode.JUMP:
             frame.block, frame.index = instruction.targets[0], 0; continue
         elif op is IROpcode.BRANCH3:
@@ -285,7 +296,7 @@ def _store_value(cell, value, value_type):
         if not isinstance(value, DynamicText):
             raise IRExecutionError("invalid text value")
     elif value_type is IRType.VECTOR:
-        if not isinstance(value, (DynamicVector, DynamicMap, DynamicSet)):
+        if not isinstance(value, (DynamicVector, DynamicCompositeVector, DynamicMap, DynamicSet)):
             raise IRExecutionError("invalid vector value")
     elif value_type is IRType.I64:
         try:
@@ -387,11 +398,54 @@ def _execute_dynamic_builtin(name: str, args: tuple[object, ...]) -> object:
         return _execute_vector_builtin(name, args, "i64", i64_vector_new)
     if name.startswith("f64_vector_"):
         return _execute_vector_builtin(name, args, "f64", f64_vector_new)
+    if name.startswith("__s3_composite_vector__"):
+        return _execute_composite_vector_builtin(name, args)
     if name.startswith("i64_map_"):
         return _execute_map_builtin(name, args)
     if name.startswith("i64_set_"):
         return _execute_set_builtin(name, args)
     raise IRExecutionError(f"unsupported dynamic builtin '{name}'")
+
+
+def _execute_composite_vector_builtin(name: str, args: tuple[object, ...]) -> object:
+    prefix = "__s3_composite_vector__"
+    if composite_vector_runtime_signature(name) is None:
+        raise IRExecutionError("malformed composite vector builtin")
+    parts = name[len(prefix) :].split("__")
+    if len(parts) != 3:
+        raise IRExecutionError("malformed composite vector builtin")
+    encoded_type, encoded_cells, operation = parts
+    element_types = tuple(encoded_cells.split("-")) if encoded_cells != "empty" else ()
+    if operation == "new":
+        return DynamicCompositeVector(encoded_type, element_types, args[0])
+    owner = _reference_owner(args[0])
+    if not isinstance(owner, DynamicCompositeVector):
+        raise IRExecutionError("invalid composite vector reference")
+    if operation == "len":
+        return owner.length
+    if operation == "capacity":
+        return owner.capacity
+    if operation == "reserve":
+        owner.reserve(args[1])
+        return 0
+    width = len(element_types)
+    if operation == "push":
+        owner.push(tuple(args[1 : 1 + width]))
+        return 0
+    if operation == "pop":
+        value = owner.pop()
+        return value[0] if width == 1 else value
+    if operation == "get":
+        value = owner.get(args[1])
+        return value[0] if width == 1 else value
+    if operation == "set":
+        owner.set(args[1], tuple(args[2 : 2 + width]))
+        return 0
+    if operation == "clone":
+        return owner.clone()
+    if operation == "slice":
+        return owner.slice(args[1], args[2])
+    raise IRExecutionError(f"unsupported composite vector operation '{operation}'")
 
 
 def _execute_vector_builtin(name: str, args: tuple[object, ...], element_type: str, constructor) -> object:

@@ -37,6 +37,7 @@ from .ternary import (
     tritwise_max,
     tritwise_min,
 )
+from .vector_types import is_composite_vector_builtin
 
 
 STATIC_TEXT_QUERY_BUILTINS = {
@@ -191,6 +192,8 @@ def _type_contains_dynamic(
 
     if isinstance(type_name, ast.TypeName):
         return type_name in _DYNAMIC_TYPES
+    if isinstance(type_name, ast.VectorType):
+        return True
     if isinstance(type_name, ast.ArrayType):
         return _type_contains_dynamic(records, enums, type_name.element_type, seen)
     if not isinstance(type_name, ast.NominalType):
@@ -1710,8 +1713,18 @@ class SemanticAnalyzer:
         if isinstance(type_name, ast.TypeName) and type_name in _DYNAMIC_TYPES:
             self.contains_dynamic = True
             return
+        if isinstance(type_name, ast.VectorType):
+            if aggregate:
+                raise SemanticError(
+                    "composite vectors cannot be stored inside aggregate fields",
+                    type_name.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+                )
+            self.contains_dynamic = True
+            self._validate_vector_element(type_name.element_type)
+            return
         if isinstance(type_name, ast.ReferenceType):
-            if type_name.target in _DYNAMIC_TYPES:
+            if type_name.target in _DYNAMIC_TYPES or isinstance(type_name.target, ast.VectorType):
                 self.contains_dynamic = True
             self.contains_references = True
             if isinstance(type_name.target, ast.ReferenceType):
@@ -1720,7 +1733,7 @@ class SemanticAnalyzer:
                     type_name.location,
                     diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_NESTED,
                 )
-            if not isinstance(type_name.target, ast.TypeName):
+            if not isinstance(type_name.target, (ast.TypeName, ast.VectorType)):
                 raise SemanticError(
                     "reference target must be a scalar type",
                     type_name.location,
@@ -1756,6 +1769,49 @@ class SemanticAnalyzer:
             raise SemanticError(
                 f"unknown type '{type_name.name}'",
                 type_name.location,
+            )
+
+    def _validate_vector_element(self, element_type: ast.DeclaredType) -> None:
+        if element_type is ast.TypeName.STRING:
+            raise SemanticError(
+                "vector<string> is not an owned composite element",
+                element_type.location if hasattr(element_type, "location") else _DYNAMIC_BUILTIN_LOCATION,
+                diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+            )
+        if element_type in {
+            ast.TypeName.TRYTE_VECTOR,
+            ast.TypeName.I64_VECTOR,
+            ast.TypeName.F64_VECTOR,
+            ast.TypeName.I64_MAP,
+            ast.TypeName.I64_SET,
+        }:
+            raise SemanticError(
+                "nested dynamic collection elements are not supported",
+                _DYNAMIC_BUILTIN_LOCATION,
+                diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+            )
+        if isinstance(
+            element_type,
+            (ast.VectorType, ast.ReferenceType, ast.SliceType, ast.TypeParameterType),
+        ):
+            raise SemanticError(
+                "vector element layout must be finite and owned by value",
+                element_type.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+            )
+        try:
+            layout = _fixed_value_layout(self.records, self.enums, element_type)
+        except RecursionError as error:
+            raise SemanticError(
+                "recursive vector element layout is not supported",
+                element_type.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+            ) from error
+        if not layout.cells:
+            raise SemanticError(
+                "vector element layout must contain at least one cell",
+                element_type.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
             )
 
     def _validate_array_type(self, type_name: ast.ArrayType) -> None:
@@ -2182,10 +2238,34 @@ class SemanticAnalyzer:
                     )
                     self.static_text_values[id(expression)] = text
                     result = ast.TypeName.STRING
-                elif isinstance(expression.target, ast.Identifier):
+                elif isinstance(expression.target, ast.Identifier) and not isinstance(target_type, ast.VectorType):
                     raise SemanticError(
                         f"variable '{expression.target.name}' is not an array",
                         expression.location,
+                    )
+                elif isinstance(target_type, ast.VectorType):
+                    self._analyze_expression(expression.target)
+                    known_index_type = self._known_expression_type(expression.index)
+                    index_type = self._analyze_expression(
+                        expression.index,
+                        ast.TypeName.I64
+                        if known_index_type is ast.TypeName.I64
+                        else ast.TypeName.TRYTE,
+                    )
+                    if index_type not in {ast.TypeName.TRYTE, ast.TypeName.I64}:
+                        raise SemanticError(
+                            "vector index must have type tryte or i64",
+                            expression.index.location,
+                        )
+                    result = target_type.element_type
+                    self.place_info[id(expression)] = PlaceInfo(
+                        result,
+                        True,
+                        False,
+                        True,
+                        "composite-vector-index",
+                        0,
+                        True,
                     )
                 else:
                     result = self._analyze_expression(expression.target)
@@ -2238,7 +2318,7 @@ class SemanticAnalyzer:
             if expression.simple_function_name in NUMERIC_CONVERSION_BUILTINS:
                 result = self._analyze_numeric_conversion_call(expression)
             else:
-                result = self._analyze_call(expression)
+                result = self._analyze_call(expression, expected)
             if expected is not None:
                 call_context = "call expression"
                 if expression.simple_function_name is not None:
@@ -2444,9 +2524,9 @@ class SemanticAnalyzer:
                 expression.mutable,
                 expression.location,
             )
-        if not isinstance(binding.type_name, ast.TypeName):
+        if not isinstance(binding.type_name, (ast.TypeName, ast.VectorType)):
             raise SemanticError(
-                "reference target must be a scalar local or parameter",
+                "reference target must be a scalar or composite-vector local or parameter",
                 expression.operand.location,
                 diagnostic_code=DiagnosticCode.SEMANTIC_REFERENCE_AGGREGATE,
             )
@@ -2972,7 +3052,11 @@ class SemanticAnalyzer:
         self.expression_types[id(expression)] = result
         return result
 
-    def _analyze_call(self, expression: ast.CallExpression) -> ast.DeclaredType:
+    def _analyze_call(
+        self,
+        expression: ast.CallExpression,
+        expected: ast.DeclaredType | None = None,
+    ) -> ast.DeclaredType:
         if expression.simple_function_name is None:
             raise SemanticError(
                 "call target must be an unqualified function name",
@@ -2985,6 +3069,8 @@ class SemanticAnalyzer:
             )
         if expression.function_name in STATIC_TEXT_QUERY_BUILTINS:
             return self._analyze_static_text_query_call(expression)
+        if is_composite_vector_builtin(expression.function_name):
+            return self._analyze_composite_vector_call(expression, expected)
         if expression.function_name in _DYNAMIC_BUILTINS:
             borrow_snapshot = dict(self.active_borrows)
             signature = self.functions[expression.function_name]
@@ -3042,6 +3128,89 @@ class SemanticAnalyzer:
                 self._consume_owner(argument.expression)
         self.active_borrows = borrow_snapshot
         return signature.return_type
+
+    def _analyze_composite_vector_call(
+        self,
+        expression: ast.CallExpression,
+        expected: ast.DeclaredType | None,
+    ) -> ast.DeclaredType:
+        if len(expression.type_arguments) != 1:
+            raise SemanticError(
+                "composite vector builtin requires one element type argument",
+                expression.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+            )
+        element_type = expression.type_arguments[0]
+        self._validate_vector_element(element_type)
+        vector_type = ast.VectorType(element_type, expression.location)
+        operation = expression.function_name[len("__s3_composite_vector__") :]
+        if operation.startswith("vector_"):
+            operation = operation[len("vector_") :]
+        if operation == "new":
+            if len(expression.arguments) != 1:
+                raise SemanticError(
+                    "vector_new expects one capacity argument",
+                    expression.location,
+                    diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+                )
+            self._analyze_expression(expression.arguments[0].expression, ast.TypeName.I64)
+            if expected is not None:
+                self._require_type(vector_type, expected, expression.location, "vector_new result")
+            self.contains_dynamic = True
+            return vector_type
+
+        mutable = operation in {"reserve", "push", "pop", "set"}
+        shared_ref = ast.ReferenceType(vector_type, False, expression.location)
+        mutable_ref = ast.ReferenceType(vector_type, True, expression.location)
+        parameter_types: tuple[ast.DeclaredType, ...]
+        result: ast.DeclaredType
+        if operation in {"len", "capacity"}:
+            parameter_types, result = (shared_ref,), ast.TypeName.I64
+        elif operation == "reserve":
+            parameter_types, result = (mutable_ref, ast.TypeName.I64), ast.TypeName.TRYTE
+        elif operation == "push":
+            parameter_types, result = (mutable_ref, element_type), ast.TypeName.TRYTE
+        elif operation == "pop":
+            parameter_types, result = (mutable_ref,), element_type
+        elif operation == "get":
+            parameter_types, result = (shared_ref, ast.TypeName.I64), element_type
+        elif operation == "set":
+            parameter_types, result = (mutable_ref, ast.TypeName.I64, element_type), ast.TypeName.TRYTE
+        elif operation == "clone":
+            parameter_types, result = (shared_ref,), vector_type
+        elif operation == "slice":
+            parameter_types, result = (shared_ref, ast.TypeName.I64, ast.TypeName.I64), vector_type
+        else:
+            raise SemanticError(
+                f"unknown composite vector operation '{operation}'",
+                expression.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+            )
+        if len(expression.arguments) != len(parameter_types):
+            raise SemanticError(
+                f"{operation} expects {len(parameter_types)} argument(s), got {len(expression.arguments)}",
+                expression.location,
+                diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+            )
+        borrow_snapshot = dict(self.active_borrows)
+        for index, (argument, parameter_type) in enumerate(
+            zip(expression.arguments, parameter_types, strict=True),
+            start=1,
+        ):
+            actual = self._analyze_expression(argument.expression, parameter_type)
+            self._require_type(
+                actual,
+                parameter_type,
+                argument.location,
+                f"argument {index} to '{operation}'",
+                diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
+            )
+        if operation in {"push", "set"}:
+            if _type_contains_dynamic(self.records, self.enums, element_type):
+                self._consume_owner(expression.arguments[-1].expression)
+        self.active_borrows = borrow_snapshot
+        self.contains_dynamic = True
+        return result
 
     def _analyze_static_text_query_call(
         self,
@@ -3501,6 +3670,9 @@ class SemanticAnalyzer:
             if binding is not None:
                 element = binding.type_name.element_type
                 return element if isinstance(element, ast.TypeName) else None
+            target_type = self._known_expression_type(expression.target)
+            if isinstance(target_type, ast.VectorType):
+                return target_type.element_type
             if self._known_expression_type(expression.target) is ast.TypeName.STRING:
                 return ast.TypeName.STRING
         if isinstance(expression, ast.SliceExpression):
@@ -3518,6 +3690,15 @@ class SemanticAnalyzer:
                 return STATIC_TEXT_QUERY_BUILTINS[function_name]
             if function_name in STATIC_TEXT_TRANSFORM_BUILTINS:
                 return ast.TypeName.STRING
+            if is_composite_vector_builtin(function_name):
+                if len(expression.type_arguments) != 1:
+                    return None
+                element = expression.type_arguments[0]
+                if function_name.endswith("_new") or function_name.endswith("_clone") or function_name.endswith("_slice"):
+                    return ast.VectorType(element, expression.location)
+                if function_name.endswith("_get") or function_name.endswith("_pop"):
+                    return element
+                return ast.TypeName.TRYTE if function_name.endswith(("_push", "_set", "_reserve")) else ast.TypeName.I64
             signature = self.functions.get(function_name)
             return None if signature is None else signature.return_type
         if isinstance(expression, ast.RecordExpression):
@@ -4297,7 +4478,12 @@ def _types_equal(left: ast.DeclaredType, right: ast.DeclaredType) -> bool:
     if isinstance(left, ast.TypeName) or isinstance(right, ast.TypeName):
         return left is right
     if isinstance(left, ast.NominalType) and isinstance(right, ast.NominalType):
-        return left.name == right.name
+        return left.name == right.name and len(left.type_arguments) == len(right.type_arguments) and all(
+            _types_equal(a, b)
+            for a, b in zip(left.type_arguments, right.type_arguments, strict=True)
+        )
+    if isinstance(left, ast.VectorType) and isinstance(right, ast.VectorType):
+        return _types_equal(left.element_type, right.element_type)
     if isinstance(left, ast.ArrayType) and isinstance(right, ast.ArrayType):
         return (
             left.length == right.length
@@ -4314,7 +4500,13 @@ def _type_display(type_name: ast.DeclaredType) -> str:
     if isinstance(type_name, ast.TypeName):
         return type_name.value
     if isinstance(type_name, ast.NominalType):
+        if type_name.type_arguments:
+            return f"{type_name.name}<" + ", ".join(
+                _type_display(argument) for argument in type_name.type_arguments
+            ) + ">"
         return type_name.name
+    if isinstance(type_name, ast.VectorType):
+        return f"vector<{_type_display(type_name.element_type)}>"
     if isinstance(type_name, ast.ArrayType):
         return f"{_type_display(type_name.element_type)}[{type_name.length}]"
     if isinstance(type_name, ast.ReferenceType):

@@ -18,6 +18,7 @@ from .ir import (
     IROpcode,
     IRType,
     TERMINATOR_OPCODES,
+    composite_vector_runtime_signature,
 )
 from .ternary import TRYTE_MAX, TernaryRangeError, TernaryWidth, validate
 from .numeric import NumericError, validate_f64, validate_i64
@@ -611,6 +612,8 @@ class IRVerifier:
                 self._error("call requires a function name", instruction.location)
             callee = functions.get(instruction.callee or "")
             builtin = DYNAMIC_BUILTIN_SIGNATURES.get(instruction.callee or "")
+            if builtin is None:
+                builtin = composite_vector_runtime_signature(instruction.callee or "")
             if callee is None and builtin is None:
                 self._error(
                     f"call to nonexistent function '{instruction.callee}'",

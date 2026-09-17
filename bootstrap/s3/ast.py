@@ -34,6 +34,14 @@ class ArrayType:
 
 
 @dataclass(frozen=True, slots=True)
+class VectorType:
+    """A compile-time-specialized vector with a statically known element layout."""
+
+    element_type: DeclaredType
+    location: SourceLocation
+
+
+@dataclass(frozen=True, slots=True)
 class NominalType:
     name: str
     location: SourceLocation
@@ -42,7 +50,7 @@ class NominalType:
 
 @dataclass(frozen=True, slots=True)
 class ReferenceType:
-    target: TypeName | ArrayType | NominalType | ReferenceType
+    target: TypeName | ArrayType | VectorType | NominalType | ReferenceType
     mutable: bool
     location: SourceLocation
 
@@ -65,6 +73,7 @@ class TypeParameterType:
 DeclaredType: TypeAlias = (
     TypeName
     | ArrayType
+    | VectorType
     | NominalType
     | ReferenceType
     | SliceType
