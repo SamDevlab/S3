@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from ...assembly import AssemblyProgram, AssemblyType
 from ...assembly_verifier import AssemblyVerifier
@@ -12,7 +12,15 @@ from .emitter import X8664Emitter
 from .experimental_policy import (
     ExperimentalNativePolicyMode,
     parse_experimental_native_policy_mode,
-    resolve_compact_ea_canaries,
+)
+from .native_policy import (
+    NativeCodegenPolicy,
+    NativePolicyDecision,
+    NativePolicySummary,
+    parse_native_codegen_policy,
+    _index_register,
+    resolve_native_policies,
+    summarize_native_policy,
 )
 
 NATIVE_MAX_INSTRUCTIONS = (1 << 64) - 1
@@ -31,13 +39,27 @@ class X8664Backend:
         default=None,
         kw_only=True,
     )
+    native_policy: NativeCodegenPolicy | str | None = field(
+        default=None,
+        kw_only=True,
+    )
 
     def __post_init__(self) -> None:
-        object.__setattr__(
-            self,
-            "experimental_mode",
-            parse_experimental_native_policy_mode(self.experimental_mode),
-        )
+        if self.native_policy is not None and self.experimental_mode is not None:
+            raise ValueError(
+                "native_policy and experimental_mode cannot both be set"
+            )
+        if self.experimental_mode is not None:
+            legacy = parse_experimental_native_policy_mode(self.experimental_mode)
+            policy = (
+                NativeCodegenPolicy.BASELINE
+                if legacy is ExperimentalNativePolicyMode.OFF
+                else NativeCodegenPolicy.COMPACT_EA
+            )
+            object.__setattr__(self, "experimental_mode", legacy)
+        else:
+            policy = parse_native_codegen_policy(self.native_policy)
+        object.__setattr__(self, "native_policy", policy)
 
     def generate(self, program: AssemblyProgram) -> str:
         if isinstance(self.max_instructions, bool) or not isinstance(self.max_instructions, int):
@@ -70,23 +92,66 @@ class X8664Backend:
             raise NativeBackendError(
                 "native entry function 'main' must return one result cell"
             )
-        canary_by_function = None
-        if self.experimental_mode is not ExperimentalNativePolicyMode.OFF:
-            selections = resolve_compact_ea_canaries(
-                program.functions,
-                self.experimental_mode,
-            )
-            canary_by_function = {
-                name: selection.applied
-                for name, selection in selections.items()
+        compact_ea_by_function = None
+        if self.native_policy is NativeCodegenPolicy.COMPACT_EA:
+            selections = self._resolved_native_policy_decisions(program)
+            compact_ea_by_function = {
+                name: decision.applied
+                for name, decision in selections.items()
             }
         return X8664Emitter(
             program,
             max_frames=self.max_frames,
             max_instructions=self.max_instructions,
             register_allocation=self.register_allocation,
-            compact_ea_by_function=canary_by_function,
+            compact_ea_by_function=compact_ea_by_function,
         ).emit()
+
+    def explain_native_policy(self, program: AssemblyProgram) -> NativePolicySummary:
+        """Return deterministic per-function policy decisions for observability."""
+
+        return summarize_native_policy(
+            program.functions,
+            self.native_policy,
+            decisions=self._resolved_native_policy_decisions(program),
+        )
+
+    def _resolved_native_policy_decisions(
+        self,
+        program: AssemblyProgram,
+    ) -> dict[str, NativePolicyDecision]:
+        decisions = resolve_native_policies(program.functions, self.native_policy)
+        if self.native_policy is not NativeCodegenPolicy.COMPACT_EA:
+            return decisions
+        from .allocation import analyze_allocation
+        from .residence import analyze_cross_block_residence
+
+        for function in program.functions:
+            decision = decisions[function.name]
+            if not decision.applied:
+                continue
+            plan = (
+                analyze_allocation(function)
+                if self.register_allocation
+                else analyze_cross_block_residence(function)
+            )
+            for instruction in function.instructions:
+                index_register = _index_register(instruction)
+                if index_register is None:
+                    continue
+                physical = plan.physical_register(index_register)
+                if physical is None or physical in {"rax", "r10", "r11"}:
+                    decisions[function.name] = replace(
+                        decision,
+                        effective_policy=NativeCodegenPolicy.BASELINE,
+                        applied=False,
+                        reason=(
+                            "compact_ea_fallback:"
+                            "physical_index_residence_not_proven"
+                        ),
+                    )
+                    break
+        return decisions
 
     def _generate_ffi(self, program: AssemblyProgram) -> str:
         return X8664Emitter(
@@ -94,6 +159,16 @@ class X8664Backend:
             max_frames=self.max_frames,
             max_instructions=self.max_instructions,
             register_allocation=self.register_allocation,
+            compact_ea_by_function=(
+                {
+                    name: decision.applied
+                    for name, decision in self._resolved_native_policy_decisions(
+                        program
+                    ).items()
+                }
+                if self.native_policy is NativeCodegenPolicy.COMPACT_EA
+                else None
+            ),
         ).emit()
 
 
@@ -103,6 +178,7 @@ def generate_native_assembly(
     max_memory_trits: int = DEFAULT_MAX_MEMORY_TRITS,
     max_frames: int = DEFAULT_MAX_FRAMES,
     max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
+    native_policy: NativeCodegenPolicy | str | None = None,
 ) -> str:
     from .._native_assembly import _generate_native_assembly
 
@@ -111,6 +187,7 @@ def generate_native_assembly(
         max_memory_trits=max_memory_trits,
         max_frames=max_frames,
         max_instructions=max_instructions,
+        native_policy=native_policy,
     )
 
 
@@ -120,6 +197,7 @@ def generate_ffi_assembly(
     max_memory_trits: int = DEFAULT_MAX_MEMORY_TRITS,
     max_frames: int = DEFAULT_MAX_FRAMES,
     max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
+    native_policy: NativeCodegenPolicy | str | None = None,
 ) -> str:
     """Generate native text for a hosted FFI artifact without entry restrictions."""
 
@@ -128,4 +206,5 @@ def generate_ffi_assembly(
         max_memory_trits=max_memory_trits,
         max_frames=max_frames,
         max_instructions=max_instructions,
+        native_policy=native_policy,
     )._generate_ffi(program)

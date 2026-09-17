@@ -12,7 +12,11 @@ from bootstrap.s3.assembly import (
     AssemblyType,
     parse_assembly,
 )
-from bootstrap.s3.backends.x86_64 import X8664Backend, generate_native_assembly
+from bootstrap.s3.backends.x86_64 import (
+    NativeCodegenPolicy,
+    X8664Backend,
+    generate_native_assembly,
+)
 from bootstrap.s3.backends.x86_64.allocation import analyze_allocation
 from bootstrap.s3.backends.x86_64.experimental_policy import (
     ExperimentalNativePolicyMode,
@@ -94,6 +98,70 @@ def test_canary_is_explicit_and_uses_the_existing_physical_allocation() -> None:
     canary = X8664Backend(experimental_mode="compact-ea-canary").generate(program)
     assert baseline != canary
     assert f"[rbp + {index_physical}*2" in canary
+
+
+def test_supported_compact_ea_policy_reports_deterministic_applied_sites() -> None:
+    program = _indexed_program()
+
+    baseline = generate_native_assembly(program)
+    compact = generate_native_assembly(program, native_policy="compact-ea")
+    summary = X8664Backend(
+        native_policy=NativeCodegenPolicy.COMPACT_EA
+    ).explain_native_policy(program).to_dict()
+
+    assert baseline != compact
+    assert summary["requested_policy"] == "compact-ea"
+    assert summary["effective_policy"] == "compact-ea"
+    assert summary["functions_considered"] == 1
+    assert summary["functions_optimized"] == 1
+    assert summary["functions_fallback"] == 0
+    assert summary["compact_ea_sites_considered"] == 2
+    assert summary["compact_ea_sites_applied"] == 2
+    assert summary == X8664Backend(
+        native_policy="compact-ea"
+    ).explain_native_policy(program).to_dict()
+
+
+def test_production_policy_falls_back_deterministically_and_legacy_modes_map() -> None:
+    program = AssemblyProgram((_reference_function(),))
+    summary = X8664Backend(native_policy="compact-ea").explain_native_policy(
+        program
+    ).to_dict()
+
+    assert summary["effective_policy"] == "baseline"
+    assert summary["functions_optimized"] == 0
+    assert summary["functions_fallback"] == 1
+    assert summary["fallback_reason_counts"] == {
+        "reference_operations_present": 1
+    }
+    assert X8664Backend(
+        native_policy="baseline"
+    ).generate(program) == X8664Backend(experimental_mode="off").generate(program)
+
+
+def test_compact_ea_falls_back_when_physical_index_residence_is_unavailable() -> None:
+    program = _indexed_program()
+    backend = X8664Backend(
+        register_allocation=False,
+        native_policy="compact-ea",
+    )
+
+    summary = backend.explain_native_policy(program).to_dict()
+
+    assert summary["effective_policy"] == "baseline"
+    assert summary["functions_optimized"] == 0
+    assert summary["functions_fallback"] == 1
+    assert summary["fallback_reason_counts"] == {
+        "physical_index_residence_not_proven": 1
+    }
+    assert backend.generate(program) == X8664Backend(
+        register_allocation=False
+    ).generate(program)
+
+
+def test_native_policy_and_legacy_mode_cannot_be_combined() -> None:
+    with pytest.raises(ValueError, match="cannot both be set"):
+        X8664Backend(native_policy="baseline", experimental_mode="off")
 
 
 def test_canary_falls_back_for_reference_operations() -> None:

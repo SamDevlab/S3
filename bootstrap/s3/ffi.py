@@ -126,6 +126,7 @@ def build_shared_library(
     *,
     extra_objects: tuple[Path, ...] = (),
     keep_assembly: Path | None = None,
+    native_policy: str | None = None,
 ) -> Path:
     """Compile ordinary S3 source into a real Linux FFI shared object."""
 
@@ -134,7 +135,7 @@ def build_shared_library(
 
     result = compile_source(source)
     _, ordinary_assembly = result.require_ordinary_artifacts()
-    assembly = generate_ffi_assembly(ordinary_assembly)
+    assembly = generate_ffi_assembly(ordinary_assembly, native_policy=native_policy)
     return NativeToolchain.detect().build_shared(
         assembly,
         output,

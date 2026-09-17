@@ -1,22 +1,27 @@
 # Active S3 project track
 
-Last reviewed: 2026-09-16.
+Last reviewed: 2026-09-17.
 
 ## Active track
 
 ```text
-ACTIVE_TRACK=S3_1_1_RELIABILITY_AND_MAINTENANCE
+ACTIVE_TRACK=S3_1_2_NATIVE_BACKEND_PRODUCTIONIZATION
 CURRENT_PUBLIC_STABLE=v1.0.0
 CURRENT_PRERELEASE=NONE
 STABLE_V1_0_RELEASED=YES
 REFERENCE_COMPILER=PYTHON
 FULL_SELFHOST=DEFERRED_RESEARCH
 PYPI_PUBLISHED=NO
+S3_1_1_TECHNICAL_CLOSURE=PASS
+S3_1_1_RELEASE_PREP=PARKED
 S3_1_1_IMPLEMENTATION_STARTED=YES
 S3_1_1_PHASE=R5_TECHNICALLY_COMPLETE_RELEASE_DECISION_PENDING
+S3_1_2_IMPLEMENTATION_STARTED=YES
 ```
 
-S3 `v1.0.0` is the stable GitHub release of the current reference toolchain line. The active bounded objective is **S3 1.1 — Reliability & Maintenance**.
+S3 `v1.0.0` is the stable GitHub release of the current reference toolchain line. The active bounded objective is **S3 1.2 — Native Backend Productionization**.
+
+The active development track is now **S3 1.2 — Native Backend Productionization**. The 1.1 reliability line remains technically closed and its release preparation remains parked; this track promotes Compact EA only as an explicit, fail-closed opt-in policy.
 
 Reliability Lab v2 is built incrementally from current `main`: deterministic identities and schemas (R0), killable process isolation (R1), deterministic source generation (R2), differential execution and replay (R3), minimization/triage (R4), then bounded maintenance closure (R5).
 

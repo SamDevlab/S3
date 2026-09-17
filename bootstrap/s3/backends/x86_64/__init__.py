@@ -7,6 +7,7 @@ from .diagnostics import (
     NativeToolchainError,
 )
 from .layout import CalleeSavedSlot, CallerSavedSpillSlot, FrameLayout, layout_frame
+from .native_policy import NativeCodegenPolicy, NativePolicySummary
 from .toolchain import NativeToolchain
 
 __all__ = [
@@ -17,6 +18,8 @@ __all__ = [
     "NativePlatformError",
     "NativeToolchain",
     "NativeToolchainError",
+    "NativeCodegenPolicy",
+    "NativePolicySummary",
     "X8664Backend",
     "generate_native_assembly",
     "generate_ffi_assembly",
