@@ -24,6 +24,31 @@ def _json_stderr(capsys: pytest.CaptureFixture[str]) -> dict[str, object]:
     return json.loads(captured.err)
 
 
+def test_native_policy_is_explicitly_forwarded_by_native_asm_cli(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    source = _write_source(
+        tmp_path / "policy.s3",
+        "fn main() -> tryte:\n    return 0\n",
+    )
+    received: list[object] = []
+
+    def fake_generate(program, **kwargs: object) -> str:
+        del program
+        received.append(kwargs["native_policy"])
+        return ".text\n"
+
+    monkeypatch.setattr(cli, "generate_native_assembly", fake_generate)
+
+    assert cli.main(
+        ["native-asm", str(source), "--native-policy", "compact-ea"]
+    ) == 0
+    assert capsys.readouterr().out == ".text\n"
+    assert received == ["compact-ea"]
+
+
 def test_text_is_default_and_explicit_text_preserves_the_same_message(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],

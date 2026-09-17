@@ -21,6 +21,7 @@ from ..targets import (
     TargetSpec,
 )
 from .x86_64 import X8664Backend
+from .x86_64.native_policy import NativeCodegenPolicy
 
 
 class BackendRegistryError(ValueError):
@@ -36,6 +37,7 @@ class HostedExecutionBackend(Protocol):
         *,
         max_frames: int = DEFAULT_MAX_FRAMES,
         max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
+        native_policy: NativeCodegenPolicy | str | None = None,
         max_memory_trits: int = DEFAULT_MAX_MEMORY_TRITS,
         capture_memory: list[dict[int, list[AssemblyValue | None]]] | None = None,
     ) -> AssemblyValue:
@@ -51,6 +53,7 @@ class NativeAssemblyBackend(Protocol):
         max_memory_trits: int = DEFAULT_MAX_MEMORY_TRITS,
         max_frames: int = DEFAULT_MAX_FRAMES,
         max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
+        native_policy: NativeCodegenPolicy | str | None = None,
     ) -> str:
         ...
 
@@ -95,11 +98,13 @@ class LinuxX8664NativeAssemblyBackend:
         max_memory_trits: int = DEFAULT_MAX_MEMORY_TRITS,
         max_frames: int = DEFAULT_MAX_FRAMES,
         max_instructions: int = DEFAULT_MAX_INSTRUCTIONS,
+        native_policy: NativeCodegenPolicy | str | None = None,
     ) -> str:
         return X8664Backend(
             max_memory_trits=max_memory_trits,
             max_frames=max_frames,
             max_instructions=max_instructions,
+            native_policy=native_policy,
         ).generate(program)
 
 

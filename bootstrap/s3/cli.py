@@ -14,6 +14,7 @@ from . import ast
 from .assembly import AssemblyError
 from .backends.registry import create_builtin_backend_registry
 from .backends.x86_64 import (
+    NativeCodegenPolicy,
     NativeBackendError,
     NativeToolchain,
     generate_native_assembly,
@@ -62,6 +63,7 @@ _SOURCE_SYNTAX_MODES = {
     "0.5": SyntaxMode.V0_5,
     "0.6": SyntaxMode.V0_6,
 }
+_NATIVE_POLICY_VALUES = tuple(policy.value for policy in NativeCodegenPolicy)
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -113,6 +115,12 @@ def _parser() -> argparse.ArgumentParser:
         choices=("0.5", "0.6"),
         default="0.6",
         help="Source syntax version (default: 0.6)",
+    )
+    parser.add_argument(
+        "--native-policy",
+        choices=_NATIVE_POLICY_VALUES,
+        default=NativeCodegenPolicy.BASELINE.value,
+        help="native code-generation policy (default: baseline)",
     )
 
     # --- Parent parser for subcommands (without defaults, so they don't overwrite) ---
@@ -223,6 +231,13 @@ def _parser() -> argparse.ArgumentParser:
                 help=(
                     f"maximum S3 opcodes (default: {DEFAULT_MAX_INSTRUCTIONS})"
                 ),
+            )
+        if cmd in ("native-asm", "build", "run-native", "ffi-build"):
+            p.add_argument(
+                "--native-policy",
+                choices=_NATIVE_POLICY_VALUES,
+                default=argparse.SUPPRESS,
+                help="native code-generation policy",
             )
     test_parser = subparsers.add_parser("test")
     test_parser.add_argument("manifest", type=Path, help="path to an s3-test.toml manifest")
@@ -532,6 +547,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 assembly,
                 max_frames=args.max_frames,
                 max_instructions=args.max_instructions,
+                native_policy=args.native_policy,
             )
             if args.output is None:
                 print(native, end="")
@@ -544,6 +560,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 assembly,
                 max_frames=args.max_frames,
                 max_instructions=args.max_instructions,
+                native_policy=args.native_policy,
             )
             output = (
                 args.output
@@ -566,6 +583,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 source,
                 output,
                 keep_assembly=args.keep_assembly,
+                native_policy=args.native_policy,
             )
             print(output)
         elif args.command == "run-native":
@@ -574,6 +592,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 assembly,
                 max_frames=args.max_frames,
                 max_instructions=args.max_instructions,
+                native_policy=args.native_policy,
             )
             toolchain = NativeToolchain.detect()
             if args.output is not None:

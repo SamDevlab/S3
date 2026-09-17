@@ -70,11 +70,13 @@ def test_public_generate_native_assembly_signature_is_unchanged() -> None:
         "max_memory_trits",
         "max_frames",
         "max_instructions",
+        "native_policy",
     )
     assert parameters["program"].kind is inspect.Parameter.POSITIONAL_OR_KEYWORD
     assert parameters["max_memory_trits"].kind is inspect.Parameter.KEYWORD_ONLY
     assert parameters["max_frames"].kind is inspect.Parameter.KEYWORD_ONLY
     assert parameters["max_instructions"].kind is inspect.Parameter.KEYWORD_ONLY
+    assert parameters["native_policy"].kind is inspect.Parameter.KEYWORD_ONLY
     assert "registry" not in parameters
     assert "target" not in parameters
 
