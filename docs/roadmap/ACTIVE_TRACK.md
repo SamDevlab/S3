@@ -14,7 +14,7 @@ REFERENCE_COMPILER=PYTHON
 FULL_SELFHOST=DEFERRED_RESEARCH
 PYPI_PUBLISHED=NO
 S3_1_1_IMPLEMENTATION_STARTED=YES
-S3_1_1_PHASE=RELEASE_PREPARATION_IN_PROGRESS
+S3_1_1_PHASE=TECHNICALLY_COMPLETE_RELEASE_PREPARATION
 ```
 
 S3 `v1.0.0` is the stable GitHub release of the current reference toolchain line. The active bounded objective is **S3 1.1 — Reliability & Maintenance**.
@@ -47,7 +47,7 @@ The authoritative post-hardening campaign report SHA-256 is `f749d501a01d7f6f2b1
 
 R4 is complete on the dedicated maintenance branch `feat/s3-1.1-r4-r5-reliability-closure-20260916` at implementation head `774849b1303e3fb726c2c4972457bfa88ba3247d`. The deterministic minimizer preserves the exact outcome and failure signature under the frozen 10,000-evaluation bound. Replay bundles are hash-verified before separate minimized output is written. Failure groups, canonical JSON, and Markdown reports use one deterministic ordering model. The focused R4 selection passed, and the full `python -m pytest -q` gate completed with exit code 0. No compiler/runtime semantics changed.
 
-R5 is technically complete on candidate `d277a862223e8d07b39fd9a687dd1ce0651af63b` after one bounded Linux x86-64 campaign: 256/256 PASS, hosted O0/O1 for all 256 cases, and native O0/O1 for the bounded 32-case shard. The campaign report, stdout summary, and empty stderr were preserved with hashes in [`R5_MAINTENANCE_CLOSURE.md`](../../reports/s3-1.1-reliability-20260916/R5_MAINTENANCE_CLOSURE.md). The Windows full regression evidence is reused from the preceding implementation commit because the final commit changed documentation only. Historical v1.0.0 `393/393 PASS` remains a separate immutable baseline. PR #294 is merged into `main`; release preparation now targets the `1.1.0` candidate, while publication has not occurred.
+R5 is technically complete on candidate `d277a862223e8d07b39fd9a687dd1ce0651af63b` after one bounded Linux x86-64 campaign: 256/256 PASS, hosted O0/O1 for all 256 cases, and native O0/O1 for the bounded 32-case shard. The campaign report, stdout summary, and empty stderr were preserved with hashes in [`R5_MAINTENANCE_CLOSURE.md`](../../reports/s3-1.1-reliability-20260916/R5_MAINTENANCE_CLOSURE.md). The Windows full regression evidence is reused from the preceding implementation commit because the final commit changed documentation only. Historical v1.0.0 `393/393 PASS` remains a separate immutable baseline. PR #294 is merged into `main`; the `1.1.0` release candidate has now passed local Windows and Ubuntu validation, while publication has not occurred.
 
 The GitHub Actions runs for the branch remain an independent infrastructure failure under issue #284: all 12 jobs ended before any workflow step with empty step lists. No rerun or workflow weakening was performed.
 
@@ -78,4 +78,4 @@ GitHub Actions jobs have been failing before any step is assigned (`runner_id=0`
 
 ## Next operational step
 
-R3 is closed. R4 and R5 are technically complete and PR #294 is merged into `main`. Release preparation is active for candidate `1.1.0`; merge of the release-prep PR, tagging, GitHub release, and PyPI publication remain explicitly unauthorized.
+R3 is closed. R4 and R5 are technically complete and PR #294 is merged into `main`. Candidate `1.1.0` is technically prepared, with GitHub Actions infrastructure debt still tracked under #284; merge of the release-prep PR, tagging, GitHub release, and PyPI publication remain explicitly unauthorized pending a separate decision.
