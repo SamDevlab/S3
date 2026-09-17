@@ -48,6 +48,17 @@ PERFORMANCE_CHARACTERIZATION=NOT_RUN
 NATIVE_SPEEDUP_CLAIM=NO
 BENCHMARK_SPECIAL_CASES=NONE
 
+PR=296
+PR_STATE=OPEN
+PR_DRAFT=YES
+PR_MERGEABLE=YES
+PR_MERGE_STATE=UNSTABLE
+CI_RUN=35181318772
+CI_HEAD=9090480d27576fdcc0d9a50895aee84b4c93e124
+CI_STATUS=INFRASTRUCTURE_BLOCKED
+CI_EVIDENCE=all jobs failed in about 2 seconds with steps=[] and no job logs
+CI_RERUN=NO
+
 PR190_MERGED=NO
 PR295_STATUS=PARKED
 ISSUE284_STATUS=OPEN
@@ -58,4 +69,5 @@ PYPI_PUBLICATION=NO
 This report records the implementation evidence for review. The Windows
 full-suite timing failure remains visible and is not converted into a skip or
 used to weaken the test. The feature branch is not ready for an unconditional
-main merge until that environment-sensitive result is reviewed.
+main merge until that environment-sensitive result and the CI infrastructure
+failure are reviewed.
