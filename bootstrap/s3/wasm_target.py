@@ -153,7 +153,7 @@ def artifact_identity(
     lock_sha256: str,
     target: TargetSpec = WASM32_WASIP1_S3_TARGET,
     profile: str = "wasi-preview1-core-v1",
-    compiler_version: str = "s3-bootstrap-1.0.0",
+    compiler_version: str = "s3-bootstrap-1.1.0",
     encoder_version: str = "s3-wasm-encoder-v1",
 ) -> str:
     """Hash only canonical inputs; never absolute paths or environment data."""
