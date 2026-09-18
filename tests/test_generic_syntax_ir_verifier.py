@@ -492,10 +492,10 @@ def test_native_verifier_differential_matrix_is_immutable_and_repeatable(tmp_pat
         source = verifier + f"\nfn main() -> i64:\n    return verifier_case({case})\n"
         hosted = run_source(source)
         if case in valid_cases:
-            assert hosted // 1_000_000 == 1, (case, hosted)
+            assert hosted // 1_000_000_000 == 1, (case, hosted)
         else:
-            assert hosted // 1_000_000 == 0, (case, hosted)
-        assert (hosted % 10_000) // 1_000 == 1, (case, hosted)
+            assert hosted // 1_000_000_000 == 0, (case, hosted)
+        assert (hosted % 1_000_000_000) // 100_000_000 == 1, (case, hosted)
 
         assembly = compile_source(source).assembly
         executable = toolchain.build(

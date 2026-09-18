@@ -983,7 +983,7 @@ export fn verifier_case(case_id: i64) -> i64:
             digest_equal = 0
         1:
             digest_equal = 0
-    return result.accepted * 1000000 + result.diagnostic_code * 10000 + digest_equal * 1000 + result.cfg_fingerprint
+    return result.accepted * 1000000000 + digest_equal * 100000000 + result.diagnostic_code * 10000 + result.cfg_fingerprint
 
 export fn verifier_kernel_shape_anchor() -> i64:
     mut reachable: vector<i64> = vector_new<i64>(2)
