@@ -54,7 +54,14 @@ representability boundary.
 - Soak: 3 clean-process test passes, zero observed nondeterminism.
 - Adjacent ordered-map, generic-map, vector, composite-vector, AI contract,
   and architecture tests: pass.
-- Full Windows/Linux suites and CI remain closure gates, not yet claimed here.
+- Windows full-suite execution completed with exit `0` and no failed tests;
+  the retained terminal transcript does not preserve the pass/skip split.
+- The Linux full suite completed once on the real FEATURE worktree under
+  Python 3.14.4: `3609` selected, `3608` passed, `1` skipped, `0` failed,
+  `0` errors. The direct status line was not captured, so exit `0` is inferred
+  from the complete `[100%]` transcript and absence of failure/error markers.
+- Python 3.13 was unavailable in the guest, so Linux evidence is not canonical
+  Python certification.
 
 ## Complexity model
 
@@ -83,13 +90,9 @@ The focused closure gates completed before the full-suite runs:
 - The Windows full suite was executed once and exited `0` with no failed
   tests. Its retained terminal transcript did not preserve the pass/skip
   split.
-- The Linux full suite was executed once against the Linux source snapshot and
-  exited nonzero. Collection contained `3609` tests; the retained
-  `.pytest_cache/v/cache/lastfailed` identified `123` failing/error nodes,
-  concentrated in historical renderer tests plus the Git-metadata test. The
-  original terminal transcript did not preserve a reliable failure-versus-
-  error and pass-versus-skip split, so those counts are intentionally not
-  fabricated here. The focused substrate and native evidence remain green.
+- The earlier copied-snapshot Linux full run is retained only as the source of
+  the `123`-node diagnostic corpus. Its raw failure cache was preserved before
+  any later execution and was not used as the final FEATURE result.
 
 This full-suite Linux result is a closure limitation, not a self-hosting
 authorization. No compiler phase, Stage1 V4 implementation, release, tag, or
@@ -99,3 +102,11 @@ The first GitHub Actions run for the Draft PR was also blocked before job
 execution: run `35306528596` reported ten failed jobs, each with
 `runner_id=0` and an empty `steps` list. This is recorded as
 `CI_STATE=INFRASTRUCTURE_BLOCKED_PRE_EXECUTION`; no workflow was rerun.
+
+The targeted Linux closure used real Git worktrees at base `d31b1577` and
+feature `5a81a5d`. Of the retained 123 IDs, 121 valid IDs expanded to 560
+cases and passed identically on both sides; two stale `m162` parameter IDs
+were invalid in both environments. The final feature worktree full run
+completed with 3608 dots, one skip, no failure/error marker, and no
+`lastfailed` cache. Python 3.13 was unavailable, so this is Python 3.14.4
+evidence rather than canonical 3.13 certification.

@@ -127,20 +127,55 @@ LINUX_NATIVE_SKIPPED=0
 LINUX_NATIVE_FAILED=0
 
 LINUX_FULL_SELECTED=3609
-LINUX_FULL_PASSED=NOT_SEPARABLE_FROM_RETAINED_EVIDENCE
-LINUX_FULL_SKIPPED=NOT_SEPARABLE_FROM_RETAINED_EVIDENCE
-LINUX_FULL_FAILED_OR_ERROR_NODES=123
-LINUX_FULL_EXIT=1
+LINUX_FULL_PASSED=3608
+LINUX_FULL_SKIPPED=1
+LINUX_FULL_FAILED=0
+LINUX_FULL_ERRORS=0
+LINUX_FULL_EXIT=0_INFERRED_FROM_COMPLETE_TRANSCRIPT
+LINUX_FULL_EXIT_CAPTURED_DIRECTLY=NO
 
 COMPILEALL=PASS
 DIFF_CHECK=PASS
 ```
 
-The Linux full run was performed once and was not rerun. Its retained cache
-identifies 123 failing/error nodes, mainly historical renderer tests and the
-Git-metadata test in the non-Git Linux snapshot. Because the terminal summary
-was not retained, the report deliberately does not invent a failed-versus-
-error or passed-versus-skipped split.
+The previous copied-snapshot full run remains preserved as historical evidence;
+its 123-node cache was exported before classification. The targeted closure
+used real Git worktrees: 121 valid retained IDs expanded to 560 cases and
+passed identically on BASE and FEATURE, while two stale parameterized IDs were
+invalid in both. The final FEATURE worktree run completed with 3608 dots, one
+skip, no failure/error marker, and no final `lastfailed` cache. Python 3.13
+was unavailable, so this is Python 3.14.4 evidence rather than canonical
+3.13 certification.
+
+## Linux closure classification
+
+```text
+S3_1_2_COMPILER_SUBSTRATE_LINUX_CLOSURE=COMPLETE_WITH_ENVIRONMENT_DEBT
+LINUX_FAILURE_CORPUS_COUNT=123
+CANONICAL_PYTHON_VERSION=3.13.x
+LINUX_CANONICAL_PYTHON_AVAILABLE=NO
+LINUX_PYTHON_USED=3.14.4
+BASE_FAILURES_ON_CORPUS=0_ON_560_VALID_EXPANDED_CASES
+FEATURE_FAILURES_ON_CORPUS=0_ON_560_VALID_EXPANDED_CASES
+FEATURE_ONLY_FAILURES=0
+BASE_AND_FEATURE_FAILURES=0
+RENDERER_CLASSIFICATION=NO_FEATURE_FAILURE_REPRODUCED_IN_REAL_GIT_WORKTREE
+GIT_METADATA_CLASSIFICATION=SOURCE_SNAPSHOT_ENVIRONMENT
+OTHER_ENVIRONMENTAL_FAILURES=2_STALE_PARAMETERIZED_NODE_IDS
+REAL_FEATURE_REGRESSIONS=0
+PRODUCTION_CODE_CHANGED=NO
+FOCUSED_RERUN_REQUIRED=NO
+LINUX_FEATURE_REGRESSION=NO
+LINUX_FULL_ENVIRONMENT=NONCANONICAL_PYTHON_3_14
+READY_FOR_MAIN_MERGE=YES_WITH_CI_AND_LINUX_CANONICAL_ENVIRONMENT_DEBT
+NEXT_HARD_GATE=EXPLICIT_USER_AUTHORIZATION_TO_MERGE_COMPILER_SUBSTRATE_PR
+```
+
+The exact corpus, A/B JUnit reports, classification JSON, and final Linux
+transcript are preserved under
+`evidence/linux-closure-ab-corpus-20260918/`. The missing direct shell status
+line is retained as an evidence-quality limitation rather than silently
+converted into a fresh test run.
 
 ## Boundary and next blocker
 
@@ -150,16 +185,20 @@ AI_CAPABILITY_ADDITIONAL_DEBT=EXISTING_STALE_ENTRIES_REMAIN
 CI_STATE=INFRASTRUCTURE_BLOCKED_PRE_EXECUTION
 CI_RUN=35306528596
 CI_JOB_EVIDENCE=10 jobs; runner_id=0; steps=[]; all failed before execution
+CI_FOLLOWUP_RUNS=35306644569,35306644577
+CI_FOLLOWUP_JOB_EVIDENCE=12 jobs; runner_id=0; steps=[]; all failed before execution
+CI_MANUAL_RERUN=NO
 
 PR_NUMBER=298
 PR_STATE=OPEN
-PR_DRAFT=YES
+PR_DRAFT=NO
+PR_READY_FOR_REVIEW=YES
 PR_MERGEABLE=MERGEABLE
 
 SELFHOST_REENTRY_AUTHORIZED=NO
 STAGE1_V4_STARTED=NO
 PR_MERGED=NO
-READY_FOR_MAIN_MERGE=NO
+READY_FOR_MAIN_MERGE=YES_WITH_CI_AND_LINUX_CANONICAL_ENVIRONMENT_DEBT
 ```
 
 The next self-host representability blocker is **complete generic syntax and
