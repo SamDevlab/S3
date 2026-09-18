@@ -4,6 +4,8 @@ from dataclasses import replace
 import json
 import platform
 from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 
@@ -24,6 +26,7 @@ from bootstrap.s3.whole_program import (
     PreparedProgramArtifacts,
     ProgramRegistry,
     RegistrationError,
+    SemanticSeed,
     SemanticState,
     TypeArena,
     TypeArenaError,
@@ -237,8 +240,9 @@ def test_same_logical_composition_has_stable_digest_across_sessions() -> None:
     assert first.phase_trace == second.phase_trace
 
 
-@pytest.mark.parametrize("case", range(64))
+@pytest.mark.parametrize("case", range(256))
 def test_composition_corpus_is_generic_and_deterministic(case: int) -> None:
+    category = case // 64
     module = ModuleSpec(
         module_symbol_id=case + 100,
         source_file_id=case,
@@ -246,9 +250,50 @@ def test_composition_corpus_is_generic_and_deterministic(case: int) -> None:
         functions=(FunctionSpec(case + 1, case, ordinal=0),),
     )
     context = WholeProgramContext(SourceBundle(((f"{case:03d}.s3", "prepared"),)))
-    result = context.compose(PreparedProgramArtifacts(_syntax(), (module,), ir=_ir(), output=f"case={case}".encode()))
-    assert result.success is True
-    assert result.diagnostics == ()
+    types = ()
+    semantic = None
+    failure = None
+    if category == 1:
+        types = (
+            TypeSpec(TypeKind.ARRAY, element_type_id=2, array_length=1 + case % 16),
+            TypeSpec(TypeKind.REFERENCE, element_type_id=2, mutable=bool(case % 2)),
+        )
+    elif category == 2:
+        semantic = SemanticSeed(node_types=((case, 2),), calls=((case, 0),))
+    elif category == 3:
+        failure = PhaseKind.TYPE if case % 2 == 0 else PhaseKind.SEMANTIC
+    result = context.compose(
+        PreparedProgramArtifacts(
+            _syntax(), (module,), type_specs=types,
+            semantic=semantic or SemanticSeed(),
+            ir=_ir(), output=f"case={case}".encode(),
+        ),
+        failure_phase=failure,
+    )
+    assert result.success is (category != 3)
+    assert bool(result.diagnostics) is (category == 3)
+
+
+def test_composition_soak_is_repeatable_in_three_clean_processes() -> None:
+    code = """
+from bootstrap.s3.compiler_substrate import SourceBundle
+from bootstrap.s3.whole_program import ModuleSpec, FunctionSpec, ProgramRegistry, TypeArena, TypeKind, TypeSpec
+registry = ProgramRegistry()
+registry.register((ModuleSpec(10, 0, 0, functions=(FunctionSpec(1, 0),)),))
+arena = TypeArena()
+array = arena.intern(TypeSpec(TypeKind.ARRAY, element_type_id=2, array_length=4))
+print(registry.structural_digest() + ':' + arena.structural_digest() + ':' + str(array))
+"""
+    outputs = []
+    for _ in range(3):
+        completed = subprocess.run(
+            [sys.executable, "-c", code],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        outputs.append(completed.stdout)
+    assert outputs[0] == outputs[1] == outputs[2]
 
 
 @pytest.mark.s3_native
