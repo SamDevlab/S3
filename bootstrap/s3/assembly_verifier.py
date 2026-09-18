@@ -82,7 +82,11 @@ def _dynamic_builtin_signature(
     return DYNAMIC_BUILTIN_SIGNATURES.get(name) or composite_vector_runtime_signature(name)
 
 
-def _dynamic_reference_target(name: str) -> AssemblyType | None:
+def _dynamic_reference_target(name: str, argument_index: int = 0) -> AssemblyType | None:
+    if name.startswith("text_i64_map_") and argument_index == 1 and name.endswith(
+        ("_put", "_contains", "_get", "_remove")
+    ):
+        return AssemblyType.TEXT
     target = _DYNAMIC_REFERENCE_TARGETS.get(name)
     if target is not None:
         return target
@@ -103,7 +107,7 @@ for _vector_prefix in ("tryte", "i64", "f64"):
         "slice",
     ):
         _DYNAMIC_REFERENCE_TARGETS[f"{_vector_prefix}_vector_{_vector_operation}"] = AssemblyType.VECTOR
-for _collection_prefix in ("i64_map", "i64_set"):
+for _collection_prefix in ("i64_map", "text_i64_map", "i64_set"):
     for _collection_operation in (
         "len",
         "capacity",
@@ -727,11 +731,15 @@ class AssemblyVerifier:
                             f"dynamic call to '{instruction.callee}' has incompatible argument types",
                         )
                     )
-                for argument, expected in zip(arguments, argument_types, strict=True):
+                for argument_index, (argument, expected) in enumerate(
+                    zip(arguments, argument_types, strict=True)
+                ):
                     if expected is not IRType.REFERENCE:
                         continue
                     info = function.reference_info(argument)
-                    expected_target = _dynamic_reference_target(instruction.callee or "")
+                    expected_target = _dynamic_reference_target(
+                        instruction.callee or "", argument_index
+                    )
                     if expected_target is None or info is None or info[0] is not expected_target:
                         raise EmulatorError(
                             self._static_context(

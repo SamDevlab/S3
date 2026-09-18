@@ -1,0 +1,14 @@
+module selfhost.substrate.arena
+
+record IdArena:
+    values: vector<i64>
+    next_id: i64
+
+export fn arena_new(capacity: i64) -> IdArena:
+    return IdArena(values=vector_new<i64>(capacity), next_id=0)
+
+export fn arena_count(arena: IdArena) -> i64:
+    return vector_len<i64>(&arena.values)
+
+export fn arena_next_id(arena: IdArena) -> i64:
+    return arena.next_id

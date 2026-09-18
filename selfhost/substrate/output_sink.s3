@@ -1,0 +1,17 @@
+module selfhost.substrate.output_sink
+
+record OutputSinkState:
+    buffer: bytes
+    limit: i64
+    committed: i64
+
+record CompileResult:
+    success: trit
+    error_code: i64
+    source_file_id: i64
+    source_start: i64
+    source_end: i64
+    output_length: i64
+
+export fn output_sink_anchor() -> i64:
+    return 0

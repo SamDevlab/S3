@@ -19,6 +19,7 @@ from .dynamic import (
     DynamicVector,
     DynamicCompositeVector,
     DynamicMap,
+    DynamicTextMap,
     DynamicSet,
     bytes_from_text,
     bytes_new,
@@ -296,7 +297,7 @@ def _store_value(cell, value, value_type):
         if not isinstance(value, DynamicText):
             raise IRExecutionError("invalid text value")
     elif value_type is IRType.VECTOR:
-        if not isinstance(value, (DynamicVector, DynamicCompositeVector, DynamicMap, DynamicSet)):
+        if not isinstance(value, (DynamicVector, DynamicCompositeVector, DynamicMap, DynamicTextMap, DynamicSet)):
             raise IRExecutionError("invalid vector value")
     elif value_type is IRType.I64:
         try:
@@ -400,7 +401,7 @@ def _execute_dynamic_builtin(name: str, args: tuple[object, ...]) -> object:
         return _execute_vector_builtin(name, args, "f64", f64_vector_new)
     if name.startswith("__s3_composite_vector__"):
         return _execute_composite_vector_builtin(name, args)
-    if name.startswith("i64_map_"):
+    if name.startswith("i64_map_") or name.startswith("text_i64_map_"):
         return _execute_map_builtin(name, args)
     if name.startswith("i64_set_"):
         return _execute_set_builtin(name, args)
@@ -480,14 +481,24 @@ def _execute_vector_builtin(name: str, args: tuple[object, ...], element_type: s
 
 
 def _execute_map_builtin(name: str, args: tuple[object, ...]) -> object:
-    from .dynamic import i64_map_new
+    from .dynamic import i64_map_new, text_i64_map_new
 
     if name == "i64_map_new":
         return i64_map_new(args[0])
+    if name == "text_i64_map_new":
+        return text_i64_map_new(args[0])
     owner = _reference_owner(args[0])
-    if not isinstance(owner, DynamicMap):
-        raise IRExecutionError("invalid i64 map reference")
-    operation = name[len("i64_map_") :]
+    is_text_map = name.startswith("text_i64_map_")
+    if is_text_map:
+        from .dynamic import DynamicTextMap
+        if not isinstance(owner, DynamicTextMap):
+            raise IRExecutionError("invalid text,i64 map reference")
+        prefix = "text_i64_map_"
+    else:
+        if not isinstance(owner, DynamicMap):
+            raise IRExecutionError("invalid i64 map reference")
+        prefix = "i64_map_"
+    operation = name[len(prefix) :]
     if operation == "len":
         return owner.length
     if operation == "capacity":
@@ -496,14 +507,14 @@ def _execute_map_builtin(name: str, args: tuple[object, ...]) -> object:
         owner.reserve(args[1])
         return 0
     if operation == "put":
-        owner.put(args[1], args[2])
+        owner.put(_reference_owner(args[1]) if is_text_map else args[1], args[2])
         return 0
     if operation == "contains":
-        return owner.contains(args[1])
+        return owner.contains(_reference_owner(args[1]) if is_text_map else args[1])
     if operation == "get":
-        return owner.get(args[1])
+        return owner.get(_reference_owner(args[1]) if is_text_map else args[1])
     if operation == "remove":
-        owner.remove(args[1])
+        owner.remove(_reference_owner(args[1]) if is_text_map else args[1])
         return 0
     if operation == "key_at":
         return owner.key_at(args[1])

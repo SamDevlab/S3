@@ -73,6 +73,14 @@
     },
     "aggregate_parameters": true,
     "aggregate_results": true,
+    "closed_generic_collections": true,
+    "deterministic_compiler_substrate": {
+      "text_i64_map": "YES_V1_HOSTED_AND_LINUX_X86_64",
+      "symbol_interner": "YES_V1_HOSTED",
+      "stable_id_arenas": "YES_V1_HOSTED",
+      "source_bundle_cursor": "YES_V1_HOSTED",
+      "output_sink_transactions": "YES_V1_HOSTED"
+    },
     "optimizer_levels": [
       "O0",
       "O1"
@@ -103,8 +111,12 @@
   },
   "roadmap_provider_status": {
     "m1.61": {
-      "generic_map": "YES_V1_I64_DOMAIN",
+      "generic_map": "YES_V1_I64_AND_TEXT_KEY_DOMAINS",
       "generic_set": "YES_V1_I64_DOMAIN"
+    },
+    "m1.71": {
+      "compiler_substrate": "YES_V1_HOSTED_WITH_S3_REPRESENTABILITY",
+      "full_self_hosting": "DEFERRED_RESEARCH_FRONTIER"
     },
     "m1.62": {
       "borrowed_slices": "YES_V1_HOSTED"

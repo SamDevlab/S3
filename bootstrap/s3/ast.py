@@ -21,6 +21,7 @@ class TypeName(Enum):
     I64_VECTOR = "i64_vector"
     F64_VECTOR = "f64_vector"
     I64_MAP = "i64_map"
+    TEXT_I64_MAP = "text_i64_map"
     I64_SET = "i64_set"
     HOST_CAPABILITY = "host_capability"
     RESOURCE_HANDLE = "resource_handle"

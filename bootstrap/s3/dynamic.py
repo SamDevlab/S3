@@ -1125,6 +1125,178 @@ class DynamicMap:
         yield from tuple(self._storage[: self._length])
 
 
+class DynamicTextMap:
+    """Ordered UTF-8 byte-key to i64 map with explicit capacity."""
+
+    def __init__(
+        self,
+        capacity: int = 0,
+        *,
+        allocator: Allocator | None = None,
+        _data: tuple[tuple[DynamicText, int], ...] = (),
+    ) -> None:
+        _validate_collection_capacity(capacity, 16)
+        if len(_data) > capacity:
+            raise BufferCapacityError("initial text map data exceeds capacity")
+        for key, value in _data:
+            self._validate_pair(key, value)
+        self.allocator = allocator or Allocator()
+        if capacity:
+            self.allocator.reserve(capacity * 16)
+        self._storage = [
+            (key.clone(), value) for key, value in _data
+        ] + [(None, 0)] * (capacity - len(_data))
+        self._length = len(_data)
+        self._shared_borrows = 0
+        self._mutable_borrow = False
+        self._moved = False
+
+    @staticmethod
+    def _validate_pair(key: DynamicText, value: int) -> None:
+        if not isinstance(key, DynamicText):
+            raise DynamicError("text map keys must be dynamic text")
+        validate_i64(value)
+
+    @property
+    def length(self) -> int:
+        self._require_live()
+        return self._length
+
+    @property
+    def capacity(self) -> int:
+        self._require_live()
+        return len(self._storage)
+
+    def _require_live(self) -> None:
+        if self._moved:
+            raise MovedValueError("owned text map was moved")
+
+    def _require_unborrowed(self) -> None:
+        self._require_live()
+        if self._shared_borrows or self._mutable_borrow:
+            raise BorrowConflictError("owner operation overlaps an active borrow")
+
+    def _acquire_borrow(self, mutable: bool) -> None:
+        self._require_live()
+        if mutable:
+            if self._mutable_borrow or self._shared_borrows:
+                raise BorrowConflictError("mutable borrow overlaps an active borrow")
+            self._mutable_borrow = True
+        else:
+            if self._mutable_borrow:
+                raise BorrowConflictError("shared borrow overlaps a mutable borrow")
+            self._shared_borrows += 1
+
+    def _release_borrow(self, mutable: bool) -> None:
+        if mutable:
+            self._mutable_borrow = False
+        elif self._shared_borrows:
+            self._shared_borrows -= 1
+
+    @staticmethod
+    def _key_bytes(key: DynamicText | BorrowedBuffer) -> bytes:
+        owner = _owned(key)
+        if not isinstance(owner, DynamicText):
+            raise DynamicError("text map keys must be dynamic text")
+        return owner._bytes.to_bytes()
+
+    def _find(self, key: DynamicText | BorrowedBuffer) -> int:
+        needle = self._key_bytes(key)
+        for index in range(self._length):
+            stored, _ = self._storage[index]
+            if stored is not None and stored._bytes.to_bytes() == needle:
+                return index
+        return -1
+
+    def move(self) -> "DynamicTextMap":
+        self._require_unborrowed()
+        replacement = object.__new__(type(self))
+        replacement.allocator = self.allocator
+        replacement._storage = self._storage
+        replacement._length = self._length
+        replacement._shared_borrows = 0
+        replacement._mutable_borrow = False
+        replacement._moved = False
+        self._moved = True
+        return replacement
+
+    def reserve(self, capacity: int) -> None:
+        self._require_unborrowed()
+        _validate_collection_capacity(capacity, 16)
+        if capacity <= self.capacity:
+            return
+        self.allocator.reserve(capacity * 16)
+        self._storage.extend([(None, 0)] * (capacity - self.capacity))
+
+    def put(self, key: DynamicText | BorrowedBuffer, value: int) -> None:
+        self._require_unborrowed()
+        owner = _owned(key)
+        if not isinstance(owner, DynamicText):
+            raise DynamicError("text map keys must be dynamic text")
+        validate_i64(value)
+        index = self._find(owner)
+        if index >= 0:
+            stored_key, _ = self._storage[index]
+            self._storage[index] = (stored_key, value)
+            return
+        if self._length >= self.capacity:
+            raise BufferFullError("text map has no reserved capacity")
+        # Clone before publishing the entry so a failed allocation is atomic.
+        cloned_key = owner.clone()
+        self._storage[self._length] = (cloned_key, value)
+        self._length += 1
+
+    def contains(self, key: DynamicText | BorrowedBuffer) -> int:
+        self._require_live()
+        return -1 if self._find(key) >= 0 else 0
+
+    def get(self, key: DynamicText | BorrowedBuffer) -> int:
+        self._require_live()
+        index = self._find(key)
+        if index < 0:
+            raise BufferBoundsError("text map key is absent")
+        return self._storage[index][1]
+
+    def remove(self, key: DynamicText | BorrowedBuffer) -> None:
+        self._require_unborrowed()
+        index = self._find(key)
+        if index < 0:
+            return
+        self._storage[index : self._length - 1] = self._storage[index + 1 : self._length]
+        self._length -= 1
+        self._storage[self._length] = (None, 0)
+
+    def key_at(self, index: int) -> DynamicText:
+        _validate_vector_index(index, self._length)
+        key, _ = self._storage[index]
+        if key is None:
+            raise DynamicError("text map contains an empty entry")
+        return key.clone()
+
+    def value_at(self, index: int) -> int:
+        _validate_vector_index(index, self._length)
+        return self._storage[index][1]
+
+    def clone(self) -> "DynamicTextMap":
+        self._require_live()
+        return DynamicTextMap(
+            self.capacity,
+            allocator=self.allocator,
+            _data=tuple(
+                (key, value) for key, value in self._storage[: self._length] if key is not None
+            ),
+        )
+
+    def borrow(self, *, mutable: bool = False) -> BorrowedBuffer:
+        return BorrowedBuffer(self, mutable)
+
+    def __iter__(self) -> Iterator[tuple[DynamicText, int]]:
+        self._require_live()
+        for key, value in tuple(self._storage[: self._length]):
+            if key is not None:
+                yield key.clone(), value
+
+
 class DynamicSet:
     """Ordered i64 set derived from the same explicit collection contract."""
 
@@ -1265,7 +1437,7 @@ def bytes_new(capacity: int, *, allocator: Allocator | None = None) -> DynamicBy
     return DynamicBytes(capacity, allocator=allocator)
 
 
-def _owned(value: DynamicBytes | DynamicText | DynamicVector | DynamicMap | DynamicSet | BorrowedBuffer):
+def _owned(value: DynamicBytes | DynamicText | DynamicVector | DynamicMap | DynamicTextMap | DynamicSet | BorrowedBuffer):
     return value.owner if isinstance(value, BorrowedBuffer) else value
 
 
@@ -1576,6 +1748,57 @@ def i64_map_value_at(value, index: int) -> int:
 
 def i64_map_clone(value) -> DynamicMap:
     return _map_owner(value).clone()
+
+
+def _text_map_owner(value: DynamicTextMap | BorrowedBuffer) -> DynamicTextMap:
+    owner = _owned(value)
+    if not isinstance(owner, DynamicTextMap):
+        raise DynamicError("expected text,i64 map")
+    return owner
+
+
+def text_i64_map_new(capacity: int, *, allocator: Allocator | None = None) -> DynamicTextMap:
+    return DynamicTextMap(capacity, allocator=allocator)
+
+
+def text_i64_map_len(value) -> int:
+    return _text_map_owner(value).length
+
+
+def text_i64_map_capacity(value) -> int:
+    return _text_map_owner(value).capacity
+
+
+def text_i64_map_reserve(value, capacity: int) -> None:
+    _text_map_owner(value).reserve(capacity)
+
+
+def text_i64_map_put(value, key, item: int) -> None:
+    _text_map_owner(value).put(key, item)
+
+
+def text_i64_map_contains(value, key) -> int:
+    return _text_map_owner(value).contains(key)
+
+
+def text_i64_map_get(value, key) -> int:
+    return _text_map_owner(value).get(key)
+
+
+def text_i64_map_remove(value, key) -> None:
+    _text_map_owner(value).remove(key)
+
+
+def text_i64_map_key_at(value, index: int) -> DynamicText:
+    return _text_map_owner(value).key_at(index)
+
+
+def text_i64_map_value_at(value, index: int) -> int:
+    return _text_map_owner(value).value_at(index)
+
+
+def text_i64_map_clone(value) -> DynamicTextMap:
+    return _text_map_owner(value).clone()
 
 
 def i64_set_new(capacity: int, *, allocator: Allocator | None = None) -> DynamicSet:

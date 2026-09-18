@@ -1,0 +1,11 @@
+module selfhost.substrate.symbol_table
+
+record SymbolTable:
+    names: map<text, i64>
+    next_id: i64
+
+export fn symbol_table_new(capacity: i64) -> SymbolTable:
+    return SymbolTable(names=map_new<text, i64>(capacity), next_id=0)
+
+export fn symbol_table_next_id(table: SymbolTable) -> i64:
+    return table.next_id

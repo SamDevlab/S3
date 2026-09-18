@@ -10,7 +10,7 @@ from .diagnostics import DiagnosticCode, SemanticError
 
 
 _SCALAR = frozenset({"trit", "tryte", "i64", "f64", "string"})
-_OWNED = frozenset({"bytes", "text", "tryte_vector", "i64_vector", "f64_vector", "i64_map", "i64_set"})
+_OWNED = frozenset({"bytes", "text", "tryte_vector", "i64_vector", "f64_vector", "i64_map", "text_i64_map", "i64_set"})
 
 
 def specialize_async_executable(program: AsyncExecutableProgram) -> AsyncExecutableProgram:

@@ -46,6 +46,7 @@ TYPE_MAP = _TypeMap({
     ast.TypeName.I64_VECTOR: IRType.VECTOR,
     ast.TypeName.F64_VECTOR: IRType.VECTOR,
     ast.TypeName.I64_MAP: IRType.VECTOR,
+    ast.TypeName.TEXT_I64_MAP: IRType.VECTOR,
     ast.TypeName.I64_SET: IRType.VECTOR,
     ast.TypeName.HOST_CAPABILITY: IRType.I64,
     ast.TypeName.RESOURCE_HANDLE: IRType.I64,
@@ -58,6 +59,7 @@ _DYNAMIC_TYPES = {
     ast.TypeName.I64_VECTOR,
     ast.TypeName.F64_VECTOR,
     ast.TypeName.I64_MAP,
+    ast.TypeName.TEXT_I64_MAP,
     ast.TypeName.I64_SET,
 }
 
@@ -551,6 +553,7 @@ class FunctionLowerer:
             ast.TypeName.I64_VECTOR: "i64_vector_new",
             ast.TypeName.F64_VECTOR: "f64_vector_new",
             ast.TypeName.I64_MAP: "i64_map_new",
+            ast.TypeName.TEXT_I64_MAP: "text_i64_map_new",
             ast.TypeName.I64_SET: "i64_set_new",
         }
         constructor = dynamic_constructors.get(type_name)
