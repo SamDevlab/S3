@@ -1,0 +1,36 @@
+module selfhost.substrate.syntax_arena
+
+record SyntaxNodeShape:
+    node_id: i64
+    kind: i64
+    file_id: i64
+    span_start: i64
+    span_end: i64
+    payload_kind: i64
+    payload_id: i64
+    first_child: i64
+    child_count: i64
+
+record SyntaxArenaShape:
+    node_ids: vector<i64>
+    node_kinds: vector<i64>
+    node_file_ids: vector<i64>
+    node_span_starts: vector<i64>
+    node_span_ends: vector<i64>
+    node_payload_kinds: vector<i64>
+    node_payload_ids: vector<i64>
+    node_first_children: vector<i64>
+    node_child_counts: vector<i64>
+    child_ids: vector<i64>
+    symbol_ids: vector<i64>
+    type_ids: vector<i64>
+    root_id: i64
+
+export fn syntax_arena_shape_anchor() -> i64:
+    mut kinds: vector<i64> = vector_new<i64>(2)
+    mut children: vector<i64> = vector_new<i64>(2)
+    discard i64_vector_push(&mut kinds, 1)
+    discard i64_vector_push(&mut kinds, 2)
+    discard i64_vector_push(&mut children, 0)
+    discard i64_vector_push(&mut children, 1)
+    return vector_len<i64>(&kinds) * 10 + vector_len<i64>(&children)

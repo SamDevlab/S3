@@ -1,0 +1,25 @@
+module selfhost.substrate.verifier_kernel
+
+record VerifierStateShape:
+    function_ids: vector<i64>
+    block_ids: vector<i64>
+    value_ids: vector<i64>
+    definition_blocks: vector<i64>
+    definition_positions: vector<i64>
+    memory_ids: vector<i64>
+    cfg_sources: vector<i64>
+    cfg_targets: vector<i64>
+    reachable_blocks: vector<i64>
+    dominator_blocks: vector<i64>
+    dominator_members: vector<i64>
+    diagnostic_code: i64
+    diagnostic_function_id: i64
+    diagnostic_block_id: i64
+    diagnostic_instruction_id: i64
+
+export fn verifier_kernel_shape_anchor() -> i64:
+    mut reachable: vector<i64> = vector_new<i64>(2)
+    mut dominators: vector<i64> = vector_new<i64>(2)
+    discard i64_vector_push(&mut reachable, 0)
+    discard i64_vector_push(&mut dominators, 0)
+    return vector_len<i64>(&reachable) + vector_len<i64>(&dominators)
