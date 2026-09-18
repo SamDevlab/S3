@@ -122,9 +122,12 @@ _DYNAMIC_BUILTINS.update(
 )
 
 _I64_MAP = ast.TypeName.I64_MAP
+_TEXT_I64_MAP = ast.TypeName.TEXT_I64_MAP
 _I64_SET = ast.TypeName.I64_SET
 _MAP_SHARED = ast.ReferenceType(_I64_MAP, False, _DYNAMIC_BUILTIN_LOCATION)
 _MAP_MUTABLE = ast.ReferenceType(_I64_MAP, True, _DYNAMIC_BUILTIN_LOCATION)
+_TEXT_MAP_SHARED = ast.ReferenceType(_TEXT_I64_MAP, False, _DYNAMIC_BUILTIN_LOCATION)
+_TEXT_MAP_MUTABLE = ast.ReferenceType(_TEXT_I64_MAP, True, _DYNAMIC_BUILTIN_LOCATION)
 _SET_SHARED = ast.ReferenceType(_I64_SET, False, _DYNAMIC_BUILTIN_LOCATION)
 _SET_MUTABLE = ast.ReferenceType(_I64_SET, True, _DYNAMIC_BUILTIN_LOCATION)
 _DYNAMIC_BUILTINS.update(
@@ -140,6 +143,17 @@ _DYNAMIC_BUILTINS.update(
         "i64_map_key_at": ((_MAP_SHARED, ast.TypeName.I64), ast.TypeName.I64),
         "i64_map_value_at": ((_MAP_SHARED, ast.TypeName.I64), ast.TypeName.I64),
         "i64_map_clone": ((_MAP_SHARED,), _I64_MAP),
+        "text_i64_map_new": ((ast.TypeName.I64,), _TEXT_I64_MAP),
+        "text_i64_map_len": ((_TEXT_MAP_SHARED,), ast.TypeName.I64),
+        "text_i64_map_capacity": ((_TEXT_MAP_SHARED,), ast.TypeName.I64),
+        "text_i64_map_reserve": ((_TEXT_MAP_MUTABLE, ast.TypeName.I64), ast.TypeName.TRYTE),
+        "text_i64_map_put": ((_TEXT_MAP_MUTABLE, ast.ReferenceType(ast.TypeName.TEXT, False, _DYNAMIC_BUILTIN_LOCATION), ast.TypeName.I64), ast.TypeName.TRYTE),
+        "text_i64_map_contains": ((_TEXT_MAP_SHARED, ast.ReferenceType(ast.TypeName.TEXT, False, _DYNAMIC_BUILTIN_LOCATION)), ast.TypeName.TRIT),
+        "text_i64_map_get": ((_TEXT_MAP_SHARED, ast.ReferenceType(ast.TypeName.TEXT, False, _DYNAMIC_BUILTIN_LOCATION)), ast.TypeName.I64),
+        "text_i64_map_remove": ((_TEXT_MAP_MUTABLE, ast.ReferenceType(ast.TypeName.TEXT, False, _DYNAMIC_BUILTIN_LOCATION)), ast.TypeName.TRYTE),
+        "text_i64_map_key_at": ((_TEXT_MAP_SHARED, ast.TypeName.I64), ast.TypeName.TEXT),
+        "text_i64_map_value_at": ((_TEXT_MAP_SHARED, ast.TypeName.I64), ast.TypeName.I64),
+        "text_i64_map_clone": ((_TEXT_MAP_SHARED,), _TEXT_I64_MAP),
         "i64_set_new": ((ast.TypeName.I64,), _I64_SET),
         "i64_set_len": ((_SET_SHARED,), ast.TypeName.I64),
         "i64_set_capacity": ((_SET_SHARED,), ast.TypeName.I64),
@@ -178,6 +192,7 @@ _DYNAMIC_TYPES = {
     ast.TypeName.I64_VECTOR,
     ast.TypeName.F64_VECTOR,
     ast.TypeName.I64_MAP,
+    ast.TypeName.TEXT_I64_MAP,
     ast.TypeName.I64_SET,
 }
 
@@ -1783,6 +1798,7 @@ class SemanticAnalyzer:
             ast.TypeName.I64_VECTOR,
             ast.TypeName.F64_VECTOR,
             ast.TypeName.I64_MAP,
+            ast.TypeName.TEXT_I64_MAP,
             ast.TypeName.I64_SET,
         }:
             raise SemanticError(

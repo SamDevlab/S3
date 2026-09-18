@@ -1,0 +1,11 @@
+module selfhost.substrate.text_map
+
+export fn text_map_new(capacity: i64) -> map<text, i64>:
+    return map_new<text, i64>(capacity)
+
+export fn text_map_put(values: &mut map<text, i64>, key: &text, value: i64) -> tryte:
+    discard map_put<text, i64>(values, key, value)
+    return 0
+
+export fn text_map_get(values: &map<text, i64>, key: &text) -> i64:
+    return map_get<text, i64>(values, key)

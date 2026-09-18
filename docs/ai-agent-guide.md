@@ -27,15 +27,17 @@ The primary intended user of the S3 toolchain is an AI agent generating, inspect
 - **Control Flow**: `if`/`else`, `while`, `for` loops, `break`, `continue`, tail calls, recursion, and functions.
 - **Modules**: Multi-file deterministic compilation with `module name;`, `from mod import sym;`, and `export fn`.
 - **Optimization**: O0 (default, unoptimized CFG) and O1 (local SSA optimizations: SCCP, DCE, GVN, DSE, Memory SSA).
+- **Closed generic collections**: `map<i64, i64>`, `map<text, i64>`, and `set<i64>` use explicit deterministic specializations; this is not open-ended type erasure.
+- **Compiler substrate V1**: hosted deterministic text-keyed maps, symbol interning, direct-ID arenas, lexical environment state, source bundle/cursors, and bounded transactional output are available as substrate contracts. They do not constitute a self-hosted compiler.
 
 ## Unsupported features
 
-- No dynamic memory allocation or heap (`malloc`, `free`, `new`).
+- No raw or unbounded host heap access; owned runtime collections use explicit bounded allocation APIs.
 - No raw pointers, address-of (`&`), or pointer arithmetic.
 - No dynamic arrays or resizing lists.
 - No dynamic text construction or runtime string parsing.
 - No cyclic or self-referential record layouts.
-- No generics, templates, traits, interfaces, or type parameters.
+- No open-ended runtime generics, templates, traits, or interfaces. Closed collection specializations are explicit and deterministic.
 - No exceptions, unwinding, implicit try/catch, or `?` operator.
 - No concurrency, async, threads, or global mutable state.
 - No standard C library or external dependency runtimes.

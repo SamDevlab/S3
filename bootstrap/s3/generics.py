@@ -23,6 +23,7 @@ _OWNED_TYPES = {
     ast.TypeName.I64_VECTOR,
     ast.TypeName.F64_VECTOR,
     ast.TypeName.I64_MAP,
+    ast.TypeName.TEXT_I64_MAP,
     ast.TypeName.I64_SET,
 }
 _VECTOR_ELEMENT_TYPES = {
@@ -32,6 +33,7 @@ _VECTOR_ELEMENT_TYPES = {
 }
 _GENERIC_MAP_TYPES = {
     (ast.TypeName.I64, ast.TypeName.I64): ast.TypeName.I64_MAP,
+    (ast.TypeName.TEXT, ast.TypeName.I64): ast.TypeName.TEXT_I64_MAP,
 }
 _GENERIC_SET_TYPES = {
     (ast.TypeName.I64,): ast.TypeName.I64_SET,
@@ -512,7 +514,7 @@ def specialize_generic_functions(program: ast.Program) -> ast.Program:
                 try:
                     return supported[arguments]
                 except KeyError as error:
-                    expected = "map<i64, i64>" if name == "map" else "set<i64>"
+                    expected = "map<i64, i64> or map<text, i64>" if name == "map" else "set<i64>"
                     raise SemanticError(
                         f"generic type '{name}' currently supports only {expected}",
                         location,
@@ -620,13 +622,19 @@ def specialize_generic_functions(program: ast.Program) -> ast.Program:
                     return _VECTOR_ELEMENT_TYPES[arguments[0]] + "_" + name
                 return composite_vector_builtin_name(name)
             if name in _GENERIC_MAP_BUILTINS:
-                if tuple(arguments) != (ast.TypeName.I64, ast.TypeName.I64):
+                prefixes = {
+                    (ast.TypeName.I64, ast.TypeName.I64): "i64_",
+                    (ast.TypeName.TEXT, ast.TypeName.I64): "text_i64_",
+                }
+                try:
+                    prefix = prefixes[tuple(arguments)]
+                except KeyError as error:
                     raise SemanticError(
-                        f"generic builtin '{name}' requires map<i64, i64> type arguments",
+                        f"generic builtin '{name}' requires map<i64, i64> or map<text, i64> type arguments",
                         location,
                         diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
-                    )
-                return "i64_" + name
+                    ) from error
+                return prefix + name
             if name in _GENERIC_SET_BUILTINS:
                 if tuple(arguments) != (ast.TypeName.I64,):
                     raise SemanticError(

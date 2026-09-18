@@ -1,0 +1,23 @@
+module selfhost.substrate.source_transport
+
+record SourceFile:
+    path: text
+    contents: bytes
+
+record SourceBundle:
+    file_ids: vector<i64>
+
+record SourceView:
+    file_id: i64
+    start: i64
+    end: i64
+
+record SourceCursor:
+    file_id: i64
+    offset: i64
+
+export fn source_cursor_start(file_id: i64) -> SourceCursor:
+    return SourceCursor(file_id=file_id, offset=0)
+
+export fn source_cursor_offset(cursor: SourceCursor) -> i64:
+    return cursor.offset

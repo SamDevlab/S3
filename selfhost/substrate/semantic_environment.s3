@@ -1,0 +1,23 @@
+module selfhost.substrate.semantic_environment
+
+record ScopeFrame:
+    parent: i64
+    function_id: i64
+
+record Declaration:
+    symbol_id: i64
+    scope_id: i64
+    kind: i64
+    type_id: i64
+    storage_id: i64
+    mutable: trit
+    span_start: i64
+    span_end: i64
+
+record SemanticEnvironmentState:
+    scopes: vector<i64>
+    declaration_ids: vector<i64>
+    current_scope: i64
+
+export fn semantic_environment_anchor() -> i64:
+    return 0
