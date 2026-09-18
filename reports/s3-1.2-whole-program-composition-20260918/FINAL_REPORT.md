@@ -11,8 +11,8 @@ compiler, Stage1 V4, Stage2, Stage3, release, tag, or shutdown.
 BASE_MAIN_SHA=ecda016e2bbca4be43e939c8a674c62e7db8e185
 BRANCH=feat/s3-1.2-whole-program-composition-root
 FINAL_TESTED_SOURCE_HEAD=e4d7aa5492e597da8f730671727f8bd5c66180d2
-CURRENT_HEAD=51f14fe075a9d5f530433abe62f1438541d80c5b
-HEAD_TREE=7d63c1b3abf1b17a625ac40861839842f2c5cf74
+CURRENT_PR_HEAD=381b0b4846606040dd1de4ec704f532600834565
+HEAD_TREE=b92b8bbca85b8913b5e053adb381ef88574a5e2b
 SOURCE_CHANGED_AFTER_FINAL_GATES=NO
 PR_MERGED=NO
 RELEASE=NO
@@ -88,6 +88,16 @@ LINUX_FULL_FAILURE=test_public_package_exports_remain_small
 LINUX_FULL_FAILURE_CLASS=SOURCE_REGRESSION_IN_PREVIOUS_CANDIDATE
 LINUX_FULL_FAILURE_FIX=The whole-program symbols were removed from __all__ while compile_program remained directly importable; focused post-fix proof passed on e4d7aa5.
 
+LINUX_FULL_POST_FIX=PASS
+LINUX_FULL_POST_FIX_HEAD=e4d7aa5492e597da8f730671727f8bd5c66180d2
+LINUX_FULL_POST_FIX_TREE=89b72da93f251908a26ad8f3aafd7c9af500c020
+LINUX_FULL_POST_FIX_SELECTED=4178
+LINUX_FULL_POST_FIX_PASSED=4177
+LINUX_FULL_POST_FIX_SKIPPED=1
+LINUX_FULL_POST_FIX_FAILED=0
+LINUX_FULL_POST_FIX_ERRORS=0
+LINUX_FULL_POST_FIX_EXIT=0
+
 LINUX_POST_FIX_FOCUSED=PASS
 LINUX_POST_FIX_NATIVE=PASS
 LINUX_POST_FIX_COMPILEALL=PASS
@@ -97,10 +107,10 @@ COMPILEALL=PASS
 DIFF_CHECK=PASS
 ```
 
-The Linux full transcript is preserved in `evidence/linux-full-suite.txt`.
-It ran before the narrow export-surface repair, so it is not silently reported
-as evidence for the later source HEAD. The focused post-fix evidence is in
-`evidence/linux-focused-post-fix.txt`; no second Linux full suite was started.
+The first Linux full transcript is preserved in `evidence/linux-full-suite.txt`.
+It ran before the narrow export-surface repair. The focused post-fix evidence is
+in `evidence/linux-focused-post-fix.txt`, and the single final Linux
+post-fix transcript is in `evidence/linux-full-post-fix.txt`.
 The Windows full transcript is in `evidence/windows-full-suite.txt`.
 
 ## Gate assessment
@@ -123,12 +133,12 @@ GENERIC_LOWERING_EXECUTED=NO
 EMITTER_EXECUTED=NO
 ```
 
-`READY_FOR_MAIN_MERGE=NO` because the only Linux full run captured a real,
-source-level export regression in the predecessor candidate. The regression
-was repaired and directly re-proven by focused Linux/Windows tests, native
-tests, `compileall`, and `diff --check`, but the policy explicitly avoids
-looping full suites. A fresh full-Linux certification for `e4d7aa5` remains the
-next evidence gate before merge readiness can be claimed.
+`READY_FOR_MAIN_MERGE=YES_WITH_CI_INFRASTRUCTURE_DEBT`. The predecessor Linux
+failure was a real source-level export regression; it was repaired by
+`e4d7aa5`, and the single final Linux post-fix suite passed with `4177 passed,
+1 skipped, 0 failed`. GitHub Actions remains blocked before execution, with
+zero job steps, so merge still requires explicit user authorization after that
+infrastructure debt is acknowledged.
 
 The largest remaining representability blocker is:
 
@@ -147,13 +157,13 @@ explicitly. No release, tag, PyPI publication, merge, or machine shutdown is
 authorized by this increment.
 
 ```text
-CI_RUNS=35388331456,35388331460,35388331474
-CI_HEAD=d7859ec5a7bebe999c46840b8b674589ebc66a93
+CI_RUNS=35388426349,35388426351,35388426402
+CI_HEAD=381b0b4846606040dd1de4ec704f532600834565
 CI_STATE=INFRASTRUCTURE_BLOCKED_PRE_EXECUTION
 CI_JOBS_WITH_STEPS=0 (all jobs in all three runs)
 CI_RERUN=NO
 PR_NUMBER=300
 PR_MERGED=NO
-READY_FOR_MAIN_MERGE=NO
-NEXT_HARD_GATE=FRESH_LINUX_FULL_CERTIFICATION_ON_e4d7aa5492e597da8f730671727f8bd5c66180d2
+READY_FOR_MAIN_MERGE=YES_WITH_CI_INFRASTRUCTURE_DEBT
+NEXT_HARD_GATE=EXPLICIT_USER_AUTHORIZATION_TO_MERGE_PR_300
 ```
