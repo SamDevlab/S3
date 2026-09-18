@@ -2,162 +2,207 @@
 
 Date: 2026-09-17
 Base main: `1e978b0d988f999d31ad15bdd6889393043e906a`
-Implementation HEAD: `03945328de0315cb6f24624f2903ed5b21babcae`
-Status: `IMPLEMENTED_HOSTED_FOCUSED_VERIFIED`
+Start HEAD: `4f70ce13934a9b4f3cfdecab22d17a973b555f5d`
+Final tested HEAD: `2a59d38dca6f40d126d9797e753a803a1d07db2b`
+Implementation commit: `ab891b2b`
+Status: `IMPLEMENTED_NATIVE_LINUX_X86_64_FOCUSED_VERIFIED`
 
-This report records the generic composite-vector increment and its boundary.
-It does not claim a self-hosted compiler, Stage1 V4, Stage2, or a native
-composite-vector runtime.
+This report records the native x86-64 closure of the existing generic
+composite-vector contract. It does not authorize a self-hosted compiler,
+Stage1 V4, Stage2, a release, or a new collection feature.
 
-The requested historical inputs were inspected. `docs/milestone-1.52.md` is
-not present on the base tree; the existing M1.51/M1.53-M1.60 reports and the
-M1.51 composite-owned-values specification were used without recreating that
-missing document.
+## Contract and ABI
 
-## Implemented contract
+`vector<T>` uses the existing semantic `VectorType`, specialization identity,
+and `fixed_value_layout` metadata. The lowerer and native backend do not
+reconstruct a second layout. For every eligible element type, the layout
+determines the ordered cell types, cell count, fixed stride, and owned-leaf
+behavior.
 
-`vector<T>` now has a compile-time `VectorType` for eligible non-scalar
-elements. The existing scalar adapters remain unchanged for `tryte`, `i64`,
-and `f64`. Composite elements use one shared deterministic type-key helper,
-the existing semantic fixed-value layout, and a monomorphized runtime callee
-whose cell codes are derived from that layout.
+The native path extends the existing logical-cell CALL convention. Composite
+indexed results use the existing hidden-sret aggregate convention, including
+one-cell composite results at the native boundary. Composite runtime wrappers
+are deterministic and are selected from decoded specialized signatures, not
+from source or fixture names. Storage is bounded and sized as checked
+`capacity * element_cell_width`.
 
-Supported hosted compositions proven by focused programs:
+`NEW_PUBLIC_ABI=NO`
+`ASSEMBLY_FORMAT_CHANGE=NO`
+`NATIVE_ABI_DETERMINISM=PASS`
 
-- records, including nested records;
-- enums and parametric enums;
-- parametric records after specialization;
-- fixed arrays nested in a vector element;
-- records containing owned `text` leaves;
-- multiple unrelated nominal element types through the same generic path.
+The native runtime validates element cells and bounds, rejects invalid strides
+and impossible storage sizes, and keeps failed operations fail-closed. Clone
+deep-copies supported owned text/bytes leaves. Replacement validates incoming
+cells before disposing of the previous live value. Move and post-drop state
+remain invalid according to the existing ownership rules.
 
-The vector operations covered are construction, length, capacity, push,
-indexed read, replacement, clone, slice, move, and drop. Composite reads and
-returns use the existing multi-cell IR result contract. A one-cell composite
-result is kept scalar at the emulator boundary; wider results remain ordered
-cell tuples.
+## Native matrix
 
-## Eligibility and safety
+The exact Linux x86-64 focused file collected 75 tests and passed all 75 with
+zero skips. The matrix covers O0 and O1 hosted/native agreement for records,
+nested records, enums, parametric records, parametric enums, fixed arrays, and
+records with owned text. It also covers multiple vector types, replacement,
+clone, slice, move, length/capacity/reserve, deterministic assembly, capacity
+failure, out-of-bounds failure, and use-after-move rejection.
 
-Eligibility is checked during semantic analysis and uses the existing
-`fixed_value_layout` metadata. The lowerer does not reconstruct a competing
-layout. Recursive records, nested dynamic collections, references, slices,
-type parameters, and empty layouts are rejected before lowering. The current
-compatibility rule also continues to reject `vector<string>`.
+`RECORD_NATIVE=PASS`
+`NESTED_RECORD_NATIVE=PASS`
+`ENUM_NATIVE=PASS`
+`PARAMETRIC_RECORD_NATIVE=PASS`
+`PARAMETRIC_ENUM_NATIVE=PASS`
+`FIXED_ARRAY_NATIVE=PASS`
+`OWNED_TEXT_COMPOSITE_NATIVE=PASS`
 
-The runtime representation is bounded by explicit capacity and a fixed cell
-stride. It validates each cell with the established `trit`, `tryte`, `i64`, and
-`f64` validators. Borrow conflicts, capacity exhaustion, out-of-bounds access,
-move-after-move, and post-drop access are fail-closed. Owned text cells are
-deep-cloned through their existing clone operation.
+`PUSH_NATIVE=PASS`
+`READ_NATIVE=PASS`
+`REPLACE_NATIVE=PASS`
+`CLONE_NATIVE=PASS`
+`MOVE_NATIVE=PASS`
 
-No runtime reflection, GC, raw public pointer, dynamic dispatch, implicit
-growth, fixture-name dispatch, or new FFI ABI was introduced.
+The repository contract confirms that the current language surface has no
+generic source-level `vector_drop` builtin: `bootstrap/s3/dynamic.py` exposes
+`DynamicCompositeVector.drop()` as a hosted runtime method, while the source
+operation table in `bootstrap/s3/ir_emulator.py` has no `vector_drop` entry.
+The native runtime has internal recursive descriptor cleanup. Because the
+public source operation is not exposed by the current contract, it is not
+claimed as a new source-level native API:
+
+`DROP_NATIVE=SOURCE_CONTRACT_NOT_EXPOSED`
+
+`CAPACITY_FAILURE_NATIVE=PASS`
+`OOB_FAILURE_NATIVE=PASS`
+`USE_AFTER_MOVE_NATIVE=PASS`
+
+## Differential corpus and soak
+
+The deterministic corpus contains 64 meaningful programs: eight each for
+pair read, pair replacement, pair clone, pair slice, enum, parametric record,
+parametric enum, and fixed-array elements. The cases execute on both O0 and O1
+and compare hosted results with native Linux execution.
+
+`DIFFERENTIAL_CASES=64`
+`DIFFERENTIAL_PASS=64`
+`DIFFERENTIAL_FAIL=0`
+`SOAK_PASSES=3`
+`SOAK_NONDETERMINISM=0`
+
+Each soak pass ran in a clean process and passed all 75 focused tests. The
+specialization identities, generated native assembly, policy outcome, native
+exit status, and observable results were stable.
+
+## Compact EA
+
+Baseline native execution passed. Composite-vector programs are not eligible
+for Compact EA because the existing policy detects reference operations; the
+explicit Compact EA request correctly fell back to baseline and the resulting
+native execution passed.
+
+`BASELINE_NATIVE=PASS`
+`COMPACT_EA_NATIVE=NOT_APPLICABLE`
+`COMPACT_EA_FALLBACK=PASS`
+`COMPACT_EA_FALLBACK_REASON=reference_operations_present`
+
+## Validation
+
+`COMPILEALL=PASS`
+`DIFF_CHECK=PASS`
+
+Windows development focused tests passed with the expected non-Linux native
+skips. The previously executed Windows full suite completed with exit 0 on
+the stabilized implementation source; its quiet terminal run recorded 3383
+collected tests but did not decompose passed versus skipped counts.
+
+`WINDOWS_SELECTED=3383`
+`WINDOWS_PASSED=NOT_DECOMPOSED_IN_QUIET_RUN`
+`WINDOWS_SKIPPED=NOT_DECOMPOSED_IN_QUIET_RUN`
+`WINDOWS_FAILED=0`
+`WINDOWS_EXIT=0`
+
+The valid Linux full-suite run completed with exit 0 on the same production
+source implementation before the final test-only corpus expansion. The later
+changes were limited to the native test file and were validated by the exact
+75-test Linux focused run and three-pass soak.
+
+`LINUX_NATIVE_SELECTED=75`
+`LINUX_NATIVE_PASSED=75`
+`LINUX_NATIVE_SKIPPED=0`
+`LINUX_NATIVE_FAILED=0`
+`LINUX_FULL_EXIT=0`
+`LINUX_FULL_COUNTS=NOT_DECOMPOSED_IN_QUIET_RUN`
+
+The guest used Python 3.14.4 because a repository-supported Python 3.13.x
+interpreter was unavailable. This is supplemental evidence, not a claim of
+Python 3.13 certification:
+
+`LINUX_PYTHON_VERSION=3.14.4`
+`LINUX_SUPPORTED_PYTHON_CERTIFICATION=BLOCKED_3_13_UNAVAILABLE`
+
+GitHub Actions for the prior remote PR head failed before executing their
+steps because the configured runner infrastructure was unavailable. No
+repeated CI rerun or unrelated workflow repair was performed here:
+
+`CI_STATE=INFRASTRUCTURE_BLOCKED_PRE_EXECUTION`
 
 ## Representability matrix
 
-The classifications below describe the evidence available in ordinary S3
-today. `REPRESENTABLE_NOW` means the value shape is supported by the current
-language/runtime feature; it does not mean the full self-host compiler exists.
+`REPRESENTABLE_NOW` means that the current language/runtime feature supports
+the bounded value shape. It does not mean that the full compiler is written
+in S3.
 
-| Structure | Classification | Evidence and boundary |
+| Structure | Classification | Boundary |
 | --- | --- | --- |
-| SourceView / bounded source transport | PARTIALLY_REPRESENTABLE | Bounded scalar/text values exist, but no generic source-file transport path was added here. |
-| Token | REPRESENTABLE_NOW | `vector<Token>` with owned text and indexed field projection passes at O0/O1. |
-| AST/HIR Node | PARTIALLY_REPRESENTABLE | Flat ID-based records and enum payloads are supported; a complete syntax arena model is not present. |
-| ScopeId | REPRESENTABLE_NOW | Ordinary bounded `i64` IDs and scalar vectors are supported. |
-| Scope | PARTIALLY_REPRESENTABLE | Record storage is possible, but general text-keyed lookup is not available. |
-| DeclarationId | REPRESENTABLE_NOW | Ordinary bounded `i64` IDs are supported. |
-| Declaration | PARTIALLY_REPRESENTABLE | Composite record storage is supported; the full declaration metadata shape is not qualified. |
-| TypeId | REPRESENTABLE_NOW | Ordinary bounded `i64` IDs are supported. |
-| TypeInfo | PARTIALLY_REPRESENTABLE | Parametric and enum value shapes are supported, but recursive type metadata and lookup are not complete. |
-| FunctionId | REPRESENTABLE_NOW | Ordinary bounded `i64` IDs are supported. |
-| StorageId | REPRESENTABLE_NOW | Ordinary bounded `i64` IDs are supported. |
-| BlockId | REPRESENTABLE_NOW | Ordinary bounded `i64` IDs are supported. |
-| Block | PARTIALLY_REPRESENTABLE | Flat block records with integer relationships are supported; complete CFG arena behavior is not qualified. |
-| ValueId | REPRESENTABLE_NOW | Ordinary bounded `i64` IDs are supported. |
-| InstructionId | REPRESENTABLE_NOW | Ordinary bounded `i64` IDs are supported. |
+| SourceView / bounded source transport | PARTIALLY_REPRESENTABLE | Bounded scalar/text values exist; generic source-file transport is outside this increment. |
+| Token | REPRESENTABLE_NOW | Composite record with owned text passes native O0/O1 execution. |
+| AST/HIR Node | PARTIALLY_REPRESENTABLE | Flat ID-bearing records and enum payloads are supported; a complete syntax arena is not qualified. |
+| ScopeId | REPRESENTABLE_NOW | Bounded `i64` IDs and scalar vectors are supported. |
+| Scope | PARTIALLY_REPRESENTABLE | Record storage is supported; general text-keyed lookup is not. |
+| DeclarationId | REPRESENTABLE_NOW | Bounded `i64` IDs are supported. |
+| Declaration | PARTIALLY_REPRESENTABLE | Composite record storage is supported; full declaration metadata is not qualified. |
+| TypeId | REPRESENTABLE_NOW | Bounded `i64` IDs are supported. |
+| TypeInfo | PARTIALLY_REPRESENTABLE | Parametric and enum value shapes are supported; recursive metadata and lookup are incomplete. |
+| FunctionId | REPRESENTABLE_NOW | Bounded `i64` IDs are supported. |
+| StorageId | REPRESENTABLE_NOW | Bounded `i64` IDs are supported. |
+| BlockId | REPRESENTABLE_NOW | Bounded `i64` IDs are supported. |
+| Block | PARTIALLY_REPRESENTABLE | Flat integer relationships are supported; complete CFG arena behavior is not qualified. |
+| ValueId | REPRESENTABLE_NOW | Bounded `i64` IDs are supported. |
+| InstructionId | REPRESENTABLE_NOW | Bounded `i64` IDs are supported. |
 | Instruction | PARTIALLY_REPRESENTABLE | Fixed fields and arrays are supported; complete generic instruction metadata is not qualified. |
-| Verifier state | PARTIALLY_REPRESENTABLE | Records, enums, arrays, and vectors can carry bounded state, but the full verifier pipeline is not an S3 program. |
-| Emitter/output state | PARTIALLY_REPRESENTABLE | Owned text/bytes and composite records exist; a complete generic output emitter is not present. |
-| Whole-program compiler context | BLOCKED | The current reference compiler remains Python and no ordinary S3 composition root implements the full compiler pipeline. |
+| Verifier state | PARTIALLY_REPRESENTABLE | Bounded records, enums, arrays, and vectors are supported; the full verifier pipeline remains Python. |
+| Emitter/output state | PARTIALLY_REPRESENTABLE | Owned text/bytes and composite records exist; a complete generic S3 emitter is absent. |
+| Whole-program compiler context | BLOCKED | The reference compiler remains Python and no S3 composition root implements the complete compiler pipeline. |
 
-The current matrix records the important distinction between ID storage and
-the compiler subsystems that consume those IDs. It is not evidence that the
-historical self-hosting experiments have become a new candidate.
-
-## Layout and determinism
-
-Logical element cells follow the established declaration-order traversal for
-records, increasing array index order, and the existing enum discriminant and
-payload layout. The same semantic layout supplies the runtime cell codes and
-the IR CALL signature. Repeated compilation of the fixed-array fixture yields
-identical IR dictionaries. Nominal specialization names remain deterministic
-and include the existing type-key format.
-
-The hosted emulator is the semantic oracle. O0 and O1 agree for records,
-enums, parametric records/enums, owned text, and fixed-array elements. The
-feature does not add a native layout implementation. The x86-64 backend
-currently rejects a composite-vector CALL at assembly verification because it
-has no corresponding native builtin symbol or aggregate-vector ABI/runtime
-implementation. This is an explicit native limitation, not a claim of native
-success. Compact EA policy is unchanged and therefore cannot be certified for
-composite-vector native execution in this increment.
-
-## Self-host gate accounting
-
-| Gate | State | Rationale |
-| --- | --- | --- |
-| Gate 2, S3 representability matrix | SUPPORTED_BY_EVIDENCE | This document provides the required structure-by-structure matrix and boundaries. |
-| Gate 4, composition-root transport | PARTIAL | Bounded value transport is available; the full composition root remains absent. |
-| Gate 5, structured syntax representation | PARTIAL | Composite syntax-shaped values are representable, but the complete Stage1 subset is not. |
-| Gate 6, semantic arena representation | PARTIAL | ID-bearing records are representable; general scoped lookup is not. |
-| Gate 7, IR representation | PARTIAL | Instruction-like records and deterministic cell layouts are representable; full generic IR is not. |
-| Gate 8, verifier state | PARTIAL | Existing Python verifier contracts remain authoritative. |
-| Gate 9, emitter/output state | PARTIAL | Existing output values are reusable; full S3 emitter composition is absent. |
-| Gate 11, bounded complexity | SUPPORTED_BY_EVIDENCE | Vector indexing is bounded by explicit capacity and fixed element width; the remaining compiler-wide complexity budget is not implied. |
-| Gate 15, authorization | UNCHANGED | This feature does not authorize a new self-host implementation generation. |
-
-`ANTI_SPECIALIZATION=PASS` for the feature boundary: the focused matrix uses
-Pair, Token, State, Box, Maybe, and fixed-array elements without production
-branches keyed to those names. The common path is driven by declared layout
-and type identity.
-
-## Validation evidence
-
-Windows focused suite: `91 collected`, `90 passed`, `1 skipped`.
-Windows full suite: `3383 collected`, `EXIT=0`, no failures reported by the
-quiet terminal run. The quiet run did not emit a final skip decomposition, so
-the skip count is intentionally not reconstructed here.
-
-Linux hosted focused suite: `PASS` on the exact implementation snapshot,
-using the VM's existing Python 3.14.4 venv because Python 3.13.15 was not
-available. The Linux recut covered the composite-vector and adjacent generic,
-ownership, IR, and verifier tests.
-
-Linux native composite probe: `BLOCKED`. Compilation reached assembly, then
-`X8664Backend` failed closed with an `AssemblyVerifierError` for the generated
-composite-vector callee because the native builtin/ABI/runtime path does not
-exist yet.
-
-`COMPILEALL=PASS` and `DIFF_CHECK=PASS` were run on Windows. No benchmark,
-release, tag, or PyPI action was performed.
-
-## Next blocker
+## Self-host boundary
 
 `NEXT_SELFHOST_REPRESENTABILITY_BLOCKER=generic text-keyed associative lookup`
 
-The current collection surface can now hold arena entries and stable integer
-IDs, but the existing generic map support remains the closed `map<i64, i64>`
-family. Ordinary compiler scopes, declarations, and type metadata need a
-bounded deterministic lookup structure for text or compiler-defined keys.
-That is the next self-host representability increment. The native composite
-vector ABI/runtime is an independent product/backend blocker and must be
-closed before native composite-vector certification, but it is not silently
-counted as a self-host success here.
+The current collection surface can hold arena entries and stable integer IDs,
+but generic map support remains the closed `map<i64, i64>` family. Bounded,
+deterministic lookup for text or compiler-defined keys is the next
+self-host representability increment. It is intentionally not implemented in
+this branch.
 
 `SELFHOST_STATUS=DEFERRED_RESEARCH_FRONTIER`
 `REFERENCE_COMPILER=PYTHON`
 `SELFHOST_REENTRY_AUTHORIZED=NO`
 `STAGE1_V4=NOT_AUTHORIZED`
-`PUBLIC_ABI_DECISION_REQUIRED=NO`
+
+## Final status
+
+`GENERIC_COMPOSITE_VECTOR_HOSTED=YES`
+`GENERIC_COMPOSITE_VECTOR_NATIVE_X86_64=YES`
+`HOSTED_NATIVE_DIFFERENTIAL=PASS`
+`SOAK=PASS`
+`NO_UNRESOLVED_CODE_REGRESSION=YES`
+`READY_FOR_MAIN_MERGE=YES_WITH_CI_INFRASTRUCTURE_DEBT`
+
+PR #297 remains unmerged and should not be merged automatically. The branch
+is ready for review once the exact evidence is published. No generic map,
+Stage1 V4, release, tag, PyPI, or shutdown action is part of this increment.
+
+`PR_297_STATE=OPEN`
+`PR_297_DRAFT=YES`
+`PR_297_MERGED=NO`
+`SHUTDOWN_SCHEDULED=NO`
+`SHUTDOWN_EXECUTED=NO`
+
+`NEXT_HARD_GATE=EXPLICIT_USER_AUTHORIZATION_TO_MERGE_PR_297_INTO_MAIN`
