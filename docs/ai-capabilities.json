@@ -84,7 +84,13 @@
       "generic_ir_program": "YES_V1_HOSTED_WITH_S3_PARALLEL_ARENAS",
       "transactional_ir_builder": "YES_V1_HOSTED",
       "independent_ir_verifier": "YES_V1_HOSTED",
-      "verifier_structured_diagnostics": "YES_V1_HOSTED_DETERMINISTIC"
+      "verifier_structured_diagnostics": "YES_V1_HOSTED_DETERMINISTIC",
+      "whole_program_control_plane": "YES_V1_HOSTED_PREPARED_ARTIFACTS_ONLY",
+      "program_registry": "YES_V1_HOSTED_AND_S3_REPRESENTABILITY",
+      "type_arena": "YES_V1_HOSTED_CANONICAL_TRANSACTIONAL",
+      "semantic_state": "YES_V1_HOSTED_EXPLICIT_ASSOCIATIONS",
+      "phase_orchestrator": "YES_V1_HOSTED_TRANSACTIONAL",
+      "source_to_output_compile_program": "NO_FRONTEND_NOT_IMPLEMENTED"
     },
     "optimizer_levels": [
       "O0",

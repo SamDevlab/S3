@@ -30,6 +30,7 @@ The primary intended user of the S3 toolchain is an AI agent generating, inspect
 - **Closed generic collections**: `map<i64, i64>`, `map<text, i64>`, and `set<i64>` use explicit deterministic specializations; this is not open-ended type erasure.
 - **Compiler substrate V1**: hosted deterministic text-keyed maps, symbol interning, direct-ID arenas, lexical environment state, source bundle/cursors, and bounded transactional output are available as substrate contracts. They do not constitute a self-hosted compiler.
 - **Generic syntax/IR substrate**: a flat indexed `SyntaxArena`, an arena-backed generic IR program, a transactional IR builder, and an independent structured verifier are available as hosted V1 contracts. They do not implement parsing, lowering, emission, or self-hosting.
+- **Whole-program control plane**: `ProgramRegistry`, canonical transactional `TypeArena`, explicit `SemanticState`, bounded diagnostic state, deterministic phase orchestration, and `WholeProgramContext` are available for prepared-artifact composition. This control plane does not parse source or emit output; `compile_program` fails closed without `TEST_ARTIFACT_INPUT`.
 
 ## Unsupported features
 
