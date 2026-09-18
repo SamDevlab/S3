@@ -1,0 +1,12 @@
+LINUX_HOST=s3-vm
+LINUX_KERNEL=Ubuntu 7.0.0-31-generic x86_64
+LINUX_PYTHON=3.14.4
+PYTEST_HARNESS=UNAVAILABLE_PYTEST_NOT_INSTALLED
+QUALIFICATION=NativeToolchain direct bounded probe
+SHAPES=3
+syntax_arena.s3=PASS
+generic_ir_program.s3=PASS
+verifier_kernel.s3=PASS
+STDOUT=program returned: 0\n for each shape
+STDERR=EMPTY for each shape
+EXIT=0

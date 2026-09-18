@@ -29,6 +29,7 @@ The primary intended user of the S3 toolchain is an AI agent generating, inspect
 - **Optimization**: O0 (default, unoptimized CFG) and O1 (local SSA optimizations: SCCP, DCE, GVN, DSE, Memory SSA).
 - **Closed generic collections**: `map<i64, i64>`, `map<text, i64>`, and `set<i64>` use explicit deterministic specializations; this is not open-ended type erasure.
 - **Compiler substrate V1**: hosted deterministic text-keyed maps, symbol interning, direct-ID arenas, lexical environment state, source bundle/cursors, and bounded transactional output are available as substrate contracts. They do not constitute a self-hosted compiler.
+- **Generic syntax/IR substrate**: a flat indexed `SyntaxArena`, an arena-backed generic IR program, a transactional IR builder, and an independent structured verifier are available as hosted V1 contracts. They do not implement parsing, lowering, emission, or self-hosting.
 
 ## Unsupported features
 
