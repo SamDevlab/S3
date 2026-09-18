@@ -1,0 +1,70 @@
+module selfhost.substrate.generic_ir_program
+
+record IRInstructionShape:
+    instruction_id: i64
+    function_id: i64
+    block_id: i64
+    opcode: i64
+    result_first: i64
+    result_count: i64
+    operand_first: i64
+    operand_count: i64
+    target_first: i64
+    target_count: i64
+    immediate_kind: i64
+    immediate_value: i64
+    static_string_id: i64
+    callee_function_id: i64
+    memory_id: i64
+    flags: i64
+
+record IRProgramShape:
+    function_ids: vector<i64>
+    function_name_symbols: vector<i64>
+    function_parameter_first: vector<i64>
+    function_parameter_count: vector<i64>
+    function_result_first: vector<i64>
+    function_result_count: vector<i64>
+    function_value_first: vector<i64>
+    function_value_count: vector<i64>
+    function_memory_first: vector<i64>
+    function_memory_count: vector<i64>
+    function_block_first: vector<i64>
+    function_block_count: vector<i64>
+    function_entry_blocks: vector<i64>
+    block_ids: vector<i64>
+    block_function_ids: vector<i64>
+    block_instruction_first: vector<i64>
+    block_instruction_count: vector<i64>
+    instruction_ids: vector<i64>
+    instruction_function_ids: vector<i64>
+    instruction_block_ids: vector<i64>
+    instruction_opcodes: vector<i64>
+    instruction_result_first: vector<i64>
+    instruction_result_count: vector<i64>
+    instruction_operand_first: vector<i64>
+    instruction_operand_count: vector<i64>
+    instruction_target_first: vector<i64>
+    instruction_target_count: vector<i64>
+    result_value_ids: vector<i64>
+    operand_value_ids: vector<i64>
+    target_block_ids: vector<i64>
+    value_ids: vector<i64>
+    value_types: vector<i64>
+    parameter_ids: vector<i64>
+    parameter_value_ids: vector<i64>
+    memory_ids: vector<i64>
+    memory_types: vector<i64>
+    memory_lengths: vector<i64>
+    static_string_ids: vector<i64>
+
+export fn generic_ir_program_shape_anchor() -> i64:
+    mut functions: vector<i64> = vector_new<i64>(1)
+    mut blocks: vector<i64> = vector_new<i64>(1)
+    mut instructions: vector<i64> = vector_new<i64>(1)
+    mut values: vector<i64> = vector_new<i64>(1)
+    discard i64_vector_push(&mut functions, 0)
+    discard i64_vector_push(&mut blocks, 0)
+    discard i64_vector_push(&mut instructions, 0)
+    discard i64_vector_push(&mut values, 0)
+    return vector_len<i64>(&functions) + vector_len<i64>(&blocks) + vector_len<i64>(&instructions) + vector_len<i64>(&values)

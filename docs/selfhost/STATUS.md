@@ -41,6 +41,20 @@ Accordingly:
 - a new implementation generation must not be started implicitly;
 - the normal S3 roadmap remains independent of self-host progress.
 
+## Generic syntax and IR foundation (2026-09-18)
+
+The current architecture increment adds a hosted, independently verifiable
+generic `SyntaxArena`, arena-backed `IRProgram`, transactional IR builder, and
+deterministic verifier kernel. These components are data-model foundations and
+are not a parser, semantic analyzer, lowerer, emitter, composition root, or
+self-hosted compiler. Their representation uses direct IDs and parallel S3
+vectors without changing the public ABI or Assembly format.
+
+The increment does not authorize Stage1 V4, Stage2, or Stage3. Self-host
+re-entry remains `NO` until the complete design-first criteria are reviewed
+separately, including the missing frontend, lowering, emitter, and composition
+root contracts.
+
 ## Relationship to existing milestones
 
 Existing self-hosting-related milestones and reports remain historical evidence.

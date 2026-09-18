@@ -79,7 +79,12 @@
       "symbol_interner": "YES_V1_HOSTED",
       "stable_id_arenas": "YES_V1_HOSTED",
       "source_bundle_cursor": "YES_V1_HOSTED",
-      "output_sink_transactions": "YES_V1_HOSTED"
+      "output_sink_transactions": "YES_V1_HOSTED",
+      "generic_syntax_arena": "YES_V1_HOSTED_WITH_S3_PARALLEL_ARENAS",
+      "generic_ir_program": "YES_V1_HOSTED_WITH_S3_PARALLEL_ARENAS",
+      "transactional_ir_builder": "YES_V1_HOSTED",
+      "independent_ir_verifier": "YES_V1_HOSTED",
+      "verifier_structured_diagnostics": "YES_V1_HOSTED_DETERMINISTIC"
     },
     "optimizer_levels": [
       "O0",
