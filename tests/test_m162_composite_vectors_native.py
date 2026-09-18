@@ -18,6 +18,136 @@ from bootstrap.s3.pipeline import compile_source, run_source
 pytestmark = [pytest.mark.s3_native, pytest.mark.s3_differential]
 
 
+def _composite_native_corpus() -> tuple[tuple[str, str, int], ...]:
+    cases: list[tuple[str, str, int]] = []
+    for value in range(1, 9):
+        cases.extend(
+            (
+                (
+                    f"pair-read-{value}",
+                    f"""\
+record Pair:
+    left: i64
+    right: i64
+fn main() -> i64:
+    mut values: vector<Pair> = vector_new<Pair>(1)
+    discard vector_push<Pair>(&mut values, Pair(left={value}, right={value + 1}))
+    return vector_get<Pair>(&values, 0).right
+""",
+                    value + 1,
+                ),
+                (
+                    f"pair-replace-{value}",
+                    f"""\
+record Pair:
+    left: i64
+    right: i64
+fn main() -> i64:
+    mut values: vector<Pair> = vector_new<Pair>(1)
+    discard vector_push<Pair>(&mut values, Pair(left=0, right=0))
+    discard vector_set<Pair>(&mut values, 0, Pair(left={value}, right={value + 2}))
+    return vector_get<Pair>(&values, 0).left
+""",
+                    value,
+                ),
+                (
+                    f"pair-clone-{value}",
+                    f"""\
+record Pair:
+    left: i64
+    right: i64
+fn main() -> i64:
+    mut values: vector<Pair> = vector_new<Pair>(1)
+    discard vector_push<Pair>(&mut values, Pair(left={value}, right={value + 3}))
+    copy: vector<Pair> = vector_clone<Pair>(&values)
+    return vector_get<Pair>(&copy, 0).right
+""",
+                    value + 3,
+                ),
+                (
+                    f"pair-slice-{value}",
+                    f"""\
+record Pair:
+    left: i64
+    right: i64
+fn main() -> i64:
+    mut values: vector<Pair> = vector_new<Pair>(2)
+    discard vector_push<Pair>(&mut values, Pair(left={value}, right={value + 4}))
+    discard vector_push<Pair>(&mut values, Pair(left=0, right=0))
+    window: vector<Pair> = vector_slice<Pair>(&values, 0, 1)
+    return vector_get<Pair>(&window, 0).left
+""",
+                    value,
+                ),
+                (
+                    f"enum-{value}",
+                    f"""\
+enum State:
+    Ready(code: i64)
+    Empty
+fn read(state: State) -> i64:
+    match state:
+        State.Ready(code):
+            return code
+        State.Empty:
+            return 0
+fn main() -> i64:
+    mut values: vector<State> = vector_new<State>(1)
+    discard vector_push<State>(&mut values, State.Ready(code={value + 5}))
+    return read(vector_get<State>(&values, 0))
+""",
+                    value + 5,
+                ),
+                (
+                    f"parametric-record-{value}",
+                    f"""\
+record Box<T: value>:
+    value: T
+fn main() -> i64:
+    mut values: vector<Box<i64>> = vector_new<Box<i64>>(1)
+    discard vector_push<Box<i64>>(&mut values, Box<i64>(value={value + 6}))
+    return vector_get<Box<i64>>(&values, 0).value
+""",
+                    value + 6,
+                ),
+                (
+                    f"parametric-enum-{value}",
+                    f"""\
+enum Maybe<T: value>:
+    Some(value: T)
+    None
+fn read(value: Maybe<i64>) -> i64:
+    match value:
+        Maybe<i64>.Some(value):
+            return value
+        Maybe<i64>.None:
+            return 0
+fn main() -> i64:
+    mut values: vector<Maybe<i64>> = vector_new<Maybe<i64>>(1)
+    discard vector_push<Maybe<i64>>(&mut values, Maybe<i64>.Some(value={value + 7}))
+    return read(vector_get<Maybe<i64>>(&values, 0))
+""",
+                    value + 7,
+                ),
+                (
+                    f"fixed-array-{value}",
+                    f"""\
+fn main() -> i64:
+    mut values: vector<i64[2]> = vector_new<i64[2]>(1)
+    pair: i64[2] = [{value}, {value + 8}]
+    discard vector_push<i64[2]>(&mut values, pair)
+    return vector_get<i64[2]>(&values, 0)[1]
+""",
+                    value + 8,
+                ),
+            )
+        )
+    return tuple(cases)
+
+
+COMPOSITE_NATIVE_CORPUS = _composite_native_corpus()
+
+
 @pytest.fixture(scope="session")
 def native_toolchain() -> NativeToolchain:
     if platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"}:
@@ -315,6 +445,21 @@ fn main() -> i64:
         assert completed.returncode == 0
         assert completed.stdout == "program returned: 7\n"
         assert completed.stderr == ""
+
+
+@pytest.mark.parametrize(
+    ("name", "source", "expected"),
+    COMPOSITE_NATIVE_CORPUS,
+    ids=[case[0] for case in COMPOSITE_NATIVE_CORPUS],
+)
+def test_native_composite_vector_differential_corpus(
+    name: str,
+    source: str,
+    expected: int,
+    native_toolchain: NativeToolchain,
+    tmp_path,
+) -> None:
+    _run_native(source, expected, native_toolchain, tmp_path / name)
 
 
 def test_composite_vector_use_after_move_is_rejected_before_native_lowering() -> None:
