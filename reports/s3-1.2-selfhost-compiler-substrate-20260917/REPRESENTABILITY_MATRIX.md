@@ -94,3 +94,8 @@ The focused closure gates completed before the full-suite runs:
 This full-suite Linux result is a closure limitation, not a self-hosting
 authorization. No compiler phase, Stage1 V4 implementation, release, tag, or
 PyPI publication is part of this increment.
+
+The first GitHub Actions run for the Draft PR was also blocked before job
+execution: run `35306528596` reported ten failed jobs, each with
+`runner_id=0` and an empty `steps` list. This is recorded as
+`CI_STATE=INFRASTRUCTURE_BLOCKED_PRE_EXECUTION`; no workflow was rerun.
