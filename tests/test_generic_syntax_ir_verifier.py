@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from bootstrap.s3 import compile_source
+from bootstrap.s3 import compile_source, run_source
 from bootstrap.s3.backends.x86_64 import NativeBackendError, NativeToolchain, generate_native_assembly
 from bootstrap.s3.compiler_substrate import InvalidIdError
 from bootstrap.s3.generic_ir import IRBuilder, IRProgram, IRRange, IROpcode, IRType
@@ -472,3 +472,52 @@ def test_selfhost_shapes_have_linux_native_qualification(tmp_path: Path) -> None
         assert completed.returncode == 0
         assert completed.stdout == "program returned: 0\n"
         assert completed.stderr == ""
+
+
+@pytest.mark.s3_native
+def test_native_verifier_differential_matrix_is_immutable_and_repeatable(tmp_path: Path) -> None:
+    if platform.system() != "Linux" or platform.machine().lower() not in {"x86_64", "amd64"}:
+        pytest.skip("native verifier qualification requires Linux x86-64")
+    try:
+        toolchain = NativeToolchain.detect()
+    except NativeBackendError as error:
+        pytest.skip(str(error))
+
+    repository = Path(__file__).parents[1]
+    verifier = (repository / "selfhost/substrate/verifier_kernel.s3").read_text(encoding="utf-8")
+    valid_cases = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 22, 23, 24, 25, 26, 27, 28, 29}
+    observed: dict[int, int] = {}
+
+    for case in range(32):
+        source = verifier + f"\nfn main() -> i64:\n    return verifier_case({case})\n"
+        hosted = run_source(source)
+        if case in valid_cases:
+            assert hosted // 1_000_000 == 1, (case, hosted)
+        else:
+            assert hosted // 1_000_000 == 0, (case, hosted)
+        assert (hosted % 10_000) // 1_000 == 1, (case, hosted)
+
+        assembly = compile_source(source).assembly
+        executable = toolchain.build(
+            generate_native_assembly(assembly),
+            tmp_path / f"verifier-case-{case}",
+        )
+        completed = toolchain.run(executable)
+        assert completed.returncode == 0
+        assert completed.stderr == ""
+        prefix = "program returned: "
+        assert completed.stdout.startswith(prefix)
+        native = int(completed.stdout[len(prefix):].strip())
+        observed[case] = native
+        assert native == hosted, (case, hosted, native)
+
+    for case in (0, 3, 10, 17, 21, 30):
+        for _ in range(3):
+            source = verifier + f"\nfn main() -> i64:\n    return verifier_case({case})\n"
+            executable = toolchain.build(
+                generate_native_assembly(compile_source(source).assembly),
+                tmp_path / f"verifier-repeat-{case}",
+            )
+            completed = toolchain.run(executable)
+            assert completed.returncode == 0
+            assert int(completed.stdout.removeprefix("program returned: ").strip()) == observed[case]
