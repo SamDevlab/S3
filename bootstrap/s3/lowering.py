@@ -21,9 +21,20 @@ from .ir import (
 from .semantic import SemanticModel
 from .static_strings import collect_static_string_literals
 from .static_text import decode_static_text, normalize_static_text_newlines
+from .vector_types import (
+    composite_vector_runtime_name,
+    is_composite_vector_builtin,
+)
 
 
-TYPE_MAP = {
+class _TypeMap(dict):
+    def __missing__(self, key):
+        if isinstance(key, ast.VectorType):
+            return IRType.VECTOR
+        raise KeyError(key)
+
+
+TYPE_MAP = _TypeMap({
     ast.TypeName.TRIT: IRType.TRIT,
     ast.TypeName.TRYTE: IRType.TRYTE,
     ast.TypeName.I64: IRType.I64,
@@ -38,7 +49,7 @@ TYPE_MAP = {
     ast.TypeName.I64_SET: IRType.VECTOR,
     ast.TypeName.HOST_CAPABILITY: IRType.I64,
     ast.TypeName.RESOURCE_HANDLE: IRType.I64,
-}
+})
 
 _DYNAMIC_TYPES = {
     ast.TypeName.BYTES,
@@ -95,6 +106,7 @@ class FunctionLowerer:
         self.parameter_array_initializers: list[
             tuple[int, tuple[int, ...], SourceLocation]
         ] = []
+        self.composite_expression_bindings: dict[int, _LoweredBinding] = {}
 
     def lower(self, *, external: bool = False) -> IRFunction:
         for parameter in self.function.parameters:
@@ -440,11 +452,13 @@ class FunctionLowerer:
         self,
         type_name: ast.DeclaredType,
         location: SourceLocation | None,
-    ) -> ast.TypeName:
+    ) -> ast.DeclaredType:
         if isinstance(type_name, ast.TypeName):
             return type_name
         if isinstance(type_name, ast.SliceType):
             return type_name.element_type
+        if isinstance(type_name, ast.VectorType):
+            return type_name
         if (
             isinstance(type_name, ast.NominalType)
             and self.semantic_model.is_enum_type(type_name)
@@ -470,6 +484,8 @@ class FunctionLowerer:
     ) -> tuple[IRType, ...]:
         if isinstance(type_name, ast.TypeName) and type_name in _DYNAMIC_TYPES:
             return (TYPE_MAP[type_name],)
+        if isinstance(type_name, ast.VectorType):
+            return (IRType.VECTOR,)
         layout = self.semantic_model.fixed_value_layout(type_name)
         if not layout.cells:
             raise LoweringError("function result layout has no cells", location)
@@ -877,6 +893,8 @@ class FunctionLowerer:
         expression: ast.CallExpression,
         type_name: ast.DeclaredType,
     ) -> tuple[int, ...]:
+        if is_composite_vector_builtin(expression.function_name):
+            return self._lower_composite_vector_call(expression)
         arguments = self._lower_call_arguments(expression)
         results = self._allocate_result_cells(type_name, expression.location)
         self._emit(
@@ -885,6 +903,60 @@ class FunctionLowerer:
                 results=results,
                 operands=arguments,
                 callee=expression.function_name,
+                location=expression.location,
+            )
+        )
+        return results
+
+    def _composite_vector_element_type(
+        self,
+        expression: ast.CallExpression,
+    ) -> ast.DeclaredType:
+        if len(expression.type_arguments) != 1:
+            raise LoweringError(
+                "composite vector builtin is missing its element type",
+                expression.location,
+            )
+        return expression.type_arguments[0]
+
+    def _composite_vector_cell_codes(
+        self,
+        element_type: ast.DeclaredType,
+        location: SourceLocation,
+    ) -> tuple[str, ...]:
+        layout = self.semantic_model.fixed_value_layout(element_type)
+        return tuple(TYPE_MAP[cell.type_name].value for cell in layout.cells)
+
+    def _lower_composite_vector_call(
+        self,
+        expression: ast.CallExpression,
+    ) -> tuple[int, ...]:
+        element_type = self._composite_vector_element_type(expression)
+        operation = expression.function_name[len("__s3_composite_vector__") :]
+        if operation.startswith("vector_"):
+            operation = operation[len("vector_") :]
+        cell_codes = self._composite_vector_cell_codes(element_type, expression.location)
+        callee = composite_vector_runtime_name(element_type, cell_codes, operation)
+        arguments = self._lower_call_arguments(expression)
+        if operation in {"get", "pop"}:
+            results = self._allocate_result_cells(element_type, expression.location)
+            self.composite_expression_bindings[id(expression)] = self._binding_from_registers(
+                element_type,
+                results,
+                expression.location,
+            )
+        elif operation in {"new", "clone", "slice"}:
+            results = (self._allocate(ast.VectorType(element_type, expression.location), expression.location),)
+        elif operation in {"len", "capacity"}:
+            results = (self._allocate(ast.TypeName.I64, expression.location),)
+        else:
+            results = (self._allocate(ast.TypeName.TRYTE, expression.location),)
+        self._emit(
+            IRInstruction(
+                IROpcode.CALL,
+                results=results,
+                operands=arguments,
+                callee=callee,
                 location=expression.location,
             )
         )
@@ -1440,7 +1512,7 @@ class FunctionLowerer:
             )
         storage_type = self._storage_type(declaration.type_name, declaration.location)
         initializer = self._lower_expression(declaration.initializer)
-        if storage_type in _DYNAMIC_TYPES:
+        if storage_type in _DYNAMIC_TYPES or isinstance(storage_type, ast.VectorType):
             variable = self._allocate(storage_type, declaration.location)
             self._emit(
                 IRInstruction(
@@ -1632,8 +1704,8 @@ class FunctionLowerer:
                 )
             value = self._lower_expression(statement.value)
             if (
-                isinstance(binding.type_name, ast.TypeName)
-                and binding.type_name in _DYNAMIC_TYPES
+                (isinstance(binding.type_name, ast.TypeName) and binding.type_name in _DYNAMIC_TYPES)
+                or isinstance(binding.type_name, ast.VectorType)
             ):
                 if binding.register is None:
                     raise LoweringError(
@@ -2381,6 +2453,16 @@ class FunctionLowerer:
         if simplified is not None:
             return self._lower_expression(simplified)
         declared_type = self.semantic_model.declared_type_of(expression)
+        if isinstance(expression, ast.CallExpression) and is_composite_vector_builtin(
+            expression.function_name
+        ):
+            results = self._lower_composite_vector_call(expression)
+            if len(results) != 1:
+                raise LoweringError(
+                    "composite vector value has multiple cells; use aggregate context",
+                    expression.location,
+                )
+            return results[0]
         if isinstance(declared_type, (ast.ReferenceType, ast.SliceType)):
             if isinstance(expression, ast.Identifier):
                 return self._lookup_variable(expression.name, expression.location).register  # type: ignore[return-value]
@@ -2560,6 +2642,8 @@ class FunctionLowerer:
                 )
                 return result
             array_type = self.semantic_model.declared_type_of(expression.target)
+            if isinstance(array_type, ast.VectorType):
+                return self._lower_composite_vector_index(expression, array_type)
             if isinstance(array_type, ast.SliceType):
                 if not isinstance(expression.target, ast.Identifier):
                     raise LoweringError("slice target must be a named slice", expression.location)
@@ -2876,6 +2960,8 @@ class FunctionLowerer:
         expression: ast.IndexExpression,
     ) -> _LoweredBinding:
         array_type = self.semantic_model.declared_type_of(expression.target)
+        if isinstance(array_type, ast.VectorType):
+            return self._lower_composite_vector_element_binding(expression, array_type)
         if not isinstance(array_type, ast.ArrayType):
             raise LoweringError("indexed target is not an array", expression.location)
         constant = self.semantic_model.constant_value_of(expression.index)
@@ -2903,7 +2989,143 @@ class FunctionLowerer:
             )
         return element
 
+    def _lower_composite_vector_element_binding(
+        self,
+        expression: ast.IndexExpression,
+        vector_type: ast.VectorType,
+    ) -> _LoweredBinding:
+        cached = self.composite_expression_bindings.get(id(expression))
+        if cached is not None:
+            return cached
+        if not isinstance(expression.target, ast.Identifier):
+            raise LoweringError(
+                "composite vector indexing requires named vector storage",
+                expression.location,
+            )
+        binding = self._lookup_variable(
+            expression.target.name,
+            expression.target.location,
+        )
+        if binding.register is None:
+            raise LoweringError("composite vector has no register storage", expression.location)
+        reference_type = ast.ReferenceType(vector_type, False, expression.location)
+        reference = self._allocate_reference(reference_type, expression.location)
+        self._emit(
+            IRInstruction(
+                IROpcode.ADDRESS_OF,
+                result=reference,
+                operands=(binding.register,),
+                reference_target=IRType.VECTOR,
+                reference_mutable=False,
+                location=expression.location,
+            )
+        )
+        index = self._lower_expression(expression.index)
+        if self.semantic_model.declared_type_of(expression.index) is ast.TypeName.TRYTE:
+            converted = self._allocate(ast.TypeName.I64, expression.index.location)
+            self._emit(
+                IRInstruction(
+                    IROpcode.CONVERT,
+                    result=converted,
+                    operands=(index,),
+                    location=expression.index.location,
+                )
+            )
+            index = converted
+        cell_codes = self._composite_vector_cell_codes(
+            vector_type.element_type,
+            expression.location,
+        )
+        results = self._allocate_result_cells(
+            vector_type.element_type,
+            expression.location,
+        )
+        self._emit(
+            IRInstruction(
+                IROpcode.CALL,
+                results=results,
+                operands=(reference, index),
+                callee=composite_vector_runtime_name(
+                    vector_type.element_type,
+                    cell_codes,
+                    "get",
+                ),
+                location=expression.location,
+            )
+        )
+        result = self._binding_from_registers(
+            vector_type.element_type,
+            results,
+            expression.location,
+        )
+        self.composite_expression_bindings[id(expression)] = result
+        return result
+
+    def _lower_composite_vector_index(
+        self,
+        expression: ast.IndexExpression,
+        vector_type: ast.VectorType,
+    ) -> int:
+        registers = self._flatten_value_registers(
+            self._lower_composite_vector_element_binding(expression, vector_type),
+            vector_type.element_type,
+            expression.location,
+        )
+        if len(registers) != 1:
+            raise LoweringError(
+                "composite vector index has multiple cells; use field or aggregate context",
+                expression.location,
+            )
+        return registers[0]
+
     def _lower_call_arguments(self, expression: ast.CallExpression) -> tuple[int, ...]:
+        if is_composite_vector_builtin(expression.function_name):
+            element_type = self._composite_vector_element_type(expression)
+            operation = expression.function_name[len("__s3_composite_vector__") :]
+            if operation.startswith("vector_"):
+                operation = operation[len("vector_") :]
+            registers: list[int] = []
+            if operation == "new":
+                return (self._lower_expression(expression.arguments[0].expression),)
+            if operation in {"len", "capacity", "reserve", "push", "pop", "get", "set", "clone", "slice"}:
+                registers.append(self._lower_expression(expression.arguments[0].expression))
+            if operation in {"len", "capacity", "clone"}:
+                return tuple(registers)
+            if operation == "reserve":
+                registers.append(self._lower_expression(expression.arguments[1].expression))
+                return tuple(registers)
+            if operation == "push":
+                registers.extend(
+                    self._lower_value_registers(
+                        expression.arguments[1].expression,
+                        element_type,
+                    )
+                )
+                return tuple(registers)
+            if operation == "pop":
+                return tuple(registers)
+            if operation == "get":
+                registers.append(self._lower_expression(expression.arguments[1].expression))
+                return tuple(registers)
+            if operation == "set":
+                registers.append(self._lower_expression(expression.arguments[1].expression))
+                registers.extend(
+                    self._lower_value_registers(
+                        expression.arguments[2].expression,
+                        element_type,
+                    )
+                )
+                return tuple(registers)
+            if operation == "slice":
+                registers.extend(
+                    self._lower_expression(argument.expression)
+                    for argument in expression.arguments[1:]
+                )
+                return tuple(registers)
+            raise LoweringError(
+                f"unknown composite vector operation '{operation}'",
+                expression.location,
+            )
         signature = self.semantic_model.function(expression.function_name)
         registers: list[int] = []
         for argument, parameter_type in zip(

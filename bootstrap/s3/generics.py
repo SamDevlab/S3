@@ -6,6 +6,7 @@ from dataclasses import replace
 
 from . import ast
 from .diagnostics import DiagnosticCode, SemanticError
+from .vector_types import composite_vector_builtin_name, type_key
 
 
 _SCALAR_TYPES = {
@@ -83,23 +84,7 @@ _GENERIC_COLLECTION_BUILTINS = (
 
 
 def _type_key(type_name: ast.DeclaredType) -> str:
-    if isinstance(type_name, ast.TypeName):
-        return type_name.value
-    if isinstance(type_name, ast.TypeParameterType):
-        return type_name.name
-    if isinstance(type_name, ast.NominalType):
-        if type_name.type_arguments:
-            return f"{type_name.name}__" + "__".join(
-                _type_key(argument) for argument in type_name.type_arguments
-            )
-        return type_name.name
-    if isinstance(type_name, ast.ArrayType):
-        return f"{_type_key(type_name.element_type)}_array{type_name.length}"
-    if isinstance(type_name, ast.ReferenceType):
-        return f"ref_{'mut' if type_name.mutable else 'shared'}_{_type_key(type_name.target)}"
-    if isinstance(type_name, ast.SliceType):
-        return f"slice_{'mut' if type_name.mutable else 'shared'}_{type_name.element_type.value}"
-    raise TypeError(f"unsupported generic type argument {type_name!r}")
+    return type_key(type_name)
 
 
 def _substitute_type(
@@ -116,6 +101,11 @@ def _substitute_type(
                 diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_PROGRAM,
             ) from error
     if isinstance(type_name, ast.ArrayType):
+        return replace(
+            type_name,
+            element_type=_substitute_type(type_name.element_type, substitutions),
+        )
+    if isinstance(type_name, ast.VectorType):
         return replace(
             type_name,
             element_type=_substitute_type(type_name.element_type, substitutions),
@@ -141,7 +131,7 @@ def _validate_constraint(
     argument: ast.DeclaredType,
     location,
 ) -> None:
-    if isinstance(argument, (ast.ArrayType, ast.NominalType, ast.ReferenceType, ast.SliceType)):
+    if isinstance(argument, (ast.ArrayType, ast.VectorType, ast.NominalType, ast.ReferenceType, ast.SliceType)):
         raise SemanticError(
             f"generic type parameter '{parameter.name}' accepts only closed scalar or owned leaves",
             argument.location,
@@ -185,6 +175,16 @@ def _rewrite_type(
                 location,
             ),
         )
+    if isinstance(type_name, ast.VectorType):
+        return replace(
+            type_name,
+            element_type=_rewrite_type(
+                type_name.element_type,
+                substitutions,
+                specialize_type,
+                location,
+            ),
+        )
     if isinstance(type_name, ast.ReferenceType):
         return replace(
             type_name,
@@ -206,7 +206,7 @@ def _rewrite_type(
                 arguments,
                 type_name.location,
             )
-            if isinstance(specialized_name, ast.TypeName):
+            if isinstance(specialized_name, (ast.TypeName, ast.VectorType)):
                 return specialized_name
             return ast.NominalType(specialized_name, type_name.location)
         return replace(type_name, type_arguments=())
@@ -267,7 +267,8 @@ def _expression(
                 )
             name = specialize.generic_builtin(callee.name, type_arguments, expression.location)
             callee = replace(callee, name=name)
-            type_arguments = ()
+            if not name.startswith("__s3_composite_vector__"):
+                type_arguments = ()
         return replace(
             expression,
             callee=callee,
@@ -498,11 +499,7 @@ def specialize_generic_functions(program: ast.Program) -> ast.Program:
                     )
                 element = arguments[0]
                 if element not in _VECTOR_ELEMENT_TYPES:
-                    raise SemanticError(
-                        "vector<T> accepts only tryte, i64, or f64 elements",
-                        location,
-                        diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
-                    )
+                    return ast.VectorType(element, location)
                 return {
                     ast.TypeName.TRYTE: ast.TypeName.TRYTE_VECTOR,
                     ast.TypeName.I64: ast.TypeName.I64_VECTOR,
@@ -613,13 +610,15 @@ def specialize_generic_functions(program: ast.Program) -> ast.Program:
 
         def generic_builtin(self, name: str, arguments, location):
             if name in _GENERIC_VECTOR_BUILTINS:
-                if len(arguments) != 1 or arguments[0] not in _VECTOR_ELEMENT_TYPES:
+                if len(arguments) != 1:
                     raise SemanticError(
-                        f"generic builtin '{name}' requires one of tryte, i64, or f64 as its type argument",
+                        f"generic builtin '{name}' requires one type argument",
                         location,
                         diagnostic_code=DiagnosticCode.SEMANTIC_INVALID_ARGUMENT_TYPE,
                     )
-                return _VECTOR_ELEMENT_TYPES[arguments[0]] + "_" + name
+                if arguments[0] in _VECTOR_ELEMENT_TYPES:
+                    return _VECTOR_ELEMENT_TYPES[arguments[0]] + "_" + name
+                return composite_vector_builtin_name(name)
             if name in _GENERIC_MAP_BUILTINS:
                 if tuple(arguments) != (ast.TypeName.I64, ast.TypeName.I64):
                     raise SemanticError(

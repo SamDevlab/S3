@@ -17,7 +17,11 @@ from .assembly import (
 )
 from .ternary import TernaryRangeError, TernaryWidth, TRYTE_MAX, validate
 from .numeric import NumericError, validate_f64, validate_i64
-from .ir import DYNAMIC_BUILTIN_SIGNATURES, IRType
+from .ir import (
+    DYNAMIC_BUILTIN_SIGNATURES,
+    IRType,
+    composite_vector_runtime_signature,
+)
 
 
 WIDTH_MAP = {
@@ -70,6 +74,21 @@ _DYNAMIC_REFERENCE_TARGETS = {
     ),
     "text_from_bytes": AssemblyType.BYTES,
 }
+
+
+def _dynamic_builtin_signature(
+    name: str,
+) -> tuple[tuple[IRType, ...], tuple[IRType, ...]] | None:
+    return DYNAMIC_BUILTIN_SIGNATURES.get(name) or composite_vector_runtime_signature(name)
+
+
+def _dynamic_reference_target(name: str) -> AssemblyType | None:
+    target = _DYNAMIC_REFERENCE_TARGETS.get(name)
+    if target is not None:
+        return target
+    if composite_vector_runtime_signature(name) is not None:
+        return AssemblyType.VECTOR
+    return None
 
 for _vector_prefix in ("tryte", "i64", "f64"):
     for _vector_operation in (
@@ -689,8 +708,9 @@ class AssemblyVerifier:
                 register_type(destination)
             for argument in arguments:
                 register_type(argument)
-            if instruction.callee in DYNAMIC_BUILTIN_SIGNATURES:
-                argument_types, result_types = DYNAMIC_BUILTIN_SIGNATURES[instruction.callee]
+            dynamic_signature = _dynamic_builtin_signature(instruction.callee or "")
+            if dynamic_signature is not None:
+                argument_types, result_types = dynamic_signature
                 expected_arguments = tuple(
                     _IR_TO_ASSEMBLY_TYPE[type_name] for type_name in argument_types
                 )
@@ -711,7 +731,8 @@ class AssemblyVerifier:
                     if expected is not IRType.REFERENCE:
                         continue
                     info = function.reference_info(argument)
-                    if info is None or info[0] is not _DYNAMIC_REFERENCE_TARGETS[instruction.callee]:
+                    expected_target = _dynamic_reference_target(instruction.callee or "")
+                    if expected_target is None or info is None or info[0] is not expected_target:
                         raise EmulatorError(
                             self._static_context(
                                 function,

@@ -769,6 +769,219 @@ class DynamicVector:
         self.set(index, value)
 
 
+class DynamicCompositeVector:
+    """Bounded vector for one compile-time-flattened composite element type."""
+
+    _CELL_SIZES = {
+        "trit": 2,
+        "tryte": 2,
+        "i64": 8,
+        "f64": 8,
+        "string": 8,
+        "bytes": 8,
+        "text": 8,
+        "vector": 8,
+    }
+
+    def __init__(
+        self,
+        element_key: str,
+        element_types: tuple[str, ...],
+        capacity: int = 0,
+        *,
+        allocator: Allocator | None = None,
+        _data: tuple[tuple[object, ...], ...] = (),
+    ) -> None:
+        if not element_types:
+            raise DynamicError("composite vector elements must contain at least one cell")
+        if any(code not in self._CELL_SIZES for code in element_types):
+            raise DynamicError("unsupported composite vector cell type")
+        self.element_key = element_key
+        self.element_types = element_types
+        self.allocator = allocator or Allocator()
+        self._stride_bytes = sum(self._CELL_SIZES[code] for code in element_types)
+        _validate_vector_capacity(capacity, self._stride_bytes)
+        if len(_data) > capacity:
+            raise BufferCapacityError("initial composite vector data exceeds capacity")
+        for value in _data:
+            self._validate_element(value)
+        if capacity:
+            self.allocator.reserve(capacity * self._stride_bytes)
+        empty = tuple(None for _ in element_types)
+        self._storage = list(_data) + [empty] * (capacity - len(_data))
+        self._length = len(_data)
+        self._shared_borrows = 0
+        self._mutable_borrow = False
+        self._moved = False
+
+    @property
+    def length(self) -> int:
+        self._require_live()
+        return self._length
+
+    @property
+    def capacity(self) -> int:
+        self._require_live()
+        return len(self._storage)
+
+    def _require_live(self) -> None:
+        if self._moved:
+            raise MovedValueError("owned composite vector was moved or dropped")
+
+    def _require_unborrowed(self) -> None:
+        self._require_live()
+        if self._shared_borrows or self._mutable_borrow:
+            raise BorrowConflictError("owner operation overlaps an active borrow")
+
+    def _validate_element(self, value: tuple[object, ...]) -> None:
+        if not isinstance(value, tuple) or len(value) != len(self.element_types):
+            raise DynamicError("composite vector element has an invalid cell width")
+        for code, cell in zip(self.element_types, value, strict=True):
+            if code == "i64":
+                try:
+                    validate_i64(cell)
+                except (TypeError, ValueError) as error:
+                    raise DynamicError("composite i64 cell is invalid") from error
+            if code == "f64":
+                try:
+                    validate_f64(cell)
+                except (TypeError, ValueError) as error:
+                    raise DynamicError("composite f64 cell is invalid") from error
+            if code == "tryte":
+                try:
+                    validate_tryte(cell)
+                except (TypeError, ValueError) as error:
+                    raise DynamicError("composite tryte cell is invalid") from error
+            if code == "trit":
+                try:
+                    validate_trit(cell)
+                except (TypeError, ValueError) as error:
+                    raise DynamicError("composite trit cell is invalid") from error
+            if code == "string" and not isinstance(cell, str):
+                raise DynamicError("composite string cell is invalid")
+            if code == "bytes" and not isinstance(cell, DynamicBytes):
+                raise DynamicError("composite bytes cell is invalid")
+            if code == "text" and not isinstance(cell, DynamicText):
+                raise DynamicError("composite text cell is invalid")
+            if code == "vector" and not isinstance(
+                cell, (DynamicVector, DynamicCompositeVector, DynamicMap, DynamicSet)
+            ):
+                raise DynamicError("composite vector cell is invalid")
+
+    def _acquire_borrow(self, mutable: bool) -> None:
+        self._require_live()
+        if mutable:
+            if self._mutable_borrow or self._shared_borrows:
+                raise BorrowConflictError("mutable borrow overlaps an active borrow")
+            self._mutable_borrow = True
+        else:
+            if self._mutable_borrow:
+                raise BorrowConflictError("shared borrow overlaps a mutable borrow")
+            self._shared_borrows += 1
+
+    def _release_borrow(self, mutable: bool) -> None:
+        if mutable:
+            self._mutable_borrow = False
+        elif self._shared_borrows:
+            self._shared_borrows -= 1
+
+    def move(self) -> "DynamicCompositeVector":
+        self._require_unborrowed()
+        replacement = object.__new__(type(self))
+        replacement.element_key = self.element_key
+        replacement.element_types = self.element_types
+        replacement.allocator = self.allocator
+        replacement._stride_bytes = self._stride_bytes
+        replacement._storage = self._storage
+        replacement._length = self._length
+        replacement._shared_borrows = 0
+        replacement._mutable_borrow = False
+        replacement._moved = False
+        self._moved = True
+        return replacement
+
+    def reserve(self, capacity: int) -> None:
+        self._require_unborrowed()
+        _validate_vector_capacity(capacity, self._stride_bytes)
+        if capacity <= self.capacity:
+            return
+        self.allocator.reserve(capacity * self._stride_bytes)
+        empty = tuple(None for _ in self.element_types)
+        self._storage.extend([empty] * (capacity - self.capacity))
+
+    def push(self, value: tuple[object, ...]) -> None:
+        self._require_unborrowed()
+        self._validate_element(value)
+        if self._length >= self.capacity:
+            raise BufferFullError("vector has no reserved capacity")
+        self._storage[self._length] = value
+        self._length += 1
+
+    def pop(self) -> tuple[object, ...]:
+        self._require_unborrowed()
+        if self._length == 0:
+            raise BufferBoundsError("cannot pop an empty vector")
+        self._length -= 1
+        value = self._storage[self._length]
+        empty = tuple(None for _ in self.element_types)
+        self._storage[self._length] = empty
+        return value
+
+    def get(self, index: int) -> tuple[object, ...]:
+        self._require_live()
+        _validate_vector_index(index, self._length)
+        return self._storage[index]
+
+    def set(self, index: int, value: tuple[object, ...]) -> None:
+        self._require_unborrowed()
+        _validate_vector_index(index, self._length)
+        self._validate_element(value)
+        self._storage[index] = value
+
+    @staticmethod
+    def _clone_cell(value: object) -> object:
+        clone = getattr(value, "clone", None)
+        return clone() if callable(clone) else value
+
+    def clone(self) -> "DynamicCompositeVector":
+        self._require_live()
+        data = tuple(
+            tuple(self._clone_cell(cell) for cell in value)
+            for value in self._storage[: self._length]
+        )
+        return DynamicCompositeVector(
+            self.element_key,
+            self.element_types,
+            self.capacity,
+            allocator=self.allocator,
+            _data=data,
+        )
+
+    def slice(self, start: int, end: int) -> "DynamicCompositeVector":
+        self._require_live()
+        _validate_slice(start, end, self._length)
+        data = tuple(
+            tuple(self._clone_cell(cell) for cell in value)
+            for value in self._storage[start:end]
+        )
+        return DynamicCompositeVector(
+            self.element_key,
+            self.element_types,
+            end - start,
+            allocator=self.allocator,
+            _data=data,
+        )
+
+    def drop(self) -> None:
+        self._require_unborrowed()
+        self._storage.clear()
+        self._length = 0
+        self._moved = True
+
+    def __iter__(self) -> Iterator[tuple[object, ...]]:
+        self._require_live()
+        return iter(tuple(self._storage[: self._length]))
+
 class DynamicMap:
     """Ordered i64 to i64 map with explicit capacity and stable insertion order."""
 

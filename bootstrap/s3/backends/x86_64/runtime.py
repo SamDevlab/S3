@@ -955,6 +955,539 @@ __s3_builtin_i64_vector_slice:
 __s3_builtin_f64_vector_slice:
     jmp __s3_vec_slice_8
 
+.type __s3_vec_len_stride,@function
+__s3_vec_len_stride:
+    test rsi,rsi
+    jz __s3_fail_invalid_runtime_state
+    mov r10,[rdi]
+    mov rax,[r10+8]
+    xor edx,edx
+    div rsi
+    ret
+.type __s3_vec_capacity_stride,@function
+__s3_vec_capacity_stride:
+    test rsi,rsi
+    jz __s3_fail_invalid_runtime_state
+    mov r10,[rdi]
+    mov rax,[r10+16]
+    xor edx,edx
+    div rsi
+    ret
+
+.type __s3_dyn_clone_descriptor,@function
+__s3_dyn_clone_descriptor:
+    test rdi,rdi
+    jz __s3_fail_invalid_runtime_state
+    push r12
+    mov r12,rdi
+    mov rdi,[r12+8]
+    call __s3_dyn_new
+    mov r10,rax
+    mov rdx,[r12+8]
+    mov rcx,rdx
+    mov rsi,[r12]
+    mov rdi,[r10]
+    call __s3_dyn_copy
+    mov [r10+8],rdx
+    mov rax,r10
+    pop r12
+    ret
+
+.type __s3_dyn_drop_descriptor,@function
+__s3_dyn_drop_descriptor:
+    test rdi,rdi
+    jz __s3_fail_invalid_runtime_state
+    mov rsi,[rdi+16]
+    add rsi,24
+    jc __s3_fail_capacity
+    mov eax,11
+    syscall
+    test rax,rax
+    js __s3_fail_allocation
+    xor eax,eax
+    ret
+
+.type __s3_composite_vector_push,@function
+__s3_composite_vector_push:
+    push rbx
+    push r12
+    push r13
+    push r14
+    push r15
+    mov r12,rdi
+    mov r13,rsi
+    mov r14,rdx
+    mov r15,rcx
+    mov rbx,r8
+    mov r10,[r12]
+    mov rax,[r10+8]
+    mov r11,rax
+    add r11,rbx
+    jc __s3_fail_capacity
+    cmp r11,[r10+16]
+    ja __s3_fail_capacity
+    xor ecx,ecx
+.L__s3_composite_push_validate:
+    cmp rcx,r15
+    jae .L__s3_composite_push_store
+    movzx eax,byte ptr [r14+rcx]
+    mov r9,qword ptr [r13+rcx*8]
+    cmp eax,0
+    je .L__s3_composite_push_validate_ternary
+    cmp eax,1
+    je .L__s3_composite_push_validate_tryte
+    cmp eax,2
+    je .L__s3_composite_push_validate_next
+    cmp eax,4
+    ja .L__s3_composite_push_invalid
+    test r9,r9
+    jz .L__s3_composite_push_invalid
+    jmp .L__s3_composite_push_validate_next
+.L__s3_composite_push_validate_ternary:
+    cmp r9,-1
+    jl .L__s3_composite_push_invalid
+    cmp r9,1
+    jg .L__s3_composite_push_invalid
+    jmp .L__s3_composite_push_validate_next
+.L__s3_composite_push_validate_tryte:
+    cmp r9,-364
+    jl .L__s3_composite_push_invalid
+    cmp r9,364
+    jg .L__s3_composite_push_invalid
+.L__s3_composite_push_validate_next:
+    inc rcx
+    jmp .L__s3_composite_push_validate
+.L__s3_composite_push_invalid:
+    jmp __s3_fail_invalid_runtime_state
+.L__s3_composite_push_store:
+    mov r10,[r12]
+    mov rdi,[r10]
+    xor ecx,ecx
+    mov r8,[r10+8]
+.L__s3_composite_push_store_loop:
+    cmp rcx,r15
+    jae .L__s3_composite_push_done
+    movzx eax,byte ptr [r14+rcx]
+    mov r9,qword ptr [r13+rcx*8]
+    cmp eax,2
+    jae .L__s3_composite_push_store_qword
+    mov word ptr [rdi+r8],r9w
+    add r8,2
+    jmp .L__s3_composite_push_store_next
+.L__s3_composite_push_store_qword:
+    mov qword ptr [rdi+r8],r9
+    add r8,8
+.L__s3_composite_push_store_next:
+    inc rcx
+    jmp .L__s3_composite_push_store_loop
+.L__s3_composite_push_done:
+    mov rax,[r10+8]
+    add rax,rbx
+    mov [r10+8],rax
+    xor eax,eax
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop rbx
+    ret
+
+.type __s3_composite_vector_set,@function
+__s3_composite_vector_set:
+    push rbx
+    push r12
+    push r13
+    push r14
+    push r15
+    mov r12,rdi
+    mov r13,rdx
+    mov r14,rcx
+    mov r15,r8
+    mov r10,[r12]
+    test rsi,rsi
+    js __s3_fail_bounds
+    mov rax,rsi
+    imul rax,r9
+    jo __s3_fail_bounds
+    cmp rax,[r10+8]
+    jae __s3_fail_bounds
+    mov rbx,rax
+    xor ecx,ecx
+.L__s3_composite_set_validate:
+    cmp rcx,r15
+    jae .L__s3_composite_set_drop
+    movzx eax,byte ptr [r14+rcx]
+    mov r9,qword ptr [r13+rcx*8]
+    cmp eax,0
+    je .L__s3_composite_set_validate_ternary
+    cmp eax,1
+    je .L__s3_composite_set_validate_tryte
+    cmp eax,2
+    je .L__s3_composite_set_validate_next
+    cmp eax,4
+    ja .L__s3_composite_set_invalid
+    test r9,r9
+    jz .L__s3_composite_set_invalid
+    jmp .L__s3_composite_set_validate_next
+.L__s3_composite_set_validate_ternary:
+    cmp r9,-1
+    jl .L__s3_composite_set_invalid
+    cmp r9,1
+    jg .L__s3_composite_set_invalid
+    jmp .L__s3_composite_set_validate_next
+.L__s3_composite_set_validate_tryte:
+    cmp r9,-364
+    jl .L__s3_composite_set_invalid
+    cmp r9,364
+    jg .L__s3_composite_set_invalid
+.L__s3_composite_set_validate_next:
+    inc rcx
+    jmp .L__s3_composite_set_validate
+.L__s3_composite_set_invalid:
+    jmp __s3_fail_invalid_runtime_state
+.L__s3_composite_set_drop:
+    xor ecx,ecx
+    xor r8d,r8d
+.L__s3_composite_set_drop_loop:
+    cmp rcx,r15
+    jae .L__s3_composite_set_store
+    movzx eax,byte ptr [r14+rcx]
+    cmp eax,3
+    je .L__s3_composite_set_drop_owned
+    cmp eax,4
+    jne .L__s3_composite_set_drop_next
+.L__s3_composite_set_drop_owned:
+    mov r10,[r12]
+    mov rdi,[r10]
+    lea r9,[rdi+rbx]
+    mov rdx,[r9+r8]
+    test rdx,rdx
+    jz __s3_fail_invalid_runtime_state
+    push rcx
+    sub rsp,8
+    mov rdi,rdx
+    call __s3_dyn_drop_descriptor
+    add rsp,8
+    pop rcx
+.L__s3_composite_set_drop_next:
+    movzx eax,byte ptr [r14+rcx]
+    cmp eax,2
+    jae .L__s3_composite_set_drop_wide
+    add r8,2
+    jmp .L__s3_composite_set_drop_advance
+.L__s3_composite_set_drop_wide:
+    add r8,8
+.L__s3_composite_set_drop_advance:
+    inc rcx
+    jmp .L__s3_composite_set_drop_loop
+.L__s3_composite_set_store:
+    mov r10,[r12]
+    mov rdi,[r10]
+    lea r11,[rdi+rbx]
+    xor ecx,ecx
+    xor r8d,r8d
+.L__s3_composite_set_store_loop:
+    cmp rcx,r15
+    jae .L__s3_composite_set_done
+    movzx eax,byte ptr [r14+rcx]
+    mov r9,qword ptr [r13+rcx*8]
+    cmp eax,2
+    jae .L__s3_composite_set_store_qword
+    mov word ptr [r11+r8],r9w
+    add r8,2
+    jmp .L__s3_composite_set_store_next
+.L__s3_composite_set_store_qword:
+    mov qword ptr [r11+r8],r9
+    add r8,8
+.L__s3_composite_set_store_next:
+    inc rcx
+    jmp .L__s3_composite_set_store_loop
+.L__s3_composite_set_done:
+    xor eax,eax
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop rbx
+    ret
+
+.type __s3_composite_vector_get,@function
+__s3_composite_vector_get:
+    push rbx
+    push r12
+    push r13
+    push r14
+    push r15
+    mov r12,rdi
+    mov r13,rsi
+    mov r14,rcx
+    mov r15,r8
+    mov rbx,r9
+    mov r10,[r13]
+    test rdx,rdx
+    js __s3_fail_bounds
+    mov rax,rdx
+    imul rax,rbx
+    jo __s3_fail_bounds
+    cmp rax,[r10+8]
+    jae __s3_fail_bounds
+    mov r11,rax
+    mov r10,[r10]
+    lea r9,[r10+r11]
+    xor ecx,ecx
+    xor r8d,r8d
+.L__s3_composite_get_loop:
+    cmp rcx,r15
+    jae .L__s3_composite_get_done
+    movzx eax,byte ptr [r14+rcx]
+    cmp eax,2
+    jae .L__s3_composite_get_wide
+    movsx rdx,word ptr [r9+r8]
+    mov qword ptr [r12+rcx*8],rdx
+    add r8,2
+    jmp .L__s3_composite_get_next
+.L__s3_composite_get_wide:
+    mov rdx,qword ptr [r9+r8]
+    mov qword ptr [r12+rcx*8],rdx
+    add r8,8
+.L__s3_composite_get_next:
+    inc rcx
+    jmp .L__s3_composite_get_loop
+.L__s3_composite_get_done:
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop rbx
+    ret
+
+.type __s3_composite_vector_pop,@function
+__s3_composite_vector_pop:
+    push rbx
+    push r12
+    push r13
+    push r14
+    push r15
+    mov r12,rdi
+    mov r13,rsi
+    mov r14,rdx
+    mov r15,rcx
+    mov rbx,r8
+    mov r10,[r13]
+    mov rax,[r10+8]
+    cmp rax,rbx
+    jb __s3_fail_bounds
+    sub rax,rbx
+    mov [r10+8],rax
+    mov r11,rax
+    mov r10,[r10]
+    lea r9,[r10+r11]
+    xor ecx,ecx
+    xor r8d,r8d
+.L__s3_composite_pop_loop:
+    cmp rcx,r15
+    jae .L__s3_composite_pop_done
+    movzx eax,byte ptr [r14+rcx]
+    cmp eax,2
+    jae .L__s3_composite_pop_wide
+    movsx rdx,word ptr [r9+r8]
+    mov qword ptr [r12+rcx*8],rdx
+    add r8,2
+    jmp .L__s3_composite_pop_next
+.L__s3_composite_pop_wide:
+    mov rdx,qword ptr [r9+r8]
+    mov qword ptr [r12+rcx*8],rdx
+    add r8,8
+.L__s3_composite_pop_next:
+    inc rcx
+    jmp .L__s3_composite_pop_loop
+.L__s3_composite_pop_done:
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop rbx
+    ret
+
+.type __s3_composite_vector_clone,@function
+__s3_composite_vector_clone:
+    push rbx
+    push r12
+    push r13
+    push r14
+    push r15
+    mov r13,rdi
+    mov r14,rsi
+    mov r15,rdx
+    mov rbx,rcx
+    mov r10,[r13]
+    mov rdi,[r10+16]
+    call __s3_dyn_new
+    mov r12,rax
+    mov r10,[r13]
+    mov rax,[r10+8]
+    mov [r12+8],rax
+    mov rcx,rax
+    mov rsi,[r10]
+    mov rdi,[r12]
+    call __s3_dyn_copy
+    xor r11d,r11d
+.L__s3_composite_clone_element:
+    mov r10,[r13]
+    cmp r11,[r10+8]
+    jae .L__s3_composite_clone_done
+    xor ecx,ecx
+    xor edx,edx
+.L__s3_composite_clone_cell:
+    cmp rcx,r15
+    jae .L__s3_composite_clone_next_element
+    movzx eax,byte ptr [r14+rcx]
+    cmp eax,3
+    je .L__s3_composite_clone_owned
+    cmp eax,4
+    jne .L__s3_composite_clone_advance
+.L__s3_composite_clone_owned:
+    mov r10,[r13]
+    mov rdi,[r10]
+    add rdi,r11
+    mov rdi,[rdi+rdx]
+    test rdi,rdi
+    jz __s3_fail_invalid_runtime_state
+    push r11
+    push rdx
+    push rcx
+    sub rsp,8
+    call __s3_dyn_clone_descriptor
+    add rsp,8
+    pop rcx
+    pop rdx
+    pop r11
+    mov r10,[r12]
+    add r10,r11
+    mov [r10+rdx],rax
+.L__s3_composite_clone_advance:
+    movzx eax,byte ptr [r14+rcx]
+    cmp eax,2
+    jae .L__s3_composite_clone_advance_wide
+    add rdx,2
+    jmp .L__s3_composite_clone_advance_next
+.L__s3_composite_clone_advance_wide:
+    add rdx,8
+.L__s3_composite_clone_advance_next:
+    inc rcx
+    jmp .L__s3_composite_clone_cell
+.L__s3_composite_clone_next_element:
+    add r11,rbx
+    jmp .L__s3_composite_clone_element
+.L__s3_composite_clone_done:
+    mov rax,r12
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop rbx
+    ret
+
+.type __s3_composite_vector_slice,@function
+__s3_composite_vector_slice:
+    push rbx
+    push r12
+    push r13
+    push r14
+    push r15
+    mov r13,rdi
+    mov r14,rcx
+    mov r15,r8
+    mov rbx,r9
+    test rsi,rsi
+    js __s3_fail_bounds
+    test rdx,rdx
+    js __s3_fail_bounds
+    cmp rdx,rsi
+    jl __s3_fail_bounds
+    mov rax,rsi
+    imul rax,rbx
+    jo __s3_fail_bounds
+    mov r12,rax
+    mov rax,rdx
+    imul rax,rbx
+    jo __s3_fail_bounds
+    mov r11,rax
+    mov r10,[r13]
+    cmp r11,[r10+8]
+    ja __s3_fail_bounds
+    sub r11,r12
+    sub rsp,16
+    mov [rsp],r12
+    mov [rsp+8],r11
+    mov rdi,r11
+    call __s3_dyn_new
+    mov r12,rax
+    mov r11,[rsp+8]
+    mov rcx,r11
+    mov r10,[r13]
+    mov rsi,[r10]
+    add rsi,[rsp]
+    mov rdi,[r12]
+    call __s3_dyn_copy
+    mov [r12+8],r11
+    add rsp,16
+    xor r10d,r10d
+.L__s3_composite_slice_element:
+    mov r11,[r12+8]
+    cmp r10,r11
+    jae .L__s3_composite_slice_done
+    xor ecx,ecx
+    xor edx,edx
+.L__s3_composite_slice_cell:
+    cmp rcx,r15
+    jae .L__s3_composite_slice_next_element
+    movzx eax,byte ptr [r14+rcx]
+    cmp eax,3
+    je .L__s3_composite_slice_owned
+    cmp eax,4
+    jne .L__s3_composite_slice_advance
+.L__s3_composite_slice_owned:
+    mov rdi,[r12]
+    add rdi,r10
+    mov rdi,[rdi+rdx]
+    test rdi,rdi
+    jz __s3_fail_invalid_runtime_state
+    push r10
+    push rdx
+    push rcx
+    sub rsp,8
+    call __s3_dyn_clone_descriptor
+    add rsp,8
+    pop rcx
+    pop rdx
+    pop r10
+    mov r11,[r12]
+    add r11,r10
+    mov [r11+rdx],rax
+.L__s3_composite_slice_advance:
+    movzx eax,byte ptr [r14+rcx]
+    cmp eax,2
+    jae .L__s3_composite_slice_advance_wide
+    add rdx,2
+    jmp .L__s3_composite_slice_advance_next
+.L__s3_composite_slice_advance_wide:
+    add rdx,8
+.L__s3_composite_slice_advance_next:
+    inc rcx
+    jmp .L__s3_composite_slice_cell
+.L__s3_composite_slice_next_element:
+    add r10,rbx
+    jmp .L__s3_composite_slice_element
+.L__s3_composite_slice_done:
+    mov rax,r12
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop rbx
+    ret
+
 .type __s3_i64_map_find,@function
 __s3_i64_map_find:
     mov r10,[rdi]

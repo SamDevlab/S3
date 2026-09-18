@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import hashlib
+import base64
 from dataclasses import dataclass
 from enum import Enum
 
 from .diagnostics import SourceLocation
+from .vector_types import COMPOSITE_VECTOR_BUILTIN_PREFIX
 
 
 class IRType(Enum):
@@ -19,6 +21,67 @@ class IRType(Enum):
     TEXT = "text"
     VECTOR = "vector"
     REFERENCE = "reference"
+
+
+def composite_vector_runtime_signature(
+    name: str,
+) -> tuple[tuple[IRType, ...], tuple[IRType, ...]] | None:
+    """Decode the verifier-visible signature of a monomorphized vector call."""
+
+    decoded = _decode_composite_vector_runtime_name(name)
+    if decoded is None:
+        return None
+    cells, operation = decoded
+    reference = (IRType.REFERENCE,)
+    if operation == "new":
+        return (IRType.I64,), (IRType.VECTOR,)
+    if operation in {"len", "capacity"}:
+        return reference, (IRType.I64,)
+    if operation == "reserve":
+        return (IRType.REFERENCE, IRType.I64), (IRType.TRYTE,)
+    if operation == "push":
+        return (IRType.REFERENCE, *cells), (IRType.TRYTE,)
+    if operation == "pop":
+        return reference, cells
+    if operation == "get":
+        return (IRType.REFERENCE, IRType.I64), cells
+    if operation == "set":
+        return (IRType.REFERENCE, IRType.I64, *cells), (IRType.TRYTE,)
+    if operation == "clone":
+        return reference, (IRType.VECTOR,)
+    if operation == "slice":
+        return (IRType.REFERENCE, IRType.I64, IRType.I64), (IRType.VECTOR,)
+    return None
+
+
+def composite_vector_runtime_cell_types(name: str) -> tuple[IRType, ...] | None:
+    """Return the statically encoded cells for a composite vector builtin."""
+
+    decoded = _decode_composite_vector_runtime_name(name)
+    return None if decoded is None else decoded[0]
+
+
+def _decode_composite_vector_runtime_name(
+    name: str,
+) -> tuple[tuple[IRType, ...], str] | None:
+    prefix = COMPOSITE_VECTOR_BUILTIN_PREFIX
+    if not name.startswith(prefix):
+        return None
+    parts = name[len(prefix) :].split("__")
+    if len(parts) != 3:
+        return None
+    encoded_type, encoded_cells, operation = parts
+    if not encoded_type or encoded_cells == "empty":
+        return None
+    try:
+        padding = "=" * (-len(encoded_type) % 4)
+        type_key = base64.urlsafe_b64decode(encoded_type + padding).decode("utf-8")
+        cells = tuple(IRType(code) for code in encoded_cells.split("-"))
+    except (UnicodeDecodeError, ValueError, base64.binascii.Error):
+        return None
+    if not type_key or not cells:
+        return None
+    return cells, operation
 
 
 DYNAMIC_BUILTIN_SIGNATURES: dict[str, tuple[tuple[IRType, ...], tuple[IRType, ...]]] = {

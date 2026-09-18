@@ -22,7 +22,12 @@ from .registers import (
     SYSV_INTEGER_ARGUMENT_REGISTERS,
 )
 from ...numeric_abi import SYSV_FLOAT_ARGUMENT_REGISTERS
-from ...ir import DYNAMIC_BUILTIN_SIGNATURES
+from ...ir import (
+    DYNAMIC_BUILTIN_SIGNATURES,
+    IRType,
+    composite_vector_runtime_cell_types,
+    composite_vector_runtime_signature,
+)
 from .runtime import render_runtime
 from .allocation import AllocationPlan, analyze_allocation
 from .liveness import analyze_liveness
@@ -32,6 +37,27 @@ from .register_init_safety import proven_initialized_register_reads
 
 _IDENTIFIER = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _ARGUMENT_REGISTERS = SYSV_INTEGER_ARGUMENT_REGISTERS
+
+_COMPOSITE_CELL_SIZES = {
+    IRType.TRIT: 2,
+    IRType.TRYTE: 2,
+    IRType.I64: 8,
+    IRType.F64: 8,
+    IRType.STRING: 8,
+    IRType.BYTES: 8,
+    IRType.TEXT: 8,
+    IRType.VECTOR: 8,
+}
+_COMPOSITE_METADATA_KINDS = {
+    IRType.TRIT: 0,
+    IRType.TRYTE: 1,
+    IRType.I64: 2,
+    IRType.F64: 2,
+    IRType.STRING: 2,
+    IRType.BYTES: 4,
+    IRType.TEXT: 3,
+    IRType.VECTOR: 2,
+}
 
 
 def _f64_bits(value: float) -> int:
@@ -134,6 +160,26 @@ class X8664Emitter:
         self._safe_register_reads: frozenset[tuple[str, int, int]] = frozenset()
         self._current_instruction_sites: dict[int, tuple[str, int]] = {}
         self._compact_ea_active = False
+        self._composite_builtins = tuple(
+            sorted(
+                {
+                    instruction.callee
+                    for function in program.functions
+                    for block in function.blocks
+                    for instruction in block.instructions
+                    if instruction.callee is not None
+                    and composite_vector_runtime_signature(instruction.callee) is not None
+                }
+            )
+        )
+        self._composite_metadata_labels = {
+            name: f".L__s3_composite_meta_{index}"
+            for index, name in enumerate(self._composite_builtins)
+        }
+        self._composite_wrapper_labels = {
+            name: f"__s3_builtin_composite_{index}"
+            for index, name in enumerate(self._composite_builtins)
+        }
 
     def emit(self) -> str:
         lines = [
@@ -144,9 +190,11 @@ class X8664Emitter:
         for function in self.program.functions:
             lines.extend(self._emit_function(function))
             lines.append("")
+        lines.extend(self._render_composite_vector_wrappers())
         lines.extend(self._render_failure_handlers())
         lines.extend(self._render_static_string_data())
         lines.extend(self._render_failure_data())
+        lines.extend(self._render_composite_vector_metadata())
         lines.append(render_runtime().rstrip())
         return "\n".join(lines) + "\n"
 
@@ -1147,7 +1195,10 @@ class X8664Emitter:
         instruction: AssemblyInstruction,
     ) -> list[str]:
         assert instruction.callee is not None
-        if instruction.callee in DYNAMIC_BUILTIN_SIGNATURES:
+        if (
+            instruction.callee in DYNAMIC_BUILTIN_SIGNATURES
+            or composite_vector_runtime_signature(instruction.callee) is not None
+        ):
             return self._emit_dynamic_builtin_call(layout, instruction)
         callee = self.functions[instruction.callee]
         destinations = instruction.result_registers
@@ -1170,6 +1221,13 @@ class X8664Emitter:
     ) -> list[str]:
         """Lower an internal dynamic-buffer call using the logical descriptor ABI."""
 
+        assert instruction.callee is not None
+        composite_signature = composite_vector_runtime_signature(instruction.callee)
+        if composite_signature is not None:
+            operation = self._composite_operation(instruction.callee)
+            if len(composite_signature[1]) > 1 or operation in {"get", "pop"}:
+                return self._emit_dynamic_sret_call(layout, instruction)
+            return self._emit_dynamic_call_with_wrapper(layout, instruction)
         if len(instruction.result_registers) != 1:
             raise NativeBackendError(
                 "dynamic builtin calls must return exactly one logical cell"
@@ -1210,6 +1268,252 @@ class X8664Emitter:
         if self.register_allocation:
             lines.extend(self._restore_caller_saved(layout, survivor_physicals))
         lines.extend(self._write_register(layout, instruction.result_registers[0], "rax"))
+        return lines
+
+    def _emit_dynamic_call_with_wrapper(
+        self,
+        layout: FrameLayout,
+        instruction: AssemblyInstruction,
+    ) -> list[str]:
+        """Marshal a single-result call to a specialized composite wrapper."""
+
+        assert instruction.callee is not None
+        arguments = instruction.argument_registers
+        stack_arguments = arguments[len(_ARGUMENT_REGISTERS):]
+        padding = 1 if len(stack_arguments) % 2 else 0
+        survivor_physicals = self._call_survivor_physicals(instruction)
+        lines: list[str] = []
+        if self._physical_residence_active:
+            for register in arguments:
+                lines.extend(self._snapshot_register(layout, register))
+            lines.extend(self._save_caller_saved(layout, survivor_physicals))
+        if padding:
+            lines.append("    sub rsp, 8")
+        for register in reversed(stack_arguments):
+            lines.extend(
+                self._load_snapshot(layout, register, "rax")
+                if self._physical_residence_active
+                else self._read_register(layout, register, "rax")
+            )
+            lines.append("    push rax")
+        for register, target in zip(
+            arguments[: len(_ARGUMENT_REGISTERS)],
+            _ARGUMENT_REGISTERS,
+            strict=False,
+        ):
+            lines.extend(
+                self._load_snapshot(layout, register, target)
+                if self._physical_residence_active
+                else self._read_register(layout, register, target)
+            )
+        lines.append(f"    call {self._composite_wrapper_labels[instruction.callee]}")
+        cleanup = (len(stack_arguments) + padding) * 8
+        if cleanup:
+            lines.append(f"    add rsp, {cleanup}")
+        if self._physical_residence_active:
+            lines.extend(self._restore_caller_saved(layout, survivor_physicals))
+        lines.extend(self._write_register(layout, instruction.result_registers[0], "rax"))
+        return lines
+
+    def _emit_dynamic_sret_call(
+        self,
+        layout: FrameLayout,
+        instruction: AssemblyInstruction,
+    ) -> list[str]:
+        """Use the established hidden-sret ABI for multi-cell vector reads."""
+
+        assert instruction.callee is not None
+        signature = composite_vector_runtime_signature(instruction.callee)
+        assert signature is not None
+        result_width = len(signature[1])
+        if len(instruction.result_registers) != result_width:
+            raise NativeBackendError("composite vector result width mismatch")
+        arguments = instruction.argument_registers
+        stack_argument_capacity = max(len(_ARGUMENT_REGISTERS) - 1, 0)
+        stack_arguments = arguments[stack_argument_capacity:]
+        pushed_words = len(stack_arguments)
+        padding = 1 if (pushed_words + 1) % 2 else 0
+        sret_size = result_width * 8
+        survivor_physicals = self._call_survivor_physicals(instruction)
+        lines: list[str] = []
+        if self._physical_residence_active:
+            for register in arguments:
+                lines.extend(self._snapshot_register(layout, register))
+            lines.extend(self._save_caller_saved(layout, survivor_physicals))
+        if padding:
+            lines.append("    sub rsp, 8")
+        lines.append(f"    sub rsp, {sret_size}")
+        lines.append("    mov rdi, rsp")
+        for register in reversed(stack_arguments):
+            lines.extend(
+                self._load_snapshot(layout, register, "rax")
+                if self._physical_residence_active
+                else self._read_register(layout, register, "rax")
+            )
+            lines.append("    push rax")
+        for register, target in zip(
+            arguments[:stack_argument_capacity],
+            _ARGUMENT_REGISTERS[1:],
+            strict=False,
+        ):
+            lines.extend(
+                self._load_snapshot(layout, register, target)
+                if self._physical_residence_active
+                else self._read_register(layout, register, target)
+            )
+        lines.append(f"    call {self._composite_wrapper_labels[instruction.callee]}")
+        if self._physical_residence_active:
+            lines.extend(self._restore_caller_saved(layout, survivor_physicals))
+        for index, destination in enumerate(instruction.result_registers):
+            lines.append(f"    mov rax, qword ptr [rsp + {pushed_words * 8 + index * 8}]")
+            lines.extend(self._write_register(layout, destination, "rax"))
+        cleanup = sret_size + (pushed_words + padding) * 8
+        if cleanup:
+            lines.append(f"    add rsp, {cleanup}")
+        return lines
+
+    @staticmethod
+    def _composite_operation(name: str) -> str:
+        return name.rsplit("__", 1)[-1]
+
+    def _composite_vector_layout(
+        self,
+        name: str,
+    ) -> tuple[tuple[IRType, ...], int, str]:
+        cells = composite_vector_runtime_cell_types(name)
+        if cells is None:
+            raise NativeBackendError("malformed composite vector builtin")
+        try:
+            stride = sum(_COMPOSITE_CELL_SIZES[cell] for cell in cells)
+        except KeyError as error:
+            raise NativeBackendError("unsupported composite vector cell type") from error
+        return cells, stride, self._composite_operation(name)
+
+    def _render_composite_vector_wrappers(self) -> list[str]:
+        if not self._composite_builtins:
+            return []
+        lines = [".section .text"]
+        for name in self._composite_builtins:
+            cells, stride, operation = self._composite_vector_layout(name)
+            label = self._composite_wrapper_labels[name]
+            metadata = self._composite_metadata_labels[name]
+            lines.extend((f".type {label},@function", f"{label}:"))
+            if operation == "new":
+                lines.extend((f"    mov esi, {stride}", "    jmp __s3_vec_new"))
+            elif operation in {"len", "capacity"}:
+                lines.extend(
+                    (
+                        f"    mov esi, {stride}",
+                        f"    jmp __s3_vec_{operation}_stride",
+                    )
+                )
+            elif operation == "reserve":
+                lines.extend((f"    mov edx, {stride}", "    jmp __s3_vec_reserve"))
+            elif operation in {"push", "set"}:
+                lines.extend(self._render_composite_vector_buffered_wrapper(
+                    operation,
+                    len(cells),
+                    stride,
+                    metadata,
+                ))
+            elif operation == "get":
+                lines.extend(
+                    (
+                        f"    lea rcx, [rip + {metadata}]",
+                        f"    mov r8d, {len(cells)}",
+                        f"    mov r9d, {stride}",
+                        "    jmp __s3_composite_vector_get",
+                    )
+                )
+            elif operation == "pop":
+                lines.extend(
+                    (
+                        f"    lea rdx, [rip + {metadata}]",
+                        f"    mov ecx, {len(cells)}",
+                        f"    mov r8d, {stride}",
+                        "    jmp __s3_composite_vector_pop",
+                    )
+                )
+            elif operation == "clone":
+                lines.extend(
+                    (
+                        f"    lea rsi, [rip + {metadata}]",
+                        f"    mov edx, {len(cells)}",
+                        f"    mov ecx, {stride}",
+                        "    jmp __s3_composite_vector_clone",
+                    )
+                )
+            elif operation == "slice":
+                lines.extend(
+                    (
+                        f"    lea rcx, [rip + {metadata}]",
+                        f"    mov r8d, {len(cells)}",
+                        f"    mov r9d, {stride}",
+                        "    jmp __s3_composite_vector_slice",
+                    )
+                )
+            else:
+                raise NativeBackendError(
+                    f"unsupported composite vector operation '{operation}'"
+                )
+            lines.extend((f".size {label}, .-{label}", ""))
+        return lines
+
+    @staticmethod
+    def _render_composite_vector_buffered_wrapper(
+        operation: str,
+        cell_count: int,
+        stride: int,
+        metadata: str,
+    ) -> list[str]:
+        if cell_count < 1:
+            raise NativeBackendError("composite vector elements must contain cells")
+        stack_bytes = cell_count * 8 + (8 if cell_count % 2 == 0 else 0)
+        if operation == "push":
+            source_registers = ("rsi", "rdx", "rcx", "r8", "r9")
+            first_stack_cell = 5
+            call_arguments = (
+                "    mov rsi, r10",
+                f"    lea rdx, [rip + {metadata}]",
+                f"    mov ecx, {cell_count}",
+                f"    mov r8d, {stride}",
+                "    call __s3_composite_vector_push",
+            )
+        else:
+            source_registers = ("rdx", "rcx", "r8", "r9")
+            first_stack_cell = 4
+            call_arguments = (
+                "    mov rdx, r10",
+                f"    lea rcx, [rip + {metadata}]",
+                f"    mov r8d, {cell_count}",
+                f"    mov r9d, {stride}",
+                "    call __s3_composite_vector_set",
+            )
+        lines = [f"    sub rsp, {stack_bytes}", "    mov r10, rsp"]
+        for index, register in enumerate(source_registers[:cell_count]):
+            lines.append(f"    mov qword ptr [r10 + {index * 8}], {register}")
+        for index in range(len(source_registers), cell_count):
+            source_offset = stack_bytes + 8 + (index - first_stack_cell) * 8
+            lines.extend(
+                (
+                    f"    mov rax, qword ptr [rsp + {source_offset}]",
+                    f"    mov qword ptr [r10 + {index * 8}], rax",
+                )
+            )
+        lines.extend(call_arguments)
+        lines.extend((f"    add rsp, {stack_bytes}", "    ret"))
+        return lines
+
+    def _render_composite_vector_metadata(self) -> list[str]:
+        if not self._composite_builtins:
+            return []
+        lines = [".section .rodata"]
+        for name in self._composite_builtins:
+            cells, _, _ = self._composite_vector_layout(name)
+            metadata = self._composite_metadata_labels[name]
+            kinds = ", ".join(str(_COMPOSITE_METADATA_KINDS[cell]) for cell in cells)
+            lines.extend((f"{metadata}:", f"    .byte {kinds}"))
+        lines.append("")
         return lines
 
     def _emit_scalar_call(
