@@ -1,0 +1,68 @@
+module selfhost.substrate.program_registry
+
+record RegistryState:
+    module_ids: vector<i64>
+    function_ids: vector<i64>
+    nominal_ids: vector<i64>
+    accepted: trit
+    digest: i64
+
+fn registry_contains(values: &vector<i64>, wanted: i64) -> trit:
+    mut index: i64 = 0
+    while index < vector_len<i64>(values):
+        match vector_get<i64>(values, index) == wanted:
+            -1:
+                return -1
+            0:
+                index = index + 1
+            1:
+                return 1
+    return 0
+
+export fn program_registry_case(case_id: i64) -> i64:
+    mut modules: vector<i64> = vector_new<i64>(8)
+    mut functions: vector<i64> = vector_new<i64>(8)
+    mut nominal: vector<i64> = vector_new<i64>(8)
+    discard vector_push<i64>(&mut modules, 10)
+    discard vector_push<i64>(&mut modules, 20)
+    discard vector_push<i64>(&mut modules, 30)
+    discard vector_push<i64>(&mut functions, 100)
+    discard vector_push<i64>(&mut functions, 200)
+    discard vector_push<i64>(&mut functions, 300)
+    discard vector_push<i64>(&mut nominal, 400)
+    discard vector_push<i64>(&mut nominal, 500)
+    mut accepted: i64 = 1
+    match case_id <=> 6:
+        -1:
+            discard vector_push<i64>(&mut functions, 600 + case_id)
+        0:
+            discard vector_push<i64>(&mut functions, 200)
+            accepted = 0
+        1:
+            discard vector_push<i64>(&mut nominal, 400)
+            accepted = 0
+    mut digest: i64 = 0
+    mut index: i64 = 0
+    while index < vector_len<i64>(&modules):
+        digest = digest + vector_get<i64>(&modules, index) * 3
+        index = index + 1
+    index = 0
+    while index < vector_len<i64>(&functions):
+        digest = digest + vector_get<i64>(&functions, index) * 5
+        index = index + 1
+    index = 0
+    while index < vector_len<i64>(&nominal):
+        digest = digest + vector_get<i64>(&nominal, index) * 7
+        index = index + 1
+    match registry_contains(&functions, 200) == registry_contains(&functions, 200):
+        -1:
+            accepted = 0
+        0:
+            accepted = 0
+        1:
+            accepted = accepted
+    return accepted * 100000 + digest
+
+export fn program_registry_anchor() -> i64:
+    return program_registry_case(0)
+

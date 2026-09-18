@@ -1,0 +1,52 @@
+module selfhost.substrate.type_arena
+
+record TypeState:
+    type_ids: vector<i64>
+    canonical_hits: i64
+    accepted: trit
+
+fn type_contains(values: &vector<i64>, wanted: i64) -> trit:
+    mut index: i64 = 0
+    while index < vector_len<i64>(values):
+        match vector_get<i64>(values, index) == wanted:
+            -1:
+                return -1
+            0:
+                index = index + 1
+            1:
+                return 1
+    return 0
+
+export fn type_arena_case(case_id: i64) -> i64:
+    mut types: vector<i64> = vector_new<i64>(12)
+    discard vector_push<i64>(&mut types, 0)
+    discard vector_push<i64>(&mut types, 1)
+    discard vector_push<i64>(&mut types, 2)
+    discard vector_push<i64>(&mut types, 100)
+    discard vector_push<i64>(&mut types, 101)
+    discard vector_push<i64>(&mut types, 200)
+    mut hits: i64 = 0
+    mut accepted: i64 = 1
+    mut index: i64 = 0
+    while index < vector_len<i64>(&types):
+        match type_contains(&types, vector_get<i64>(&types, index)):
+            -1:
+                accepted = 0
+            0:
+                accepted = 0
+            1:
+                hits = hits + 1
+        index = index + 1
+    match case_id <=> 6:
+        -1:
+            discard vector_push<i64>(&mut types, 300 + case_id)
+        0:
+            discard vector_push<i64>(&mut types, 101)
+            accepted = 0
+        1:
+            discard vector_push<i64>(&mut types, 400 + case_id)
+    return accepted * 100000 + hits * 1000 + vector_len<i64>(&types)
+
+export fn type_arena_anchor() -> i64:
+    return type_arena_case(0)
+
