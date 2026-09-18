@@ -195,12 +195,13 @@ this branch.
 `NO_UNRESOLVED_CODE_REGRESSION=YES`
 `READY_FOR_MAIN_MERGE=YES_WITH_CI_INFRASTRUCTURE_DEBT`
 
-PR #297 remains unmerged and should not be merged automatically. The branch
-is ready for review once the exact evidence is published. No generic map,
+PR #297 remains unmerged and should not be merged automatically. The PR is
+marked ready for review. No generic map,
 Stage1 V4, release, tag, PyPI, or shutdown action is part of this increment.
 
 `PR_297_STATE=OPEN`
-`PR_297_DRAFT=YES`
+`PR_297_HEAD=0c8e669ad00e140302aec3eb6c0d97e70d0775f9`
+`PR_297_DRAFT=NO`
 `PR_297_MERGED=NO`
 `SHUTDOWN_SCHEDULED=NO`
 `SHUTDOWN_EXECUTED=NO`
