@@ -485,7 +485,7 @@ def test_native_verifier_differential_matrix_is_immutable_and_repeatable(tmp_pat
 
     repository = Path(__file__).parents[1]
     verifier = (repository / "selfhost/substrate/verifier_kernel.s3").read_text(encoding="utf-8")
-    valid_cases = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 22, 23, 24, 25, 26, 27, 28, 29}
+    valid_cases = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 23, 24, 25, 26, 27, 28, 29}
     observed: dict[int, int] = {}
 
     for case in range(32):
