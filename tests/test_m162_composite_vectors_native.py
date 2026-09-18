@@ -4,7 +4,12 @@ import platform
 
 import pytest
 
-from bootstrap.s3.backends.x86_64 import NativeBackendError, NativeToolchain, generate_native_assembly
+from bootstrap.s3.backends.x86_64 import (
+    NativeBackendError,
+    NativeToolchain,
+    X8664Backend,
+    generate_native_assembly,
+)
 from bootstrap.s3.diagnostics import DiagnosticCode, SemanticError
 from bootstrap.s3.lexer import SyntaxMode
 from bootstrap.s3.pipeline import compile_source, run_source
@@ -262,6 +267,54 @@ fn main() -> i64:
     first = compile_source(source, "O0", mode=SyntaxMode.V0_6).assembly
     second = compile_source(source, "O0", mode=SyntaxMode.V0_6).assembly
     assert generate_native_assembly(first) == generate_native_assembly(second)
+
+
+def test_native_composite_vector_move_and_multiple_vector_types(
+    native_toolchain: NativeToolchain,
+    tmp_path,
+) -> None:
+    source = """\
+record Pair:
+    left: i64
+    right: i64
+fn consume(values: vector<Pair>) -> i64:
+    return vector_get<Pair>(&values, 0).left
+fn main() -> i64:
+    mut pairs: vector<Pair> = vector_new<Pair>(1)
+    mut numbers: vector<i64> = vector_new<i64>(1)
+    discard vector_push<Pair>(&mut pairs, Pair(left=8, right=13))
+    discard i64_vector_push(&mut numbers, 5)
+    return consume(pairs) + i64_vector_get(&numbers, 0)
+"""
+    _run_native(source, 13, native_toolchain, tmp_path / "move-multiple")
+
+
+def test_native_composite_vector_compact_ea_falls_back_safely(
+    native_toolchain: NativeToolchain,
+    tmp_path,
+) -> None:
+    source = """\
+record Pair:
+    left: i64
+    right: i64
+fn main() -> i64:
+    mut values: vector<Pair> = vector_new<Pair>(1)
+    discard vector_push<Pair>(&mut values, Pair(left=4, right=7))
+    return vector_get<Pair>(&values, 0).right
+"""
+    for optimization in ("O0", "O1"):
+        program = compile_source(source, optimization, mode=SyntaxMode.V0_6).assembly
+        summary = X8664Backend(native_policy="compact-ea").explain_native_policy(program)
+        assert summary.effective_policy.value == "baseline"
+        assert summary.fallback_reason_counts == {"reference_operations_present": 1}
+        executable = native_toolchain.build(
+            generate_native_assembly(program, native_policy="compact-ea"),
+            tmp_path / f"compact-{optimization.lower()}",
+        )
+        completed = native_toolchain.run(executable)
+        assert completed.returncode == 0
+        assert completed.stdout == "program returned: 7\n"
+        assert completed.stderr == ""
 
 
 def test_composite_vector_use_after_move_is_rejected_before_native_lowering() -> None:
