@@ -42,8 +42,9 @@ shape and direct-ID ordering without claiming to implement lexing.
 
 ## Parser boundary
 
-V1 deliberately uses the existing production Python recursive-descent parser as
-the grammar oracle:
+V1 now provides two explicit hosted paths.
+
+The compatibility/reference bridge remains available:
 
 ```text
 normalized source
@@ -55,9 +56,20 @@ normalized source
     -> generic SyntaxArena
 ```
 
-The hosted AST is a transient compatibility artifact. It is not the long-lived
-compiler representation and is not consumed by the generic verifier or
-whole-program IR control plane.
+The independent generic parser path is:
+
+```text
+normalized source
+    -> production Python lexer
+    -> generic TokenArena
+    -> GenericParser
+    -> generic SyntaxArena
+```
+
+`GenericParser` consumes `TokenArena` directly. It does not import or construct
+`bootstrap.s3.ast` values and does not call `bootstrap.s3.parser`. The
+reference bridge remains solely as a differential oracle and compatibility
+path.
 
 Therefore:
 
@@ -65,14 +77,16 @@ Therefore:
 REAL_SOURCE_INPUT=YES
 GENERIC_TOKEN_ARENA=YES
 GENERIC_SYNTAX_ARENA_OUTPUT=YES
-PYTHON_REFERENCE_PARSER_BACKEND=YES
+INDEPENDENT_GENERIC_PARSER=YES_HOSTED_V0_6
+REFERENCE_PARSER_DIFFERENTIAL_ORACLE=YES
 S3_NATIVE_PARSER=NO
 STAGE1_V4=NOT_AUTHORIZED
 ```
 
-A future independent generic parser must consume `TokenArena` directly and
-produce the same `SyntaxArena` contract. That replacement must not create a
-second AST model.
+V1 independent parsing intentionally targets the current default V0.6 grammar.
+V0.5 remains reference-backed until separately migrated. The independent parser
+must continue to produce the same generic SyntaxArena contract and must not
+create a second AST model.
 
 ## Syntax projection
 
@@ -139,7 +153,8 @@ No generic token or syntax identity is reconstructed by rescanning source.
 
 V1 does not:
 
-- replace the production lexer or parser;
+- replace the default production Python compiler/parser path;
+- replace the production lexer;
 - implement an S3-native lexer;
 - implement an S3-native parser;
 - execute semantic expression passes;
@@ -148,5 +163,6 @@ V1 does not:
 - turn `compile_program` into source-to-output compilation;
 - authorize self-host re-entry or Stage1 V4.
 
-The next parser-specific frontier after this bridge is an independent generic
-parser kernel over `TokenArena`, followed by ordinary-S3/native qualification.
+The next parser-specific frontier is ordinary-S3/native parser execution over
+the same TokenArena/SyntaxArena contract. Hosted parser independence is now a
+separate implemented capability; native parser execution remains unclaimed.
