@@ -346,6 +346,41 @@ class ProgramRegistry:
             for _, record in self.nominal_types.items()
         }
 
+    def _validate_import_cycles(self) -> None:
+        graph: dict[int, tuple[int, ...]] = {
+            module_id: ()
+            for module_id, _ in self.modules.items()
+        }
+        mutable: dict[int, list[int]] = {
+            module_id: []
+            for module_id in graph
+        }
+        for _, record in self.imports.items():
+            mutable[int(record.source_module_id)].append(int(record.target_module_id))
+        graph = {
+            module_id: tuple(sorted(set(targets)))
+            for module_id, targets in mutable.items()
+        }
+
+        visiting: set[int] = set()
+        visited: set[int] = set()
+
+        def visit(module_id: int) -> None:
+            if module_id in visited:
+                return
+            if module_id in visiting:
+                raise RegistrationError(
+                    "S3E_MODULE_CYCLE: module import cycle"
+                )
+            visiting.add(module_id)
+            for target in graph.get(module_id, ()):
+                visit(target)
+            visiting.remove(module_id)
+            visited.add(module_id)
+
+        for module_id in sorted(graph):
+            visit(module_id)
+
     @staticmethod
     def _module_key(spec: ModuleSpec) -> tuple[int, int, int, int]:
         return (spec.manifest_ordinal, spec.source_file_id, spec.module_symbol_id, spec.root_node_id)
@@ -429,6 +464,15 @@ class ProgramRegistry:
                 self.modules.append(module)
                 self._module_by_symbol[spec.module_symbol_id] = module_id
             module_specs = tuple(zip(ordered, tuple(self.modules.items())[-len(ordered):])) if ordered else ()
+            declared_exports: dict[int, set[int]] = {}
+            for _, existing_export in self.exports.items():
+                declared_exports.setdefault(
+                    int(existing_export.module_id), set()
+                ).add(existing_export.symbol_id)
+            for spec, (_, module) in module_specs:
+                declared_exports.setdefault(int(module.id), set()).update(
+                    item.symbol_id for item in spec.exports
+                )
             for spec, (_, module) in module_specs:
                 import_first = self.imports.checkpoint()
                 export_first = self.exports.checkpoint()
@@ -441,8 +485,20 @@ class ProgramRegistry:
                     if alias in aliases:
                         raise RegistrationError("S3E_IMPORT_DUPLICATE: duplicate import alias")
                     aliases.add(alias)
-                    if (int(target), item.imported_symbol_id) not in self._function_by_namespace and (int(target), item.imported_symbol_id) not in self._type_by_namespace:
-                        raise RegistrationError("S3E_IMPORT_UNKNOWN_SYMBOL: imported symbol is not registered")
+                    target_key = (int(target), item.imported_symbol_id)
+                    if (
+                        target_key not in self._function_by_namespace
+                        and target_key not in self._type_by_namespace
+                    ):
+                        raise RegistrationError(
+                            "S3E_IMPORT_UNKNOWN_SYMBOL: imported symbol is not registered"
+                        )
+                    if item.imported_symbol_id not in declared_exports.get(
+                        int(target), set()
+                    ):
+                        raise RegistrationError(
+                            "S3E_IMPORT_PRIVATE_SYMBOL: imported symbol is private"
+                        )
                     self.imports.append(ImportRecord(self.imports.checkpoint(), module.id, target, item.imported_symbol_id, alias, item.span))
                 exported: set[int] = set()
                 for item in sorted(spec.exports, key=lambda value: (value.ordinal, value.symbol_id, value.kind)):
@@ -458,6 +514,7 @@ class ProgramRegistry:
                     IdRange(import_first, self.imports.checkpoint() - import_first),
                     IdRange(export_first, self.exports.checkpoint() - export_first),
                 )
+            self._validate_import_cycles()
             return tuple(record for _, record in self.modules.items())
         except Exception:
             self.rollback(checkpoint)
