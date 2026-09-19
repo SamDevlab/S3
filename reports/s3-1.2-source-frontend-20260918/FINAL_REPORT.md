@@ -5,7 +5,7 @@
 ```text
 BASE_MAIN_SHA=4c7aaf4ad59fdacdd83f230e11a0bd979081c80a
 BRANCH=feat/s3-1.2-source-frontend
-IMPLEMENTATION_SOURCE_HEAD=e6b9122eb446d0f543e1d701b11219e22ecb85bb
+IMPLEMENTATION_SOURCE_HEAD=6717e38bb370dc4713f6caa829a7dd1b20c240e2
 PR=301
 PR_STATE=OPEN_DRAFT
 PR_MERGED=NO
@@ -36,8 +36,9 @@ S3_GENERIC_LEXER_STATE_SHAPE=YES
 S3_GENERIC_PARSER_STATE_SHAPE=YES
 
 FRONTEND_PROGRAM_REGISTRATION=YES_HOSTED
-FRONTEND_CONTROL_PLANE_INGESTION=YES_INPUT_SYNTAX_REGISTRATION
-COMPILE_PROGRAM_REAL_SOURCE=YES_STOPS_AT_TYPE
+FRONTEND_CONTROL_PLANE_INGESTION=YES_INPUT_SYNTAX_REGISTRATION_TYPE
+FRONTEND_TYPE_RESOLUTION=YES_HOSTED_CANONICAL_TRANSACTIONAL
+COMPILE_PROGRAM_REAL_SOURCE=YES_STOPS_AT_SEMANTIC
 PROGRAM_REGISTRY_IMPORT_VISIBILITY=ENFORCED
 PROGRAM_REGISTRY_TYPE_IMPORT_ALIAS=REJECTED_PER_LANGUAGE_CONTRACT
 PROGRAM_REGISTRY_MODULE_CYCLES=REJECTED
@@ -71,17 +72,23 @@ does not construct `bootstrap.s3.ast` values, and does not call
 `bootstrap.s3.parser`.
 
 The independent frontend is additionally bridged into the whole-program
-control plane. A fresh context can now consume real source through INPUT,
-SYNTAX, and REGISTRATION and stops with TYPE as the next legal phase.
-`compile_program` uses this path when prepared test artifacts are absent and
-fails closed at TYPE with `S3E_TYPE_PHASE_UNAVAILABLE`.
+control plane. A fresh context now consumes real source through INPUT, SYNTAX,
+REGISTRATION, and canonical TYPE resolution. `compile_program` uses this path
+when prepared test artifacts are absent and fails closed at SEMANTIC with
+`S3E_SEMANTIC_PHASE_UNAVAILABLE`.
 
 The registration bridge derives deterministic module/function/nominal/import/
 export identities directly from generic syntax. Implicit module identity follows
-the existing module-graph logical-path authority. ProgramRegistry now also
-enforces import visibility, rejects module import cycles, scopes field/variant
-ranges per nominal type, and retains unresolved field/payload type-syntax IDs
-for the later TYPE phase.
+the existing module-graph logical-path authority. ProgramRegistry also enforces
+import visibility, rejects module import cycles, scopes field/variant ranges per
+nominal type, and retains field/payload type-syntax IDs consumed by TYPE.
+
+The TYPE bridge resolves primitives, closed collections, arrays,
+references/slices, local/imported nominals, owner-sensitive type parameters,
+and instantiated nominal generics into canonical TypeArena identities. It
+publishes function signatures and node-type associations transactionally.
+A TYPE failure rolls back new TypeArena/SemanticState changes while preserving
+the committed ProgramRegistry.
 
 The default production compiler/frontend remains unchanged.
 
@@ -150,7 +157,12 @@ Focused tests now cover:
 - multi-file shared symbol identity;
 - exported function flag preservation;
 - private-import rejection, module-cycle rejection, and unsupported type-import
-  alias rejection in the registration path.
+  alias rejection in the registration path;
+- primitive/array/reference/collection type resolution;
+- local/imported nominal identity resolution;
+- owner-sensitive generic type parameters and nominal instantiation;
+- function signature publication and record/enum member type metadata;
+- TYPE rollback while preserving committed registration.
 
 No local pytest/compileall/native result is claimed here because this ChatGPT
 execution context has GitHub access but no shell access to the user's
@@ -172,7 +184,7 @@ S3_NATIVE_PARSER=NO
 SEMANTIC_EXPRESSION_ANALYZER=NO
 GENERIC_LOWERING=NO
 EMITTER=NO
-COMPILE_PROGRAM_REAL_SOURCE_TO_REGISTRATION=YES
+COMPILE_PROGRAM_REAL_SOURCE_TO_TYPE=YES
 TRUE_SOURCE_TO_OUTPUT_COMPILE_PROGRAM=NO
 
 SELFHOST_REENTRY_AUTHORIZED=NO
@@ -212,8 +224,8 @@ NEXT_SELFHOST_REPRESENTABILITY_BLOCKER=ORDINARY_S3_NATIVE_FRONTEND_EXECUTION
 ```
 
 For the hosted compiler architecture, the next legal control-plane phase is
-TYPE. Real semantic type resolution, semantic expression passes, lowering and
-emission remain unimplemented. Ordinary-S3 token/lexer/parser state shapes
+SEMANTIC. Canonical declaration type resolution is implemented; expression and
+declaration semantic analysis, lowering and emission remain unimplemented. Ordinary-S3 token/lexer/parser state shapes
 exist, but complete lexer/parser algorithms have not yet been executed as
 ordinary S3/native code.
 
