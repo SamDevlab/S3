@@ -171,6 +171,29 @@ def test_type_parameter_rejects_missing_owner_kind() -> None:
         )
 
 
+def test_type_arena_appends_capability_primitives_without_renumbering_core_ids() -> None:
+    arena = TypeArena()
+    assert int(arena.primitive(TypeKind.TRIT)) == 0
+    assert int(arena.primitive(TypeKind.TEXT)) == 6
+    assert int(arena.primitive(TypeKind.HOST_CAPABILITY)) == 7
+    assert int(arena.primitive(TypeKind.RESOURCE_HANDLE)) == 8
+
+
+def test_type_arena_rejects_dangling_element_and_argument_ids() -> None:
+    arena = TypeArena()
+    with pytest.raises(TypeArenaError, match="unknown element"):
+        arena.intern(TypeSpec(TypeKind.VECTOR, element_type_id=999))
+    with pytest.raises(TypeArenaError, match="type arguments"):
+        arena.intern(
+            TypeSpec(
+                TypeKind.INSTANTIATED,
+                module_id=0,
+                nominal_declaration_id=0,
+                type_arguments=(999,),
+            )
+        )
+
+
 def test_semantic_state_keeps_explicit_associations_and_rolls_back() -> None:
     registry = ProgramRegistry()
     registry.register((_modules()[0],))
