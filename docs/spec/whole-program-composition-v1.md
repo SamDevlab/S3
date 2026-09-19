@@ -63,7 +63,8 @@ anonymous-module naming scheme.
 `ProgramRegistry` owns indexed module, function, parameter, nominal type,
 field, variant, import, and export tables. Registration is declaration-only;
 function bodies are not analyzed. Import targets must be registered and
-exported, duplicate import aliases are rejected, direct/indirect module import
+exported, duplicate import aliases are rejected, type import aliases remain
+unsupported per the existing module contract, direct/indirect module import
 cycles fail closed, nominal field/variant ranges are scoped to each owner, and
 unresolved source type syntax identities are retained for the later TYPE
 phase.
