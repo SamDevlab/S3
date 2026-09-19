@@ -2,13 +2,16 @@
 
 This specification defines the whole-program control plane added after the
 generic syntax, IR, and verifier substrate. It is a state and ownership
-contract. It is not a parser, semantic expression analyzer, lowerer, emitter,
-Stage1 compiler, or self-hosting authorization.
+contract. The control plane can now ingest real source through the independent
+hosted frontend, but it is not a semantic expression analyzer, generic lowerer,
+emitter, Stage1 compiler, or self-hosting authorization.
 
 ## Boundary
 
-The only executable composition path in V1 consumes explicitly prepared
-artifacts:
+V1 exposes two explicit composition paths.
+
+The prepared-artifact path remains available for architecture, transaction, and
+verifier tests:
 
 ```text
 SourceBundle + SyntaxArena + registration view + optional semantic seed
@@ -18,8 +21,26 @@ SourceBundle + SyntaxArena + registration view + optional semantic seed
 ```
 
 Prepared syntax, semantic, IR, and output values are labeled
-`TEST_ARTIFACT_INPUT`. `compile_program` fails closed when they are absent; it
-does not invoke a host parser or synthesize a semantic result.
+`TEST_ARTIFACT_INPUT`.
+
+The real-source path now performs:
+
+```text
+SourceBundle
+    -> GenericLexer
+    -> TokenArena
+    -> GenericParser
+    -> SyntaxArena
+    -> registration view
+    -> ProgramRegistry
+    -> TYPE:FAILED(S3E_TYPE_PHASE_UNAVAILABLE)
+```
+
+The real-source path commits `INPUT`, `SYNTAX`, and `REGISTRATION`, then
+fails closed at `TYPE`. It does not synthesize type resolution, expression
+semantics, IR, verification, emission, or output. The independent hosted
+frontend is an architecture candidate; the default production Python compiler
+and parser remain unchanged.
 
 ## Identity and ownership
 
@@ -34,9 +55,18 @@ file ID, module symbol ID, and root node ID. Functions and nominal declarations
 are ordered by explicit declaration ordinal and stable symbol/node identity.
 Host filesystem enumeration and Python hash order do not select identities.
 
+For real-source ingestion, an absent source `module` declaration uses the
+existing module-graph authority: normalized relative path, minus the `.s3`
+suffix, rendered as a dotted module id. The frontend does not define a parallel
+anonymous-module naming scheme.
+
 `ProgramRegistry` owns indexed module, function, parameter, nominal type,
 field, variant, import, and export tables. Registration is declaration-only;
-function bodies are not analyzed.
+function bodies are not analyzed. Import targets must be registered and
+exported, duplicate import aliases are rejected, direct/indirect module import
+cycles fail closed, nominal field/variant ranges are scoped to each owner, and
+unresolved source type syntax identities are retained for the later TYPE
+phase.
 
 ## TypeArena
 
@@ -83,10 +113,14 @@ INPUT -> SYNTAX -> REGISTRATION -> TYPE -> SEMANTIC -> LOWERING
 ```
 
 `LOWERING` and `EMITTER` are explicitly skipped for prepared-artifact tests.
-They are never reported as executed. A phase can be `RUNNING`, `COMMITTED`,
-`FAILED`, or `SKIPPED`. Invalid order, duplicate begin, and commit without a
-running phase are rejected. A failed phase records one diagnostic and all
-dependent phases become `SKIPPED`.
+They are never reported as executed. In the real-source path, INPUT, SYNTAX, and
+REGISTRATION commit, TYPE fails with the current unavailable-phase diagnostic,
+and every dependent phase is marked `SKIPPED`.
+
+A phase can be `RUNNING`, `COMMITTED`, `FAILED`, or `SKIPPED`. Invalid
+order, duplicate begin, and commit without a running phase are rejected. A
+failed phase records one diagnostic and all dependent phases become
+`SKIPPED`.
 
 The current implementation uses cursor checkpoints rather than copying the
 whole context. Rollback removes only post-checkpoint arena entries and restores
@@ -108,13 +142,17 @@ paths, clocks, process IDs, and host object addresses.
 
 The existing Python compiler and `CompilerContext` remain the default production
 pipeline. `WholeProgramContext` is a clearly named architectural session and
-does not replace that API. The existing generic verifier is called directly;
-its invariants are not duplicated.
+does not replace that API. The independent hosted `GenericLexer` and
+`GenericParser` feed the control plane only through the generic TokenArena /
+SyntaxArena contract. The existing generic verifier is called directly in the
+prepared-IR path; its invariants are not duplicated.
 
 The S3 files under `selfhost/substrate/` are ordinary representability
-projections for registration, type canonicalization, phases, diagnostics, and
-context state. They do not constitute a Stage1 candidate.
+projections for registration, type canonicalization, phases, diagnostics,
+frontend state, and context state. They do not constitute a Stage1 candidate
+and do not prove native lexer/parser execution.
 
-Not implemented by V1: lexer, parser, expression semantics, generic lowering,
-optimizer, emitter, source-to-output compilation, Stage1 V4, Stage2, Stage3,
-release, or self-host re-entry.
+Not implemented by V1: real TYPE/semantic resolution from generic syntax,
+expression semantic passes, generic lowering, optimizer integration for this
+pipeline, emitter, source-to-output compilation, ordinary-S3/native complete
+frontend execution, Stage1 V4, Stage2, Stage3, release, or self-host re-entry.
