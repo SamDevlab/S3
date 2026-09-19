@@ -98,6 +98,22 @@ path when no prepared test artifacts are supplied and fails closed at TYPE with
 `S3E_TYPE_PHASE_UNAVAILABLE`. No semantic, lowering, verifier, emitter, or
 output success is fabricated.
 
+The hosted frontend is now also connected through deterministic program
+registration and a canonical TYPE bridge. Registered parameter/result/field/
+variant type syntax resolves into compiler-owned `TypeId` values, owner-sensitive
+type parameters, nominal identities, and function signatures. A TYPE failure
+rolls back post-checkpoint type/semantic associations while preserving the
+already committed ProgramRegistry.
+
+The real-source composition path now reaches:
+
+```text
+INPUT -> SYNTAX -> REGISTRATION -> TYPE
+```
+
+and stops before semantic-expression/declaration analysis. It does not claim
+generic semantic passes, lowering, emission, Stage1, or self-host execution.
+
 `SELFHOST_REENTRY_AUTHORIZED=NO` and `STAGE1_V4=NOT_AUTHORIZED` remain
 unchanged.
 
