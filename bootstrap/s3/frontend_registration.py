@@ -155,10 +155,6 @@ def _function_spec(
             f"function node {node.id} has no declared result type syntax"
         )
 
-    # Generic arity remains represented structurally on syntax in this bridge.
-    # Registration currently needs only parameter/result syntax identities.
-    _ = type_parameters
-
     return FunctionSpec(
         payload.symbol_id,
         node.id,
@@ -167,6 +163,7 @@ def _function_spec(
         ordinal,
         bool(payload.flags & 1),
         node.kind is NodeKind.FOREIGN_FUNCTION,
+        type_parameters,
     )
 
 
