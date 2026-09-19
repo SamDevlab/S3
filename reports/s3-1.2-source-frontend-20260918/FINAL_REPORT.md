@@ -5,7 +5,7 @@
 ```text
 BASE_MAIN_SHA=4c7aaf4ad59fdacdd83f230e11a0bd979081c80a
 BRANCH=feat/s3-1.2-source-frontend
-IMPLEMENTATION_SOURCE_HEAD=b95e270e5cf68c76c7721b21ce767f9734b780c6
+IMPLEMENTATION_SOURCE_HEAD=d2d2e93d243cae688ede4882897d06f7d3ab1b9f
 PR=301
 PR_STATE=OPEN_DRAFT
 PR_MERGED=NO
@@ -37,6 +37,7 @@ S3_GENERIC_PARSER_STATE_SHAPE=YES
 
 FRONTEND_PROGRAM_REGISTRATION=YES_HOSTED
 FRONTEND_CONTROL_PLANE_INGESTION=YES_INPUT_SYNTAX_REGISTRATION
+COMPILE_PROGRAM_REAL_SOURCE=YES_STOPS_AT_TYPE
 PROGRAM_REGISTRY_IMPORT_VISIBILITY=ENFORCED
 PROGRAM_REGISTRY_MODULE_CYCLES=REJECTED
 NOMINAL_FIELD_RANGES=PER_TYPE
@@ -71,6 +72,8 @@ does not construct `bootstrap.s3.ast` values, and does not call
 The independent frontend is additionally bridged into the whole-program
 control plane. A fresh context can now consume real source through INPUT,
 SYNTAX, and REGISTRATION and stops with TYPE as the next legal phase.
+`compile_program` uses this path when prepared test artifacts are absent and
+fails closed at TYPE with `S3E_TYPE_PHASE_UNAVAILABLE`.
 
 The registration bridge derives deterministic module/function/nominal/import/
 export identities directly from generic syntax. Implicit module identity follows
@@ -166,6 +169,7 @@ S3_NATIVE_PARSER=NO
 SEMANTIC_EXPRESSION_ANALYZER=NO
 GENERIC_LOWERING=NO
 EMITTER=NO
+COMPILE_PROGRAM_REAL_SOURCE_TO_REGISTRATION=YES
 TRUE_SOURCE_TO_OUTPUT_COMPILE_PROGRAM=NO
 
 SELFHOST_REENTRY_AUTHORIZED=NO
