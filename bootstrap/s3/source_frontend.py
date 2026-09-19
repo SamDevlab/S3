@@ -1,12 +1,15 @@
-"""Deterministic source-front-end projection into the generic SyntaxArena.
+"""Deterministic source frontend over TokenArena and SyntaxArena.
 
-This module is the first bridge from real S3 source text to the generic compiler
-data model. It deliberately reuses the production Python lexer/parser as the
-reference grammar implementation, but it does not reuse the hosted AST as the
-long-lived compiler representation: tokens are materialized into a direct-ID
-TokenArena and parsed AST values are projected into the generic SyntaxArena.
+This module exposes two hosted paths over one generic data contract:
 
-The ordinary-S3 parser kernel remains a separate representability boundary.
+* a compatibility/differential bridge using the production Python lexer/parser
+  and a transient hosted AST; and
+* an independent path using GenericLexer -> TokenArena -> GenericParser ->
+  SyntaxArena with no reference lexer/parser decisions.
+
+Both paths preserve direct token/node identities and deterministic source-bundle
+symbol identity.  Ordinary-S3/native execution of the complete frontend remains
+a separate representability and qualification boundary.
 """
 
 from __future__ import annotations
