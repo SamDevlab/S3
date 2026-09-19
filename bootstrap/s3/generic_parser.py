@@ -243,7 +243,6 @@ class GenericParser:
             self._active_type_parameters = previous
 
         children = type_parameters + parameters + (return_type, body)
-        flags = 1 if exported else 0
         return self._append(
             NodeKind.FUNCTION,
             start,
@@ -253,9 +252,9 @@ class GenericParser:
                 parameters[0] if parameters else 0,
                 len(parameters),
                 body,
+                1 if exported else 0,
             ),
             children=children,
-            flags=flags,
         )
 
     def _parse_type_parameters(self) -> tuple[tuple[int, ...], tuple[str, ...]]:
@@ -1466,13 +1465,7 @@ class GenericParser:
         payload=None,
         children: tuple[int, ...] = (),
         end: TokenRecord | None = None,
-        flags: int = 0,
     ) -> int:
-        if flags:
-            if isinstance(payload, FunctionPayload):
-                # Export is represented structurally by the declaration's source
-                # context today; FunctionPayload has no flags field.
-                pass
         span_end = end.span.end if end is not None else start.span.end
         for child_id in children:
             span_end = max(span_end, self.arena.node(child_id).span.end)
