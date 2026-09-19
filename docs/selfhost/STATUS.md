@@ -69,6 +69,23 @@ prepared artifacts; lexer, parser, expression semantics, lowering, emitter,
 Stage1 V4, Stage2, and Stage3 remain absent or unauthorized. The Python
 reference compiler remains the default production compiler.
 
+## Source frontend projection (2026-09-18)
+
+The next architecture increment connects real normalized source text to a
+direct-ID `TokenArena` and then projects the existing reference parser's output
+into the generic `SyntaxArena`. Multi-file `SourceBundle` parsing uses one
+shared symbol interner so equal names keep one deterministic identity across the
+bundle.
+
+This is an integration bridge, not an S3-native parser. The grammar authority is
+still the production Python recursive-descent parser, and the hosted AST is a
+transient compatibility artifact only. The ordinary-S3 token arena projection
+does not perform lexing or parsing. Independent generic parser execution and
+native qualification therefore remain a separate frontend frontier.
+
+`SELFHOST_REENTRY_AUTHORIZED=NO` and `STAGE1_V4=NOT_AUTHORIZED` remain
+unchanged.
+
 ## Relationship to existing milestones
 
 Existing self-hosting-related milestones and reports remain historical evidence.
