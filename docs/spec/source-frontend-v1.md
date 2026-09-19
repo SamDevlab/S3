@@ -167,6 +167,44 @@ SEMANTIC, LOWERING, VERIFICATION, EMITTER, OUTPUT, or FINALIZE as successful.
 Frontend or registration failure is converted into the existing structured
 phase failure path and dependent later phases are suppressed.
 
+## Registration and TYPE bridge
+
+The independent frontend now connects to the whole-program control plane
+without returning to the hosted AST.
+
+```text
+SourceBundle
+    -> GenericLexer
+    -> TokenArena
+    -> GenericParser
+    -> SyntaxArena
+    -> FrontendRegistrationPlan
+    -> ProgramRegistry
+    -> frontend TYPE resolution
+    -> TypeArena + FunctionSignature/node-type associations
+```
+
+Registration retains unresolved source type syntax as whole-program NodeIds.
+The TYPE bridge resolves those nodes into canonical compiler-owned TypeIds for:
+
+- scalar/core primitive types;
+- closed vector/map/set spellings;
+- fixed arrays;
+- shared/mutable references and slices;
+- local and imported nominal records/enums;
+- owner-sensitive type parameters;
+- instantiated nominal generic types;
+- function parameter/result signatures;
+- record-field and enum-payload type metadata.
+
+TYPE resolution is transactional. On failure, post-checkpoint TypeIds and
+semantic signature/node-type associations are rolled back while the previously
+committed ProgramRegistry remains intact.
+
+This still does **not** perform expression/declaration semantic analysis. The
+real-source `compile_program` path therefore fails closed at SEMANTIC after a
+successful TYPE commit.
+
 ## Diagnostics
 
 Lexical and parse failures remain the existing typed Python
