@@ -968,6 +968,25 @@ class _AstProjector:
         return self.project(label)
 
 
+
+def _parse_with_interner(
+    source: str,
+    *,
+    file_id: int,
+    mode: SyntaxMode,
+    interner: SymbolInterner,
+) -> tuple[TokenArena, SyntaxArena]:
+    token_arena = TokenArena.from_source(
+        source, file_id=file_id, mode=mode
+    )
+    program = parse_tokens(
+        token_arena.to_reference_tokens(), mode=mode
+    )
+    projector = _AstProjector(token_arena, interner)
+    syntax_arena, _ = projector.finish(program)
+    return token_arena, syntax_arena
+
+
 def parse_source_to_syntax(
     source: str,
     *,
@@ -981,22 +1000,63 @@ def parse_source_to_syntax(
     claiming an S3-native parser implementation.
     """
 
-    token_arena = TokenArena.from_source(
-        source, file_id=file_id, mode=mode
+    interner = SymbolInterner()
+    token_arena, syntax_arena = _parse_with_interner(
+        source,
+        file_id=file_id,
+        mode=mode,
+        interner=interner,
     )
-    program = parse_tokens(
-        token_arena.to_reference_tokens(), mode=mode
+    symbols = tuple(
+        interner.name(symbol_id) for symbol_id in range(interner.length)
     )
-    projector = _AstProjector(token_arena)
-    syntax_arena, symbols = projector.finish(program)
     return SourceFrontendResult(token_arena, syntax_arena, symbols)
 
 
+def parse_source_bundle(
+    bundle: SourceBundle,
+    *,
+    mode: SyntaxMode = SyntaxMode.V0_6,
+) -> SourceBundleFrontendResult:
+    """Parse a deterministic SourceBundle with one shared symbol namespace."""
+
+    interner = SymbolInterner()
+    units: list[SourceUnitFrontendResult] = []
+    for file_id, source_file in enumerate(bundle.files):
+        try:
+            source = source_file.data.decode("utf-8")
+        except UnicodeDecodeError as error:
+            raise SourceFrontendError(
+                f"source file {source_file.path!r} is not valid UTF-8"
+            ) from error
+        token_arena, syntax_arena = _parse_with_interner(
+            source,
+            file_id=file_id,
+            mode=mode,
+            interner=interner,
+        )
+        units.append(
+            SourceUnitFrontendResult(
+                file_id,
+                source_file.path,
+                token_arena,
+                syntax_arena,
+            )
+        )
+    symbols = tuple(
+        interner.name(symbol_id) for symbol_id in range(interner.length)
+    )
+    return SourceBundleFrontendResult(tuple(units), symbols)
+
+
 __all__ = [
+    "SourceBundleFrontendResult",
     "SourceFrontendError",
     "SourceFrontendResult",
+    "SourceUnitFrontendResult",
     "TokenArena",
     "TokenRecord",
     "TokenSpan",
+    "parse_source_bundle",
     "parse_source_to_syntax",
 ]
