@@ -293,3 +293,32 @@ fn main() -> i64:
     plan = build_registration_plan(frontend)
     with pytest.raises(RegistrationError, match="type import aliases"):
         ProgramRegistry().register(plan.modules)
+
+def test_frontend_syntax_index_assigns_unique_whole_program_node_ids() -> None:
+    frontend = parse_source_bundle_independent(
+        SourceBundle(
+            (
+                (
+                    "a.s3",
+                    "module a\nfn main() -> i64:\n    return 0\n",
+                ),
+                (
+                    "b.s3",
+                    "module b\nfn main() -> i64:\n    return 1\n",
+                ),
+            )
+        )
+    )
+    plan = build_registration_plan(frontend)
+
+    first = plan.syntax_index.global_id(0, 0)
+    second = plan.syntax_index.global_id(1, 0)
+    assert first != second
+    assert plan.syntax_index.local_ref(first) == (0, 0)
+    assert plan.syntax_index.local_ref(second) == (1, 0)
+    assert plan.syntax_index.node_count == sum(
+        len(unit.syntax_arena.nodes) for unit in frontend.units
+    )
+
+    root_ids = tuple(module.root_node_id for module in plan.modules)
+    assert len(root_ids) == len(set(root_ids))
