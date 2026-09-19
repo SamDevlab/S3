@@ -1015,6 +1015,32 @@ def parse_source_to_syntax(
     return SourceFrontendResult(token_arena, syntax_arena, symbols)
 
 
+def parse_source_to_syntax_independent(
+    source: str,
+    *,
+    file_id: int = 0,
+    mode: SyntaxMode = SyntaxMode.V0_6,
+) -> SourceFrontendResult:
+    """Parse real source through the independent generic parser kernel.
+
+    Unlike parse_source_to_syntax(), this path does not construct hosted AST
+    objects and does not call bootstrap.s3.parser.
+    """
+
+    token_arena = TokenArena.from_source(
+        source, file_id=file_id, mode=mode
+    )
+    from .generic_parser import parse_token_arena
+
+    result = parse_token_arena(token_arena)
+    return SourceFrontendResult(
+        token_arena,
+        result.syntax_arena,
+        result.symbol_names,
+        result.parser_backend,
+    )
+
+
 def parse_source_bundle(
     bundle: SourceBundle,
     *,
@@ -1051,6 +1077,48 @@ def parse_source_bundle(
     return SourceBundleFrontendResult(tuple(units), symbols)
 
 
+def parse_source_bundle_independent(
+    bundle: SourceBundle,
+    *,
+    mode: SyntaxMode = SyntaxMode.V0_6,
+) -> SourceBundleFrontendResult:
+    """Parse a SourceBundle without the hosted AST/reference parser bridge."""
+
+    from .generic_parser import parse_token_arena
+
+    interner = SymbolInterner()
+    units: list[SourceUnitFrontendResult] = []
+    for file_id, source_file in enumerate(bundle.files):
+        try:
+            source = source_file.data.decode("utf-8")
+        except UnicodeDecodeError as error:
+            raise SourceFrontendError(
+                f"source file {source_file.path!r} is not valid UTF-8"
+            ) from error
+        token_arena = TokenArena.from_source(
+            source,
+            file_id=file_id,
+            mode=mode,
+        )
+        parsed = parse_token_arena(token_arena, interner=interner)
+        units.append(
+            SourceUnitFrontendResult(
+                file_id,
+                source_file.path,
+                token_arena,
+                parsed.syntax_arena,
+            )
+        )
+    symbols = tuple(
+        interner.name(symbol_id) for symbol_id in range(interner.length)
+    )
+    return SourceBundleFrontendResult(
+        tuple(units),
+        symbols,
+        "independent_generic_recursive_descent",
+    )
+
+
 __all__ = [
     "SourceBundleFrontendResult",
     "SourceFrontendError",
@@ -1060,5 +1128,7 @@ __all__ = [
     "TokenRecord",
     "TokenSpan",
     "parse_source_bundle",
+    "parse_source_bundle_independent",
     "parse_source_to_syntax",
+    "parse_source_to_syntax_independent",
 ]
