@@ -90,6 +90,12 @@ calling the production `Lexer`/`tokenize` implementation.
 This is still not an S3-native frontend. Ordinary-S3 source/token/parser state
 shapes exist, but native lexer/parser execution remains a separate frontier.
 
+The hosted frontend is also connected to the whole-program control plane
+through a syntax-to-registration bridge. A fresh `WholeProgramContext` can
+advance from INPUT through SYNTAX and REGISTRATION using real source, then stop
+with TYPE as the next legal phase. No semantic, lowering, verifier, emitter, or
+output success is fabricated.
+
 `SELFHOST_REENTRY_AUTHORIZED=NO` and `STAGE1_V4=NOT_AUTHORIZED` remain
 unchanged.
 
