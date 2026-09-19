@@ -20,7 +20,14 @@
 | hosted AST dependency in independent path | NO | GenericLexer -> TokenArena -> GenericParser -> SyntaxArena |
 | reference lexer dependency in independent path | NO | TokenArena.from_source_independent uses GenericLexer |
 | multi-file symbol identity | REPRESENTABLE_NOW_HOSTED | shared SymbolInterner across SourceBundle |
-| frontend diagnostics | PARTIAL | existing LexError/ParseError code authority; whole-program DiagnosticArena mapping pending |
+| source syntax -> ProgramRegistry plan | REPRESENTABLE_NOW_HOSTED | frontend_registration.py |
+| implicit module identity | REPRESENTABLE_NOW_HOSTED | existing logical-path ModuleId authority |
+| import visibility | REPRESENTABLE_NOW_HOSTED | ProgramRegistry requires target export |
+| module cycle rejection | REPRESENTABLE_NOW_HOSTED | deterministic registry graph validation |
+| nominal field/variant ranges | REPRESENTABLE_NOW_HOSTED | per-nominal ranges, duplicate checks scoped to owner |
+| unresolved nominal type syntax | REPRESENTABLE_NOW_HOSTED | FieldSpec/VariantSpec retain syntax IDs |
+| frontend -> control-plane registration | REPRESENTABLE_NOW_HOSTED | INPUT/SYNTAX/REGISTRATION only |
+| frontend diagnostics | PARTIAL | error codes enter phase diagnostics; complete source-span envelope pending |
 | source -> IR | BLOCKED | semantic passes/lowering absent |
 | source -> output | BLOCKED | semantics/lowering/emitter absent |
 
