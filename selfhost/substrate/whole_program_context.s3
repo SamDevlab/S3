@@ -1,0 +1,32 @@
+module selfhost.substrate.whole_program_context
+
+record ProgramIdentity:
+    program_id: i64
+    module_count: i64
+    function_count: i64
+    nominal_type_count: i64
+
+record PhaseState:
+    phase_id: i64
+    status: i64
+    diagnostic_id: i64
+
+record WholeProgramContextShape:
+    program: ProgramIdentity
+    phases: vector<i64>
+    module_ids: vector<i64>
+    function_ids: vector<i64>
+    nominal_type_ids: vector<i64>
+    type_ids: vector<i64>
+    declaration_ids: vector<i64>
+    storage_ids: vector<i64>
+
+export fn whole_program_control_plane_anchor() -> i64:
+    program: ProgramIdentity = ProgramIdentity(program_id=0, module_count=2, function_count=3, nominal_type_count=1)
+    mut phases: vector<i64> = vector_new<i64>(4)
+    discard vector_push<i64>(&mut phases, 1)
+    discard vector_push<i64>(&mut phases, 2)
+    discard vector_push<i64>(&mut phases, 3)
+    discard vector_push<i64>(&mut phases, 4)
+    return program.module_count + program.function_count + vector_len<i64>(&phases) + program.nominal_type_count
+

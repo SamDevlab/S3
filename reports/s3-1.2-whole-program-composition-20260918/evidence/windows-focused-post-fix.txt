@@ -1,0 +1,5 @@
+HEAD=e4d7aa5492e597da8f730671727f8bd5c66180d2
+COMMAND=python -m pytest -q tests/test_internal_architecture_contracts.py tests/test_whole_program_composition.py
+EXIT=0
+NATIVE_TESTS=SKIPPED_ON_WINDOWS
+NOTE=The focused post-fix run proves the public export regression is resolved.

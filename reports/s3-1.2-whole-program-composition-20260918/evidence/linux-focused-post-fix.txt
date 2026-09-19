@@ -1,0 +1,11 @@
+HEAD=e4d7aa5492e597da8f730671727f8bd5c66180d2
+PYTHON=/tmp/s3-pr299-linux-iWzMu2/venv/bin/python
+COMMAND=python -m pytest -q tests/test_internal_architecture_contracts.py tests/test_whole_program_composition.py
+EXIT=0
+COMMAND_NATIVE=python -m pytest -q tests/test_whole_program_composition.py -m s3_native
+NATIVE_EXIT=0
+COMPILEALL=python -m compileall -q bootstrap tools tests
+COMPILEALL_EXIT=0
+DIFF_CHECK=git diff --check
+DIFF_CHECK_EXIT=0
+NOTE=The focused post-fix run proves the public export regression is resolved; no full Linux rerun was started.

@@ -1,0 +1,45 @@
+module selfhost.substrate.phase_orchestrator
+
+record PhaseState:
+    phase_ids: vector<i64>
+    committed: vector<i64>
+    rolled_back: trit
+    diagnostic_code: i64
+
+export fn phase_orchestrator_case(case_id: i64) -> i64:
+    mut phases: vector<i64> = vector_new<i64>(8)
+    mut committed: vector<i64> = vector_new<i64>(8)
+    mut phase: i64 = 0
+    mut accepted: i64 = 1
+    mut diagnostic: i64 = 0
+    while phase < 5:
+        discard vector_push<i64>(&mut phases, phase)
+        match case_id <=> 6:
+            -1:
+                discard vector_push<i64>(&mut committed, phase)
+            0:
+                match phase <=> 3:
+                    -1:
+                        discard vector_push<i64>(&mut committed, phase)
+                    0:
+                        accepted = 0
+                        diagnostic = 703
+                    1:
+                        accepted = 0
+                        diagnostic = 703
+            1:
+                match phase <=> 4:
+                    -1:
+                        discard vector_push<i64>(&mut committed, phase)
+                    0:
+                        accepted = 0
+                        diagnostic = 704
+                    1:
+                        accepted = 0
+                        diagnostic = 704
+        phase = phase + 1
+    return accepted * 100000 + diagnostic * 10 + vector_len<i64>(&committed)
+
+export fn phase_orchestrator_anchor() -> i64:
+    return phase_orchestrator_case(0)
+

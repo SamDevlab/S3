@@ -55,6 +55,20 @@ re-entry remains `NO` until the complete design-first criteria are reviewed
 separately, including the missing frontend, lowering, emitter, and composition
 root contracts.
 
+## Whole-program composition foundation (2026-09-18)
+
+The follow-up increment adds a supported whole-program **control plane**:
+deterministic program registration, a canonical transactional `TypeArena`,
+explicit semantic associations, a bounded structured diagnostic arena, phase
+transactions, and an isolated `WholeProgramContext`. It composes explicitly
+prepared `SyntaxArena` and `IRProgram` artifacts and invokes the existing
+independent verifier.
+
+This is not source compilation. The composition root fails closed without
+prepared artifacts; lexer, parser, expression semantics, lowering, emitter,
+Stage1 V4, Stage2, and Stage3 remain absent or unauthorized. The Python
+reference compiler remains the default production compiler.
+
 ## Relationship to existing milestones
 
 Existing self-hosting-related milestones and reports remain historical evidence.

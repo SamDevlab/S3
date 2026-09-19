@@ -1,0 +1,43 @@
+module selfhost.substrate.diagnostic_arena
+
+record DiagnosticState:
+    codes: vector<i64>
+    source_spans: vector<i64>
+    ordered: trit
+    capacity_ok: trit
+
+export fn diagnostic_arena_case(case_id: i64) -> i64:
+    mut codes: vector<i64> = vector_new<i64>(8)
+    mut spans: vector<i64> = vector_new<i64>(8)
+    discard vector_push<i64>(&mut codes, 110)
+    discard vector_push<i64>(&mut codes, 220)
+    discard vector_push<i64>(&mut codes, 330)
+    discard vector_push<i64>(&mut spans, 10)
+    discard vector_push<i64>(&mut spans, 20)
+    discard vector_push<i64>(&mut spans, 30)
+    mut ordered: i64 = 1
+    mut index: i64 = 1
+    while index < vector_len<i64>(&codes):
+        match vector_get<i64>(&codes, index - 1) <=> vector_get<i64>(&codes, index):
+            1:
+                ordered = 0
+            0:
+                ordered = 0
+            -1:
+                index = index
+        index = index + 1
+    mut capacity_ok: i64 = 1
+    match case_id <=> 9:
+        -1:
+            discard vector_push<i64>(&mut codes, 400 + case_id)
+            discard vector_push<i64>(&mut spans, 40 + case_id)
+        0:
+            capacity_ok = 0
+        1:
+            discard vector_push<i64>(&mut codes, 100)
+            ordered = 0
+    return ordered * 100000 + capacity_ok * 10000 + vector_len<i64>(&codes) * 100 + vector_len<i64>(&spans)
+
+export fn diagnostic_arena_anchor() -> i64:
+    return diagnostic_arena_case(0)
+
