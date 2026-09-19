@@ -14,6 +14,7 @@
 | complete lexer algorithm ordinary S3 | BLOCKED | hosted algorithm not yet projected/executed natively |
 | parser cursor/state hosted | REPRESENTABLE_NOW | generic_parser.py |
 | parser cursor/state ordinary S3 | REPRESENTABLE_NOW_FOR_SHAPE | generic_parser_state.s3 |
+| bounded native function parser slice | QUALIFIED_FOR_MINIMAL_FUNCTION | native token vectors -> function/return/integer structural digest; Linux x86-64 pass |
 | parser grammar decisions hosted | REPRESENTABLE_NOW_V0_6 | GenericParser consumes TokenArena directly |
 | parser differential oracle | AVAILABLE | production Python parser |
 | complete parser algorithm ordinary S3 | BLOCKED | hosted algorithm not yet projected/executed natively |

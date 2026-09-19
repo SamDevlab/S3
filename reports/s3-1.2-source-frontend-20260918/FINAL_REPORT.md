@@ -5,7 +5,7 @@
 ```text
 BASE_MAIN_SHA=4c7aaf4ad59fdacdd83f230e11a0bd979081c80a
 BRANCH=feat/s3-1.2-source-frontend
-IMPLEMENTATION_SOURCE_HEAD=1b6f28596f504deb71822e417c8e7cff9296bf2b
+IMPLEMENTATION_SOURCE_HEAD=3cce14ce78073d36dcc04088524f5563713cb84a
 SOURCE_CHANGED_AFTER_IMPLEMENTATION_HEAD=NO
 PR=301
 PR_STATE=OPEN_DRAFT
@@ -151,15 +151,23 @@ fixture literals. The focused regression computes the independent hosted
 
 ```text
 ORDINARY_S3_LEXER_SLICE=PASS_HOSTED_AND_LINUX_NATIVE
-ORDINARY_S3_NATIVE_FRONTEND_EXECUTION=PARTIALLY_PROVEN
-S3_NATIVE_LEXER=PARTIAL
-S3_NATIVE_PARSER=NO
+ORDINARY_S3_NATIVE_FRONTEND_EXECUTION=PROVEN_FOR_MINIMAL_FUNCTION_SUBSET
+S3_NATIVE_LEXER=PARTIAL_GENERALIZED_SUBSET
+S3_NATIVE_PARSER=PARTIAL_MINIMAL_FUNCTION
+NATIVE_SOURCE_TO_SYNTAX_END_TO_END=PROVEN_FOR_MINIMAL_FUNCTION_SUBSET
 ```
 
 The Windows run records the Linux-native marker as an expected platform skip.
-The same test passed on the Linux x86-64 VM with `5 passed`, covering four
-hosted cases and the native parametrized case. Remote Linux compileall also
-passed.
+The same test passed on the Linux x86-64 VM with `11 passed`, covering the
+lexer cases, two valid native parser cases, and two native parser rejection
+cases. Remote Linux compileall also passed. The native parser consumes only
+the native token vectors and has no fallback to the hosted lexer/parser.
+
+The bounded native parser accepts `fn <identifier>() -> i64:` with an indented
+integer return. Its structural digests are `1063349395` for `entry`/`42` and
+`38641705493` for `worker`/`7`; missing integer and trailing source are
+rejected. The independent hosted `GenericParser` remains the differential
+oracle.
 
 ## Tests authored
 
@@ -189,22 +197,22 @@ Focused tests now cover:
 - TYPE rollback while preserving committed registration.
 - bounded ordinary-S3 lexer slice parity with the independent hosted digest;
 - parenthesis-token differential behavior;
-- platform-gated native qualification for that slice.
+- platform-gated native qualification for the lexer and minimal parser slice.
 
 Validation performed on the Windows checkout and Linux x86-64 VM:
 
-- `tests/test_native_frontend_slice.py`: 4 hosted cases passed, 1 expected
-  Windows platform skip;
-- affected frontend tests: 55 passed;
+- `tests/test_native_frontend_slice.py`: 9 focused cases passed, 2 expected
+  Windows platform skips;
+- affected frontend tests: 46 passed, 2 expected Windows platform skips;
 - `python -m compileall -q bootstrap tools tests`: PASS;
 - `git diff --check`: PASS.
-- Linux VM `tests/test_native_frontend_slice.py`: 5 passed;
+- Linux VM `tests/test_native_frontend_slice.py`: 11 passed;
 - Linux VM compileall: PASS.
 
 The final full suite on
-`1b6f28596f504deb71822e417c8e7cff9296bf2b` exited 0 after the arbitrary
-identifier/integer slice. The subsequent report-only publication commit
-changes no executable, compiler, or test logic.
+`3cce14ce78073d36dcc04088524f5563713cb84a` exited 0 after the native parser
+slice. Any subsequent publication commit changes only documentation and
+report metadata, not executable, compiler, or test logic.
 
 ## Architectural boundary
 
@@ -215,8 +223,9 @@ PYTHON_REFERENCE_PARSER=YES_AS_ORACLE_AND_DEFAULT
 INDEPENDENT_GENERIC_LEXER=YES_HOSTED
 INDEPENDENT_GENERIC_PARSER=YES_HOSTED_V0_6
 
-S3_NATIVE_LEXER=NO
-S3_NATIVE_PARSER=NO
+S3_NATIVE_LEXER=PARTIAL_GENERALIZED_SUBSET
+S3_NATIVE_PARSER=PARTIAL_MINIMAL_FUNCTION
+NATIVE_SOURCE_TO_SYNTAX_END_TO_END=PROVEN_FOR_MINIMAL_FUNCTION_SUBSET
 
 SEMANTIC_EXPRESSION_ANALYZER=NO
 GENERIC_LOWERING=NO
@@ -247,7 +256,7 @@ No test result is inferred from that infrastructure failure.
 
 ```text
 SELFHOST_GATE_2=IMPROVED_SOURCE_TOKEN_PARSER_STATE_REPRESENTATION
-SELFHOST_GATE_3=HOSTED_GENERIC_LEXER_AND_PARSER_IMPLEMENTED_NATIVE_FRONTEND_PENDING
+SELFHOST_GATE_3=BOUNDED_NATIVE_LEXER_AND_MINIMAL_FUNCTION_PARSER_PROVEN
 SELFHOST_GATE_4=UNCHANGED_CONTROL_PLANE_FROM_PR_300
 SELFHOST_GATE_5=GENERIC_SYNTAX_DIRECT_FRONTEND_OUTPUT_SUPPORTED_HOSTED
 SELFHOST_GATE_10=DIRECT_TOKEN_AND_NODE_IDS_PRESERVED
@@ -257,14 +266,14 @@ SELFHOST_GATE_11=FRONTEND_COMPLEXITY_DOCUMENTED
 The next remaining self-host frontend boundary after validation is:
 
 ```text
-NEXT_SELFHOST_REPRESENTABILITY_BLOCKER=ORDINARY_S3_NATIVE_FRONTEND_EXECUTION
+NEXT_SELFHOST_REPRESENTABILITY_BLOCKER=NATIVE_STATEMENT_OR_EXPRESSION_PARSING
 ```
 
 For the hosted compiler architecture, the next legal control-plane phase is
 SEMANTIC. Canonical declaration type resolution is implemented; expression and
 declaration semantic analysis, lowering and emission remain unimplemented. Ordinary-S3 token/lexer/parser state shapes
-exist, but complete lexer/parser algorithms have not yet been executed as
-ordinary S3/native code.
+exist, but complete lexer/parser algorithms and broader statement/expression
+coverage have not yet been executed as ordinary S3/native code.
 
 ## Publication boundary
 

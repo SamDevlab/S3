@@ -117,7 +117,7 @@ generic semantic passes, lowering, emission, Stage1, or self-host execution.
 `SELFHOST_REENTRY_AUTHORIZED=NO` and `STAGE1_V4=NOT_AUTHORIZED` remain
 unchanged.
 
-## Ordinary-S3 lexer vertical slice (2026-09-19)
+## Ordinary-S3 lexer and parser vertical slice (2026-09-19)
 
 The source-frontend increment now includes one bounded ordinary-S3 execution
 slice in `selfhost/substrate/generic_lexer_state.s3`. The slice scans direct
@@ -130,15 +130,27 @@ identifier/integer lexemes (`fn entry()`/`return 42` and `fn worker()`/`return
 x86-64 backend on the Linux VM; the Windows validation run records that
 Linux-native test as an expected local platform skip.
 
-This is partial ordinary-frontend execution evidence only. It does not claim a
-complete S3-native lexer, a native parser, semantic analysis, lowering,
+The same ordinary-S3 source now also contains a bounded native parser slice.
+It consumes the native token vectors produced by the scanner and accepts the
+minimal `fn <identifier>() -> i64:` function shape with an indented integer
+return. Its digest is derived from the parsed identifier bytes, token spans,
+integer payload, and token-vector length rather than from fixture names or
+constants. Two valid inputs and two malformed inputs (missing integer and
+trailing source) are covered, with the independent hosted parser used only as
+the differential oracle. The Linux x86-64 focused qualification passed 11
+tests, and the native path has no fallback to `GenericLexer`, `GenericParser`,
+or the Python parser.
+
+This remains partial ordinary-frontend execution evidence only. It does not
+claim a complete S3-native lexer or parser, semantic analysis, lowering,
 emission, or a self-hosted compiler:
 
 ```text
 ORDINARY_S3_LEXER_SLICE=YES_HOSTED_AND_LINUX_NATIVE
-ORDINARY_S3_NATIVE_FRONTEND_EXECUTION=PARTIALLY_PROVEN
-S3_NATIVE_LEXER=PARTIAL
-S3_NATIVE_PARSER=NO
+ORDINARY_S3_NATIVE_FRONTEND_EXECUTION=PROVEN_FOR_MINIMAL_FUNCTION_SUBSET
+S3_NATIVE_LEXER=PARTIAL_GENERALIZED_SUBSET
+S3_NATIVE_PARSER=PARTIAL_MINIMAL_FUNCTION
+NATIVE_SOURCE_TO_SYNTAX_END_TO_END=PROVEN_FOR_MINIMAL_FUNCTION_SUBSET
 ```
 
 ## Relationship to existing milestones

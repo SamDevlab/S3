@@ -66,6 +66,22 @@ Linux x86-64 native qualification is platform-gated. The current Windows host
 skips that local marker, while the same focused test passes on the project
 Linux x86-64 VM.
 
+### Bounded native function parser slice
+
+`generic_native_parser_digest` consumes the token IDs, kinds, and spans emitted
+by the native lexer vectors. It recognizes the bounded
+`fn <identifier>() -> i64:` shape with an indented `return <integer>` body,
+checks the final newline and EOF, and derives a structural digest from the
+name bytes, spans, integer value, and token count. The hosted independent
+`GenericParser` supplies the differential oracle; the native implementation
+does not call `GenericLexer`, `GenericParser`, `tokenize`, or `parse_tokens`.
+
+The valid `entry`/`42` and `worker`/`7` cases produce `1063349395` and
+`38641705493`, respectively. Missing integer and trailing source are rejected
+with `-1`. The Linux x86-64 focused qualification passed 11 tests, including
+the parser positives and negatives, while the Windows run records the native
+Linux marker as an expected platform skip.
+
 ## Parser boundary
 
 V1 now provides two explicit hosted paths.
@@ -111,8 +127,9 @@ INDEPENDENT_GENERIC_LEXER=YES_HOSTED
 INDEPENDENT_GENERIC_PARSER=YES_HOSTED_V0_6
 REFERENCE_LEXER_DIFFERENTIAL_ORACLE=YES
 REFERENCE_PARSER_DIFFERENTIAL_ORACLE=YES
-S3_NATIVE_LEXER=NO
-S3_NATIVE_PARSER=NO
+S3_NATIVE_LEXER=PARTIAL_GENERALIZED_SUBSET
+S3_NATIVE_PARSER=PARTIAL_MINIMAL_FUNCTION
+NATIVE_SOURCE_TO_SYNTAX_END_TO_END=PROVEN_FOR_MINIMAL_FUNCTION_SUBSET
 STAGE1_V4=NOT_AUTHORIZED
 ```
 
@@ -262,8 +279,8 @@ V1 does not:
 
 - replace the default production Python compiler/parser path;
 - replace the default production Python lexer path;
-- implement an S3-native lexer;
-- implement an S3-native parser;
+- implement a complete S3-native lexer;
+- implement a complete S3-native parser;
 - execute semantic expression passes;
 - lower generic syntax to IR;
 - emit artifacts;
@@ -271,6 +288,8 @@ V1 does not:
 - authorize self-host re-entry or Stage1 V4.
 
 The hosted source frontend is now independent from both reference lexer and
-reference parser decisions. The next frontend frontier is an ordinary-S3/native
-lexer+parser execution path over the same SourceView/TokenArena/SyntaxArena
-contracts. Native frontend execution remains unclaimed.
+reference parser decisions. A bounded ordinary-S3/native lexer and minimal
+function parser slice is proven over the same token-vector and syntax
+contracts. The next frontend frontier is broader native statement and
+expression parsing; native semantic analysis, lowering, and emission remain
+unclaimed.
