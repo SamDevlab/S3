@@ -314,3 +314,14 @@ def test_independent_source_bundle_uses_shared_symbol_namespace() -> None:
     assert result.symbol_names.count("value") == 1
     for unit in result.units:
         unit.syntax_arena.validate()
+
+def test_independent_parser_never_calls_reference_parse_tokens(monkeypatch) -> None:
+    def forbidden(*args, **kwargs):
+        raise AssertionError("reference parser bridge must not run")
+
+    monkeypatch.setattr("bootstrap.s3.source_frontend.parse_tokens", forbidden)
+    result = parse_source_to_syntax_independent(
+        "fn main() -> i64:\n    return 7\n"
+    )
+    result.syntax_arena.validate()
+    assert result.parser_backend == "independent_generic_recursive_descent"
