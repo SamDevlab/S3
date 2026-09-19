@@ -277,7 +277,7 @@ class _AstProjector:
         return self.interner.intern(value)
 
     def _start(self, location: SourceLocation) -> int:
-        index = min(max(location.position, 0), len(self.tokens.source))
+        index = min(max(location.offset, 0), len(self.tokens.source))
         return self._byte_offsets[index]
 
     def _span(
@@ -286,7 +286,7 @@ class _AstProjector:
         children: tuple[int, ...] = (),
     ) -> SyntaxSpan:
         start = self._start(location)
-        token = self._token_by_source_position.get(location.position)
+        token = self._token_by_source_position.get(location.offset)
         end = token.span.end if token is not None else start
         for child_id in children:
             child = self.arena.node(child_id)
