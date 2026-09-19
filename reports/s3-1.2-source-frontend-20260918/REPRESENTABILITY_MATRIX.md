@@ -27,7 +27,9 @@
 | nominal field/variant ranges | REPRESENTABLE_NOW_HOSTED | per-nominal ranges, duplicate checks scoped to owner |
 | unresolved nominal type syntax | REPRESENTABLE_NOW_HOSTED | FieldSpec/VariantSpec retain syntax IDs |
 | frontend -> control-plane registration | REPRESENTABLE_NOW_HOSTED | INPUT/SYNTAX/REGISTRATION only |
+| compile_program real-source ingestion | REPRESENTABLE_NOW_HOSTED_PARTIAL | commits through REGISTRATION, fails closed at TYPE |
 | frontend diagnostics | PARTIAL | error codes enter phase diagnostics; complete source-span envelope pending |
+| TYPE phase from generic syntax | BLOCKED | real type resolution not implemented |
 | source -> IR | BLOCKED | semantic passes/lowering absent |
 | source -> output | BLOCKED | semantics/lowering/emitter absent |
 
