@@ -7,7 +7,7 @@ in this file is evidence until its actual output is captured.
 
 ```text
 BASE_MAIN_SHA=4c7aaf4ad59fdacdd83f230e11a0bd979081c80a
-IMPLEMENTATION_SOURCE_HEAD=e6b9122eb446d0f543e1d701b11219e22ecb85bb
+IMPLEMENTATION_SOURCE_HEAD=6717e38bb370dc4713f6caa829a7dd1b20c240e2
 SOURCE_CHANGED_AFTER_IMPLEMENTATION_HEAD=NO
 PR=301
 ```
@@ -39,6 +39,7 @@ Run:
 python -m pytest -q \
   tests/test_source_frontend.py \
   tests/test_frontend_registration.py \
+  tests/test_frontend_types.py \
   tests/test_frontend_control_plane.py \
   tests/test_whole_program_composition.py \
   tests/test_generic_syntax_ir_verifier.py
@@ -55,8 +56,13 @@ This tier is expected to exercise:
 - implicit module identity;
 - import visibility and cycle rejection;
 - per-nominal field/variant ranges;
-- frontend phase ingestion through REGISTRATION;
-- `compile_program` real-source ingestion and fail-closed TYPE boundary;
+- frontend phase ingestion through REGISTRATION and TYPE;
+- primitive/array/reference/collection TypeArena resolution;
+- local/imported nominal type resolution;
+- owner-sensitive type-parameter identity and generic nominal instantiation;
+- function signature/node-type publication;
+- TYPE rollback preserving committed registration;
+- `compile_program` real-source ingestion and fail-closed SEMANTIC boundary;
 - import visibility, module-cycle validation, and type-import-alias rejection in ProgramRegistry;
 - function generic-arity and unresolved nominal type-syntax retention;
 - existing whole-program transaction/orchestration regressions.
