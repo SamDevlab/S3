@@ -44,13 +44,6 @@ class FrontendControlPlaneResult:
     next_phase: PhaseKind | None
 
 
-def _next_phase(context: WholeProgramContext) -> PhaseKind | None:
-    index = context.phases._next_index
-    if index >= len(context.phases._ORDER):
-        return None
-    return context.phases._ORDER[index]
-
-
 def _diagnostic_code(error: BaseException) -> str:
     if isinstance(error, S3Error):
         return error.diagnostic_code.value
@@ -116,7 +109,7 @@ def ingest_source_frontend(
             modules,
             context.diagnostics.ordered(),
             context.phases.trace(),
-            _next_phase(context),
+            context.phases.next_phase,
         )
     except (
         S3Error,
@@ -144,7 +137,7 @@ def ingest_source_frontend(
             (),
             context.diagnostics.ordered(),
             context.phases.trace(),
-            _next_phase(context),
+            context.phases.next_phase,
         )
 
 
