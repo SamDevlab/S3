@@ -117,6 +117,28 @@ generic semantic passes, lowering, emission, Stage1, or self-host execution.
 `SELFHOST_REENTRY_AUTHORIZED=NO` and `STAGE1_V4=NOT_AUTHORIZED` remain
 unchanged.
 
+## Ordinary-S3 lexer vertical slice (2026-09-19)
+
+The source-frontend increment now includes one bounded ordinary-S3 execution
+slice in `selfhost/substrate/generic_lexer_state.s3`. The slice scans the
+ordinary source shape `fn main` followed by `return 0`, emits direct token
+identities and byte spans into bounded S3 vectors, and returns a deterministic
+digest. A focused test compares that result with the independent hosted
+`GenericLexer` contract. The same S3 source is also native-qualification-ready
+through the normal x86-64 backend; the current Windows validation run records
+the Linux-native test as an expected platform skip.
+
+This is partial ordinary-frontend execution evidence only. It does not claim a
+complete S3-native lexer, a native parser, semantic analysis, lowering,
+emission, or a self-hosted compiler:
+
+```text
+ORDINARY_S3_LEXER_SLICE=YES_HOSTED
+ORDINARY_S3_NATIVE_FRONTEND_EXECUTION=PARTIALLY_PROVEN
+S3_NATIVE_LEXER=NO_COMPLETE_FRONTEND
+S3_NATIVE_PARSER=NO
+```
+
 ## Relationship to existing milestones
 
 Existing self-hosting-related milestones and reports remain historical evidence.

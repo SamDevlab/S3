@@ -5,7 +5,8 @@
 ```text
 BASE_MAIN_SHA=4c7aaf4ad59fdacdd83f230e11a0bd979081c80a
 BRANCH=feat/s3-1.2-source-frontend
-IMPLEMENTATION_SOURCE_HEAD=6717e38bb370dc4713f6caa829a7dd1b20c240e2
+IMPLEMENTATION_SOURCE_HEAD=ec8047d227a547f3148eca51837ca84c9dbce26e
+SOURCE_CHANGED_AFTER_IMPLEMENTATION_HEAD=NO
 PR=301
 PR_STATE=OPEN_DRAFT
 PR_MERGED=NO
@@ -137,6 +138,24 @@ The independent parser targets the default V0.6 grammar and directly handles:
 - field/index/slice postfix expressions;
 - address-of and dereference.
 
+## Bounded ordinary-S3 execution slice
+
+The candidate now contains a small executable ordinary-S3 lexer slice in
+`selfhost/substrate/generic_lexer_state.s3`. It scans the bounded source
+shape `fn main\nreturn 0\n`, emits direct IDs/kinds/spans, and returns digest
+1509. The focused regression computes the independent hosted `GenericLexer`
+digest for the same source and compares the two results.
+
+```text
+ORDINARY_S3_LEXER_SLICE=PASS_HOSTED
+ORDINARY_S3_NATIVE_FRONTEND_EXECUTION=PARTIALLY_PROVEN
+S3_NATIVE_LEXER=NO_COMPLETE_FRONTEND
+S3_NATIVE_PARSER=NO
+```
+
+The native qualification test is Linux x86-64 gated; this Windows run records
+the platform skip rather than converting it into a false pass.
+
 ## Tests authored
 
 Focused tests now cover:
@@ -163,11 +182,19 @@ Focused tests now cover:
 - owner-sensitive generic type parameters and nominal instantiation;
 - function signature publication and record/enum member type metadata;
 - TYPE rollback while preserving committed registration.
+- bounded ordinary-S3 lexer slice parity with the independent hosted digest;
+- platform-gated native qualification for that slice.
 
-No local pytest/compileall/native result is claimed here because this ChatGPT
-execution context has GitHub access but no shell access to the user's
-Windows/Linux worktree. The branch is intentionally left ready for the user's
-validation round.
+Validation performed on the Windows checkout:
+
+- `tests/test_native_frontend_slice.py`: 1 passed, 1 expected platform skip;
+- affected frontend tests: 55 passed;
+- `python -m compileall -q bootstrap tools tests`: PASS;
+- `git diff --check`: PASS.
+
+The pre-slice official full suite was also rerun after the stale test contracts
+were aligned and exited 0. The Linux-native slice remains unqualified on this
+host.
 
 ## Architectural boundary
 
@@ -233,7 +260,7 @@ ordinary S3/native code.
 
 ```text
 READY_FOR_USER_TEST_ROUND=YES
-READY_FOR_MAIN_MERGE=NO_VALIDATION_PENDING
+READY_FOR_MAIN_MERGE=NO_LINUX_NATIVE_QUALIFICATION_PENDING
 
 RELEASE=NO
 TAG=NO

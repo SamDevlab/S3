@@ -42,7 +42,24 @@ The ordinary-S3 projections are
 `selfhost/substrate/token_arena.s3` and
 `selfhost/substrate/generic_lexer_state.s3`. They demonstrate the flat
 parallel-vector token/state representation and deterministic cursor/classifier
-shape. They do not yet claim an ordinary-S3 complete lexer implementation.
+shape. The latter now also contains a bounded executable slice for the
+`fn main`/`return 0` source shape; it is a vertical-slice proof, not a claim
+of an ordinary-S3 complete lexer.
+
+### Bounded ordinary-S3 lexer slice
+
+`generic_lexer_native_case` is compiled through the normal S3 compiler path.
+It scans a small source buffer using ordinary S3 control flow, emits token
+IDs, token-kind codes, and normalized source spans into bounded vectors, then
+computes a deterministic digest. The focused regression derives the expected
+digest from the independent hosted `GenericLexer` and asserts equality. This
+keeps the hosted generic frontend as the semantic vocabulary oracle while
+proving that real S3 code can execute the first lexer-shaped slice.
+
+The slice intentionally does not cover indentation, comments, strings,
+operators, parser state, semantic analysis, lowering, or output generation.
+Linux x86-64 native qualification is platform-gated and is not represented as
+passed when the current validation host cannot provide it.
 
 ## Parser boundary
 
