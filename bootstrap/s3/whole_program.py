@@ -108,6 +108,8 @@ class TypeKind(str, Enum):
     STRING = "string"
     BYTES = "bytes"
     TEXT = "text"
+    HOST_CAPABILITY = "host_capability"
+    RESOURCE_HANDLE = "resource_handle"
     VECTOR = "vector"
     MAP = "map"
     SET = "set"
@@ -597,7 +599,17 @@ class TypeArenaCheckpoint:
 class TypeArena:
     """Canonical compiler-owned type identity arena."""
 
-    _PRIMITIVES = (TypeKind.TRIT, TypeKind.TRYTE, TypeKind.I64, TypeKind.F64, TypeKind.STRING, TypeKind.BYTES, TypeKind.TEXT)
+    _PRIMITIVES = (
+        TypeKind.TRIT,
+        TypeKind.TRYTE,
+        TypeKind.I64,
+        TypeKind.F64,
+        TypeKind.STRING,
+        TypeKind.BYTES,
+        TypeKind.TEXT,
+        TypeKind.HOST_CAPABILITY,
+        TypeKind.RESOURCE_HANDLE,
+    )
 
     def __init__(self, *, capacity: int | None = None) -> None:
         self.capacity = capacity
@@ -657,6 +669,10 @@ class TypeArena:
                 raise TypeArenaError("S3E_SEMANTIC_INVALID_PROGRAM: type parameter lacks owner")
             if spec.owner_kind not in {"function", "nominal"}:
                 raise TypeArenaError("S3E_SEMANTIC_INVALID_PROGRAM: type parameter owner kind is invalid")
+        if spec.element_type_id >= 0 and spec.element_type_id not in self.types:
+            raise TypeArenaError("S3E_SEMANTIC_INVALID_PROGRAM: structural type references unknown element type")
+        if any(type_id < 0 or type_id not in self.types for type_id in spec.type_arguments):
+            raise TypeArenaError("S3E_SEMANTIC_INVALID_PROGRAM: type arguments contain unknown type ID")
         element = TypeId(spec.element_type_id) if spec.element_type_id >= 0 else None
         info = TypeInfo(
             TypeId(self.types.checkpoint()), spec.kind, element,
