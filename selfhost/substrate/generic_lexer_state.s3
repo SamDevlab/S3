@@ -265,6 +265,21 @@ fn generic_scan_kind(unit: i64) -> trit:
         1:
             return 0
 
+fn generic_punctuation_kind(unit: i64) -> i64:
+    match unit == 40:
+        -1:
+            return 7
+        0:
+            match unit == 41:
+                -1:
+                    return 8
+                0:
+                    return 100 + unit
+                1:
+                    return 100 + unit
+        1:
+            return 100 + unit
+
 export fn generic_lexer_scan_digest(source: &vector<i64>) -> i64:
     mut ids: vector<i64> = vector_new<i64>(64)
     mut kinds: vector<i64> = vector_new<i64>(64)
@@ -281,7 +296,7 @@ export fn generic_lexer_scan_digest(source: &vector<i64>) -> i64:
                     -1:
                         mut token_id: i64 = vector_len<i64>(&ids)
                         discard vector_push<i64>(&mut ids, token_id)
-                        discard vector_push<i64>(&mut kinds, 100 + unit)
+                        discard vector_push<i64>(&mut kinds, generic_punctuation_kind(unit))
                         discard vector_push<i64>(&mut starts, cursor)
                         discard vector_push<i64>(&mut ends, cursor + 1)
                         cursor = cursor + 1
@@ -368,6 +383,14 @@ export fn generic_lexer_native_case(case_id: i64) -> i64:
     discard vector_push<i64>(&mut source, 97)
     discard vector_push<i64>(&mut source, 105)
     discard vector_push<i64>(&mut source, 110)
+    match case_id == 1:
+        -1:
+            discard vector_push<i64>(&mut source, 40)
+            discard vector_push<i64>(&mut source, 41)
+        0:
+            discard 0
+        1:
+            discard 0
     discard vector_push<i64>(&mut source, 10)
     discard vector_push<i64>(&mut source, 114)
     discard vector_push<i64>(&mut source, 101)
@@ -378,4 +401,4 @@ export fn generic_lexer_native_case(case_id: i64) -> i64:
     discard vector_push<i64>(&mut source, 32)
     discard vector_push<i64>(&mut source, 48)
     discard vector_push<i64>(&mut source, 10)
-    return generic_lexer_scan_digest(&source) + case_id
+    return generic_lexer_scan_digest(&source)

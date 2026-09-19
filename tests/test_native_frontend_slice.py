@@ -15,7 +15,10 @@ from bootstrap.s3.frontend_token_arena import TokenArena
 from bootstrap.s3.lexer import SyntaxMode, TokenKind
 
 
-_ORDINARY_SOURCE = "fn main\nreturn 0\n"
+_ORDINARY_SOURCES = {
+    0: "fn main\nreturn 0\n",
+    1: "fn main()\nreturn 0\n",
+}
 _KIND_CODES = {
     TokenKind.FN: 2,
     TokenKind.IDENTIFIER: 1,
@@ -23,20 +26,25 @@ _KIND_CODES = {
     TokenKind.INTEGER: 5,
     TokenKind.NEWLINE: 6,
     TokenKind.EOF: 0,
+    TokenKind.LEFT_PAREN: 7,
+    TokenKind.RIGHT_PAREN: 8,
 }
 
 
-def _candidate_source() -> str:
+def _candidate_source(case_id: int) -> str:
     repository = Path(__file__).parents[1]
     substrate = (
         repository / "selfhost/substrate/generic_lexer_state.s3"
     ).read_text(encoding="utf-8")
-    return substrate + "\nfn main() -> i64:\n    return generic_lexer_native_case(0)\n"
+    return (
+        substrate
+        + f"\nfn main() -> i64:\n    return generic_lexer_native_case({case_id})\n"
+    )
 
 
-def _independent_digest() -> int:
+def _independent_digest(source: str) -> int:
     arena = TokenArena.from_source_independent(
-        _ORDINARY_SOURCE,
+        source,
         mode=SyntaxMode.V0_6,
     )
     digest = 0
@@ -49,10 +57,14 @@ def _independent_digest() -> int:
     return digest
 
 
-def test_ordinary_s3_lexer_slice_matches_independent_generic_frontend() -> None:
-    expected = _independent_digest()
-    assert expected == 1509
-    assert run_source(_candidate_source()) == expected
+@pytest.mark.parametrize("case_id,expected_digest", ((0, 1509), (1, 2101)))
+def test_ordinary_s3_lexer_slice_matches_independent_generic_frontend(
+    case_id: int,
+    expected_digest: int,
+) -> None:
+    expected = _independent_digest(_ORDINARY_SOURCES[case_id])
+    assert expected == expected_digest
+    assert run_source(_candidate_source(case_id)) == expected
 
 
 @pytest.mark.s3_native
@@ -69,12 +81,13 @@ def test_ordinary_s3_lexer_slice_qualifies_on_linux_x86_64(
     except NativeBackendError as error:
         pytest.skip(str(error))
 
-    compilation = compile_source(_candidate_source())
-    executable = toolchain.build(
-        generate_native_assembly(compilation.assembly),
-        tmp_path / "ordinary-s3-lexer-slice",
-    )
-    completed = toolchain.run(executable)
-    assert completed.returncode == 0
-    assert completed.stdout == "program returned: 1509\n"
-    assert completed.stderr == ""
+    for case_id, expected_digest in ((0, 1509), (1, 2101)):
+        compilation = compile_source(_candidate_source(case_id))
+        executable = toolchain.build(
+            generate_native_assembly(compilation.assembly),
+            tmp_path / f"ordinary-s3-lexer-slice-{case_id}",
+        )
+        completed = toolchain.run(executable)
+        assert completed.returncode == 0
+        assert completed.stdout == f"program returned: {expected_digest}\n"
+        assert completed.stderr == ""
