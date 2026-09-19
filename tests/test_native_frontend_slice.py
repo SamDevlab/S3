@@ -11,7 +11,11 @@ from bootstrap.s3.backends.x86_64 import (
     NativeToolchain,
     generate_native_assembly,
 )
-from bootstrap.s3.generic_syntax import IntegerPayload, NodeKind
+from bootstrap.s3.generic_syntax import (
+    IntegerPayload,
+    NodeKind,
+    OperatorPayload,
+)
 from bootstrap.s3.frontend_token_arena import TokenArena
 from bootstrap.s3.lexer import SyntaxMode, TokenKind
 from bootstrap.s3.source_frontend import parse_source_to_syntax_independent
@@ -37,6 +41,10 @@ _PARSER_SOURCES = {
     0: "fn entry() -> i64:\n    return 42\n",
     1: "fn worker() -> i64:\n    return 7\n",
 }
+_BINARY_PARSER_SOURCES = {
+    0: "fn calc() -> i64:\n    return 1 + 2\n",
+    1: "fn compute() -> i64:\n    return 40 + 2\n",
+}
 
 
 def _candidate_source(case_id: int) -> str:
@@ -58,6 +66,17 @@ def _candidate_parser_source(case_id: int) -> str:
     return (
         substrate
         + f"\nfn main() -> i64:\n    return generic_native_parser_case({case_id})\n"
+    )
+
+
+def _candidate_binary_parser_source(case_id: int) -> str:
+    repository = Path(__file__).parents[1]
+    substrate = (
+        repository / "selfhost/substrate/generic_lexer_state.s3"
+    ).read_text(encoding="utf-8")
+    return (
+        substrate
+        + f"\nfn main() -> i64:\n    return generic_native_parser_binary_case({case_id})\n"
     )
 
 
@@ -113,6 +132,63 @@ def _independent_parser_digest(source: str) -> int:
     digest += integer.span.end * 29
     digest += integer_payload.value * 31
     digest += native_token_count * 37
+    assert function.span.start == 0
+    return digest
+
+
+def _independent_binary_parser_digest(source: str) -> int:
+    parsed = parse_source_to_syntax_independent(source)
+    arena = parsed.syntax_arena
+    function = next(
+        node for _, node in arena.nodes.items() if node.kind is NodeKind.FUNCTION
+    )
+    return_node = next(
+        node for _, node in arena.nodes.items() if node.kind is NodeKind.RETURN
+    )
+    binary = next(
+        node for _, node in arena.nodes.items() if node.kind is NodeKind.BINARY
+    )
+    binary_payload = arena.payload(binary)
+    assert isinstance(binary_payload, OperatorPayload)
+    children = arena.child_ids(binary.id)
+    assert len(children) == 2
+    left = arena.node(children[0])
+    right = arena.node(children[1])
+    assert left.kind is NodeKind.INTEGER_LITERAL
+    assert right.kind is NodeKind.INTEGER_LITERAL
+    left_payload = arena.payload(left)
+    right_payload = arena.payload(right)
+    assert isinstance(left_payload, IntegerPayload)
+    assert isinstance(right_payload, IntegerPayload)
+    tokens = TokenArena.from_source_independent(source, mode=SyntaxMode.V0_6)
+    name_token = next(
+        token
+        for _, token in tokens.tokens.items()
+        if token.kind is TokenKind.IDENTIFIER and token.text != "i64"
+    )
+    name_digest = 0
+    for unit in source[name_token.span.start:name_token.span.end].encode("utf-8"):
+        name_digest = name_digest * 31 + unit
+    native_token_count = len(tokens) - sum(
+        token.kind in {TokenKind.INDENT, TokenKind.DEDENT}
+        for _, token in tokens.tokens.items()
+    ) + 1
+    digest = name_digest * 11
+    digest += name_token.span.start * 13
+    digest += name_token.span.end * 17
+    digest += return_node.span.start * 19
+    digest += left.span.start * 23
+    digest += left.span.end * 29
+    digest += left_payload.value * 31
+    digest += native_token_count * 37
+    digest += (binary_payload.operator_id + 1) * 41
+    digest += binary.span.start * 43
+    digest += left.span.start * 47
+    digest += left.span.end * 53
+    digest += left_payload.value * 59
+    digest += right.span.start * 61
+    digest += right.span.end * 67
+    digest += right_payload.value * 71
     assert function.span.start == 0
     return digest
 
@@ -179,6 +255,24 @@ def test_native_parser_minimal_function_rejects_malformed_input(case_id: int) ->
     assert run_source(_candidate_parser_source(case_id)) == -1
 
 
+@pytest.mark.parametrize(
+    "case_id,expected_digest",
+    ((0, 33517221), (1, 1002593000003)),
+)
+def test_native_binary_expression_matches_independent_syntax_oracle(
+    case_id: int,
+    expected_digest: int,
+) -> None:
+    expected = _independent_binary_parser_digest(_BINARY_PARSER_SOURCES[case_id])
+    assert expected == expected_digest
+    assert run_source(_candidate_binary_parser_source(case_id)) == expected
+
+
+@pytest.mark.parametrize("case_id", (2, 3))
+def test_native_binary_expression_rejects_malformed_input(case_id: int) -> None:
+    assert run_source(_candidate_binary_parser_source(case_id)) == -1
+
+
 def test_native_parser_slice_has_no_reference_frontend_fallback() -> None:
     source = _candidate_parser_source(0)
     for forbidden in (
@@ -189,6 +283,9 @@ def test_native_parser_slice_has_no_reference_frontend_fallback() -> None:
         "bootstrap.s3.ast",
     ):
         assert forbidden not in source
+    parser_source = source.split("export fn generic_native_parser_case", 1)[0]
+    for fixture_literal in ("calc", "compute", "entry", "worker"):
+        assert fixture_literal not in parser_source
 
 
 @pytest.mark.s3_native
@@ -221,6 +318,31 @@ def test_native_parser_minimal_function_qualifies_on_linux_x86_64(
         executable = toolchain.build(
             generate_native_assembly(compilation.assembly),
             tmp_path / f"ordinary-s3-parser-slice-negative-{case_id}",
+        )
+        completed = toolchain.run(executable)
+        assert completed.returncode == 0
+        assert completed.stdout == "program returned: -1\n"
+        assert completed.stderr == ""
+
+    for case_id in (0, 1):
+        compilation = compile_source(_candidate_binary_parser_source(case_id))
+        executable = toolchain.build(
+            generate_native_assembly(compilation.assembly),
+            tmp_path / f"ordinary-s3-binary-parser-slice-{case_id}",
+        )
+        completed = toolchain.run(executable)
+        assert completed.returncode == 0
+        assert completed.stdout == (
+            f"program returned: "
+            f"{_independent_binary_parser_digest(_BINARY_PARSER_SOURCES[case_id])}\n"
+        )
+        assert completed.stderr == ""
+
+    for case_id in (2, 3):
+        compilation = compile_source(_candidate_binary_parser_source(case_id))
+        executable = toolchain.build(
+            generate_native_assembly(compilation.assembly),
+            tmp_path / f"ordinary-s3-binary-parser-negative-{case_id}",
         )
         completed = toolchain.run(executable)
         assert completed.returncode == 0

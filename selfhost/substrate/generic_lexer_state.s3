@@ -499,6 +499,10 @@ export fn generic_native_parser_digest(source: &vector<i64>) -> i64:
     mut return_start: i64 = -1
     mut integer_start: i64 = -1
     mut integer_end: i64 = -1
+    mut operator_start: i64 = -1
+    mut operator_code: i64 = -1
+    mut right_integer_start: i64 = -1
+    mut right_integer_end: i64 = -1
 
     match generic_native_parser_take(&kinds, cursor, 2):
         -1:
@@ -590,6 +594,24 @@ export fn generic_native_parser_digest(source: &vector<i64>) -> i64:
             return -1
         1:
             return -1
+    match generic_native_parser_kind(&kinds, cursor) == 143:
+        -1:
+            operator_start = vector_get<i64>(&starts, cursor)
+            operator_code = 1
+            cursor = cursor + 1
+            match generic_native_parser_take(&kinds, cursor, 5):
+                -1:
+                    right_integer_start = vector_get<i64>(&starts, cursor)
+                    right_integer_end = vector_get<i64>(&ends, cursor)
+                    cursor = cursor + 1
+                0:
+                    return -1
+                1:
+                    return -1
+        0:
+            discard 0
+        1:
+            discard 0
     match generic_native_parser_take(&kinds, cursor, 6):
         -1:
             cursor = cursor + 1
@@ -617,6 +639,29 @@ export fn generic_native_parser_digest(source: &vector<i64>) -> i64:
             digest = digest + integer_end * 29
             digest = digest + integer_value * 31
             digest = digest + token_count * 37
+            match operator_start == -1:
+                -1:
+                    discard 0
+                0:
+                    mut right_integer_value: i64 = generic_native_parser_integer_value(source, right_integer_start, right_integer_end)
+                    digest = digest + operator_code * 41
+                    digest = digest + operator_start * 43
+                    digest = digest + integer_start * 47
+                    digest = digest + integer_end * 53
+                    digest = digest + integer_value * 59
+                    digest = digest + right_integer_start * 61
+                    digest = digest + right_integer_end * 67
+                    digest = digest + right_integer_value * 71
+                1:
+                    mut right_integer_value: i64 = generic_native_parser_integer_value(source, right_integer_start, right_integer_end)
+                    digest = digest + operator_code * 41
+                    digest = digest + operator_start * 43
+                    digest = digest + integer_start * 47
+                    digest = digest + integer_end * 53
+                    digest = digest + integer_value * 59
+                    digest = digest + right_integer_start * 61
+                    digest = digest + right_integer_end * 67
+                    digest = digest + right_integer_value * 71
             return digest
         0:
             return -1
@@ -709,4 +754,84 @@ export fn generic_native_parser_case(case_id: i64) -> i64:
             discard vector_push<i64>(&mut source, 10)
         1:
             discard vector_push<i64>(&mut source, 10)
+    return generic_native_parser_digest(&source)
+
+export fn generic_native_parser_binary_case(case_id: i64) -> i64:
+    mut source: vector<i64> = vector_new<i64>(64)
+    discard vector_push<i64>(&mut source, 102)
+    discard vector_push<i64>(&mut source, 110)
+    discard vector_push<i64>(&mut source, 32)
+    match case_id == 1:
+        -1:
+            discard vector_push<i64>(&mut source, 99)
+            discard vector_push<i64>(&mut source, 111)
+            discard vector_push<i64>(&mut source, 109)
+            discard vector_push<i64>(&mut source, 112)
+            discard vector_push<i64>(&mut source, 117)
+            discard vector_push<i64>(&mut source, 116)
+            discard vector_push<i64>(&mut source, 101)
+        0:
+            discard vector_push<i64>(&mut source, 99)
+            discard vector_push<i64>(&mut source, 97)
+            discard vector_push<i64>(&mut source, 108)
+            discard vector_push<i64>(&mut source, 99)
+        1:
+            discard vector_push<i64>(&mut source, 99)
+            discard vector_push<i64>(&mut source, 97)
+            discard vector_push<i64>(&mut source, 108)
+            discard vector_push<i64>(&mut source, 99)
+    discard vector_push<i64>(&mut source, 40)
+    discard vector_push<i64>(&mut source, 41)
+    discard vector_push<i64>(&mut source, 32)
+    discard vector_push<i64>(&mut source, 45)
+    discard vector_push<i64>(&mut source, 62)
+    discard vector_push<i64>(&mut source, 32)
+    discard vector_push<i64>(&mut source, 105)
+    discard vector_push<i64>(&mut source, 54)
+    discard vector_push<i64>(&mut source, 52)
+    discard vector_push<i64>(&mut source, 58)
+    discard vector_push<i64>(&mut source, 10)
+    discard vector_push<i64>(&mut source, 32)
+    discard vector_push<i64>(&mut source, 32)
+    discard vector_push<i64>(&mut source, 32)
+    discard vector_push<i64>(&mut source, 32)
+    discard vector_push<i64>(&mut source, 114)
+    discard vector_push<i64>(&mut source, 101)
+    discard vector_push<i64>(&mut source, 116)
+    discard vector_push<i64>(&mut source, 117)
+    discard vector_push<i64>(&mut source, 114)
+    discard vector_push<i64>(&mut source, 110)
+    discard vector_push<i64>(&mut source, 32)
+    match case_id == 3:
+        -1:
+            discard 0
+        0:
+            match case_id == 1:
+                -1:
+                    discard vector_push<i64>(&mut source, 52)
+                    discard vector_push<i64>(&mut source, 48)
+                0:
+                    discard vector_push<i64>(&mut source, 49)
+                1:
+                    discard vector_push<i64>(&mut source, 49)
+        1:
+            match case_id == 1:
+                -1:
+                    discard vector_push<i64>(&mut source, 52)
+                    discard vector_push<i64>(&mut source, 48)
+                0:
+                    discard vector_push<i64>(&mut source, 49)
+                1:
+                    discard vector_push<i64>(&mut source, 49)
+    discard vector_push<i64>(&mut source, 32)
+    discard vector_push<i64>(&mut source, 43)
+    discard vector_push<i64>(&mut source, 32)
+    match case_id == 2:
+        -1:
+            discard 0
+        0:
+            discard vector_push<i64>(&mut source, 50)
+        1:
+            discard vector_push<i64>(&mut source, 50)
+    discard vector_push<i64>(&mut source, 10)
     return generic_native_parser_digest(&source)
