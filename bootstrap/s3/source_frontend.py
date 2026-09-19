@@ -67,12 +67,22 @@ class TokenArena:
 
     POSITION_AUTHORITY = "normalized_utf8_bytes"
 
-    def __init__(self, *, file_id: int, source: str, mode: SyntaxMode) -> None:
+    def __init__(
+        self,
+        *,
+        file_id: int,
+        source: str,
+        mode: SyntaxMode,
+        lexer_backend: str = "python_reference",
+    ) -> None:
         if isinstance(file_id, bool) or not isinstance(file_id, int) or file_id < 0:
             raise ValueError("file_id must be a non-negative integer")
+        if not isinstance(lexer_backend, str) or not lexer_backend:
+            raise ValueError("lexer_backend must be a non-empty string")
         self.file_id = file_id
         self.source = source
         self.mode = mode
+        self.lexer_backend = lexer_backend
         self.tokens: StableArena[TokenRecord] = StableArena()
 
     @staticmethod
@@ -88,7 +98,12 @@ class TokenArena:
         mode: SyntaxMode = SyntaxMode.V0_6,
     ) -> "TokenArena":
         normalized = cls.normalize_source(source)
-        arena = cls(file_id=file_id, source=normalized, mode=mode)
+        arena = cls(
+            file_id=file_id,
+            source=normalized,
+            mode=mode,
+            lexer_backend="python_reference",
+        )
         byte_offsets = _codepoint_to_byte_offsets(normalized)
         for token in tokenize(normalized, mode=mode):
             token_id = arena.tokens.checkpoint()
@@ -107,6 +122,22 @@ class TokenArena:
                 )
             )
         return arena
+
+    @classmethod
+    def from_source_independent(
+        cls,
+        source: str,
+        *,
+        file_id: int = 0,
+        mode: SyntaxMode = SyntaxMode.V0_6,
+    ) -> "TokenArena":
+        from .generic_lexer import tokenize_to_arena
+
+        return tokenize_to_arena(
+            source,
+            file_id=file_id,
+            mode=mode,
+        )
 
     def __len__(self) -> int:
         return len(self.tokens)
@@ -1029,7 +1060,7 @@ def parse_source_to_syntax_independent(
     objects and does not call bootstrap.s3.parser.
     """
 
-    token_arena = TokenArena.from_source(
+    token_arena = TokenArena.from_source_independent(
         source, file_id=file_id, mode=mode
     )
     from .generic_parser import parse_token_arena
@@ -1097,7 +1128,7 @@ def parse_source_bundle_independent(
             raise SourceFrontendError(
                 f"source file {source_file.path!r} is not valid UTF-8"
             ) from error
-        token_arena = TokenArena.from_source(
+        token_arena = TokenArena.from_source_independent(
             source,
             file_id=file_id,
             mode=mode,
