@@ -263,3 +263,33 @@ fn main() -> i64:
     )
     assert util_module.source_file_id >= 0
     assert len(tuple(registry.imports.items())) == 1
+
+def test_type_import_alias_is_rejected_by_program_registry() -> None:
+    frontend = parse_source_bundle_independent(
+        SourceBundle(
+            (
+                (
+                    "types.s3",
+                    """\
+module types
+export record Point:
+    x: i64
+fn main() -> i64:
+    return 0
+""",
+                ),
+                (
+                    "main.s3",
+                    """\
+module main
+from types import Point as P
+fn main() -> i64:
+    return 0
+""",
+                ),
+            )
+        )
+    )
+    plan = build_registration_plan(frontend)
+    with pytest.raises(RegistrationError, match="type import aliases"):
+        ProgramRegistry().register(plan.modules)
