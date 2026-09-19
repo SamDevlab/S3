@@ -1,9 +1,9 @@
 """Hosted source-frontend integration with the whole-program control plane.
 
-This module advances a WholeProgramContext through INPUT, SYNTAX, and
-REGISTRATION using the independent GenericLexer/GenericParser path.  It stops
-before TYPE/SEMANTIC on purpose; no fake semantic, lowering, or emission phase
-is created.
+This module advances a WholeProgramContext through INPUT, SYNTAX,
+REGISTRATION, and TYPE using the independent GenericLexer/GenericParser path.
+It stops before semantic-expression analysis on purpose; no fake semantic,
+lowering, or emission phase is created.
 """
 
 from __future__ import annotations
@@ -16,6 +16,11 @@ from .frontend_registration import (
     FrontendRegistrationError,
     FrontendRegistrationPlan,
     build_registration_plan,
+)
+from .frontend_types import (
+    FrontendTypeError,
+    FrontendTypeResolutionResult,
+    resolve_frontend_types,
 )
 from .lexer import SyntaxMode
 from .source_frontend import (
@@ -38,6 +43,7 @@ class FrontendControlPlaneResult:
     success: bool
     frontend: SourceBundleFrontendResult | None
     registration_plan: FrontendRegistrationPlan | None
+    type_resolution: FrontendTypeResolutionResult | None
     modules: tuple[ModuleRecord, ...]
     diagnostics: tuple[DiagnosticRecord, ...]
     phase_trace: tuple[str, ...]
@@ -66,10 +72,10 @@ def ingest_source_frontend(
     *,
     mode: SyntaxMode = SyntaxMode.V0_6,
 ) -> FrontendControlPlaneResult:
-    """Run real source through frontend + registration, then stop before TYPE.
+    """Run real source through frontend, registration, and canonical TYPE.
 
-    A context is single-use for this entry point.  On success, the next legal
-    control-plane phase is TYPE.  On failure, the active phase records a
+    A context is single-use for this entry point. On success, the next legal
+    control-plane phase is SEMANTIC.  On failure, the active phase records a
     structured diagnostic and all dependent phases are suppressed by the
     existing PhaseOrchestrator.
     """
@@ -81,6 +87,7 @@ def ingest_source_frontend(
 
     frontend: SourceBundleFrontendResult | None = None
     plan: FrontendRegistrationPlan | None = None
+    type_resolution: FrontendTypeResolutionResult | None = None
     modules: tuple[ModuleRecord, ...] = ()
 
     try:
@@ -102,10 +109,28 @@ def ingest_source_frontend(
         modules = context.registry.register(plan.modules)
         context.phases.commit()
 
+        context.phases.begin(PhaseKind.TYPE)
+        type_checkpoint = context.types.checkpoint()
+        semantic_checkpoint = context.semantic.checkpoint()
+        try:
+            type_resolution = resolve_frontend_types(
+                frontend,
+                plan,
+                context.registry,
+                context.types,
+                context.semantic,
+            )
+        except Exception:
+            context.types.rollback(type_checkpoint)
+            context.semantic.rollback(semantic_checkpoint)
+            raise
+        context.phases.commit()
+
         return FrontendControlPlaneResult(
             True,
             frontend,
             plan,
+            type_resolution,
             modules,
             context.diagnostics.ordered(),
             context.phases.trace(),
@@ -114,6 +139,7 @@ def ingest_source_frontend(
     except (
         S3Error,
         FrontendRegistrationError,
+        FrontendTypeError,
         CompositionError,
         SubstrateError,
         ValueError,
@@ -134,6 +160,7 @@ def ingest_source_frontend(
             False,
             frontend,
             plan,
+            type_resolution,
             (),
             context.diagnostics.ordered(),
             context.phases.trace(),
@@ -141,12 +168,13 @@ def ingest_source_frontend(
         )
 
 
-def frontend_control_plane_ready_for_type(
+def frontend_control_plane_ready_for_semantic(
     result: FrontendControlPlaneResult,
 ) -> bool:
     return (
         result.success
-        and result.next_phase is PhaseKind.TYPE
+        and result.type_resolution is not None
+        and result.next_phase is PhaseKind.SEMANTIC
         and all(
             trace.endswith(
                 (
@@ -161,6 +189,6 @@ def frontend_control_plane_ready_for_type(
 
 __all__ = [
     "FrontendControlPlaneResult",
-    "frontend_control_plane_ready_for_type",
+    "frontend_control_plane_ready_for_semantic",
     "ingest_source_frontend",
 ]
