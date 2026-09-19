@@ -189,11 +189,29 @@ def test_composition_root_orchestrates_prepared_artifacts_without_fake_frontend(
     assert result.structural_digest
 
 
-def test_compile_program_fails_closed_without_prepared_frontend_artifacts() -> None:
-    result = compile_program(SourceBundle((("main.s3", "fn main"),)), OutputSink(32))
+def test_compile_program_runs_real_frontend_then_fails_closed_at_type_phase() -> None:
+    result = compile_program(
+        SourceBundle(
+            (
+                (
+                    "main.s3",
+                    "module main\nfn main() -> i64:\n    return 0\n",
+                ),
+            )
+        ),
+        OutputSink(32),
+    )
     assert result.success is False
+    assert result.test_artifact_input is False
     assert result.output == b""
-    assert result.diagnostics[0].code == "S3E_FRONTEND_UNAVAILABLE"
+    assert result.diagnostics[0].code == "S3E_TYPE_PHASE_UNAVAILABLE"
+    assert result.phase_trace[:4] == (
+        "INPUT:COMMITTED",
+        "SYNTAX:COMMITTED",
+        "REGISTRATION:COMMITTED",
+        "TYPE:FAILED",
+    )
+    assert "SEMANTIC:SKIPPED" in result.phase_trace
 
 
 def test_s3_whole_program_components_are_ordinary_representability_artifacts() -> None:
