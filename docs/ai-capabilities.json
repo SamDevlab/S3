@@ -94,6 +94,8 @@
       "source_to_generic_syntax": "YES_V1_REFERENCE_AND_INDEPENDENT_HOSTED_PATHS",
       "independent_generic_lexer": "YES_V1_HOSTED_WITH_S3_STATE_SHAPE",
       "independent_generic_parser": "YES_V1_HOSTED_V0_6_WITH_S3_STATE_SHAPE",
+      "frontend_program_registration": "YES_V1_HOSTED_FROM_GENERIC_SYNTAX",
+      "frontend_control_plane_ingestion": "YES_V1_INPUT_SYNTAX_REGISTRATION_ONLY",
       "independent_s3_lexer": "NO",
       "independent_s3_parser": "NO",
       "source_to_output_compile_program": "NO_SEMANTICS_LOWERING_EMITTER_NOT_IMPLEMENTED"
