@@ -208,3 +208,25 @@ fn main() -> i64:
     plan = build_registration_plan(frontend)
     with pytest.raises(RegistrationError, match="module import cycle"):
         ProgramRegistry().register(plan.modules)
+
+def test_function_generic_arity_is_retained_by_registration() -> None:
+    _, _, registry, _ = _registered(
+        (
+            (
+                "generic.s3",
+                """\
+module generic
+fn identity<T: value>(value: T) -> T:
+    return value
+fn main() -> i64:
+    return 0
+""",
+            ),
+        )
+    )
+    identity = next(
+        record
+        for _, record in registry.functions.items()
+        if record.generic_arity == 1
+    )
+    assert identity.generic_arity == 1
