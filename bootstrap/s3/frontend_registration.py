@@ -22,6 +22,7 @@ from .source_frontend import (
     SourceBundleFrontendResult,
     SourceUnitFrontendResult,
 )
+from .module_graph import ModuleId as SourceModuleId
 from .whole_program import (
     ExportSpec,
     FieldSpec,
@@ -294,7 +295,7 @@ def _module_symbol_id(
         if child.kind is NodeKind.MODULE_DECLARATION:
             return _declaration_payload(arena, child).symbol_id
 
-    synthetic_name = f"@source:{unit.path}"
+    synthetic_name = str(SourceModuleId.from_logical_path(unit.path))
     existing = symbol_to_id.get(synthetic_name)
     if existing is not None:
         return existing
