@@ -1,0 +1,104 @@
+module selfhost.substrate.generic_lexer_state
+
+record GenericLexerState:
+    source_bytes: vector<i64>
+    cursor: i64
+    line: i64
+    column: i64
+    indent_stack: vector<i64>
+    delimiter_stack: vector<i64>
+    token_ids: vector<i64>
+    token_kinds: vector<i64>
+    token_starts: vector<i64>
+    token_ends: vector<i64>
+
+fn is_ascii_digit(value: i64) -> trit:
+    match value >= 48:
+        -1:
+            return -1
+        0:
+            return -1
+        1:
+            match value <= 57:
+                -1:
+                    return -1
+                0:
+                    return 1
+                1:
+                    return 1
+
+fn is_ascii_identifier_start(value: i64) -> trit:
+    match value == 95:
+        -1:
+            discard 0
+        0:
+            return 1
+        1:
+            return 1
+
+    match value >= 65:
+        -1:
+            discard 0
+        0:
+            discard 0
+        1:
+            match value <= 90:
+                -1:
+                    discard 0
+                0:
+                    return 1
+                1:
+                    return 1
+
+    match value >= 97:
+        -1:
+            return -1
+        0:
+            return -1
+        1:
+            match value <= 122:
+                -1:
+                    return -1
+                0:
+                    return 1
+                1:
+                    return 1
+
+export fn generic_lexer_state_case(case_id: i64) -> i64:
+    mut source: vector<i64> = vector_new<i64>(16)
+    discard vector_push<i64>(&mut source, 102)
+    discard vector_push<i64>(&mut source, 110)
+    discard vector_push<i64>(&mut source, 32)
+    discard vector_push<i64>(&mut source, 109)
+    discard vector_push<i64>(&mut source, 97)
+    discard vector_push<i64>(&mut source, 105)
+    discard vector_push<i64>(&mut source, 110)
+    discard vector_push<i64>(&mut source, 10)
+    discard vector_push<i64>(&mut source, 49)
+    discard vector_push<i64>(&mut source, 50)
+    discard vector_push<i64>(&mut source, 51)
+
+    mut digest: i64 = 0
+    mut cursor: i64 = 0
+    while cursor < vector_len<i64>(&source):
+        mut value: i64 = vector_get<i64>(&source, cursor)
+        match is_ascii_digit(value):
+            -1:
+                digest = digest + value
+            0:
+                digest = digest + value * 3
+            1:
+                digest = digest + value * 3
+        match is_ascii_identifier_start(value):
+            -1:
+                discard 0
+            0:
+                digest = digest + 7
+            1:
+                digest = digest + 7
+        cursor = cursor + 1
+
+    return digest + case_id
+
+export fn generic_lexer_state_anchor() -> i64:
+    return generic_lexer_state_case(0)
