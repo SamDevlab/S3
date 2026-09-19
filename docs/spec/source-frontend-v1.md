@@ -53,10 +53,12 @@ It scans a small source buffer using ordinary S3 control flow, emits token
 IDs, token-kind codes, and normalized source spans into bounded vectors, then
 computes a deterministic digest. The focused regression derives the expected
 digest from the independent hosted `GenericLexer` and asserts equality. The
-first case yields `1509`; the second case adds real `(` and `)` token
-classification and yields `2101`. This keeps the hosted generic frontend as
-the semantic vocabulary oracle while proving that real S3 code can execute
-small lexer-shaped slices.
+qualification cases yield `1509` for the original shape, `2101` after adding
+real `(` and `)` classification, `2285` for `entry`/`42`, and `2375` for
+`worker`/`7`. The latter two cases prove cursor advancement and integer
+scanning are not coupled to the earlier `main`/`0` literals. This keeps the
+hosted generic frontend as the semantic vocabulary oracle while proving that
+real S3 code can execute small lexer-shaped slices.
 
 The slice intentionally does not cover indentation, comments, strings,
 operators, parser state, semantic analysis, lowering, or output generation.

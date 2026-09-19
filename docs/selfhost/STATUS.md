@@ -120,15 +120,15 @@ unchanged.
 ## Ordinary-S3 lexer vertical slice (2026-09-19)
 
 The source-frontend increment now includes one bounded ordinary-S3 execution
-slice in `selfhost/substrate/generic_lexer_state.s3`. The slice scans the
-ordinary source shape `fn main` followed by `return 0`, emits direct token
-identities and byte spans into bounded S3 vectors, and returns a deterministic
-digest. A focused test compares that result with the independent hosted
-`GenericLexer` contract. The slice also recognizes parenthesis tokens in the
-extended source shape and preserves the same digest contract. The same S3
-source is qualified through the normal x86-64 backend on the Linux VM; the
-Windows validation run records that Linux-native test as an expected local
-platform skip.
+slice in `selfhost/substrate/generic_lexer_state.s3`. The slice scans direct
+token identities and byte spans into bounded S3 vectors and returns a
+deterministic digest. Its qualification matrix covers the original
+`fn main`/`return 0` shape, parenthesis classification, and distinct arbitrary
+identifier/integer lexemes (`fn entry()`/`return 42` and `fn worker()`/`return
+7`). A focused test compares each result with the independent hosted
+`GenericLexer` contract. The same S3 source is qualified through the normal
+x86-64 backend on the Linux VM; the Windows validation run records that
+Linux-native test as an expected local platform skip.
 
 This is partial ordinary-frontend execution evidence only. It does not claim a
 complete S3-native lexer, a native parser, semantic analysis, lowering,

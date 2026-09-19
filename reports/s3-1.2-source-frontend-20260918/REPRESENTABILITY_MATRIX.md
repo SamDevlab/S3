@@ -10,6 +10,7 @@
 | lexical decisions hosted | REPRESENTABLE_NOW | GenericLexer writes TokenArena directly |
 | lexical differential oracle | AVAILABLE | production Python lexer |
 | lexer state ordinary S3 | REPRESENTABLE_NOW_FOR_SHAPE | generic_lexer_state.s3 |
+| bounded native lexer slice | QUALIFIED_FOR_BOUNDED_CASES | hosted differential digests 1509, 2101, 2285, 2375; Linux x86-64 native pass |
 | complete lexer algorithm ordinary S3 | BLOCKED | hosted algorithm not yet projected/executed natively |
 | parser cursor/state hosted | REPRESENTABLE_NOW | generic_parser.py |
 | parser cursor/state ordinary S3 | REPRESENTABLE_NOW_FOR_SHAPE | generic_parser_state.s3 |

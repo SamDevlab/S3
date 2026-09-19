@@ -5,7 +5,7 @@
 ```text
 BASE_MAIN_SHA=4c7aaf4ad59fdacdd83f230e11a0bd979081c80a
 BRANCH=feat/s3-1.2-source-frontend
-IMPLEMENTATION_SOURCE_HEAD=b720158ed70835f348f6e8182833752369ce2e55
+IMPLEMENTATION_SOURCE_HEAD=1b6f28596f504deb71822e417c8e7cff9296bf2b
 SOURCE_CHANGED_AFTER_IMPLEMENTATION_HEAD=NO
 PR=301
 PR_STATE=OPEN_DRAFT
@@ -141,12 +141,13 @@ The independent parser targets the default V0.6 grammar and directly handles:
 ## Bounded ordinary-S3 execution slice
 
 The candidate now contains a small executable ordinary-S3 lexer slice in
-`selfhost/substrate/generic_lexer_state.s3`. It scans the bounded source
-shape `fn main\nreturn 0\n`, emits direct IDs/kinds/spans, and returns digest
-1509. Its second case adds real parenthesis classification for
-`fn main()\nreturn 0\n` and returns digest 2101. The focused regression computes
-the independent hosted `GenericLexer` digest for each source and compares the
-results.
+`selfhost/substrate/generic_lexer_state.s3`. It scans bounded source shapes,
+emits direct IDs/kinds/spans, and returns the independent hosted digests 1509
+(`fn main`/`0`), 2101 (parentheses), 2285 (`entry`/`42`), and 2375
+(`worker`/`7`). The latter cases exercise arbitrary identifier advancement
+and multi-digit/single-digit integer scanning rather than the original
+fixture literals. The focused regression computes the independent hosted
+`GenericLexer` digest for each source and compares the results.
 
 ```text
 ORDINARY_S3_LEXER_SLICE=PASS_HOSTED_AND_LINUX_NATIVE
@@ -156,7 +157,7 @@ S3_NATIVE_PARSER=NO
 ```
 
 The Windows run records the Linux-native marker as an expected platform skip.
-The same test passed on the Linux x86-64 VM with `3 passed`, covering both
+The same test passed on the Linux x86-64 VM with `5 passed`, covering four
 hosted cases and the native parametrized case. Remote Linux compileall also
 passed.
 
@@ -192,18 +193,18 @@ Focused tests now cover:
 
 Validation performed on the Windows checkout and Linux x86-64 VM:
 
-- `tests/test_native_frontend_slice.py`: 2 hosted cases passed, 1 expected
+- `tests/test_native_frontend_slice.py`: 4 hosted cases passed, 1 expected
   Windows platform skip;
 - affected frontend tests: 55 passed;
 - `python -m compileall -q bootstrap tools tests`: PASS;
 - `git diff --check`: PASS.
-- Linux VM `tests/test_native_frontend_slice.py`: 3 passed;
+- Linux VM `tests/test_native_frontend_slice.py`: 5 passed;
 - Linux VM compileall: PASS.
 
-The official full suite on `bd0dc504ba6a3fb7f5624ee572810c1ae3dd9d3e`
-exited 0 before the second slice. The second slice then passed its focused
-Windows and Linux gates; the full suite was not duplicated solely for this
-bounded selfhost S3-source extension.
+The final full suite on
+`1b6f28596f504deb71822e417c8e7cff9296bf2b` exited 0 after the arbitrary
+identifier/integer slice. The subsequent report-only publication commit
+changes no executable, compiler, or test logic.
 
 ## Architectural boundary
 
