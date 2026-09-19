@@ -216,6 +216,7 @@ def _logical_tree(result, node_id: int):
             result.symbol_names[payload.symbol_id],
             payload.return_type_id,
             payload.parameter_count,
+            payload.flags,
         )
     elif payload is None:
         logical_payload = None
