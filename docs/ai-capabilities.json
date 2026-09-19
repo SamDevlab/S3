@@ -90,6 +90,9 @@
       "type_arena": "YES_V1_HOSTED_CANONICAL_TRANSACTIONAL",
       "semantic_state": "YES_V1_HOSTED_EXPLICIT_ASSOCIATIONS",
       "phase_orchestrator": "YES_V1_HOSTED_TRANSACTIONAL",
+      "generic_token_arena": "YES_V1_HOSTED_WITH_S3_SHAPE",
+      "source_to_generic_syntax": "YES_V1_REFERENCE_PARSER_BRIDGE",
+      "independent_s3_parser": "NO",
       "source_to_output_compile_program": "NO_FRONTEND_NOT_IMPLEMENTED"
     },
     "optimizer_levels": [
