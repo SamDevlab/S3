@@ -16,7 +16,7 @@ from hashlib import sha256
 import json
 
 from . import ast
-from .compiler_substrate import StableArena, SymbolInterner
+from .compiler_substrate import SourceBundle, StableArena, SymbolInterner
 from .diagnostics import SourceLocation
 from .generic_syntax import (
     DeclarationPayload,
@@ -180,6 +180,41 @@ class SourceFrontendResult:
         return digest.hexdigest()
 
 
+@dataclass(frozen=True, slots=True)
+class SourceUnitFrontendResult:
+    file_id: int
+    path: str
+    token_arena: TokenArena
+    syntax_arena: SyntaxArena
+
+    @property
+    def root_id(self) -> int:
+        if self.syntax_arena.root_id is None:
+            raise SourceFrontendError("syntax arena has no root")
+        return self.syntax_arena.root_id
+
+
+@dataclass(frozen=True, slots=True)
+class SourceBundleFrontendResult:
+    units: tuple[SourceUnitFrontendResult, ...]
+    symbol_names: tuple[str, ...]
+    parser_backend: str = "python_reference_recursive_descent"
+
+    def structural_digest(self) -> str:
+        digest = sha256()
+        for unit in self.units:
+            path = unit.path.encode("utf-8")
+            digest.update(len(path).to_bytes(8, "big"))
+            digest.update(path)
+            digest.update(unit.token_arena.structural_digest().encode("ascii"))
+            digest.update(unit.syntax_arena.structural_digest().encode("ascii"))
+        for name in self.symbol_names:
+            encoded = name.encode("utf-8")
+            digest.update(len(encoded).to_bytes(8, "big"))
+            digest.update(encoded)
+        return digest.hexdigest()
+
+
 _UNARY_OPERATOR_IDS = {
     ast.UnaryOperator.INVERT: 0,
     ast.UnaryOperator.NEGATE: 1,
@@ -212,9 +247,13 @@ def _codepoint_to_byte_offsets(source: str) -> tuple[int, ...]:
 
 
 class _AstProjector:
-    def __init__(self, tokens: TokenArena) -> None:
+    def __init__(
+        self,
+        tokens: TokenArena,
+        interner: SymbolInterner | None = None,
+    ) -> None:
         self.tokens = tokens
-        self.interner = SymbolInterner()
+        self.interner = interner if interner is not None else SymbolInterner()
         self.arena = SyntaxArena(symbol_count=0, type_count=0)
         self._byte_offsets = _codepoint_to_byte_offsets(tokens.source)
         self._token_by_source_position = {
