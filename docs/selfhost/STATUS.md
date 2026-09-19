@@ -93,7 +93,9 @@ shapes exist, but native lexer/parser execution remains a separate frontier.
 The hosted frontend is also connected to the whole-program control plane
 through a syntax-to-registration bridge. A fresh `WholeProgramContext` can
 advance from INPUT through SYNTAX and REGISTRATION using real source, then stop
-with TYPE as the next legal phase. No semantic, lowering, verifier, emitter, or
+with TYPE as the next legal phase. `compile_program` now uses that real-source
+path when no prepared test artifacts are supplied and fails closed at TYPE with
+`S3E_TYPE_PHASE_UNAVAILABLE`. No semantic, lowering, verifier, emitter, or
 output success is fabricated.
 
 `SELFHOST_REENTRY_AUTHORIZED=NO` and `STAGE1_V4=NOT_AUTHORIZED` remain
