@@ -5,15 +5,19 @@ import pytest
 from bootstrap.s3.compiler_substrate import SourceBundle
 from bootstrap.s3.diagnostics import ParseError
 from bootstrap.s3.generic_syntax import (
+    DeclarationPayload,
     FunctionPayload,
     NodeKind,
     PayloadKind,
+    SymbolPayload,
 )
 from bootstrap.s3.lexer import SyntaxMode, TokenKind, tokenize
 from bootstrap.s3.source_frontend import (
     TokenArena,
     parse_source_bundle,
+    parse_source_bundle_independent,
     parse_source_to_syntax,
+    parse_source_to_syntax_independent,
 )
 
 
@@ -192,3 +196,121 @@ def test_source_bundle_rejects_invalid_utf8() -> None:
     bundle = SourceBundle((("bad.s3", b"\xff"),))
     with pytest.raises(Exception, match="valid UTF-8"):
         parse_source_bundle(bundle)
+
+def _logical_tree(result, node_id: int):
+    arena = result.syntax_arena
+    node = arena.node(node_id)
+    payload = arena.payload(node)
+    if isinstance(payload, SymbolPayload):
+        logical_payload = ("symbol", result.symbol_names[payload.symbol_id])
+    elif isinstance(payload, DeclarationPayload):
+        logical_payload = (
+            "declaration",
+            result.symbol_names[payload.symbol_id],
+            payload.type_id,
+            payload.flags,
+        )
+    elif isinstance(payload, FunctionPayload):
+        logical_payload = (
+            "function",
+            result.symbol_names[payload.symbol_id],
+            payload.return_type_id,
+            payload.parameter_count,
+        )
+    elif payload is None:
+        logical_payload = None
+    else:
+        logical_payload = (type(payload).__name__, tuple(vars(payload).values()) if hasattr(payload, "__dict__") else repr(payload))
+    return (
+        node.kind.value,
+        logical_payload,
+        tuple(_logical_tree(result, child) for child in arena.child_ids(node_id)),
+    )
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        PROGRAM,
+        """\
+record Box<T: value>:
+    value: T
+fn read(box: Box<i64>) -> i64:
+    return box.value
+fn main() -> i64:
+    mut box: Box<i64> = Box<i64>(value=7)
+    return read(box)
+""",
+        """\
+fn main() -> i64:
+    mut total: i64 = 0
+    for index: i64 in range(0, 3):
+        total += index
+    while total < 10:
+        total += 1
+    return total
+""",
+        """\
+enum Choice:
+    None
+    Some(value: i64)
+fn main() -> i64:
+    mut value: i64 = 1
+    match value:
+        -1:
+            return 10
+        0:
+            return 20
+        else:
+            return 30
+""",
+    ),
+)
+def test_independent_parser_matches_reference_projection_logically(source: str) -> None:
+    reference = parse_source_to_syntax(source)
+    independent = parse_source_to_syntax_independent(source)
+
+    reference.syntax_arena.validate()
+    independent.syntax_arena.validate()
+
+    assert independent.parser_backend == "independent_generic_recursive_descent"
+    assert _logical_tree(reference, reference.root_id) == _logical_tree(
+        independent, independent.root_id
+    )
+
+
+def test_independent_parser_does_not_require_reference_parser_output() -> None:
+    result = parse_source_to_syntax_independent(
+        "fn main() -> i64:\n    return (1 + 2) * 3\n"
+    )
+    assert result.parser_backend == "independent_generic_recursive_descent"
+    assert NodeKind.BINARY in _kinds(result)
+    result.syntax_arena.validate()
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        "fn main() -> i64:\n    return\n",
+        "record Empty:\nfn main() -> i64:\n    return 0\n",
+        "fn main() -> i64:\n    mut value: i64 = 1;\n    return value\n",
+    ),
+)
+def test_independent_parser_rejects_malformed_sources(source: str) -> None:
+    with pytest.raises(ParseError):
+        parse_source_to_syntax_independent(source)
+
+
+def test_independent_source_bundle_uses_shared_symbol_namespace() -> None:
+    bundle = SourceBundle(
+        (
+            ("b.s3", "module b\nfn value() -> i64:\n    return 2\n"),
+            ("a.s3", "module a\nfn value() -> i64:\n    return 1\n"),
+        )
+    )
+    result = parse_source_bundle_independent(bundle)
+    assert result.parser_backend == "independent_generic_recursive_descent"
+    assert tuple(unit.path for unit in result.units) == ("a.s3", "b.s3")
+    assert result.symbol_names.count("value") == 1
+    for unit in result.units:
+        unit.syntax_arena.validate()
