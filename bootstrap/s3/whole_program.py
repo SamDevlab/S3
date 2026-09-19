@@ -365,8 +365,6 @@ class ProgramRegistry:
                 nominal_specs = tuple(sorted(spec.nominal_types, key=lambda item: (item.ordinal, item.name_symbol_id, item.syntax_node_id)))
                 function_first = self.functions.checkpoint()
                 nominal_first = self.nominal_types.checkpoint()
-                field_first = self.fields.checkpoint()
-                variant_first = self.variants.checkpoint()
                 for function in function_specs:
                     key = (int(module_id), function.name_symbol_id)
                     if key in self._function_by_namespace or key in self._type_by_namespace:
@@ -393,16 +391,32 @@ class ProgramRegistry:
                     if nominal.generic_arity < 0:
                         raise RegistrationError("S3E_SEMANTIC_INVALID_PROGRAM: invalid generic arity")
                     type_id = NominalTypeId(self.nominal_types.checkpoint())
+                    nominal_field_first = self.fields.checkpoint()
+                    nominal_variant_first = self.variants.checkpoint()
+                    seen_fields: set[int] = set()
                     for field in sorted(nominal.fields, key=lambda item: (item.ordinal, item.symbol_id)):
-                        if any(existing.symbol_id == field.symbol_id for _, existing in self.fields.items() if _ >= field_first):
+                        if field.symbol_id in seen_fields:
                             raise RegistrationError("S3E_RECORD_FIELD_DUPLICATE: duplicate record field")
+                        seen_fields.add(field.symbol_id)
                         self.fields.append(field)
+                    seen_variants: set[int] = set()
                     for variant in sorted(nominal.variants, key=lambda item: (item.ordinal, item.symbol_id)):
+                        if variant.symbol_id in seen_variants:
+                            raise RegistrationError("S3E_ENUM_VARIANT_DUPLICATE: duplicate enum variant")
+                        seen_variants.add(variant.symbol_id)
                         self.variants.append(variant)
                     record = NominalTypeRecord(
                         type_id, module_id, nominal.name_symbol_id, nominal.syntax_node_id,
-                        nominal.kind, IdRange(field_first, self.fields.checkpoint() - field_first),
-                        IdRange(variant_first, self.variants.checkpoint() - variant_first), nominal.generic_arity,
+                        nominal.kind,
+                        IdRange(
+                            nominal_field_first,
+                            self.fields.checkpoint() - nominal_field_first,
+                        ),
+                        IdRange(
+                            nominal_variant_first,
+                            self.variants.checkpoint() - nominal_variant_first,
+                        ),
+                        nominal.generic_arity,
                     )
                     self.nominal_types.append(record)
                     self._type_by_namespace[key] = record.id
