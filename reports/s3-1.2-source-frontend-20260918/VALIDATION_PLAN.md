@@ -7,7 +7,7 @@ in this file is evidence until its actual output is captured.
 
 ```text
 BASE_MAIN_SHA=4c7aaf4ad59fdacdd83f230e11a0bd979081c80a
-IMPLEMENTATION_SOURCE_HEAD=b95e270e5cf68c76c7721b21ce767f9734b780c6
+IMPLEMENTATION_SOURCE_HEAD=d2d2e93d243cae688ede4882897d06f7d3ab1b9f
 SOURCE_CHANGED_AFTER_IMPLEMENTATION_HEAD=NO
 PR=301
 ```
@@ -56,6 +56,9 @@ This tier is expected to exercise:
 - import visibility and cycle rejection;
 - per-nominal field/variant ranges;
 - frontend phase ingestion through REGISTRATION;
+- `compile_program` real-source ingestion and fail-closed TYPE boundary;
+- import visibility and module-cycle validation in ProgramRegistry;
+- function generic-arity and unresolved nominal type-syntax retention;
 - existing whole-program transaction/orchestration regressions.
 
 Do not proceed to full-suite certification if this tier has unresolved
