@@ -5,7 +5,7 @@
 ```text
 BASE_MAIN_SHA=4c7aaf4ad59fdacdd83f230e11a0bd979081c80a
 BRANCH=feat/s3-1.2-source-frontend
-IMPLEMENTATION_SOURCE_HEAD=d2d2e93d243cae688ede4882897d06f7d3ab1b9f
+IMPLEMENTATION_SOURCE_HEAD=e6b9122eb446d0f543e1d701b11219e22ecb85bb
 PR=301
 PR_STATE=OPEN_DRAFT
 PR_MERGED=NO
@@ -39,6 +39,7 @@ FRONTEND_PROGRAM_REGISTRATION=YES_HOSTED
 FRONTEND_CONTROL_PLANE_INGESTION=YES_INPUT_SYNTAX_REGISTRATION
 COMPILE_PROGRAM_REAL_SOURCE=YES_STOPS_AT_TYPE
 PROGRAM_REGISTRY_IMPORT_VISIBILITY=ENFORCED
+PROGRAM_REGISTRY_TYPE_IMPORT_ALIAS=REJECTED_PER_LANGUAGE_CONTRACT
 PROGRAM_REGISTRY_MODULE_CYCLES=REJECTED
 NOMINAL_FIELD_RANGES=PER_TYPE
 NOMINAL_TYPE_SYNTAX_RETENTION=YES
@@ -147,7 +148,9 @@ Focused tests now cover:
   modules, records, enums, generics, calls, loops and match statements;
 - malformed-source rejection;
 - multi-file shared symbol identity;
-- exported function flag preservation.
+- exported function flag preservation;
+- private-import rejection, module-cycle rejection, and unsupported type-import
+  alias rejection in the registration path.
 
 No local pytest/compileall/native result is claimed here because this ChatGPT
 execution context has GitHub access but no shell access to the user's
