@@ -5,7 +5,7 @@
 ```text
 BASE_MAIN_SHA=4c7aaf4ad59fdacdd83f230e11a0bd979081c80a
 BRANCH=feat/s3-1.2-source-frontend
-IMPLEMENTATION_SOURCE_HEAD=ec8047d227a547f3148eca51837ca84c9dbce26e
+IMPLEMENTATION_SOURCE_HEAD=b720158ed70835f348f6e8182833752369ce2e55
 SOURCE_CHANGED_AFTER_IMPLEMENTATION_HEAD=NO
 PR=301
 PR_STATE=OPEN_DRAFT
@@ -143,18 +143,22 @@ The independent parser targets the default V0.6 grammar and directly handles:
 The candidate now contains a small executable ordinary-S3 lexer slice in
 `selfhost/substrate/generic_lexer_state.s3`. It scans the bounded source
 shape `fn main\nreturn 0\n`, emits direct IDs/kinds/spans, and returns digest
-1509. The focused regression computes the independent hosted `GenericLexer`
-digest for the same source and compares the two results.
+1509. Its second case adds real parenthesis classification for
+`fn main()\nreturn 0\n` and returns digest 2101. The focused regression computes
+the independent hosted `GenericLexer` digest for each source and compares the
+results.
 
 ```text
-ORDINARY_S3_LEXER_SLICE=PASS_HOSTED
+ORDINARY_S3_LEXER_SLICE=PASS_HOSTED_AND_LINUX_NATIVE
 ORDINARY_S3_NATIVE_FRONTEND_EXECUTION=PARTIALLY_PROVEN
-S3_NATIVE_LEXER=NO_COMPLETE_FRONTEND
+S3_NATIVE_LEXER=PARTIAL
 S3_NATIVE_PARSER=NO
 ```
 
-The native qualification test is Linux x86-64 gated; this Windows run records
-the platform skip rather than converting it into a false pass.
+The Windows run records the Linux-native marker as an expected platform skip.
+The same test passed on the Linux x86-64 VM with `3 passed`, covering both
+hosted cases and the native parametrized case. Remote Linux compileall also
+passed.
 
 ## Tests authored
 
@@ -183,18 +187,23 @@ Focused tests now cover:
 - function signature publication and record/enum member type metadata;
 - TYPE rollback while preserving committed registration.
 - bounded ordinary-S3 lexer slice parity with the independent hosted digest;
+- parenthesis-token differential behavior;
 - platform-gated native qualification for that slice.
 
-Validation performed on the Windows checkout:
+Validation performed on the Windows checkout and Linux x86-64 VM:
 
-- `tests/test_native_frontend_slice.py`: 1 passed, 1 expected platform skip;
+- `tests/test_native_frontend_slice.py`: 2 hosted cases passed, 1 expected
+  Windows platform skip;
 - affected frontend tests: 55 passed;
 - `python -m compileall -q bootstrap tools tests`: PASS;
 - `git diff --check`: PASS.
+- Linux VM `tests/test_native_frontend_slice.py`: 3 passed;
+- Linux VM compileall: PASS.
 
-The pre-slice official full suite was also rerun after the stale test contracts
-were aligned and exited 0. The Linux-native slice remains unqualified on this
-host.
+The official full suite on `bd0dc504ba6a3fb7f5624ee572810c1ae3dd9d3e`
+exited 0 before the second slice. The second slice then passed its focused
+Windows and Linux gates; the full suite was not duplicated solely for this
+bounded selfhost S3-source extension.
 
 ## Architectural boundary
 
@@ -260,7 +269,7 @@ ordinary S3/native code.
 
 ```text
 READY_FOR_USER_TEST_ROUND=YES
-READY_FOR_MAIN_MERGE=NO_LINUX_NATIVE_QUALIFICATION_PENDING
+READY_FOR_MAIN_MERGE=NO_REMOTE_CHECKS_PENDING
 
 RELEASE=NO
 TAG=NO

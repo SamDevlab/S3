@@ -124,18 +124,20 @@ slice in `selfhost/substrate/generic_lexer_state.s3`. The slice scans the
 ordinary source shape `fn main` followed by `return 0`, emits direct token
 identities and byte spans into bounded S3 vectors, and returns a deterministic
 digest. A focused test compares that result with the independent hosted
-`GenericLexer` contract. The same S3 source is also native-qualification-ready
-through the normal x86-64 backend; the current Windows validation run records
-the Linux-native test as an expected platform skip.
+`GenericLexer` contract. The slice also recognizes parenthesis tokens in the
+extended source shape and preserves the same digest contract. The same S3
+source is qualified through the normal x86-64 backend on the Linux VM; the
+Windows validation run records that Linux-native test as an expected local
+platform skip.
 
 This is partial ordinary-frontend execution evidence only. It does not claim a
 complete S3-native lexer, a native parser, semantic analysis, lowering,
 emission, or a self-hosted compiler:
 
 ```text
-ORDINARY_S3_LEXER_SLICE=YES_HOSTED
+ORDINARY_S3_LEXER_SLICE=YES_HOSTED_AND_LINUX_NATIVE
 ORDINARY_S3_NATIVE_FRONTEND_EXECUTION=PARTIALLY_PROVEN
-S3_NATIVE_LEXER=NO_COMPLETE_FRONTEND
+S3_NATIVE_LEXER=PARTIAL
 S3_NATIVE_PARSER=NO
 ```
 
