@@ -144,3 +144,67 @@ fn main() -> i64:
     plan = build_registration_plan(frontend)
     with pytest.raises(RegistrationError, match="duplicate enum variant"):
         ProgramRegistry().register(plan.modules)
+
+def test_private_import_is_rejected_by_program_registry() -> None:
+    frontend = parse_source_bundle_independent(
+        SourceBundle(
+            (
+                (
+                    "a.s3",
+                    """\
+module a
+fn hidden() -> i64:
+    return 1
+fn main() -> i64:
+    return hidden()
+""",
+                ),
+                (
+                    "b.s3",
+                    """\
+module b
+from a import hidden
+fn main() -> i64:
+    return hidden()
+""",
+                ),
+            )
+        )
+    )
+    plan = build_registration_plan(frontend)
+    with pytest.raises(RegistrationError, match="private"):
+        ProgramRegistry().register(plan.modules)
+
+
+def test_module_import_cycle_is_rejected_by_program_registry() -> None:
+    frontend = parse_source_bundle_independent(
+        SourceBundle(
+            (
+                (
+                    "a.s3",
+                    """\
+module a
+from b import b_value
+export fn a_value() -> i64:
+    return 1
+fn main() -> i64:
+    return b_value()
+""",
+                ),
+                (
+                    "b.s3",
+                    """\
+module b
+from a import a_value
+export fn b_value() -> i64:
+    return 2
+fn main() -> i64:
+    return a_value()
+""",
+                ),
+            )
+        )
+    )
+    plan = build_registration_plan(frontend)
+    with pytest.raises(RegistrationError, match="module import cycle"):
+        ProgramRegistry().register(plan.modules)
