@@ -1,14 +1,19 @@
 """Deterministic whole-program composition control plane.
 
-This module deliberately stops at prepared-artifact orchestration.  It owns
-program identities, canonical type identities, semantic associations,
-structured diagnostics, phase transactions, and the final composition digest.
-It does not lex, parse, analyze expressions, lower, or emit source programs.
+The control plane owns program identities, canonical type identities, semantic
+associations, structured diagnostics, phase transactions, and the final
+composition digest.
 
-The prepared-artifact boundary is intentional: tests may inject a validated
-``SyntaxArena`` and an ``IRProgram`` while the missing frontend phases remain
-explicitly skipped.  This keeps the architecture useful without turning a
-test harness into a fake compiler.
+Two explicit entry paths coexist:
+
+* prepared-artifact composition for architecture and verifier tests; and
+* real hosted source ingestion through the independent generic frontend,
+  currently committing INPUT, SYNTAX, and REGISTRATION before failing closed
+  at TYPE because generic type/semantic resolution is not implemented.
+
+Neither path fabricates lowering or emission.  The default production Python
+compiler remains separate, and this module does not constitute Stage1 or a
+self-hosted compiler.
 """
 
 from __future__ import annotations
