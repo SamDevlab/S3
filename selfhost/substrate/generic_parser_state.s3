@@ -1,0 +1,61 @@
+module selfhost.substrate.generic_parser_state
+
+record GenericParserState:
+    token_ids: vector<i64>
+    token_kinds: vector<i64>
+    cursor: i64
+    error_code: i64
+
+fn parser_peek_kind(kinds: &vector<i64>, cursor: i64) -> i64:
+    match cursor <=> vector_len<i64>(kinds):
+        -1:
+            return vector_get<i64>(kinds, cursor)
+        0:
+            return -1
+        1:
+            return -1
+
+fn parser_match_kind(kinds: &vector<i64>, cursor: i64, wanted: i64) -> trit:
+    match parser_peek_kind(kinds, cursor) == wanted:
+        -1:
+            return -1
+        0:
+            return 0
+        1:
+            return 1
+
+export fn generic_parser_state_case(case_id: i64) -> i64:
+    mut ids: vector<i64> = vector_new<i64>(8)
+    mut kinds: vector<i64> = vector_new<i64>(8)
+
+    discard vector_push<i64>(&mut ids, 0)
+    discard vector_push<i64>(&mut ids, 1)
+    discard vector_push<i64>(&mut ids, 2)
+    discard vector_push<i64>(&mut ids, 3)
+
+    discard vector_push<i64>(&mut kinds, 100)
+    discard vector_push<i64>(&mut kinds, 200)
+    discard vector_push<i64>(&mut kinds, 300)
+    discard vector_push<i64>(&mut kinds, 999)
+
+    mut cursor: i64 = 0
+    mut digest: i64 = 0
+
+    while cursor < vector_len<i64>(&kinds):
+        digest = digest + vector_get<i64>(&ids, cursor) * 3
+        digest = digest + parser_peek_kind(&kinds, cursor) * 5
+        cursor = cursor + 1
+
+    mut matched: i64 = 0
+    match parser_match_kind(&kinds, case_id, 200):
+        -1:
+            matched = -1
+        0:
+            matched = 0
+        1:
+            matched = 1
+
+    return matched * 100000 + digest
+
+export fn generic_parser_state_anchor() -> i64:
+    return generic_parser_state_case(1)
