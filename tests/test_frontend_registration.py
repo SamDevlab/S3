@@ -230,3 +230,36 @@ fn main() -> i64:
         if record.generic_arity == 1
     )
     assert identity.generic_arity == 1
+
+def test_implicit_path_module_identity_matches_import_spelling() -> None:
+    _, plan, registry, _ = _registered(
+        (
+            (
+                "util/math.s3",
+                """\
+export fn one() -> i64:
+    return 1
+fn main() -> i64:
+    return one()
+""",
+            ),
+            (
+                "main.s3",
+                """\
+module main
+from util.math import one
+fn main() -> i64:
+    return one()
+""",
+            ),
+        )
+    )
+
+    util_symbol = plan.symbol_names.index("util.math")
+    util_module = next(
+        record
+        for _, record in registry.modules.items()
+        if record.symbol_id == util_symbol
+    )
+    assert util_module.source_file_id >= 0
+    assert len(tuple(registry.imports.items())) == 1
