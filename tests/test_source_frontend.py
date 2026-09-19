@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from bootstrap.s3.compiler_substrate import SourceBundle
-from bootstrap.s3.diagnostics import ParseError
+from bootstrap.s3.diagnostics import IndentationError, LexError, ParseError
 from bootstrap.s3.generic_syntax import (
     DeclarationPayload,
     FunctionPayload,
@@ -341,3 +341,143 @@ def test_independent_parser_preserves_exported_function_flag() -> None:
         payload = result.syntax_arena.payload(function)
         assert isinstance(payload, FunctionPayload)
         assert payload.flags == 1
+
+def _token_signature(arena: TokenArena):
+    return tuple(
+        (
+            record.id,
+            record.kind,
+            record.text,
+            record.span.file_id,
+            record.span.start,
+            record.span.end,
+            record.line,
+            record.column,
+            record.source_position,
+        )
+        for _, record in arena.tokens.items()
+    )
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        PROGRAM,
+        """\
+# heading
+fn main() -> i64:
+    mut value: i64 = 12
+    value += 3
+    return value
+""",
+        """\
+fn main() -> f64:
+    mut value: f64 = 12.5
+    return value / 2.5
+""",
+        """\
+fn main() -> i64:
+    discard foo(
+        1,
+        2
+    )
+    return 0
+""",
+        """\
+fn main() -> i64:
+    discard "a\\\"b"
+    return 0
+""",
+        """\
+fn main() -> i64:
+    mut x: i64 = 1
+    match x:
+        -1:
+            return 1
+        0:
+            return 2
+        else:
+            return 3
+""",
+        "fn main() -> i64:\r\n    return 0\r\n",
+    ),
+)
+def test_independent_lexer_matches_reference_token_arena(source: str) -> None:
+    reference = TokenArena.from_source(source, file_id=11)
+    independent = TokenArena.from_source_independent(source, file_id=11)
+
+    assert reference.lexer_backend == "python_reference"
+    assert independent.lexer_backend == "independent_generic"
+    assert _token_signature(independent) == _token_signature(reference)
+    assert independent.structural_digest() == reference.structural_digest()
+
+
+@pytest.mark.parametrize(
+    "source",
+    (
+        "fn main() -> i64:\n\treturn 0\n",
+        "fn main() -> i64:\n \treturn 0\n",
+        "fn main() -> i64:\n    return 0\n  return 1\n",
+        "fn main() -> i64:\n    discard \"unterminated\n",
+        "fn main() -> i64:\n    return @\n",
+    ),
+)
+def test_independent_lexer_matches_reference_failures(source: str) -> None:
+    def capture(factory):
+        with pytest.raises((LexError, IndentationError)) as caught:
+            factory(source)
+        return caught.value
+
+    reference = capture(TokenArena.from_source)
+    independent = capture(TokenArena.from_source_independent)
+
+    assert type(independent) is type(reference)
+    assert independent.diagnostic_code is reference.diagnostic_code
+    assert independent.diagnostic_phase is reference.diagnostic_phase
+    assert independent.location == reference.location
+
+
+def test_independent_full_frontend_never_calls_reference_lexer_or_parser(monkeypatch) -> None:
+    def forbidden(*args, **kwargs):
+        raise AssertionError("reference frontend callback must not run")
+
+    monkeypatch.setattr("bootstrap.s3.source_frontend.tokenize", forbidden)
+    monkeypatch.setattr("bootstrap.s3.source_frontend.parse_tokens", forbidden)
+
+    result = parse_source_to_syntax_independent(
+        "fn main() -> i64:\n    return (1 + 2) * 3\n"
+    )
+    result.syntax_arena.validate()
+    assert result.token_arena.lexer_backend == "independent_generic"
+    assert result.parser_backend == "independent_generic_recursive_descent"
+
+
+def test_independent_lexer_suppresses_newlines_inside_delimiters() -> None:
+    source = """\
+fn main() -> i64:
+    return foo(
+        1,
+        2
+    )
+"""
+    reference = TokenArena.from_source(source)
+    independent = TokenArena.from_source_independent(source)
+    assert _token_signature(independent) == _token_signature(reference)
+
+
+def test_independent_lexer_covers_operator_vocabulary() -> None:
+    source = """\
+fn main() -> i64:
+    mut value: i64 = 1
+    value += 2
+    discard value <=> 0
+    discard value == 3
+    discard value != 4
+    discard value <= 5
+    discard value >= 6
+    discard value & 7 | 8
+    return ~value + 1 * 2 / 3 - 4
+"""
+    reference = TokenArena.from_source(source)
+    independent = TokenArena.from_source_independent(source)
+    assert _token_signature(independent) == _token_signature(reference)
