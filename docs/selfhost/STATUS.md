@@ -77,15 +77,18 @@ into the generic `SyntaxArena`. Multi-file `SourceBundle` parsing uses one
 shared symbol interner so equal names keep one deterministic identity across the
 bundle.
 
-The compatibility bridge still keeps the production Python recursive-descent
-parser as a differential oracle, but this branch also contains a separate
-hosted `GenericParser` that consumes `TokenArena` directly and writes the
-generic `SyntaxArena` without constructing hosted AST objects or calling
+The compatibility bridge still keeps the production Python lexer/parser as a
+differential oracle, but this branch now also contains a separate hosted
+`GenericLexer` and `GenericParser`.
+
+`GenericLexer` scans normalized source directly into `TokenArena` without
+calling the production `Lexer`/`tokenize` implementation.
+`GenericParser` then consumes `TokenArena` directly and writes the generic
+`SyntaxArena` without constructing hosted AST objects or calling
 `bootstrap.s3.parser`.
 
-This is still not an S3-native parser. The ordinary-S3 token arena projection
-does not perform lexing or parsing, and native parser execution remains a
-separate frontend frontier.
+This is still not an S3-native frontend. Ordinary-S3 source/token/parser state
+shapes exist, but native lexer/parser execution remains a separate frontier.
 
 `SELFHOST_REENTRY_AUTHORIZED=NO` and `STAGE1_V4=NOT_AUTHORIZED` remain
 unchanged.
