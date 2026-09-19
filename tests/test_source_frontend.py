@@ -182,3 +182,13 @@ def test_source_bundle_uses_canonical_file_order_and_shared_symbols() -> None:
     assert tuple(unit.file_id for unit in first.units) == (0, 1)
     for unit in first.units:
         unit.syntax_arena.validate()
+
+def test_token_arena_rejects_negative_file_id() -> None:
+    with pytest.raises(ValueError, match="file_id"):
+        TokenArena.from_source("fn main() -> i64:\n    return 0\n", file_id=-1)
+
+
+def test_source_bundle_rejects_invalid_utf8() -> None:
+    bundle = SourceBundle((("bad.s3", b"\xff"),))
+    with pytest.raises(Exception, match="valid UTF-8"):
+        parse_source_bundle(bundle)
