@@ -135,6 +135,38 @@ Every file still receives an independent `SyntaxArena` and file ID. The bundle
 result records the canonical units plus the shared symbol table and produces a
 deterministic structural digest.
 
+
+## Registration integration
+
+The hosted independent frontend now has an explicit bridge from generic syntax
+to the whole-program `ProgramRegistry`.
+
+`build_registration_plan(frontend)` derives deterministic `ModuleSpec`,
+`FunctionSpec`, `NominalTypeSpec`, `ImportSpec`, and `ExportSpec` values
+from `SyntaxArena` nodes. Registration does not invoke semantic expression
+analysis.
+
+For source units without an explicit `module` declaration, module identity
+follows the existing module-graph authority: normalized relative path with the
+`.s3` suffix removed and path components converted to the canonical dotted
+module id. The frontend does not invent a second anonymous-module naming rule.
+
+The bridge preserves unresolved declaration-type syntax IDs where registration
+precedes type resolution. Record/enum type identities and field/variant names
+are registered, while semantic `TypeId` assignment remains a later phase.
+
+`ingest_source_frontend(context)` advances a fresh `WholeProgramContext`
+through exactly:
+
+```text
+INPUT -> SYNTAX -> REGISTRATION
+```
+
+and stops with `TYPE` as the next legal phase. It does not mark TYPE,
+SEMANTIC, LOWERING, VERIFICATION, EMITTER, OUTPUT, or FINALIZE as successful.
+Frontend or registration failure is converted into the existing structured
+phase failure path and dependent later phases are suppressed.
+
 ## Diagnostics
 
 Lexical and parse failures remain the existing typed Python
@@ -142,9 +174,10 @@ Lexical and parse failures remain the existing typed Python
 `DiagnosticCode` authority. This increment does not invent a parallel
 diagnostic code family.
 
-Mapping those diagnostics directly into the whole-program `DiagnosticArena`
-belongs to composition integration after the independent parser contract is
-settled.
+Frontend ingestion maps lexical/parse/registration failure codes into the
+whole-program phase diagnostic path. The composition DiagnosticArena still
+does not retain the complete source-span envelope, so full diagnostic
+source-location preservation remains a later integration item.
 
 ## Complexity
 
