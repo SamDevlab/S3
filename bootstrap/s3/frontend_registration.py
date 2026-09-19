@@ -254,11 +254,11 @@ def _record_spec(
             # explicit unresolved sentinel; type_syntax_id retains the source
             # identity for the later TYPE phase.
             type_syntax_id = _type_child(
-                        arena,
-                        child.id,
-                        file_id=file_id,
-                        syntax_index=syntax_index,
-                    )
+                arena,
+                child.id,
+                file_id=file_id,
+                syntax_index=syntax_index,
+            )
             fields.append(
                 FieldSpec(
                     field.symbol_id,
@@ -312,7 +312,12 @@ def _enum_spec(
                     f"enum variant node {child.id} has non-field payload syntax"
                 )
             payload_type_syntax_ids.append(
-                _type_child(arena, payload_field.id)
+                _type_child(
+                    arena,
+                    payload_field.id,
+                    file_id=file_id,
+                    syntax_index=syntax_index,
+                )
             )
         variants.append(
             VariantSpec(
