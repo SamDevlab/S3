@@ -513,6 +513,13 @@ class ProgramRegistry:
                         raise RegistrationError(
                             "S3E_IMPORT_PRIVATE_SYMBOL: imported symbol is private"
                         )
+                    if (
+                        item.alias_symbol_id >= 0
+                        and target_key in self._type_by_namespace
+                    ):
+                        raise RegistrationError(
+                            "S3E_SEMANTIC_INVALID_PROGRAM: type import aliases are not supported yet"
+                        )
                     self.imports.append(ImportRecord(self.imports.checkpoint(), module.id, target, item.imported_symbol_id, alias, item.span))
                 exported: set[int] = set()
                 for item in sorted(spec.exports, key=lambda value: (value.ordinal, value.symbol_id, value.kind)):
