@@ -509,6 +509,7 @@ class _AstProjector:
                     first_parameter,
                     len(parameters),
                     body,
+                    1 if value.exported else 0,
                 ),
                 children=children,
             )
@@ -533,6 +534,7 @@ class _AstProjector:
                     first_parameter,
                     len(parameters),
                     -1,
+                    0,
                 ),
                 children=children,
             )
