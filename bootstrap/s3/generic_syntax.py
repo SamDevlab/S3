@@ -144,6 +144,7 @@ class FunctionPayload:
     parameter_first: int = 0
     parameter_count: int = 0
     body_id: int = -1
+    flags: int = 0
 
 
 NodePayload: TypeAlias = (
@@ -397,7 +398,7 @@ class SyntaxArena:
                 and not 0 <= payload.return_type_id < self.type_count
             ) or payload.parameter_first < 0:
                 raise SyntaxValidationError(f"invalid function payload at node {node_id}")
-            if payload.parameter_count < 0 or payload.body_id < -1:
+            if payload.parameter_count < 0 or payload.body_id < -1 or payload.flags < 0:
                 raise SyntaxValidationError(f"invalid function payload at node {node_id}")
 
     def _validate_reachable_root(self, root_id: int) -> None:
