@@ -280,13 +280,10 @@ fn generic_punctuation_kind(unit: i64) -> i64:
         1:
             return 100 + unit
 
-export fn generic_lexer_scan_digest(source: &vector<i64>) -> i64:
-    mut ids: vector<i64> = vector_new<i64>(64)
-    mut kinds: vector<i64> = vector_new<i64>(64)
-    mut starts: vector<i64> = vector_new<i64>(64)
-    mut ends: vector<i64> = vector_new<i64>(64)
+fn generic_lexer_scan_tokens(source: &vector<i64>, ids: &mut vector<i64>, kinds: &mut vector<i64>, starts: &mut vector<i64>, ends: &mut vector<i64>) -> i64:
     mut cursor: i64 = 0
     mut length: i64 = vector_len<i64>(source)
+    mut token_count: i64 = 0
 
     while cursor < length:
         mut unit: i64 = vector_get<i64>(source, cursor)
@@ -294,11 +291,12 @@ export fn generic_lexer_scan_digest(source: &vector<i64>) -> i64:
             -1:
                 match generic_scan_kind(unit):
                     -1:
-                        mut token_id: i64 = vector_len<i64>(&ids)
-                        discard vector_push<i64>(&mut ids, token_id)
-                        discard vector_push<i64>(&mut kinds, generic_punctuation_kind(unit))
-                        discard vector_push<i64>(&mut starts, cursor)
-                        discard vector_push<i64>(&mut ends, cursor + 1)
+                        mut token_id: i64 = token_count
+                        discard vector_push<i64>(ids, token_id)
+                        discard vector_push<i64>(kinds, generic_punctuation_kind(unit))
+                        discard vector_push<i64>(starts, cursor)
+                        discard vector_push<i64>(ends, cursor + 1)
+                        token_count = token_count + 1
                         cursor = cursor + 1
                     0:
                         mut start: i64 = cursor
@@ -318,11 +316,12 @@ export fn generic_lexer_scan_digest(source: &vector<i64>) -> i64:
                                     scanning = 0
                                 1:
                                     scanning = 0
-                        mut token_id: i64 = vector_len<i64>(&ids)
-                        discard vector_push<i64>(&mut ids, token_id)
-                        discard vector_push<i64>(&mut kinds, 5)
-                        discard vector_push<i64>(&mut starts, start)
-                        discard vector_push<i64>(&mut ends, end)
+                        mut token_id: i64 = token_count
+                        discard vector_push<i64>(ids, token_id)
+                        discard vector_push<i64>(kinds, 5)
+                        discard vector_push<i64>(starts, start)
+                        discard vector_push<i64>(ends, end)
+                        token_count = token_count + 1
                         cursor = end
                     1:
                         mut start: i64 = cursor
@@ -342,27 +341,37 @@ export fn generic_lexer_scan_digest(source: &vector<i64>) -> i64:
                                     scanning = 0
                                 1:
                                     scanning = 0
-                        mut token_id: i64 = vector_len<i64>(&ids)
-                        discard vector_push<i64>(&mut ids, token_id)
-                        discard vector_push<i64>(&mut kinds, generic_word_kind(source, start, end))
-                        discard vector_push<i64>(&mut starts, start)
-                        discard vector_push<i64>(&mut ends, end)
+                        mut token_id: i64 = token_count
+                        discard vector_push<i64>(ids, token_id)
+                        discard vector_push<i64>(kinds, generic_word_kind(source, start, end))
+                        discard vector_push<i64>(starts, start)
+                        discard vector_push<i64>(ends, end)
+                        token_count = token_count + 1
                         cursor = end
             0:
-                mut token_id: i64 = vector_len<i64>(&ids)
-                discard vector_push<i64>(&mut ids, token_id)
-                discard vector_push<i64>(&mut kinds, 6)
-                discard vector_push<i64>(&mut starts, cursor)
-                discard vector_push<i64>(&mut ends, cursor)
+                mut token_id: i64 = token_count
+                discard vector_push<i64>(ids, token_id)
+                discard vector_push<i64>(kinds, 6)
+                discard vector_push<i64>(starts, cursor)
+                discard vector_push<i64>(ends, cursor)
+                token_count = token_count + 1
                 cursor = cursor + 1
             1:
                 cursor = cursor + 1
 
-    mut token_id: i64 = vector_len<i64>(&ids)
-    discard vector_push<i64>(&mut ids, token_id)
-    discard vector_push<i64>(&mut kinds, 0)
-    discard vector_push<i64>(&mut starts, length)
-    discard vector_push<i64>(&mut ends, length)
+    mut token_id: i64 = token_count
+    discard vector_push<i64>(ids, token_id)
+    discard vector_push<i64>(kinds, 0)
+    discard vector_push<i64>(starts, length)
+    discard vector_push<i64>(ends, length)
+    return token_count + 1
+
+export fn generic_lexer_scan_digest(source: &vector<i64>) -> i64:
+    mut ids: vector<i64> = vector_new<i64>(64)
+    mut kinds: vector<i64> = vector_new<i64>(64)
+    mut starts: vector<i64> = vector_new<i64>(64)
+    mut ends: vector<i64> = vector_new<i64>(64)
+    discard generic_lexer_scan_tokens(source, &mut ids, &mut kinds, &mut starts, &mut ends)
 
     mut index: i64 = 0
     mut digest: i64 = 0
@@ -443,3 +452,261 @@ export fn generic_lexer_native_case(case_id: i64) -> i64:
             discard vector_push<i64>(&mut source, 48)
     discard vector_push<i64>(&mut source, 10)
     return generic_lexer_scan_digest(&source)
+
+fn generic_native_parser_kind(kinds: &vector<i64>, cursor: i64) -> i64:
+    match cursor <=> vector_len<i64>(kinds):
+        -1:
+            return vector_get<i64>(kinds, cursor)
+        0:
+            return -1
+        1:
+            return -1
+
+fn generic_native_parser_take(kinds: &vector<i64>, cursor: i64, wanted: i64) -> trit:
+    match generic_native_parser_kind(kinds, cursor) == wanted:
+        -1:
+            return -1
+        0:
+            return 0
+        1:
+            return 1
+
+fn generic_native_parser_name_digest(source: &vector<i64>, start: i64, end: i64) -> i64:
+    mut cursor: i64 = start
+    mut digest: i64 = 0
+    while cursor < end:
+        digest = digest * 31 + vector_get<i64>(source, cursor)
+        cursor = cursor + 1
+    return digest
+
+fn generic_native_parser_integer_value(source: &vector<i64>, start: i64, end: i64) -> i64:
+    mut cursor: i64 = start
+    mut value: i64 = 0
+    while cursor < end:
+        value = value * 10 + vector_get<i64>(source, cursor) - 48
+        cursor = cursor + 1
+    return value
+
+export fn generic_native_parser_digest(source: &vector<i64>) -> i64:
+    mut ids: vector<i64> = vector_new<i64>(32)
+    mut kinds: vector<i64> = vector_new<i64>(32)
+    mut starts: vector<i64> = vector_new<i64>(32)
+    mut ends: vector<i64> = vector_new<i64>(32)
+    mut token_count: i64 = generic_lexer_scan_tokens(source, &mut ids, &mut kinds, &mut starts, &mut ends)
+    mut cursor: i64 = 0
+    mut name_start: i64 = -1
+    mut name_end: i64 = -1
+    mut return_start: i64 = -1
+    mut integer_start: i64 = -1
+    mut integer_end: i64 = -1
+
+    match generic_native_parser_take(&kinds, cursor, 2):
+        -1:
+            cursor = cursor + 1
+        0:
+            return -1
+        1:
+            return -1
+    match generic_native_parser_take(&kinds, cursor, 1):
+        -1:
+            name_start = vector_get<i64>(&starts, cursor)
+            name_end = vector_get<i64>(&ends, cursor)
+            cursor = cursor + 1
+        0:
+            return -1
+        1:
+            return -1
+    match generic_native_parser_take(&kinds, cursor, 7):
+        -1:
+            cursor = cursor + 1
+        0:
+            return -1
+        1:
+            return -1
+    match generic_native_parser_take(&kinds, cursor, 8):
+        -1:
+            cursor = cursor + 1
+        0:
+            return -1
+        1:
+            return -1
+
+    match generic_native_parser_kind(&kinds, cursor) == 6:
+        -1:
+            cursor = cursor + 1
+        0:
+            match generic_native_parser_take(&kinds, cursor, 145):
+                -1:
+                    cursor = cursor + 1
+                0:
+                    return -1
+                1:
+                    return -1
+            match generic_native_parser_take(&kinds, cursor, 162):
+                -1:
+                    cursor = cursor + 1
+                0:
+                    return -1
+                1:
+                    return -1
+            match generic_native_parser_take(&kinds, cursor, 1):
+                -1:
+                    cursor = cursor + 1
+                0:
+                    return -1
+                1:
+                    return -1
+            match generic_native_parser_take(&kinds, cursor, 158):
+                -1:
+                    cursor = cursor + 1
+                0:
+                    return -1
+                1:
+                    return -1
+            match generic_native_parser_take(&kinds, cursor, 6):
+                -1:
+                    cursor = cursor + 1
+                0:
+                    return -1
+                1:
+                    return -1
+        1:
+            return -1
+
+    match generic_native_parser_take(&kinds, cursor, 3):
+        -1:
+            return_start = vector_get<i64>(&starts, cursor)
+            cursor = cursor + 1
+        0:
+            return -1
+        1:
+            return -1
+    match generic_native_parser_take(&kinds, cursor, 5):
+        -1:
+            integer_start = vector_get<i64>(&starts, cursor)
+            integer_end = vector_get<i64>(&ends, cursor)
+            cursor = cursor + 1
+        0:
+            return -1
+        1:
+            return -1
+    match generic_native_parser_take(&kinds, cursor, 6):
+        -1:
+            cursor = cursor + 1
+        0:
+            return -1
+        1:
+            return -1
+    match generic_native_parser_take(&kinds, cursor, 0):
+        -1:
+            cursor = cursor + 1
+        0:
+            return -1
+        1:
+            return -1
+    match cursor == token_count:
+        -1:
+            mut name_digest: i64 = generic_native_parser_name_digest(source, name_start, name_end)
+            mut integer_value: i64 = generic_native_parser_integer_value(source, integer_start, integer_end)
+            mut digest: i64 = 0
+            digest = digest + name_digest * 11
+            digest = digest + name_start * 13
+            digest = digest + name_end * 17
+            digest = digest + return_start * 19
+            digest = digest + integer_start * 23
+            digest = digest + integer_end * 29
+            digest = digest + integer_value * 31
+            digest = digest + token_count * 37
+            return digest
+        0:
+            return -1
+        1:
+            return -1
+
+export fn generic_native_parser_case(case_id: i64) -> i64:
+    mut source: vector<i64> = vector_new<i64>(64)
+    discard vector_push<i64>(&mut source, 102)
+    discard vector_push<i64>(&mut source, 110)
+    discard vector_push<i64>(&mut source, 32)
+    match case_id == 1:
+        -1:
+            discard vector_push<i64>(&mut source, 119)
+            discard vector_push<i64>(&mut source, 111)
+            discard vector_push<i64>(&mut source, 114)
+            discard vector_push<i64>(&mut source, 107)
+            discard vector_push<i64>(&mut source, 101)
+            discard vector_push<i64>(&mut source, 114)
+        0:
+            discard vector_push<i64>(&mut source, 101)
+            discard vector_push<i64>(&mut source, 110)
+            discard vector_push<i64>(&mut source, 116)
+            discard vector_push<i64>(&mut source, 114)
+            discard vector_push<i64>(&mut source, 121)
+        1:
+            discard vector_push<i64>(&mut source, 101)
+            discard vector_push<i64>(&mut source, 110)
+            discard vector_push<i64>(&mut source, 116)
+            discard vector_push<i64>(&mut source, 114)
+            discard vector_push<i64>(&mut source, 121)
+    discard vector_push<i64>(&mut source, 40)
+    discard vector_push<i64>(&mut source, 41)
+    discard vector_push<i64>(&mut source, 32)
+    discard vector_push<i64>(&mut source, 45)
+    discard vector_push<i64>(&mut source, 62)
+    discard vector_push<i64>(&mut source, 32)
+    discard vector_push<i64>(&mut source, 105)
+    discard vector_push<i64>(&mut source, 54)
+    discard vector_push<i64>(&mut source, 52)
+    discard vector_push<i64>(&mut source, 58)
+    discard vector_push<i64>(&mut source, 10)
+    discard vector_push<i64>(&mut source, 32)
+    discard vector_push<i64>(&mut source, 32)
+    discard vector_push<i64>(&mut source, 32)
+    discard vector_push<i64>(&mut source, 32)
+    discard vector_push<i64>(&mut source, 114)
+    discard vector_push<i64>(&mut source, 101)
+    discard vector_push<i64>(&mut source, 116)
+    discard vector_push<i64>(&mut source, 117)
+    discard vector_push<i64>(&mut source, 114)
+    discard vector_push<i64>(&mut source, 110)
+    discard vector_push<i64>(&mut source, 32)
+    match case_id == 2:
+        -1:
+            discard 0
+        0:
+            match case_id == 1:
+                -1:
+                    discard vector_push<i64>(&mut source, 55)
+                0:
+                    discard vector_push<i64>(&mut source, 52)
+                    discard vector_push<i64>(&mut source, 50)
+                1:
+                    discard vector_push<i64>(&mut source, 52)
+                    discard vector_push<i64>(&mut source, 50)
+        1:
+            match case_id == 1:
+                -1:
+                    discard vector_push<i64>(&mut source, 55)
+                0:
+                    discard vector_push<i64>(&mut source, 52)
+                    discard vector_push<i64>(&mut source, 50)
+                1:
+                    discard vector_push<i64>(&mut source, 52)
+                    discard vector_push<i64>(&mut source, 50)
+    match case_id == 3:
+        -1:
+            discard vector_push<i64>(&mut source, 10)
+            discard vector_push<i64>(&mut source, 117)
+            discard vector_push<i64>(&mut source, 110)
+            discard vector_push<i64>(&mut source, 101)
+            discard vector_push<i64>(&mut source, 120)
+            discard vector_push<i64>(&mut source, 112)
+            discard vector_push<i64>(&mut source, 101)
+            discard vector_push<i64>(&mut source, 99)
+            discard vector_push<i64>(&mut source, 116)
+            discard vector_push<i64>(&mut source, 101)
+        0:
+            discard vector_push<i64>(&mut source, 10)
+        1:
+            discard vector_push<i64>(&mut source, 10)
+    return generic_native_parser_digest(&source)
